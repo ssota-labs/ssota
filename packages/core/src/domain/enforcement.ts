@@ -84,6 +84,16 @@ export function resolveEffects(
 
   for (const template of actionEntry.effects) {
     if (template.kind === "create_node") {
+      const inputProperties =
+        (input.properties as Record<string, unknown> | undefined) ?? {};
+      const properties = {
+        ...template.node.properties,
+        ...inputProperties,
+      };
+      if (input.title !== undefined) {
+        properties.title = input.title;
+      }
+
       effects.push({
         kind: "create_node",
         node: {
@@ -91,12 +101,13 @@ export function resolveEffects(
           lifecycleStatus:
             (input.lifecycleStatus as LifecycleStatus) ??
             template.node.lifecycleStatus,
-          properties:
-            (input.properties as Record<string, unknown>) ??
-            template.node.properties,
-          content: (input.content as string | null) ?? template.node.content,
+          properties,
+          content:
+            (input.content as string | null | undefined) ??
+            template.node.content,
           contentUrl:
-            (input.contentUrl as string | null) ?? template.node.contentUrl,
+            (input.contentUrl as string | null | undefined) ??
+            template.node.contentUrl,
           provenance:
             (input.provenance as Record<string, unknown>) ??
             template.node.provenance,
