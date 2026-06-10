@@ -2,8 +2,9 @@
 
 import { executeAction } from "@loopos/core";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getActionPorts } from "@/lib/ports";
-import { getCurrentUser } from "@/lib/supabase/server";
+import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
 
 export async function approveGateAction(
   gateId: string,
@@ -38,8 +39,24 @@ export async function approveGateFormAction(formData: FormData) {
   await approveGateAction(gateId, approved);
 }
 
+export async function signInAction(formData: FormData) {
+  const email = formData.get("email");
+  const password = formData.get("password");
+  if (typeof email !== "string" || typeof password !== "string") {
+    throw new Error("email and password required");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  }
+
+  redirect("/");
+}
+
 export async function signOutAction() {
-  const { createSupabaseServerClient } = await import("@/lib/supabase/server");
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
+  redirect("/login");
 }
