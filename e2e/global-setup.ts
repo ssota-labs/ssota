@@ -58,7 +58,7 @@ export default async function globalSetup(): Promise<void> {
   if (!(await isSupabaseAuthUp())) {
     if (!canUseDocker()) {
       throw new Error(
-        "Supabase is not running and Docker is unavailable. Run: supabase start && pnpm db:migrate && pnpm db:seed",
+        "Supabase is not running and Docker is unavailable. Run: pnpm cloud:prepare (Cloud) or pnpm e2e:prepare (local)",
       );
     }
     console.log("[e2e setup] Supabase not reachable — starting local stack…");
@@ -66,7 +66,7 @@ export default async function globalSetup(): Promise<void> {
       run("supabase start");
     } catch {
       throw new Error(
-        "Failed to start Supabase. Run manually: supabase start && pnpm db:migrate && pnpm db:seed",
+        "Failed to start Supabase. Run manually: pnpm cloud:prepare (Cloud) or pnpm e2e:prepare (local)",
       );
     }
   }
