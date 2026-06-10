@@ -72,7 +72,8 @@ See `examples/cursor-local.md` and `examples/smoke-workflow.md` for details.
 
 ## Safety rules
 
-- Do not write to LoopOS data stores directly.
+- The `loopos-mcp` skill is the Root Protocol; domain instructions live in LoopOS.
+- LoopOS MCP is the only mutation interface.
 - All LoopOS mutations must go through MCP `execute_action`.
 - Treat `approve_gate` as Human-only.
 - Do not commit access tokens, `.env` files, or user credentials.

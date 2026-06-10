@@ -1,73 +1,62 @@
 # LoopOS MCP Tools
 
-LoopOS MCP exposes read tools for discovery and a single write tool for mutation.
+Three read tiers plus one write path.
 
-## Catalog reads
+## Discover (`list_*`)
 
-Use these tools to understand what the runtime supports:
+Catalog or queue **index only**. Do not read full details from list responses.
 
-- `list_node_types`
-- `list_edge_types`
-- `list_properties`
-- `list_action_contracts`
-- `list_archetypes`
-- `get_action_contract`
+- `list_node_types` → use `get_node_type`
+- `list_edge_types` → use `get_edge_type`
+- `list_properties` → use `get_property`
+- `list_action_contracts` → use `get_action_contract`
+- `list_archetypes` → use `get_archetype`
+- `list_pending_gates` → use `get_gate` or `query_gates`
 
-Always call `get_action_contract` before executing an action whose input shape is not already known in the current task.
+## Fetch (`get_*`)
 
-## Graph reads
+Single entity by primary key.
 
-Use these tools to inspect runtime graph state:
+- `get_node` — `nodeId`
+- `get_instruction` — `instructionId`
+- `get_gate` — `gateId`
+- `get_node_type` — `nodeType`
+- `get_edge_type` — `edgeType`
+- `get_property` — `propertyKey`
+- `get_archetype` — `archetypeId`
+- `get_action_contract` — `actionType`
+- `get_action_log_entry` — `logId` or `idempotencyKey`
 
-- `query_nodes`
-- `traverse_edges`
+## Query (`query_*`, `find_*`)
 
-Use graph reads before writing when an action depends on existing nodes, lifecycle status, relationships, or prior decisions.
+Filtered sets, search, graph traversal.
 
-## Instructions
+- `query_nodes` — `nodeType`, `lifecycleStatus`, pagination
+- `query_neighbors` — 1-hop edges + neighbor nodes
+- `traverse_graph` — multi-hop from `startNodeId`
+- `traverse_edges` — raw 1-hop edges only
+- `find_instruction` — text search for domain instructions
+- `get_action_log` — filtered log list
+- `query_gates` — optional `status` filter
 
-Use:
+## Write
 
-- `find_instruction`
+- `execute_action` — **only** mutation path
 
-Instructions are automation recipes. They can specify trigger conditions, required context reads, action order, allowed actions, and success checks.
+## Gates (read + propose)
 
-## Writes
+- `query_gates` / `list_pending_gates` / `get_gate`
+- `submit_for_approval` — informational only; does not approve
 
-Use:
-
-- `execute_action`
-
-This is the only write path. All LoopOS mutations must flow through it, including document creation, note creation, catalog changes, instruction changes, and gate-related actions.
-
-Do not bypass `execute_action` with database writes, internal APIs, adapter calls, or direct CRUD.
-
-## Gates
-
-Use:
-
-- `list_pending_gates`
-- `submit_for_approval`
-
-`submit_for_approval` is informational/proposal-oriented. It does not replace `execute_action`, and it does not approve a gate.
-
-`approve_gate` remains a Human-only action unless LoopOS policy explicitly changes.
-
-## Audit
-
-Use:
-
-- `get_action_log`
-
-Verify important writes through the action log. A completed workflow should leave a trace that connects the action type, executor, input rationale, outcome, and effects.
+`approve_gate` is Human-only unless policy changes.
 
 ## Recommended sequence
 
 ```txt
 find_instruction
+get_instruction
 get_action_contract
-query_nodes if context is required
+query_nodes / get_node / query_neighbors / traverse_graph
 execute_action
-get_action_log
-query_nodes or list_pending_gates for follow-up
+get_action_log_entry / get_node / query_gates
 ```
