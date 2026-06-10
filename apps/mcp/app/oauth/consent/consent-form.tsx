@@ -3,6 +3,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button } from "@loopos/ui/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@loopos/ui/components/ui/card";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
@@ -68,33 +76,31 @@ export function ConsentForm() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center gap-6 p-8">
-      <h1 className="text-2xl font-semibold">OAuth 동의</h1>
-      <p className="text-sm text-neutral-600">
-        MCP 클라이언트가 LoopOS에 접근하려 합니다.
-      </p>
-      {error && <p className="text-red-600">{error}</p>}
-      {details && (
-        <pre className="overflow-auto rounded bg-neutral-100 p-4 text-xs">
-          {JSON.stringify(details, null, 2)}
-        </pre>
-      )}
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={() => void handleApprove()}
-          className="rounded bg-black px-4 py-2 text-white"
-        >
-          승인
-        </button>
-        <button
-          type="button"
-          onClick={() => void handleDeny()}
-          className="rounded border px-4 py-2"
-        >
-          거부
-        </button>
-      </div>
+    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center p-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>OAuth 동의</CardTitle>
+          <CardDescription>
+            MCP 클라이언트가 LoopOS에 접근하려 합니다.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          {details && (
+            <pre className="overflow-auto rounded-md bg-muted p-4 text-xs">
+              {JSON.stringify(details, null, 2)}
+            </pre>
+          )}
+          <div className="flex gap-3">
+            <Button type="button" onClick={() => void handleApprove()}>
+              승인
+            </Button>
+            <Button type="button" variant="outline" onClick={() => void handleDeny()}>
+              거부
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </main>
   );
 }

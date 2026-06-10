@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import { getActionPorts } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { Badge } from "@loopos/ui/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@loopos/ui/components/ui/card";
 
 export default async function CatalogPage() {
   const user = await getCurrentUser();
@@ -23,15 +30,17 @@ export default async function CatalogPage() {
         <h2 className="mb-3 text-lg font-medium">Node Types</h2>
         <div className="grid gap-3 md:grid-cols-2">
           {nodeTypes.map((entry) => (
-            <div key={entry.nodeType} className="rounded-lg border bg-white p-4">
-              <p className="font-medium">{entry.nodeType}</p>
-              <p className="text-sm text-neutral-600">
-                {entry.family} · {entry.archetypeId}
-              </p>
+            <Card key={entry.nodeType}>
+              <CardHeader>
+                <CardTitle className="text-base">{entry.nodeType}</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {entry.family} · {entry.archetypeId}
+                </p>
+              </CardHeader>
               {entry.contentGuide && (
-                <p className="mt-2 text-sm">{entry.contentGuide}</p>
+                <CardContent className="pt-0 text-sm">{entry.contentGuide}</CardContent>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       </section>
@@ -42,17 +51,21 @@ export default async function CatalogPage() {
           {actionTypes
             .filter((a) => a !== null)
             .map((entry) => (
-              <details key={entry!.actionType} className="rounded-lg border bg-white p-4">
-                <summary className="cursor-pointer font-medium">
-                  {entry!.actionType}{" "}
-                  <span className="text-sm font-normal text-neutral-600">
-                    executor={entry!.executor}
-                  </span>
-                </summary>
-                <pre className="mt-3 overflow-auto rounded bg-neutral-50 p-3 text-xs">
-                  {JSON.stringify(entry, null, 2)}
-                </pre>
-              </details>
+              <Card key={entry!.actionType}>
+                <CardHeader>
+                  <details>
+                    <summary className="cursor-pointer font-medium">
+                      {entry!.actionType}{" "}
+                      <Badge variant="secondary" className="ml-2">
+                        executor={entry!.executor}
+                      </Badge>
+                    </summary>
+                    <pre className="mt-3 overflow-auto rounded-md bg-muted p-3 text-xs">
+                      {JSON.stringify(entry, null, 2)}
+                    </pre>
+                  </details>
+                </CardHeader>
+              </Card>
             ))}
         </div>
       </section>

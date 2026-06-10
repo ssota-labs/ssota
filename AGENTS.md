@@ -63,6 +63,7 @@ pnpm db:seed                 # 아키타입 2계열 + 코어 카탈로그 + smok
 pnpm dev                     # turbo run dev — web + mcp 동시 기동
 pnpm dev --filter web        # 콘솔만
 pnpm dev --filter mcp        # MCP 앱만
+pnpm storybook               # Storybook (apps/storybook, port 6006)
 pnpm build                   # turbo run build (전체)
 pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 ```
@@ -120,7 +121,7 @@ Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0
 - Zod 스키마는 `packages/contracts`에 정의하고 core/apps가 공유한다 — 스키마를 앱에 중복 정의하지 않는다.
 - 도메인 용어는 코어 스펙의 명칭을 그대로 쓴다: `executeAction`, `ActionCommitPort`, `gate`, `archetype`, `lifecycle_status` 등. 임의로 동의어를 만들지 않는다.
 - 파일 코멘트·문서는 한국어, 식별자는 영어.
-- UI는 shadcn/ui 컴포넌트 우선. `pnpm dlx shadcn@latest add <component>`로 추가.
+- UI는 `@loopos/ui` (`packages/ui`) shadcn Base UI 컴포넌트 우선. `pnpm dlx shadcn@latest add <component> -y -c apps/web`로 추가. 디자인 규칙은 루트 [DESIGN.md](DESIGN.md) 및 `.cursor/rules/design.mdc` 참조.
 
 ## MCP App Notes (apps/mcp)
 

@@ -1,4 +1,13 @@
 import { signInAction } from "../actions";
+import { Button } from "@loopos/ui/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@loopos/ui/components/ui/card";
+import { Input } from "@loopos/ui/components/ui/input";
+import { Label } from "@loopos/ui/components/ui/label";
 
 export default async function LoginPage({
   searchParams,
@@ -8,33 +17,40 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <div className="mx-auto max-w-md space-y-6">
-      <h1 className="text-2xl font-semibold">로그인</h1>
-      <form action={signInAction} className="space-y-4">
-        <input
-          type="email"
-          name="email"
-          defaultValue="smoke@loopos.test"
-          className="w-full rounded border px-3 py-2"
-          placeholder="email"
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          defaultValue="smoke-test-password-123"
-          className="w-full rounded border px-3 py-2"
-          placeholder="password"
-          required
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          className="w-full rounded bg-neutral-900 px-4 py-2 text-white"
-        >
-          로그인
-        </button>
-      </form>
-    </div>
+    <Card className="mx-auto max-w-md">
+      <CardHeader>
+        <CardTitle>로그인</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form action={signInAction} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              name="email"
+              defaultValue="smoke@loopos.test"
+              placeholder="email"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              type="password"
+              name="password"
+              defaultValue="smoke-test-password-123"
+              placeholder="password"
+              required
+            />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <Button type="submit" className="w-full">
+            로그인
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
