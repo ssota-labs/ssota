@@ -328,8 +328,8 @@ export async function deprecateInstructionAction(input: Record<string, unknown>)
   ]);
 }
 
-export async function createNodeTableFormAction(formData: FormData) {
-  return defineNodeTypeAction({
+export async function createNodeTableFormAction(formData: FormData): Promise<void> {
+  await defineNodeTypeAction({
     definition: {
       nodeType: String(formData.get("nodeType") ?? ""),
       family: String(formData.get("family") ?? "document"),
@@ -343,7 +343,7 @@ export async function createNodeTableFormAction(formData: FormData) {
   });
 }
 
-export async function addNodePropertyFormAction(formData: FormData) {
+export async function addNodePropertyFormAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
@@ -367,13 +367,13 @@ export async function addNodePropertyFormAction(formData: FormData) {
       executorId: user.id,
       executorType: "Human",
     });
-    if (propertyResult.status === "rejected") return propertyResult;
+    if (propertyResult.status === "rejected") return;
   }
 
   const nodeEntry = await ports.catalog.getNodeCatalogEntry(nodeType);
   if (!nodeEntry) throw new Error(`Node type '${nodeType}' not found`);
   const propertyRefs = Array.from(new Set([...nodeEntry.propertyRefs, propertyKey]));
-  const result = await executeAction(ports, {
+  await executeAction(ports, {
     actionType: "update_node_type",
     input: { nodeType, patch: { propertyRefs } },
     executorId: user.id,
@@ -392,11 +392,10 @@ export async function addNodePropertyFormAction(formData: FormData) {
   ]) {
     revalidatePath(path);
   }
-  return result;
 }
 
-export async function createEdgeTableFormAction(formData: FormData) {
-  return defineEdgeTypeAction({
+export async function createEdgeTableFormAction(formData: FormData): Promise<void> {
+  await defineEdgeTypeAction({
     definition: {
       edgeType: String(formData.get("edgeType") ?? ""),
       domain: parseCsv(formData.get("domain")),
@@ -407,7 +406,7 @@ export async function createEdgeTableFormAction(formData: FormData) {
   });
 }
 
-export async function defineScopedActionFormAction(formData: FormData) {
+export async function defineScopedActionFormAction(formData: FormData): Promise<void> {
   const scopeKind = String(formData.get("scopeKind") ?? "global");
   const scope = ActionScopeSchema.parse(
     scopeKind === "node_type"
@@ -428,7 +427,7 @@ export async function defineScopedActionFormAction(formData: FormData) {
             : { kind: "global" },
   );
 
-  return defineActionContractAction({
+  await defineActionContractAction({
     definition: {
       actionType: String(formData.get("actionType") ?? ""),
       scope,
@@ -443,7 +442,7 @@ export async function defineScopedActionFormAction(formData: FormData) {
   });
 }
 
-export async function defineWorkflowInstructionFormAction(formData: FormData) {
+export async function defineWorkflowInstructionFormAction(formData: FormData): Promise<void> {
   const triggerPatterns = parseCsv(formData.get("triggerPatterns"));
   const scopeKind = String(formData.get("scopeKind") ?? "global");
   const scopedNodeType = String(formData.get("nodeType") ?? "");
@@ -452,7 +451,7 @@ export async function defineWorkflowInstructionFormAction(formData: FormData) {
       ? { kind: "node_type" as const, nodeType: scopedNodeType }
       : { kind: "global" as const };
   const applicableNodeTypes = parseCsv(formData.get("applicableNodeTypes"));
-  return defineInstructionAction({
+  await defineInstructionAction({
     definition: {
       title: String(formData.get("title") ?? ""),
       triggerPatterns: triggerPatterns.length ? triggerPatterns : ["manual"],
@@ -475,13 +474,13 @@ export async function defineWorkflowInstructionFormAction(formData: FormData) {
   });
 }
 
-export async function runActionJsonFormAction(formData: FormData) {
+export async function runActionJsonFormAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
   const actionType = String(formData.get("actionType") ?? "");
   const input = parseJsonObject(formData.get("input"));
   const ports = getActionPorts();
-  const result = await executeAction(ports, {
+  await executeAction(ports, {
     actionType,
     input,
     executorId: user.id,
@@ -490,7 +489,6 @@ export async function runActionJsonFormAction(formData: FormData) {
   for (const path of ["/context-graph", "/context-graph/nodes", "/log", "/gates"]) {
     revalidatePath(path);
   }
-  return result;
 }
 
 export async function previewActionContractAction(input: Record<string, unknown>) {

@@ -96,6 +96,11 @@ ensure_iptables_legacy() {
     return
   fi
 
+  if ! sudo update-alternatives --query iptables >/dev/null 2>&1; then
+    log "iptables alternatives not registered — skipping iptables switch"
+    return
+  fi
+
   sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
   sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy 2>/dev/null || true
   log "iptables backend set to legacy"
