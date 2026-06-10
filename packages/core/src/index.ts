@@ -510,3 +510,4 @@ export async function approveGate(
 
 export * from "./domain/types.js";
 export * from "./domain/enforcement.js";
+export * from "./catalog-slug.js";
