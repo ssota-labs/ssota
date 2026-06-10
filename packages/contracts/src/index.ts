@@ -90,11 +90,31 @@ export const EdgeTypeDefinitionSchema = z.object({
 
 export type EdgeTypeDefinition = z.infer<typeof EdgeTypeDefinitionSchema>;
 
+export const EdgeTypeDefinitionPatchSchema =
+  EdgeTypeDefinitionSchema.partial().extend({
+    edgeType: z.string().min(1),
+  });
+
+export type EdgeTypeDefinitionPatch = z.infer<typeof EdgeTypeDefinitionPatchSchema>;
+
 export const DefineEdgeTypeInputSchema = z.object({
   definition: EdgeTypeDefinitionSchema,
 });
 
 export type DefineEdgeTypeInput = z.infer<typeof DefineEdgeTypeInputSchema>;
+
+export const UpdateEdgeTypeInputSchema = z.object({
+  edgeType: z.string().min(1),
+  patch: EdgeTypeDefinitionPatchSchema.omit({ edgeType: true }),
+});
+
+export type UpdateEdgeTypeInput = z.infer<typeof UpdateEdgeTypeInputSchema>;
+
+export const DeprecateEdgeTypeInputSchema = z.object({
+  edgeType: z.string().min(1),
+});
+
+export type DeprecateEdgeTypeInput = z.infer<typeof DeprecateEdgeTypeInputSchema>;
 
 export const PropertyDefinitionSchema = z.object({
   propertyKey: z.string().min(1),
@@ -105,11 +125,55 @@ export const PropertyDefinitionSchema = z.object({
 
 export type PropertyDefinition = z.infer<typeof PropertyDefinitionSchema>;
 
+export const PropertyDefinitionPatchSchema = PropertyDefinitionSchema.partial().extend(
+  {
+    propertyKey: z.string().min(1),
+  },
+);
+
+export type PropertyDefinitionPatch = z.infer<typeof PropertyDefinitionPatchSchema>;
+
 export const DefinePropertyInputSchema = z.object({
   definition: PropertyDefinitionSchema,
 });
 
 export type DefinePropertyInput = z.infer<typeof DefinePropertyInputSchema>;
+
+export const UpdatePropertyInputSchema = z.object({
+  propertyKey: z.string().min(1),
+  patch: PropertyDefinitionPatchSchema.omit({ propertyKey: true }),
+});
+
+export type UpdatePropertyInput = z.infer<typeof UpdatePropertyInputSchema>;
+
+export const DeprecatePropertyInputSchema = z.object({
+  propertyKey: z.string().min(1),
+});
+
+export type DeprecatePropertyInput = z.infer<typeof DeprecatePropertyInputSchema>;
+
+export const PropertyPermissionDefinitionSchema = z.object({
+  actionType: z.string().min(1),
+  nodeType: z.string().min(1),
+  propertyKey: z.string().min(1),
+  operation: PermissionOperationSchema,
+  permissionType: PermissionTypeSchema,
+  valueConstraint: z.record(z.unknown()).nullable().optional(),
+  requiresHumanGate: z.boolean().default(false),
+  status: z.string().default("active"),
+});
+
+export type PropertyPermissionDefinition = z.infer<
+  typeof PropertyPermissionDefinitionSchema
+>;
+
+export const UpdatePropertyPermissionInputSchema = z.object({
+  permission: PropertyPermissionDefinitionSchema,
+});
+
+export type UpdatePropertyPermissionInput = z.infer<
+  typeof UpdatePropertyPermissionInputSchema
+>;
 
 export const ActionContractDefinitionSchema = z.object({
   actionType: z.string().min(1),
@@ -136,6 +200,32 @@ export type DefineActionContractInput = z.infer<
   typeof DefineActionContractInputSchema
 >;
 
+export const ActionContractDefinitionPatchSchema =
+  ActionContractDefinitionSchema.partial().extend({
+    actionType: z.string().min(1),
+  });
+
+export type ActionContractDefinitionPatch = z.infer<
+  typeof ActionContractDefinitionPatchSchema
+>;
+
+export const UpdateActionContractInputSchema = z.object({
+  actionType: z.string().min(1),
+  patch: ActionContractDefinitionPatchSchema.omit({ actionType: true }),
+});
+
+export type UpdateActionContractInput = z.infer<
+  typeof UpdateActionContractInputSchema
+>;
+
+export const DeprecateActionContractInputSchema = z.object({
+  actionType: z.string().min(1),
+});
+
+export type DeprecateActionContractInput = z.infer<
+  typeof DeprecateActionContractInputSchema
+>;
+
 export const InstructionDefinitionSchema = z.object({
   title: z.string().min(1),
   triggerPatterns: z.array(z.string()).min(1),
@@ -153,6 +243,29 @@ export const DefineInstructionInputSchema = z.object({
 });
 
 export type DefineInstructionInput = z.infer<typeof DefineInstructionInputSchema>;
+
+export const InstructionCatalogUpsertSchema = InstructionDefinitionSchema.extend({
+  instructionId: z.string().uuid().optional(),
+});
+
+export type InstructionCatalogUpsert = z.infer<
+  typeof InstructionCatalogUpsertSchema
+>;
+
+export const UpdateInstructionInputSchema = z.object({
+  instructionId: z.string().uuid(),
+  patch: InstructionDefinitionSchema.partial(),
+});
+
+export type UpdateInstructionInput = z.infer<typeof UpdateInstructionInputSchema>;
+
+export const DeprecateInstructionInputSchema = z.object({
+  instructionId: z.string().uuid(),
+});
+
+export type DeprecateInstructionInput = z.infer<
+  typeof DeprecateInstructionInputSchema
+>;
 
 export const EffectSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -207,16 +320,36 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     entry: EdgeTypeDefinitionSchema,
   }),
   z.object({
+    kind: z.literal("deprecate_edge_catalog_entry"),
+    edgeType: z.string().min(1),
+  }),
+  z.object({
     kind: z.literal("upsert_property_catalog_entry"),
     entry: PropertyDefinitionSchema,
+  }),
+  z.object({
+    kind: z.literal("deprecate_property_catalog_entry"),
+    propertyKey: z.string().min(1),
+  }),
+  z.object({
+    kind: z.literal("upsert_property_permission_entry"),
+    permission: PropertyPermissionDefinitionSchema,
   }),
   z.object({
     kind: z.literal("upsert_action_catalog_entry"),
     entry: ActionContractDefinitionSchema,
   }),
   z.object({
+    kind: z.literal("deprecate_action_catalog_entry"),
+    actionType: z.string().min(1),
+  }),
+  z.object({
     kind: z.literal("upsert_instruction_catalog_entry"),
-    entry: InstructionDefinitionSchema,
+    entry: InstructionCatalogUpsertSchema,
+  }),
+  z.object({
+    kind: z.literal("deprecate_instruction_catalog_entry"),
+    instructionId: z.string().uuid(),
   }),
 ]);
 
@@ -308,3 +441,19 @@ export const SubmitForApprovalInputSchema = z.object({
 export type SubmitForApprovalInput = z.infer<
   typeof SubmitForApprovalInputSchema
 >;
+
+export const ActionPreviewResultSchema = z.discriminatedUnion("status", [
+  z.object({
+    status: z.literal("ok"),
+    effects: z.array(EffectSchema),
+    wouldGate: z.boolean(),
+    gateReason: z.string().optional(),
+  }),
+  z.object({
+    status: z.literal("rejected"),
+    code: z.string(),
+    reason: z.string(),
+  }),
+]);
+
+export type ActionPreviewResult = z.infer<typeof ActionPreviewResultSchema>;

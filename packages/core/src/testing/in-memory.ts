@@ -149,10 +149,42 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
     });
   } else if (effect.kind === "deprecate_node_catalog_entry") {
     state.nodeCatalog.delete(effect.nodeType);
+  } else if (effect.kind === "deprecate_edge_catalog_entry") {
+    state.edgeCatalog.delete(effect.edgeType);
+  } else if (effect.kind === "deprecate_property_catalog_entry") {
+    state.propertyCatalog.delete(effect.propertyKey);
+  } else if (effect.kind === "deprecate_action_catalog_entry") {
+    state.actionCatalog.delete(effect.actionType);
+  } else if (effect.kind === "deprecate_instruction_catalog_entry") {
+    state.instructions = state.instructions.filter(
+      (instruction) => instruction.id !== effect.instructionId,
+    );
   } else if (effect.kind === "upsert_edge_catalog_entry") {
     state.edgeCatalog.set(effect.entry.edgeType, effect.entry);
   } else if (effect.kind === "upsert_property_catalog_entry") {
     state.propertyCatalog.set(effect.entry.propertyKey, effect.entry);
+  } else if (effect.kind === "upsert_property_permission_entry") {
+    const idx = state.permissions.findIndex(
+      (permission) =>
+        permission.actionType === effect.permission.actionType &&
+        permission.nodeType === effect.permission.nodeType &&
+        permission.propertyKey === effect.permission.propertyKey,
+    );
+    const next = {
+      actionType: effect.permission.actionType,
+      nodeType: effect.permission.nodeType,
+      propertyKey: effect.permission.propertyKey,
+      operation: effect.permission.operation,
+      permissionType: effect.permission.permissionType,
+      valueConstraint: effect.permission.valueConstraint ?? null,
+      requiresHumanGate: effect.permission.requiresHumanGate,
+      status: effect.permission.status,
+    };
+    if (idx >= 0) {
+      state.permissions[idx] = next;
+    } else {
+      state.permissions.push(next);
+    }
   } else if (effect.kind === "upsert_action_catalog_entry") {
     state.actionCatalog.set(effect.entry.actionType, {
       actionType: effect.entry.actionType,
@@ -165,16 +197,37 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
       logPayloadSchema: effect.entry.logPayloadSchema,
     });
   } else if (effect.kind === "upsert_instruction_catalog_entry") {
-    state.instructions.push({
-      id: randomUUID(),
-      title: effect.entry.title,
-      triggerPatterns: effect.entry.triggerPatterns,
-      applicableNodeTypes: effect.entry.applicableNodeTypes,
-      requiredActions: effect.entry.requiredActions,
-      optionalActions: effect.entry.optionalActions,
-      lifecycle: effect.entry.lifecycle,
-      body: effect.entry.body,
-    });
+    if (effect.entry.instructionId) {
+      const idx = state.instructions.findIndex(
+        (instruction) => instruction.id === effect.entry.instructionId,
+      );
+      const next = {
+        id: effect.entry.instructionId,
+        title: effect.entry.title,
+        triggerPatterns: effect.entry.triggerPatterns,
+        applicableNodeTypes: effect.entry.applicableNodeTypes,
+        requiredActions: effect.entry.requiredActions,
+        optionalActions: effect.entry.optionalActions,
+        lifecycle: effect.entry.lifecycle,
+        body: effect.entry.body,
+      };
+      if (idx >= 0) {
+        state.instructions[idx] = next;
+      } else {
+        state.instructions.push(next);
+      }
+    } else {
+      state.instructions.push({
+        id: randomUUID(),
+        title: effect.entry.title,
+        triggerPatterns: effect.entry.triggerPatterns,
+        applicableNodeTypes: effect.entry.applicableNodeTypes,
+        requiredActions: effect.entry.requiredActions,
+        optionalActions: effect.entry.optionalActions,
+        lifecycle: effect.entry.lifecycle,
+        body: effect.entry.body,
+      });
+    }
   }
 }
 
@@ -229,6 +282,12 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
     async listInstructions(input) {
       const limit = input?.limit ?? 100;
       return state.instructions.slice(0, limit);
+    },
+    async getInstruction(instructionId) {
+      return (
+        state.instructions.find((instruction) => instruction.id === instructionId) ??
+        null
+      );
     },
   };
 

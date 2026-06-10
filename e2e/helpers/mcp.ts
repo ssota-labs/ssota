@@ -29,7 +29,7 @@ export async function mcpToolCall(
         headers?: Record<string, string>;
         data?: unknown;
       },
-    ) => Promise<{ ok: () => boolean; json: () => Promise<unknown> }>;
+    ) => Promise<{ ok: () => boolean; text: () => Promise<string> }>;
   },
   mcpUrl: string,
   token: string,
@@ -72,9 +72,24 @@ export async function mcpToolCall(
     throw new Error(`MCP tools/call failed for ${toolName}`);
   }
 
-  const body = (await callRes.json()) as {
+  const body = parseJsonRpcResponse(await callRes.text()) as {
     result?: { content?: Array<{ text?: string }> };
   };
   const text = body.result?.content?.[0]?.text;
   return text ? JSON.parse(text) : body;
+}
+
+function parseJsonRpcResponse(rawBody: string): unknown {
+  const trimmed = rawBody.trim();
+  if (!trimmed.startsWith("event:") && !trimmed.includes("\ndata:")) {
+    return JSON.parse(trimmed);
+  }
+
+  const data = trimmed
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith("data:"))
+    .map((line) => line.slice("data:".length).trim())
+    .join("\n");
+
+  return JSON.parse(data);
 }

@@ -174,6 +174,7 @@ export interface CatalogPort {
     limit?: number,
   ): Promise<Instruction[]>;
   listInstructions(input?: InstructionListInput): Promise<Instruction[]>;
+  getInstruction(instructionId: string): Promise<Instruction | null>;
 }
 
 export interface GraphReadPort {

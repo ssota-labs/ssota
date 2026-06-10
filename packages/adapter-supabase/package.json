@@ -22,7 +22,7 @@
   "dependencies": {
     "@loopos/contracts": "workspace:*",
     "@loopos/core": "workspace:*",
-    "@supabase/supabase-js": "^2.50.0",
+    "@supabase/supabase-js": "^2.108.1",
     "drizzle-orm": "^0.44.2",
     "postgres": "^3.4.7",
     "zod": "^3.25.67"

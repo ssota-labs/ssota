@@ -289,6 +289,26 @@ export function createCatalogPort(db: Db): CatalogPort {
           }) satisfies Instruction,
       );
     },
+
+    async getInstruction(instructionId) {
+      const rows = await db
+        .select()
+        .from(schema.instructions)
+        .where(eq(schema.instructions.id, instructionId))
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return {
+        id: row.id,
+        title: row.title,
+        triggerPatterns: row.triggerPatterns,
+        applicableNodeTypes: row.applicableNodeTypes,
+        requiredActions: row.requiredActions,
+        optionalActions: row.optionalActions,
+        lifecycle: row.lifecycle as LifecycleStatus,
+        body: row.body,
+      } satisfies Instruction;
+    },
   };
 }
 
@@ -534,6 +554,22 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
     await tx
       .delete(schema.nodeCatalog)
       .where(eq(schema.nodeCatalog.nodeType, effect.nodeType));
+  } else if (effect.kind === "deprecate_edge_catalog_entry") {
+    await tx
+      .delete(schema.edgeCatalog)
+      .where(eq(schema.edgeCatalog.edgeType, effect.edgeType));
+  } else if (effect.kind === "deprecate_property_catalog_entry") {
+    await tx
+      .delete(schema.propertyCatalog)
+      .where(eq(schema.propertyCatalog.propertyKey, effect.propertyKey));
+  } else if (effect.kind === "deprecate_action_catalog_entry") {
+    await tx
+      .delete(schema.actionCatalog)
+      .where(eq(schema.actionCatalog.actionType, effect.actionType));
+  } else if (effect.kind === "deprecate_instruction_catalog_entry") {
+    await tx
+      .delete(schema.instructions)
+      .where(eq(schema.instructions.id, effect.instructionId));
   } else if (effect.kind === "upsert_edge_catalog_entry") {
     await tx
       .insert(schema.edgeCatalog)
@@ -570,6 +606,41 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
           owningActions: effect.entry.owningActions,
         },
       });
+  } else if (effect.kind === "upsert_property_permission_entry") {
+    const existing = await tx
+      .select()
+      .from(schema.actionPropertyPermissions)
+      .where(
+        and(
+          eq(schema.actionPropertyPermissions.actionType, effect.permission.actionType),
+          eq(schema.actionPropertyPermissions.nodeType, effect.permission.nodeType),
+          eq(schema.actionPropertyPermissions.propertyKey, effect.permission.propertyKey),
+        ),
+      )
+      .limit(1);
+    if (existing[0]) {
+      await tx
+        .update(schema.actionPropertyPermissions)
+        .set({
+          operation: effect.permission.operation,
+          permissionType: effect.permission.permissionType,
+          valueConstraint: effect.permission.valueConstraint ?? null,
+          requiresHumanGate: effect.permission.requiresHumanGate,
+          status: effect.permission.status,
+        })
+        .where(eq(schema.actionPropertyPermissions.id, existing[0].id));
+    } else {
+      await tx.insert(schema.actionPropertyPermissions).values({
+        actionType: effect.permission.actionType,
+        nodeType: effect.permission.nodeType,
+        propertyKey: effect.permission.propertyKey,
+        operation: effect.permission.operation,
+        permissionType: effect.permission.permissionType,
+        valueConstraint: effect.permission.valueConstraint ?? null,
+        requiresHumanGate: effect.permission.requiresHumanGate,
+        status: effect.permission.status,
+      });
+    }
   } else if (effect.kind === "upsert_action_catalog_entry") {
     await tx
       .insert(schema.actionCatalog)
@@ -596,15 +667,30 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         },
       });
   } else if (effect.kind === "upsert_instruction_catalog_entry") {
-    await tx.insert(schema.instructions).values({
-      title: effect.entry.title,
-      triggerPatterns: effect.entry.triggerPatterns,
-      applicableNodeTypes: effect.entry.applicableNodeTypes,
-      requiredActions: effect.entry.requiredActions,
-      optionalActions: effect.entry.optionalActions,
-      lifecycle: effect.entry.lifecycle,
-      body: effect.entry.body,
-    });
+    if (effect.entry.instructionId) {
+      await tx
+        .update(schema.instructions)
+        .set({
+          title: effect.entry.title,
+          triggerPatterns: effect.entry.triggerPatterns,
+          applicableNodeTypes: effect.entry.applicableNodeTypes,
+          requiredActions: effect.entry.requiredActions,
+          optionalActions: effect.entry.optionalActions,
+          lifecycle: effect.entry.lifecycle,
+          body: effect.entry.body,
+        })
+        .where(eq(schema.instructions.id, effect.entry.instructionId));
+    } else {
+      await tx.insert(schema.instructions).values({
+        title: effect.entry.title,
+        triggerPatterns: effect.entry.triggerPatterns,
+        applicableNodeTypes: effect.entry.applicableNodeTypes,
+        requiredActions: effect.entry.requiredActions,
+        optionalActions: effect.entry.optionalActions,
+        lifecycle: effect.entry.lifecycle,
+        body: effect.entry.body,
+      });
+    }
   }
 }
 

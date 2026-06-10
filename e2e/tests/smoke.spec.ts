@@ -1,50 +1,24 @@
 import { test, expect } from "@playwright/test";
-import {
-  SMOKE_EMAIL,
-  SMOKE_PASSWORD,
-} from "@loopos/adapter-supabase";
+import { loginAsSmoke } from "../helpers/auth";
 
 test.describe("LoopOS Console", () => {
   test("smoke: 로그인 → 홈 → 카탈로그", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByPlaceholder("email").fill(SMOKE_EMAIL);
-    await page.getByPlaceholder("password").fill(SMOKE_PASSWORD);
-    await page.getByRole("button", { name: "로그인" }).click();
-
-    await expect(page.getByRole("heading", { name: "LoopOS Console" })).toBeVisible({
-      timeout: 15_000,
-    });
+    await loginAsSmoke(page);
     await page.getByRole("navigation").getByRole("link", { name: "Catalog" }).click();
     await expect(page.getByRole("heading", { name: "Catalog Browser" })).toBeVisible();
     await expect(page.getByText("Note", { exact: true }).first()).toBeVisible();
   });
 
   test("smoke: Studio 페이지", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByPlaceholder("email").fill(SMOKE_EMAIL);
-    await page.getByPlaceholder("password").fill(SMOKE_PASSWORD);
-    await page.getByRole("button", { name: "로그인" }).click();
-
-    await expect(page.getByRole("heading", { name: "LoopOS Console" })).toBeVisible({
-      timeout: 15_000,
-    });
-
+    await loginAsSmoke(page);
     await page.getByRole("navigation").getByRole("link", { name: "Studio" }).click();
     await expect(page.getByRole("heading", { name: "Meta Action Studio" })).toBeVisible();
-    await page.getByRole("link", { name: "Node Types" }).click();
+    await page.getByRole("link", { name: "Node Types", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Node Types" })).toBeVisible();
   });
 
   test("smoke: Action Log 페이지", async ({ page }) => {
-    await page.goto("/login");
-    await page.getByPlaceholder("email").fill(SMOKE_EMAIL);
-    await page.getByPlaceholder("password").fill(SMOKE_PASSWORD);
-    await page.getByRole("button", { name: "로그인" }).click();
-
-    await expect(page.getByRole("heading", { name: "LoopOS Console" })).toBeVisible({
-      timeout: 15_000,
-    });
-
+    await loginAsSmoke(page);
     await page.getByRole("navigation").getByRole("link", { name: "Action Log" }).click();
     await expect(page.getByRole("heading", { name: "Action Log" })).toBeVisible();
   });

@@ -111,9 +111,38 @@ Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0
 | E2E | `pnpm e2e` | **smoke 계정** | 콘솔(로그인→게이트 승인→로그) + MCP HTTP(Bearer→initialize→execute_action→거부 케이스) |
 
 - **Smoke 계정**: `smoke@loopos.test` — 시드 단계에서 Auth Admin API로 생성되는 전용 테스트 사용자. integration·e2e는 반드시 이 계정으로만 인증한다. 실제 사용자 계정이나 service key 우회로 테스트하지 않는다.
-- Integration·e2e 실행 전 `supabase start`가 떠 있어야 한다.
+- Integration·e2e 실행 전 `supabase start`가 떠 있어야 한다. **로컬**에서는 `pnpm e2e:prepare` (= supabase start + migrate + seed). **Cursor Cloud**에서는 세션마다 `pnpm cloud:prepare`로 Docker·Supabase·시드를 한 번에 부트스트랩한다 (`scripts/cloud-bootstrap.sh`). `pnpm e2e` global setup은 smoke 로그인 실패 시 migrate+seed만 자동 재시도한다 (`e2e/global-setup.ts`) — Cloud에서 Docker가 안 떠 있으면 `cloud:prepare`가 필요하다.
+- E2E 로그인은 `e2e/helpers/auth.ts`의 `loginAsSmoke()`를 사용한다 — 헤더의「로그인」링크와 폼 submit 버튼 이름이 같아 `getByRole('button', { name: '로그인' })` 단독 사용 시 strict mode violation이 난다.
 - 새 강제 규칙·포트를 추가하면 **거부 케이스 테스트가 필수다.** 통과 케이스만 있는 PR은 불완전하다.
 - "비기록 변경 0건"(Phase 1 exit criteria)은 integration에서 구조적으로 검증한다: 로그 없이 커밋되는 경로가 존재하지 않음.
+
+### E2E 리포트 (에이전트·PR 공통)
+
+E2E를 실행한 턴(특히 web/studio/e2e 변경 PR)에서는 **스크린샷·비디오·HTML 리포트**를 사용자에게 제공한다. 매번 요청받지 않아도 된다.
+
+**실행**
+
+```bash
+# dev 서버 tmux 세션이 3000/3001을 쓰면 e2e 전에 종료 (Playwright는 3100/3101 사용)
+cd e2e && pnpm exec playwright install chromium   # 최초 1회
+pnpm e2e                                          # 또는 pnpm e2e:report (HTML 뷰어)
+```
+
+**산출물 경로** (`e2e/playwright.config.ts` 기준)
+
+| 종류 | 경로 |
+|---|---|
+| HTML 리포트 | `e2e/report/html/index.html` |
+| 스크린샷 | `e2e/report/test-results/**/` |
+| 비디오 | `e2e/report/test-results/**/*.webm` |
+| trace | `e2e/report/test-results/**/trace.zip` |
+| JSON 요약 | `e2e/report/results.json` |
+
+**에이전트 응답 규칙**
+
+- E2E 실행 후 PR/작업 요약에 **주요 스크린샷 2–4장**과 **대표 플로우 비디오 1개**를 첨부한다 (`/opt/cursor/artifacts/`에 복사 후 markdown 이미지/비디오 태그로 참조).
+- 실패 시 HTML 리포트 경로와 실패 테스트명·스크린샷을 함께 남긴다.
+- `e2e/report/`는 `.gitignore` 대상 — 커밋하지 않는다.
 
 ## Code Style
 
@@ -143,25 +172,63 @@ Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0
 
 ## Cursor Cloud specific instructions
 
+Cursor Cloud Agent는 **세션마다 새 VM 프로세스**에서 시작한다. git에 커밋된 코드·설정은 유지되지만, **Docker daemon, Supabase 컨테이너, DB 데이터, dev 서버, E2E 산출물**은 세션 간에 남지 않는다. 인프라가 필요한 작업(E2E, adapter 통합 테스트) 전에 **반드시** 아래 부트스트랩을 실행한다.
+
+### 한 번에 준비 (권장)
+
+```bash
+export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use 24
+pnpm cloud:prepare
+```
+
+`pnpm cloud:prepare` (= `scripts/cloud-bootstrap.sh`)가 하는 일:
+
+1. Node 24 (`.nvmrc`) 확인
+2. `node_modules` 없으면 `pnpm install`
+3. `apps/web/.env.local`, `apps/mcp/.env.local` 없으면 `.env.example` 복사
+4. **Docker**: `iptables-legacy` + **`vfs` storage driver**로 `dockerd` 기동 (Cloud VM에서 기본 `iptables-nft`/`overlayfs`는 실패함)
+5. **Supabase**: `pnpm exec supabase start` (CLI **2.105.0** pinned)
+6. **DB**: `pnpm db:migrate` + `pnpm db:seed` (smoke 계정 포함)
+7. **Playwright**: `pnpm --filter e2e exec playwright install chromium`
+
+옵션: `--skip-install`, `--skip-playwright`
+
+### 세션 간 유지 / 비유지
+
+| 항목 | 새 Cloud 세션 |
+|---|---|
+| git 코드·PR | 유지 |
+| `package.json` / lockfile / Supabase CLI pin | 유지 |
+| Docker daemon·컨테이너·DB 볼륨 | **재생성 필요** (`pnpm cloud:prepare`) |
+| `pnpm dev` tmux 세션 | **재기동 필요** |
+| E2E 스크린샷·비디오 (`e2e/report/`) | **없음** — 실행 시 다시 생성 |
+
 ### Node.js
 
-Cloud VM의 기본 `node`(`/exec-daemon/node`)는 v22이며, 이 저장소는 **Node 24**가 필요하다(`.nvmrc`). 셸에서 nvm으로 전환한 뒤 PATH를 우선시한다:
+Cloud VM 기본 `node`(`/exec-daemon/node`)는 v22이다. 이 저장소는 **Node 24** (`.nvmrc`). 부트스트랩·검증 전에:
 
 ```bash
 export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use 24
 export PATH="$NVM_DIR/versions/node/v24.16.0/bin:$PATH"
 ```
 
-### Docker & Supabase (세션마다)
+### Docker & Supabase (수동 — 스크립트가 대신 실행)
 
-로컬 Supabase는 Docker가 필요하다. 최초 1회 VM 스냅샷에 Docker CE + `fuse-overlayfs` + `supabase` CLI가 설치되어 있어야 한다. 매 Cloud Agent 세션 시작 시:
+`pnpm cloud:prepare`가 내부적으로 아래와 동일한 작업을 수행한다. 수동 디버깅 시 참고:
 
 ```bash
-sudo dockerd >/tmp/dockerd.log 2>&1 &   # 이미 떠 있으면 생략
-sudo chmod 666 /var/run/docker.sock     # 권한 거부 시
-cd /workspace && supabase start         # 최초 pull 후 ~1–2분
-pnpm db:migrate && pnpm db:seed         # DB가 비어 있을 때
+sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
+sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+sudo pkill dockerd || true
+sudo pkill containerd || true
+sudo mkdir -p /tmp/docker-vfs /tmp/docker-exec
+sudo dockerd --storage-driver=vfs --data-root=/tmp/docker-vfs --exec-root=/tmp/docker-exec --host=unix:///var/run/docker.sock >/tmp/dockerd-vfs.log 2>&1 &
+sudo chmod 666 /var/run/docker.sock
+pnpm exec supabase start
+pnpm db:migrate && pnpm db:seed
 ```
+
+실패 시 로그: `/tmp/dockerd-vfs.log`. 흔한 원인: `iptables-nft` NAT chain (`TABLE_ADD failed`), `overlayfs` whiteout (`operation not permitted`), Docker embedded DNS (`127.0.0.11` connection refused — legacy iptables 미적용).
 
 `apps/web/.env.local`, `apps/mcp/.env.local`은 `.env.example` 복사본이면 로컬 Supabase 기본 키로 동작한다.
 
@@ -175,15 +242,16 @@ tmux -f /exec-daemon/tmux.portal.conf new-session -d -s loopos-dev -c /workspace
 pnpm dev   # web :3000, mcp :3001
 ```
 
-`pnpm e2e`는 Playwright가 **3100/3101**에서 자체 `next dev`를 띄우므로, `pnpm dev` tmux 세션이 살아 있으면 Next.js dev lock 충돌로 실패한다. e2e 전에 `tmux kill-session -t loopos-dev`로 dev 서버를 내린다. Playwright 브라우저는 최초 1회 `cd e2e && pnpm exec playwright install chromium`이 필요하다.
+`pnpm e2e`는 Playwright가 **3100/3101**에서 자체 `next dev`를 띄우므로, `pnpm dev` tmux 세션이 살아 있으면 Next.js dev lock 충돌로 실패한다. e2e 전에 `tmux kill-session -t loopos-dev`로 dev 서버를 내린다.
 
-### 검증 명령 (인프라 없음 / 있음)
+### 검증 명령 (Cloud 세션)
 
-| 목적 | 명령 |
-|---|---|
-| 린트·타입 | `pnpm lint && pnpm typecheck` |
-| 코어 유닛 | `pnpm test --filter @loopos/core` |
-| 어댑터 통합 | `pnpm test --filter @loopos/adapter-supabase` (Supabase + migrate + seed) |
-| E2E | `pnpm e2e` (위 Supabase + Playwright chromium) |
+| 목적 | 명령 | 사전 조건 |
+|---|---|---|
+| 부트스트랩 | `pnpm cloud:prepare` | Node 24 |
+| 린트·타입 | `pnpm lint && pnpm typecheck` | 없음 |
+| 코어 유닛 | `pnpm test --filter @loopos/core` | 없음 |
+| 어댑터 통합 | `pnpm test --filter @loopos/adapter-supabase` | `cloud:prepare` |
+| E2E | `pnpm e2e` | `cloud:prepare` |
 
 스모크 계정: `smoke@loopos.test` / `smoke-test-password-123` (시드 생성).
