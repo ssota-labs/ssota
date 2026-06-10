@@ -3,10 +3,12 @@ import {
   checkArchetypeDeviation,
   checkPreconditions,
   enforceCatalog,
+  enforceCatalogMutationIntegrity,
   enforceEffectsContract,
   enforceGateRules,
   enforcePermissions,
   resolveEffects,
+  validateLifecycleTransitions,
 } from "./domain/enforcement.js";
 import {
   ActionRejectedError,
@@ -34,10 +36,60 @@ export async function executeAction(
 
   const actionEntry = await ports.catalog.getActionCatalogEntry(actionType);
 
+  let resolvedInput = input;
+  if (actionType === "update_node_type") {
+    const nodeType = input.nodeType as string | undefined;
+    const patch = input.patch as Record<string, unknown> | undefined;
+    if (!nodeType || !patch) {
+      return {
+        status: "rejected",
+        reason: "update_node_type requires nodeType and patch",
+        code: "PRECONDITION_FAILED",
+      };
+    }
+    const existing = await ports.catalog.getNodeCatalogEntry(nodeType);
+    if (!existing) {
+      return {
+        status: "rejected",
+        reason: `Node type '${nodeType}' does not exist`,
+        code: "CATALOG_NOT_FOUND",
+      };
+    }
+    const merged = {
+      nodeType,
+      family: (patch.family as typeof existing.family | undefined) ?? existing.family,
+      archetypeId:
+        (patch.archetypeId as string | undefined) ?? existing.archetypeId,
+      typicalValueOverrides: {
+        ...existing.typicalValueOverrides,
+        ...((patch.typicalValueOverrides as Record<string, unknown> | undefined) ??
+          {}),
+      },
+      lifecycleTransitions:
+        (patch.lifecycleTransitions as typeof existing.lifecycleTransitions | undefined) ??
+        existing.lifecycleTransitions,
+      contentGuide:
+        patch.contentGuide !== undefined
+          ? (patch.contentGuide as string | null)
+          : existing.contentGuide,
+      propertyRefs: patch.propertyRefs as string[] | undefined,
+      allowedActionRefs: patch.allowedActionRefs as string[] | undefined,
+    };
+    try {
+      validateLifecycleTransitions(merged.lifecycleTransitions);
+    } catch (err) {
+      if (err instanceof ActionRejectedError) {
+        return { status: "rejected", reason: err.message, code: err.code };
+      }
+      throw err;
+    }
+    resolvedInput = { definition: merged };
+  }
+
   let effects: Effect[];
   try {
     effects = actionEntry
-      ? resolveEffects(actionEntry, input)
+      ? resolveEffects(actionEntry, resolvedInput)
       : [];
   } catch {
     if (!actionEntry) {
@@ -77,7 +129,7 @@ export async function executeAction(
   }
 
   try {
-    checkPreconditions(actionEntry!, input, { nodes: existingNodes });
+    checkPreconditions(actionEntry!, resolvedInput, { nodes: existingNodes });
     enforceEffectsContract(actionEntry!, effects);
   } catch (err) {
     if (err instanceof ActionRejectedError) {
@@ -93,6 +145,24 @@ export async function executeAction(
       (at, nt) => ports.catalog.getPropertyPermissions(at, nt),
       (nodeId) => ports.graph.getNode(nodeId),
     );
+  } catch (err) {
+    if (err instanceof ActionRejectedError) {
+      return { status: "rejected", reason: err.message, code: err.code };
+    }
+    throw err;
+  }
+
+  try {
+    await enforceCatalogMutationIntegrity(actionType, effects, {
+      getNodeCatalogEntry: (nodeType) =>
+        ports.catalog.getNodeCatalogEntry(nodeType),
+      getArchetype: (archetypeId) => ports.catalog.getArchetype(archetypeId),
+      getPropertyCatalogEntry: (propertyKey) =>
+        ports.catalog.getPropertyCatalogEntry(propertyKey),
+      getActionCatalogEntry: (at) => ports.catalog.getActionCatalogEntry(at),
+      getEdgeCatalogEntry: (edgeType) =>
+        ports.catalog.getEdgeCatalogEntry(edgeType),
+    });
   } catch (err) {
     if (err instanceof ActionRejectedError) {
       return { status: "rejected", reason: err.message, code: err.code };

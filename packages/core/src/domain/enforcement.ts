@@ -4,8 +4,15 @@ import type {
   Archetype,
   Node,
   NodeCatalogEntry,
+  PropertyCatalogEntry,
 } from "./types.js";
-import type { Effect, ExecutorType, LifecycleStatus } from "@loopos/contracts";
+import type {
+  Effect,
+  ExecutorType,
+  LifecycleStatus,
+  NodeTypeDefinition,
+} from "@loopos/contracts";
+import { NodeTypeDefinitionSchema } from "@loopos/contracts";
 import { ActionRejectedError } from "./types.js";
 
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
@@ -18,6 +25,52 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
     current = (current as Record<string, unknown>)[part];
   }
   return current;
+}
+
+const ALL_LIFECYCLE_STATUSES: LifecycleStatus[] = [
+  "Draft",
+  "Active",
+  "Archived",
+  "Deleted",
+];
+
+export function validateLifecycleTransitions(
+  transitions: Record<string, LifecycleStatus[]>,
+): void {
+  for (const status of ALL_LIFECYCLE_STATUSES) {
+    if (!(status in transitions)) {
+      throw new ActionRejectedError(
+        "INVALID_LIFECYCLE_TRANSITIONS",
+        `Missing lifecycle status key: ${status}`,
+      );
+    }
+    const targets = transitions[status];
+    if (!Array.isArray(targets)) {
+      throw new ActionRejectedError(
+        "INVALID_LIFECYCLE_TRANSITIONS",
+        `Lifecycle transitions for '${status}' must be an array`,
+      );
+    }
+    for (const target of targets) {
+      if (!ALL_LIFECYCLE_STATUSES.includes(target)) {
+        throw new ActionRejectedError(
+          "INVALID_LIFECYCLE_TRANSITIONS",
+          `Invalid lifecycle target: ${target}`,
+        );
+      }
+    }
+  }
+}
+
+function parseNodeDefinition(input: Record<string, unknown>): NodeTypeDefinition {
+  const parsed = NodeTypeDefinitionSchema.safeParse(input.definition ?? input);
+  if (!parsed.success) {
+    throw new ActionRejectedError(
+      "PRECONDITION_FAILED",
+      parsed.error.message,
+    );
+  }
+  return parsed.data;
 }
 
 export function enforceCatalog(
@@ -155,6 +208,73 @@ export function resolveEffects(
         decisionNote:
           (input.decisionNote as string | undefined) ?? template.decisionNote,
       });
+    } else if (template.kind === "upsert_node_catalog_entry") {
+      const definition = parseNodeDefinition(input);
+      effects.push({
+        kind: "upsert_node_catalog_entry",
+        entry: definition,
+      });
+    } else if (template.kind === "deprecate_node_catalog_entry") {
+      effects.push({
+        kind: "deprecate_node_catalog_entry",
+        nodeType: input.nodeType as string,
+        replacementNodeType: input.replacementNodeType as string | undefined,
+      });
+    } else if (template.kind === "upsert_edge_catalog_entry") {
+      const definition = input.definition as {
+        edgeType: string;
+        domain: string[];
+        range: string[];
+        cardinality: string;
+        representation: string;
+      };
+      effects.push({
+        kind: "upsert_edge_catalog_entry",
+        entry: definition,
+      });
+    } else if (template.kind === "upsert_property_catalog_entry") {
+      const definition = input.definition as {
+        propertyKey: string;
+        valueType: string;
+        constraints: Record<string, unknown>;
+        owningActions: string[];
+      };
+      effects.push({
+        kind: "upsert_property_catalog_entry",
+        entry: definition,
+      });
+    } else if (template.kind === "upsert_action_catalog_entry") {
+      const definition = input.definition as {
+        actionType: string;
+        preconditions: Record<string, unknown>;
+        effects: unknown[];
+        executor: ExecutorType;
+        allowedLifecycleTransitions: Record<string, LifecycleStatus[]>;
+        failureMode: string;
+        idempotencyRule: string | null;
+        logPayloadSchema: Record<string, unknown>;
+      };
+      effects.push({
+        kind: "upsert_action_catalog_entry",
+        entry: {
+          ...definition,
+          effects: definition.effects as Record<string, unknown>[],
+        },
+      });
+    } else if (template.kind === "upsert_instruction_catalog_entry") {
+      const definition = input.definition as {
+        title: string;
+        triggerPatterns: string[];
+        applicableNodeTypes: string[];
+        requiredActions: string[];
+        optionalActions: string[];
+        lifecycle: LifecycleStatus;
+        body: string;
+      };
+      effects.push({
+        kind: "upsert_instruction_catalog_entry",
+        entry: definition,
+      });
     }
   }
 
@@ -253,6 +373,142 @@ export async function checkArchetypeDeviation(
   return { deviates: false, reason: "" };
 }
 
+export async function enforceCatalogMutationIntegrity(
+  actionType: string,
+  effects: Effect[],
+  catalog: {
+    getNodeCatalogEntry: (
+      nodeType: string,
+    ) => Promise<NodeCatalogEntry | null>;
+    getArchetype: (archetypeId: string) => Promise<Archetype | null>;
+    getPropertyCatalogEntry: (
+      propertyKey: string,
+    ) => Promise<PropertyCatalogEntry | null>;
+    getActionCatalogEntry: (
+      actionType: string,
+    ) => Promise<ActionCatalogEntry | null>;
+    getEdgeCatalogEntry: (
+      edgeType: string,
+    ) => Promise<import("./types.js").EdgeCatalogEntry | null>;
+  },
+): Promise<void> {
+  for (const effect of effects) {
+    if (effect.kind === "upsert_node_catalog_entry") {
+      validateLifecycleTransitions(effect.entry.lifecycleTransitions);
+
+      const archetype = await catalog.getArchetype(effect.entry.archetypeId);
+      if (!archetype) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Archetype '${effect.entry.archetypeId}' does not exist`,
+        );
+      }
+
+      const existing = await catalog.getNodeCatalogEntry(effect.entry.nodeType);
+      if (actionType === "define_node_type" && existing) {
+        throw new ActionRejectedError(
+          "DUPLICATE_NODE_TYPE",
+          `Node type '${effect.entry.nodeType}' already exists`,
+        );
+      }
+      if (actionType === "update_node_type" && !existing) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Node type '${effect.entry.nodeType}' does not exist`,
+        );
+      }
+
+      if (effect.entry.propertyRefs) {
+        for (const key of effect.entry.propertyRefs) {
+          const prop = await catalog.getPropertyCatalogEntry(key);
+          if (!prop) {
+            throw new ActionRejectedError(
+              "CATALOG_NOT_FOUND",
+              `Property '${key}' is not in the property catalog`,
+            );
+          }
+        }
+      }
+
+      if (effect.entry.allowedActionRefs) {
+        for (const ref of effect.entry.allowedActionRefs) {
+          const action = await catalog.getActionCatalogEntry(ref);
+          if (!action) {
+            throw new ActionRejectedError(
+              "CATALOG_NOT_FOUND",
+              `Action '${ref}' is not in the action catalog`,
+            );
+          }
+        }
+      }
+    }
+
+    if (effect.kind === "deprecate_node_catalog_entry") {
+      const existing = await catalog.getNodeCatalogEntry(effect.nodeType);
+      if (!existing) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Node type '${effect.nodeType}' does not exist`,
+        );
+      }
+      if (effect.replacementNodeType) {
+        const replacement = await catalog.getNodeCatalogEntry(
+          effect.replacementNodeType,
+        );
+        if (!replacement) {
+          throw new ActionRejectedError(
+            "CATALOG_NOT_FOUND",
+            `Replacement node type '${effect.replacementNodeType}' does not exist`,
+          );
+        }
+      }
+    }
+
+    if (effect.kind === "upsert_edge_catalog_entry") {
+      const existing = await catalog.getEdgeCatalogEntry(effect.entry.edgeType);
+      if (actionType === "define_edge_type" && existing) {
+        throw new ActionRejectedError(
+          "DUPLICATE_EDGE_TYPE",
+          `Edge type '${effect.entry.edgeType}' already exists`,
+        );
+      }
+    }
+
+    if (effect.kind === "upsert_property_catalog_entry") {
+      const existing = await catalog.getPropertyCatalogEntry(
+        effect.entry.propertyKey,
+      );
+      if (actionType === "define_property" && existing) {
+        throw new ActionRejectedError(
+          "DUPLICATE_PROPERTY",
+          `Property '${effect.entry.propertyKey}' already exists`,
+        );
+      }
+    }
+
+    if (effect.kind === "upsert_action_catalog_entry") {
+      const existing = await catalog.getActionCatalogEntry(
+        effect.entry.actionType,
+      );
+      if (actionType === "define_action_contract" && existing) {
+        throw new ActionRejectedError(
+          "DUPLICATE_ACTION_TYPE",
+          `Action '${effect.entry.actionType}' already exists`,
+        );
+      }
+    }
+  }
+}
+
+const CATALOG_EFFECT_KINDS = new Set([
+  "upsert_node_catalog_entry",
+  "deprecate_node_catalog_entry",
+  "upsert_edge_catalog_entry",
+  "upsert_property_catalog_entry",
+  "upsert_action_catalog_entry",
+  "upsert_instruction_catalog_entry",
+]);
+
 export function enforceGateRules(
   actionEntry: ActionCatalogEntry,
   executorType: ExecutorType,
@@ -260,6 +516,15 @@ export function enforceGateRules(
   nodeCatalogEntries: Map<string, NodeCatalogEntry>,
   existingNodes: Map<string, Node>,
 ): { requiresGate: boolean; reason: string } {
+  for (const effect of effects) {
+    if (CATALOG_EFFECT_KINDS.has(effect.kind) && executorType === "Agent") {
+      return {
+        requiresGate: true,
+        reason: "Agent catalog mutation requires human approval",
+      };
+    }
+  }
+
   if (
     actionEntry.executor === "Human" &&
     executorType !== "Human"

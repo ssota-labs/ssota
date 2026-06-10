@@ -15,12 +15,7 @@ export default async function CatalogPage() {
 
   const ports = getActionPorts();
   const nodeTypes = await ports.catalog.listNodeCatalogEntries();
-
-  const actionTypes = await Promise.all(
-    ["create_note", "create_document", "promote_document", "approve_gate"].map(
-      (t) => ports.catalog.getActionCatalogEntry(t),
-    ),
-  );
+  const actionTypes = await ports.catalog.listActionCatalogEntries();
 
   return (
     <div className="space-y-8">
@@ -48,16 +43,14 @@ export default async function CatalogPage() {
       <section>
         <h2 className="mb-3 text-lg font-medium">Action Contracts</h2>
         <div className="space-y-3">
-          {actionTypes
-            .filter((a) => a !== null)
-            .map((entry) => (
-              <Card key={entry!.actionType}>
+          {actionTypes.map((entry) => (
+              <Card key={entry.actionType}>
                 <CardHeader>
                   <details>
                     <summary className="cursor-pointer font-medium">
-                      {entry!.actionType}{" "}
+                      {entry.actionType}{" "}
                       <Badge variant="secondary" className="ml-2">
-                        executor={entry!.executor}
+                        executor={entry.executor}
                       </Badge>
                     </summary>
                     <pre className="mt-3 overflow-auto rounded-md bg-muted p-3 text-xs">

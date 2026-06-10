@@ -106,4 +106,91 @@ describe("adapter-supabase integration", () => {
 
     expect(promoteResult.status).toBe("gated");
   });
+
+  it.runIf(runIfSupabase)(
+    "define_node_type Human 커밋 + catalog 반영",
+    async () => {
+      const nodeType = `TestType_${Date.now()}`;
+      const result = await executeAction(ports, {
+        actionType: "define_node_type",
+        input: {
+          definition: {
+            nodeType,
+            family: "document",
+            archetypeId: "doc-note",
+            typicalValueOverrides: {},
+            lifecycleTransitions: {
+              Draft: ["Active", "Archived"],
+              Active: ["Archived", "Draft"],
+              Archived: ["Active"],
+              Deleted: [],
+            },
+            contentGuide: "Integration test node type",
+          },
+        },
+        executorId: smokeUserId,
+        executorType: "Human",
+      });
+
+      expect(result.status).toBe("committed");
+
+      const entry = await ports.catalog.getNodeCatalogEntry(nodeType);
+      expect(entry).toBeTruthy();
+      expect(entry?.contentGuide).toBe("Integration test node type");
+
+      const log = await ports.commit.getActionLog({
+        actionType: "define_node_type",
+        limit: 1,
+      });
+      expect(log[0]?.outcome).toBe("committed");
+    },
+  );
+
+  it.runIf(runIfSupabase)(
+    "define_node_type Agent → gate 승인 → catalog 반영",
+    async () => {
+      const nodeType = `AgentType_${Date.now()}`;
+      const gated = await executeAction(ports, {
+        actionType: "define_node_type",
+        input: {
+          definition: {
+            nodeType,
+            family: "document",
+            archetypeId: "doc-memo",
+            typicalValueOverrides: {},
+            lifecycleTransitions: {
+              Draft: ["Active", "Archived"],
+              Active: ["Archived", "Draft"],
+              Archived: ["Active"],
+              Deleted: [],
+            },
+            contentGuide: "Agent proposed type",
+          },
+        },
+        executorId: smokeUserId,
+        executorType: "Agent",
+      });
+
+      expect(gated.status).toBe("gated");
+      if (gated.status !== "gated") return;
+
+      const before = await ports.catalog.getNodeCatalogEntry(nodeType);
+      expect(before).toBeNull();
+
+      const approved = await executeAction(ports, {
+        actionType: "approve_gate",
+        input: { gateId: gated.gateId, status: "approved" },
+        executorId: smokeUserId,
+        executorType: "Human",
+      });
+      expect(approved.status).toBe("committed");
+
+      const after = await ports.catalog.getNodeCatalogEntry(nodeType);
+      expect(after?.nodeType).toBe(nodeType);
+
+      const log = await ports.commit.getActionLog({ limit: 10 });
+      expect(log.some((l) => l.actionType === "define_node_type")).toBe(true);
+      expect(log.some((l) => l.actionType === "approve_gate")).toBe(true);
+    },
+  );
 });

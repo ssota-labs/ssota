@@ -39,6 +39,70 @@ const mcpHandler = createMcpHandler(
     );
 
     server.registerTool(
+      "list_edge_types",
+      {
+        title: "List Edge Types",
+        description: "List all edge types from the catalog",
+        inputSchema: {},
+      },
+      async () => {
+        const ports = getActionPorts();
+        const entries = await ports.catalog.listEdgeCatalogEntries();
+        return {
+          content: [{ type: "text", text: JSON.stringify(entries, null, 2) }],
+        };
+      },
+    );
+
+    server.registerTool(
+      "list_properties",
+      {
+        title: "List Properties",
+        description: "List all properties from the catalog",
+        inputSchema: {},
+      },
+      async () => {
+        const ports = getActionPorts();
+        const entries = await ports.catalog.listPropertyCatalogEntries();
+        return {
+          content: [{ type: "text", text: JSON.stringify(entries, null, 2) }],
+        };
+      },
+    );
+
+    server.registerTool(
+      "list_action_contracts",
+      {
+        title: "List Action Contracts",
+        description: "List all action contracts from the catalog",
+        inputSchema: {},
+      },
+      async () => {
+        const ports = getActionPorts();
+        const entries = await ports.catalog.listActionCatalogEntries();
+        return {
+          content: [{ type: "text", text: JSON.stringify(entries, null, 2) }],
+        };
+      },
+    );
+
+    server.registerTool(
+      "list_archetypes",
+      {
+        title: "List Archetypes",
+        description: "List all archetypes from the catalog",
+        inputSchema: {},
+      },
+      async () => {
+        const ports = getActionPorts();
+        const entries = await ports.catalog.listArchetypes();
+        return {
+          content: [{ type: "text", text: JSON.stringify(entries, null, 2) }],
+        };
+      },
+    );
+
+    server.registerTool(
       "get_action_contract",
       {
         title: "Get Action Contract",

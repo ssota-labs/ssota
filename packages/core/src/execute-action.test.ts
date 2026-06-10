@@ -152,3 +152,122 @@ describe("executeAction — 4대 강제", () => {
     expect(state.actionLog[0]?.actionType).toBe("create_note");
   });
 });
+
+describe("executeAction — define_node_type", () => {
+  const defaultTransitions = {
+    Draft: ["Active", "Archived"] as const,
+    Active: ["Archived", "Draft"] as const,
+    Archived: ["Active"] as const,
+    Deleted: [] as const,
+  };
+
+  const validDefinition = {
+    nodeType: "Memo",
+    family: "document" as const,
+    archetypeId: "doc-note",
+    typicalValueOverrides: {},
+    lifecycleTransitions: defaultTransitions,
+    contentGuide: "Team memo node type",
+  };
+
+  it("통과: Human executor define_node_type 커밋", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "define_node_type",
+      input: { definition: validDefinition },
+      executorId: "human-1",
+      executorType: "Human",
+    });
+
+    expect(result.status).toBe("committed");
+    expect(state.nodeCatalog.has("Memo")).toBe(true);
+    expect(state.actionLog.some((l) => l.actionType === "define_node_type")).toBe(
+      true,
+    );
+  });
+
+  it("거부: duplicate node type", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "define_node_type",
+      input: {
+        definition: { ...validDefinition, nodeType: "Note" },
+      },
+      executorId: "human-1",
+      executorType: "Human",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("DUPLICATE_NODE_TYPE");
+    }
+  });
+
+  it("거부: missing archetype", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "define_node_type",
+      input: {
+        definition: { ...validDefinition, archetypeId: "missing-archetype" },
+      },
+      executorId: "human-1",
+      executorType: "Human",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("CATALOG_NOT_FOUND");
+    }
+  });
+
+  it("거부: bad lifecycle transition shape", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "define_node_type",
+      input: {
+        definition: {
+          ...validDefinition,
+          lifecycleTransitions: { Draft: ["Active"] },
+        },
+      },
+      executorId: "human-1",
+      executorType: "Human",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("INVALID_LIFECYCLE_TRANSITIONS");
+    }
+  });
+
+  it("게이트: Agent executor define_node_type", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "define_node_type",
+      input: { definition: validDefinition },
+      executorId: "agent-1",
+      executorType: "Agent",
+    });
+
+    expect(result.status).toBe("gated");
+    expect(state.nodeCatalog.has("Memo")).toBe(false);
+    if (result.status === "gated") {
+      expect(state.gates.has(result.gateId)).toBe(true);
+    }
+  });
+});

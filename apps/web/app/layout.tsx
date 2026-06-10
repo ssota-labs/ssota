@@ -43,6 +43,9 @@ export default async function RootLayout({
                     <Link href="/catalog" className="text-muted-foreground hover:text-foreground">
                       Catalog
                     </Link>
+                    <Link href="/studio" className="text-muted-foreground hover:text-foreground">
+                      Studio
+                    </Link>
                   </nav>
                 )}
               </div>

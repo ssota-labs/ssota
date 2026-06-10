@@ -34,6 +34,126 @@ export const GateStatusSchema = z.enum(["pending", "approved", "rejected"]);
 
 export type GateStatus = z.infer<typeof GateStatusSchema>;
 
+export const LifecycleTransitionsSchema = z.record(
+  LifecycleStatusSchema,
+  z.array(LifecycleStatusSchema),
+);
+
+export type LifecycleTransitions = z.infer<typeof LifecycleTransitionsSchema>;
+
+export const NodeTypeDefinitionSchema = z.object({
+  nodeType: z.string().min(1),
+  family: NodeFamilySchema,
+  archetypeId: z.string().min(1),
+  typicalValueOverrides: z.record(z.unknown()).default({}),
+  lifecycleTransitions: LifecycleTransitionsSchema,
+  contentGuide: z.string().nullable().optional(),
+  propertyRefs: z.array(z.string()).optional(),
+  allowedActionRefs: z.array(z.string()).optional(),
+});
+
+export type NodeTypeDefinition = z.infer<typeof NodeTypeDefinitionSchema>;
+
+export const NodeTypeDefinitionPatchSchema = NodeTypeDefinitionSchema.partial().extend({
+  nodeType: z.string().min(1),
+});
+
+export type NodeTypeDefinitionPatch = z.infer<typeof NodeTypeDefinitionPatchSchema>;
+
+export const DefineNodeTypeInputSchema = z.object({
+  definition: NodeTypeDefinitionSchema,
+});
+
+export type DefineNodeTypeInput = z.infer<typeof DefineNodeTypeInputSchema>;
+
+export const UpdateNodeTypeInputSchema = z.object({
+  nodeType: z.string().min(1),
+  patch: NodeTypeDefinitionPatchSchema.omit({ nodeType: true }),
+});
+
+export type UpdateNodeTypeInput = z.infer<typeof UpdateNodeTypeInputSchema>;
+
+export const DeprecateNodeTypeInputSchema = z.object({
+  nodeType: z.string().min(1),
+  replacementNodeType: z.string().optional(),
+});
+
+export type DeprecateNodeTypeInput = z.infer<typeof DeprecateNodeTypeInputSchema>;
+
+export const EdgeTypeDefinitionSchema = z.object({
+  edgeType: z.string().min(1),
+  domain: z.array(z.string()).min(1),
+  range: z.array(z.string()).min(1),
+  cardinality: z.string().min(1),
+  representation: z.string().min(1),
+});
+
+export type EdgeTypeDefinition = z.infer<typeof EdgeTypeDefinitionSchema>;
+
+export const DefineEdgeTypeInputSchema = z.object({
+  definition: EdgeTypeDefinitionSchema,
+});
+
+export type DefineEdgeTypeInput = z.infer<typeof DefineEdgeTypeInputSchema>;
+
+export const PropertyDefinitionSchema = z.object({
+  propertyKey: z.string().min(1),
+  valueType: z.string().min(1),
+  constraints: z.record(z.unknown()).default({}),
+  owningActions: z.array(z.string()).default([]),
+});
+
+export type PropertyDefinition = z.infer<typeof PropertyDefinitionSchema>;
+
+export const DefinePropertyInputSchema = z.object({
+  definition: PropertyDefinitionSchema,
+});
+
+export type DefinePropertyInput = z.infer<typeof DefinePropertyInputSchema>;
+
+export const ActionContractDefinitionSchema = z.object({
+  actionType: z.string().min(1),
+  preconditions: z.record(z.unknown()).default({}),
+  effects: z.array(z.record(z.unknown())).default([]),
+  executor: ExecutorTypeSchema,
+  allowedLifecycleTransitions: z
+    .record(z.array(LifecycleStatusSchema))
+    .default({}),
+  failureMode: z.string().default("reject"),
+  idempotencyRule: z.string().nullable().optional(),
+  logPayloadSchema: z.record(z.unknown()).default({}),
+});
+
+export type ActionContractDefinition = z.infer<
+  typeof ActionContractDefinitionSchema
+>;
+
+export const DefineActionContractInputSchema = z.object({
+  definition: ActionContractDefinitionSchema,
+});
+
+export type DefineActionContractInput = z.infer<
+  typeof DefineActionContractInputSchema
+>;
+
+export const InstructionDefinitionSchema = z.object({
+  title: z.string().min(1),
+  triggerPatterns: z.array(z.string()).min(1),
+  applicableNodeTypes: z.array(z.string()).default([]),
+  requiredActions: z.array(z.string()).default([]),
+  optionalActions: z.array(z.string()).default([]),
+  lifecycle: LifecycleStatusSchema.default("Active"),
+  body: z.string().min(1),
+});
+
+export type InstructionDefinition = z.infer<typeof InstructionDefinitionSchema>;
+
+export const DefineInstructionInputSchema = z.object({
+  definition: InstructionDefinitionSchema,
+});
+
+export type DefineInstructionInput = z.infer<typeof DefineInstructionInputSchema>;
+
 export const EffectSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("create_node"),
@@ -72,6 +192,31 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     gateId: z.string().uuid(),
     status: GateStatusSchema,
     decisionNote: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("upsert_node_catalog_entry"),
+    entry: NodeTypeDefinitionSchema,
+  }),
+  z.object({
+    kind: z.literal("deprecate_node_catalog_entry"),
+    nodeType: z.string().min(1),
+    replacementNodeType: z.string().optional(),
+  }),
+  z.object({
+    kind: z.literal("upsert_edge_catalog_entry"),
+    entry: EdgeTypeDefinitionSchema,
+  }),
+  z.object({
+    kind: z.literal("upsert_property_catalog_entry"),
+    entry: PropertyDefinitionSchema,
+  }),
+  z.object({
+    kind: z.literal("upsert_action_catalog_entry"),
+    entry: ActionContractDefinitionSchema,
+  }),
+  z.object({
+    kind: z.literal("upsert_instruction_catalog_entry"),
+    entry: InstructionDefinitionSchema,
   }),
 ]);
 

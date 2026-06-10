@@ -191,6 +191,153 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         idempotencyRule: null,
         logPayloadSchema: {},
       },
+      {
+        actionType: "define_node_type",
+        preconditions: { requiredFields: ["definition"] },
+        effects: [
+          {
+            kind: "upsert_node_catalog_entry",
+            entry: {
+              nodeType: "",
+              family: "document",
+              archetypeId: "",
+              typicalValueOverrides: {},
+              lifecycleTransitions: defaultTransitions,
+              contentGuide: null,
+            },
+          },
+        ],
+        executor: "Human",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: null,
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "update_node_type",
+        preconditions: { requiredFields: ["nodeType", "patch"] },
+        effects: [
+          {
+            kind: "upsert_node_catalog_entry",
+            entry: {
+              nodeType: "",
+              family: "document",
+              archetypeId: "",
+              typicalValueOverrides: {},
+              lifecycleTransitions: defaultTransitions,
+              contentGuide: null,
+            },
+          },
+        ],
+        executor: "Human",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: null,
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "deprecate_node_type",
+        preconditions: { requiredFields: ["nodeType"] },
+        effects: [
+          {
+            kind: "deprecate_node_catalog_entry",
+            nodeType: "",
+          },
+        ],
+        executor: "Human",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: null,
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "define_edge_type",
+        preconditions: { requiredFields: ["definition"] },
+        effects: [
+          {
+            kind: "upsert_edge_catalog_entry",
+            entry: {
+              edgeType: "",
+              domain: [],
+              range: [],
+              cardinality: "",
+              representation: "",
+            },
+          },
+        ],
+        executor: "Human",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: null,
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "define_property",
+        preconditions: { requiredFields: ["definition"] },
+        effects: [
+          {
+            kind: "upsert_property_catalog_entry",
+            entry: {
+              propertyKey: "",
+              valueType: "string",
+              constraints: {},
+              owningActions: [],
+            },
+          },
+        ],
+        executor: "Human",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: null,
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "define_action_contract",
+        preconditions: { requiredFields: ["definition"] },
+        effects: [
+          {
+            kind: "upsert_action_catalog_entry",
+            entry: {
+              actionType: "",
+              preconditions: {},
+              effects: [],
+              executor: "Agent",
+              allowedLifecycleTransitions: {},
+              failureMode: "reject",
+              idempotencyRule: null,
+              logPayloadSchema: {},
+            },
+          },
+        ],
+        executor: "Human",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: null,
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "define_instruction",
+        preconditions: { requiredFields: ["definition"] },
+        effects: [
+          {
+            kind: "upsert_instruction_catalog_entry",
+            entry: {
+              title: "",
+              triggerPatterns: [],
+              applicableNodeTypes: [],
+              requiredActions: [],
+              optionalActions: [],
+              lifecycle: "Active",
+              body: "",
+            },
+          },
+        ],
+        executor: "Human",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: null,
+        logPayloadSchema: {},
+      },
     ])
     .onConflictDoNothing();
 

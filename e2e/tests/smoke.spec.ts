@@ -19,6 +19,22 @@ test.describe("LoopOS Console", () => {
     await expect(page.getByText("Note", { exact: true }).first()).toBeVisible();
   });
 
+  test("smoke: Studio 페이지", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByPlaceholder("email").fill(SMOKE_EMAIL);
+    await page.getByPlaceholder("password").fill(SMOKE_PASSWORD);
+    await page.getByRole("button", { name: "로그인" }).click();
+
+    await expect(page.getByRole("heading", { name: "LoopOS Console" })).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.getByRole("navigation").getByRole("link", { name: "Studio" }).click();
+    await expect(page.getByRole("heading", { name: "Meta Action Studio" })).toBeVisible();
+    await page.getByRole("link", { name: "Node Types" }).click();
+    await expect(page.getByRole("heading", { name: "Node Types" })).toBeVisible();
+  });
+
   test("smoke: Action Log 페이지", async ({ page }) => {
     await page.goto("/login");
     await page.getByPlaceholder("email").fill(SMOKE_EMAIL);
