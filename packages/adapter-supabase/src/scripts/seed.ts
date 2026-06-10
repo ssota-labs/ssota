@@ -1,0 +1,276 @@
+import { createClient } from "@supabase/supabase-js";
+import { createDb } from "../db/client.js";
+import * as schema from "../db/schema.js";
+import { SMOKE_EMAIL, SMOKE_PASSWORD } from "../constants.js";
+
+const documentArchetypes = [
+  { id: "doc-note", name: "Note", typical: { temporality: "ephemeral", authority: "personal" } },
+  { id: "doc-memo", name: "Memo", typical: { temporality: "persistent", authority: "team" } },
+  { id: "doc-spec", name: "Spec", typical: { temporality: "persistent", authority: "canonical" } },
+  { id: "doc-decision", name: "Decision", typical: { temporality: "persistent", authority: "binding" } },
+  { id: "doc-instruction", name: "Instruction", typical: { temporality: "persistent", authority: "canonical" } },
+  { id: "doc-reference", name: "Reference", typical: { temporality: "persistent", authority: "external" } },
+  { id: "doc-log", name: "Log", typical: { temporality: "append-only", authority: "system" } },
+  { id: "doc-template", name: "Template", typical: { temporality: "persistent", authority: "reusable" } },
+];
+
+const operationalArchetypes = [
+  { id: "op-project", name: "Project", typical: { stateMachine: "project" } },
+  { id: "op-task", name: "Task", typical: { stateMachine: "task" } },
+  { id: "op-goal", name: "Goal", typical: { stateMachine: "goal" } },
+  { id: "op-milestone", name: "Milestone", typical: { stateMachine: "milestone" } },
+];
+
+async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
+  for (const a of [...documentArchetypes, ...operationalArchetypes]) {
+    await db
+      .insert(schema.archetypes)
+      .values({
+        id: a.id,
+        name: a.name,
+        family: a.id.startsWith("doc-") ? "document" : "operational",
+        typicalValues: a.typical,
+        allowedMutations: ["update_content", "update_properties"],
+      })
+      .onConflictDoNothing();
+  }
+
+  const defaultTransitions = {
+    Draft: ["Active", "Archived"],
+    Active: ["Archived", "Draft"],
+    Archived: ["Active"],
+    Deleted: [],
+  };
+
+  await db
+    .insert(schema.nodeCatalog)
+    .values([
+      {
+        nodeType: "Note",
+        family: "document",
+        archetypeId: "doc-note",
+        typicalValueOverrides: {},
+        lifecycleTransitions: defaultTransitions,
+        contentGuide: "Free-form note content",
+      },
+      {
+        nodeType: "Document",
+        family: "document",
+        archetypeId: "doc-spec",
+        typicalValueOverrides: {},
+        lifecycleTransitions: defaultTransitions,
+        contentGuide: "Structured document with title and body",
+      },
+      {
+        nodeType: "Instruction",
+        family: "document",
+        archetypeId: "doc-instruction",
+        typicalValueOverrides: {},
+        lifecycleTransitions: defaultTransitions,
+        contentGuide: "Agent instruction with trigger patterns",
+      },
+      {
+        nodeType: "Project",
+        family: "operational",
+        archetypeId: "op-project",
+        typicalValueOverrides: {},
+        lifecycleTransitions: defaultTransitions,
+        contentGuide: "Operational project node",
+      },
+      {
+        nodeType: "Task",
+        family: "operational",
+        archetypeId: "op-task",
+        typicalValueOverrides: {},
+        lifecycleTransitions: defaultTransitions,
+        contentGuide: "Operational task node",
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(schema.edgeCatalog)
+    .values([
+      {
+        edgeType: "references",
+        domain: ["Document", "Note", "Instruction"],
+        range: ["Document", "Note", "Instruction"],
+        cardinality: "many-to-many",
+        representation: "directed",
+      },
+      {
+        edgeType: "contains",
+        domain: ["Project"],
+        range: ["Task", "Document"],
+        cardinality: "one-to-many",
+        representation: "directed",
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(schema.propertyCatalog)
+    .values([
+      {
+        propertyKey: "title",
+        valueType: "string",
+        constraints: { maxLength: 500 },
+        owningActions: ["create_document", "update_document"],
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(schema.actionCatalog)
+    .values([
+      {
+        actionType: "create_note",
+        preconditions: { requiredFields: ["content"] },
+        effects: [
+          {
+            kind: "create_node",
+            node: {
+              nodeType: "Note",
+              lifecycleStatus: "Draft",
+              properties: {},
+              content: null,
+              provenance: {},
+            },
+          },
+        ],
+        executor: "Agent",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: "key",
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "create_document",
+        preconditions: { requiredFields: ["title", "content"] },
+        effects: [
+          {
+            kind: "create_node",
+            node: {
+              nodeType: "Document",
+              lifecycleStatus: "Draft",
+              properties: {},
+              content: null,
+              provenance: {},
+            },
+          },
+        ],
+        executor: "Agent",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: "key",
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "promote_document",
+        preconditions: { requiresExistingNode: true, requiredFields: ["nodeId"] },
+        effects: [
+          {
+            kind: "update_node",
+            nodeId: "",
+            patch: { lifecycleStatus: "Active" },
+          },
+        ],
+        executor: "Human",
+        allowedLifecycleTransitions: { Draft: ["Active"] },
+        failureMode: "reject",
+        idempotencyRule: null,
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "approve_gate",
+        preconditions: { requiredFields: ["gateId", "status"] },
+        effects: [{ kind: "update_gate", gateId: "", status: "approved" }],
+        executor: "Human",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: null,
+        logPayloadSchema: {},
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(schema.actionPropertyPermissions)
+    .values([
+      {
+        actionType: "create_note",
+        nodeType: "Note",
+        propertyKey: "title",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
+      {
+        actionType: "create_document",
+        nodeType: "Document",
+        propertyKey: "title",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(schema.instructions)
+    .values([
+      {
+        title: "Document creation guide",
+        triggerPatterns: ["create document", "new document"],
+        applicableNodeTypes: ["Document"],
+        requiredActions: ["create_document"],
+        optionalActions: ["promote_document"],
+        lifecycle: "Active",
+        body: "Use create_document action with title and content. Promote via Human Gate.",
+      },
+    ])
+    .onConflictDoNothing();
+}
+
+async function seedSmokeUser() {
+  const url = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
+  const serviceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+
+  const admin = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  const { data: existing } = await admin.auth.admin.listUsers();
+  const smokeUser = existing?.users?.find((u) => u.email === SMOKE_EMAIL);
+
+  if (!smokeUser) {
+    const { error } = await admin.auth.admin.createUser({
+      email: SMOKE_EMAIL,
+      password: SMOKE_PASSWORD,
+      email_confirm: true,
+    });
+    if (error) throw error;
+    console.log(`Created smoke user: ${SMOKE_EMAIL}`);
+  } else {
+    console.log(`Smoke user already exists: ${SMOKE_EMAIL}`);
+  }
+}
+
+async function main() {
+  const { db, client } = createDb();
+  console.log("Seeding catalog...");
+  await seedCatalog(db);
+  console.log("Seeding smoke user...");
+  await seedSmokeUser();
+  console.log("Seed complete.");
+  await client.end();
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
