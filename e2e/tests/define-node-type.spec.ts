@@ -41,7 +41,7 @@ test.describe("LoopOS define_node_type vertical slice", () => {
     await page.getByRole("button", { name: "승인" }).first().click();
 
     await page.getByRole("navigation").getByRole("link", { name: "Studio" }).click();
-    await page.getByRole("link", { name: "Node Types" }).click();
+    await page.getByRole("link", { name: "Node Types", exact: true }).click();
     await expect(page.getByText(nodeType)).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("navigation").getByRole("link", { name: "Action Log" }).click();

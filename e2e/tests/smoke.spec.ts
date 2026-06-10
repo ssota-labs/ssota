@@ -13,7 +13,7 @@ test.describe("LoopOS Console", () => {
     await loginAsSmoke(page);
     await page.getByRole("navigation").getByRole("link", { name: "Studio" }).click();
     await expect(page.getByRole("heading", { name: "Meta Action Studio" })).toBeVisible();
-    await page.getByRole("link", { name: "Node Types" }).click();
+    await page.getByRole("link", { name: "Node Types", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Node Types" })).toBeVisible();
   });
 
