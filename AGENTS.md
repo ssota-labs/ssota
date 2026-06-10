@@ -139,3 +139,50 @@ Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0
 
 - 이 저장소는 도그푸딩 대상이다: 노션 프로토타입(Documents·Instructions·Actions DB)을 LoopOS로 이전하는 것이 첫 마이그레이션 케이스(M6).
 - 기획 변경은 코드가 아니라 Notion 문서(Draft → Human Gate 승인) 쪽에서 먼저 일어난다. 스펙과 코드가 충돌하면 Notion 코어 스펙이 우선이며, 코드 쪽 이슈로 제기한다.
+
+## Cursor Cloud specific instructions
+
+### Node.js
+
+Cloud VM의 기본 `node`(`/exec-daemon/node`)는 v22이며, 이 저장소는 **Node 24**가 필요하다(`.nvmrc`). 셸에서 nvm으로 전환한 뒤 PATH를 우선시한다:
+
+```bash
+export NVM_DIR="$HOME/.nvm" && . "$NVM_DIR/nvm.sh" && nvm use 24
+export PATH="$NVM_DIR/versions/node/v24.16.0/bin:$PATH"
+```
+
+### Docker & Supabase (세션마다)
+
+로컬 Supabase는 Docker가 필요하다. 최초 1회 VM 스냅샷에 Docker CE + `fuse-overlayfs` + `supabase` CLI가 설치되어 있어야 한다. 매 Cloud Agent 세션 시작 시:
+
+```bash
+sudo dockerd >/tmp/dockerd.log 2>&1 &   # 이미 떠 있으면 생략
+sudo chmod 666 /var/run/docker.sock     # 권한 거부 시
+cd /workspace && supabase start         # 최초 pull 후 ~1–2분
+pnpm db:migrate && pnpm db:seed         # DB가 비어 있을 때
+```
+
+`apps/web/.env.local`, `apps/mcp/.env.local`은 `.env.example` 복사본이면 로컬 Supabase 기본 키로 동작한다.
+
+### 앱 기동
+
+표준 명령은 위 **Development Workflow** 참고. Cloud에서는 장시간 프로세스를 tmux로 띄운다:
+
+```bash
+tmux -f /exec-daemon/tmux.portal.conf new-session -d -s loopos-dev -c /workspace -- bash -l
+# 세션에 nvm/Node 24 PATH 설정 후:
+pnpm dev   # web :3000, mcp :3001
+```
+
+`pnpm e2e`는 Playwright가 **3100/3101**에서 자체 `next dev`를 띄우므로, `pnpm dev` tmux 세션이 살아 있으면 Next.js dev lock 충돌로 실패한다. e2e 전에 `tmux kill-session -t loopos-dev`로 dev 서버를 내린다. Playwright 브라우저는 최초 1회 `cd e2e && pnpm exec playwright install chromium`이 필요하다.
+
+### 검증 명령 (인프라 없음 / 있음)
+
+| 목적 | 명령 |
+|---|---|
+| 린트·타입 | `pnpm lint && pnpm typecheck` |
+| 코어 유닛 | `pnpm test --filter @loopos/core` |
+| 어댑터 통합 | `pnpm test --filter @loopos/adapter-supabase` (Supabase + migrate + seed) |
+| E2E | `pnpm e2e` (위 Supabase + Playwright chromium) |
+
+스모크 계정: `smoke@loopos.test` / `smoke-test-password-123` (시드 생성).
