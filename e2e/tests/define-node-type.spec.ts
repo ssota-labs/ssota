@@ -37,8 +37,11 @@ test.describe("LoopOS define_node_type vertical slice", () => {
     await loginAsSmoke(page);
 
     await page.getByRole("navigation").getByRole("link", { name: "Human Gate" }).click();
-    await expect(page.getByText("define_node_type")).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: "승인" }).first().click();
+    const gateCard = page.locator("li").filter({ hasText: nodeType });
+    await expect(gateCard.getByText("define_node_type")).toBeVisible({
+      timeout: 10_000,
+    });
+    await gateCard.getByRole("button", { name: "승인" }).click();
 
     await page.getByRole("navigation").getByRole("link", { name: "Studio" }).click();
     await page.getByRole("link", { name: "Node Types", exact: true }).click();
