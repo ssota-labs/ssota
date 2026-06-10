@@ -5,6 +5,7 @@ import type {
   ActionLogRecord,
   ActionPorts,
   ActionPropertyPermission,
+  ActionCatalogEntry,
   Archetype,
   CatalogPort,
   CommitParams,
@@ -17,6 +18,7 @@ import type {
   Instruction,
   Node,
   NodeCatalogEntry,
+  PropertyCatalogEntry,
 } from "@loopos/core";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
@@ -76,6 +78,66 @@ export function createCatalogPort(db: Db): CatalogPort {
       );
     },
 
+    async getEdgeCatalogEntry(edgeType) {
+      const rows = await db
+        .select()
+        .from(schema.edgeCatalog)
+        .where(eq(schema.edgeCatalog.edgeType, edgeType))
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return {
+        edgeType: row.edgeType,
+        domain: row.domain,
+        range: row.range,
+        cardinality: row.cardinality,
+        representation: row.representation,
+      } satisfies EdgeCatalogEntry;
+    },
+
+    async listEdgeCatalogEntries() {
+      const rows = await db.select().from(schema.edgeCatalog);
+      return rows.map(
+        (row) =>
+          ({
+            edgeType: row.edgeType,
+            domain: row.domain,
+            range: row.range,
+            cardinality: row.cardinality,
+            representation: row.representation,
+          }) satisfies EdgeCatalogEntry,
+      );
+    },
+
+    async getPropertyCatalogEntry(propertyKey) {
+      const rows = await db
+        .select()
+        .from(schema.propertyCatalog)
+        .where(eq(schema.propertyCatalog.propertyKey, propertyKey))
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return {
+        propertyKey: row.propertyKey,
+        valueType: row.valueType,
+        constraints: row.constraints,
+        owningActions: row.owningActions,
+      } satisfies PropertyCatalogEntry;
+    },
+
+    async listPropertyCatalogEntries() {
+      const rows = await db.select().from(schema.propertyCatalog);
+      return rows.map(
+        (row) =>
+          ({
+            propertyKey: row.propertyKey,
+            valueType: row.valueType,
+            constraints: row.constraints,
+            owningActions: row.owningActions,
+          }) satisfies PropertyCatalogEntry,
+      );
+    },
+
     async getActionCatalogEntry(actionType) {
       const rows = await db
         .select()
@@ -99,6 +161,26 @@ export function createCatalogPort(db: Db): CatalogPort {
       };
     },
 
+    async listActionCatalogEntries() {
+      const rows = await db.select().from(schema.actionCatalog);
+      return rows.map(
+        (row) =>
+          ({
+            actionType: row.actionType,
+            preconditions: row.preconditions,
+            effects: row.effects as Effect[],
+            executor: row.executor,
+            allowedLifecycleTransitions: row.allowedLifecycleTransitions as Record<
+              string,
+              LifecycleStatus[]
+            >,
+            failureMode: row.failureMode,
+            idempotencyRule: row.idempotencyRule,
+            logPayloadSchema: row.logPayloadSchema,
+          }) satisfies ActionCatalogEntry,
+      );
+    },
+
     async getArchetype(archetypeId) {
       const rows = await db
         .select()
@@ -114,6 +196,20 @@ export function createCatalogPort(db: Db): CatalogPort {
         typicalValues: row.typicalValues,
         allowedMutations: row.allowedMutations,
       } satisfies Archetype;
+    },
+
+    async listArchetypes() {
+      const rows = await db.select().from(schema.archetypes);
+      return rows.map(
+        (row) =>
+          ({
+            id: row.id,
+            name: row.name,
+            family: row.family,
+            typicalValues: row.typicalValues,
+            allowedMutations: row.allowedMutations,
+          }) satisfies Archetype,
+      );
     },
 
     async getPropertyPermissions(actionType, nodeType) {
@@ -159,6 +255,26 @@ export function createCatalogPort(db: Db): CatalogPort {
         )
         .limit(limit);
 
+      return rows.map(
+        (row) =>
+          ({
+            id: row.id,
+            title: row.title,
+            triggerPatterns: row.triggerPatterns,
+            applicableNodeTypes: row.applicableNodeTypes,
+            requiredActions: row.requiredActions,
+            optionalActions: row.optionalActions,
+            lifecycle: row.lifecycle as LifecycleStatus,
+            body: row.body,
+          }) satisfies Instruction,
+      );
+    },
+
+    async listInstructions(input) {
+      const rows = await db
+        .select()
+        .from(schema.instructions)
+        .limit(input?.limit ?? 100);
       return rows.map(
         (row) =>
           ({
@@ -393,6 +509,102 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         }
       }
     }
+  } else if (effect.kind === "upsert_node_catalog_entry") {
+    await tx
+      .insert(schema.nodeCatalog)
+      .values({
+        nodeType: effect.entry.nodeType,
+        family: effect.entry.family,
+        archetypeId: effect.entry.archetypeId,
+        typicalValueOverrides: effect.entry.typicalValueOverrides,
+        lifecycleTransitions: effect.entry.lifecycleTransitions,
+        contentGuide: effect.entry.contentGuide ?? null,
+      })
+      .onConflictDoUpdate({
+        target: schema.nodeCatalog.nodeType,
+        set: {
+          family: effect.entry.family,
+          archetypeId: effect.entry.archetypeId,
+          typicalValueOverrides: effect.entry.typicalValueOverrides,
+          lifecycleTransitions: effect.entry.lifecycleTransitions,
+          contentGuide: effect.entry.contentGuide ?? null,
+        },
+      });
+  } else if (effect.kind === "deprecate_node_catalog_entry") {
+    await tx
+      .delete(schema.nodeCatalog)
+      .where(eq(schema.nodeCatalog.nodeType, effect.nodeType));
+  } else if (effect.kind === "upsert_edge_catalog_entry") {
+    await tx
+      .insert(schema.edgeCatalog)
+      .values({
+        edgeType: effect.entry.edgeType,
+        domain: effect.entry.domain,
+        range: effect.entry.range,
+        cardinality: effect.entry.cardinality,
+        representation: effect.entry.representation,
+      })
+      .onConflictDoUpdate({
+        target: schema.edgeCatalog.edgeType,
+        set: {
+          domain: effect.entry.domain,
+          range: effect.entry.range,
+          cardinality: effect.entry.cardinality,
+          representation: effect.entry.representation,
+        },
+      });
+  } else if (effect.kind === "upsert_property_catalog_entry") {
+    await tx
+      .insert(schema.propertyCatalog)
+      .values({
+        propertyKey: effect.entry.propertyKey,
+        valueType: effect.entry.valueType,
+        constraints: effect.entry.constraints,
+        owningActions: effect.entry.owningActions,
+      })
+      .onConflictDoUpdate({
+        target: schema.propertyCatalog.propertyKey,
+        set: {
+          valueType: effect.entry.valueType,
+          constraints: effect.entry.constraints,
+          owningActions: effect.entry.owningActions,
+        },
+      });
+  } else if (effect.kind === "upsert_action_catalog_entry") {
+    await tx
+      .insert(schema.actionCatalog)
+      .values({
+        actionType: effect.entry.actionType,
+        preconditions: effect.entry.preconditions,
+        effects: effect.entry.effects,
+        executor: effect.entry.executor,
+        allowedLifecycleTransitions: effect.entry.allowedLifecycleTransitions,
+        failureMode: effect.entry.failureMode,
+        idempotencyRule: effect.entry.idempotencyRule ?? null,
+        logPayloadSchema: effect.entry.logPayloadSchema,
+      })
+      .onConflictDoUpdate({
+        target: schema.actionCatalog.actionType,
+        set: {
+          preconditions: effect.entry.preconditions,
+          effects: effect.entry.effects,
+          executor: effect.entry.executor,
+          allowedLifecycleTransitions: effect.entry.allowedLifecycleTransitions,
+          failureMode: effect.entry.failureMode,
+          idempotencyRule: effect.entry.idempotencyRule ?? null,
+          logPayloadSchema: effect.entry.logPayloadSchema,
+        },
+      });
+  } else if (effect.kind === "upsert_instruction_catalog_entry") {
+    await tx.insert(schema.instructions).values({
+      title: effect.entry.title,
+      triggerPatterns: effect.entry.triggerPatterns,
+      applicableNodeTypes: effect.entry.applicableNodeTypes,
+      requiredActions: effect.entry.requiredActions,
+      optionalActions: effect.entry.optionalActions,
+      lifecycle: effect.entry.lifecycle,
+      body: effect.entry.body,
+    });
   }
 }
 

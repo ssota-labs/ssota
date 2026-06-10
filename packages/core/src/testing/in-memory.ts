@@ -17,6 +17,7 @@ import type {
   Instruction,
   Node,
   NodeCatalogEntry,
+  PropertyCatalogEntry,
 } from "../domain/types.js";
 import type { Effect, GateStatus, LifecycleStatus } from "@loopos/contracts";
 
@@ -31,6 +32,7 @@ export interface InMemoryState {
   permissions: ActionPropertyPermission[];
   instructions: Instruction[];
   edgeCatalog: Map<string, EdgeCatalogEntry>;
+  propertyCatalog: Map<string, PropertyCatalogEntry>;
 }
 
 export function createInMemoryState(
@@ -41,6 +43,7 @@ export function createInMemoryState(
     permissions: ActionPropertyPermission[];
     instructions: Instruction[];
     edgeCatalog: EdgeCatalogEntry[];
+    propertyCatalog: PropertyCatalogEntry[];
     nodes: Node[];
   }>,
 ): InMemoryState {
@@ -55,6 +58,7 @@ export function createInMemoryState(
     permissions: [],
     instructions: [],
     edgeCatalog: new Map(),
+    propertyCatalog: new Map(),
   };
 
   seed?.nodeCatalog?.forEach((e) => state.nodeCatalog.set(e.nodeType, e));
@@ -63,6 +67,9 @@ export function createInMemoryState(
   seed?.permissions?.forEach((p) => state.permissions.push(p));
   seed?.instructions?.forEach((i) => state.instructions.push(i));
   seed?.edgeCatalog?.forEach((e) => state.edgeCatalog.set(e.edgeType, e));
+  seed?.propertyCatalog?.forEach((e) =>
+    state.propertyCatalog.set(e.propertyKey, e),
+  );
   seed?.nodes?.forEach((n) => state.nodes.set(n.id, n));
 
   return state;
@@ -128,6 +135,46 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
         }
       }
     }
+  } else if (effect.kind === "upsert_node_catalog_entry") {
+    state.nodeCatalog.set(effect.entry.nodeType, {
+      nodeType: effect.entry.nodeType,
+      family: effect.entry.family,
+      archetypeId: effect.entry.archetypeId,
+      typicalValueOverrides: effect.entry.typicalValueOverrides,
+      lifecycleTransitions: effect.entry.lifecycleTransitions as Record<
+        LifecycleStatus,
+        LifecycleStatus[]
+      >,
+      contentGuide: effect.entry.contentGuide ?? null,
+    });
+  } else if (effect.kind === "deprecate_node_catalog_entry") {
+    state.nodeCatalog.delete(effect.nodeType);
+  } else if (effect.kind === "upsert_edge_catalog_entry") {
+    state.edgeCatalog.set(effect.entry.edgeType, effect.entry);
+  } else if (effect.kind === "upsert_property_catalog_entry") {
+    state.propertyCatalog.set(effect.entry.propertyKey, effect.entry);
+  } else if (effect.kind === "upsert_action_catalog_entry") {
+    state.actionCatalog.set(effect.entry.actionType, {
+      actionType: effect.entry.actionType,
+      preconditions: effect.entry.preconditions,
+      effects: effect.entry.effects as Effect[],
+      executor: effect.entry.executor,
+      allowedLifecycleTransitions: effect.entry.allowedLifecycleTransitions,
+      failureMode: effect.entry.failureMode,
+      idempotencyRule: effect.entry.idempotencyRule ?? null,
+      logPayloadSchema: effect.entry.logPayloadSchema,
+    });
+  } else if (effect.kind === "upsert_instruction_catalog_entry") {
+    state.instructions.push({
+      id: randomUUID(),
+      title: effect.entry.title,
+      triggerPatterns: effect.entry.triggerPatterns,
+      applicableNodeTypes: effect.entry.applicableNodeTypes,
+      requiredActions: effect.entry.requiredActions,
+      optionalActions: effect.entry.optionalActions,
+      lifecycle: effect.entry.lifecycle,
+      body: effect.entry.body,
+    });
   }
 }
 
@@ -139,11 +186,29 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
     async listNodeCatalogEntries() {
       return [...state.nodeCatalog.values()];
     },
+    async getEdgeCatalogEntry(edgeType) {
+      return state.edgeCatalog.get(edgeType) ?? null;
+    },
+    async listEdgeCatalogEntries() {
+      return [...state.edgeCatalog.values()];
+    },
+    async getPropertyCatalogEntry(propertyKey) {
+      return state.propertyCatalog.get(propertyKey) ?? null;
+    },
+    async listPropertyCatalogEntries() {
+      return [...state.propertyCatalog.values()];
+    },
     async getActionCatalogEntry(actionType) {
       return state.actionCatalog.get(actionType) ?? null;
     },
+    async listActionCatalogEntries() {
+      return [...state.actionCatalog.values()];
+    },
     async getArchetype(archetypeId) {
       return state.archetypes.get(archetypeId) ?? null;
+    },
+    async listArchetypes() {
+      return [...state.archetypes.values()];
     },
     async getPropertyPermissions(actionType, nodeType) {
       return state.permissions.filter(
@@ -160,6 +225,10 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
             (!nodeType || i.applicableNodeTypes.includes(nodeType)),
         )
         .slice(0, limit);
+    },
+    async listInstructions(input) {
+      const limit = input?.limit ?? 100;
+      return state.instructions.slice(0, limit);
     },
   };
 
@@ -351,6 +420,36 @@ export function seedTestCatalog(state: InMemoryState): void {
         kind: "update_gate",
         gateId: "",
         status: "approved",
+      },
+    ],
+    executor: "Human",
+    allowedLifecycleTransitions: {},
+    failureMode: "reject",
+    idempotencyRule: null,
+    logPayloadSchema: {},
+  });
+
+  const defaultTransitions: Record<LifecycleStatus, LifecycleStatus[]> = {
+    Draft: ["Active", "Archived"],
+    Active: ["Archived", "Draft"],
+    Archived: ["Active"],
+    Deleted: [],
+  };
+
+  state.actionCatalog.set("define_node_type", {
+    actionType: "define_node_type",
+    preconditions: { requiredFields: ["definition"] },
+    effects: [
+      {
+        kind: "upsert_node_catalog_entry",
+        entry: {
+          nodeType: "",
+          family: "document",
+          archetypeId: "",
+          typicalValueOverrides: {},
+          lifecycleTransitions: defaultTransitions,
+          contentGuide: null,
+        },
       },
     ],
     executor: "Human",

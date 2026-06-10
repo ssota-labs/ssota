@@ -147,11 +147,23 @@ export interface CommitResult {
   appliedEffects: Effect[];
 }
 
+export interface InstructionListInput {
+  limit?: number;
+}
+
 export interface CatalogPort {
   getNodeCatalogEntry(nodeType: string): Promise<NodeCatalogEntry | null>;
   listNodeCatalogEntries(): Promise<NodeCatalogEntry[]>;
+  getEdgeCatalogEntry(edgeType: string): Promise<EdgeCatalogEntry | null>;
+  listEdgeCatalogEntries(): Promise<EdgeCatalogEntry[]>;
+  getPropertyCatalogEntry(
+    propertyKey: string,
+  ): Promise<PropertyCatalogEntry | null>;
+  listPropertyCatalogEntries(): Promise<PropertyCatalogEntry[]>;
   getActionCatalogEntry(actionType: string): Promise<ActionCatalogEntry | null>;
+  listActionCatalogEntries(): Promise<ActionCatalogEntry[]>;
   getArchetype(archetypeId: string): Promise<Archetype | null>;
+  listArchetypes(): Promise<Archetype[]>;
   getPropertyPermissions(
     actionType: string,
     nodeType: string,
@@ -161,6 +173,7 @@ export interface CatalogPort {
     nodeType?: string,
     limit?: number,
   ): Promise<Instruction[]>;
+  listInstructions(input?: InstructionListInput): Promise<Instruction[]>;
 }
 
 export interface GraphReadPort {

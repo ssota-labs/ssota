@@ -1,6 +1,15 @@
 "use server";
 
 import { executeAction } from "@loopos/core";
+import {
+  DefineEdgeTypeInputSchema,
+  DefineInstructionInputSchema,
+  DefineNodeTypeInputSchema,
+  DefinePropertyInputSchema,
+  DeprecateNodeTypeInputSchema,
+  UpdateNodeTypeInputSchema,
+} from "@loopos/contracts";
+import type { ExecuteActionResult } from "@loopos/contracts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getActionPorts } from "@/lib/ports";
@@ -59,4 +68,101 @@ export async function signOutAction() {
   const supabase = await createSupabaseServerClient();
   await supabase.auth.signOut();
   redirect("/login");
+}
+
+async function runMetaAction(
+  actionType: string,
+  input: Record<string, unknown>,
+  revalidatePaths: string[],
+): Promise<ExecuteActionResult> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const ports = getActionPorts();
+  const result = await executeAction(ports, {
+    actionType,
+    input,
+    executorId: user.id,
+    executorType: "Human",
+  });
+
+  for (const path of revalidatePaths) {
+    revalidatePath(path);
+  }
+
+  return result;
+}
+
+export async function defineNodeTypeAction(input: {
+  definition: Record<string, unknown>;
+}) {
+  const parsed = DefineNodeTypeInputSchema.parse(input);
+  return runMetaAction("define_node_type", parsed, [
+    "/studio/node-types",
+    "/catalog",
+    "/log",
+    "/gates",
+  ]);
+}
+
+export async function defineNodeTypeFormAction(formData: FormData) {
+  const lifecycleTransitions = {
+    Draft: ["Active", "Archived"],
+    Active: ["Archived", "Draft"],
+    Archived: ["Active"],
+    Deleted: [],
+  };
+
+  const definition = {
+    nodeType: String(formData.get("nodeType") ?? ""),
+    family: String(formData.get("family") ?? "document"),
+    archetypeId: String(formData.get("archetypeId") ?? ""),
+    typicalValueOverrides: {},
+    lifecycleTransitions,
+    contentGuide: String(formData.get("contentGuide") ?? "") || null,
+  };
+
+  return defineNodeTypeAction({ definition });
+}
+
+export async function updateNodeTypeAction(input: Record<string, unknown>) {
+  const parsed = UpdateNodeTypeInputSchema.parse(input);
+  return runMetaAction("update_node_type", parsed, [
+    "/studio/node-types",
+    "/catalog",
+    "/log",
+  ]);
+}
+
+export async function deprecateNodeTypeAction(input: Record<string, unknown>) {
+  const parsed = DeprecateNodeTypeInputSchema.parse(input);
+  return runMetaAction("deprecate_node_type", parsed, [
+    "/studio/node-types",
+    "/catalog",
+    "/log",
+  ]);
+}
+
+export async function defineEdgeTypeAction(input: Record<string, unknown>) {
+  const parsed = DefineEdgeTypeInputSchema.parse(input);
+  return runMetaAction("define_edge_type", parsed, [
+    "/studio/edge-types",
+    "/log",
+  ]);
+}
+
+export async function definePropertyAction(input: Record<string, unknown>) {
+  const parsed = DefinePropertyInputSchema.parse(input);
+  return runMetaAction("define_property", parsed, [
+    "/studio/properties",
+    "/log",
+  ]);
+}
+
+export async function defineInstructionAction(input: Record<string, unknown>) {
+  const parsed = DefineInstructionInputSchema.parse(input);
+  return runMetaAction("define_instruction", parsed, [
+    "/studio/instructions",
+    "/log",
+  ]);
 }
