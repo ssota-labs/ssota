@@ -12,7 +12,7 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "LoopOS Console",
-  description: "Human Gate · Action Log · Catalog",
+  description: "Context Graph · Human Gate · Action Log",
 };
 
 export default async function RootLayout({
@@ -34,6 +34,9 @@ export default async function RootLayout({
                 </Link>
                 {user && (
                   <nav className="flex gap-4 text-sm">
+                    <Link href="/context-graph" className="text-muted-foreground hover:text-foreground">
+                      Context Graph
+                    </Link>
                     <Link href="/gates" className="text-muted-foreground hover:text-foreground">
                       Human Gate
                     </Link>

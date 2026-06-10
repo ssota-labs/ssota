@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { describe, expect, it, beforeAll, afterAll } from "vitest";
+import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
 import { executeAction } from "@loopos/core";
 import {
   createActionPorts,
@@ -13,7 +13,6 @@ const supabaseAnonKey =
   process.env.SUPABASE_ANON_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
 
-const runIfSupabase = () => !skip;
 let skip = false;
 
 describe("adapter-supabase integration", () => {
@@ -48,11 +47,15 @@ describe("adapter-supabase integration", () => {
     await client?.end();
   });
 
-  it.runIf(runIfSupabase)("smoke 계정 인증 성공", () => {
+  beforeEach((context) => {
+    if (skip) context.skip();
+  });
+
+  it("smoke 계정 인증 성공", () => {
     expect(smokeUserId).toBeTruthy();
   });
 
-  it.runIf(runIfSupabase)("create_note 커밋 + action_log 기록", async () => {
+  it("create_note 커밋 + action_log 기록", async () => {
     const result = await executeAction(ports, {
       actionType: "create_note",
       input: { content: "Integration test note" },
@@ -67,7 +70,7 @@ describe("adapter-supabase integration", () => {
     expect(log[0]?.outcome).toBe("committed");
   });
 
-  it.runIf(runIfSupabase)(
+  it(
     "비기록 변경 0건: commit은 항상 logEntry와 함께",
     async () => {
       const beforeCount = (await ports.commit.getActionLog({ limit: 1000 })).length;
@@ -84,7 +87,7 @@ describe("adapter-supabase integration", () => {
     },
   );
 
-  it.runIf(runIfSupabase)("promote_document는 Agent 호출 시 게이트 큐", async () => {
+  it("promote_document는 Agent 호출 시 게이트 큐", async () => {
     const createResult = await executeAction(ports, {
       actionType: "create_document",
       input: { title: "Gate Test", content: "Body" },
@@ -107,7 +110,7 @@ describe("adapter-supabase integration", () => {
     expect(promoteResult.status).toBe("gated");
   });
 
-  it.runIf(runIfSupabase)(
+  it(
     "define_node_type Human 커밋 + catalog 반영",
     async () => {
       const nodeType = `TestType_${Date.now()}`;
@@ -126,6 +129,8 @@ describe("adapter-supabase integration", () => {
               Deleted: [],
             },
             contentGuide: "Integration test node type",
+            propertyRefs: ["title"],
+            allowedActionRefs: ["create_document"],
           },
         },
         executorId: smokeUserId,
@@ -137,6 +142,8 @@ describe("adapter-supabase integration", () => {
       const entry = await ports.catalog.getNodeCatalogEntry(nodeType);
       expect(entry).toBeTruthy();
       expect(entry?.contentGuide).toBe("Integration test node type");
+      expect(entry?.propertyRefs).toContain("title");
+      expect(entry?.allowedActionRefs).toContain("create_document");
 
       const log = await ports.commit.getActionLog({
         actionType: "define_node_type",
@@ -146,7 +153,50 @@ describe("adapter-supabase integration", () => {
     },
   );
 
-  it.runIf(runIfSupabase)(
+  it(
+    "define_instruction workflow fields round-trip",
+    async () => {
+      const title = `Workflow ${Date.now()}`;
+      const result = await executeAction(ports, {
+        actionType: "define_instruction",
+        input: {
+          definition: {
+            title,
+            triggerPatterns: ["manual"],
+            applicableNodeTypes: ["Document"],
+            requiredActions: ["create_document"],
+            optionalActions: ["promote_document"],
+            lifecycle: "Active",
+            body: "Gather context, create a document, and report the result.",
+            scope: { kind: "node_type", nodeType: "Document" },
+            triggers: ["task_assigned"],
+            workflowSteps: [
+              {
+                id: "gather_context",
+                title: "Gather context",
+                actionRefs: ["create_document"],
+              },
+            ],
+            allowedActions: ["create_document", "promote_document"],
+            outputContract: { format: "markdown" },
+            gatePolicy: { catalogChanges: "always" },
+            completionCriteria: "Document draft exists",
+          },
+        },
+        executorId: smokeUserId,
+        executorType: "Human",
+      });
+
+      expect(result.status).toBe("committed");
+      const instructions = await ports.catalog.listInstructions({ limit: 100 });
+      const created = instructions.find((instruction) => instruction.title === title);
+      expect(created?.scope).toEqual({ kind: "node_type", nodeType: "Document" });
+      expect(created?.workflowSteps[0]?.id).toBe("gather_context");
+      expect(created?.allowedActions).toContain("create_document");
+    },
+  );
+
+  it(
     "define_node_type Agent → gate 승인 → catalog 반영",
     async () => {
       const nodeType = `AgentType_${Date.now()}`;

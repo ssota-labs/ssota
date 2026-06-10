@@ -1,7 +1,10 @@
 import type {
+  ActionScope,
   Effect,
   ExecutorType,
   GateStatus,
+  InstructionScope,
+  InstructionWorkflowStep,
   LifecycleStatus,
   NodeFamily,
   PermissionOperation,
@@ -23,6 +26,8 @@ export interface NodeCatalogEntry {
   typicalValueOverrides: Record<string, unknown>;
   lifecycleTransitions: Record<LifecycleStatus, LifecycleStatus[]>;
   contentGuide: string | null;
+  propertyRefs: string[];
+  allowedActionRefs: string[];
 }
 
 export interface Node {
@@ -63,6 +68,7 @@ export interface PropertyCatalogEntry {
 
 export interface ActionCatalogEntry {
   actionType: string;
+  scope: ActionScope;
   preconditions: Record<string, unknown>;
   effects: Effect[];
   executor: ExecutorType;
@@ -92,6 +98,13 @@ export interface Instruction {
   optionalActions: string[];
   lifecycle: LifecycleStatus;
   body: string;
+  scope: InstructionScope;
+  triggers: string[];
+  workflowSteps: InstructionWorkflowStep[];
+  allowedActions: string[];
+  outputContract: Record<string, unknown>;
+  gatePolicy: Record<string, unknown>;
+  completionCriteria: string | null;
 }
 
 export interface Gate {

@@ -66,6 +66,11 @@ export const nodeCatalog = pgTable("node_catalog", {
     .notNull()
     .$type<Record<string, string[]>>(),
   contentGuide: text("content_guide"),
+  propertyRefs: jsonb("property_refs").notNull().default([]).$type<string[]>(),
+  allowedActionRefs: jsonb("allowed_action_refs")
+    .notNull()
+    .default([])
+    .$type<string[]>(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -117,6 +122,10 @@ export const propertyCatalog = pgTable("property_catalog", {
 
 export const actionCatalog = pgTable("action_catalog", {
   actionType: text("action_type").primaryKey(),
+  scope: jsonb("scope")
+    .notNull()
+    .default({ kind: "global" })
+    .$type<Record<string, unknown>>(),
   preconditions: jsonb("preconditions").notNull().$type<Record<string, unknown>>(),
   effects: jsonb("effects").notNull().$type<unknown[]>(),
   executor: executorTypeEnum("executor").notNull(),
@@ -157,6 +166,22 @@ export const instructions = pgTable("instructions", {
   optionalActions: jsonb("optional_actions").notNull().$type<string[]>(),
   lifecycle: lifecycleStatusEnum("lifecycle").notNull(),
   body: text("body").notNull(),
+  scope: jsonb("scope")
+    .notNull()
+    .default({ kind: "global" })
+    .$type<Record<string, unknown>>(),
+  triggers: jsonb("triggers").notNull().default([]).$type<string[]>(),
+  workflowSteps: jsonb("workflow_steps").notNull().default([]).$type<unknown[]>(),
+  allowedActions: jsonb("allowed_actions").notNull().default([]).$type<string[]>(),
+  outputContract: jsonb("output_contract")
+    .notNull()
+    .default({})
+    .$type<Record<string, unknown>>(),
+  gatePolicy: jsonb("gate_policy")
+    .notNull()
+    .default({})
+    .$type<Record<string, unknown>>(),
+  completionCriteria: text("completion_criteria"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

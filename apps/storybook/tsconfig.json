@@ -5,8 +5,8 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "noEmit": true,
     "paths": {
-      "@/*": ["../../../packages/ui/src/*"],
-      "@loopos/ui/*": ["../../../packages/ui/src/*"]
+      "@/*": ["../../packages/ui/src/*"],
+      "@loopos/ui/*": ["../../packages/ui/src/*"]
     }
   },
   "include": ["src", ".storybook", "../../packages/ui/src/**/*.stories.tsx"]

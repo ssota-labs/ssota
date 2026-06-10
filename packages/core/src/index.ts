@@ -8,6 +8,7 @@ import {
   checkArchetypeDeviation,
   checkPreconditions,
   enforceCatalog,
+  enforceActionScopeAndGraphIntegrity,
   enforceCatalogMutationIntegrity,
   enforceEffectsContract,
   enforceGateRules,
@@ -31,6 +32,7 @@ interface PreparedAction {
   effects: Effect[];
   resolvedInput: Record<string, unknown>;
   breakingChange: boolean;
+  permissionGateReason: string;
 }
 
 async function prepareAction(
@@ -236,13 +238,19 @@ async function prepareAction(
     throw err;
   }
 
+  let permissionGateReason = "";
   try {
-    await enforcePermissions(
+    const permissionCheck = await enforcePermissions(
       actionType,
       effects,
       (at, nt) => ports.catalog.getPropertyPermissions(at, nt),
       (nodeId) => ports.graph.getNode(nodeId),
+      (nodeType) => ports.catalog.getNodeCatalogEntry(nodeType),
+      (propertyKey) => ports.catalog.getPropertyCatalogEntry(propertyKey),
     );
+    if (permissionCheck.requiresGate) {
+      permissionGateReason = permissionCheck.reason;
+    }
   } catch (err) {
     if (err instanceof ActionRejectedError) {
       return {
@@ -253,6 +261,17 @@ async function prepareAction(
   }
 
   try {
+    await enforceActionScopeAndGraphIntegrity(
+      actionEntry!,
+      effects,
+      { getNode: (nodeId) => ports.graph.getNode(nodeId) },
+      {
+        getNodeCatalogEntry: (nodeType) =>
+          ports.catalog.getNodeCatalogEntry(nodeType),
+        getEdgeCatalogEntry: (edgeType) =>
+          ports.catalog.getEdgeCatalogEntry(edgeType),
+      },
+    );
     await enforceCatalogMutationIntegrity(actionType, effects, {
       getNodeCatalogEntry: (nodeType) =>
         ports.catalog.getNodeCatalogEntry(nodeType),
@@ -290,7 +309,7 @@ async function prepareAction(
     throw err;
   }
 
-  return { effects, resolvedInput, breakingChange };
+  return { effects, resolvedInput, breakingChange, permissionGateReason };
 }
 
 export async function executeAction(
@@ -316,7 +335,7 @@ export async function executeAction(
     return prepared.rejected;
   }
 
-  const { effects, breakingChange } = prepared;
+  const { effects, breakingChange, permissionGateReason } = prepared;
   const actionEntry = await ports.catalog.getActionCatalogEntry(actionType);
 
   const existingNodes = new Map<string, Node>();
@@ -358,12 +377,14 @@ export async function executeAction(
 
   const needsGate =
     gateCheck.requiresGate ||
+    Boolean(permissionGateReason) ||
     deviation.deviates ||
     (breakingChange && actionType === "update_node_type");
 
   if (needsGate && actionType !== "approve_gate") {
     const gateReason =
       gateCheck.reason ||
+      permissionGateReason ||
       deviation.reason ||
       (breakingChange ? "Breaking node type change requires human approval" : "");
 
@@ -387,6 +408,7 @@ export async function executeAction(
         outcome: "gated",
         gateId: gate.id,
         idempotencyKey,
+        metadata: { scope: actionEntry?.scope ?? { kind: "global" } },
       },
     });
 
@@ -408,6 +430,7 @@ export async function executeAction(
         effects,
         outcome: "committed",
         idempotencyKey,
+        metadata: { scope: actionEntry?.scope ?? { kind: "global" } },
       },
     });
 
@@ -435,7 +458,7 @@ export async function previewAction(
     return { status: "rejected", code: r.code, reason: r.reason };
   }
 
-  const { effects, breakingChange } = prepared;
+  const { effects, breakingChange, permissionGateReason } = prepared;
   const actionEntry = await ports.catalog.getActionCatalogEntry(params.actionType);
   const existingNodes = new Map<string, Node>();
 
@@ -449,6 +472,7 @@ export async function previewAction(
 
   const wouldGate =
     gateCheck.requiresGate ||
+    Boolean(permissionGateReason) ||
     (breakingChange && params.actionType === "update_node_type");
 
   return {
@@ -457,6 +481,7 @@ export async function previewAction(
     wouldGate,
     gateReason:
       gateCheck.reason ||
+      permissionGateReason ||
       (breakingChange ? "Breaking node type change requires human approval" : undefined),
   };
 }

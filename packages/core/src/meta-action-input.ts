@@ -34,8 +34,11 @@ export function mergeUpdateNodeTypeInput(
       patch.contentGuide !== undefined
         ? (patch.contentGuide as string | null)
         : existing.contentGuide,
-    propertyRefs: patch.propertyRefs as string[] | undefined,
-    allowedActionRefs: patch.allowedActionRefs as string[] | undefined,
+    propertyRefs:
+      (patch.propertyRefs as string[] | undefined) ?? existing.propertyRefs,
+    allowedActionRefs:
+      (patch.allowedActionRefs as string[] | undefined) ??
+      existing.allowedActionRefs,
   };
   validateLifecycleTransitions(merged.lifecycleTransitions);
   return {
@@ -91,6 +94,9 @@ export function mergeUpdateActionContractInput(
   return {
     definition: {
       actionType,
+      scope:
+        (patch.scope as ActionCatalogEntry["scope"] | undefined) ??
+        existing.scope,
       preconditions:
         (patch.preconditions as Record<string, unknown> | undefined) ??
         existing.preconditions,
@@ -142,6 +148,26 @@ export function mergeUpdateInstructionInput(
         (patch.lifecycle as Instruction["lifecycle"] | undefined) ??
         existing.lifecycle,
       body: (patch.body as string | undefined) ?? existing.body,
+      scope:
+        (patch.scope as Instruction["scope"] | undefined) ?? existing.scope,
+      triggers:
+        (patch.triggers as string[] | undefined) ?? existing.triggers,
+      workflowSteps:
+        (patch.workflowSteps as Instruction["workflowSteps"] | undefined) ??
+        existing.workflowSteps,
+      allowedActions:
+        (patch.allowedActions as string[] | undefined) ??
+        existing.allowedActions,
+      outputContract:
+        (patch.outputContract as Record<string, unknown> | undefined) ??
+        existing.outputContract,
+      gatePolicy:
+        (patch.gatePolicy as Record<string, unknown> | undefined) ??
+        existing.gatePolicy,
+      completionCriteria:
+        patch.completionCriteria !== undefined
+          ? (patch.completionCriteria as string | null)
+          : existing.completionCriteria,
     },
   };
 }

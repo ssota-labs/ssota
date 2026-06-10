@@ -97,6 +97,12 @@ describe("executeAction — 4대 강제", () => {
       requiresHumanGate: false,
       status: "active",
     });
+    state.propertyCatalog.set("secret", {
+      propertyKey: "secret",
+      valueType: "string",
+      constraints: {},
+      owningActions: ["create_note"],
+    });
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
@@ -278,6 +284,7 @@ describe("executeAction — follow-up catalog meta actions", () => {
     seedTestCatalog(state);
     state.actionCatalog.set("update_node_type", {
       actionType: "update_node_type",
+      scope: { kind: "global" },
       preconditions: { requiredFields: ["nodeType", "patch"] },
       effects: [
         {
@@ -294,6 +301,8 @@ describe("executeAction — follow-up catalog meta actions", () => {
               Deleted: [],
             },
             contentGuide: null,
+            propertyRefs: [],
+            allowedActionRefs: [],
           },
         },
       ],
@@ -331,6 +340,7 @@ describe("executeAction — follow-up catalog meta actions", () => {
     seedTestCatalog(state);
     state.actionCatalog.set("deprecate_node_type", {
       actionType: "deprecate_node_type",
+      scope: { kind: "global" },
       preconditions: { requiredFields: ["nodeType"] },
       effects: [{ kind: "deprecate_node_catalog_entry", nodeType: "" }],
       executor: "Human",
@@ -359,8 +369,9 @@ describe("executeAction — follow-up catalog meta actions", () => {
     seedTestCatalog(state);
     state.actionCatalog.set("define_action_contract", {
       actionType: "define_action_contract",
+      scope: { kind: "global" },
       preconditions: { requiredFields: ["definition"] },
-      effects: [{ kind: "upsert_action_catalog_entry", entry: { actionType: "", preconditions: {}, effects: [], executor: "Agent", allowedLifecycleTransitions: {}, failureMode: "reject", logPayloadSchema: {} } }],
+      effects: [{ kind: "upsert_action_catalog_entry", entry: { actionType: "", scope: { kind: "global" }, preconditions: {}, effects: [], executor: "Agent", allowedLifecycleTransitions: {}, failureMode: "reject", logPayloadSchema: {} } }],
       executor: "Human",
       allowedLifecycleTransitions: {},
       failureMode: "reject",
@@ -389,6 +400,160 @@ describe("executeAction — follow-up catalog meta actions", () => {
     expect(result.status).toBe("rejected");
     if (result.status === "rejected") {
       expect(result.code).toBe("UNSAFE_EFFECT");
+    }
+  });
+});
+
+describe("executeAction — Phase 3 scoped graph enforcement", () => {
+  it("거부: catalog에 없는 property write", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "create_note",
+      input: { content: "x", properties: { unknown_property: "no" } },
+      executorId: "agent-1",
+      executorType: "Agent",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("CATALOG_NOT_FOUND");
+    }
+  });
+
+  it("거부: property valueType 위반", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "create_note",
+      input: { content: "x", properties: { title: 42 } },
+      executorId: "agent-1",
+      executorType: "Agent",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("INVALID_PROPERTY_VALUE");
+    }
+  });
+
+  it("게이트: property permission requiresHumanGate", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    state.propertyCatalog.set("priority", {
+      propertyKey: "priority",
+      valueType: "string",
+      constraints: {},
+      owningActions: ["create_note"],
+    });
+    state.permissions.push({
+      actionType: "create_note",
+      nodeType: "Note",
+      propertyKey: "priority",
+      operation: "write",
+      permissionType: "allow",
+      valueConstraint: null,
+      requiresHumanGate: true,
+      status: "active",
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "create_note",
+      input: { content: "x", properties: { priority: "high" } },
+      executorId: "agent-1",
+      executorType: "Agent",
+    });
+
+    expect(result.status).toBe("gated");
+  });
+
+  it("거부: action scope와 node type 불일치", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    state.actionCatalog.set("create_note", {
+      ...state.actionCatalog.get("create_note")!,
+      scope: { kind: "node_type", nodeType: "Document" },
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "create_note",
+      input: { content: "x" },
+      executorId: "agent-1",
+      executorType: "Agent",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("ACTION_SCOPE_MISMATCH");
+    }
+  });
+
+  it("거부: instruction workflow가 없는 action을 참조", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    state.actionCatalog.set("define_instruction", {
+      actionType: "define_instruction",
+      scope: { kind: "global" },
+      preconditions: { requiredFields: ["definition"] },
+      effects: [
+        {
+          kind: "upsert_instruction_catalog_entry",
+          entry: {
+            title: "",
+            triggerPatterns: ["manual"],
+            applicableNodeTypes: [],
+            requiredActions: [],
+            optionalActions: [],
+            lifecycle: "Active",
+            body: "",
+            scope: { kind: "global" },
+            triggers: [],
+            workflowSteps: [],
+            allowedActions: [],
+            outputContract: {},
+            gatePolicy: {},
+            completionCriteria: null,
+          },
+        },
+      ],
+      executor: "Human",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "define_instruction",
+      input: {
+        definition: {
+          title: "Broken workflow",
+          triggerPatterns: ["manual"],
+          applicableNodeTypes: [],
+          requiredActions: [],
+          optionalActions: [],
+          lifecycle: "Active",
+          body: "This references a missing action.",
+          scope: { kind: "global" },
+          workflowSteps: [
+            { id: "step1", title: "Step 1", actionRefs: ["missing_action"] },
+          ],
+        },
+      },
+      executorId: "human-1",
+      executorType: "Human",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("CATALOG_NOT_FOUND");
     }
   });
 });
