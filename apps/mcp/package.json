@@ -13,6 +13,7 @@
     "@loopos/adapter-supabase": "workspace:*",
     "@loopos/contracts": "workspace:*",
     "@loopos/core": "workspace:*",
+    "@loopos/ui": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.13.0",
     "@supabase/supabase-js": "^2.50.0",
     "jose": "^6.0.11",
@@ -24,11 +25,14 @@
   },
   "devDependencies": {
     "@loopos/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.1.8",
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
     "eslint": "^9.28.0",
     "eslint-config-next": "^16.0.0",
+    "postcss": "^8.5.4",
+    "tailwindcss": "^4.1.8",
     "typescript": "^5.8.3"
   }
 }

@@ -3,6 +3,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@loopos/ui/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@loopos/ui/components/ui/card";
+import { Input } from "@loopos/ui/components/ui/input";
+import { Label } from "@loopos/ui/components/ui/label";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
@@ -31,28 +40,40 @@ export function LoginForm() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 p-8">
-      <h1 className="text-2xl font-semibold">MCP OAuth 로그인</h1>
-      <form onSubmit={(e) => void handleLogin(e)} className="flex flex-col gap-3">
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="rounded border px-3 py-2"
-          placeholder="email"
-        />
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="rounded border px-3 py-2"
-          placeholder="password"
-        />
-        {error && <p className="text-red-600">{error}</p>}
-        <button type="submit" className="rounded bg-black px-4 py-2 text-white">
-          로그인
-        </button>
-      </form>
+    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center p-8">
+      <Card>
+        <CardHeader>
+          <CardTitle>MCP OAuth 로그인</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={(e) => void handleLogin(e)} className="flex flex-col gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="mcp-email">Email</Label>
+              <Input
+                id="mcp-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="email"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mcp-password">Password</Label>
+              <Input
+                id="mcp-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="password"
+              />
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" className="w-full">
+              로그인
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </main>
   );
 }

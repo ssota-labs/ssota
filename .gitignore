@@ -30,7 +30,9 @@ pnpm-debug.log*
 Thumbs.db
 
 # IDE
-.cursor/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
 .idea/
 .vscode/*
 !.vscode/extensions.json
@@ -61,3 +63,4 @@ venv/
 .cache/
 .turbo/
 .vercel/
+storybook-static/

@@ -11,7 +11,8 @@
     "db:generate": "pnpm --filter @loopos/adapter-supabase db:generate",
     "db:migrate": "pnpm --filter @loopos/adapter-supabase db:migrate",
     "db:seed": "pnpm --filter @loopos/adapter-supabase db:seed",
-    "migrate:notion": "tsx scripts/m6-notion-migration.ts"
+    "migrate:notion": "tsx scripts/m6-notion-migration.ts",
+    "storybook": "pnpm --filter storybook dev"
   },
   "devDependencies": {
     "turbo": "^2.5.4",
