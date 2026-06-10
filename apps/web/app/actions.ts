@@ -372,7 +372,20 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
 
   const nodeEntry = await ports.catalog.getNodeCatalogEntry(nodeType);
   if (!nodeEntry) throw new Error(`Node type '${nodeType}' not found`);
-  const propertyRefs = Array.from(new Set([...nodeEntry.propertyRefs, propertyKey]));
+  const existingPropertyRefs =
+    nodeEntry.propertyRefs.length > 0
+      ? nodeEntry.propertyRefs
+      : (await ports.catalog.listPropertyCatalogEntries()).map(
+          (property) => property.propertyKey,
+        );
+  const titleProperty = await ports.catalog.getPropertyCatalogEntry("title");
+  const propertyRefs = Array.from(
+    new Set([
+      ...existingPropertyRefs,
+      ...(titleProperty ? ["title"] : []),
+      propertyKey,
+    ]),
+  );
   await executeAction(ports, {
     actionType: "update_node_type",
     input: { nodeType, patch: { propertyRefs } },

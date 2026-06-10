@@ -157,7 +157,7 @@ function RunEdgeActionSheet({ edgeType }: { edgeType: string }) {
   return (
     <Sheet>
       <SheetTrigger render={<Button />}>Create edge / Run action</SheetTrigger>
-      <SheetContent className="sm:max-w-lg">
+      <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Run edge action</SheetTitle>
           <SheetDescription>create_edge action input을 JSON으로 제출합니다.</SheetDescription>
@@ -186,7 +186,7 @@ function AddEdgeActionSheet({ edgeType }: { edgeType: string }) {
   return (
     <Sheet>
       <SheetTrigger render={<Button variant="outline" />}>Add action</SheetTrigger>
-      <SheetContent className="sm:max-w-lg">
+      <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>Add action to {edgeType}</SheetTitle>
           <SheetDescription>scope=edge_type:{edgeType}로 action contract를 생성합니다.</SheetDescription>

@@ -15,7 +15,7 @@ test.describe("LoopOS Console", () => {
     await expect(page.getByRole("heading", { name: "Context Graph" })).toBeVisible();
     await page.getByRole("link", { name: "Nodes", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Nodes" })).toBeVisible();
-    await expect(page.getByText("Note")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Note" })).toBeVisible();
   });
 
   test("smoke: Studio 페이지", async ({ page }) => {

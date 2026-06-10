@@ -9,16 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@loopos/ui/components/ui/card";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@loopos/ui/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -27,13 +17,12 @@ import {
   TableHeader,
   TableRow,
 } from "@loopos/ui/components/ui/table";
-import { Textarea } from "@loopos/ui/components/ui/textarea";
 import {
-  addNodePropertyFormAction,
-  defineScopedActionFormAction,
-  defineWorkflowInstructionFormAction,
-  runActionJsonFormAction,
-} from "@/app/actions";
+  ActionRunner,
+  AddActionSheet,
+  AddInstructionSheet,
+  AddPropertySheet,
+} from "@/components/context-graph/node-table-actions";
 import { PageHeader } from "@/components/studio/page-header";
 import { getActionPorts } from "@/lib/ports";
 
@@ -216,145 +205,3 @@ function formatCell(value: unknown) {
   return JSON.stringify(value);
 }
 
-function ActionRunner({ actions }: { actions: string[] }) {
-  return (
-    <Sheet>
-      <SheetTrigger render={<Button />}>Create node / Run action</SheetTrigger>
-      <SheetContent className="sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>Run action</SheetTitle>
-          <SheetDescription>
-            JSON input으로 action을 실행합니다. 모든 변경은 executeAction()을 통과합니다.
-          </SheetDescription>
-        </SheetHeader>
-        <form action={runActionJsonFormAction} className="space-y-4 px-6 pb-6">
-          <div className="space-y-2">
-            <Label htmlFor="actionType">Action type</Label>
-            <Input id="actionType" name="actionType" list="node-actions" required />
-            <datalist id="node-actions">
-              {actions.map((action) => (
-                <option key={action} value={action} />
-              ))}
-            </datalist>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="input">Input JSON</Label>
-            <Textarea id="input" name="input" defaultValue={'{ "title": "New node", "content": "" }'} />
-          </div>
-          <Button type="submit">Submit action</Button>
-        </form>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function AddPropertySheet({ nodeType }: { nodeType: string }) {
-  return (
-    <Sheet>
-      <SheetTrigger render={<Button variant="outline" />}>Add property</SheetTrigger>
-      <SheetContent className="sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>Add property to {nodeType}</SheetTitle>
-          <SheetDescription>
-            define_property 후 update_node_type으로 property binding을 추가합니다.
-          </SheetDescription>
-        </SheetHeader>
-        <form action={addNodePropertyFormAction} className="space-y-4 px-6 pb-6">
-          <input type="hidden" name="nodeType" value={nodeType} />
-          <div className="space-y-2">
-            <Label htmlFor="propertyKey">Property key</Label>
-            <Input id="propertyKey" name="propertyKey" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="valueType">Value type</Label>
-            <Input id="valueType" name="valueType" defaultValue="string" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="owningActions">Owning actions</Label>
-            <Input id="owningActions" name="owningActions" placeholder="create_document, update_document" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="constraints">Constraints JSON</Label>
-            <Textarea id="constraints" name="constraints" defaultValue="{}" />
-          </div>
-          <Button type="submit">Submit change</Button>
-        </form>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function AddActionSheet({ nodeType }: { nodeType: string }) {
-  return (
-    <Sheet>
-      <SheetTrigger render={<Button variant="outline" />}>Add action</SheetTrigger>
-      <SheetContent className="sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>Add action to {nodeType}</SheetTitle>
-          <SheetDescription>scope=node_type:{nodeType}로 action contract를 생성합니다.</SheetDescription>
-        </SheetHeader>
-        <form action={defineScopedActionFormAction} className="space-y-4 px-6 pb-6">
-          <input type="hidden" name="scopeKind" value="node_type" />
-          <input type="hidden" name="nodeType" value={nodeType} />
-          <div className="space-y-2">
-            <Label htmlFor="actionType">Action type</Label>
-            <Input id="actionType" name="actionType" placeholder="publish_document" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="executor">Executor</Label>
-            <Input id="executor" name="executor" defaultValue="Agent" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="preconditions">Preconditions JSON</Label>
-            <Textarea id="preconditions" name="preconditions" defaultValue='{ "requiredFields": ["nodeId"] }' />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="effects">Effects JSON array</Label>
-            <Textarea id="effects" name="effects" defaultValue="[]" />
-          </div>
-          <Button type="submit">Submit action contract</Button>
-        </form>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
-function AddInstructionSheet({ nodeType }: { nodeType: string }) {
-  return (
-    <Sheet>
-      <SheetTrigger render={<Button variant="outline" />}>Add instruction</SheetTrigger>
-      <SheetContent className="sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>Add instruction to {nodeType}</SheetTitle>
-          <SheetDescription>이 node table에 적용되는 agent workflow를 정의합니다.</SheetDescription>
-        </SheetHeader>
-        <form action={defineWorkflowInstructionFormAction} className="space-y-4 px-6 pb-6">
-          <input type="hidden" name="scopeKind" value="node_type" />
-          <input type="hidden" name="nodeType" value={nodeType} />
-          <input type="hidden" name="applicableNodeTypes" value={nodeType} />
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="triggerPatterns">Trigger patterns</Label>
-            <Input id="triggerPatterns" name="triggerPatterns" defaultValue="manual" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="allowedActions">Allowed actions</Label>
-            <Input id="allowedActions" name="allowedActions" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="workflowSteps">Workflow steps JSON array</Label>
-            <Textarea id="workflowSteps" name="workflowSteps" defaultValue="[]" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="body">Body</Label>
-            <Textarea id="body" name="body" required />
-          </div>
-          <Button type="submit">Submit instruction</Button>
-        </form>
-      </SheetContent>
-    </Sheet>
-  );
-}

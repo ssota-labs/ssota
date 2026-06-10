@@ -48,7 +48,7 @@ export default async function ContextGraphNodesPage() {
       <div className="flex justify-end">
         <Sheet>
           <SheetTrigger render={<Button />}>New node table</SheetTrigger>
-          <SheetContent className="sm:max-w-lg">
+          <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
             <SheetHeader>
               <SheetTitle>New node table</SheetTitle>
               <SheetDescription>

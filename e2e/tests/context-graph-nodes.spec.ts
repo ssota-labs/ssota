@@ -15,9 +15,11 @@ test.describe("Context Graph Nodes", () => {
     await page.getByLabel("Owning actions").fill("create_document");
     await page.getByRole("button", { name: "Submit change" }).click();
 
-    await expect(page.getByText(propertyKey)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("columnheader", { name: propertyKey })).toBeVisible({
+      timeout: 10_000,
+    });
     await page.getByRole("navigation").getByRole("link", { name: "Action Log" }).click();
-    await expect(page.getByText("define_property")).toBeVisible();
-    await expect(page.getByText("update_node_type")).toBeVisible();
+    await expect(page.getByText("define_property").first()).toBeVisible();
+    await expect(page.getByText("update_node_type").first()).toBeVisible();
   });
 });

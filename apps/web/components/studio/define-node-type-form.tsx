@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { defineNodeTypeFormAction } from "@/app/actions";
 import { OutcomeBadge } from "@/components/outcome-badge";
@@ -29,7 +29,9 @@ export function DefineNodeTypeForm({ archetypes }: DefineNodeTypeFormProps) {
   const [result, setResult] = useState<ExecuteActionResult | null>(null);
   const [pending, setPending] = useState(false);
 
-  async function handleSubmit(formData: FormData) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
     setPending(true);
     setResult(null);
     try {
@@ -47,7 +49,7 @@ export function DefineNodeTypeForm({ archetypes }: DefineNodeTypeFormProps) {
           <CardTitle className="text-base">Node Type Definition</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="nodeType">Node Type</Label>

@@ -107,7 +107,7 @@ function NewInstructionSheet() {
   return (
     <Sheet>
       <SheetTrigger render={<Button />}>New instruction</SheetTrigger>
-      <SheetContent className="sm:max-w-lg">
+      <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New workflow instruction</SheetTitle>
           <SheetDescription>define_instruction 메타 액션으로 agent workflow를 추가합니다.</SheetDescription>

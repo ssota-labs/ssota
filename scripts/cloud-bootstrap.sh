@@ -90,6 +90,22 @@ ensure_env_files() {
   done
 }
 
+ensure_docker_binaries() {
+  if command -v docker >/dev/null 2>&1 && command -v dockerd >/dev/null 2>&1; then
+    log "Docker binaries present"
+    return
+  fi
+
+  if ! command -v apt-get >/dev/null 2>&1; then
+    echo "Docker is not installed and apt-get is unavailable" >&2
+    exit 1
+  fi
+
+  log "Installing Docker engine package (docker.io)…"
+  sudo apt-get update
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
+}
+
 ensure_iptables_legacy() {
   if ! command -v update-alternatives >/dev/null 2>&1; then
     log "update-alternatives not found — skipping iptables switch"
@@ -107,6 +123,7 @@ ensure_iptables_legacy() {
 }
 
 docker_ready() {
+  sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
   docker info >/dev/null 2>&1 \
     && [[ "$(docker info --format '{{.Driver}}' 2>/dev/null || echo '')" == "vfs" ]]
 }
@@ -129,6 +146,7 @@ ensure_docker() {
     --exec-root=/tmp/docker-exec \
     --host=unix:///var/run/docker.sock \
     >/tmp/dockerd-vfs.log 2>&1 &
+  sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
 
   local attempt
   for attempt in $(seq 1 30); do
@@ -175,6 +193,7 @@ main() {
   ensure_node
   ensure_dependencies
   ensure_env_files
+  ensure_docker_binaries
   ensure_iptables_legacy
   ensure_docker
   ensure_supabase

@@ -48,8 +48,8 @@ test.describe("LoopOS define_node_type vertical slice", () => {
     await expect(page.getByText(nodeType)).toBeVisible({ timeout: 10_000 });
 
     await page.getByRole("navigation").getByRole("link", { name: "Action Log" }).click();
-    await expect(page.getByText("define_node_type")).toBeVisible();
-    await expect(page.getByText("approve_gate")).toBeVisible();
+    await expect(page.getByText("define_node_type").first()).toBeVisible();
+    await expect(page.getByText("approve_gate").first()).toBeVisible();
   });
 
   test("Human web form define_node_type committed", async ({ page }) => {

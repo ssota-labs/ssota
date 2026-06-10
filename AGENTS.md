@@ -186,7 +186,7 @@ pnpm cloud:prepare
 1. Node 24 (`.nvmrc`) 확인
 2. `node_modules` 없으면 `pnpm install`
 3. `apps/web/.env.local`, `apps/mcp/.env.local` 없으면 `.env.example` 복사
-4. **Docker**: `iptables-legacy` + **`vfs` storage driver**로 `dockerd` 기동 (Cloud VM에서 기본 `iptables-nft`/`overlayfs`는 실패함)
+4. **Docker**: `docker`/`dockerd`가 없으면 `apt-get install -y docker.io`로 설치한 뒤, `iptables-legacy` + **`vfs` storage driver**로 `dockerd` 기동 (Cloud VM에서 기본 `iptables-nft`/`overlayfs`는 실패함)
 5. **Supabase**: `pnpm exec supabase start` (CLI **2.105.0** pinned)
 6. **DB**: `pnpm db:migrate` + `pnpm db:seed` (smoke 계정 포함)
 7. **Playwright**: `pnpm --filter e2e exec playwright install chromium`
@@ -217,6 +217,10 @@ export PATH="$NVM_DIR/versions/node/v24.16.0/bin:$PATH"
 `pnpm cloud:prepare`가 내부적으로 아래와 동일한 작업을 수행한다. 수동 디버깅 시 참고:
 
 ```bash
+if ! command -v dockerd >/dev/null; then
+  sudo apt-get update
+  sudo DEBIAN_FRONTEND=noninteractive apt-get install -y docker.io
+fi
 sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
 sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
 sudo pkill dockerd || true
@@ -228,7 +232,9 @@ pnpm exec supabase start
 pnpm db:migrate && pnpm db:seed
 ```
 
-실패 시 로그: `/tmp/dockerd-vfs.log`. 흔한 원인: `iptables-nft` NAT chain (`TABLE_ADD failed`), `overlayfs` whiteout (`operation not permitted`), Docker embedded DNS (`127.0.0.11` connection refused — legacy iptables 미적용).
+실패 시 로그: `/tmp/dockerd-vfs.log`. 흔한 원인: `dockerd: command not found`(Docker 패키지 미설치 — `docker.io` 설치 필요), `/var/run/docker.sock` 권한 `660 root docker`로 인한 `permission denied`(`sudo chmod 666 /var/run/docker.sock` 필요), `iptables-nft` NAT chain (`TABLE_ADD failed`), `overlayfs` whiteout (`operation not permitted`), Docker embedded DNS (`127.0.0.11` connection refused — legacy iptables 미적용).
+
+**반복 방지 메모:** Cloud VM은 세션마다 Docker daemon뿐 아니라 Docker 패키지 자체가 없을 수 있다. `dockerd`가 없다고 E2E를 포기하지 말고 `pnpm cloud:prepare`가 `docker.io`를 설치하게 하거나 위 수동 명령으로 설치한 뒤 재시도한다. daemon 로그가 `API listen on /var/run/docker.sock`까지 갔는데 bootstrap이 실패하면 거의 항상 socket 권한 문제다.
 
 `apps/web/.env.local`, `apps/mcp/.env.local`은 `.env.example` 복사본이면 로컬 Supabase 기본 키로 동작한다.
 

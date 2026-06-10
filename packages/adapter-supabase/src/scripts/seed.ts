@@ -52,6 +52,8 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Free-form note content",
+        propertyRefs: ["title"],
+        allowedActionRefs: [],
       },
       {
         nodeType: "Document",
@@ -60,6 +62,8 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Structured document with title and body",
+        propertyRefs: ["title"],
+        allowedActionRefs: [],
       },
       {
         nodeType: "Instruction",
@@ -68,6 +72,8 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Agent instruction with trigger patterns",
+        propertyRefs: ["title"],
+        allowedActionRefs: [],
       },
       {
         nodeType: "Project",
@@ -76,6 +82,8 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational project node",
+        propertyRefs: ["title"],
+        allowedActionRefs: [],
       },
       {
         nodeType: "Task",
@@ -84,6 +92,8 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational task node",
+        propertyRefs: ["title"],
+        allowedActionRefs: [],
       },
     ])
     .onConflictDoNothing();

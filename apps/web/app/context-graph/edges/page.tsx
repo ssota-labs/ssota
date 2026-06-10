@@ -43,7 +43,7 @@ export default async function ContextGraphEdgesPage() {
       <div className="flex justify-end">
         <Sheet>
           <SheetTrigger render={<Button />}>New edge table</SheetTrigger>
-          <SheetContent className="sm:max-w-lg">
+          <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
             <SheetHeader>
               <SheetTitle>New edge table</SheetTitle>
               <SheetDescription>define_edge_type 메타 액션을 실행합니다.</SheetDescription>

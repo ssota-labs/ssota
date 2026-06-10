@@ -97,7 +97,7 @@ function NewActionSheet() {
   return (
     <Sheet>
       <SheetTrigger render={<Button />}>New action</SheetTrigger>
-      <SheetContent className="sm:max-w-lg">
+      <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New action contract</SheetTitle>
           <SheetDescription>Global action을 생성합니다. Local action은 node/edge/property 화면에서 생성하세요.</SheetDescription>
