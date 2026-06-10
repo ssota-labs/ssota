@@ -402,6 +402,18 @@ export function createGatePort(db: Db): GatePort {
       return rows.map(mapGate);
     },
 
+    async queryGates(params) {
+      let query = db.select().from(schema.gates).$dynamic();
+      if (params.status) {
+        query = query.where(eq(schema.gates.status, params.status));
+      }
+      const rows = await query
+        .orderBy(sql`${schema.gates.createdAt} desc`)
+        .limit(params.limit ?? 20)
+        .offset(params.offset ?? 0);
+      return rows.map(mapGate);
+    },
+
     async getGate(gateId) {
       const rows = await db
         .select()
@@ -746,6 +758,16 @@ export function createActionCommitPort(db: Db): ActionCommitPort {
         .offset(params.offset ?? 0);
 
       return rows.map(mapLogRecord);
+    },
+
+    async getActionLogEntry(logId) {
+      const rows = await db
+        .select()
+        .from(schema.actionLog)
+        .where(eq(schema.actionLog.id, logId))
+        .limit(1);
+      const row = rows[0];
+      return row ? mapLogRecord(row) : null;
     },
 
     async findByIdempotencyKey(key) {

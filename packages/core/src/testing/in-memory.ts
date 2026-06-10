@@ -354,6 +354,15 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
     async listPendingGates() {
       return [...state.gates.values()].filter((g) => g.status === "pending");
     },
+    async queryGates(params) {
+      let results = [...state.gates.values()];
+      if (params.status) {
+        results = results.filter((g) => g.status === params.status);
+      }
+      const offset = params.offset ?? 0;
+      const limit = params.limit ?? 20;
+      return results.slice(offset, offset + limit);
+    },
     async getGate(gateId) {
       return state.gates.get(gateId) ?? null;
     },
@@ -412,6 +421,9 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
       const offset = params.offset ?? 0;
       const limit = params.limit ?? 20;
       return results.slice(offset, offset + limit);
+    },
+    async getActionLogEntry(logId) {
+      return state.actionLog.find((r) => r.id === logId) ?? null;
     },
     async findByIdempotencyKey(key) {
       return (
