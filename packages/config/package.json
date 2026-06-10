@@ -1,0 +1,15 @@
+{
+  "name": "@loopos/config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./typescript/base": "./typescript/base.json",
+    "./typescript/node": "./typescript/node.json",
+    "./typescript/nextjs": "./typescript/nextjs.json",
+    "./eslint/base": "./eslint/base.js",
+    "./vitest/node": "./vitest/node.mjs"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.4"
+  }
+}

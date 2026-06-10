@@ -1,0 +1,3 @@
+{
+  "extends": "@loopos/config/typescript/base.json"
+}
