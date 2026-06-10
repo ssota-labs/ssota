@@ -1,4 +1,10 @@
-import { createMcpHandler } from "mcp-handler";
+import {
+  createMcpHandler,
+  protectedResourceHandler,
+  withMcpAuth,
+} from "mcp-handler";
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import { z } from "zod";
 import { executeAction } from "@loopos/core";
 import {
   ExecuteActionInputSchema,
@@ -11,12 +17,18 @@ import {
 import { verifyBearerToken } from "@/lib/auth";
 import { getActionPorts } from "@/lib/ports";
 
-const handler = createMcpHandler(
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
+
+const mcpHandler = createMcpHandler(
   (server) => {
-    server.tool(
+    server.registerTool(
       "list_node_types",
-      "List all node types from the catalog",
-      {},
+      {
+        title: "List Node Types",
+        description: "List all node types from the catalog",
+        inputSchema: {},
+      },
       async () => {
         const ports = getActionPorts();
         const entries = await ports.catalog.listNodeCatalogEntries();
@@ -26,34 +38,37 @@ const handler = createMcpHandler(
       },
     );
 
-    server.tool(
+    server.registerTool(
       "get_action_contract",
-      "Get action contract from catalog",
       {
-        actionType: { type: "string", description: "Action type name" },
+        title: "Get Action Contract",
+        description: "Get action contract from catalog",
+        inputSchema: {
+          actionType: z.string(),
+        },
       },
       async ({ actionType }) => {
         const ports = getActionPorts();
-        const entry = await ports.catalog.getActionCatalogEntry(
-          actionType as string,
-        );
+        const entry = await ports.catalog.getActionCatalogEntry(actionType);
         return {
           content: [{ type: "text", text: JSON.stringify(entry, null, 2) }],
         };
       },
     );
 
-    server.tool(
+    server.registerTool(
       "query_nodes",
-      "Query nodes by type and lifecycle status",
       {
-        nodeType: { type: "string", description: "Filter by node type" },
-        lifecycleStatus: {
-          type: "string",
-          description: "Filter by lifecycle status",
+        title: "Query Nodes",
+        description: "Query nodes by type and lifecycle status",
+        inputSchema: {
+          nodeType: z.string().optional(),
+          lifecycleStatus: z
+            .enum(["Draft", "Active", "Archived", "Deleted"])
+            .optional(),
+          limit: z.number().int().positive().max(100).optional(),
+          offset: z.number().int().nonnegative().optional(),
         },
-        limit: { type: "number", description: "Max results" },
-        offset: { type: "number", description: "Offset" },
       },
       async (args) => {
         const parsed = QueryNodesInputSchema.parse(args);
@@ -65,16 +80,16 @@ const handler = createMcpHandler(
       },
     );
 
-    server.tool(
+    server.registerTool(
       "traverse_edges",
-      "Traverse edges from a node",
       {
-        nodeId: { type: "string", description: "Source node ID" },
-        direction: {
-          type: "string",
-          description: "outgoing | incoming | both",
+        title: "Traverse Edges",
+        description: "Traverse edges from a node",
+        inputSchema: {
+          nodeId: z.string().uuid(),
+          direction: z.enum(["outgoing", "incoming", "both"]).optional(),
+          edgeType: z.string().optional(),
         },
-        edgeType: { type: "string", description: "Filter by edge type" },
       },
       async (args) => {
         const parsed = TraverseEdgesInputSchema.parse(args);
@@ -86,13 +101,16 @@ const handler = createMcpHandler(
       },
     );
 
-    server.tool(
+    server.registerTool(
       "find_instruction",
-      "Search instructions by query",
       {
-        query: { type: "string", description: "Search query" },
-        nodeType: { type: "string", description: "Filter by node type" },
-        limit: { type: "number", description: "Max results" },
+        title: "Find Instruction",
+        description: "Search instructions by query",
+        inputSchema: {
+          query: z.string().min(1),
+          nodeType: z.string().optional(),
+          limit: z.number().int().positive().max(20).optional(),
+        },
       },
       async (args) => {
         const parsed = FindInstructionInputSchema.parse(args);
@@ -110,15 +128,15 @@ const handler = createMcpHandler(
       },
     );
 
-    server.tool(
+    server.registerTool(
       "execute_action",
-      "Execute an action (the only write path)",
       {
-        actionType: { type: "string", description: "Action type" },
-        input: { type: "object", description: "Action input payload" },
-        idempotencyKey: {
-          type: "string",
-          description: "Optional idempotency key",
+        title: "Execute Action",
+        description: "Execute an action (the only write path)",
+        inputSchema: {
+          actionType: z.string(),
+          input: z.record(z.unknown()).optional(),
+          idempotencyKey: z.string().optional(),
         },
       },
       async (args, extra) => {
@@ -148,10 +166,13 @@ const handler = createMcpHandler(
       },
     );
 
-    server.tool(
+    server.registerTool(
       "list_pending_gates",
-      "List pending human gates",
-      {},
+      {
+        title: "List Pending Gates",
+        description: "List pending human gates",
+        inputSchema: {},
+      },
       async () => {
         const ports = getActionPorts();
         const gates = await ports.gate.listPendingGates();
@@ -161,12 +182,15 @@ const handler = createMcpHandler(
       },
     );
 
-    server.tool(
+    server.registerTool(
       "submit_for_approval",
-      "Submit a gate for human approval (alias for approve_gate flow)",
       {
-        gateId: { type: "string", description: "Gate ID" },
-        note: { type: "string", description: "Optional note" },
+        title: "Submit For Approval",
+        description: "Submit a gate for human approval",
+        inputSchema: {
+          gateId: z.string().uuid(),
+          note: z.string().optional(),
+        },
       },
       async (args) => {
         const parsed = SubmitForApprovalInputSchema.parse(args);
@@ -177,10 +201,7 @@ const handler = createMcpHandler(
             {
               type: "text",
               text: JSON.stringify(
-                {
-                  message: "Gate submitted for human review",
-                  gate,
-                },
+                { message: "Gate submitted for human review", gate },
                 null,
                 2,
               ),
@@ -190,13 +211,16 @@ const handler = createMcpHandler(
       },
     );
 
-    server.tool(
+    server.registerTool(
       "get_action_log",
-      "Get action log entries",
       {
-        limit: { type: "number" },
-        offset: { type: "number" },
-        actionType: { type: "string" },
+        title: "Get Action Log",
+        description: "Get action log entries",
+        inputSchema: {
+          limit: z.number().int().positive().max(100).optional(),
+          offset: z.number().int().nonnegative().optional(),
+          actionType: z.string().optional(),
+        },
       },
       async (args) => {
         const parsed = GetActionLogInputSchema.parse(args);
@@ -208,30 +232,36 @@ const handler = createMcpHandler(
       },
     );
   },
-  {},
+  {
+    serverInfo: { name: "loopos-mcp", version: "0.1.0" },
+  },
   {
     basePath: "/api",
+    verboseLogs: process.env.NODE_ENV === "development",
   },
 );
 
-export async function GET(request: Request) {
-  const user = await verifyBearerToken(request.headers.get("authorization"));
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+async function verifyToken(
+  _req: Request,
+  bearerToken?: string,
+): Promise<AuthInfo | undefined> {
+  const user = await verifyBearerToken(
+    bearerToken ? `Bearer ${bearerToken}` : null,
+  );
+  if (!user) return undefined;
 
-  return handler(request, {
-    authInfo: { extra: { user } },
-  } as Parameters<typeof handler>[1]);
+  return {
+    token: bearerToken ?? "",
+    clientId: user.id,
+    scopes: ["openid"],
+    extra: { user },
+  };
 }
 
-export async function POST(request: Request) {
-  const user = await verifyBearerToken(request.headers.get("authorization"));
-  if (!user) {
-    return new Response("Unauthorized", { status: 401 });
-  }
+const authHandler = withMcpAuth(mcpHandler, verifyToken, {
+  required: true,
+  resourceMetadataPath: "/.well-known/oauth-protected-resource",
+  resourceUrl: process.env.MCP_RESOURCE_URL ?? "http://127.0.0.1:3001/api/mcp",
+});
 
-  return handler(request, {
-    authInfo: { extra: { user } },
-  } as Parameters<typeof handler>[1]);
-}
+export { authHandler as GET, authHandler as POST };
