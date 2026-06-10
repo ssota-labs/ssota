@@ -220,6 +220,26 @@ export function resolveEffects(
         nodeType: input.nodeType as string,
         replacementNodeType: input.replacementNodeType as string | undefined,
       });
+    } else if (template.kind === "deprecate_edge_catalog_entry") {
+      effects.push({
+        kind: "deprecate_edge_catalog_entry",
+        edgeType: input.edgeType as string,
+      });
+    } else if (template.kind === "deprecate_property_catalog_entry") {
+      effects.push({
+        kind: "deprecate_property_catalog_entry",
+        propertyKey: input.propertyKey as string,
+      });
+    } else if (template.kind === "deprecate_action_catalog_entry") {
+      effects.push({
+        kind: "deprecate_action_catalog_entry",
+        actionType: input.actionType as string,
+      });
+    } else if (template.kind === "deprecate_instruction_catalog_entry") {
+      effects.push({
+        kind: "deprecate_instruction_catalog_entry",
+        instructionId: input.instructionId as string,
+      });
     } else if (template.kind === "upsert_edge_catalog_entry") {
       const definition = input.definition as {
         edgeType: string;
@@ -243,6 +263,20 @@ export function resolveEffects(
         kind: "upsert_property_catalog_entry",
         entry: definition,
       });
+    } else if (template.kind === "upsert_property_permission_entry") {
+      effects.push({
+        kind: "upsert_property_permission_entry",
+        permission: input.permission as {
+          actionType: string;
+          nodeType: string;
+          propertyKey: string;
+          operation: import("@loopos/contracts").PermissionOperation;
+          permissionType: import("@loopos/contracts").PermissionType;
+          valueConstraint: Record<string, unknown> | null;
+          requiresHumanGate: boolean;
+          status: string;
+        },
+      });
     } else if (template.kind === "upsert_action_catalog_entry") {
       const definition = input.definition as {
         actionType: string;
@@ -263,6 +297,7 @@ export function resolveEffects(
       });
     } else if (template.kind === "upsert_instruction_catalog_entry") {
       const definition = input.definition as {
+        instructionId?: string;
         title: string;
         triggerPatterns: string[];
         applicableNodeTypes: string[];
@@ -373,6 +408,77 @@ export async function checkArchetypeDeviation(
   return { deviates: false, reason: "" };
 }
 
+export function detectBreakingNodeTypeChange(
+  existing: NodeCatalogEntry,
+  patch: Record<string, unknown>,
+): boolean {
+  if (patch.family !== undefined && patch.family !== existing.family) {
+    return true;
+  }
+  if (
+    patch.archetypeId !== undefined &&
+    patch.archetypeId !== existing.archetypeId
+  ) {
+    return true;
+  }
+  if (patch.lifecycleTransitions !== undefined) {
+    return (
+      JSON.stringify(patch.lifecycleTransitions) !==
+      JSON.stringify(existing.lifecycleTransitions)
+    );
+  }
+  return false;
+}
+
+const CATALOG_EFFECT_KINDS = new Set([
+  "upsert_node_catalog_entry",
+  "deprecate_node_catalog_entry",
+  "upsert_edge_catalog_entry",
+  "deprecate_edge_catalog_entry",
+  "upsert_property_catalog_entry",
+  "deprecate_property_catalog_entry",
+  "upsert_property_permission_entry",
+  "upsert_action_catalog_entry",
+  "deprecate_action_catalog_entry",
+  "upsert_instruction_catalog_entry",
+  "deprecate_instruction_catalog_entry",
+]);
+
+const PROTECTED_ACTION_TYPES = new Set([
+  "approve_gate",
+  "define_node_type",
+  "update_node_type",
+  "deprecate_node_type",
+]);
+
+export function enforceActionContractSafety(
+  definition: {
+    actionType: string;
+    executor: ExecutorType;
+    effects: Record<string, unknown>[];
+  },
+): void {
+  if (
+    PROTECTED_ACTION_TYPES.has(definition.actionType) &&
+    definition.executor !== "Human"
+  ) {
+    throw new ActionRejectedError(
+      "UNSAFE_EFFECT",
+      `Action '${definition.actionType}' must keep Human executor`,
+    );
+  }
+
+  for (const effect of definition.effects) {
+    const kind = effect.kind as string | undefined;
+    if (kind && CATALOG_EFFECT_KINDS.has(kind)) {
+      throw new ActionRejectedError(
+        "UNSAFE_EFFECT",
+        `Action contract cannot declare catalog effect '${kind}'`,
+      );
+    }
+  }
+}
+
 export async function enforceCatalogMutationIntegrity(
   actionType: string,
   effects: Effect[],
@@ -390,6 +496,9 @@ export async function enforceCatalogMutationIntegrity(
     getEdgeCatalogEntry: (
       edgeType: string,
     ) => Promise<import("./types.js").EdgeCatalogEntry | null>;
+    getInstruction?: (instructionId: string) => Promise<import("./types.js").Instruction | null>;
+    hasNodesOfType?: (nodeType: string) => Promise<boolean>;
+    hasEdgesOfType?: (edgeType: string) => Promise<boolean>;
   },
 ): Promise<void> {
   for (const effect of effects) {
@@ -462,6 +571,70 @@ export async function enforceCatalogMutationIntegrity(
           );
         }
       }
+      if (catalog.hasNodesOfType) {
+        const inUse = await catalog.hasNodesOfType(effect.nodeType);
+        if (inUse) {
+          throw new ActionRejectedError(
+            "CATALOG_IN_USE",
+            `Node type '${effect.nodeType}' has runtime nodes and cannot be deprecated`,
+          );
+        }
+      }
+    }
+
+    if (effect.kind === "deprecate_edge_catalog_entry") {
+      const existing = await catalog.getEdgeCatalogEntry(effect.edgeType);
+      if (!existing) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Edge type '${effect.edgeType}' does not exist`,
+        );
+      }
+      if (catalog.hasEdgesOfType) {
+        const inUse = await catalog.hasEdgesOfType(effect.edgeType);
+        if (inUse) {
+          throw new ActionRejectedError(
+            "CATALOG_IN_USE",
+            `Edge type '${effect.edgeType}' has runtime edges and cannot be deprecated`,
+          );
+        }
+      }
+    }
+
+    if (effect.kind === "deprecate_property_catalog_entry") {
+      const existing = await catalog.getPropertyCatalogEntry(effect.propertyKey);
+      if (!existing) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Property '${effect.propertyKey}' does not exist`,
+        );
+      }
+    }
+
+    if (effect.kind === "deprecate_action_catalog_entry") {
+      if (PROTECTED_ACTION_TYPES.has(effect.actionType)) {
+        throw new ActionRejectedError(
+          "UNSAFE_EFFECT",
+          `Action '${effect.actionType}' is protected and cannot be deprecated`,
+        );
+      }
+      const existing = await catalog.getActionCatalogEntry(effect.actionType);
+      if (!existing) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Action '${effect.actionType}' does not exist`,
+        );
+      }
+    }
+
+    if (effect.kind === "deprecate_instruction_catalog_entry") {
+      const existing = await catalog.getInstruction?.(effect.instructionId);
+      if (!existing) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Instruction '${effect.instructionId}' does not exist`,
+        );
+      }
     }
 
     if (effect.kind === "upsert_edge_catalog_entry") {
@@ -470,6 +643,12 @@ export async function enforceCatalogMutationIntegrity(
         throw new ActionRejectedError(
           "DUPLICATE_EDGE_TYPE",
           `Edge type '${effect.entry.edgeType}' already exists`,
+        );
+      }
+      if (actionType === "update_edge_type" && !existing) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Edge type '${effect.entry.edgeType}' does not exist`,
         );
       }
     }
@@ -484,9 +663,42 @@ export async function enforceCatalogMutationIntegrity(
           `Property '${effect.entry.propertyKey}' already exists`,
         );
       }
+      if (actionType === "update_property" && !existing) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Property '${effect.entry.propertyKey}' does not exist`,
+        );
+      }
+    }
+
+    if (effect.kind === "upsert_property_permission_entry") {
+      const nodeEntry = await catalog.getNodeCatalogEntry(
+        effect.permission.nodeType,
+      );
+      if (!nodeEntry) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Node type '${effect.permission.nodeType}' does not exist`,
+        );
+      }
+      const actionEntry = await catalog.getActionCatalogEntry(
+        effect.permission.actionType,
+      );
+      if (!actionEntry) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Action '${effect.permission.actionType}' does not exist`,
+        );
+      }
     }
 
     if (effect.kind === "upsert_action_catalog_entry") {
+      if (
+        actionType === "define_action_contract" ||
+        actionType === "update_action_contract"
+      ) {
+        enforceActionContractSafety(effect.entry);
+      }
       const existing = await catalog.getActionCatalogEntry(
         effect.entry.actionType,
       );
@@ -496,18 +708,32 @@ export async function enforceCatalogMutationIntegrity(
           `Action '${effect.entry.actionType}' already exists`,
         );
       }
+      if (actionType === "update_action_contract" && !existing) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Action '${effect.entry.actionType}' does not exist`,
+        );
+      }
+    }
+
+    if (effect.kind === "upsert_instruction_catalog_entry") {
+      if (effect.entry.instructionId) {
+        const existing = await catalog.getInstruction?.(effect.entry.instructionId);
+        if (actionType === "update_instruction" && !existing) {
+          throw new ActionRejectedError(
+            "CATALOG_NOT_FOUND",
+            `Instruction '${effect.entry.instructionId}' does not exist`,
+          );
+        }
+      } else if (actionType === "update_instruction") {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          "update_instruction requires instructionId in merged definition",
+        );
+      }
     }
   }
 }
-
-const CATALOG_EFFECT_KINDS = new Set([
-  "upsert_node_catalog_entry",
-  "deprecate_node_catalog_entry",
-  "upsert_edge_catalog_entry",
-  "upsert_property_catalog_entry",
-  "upsert_action_catalog_entry",
-  "upsert_instruction_catalog_entry",
-]);
 
 export function enforceGateRules(
   actionEntry: ActionCatalogEntry,

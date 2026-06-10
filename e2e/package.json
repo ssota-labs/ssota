@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "test": "playwright test",
-    "test:ui": "playwright test --ui"
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright test && playwright show-report report/html"
   },
   "devDependencies": {
     "@loopos/adapter-supabase": "workspace:*",

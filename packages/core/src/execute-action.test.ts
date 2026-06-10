@@ -271,3 +271,124 @@ describe("executeAction — define_node_type", () => {
     }
   });
 });
+
+describe("executeAction — follow-up catalog meta actions", () => {
+  it("게이트: breaking update_node_type lifecycle change", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    state.actionCatalog.set("update_node_type", {
+      actionType: "update_node_type",
+      preconditions: { requiredFields: ["nodeType", "patch"] },
+      effects: [
+        {
+          kind: "upsert_node_catalog_entry",
+          entry: {
+            nodeType: "",
+            family: "document",
+            archetypeId: "",
+            typicalValueOverrides: {},
+            lifecycleTransitions: {
+              Draft: ["Active"],
+              Active: ["Archived"],
+              Archived: [],
+              Deleted: [],
+            },
+            contentGuide: null,
+          },
+        },
+      ],
+      executor: "Human",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "update_node_type",
+      input: {
+        nodeType: "Note",
+        patch: {
+          lifecycleTransitions: {
+            Draft: ["Active"],
+            Active: ["Archived"],
+            Archived: [],
+            Deleted: [],
+          },
+        },
+      },
+      executorId: "human-1",
+      executorType: "Human",
+    });
+
+    expect(result.status).toBe("gated");
+  });
+
+  it("거부: deprecate_node_type when nodes exist", async () => {
+    const node = createTestNode();
+    const state = createInMemoryState({ nodes: [node] });
+    seedTestCatalog(state);
+    state.actionCatalog.set("deprecate_node_type", {
+      actionType: "deprecate_node_type",
+      preconditions: { requiredFields: ["nodeType"] },
+      effects: [{ kind: "deprecate_node_catalog_entry", nodeType: "" }],
+      executor: "Human",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "deprecate_node_type",
+      input: { nodeType: "Note" },
+      executorId: "human-1",
+      executorType: "Human",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("CATALOG_IN_USE");
+    }
+  });
+
+  it("거부: define_action_contract with catalog effect", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    state.actionCatalog.set("define_action_contract", {
+      actionType: "define_action_contract",
+      preconditions: { requiredFields: ["definition"] },
+      effects: [{ kind: "upsert_action_catalog_entry", entry: { actionType: "", preconditions: {}, effects: [], executor: "Agent", allowedLifecycleTransitions: {}, failureMode: "reject", logPayloadSchema: {} } }],
+      executor: "Human",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "define_action_contract",
+      input: {
+        definition: {
+          actionType: "evil_action",
+          preconditions: {},
+          effects: [{ kind: "upsert_node_catalog_entry", entry: { nodeType: "Evil", family: "document", archetypeId: "doc-note", typicalValueOverrides: {}, lifecycleTransitions: { Draft: ["Active"], Active: [], Archived: [], Deleted: [] } } }],
+          executor: "Agent",
+          allowedLifecycleTransitions: {},
+          failureMode: "reject",
+          logPayloadSchema: {},
+        },
+      },
+      executorId: "human-1",
+      executorType: "Human",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("UNSAFE_EFFECT");
+    }
+  });
+});

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { EmptyState } from "@/components/studio/empty-state";
 import { PageHeader } from "@/components/studio/page-header";
 import { getActionPorts } from "@/lib/ports";
@@ -29,7 +30,12 @@ export default async function InstructionsPage() {
             <Card key={entry.id}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
-                  {entry.title}
+                  <Link
+                    href={`/studio/instructions/${entry.id}/edit`}
+                    className="hover:underline"
+                  >
+                    {entry.title}
+                  </Link>
                   <Badge variant="secondary">{entry.lifecycle}</Badge>
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">

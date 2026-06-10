@@ -115,6 +115,34 @@ Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0
 - 새 강제 규칙·포트를 추가하면 **거부 케이스 테스트가 필수다.** 통과 케이스만 있는 PR은 불완전하다.
 - "비기록 변경 0건"(Phase 1 exit criteria)은 integration에서 구조적으로 검증한다: 로그 없이 커밋되는 경로가 존재하지 않음.
 
+### E2E 리포트 (에이전트·PR 공통)
+
+E2E를 실행한 턴(특히 web/studio/e2e 변경 PR)에서는 **스크린샷·비디오·HTML 리포트**를 사용자에게 제공한다. 매번 요청받지 않아도 된다.
+
+**실행**
+
+```bash
+# dev 서버 tmux 세션이 3000/3001을 쓰면 e2e 전에 종료 (Playwright는 3100/3101 사용)
+cd e2e && pnpm exec playwright install chromium   # 최초 1회
+pnpm e2e                                          # 또는 pnpm e2e:report (HTML 뷰어)
+```
+
+**산출물 경로** (`e2e/playwright.config.ts` 기준)
+
+| 종류 | 경로 |
+|---|---|
+| HTML 리포트 | `e2e/report/html/index.html` |
+| 스크린샷 | `e2e/report/test-results/**/` |
+| 비디오 | `e2e/report/test-results/**/*.webm` |
+| trace | `e2e/report/test-results/**/trace.zip` |
+| JSON 요약 | `e2e/report/results.json` |
+
+**에이전트 응답 규칙**
+
+- E2E 실행 후 PR/작업 요약에 **주요 스크린샷 2–4장**과 **대표 플로우 비디오 1개**를 첨부한다 (`/opt/cursor/artifacts/`에 복사 후 markdown 이미지/비디오 태그로 참조).
+- 실패 시 HTML 리포트 경로와 실패 테스트명·스크린샷을 함께 남긴다.
+- `e2e/report/`는 `.gitignore` 대상 — 커밋하지 않는다.
+
 ## Code Style
 
 - TypeScript strict 모드. `any` 금지, 외부 입력은 Zod(`packages/contracts`)로 파싱.

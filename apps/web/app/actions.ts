@@ -1,13 +1,23 @@
 "use server";
 
-import { executeAction } from "@loopos/core";
+import { executeAction, previewAction } from "@loopos/core";
 import {
+  DefineActionContractInputSchema,
   DefineEdgeTypeInputSchema,
   DefineInstructionInputSchema,
   DefineNodeTypeInputSchema,
   DefinePropertyInputSchema,
+  DeprecateActionContractInputSchema,
+  DeprecateEdgeTypeInputSchema,
+  DeprecateInstructionInputSchema,
   DeprecateNodeTypeInputSchema,
+  DeprecatePropertyInputSchema,
+  UpdateActionContractInputSchema,
+  UpdateEdgeTypeInputSchema,
+  UpdateInstructionInputSchema,
   UpdateNodeTypeInputSchema,
+  UpdatePropertyInputSchema,
+  UpdatePropertyPermissionInputSchema,
 } from "@loopos/contracts";
 import type { ExecuteActionResult } from "@loopos/contracts";
 import { revalidatePath } from "next/cache";
@@ -165,4 +175,87 @@ export async function defineInstructionAction(input: Record<string, unknown>) {
     "/studio/instructions",
     "/log",
   ]);
+}
+
+export async function updateEdgeTypeAction(input: Record<string, unknown>) {
+  const parsed = UpdateEdgeTypeInputSchema.parse(input);
+  return runMetaAction("update_edge_type", parsed, ["/studio/edge-types", "/log"]);
+}
+
+export async function deprecateEdgeTypeAction(input: Record<string, unknown>) {
+  const parsed = DeprecateEdgeTypeInputSchema.parse(input);
+  return runMetaAction("deprecate_edge_type", parsed, ["/studio/edge-types", "/log"]);
+}
+
+export async function updatePropertyAction(input: Record<string, unknown>) {
+  const parsed = UpdatePropertyInputSchema.parse(input);
+  return runMetaAction("update_property", parsed, ["/studio/properties", "/log"]);
+}
+
+export async function deprecatePropertyAction(input: Record<string, unknown>) {
+  const parsed = DeprecatePropertyInputSchema.parse(input);
+  return runMetaAction("deprecate_property", parsed, ["/studio/properties", "/log"]);
+}
+
+export async function updatePropertyPermissionAction(
+  input: Record<string, unknown>,
+) {
+  const parsed = UpdatePropertyPermissionInputSchema.parse(input);
+  return runMetaAction("update_property_permission", parsed, ["/log"]);
+}
+
+export async function defineActionContractAction(input: Record<string, unknown>) {
+  const parsed = DefineActionContractInputSchema.parse(input);
+  return runMetaAction("define_action_contract", parsed, [
+    "/studio/actions",
+    "/log",
+  ]);
+}
+
+export async function updateActionContractAction(input: Record<string, unknown>) {
+  const parsed = UpdateActionContractInputSchema.parse(input);
+  return runMetaAction("update_action_contract", parsed, [
+    "/studio/actions",
+    "/log",
+  ]);
+}
+
+export async function deprecateActionContractAction(
+  input: Record<string, unknown>,
+) {
+  const parsed = DeprecateActionContractInputSchema.parse(input);
+  return runMetaAction("deprecate_action_contract", parsed, [
+    "/studio/actions",
+    "/log",
+  ]);
+}
+
+export async function updateInstructionAction(input: Record<string, unknown>) {
+  const parsed = UpdateInstructionInputSchema.parse(input);
+  return runMetaAction("update_instruction", parsed, [
+    "/studio/instructions",
+    "/log",
+  ]);
+}
+
+export async function deprecateInstructionAction(input: Record<string, unknown>) {
+  const parsed = DeprecateInstructionInputSchema.parse(input);
+  return runMetaAction("deprecate_instruction", parsed, [
+    "/studio/instructions",
+    "/log",
+  ]);
+}
+
+export async function previewActionContractAction(input: Record<string, unknown>) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const parsed = DefineActionContractInputSchema.parse(input);
+  const ports = getActionPorts();
+  return previewAction(ports, {
+    actionType: "define_action_contract",
+    input: parsed,
+    executorId: user.id,
+    executorType: "Human",
+  });
 }
