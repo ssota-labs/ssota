@@ -10,9 +10,14 @@
     "./typescript/nextjs": "./typescript/nextjs.json",
     "./typescript/nextjs.json": "./typescript/nextjs.json",
     "./eslint/base": "./eslint/base.js",
-    "./vitest/node": "./vitest/node.mjs"
+    "./eslint/base.js": "./eslint/base.js",
+    "./vitest/node": "./vitest/node.mjs",
+    "./vitest/node.mjs": "./vitest/node.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "^9.28.0",
+    "eslint": "^9.28.0",
+    "typescript-eslint": "^8.34.0",
     "vitest": "^3.2.4"
   }
 }
