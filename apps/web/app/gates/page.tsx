@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { approveGateAction } from "@/app/actions";
+import { approveGateFormAction } from "@/app/actions";
 import { getActionPorts } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -28,12 +28,9 @@ export default async function GatesPage() {
                   </pre>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <form
-                    action={async () => {
-                      "use server";
-                      await approveGateAction(gate.id, true);
-                    }}
-                  >
+                  <form action={approveGateFormAction}>
+                    <input type="hidden" name="gateId" value={gate.id} />
+                    <input type="hidden" name="approved" value="true" />
                     <button
                       type="submit"
                       className="rounded bg-green-600 px-3 py-1.5 text-sm text-white"
@@ -41,12 +38,9 @@ export default async function GatesPage() {
                       승인
                     </button>
                   </form>
-                  <form
-                    action={async () => {
-                      "use server";
-                      await approveGateAction(gate.id, false);
-                    }}
-                  >
+                  <form action={approveGateFormAction}>
+                    <input type="hidden" name="gateId" value={gate.id} />
+                    <input type="hidden" name="approved" value="false" />
                     <button
                       type="submit"
                       className="rounded border px-3 py-1.5 text-sm"

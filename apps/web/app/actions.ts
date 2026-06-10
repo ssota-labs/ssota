@@ -30,6 +30,14 @@ export async function approveGateAction(
   return result;
 }
 
+export async function approveGateFormAction(formData: FormData) {
+  const gateId = formData.get("gateId");
+  const approved = formData.get("approved") === "true";
+  if (typeof gateId !== "string") throw new Error("gateId required");
+
+  await approveGateAction(gateId, approved);
+}
+
 export async function signOutAction() {
   const { createSupabaseServerClient } = await import("@/lib/supabase/server");
   const supabase = await createSupabaseServerClient();
