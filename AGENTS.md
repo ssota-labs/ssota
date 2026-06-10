@@ -183,13 +183,18 @@ export PATH="$NVM_DIR/versions/node/v24.16.0/bin:$PATH"
 
 ### Docker & Supabase (세션마다)
 
-로컬 Supabase는 Docker가 필요하다. 최초 1회 VM 스냅샷에 Docker CE + `fuse-overlayfs` + `supabase` CLI가 설치되어 있어야 한다. 매 Cloud Agent 세션 시작 시:
+로컬 Supabase는 Docker가 필요하다. Cursor Cloud VM에서는 기본 `iptables-nft`/`overlayfs` 조합이 실패할 수 있다(`TABLE_ADD failed`, whiteout `operation not permitted`). 매 Cloud Agent 세션 시작 시 Docker를 **legacy iptables + vfs storage driver**로 띄운다:
 
 ```bash
-sudo dockerd >/tmp/dockerd.log 2>&1 &   # 이미 떠 있으면 생략
-sudo chmod 666 /var/run/docker.sock     # 권한 거부 시
-cd /workspace && supabase start         # 최초 pull 후 ~1–2분
-pnpm db:migrate && pnpm db:seed         # DB가 비어 있을 때
+sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
+sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+sudo pkill dockerd || true
+sudo pkill containerd || true
+sudo mkdir -p /tmp/docker-vfs /tmp/docker-exec
+sudo dockerd --storage-driver=vfs --data-root=/tmp/docker-vfs --exec-root=/tmp/docker-exec --host=unix:///var/run/docker.sock >/tmp/dockerd-vfs.log 2>&1 &
+sudo chmod 666 /var/run/docker.sock
+cd /workspace && supabase start
+pnpm db:migrate && pnpm db:seed
 ```
 
 `apps/web/.env.local`, `apps/mcp/.env.local`은 `.env.example` 복사본이면 로컬 Supabase 기본 키로 동작한다.
