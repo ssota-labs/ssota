@@ -111,7 +111,8 @@ Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0
 | E2E | `pnpm e2e` | **smoke 계정** | 콘솔(로그인→게이트 승인→로그) + MCP HTTP(Bearer→initialize→execute_action→거부 케이스) |
 
 - **Smoke 계정**: `smoke@loopos.test` — 시드 단계에서 Auth Admin API로 생성되는 전용 테스트 사용자. integration·e2e는 반드시 이 계정으로만 인증한다. 실제 사용자 계정이나 service key 우회로 테스트하지 않는다.
-- Integration·e2e 실행 전 `supabase start`가 떠 있어야 한다.
+- Integration·e2e 실행 전 `supabase start`가 떠 있어야 한다. `pnpm e2e`는 **global setup**에서 smoke 계정 로그인을 검증하고, 실패 시 `pnpm db:migrate` + `pnpm db:seed`를 자동 실행한다 (`e2e/global-setup.ts`). 최초 1회는 `pnpm e2e:prepare` (= supabase start + migrate + seed)로 준비한다.
+- E2E 로그인은 `e2e/helpers/auth.ts`의 `loginAsSmoke()`를 사용한다 — 헤더의「로그인」링크와 폼 submit 버튼 이름이 같아 `getByRole('button', { name: '로그인' })` 단독 사용 시 strict mode violation이 난다.
 - 새 강제 규칙·포트를 추가하면 **거부 케이스 테스트가 필수다.** 통과 케이스만 있는 PR은 불완전하다.
 - "비기록 변경 0건"(Phase 1 exit criteria)은 integration에서 구조적으로 검증한다: 로그 없이 커밋되는 경로가 존재하지 않음.
 

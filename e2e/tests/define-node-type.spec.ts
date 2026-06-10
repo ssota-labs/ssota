@@ -1,9 +1,6 @@
 import { test, expect } from "@playwright/test";
-import {
-  SMOKE_EMAIL,
-  SMOKE_PASSWORD,
-} from "@loopos/adapter-supabase";
 import { getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
+import { loginAsSmoke } from "../helpers/auth";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
@@ -13,14 +10,7 @@ test.describe("LoopOS define_node_type vertical slice", () => {
     request,
   }) => {
     const nodeType = `E2EType_${Date.now()}`;
-    let token: string;
-
-    try {
-      token = await getSmokeAccessToken();
-    } catch {
-      test.skip(true, "Supabase smoke auth unavailable");
-      return;
-    }
+    const token = await getSmokeAccessToken();
 
     const mcpResult = (await mcpToolCall(request, mcpUrl, token, "execute_action", {
       actionType: "define_node_type",
@@ -44,14 +34,7 @@ test.describe("LoopOS define_node_type vertical slice", () => {
     expect(mcpResult.status).toBe("gated");
     expect(mcpResult.gateId).toBeTruthy();
 
-    await page.goto("/login");
-    await page.getByPlaceholder("email").fill(SMOKE_EMAIL);
-    await page.getByPlaceholder("password").fill(SMOKE_PASSWORD);
-    await page.getByRole("button", { name: "로그인" }).click();
-
-    await expect(page.getByRole("heading", { name: "LoopOS Console" })).toBeVisible({
-      timeout: 15_000,
-    });
+    await loginAsSmoke(page);
 
     await page.getByRole("navigation").getByRole("link", { name: "Human Gate" }).click();
     await expect(page.getByText("define_node_type")).toBeVisible({ timeout: 10_000 });
@@ -69,14 +52,7 @@ test.describe("LoopOS define_node_type vertical slice", () => {
   test("Human web form define_node_type committed", async ({ page }) => {
     const nodeType = `WebType_${Date.now()}`;
 
-    await page.goto("/login");
-    await page.getByPlaceholder("email").fill(SMOKE_EMAIL);
-    await page.getByPlaceholder("password").fill(SMOKE_PASSWORD);
-    await page.getByRole("button", { name: "로그인" }).click();
-
-    await expect(page.getByRole("heading", { name: "LoopOS Console" })).toBeVisible({
-      timeout: 15_000,
-    });
+    await loginAsSmoke(page);
 
     await page.goto("/studio/node-types/new");
     await page.getByLabel("Node Type").fill(nodeType);
