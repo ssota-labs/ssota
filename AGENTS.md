@@ -70,6 +70,35 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 - 패키지 추가는 `pnpm add <pkg> --filter <workspace>` 사용.
 - 스키마 변경 시: `packages/adapter-supabase`에서 Drizzle 스키마 수정 → `pnpm db:generate`로 마이그레이션 생성 → `pnpm db:migrate`.
 
+## MVP 마일스톤 커밋 (에이전트·개발자 공통)
+
+Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0–M6) 하나가 끝날 때마다** git 커밋을 남긴다. 한 PR에 여러 마일스톤을 섞지 않는다.
+
+| 마일스톤 | 접두사 | 포함 범위 | 커밋 전 확인 |
+|---|---|---|---|
+| M0 | `[infra]` | turbo/pnpm/nvm, `packages/config`, `supabase/config.toml`, 루트 `package.json`·`tsconfig` | `pnpm install` |
+| M1 | `[core]` | `packages/contracts`, `packages/core` | `pnpm test --filter core` |
+| M2 | `[adapter]` | `packages/adapter-supabase` (+ `drizzle/`) | `pnpm --filter @loopos/adapter-supabase build` |
+| M3 | `[mcp]` | `apps/mcp` | `pnpm --filter mcp typecheck` |
+| M4 | `[web]` | `apps/web` | `pnpm --filter web typecheck` |
+| M5 | `[e2e]` | `e2e/` | `pnpm e2e` (Supabase·앱 기동 후) |
+| M6 | `[dogfood]` | `scripts/m6-notion-migration.ts`, `migrate:notion` 스크립트 | `pnpm migrate:notion` |
+
+**커밋 메시지 형식**
+
+```
+[infra|core|adapter|mcp|web|e2e|dogfood] why 중심 한 줄
+
+- M<n> 완료: …
+```
+
+**규칙**
+
+- 마일스톤 완료 직후 **해당 마일스톤 파일만** 스테이징한다.
+- 커밋 전 해당 마일스톤의 **최소 검증 명령**을 실행하고, 실패 시 커밋하지 않는다.
+- `.env.local`·시크릿·`node_modules`·`dist`는 커밋하지 않는다.
+- plan 파일의 todo 상태만 유지하고, **커밋 정책 SSOT는 AGENTS.md(이 섹션)** 이다.
+
 ## Testing Instructions
 
 테스트는 3층이며, 층마다 인증 방식이 다르다.
