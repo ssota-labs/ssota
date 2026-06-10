@@ -1,5 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const webPort = process.env.WEB_PORT ?? "3100";
+const mcpPort = process.env.MCP_PORT ?? "3101";
+const webUrl = process.env.WEB_URL ?? `http://127.0.0.1:${webPort}`;
+const mcpUrl = process.env.MCP_URL ?? `http://127.0.0.1:${mcpPort}`;
+
+process.env.MCP_URL ??= mcpUrl;
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: false,
@@ -8,22 +15,30 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: process.env.WEB_URL ?? "http://127.0.0.1:3000",
+    baseURL: webUrl,
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {
-      command: "pnpm --filter web dev",
-      url: "http://127.0.0.1:3000",
-      reuseExistingServer: !process.env.CI,
+      command: `pnpm --filter web exec next dev --port ${webPort}`,
+      url: webUrl,
+      reuseExistingServer: false,
       timeout: 120_000,
+      env: {
+        ...process.env,
+        PORT: webPort,
+      },
     },
     {
-      command: "pnpm --filter mcp dev",
-      url: "http://127.0.0.1:3001",
-      reuseExistingServer: !process.env.CI,
+      command: `pnpm --filter mcp exec next dev --port ${mcpPort}`,
+      url: mcpUrl,
+      reuseExistingServer: false,
       timeout: 120_000,
+      env: {
+        ...process.env,
+        PORT: mcpPort,
+      },
     },
   ],
 });
