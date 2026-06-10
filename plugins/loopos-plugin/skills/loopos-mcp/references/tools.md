@@ -40,7 +40,7 @@ Use:
 
 This is the only write path. All LoopOS mutations must flow through it, including document creation, note creation, catalog changes, instruction changes, and gate-related actions.
 
-Do not bypass `execute_action` with database writes, internal APIs, adapter calls, or direct CRUD.
+LoopOS MCP is the only mutation interface. Do not look for alternate write APIs outside MCP.
 
 ## Gates
 
