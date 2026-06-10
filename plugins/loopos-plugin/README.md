@@ -6,7 +6,7 @@ Phase 4 keeps this plugin inside the LoopOS monorepo at `plugins/loopos-plugin/`
 
 ## What this plugin provides
 
-- A portable `loopos-mcp` Agent Skill.
+- A portable `loopos-mcp` Agent Skill (**Root Runtime Protocol** — intent routing, MCP safety, self-check).
 - Cursor plugin metadata and MCP config examples.
 - Codex metadata for MCP dependency discovery.
 - Claude packaging notes for reusing the same skill core.
@@ -25,6 +25,7 @@ plugins/loopos-plugin/
       SKILL.md
       references/
         auth.md
+        routing.md
         tools.md
         workflows.md
         result-handling.md
