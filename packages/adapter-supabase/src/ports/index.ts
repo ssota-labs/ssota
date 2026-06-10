@@ -1,5 +1,12 @@
 import { eq, and, or, sql } from "drizzle-orm";
-import type { Effect, GateStatus, LifecycleStatus } from "@loopos/contracts";
+import type {
+  ActionScope,
+  Effect,
+  GateStatus,
+  InstructionScope,
+  InstructionWorkflowStep,
+  LifecycleStatus,
+} from "@loopos/contracts";
 import type {
   ActionCommitPort,
   ActionLogRecord,
@@ -37,6 +44,63 @@ function mapNode(row: typeof schema.nodes.$inferSelect): Node {
   };
 }
 
+function mapNodeCatalogEntry(
+  row: typeof schema.nodeCatalog.$inferSelect,
+): NodeCatalogEntry {
+  return {
+    nodeType: row.nodeType,
+    family: row.family,
+    archetypeId: row.archetypeId,
+    typicalValueOverrides: row.typicalValueOverrides,
+    lifecycleTransitions: row.lifecycleTransitions as Record<
+      LifecycleStatus,
+      LifecycleStatus[]
+    >,
+    contentGuide: row.contentGuide,
+    propertyRefs: row.propertyRefs ?? [],
+    allowedActionRefs: row.allowedActionRefs ?? [],
+  };
+}
+
+function mapActionCatalogEntry(
+  row: typeof schema.actionCatalog.$inferSelect,
+): ActionCatalogEntry {
+  return {
+    actionType: row.actionType,
+    scope: row.scope as ActionScope,
+    preconditions: row.preconditions,
+    effects: row.effects as Effect[],
+    executor: row.executor,
+    allowedLifecycleTransitions: row.allowedLifecycleTransitions as Record<
+      string,
+      LifecycleStatus[]
+    >,
+    failureMode: row.failureMode,
+    idempotencyRule: row.idempotencyRule,
+    logPayloadSchema: row.logPayloadSchema,
+  };
+}
+
+function mapInstruction(row: typeof schema.instructions.$inferSelect): Instruction {
+  return {
+    id: row.id,
+    title: row.title,
+    triggerPatterns: row.triggerPatterns,
+    applicableNodeTypes: row.applicableNodeTypes,
+    requiredActions: row.requiredActions,
+    optionalActions: row.optionalActions,
+    lifecycle: row.lifecycle as LifecycleStatus,
+    body: row.body,
+    scope: row.scope as InstructionScope,
+    triggers: row.triggers,
+    workflowSteps: row.workflowSteps as InstructionWorkflowStep[],
+    allowedActions: row.allowedActions,
+    outputContract: row.outputContract,
+    gatePolicy: row.gatePolicy,
+    completionCriteria: row.completionCriteria,
+  };
+}
+
 export function createCatalogPort(db: Db): CatalogPort {
   return {
     async getNodeCatalogEntry(nodeType) {
@@ -47,35 +111,12 @@ export function createCatalogPort(db: Db): CatalogPort {
         .limit(1);
       const row = rows[0];
       if (!row) return null;
-      return {
-        nodeType: row.nodeType,
-        family: row.family,
-        archetypeId: row.archetypeId,
-        typicalValueOverrides: row.typicalValueOverrides,
-        lifecycleTransitions: row.lifecycleTransitions as Record<
-          LifecycleStatus,
-          LifecycleStatus[]
-        >,
-        contentGuide: row.contentGuide,
-      } satisfies NodeCatalogEntry;
+      return mapNodeCatalogEntry(row);
     },
 
     async listNodeCatalogEntries() {
       const rows = await db.select().from(schema.nodeCatalog);
-      return rows.map(
-        (row) =>
-          ({
-            nodeType: row.nodeType,
-            family: row.family,
-            archetypeId: row.archetypeId,
-            typicalValueOverrides: row.typicalValueOverrides,
-            lifecycleTransitions: row.lifecycleTransitions as Record<
-              LifecycleStatus,
-              LifecycleStatus[]
-            >,
-            contentGuide: row.contentGuide,
-          }) satisfies NodeCatalogEntry,
-      );
+      return rows.map(mapNodeCatalogEntry);
     },
 
     async getEdgeCatalogEntry(edgeType) {
@@ -146,39 +187,12 @@ export function createCatalogPort(db: Db): CatalogPort {
         .limit(1);
       const row = rows[0];
       if (!row) return null;
-      return {
-        actionType: row.actionType,
-        preconditions: row.preconditions,
-        effects: row.effects as Effect[],
-        executor: row.executor,
-        allowedLifecycleTransitions: row.allowedLifecycleTransitions as Record<
-          string,
-          LifecycleStatus[]
-        >,
-        failureMode: row.failureMode,
-        idempotencyRule: row.idempotencyRule,
-        logPayloadSchema: row.logPayloadSchema,
-      };
+      return mapActionCatalogEntry(row);
     },
 
     async listActionCatalogEntries() {
       const rows = await db.select().from(schema.actionCatalog);
-      return rows.map(
-        (row) =>
-          ({
-            actionType: row.actionType,
-            preconditions: row.preconditions,
-            effects: row.effects as Effect[],
-            executor: row.executor,
-            allowedLifecycleTransitions: row.allowedLifecycleTransitions as Record<
-              string,
-              LifecycleStatus[]
-            >,
-            failureMode: row.failureMode,
-            idempotencyRule: row.idempotencyRule,
-            logPayloadSchema: row.logPayloadSchema,
-          }) satisfies ActionCatalogEntry,
-      );
+      return rows.map(mapActionCatalogEntry);
     },
 
     async getArchetype(archetypeId) {
@@ -255,19 +269,7 @@ export function createCatalogPort(db: Db): CatalogPort {
         )
         .limit(limit);
 
-      return rows.map(
-        (row) =>
-          ({
-            id: row.id,
-            title: row.title,
-            triggerPatterns: row.triggerPatterns,
-            applicableNodeTypes: row.applicableNodeTypes,
-            requiredActions: row.requiredActions,
-            optionalActions: row.optionalActions,
-            lifecycle: row.lifecycle as LifecycleStatus,
-            body: row.body,
-          }) satisfies Instruction,
-      );
+      return rows.map(mapInstruction);
     },
 
     async listInstructions(input) {
@@ -275,19 +277,7 @@ export function createCatalogPort(db: Db): CatalogPort {
         .select()
         .from(schema.instructions)
         .limit(input?.limit ?? 100);
-      return rows.map(
-        (row) =>
-          ({
-            id: row.id,
-            title: row.title,
-            triggerPatterns: row.triggerPatterns,
-            applicableNodeTypes: row.applicableNodeTypes,
-            requiredActions: row.requiredActions,
-            optionalActions: row.optionalActions,
-            lifecycle: row.lifecycle as LifecycleStatus,
-            body: row.body,
-          }) satisfies Instruction,
-      );
+      return rows.map(mapInstruction);
     },
 
     async getInstruction(instructionId) {
@@ -298,16 +288,7 @@ export function createCatalogPort(db: Db): CatalogPort {
         .limit(1);
       const row = rows[0];
       if (!row) return null;
-      return {
-        id: row.id,
-        title: row.title,
-        triggerPatterns: row.triggerPatterns,
-        applicableNodeTypes: row.applicableNodeTypes,
-        requiredActions: row.requiredActions,
-        optionalActions: row.optionalActions,
-        lifecycle: row.lifecycle as LifecycleStatus,
-        body: row.body,
-      } satisfies Instruction;
+      return mapInstruction(row);
     },
   };
 }
@@ -539,6 +520,8 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         typicalValueOverrides: effect.entry.typicalValueOverrides,
         lifecycleTransitions: effect.entry.lifecycleTransitions,
         contentGuide: effect.entry.contentGuide ?? null,
+        propertyRefs: effect.entry.propertyRefs ?? [],
+        allowedActionRefs: effect.entry.allowedActionRefs ?? [],
       })
       .onConflictDoUpdate({
         target: schema.nodeCatalog.nodeType,
@@ -548,6 +531,8 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
           typicalValueOverrides: effect.entry.typicalValueOverrides,
           lifecycleTransitions: effect.entry.lifecycleTransitions,
           contentGuide: effect.entry.contentGuide ?? null,
+          propertyRefs: effect.entry.propertyRefs ?? [],
+          allowedActionRefs: effect.entry.allowedActionRefs ?? [],
         },
       });
   } else if (effect.kind === "deprecate_node_catalog_entry") {
@@ -646,6 +631,7 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
       .insert(schema.actionCatalog)
       .values({
         actionType: effect.entry.actionType,
+        scope: effect.entry.scope,
         preconditions: effect.entry.preconditions,
         effects: effect.entry.effects,
         executor: effect.entry.executor,
@@ -658,6 +644,7 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         target: schema.actionCatalog.actionType,
         set: {
           preconditions: effect.entry.preconditions,
+          scope: effect.entry.scope,
           effects: effect.entry.effects,
           executor: effect.entry.executor,
           allowedLifecycleTransitions: effect.entry.allowedLifecycleTransitions,
@@ -678,6 +665,13 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
           optionalActions: effect.entry.optionalActions,
           lifecycle: effect.entry.lifecycle,
           body: effect.entry.body,
+          scope: effect.entry.scope,
+          triggers: effect.entry.triggers,
+          workflowSteps: effect.entry.workflowSteps,
+          allowedActions: effect.entry.allowedActions,
+          outputContract: effect.entry.outputContract,
+          gatePolicy: effect.entry.gatePolicy,
+          completionCriteria: effect.entry.completionCriteria ?? null,
         })
         .where(eq(schema.instructions.id, effect.entry.instructionId));
     } else {
@@ -689,6 +683,13 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         optionalActions: effect.entry.optionalActions,
         lifecycle: effect.entry.lifecycle,
         body: effect.entry.body,
+        scope: effect.entry.scope,
+        triggers: effect.entry.triggers,
+        workflowSteps: effect.entry.workflowSteps,
+        allowedActions: effect.entry.allowedActions,
+        outputContract: effect.entry.outputContract,
+        gatePolicy: effect.entry.gatePolicy,
+        completionCriteria: effect.entry.completionCriteria ?? null,
       });
     }
   }

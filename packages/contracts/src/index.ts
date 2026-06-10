@@ -30,6 +30,24 @@ export const PermissionTypeSchema = z.enum(["allow", "deny"]);
 
 export type PermissionType = z.infer<typeof PermissionTypeSchema>;
 
+export const ActionScopeSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("global") }),
+  z.object({ kind: z.literal("node_type"), nodeType: z.string().min(1) }),
+  z.object({ kind: z.literal("edge_type"), edgeType: z.string().min(1) }),
+  z.object({
+    kind: z.literal("property"),
+    nodeType: z.string().min(1),
+    propertyKey: z.string().min(1),
+  }),
+  z.object({
+    kind: z.literal("instruction"),
+    instructionId: z.string().uuid().optional(),
+    title: z.string().min(1).optional(),
+  }),
+]);
+
+export type ActionScope = z.infer<typeof ActionScopeSchema>;
+
 export const GateStatusSchema = z.enum(["pending", "approved", "rejected"]);
 
 export type GateStatus = z.infer<typeof GateStatusSchema>;
@@ -177,6 +195,7 @@ export type UpdatePropertyPermissionInput = z.infer<
 
 export const ActionContractDefinitionSchema = z.object({
   actionType: z.string().min(1),
+  scope: ActionScopeSchema.default({ kind: "global" }),
   preconditions: z.record(z.unknown()).default({}),
   effects: z.array(z.record(z.unknown())).default([]),
   executor: ExecutorTypeSchema,
@@ -226,6 +245,33 @@ export type DeprecateActionContractInput = z.infer<
   typeof DeprecateActionContractInputSchema
 >;
 
+export const InstructionScopeSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("global") }),
+  z.object({ kind: z.literal("node_type"), nodeType: z.string().min(1) }),
+  z.object({ kind: z.literal("edge_type"), edgeType: z.string().min(1) }),
+  z.object({
+    kind: z.literal("property"),
+    nodeType: z.string().min(1),
+    propertyKey: z.string().min(1),
+  }),
+  z.object({ kind: z.literal("action"), actionType: z.string().min(1) }),
+]);
+
+export type InstructionScope = z.infer<typeof InstructionScopeSchema>;
+
+export const InstructionWorkflowStepSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  actionRefs: z.array(z.string()).default([]),
+  output: z.string().optional(),
+  gate: z.boolean().default(false),
+});
+
+export type InstructionWorkflowStep = z.infer<
+  typeof InstructionWorkflowStepSchema
+>;
+
 export const InstructionDefinitionSchema = z.object({
   title: z.string().min(1),
   triggerPatterns: z.array(z.string()).min(1),
@@ -234,6 +280,13 @@ export const InstructionDefinitionSchema = z.object({
   optionalActions: z.array(z.string()).default([]),
   lifecycle: LifecycleStatusSchema.default("Active"),
   body: z.string().min(1),
+  scope: InstructionScopeSchema.default({ kind: "global" }),
+  triggers: z.array(z.string()).default([]),
+  workflowSteps: z.array(InstructionWorkflowStepSchema).default([]),
+  allowedActions: z.array(z.string()).default([]),
+  outputContract: z.record(z.unknown()).default({}),
+  gatePolicy: z.record(z.unknown()).default({}),
+  completionCriteria: z.string().nullable().optional(),
 });
 
 export type InstructionDefinition = z.infer<typeof InstructionDefinitionSchema>;

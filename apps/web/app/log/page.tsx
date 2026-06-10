@@ -27,6 +27,8 @@ export default async function LogPage() {
             <TableRow>
               <TableHead>시간</TableHead>
               <TableHead>액션</TableHead>
+              <TableHead>scope</TableHead>
+              <TableHead>instruction</TableHead>
               <TableHead>결과</TableHead>
               <TableHead>실행자</TableHead>
             </TableRow>
@@ -38,6 +40,12 @@ export default async function LogPage() {
                   {entry.createdAt.toISOString()}
                 </TableCell>
                 <TableCell className="font-medium">{entry.actionType}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {formatScope(entry.metadata.scope ?? entry.input.scope)}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {String(entry.metadata.instructionRunId ?? entry.metadata.instructionId ?? "-")}
+                </TableCell>
                 <TableCell>
                   <OutcomeBadge outcome={entry.outcome} />
                 </TableCell>
@@ -51,4 +59,19 @@ export default async function LogPage() {
       </div>
     </div>
   );
+}
+
+function formatScope(scope: unknown) {
+  if (!scope || typeof scope !== "object") return "-";
+  const value = scope as Record<string, unknown>;
+  if (value.kind === "node_type") return `node:${String(value.nodeType)}`;
+  if (value.kind === "edge_type") return `edge:${String(value.edgeType)}`;
+  if (value.kind === "property") {
+    return `property:${String(value.nodeType)}.${String(value.propertyKey)}`;
+  }
+  if (value.kind === "instruction") {
+    return `instruction:${String(value.title ?? value.instructionId ?? "*")}`;
+  }
+  if (value.kind === "global") return "global";
+  return "-";
 }

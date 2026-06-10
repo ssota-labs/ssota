@@ -126,6 +126,8 @@ describe("adapter-supabase integration", () => {
               Deleted: [],
             },
             contentGuide: "Integration test node type",
+            propertyRefs: ["title"],
+            allowedActionRefs: ["create_document"],
           },
         },
         executorId: smokeUserId,
@@ -137,12 +139,57 @@ describe("adapter-supabase integration", () => {
       const entry = await ports.catalog.getNodeCatalogEntry(nodeType);
       expect(entry).toBeTruthy();
       expect(entry?.contentGuide).toBe("Integration test node type");
+      expect(entry?.propertyRefs).toContain("title");
+      expect(entry?.allowedActionRefs).toContain("create_document");
 
       const log = await ports.commit.getActionLog({
         actionType: "define_node_type",
         limit: 1,
       });
       expect(log[0]?.outcome).toBe("committed");
+    },
+  );
+
+  it.runIf(runIfSupabase)(
+    "define_instruction workflow fields round-trip",
+    async () => {
+      const title = `Workflow ${Date.now()}`;
+      const result = await executeAction(ports, {
+        actionType: "define_instruction",
+        input: {
+          definition: {
+            title,
+            triggerPatterns: ["manual"],
+            applicableNodeTypes: ["Document"],
+            requiredActions: ["create_document"],
+            optionalActions: ["promote_document"],
+            lifecycle: "Active",
+            body: "Gather context, create a document, and report the result.",
+            scope: { kind: "node_type", nodeType: "Document" },
+            triggers: ["task_assigned"],
+            workflowSteps: [
+              {
+                id: "gather_context",
+                title: "Gather context",
+                actionRefs: ["create_document"],
+              },
+            ],
+            allowedActions: ["create_document", "promote_document"],
+            outputContract: { format: "markdown" },
+            gatePolicy: { catalogChanges: "always" },
+            completionCriteria: "Document draft exists",
+          },
+        },
+        executorId: smokeUserId,
+        executorType: "Human",
+      });
+
+      expect(result.status).toBe("committed");
+      const instructions = await ports.catalog.listInstructions({ limit: 100 });
+      const created = instructions.find((instruction) => instruction.title === title);
+      expect(created?.scope).toEqual({ kind: "node_type", nodeType: "Document" });
+      expect(created?.workflowSteps[0]?.id).toBe("gather_context");
+      expect(created?.allowedActions).toContain("create_document");
     },
   );
 

@@ -146,6 +146,8 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
         LifecycleStatus[]
       >,
       contentGuide: effect.entry.contentGuide ?? null,
+      propertyRefs: effect.entry.propertyRefs ?? [],
+      allowedActionRefs: effect.entry.allowedActionRefs ?? [],
     });
   } else if (effect.kind === "deprecate_node_catalog_entry") {
     state.nodeCatalog.delete(effect.nodeType);
@@ -188,6 +190,7 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
   } else if (effect.kind === "upsert_action_catalog_entry") {
     state.actionCatalog.set(effect.entry.actionType, {
       actionType: effect.entry.actionType,
+      scope: effect.entry.scope,
       preconditions: effect.entry.preconditions,
       effects: effect.entry.effects as Effect[],
       executor: effect.entry.executor,
@@ -210,6 +213,13 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
         optionalActions: effect.entry.optionalActions,
         lifecycle: effect.entry.lifecycle,
         body: effect.entry.body,
+        scope: effect.entry.scope,
+        triggers: effect.entry.triggers,
+        workflowSteps: effect.entry.workflowSteps,
+        allowedActions: effect.entry.allowedActions,
+        outputContract: effect.entry.outputContract,
+        gatePolicy: effect.entry.gatePolicy,
+        completionCriteria: effect.entry.completionCriteria ?? null,
       };
       if (idx >= 0) {
         state.instructions[idx] = next;
@@ -226,6 +236,13 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
         optionalActions: effect.entry.optionalActions,
         lifecycle: effect.entry.lifecycle,
         body: effect.entry.body,
+        scope: effect.entry.scope,
+        triggers: effect.entry.triggers,
+        workflowSteps: effect.entry.workflowSteps,
+        allowedActions: effect.entry.allowedActions,
+        outputContract: effect.entry.outputContract,
+        gatePolicy: effect.entry.gatePolicy,
+        completionCriteria: effect.entry.completionCriteria ?? null,
       });
     }
   }
@@ -429,10 +446,13 @@ export function seedTestCatalog(state: InMemoryState): void {
       Deleted: [],
     },
     contentGuide: "Free-form note content",
+    propertyRefs: [],
+    allowedActionRefs: [],
   });
 
   state.actionCatalog.set("create_note", {
     actionType: "create_note",
+    scope: { kind: "global" },
     preconditions: { requiredFields: ["content"] },
     effects: [
       {
@@ -456,6 +476,7 @@ export function seedTestCatalog(state: InMemoryState): void {
 
   state.actionCatalog.set("promote_note", {
     actionType: "promote_note",
+    scope: { kind: "global" },
     preconditions: { requiresExistingNode: true, requiredFields: ["nodeId"] },
     effects: [
       {
@@ -473,6 +494,7 @@ export function seedTestCatalog(state: InMemoryState): void {
 
   state.actionCatalog.set("approve_gate", {
     actionType: "approve_gate",
+    scope: { kind: "global" },
     preconditions: { requiredFields: ["gateId", "status"] },
     effects: [
       {
@@ -497,6 +519,7 @@ export function seedTestCatalog(state: InMemoryState): void {
 
   state.actionCatalog.set("define_node_type", {
     actionType: "define_node_type",
+    scope: { kind: "global" },
     preconditions: { requiredFields: ["definition"] },
     effects: [
       {
@@ -508,6 +531,8 @@ export function seedTestCatalog(state: InMemoryState): void {
           typicalValueOverrides: {},
           lifecycleTransitions: defaultTransitions,
           contentGuide: null,
+          propertyRefs: [],
+          allowedActionRefs: [],
         },
       },
     ],
@@ -527,6 +552,13 @@ export function seedTestCatalog(state: InMemoryState): void {
     valueConstraint: null,
     requiresHumanGate: false,
     status: "active",
+  });
+
+  state.propertyCatalog.set("title", {
+    propertyKey: "title",
+    valueType: "string",
+    constraints: { maxLength: 500 },
+    owningActions: ["create_note"],
   });
 }
 

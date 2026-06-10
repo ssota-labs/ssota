@@ -9,6 +9,15 @@ test.describe("LoopOS Console", () => {
     await expect(page.getByText("Note", { exact: true }).first()).toBeVisible();
   });
 
+  test("smoke: Context Graph 페이지", async ({ page }) => {
+    await loginAsSmoke(page);
+    await page.getByRole("navigation").getByRole("link", { name: "Context Graph" }).click();
+    await expect(page.getByRole("heading", { name: "Context Graph" })).toBeVisible();
+    await page.getByRole("link", { name: "Nodes", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Nodes" })).toBeVisible();
+    await expect(page.getByText("Note")).toBeVisible();
+  });
+
   test("smoke: Studio 페이지", async ({ page }) => {
     await loginAsSmoke(page);
     await page.getByRole("navigation").getByRole("link", { name: "Studio" }).click();

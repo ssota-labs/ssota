@@ -13,18 +13,19 @@ export default async function HomePage() {
   if (!user) redirect("/login");
 
   const links = [
+    { href: "/context-graph", title: "Context Graph", description: "노드·엣지·액션·지침 Studio" },
     { href: "/gates", title: "Human Gate", description: "승인 대기 액션" },
     { href: "/log", title: "Action Log", description: "감사 타임라인" },
-    { href: "/catalog", title: "Catalog", description: "노드·액션 카탈로그" },
+    { href: "/catalog", title: "Catalog", description: "Legacy read-only catalog" },
   ];
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-semibold">LoopOS Console</h1>
       <p className="text-muted-foreground">
-        Human Gate 큐, Action Log, 카탈로그 브라우저
+        Context Graph Studio, Human Gate 큐, Action Log
       </p>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         {links.map((item) => (
           <Link key={item.href} href={item.href} className="block transition-opacity hover:opacity-90">
             <Card>

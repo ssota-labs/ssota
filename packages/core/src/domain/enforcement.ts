@@ -7,10 +7,12 @@ import type {
   PropertyCatalogEntry,
 } from "./types.js";
 import type {
+  ActionScope,
   Effect,
   ExecutorType,
   LifecycleStatus,
   NodeTypeDefinition,
+  PermissionOperation,
 } from "@loopos/contracts";
 import { NodeTypeDefinitionSchema } from "@loopos/contracts";
 import { ActionRejectedError } from "./types.js";
@@ -280,6 +282,7 @@ export function resolveEffects(
     } else if (template.kind === "upsert_action_catalog_entry") {
       const definition = input.definition as {
         actionType: string;
+        scope?: ActionScope;
         preconditions: Record<string, unknown>;
         effects: unknown[];
         executor: ExecutorType;
@@ -291,6 +294,7 @@ export function resolveEffects(
       effects.push({
         kind: "upsert_action_catalog_entry",
         entry: {
+          scope: definition.scope ?? { kind: "global" },
           ...definition,
           effects: definition.effects as Record<string, unknown>[],
         },
@@ -305,10 +309,26 @@ export function resolveEffects(
         optionalActions: string[];
         lifecycle: LifecycleStatus;
         body: string;
+        scope?: import("@loopos/contracts").InstructionScope;
+        triggers?: string[];
+        workflowSteps?: import("@loopos/contracts").InstructionWorkflowStep[];
+        allowedActions?: string[];
+        outputContract?: Record<string, unknown>;
+        gatePolicy?: Record<string, unknown>;
+        completionCriteria?: string | null;
       };
       effects.push({
         kind: "upsert_instruction_catalog_entry",
-        entry: definition,
+        entry: {
+          ...definition,
+          scope: definition.scope ?? { kind: "global" },
+          triggers: definition.triggers ?? [],
+          workflowSteps: definition.workflowSteps ?? [],
+          allowedActions: definition.allowedActions ?? [],
+          outputContract: definition.outputContract ?? {},
+          gatePolicy: definition.gatePolicy ?? {},
+          completionCriteria: definition.completionCriteria ?? null,
+        },
       });
     }
   }
@@ -324,18 +344,72 @@ export async function enforcePermissions(
     nodeType: string,
   ) => Promise<ActionPropertyPermission[]>,
   getNode: (nodeId: string) => Promise<Node | null>,
-): Promise<void> {
+  getNodeCatalog: (nodeType: string) => Promise<NodeCatalogEntry | null>,
+  getPropertyCatalog: (
+    propertyKey: string,
+  ) => Promise<PropertyCatalogEntry | null>,
+): Promise<{ requiresGate: boolean; reason: string }> {
+  let requiresGate = false;
+  let reason = "";
+
+  async function checkPropertyWrite(
+    nodeType: string,
+    propertyKey: string,
+    value: unknown,
+    operation: PermissionOperation,
+  ) {
+    const catalog = await getNodeCatalog(nodeType);
+    if (catalog?.propertyRefs.length && !catalog.propertyRefs.includes(propertyKey)) {
+      throw new ActionRejectedError(
+        "PROPERTY_NOT_BOUND",
+        `Property '${propertyKey}' is not bound to node type '${nodeType}'`,
+      );
+    }
+
+    const property = await getPropertyCatalog(propertyKey);
+    if (!property) {
+      throw new ActionRejectedError(
+        "CATALOG_NOT_FOUND",
+        `Property '${propertyKey}' is not in the property catalog`,
+      );
+    }
+
+    if (
+      property.owningActions.length > 0 &&
+      !property.owningActions.includes(actionType)
+    ) {
+      throw new ActionRejectedError(
+        "PERMISSION_DENIED",
+        `Action '${actionType}' does not own property '${propertyKey}'`,
+      );
+    }
+
+    enforcePropertyValue(property, value);
+
+    const perms = await getPermissions(actionType, nodeType);
+    const active = perms.filter(
+      (p) =>
+        p.status === "active" &&
+        p.propertyKey === propertyKey &&
+        (p.operation === operation || p.operation === "write"),
+    );
+    const deny = active.find((p) => p.permissionType === "deny");
+    if (deny) {
+      throw new ActionRejectedError(
+        "PERMISSION_DENIED",
+        `Cannot write property '${propertyKey}' on node type '${nodeType}'`,
+      );
+    }
+    if (active.some((p) => p.requiresHumanGate)) {
+      requiresGate = true;
+      reason ||= `Property '${propertyKey}' requires human approval`;
+    }
+  }
+
   for (const effect of effects) {
     if (effect.kind === "create_node") {
-      const perms = await getPermissions(actionType, effect.node.nodeType);
-      for (const [key] of Object.entries(effect.node.properties)) {
-        const perm = perms.find((p) => p.propertyKey === key);
-        if (perm?.permissionType === "deny") {
-          throw new ActionRejectedError(
-            "PERMISSION_DENIED",
-            `Cannot write property '${key}' on node type '${effect.node.nodeType}'`,
-          );
-        }
+      for (const [key, value] of Object.entries(effect.node.properties)) {
+        await checkPropertyWrite(effect.node.nodeType, key, value, "create");
       }
     } else if (effect.kind === "update_node") {
       const node = await getNode(effect.nodeId);
@@ -345,19 +419,197 @@ export async function enforcePermissions(
           `Node '${effect.nodeId}' does not exist`,
         );
       }
-      const perms = await getPermissions(actionType, node.nodeType);
       if (effect.patch.properties) {
-        for (const key of Object.keys(effect.patch.properties)) {
-          const perm = perms.find((p) => p.propertyKey === key);
-          if (perm?.permissionType === "deny") {
-            throw new ActionRejectedError(
-              "PERMISSION_DENIED",
-              `Cannot write property '${key}' on node type '${node.nodeType}'`,
-            );
-          }
+        for (const [key, value] of Object.entries(effect.patch.properties)) {
+          await checkPropertyWrite(node.nodeType, key, value, "write");
         }
       }
     }
+  }
+
+  return { requiresGate, reason };
+}
+
+function enforcePropertyValue(
+  property: PropertyCatalogEntry,
+  value: unknown,
+): void {
+  if (value === undefined || value === null) return;
+
+  const valueType = property.valueType.toLowerCase();
+  const constraints = property.constraints;
+  const enumValues =
+    (constraints.enum as unknown[] | undefined) ??
+    (constraints.options as unknown[] | undefined) ??
+    (constraints.enumOptions as unknown[] | undefined);
+
+  if ((valueType === "string" || valueType === "text") && typeof value !== "string") {
+    throw new ActionRejectedError(
+      "INVALID_PROPERTY_VALUE",
+      `Property '${property.propertyKey}' must be a string`,
+    );
+  }
+  if (valueType === "number" && typeof value !== "number") {
+    throw new ActionRejectedError(
+      "INVALID_PROPERTY_VALUE",
+      `Property '${property.propertyKey}' must be a number`,
+    );
+  }
+  if (valueType === "boolean" && typeof value !== "boolean") {
+    throw new ActionRejectedError(
+      "INVALID_PROPERTY_VALUE",
+      `Property '${property.propertyKey}' must be a boolean`,
+    );
+  }
+  if (valueType === "enum" && enumValues && !enumValues.includes(value)) {
+    throw new ActionRejectedError(
+      "INVALID_PROPERTY_VALUE",
+      `Property '${property.propertyKey}' must match one of its enum options`,
+    );
+  }
+  if (
+    typeof value === "string" &&
+    typeof constraints.maxLength === "number" &&
+    value.length > constraints.maxLength
+  ) {
+    throw new ActionRejectedError(
+      "INVALID_PROPERTY_VALUE",
+      `Property '${property.propertyKey}' exceeds maxLength ${constraints.maxLength}`,
+    );
+  }
+}
+
+export async function enforceActionScopeAndGraphIntegrity(
+  actionEntry: ActionCatalogEntry,
+  effects: Effect[],
+  graph: {
+    getNode: (nodeId: string) => Promise<Node | null>;
+  },
+  catalog: {
+    getNodeCatalogEntry: (
+      nodeType: string,
+    ) => Promise<NodeCatalogEntry | null>;
+    getEdgeCatalogEntry: (
+      edgeType: string,
+    ) => Promise<import("./types.js").EdgeCatalogEntry | null>;
+  },
+): Promise<void> {
+  const scope = actionEntry.scope;
+
+  for (const effect of effects) {
+    if (effect.kind === "create_node") {
+      await enforceNodeScope(actionEntry.actionType, scope, effect.node.nodeType, Object.keys(effect.node.properties));
+      await enforceAllowedActionRef(actionEntry.actionType, effect.node.nodeType, catalog);
+    }
+
+    if (effect.kind === "update_node") {
+      const node = await graph.getNode(effect.nodeId);
+      if (!node) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          `Node '${effect.nodeId}' does not exist`,
+        );
+      }
+      await enforceNodeScope(
+        actionEntry.actionType,
+        scope,
+        node.nodeType,
+        Object.keys(effect.patch.properties ?? {}),
+      );
+      await enforceAllowedActionRef(actionEntry.actionType, node.nodeType, catalog);
+    }
+
+    if (effect.kind === "create_edge") {
+      const edgeEntry = await catalog.getEdgeCatalogEntry(effect.edge.edgeType);
+      if (!edgeEntry) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Edge type '${effect.edge.edgeType}' is not in the edge catalog`,
+        );
+      }
+      if (scope.kind === "edge_type" && scope.edgeType !== effect.edge.edgeType) {
+        throw new ActionRejectedError(
+          "ACTION_SCOPE_MISMATCH",
+          `Action '${actionEntry.actionType}' is scoped to edge type '${scope.edgeType}'`,
+        );
+      }
+      if (
+        scope.kind !== "global" &&
+        scope.kind !== "edge_type" &&
+        scope.kind !== "instruction"
+      ) {
+        throw new ActionRejectedError(
+          "ACTION_SCOPE_MISMATCH",
+          `Action '${actionEntry.actionType}' cannot create edges from ${scope.kind} scope`,
+        );
+      }
+
+      const [source, target] = await Promise.all([
+        graph.getNode(effect.edge.sourceNodeId),
+        graph.getNode(effect.edge.targetNodeId),
+      ]);
+      if (!source || !target) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          "Edge source and target nodes must exist",
+        );
+      }
+      if (!edgeEntry.domain.includes(source.nodeType)) {
+        throw new ActionRejectedError(
+          "EDGE_ENDPOINT_MISMATCH",
+          `Edge '${effect.edge.edgeType}' does not allow source node type '${source.nodeType}'`,
+        );
+      }
+      if (!edgeEntry.range.includes(target.nodeType)) {
+        throw new ActionRejectedError(
+          "EDGE_ENDPOINT_MISMATCH",
+          `Edge '${effect.edge.edgeType}' does not allow target node type '${target.nodeType}'`,
+        );
+      }
+    }
+  }
+}
+
+async function enforceNodeScope(
+  actionType: string,
+  scope: ActionScope,
+  nodeType: string,
+  propertyKeys: string[],
+): Promise<void> {
+  if (scope.kind === "global" || scope.kind === "instruction") return;
+  if (scope.kind === "node_type" && scope.nodeType === nodeType) return;
+  if (
+    scope.kind === "property" &&
+    scope.nodeType === nodeType &&
+    propertyKeys.length > 0 &&
+    propertyKeys.every((key) => key === scope.propertyKey)
+  ) {
+    return;
+  }
+  throw new ActionRejectedError(
+    "ACTION_SCOPE_MISMATCH",
+    `Action '${actionType}' is not scoped to node type '${nodeType}'`,
+  );
+}
+
+async function enforceAllowedActionRef(
+  actionType: string,
+  nodeType: string,
+  catalog: {
+    getNodeCatalogEntry: (
+      nodeType: string,
+    ) => Promise<NodeCatalogEntry | null>;
+  },
+): Promise<void> {
+  const nodeEntry = await catalog.getNodeCatalogEntry(nodeType);
+  if (
+    nodeEntry?.allowedActionRefs.length &&
+    !nodeEntry.allowedActionRefs.includes(actionType)
+  ) {
+    throw new ActionRejectedError(
+      "ACTION_SCOPE_MISMATCH",
+      `Action '${actionType}' is not allowed on node type '${nodeType}'`,
+    );
   }
 }
 
@@ -651,6 +903,15 @@ export async function enforceCatalogMutationIntegrity(
           `Edge type '${effect.entry.edgeType}' does not exist`,
         );
       }
+      for (const nodeType of [...effect.entry.domain, ...effect.entry.range]) {
+        const nodeEntry = await catalog.getNodeCatalogEntry(nodeType);
+        if (!nodeEntry) {
+          throw new ActionRejectedError(
+            "CATALOG_NOT_FOUND",
+            `Edge type '${effect.entry.edgeType}' references missing node type '${nodeType}'`,
+          );
+        }
+      }
     }
 
     if (effect.kind === "upsert_property_catalog_entry") {
@@ -688,6 +949,15 @@ export async function enforceCatalogMutationIntegrity(
         throw new ActionRejectedError(
           "CATALOG_NOT_FOUND",
           `Action '${effect.permission.actionType}' does not exist`,
+        );
+      }
+      const propertyEntry = await catalog.getPropertyCatalogEntry(
+        effect.permission.propertyKey,
+      );
+      if (!propertyEntry) {
+        throw new ActionRejectedError(
+          "CATALOG_NOT_FOUND",
+          `Property '${effect.permission.propertyKey}' does not exist`,
         );
       }
     }
@@ -730,6 +1000,21 @@ export async function enforceCatalogMutationIntegrity(
           "PRECONDITION_FAILED",
           "update_instruction requires instructionId in merged definition",
         );
+      }
+      const actionRefs = new Set([
+        ...effect.entry.requiredActions,
+        ...effect.entry.optionalActions,
+        ...effect.entry.allowedActions,
+        ...effect.entry.workflowSteps.flatMap((step) => step.actionRefs),
+      ]);
+      for (const ref of actionRefs) {
+        const action = await catalog.getActionCatalogEntry(ref);
+        if (!action) {
+          throw new ActionRejectedError(
+            "CATALOG_NOT_FOUND",
+            `Instruction references missing action '${ref}'`,
+          );
+        }
       }
     }
   }
