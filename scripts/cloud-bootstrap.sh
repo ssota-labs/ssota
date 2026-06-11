@@ -128,6 +128,13 @@ docker_ready() {
     && [[ "$(docker info --format '{{.Driver}}' 2>/dev/null || echo '')" == "vfs" ]]
 }
 
+loopos_docker_config() {
+  # Cloud VM /etc/docker/daemon.json may pin overlayfs — isolate with our own config.
+  local cfg="/tmp/loopos-docker-daemon.json"
+  printf '%s\n' '{"storage-driver":"vfs"}' >"$cfg"
+  echo "$cfg"
+}
+
 ensure_docker() {
   if docker_ready; then
     log "Docker daemon already running (storage driver: vfs)"
@@ -139,9 +146,15 @@ ensure_docker() {
   sudo pkill containerd 2>/dev/null || true
   sleep 2
 
+  local docker_config
+  docker_config="$(loopos_docker_config)"
+  if [[ -f /etc/docker/daemon.json ]]; then
+    log "Using isolated Docker config ($docker_config) — system /etc/docker/daemon.json ignored"
+  fi
+
   sudo mkdir -p /tmp/docker-vfs /tmp/docker-exec
   sudo dockerd \
-    --storage-driver=vfs \
+    --config-file="$docker_config" \
     --data-root=/tmp/docker-vfs \
     --exec-root=/tmp/docker-exec \
     --host=unix:///var/run/docker.sock \
