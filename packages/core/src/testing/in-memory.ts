@@ -357,6 +357,11 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
           (n) => n.lifecycleStatus === params.lifecycleStatus,
         );
       }
+      if (params.subjectId) {
+        results = results.filter(
+          (n) => n.properties.subject_id === params.subjectId,
+        );
+      }
       const offset = params.offset ?? 0;
       const limit = params.limit ?? 20;
       return results.slice(offset, offset + limit);

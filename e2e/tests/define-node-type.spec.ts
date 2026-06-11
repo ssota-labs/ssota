@@ -62,12 +62,17 @@ test.describe("LoopOS define_node_type vertical slice", () => {
 
     await gotoProject(page, "graph/nodes");
     await page.getByRole("button", { name: "New node table" }).click();
-    await page.getByLabel("Key").fill(nodeType);
-    await page.getByLabel("Archetype").fill("doc-note");
-    await page.getByLabel("Content guide").fill("Web form test");
+    await expect(page.locator("#nodeType")).toBeVisible();
+    await page.locator("#nodeType").fill(nodeType);
+    await page.locator("#archetypeId").fill("doc-note");
+    await page.locator("#contentGuide").fill("Web form test");
     const label = nodeType.replace(/_/g, " ");
+    const submit = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" && response.ok(),
+    );
     await page.getByRole("button", { name: "Create node table" }).click();
-    await page.waitForLoadState("networkidle");
+    await submit;
     await gotoProject(page, "graph/nodes");
     await expect(page.getByRole("link", { name: label })).toBeVisible({
       timeout: 15_000,

@@ -267,4 +267,114 @@ describe("adapter-supabase integration", () => {
       expect(log.some((l) => l.actionType === "approve_gate")).toBe(true);
     },
   );
+
+  it("subject_id: create_project 격리 + query_nodes 필터", async () => {
+    const subjectA = `usr_a_${Date.now()}`;
+    const subjectB = `usr_b_${Date.now()}`;
+
+    const createA = await executeAction(ports, {
+      actionType: "create_project",
+      input: { title: "Project A" },
+      executorId: smokeUserId,
+      executorType: "Agent",
+      subjectId: subjectA,
+    });
+    expect(createA.status).toBe("committed");
+
+    const createB = await executeAction(ports, {
+      actionType: "create_project",
+      input: { title: "Project B" },
+      executorId: smokeUserId,
+      executorType: "Agent",
+      subjectId: subjectB,
+    });
+    expect(createB.status).toBe("committed");
+
+    const nodesA = await ports.graph.queryNodes({
+      nodeType: "Project",
+      subjectId: subjectA,
+      limit: 10,
+    });
+    const nodesB = await ports.graph.queryNodes({
+      nodeType: "Project",
+      subjectId: subjectB,
+      limit: 10,
+    });
+
+    expect(nodesA.every((n) => n.properties.subject_id === subjectA)).toBe(true);
+    expect(nodesB.every((n) => n.properties.subject_id === subjectB)).toBe(true);
+    expect(nodesA.some((n) => n.properties.title === "Project A")).toBe(true);
+    expect(nodesA.some((n) => n.properties.title === "Project B")).toBe(false);
+  });
+
+  it("subject_id: context 없이 create_project 거부", async () => {
+    const result = await executeAction(ports, {
+      actionType: "create_project",
+      input: { title: "No subject" },
+      executorId: smokeUserId,
+      executorType: "Agent",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("SUBJECT_REQUIRED");
+    }
+  });
+
+  it("homepage agent: project → brief → link", async () => {
+    const subjectId = `usr_homepage_${Date.now()}`;
+
+    const project = await executeAction(ports, {
+      actionType: "create_homepage_project",
+      input: { title: "Smoke Homepage" },
+      executorId: smokeUserId,
+      executorType: "Agent",
+      subjectId,
+    });
+    expect(project.status).toBe("committed");
+
+    const brief = await executeAction(ports, {
+      actionType: "create_design_brief",
+      input: {
+        title: "Smoke brief",
+        content: "Integration test homepage brief",
+      },
+      executorId: smokeUserId,
+      executorType: "Agent",
+      subjectId,
+    });
+    expect(brief.status).toBe("committed");
+
+    const projects = await ports.graph.queryNodes({
+      nodeType: "HomepageProject",
+      subjectId,
+      limit: 5,
+    });
+    const briefs = await ports.graph.queryNodes({
+      nodeType: "DesignBrief",
+      subjectId,
+      limit: 5,
+    });
+    const homepage = projects.find((n) => n.properties.title === "Smoke Homepage");
+    const designBrief = briefs.find((n) => n.properties.title === "Smoke brief");
+    expect(homepage).toBeTruthy();
+    expect(designBrief).toBeTruthy();
+
+    const link = await executeAction(ports, {
+      actionType: "link_homepage_contains",
+      input: {
+        sourceNodeId: homepage!.id,
+        targetNodeId: designBrief!.id,
+      },
+      executorId: smokeUserId,
+      executorType: "Agent",
+      subjectId,
+    });
+    expect(link.status).toBe("committed");
+
+    const instructions = await ports.catalog.findInstructions("homepage", undefined, 5);
+    expect(
+      instructions.some((i) => i.title === "Homepage creation workflow"),
+    ).toBe(true);
+  });
 });

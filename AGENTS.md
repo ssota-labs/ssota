@@ -44,6 +44,64 @@ e2e/                    # Playwright — 콘솔 + MCP HTTP 플로우
 4. **게이트 승인도 액션이다.** `approve_gate` 역시 Action Log에 남는다. 전형 이탈(아키타입 typical values 위반)은 자동으로 gates 큐로 보낸다.
 5. **노드 = 정형 봉투 + 비정형 content.** 런타임(게이트·권한·전이)이 참조하는 것만 필드로 구조화한다. 의미는 content(내장 text 또는 외부 링크)가 담당한다 — 결정 입력을 필드로 깎아내지 않는다.
 
+## Tenancy & Security — `subject_id` + 서버사이드 격리
+
+B2B2C(고객사 A가 자체 에이전트를 만들고, A의 최종 고객마다 그래프 인스턴스를 나누는 모델)에서 **그래프는 하나의 카탈로그(스키마) 공간**이고, Node Type = 테이블, Node 인스턴스 = row다. 최종 고객 구분은 **별도 그래프/DB가 아니라 `subject_id` property**로 한다.
+
+### 레이어 분리
+
+| 레이어 | 담당 | 식별자 |
+|---|---|---|
+| 고객사 A 앱 (자체 Supabase) | 최종 사용자 인증·앱 데이터 RLS | A의 `users.id` (또는 동등한 PK) |
+| LoopOS 그래프 DB | 컨텍스트 그래프 인스턴스 저장 | `nodes.properties.subject_id` |
+| LoopOS Console / MCP 서버 | 카탈로그·`executeAction`·쿼리 스코핑 | 요청 context의 `subjectId` |
+
+고객사 A의 최종 고객 Acme을 구분하는 값은 **LoopOS Project slug가 아니라 `subject_id`**다. A의 백엔드가 자체 auth를 검증한 뒤, 해당 사용자의 id를 그대로 `subject_id`에 넣어 LoopOS API/MCP에 전달한다. LoopOS는 이 값을 opaque string으로 취급한다 — 형식·FK 검증은 A의 책임.
+
+### `subject_id` 규칙
+
+- **카탈로그(스키마) 엔트리** — Node/Edge/Action Catalog, Instruction, Property Catalog — 는 tenant-scoped가 **아니다**. 고객사 A가 한 번 정의하면 모든 최종 고객이 같은 타입 체계를 쓴다.
+- **tenant-scoped 인스턴스 노드** — `HomepageProject`, `DesignBrief` 등 최종 고객별 row — 는 `properties.subject_id`를 **필수**로 둔다. Property Catalog에 `subject_id`를 등록하고, 해당 node type의 create/update 액션 effect·precondition에서 강제한다.
+- **조회**: `query_nodes`·`traverse_edges`는 서버가 항상 요청 context의 `subjectId`로 필터한다. 클라이언트가 `subject_id`를 생략·위조해도 서버가 주입·검증한다.
+- **쓰기**: `executeAction`은 effect에 선언된 `subject_id`가 context `subjectId`와 일치하지 않으면 거부한다. 다른 subject의 노드를 patch하려 하면 거부.
+- **인덱스**: adapter 마이그레이션에서 `(node_type, (properties->>'subject_id'))` 복합 인덱스를 둔다 (구현 시).
+
+예시 (홈페이지 제작 에이전트):
+
+```plain text
+고객사 A 카탈로그: Customer-facing node types = HomepageProject, DesignBrief, PageSection
+Acme 사용자 (A의 users.id = "usr_acme_42") → subject_id = "usr_acme_42"
+create_homepage_project effect → properties: { subject_id: "usr_acme_42", title: "..." }
+query_nodes({ nodeType: "HomepageProject" }) + context.subjectId → Acme row만
+```
+
+### Postgres RLS — 항상 비활성 (의도적)
+
+LoopOS 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그 등)의 **Postgres RLS는 켜지 않는다** (`isRLSEnabled: false` 유지). 이유:
+
+1. **고객사 A가 자체 Supabase에서 최종 사용자 RLS를 이미 처리**한다. LoopOS 그래프 DB는 A의 백엔드·LoopOS 서버만 접근하는 **서버사이드 데이터 플레인**이다.
+2. **격리의 SSOT는 `executeAction` + 서버 context**다. Property Permission 튜플은 액션 계약 강제(4대 강제 중 계약·권한)이지, Postgres row policy가 아니다.
+3. **단일 접근 경로**: adapter는 `DATABASE_URL`(service role / direct Postgres)로만 연결한다. 브라우저·MCP 클라이언트가 anon key로 그래프 테이블에 직접 쿼리하는 경로를 만들지 않는다.
+
+### Defense in depth (서버사이드)
+
+```
+[최종 사용자] → [고객사 A API — A의 Supabase Auth + A의 RLS]
+                      ↓ subjectId = A.users.id
+              [LoopOS apps/web | apps/mcp — JWT·context 검증]
+                      ↓ subjectId 주입·검증
+              [executeAction / queryNodes — core 4대 강제 + subject 스코핑]
+                      ↓
+              [adapter-supabase — admin client, RLS 없음]
+```
+
+- **금지**: 그래프 테이블에 RLS policy 추가, anon/authenticated PostgREST로 `nodes`/`edges` 직접 노출, 클라이언트가 보낸 `subject_id`를 검증 없이 신뢰.
+- **필수**: 모든 graph read/write는 apps 라우트·MCP 핸들러를 통과; context `subjectId`는 A의 백엔드 또는 LoopOS OAuth 이후 서버에서만 설정; 거부 케이스 integration 테스트.
+
+LoopOS Console 운영자(카탈로그 편집·Human Gate)는 `subject_id` 스코핑 **바깥**의 별도 auth 경로다 — smoke 계정·org membership으로 처리하며, 최종 고객 데이터와 섞지 않는다.
+
+**Embedder BFF 예시**: `examples/embedder-bff/` — 고객사 A가 `X-Embedder-User-Id`(자체 `users.id`)를 검증 후 LoopOS MCP로 프록시. 로컬 실행: `pnpm embedder-bff` (MCP 기동 후).
+
 ## Setup Commands
 
 ```bash

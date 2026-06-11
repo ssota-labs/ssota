@@ -14,6 +14,7 @@ import type {
   NodeTypeDefinition,
   PermissionOperation,
 } from "@loopos/contracts";
+import { SUBJECT_ID_PROPERTY_KEY } from "@loopos/contracts";
 import { NodeTypeDefinitionSchema } from "@loopos/contracts";
 import { ActionRejectedError } from "./types.js";
 
@@ -145,6 +146,9 @@ export function resolveEffects(
         ...template.node.properties,
         ...inputProperties,
       };
+      if (input.subject_id !== undefined) {
+        properties[SUBJECT_ID_PROPERTY_KEY] = input.subject_id;
+      }
       if (input.title !== undefined) {
         properties.title = input.title;
       }
