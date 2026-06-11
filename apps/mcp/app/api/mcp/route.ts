@@ -7,27 +7,56 @@ import { z } from "zod";
 import {
   ExecuteActionClientInputSchema,
   FindInstructionInputSchema,
+  GetActionLogEntryInputSchema,
   GetActionLogInputSchema,
+  GetArchetypeInputSchema,
+  GetEdgeTypeInputSchema,
+  GetGateInputSchema,
+  GetInstructionInputSchema,
+  GetNodeInputSchema,
+  GetNodeTypeInputSchema,
+  GetPropertyInputSchema,
+  QueryGatesInputSchema,
+  QueryNeighborsInputSchema,
   QueryNodesInputSchema,
   SubmitForApprovalInputSchema,
   TraverseEdgesInputSchema,
+  TraverseGraphInputSchema,
 } from "@loopos/contracts";
 import {
   executeActionForClient,
   findInstructions,
   getActionContract,
   getActionLog,
+  getActionLogEntry,
+  getArchetype,
+  getEdgeType,
+  getGate,
+  getInstruction,
+  getNode,
+  getNodeType,
+  getProperty,
   listActionContracts,
   listArchetypes,
   listEdgeTypes,
   listNodeTypes,
   listPendingGates,
   listProperties,
+  queryGates,
+  queryNeighborsService,
   queryNodes,
   submitForApproval,
   traverseEdges,
+  traverseGraphService,
 } from "@/lib/api/services";
 import { verifyBearerToken } from "@/lib/auth";
+import { resolveSubjectId } from "@/lib/subject-context";
+
+function jsonContent(data: unknown) {
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  };
+}
 
 const mcpHandler = createMcpHandler(
   (server) => {
@@ -35,73 +64,55 @@ const mcpHandler = createMcpHandler(
       "list_node_types",
       {
         title: "List Node Types",
-        description: "List all node types from the catalog",
+        description:
+          "Discover: list node type catalog index. Fetch details with get_node_type.",
         inputSchema: {},
       },
-      async () => ({
-        content: [
-          { type: "text", text: JSON.stringify(await listNodeTypes(), null, 2) },
-        ],
-      }),
+      async () => jsonContent(await listNodeTypes()),
     );
 
     server.registerTool(
       "list_edge_types",
       {
         title: "List Edge Types",
-        description: "List all edge types from the catalog",
+        description:
+          "Discover: list edge type catalog index. Fetch details with get_edge_type.",
         inputSchema: {},
       },
-      async () => ({
-        content: [
-          { type: "text", text: JSON.stringify(await listEdgeTypes(), null, 2) },
-        ],
-      }),
+      async () => jsonContent(await listEdgeTypes()),
     );
 
     server.registerTool(
       "list_properties",
       {
         title: "List Properties",
-        description: "List all properties from the catalog",
+        description:
+          "Discover: list property catalog index. Fetch details with get_property.",
         inputSchema: {},
       },
-      async () => ({
-        content: [
-          { type: "text", text: JSON.stringify(await listProperties(), null, 2) },
-        ],
-      }),
+      async () => jsonContent(await listProperties()),
     );
 
     server.registerTool(
       "list_action_contracts",
       {
         title: "List Action Contracts",
-        description: "List all action contracts from the catalog",
+        description:
+          "Discover: list action contract index. Fetch details with get_action_contract.",
         inputSchema: {},
       },
-      async () => ({
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(await listActionContracts(), null, 2),
-          },
-        ],
-      }),
+      async () => jsonContent(await listActionContracts()),
     );
 
     server.registerTool(
       "list_archetypes",
       {
         title: "List Archetypes",
-        description: "List all archetypes from the catalog",
+        description:
+          "Discover: list archetype index. Fetch details with get_archetype.",
         inputSchema: {},
       },
-      async () => ({
-        content: [
-          { type: "text", text: JSON.stringify(await listArchetypes(), null, 2) },
-        ],
-      }),
+      async () => jsonContent(await listArchetypes()),
     );
 
     server.registerTool(
@@ -109,18 +120,100 @@ const mcpHandler = createMcpHandler(
       {
         title: "Get Action Contract",
         description: "Get action contract from catalog",
-        inputSchema: {
-          actionType: z.string(),
-        },
+        inputSchema: { actionType: z.string() },
       },
-      async ({ actionType }) => ({
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(await getActionContract(actionType), null, 2),
-          },
-        ],
-      }),
+      async ({ actionType }) => jsonContent(await getActionContract(actionType)),
+    );
+
+    server.registerTool(
+      "get_node_type",
+      {
+        title: "Get Node Type",
+        description: "Fetch one node type catalog entry by nodeType",
+        inputSchema: { nodeType: z.string().min(1) },
+      },
+      async (args) => {
+        const parsed = GetNodeTypeInputSchema.parse(args);
+        return jsonContent(await getNodeType(parsed.nodeType));
+      },
+    );
+
+    server.registerTool(
+      "get_edge_type",
+      {
+        title: "Get Edge Type",
+        description: "Fetch one edge type catalog entry by edgeType",
+        inputSchema: { edgeType: z.string().min(1) },
+      },
+      async (args) => {
+        const parsed = GetEdgeTypeInputSchema.parse(args);
+        return jsonContent(await getEdgeType(parsed.edgeType));
+      },
+    );
+
+    server.registerTool(
+      "get_property",
+      {
+        title: "Get Property",
+        description: "Fetch one property catalog entry by propertyKey",
+        inputSchema: { propertyKey: z.string().min(1) },
+      },
+      async (args) => {
+        const parsed = GetPropertyInputSchema.parse(args);
+        return jsonContent(await getProperty(parsed.propertyKey));
+      },
+    );
+
+    server.registerTool(
+      "get_archetype",
+      {
+        title: "Get Archetype",
+        description: "Fetch one archetype by archetypeId",
+        inputSchema: { archetypeId: z.string().min(1) },
+      },
+      async (args) => {
+        const parsed = GetArchetypeInputSchema.parse(args);
+        return jsonContent(await getArchetype(parsed.archetypeId));
+      },
+    );
+
+    server.registerTool(
+      "get_node",
+      {
+        title: "Get Node",
+        description: "Fetch one graph node by nodeId",
+        inputSchema: { nodeId: z.string().uuid() },
+      },
+      async (args) => {
+        const parsed = GetNodeInputSchema.parse(args);
+        return jsonContent(await getNode(parsed.nodeId));
+      },
+    );
+
+    server.registerTool(
+      "get_instruction",
+      {
+        title: "Get Instruction",
+        description: "Fetch one domain instruction by instructionId",
+        inputSchema: { instructionId: z.string().uuid() },
+      },
+      async (args) => {
+        const parsed = GetInstructionInputSchema.parse(args);
+        return jsonContent(await getInstruction(parsed.instructionId));
+      },
+    );
+
+    server.registerTool(
+      "get_gate",
+      {
+        title: "Get Gate",
+        description: "Fetch one gate by gateId",
+        inputSchema: { gateId: z.string().uuid() },
+      },
+      async (args) => {
+        const parsed = GetGateInputSchema.parse(args);
+        return jsonContent(await getGate(parsed.gateId));
+      },
     );
 
     server.registerTool(
@@ -137,13 +230,10 @@ const mcpHandler = createMcpHandler(
           offset: z.number().int().nonnegative().optional(),
         },
       },
-      async (args) => {
-        const parsed = QueryNodesInputSchema.parse(args);
-        return {
-          content: [
-            { type: "text", text: JSON.stringify(await queryNodes(parsed), null, 2) },
-          ],
-        };
+      async (args, extra) => {
+        const subjectId = readSubjectFromExtra(extra);
+        const parsed = QueryNodesInputSchema.parse({ ...args, subjectId });
+        return jsonContent(await queryNodes(parsed));
       },
     );
 
@@ -151,7 +241,27 @@ const mcpHandler = createMcpHandler(
       "traverse_edges",
       {
         title: "Traverse Edges",
-        description: "Traverse edges from a node",
+        description:
+          "Query: list 1-hop edges from a node. For neighbor nodes use query_neighbors; for multi-hop use traverse_graph.",
+        inputSchema: {
+          nodeId: z.string().uuid(),
+          direction: z.enum(["outgoing", "incoming", "both"]).optional(),
+          edgeType: z.string().optional(),
+        },
+      },
+      async (args, extra) => {
+        const subjectId = readSubjectFromExtra(extra);
+        const parsed = TraverseEdgesInputSchema.parse({ ...args, subjectId });
+        return jsonContent(await traverseEdges(parsed));
+      },
+    );
+
+    server.registerTool(
+      "query_neighbors",
+      {
+        title: "Query Neighbors",
+        description:
+          "Query: 1-hop neighbors with edges and resolved neighbor nodes",
         inputSchema: {
           nodeId: z.string().uuid(),
           direction: z.enum(["outgoing", "incoming", "both"]).optional(),
@@ -159,15 +269,29 @@ const mcpHandler = createMcpHandler(
         },
       },
       async (args) => {
-        const parsed = TraverseEdgesInputSchema.parse(args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await traverseEdges(parsed), null, 2),
-            },
-          ],
-        };
+        const parsed = QueryNeighborsInputSchema.parse(args);
+        return jsonContent(await queryNeighborsService(parsed));
+      },
+    );
+
+    server.registerTool(
+      "traverse_graph",
+      {
+        title: "Traverse Graph",
+        description:
+          "Query: multi-hop graph traversal from a start node with optional edge and node type filters",
+        inputSchema: {
+          startNodeId: z.string().uuid(),
+          maxHops: z.number().int().positive().max(5).optional(),
+          direction: z.enum(["outgoing", "incoming", "both"]).optional(),
+          edgeTypes: z.array(z.string()).optional(),
+          nodeTypes: z.array(z.string()).optional(),
+          limit: z.number().int().positive().max(100).optional(),
+        },
+      },
+      async (args) => {
+        const parsed = TraverseGraphInputSchema.parse(args);
+        return jsonContent(await traverseGraphService(parsed));
       },
     );
 
@@ -184,14 +308,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = FindInstructionInputSchema.parse(args);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(await findInstructions(parsed), null, 2),
-            },
-          ],
-        };
+        return jsonContent(await findInstructions(parsed));
       },
     );
 
@@ -217,6 +334,7 @@ const mcpHandler = createMcpHandler(
           };
         }
 
+        const subjectId = readSubjectFromExtra(extra);
         const parsed = ExecuteActionClientInputSchema.parse({
           actionType: args.actionType,
           input: args.input ?? {},
@@ -227,10 +345,9 @@ const mcpHandler = createMcpHandler(
           parsed,
           user.id,
           "Agent",
+          subjectId,
         );
-        return {
-          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-        };
+        return jsonContent(result);
       },
     );
 
@@ -238,17 +355,28 @@ const mcpHandler = createMcpHandler(
       "list_pending_gates",
       {
         title: "List Pending Gates",
-        description: "List pending human gates",
+        description:
+          "Discover: list pending gates only. Query with filters via query_gates.",
         inputSchema: {},
       },
-      async () => ({
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(await listPendingGates(), null, 2),
-          },
-        ],
-      }),
+      async () => jsonContent(await listPendingGates()),
+    );
+
+    server.registerTool(
+      "query_gates",
+      {
+        title: "Query Gates",
+        description: "Query gates with optional status filter and pagination",
+        inputSchema: {
+          status: z.enum(["pending", "approved", "rejected"]).optional(),
+          limit: z.number().int().positive().max(100).optional(),
+          offset: z.number().int().nonnegative().optional(),
+        },
+      },
+      async (args) => {
+        const parsed = QueryGatesInputSchema.parse(args);
+        return jsonContent(await queryGates(parsed));
+      },
     );
 
     server.registerTool(
@@ -263,10 +391,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = SubmitForApprovalInputSchema.parse(args);
-        const result = await submitForApproval(parsed.gateId, parsed.note);
-        return {
-          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-        };
+        return jsonContent(await submitForApproval(parsed.gateId, parsed.note));
       },
     );
 
@@ -283,11 +408,23 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetActionLogInputSchema.parse(args);
-        return {
-          content: [
-            { type: "text", text: JSON.stringify(await getActionLog(parsed), null, 2) },
-          ],
-        };
+        return jsonContent(await getActionLog(parsed));
+      },
+    );
+
+    server.registerTool(
+      "get_action_log_entry",
+      {
+        title: "Get Action Log Entry",
+        description: "Fetch one action log entry by logId or idempotencyKey",
+        inputSchema: {
+          logId: z.string().uuid().optional(),
+          idempotencyKey: z.string().min(1).optional(),
+        },
+      },
+      async (args) => {
+        const parsed = GetActionLogEntryInputSchema.parse(args);
+        return jsonContent(await getActionLogEntry(parsed));
       },
     );
   },
@@ -300,8 +437,17 @@ const mcpHandler = createMcpHandler(
   },
 );
 
+function readSubjectFromExtra(
+  extra: { authInfo?: AuthInfo } | undefined,
+): string | undefined {
+  const subjectId = extra?.authInfo?.extra?.subjectId;
+  return typeof subjectId === "string" && subjectId.length > 0
+    ? subjectId
+    : undefined;
+}
+
 async function verifyToken(
-  _req: Request,
+  req: Request,
   bearerToken?: string,
 ): Promise<AuthInfo | undefined> {
   const user = await verifyBearerToken(
@@ -309,11 +455,18 @@ async function verifyToken(
   );
   if (!user) return undefined;
 
+  let subjectId: string | undefined;
+  try {
+    subjectId = resolveSubjectId(req);
+  } catch {
+    return undefined;
+  }
+
   return {
     token: bearerToken ?? "",
     clientId: user.id,
     scopes: ["openid"],
-    extra: { user },
+    extra: { user, subjectId },
   };
 }
 

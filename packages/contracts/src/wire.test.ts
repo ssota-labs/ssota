@@ -2,10 +2,32 @@ import { describe, expect, it } from "vitest";
 import {
   ActionLogRecordSchema,
   ExecuteActionClientInputSchema,
+  NodeCatalogEntrySchema,
   NodeSchema,
 } from "./index.js";
 
 describe("wire schemas", () => {
+  it("parses a node catalog entry wire payload", () => {
+    const parsed = NodeCatalogEntrySchema.parse({
+      nodeType: "Note",
+      slug: "note",
+      label: "Note",
+      family: "document",
+      archetypeId: "note",
+      typicalValueOverrides: {},
+      lifecycleTransitions: {
+        Draft: ["Active"],
+        Active: ["Archived"],
+        Archived: ["Deleted"],
+        Deleted: [],
+      },
+      contentGuide: null,
+      propertyRefs: [],
+      allowedActionRefs: [],
+    });
+    expect(parsed.nodeType).toBe("Note");
+  });
+
   it("parses a node wire payload", () => {
     const parsed = NodeSchema.parse({
       id: "550e8400-e29b-41d4-a716-446655440000",

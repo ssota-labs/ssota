@@ -1,22 +1,37 @@
 import type {
-  ActionCatalogEntry as ContractActionCatalogEntry,
-  Archetype as ContractArchetype,
-  EdgeCatalogEntry as ContractEdgeCatalogEntry,
+  ActionScope,
   Effect,
   ExecutorType,
   GateStatus,
   InstructionScope,
   InstructionWorkflowStep,
   LifecycleStatus,
-  NodeCatalogEntry as ContractNodeCatalogEntry,
+  NodeFamily,
   PermissionOperation,
   PermissionType,
   PropertyCatalogEntry as ContractPropertyCatalogEntry,
 } from "@loopos/contracts";
 
-export type Archetype = ContractArchetype;
+export interface Archetype {
+  id: string;
+  name: string;
+  family: NodeFamily;
+  typicalValues: Record<string, unknown>;
+  allowedMutations: string[];
+}
 
-export type NodeCatalogEntry = ContractNodeCatalogEntry;
+export interface NodeCatalogEntry {
+  nodeType: string;
+  slug: string;
+  label: string;
+  family: NodeFamily;
+  archetypeId: string;
+  typicalValueOverrides: Record<string, unknown>;
+  lifecycleTransitions: Record<LifecycleStatus, LifecycleStatus[]>;
+  contentGuide: string | null;
+  propertyRefs: string[];
+  allowedActionRefs: string[];
+}
 
 export interface Node {
   id: string;
@@ -30,7 +45,15 @@ export interface Node {
   updatedAt: Date;
 }
 
-export type EdgeCatalogEntry = ContractEdgeCatalogEntry;
+export interface EdgeCatalogEntry {
+  edgeType: string;
+  slug: string;
+  label: string;
+  domain: string[];
+  range: string[];
+  cardinality: string;
+  representation: string;
+}
 
 export interface Edge {
   id: string;
@@ -43,7 +66,19 @@ export interface Edge {
 
 export type PropertyCatalogEntry = ContractPropertyCatalogEntry;
 
-export type ActionCatalogEntry = ContractActionCatalogEntry;
+export interface ActionCatalogEntry {
+  actionType: string;
+  slug: string;
+  label: string;
+  scope: ActionScope;
+  preconditions: Record<string, unknown>;
+  effects: Effect[];
+  executor: ExecutorType;
+  allowedLifecycleTransitions: Record<string, LifecycleStatus[]>;
+  failureMode: string;
+  idempotencyRule: string | null;
+  logPayloadSchema: Record<string, unknown>;
+}
 
 export interface ActionPropertyPermission {
   actionType: string;
@@ -58,6 +93,7 @@ export interface ActionPropertyPermission {
 
 export interface Instruction {
   id: string;
+  slug: string;
   title: string;
   triggerPatterns: string[];
   applicableNodeTypes: string[];
@@ -131,16 +167,32 @@ export interface InstructionListInput {
   limit?: number;
 }
 
+export interface Organization {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export interface Project {
+  id: string;
+  organizationId: string;
+  slug: string;
+  name: string;
+}
+
 export interface CatalogPort {
   getNodeCatalogEntry(nodeType: string): Promise<NodeCatalogEntry | null>;
+  getNodeCatalogEntryBySlug(slug: string): Promise<NodeCatalogEntry | null>;
   listNodeCatalogEntries(): Promise<NodeCatalogEntry[]>;
   getEdgeCatalogEntry(edgeType: string): Promise<EdgeCatalogEntry | null>;
+  getEdgeCatalogEntryBySlug(slug: string): Promise<EdgeCatalogEntry | null>;
   listEdgeCatalogEntries(): Promise<EdgeCatalogEntry[]>;
   getPropertyCatalogEntry(
     propertyKey: string,
   ): Promise<PropertyCatalogEntry | null>;
   listPropertyCatalogEntries(): Promise<PropertyCatalogEntry[]>;
   getActionCatalogEntry(actionType: string): Promise<ActionCatalogEntry | null>;
+  getActionCatalogEntryBySlug(slug: string): Promise<ActionCatalogEntry | null>;
   listActionCatalogEntries(): Promise<ActionCatalogEntry[]>;
   getArchetype(archetypeId: string): Promise<Archetype | null>;
   listArchetypes(): Promise<Archetype[]>;
@@ -155,6 +207,25 @@ export interface CatalogPort {
   ): Promise<Instruction[]>;
   listInstructions(input?: InstructionListInput): Promise<Instruction[]>;
   getInstruction(instructionId: string): Promise<Instruction | null>;
+  getInstructionBySlug(slug: string): Promise<Instruction | null>;
+}
+
+export interface ConsolePort {
+  getOrganizationBySlug(slug: string): Promise<Organization | null>;
+  listOrganizationsForUser(userId: string): Promise<Organization[]>;
+  getProjectBySlug(
+    organizationId: string,
+    projectSlug: string,
+  ): Promise<Project | null>;
+  listProjectsForOrganization(organizationId: string): Promise<Project[]>;
+  getUserProjectPreference(
+    userId: string,
+  ): Promise<{ orgSlug: string; projectSlug: string } | null>;
+  setUserProjectPreference(
+    userId: string,
+    orgSlug: string,
+    projectSlug: string,
+  ): Promise<void>;
 }
 
 export interface GraphReadPort {
@@ -162,6 +233,7 @@ export interface GraphReadPort {
   queryNodes(params: {
     nodeType?: string;
     lifecycleStatus?: LifecycleStatus;
+    subjectId?: string;
     limit?: number;
     offset?: number;
   }): Promise<Node[]>;
@@ -169,12 +241,18 @@ export interface GraphReadPort {
     nodeId: string;
     direction: "outgoing" | "incoming" | "both";
     edgeType?: string;
+    subjectId?: string;
   }): Promise<Edge[]>;
   getEdgeCatalogEntry(edgeType: string): Promise<EdgeCatalogEntry | null>;
 }
 
 export interface GatePort {
   listPendingGates(): Promise<Gate[]>;
+  queryGates(params: {
+    status?: GateStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<Gate[]>;
   getGate(gateId: string): Promise<Gate | null>;
   createGate(gate: Omit<Gate, "id" | "createdAt" | "decisionNote">): Promise<Gate>;
 }
@@ -186,6 +264,7 @@ export interface ActionCommitPort {
     offset?: number;
     actionType?: string;
   }): Promise<ActionLogRecord[]>;
+  getActionLogEntry(logId: string): Promise<ActionLogRecord | null>;
   findByIdempotencyKey(key: string): Promise<ActionLogRecord | null>;
 }
 

@@ -33,6 +33,11 @@ Thumbs.db
 .cursor/*
 !.cursor/rules/
 !.cursor/rules/**
+!.cursor/plugins/
+!.cursor/plugins/**
+!.cursor/skills/
+!.cursor/skills/**
+!.cursor/mcp.json
 .idea/
 .vscode/*
 !.vscode/extensions.json
@@ -65,3 +70,5 @@ venv/
 .turbo/
 .vercel/
 storybook-static/
+supabase/.branches/
+supabase/.temp/

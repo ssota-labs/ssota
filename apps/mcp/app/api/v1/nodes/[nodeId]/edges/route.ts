@@ -11,11 +11,15 @@ export async function GET(
   { params }: { params: Promise<{ nodeId: string }> },
 ) {
   const { nodeId } = await params;
-  return withAuth(request, async () => {
+  return withAuth(request, async (ctx) => {
     const url = new URL(request.url);
     const parsed = parseQuery(TraverseEdgesInputSchema, url.searchParams);
     if (!parsed.ok) return parsed.response;
-    const data = await traverseEdges({ ...parsed.data, nodeId });
+    const data = await traverseEdges({
+      ...parsed.data,
+      nodeId,
+      subjectId: ctx.subjectId,
+    });
     return jsonOk(EdgeListResponseSchema.parse({ data }).data);
   });
 }

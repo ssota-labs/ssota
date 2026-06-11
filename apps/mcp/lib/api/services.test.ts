@@ -11,10 +11,12 @@ describe("toExecuteActionInput", () => {
       },
       "real-user-id",
       "Human",
+      "subject-abc",
     );
 
     expect(input.executorId).toBe("real-user-id");
     expect(input.executorType).toBe("Human");
+    expect(input.subjectId).toBe("subject-abc");
     expect(ExecuteActionInputSchema.parse(input)).toEqual(input);
   });
 });

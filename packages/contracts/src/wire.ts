@@ -38,13 +38,18 @@ export const ArchetypeSchema = z.object({
 export type Archetype = z.infer<typeof ArchetypeSchema>;
 
 export const NodeCatalogEntrySchema = NodeTypeDefinitionSchema.extend({
+  slug: z.string().min(1),
+  label: z.string().min(1),
   propertyRefs: z.array(z.string()).default([]),
   allowedActionRefs: z.array(z.string()).default([]),
 });
 
 export type NodeCatalogEntry = z.infer<typeof NodeCatalogEntrySchema>;
 
-export const EdgeCatalogEntrySchema = EdgeTypeDefinitionSchema;
+export const EdgeCatalogEntrySchema = EdgeTypeDefinitionSchema.extend({
+  slug: z.string().min(1),
+  label: z.string().min(1),
+});
 
 export type EdgeCatalogEntry = z.infer<typeof EdgeCatalogEntrySchema>;
 
@@ -54,6 +59,8 @@ export type PropertyCatalogEntry = z.infer<typeof PropertyCatalogEntrySchema>;
 
 export const ActionCatalogEntrySchema = z.object({
   actionType: z.string(),
+  slug: z.string().min(1),
+  label: z.string().min(1),
   scope: ActionScopeSchema,
   preconditions: z.record(z.unknown()),
   effects: z.array(EffectSchema),
@@ -83,6 +90,7 @@ export type ActionPropertyPermission = z.infer<
 
 export const InstructionSchema = z.object({
   id: z.string().uuid(),
+  slug: z.string().min(1),
   title: z.string(),
   triggerPatterns: z.array(z.string()),
   applicableNodeTypes: z.array(z.string()),

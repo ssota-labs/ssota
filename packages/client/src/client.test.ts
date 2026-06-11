@@ -21,6 +21,8 @@ describe("createClient", () => {
       data: [
         {
           nodeType: "Note",
+          slug: "note",
+          label: "Note",
           family: "document",
           archetypeId: "note",
           typicalValueOverrides: {},
