@@ -4,22 +4,22 @@ import { type FormEvent, useState } from "react";
 import Link from "next/link";
 import { defineNodeTypeFormAction } from "@/app/actions";
 import { OutcomeBadge } from "@/components/outcome-badge";
-import type { Archetype } from "@loopos/core";
-import type { ExecuteActionResult } from "@loopos/contracts";
-import { Button } from "@loopos/ui/components/ui/button";
+import type { Archetype } from "@ssota/core";
+import type { ExecuteActionResult } from "@ssota/contracts";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
+} from "@ssota/ui/components/ui/card";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 import {
   NativeSelect,
   NativeSelectOption,
-} from "@loopos/ui/components/ui/native-select";
-import { Textarea } from "@loopos/ui/components/ui/textarea";
+} from "@ssota/ui/components/ui/native-select";
+import { Textarea } from "@ssota/ui/components/ui/textarea";
 
 interface DefineNodeTypeFormProps {
   archetypes: Archetype[];

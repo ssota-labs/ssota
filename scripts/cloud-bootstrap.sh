@@ -133,9 +133,9 @@ docker_ready() {
     && [[ "$(docker info --format '{{.Driver}}' 2>/dev/null || echo '')" == "vfs" ]]
 }
 
-loopos_docker_config() {
+ssota_docker_config() {
   # Cloud VM /etc/docker/daemon.json may pin overlayfs — isolate with our own config.
-  local cfg="/tmp/loopos-docker-daemon.json"
+  local cfg="/tmp/ssota-docker-daemon.json"
   printf '%s\n' '{"storage-driver":"vfs"}' >"$cfg"
   echo "$cfg"
 }
@@ -152,7 +152,7 @@ ensure_docker() {
   sleep 2
 
   local docker_config
-  docker_config="$(loopos_docker_config)"
+  docker_config="$(ssota_docker_config)"
   if [[ -f /etc/docker/daemon.json ]]; then
     log "Using isolated Docker config ($docker_config) — system /etc/docker/daemon.json ignored"
   fi
@@ -207,7 +207,7 @@ ensure_playwright() {
 }
 
 main() {
-  log "LoopOS Cloud bootstrap (session-local runtime)"
+  log "SSOTA Cloud bootstrap (session-local runtime)"
   ensure_node
   ensure_dependencies
   ensure_env_files
@@ -219,8 +219,8 @@ main() {
   ensure_database
   ensure_playwright
   log "Ready."
-  log "Smoke: smoke@loopos.test / smoke-test-password-123"
-  log "Next: pnpm e2e  |  pnpm test --filter @loopos/adapter-supabase"
+  log "Smoke: smoke@ssota.test / smoke-test-password-123"
+  log "Next: pnpm e2e  |  pnpm test --filter @ssota/adapter-supabase"
 }
 
 main "$@"

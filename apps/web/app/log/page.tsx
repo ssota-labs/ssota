@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@loopos/ui/components/ui/table";
+} from "@ssota/ui/components/ui/table";
 
 export default async function LogPage() {
   const user = await getCurrentUser();

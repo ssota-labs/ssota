@@ -3,7 +3,7 @@ import type {
   Effect,
   ExecuteActionInput,
   ExecuteActionResult,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import {
   checkArchetypeDeviation,
   checkPreconditions,

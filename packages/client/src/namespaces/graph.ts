@@ -3,7 +3,7 @@ import {
   TraverseGraphInputSchema,
   type GraphTraversalResult,
   type TraverseGraphInput,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import type { HttpClient } from "../http.js";
 
 export function createGraphApi(http: HttpClient) {

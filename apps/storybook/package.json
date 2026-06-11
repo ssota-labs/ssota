@@ -9,12 +9,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@loopos/ui": "workspace:*",
+    "@ssota/ui": "workspace:*",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
-    "@loopos/config": "workspace:*",
+    "@ssota/config": "workspace:*",
     "@storybook/addon-docs": "^9.0.4",
     "@storybook/react-vite": "^9.0.4",
     "@tailwindcss/postcss": "^4.1.8",

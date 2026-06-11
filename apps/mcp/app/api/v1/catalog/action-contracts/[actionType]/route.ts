@@ -1,4 +1,4 @@
-import { ActionContractResponseSchema } from "@loopos/contracts";
+import { ActionContractResponseSchema } from "@ssota/contracts";
 import { getActionContract } from "@/lib/api/services";
 import { jsonOk } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

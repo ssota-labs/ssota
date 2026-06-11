@@ -1,9 +1,9 @@
 {
-  "extends": "@loopos/config/typescript/nextjs.json",
+  "extends": "@ssota/config/typescript/nextjs.json",
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "@loopos/ui/*": ["../../packages/ui/src/*"],
+      "@ssota/ui/*": ["../../packages/ui/src/*"],
       "@/lib/utils": ["../../packages/ui/src/lib/utils.ts"],
       "@/components/ui/*": ["../../packages/ui/src/components/ui/*"],
       "@/hooks/*": ["../../packages/ui/src/hooks/*"]

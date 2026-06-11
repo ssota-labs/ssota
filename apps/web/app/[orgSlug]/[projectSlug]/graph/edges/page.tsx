@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { Button } from "@loopos/ui/components/ui/button";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
+import { Button } from "@ssota/ui/components/ui/button";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -9,7 +9,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@loopos/ui/components/ui/sheet";
+} from "@ssota/ui/components/ui/sheet";
 import { createEdgeTableFormAction } from "@/app/actions";
 import { EdgeCatalogDataTable } from "@/components/graph/edge-catalog-data-table";
 import { graphPath } from "@/lib/console/paths";

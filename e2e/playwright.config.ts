@@ -74,7 +74,7 @@ export default defineConfig({
         ...process.env,
         ...defaultSupabaseEnv,
         EMBEDDER_BFF_PORT: bffPort,
-        LOOPOS_MCP_URL: mcpUrl,
+        SSOTA_MCP_URL: mcpUrl,
         SUPABASE_URL: defaultSupabaseEnv.NEXT_PUBLIC_SUPABASE_URL,
         SUPABASE_ANON_KEY: defaultSupabaseEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       },

@@ -1,5 +1,5 @@
 import { eq, and, or, sql } from "drizzle-orm";
-import { toCatalogLabel, toCatalogSlug } from "@loopos/core";
+import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
 import type {
   ActionScope,
   Effect,
@@ -7,8 +7,8 @@ import type {
   InstructionScope,
   InstructionWorkflowStep,
   LifecycleStatus,
-} from "@loopos/contracts";
-import { SUBJECT_ID_PROPERTY_KEY } from "@loopos/contracts";
+} from "@ssota/contracts";
+import { SUBJECT_ID_PROPERTY_KEY } from "@ssota/contracts";
 import type {
   ActionCommitPort,
   ActionLogRecord,
@@ -28,7 +28,7 @@ import type {
   Node,
   NodeCatalogEntry,
   PropertyCatalogEntry,
-} from "@loopos/core";
+} from "@ssota/core";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 

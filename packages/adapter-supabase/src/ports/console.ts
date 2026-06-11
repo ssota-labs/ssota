@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { ConsolePort, Organization, Project } from "@loopos/core";
+import type { ConsolePort, Organization, Project } from "@ssota/core";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 

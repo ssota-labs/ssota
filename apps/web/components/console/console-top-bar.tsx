@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { Organization, Project } from "@loopos/core";
+import type { Organization, Project } from "@ssota/core";
 import {
   Avatar,
   AvatarFallback,
-} from "@loopos/ui/components/ui/avatar";
-import { Button } from "@loopos/ui/components/ui/button";
+} from "@ssota/ui/components/ui/avatar";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,8 +15,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@loopos/ui/components/ui/dropdown-menu";
-import { Separator } from "@loopos/ui/components/ui/separator";
+} from "@ssota/ui/components/ui/dropdown-menu";
+import { Separator } from "@ssota/ui/components/ui/separator";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { projectPath } from "@/lib/console/paths";
 import { ConsoleBreadcrumbs } from "./console-breadcrumbs";
@@ -60,7 +60,7 @@ export function ConsoleTopBar({
         href={projectPath(ctx)}
         className="shrink-0 text-sm font-semibold tracking-tight"
       >
-        LoopOS
+        SSOTA
       </Link>
 
       <Separator orientation="vertical" className="h-4" />

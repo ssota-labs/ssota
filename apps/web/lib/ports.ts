@@ -3,7 +3,7 @@ import {
   createConsolePort,
   createDb,
   createOnboardingPort,
-} from "@loopos/adapter-supabase";
+} from "@ssota/adapter-supabase";
 
 let cachedPorts: ReturnType<typeof createActionPorts> | null = null;
 let cachedConsolePort: ReturnType<typeof createConsolePort> | null = null;

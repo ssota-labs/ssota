@@ -5,8 +5,8 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "LoopOS MCP",
-  description: "LoopOS MCP Server",
+  title: "SSOTA MCP",
+  description: "SSOTA MCP Server",
 };
 
 export default function RootLayout({

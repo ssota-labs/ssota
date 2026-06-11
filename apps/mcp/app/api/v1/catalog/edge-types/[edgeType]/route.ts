@@ -1,4 +1,4 @@
-import { EdgeCatalogEntryResponseSchema } from "@loopos/contracts";
+import { EdgeCatalogEntryResponseSchema } from "@ssota/contracts";
 import { getEdgeType } from "@/lib/api/services";
 import { jsonOk } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

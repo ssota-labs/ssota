@@ -1,5 +1,5 @@
-import type { ActionPorts, Edge, Node } from "@loopos/core";
-import type { QueryNeighborsInput, TraverseGraphInput } from "@loopos/contracts";
+import type { ActionPorts, Edge, Node } from "@ssota/core";
+import type { QueryNeighborsInput, TraverseGraphInput } from "@ssota/contracts";
 
 export interface NeighborQueryResult {
   nodeId: string;

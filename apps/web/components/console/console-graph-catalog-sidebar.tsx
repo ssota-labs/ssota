@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
-import { Input } from "@loopos/ui/components/ui/input";
-import { ScrollArea } from "@loopos/ui/components/ui/scroll-area";
-import { cn } from "@loopos/ui/lib/utils";
+import { Input } from "@ssota/ui/components/ui/input";
+import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
+import { cn } from "@ssota/ui/lib/utils";
 import { graphPath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 import { useGraphCatalog } from "./graph-catalog-context";

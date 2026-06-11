@@ -1,4 +1,4 @@
--- LoopOS graph tables: RLS on, deny-all policies.
+-- SSOTA graph tables: RLS on, deny-all policies.
 -- PostgREST (anon/authenticated) cannot read or write rows.
 -- Server adapter uses DATABASE_URL (postgres superuser / service role) which bypasses RLS.
 

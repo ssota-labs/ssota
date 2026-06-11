@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { Badge } from "@loopos/ui/components/ui/badge";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Badge } from "@ssota/ui/components/ui/badge";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
+} from "@ssota/ui/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@loopos/ui/components/ui/table";
+} from "@ssota/ui/components/ui/table";
 import { PageHeader } from "@/components/studio/page-header";
 import { graphPath, projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { HOMEPAGE_AGENT } from "@/lib/homepage-agent";
@@ -81,7 +81,7 @@ export async function HomepageAgentVerticalView({
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2 text-sm text-muted-foreground">
           <Badge variant="outline">BFF: examples/embedder-bff</Badge>
-          <Badge variant="outline">Header: X-LoopOS-Subject-Id</Badge>
+          <Badge variant="outline">Header: X-SSOTA-Subject-Id</Badge>
           <Badge variant="outline">RLS: embedder Supabase</Badge>
         </CardContent>
       </Card>

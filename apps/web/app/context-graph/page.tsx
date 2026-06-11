@@ -5,9 +5,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
-import { Badge } from "@loopos/ui/components/ui/badge";
-import { Button } from "@loopos/ui/components/ui/button";
+} from "@ssota/ui/components/ui/card";
+import { Badge } from "@ssota/ui/components/ui/badge";
+import { Button } from "@ssota/ui/components/ui/button";
 import { PageHeader } from "@/components/studio/page-header";
 import { getActionPorts } from "@/lib/ports";
 

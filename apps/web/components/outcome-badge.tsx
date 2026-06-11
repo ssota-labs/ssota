@@ -1,4 +1,4 @@
-import { Badge } from "@loopos/ui/components/ui/badge";
+import { Badge } from "@ssota/ui/components/ui/badge";
 
 const outcomeVariant = {
   committed: "outline",

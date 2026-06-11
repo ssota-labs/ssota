@@ -1,5 +1,5 @@
 {
-  "extends": "@loopos/config/typescript/node",
+  "extends": "@ssota/config/typescript/node",
   "compilerOptions": {
     "outDir": "dist",
     "rootDir": "src",

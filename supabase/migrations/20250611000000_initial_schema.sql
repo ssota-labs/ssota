@@ -1,4 +1,4 @@
--- LoopOS initial schema (from Drizzle schema.ts)
+-- SSOTA initial schema (from Drizzle schema.ts)
 -- Apply via: pnpm db:migrate (= supabase migration up --local)
 
 CREATE TYPE "public"."action_outcome" AS ENUM('committed', 'gated', 'rejected');

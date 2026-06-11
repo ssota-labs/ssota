@@ -1,4 +1,4 @@
-import { toCatalogLabel, toCatalogSlug } from "@loopos/core";
+import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
 import { createClient } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
 import { createDb } from "../db/client.js";
@@ -659,7 +659,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
   await seedHomepageAgentCatalog(db);
 }
 
-/** Domain instructions only — Root Runtime Protocol lives in loopos-mcp skill. */
+/** Domain instructions only — Root Runtime Protocol lives in ssota-mcp skill. */
 const DOMAIN_INSTRUCTIONS = [
   {
     title: "Document creation",
@@ -800,7 +800,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     .values({
       organizationId,
       slug: DEFAULT_PROJECT_SLUG,
-      name: "LoopOS Dev",
+      name: "SSOTA Dev",
     })
     .onConflictDoNothing();
 

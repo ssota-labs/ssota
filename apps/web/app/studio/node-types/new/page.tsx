@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/studio/page-header";
 import { DefineNodeTypeForm } from "@/components/studio/define-node-type-form";
 import { getActionPorts } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Button } from "@ssota/ui/components/ui/button";
 
 export default async function NewNodeTypePage() {
   const user = await getCurrentUser();

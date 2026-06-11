@@ -1,5 +1,5 @@
 {
-  "name": "@loopos/adapter-supabase",
+  "name": "@ssota/adapter-supabase",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -19,15 +19,15 @@
     "db:seed": "tsx src/scripts/seed.ts"
   },
   "dependencies": {
-    "@loopos/contracts": "workspace:*",
-    "@loopos/core": "workspace:*",
+    "@ssota/contracts": "workspace:*",
+    "@ssota/core": "workspace:*",
     "@supabase/supabase-js": "^2.108.1",
     "drizzle-orm": "^0.44.2",
     "postgres": "^3.4.7",
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@loopos/config": "workspace:*",
+    "@ssota/config": "workspace:*",
     "@types/node": "^22.15.30",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",

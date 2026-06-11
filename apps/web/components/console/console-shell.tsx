@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import type { Organization, Project } from "@loopos/core";
+import type { Organization, Project } from "@ssota/core";
 import { ConsoleGraphCatalogSidebar } from "./console-graph-catalog-sidebar";
 import { ConsoleIconRail } from "./console-icon-rail";
 import { ConsoleTopBar } from "./console-top-bar";

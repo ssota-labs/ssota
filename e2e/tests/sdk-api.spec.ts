@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createClient } from "@loopos/client";
+import { createClient } from "@ssota/client";
 import { getSmokeAccessToken } from "../helpers/mcp";
 import fs from "node:fs";
 import path from "node:path";
@@ -7,7 +7,7 @@ import path from "node:path";
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 const apiBase = `${mcpUrl}/api/v1`;
 
-test.describe("LoopOS SDK → HTTP API v1", () => {
+test.describe("SSOTA SDK → HTTP API v1", () => {
   test("401: Bearer 없이 API 거부", async ({ request }) => {
     const res = await request.get(`${apiBase}/catalog/node-types`);
     expect(res.status()).toBe(401);
@@ -17,12 +17,12 @@ test.describe("LoopOS SDK → HTTP API v1", () => {
 
   test("거부: 카탈로그에 없는 actionType은 rejected (HTTP 200)", async () => {
     const token = await getSmokeAccessToken();
-    const loopos = createClient({
+    const ssota = createClient({
       url: apiBase,
       auth: { accessToken: token },
     });
 
-    const result = await loopos.actions.execute({
+    const result = await ssota.actions.execute({
       actionType: "definitely_not_in_catalog_xyz",
       input: {},
     });
@@ -57,50 +57,50 @@ test.describe("LoopOS SDK → HTTP API v1", () => {
 
   test("smoke: SDK catalog 조회 + fetch", async () => {
     const token = await getSmokeAccessToken();
-    const loopos = createClient({
+    const ssota = createClient({
       url: apiBase,
       auth: { accessToken: token },
     });
 
-    const nodeTypes = await loopos.catalog.listNodeTypes();
+    const nodeTypes = await ssota.catalog.listNodeTypes();
     expect(nodeTypes.length).toBeGreaterThan(0);
     expect(nodeTypes.some((e) => e.nodeType === "Note")).toBe(true);
 
-    const noteType = await loopos.catalog.getNodeType("Note");
+    const noteType = await ssota.catalog.getNodeType("Note");
     expect(noteType?.nodeType).toBe("Note");
 
-    const log = await loopos.log.list({ limit: 5 });
+    const log = await ssota.log.list({ limit: 5 });
     expect(Array.isArray(log)).toBe(true);
   });
 
   test("smoke: SDK instructions find + get", async () => {
     const token = await getSmokeAccessToken();
-    const loopos = createClient({
+    const ssota = createClient({
       url: apiBase,
       auth: { accessToken: token },
     });
 
-    const found = await loopos.instructions.find({
+    const found = await ssota.instructions.find({
       query: "document",
       limit: 3,
     });
     expect(found.length).toBeGreaterThan(0);
 
-    const instruction = await loopos.instructions.get(found[0]!.id);
+    const instruction = await ssota.instructions.get(found[0]!.id);
     expect(instruction?.id).toBe(found[0]!.id);
   });
 
   test("smoke: SDK execute → preview 플로우", async () => {
     const token = await getSmokeAccessToken();
-    const loopos = createClient({
+    const ssota = createClient({
       url: apiBase,
       auth: { accessToken: token },
     });
 
-    const preview = await loopos.actions.preview({
+    const preview = await ssota.actions.preview({
       actionType: "create_note",
       input: {
-        content: "created via @loopos/client",
+        content: "created via @ssota/client",
       },
     });
 
@@ -110,14 +110,14 @@ test.describe("LoopOS SDK → HTTP API v1", () => {
     }
   });
 
-  test("subjectId: X-LoopOS-Subject-Id 헤더가 API에 전달됨", async ({
+  test("subjectId: X-SSOTA-Subject-Id 헤더가 API에 전달됨", async ({
     request,
   }) => {
     const token = await getSmokeAccessToken();
     const res = await request.get(`${apiBase}/catalog/node-types`, {
       headers: {
         Authorization: `Bearer ${token}`,
-        "X-LoopOS-Subject-Id": "e2e-subject-1",
+        "X-SSOTA-Subject-Id": "e2e-subject-1",
       },
     });
     expect(res.ok()).toBeTruthy();
@@ -127,20 +127,20 @@ test.describe("LoopOS SDK → HTTP API v1", () => {
     const token = await getSmokeAccessToken();
     let sawSubjectHeader = false;
 
-    const loopos = createClient({
+    const ssota = createClient({
       url: apiBase,
       auth: { accessToken: token },
       subjectId: "e2e-sdk-subject",
       fetch: async (input, init) => {
         const headers = init?.headers as Record<string, string>;
-        if (headers["X-LoopOS-Subject-Id"] === "e2e-sdk-subject") {
+        if (headers["X-SSOTA-Subject-Id"] === "e2e-sdk-subject") {
           sawSubjectHeader = true;
         }
         return request.fetch(String(input), init ?? {});
       },
     });
 
-    await loopos.catalog.listNodeTypes();
+    await ssota.catalog.listNodeTypes();
     expect(sawSubjectHeader).toBe(true);
   });
 

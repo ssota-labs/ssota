@@ -8,7 +8,7 @@ importers:
 
   .:
     devDependencies:
-      '@loopos/client':
+      '@ssota/client':
         specifier: workspace:*
         version: link:packages/client
       supabase:
@@ -26,21 +26,21 @@ importers:
 
   apps/mcp:
     dependencies:
-      '@loopos/adapter-supabase':
-        specifier: workspace:*
-        version: link:../../packages/adapter-supabase
-      '@loopos/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@loopos/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@loopos/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@modelcontextprotocol/sdk':
         specifier: ^1.13.0
         version: 1.29.0(zod@3.25.76)
+      '@ssota/adapter-supabase':
+        specifier: workspace:*
+        version: link:../../packages/adapter-supabase
+      '@ssota/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@ssota/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@ssota/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@supabase/supabase-js':
         specifier: ^2.108.1
         version: 2.108.1
@@ -49,7 +49,7 @@ importers:
         version: 6.2.3
       mcp-handler:
         specifier: ^1.0.3
-        version: 1.1.0(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(next@16.2.7(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
+        version: 1.1.0(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(next@16.2.7(@babel/core@7.29.7)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))
       next:
         specifier: ^16.0.0
         version: 16.2.7(@babel/core@7.29.7)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -63,7 +63,7 @@ importers:
         specifier: ^3.25.67
         version: 3.25.76
     devDependencies:
-      '@loopos/config':
+      '@ssota/config':
         specifier: workspace:*
         version: link:../../packages/config
       '@tailwindcss/postcss':
@@ -99,7 +99,7 @@ importers:
 
   apps/storybook:
     dependencies:
-      '@loopos/ui':
+      '@ssota/ui':
         specifier: workspace:*
         version: link:../../packages/ui
       react:
@@ -109,7 +109,7 @@ importers:
         specifier: ^19.1.0
         version: 19.2.7(react@19.2.7)
     devDependencies:
-      '@loopos/config':
+      '@ssota/config':
         specifier: workspace:*
         version: link:../../packages/config
       '@storybook/addon-docs':
@@ -145,21 +145,21 @@ importers:
 
   apps/web:
     dependencies:
-      '@loopos/adapter-supabase':
-        specifier: workspace:*
-        version: link:../../packages/adapter-supabase
-      '@loopos/contracts':
-        specifier: workspace:*
-        version: link:../../packages/contracts
-      '@loopos/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@loopos/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      '@ssota/adapter-supabase':
+        specifier: workspace:*
+        version: link:../../packages/adapter-supabase
+      '@ssota/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@ssota/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@ssota/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@supabase/ssr':
         specifier: ^0.12.0
         version: 0.12.0(@supabase/supabase-js@2.108.1)
@@ -182,7 +182,7 @@ importers:
         specifier: ^3.25.67
         version: 3.25.76
     devDependencies:
-      '@loopos/config':
+      '@ssota/config':
         specifier: workspace:*
         version: link:../../packages/config
       '@tailwindcss/postcss':
@@ -215,25 +215,25 @@ importers:
 
   e2e:
     devDependencies:
-      '@loopos/adapter-supabase':
-        specifier: workspace:*
-        version: link:../packages/adapter-supabase
-      '@loopos/client':
-        specifier: workspace:*
-        version: link:../packages/client
       '@playwright/test':
         specifier: ^1.52.0
         version: 1.60.0
+      '@ssota/adapter-supabase':
+        specifier: workspace:*
+        version: link:../packages/adapter-supabase
+      '@ssota/client':
+        specifier: workspace:*
+        version: link:../packages/client
       '@supabase/supabase-js':
         specifier: ^2.108.1
         version: 2.108.1
 
   packages/adapter-supabase:
     dependencies:
-      '@loopos/contracts':
+      '@ssota/contracts':
         specifier: workspace:*
         version: link:../contracts
-      '@loopos/core':
+      '@ssota/core':
         specifier: workspace:*
         version: link:../core
       '@supabase/supabase-js':
@@ -249,7 +249,7 @@ importers:
         specifier: ^3.25.67
         version: 3.25.76
     devDependencies:
-      '@loopos/config':
+      '@ssota/config':
         specifier: workspace:*
         version: link:../config
       '@types/node':
@@ -282,14 +282,14 @@ importers:
 
   packages/client:
     dependencies:
-      '@loopos/contracts':
+      '@ssota/contracts':
         specifier: workspace:*
         version: link:../contracts
       zod:
         specifier: ^3.25.67
         version: 3.25.76
     devDependencies:
-      '@loopos/config':
+      '@ssota/config':
         specifier: workspace:*
         version: link:../config
       '@types/node':
@@ -332,7 +332,7 @@ importers:
         specifier: ^3.25.67
         version: 3.25.76
     devDependencies:
-      '@loopos/config':
+      '@ssota/config':
         specifier: workspace:*
         version: link:../config
       '@typescript-eslint/eslint-plugin':
@@ -353,11 +353,11 @@ importers:
 
   packages/core:
     dependencies:
-      '@loopos/contracts':
+      '@ssota/contracts':
         specifier: workspace:*
         version: link:../contracts
     devDependencies:
-      '@loopos/config':
+      '@ssota/config':
         specifier: workspace:*
         version: link:../config
       '@types/node':
@@ -442,7 +442,7 @@ importers:
         specifier: ^1.1.2
         version: 1.1.2(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
-      '@loopos/config':
+      '@ssota/config':
         specifier: workspace:*
         version: link:../config
       '@storybook/react-vite':
@@ -8863,7 +8863,7 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  mcp-handler@1.1.0(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(next@16.2.7(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)):
+  mcp-handler@1.1.0(@modelcontextprotocol/sdk@1.29.0(zod@3.25.76))(next@16.2.7(@babel/core@7.29.7)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)):
     dependencies:
       '@modelcontextprotocol/sdk': 1.29.0(zod@3.25.76)
       chalk: 5.6.2

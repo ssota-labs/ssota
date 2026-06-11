@@ -1,5 +1,5 @@
-import { SUBJECT_ID_PROPERTY_KEY } from "@loopos/contracts";
-import type { Effect } from "@loopos/contracts";
+import { SUBJECT_ID_PROPERTY_KEY } from "@ssota/contracts";
+import type { Effect } from "@ssota/contracts";
 import type { Node, NodeCatalogEntry } from "./types.js";
 import { ActionRejectedError } from "./types.js";
 

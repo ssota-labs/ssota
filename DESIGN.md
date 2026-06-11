@@ -1,10 +1,10 @@
-# LoopOS Design System
+# SSOTA Design System
 
 > SSOT: `packages/ui` + preset `b2CimoD3a` (Base UI / style `base-mira` / theme cyan / font Geist)
 
 ## 1. Brand Context
 
-LoopOS는 에이전트에게 결정을 위임하기 위한 컨텍스트 그래프 런타임이다. 콘솔 UI는 Human Gate·Action Log·카탈로그 브라우저를 제공하며, 기술적·신뢰감 있는 SaaS 톤을 유지한다. 장식보다 정보 밀도와 감사 가능성을 우선한다.
+SSOTA는 에이전트에게 결정을 위임하기 위한 컨텍스트 그래프 런타임이다. 콘솔 UI는 Human Gate·Action Log·카탈로그 브라우저를 제공하며, 기술적·신뢰감 있는 SaaS 톤을 유지한다. 장식보다 정보 밀도와 감사 가능성을 우선한다.
 
 ## 2. Color System
 
@@ -45,7 +45,7 @@ Primary는 cyan 계열 oklch (`--primary: oklch(0.52 0.105 223.128)`). **임의 
 | Login | `Card`, `Input`, `Button`, `Label` |
 | Catalog | `Card`, `Badge` |
 
-Import path: `@loopos/ui/components/ui/<component>`
+Import path: `@ssota/ui/components/ui/<component>`
 
 ## 6. Motion
 
@@ -56,7 +56,7 @@ Import path: `@loopos/ui/components/ui/<component>`
 
 **Do**
 
-- `@loopos/ui` semantic tokens 사용 (`bg-background`, `text-muted-foreground`)
+- `@ssota/ui` semantic tokens 사용 (`bg-background`, `text-muted-foreground`)
 - Base UI `render` prop으로 trigger/close 구성
 - 모든 쓰기는 `executeAction()` 경유 (UI에서 직접 CRUD 금지)
 
@@ -83,4 +83,4 @@ pnpm dlx shadcn@latest add <name> -y -c apps/web
 
 ## 9. Changelog
 
-- 2026-06-10: preset `b2CimoD3a`, Base UI, `@loopos/ui` monorepo, Storybook, console migration
+- 2026-06-10: preset `b2CimoD3a`, Base UI, `@ssota/ui` monorepo, Storybook, console migration

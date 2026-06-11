@@ -6,7 +6,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
+} from "@ssota/ui/components/ui/card";
 
 const sections = [
   {

@@ -1,4 +1,4 @@
-import { NodeCatalogEntryResponseSchema } from "@loopos/contracts";
+import { NodeCatalogEntryResponseSchema } from "@ssota/contracts";
 import { getNodeType } from "@/lib/api/services";
 import { jsonOk } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

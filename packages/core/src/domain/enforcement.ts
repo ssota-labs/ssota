@@ -13,9 +13,9 @@ import type {
   LifecycleStatus,
   NodeTypeDefinition,
   PermissionOperation,
-} from "@loopos/contracts";
-import { SUBJECT_ID_PROPERTY_KEY } from "@loopos/contracts";
-import { NodeTypeDefinitionSchema } from "@loopos/contracts";
+} from "@ssota/contracts";
+import { SUBJECT_ID_PROPERTY_KEY } from "@ssota/contracts";
+import { NodeTypeDefinitionSchema } from "@ssota/contracts";
 import { ActionRejectedError } from "./types.js";
 
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
@@ -276,8 +276,8 @@ export function resolveEffects(
           actionType: string;
           nodeType: string;
           propertyKey: string;
-          operation: import("@loopos/contracts").PermissionOperation;
-          permissionType: import("@loopos/contracts").PermissionType;
+          operation: import("@ssota/contracts").PermissionOperation;
+          permissionType: import("@ssota/contracts").PermissionType;
           valueConstraint: Record<string, unknown> | null;
           requiresHumanGate: boolean;
           status: string;
@@ -313,9 +313,9 @@ export function resolveEffects(
         optionalActions: string[];
         lifecycle: LifecycleStatus;
         body: string;
-        scope?: import("@loopos/contracts").InstructionScope;
+        scope?: import("@ssota/contracts").InstructionScope;
         triggers?: string[];
-        workflowSteps?: import("@loopos/contracts").InstructionWorkflowStep[];
+        workflowSteps?: import("@ssota/contracts").InstructionWorkflowStep[];
         allowedActions?: string[];
         outputContract?: Record<string, unknown>;
         gatePolicy?: Record<string, unknown>;

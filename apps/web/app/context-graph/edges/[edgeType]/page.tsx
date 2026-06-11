@@ -1,15 +1,15 @@
 import { notFound } from "next/navigation";
-import { Badge } from "@loopos/ui/components/ui/badge";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Badge } from "@ssota/ui/components/ui/badge";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
+} from "@ssota/ui/components/ui/card";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -17,7 +17,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@loopos/ui/components/ui/sheet";
+} from "@ssota/ui/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -25,8 +25,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@loopos/ui/components/ui/table";
-import { Textarea } from "@loopos/ui/components/ui/textarea";
+} from "@ssota/ui/components/ui/table";
+import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineScopedActionFormAction, runActionJsonFormAction } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
 import { getActionPorts } from "@/lib/ports";

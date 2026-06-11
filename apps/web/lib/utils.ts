@@ -1,1 +1,1 @@
-export { cn } from "@loopos/ui/lib/utils";
+export { cn } from "@ssota/ui/lib/utils";

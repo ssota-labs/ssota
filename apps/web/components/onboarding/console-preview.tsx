@@ -1,6 +1,6 @@
 "use client";
 
-import { toRouteSlug } from "@loopos/core";
+import { toRouteSlug } from "@ssota/core";
 
 type ConsolePreviewProps = {
   workspaceName: string;
@@ -18,7 +18,7 @@ export function ConsolePreview({ workspaceName, projectName }: ConsolePreviewPro
   return (
     <div className="flex min-h-[34rem] flex-col overflow-hidden rounded-xl border bg-background shadow-lg">
       <header className="flex h-14 shrink-0 items-center gap-2 border-b px-5 text-sm">
-        <span className="font-semibold">LoopOS</span>
+        <span className="font-semibold">SSOTA</span>
         <span className="text-muted-foreground">|</span>
         <span className="rounded-md border px-2 py-0.5">{orgLabel}</span>
         <span className="text-muted-foreground">/</span>
@@ -42,7 +42,7 @@ export function ConsolePreview({ workspaceName, projectName }: ConsolePreviewPro
 
         <main className="flex-1 p-8">
           <p className="text-xs text-muted-foreground">
-            loopos.dev/{orgSlug}/{projectSlug}
+            ssota.dev/{orgSlug}/{projectSlug}
           </p>
           <h2 className="mt-2 text-3xl font-semibold">{projectLabel}</h2>
           <p className="mt-1 text-sm text-muted-foreground">

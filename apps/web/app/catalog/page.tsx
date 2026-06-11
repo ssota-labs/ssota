@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
 import { getActionPorts } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { Badge } from "@loopos/ui/components/ui/badge";
+import { Badge } from "@ssota/ui/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
+} from "@ssota/ui/components/ui/card";
 
 export default async function CatalogPage() {
   const user = await getCurrentUser();

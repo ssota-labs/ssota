@@ -8,7 +8,7 @@ import {
   type Node,
   type QueryNeighborsInput,
   type QueryNodesInput,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import type { HttpClient } from "../http.js";
 
 export function createNodesApi(http: HttpClient) {

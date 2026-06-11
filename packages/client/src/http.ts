@@ -72,7 +72,7 @@ export class HttpClient {
       Accept: "application/json",
     };
     if (subjectId) {
-      headers["X-LoopOS-Subject-Id"] = subjectId;
+      headers["X-SSOTA-Subject-Id"] = subjectId;
     }
 
     const response = await this.fetchImpl(String(url), {

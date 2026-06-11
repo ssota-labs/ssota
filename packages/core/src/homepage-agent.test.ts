@@ -6,7 +6,7 @@ import {
   createInMemoryState,
   seedTestCatalog,
 } from "./testing/in-memory.js";
-import type { LifecycleStatus } from "@loopos/contracts";
+import type { LifecycleStatus } from "@ssota/contracts";
 
 const defaultTransitions: Record<LifecycleStatus, LifecycleStatus[]> = {
   Draft: ["Active", "Archived"],

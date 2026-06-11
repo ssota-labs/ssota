@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import type { Organization, Project } from "@loopos/core";
+import type { Organization, Project } from "@ssota/core";
 import { getConsolePort } from "@/lib/ports";
 
 export type ResolvedProject = {

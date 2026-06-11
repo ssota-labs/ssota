@@ -1,5 +1,5 @@
 import { signInWithGoogleAction } from "@/app/actions";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Button } from "@ssota/ui/components/ui/button";
 
 function GoogleIcon() {
   return (

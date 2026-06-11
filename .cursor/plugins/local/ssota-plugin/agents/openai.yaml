@@ -1,0 +1,16 @@
+interface:
+  display_name: "SSOTA Plugin"
+  short_description: "Use SSOTA MCP instructions and action contracts from Codex."
+  brand_color: "#2563EB"
+  default_prompt: "Use the ssota-mcp skill to discover instructions, inspect action contracts, execute SSOTA actions, and verify outcomes."
+
+policy:
+  allow_implicit_invocation: true
+
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "ssota"
+      description: "SSOTA MCP server for instruction-driven automation and execute_action workflows."
+      transport: "streamable_http"
+      url: "http://127.0.0.1:3001/api/mcp"

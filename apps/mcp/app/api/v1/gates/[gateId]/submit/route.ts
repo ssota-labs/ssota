@@ -1,7 +1,7 @@
 import {
   SubmitForApprovalClientInputSchema,
   SubmitForApprovalResponseSchema,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import { submitForApproval } from "@/lib/api/services";
 import { jsonOk, parseJsonBody } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

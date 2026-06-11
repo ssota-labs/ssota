@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
-} from "@loopos/adapter-supabase";
+} from "@ssota/adapter-supabase";
 
 const supabaseUrl = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
 const supabaseAnonKey =
@@ -43,7 +43,7 @@ export async function mcpToolCall(
     Accept: "application/json, text/event-stream",
   };
   if (options?.subjectId) {
-    headers["X-LoopOS-Subject-Id"] = options.subjectId;
+    headers["X-SSOTA-Subject-Id"] = options.subjectId;
   }
 
   const initRes = await request.post(`${mcpUrl}/api/mcp`, {

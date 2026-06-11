@@ -1,4 +1,4 @@
-import { ArchetypeResponseSchema } from "@loopos/contracts";
+import { ArchetypeResponseSchema } from "@ssota/contracts";
 import { getArchetype } from "@/lib/api/services";
 import { jsonOk } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

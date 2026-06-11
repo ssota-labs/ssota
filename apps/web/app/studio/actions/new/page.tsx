@@ -3,20 +3,20 @@ import Link from "next/link";
 import { defineActionContractAction } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
+} from "@ssota/ui/components/ui/card";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 import {
   NativeSelect,
   NativeSelectOption,
-} from "@loopos/ui/components/ui/native-select";
-import { Textarea } from "@loopos/ui/components/ui/textarea";
+} from "@ssota/ui/components/ui/native-select";
+import { Textarea } from "@ssota/ui/components/ui/textarea";
 
 export default async function NewActionContractPage() {
   const user = await getCurrentUser();

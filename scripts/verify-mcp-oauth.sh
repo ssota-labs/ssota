@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Smoke-check LoopOS MCP OAuth surface (local or hosted).
+# Smoke-check SSOTA MCP OAuth surface (local or hosted).
 # Usage: ./scripts/verify-mcp-oauth.sh https://mcp.example.com
 set -euo pipefail
 
@@ -12,7 +12,7 @@ SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-}"
 pass() { printf '  ✓ %s\n' "$1"; }
 fail() { printf '  ✗ %s\n' "$1"; exit 1; }
 
-echo "LoopOS MCP OAuth verification"
+echo "SSOTA MCP OAuth verification"
 echo "  MCP resource : ${RESOURCE_URL}"
 echo "  Metadata URL : ${METADATA_URL}"
 echo

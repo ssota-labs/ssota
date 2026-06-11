@@ -6,7 +6,7 @@ export function uniqueOnboardingSuffix(): string {
 }
 
 export function uniqueOnboardingEmail(): string {
-  return `onboarding-e2e-${uniqueOnboardingSuffix()}@loopos.test`;
+  return `onboarding-e2e-${uniqueOnboardingSuffix()}@ssota.test`;
 }
 
 export const ONBOARDING_PASSWORD = "onboarding-test-password-123";

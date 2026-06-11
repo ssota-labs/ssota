@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-import { Button } from "@loopos/ui/components/ui/button";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
+import { Button } from "@ssota/ui/components/ui/button";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -9,8 +9,8 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@loopos/ui/components/ui/sheet";
-import { Textarea } from "@loopos/ui/components/ui/textarea";
+} from "@ssota/ui/components/ui/sheet";
+import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { createNodeTableFormAction } from "@/app/actions";
 import { NodeCatalogDataTable } from "@/components/graph/node-catalog-data-table";
 import { graphPath } from "@/lib/console/paths";

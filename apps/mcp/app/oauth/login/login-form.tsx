@@ -3,15 +3,15 @@
 import { createClient } from "@supabase/supabase-js";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
+} from "@ssota/ui/components/ui/card";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
@@ -22,7 +22,7 @@ const supabase = createClient(
 export function LoginForm() {
   const searchParams = useSearchParams();
   const authorizationId = searchParams.get("authorization_id");
-  const [email, setEmail] = useState("smoke@loopos.test");
+  const [email, setEmail] = useState("smoke@ssota.test");
   const [password, setPassword] = useState("smoke-test-password-123");
   const [error, setError] = useState<string | null>(null);
 

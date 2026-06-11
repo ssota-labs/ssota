@@ -3,7 +3,7 @@ import {
   TraverseEdgesInputSchema,
   type Edge,
   type TraverseEdgesInput,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import type { HttpClient } from "../http.js";
 
 export interface TraverseEdgesParams

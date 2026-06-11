@@ -14,7 +14,7 @@ import {
   type EdgeCatalogEntry,
   type NodeCatalogEntry,
   type PropertyCatalogEntry,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import type { HttpClient } from "../http.js";
 
 export function createCatalogApi(http: HttpClient) {

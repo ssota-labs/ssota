@@ -1,4 +1,4 @@
-import { createActionPorts, createDb } from "@loopos/adapter-supabase";
+import { createActionPorts, createDb } from "@ssota/adapter-supabase";
 
 let cachedPorts: ReturnType<typeof createActionPorts> | null = null;
 

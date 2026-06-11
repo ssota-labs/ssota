@@ -1,5 +1,5 @@
 import type { z } from "zod";
-import { ApiErrorSchema } from "@loopos/contracts";
+import { ApiErrorSchema } from "@ssota/contracts";
 
 export function jsonOk<T>(data: T, status = 200): Response {
   return Response.json({ data }, { status });

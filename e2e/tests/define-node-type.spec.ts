@@ -5,7 +5,7 @@ import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
-test.describe("LoopOS define_node_type vertical slice", () => {
+test.describe("SSOTA define_node_type vertical slice", () => {
   test("Agent MCP propose → Human gate approve → catalog visible", async ({
     page,
     request,

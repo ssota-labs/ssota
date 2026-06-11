@@ -18,7 +18,7 @@ import {
   TraverseGraphInputSchema,
   type ExecuteActionClientInput,
   type ExecuteActionInput,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import {
   executeAction,
   previewAction,
@@ -32,8 +32,8 @@ import {
   serializeNode,
   serializeNodeCatalogEntry,
   serializePropertyCatalogEntry,
-} from "@loopos/core";
-import type { ExecutorType } from "@loopos/contracts";
+} from "@ssota/core";
+import type { ExecutorType } from "@ssota/contracts";
 import { queryNeighbors, traverseGraph } from "@/lib/graph-query";
 import { getActionPorts } from "@/lib/ports";
 

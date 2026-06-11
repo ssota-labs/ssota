@@ -1,3 +1,3 @@
-import config from "@loopos/config/vitest/node";
+import config from "@ssota/config/vitest/node";
 
 export default config;

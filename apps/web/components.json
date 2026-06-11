@@ -13,11 +13,11 @@
   "iconLibrary": "phosphor",
   "rtl": false,
   "aliases": {
-    "components": "@loopos/ui/components",
-    "utils": "@loopos/ui/lib/utils",
-    "ui": "@loopos/ui/components/ui",
-    "lib": "@loopos/ui/lib",
-    "hooks": "@loopos/ui/hooks"
+    "components": "@ssota/ui/components",
+    "utils": "@ssota/ui/lib/utils",
+    "ui": "@ssota/ui/components/ui",
+    "lib": "@ssota/ui/lib",
+    "hooks": "@ssota/ui/hooks"
   },
   "menuColor": "default-translucent",
   "menuAccent": "subtle",

@@ -1,13 +1,13 @@
 import { approveGateFormAction } from "@/app/actions";
 import { getActionPorts } from "@/lib/ports";
-import { Button } from "@loopos/ui/components/ui/button";
-import { Badge } from "@loopos/ui/components/ui/badge";
+import { Button } from "@ssota/ui/components/ui/button";
+import { Badge } from "@ssota/ui/components/ui/badge";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
+} from "@ssota/ui/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@loopos/ui/components/ui/table";
+} from "@ssota/ui/components/ui/table";
 
 export default async function GatesPage({
   params,

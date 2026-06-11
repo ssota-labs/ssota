@@ -10,7 +10,7 @@ import type {
   PermissionOperation,
   PermissionType,
   PropertyCatalogEntry as ContractPropertyCatalogEntry,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 
 export interface Archetype {
   id: string;

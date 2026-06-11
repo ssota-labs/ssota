@@ -2,10 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: [
-    "@loopos/core",
-    "@loopos/contracts",
-    "@loopos/adapter-supabase",
-    "@loopos/ui",
+    "@ssota/core",
+    "@ssota/contracts",
+    "@ssota/adapter-supabase",
+    "@ssota/ui",
   ],
   allowedDevOrigins: ["127.0.0.1"],
 };

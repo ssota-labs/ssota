@@ -53,7 +53,7 @@ describe("executeAction — 4대 강제", () => {
 
     const result = await executeAction(ports, {
       actionType: "create_note",
-      input: { content: "Hello LoopOS" },
+      input: { content: "Hello SSOTA" },
       executorId: "agent-1",
       executorType: "Agent",
     });

@@ -3,7 +3,7 @@ import { expect } from "@playwright/test";
 import {
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
-} from "@loopos/adapter-supabase";
+} from "@ssota/adapter-supabase";
 
 export const DEFAULT_CONSOLE_BASE = `/${DEFAULT_ORG_SLUG}/${DEFAULT_PROJECT_SLUG}`;
 

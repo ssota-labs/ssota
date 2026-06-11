@@ -1,7 +1,7 @@
 import {
   NeighborQueryResponseSchema,
   QueryNeighborsInputSchema,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import { queryNeighborsService } from "@/lib/api/services";
 import { jsonOk, parseQuery } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

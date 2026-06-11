@@ -17,7 +17,7 @@ export function OnboardingShell({
     <div className="min-h-screen overflow-x-hidden bg-muted/30">
       <header className="border-b bg-background px-6 py-4">
         <Link href="/" className="text-lg font-semibold">
-          LoopOS
+          SSOTA
         </Link>
       </header>
 
