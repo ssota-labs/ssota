@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { SMOKE_EMAIL, SMOKE_PASSWORD } from "../constants.js";
+import { seedHomepageAgentCatalog } from "./seed-homepage-agent.js";
 
 const documentArchetypes = [
   { id: "doc-note", name: "Note", typical: { temporality: "ephemeral", authority: "personal" } },
@@ -632,6 +633,8 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
       },
     ])
     .onConflictDoNothing();
+
+  await seedHomepageAgentCatalog(db);
 }
 
 async function seedSmokeUser() {
