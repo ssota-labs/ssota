@@ -1,4 +1,4 @@
-import { getDefaultProjectPath } from "@/lib/console/default-landing";
+import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/auth/config";
 import { NextResponse } from "next/server";
@@ -23,6 +23,6 @@ export async function GET(request: Request) {
     );
   }
 
-  const path = await getDefaultProjectPath(data.user.id);
+  const path = await resolvePostAuthPath(data.user.id);
   return NextResponse.redirect(`${origin}${path}`);
 }

@@ -456,6 +456,7 @@ export function createGraphReadPort(db: Db): GraphReadPort {
 }
 
 export { createConsolePort } from "./console.js";
+export { createOnboardingPort } from "./onboarding.js";
 
 export function createGatePort(db: Db): GatePort {
   return {

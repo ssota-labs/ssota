@@ -49,7 +49,23 @@ export const organizations = pgTable("organizations", {
   id: uuid("id").primaryKey().defaultRandom(),
   slug: text("slug").notNull().unique(),
   name: text("name").notNull(),
+  ownerUserId: text("owner_user_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const profiles = pgTable("profiles", {
+  id: text("id").primaryKey(),
+  email: text("email").notNull(),
+  displayName: text("display_name"),
+  personalOrganizationId: uuid("personal_organization_id").references(
+    () => organizations.id,
+  ),
+  onboardingStep: text("onboarding_step").notNull().default("profile"),
+  onboardingCompletedAt: timestamp("onboarding_completed_at", {
+    withTimezone: true,
+  }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const projects = pgTable(

@@ -1,5 +1,9 @@
 export { createAdminDb, createDb, schema } from "./db/client.js";
-export { createActionPorts, createConsolePort } from "./ports/index.js";
+export {
+  createActionPorts,
+  createConsolePort,
+  createOnboardingPort,
+} from "./ports/index.js";
 export {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,

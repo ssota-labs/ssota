@@ -167,6 +167,17 @@ export interface InstructionListInput {
   limit?: number;
 }
 
+export type OnboardingStep = "profile" | "project" | "completed";
+
+export interface Profile {
+  id: string;
+  email: string;
+  displayName: string | null;
+  personalOrganizationId: string | null;
+  onboardingStep: OnboardingStep;
+  onboardingCompletedAt: Date | null;
+}
+
 export interface Organization {
   id: string;
   slug: string;
@@ -226,6 +237,20 @@ export interface ConsolePort {
     orgSlug: string,
     projectSlug: string,
   ): Promise<void>;
+}
+
+export interface OnboardingPort {
+  getProfile(userId: string): Promise<Profile | null>;
+  completeProfileStep(input: {
+    userId: string;
+    email: string;
+    displayName: string;
+    workspaceName: string;
+  }): Promise<{ organization: Organization }>;
+  completeProjectStep(input: {
+    userId: string;
+    projectName: string;
+  }): Promise<{ organization: Organization; project: Project }>;
 }
 
 export interface GraphReadPort {

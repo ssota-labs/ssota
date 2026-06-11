@@ -23,7 +23,7 @@ import {
 import type { ExecuteActionResult } from "@loopos/contracts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getDefaultProjectPath } from "@/lib/console/default-landing";
+import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { withConsolePaths } from "@/lib/console/revalidate";
 import { graphPath, DEFAULT_PROJECT } from "@/lib/console/paths";
 import { getActionPorts } from "@/lib/ports";
@@ -101,7 +101,28 @@ export async function signInAction(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 
-  const path = await getDefaultProjectPath(data.user!.id);
+  const path = await resolvePostAuthPath(data.user!.id);
+  redirect(path);
+}
+
+export async function signUpAction(formData: FormData) {
+  const email = formData.get("email");
+  const password = formData.get("password");
+  if (typeof email !== "string" || typeof password !== "string") {
+    throw new Error("email and password required");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) {
+    redirect(`/login?mode=signup&error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (!data.user) {
+    redirect("/login?mode=signup&error=Sign%20up%20failed");
+  }
+
+  const path = await resolvePostAuthPath(data.user.id);
   redirect(path);
 }
 
