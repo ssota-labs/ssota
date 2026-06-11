@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import {
   completeProfileOnboarding,
   completeProjectOnboarding,
-  signUpOnLoginPage,
+  signInOnLoginPage,
   uniqueOnboardingEmail,
   uniqueOnboardingSuffix,
 } from "../helpers/onboarding";
@@ -14,7 +14,7 @@ test.describe("Console onboarding screenshots", () => {
     const workspaceName = `Acme Workspace ${suffix}`;
     const projectName = `SSOTA Dev ${suffix}`;
 
-    await signUpOnLoginPage(page, email);
+    await signInOnLoginPage(page, email);
     await expect(
       page.getByRole("heading", { name: "Create your workspace" }),
     ).toBeVisible();
