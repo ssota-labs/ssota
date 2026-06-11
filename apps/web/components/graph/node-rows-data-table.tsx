@@ -13,6 +13,12 @@ export type NodeRowRecord = {
   updatedAt: string;
 };
 
+export type PropertyColumn = {
+  key: string;
+  label: string;
+  valueType: string;
+};
+
 function formatCell(value: unknown) {
   if (value === undefined || value === null) return "-";
   if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
@@ -23,12 +29,12 @@ function formatCell(value: unknown) {
 
 export function NodeRowsDataTable({
   rows,
-  propertyKeys,
+  propertyColumns,
   toolbar,
   emptyMessage = "아직 생성된 node row가 없습니다.",
 }: {
   rows: NodeRowRecord[];
-  propertyKeys: string[];
+  propertyColumns: PropertyColumn[];
   toolbar?: React.ReactNode;
   emptyMessage?: string;
 }) {
@@ -49,12 +55,18 @@ export function NodeRowsDataTable({
         <Badge variant="outline">{row.original.lifecycleStatus}</Badge>
       ),
     },
-    ...propertyKeys.map(
-      (key): ColumnDef<NodeRowRecord> => ({
-        id: key,
-        accessorFn: (row) => formatCell(row.properties[key]),
-        header: ({ column }) => <DataTableColumnHeader column={column} title={key} />,
-        cell: ({ row }) => formatCell(row.original.properties[key]),
+    ...propertyColumns.map(
+      (property): ColumnDef<NodeRowRecord> => ({
+        id: property.key,
+        accessorFn: (row) => formatCell(row.properties[property.key]),
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title={property.label}
+            subtitle={property.valueType}
+          />
+        ),
+        cell: ({ row }) => formatCell(row.original.properties[property.key]),
       }),
     ),
     {

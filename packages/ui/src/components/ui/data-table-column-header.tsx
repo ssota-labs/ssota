@@ -15,16 +15,32 @@ import {
 type DataTableColumnHeaderProps<TData, TValue> = {
   column: Column<TData, TValue>
   title: string
+  subtitle?: string
   className?: string
+}
+
+function ColumnHeaderLabel({ title, subtitle }: { title: string; subtitle?: string }) {
+  if (!subtitle) return <span>{title}</span>
+  return (
+    <span className="flex flex-col items-start gap-0.5 text-left leading-none">
+      <span>{title}</span>
+      <span className="font-mono text-[10px] font-normal text-muted-foreground">{subtitle}</span>
+    </span>
+  )
 }
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
+  subtitle,
   className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
-    return <div className={cn(className)}>{title}</div>
+    return (
+      <div className={cn(className)}>
+        <ColumnHeaderLabel title={title} subtitle={subtitle} />
+      </div>
+    )
   }
 
   return (
@@ -39,7 +55,7 @@ export function DataTableColumnHeader<TData, TValue>({
             />
           }
         >
-          <span>{title}</span>
+          <ColumnHeaderLabel title={title} subtitle={subtitle} />
           {column.getIsSorted() === "desc" ? (
             <ArrowDownIcon className="size-3.5" />
           ) : column.getIsSorted() === "asc" ? (

@@ -9,6 +9,7 @@ import {
 } from "@/components/context-graph/node-table-actions";
 import { NodeRowsDataTable } from "@/components/graph/node-rows-data-table";
 import { projectPath } from "@/lib/console/paths";
+import { propertyColumnLabel } from "@/lib/graph/property-column-label";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphNodeTablePage({
@@ -24,8 +25,9 @@ export default async function GraphNodeTablePage({
   if (!entry) notFound();
 
   const decoded = entry.nodeType;
-  const [rows, actions, instructions] = await Promise.all([
+  const [rows, properties, actions, instructions] = await Promise.all([
     ports.graph.queryNodes({ nodeType: decoded, limit: 500 }),
+    ports.catalog.listPropertyCatalogEntries(),
     ports.catalog.listActionCatalogEntries(),
     ports.catalog.listInstructions({ limit: 100 }),
   ]);
@@ -34,6 +36,16 @@ export default async function GraphNodeTablePage({
     entry.propertyRefs.length > 0
       ? entry.propertyRefs
       : Array.from(new Set(rows.flatMap((row) => Object.keys(row.properties))));
+
+  const propertyByKey = new Map(properties.map((property) => [property.propertyKey, property]));
+  const propertyColumns = propertyKeys.map((key) => {
+    const catalog = propertyByKey.get(key);
+    return {
+      key,
+      label: propertyColumnLabel(key),
+      valueType: catalog?.valueType ?? "unknown",
+    };
+  });
 
   const localActions = actions.filter((action) => {
     if (entry.allowedActionRefs.includes(action.actionType)) return true;
@@ -83,7 +95,7 @@ export default async function GraphNodeTablePage({
       </div>
       <NodeRowsDataTable
         rows={tableRows}
-        propertyKeys={propertyKeys}
+        propertyColumns={propertyColumns}
         toolbar={toolbar}
       />
     </div>
