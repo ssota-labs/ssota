@@ -10,6 +10,7 @@ import { Badge } from "@loopos/ui/components/ui/badge";
 import { Button } from "@loopos/ui/components/ui/button";
 import { PageHeader } from "@/components/studio/page-header";
 import { graphPath, projectPath } from "@/lib/console/paths";
+import { HOMEPAGE_AGENT } from "@/lib/homepage-agent";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphOverviewPage({
@@ -29,7 +30,17 @@ export default async function GraphOverviewPage({
     ports.commit.getActionLog({ limit: 8 }),
   ]);
 
+  const homepageNodeCount = nodes.filter((n) =>
+    (HOMEPAGE_AGENT.nodeTypes as readonly string[]).includes(n.nodeType),
+  ).length;
+
   const cards = [
+    {
+      title: "Homepage Agent",
+      description: "Reference B2B2C vertical catalog (subject_id tenancy)",
+      href: graphPath(ctx, "verticals", "homepage-agent"),
+      count: homepageNodeCount,
+    },
     {
       title: "Nodes",
       description: "Node tables and structured context envelopes",

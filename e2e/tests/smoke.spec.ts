@@ -18,6 +18,17 @@ test.describe("LoopOS Console", () => {
     await expect(page.getByRole("link", { name: "Document" })).toBeVisible();
   });
 
+  test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "graph/verticals/homepage-agent");
+    await expect(page.getByRole("heading", { name: "Homepage Agent" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "HomepageProject" }),
+    ).toBeVisible();
+    await expect(page.getByText("create_homepage_project").first()).toBeVisible();
+    await expect(page.getByText("Homepage creation workflow")).toBeVisible();
+  });
+
   test("smoke: Instructions route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "instructions");

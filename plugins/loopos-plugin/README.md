@@ -60,14 +60,22 @@ plugins/loopos-plugin/
    pnpm dev --filter mcp
    ```
 
-3. Install this plugin into Cursor locally.
+3. Workspace install copies already live at:
+
+   - `.cursor/plugins/local/loopos-plugin/` — full plugin bundle (Cursor install path)
+   - `.agents/plugins/loopos-plugin/` — full plugin bundle
+   - `.agents/skills/loopos-mcp`, `.cursor/skills/loopos-mcp`, `.cursor/mcp.json` — materialized skill + MCP config
+
+   When you edit this plugin, update all of those copies in the same PR.
+
+4. Optionally install into the Cursor user plugin directory:
 
    ```bash
    mkdir -p ~/.cursor/plugins/local
    ln -s /workspace/plugins/loopos-plugin ~/.cursor/plugins/local/loopos-plugin
    ```
 
-4. Reload Cursor and enable the LoopOS MCP server in settings.
+5. Reload Cursor and enable the LoopOS MCP server in settings.
 
 See `examples/cursor-local.md` and `examples/smoke-workflow.md` for details.
 

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const links = [
   { href: "/context-graph", label: "Overview" },
+  { href: "/context-graph/verticals/homepage-agent", label: "Homepage Agent" },
   { href: "/context-graph/nodes", label: "Nodes" },
   { href: "/context-graph/edges", label: "Edges" },
   { href: "/context-graph/actions", label: "Actions" },

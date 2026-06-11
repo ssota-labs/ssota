@@ -9,6 +9,7 @@ import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
 } from "../constants.js";
+import { seedHomepageAgentCatalog } from "./seed-homepage-agent.js";
 
 const documentArchetypes = [
   { id: "doc-note", name: "Note", typical: { temporality: "ephemeral", authority: "personal" } },
@@ -97,7 +98,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational project node",
-        propertyRefs: ["title"],
+        propertyRefs: ["title", "subject_id"],
         allowedActionRefs: [],
       },
       {
@@ -109,7 +110,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational task node",
-        propertyRefs: ["title"],
+        propertyRefs: ["title", "subject_id"],
         allowedActionRefs: [],
       },
     ])
@@ -146,12 +147,65 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         propertyKey: "title",
         valueType: "string",
         constraints: { maxLength: 500 },
-        owningActions: ["create_document", "update_document"],
+        owningActions: [
+          "create_document",
+          "update_document",
+          "create_project",
+          "create_task",
+        ],
+      },
+      {
+        propertyKey: "subject_id",
+        valueType: "string",
+        constraints: { minLength: 1 },
+        owningActions: ["create_project", "create_task"],
       },
     ])
     .onConflictDoNothing();
 
   const actionCatalogRows = [
+      {
+        actionType: "create_project",
+        preconditions: { requiredFields: ["title"] },
+        effects: [
+          {
+            kind: "create_node",
+            node: {
+              nodeType: "Project",
+              lifecycleStatus: "Draft",
+              properties: {},
+              content: null,
+              provenance: {},
+            },
+          },
+        ],
+        executor: "Agent",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: "key",
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "create_task",
+        preconditions: { requiredFields: ["title"] },
+        effects: [
+          {
+            kind: "create_node",
+            node: {
+              nodeType: "Task",
+              lifecycleStatus: "Draft",
+              properties: {},
+              content: null,
+              provenance: {},
+            },
+          },
+        ],
+        executor: "Agent",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: "key",
+        logPayloadSchema: {},
+      },
       {
         actionType: "create_note",
         preconditions: { requiredFields: ["content"] },
@@ -553,6 +607,42 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         requiresHumanGate: false,
         status: "active",
       },
+      {
+        actionType: "create_project",
+        nodeType: "Project",
+        propertyKey: "title",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
+      {
+        actionType: "create_project",
+        nodeType: "Project",
+        propertyKey: "subject_id",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
+      {
+        actionType: "create_task",
+        nodeType: "Task",
+        propertyKey: "title",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
+      {
+        actionType: "create_task",
+        nodeType: "Task",
+        propertyKey: "subject_id",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
     ])
     .onConflictDoNothing();
 
@@ -565,6 +655,8 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
       })) as (typeof schema.instructions.$inferInsert)[],
     )
     .onConflictDoNothing();
+
+  await seedHomepageAgentCatalog(db);
 }
 
 /** Domain instructions only — Root Runtime Protocol lives in loopos-mcp skill. */
