@@ -16,6 +16,10 @@ import {
   resolveEffects,
 } from "./domain/enforcement.js";
 import {
+  enforceSubjectScope,
+  injectSubjectIntoEffects,
+} from "./domain/subject-scope.js";
+import {
   mergeUpdateActionContractInput,
   mergeUpdateEdgeTypeInput,
   mergeUpdateInstructionInput,
@@ -25,6 +29,7 @@ import {
 import {
   ActionRejectedError,
   type ActionPorts,
+  type CatalogPort,
   type Node,
 } from "./domain/types.js";
 
@@ -39,7 +44,7 @@ async function prepareAction(
   ports: ActionPorts,
   params: ExecuteActionInput,
 ): Promise<PreparedAction | { rejected: ExecuteActionResult }> {
-  const { actionType, input } = params;
+  const { actionType, input, subjectId } = params;
   const actionEntry = await ports.catalog.getActionCatalogEntry(actionType);
 
   let resolvedInput = input;
@@ -236,6 +241,33 @@ async function prepareAction(
       };
     }
     throw err;
+  }
+
+  const nodeCatalogForSubject = new Map<string, NonNullable<Awaited<ReturnType<CatalogPort["getNodeCatalogEntry"]>>>>();
+  for (const effect of effects) {
+    if (effect.kind === "create_node") {
+      const entry = await ports.catalog.getNodeCatalogEntry(effect.node.nodeType);
+      if (entry) nodeCatalogForSubject.set(effect.node.nodeType, entry);
+    }
+  }
+
+  try {
+    await enforceSubjectScope(subjectId, effects, {
+      getNode: (nodeId) => ports.graph.getNode(nodeId),
+      getNodeCatalogEntry: (nodeType) =>
+        ports.catalog.getNodeCatalogEntry(nodeType),
+    });
+  } catch (err) {
+    if (err instanceof ActionRejectedError) {
+      return {
+        rejected: { status: "rejected", reason: err.message, code: err.code },
+      };
+    }
+    throw err;
+  }
+
+  if (subjectId) {
+    effects = injectSubjectIntoEffects(effects, subjectId, nodeCatalogForSubject);
   }
 
   let permissionGateReason = "";
@@ -510,3 +542,5 @@ export async function approveGate(
 
 export * from "./domain/types.js";
 export * from "./domain/enforcement.js";
+export * from "./domain/subject-scope.js";
+export * from "./catalog-slug.js";

@@ -1,4 +1,5 @@
 import { eq, and, or, sql } from "drizzle-orm";
+import { toCatalogLabel, toCatalogSlug } from "@loopos/core";
 import type {
   ActionScope,
   Effect,
@@ -7,6 +8,7 @@ import type {
   InstructionWorkflowStep,
   LifecycleStatus,
 } from "@loopos/contracts";
+import { SUBJECT_ID_PROPERTY_KEY } from "@loopos/contracts";
 import type {
   ActionCommitPort,
   ActionLogRecord,
@@ -49,6 +51,8 @@ function mapNodeCatalogEntry(
 ): NodeCatalogEntry {
   return {
     nodeType: row.nodeType,
+    slug: row.slug,
+    label: row.label,
     family: row.family,
     archetypeId: row.archetypeId,
     typicalValueOverrides: row.typicalValueOverrides,
@@ -67,6 +71,8 @@ function mapActionCatalogEntry(
 ): ActionCatalogEntry {
   return {
     actionType: row.actionType,
+    slug: row.slug,
+    label: row.label,
     scope: row.scope as ActionScope,
     preconditions: row.preconditions,
     effects: row.effects as Effect[],
@@ -81,9 +87,24 @@ function mapActionCatalogEntry(
   };
 }
 
+function mapEdgeCatalogEntry(
+  row: typeof schema.edgeCatalog.$inferSelect,
+): EdgeCatalogEntry {
+  return {
+    edgeType: row.edgeType,
+    slug: row.slug,
+    label: row.label,
+    domain: row.domain,
+    range: row.range,
+    cardinality: row.cardinality,
+    representation: row.representation,
+  };
+}
+
 function mapInstruction(row: typeof schema.instructions.$inferSelect): Instruction {
   return {
     id: row.id,
+    slug: row.slug,
     title: row.title,
     triggerPatterns: row.triggerPatterns,
     applicableNodeTypes: row.applicableNodeTypes,
@@ -114,6 +135,17 @@ export function createCatalogPort(db: Db): CatalogPort {
       return mapNodeCatalogEntry(row);
     },
 
+    async getNodeCatalogEntryBySlug(slug) {
+      const rows = await db
+        .select()
+        .from(schema.nodeCatalog)
+        .where(eq(schema.nodeCatalog.slug, slug))
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return mapNodeCatalogEntry(row);
+    },
+
     async listNodeCatalogEntries() {
       const rows = await db.select().from(schema.nodeCatalog);
       return rows.map(mapNodeCatalogEntry);
@@ -127,27 +159,23 @@ export function createCatalogPort(db: Db): CatalogPort {
         .limit(1);
       const row = rows[0];
       if (!row) return null;
-      return {
-        edgeType: row.edgeType,
-        domain: row.domain,
-        range: row.range,
-        cardinality: row.cardinality,
-        representation: row.representation,
-      } satisfies EdgeCatalogEntry;
+      return mapEdgeCatalogEntry(row);
+    },
+
+    async getEdgeCatalogEntryBySlug(slug) {
+      const rows = await db
+        .select()
+        .from(schema.edgeCatalog)
+        .where(eq(schema.edgeCatalog.slug, slug))
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return mapEdgeCatalogEntry(row);
     },
 
     async listEdgeCatalogEntries() {
       const rows = await db.select().from(schema.edgeCatalog);
-      return rows.map(
-        (row) =>
-          ({
-            edgeType: row.edgeType,
-            domain: row.domain,
-            range: row.range,
-            cardinality: row.cardinality,
-            representation: row.representation,
-          }) satisfies EdgeCatalogEntry,
-      );
+      return rows.map(mapEdgeCatalogEntry);
     },
 
     async getPropertyCatalogEntry(propertyKey) {
@@ -184,6 +212,17 @@ export function createCatalogPort(db: Db): CatalogPort {
         .select()
         .from(schema.actionCatalog)
         .where(eq(schema.actionCatalog.actionType, actionType))
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return mapActionCatalogEntry(row);
+    },
+
+    async getActionCatalogEntryBySlug(slug) {
+      const rows = await db
+        .select()
+        .from(schema.actionCatalog)
+        .where(eq(schema.actionCatalog.slug, slug))
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -290,6 +329,17 @@ export function createCatalogPort(db: Db): CatalogPort {
       if (!row) return null;
       return mapInstruction(row);
     },
+
+    async getInstructionBySlug(slug) {
+      const rows = await db
+        .select()
+        .from(schema.instructions)
+        .where(eq(schema.instructions.slug, slug))
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return mapInstruction(row);
+    },
   };
 }
 
@@ -316,6 +366,11 @@ export function createGraphReadPort(db: Db): GraphReadPort {
           eq(schema.nodes.lifecycleStatus, params.lifecycleStatus),
         );
       }
+      if (params.subjectId) {
+        conditions.push(
+          sql`${schema.nodes.properties}->>${SUBJECT_ID_PROPERTY_KEY} = ${params.subjectId}`,
+        );
+      }
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
       }
@@ -326,6 +381,20 @@ export function createGraphReadPort(db: Db): GraphReadPort {
     },
 
     async traverseEdges(params) {
+      if (params.subjectId) {
+        const anchor = await this.getNode(params.nodeId);
+        const anchorSubject = anchor?.properties[SUBJECT_ID_PROPERTY_KEY];
+        if (
+          typeof anchorSubject === "string" &&
+          anchorSubject.length > 0 &&
+          anchorSubject !== params.subjectId
+        ) {
+          throw new Error(
+            `Node '${params.nodeId}' belongs to a different subject`,
+          );
+        }
+      }
+
       const conditions = [];
       if (params.edgeType) {
         conditions.push(eq(schema.edges.edgeType, params.edgeType));
@@ -381,16 +450,12 @@ export function createGraphReadPort(db: Db): GraphReadPort {
         .limit(1);
       const row = rows[0];
       if (!row) return null;
-      return {
-        edgeType: row.edgeType,
-        domain: row.domain,
-        range: row.range,
-        cardinality: row.cardinality,
-        representation: row.representation,
-      } satisfies EdgeCatalogEntry;
+      return mapEdgeCatalogEntry(row);
     },
   };
 }
+
+export { createConsolePort } from "./console.js";
 
 export function createGatePort(db: Db): GatePort {
   return {
@@ -523,10 +588,14 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
       }
     }
   } else if (effect.kind === "upsert_node_catalog_entry") {
+    const slug = toCatalogSlug(effect.entry.nodeType);
+    const label = toCatalogLabel(effect.entry.nodeType);
     await tx
       .insert(schema.nodeCatalog)
       .values({
         nodeType: effect.entry.nodeType,
+        slug,
+        label,
         family: effect.entry.family,
         archetypeId: effect.entry.archetypeId,
         typicalValueOverrides: effect.entry.typicalValueOverrides,
@@ -568,10 +637,14 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
       .delete(schema.instructions)
       .where(eq(schema.instructions.id, effect.instructionId));
   } else if (effect.kind === "upsert_edge_catalog_entry") {
+    const slug = toCatalogSlug(effect.entry.edgeType);
+    const label = toCatalogLabel(effect.entry.edgeType);
     await tx
       .insert(schema.edgeCatalog)
       .values({
         edgeType: effect.entry.edgeType,
+        slug,
+        label,
         domain: effect.entry.domain,
         range: effect.entry.range,
         cardinality: effect.entry.cardinality,
@@ -639,10 +712,14 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
       });
     }
   } else if (effect.kind === "upsert_action_catalog_entry") {
+    const slug = toCatalogSlug(effect.entry.actionType);
+    const label = toCatalogLabel(effect.entry.actionType);
     await tx
       .insert(schema.actionCatalog)
       .values({
         actionType: effect.entry.actionType,
+        slug,
+        label,
         scope: effect.entry.scope,
         preconditions: effect.entry.preconditions,
         effects: effect.entry.effects,
@@ -687,7 +764,9 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         })
         .where(eq(schema.instructions.id, effect.entry.instructionId));
     } else {
+      const slug = toCatalogSlug(effect.entry.title);
       await tx.insert(schema.instructions).values({
+        slug,
         title: effect.entry.title,
         triggerPatterns: effect.entry.triggerPatterns,
         applicableNodeTypes: effect.entry.applicableNodeTypes,

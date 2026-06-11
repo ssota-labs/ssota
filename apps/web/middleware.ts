@@ -1,7 +1,59 @@
 import { createServerClient } from "@supabase/ssr";
+import { DEFAULT_ORG_SLUG, DEFAULT_PROJECT_SLUG } from "@/lib/console/constants";
 import { NextResponse, type NextRequest } from "next/server";
 
+const defaultBase = `/${DEFAULT_ORG_SLUG}/${DEFAULT_PROJECT_SLUG}`;
+
+function legacyRedirect(request: NextRequest, targetPath: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = targetPath;
+  return NextResponse.redirect(url, 308);
+}
+
+function mapLegacyPath(pathname: string): string | null {
+  if (pathname === "/context-graph" || pathname === "/context-graph/") {
+    return `${defaultBase}/graph`;
+  }
+  if (pathname.startsWith("/context-graph/")) {
+    const rest = pathname.slice("/context-graph/".length);
+    if (rest === "instructions") {
+      return `${defaultBase}/instructions`;
+    }
+    const segments = rest.split("/");
+    if (segments[0] === "nodes" && segments[1]) {
+      segments[1] = segments[1].toLowerCase();
+    }
+    if (segments[0] === "edges" && segments[1]) {
+      segments[1] = segments[1].toLowerCase();
+    }
+    if (segments[0] === "actions" && segments[1]) {
+      segments[1] = segments[1].toLowerCase();
+    }
+    return `${defaultBase}/graph/${segments.join("/")}`;
+  }
+  if (pathname === "/gates") return `${defaultBase}/gates`;
+  if (pathname === "/log") return `${defaultBase}/log`;
+  if (pathname === "/catalog") return `${defaultBase}/graph`;
+  if (pathname.startsWith("/studio")) {
+    return `${defaultBase}/graph/nodes`;
+  }
+
+  const labelNodeMatch = pathname.match(
+    /^\/graph\/nodes\/([A-Z][a-zA-Z0-9_]*)$/,
+  );
+  if (labelNodeMatch) {
+    return `${defaultBase}/graph/nodes/${labelNodeMatch[1]!.toLowerCase()}`;
+  }
+
+  return null;
+}
+
 export async function middleware(request: NextRequest) {
+  const legacyTarget = mapLegacyPath(request.nextUrl.pathname);
+  if (legacyTarget) {
+    return legacyRedirect(request, legacyTarget);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

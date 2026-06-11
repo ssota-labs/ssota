@@ -23,6 +23,9 @@ import {
 import type { ExecuteActionResult } from "@loopos/contracts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { getDefaultProjectPath } from "@/lib/console/default-landing";
+import { withConsolePaths } from "@/lib/console/revalidate";
+import { graphPath, DEFAULT_PROJECT } from "@/lib/console/paths";
 import { getActionPorts } from "@/lib/ports";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
 
@@ -46,8 +49,9 @@ export async function approveGateAction(
     executorType: "Human",
   });
 
-  revalidatePath("/gates");
-  revalidatePath("/log");
+  for (const path of withConsolePaths(["/gates", "/log"])) {
+    revalidatePath(path);
+  }
   return result;
 }
 
@@ -67,12 +71,13 @@ export async function signInAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
 
-  redirect("/");
+  const path = await getDefaultProjectPath(data.user!.id);
+  redirect(path);
 }
 
 export async function signOutAction() {
@@ -97,7 +102,7 @@ async function runMetaAction(
     executorType: "Human",
   });
 
-  for (const path of revalidatePaths) {
+  for (const path of withConsolePaths(revalidatePaths)) {
     revalidatePath(path);
   }
 
@@ -393,7 +398,8 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
     executorType: "Human",
   });
 
-  for (const path of [
+  const nodeSlug = nodeEntry.slug;
+  for (const path of withConsolePaths([
     "/context-graph",
     "/context-graph/nodes",
     `/context-graph/nodes/${nodeType}`,
@@ -402,7 +408,8 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
     "/catalog",
     "/log",
     "/gates",
-  ]) {
+    graphPath(DEFAULT_PROJECT, "nodes", nodeSlug),
+  ])) {
     revalidatePath(path);
   }
 }
@@ -499,7 +506,12 @@ export async function runActionJsonFormAction(formData: FormData): Promise<void>
     executorId: user.id,
     executorType: "Human",
   });
-  for (const path of ["/context-graph", "/context-graph/nodes", "/log", "/gates"]) {
+  for (const path of withConsolePaths([
+    "/context-graph",
+    "/context-graph/nodes",
+    "/log",
+    "/gates",
+  ])) {
     revalidatePath(path);
   }
 }

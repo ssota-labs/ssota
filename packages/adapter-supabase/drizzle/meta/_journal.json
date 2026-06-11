@@ -15,6 +15,20 @@
       "when": 1781083980000,
       "tag": "0001_phase3_context_graph",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781090000000,
+      "tag": "0002_phase5_console",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781095000000,
+      "tag": "0003_subject_id_index",
+      "breakpoints": true
     }
   ]
 }

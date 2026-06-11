@@ -128,6 +128,13 @@ docker_ready() {
     && [[ "$(docker info --format '{{.Driver}}' 2>/dev/null || echo '')" == "vfs" ]]
 }
 
+loopos_docker_config() {
+  # Cloud VM /etc/docker/daemon.json may pin overlayfs — isolate with our own config.
+  local cfg="/tmp/loopos-docker-daemon.json"
+  printf '%s\n' '{"storage-driver":"vfs"}' >"$cfg"
+  echo "$cfg"
+}
+
 ensure_docker() {
   if docker_ready; then
     log "Docker daemon already running (storage driver: vfs)"
@@ -139,18 +146,15 @@ ensure_docker() {
   sudo pkill containerd 2>/dev/null || true
   sleep 2
 
-  # Cloud VM images may ship /etc/docker/daemon.json with fuse-overlayfs, which
-  # conflicts with --storage-driver=vfs on the CLI.
-  local daemon_json="/etc/docker/daemon.json"
-  local daemon_json_bak="/etc/docker/daemon.json.loopos-vfs.bak"
-  if [[ -f "$daemon_json" ]] && grep -q '"storage-driver"' "$daemon_json" 2>/dev/null; then
-    log "Temporarily moving $daemon_json (storage-driver flag conflict)"
-    sudo mv "$daemon_json" "$daemon_json_bak"
+  local docker_config
+  docker_config="$(loopos_docker_config)"
+  if [[ -f /etc/docker/daemon.json ]]; then
+    log "Using isolated Docker config ($docker_config) — system /etc/docker/daemon.json ignored"
   fi
 
   sudo mkdir -p /tmp/docker-vfs /tmp/docker-exec
   sudo dockerd \
-    --storage-driver=vfs \
+    --config-file="$docker_config" \
     --data-root=/tmp/docker-vfs \
     --exec-root=/tmp/docker-exec \
     --host=unix:///var/run/docker.sock \
@@ -166,11 +170,6 @@ ensure_docker() {
     fi
     sleep 1
   done
-
-  # Restore daemon.json if we moved it
-  if [[ -f "$daemon_json_bak" ]]; then
-    sudo mv "$daemon_json_bak" "$daemon_json"
-  fi
 
   log "Docker failed to start — see /tmp/dockerd-vfs.log"
   exit 1

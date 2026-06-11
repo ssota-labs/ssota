@@ -1,35 +1,65 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
+import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
 test.describe("LoopOS Console", () => {
-  test("smoke: 로그인 → 홈 → 카탈로그", async ({ page }) => {
+  test("smoke: 로그인 → 프로젝트 홈", async ({ page }) => {
     await loginAsSmoke(page);
-    await page.getByRole("navigation").getByRole("link", { name: "Catalog" }).click();
-    await expect(page.getByRole("heading", { name: "Catalog Browser" })).toBeVisible();
-    await expect(page.getByText("Note", { exact: true }).first()).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
+    await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible();
   });
 
-  test("smoke: Context Graph 페이지", async ({ page }) => {
+  test("smoke: Graph → Nodes", async ({ page }) => {
     await loginAsSmoke(page);
-    await page.getByRole("navigation").getByRole("link", { name: "Context Graph" }).click();
-    await expect(page.getByRole("heading", { name: "Context Graph" })).toBeVisible();
-    await page.getByRole("link", { name: "Nodes", exact: true }).click();
+    await gotoProject(page, "graph");
+    await expect(page.getByRole("heading", { name: "Graph" })).toBeVisible();
+    await page.getByRole("link", { name: /Nodes \d+/ }).click();
     await expect(page.getByRole("heading", { name: "Nodes" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Note" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Document" })).toBeVisible();
   });
 
-  test("smoke: Studio 페이지", async ({ page }) => {
+  test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
     await loginAsSmoke(page);
-    await page.getByRole("navigation").getByRole("link", { name: "Studio" }).click();
-    await expect(page.getByRole("heading", { name: "Meta Action Studio" })).toBeVisible();
-    await page.getByRole("link", { name: "Node Types", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Node Types" })).toBeVisible();
+    await gotoProject(page, "graph/verticals/homepage-agent");
+    await expect(page.getByRole("heading", { name: "Homepage Agent" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "HomepageProject" }),
+    ).toBeVisible();
+    await expect(page.getByText("create_homepage_project").first()).toBeVisible();
+    await expect(page.getByText("Homepage creation workflow")).toBeVisible();
   });
 
-  test("smoke: Action Log 페이지", async ({ page }) => {
+  test("smoke: Instructions route", async ({ page }) => {
     await loginAsSmoke(page);
-    await page.getByRole("navigation").getByRole("link", { name: "Action Log" }).click();
+    await gotoProject(page, "instructions");
+    await expect(page.getByRole("heading", { name: "Instructions" })).toBeVisible();
+  });
+
+  test("smoke: Action Log route", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "log");
     await expect(page.getByRole("heading", { name: "Action Log" })).toBeVisible();
+  });
+
+  test("smoke: sidebar exposes primary nav", async ({ page }) => {
+    await loginAsSmoke(page);
+    await expect(page.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Action Log", exact: true })).toBeVisible();
+  });
+
+  test("smoke: legacy /context-graph redirect", async ({ page }) => {
+    await loginAsSmoke(page);
+    await page.goto("/context-graph/nodes/Document");
+    await expect(page).toHaveURL(
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes/document`),
+    );
+    await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
+  });
+
+  test("smoke: /studio redirect", async ({ page }) => {
+    await loginAsSmoke(page);
+    await page.goto("/studio/node-types");
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes`));
   });
 });
 

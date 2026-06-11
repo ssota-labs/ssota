@@ -35,12 +35,16 @@ export async function mcpToolCall(
   token: string,
   toolName: string,
   args: Record<string, unknown> = {},
+  options?: { subjectId?: string },
 ): Promise<unknown> {
-  const headers = {
+  const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
     Accept: "application/json, text/event-stream",
   };
+  if (options?.subjectId) {
+    headers["X-LoopOS-Subject-Id"] = options.subjectId;
+  }
 
   const initRes = await request.post(`${mcpUrl}/api/mcp`, {
     headers,

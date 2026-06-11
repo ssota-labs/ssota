@@ -19,6 +19,7 @@
     "db:reset": "pnpm exec supabase db reset --local",
     "db:seed": "pnpm --filter @loopos/adapter-supabase db:seed",
     "migrate:notion": "tsx scripts/m6-notion-migration.ts",
+    "embedder-bff": "tsx examples/embedder-bff/server.ts",
     "storybook": "pnpm --filter storybook dev"
   },
   "devDependencies": {
