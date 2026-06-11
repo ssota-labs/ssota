@@ -37,18 +37,16 @@ export function ConsoleShell({
   return (
     <ProjectProvider value={ctx}>
       <SidebarProvider>
-        <div className="flex min-h-screen w-full flex-col">
+        {isGraphContext ? <ConsoleGraphSidebar /> : <ConsolePrimarySidebar />}
+        <SidebarInset>
           <ConsoleTopBar
             userEmail={userEmail}
             organizations={organizations}
             projects={projects}
             signOutAction={signOutAction}
           />
-          <div className="flex flex-1">
-            {isGraphContext ? <ConsoleGraphSidebar /> : <ConsolePrimarySidebar />}
-            <SidebarInset className="flex-1 p-6">{children}</SidebarInset>
-          </div>
-        </div>
+          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</div>
+        </SidebarInset>
       </SidebarProvider>
     </ProjectProvider>
   );

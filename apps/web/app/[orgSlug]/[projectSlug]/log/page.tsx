@@ -1,5 +1,13 @@
 import { OutcomeBadge } from "@/components/outcome-badge";
+import { PageHeader } from "@/components/studio/page-header";
 import { getActionPorts } from "@/lib/ports";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@loopos/ui/components/ui/card";
 import {
   Table,
   TableBody,
@@ -20,43 +28,59 @@ export default async function LogPage({
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Action Log</h1>
-      <div className="overflow-hidden rounded-lg border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>시간</TableHead>
-              <TableHead>액션</TableHead>
-              <TableHead>scope</TableHead>
-              <TableHead>instruction</TableHead>
-              <TableHead>결과</TableHead>
-              <TableHead>실행자</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {log.map((entry) => (
-              <TableRow key={entry.id}>
-                <TableCell className="text-muted-foreground">
-                  {entry.createdAt.toISOString()}
-                </TableCell>
-                <TableCell className="font-medium">{entry.actionType}</TableCell>
-                <TableCell className="text-muted-foreground">
-                  {formatScope(entry.metadata.scope ?? entry.input.scope)}
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {String(entry.metadata.instructionRunId ?? entry.metadata.instructionId ?? "-")}
-                </TableCell>
-                <TableCell>
-                  <OutcomeBadge outcome={entry.outcome} />
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {entry.executorType}
-                </TableCell>
+      <PageHeader
+        title="Action Log"
+        description="모든 executeAction 커밋·게이트·거부 이벤트의 감사 타임라인입니다."
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Recent activity</CardTitle>
+          <CardDescription>
+            Outcome badges reflect committed, gated, or rejected runtime decisions.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>시간</TableHead>
+                <TableHead>액션</TableHead>
+                <TableHead>scope</TableHead>
+                <TableHead>instruction</TableHead>
+                <TableHead>결과</TableHead>
+                <TableHead>실행자</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {log.map((entry) => (
+                <TableRow key={entry.id}>
+                  <TableCell className="text-muted-foreground">
+                    {entry.createdAt.toISOString()}
+                  </TableCell>
+                  <TableCell className="font-medium">{entry.actionType}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {formatScope(entry.metadata.scope ?? entry.input.scope)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {String(
+                      entry.metadata.instructionRunId ??
+                        entry.metadata.instructionId ??
+                        "-",
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <OutcomeBadge outcome={entry.outcome} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {entry.executorType}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
 } from "@loopos/ui/components/ui/sidebar";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
@@ -27,7 +28,7 @@ export function ConsoleGraphSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar collapsible="none">
+    <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
@@ -68,6 +69,7 @@ export function ConsoleGraphSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarRail />
     </Sidebar>
   );
 }

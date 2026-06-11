@@ -9,9 +9,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@loopos/ui/components/ui/dropdown-menu";
+import { Separator } from "@loopos/ui/components/ui/separator";
 import { SidebarTrigger } from "@loopos/ui/components/ui/sidebar";
 import { projectPath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
@@ -34,22 +34,25 @@ export function ConsoleTopBar({
   const router = useRouter();
 
   function switchProject(org: Organization, project: Project) {
-    const suffix = pathname.replace(
-      `/${ctx.orgSlug}/${ctx.projectSlug}`,
-      "",
-    );
+    const suffix = pathname.replace(`/${ctx.orgSlug}/${ctx.projectSlug}`, "");
     router.push(`/${org.slug}/${project.slug}${suffix || ""}`);
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b bg-card px-4">
-      <SidebarTrigger />
-      <Link href={projectPath(ctx)} className="text-lg font-semibold">
+    <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
+      <SidebarTrigger className="-ml-1" />
+      <Separator
+        orientation="vertical"
+        className="mr-1 data-[orientation=vertical]:h-4"
+      />
+      <Link href={projectPath(ctx)} className="text-sm font-semibold">
         LoopOS
       </Link>
 
       <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+        <DropdownMenuTrigger
+          render={<Button variant="outline" size="sm" />}
+        >
           {ctx.org.name}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
@@ -69,7 +72,9 @@ export function ConsoleTopBar({
       </DropdownMenu>
 
       <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="outline" size="sm" />}>
+        <DropdownMenuTrigger
+          render={<Button variant="outline" size="sm" />}
+        >
           {ctx.project.name}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">

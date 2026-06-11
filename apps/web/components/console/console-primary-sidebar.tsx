@@ -11,6 +11,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
   SidebarSeparator,
 } from "@loopos/ui/components/ui/sidebar";
 import { projectPath } from "@/lib/console/paths";
@@ -32,7 +33,7 @@ export function ConsolePrimarySidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar collapsible="none">
+    <Sidebar collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>{ctx.project.name}</SidebarGroupLabel>
@@ -102,6 +103,7 @@ export function ConsolePrimarySidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarRail />
     </Sidebar>
   );
 }

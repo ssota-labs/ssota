@@ -42,9 +42,11 @@ export default async function RootLayout({
               </div>
             </header>
           ) : null}
-          <main className={user ? "" : "mx-auto max-w-6xl px-6 py-8"}>
-            {children}
-          </main>
+          {user ? (
+            children
+          ) : (
+            <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+          )}
         </TooltipProvider>
       </body>
     </html>
