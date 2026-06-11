@@ -1,3 +1,4 @@
+import { toCatalogLabel, toCatalogSlug } from "@loopos/core";
 import { eq } from "drizzle-orm";
 import type { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
@@ -37,6 +38,8 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     .values([
       {
         nodeType: "HomepageProject",
+        slug: toCatalogSlug("HomepageProject"),
+        label: toCatalogLabel("HomepageProject"),
         family: "operational",
         archetypeId: "op-project",
         typicalValueOverrides: {},
@@ -52,6 +55,8 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
       },
       {
         nodeType: "DesignBrief",
+        slug: toCatalogSlug("DesignBrief"),
+        label: toCatalogLabel("DesignBrief"),
         family: "document",
         archetypeId: "doc-spec",
         typicalValueOverrides: {},
@@ -62,6 +67,8 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
       },
       {
         nodeType: "PageSection",
+        slug: toCatalogSlug("PageSection"),
+        label: toCatalogLabel("PageSection"),
         family: "document",
         archetypeId: "doc-spec",
         typicalValueOverrides: {},
@@ -78,6 +85,8 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     .values([
       {
         edgeType: "homepage_contains",
+        slug: toCatalogSlug("homepage_contains"),
+        label: toCatalogLabel("homepage_contains"),
         domain: ["HomepageProject"],
         range: ["DesignBrief", "PageSection"],
         cardinality: "one-to-many",
@@ -109,9 +118,7 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     "create_page_section",
   ]);
 
-  await db
-    .insert(schema.actionCatalog)
-    .values([
+  const actionCatalogRows = [
       {
         actionType: "create_homepage_project",
         scope: { kind: "node_type", nodeType: "HomepageProject" },
@@ -202,7 +209,18 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
         idempotencyRule: "key",
         logPayloadSchema: {},
       },
-    ])
+    ];
+
+  await db
+    .insert(schema.actionCatalog)
+    .values(
+      actionCatalogRows.map((row) => ({
+        ...row,
+        slug: toCatalogSlug(row.actionType),
+        label: toCatalogLabel(row.actionType),
+        executor: row.executor as "Agent" | "Human" | "System",
+      })) as (typeof schema.actionCatalog.$inferInsert)[],
+    )
     .onConflictDoNothing();
 
   const permissionRows = [
@@ -235,6 +253,7 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     .values([
       {
         title: "Homepage creation workflow",
+        slug: toCatalogSlug("Homepage creation workflow"),
         triggerPatterns: [
           "create homepage",
           "new homepage project",

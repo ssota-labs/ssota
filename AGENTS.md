@@ -213,7 +213,9 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 ## MCP App Notes (apps/mcp)
 
 - 엔드포인트는 `/api/mcp` (Streamable HTTP, `mcp-handler` + `@modelcontextprotocol/sdk`).
-- 도구 6군: 카탈로그 조회(`list_node_types`, `get_action_contract`) / 상태 조회(`query_nodes`, `traverse_edges`) / 지침 검색(`find_instruction`) / **`execute_action`(유일한 쓰기)** / 게이트 큐(`list_pending_gates`, `submit_for_approval`) / 로그(`get_action_log`).
+- **Root Runtime Protocol**은 `plugins/loopos-plugin/skills/loopos-mcp` 스킬이 담당한다. 그래프의 Instructions는 **도메인 레시피**만 저장한다.
+- MCP 읽기 3층: **Discover** (`list_*` 인덱스) / **Fetch** (`get_*` 단건) / **Query** (`query_*`, `find_*`, `traverse_graph`, `query_neighbors`).
+- **`execute_action`이 유일한 쓰기.** 게이트: `query_gates`, `list_pending_gates`, `submit_for_approval`. 로그: `get_action_log`, `get_action_log_entry`.
 - 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. 이 앱은 (1) `/oauth/consent` 화면(`supabase.auth.oauth.getAuthorizationDetails/approveAuthorization/denyAuthorization`)과 (2) Bearer JWT의 JWKS 검증 + `.well-known/oauth-protected-resource` 메타데이터만 구현한다.
 - 도구 핸들러에 비즈니스 로직을 넣지 않는다 — core 유스케이스 호출 + IO 변환만.
 

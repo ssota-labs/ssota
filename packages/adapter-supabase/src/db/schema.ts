@@ -6,6 +6,7 @@ import {
   timestamp,
   uuid,
   boolean,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 export const lifecycleStatusEnum = pgEnum("lifecycle_status", [
@@ -44,6 +45,58 @@ export const actionOutcomeEnum = pgEnum("action_outcome", [
   "rejected",
 ]);
 
+export const organizations = pgTable("organizations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    orgSlugUnique: uniqueIndex("projects_org_slug_unique").on(
+      table.organizationId,
+      table.slug,
+    ),
+  }),
+);
+
+export const organizationMemberships = pgTable(
+  "organization_memberships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id),
+    userId: text("user_id").notNull(),
+    role: text("role").notNull().default("member"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    orgUserUnique: uniqueIndex("organization_memberships_org_user_unique").on(
+      table.organizationId,
+      table.userId,
+    ),
+  }),
+);
+
+export const userProjectPreferences = pgTable("user_project_preferences", {
+  userId: text("user_id").primaryKey(),
+  orgSlug: text("org_slug").notNull(),
+  projectSlug: text("project_slug").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 export const archetypes = pgTable("archetypes", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -55,6 +108,8 @@ export const archetypes = pgTable("archetypes", {
 
 export const nodeCatalog = pgTable("node_catalog", {
   nodeType: text("node_type").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
   family: nodeFamilyEnum("family").notNull(),
   archetypeId: text("archetype_id")
     .notNull()
@@ -90,6 +145,8 @@ export const nodes = pgTable("nodes", {
 
 export const edgeCatalog = pgTable("edge_catalog", {
   edgeType: text("edge_type").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
   domain: jsonb("domain").notNull().$type<string[]>(),
   range: jsonb("range").notNull().$type<string[]>(),
   cardinality: text("cardinality").notNull(),
@@ -122,6 +179,8 @@ export const propertyCatalog = pgTable("property_catalog", {
 
 export const actionCatalog = pgTable("action_catalog", {
   actionType: text("action_type").primaryKey(),
+  slug: text("slug").notNull().unique(),
+  label: text("label").notNull(),
   scope: jsonb("scope")
     .notNull()
     .default({ kind: "global" })
@@ -159,6 +218,7 @@ export const actionPropertyPermissions = pgTable("action_property_permissions", 
 
 export const instructions = pgTable("instructions", {
   id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
   triggerPatterns: jsonb("trigger_patterns").notNull().$type<string[]>(),
   applicableNodeTypes: jsonb("applicable_node_types").notNull().$type<string[]>(),

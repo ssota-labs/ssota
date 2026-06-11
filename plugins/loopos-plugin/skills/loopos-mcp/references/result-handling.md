@@ -79,7 +79,7 @@ Required follow-up:
 3. Confirm the client completed JSON-RPC `initialize`.
 4. Retry after setup is repaired.
 
-Do not convert auth failures into direct database writes.
+Do not attempt to mutate LoopOS state through any path other than MCP `execute_action`.
 
 ## Unknown responses
 

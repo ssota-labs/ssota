@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { toCatalogLabel, toCatalogSlug } from "./catalog-slug.js";
 import { executeAction } from "./index.js";
 import {
   createInMemoryPorts,
@@ -284,6 +285,8 @@ describe("executeAction — follow-up catalog meta actions", () => {
     seedTestCatalog(state);
     state.actionCatalog.set("update_node_type", {
       actionType: "update_node_type",
+      slug: "update_node_type",
+      label: "Update Node Type",
       scope: { kind: "global" },
       preconditions: { requiredFields: ["nodeType", "patch"] },
       effects: [
@@ -340,6 +343,8 @@ describe("executeAction — follow-up catalog meta actions", () => {
     seedTestCatalog(state);
     state.actionCatalog.set("deprecate_node_type", {
       actionType: "deprecate_node_type",
+      slug: "deprecate_node_type",
+      label: "Deprecate Node Type",
       scope: { kind: "global" },
       preconditions: { requiredFields: ["nodeType"] },
       effects: [{ kind: "deprecate_node_catalog_entry", nodeType: "" }],
@@ -369,6 +374,8 @@ describe("executeAction — follow-up catalog meta actions", () => {
     seedTestCatalog(state);
     state.actionCatalog.set("define_action_contract", {
       actionType: "define_action_contract",
+      slug: "define_action_contract",
+      label: "Define Action Contract",
       scope: { kind: "global" },
       preconditions: { requiredFields: ["definition"] },
       effects: [{ kind: "upsert_action_catalog_entry", entry: { actionType: "", scope: { kind: "global" }, preconditions: {}, effects: [], executor: "Agent", allowedLifecycleTransitions: {}, failureMode: "reject", logPayloadSchema: {} } }],
@@ -499,6 +506,8 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
     seedTestCatalog(state);
     state.actionCatalog.set("define_instruction", {
       actionType: "define_instruction",
+      slug: "define_instruction",
+      label: "Define Instruction",
       scope: { kind: "global" },
       preconditions: { requiredFields: ["definition"] },
       effects: [
@@ -576,6 +585,8 @@ function seedSubjectScopedProjectCatalog(
   });
   state.nodeCatalog.set("Project", {
     nodeType: "Project",
+    slug: toCatalogSlug("Project"),
+    label: toCatalogLabel("Project"),
     family: "operational",
     archetypeId: "op-project",
     typicalValueOverrides: {},
@@ -598,6 +609,8 @@ function seedSubjectScopedProjectCatalog(
   });
   state.actionCatalog.set("create_project", {
     actionType: "create_project",
+    slug: toCatalogSlug("create_project"),
+    label: toCatalogLabel("create_project"),
     scope: { kind: "global" },
     preconditions: { requiredFields: ["title"] },
     effects: [
@@ -713,6 +726,8 @@ describe("executeAction — subject_id tenancy", () => {
     state.nodes.set(node.id, node);
     state.actionCatalog.set("update_project_title", {
       actionType: "update_project_title",
+      slug: toCatalogSlug("update_project_title"),
+      label: toCatalogLabel("update_project_title"),
       scope: { kind: "node_type", nodeType: "Project" },
       preconditions: { requiresExistingNode: true, requiredFields: ["nodeId", "title"] },
       effects: [

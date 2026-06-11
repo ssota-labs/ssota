@@ -3,7 +3,10 @@ import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
 import { executeAction } from "@loopos/core";
 import {
   createActionPorts,
+  createConsolePort,
   createDb,
+  DEFAULT_ORG_SLUG,
+  DEFAULT_PROJECT_SLUG,
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
 } from "@loopos/adapter-supabase";
@@ -53,6 +56,27 @@ describe("adapter-supabase integration", () => {
 
   it("smoke 계정 인증 성공", () => {
     expect(smokeUserId).toBeTruthy();
+  });
+
+  it("console: org/project slug resolve + smoke membership", async () => {
+    const dbBundle = createDb();
+    const consolePort = createConsolePort(dbBundle.db);
+
+    const org = await consolePort.getOrganizationBySlug(DEFAULT_ORG_SLUG);
+    expect(org).toBeTruthy();
+
+    const project = await consolePort.getProjectBySlug(org!.id, DEFAULT_PROJECT_SLUG);
+    expect(project).toBeTruthy();
+    expect(project?.slug).toBe(DEFAULT_PROJECT_SLUG);
+
+    const orgsForUser = await consolePort.listOrganizationsForUser(smokeUserId);
+    expect(orgsForUser.some((item) => item.slug === DEFAULT_ORG_SLUG)).toBe(true);
+
+    const nodeEntry = await ports.catalog.getNodeCatalogEntryBySlug("document");
+    expect(nodeEntry?.nodeType).toBe("Document");
+    expect(nodeEntry?.slug).toBe("document");
+
+    await dbBundle.client?.end();
   });
 
   it("create_note 커밋 + action_log 기록", async () => {

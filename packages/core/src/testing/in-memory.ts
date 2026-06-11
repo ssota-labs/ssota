@@ -20,6 +20,7 @@ import type {
   PropertyCatalogEntry,
 } from "../domain/types.js";
 import type { Effect, GateStatus, LifecycleStatus } from "@loopos/contracts";
+import { toCatalogLabel, toCatalogSlug } from "../catalog-slug.js";
 
 export interface InMemoryState {
   nodes: Map<string, Node>;
@@ -138,6 +139,8 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
   } else if (effect.kind === "upsert_node_catalog_entry") {
     state.nodeCatalog.set(effect.entry.nodeType, {
       nodeType: effect.entry.nodeType,
+      slug: toCatalogSlug(effect.entry.nodeType),
+      label: toCatalogLabel(effect.entry.nodeType),
       family: effect.entry.family,
       archetypeId: effect.entry.archetypeId,
       typicalValueOverrides: effect.entry.typicalValueOverrides,
@@ -162,7 +165,11 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
       (instruction) => instruction.id !== effect.instructionId,
     );
   } else if (effect.kind === "upsert_edge_catalog_entry") {
-    state.edgeCatalog.set(effect.entry.edgeType, effect.entry);
+    state.edgeCatalog.set(effect.entry.edgeType, {
+      ...effect.entry,
+      slug: toCatalogSlug(effect.entry.edgeType),
+      label: toCatalogLabel(effect.entry.edgeType),
+    });
   } else if (effect.kind === "upsert_property_catalog_entry") {
     state.propertyCatalog.set(effect.entry.propertyKey, effect.entry);
   } else if (effect.kind === "upsert_property_permission_entry") {
@@ -190,6 +197,8 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
   } else if (effect.kind === "upsert_action_catalog_entry") {
     state.actionCatalog.set(effect.entry.actionType, {
       actionType: effect.entry.actionType,
+      slug: toCatalogSlug(effect.entry.actionType),
+      label: toCatalogLabel(effect.entry.actionType),
       scope: effect.entry.scope,
       preconditions: effect.entry.preconditions,
       effects: effect.entry.effects as Effect[],
@@ -206,6 +215,7 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
       );
       const next = {
         id: effect.entry.instructionId,
+        slug: toCatalogSlug(effect.entry.title),
         title: effect.entry.title,
         triggerPatterns: effect.entry.triggerPatterns,
         applicableNodeTypes: effect.entry.applicableNodeTypes,
@@ -229,6 +239,7 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
     } else {
       state.instructions.push({
         id: randomUUID(),
+        slug: toCatalogSlug(effect.entry.title),
         title: effect.entry.title,
         triggerPatterns: effect.entry.triggerPatterns,
         applicableNodeTypes: effect.entry.applicableNodeTypes,
@@ -253,11 +264,23 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
     async getNodeCatalogEntry(nodeType) {
       return state.nodeCatalog.get(nodeType) ?? null;
     },
+    async getNodeCatalogEntryBySlug(slug) {
+      return (
+        [...state.nodeCatalog.values()].find((entry) => entry.slug === slug) ??
+        null
+      );
+    },
     async listNodeCatalogEntries() {
       return [...state.nodeCatalog.values()];
     },
     async getEdgeCatalogEntry(edgeType) {
       return state.edgeCatalog.get(edgeType) ?? null;
+    },
+    async getEdgeCatalogEntryBySlug(slug) {
+      return (
+        [...state.edgeCatalog.values()].find((entry) => entry.slug === slug) ??
+        null
+      );
     },
     async listEdgeCatalogEntries() {
       return [...state.edgeCatalog.values()];
@@ -270,6 +293,12 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
     },
     async getActionCatalogEntry(actionType) {
       return state.actionCatalog.get(actionType) ?? null;
+    },
+    async getActionCatalogEntryBySlug(slug) {
+      return (
+        [...state.actionCatalog.values()].find((entry) => entry.slug === slug) ??
+        null
+      );
     },
     async listActionCatalogEntries() {
       return [...state.actionCatalog.values()];
@@ -303,6 +332,12 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
     async getInstruction(instructionId) {
       return (
         state.instructions.find((instruction) => instruction.id === instructionId) ??
+        null
+      );
+    },
+    async getInstructionBySlug(slug) {
+      return (
+        state.instructions.find((instruction) => instruction.slug === slug) ??
         null
       );
     },
@@ -358,6 +393,15 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
   const gate: GatePort = {
     async listPendingGates() {
       return [...state.gates.values()].filter((g) => g.status === "pending");
+    },
+    async queryGates(params) {
+      let results = [...state.gates.values()];
+      if (params.status) {
+        results = results.filter((g) => g.status === params.status);
+      }
+      const offset = params.offset ?? 0;
+      const limit = params.limit ?? 20;
+      return results.slice(offset, offset + limit);
     },
     async getGate(gateId) {
       return state.gates.get(gateId) ?? null;
@@ -418,6 +462,9 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
       const limit = params.limit ?? 20;
       return results.slice(offset, offset + limit);
     },
+    async getActionLogEntry(logId) {
+      return state.actionLog.find((r) => r.id === logId) ?? null;
+    },
     async findByIdempotencyKey(key) {
       return (
         state.actionLog.find(
@@ -441,6 +488,8 @@ export function seedTestCatalog(state: InMemoryState): void {
 
   state.nodeCatalog.set("Note", {
     nodeType: "Note",
+    slug: "note",
+    label: "Note",
     family: "document",
     archetypeId: "doc-note",
     typicalValueOverrides: {},
@@ -457,6 +506,8 @@ export function seedTestCatalog(state: InMemoryState): void {
 
   state.actionCatalog.set("create_note", {
     actionType: "create_note",
+    slug: "create_note",
+    label: "Create Note",
     scope: { kind: "global" },
     preconditions: { requiredFields: ["content"] },
     effects: [
@@ -481,6 +532,8 @@ export function seedTestCatalog(state: InMemoryState): void {
 
   state.actionCatalog.set("promote_note", {
     actionType: "promote_note",
+    slug: "promote_note",
+    label: "Promote Note",
     scope: { kind: "global" },
     preconditions: { requiresExistingNode: true, requiredFields: ["nodeId"] },
     effects: [
@@ -499,6 +552,8 @@ export function seedTestCatalog(state: InMemoryState): void {
 
   state.actionCatalog.set("approve_gate", {
     actionType: "approve_gate",
+    slug: "approve_gate",
+    label: "Approve Gate",
     scope: { kind: "global" },
     preconditions: { requiredFields: ["gateId", "status"] },
     effects: [
@@ -524,6 +579,8 @@ export function seedTestCatalog(state: InMemoryState): void {
 
   state.actionCatalog.set("define_node_type", {
     actionType: "define_node_type",
+    slug: "define_node_type",
+    label: "Define Node Type",
     scope: { kind: "global" },
     preconditions: { requiredFields: ["definition"] },
     effects: [

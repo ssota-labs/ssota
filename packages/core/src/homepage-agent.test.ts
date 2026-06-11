@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { toCatalogLabel, toCatalogSlug } from "./catalog-slug.js";
 import { executeAction } from "./index.js";
 import {
   createInMemoryPorts,
@@ -70,6 +71,8 @@ function seedHomepageAgentInMemory(
     });
     state.nodeCatalog.set(nodeType, {
       nodeType,
+      slug: toCatalogSlug(nodeType),
+      label: toCatalogLabel(nodeType),
       family,
       archetypeId,
       typicalValueOverrides: {},
@@ -85,6 +88,8 @@ function seedHomepageAgentInMemory(
 
   state.edgeCatalog.set("homepage_contains", {
     edgeType: "homepage_contains",
+    slug: toCatalogSlug("homepage_contains"),
+    label: toCatalogLabel("homepage_contains"),
     domain: ["HomepageProject"],
     range: ["DesignBrief", "PageSection"],
     cardinality: "one-to-many",
@@ -105,6 +110,8 @@ function seedHomepageAgentInMemory(
 
   state.actionCatalog.set("create_homepage_project", {
     actionType: "create_homepage_project",
+    slug: toCatalogSlug("create_homepage_project"),
+    label: toCatalogLabel("create_homepage_project"),
     scope: { kind: "node_type", nodeType: "HomepageProject" },
     preconditions: { requiredFields: ["title"] },
     effects: [nodeEffect("HomepageProject")],
@@ -116,6 +123,8 @@ function seedHomepageAgentInMemory(
   });
   state.actionCatalog.set("create_design_brief", {
     actionType: "create_design_brief",
+    slug: toCatalogSlug("create_design_brief"),
+    label: toCatalogLabel("create_design_brief"),
     scope: { kind: "node_type", nodeType: "DesignBrief" },
     preconditions: { requiredFields: ["title", "content"] },
     effects: [nodeEffect("DesignBrief")],
@@ -127,6 +136,8 @@ function seedHomepageAgentInMemory(
   });
   state.actionCatalog.set("link_homepage_contains", {
     actionType: "link_homepage_contains",
+    slug: toCatalogSlug("link_homepage_contains"),
+    label: toCatalogLabel("link_homepage_contains"),
     scope: { kind: "edge_type", edgeType: "homepage_contains" },
     preconditions: {
       requiresExistingNode: true,

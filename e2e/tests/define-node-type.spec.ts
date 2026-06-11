@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
 import { loginAsSmoke } from "../helpers/auth";
+import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
@@ -36,20 +37,22 @@ test.describe("LoopOS define_node_type vertical slice", () => {
 
     await loginAsSmoke(page);
 
-    await page.getByRole("navigation").getByRole("link", { name: "Human Gate" }).click();
+    await gotoProject(page, "gates");
     const gateCard = page.locator(".rounded-lg, .rounded-md, [data-slot='card']").filter({ hasText: nodeType });
     await expect(page.getByText("define_node_type").first()).toBeVisible({
       timeout: 10_000,
     });
     await gateCard.getByRole("button", { name: "승인" }).first().click();
 
-    await page.getByRole("navigation").getByRole("link", { name: "Context Graph" }).click();
-    await page.getByRole("link", { name: "Nodes", exact: true }).click();
-    await expect(page.getByText(nodeType)).toBeVisible({ timeout: 10_000 });
+    await gotoProject(page, "graph/nodes");
+    await expect(
+      page.getByRole("link", { name: nodeType.replace(/_/g, " ") }),
+    ).toBeVisible({ timeout: 10_000 });
 
-    await page.getByRole("navigation").getByRole("link", { name: "Action Log" }).click();
+    await gotoProject(page, "log");
     await expect(page.getByText("define_node_type").first()).toBeVisible();
     await expect(page.getByText("approve_gate").first()).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/log`));
   });
 
   test("Human web form define_node_type committed", async ({ page }) => {
@@ -57,15 +60,17 @@ test.describe("LoopOS define_node_type vertical slice", () => {
 
     await loginAsSmoke(page);
 
-    await page.goto("/studio/node-types/new");
-    await page.getByLabel("Node Type").fill(nodeType);
-    await page.getByLabel("Archetype").selectOption("doc-note");
-    await page.getByLabel("Content Guide").fill("Web form test");
-    await page.getByRole("button", { name: "define_node_type 실행" }).click();
-
-    await expect(page.getByText("committed")).toBeVisible({ timeout: 10_000 });
-
-    await page.goto("/studio/node-types");
-    await expect(page.getByText(nodeType)).toBeVisible();
+    await gotoProject(page, "graph/nodes");
+    await page.getByRole("button", { name: "New node table" }).click();
+    await page.getByLabel("Key").fill(nodeType);
+    await page.getByLabel("Archetype").fill("doc-note");
+    await page.getByLabel("Content guide").fill("Web form test");
+    const label = nodeType.replace(/_/g, " ");
+    await page.getByRole("button", { name: "Create node table" }).click();
+    await page.waitForLoadState("networkidle");
+    await gotoProject(page, "graph/nodes");
+    await expect(page.getByRole("link", { name: label })).toBeVisible({
+      timeout: 15_000,
+    });
   });
 });

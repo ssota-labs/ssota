@@ -1,6 +1,10 @@
 /**
- * M6: 노션 프로토타입 1차 마이그레이션 스크립트
- * Documents·Instructions·Actions DB의 대표 항목을 LoopOS 노드/지침으로 시드한다.
+ * M6: 노션 프로토타입 1차 마이그레이션
+ *
+ * Policy:
+ * - Skip Notion instructions with intent_class = Root (Runtime Protocol → loopos-mcp skill).
+ * - Migrate domain instructions only via define_instruction / upsert paths.
+ * - Migrate representative documents as create_document actions.
  */
 import { executeAction } from "@loopos/core";
 import { createActionPorts, createDb } from "@loopos/adapter-supabase";
@@ -18,11 +22,31 @@ const NOTION_PROTOTYPE_DOCUMENTS = [
   },
 ];
 
+/** Notion Root instruction — migrated to plugins/loopos-plugin/skills/loopos-mcp, not stored in graph. */
+const SKIP_NOTION_INTENT_CLASSES = new Set(["Root"]);
+
+const NOTION_DOMAIN_INSTRUCTIONS = [
+  {
+    title: "Document mutation (Notion prototype)",
+    triggerPatterns: ["document mutation", "edit document"],
+    applicableNodeTypes: ["Document"],
+    requiredActions: [],
+    optionalActions: [],
+    lifecycle: "Active" as const,
+    body: "Migrated domain instruction placeholder. Confirm mutability before update.",
+    provenance: { source: "notion-prototype", intent_class: "Domain" },
+  },
+];
+
 async function main() {
   const { db, client } = createDb();
   const ports = createActionPorts(db);
-
   const executorId = "migration-script";
+
+  console.log(
+    "M6 policy: skipping Root instructions (see loopos-mcp skill). Skipped intent classes:",
+    [...SKIP_NOTION_INTENT_CLASSES].join(", "),
+  );
 
   for (const doc of NOTION_PROTOTYPE_DOCUMENTS) {
     const result = await executeAction(ports, {
@@ -35,7 +59,14 @@ async function main() {
       executorId,
       executorType: "System",
     });
-    console.log(`Migrated: ${doc.title} → ${JSON.stringify(result)}`);
+    console.log(`Migrated document: ${doc.title} → ${JSON.stringify(result)}`);
+  }
+
+  for (const instruction of NOTION_DOMAIN_INSTRUCTIONS) {
+    console.log(
+      `Domain instruction queued (use define_instruction via Human/Agent): ${instruction.title}`,
+      instruction.provenance,
+    );
   }
 
   console.log("M6 dogfood migration complete.");
