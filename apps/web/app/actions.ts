@@ -27,6 +27,7 @@ import { getDefaultProjectPath } from "@/lib/console/default-landing";
 import { withConsolePaths } from "@/lib/console/revalidate";
 import { graphPath, DEFAULT_PROJECT } from "@/lib/console/paths";
 import { getActionPorts } from "@/lib/ports";
+import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
 
 export async function approveGateAction(
@@ -61,6 +62,30 @@ export async function approveGateFormAction(formData: FormData) {
   if (typeof gateId !== "string") throw new Error("gateId required");
 
   await approveGateAction(gateId, approved);
+}
+
+export async function signInWithGoogleAction() {
+  if (!isGoogleAuthEnabled()) {
+    redirect("/login?error=" + encodeURIComponent("Google 로그인이 활성화되지 않았습니다"));
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${getSiteUrl()}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  }
+
+  if (data.url) {
+    redirect(data.url);
+  }
+
+  redirect("/login?error=" + encodeURIComponent("Google 로그인을 시작할 수 없습니다"));
 }
 
 export async function signInAction(formData: FormData) {
