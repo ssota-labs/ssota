@@ -21,6 +21,8 @@ export interface Archetype {
 
 export interface NodeCatalogEntry {
   nodeType: string;
+  slug: string;
+  label: string;
   family: NodeFamily;
   archetypeId: string;
   typicalValueOverrides: Record<string, unknown>;
@@ -44,6 +46,8 @@ export interface Node {
 
 export interface EdgeCatalogEntry {
   edgeType: string;
+  slug: string;
+  label: string;
   domain: string[];
   range: string[];
   cardinality: string;
@@ -68,6 +72,8 @@ export interface PropertyCatalogEntry {
 
 export interface ActionCatalogEntry {
   actionType: string;
+  slug: string;
+  label: string;
   scope: ActionScope;
   preconditions: Record<string, unknown>;
   effects: Effect[];
@@ -91,6 +97,7 @@ export interface ActionPropertyPermission {
 
 export interface Instruction {
   id: string;
+  slug: string;
   title: string;
   triggerPatterns: string[];
   applicableNodeTypes: string[];
@@ -164,16 +171,32 @@ export interface InstructionListInput {
   limit?: number;
 }
 
+export interface Organization {
+  id: string;
+  slug: string;
+  name: string;
+}
+
+export interface Project {
+  id: string;
+  organizationId: string;
+  slug: string;
+  name: string;
+}
+
 export interface CatalogPort {
   getNodeCatalogEntry(nodeType: string): Promise<NodeCatalogEntry | null>;
+  getNodeCatalogEntryBySlug(slug: string): Promise<NodeCatalogEntry | null>;
   listNodeCatalogEntries(): Promise<NodeCatalogEntry[]>;
   getEdgeCatalogEntry(edgeType: string): Promise<EdgeCatalogEntry | null>;
+  getEdgeCatalogEntryBySlug(slug: string): Promise<EdgeCatalogEntry | null>;
   listEdgeCatalogEntries(): Promise<EdgeCatalogEntry[]>;
   getPropertyCatalogEntry(
     propertyKey: string,
   ): Promise<PropertyCatalogEntry | null>;
   listPropertyCatalogEntries(): Promise<PropertyCatalogEntry[]>;
   getActionCatalogEntry(actionType: string): Promise<ActionCatalogEntry | null>;
+  getActionCatalogEntryBySlug(slug: string): Promise<ActionCatalogEntry | null>;
   listActionCatalogEntries(): Promise<ActionCatalogEntry[]>;
   getArchetype(archetypeId: string): Promise<Archetype | null>;
   listArchetypes(): Promise<Archetype[]>;
@@ -188,6 +211,25 @@ export interface CatalogPort {
   ): Promise<Instruction[]>;
   listInstructions(input?: InstructionListInput): Promise<Instruction[]>;
   getInstruction(instructionId: string): Promise<Instruction | null>;
+  getInstructionBySlug(slug: string): Promise<Instruction | null>;
+}
+
+export interface ConsolePort {
+  getOrganizationBySlug(slug: string): Promise<Organization | null>;
+  listOrganizationsForUser(userId: string): Promise<Organization[]>;
+  getProjectBySlug(
+    organizationId: string,
+    projectSlug: string,
+  ): Promise<Project | null>;
+  listProjectsForOrganization(organizationId: string): Promise<Project[]>;
+  getUserProjectPreference(
+    userId: string,
+  ): Promise<{ orgSlug: string; projectSlug: string } | null>;
+  setUserProjectPreference(
+    userId: string,
+    orgSlug: string,
+    projectSlug: string,
+  ): Promise<void>;
 }
 
 export interface GraphReadPort {

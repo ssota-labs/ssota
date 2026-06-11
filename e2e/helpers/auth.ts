@@ -12,7 +12,7 @@ export async function loginAsSmoke(page: Page): Promise<void> {
   await form.getByPlaceholder("password").fill(SMOKE_PASSWORD);
   await form.getByRole("button", { name: "로그인" }).click();
 
-  await expect(page.getByRole("heading", { name: "LoopOS Console" })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible({
     timeout: 15_000,
   });
 }
