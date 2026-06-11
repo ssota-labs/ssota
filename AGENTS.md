@@ -17,8 +17,8 @@ SSOTA — 에이전트에게 결정을 위임하기 위한 컨텍스트 그래�
 
 ```
 apps/
-  web/                  # Next.js 16 — 콘솔 UI (Human Gate 큐·Action Log·카탈로그 브라우저) + Supabase Auth
-  mcp/                  # Next.js 16 — 독립 MCP 앱: /api/mcp 라우트 + /oauth/consent 화면
+  web/                  # Next.js 16 — 콘솔 UI (Human Gate·Action Log·카탈로그) + Supabase Auth + MCP OAuth consent
+  mcp/                  # Next.js 16 — 독립 MCP 앱: /api/mcp + OAuth PRM 메타데이터 (Bearer JWT 검증)
 packages/
   core/                 # 도메인 헥사곤 — 엔티티, 포트(인터페이스), executeAction 유스케이스, 4대 강제
   adapter-supabase/     # 드리븐 어댑터 — Drizzle 스키마·시드, core 포트 구현
@@ -216,7 +216,7 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 - **Root Runtime Protocol**은 `ssota-mcp` 스킬이 담당한다. 배포 번들 SSOT는 `plugins/ssota-plugin/`이며, 설치 복제본은 `.cursor/plugins/local/ssota-plugin/`·`.agents/plugins/ssota-plugin/`(전체 번들), `.agents/skills/ssota-mcp`·`.cursor/skills/ssota-mcp`·`.cursor/mcp.json`(설치 시 풀리는 스킬·MCP)에 있다. 플러그인 수정 시 같은 PR에서 복제본도 함께 갱신한다. 그래프의 Instructions는 **도메인 레시피**만 저장한다.
 - MCP 읽기 3층: **Discover** (`list_*` 인덱스) / **Fetch** (`get_*` 단건) / **Query** (`query_*`, `find_*`, `traverse_graph`, `query_neighbors`).
 - **`execute_action`이 유일한 쓰기.** 게이트: `query_gates`, `list_pending_gates`, `submit_for_approval`. 로그: `get_action_log`, `get_action_log_entry`.
-- 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. 이 앱은 (1) `/oauth/consent` 화면(`supabase.auth.oauth.getAuthorizationDetails/approveAuthorization/denyAuthorization`)과 (2) Bearer JWT의 JWKS 검증 + `.well-known/oauth-protected-resource` 메타데이터만 구현한다.
+- 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. **OAuth consent**(`/oauth/consent`)는 `apps/web`이 담당한다. `apps/mcp`는 Bearer JWT JWKS 검증 + `/.well-known/oauth-protected-resource` + `/api/mcp`만 구현한다.
 - 도구 핸들러에 비즈니스 로직을 넣지 않는다 — core 유스케이스 호출 + IO 변환만.
 
 ## PR Guidelines

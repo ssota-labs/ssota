@@ -18,11 +18,13 @@ import { Separator } from "@ssota/ui/components/ui/separator";
 type LoginFormProps = {
   error?: string;
   googleAuthEnabled?: boolean;
+  next?: string;
 };
 
 export function LoginForm({
   error,
   googleAuthEnabled = false,
+  next,
 }: LoginFormProps) {
   const { t } = useLocale();
 
@@ -34,6 +36,7 @@ export function LoginForm({
       </CardHeader>
       <CardContent>
         <form action={signInAction} className="space-y-4">
+          {next ? <input type="hidden" name="next" value={next} /> : null}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -69,7 +72,7 @@ export function LoginForm({
               <span className="text-xs text-muted-foreground">{t("common.or")}</span>
               <Separator className="flex-1" />
             </div>
-            <GoogleSignInButton />
+            <GoogleSignInButton next={next} />
           </div>
         ) : null}
       </CardContent>

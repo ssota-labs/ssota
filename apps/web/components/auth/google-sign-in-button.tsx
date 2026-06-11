@@ -27,11 +27,16 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleSignInButton() {
+type GoogleSignInButtonProps = {
+  next?: string;
+};
+
+export function GoogleSignInButton({ next }: GoogleSignInButtonProps) {
   const { t } = useLocale();
 
   return (
     <form action={signInWithGoogleAction}>
+      {next ? <input type="hidden" name="next" value={next} /> : null}
       <Button type="submit" variant="outline" className="w-full" data-icon="inline-start">
         <GoogleIcon />
         {t("auth.googleSignIn")}

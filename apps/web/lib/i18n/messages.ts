@@ -13,6 +13,13 @@ export const en = {
     googleSignIn: "Sign in with Google",
     googleNotEnabled: "Google sign-in is not enabled",
   },
+  oauth: {
+    consentTitle: "Authorize MCP access",
+    consentDescription: "An MCP client is requesting access to SSOTA.",
+    approve: "Approve",
+    deny: "Deny",
+    missingAuthorizationId: "authorization_id is required.",
+  },
   nav: {
     projectHome: "Project Home",
     graph: "Graph",
@@ -86,6 +93,13 @@ export const ko = {
     description: "계정이 없으면 이메일과 비밀번호로 자동 가입됩니다.",
     googleSignIn: "Google로 로그인",
     googleNotEnabled: "Google 로그인이 활성화되지 않았습니다",
+  },
+  oauth: {
+    consentTitle: "OAuth 동의",
+    consentDescription: "MCP 클라이언트가 SSOTA에 접근하려 합니다.",
+    approve: "승인",
+    deny: "거부",
+    missingAuthorizationId: "authorization_id가 필요합니다.",
   },
   nav: {
     projectHome: "프로젝트 홈",
