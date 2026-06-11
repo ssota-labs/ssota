@@ -47,6 +47,13 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("link", { name: "Action Log", exact: true })).toBeVisible();
   });
 
+  test("smoke: profile menu opens", async ({ page }) => {
+    await loginAsSmoke(page);
+    await page.getByRole("button", { name: "Signed in as" }).click();
+    await expect(page.getByText("smoke@ssota.test")).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+  });
+
   test("smoke: legacy /context-graph redirect", async ({ page }) => {
     await loginAsSmoke(page);
     await page.goto("/context-graph/nodes/Document");

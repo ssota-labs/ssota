@@ -119,18 +119,17 @@ export function ConsoleTopBar({
       <div className="ml-auto">
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
-                <Avatar size="sm">
-                  <AvatarFallback>{initialsFromEmail(userEmail)}</AvatarFallback>
-                </Avatar>
-                <span className="hidden max-w-[10rem] truncate text-xs md:inline">
-                  {userEmail}
-                </span>
-                <CaretDownIcon className="size-3.5 text-muted-foreground" />
-              </Button>
-            }
-          />
+            aria-label={t("nav.signedInAs")}
+            render={<Button variant="ghost" size="sm" className="h-8 gap-2 px-2" />}
+          >
+            <Avatar size="sm">
+              <AvatarFallback>{initialsFromEmail(userEmail)}</AvatarFallback>
+            </Avatar>
+            <span className="hidden max-w-[10rem] truncate text-xs md:inline">
+              {userEmail}
+            </span>
+            <CaretDownIcon className="size-3.5 text-muted-foreground" />
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="font-normal">
@@ -139,13 +138,9 @@ export function ConsoleTopBar({
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <form action={signOutAction}>
-              <DropdownMenuItem
-                render={<button type="submit" className="w-full cursor-pointer" />}
-              >
-                {t("common.signOut")}
-              </DropdownMenuItem>
-            </form>
+            <DropdownMenuItem onClick={() => void signOutAction()}>
+              {t("common.signOut")}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
