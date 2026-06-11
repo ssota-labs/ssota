@@ -21,8 +21,10 @@ export function ProfileOnboardingForm({
 
   return (
     <OnboardingShell
+      step={1}
+      stepLabel="Workspace"
       title="Create your workspace"
-      description="Set up your personal SSOTA workspace. Names must use English letters and numbers."
+      description="Your workspace is your organization — it holds all your projects. Names must use English letters and numbers."
       form={
         <form action={completeProfileOnboardingAction} className="space-y-4">
           <div className="space-y-2">

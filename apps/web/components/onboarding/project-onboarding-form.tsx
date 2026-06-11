@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { CheckCircleIcon } from "@phosphor-icons/react";
 import { completeProjectOnboardingAction } from "@/app/onboarding/actions";
 import { ConsolePreview } from "@/components/onboarding/console-preview";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
@@ -21,10 +22,35 @@ export function ProjectOnboardingForm({
 
   return (
     <OnboardingShell
+      step={2}
+      stepLabel="First project"
       title="Create your first project"
       description="Projects organize your context graph, instructions, and gates."
+      backHref="/onboarding/profile"
+      backLabel="Back to workspace"
+      banner={
+        <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm">
+          <span className="font-medium text-foreground">{workspaceName}</span>
+          <span className="text-muted-foreground">
+            {" "}
+            workspace created. Name your first project below.
+          </span>
+        </div>
+      }
       form={
         <form action={completeProjectOnboardingAction} className="space-y-4">
+          <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
+            <CheckCircleIcon
+              className="size-4 shrink-0 text-primary"
+              weight="fill"
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-muted-foreground">Workspace</p>
+              <p className="truncate text-sm font-medium">{workspaceName}</p>
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="projectName">Project name</Label>
             <Input

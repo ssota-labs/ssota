@@ -179,7 +179,6 @@ export interface Profile {
   id: string;
   email: string;
   displayName: string | null;
-  personalOrganizationId: string | null;
   onboardingStep: OnboardingStep;
   onboardingCompletedAt: Date | null;
   locale: Locale;
@@ -230,6 +229,7 @@ export interface CatalogPort {
 
 export interface ConsolePort {
   getOrganizationBySlug(slug: string): Promise<Organization | null>;
+  getPersonalOrganizationForUser(userId: string): Promise<Organization | null>;
   listOrganizationsForUser(userId: string): Promise<Organization[]>;
   getProjectBySlug(
     organizationId: string,

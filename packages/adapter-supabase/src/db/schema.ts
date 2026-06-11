@@ -45,21 +45,10 @@ export const actionOutcomeEnum = pgEnum("action_outcome", [
   "rejected",
 ]);
 
-export const organizations = pgTable("organizations", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  slug: text("slug").notNull().unique(),
-  name: text("name").notNull(),
-  ownerUserId: text("owner_user_id"),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
-
 export const profiles = pgTable("profiles", {
-  id: text("id").primaryKey(),
+  id: uuid("id").primaryKey(),
   email: text("email").notNull(),
   displayName: text("display_name"),
-  personalOrganizationId: uuid("personal_organization_id").references(
-    () => organizations.id,
-  ),
   onboardingStep: text("onboarding_step").notNull().default("profile"),
   onboardingCompletedAt: timestamp("onboarding_completed_at", {
     withTimezone: true,
@@ -67,6 +56,14 @@ export const profiles = pgTable("profiles", {
   locale: text("locale").notNull().default("en"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const organizations = pgTable("organizations", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  ownerUserId: uuid("owner_user_id").references(() => profiles.id),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const projects = pgTable(
@@ -95,7 +92,9 @@ export const organizationMemberships = pgTable(
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organizations.id),
-    userId: text("user_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
     role: text("role").notNull().default("member"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -108,7 +107,9 @@ export const organizationMemberships = pgTable(
 );
 
 export const userProjectPreferences = pgTable("user_project_preferences", {
-  userId: text("user_id").primaryKey(),
+  userId: uuid("user_id")
+    .primaryKey()
+    .references(() => profiles.id, { onDelete: "cascade" }),
   orgSlug: text("org_slug").notNull(),
   projectSlug: text("project_slug").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

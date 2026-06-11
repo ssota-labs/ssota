@@ -129,6 +129,67 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 - 패키지 추가는 `pnpm add <pkg> --filter <workspace>` 사용.
 - 스키마 변경 시: `packages/adapter-supabase`에서 Drizzle 스키마 수정 → `pnpm db:generate`로 SQL diff 생성 → `supabase/migrations/`에 `pnpm db:migration:new <name>`으로 파일 추가( diff SQL 이식) → `pnpm db:migrate`. Drizzle은 스키마 정의·diff용, **적용 SSOT는 `supabase/migrations/`** (branching 호환).
 
+## Frontend 작업 완료 정의 (에이전트·PR 공통)
+
+`apps/web`·`packages/ui` 등 **사용자에게 보이는 UI를 바꾸는 작업**은 코드 커밋만으로 끝나지 않는다. 아래 3단계를 모두 마쳐야 **완료**다. 사용자가 스크린샷·데모를 따로 요청하지 않아도 에이전트가 끝까지 수행한다.
+
+```
+1. 구현 + 정적 검증
+2. E2E (해당 플로우)
+3. agent-browser로 시각 보고
+```
+
+### 1. 구현 + 정적 검증
+
+- `pnpm lint && pnpm typecheck` (변경 범위에 맞게)
+- `apps/web`만 건드렸으면 `pnpm --filter web typecheck`
+- 디자인 규칙: [DESIGN.md](DESIGN.md), `@ssota/ui` semantic tokens
+
+### 2. E2E
+
+- 변경한 화면·플로우에 맞는 Playwright 스펙을 실행한다. 신규 UX면 **테스트 추가**를 우선 검토한다.
+- 실행 전: Cloud는 `pnpm cloud:prepare`, 로컬은 `pnpm e2e:prepare` 또는 `supabase start` + migrate + seed.
+- `pnpm e2e`는 **3100/3101**에서 자체 `next dev`를 띄운다. `pnpm dev` tmux 세션이 3000/3001을 쓰면 E2E 전에 `tmux kill-session -t ssota-dev`로 내린다.
+- 관련 테스트만 돌릴 때: `pnpm e2e --grep '<키워드>'` (예: `--grep onboarding`).
+- 실패 시 수정 후 재실행. E2E 산출물·리포트 규칙은 아래 **E2E 리포트** 절을 따른다.
+
+### 3. agent-browser 시각 보고
+
+E2E가 통과한 뒤, **실제 브라우저에서 변경 UI를 다시 열어** 사용자에게 보여준다. Playwright 산출물만으로 끝내지 않는다.
+
+- 스킬: `.agents/skills/agent-browser/SKILL.md` — 실행 전 `agent-browser skills get core`로 워크플로 확인.
+- 설치: `npm i -g agent-browser && agent-browser install` (Cloud 세션에 없으면 설치).
+- dev 서버: `pnpm dev --filter web` (:3000). E2E 직후라면 tmux로 다시 기동.
+- **데스크탑 뷰포트**가 기본: `agent-browser set viewport 1440 900 2` (2x retina).
+- 변경된 화면·상태별로 스크린샷: `agent-browser screenshot --full /opt/cursor/artifacts/screenshots/<이름>.png`
+- 여러 단계(온보딩 1→2, 모달 열림 등)면 **상태마다 1장 이상** 캡처.
+- 플로우가 움직이는 경우 짧은 데모가 필요하면 `RecordScreen` 또는 agent-browser로 단계별 캡처.
+
+**사용자 응답·PR 본문에 포함할 것**
+
+- `/opt/cursor/artifacts/screenshots/` 등에 저장한 **스크린샷 2–4장** (markdown `<img>` 태그, 절대 경로).
+- 무엇을 바꿨는지 한 줄 요약 + 캡처가 보여주는 상태 설명.
+- E2E를 돌렸다면 통과한 스펙 이름(또는 `--grep` 키워드).
+- 실패했던 경우: 수정 내용과 재실행 결과.
+
+**agent-browser 최소 예시**
+
+```bash
+agent-browser set viewport 1440 900 2
+agent-browser open http://localhost:3000/onboarding/profile
+agent-browser wait --load networkidle
+agent-browser screenshot --full /opt/cursor/artifacts/screenshots/onboarding-step1.png
+# 플로우 진행 후 다음 상태도 동일하게 캡처
+agent-browser close
+```
+
+### 완료 체크리스트 (프론트 PR)
+
+- [ ] UI 구현 및 lint/typecheck 통과
+- [ ] 해당 플로우 E2E 통과 (필요 시 스펙 추가)
+- [ ] agent-browser 데스크탑 스크린샷으로 사용자/PR에 시각 보고
+- [ ] 커밋·푸시·PR 업데이트 (테스트 전·후 변경 반영)
+
 ## MVP 마일스톤 커밋 (에이전트·개발자 공통)
 
 Phase 1 구현 계획(`ssota_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0–M6) 하나가 끝날 때마다** git 커밋을 남긴다. 한 PR에 여러 마일스톤을 섞지 않는다.
@@ -243,13 +304,14 @@ pnpm cloud:prepare
 
 `pnpm cloud:prepare` (= `scripts/cloud-bootstrap.sh`)가 하는 일:
 
-1. Node 24 (`.nvmrc`) 확인
+1. Node 24 (`.nvmrc`) 확인 — nvm에 24가 없으면 update script(또는 `nvm install 24`)가 먼저 설치해야 한다
 2. `node_modules` 없으면 `pnpm install`
-3. `apps/web/.env.local`, `apps/mcp/.env.local` 없으면 `.env.example` 복사
-4. **Docker**: `docker`/`dockerd`가 없으면 `apt-get install -y docker.io`로 설치한 뒤, `iptables-legacy` + **`vfs` storage driver**로 `dockerd` 기동 (Cloud VM에서 기본 `iptables-nft`/`overlayfs`는 실패함)
-5. **Supabase**: `pnpm exec supabase start` (CLI **2.105.0** pinned)
-6. **DB**: `pnpm db:migrate` + `pnpm db:seed` (smoke 계정 포함)
-7. **Playwright**: `pnpm --filter e2e exec playwright install chromium`
+3. **Build**: `pnpm build --filter @loopos/adapter-supabase --filter @loopos/client` — 워크스페이스 라이브러리(contracts/core/adapter/client) `dist/` 생성. `dist/`는 git·세션 간에 유지되지 않으므로 seed·통합 테스트·앱이 `@loopos/core/dist`를 import하기 전에 **반드시** 빌드돼 있어야 한다 (`pnpm dev`는 tsc watch로 자체 빌드하지만 standalone seed/test는 아니다)
+4. `apps/web/.env.local`, `apps/mcp/.env.local` 없으면 `.env.example` 복사
+5. **Docker**: `docker`/`dockerd`가 없으면 `apt-get install -y docker.io`로 설치한 뒤, `iptables-legacy` + **`vfs` storage driver**로 `dockerd` 기동 (Cloud VM에서 기본 `iptables-nft`/`overlayfs`는 실패함)
+6. **Supabase**: `pnpm exec supabase start` (CLI **2.105.0** pinned)
+7. **DB**: `pnpm db:migrate` + `pnpm db:seed` (smoke 계정 포함)
+8. **Playwright**: `pnpm --filter e2e exec playwright install chromium`
 
 옵션: `--skip-install`, `--skip-playwright`
 
