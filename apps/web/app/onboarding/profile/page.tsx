@@ -25,12 +25,9 @@ export default async function OnboardingProfilePage({
     user.email?.split("@")[0]?.replace(/[^A-Za-z0-9 '-]/g, "") ??
     "";
 
-  if (profile?.personalOrganizationId) {
-    const consolePort = getConsolePort();
-    const orgs = await consolePort.listOrganizationsForUser(user.id);
-    const org = orgs.find((item) => item.id === profile.personalOrganizationId);
-    if (org) defaultWorkspaceName = org.name;
-  }
+  const consolePort = getConsolePort();
+  const personalOrg = await consolePort.getPersonalOrganizationForUser(user.id);
+  if (personalOrg) defaultWorkspaceName = personalOrg.name;
 
   return (
     <ProfileOnboardingForm
