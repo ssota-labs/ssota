@@ -9,6 +9,7 @@ import type {
   NodeFamily,
   PermissionOperation,
   PermissionType,
+  PropertyCatalogEntry as ContractPropertyCatalogEntry,
 } from "@loopos/contracts";
 
 export interface Archetype {
@@ -63,12 +64,7 @@ export interface Edge {
   createdAt: Date;
 }
 
-export interface PropertyCatalogEntry {
-  propertyKey: string;
-  valueType: string;
-  constraints: Record<string, unknown>;
-  owningActions: string[];
-}
+export type PropertyCatalogEntry = ContractPropertyCatalogEntry;
 
 export interface ActionCatalogEntry {
   actionType: string;

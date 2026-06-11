@@ -1,13 +1,11 @@
 import {
   createMcpHandler,
-  protectedResourceHandler,
   withMcpAuth,
 } from "mcp-handler";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { z } from "zod";
-import { executeAction } from "@loopos/core";
 import {
-  ExecuteActionInputSchema,
+  ExecuteActionClientInputSchema,
   FindInstructionInputSchema,
   GetActionLogEntryInputSchema,
   GetActionLogInputSchema,
@@ -25,13 +23,39 @@ import {
   TraverseEdgesInputSchema,
   TraverseGraphInputSchema,
 } from "@loopos/contracts";
+import {
+  executeActionForClient,
+  findInstructions,
+  getActionContract,
+  getActionLog,
+  getActionLogEntry,
+  getArchetype,
+  getEdgeType,
+  getGate,
+  getInstruction,
+  getNode,
+  getNodeType,
+  getProperty,
+  listActionContracts,
+  listArchetypes,
+  listEdgeTypes,
+  listNodeTypes,
+  listPendingGates,
+  listProperties,
+  queryGates,
+  queryNeighborsService,
+  queryNodes,
+  submitForApproval,
+  traverseEdges,
+  traverseGraphService,
+} from "@/lib/api/services";
 import { verifyBearerToken } from "@/lib/auth";
-import { queryNeighbors, traverseGraph } from "@/lib/graph-query";
-import { getActionPorts } from "@/lib/ports";
 import { resolveSubjectId } from "@/lib/subject-context";
 
 function jsonContent(data: unknown) {
-  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+  return {
+    content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }],
+  };
 }
 
 const mcpHandler = createMcpHandler(
@@ -44,13 +68,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list node type catalog index. Fetch details with get_node_type.",
         inputSchema: {},
       },
-      async () => {
-        const ports = getActionPorts();
-        const entries = await ports.catalog.listNodeCatalogEntries();
-        return {
-          content: [{ type: "text", text: JSON.stringify(entries, null, 2) }],
-        };
-      },
+      async () => jsonContent(await listNodeTypes()),
     );
 
     server.registerTool(
@@ -61,13 +79,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list edge type catalog index. Fetch details with get_edge_type.",
         inputSchema: {},
       },
-      async () => {
-        const ports = getActionPorts();
-        const entries = await ports.catalog.listEdgeCatalogEntries();
-        return {
-          content: [{ type: "text", text: JSON.stringify(entries, null, 2) }],
-        };
-      },
+      async () => jsonContent(await listEdgeTypes()),
     );
 
     server.registerTool(
@@ -78,13 +90,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list property catalog index. Fetch details with get_property.",
         inputSchema: {},
       },
-      async () => {
-        const ports = getActionPorts();
-        const entries = await ports.catalog.listPropertyCatalogEntries();
-        return {
-          content: [{ type: "text", text: JSON.stringify(entries, null, 2) }],
-        };
-      },
+      async () => jsonContent(await listProperties()),
     );
 
     server.registerTool(
@@ -95,13 +101,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list action contract index. Fetch details with get_action_contract.",
         inputSchema: {},
       },
-      async () => {
-        const ports = getActionPorts();
-        const entries = await ports.catalog.listActionCatalogEntries();
-        return {
-          content: [{ type: "text", text: JSON.stringify(entries, null, 2) }],
-        };
-      },
+      async () => jsonContent(await listActionContracts()),
     );
 
     server.registerTool(
@@ -112,13 +112,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list archetype index. Fetch details with get_archetype.",
         inputSchema: {},
       },
-      async () => {
-        const ports = getActionPorts();
-        const entries = await ports.catalog.listArchetypes();
-        return {
-          content: [{ type: "text", text: JSON.stringify(entries, null, 2) }],
-        };
-      },
+      async () => jsonContent(await listArchetypes()),
     );
 
     server.registerTool(
@@ -126,15 +120,9 @@ const mcpHandler = createMcpHandler(
       {
         title: "Get Action Contract",
         description: "Get action contract from catalog",
-        inputSchema: {
-          actionType: z.string(),
-        },
+        inputSchema: { actionType: z.string() },
       },
-      async ({ actionType }) => {
-        const ports = getActionPorts();
-        const entry = await ports.catalog.getActionCatalogEntry(actionType);
-        return jsonContent(entry);
-      },
+      async ({ actionType }) => jsonContent(await getActionContract(actionType)),
     );
 
     server.registerTool(
@@ -146,9 +134,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetNodeTypeInputSchema.parse(args);
-        const ports = getActionPorts();
-        const entry = await ports.catalog.getNodeCatalogEntry(parsed.nodeType);
-        return jsonContent(entry);
+        return jsonContent(await getNodeType(parsed.nodeType));
       },
     );
 
@@ -161,9 +147,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetEdgeTypeInputSchema.parse(args);
-        const ports = getActionPorts();
-        const entry = await ports.catalog.getEdgeCatalogEntry(parsed.edgeType);
-        return jsonContent(entry);
+        return jsonContent(await getEdgeType(parsed.edgeType));
       },
     );
 
@@ -176,11 +160,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetPropertyInputSchema.parse(args);
-        const ports = getActionPorts();
-        const entry = await ports.catalog.getPropertyCatalogEntry(
-          parsed.propertyKey,
-        );
-        return jsonContent(entry);
+        return jsonContent(await getProperty(parsed.propertyKey));
       },
     );
 
@@ -193,9 +173,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetArchetypeInputSchema.parse(args);
-        const ports = getActionPorts();
-        const entry = await ports.catalog.getArchetype(parsed.archetypeId);
-        return jsonContent(entry);
+        return jsonContent(await getArchetype(parsed.archetypeId));
       },
     );
 
@@ -208,9 +186,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetNodeInputSchema.parse(args);
-        const ports = getActionPorts();
-        const node = await ports.graph.getNode(parsed.nodeId);
-        return jsonContent(node);
+        return jsonContent(await getNode(parsed.nodeId));
       },
     );
 
@@ -223,11 +199,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetInstructionInputSchema.parse(args);
-        const ports = getActionPorts();
-        const instruction = await ports.catalog.getInstruction(
-          parsed.instructionId,
-        );
-        return jsonContent(instruction);
+        return jsonContent(await getInstruction(parsed.instructionId));
       },
     );
 
@@ -240,9 +212,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetGateInputSchema.parse(args);
-        const ports = getActionPorts();
-        const gate = await ports.gate.getGate(parsed.gateId);
-        return jsonContent(gate);
+        return jsonContent(await getGate(parsed.gateId));
       },
     );
 
@@ -262,15 +232,8 @@ const mcpHandler = createMcpHandler(
       },
       async (args, extra) => {
         const subjectId = readSubjectFromExtra(extra);
-        const parsed = QueryNodesInputSchema.parse({
-          ...args,
-          subjectId,
-        });
-        const ports = getActionPorts();
-        const nodes = await ports.graph.queryNodes(parsed);
-        return {
-          content: [{ type: "text", text: JSON.stringify(nodes, null, 2) }],
-        };
+        const parsed = QueryNodesInputSchema.parse({ ...args, subjectId });
+        return jsonContent(await queryNodes(parsed));
       },
     );
 
@@ -288,13 +251,8 @@ const mcpHandler = createMcpHandler(
       },
       async (args, extra) => {
         const subjectId = readSubjectFromExtra(extra);
-        const parsed = TraverseEdgesInputSchema.parse({
-          ...args,
-          subjectId,
-        });
-        const ports = getActionPorts();
-        const edges = await ports.graph.traverseEdges(parsed);
-        return jsonContent(edges);
+        const parsed = TraverseEdgesInputSchema.parse({ ...args, subjectId });
+        return jsonContent(await traverseEdges(parsed));
       },
     );
 
@@ -312,9 +270,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = QueryNeighborsInputSchema.parse(args);
-        const ports = getActionPorts();
-        const result = await queryNeighbors(ports, parsed);
-        return jsonContent(result);
+        return jsonContent(await queryNeighborsService(parsed));
       },
     );
 
@@ -335,9 +291,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = TraverseGraphInputSchema.parse(args);
-        const ports = getActionPorts();
-        const result = await traverseGraph(ports, parsed);
-        return jsonContent(result);
+        return jsonContent(await traverseGraphService(parsed));
       },
     );
 
@@ -354,17 +308,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = FindInstructionInputSchema.parse(args);
-        const ports = getActionPorts();
-        const instructions = await ports.catalog.findInstructions(
-          parsed.query,
-          parsed.nodeType,
-          parsed.limit,
-        );
-        return {
-          content: [
-            { type: "text", text: JSON.stringify(instructions, null, 2) },
-          ],
-        };
+        return jsonContent(await findInstructions(parsed));
       },
     );
 
@@ -391,20 +335,19 @@ const mcpHandler = createMcpHandler(
         }
 
         const subjectId = readSubjectFromExtra(extra);
-        const parsed = ExecuteActionInputSchema.parse({
+        const parsed = ExecuteActionClientInputSchema.parse({
           actionType: args.actionType,
           input: args.input ?? {},
-          executorId: user.id,
-          executorType: "Agent",
           idempotencyKey: args.idempotencyKey,
-          subjectId,
         });
 
-        const ports = getActionPorts();
-        const result = await executeAction(ports, parsed);
-        return {
-          content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-        };
+        const result = await executeActionForClient(
+          parsed,
+          user.id,
+          "Agent",
+          subjectId,
+        );
+        return jsonContent(result);
       },
     );
 
@@ -416,13 +359,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list pending gates only. Query with filters via query_gates.",
         inputSchema: {},
       },
-      async () => {
-        const ports = getActionPorts();
-        const gates = await ports.gate.listPendingGates();
-        return {
-          content: [{ type: "text", text: JSON.stringify(gates, null, 2) }],
-        };
-      },
+      async () => jsonContent(await listPendingGates()),
     );
 
     server.registerTool(
@@ -438,9 +375,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = QueryGatesInputSchema.parse(args);
-        const ports = getActionPorts();
-        const gates = await ports.gate.queryGates(parsed);
-        return jsonContent(gates);
+        return jsonContent(await queryGates(parsed));
       },
     );
 
@@ -456,20 +391,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = SubmitForApprovalInputSchema.parse(args);
-        const ports = getActionPorts();
-        const gate = await ports.gate.getGate(parsed.gateId);
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(
-                { message: "Gate submitted for human review", gate },
-                null,
-                2,
-              ),
-            },
-          ],
-        };
+        return jsonContent(await submitForApproval(parsed.gateId, parsed.note));
       },
     );
 
@@ -486,9 +408,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetActionLogInputSchema.parse(args);
-        const ports = getActionPorts();
-        const log = await ports.commit.getActionLog(parsed);
-        return jsonContent(log);
+        return jsonContent(await getActionLog(parsed));
       },
     );
 
@@ -504,11 +424,7 @@ const mcpHandler = createMcpHandler(
       },
       async (args) => {
         const parsed = GetActionLogEntryInputSchema.parse(args);
-        const ports = getActionPorts();
-        const entry = parsed.logId
-          ? await ports.commit.getActionLogEntry(parsed.logId)
-          : await ports.commit.findByIdempotencyKey(parsed.idempotencyKey!);
-        return jsonContent(entry);
+        return jsonContent(await getActionLogEntry(parsed));
       },
     );
   },

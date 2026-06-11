@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@loopos/adapter-supabase": "workspace:*",
+    "@loopos/client": "workspace:*",
     "@playwright/test": "^1.52.0",
     "@supabase/supabase-js": "^2.108.1"
   }
