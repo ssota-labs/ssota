@@ -11,19 +11,21 @@ export function uniqueOnboardingEmail(): string {
 
 export const ONBOARDING_PASSWORD = "onboarding-test-password-123";
 
-export async function signUpOnLoginPage(
+export async function signInOnLoginPage(
   page: Page,
   email: string,
   password = ONBOARDING_PASSWORD,
 ): Promise<void> {
   await page.goto("/login");
   const form = page.locator("main form");
-  await page.getByRole("button", { name: "회원가입" }).click();
   await form.getByLabel("Email").fill(email);
   await form.getByLabel("Password").fill(password);
   await form.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/onboarding\/profile/, { timeout: 15_000 });
 }
+
+/** @deprecated use signInOnLoginPage */
+export const signUpOnLoginPage = signInOnLoginPage;
 
 export async function completeProfileOnboarding(
   page: Page,
@@ -78,7 +80,7 @@ export async function completeOnboardingFlow(
   const workspaceName = `E2E Workspace ${suffix}`;
   const projectName = `E2E Project ${suffix}`;
 
-  await signUpOnLoginPage(page, email);
+  await signInOnLoginPage(page, email);
   await completeProfileOnboarding(page, {
     displayName: "E2E User",
     workspaceName,

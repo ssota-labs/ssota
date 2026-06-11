@@ -3,12 +3,12 @@ import { loginAsSmoke } from "../helpers/auth";
 import {
   completeOnboardingFlow,
   completeProfileOnboarding,
-  signUpOnLoginPage,
+  signInOnLoginPage,
   uniqueOnboardingEmail,
 } from "../helpers/onboarding";
 
 test.describe("Console onboarding", () => {
-  test("신규 회원가입 → profile → project → Project Home", async ({ page }) => {
+  test("신규 로그인(자동 가입) → profile → project → Project Home", async ({ page }) => {
     const { orgSlug, projectSlug, workspaceName, projectName } =
       await completeOnboardingFlow(page);
 
@@ -23,7 +23,7 @@ test.describe("Console onboarding", () => {
     page,
   }) => {
     const email = uniqueOnboardingEmail();
-    await signUpOnLoginPage(page, email);
+    await signInOnLoginPage(page, email);
     await completeProfileOnboarding(page, {
       displayName: "Redirect User",
       workspaceName: "Redirect Workspace",

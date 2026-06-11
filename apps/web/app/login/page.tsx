@@ -4,15 +4,11 @@ import { isGoogleAuthEnabled } from "@/lib/auth/config";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; mode?: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
-  const { error, mode } = await searchParams;
+  const { error } = await searchParams;
 
   return (
-    <LoginForm
-      error={error}
-      initialMode={mode === "signup" ? "signup" : "signin"}
-      googleAuthEnabled={isGoogleAuthEnabled()}
-    />
+    <LoginForm error={error} googleAuthEnabled={isGoogleAuthEnabled()} />
   );
 }
