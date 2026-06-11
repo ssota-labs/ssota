@@ -80,5 +80,6 @@ test.describe("LoopOS MCP HTTP", () => {
     expect(res.ok()).toBeTruthy();
     const body = await res.json();
     expect(body.resource).toContain("/api/mcp");
+    expect(body.authorization_servers?.[0]).toMatch(/\/auth\/v1$/);
   });
 });

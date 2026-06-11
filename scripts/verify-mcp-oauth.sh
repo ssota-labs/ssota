@@ -23,9 +23,12 @@ echo "${META}" | python3 -c "
 import json, sys
 d = json.load(sys.stdin)
 assert 'resource' in d and '/api/mcp' in d['resource'], d
-assert d['authorization_servers'], d
+servers = d.get('authorization_servers') or []
+assert servers, d
+issuer = servers[0].rstrip('/')
+assert issuer.endswith('/auth/v1'), f'authorization_servers[0] must be Supabase issuer (/auth/v1), got {servers[0]!r}'
 print('  resource:', d['resource'])
-print('  authorization_servers:', d['authorization_servers'])
+print('  authorization_servers:', servers)
 "
 pass "metadata JSON valid"
 
@@ -55,6 +58,18 @@ print('  issuer:', d['issuer'])
 print('  registration_endpoint:', d['registration_endpoint'])
 "
   pass "Supabase OAuth AS metadata valid"
+
+  echo "5. PRM authorization_servers matches Supabase issuer"
+  PRM_META="${META}" AS_META="${AS_META}" python3 -c "
+import json, os
+meta = json.loads(os.environ['PRM_META'])
+as_meta = json.loads(os.environ['AS_META'])
+prm_issuer = meta['authorization_servers'][0].rstrip('/')
+as_issuer = as_meta['issuer'].rstrip('/')
+assert prm_issuer == as_issuer, f'issuer mismatch: PRM={prm_issuer!r} AS={as_issuer!r}'
+print('  matched issuer:', prm_issuer)
+"
+  pass "authorization_servers matches Supabase issuer"
 else
   echo "4. Supabase AS metadata — skipped (set NEXT_PUBLIC_SUPABASE_URL to verify)"
 fi
