@@ -29,13 +29,13 @@ export const signUpOnLoginPage = signInOnLoginPage;
 
 export async function completeProfileOnboarding(
   page: Page,
-  workspaceName: string,
+  organizationName: string,
 ): Promise<void> {
   await expect(
-    page.getByRole("heading", { name: "Create your workspace" }),
+    page.getByRole("heading", { name: "Create your organization" }),
   ).toBeVisible();
 
-  await page.getByLabel("Workspace name").fill(workspaceName);
+  await page.getByLabel("Organization name").fill(organizationName);
   await page.locator('button[type="submit"]').click();
 
   await expect(page).toHaveURL(/\/onboarding\/project/, { timeout: 15_000 });
@@ -72,19 +72,19 @@ export async function completeOnboardingFlow(
   email: string;
   orgSlug: string;
   projectSlug: string;
-  workspaceName: string;
+  organizationName: string;
   projectName: string;
 }> {
   const suffix = uniqueOnboardingSuffix();
-  const workspaceName = `E2E Workspace ${suffix}`;
+  const organizationName = `E2E Organization ${suffix}`;
   const projectName = `E2E Project ${suffix}`;
 
   await signInOnLoginPage(page, email);
-  await completeProfileOnboarding(page, workspaceName);
+  await completeProfileOnboarding(page, organizationName);
   const { orgSlug, projectSlug } = await completeProjectOnboarding(
     page,
     projectName,
   );
 
-  return { email, orgSlug, projectSlug, workspaceName, projectName };
+  return { email, orgSlug, projectSlug, organizationName, projectName };
 }

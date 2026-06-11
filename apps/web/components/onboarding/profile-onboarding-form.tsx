@@ -9,32 +9,32 @@ import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 
 type ProfileOnboardingFormProps = {
-  defaultWorkspaceName: string;
+  defaultOrganizationName: string;
   error?: string;
 };
 
 export function ProfileOnboardingForm({
-  defaultWorkspaceName,
+  defaultOrganizationName,
   error,
 }: ProfileOnboardingFormProps) {
-  const [workspaceName, setWorkspaceName] = useState(defaultWorkspaceName);
+  const [organizationName, setOrganizationName] = useState(defaultOrganizationName);
 
   return (
     <OnboardingShell
       step={1}
-      stepLabel="Workspace"
-      title="Create your workspace"
-      description="Your workspace is your organization — it holds all your projects. Names must use English letters and numbers."
+      stepLabel="Organization"
+      title="Create your organization"
+      description="Organizations hold all your projects. Names must use English letters and numbers."
       form={
         <form action={completeProfileOnboardingAction} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="workspaceName">Workspace name</Label>
+            <Label htmlFor="organizationName">Organization name</Label>
             <Input
-              id="workspaceName"
-              name="workspaceName"
-              value={workspaceName}
-              onChange={(event) => setWorkspaceName(event.target.value)}
-              placeholder="Acme Workspace"
+              id="organizationName"
+              name="organizationName"
+              value={organizationName}
+              onChange={(event) => setOrganizationName(event.target.value)}
+              placeholder="Acme Organization"
               required
             />
             <p className="text-xs text-muted-foreground">
@@ -50,7 +50,7 @@ export function ProfileOnboardingForm({
         </form>
       }
       preview={
-        <ConsolePreview workspaceName={workspaceName || "Your Workspace"} />
+        <ConsolePreview organizationName={organizationName || "Your Organization"} />
       }
     />
   );

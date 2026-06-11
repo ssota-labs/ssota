@@ -12,7 +12,7 @@ export function toRouteSlug(name: string): string {
 
 const ENGLISH_NAME_PATTERN = /^[A-Za-z][A-Za-z0-9 '-]*$/;
 
-/** Workspace / project names: ASCII letters, digits, spaces, hyphens, apostrophes */
+/** Organization / project names: ASCII letters, digits, spaces, hyphens, apostrophes */
 export function isEnglishDisplayName(name: string): boolean {
   const trimmed = name.trim();
   if (trimmed.length < 2 || trimmed.length > 64) return false;

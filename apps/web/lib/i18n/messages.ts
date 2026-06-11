@@ -16,8 +16,14 @@ export const en = {
   oauth: {
     consentTitle: "Authorize MCP access",
     consentDescription: "An MCP client is requesting access to SSOTA.",
+    clientRequest: "{client} is requesting access to your SSOTA account.",
+    signedInAs: "Signed in as",
+    permissionsTitle: "This will allow the client to:",
+    scopeEmail: "View your email address",
+    scopeUnknown: "Access: {scope}",
     approve: "Approve",
     deny: "Deny",
+    loading: "Loading authorization details…",
     missingAuthorizationId: "authorization_id is required.",
   },
   nav: {
@@ -97,8 +103,14 @@ export const ko = {
   oauth: {
     consentTitle: "OAuth 동의",
     consentDescription: "MCP 클라이언트가 SSOTA에 접근하려 합니다.",
+    clientRequest: "{client}가 SSOTA 계정에 접근하려 합니다.",
+    signedInAs: "로그인 계정",
+    permissionsTitle: "다음 권한을 허용합니다:",
+    scopeEmail: "이메일 주소 확인",
+    scopeUnknown: "접근 권한: {scope}",
     approve: "승인",
     deny: "거부",
+    loading: "인증 정보를 불러오는 중…",
     missingAuthorizationId: "authorization_id가 필요합니다.",
   },
   nav: {

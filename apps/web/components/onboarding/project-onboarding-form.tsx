@@ -10,12 +10,12 @@ import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 
 type ProjectOnboardingFormProps = {
-  workspaceName: string;
+  organizationName: string;
   error?: string;
 };
 
 export function ProjectOnboardingForm({
-  workspaceName,
+  organizationName,
   error,
 }: ProjectOnboardingFormProps) {
   const [projectName, setProjectName] = useState("");
@@ -27,13 +27,13 @@ export function ProjectOnboardingForm({
       title="Create your first project"
       description="Projects organize your context graph, instructions, and gates."
       backHref="/onboarding/profile"
-      backLabel="Back to workspace"
+      backLabel="Back to organization"
       banner={
         <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm">
-          <span className="font-medium text-foreground">{workspaceName}</span>
+          <span className="font-medium text-foreground">{organizationName}</span>
           <span className="text-muted-foreground">
             {" "}
-            workspace created. Name your first project below.
+            organization created. Name your first project below.
           </span>
         </div>
       }
@@ -46,8 +46,8 @@ export function ProjectOnboardingForm({
               aria-hidden
             />
             <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground">Workspace</p>
-              <p className="truncate text-sm font-medium">{workspaceName}</p>
+              <p className="text-xs text-muted-foreground">Organization</p>
+              <p className="truncate text-sm font-medium">{organizationName}</p>
             </div>
           </div>
 
@@ -75,7 +75,7 @@ export function ProjectOnboardingForm({
       }
       preview={
         <ConsolePreview
-          workspaceName={workspaceName}
+          organizationName={organizationName}
           projectName={projectName || "Your Project"}
         />
       }
