@@ -58,6 +58,39 @@ describe("adapter-supabase integration", () => {
     expect(smokeUserId).toBeTruthy();
   });
 
+  it("RLS deny-all: anon/authenticated PostgREST로 그래프 테이블 접근 불가", async () => {
+    const anonClient = createClient(supabaseUrl, supabaseAnonKey);
+    const { data: anonData, error: anonError } = await anonClient
+      .from("nodes")
+      .select("id")
+      .limit(1);
+    expect(anonError).toBeNull();
+    expect(anonData).toEqual([]);
+
+    const authedClient = createClient(supabaseUrl, supabaseAnonKey);
+    const { error: signInError } = await authedClient.auth.signInWithPassword({
+      email: SMOKE_EMAIL,
+      password: SMOKE_PASSWORD,
+    });
+    expect(signInError).toBeNull();
+
+    const { data: authedData, error: authedError } = await authedClient
+      .from("nodes")
+      .select("id")
+      .limit(1);
+    expect(authedError).toBeNull();
+    expect(authedData).toEqual([]);
+
+    const { error: insertError } = await authedClient.from("nodes").insert({
+      node_type: "Document",
+      lifecycle_status: "Draft",
+      properties: {},
+      provenance: {},
+    });
+    expect(insertError).toBeTruthy();
+    expect(insertError?.message.toLowerCase()).toContain("row-level security");
+  });
+
   it("console: org/project slug resolve + smoke membership", async () => {
     const dbBundle = createDb();
     const consolePort = createConsolePort(dbBundle.db);
