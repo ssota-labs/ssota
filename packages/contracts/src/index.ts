@@ -495,6 +495,90 @@ export type SubmitForApprovalInput = z.infer<
   typeof SubmitForApprovalInputSchema
 >;
 
+export const GetNodeInputSchema = z.object({
+  nodeId: z.string().uuid(),
+});
+
+export type GetNodeInput = z.infer<typeof GetNodeInputSchema>;
+
+export const GetInstructionInputSchema = z.object({
+  instructionId: z.string().uuid(),
+});
+
+export type GetInstructionInput = z.infer<typeof GetInstructionInputSchema>;
+
+export const GetGateInputSchema = z.object({
+  gateId: z.string().uuid(),
+});
+
+export type GetGateInput = z.infer<typeof GetGateInputSchema>;
+
+export const GetNodeTypeInputSchema = z.object({
+  nodeType: z.string().min(1),
+});
+
+export type GetNodeTypeInput = z.infer<typeof GetNodeTypeInputSchema>;
+
+export const GetEdgeTypeInputSchema = z.object({
+  edgeType: z.string().min(1),
+});
+
+export type GetEdgeTypeInput = z.infer<typeof GetEdgeTypeInputSchema>;
+
+export const GetPropertyInputSchema = z.object({
+  propertyKey: z.string().min(1),
+});
+
+export type GetPropertyInput = z.infer<typeof GetPropertyInputSchema>;
+
+export const GetArchetypeInputSchema = z.object({
+  archetypeId: z.string().min(1),
+});
+
+export type GetArchetypeInput = z.infer<typeof GetArchetypeInputSchema>;
+
+export const GetActionLogEntryInputSchema = z
+  .object({
+    logId: z.string().uuid().optional(),
+    idempotencyKey: z.string().min(1).optional(),
+  })
+  .refine(
+    (value) =>
+      (value.logId !== undefined) !== (value.idempotencyKey !== undefined),
+    { message: "Provide exactly one of logId or idempotencyKey" },
+  );
+
+export type GetActionLogEntryInput = z.infer<
+  typeof GetActionLogEntryInputSchema
+>;
+
+export const QueryGatesInputSchema = z.object({
+  status: GateStatusSchema.optional(),
+  limit: z.number().int().positive().max(100).default(20),
+  offset: z.number().int().nonnegative().default(0),
+});
+
+export type QueryGatesInput = z.infer<typeof QueryGatesInputSchema>;
+
+export const QueryNeighborsInputSchema = z.object({
+  nodeId: z.string().uuid(),
+  direction: z.enum(["outgoing", "incoming", "both"]).default("both"),
+  edgeType: z.string().optional(),
+});
+
+export type QueryNeighborsInput = z.infer<typeof QueryNeighborsInputSchema>;
+
+export const TraverseGraphInputSchema = z.object({
+  startNodeId: z.string().uuid(),
+  maxHops: z.number().int().positive().max(5).default(2),
+  direction: z.enum(["outgoing", "incoming", "both"]).default("both"),
+  edgeTypes: z.array(z.string()).optional(),
+  nodeTypes: z.array(z.string()).optional(),
+  limit: z.number().int().positive().max(100).default(50),
+});
+
+export type TraverseGraphInput = z.infer<typeof TraverseGraphInputSchema>;
+
 export const ActionPreviewResultSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("ok"),

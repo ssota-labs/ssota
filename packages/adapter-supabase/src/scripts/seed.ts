@@ -558,20 +558,129 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
 
   await db
     .insert(schema.instructions)
-    .values([
-      {
-        slug: "document_creation_guide",
-        title: "Document creation guide",
-        triggerPatterns: ["create document", "new document"],
-        applicableNodeTypes: ["Document"],
-        requiredActions: ["create_document"],
-        optionalActions: ["promote_document"],
-        lifecycle: "Active",
-        body: "Use create_document action with title and content. Promote via Human Gate.",
-      },
-    ])
+    .values(
+      DOMAIN_INSTRUCTIONS.map((row) => ({
+        ...row,
+        slug: toCatalogSlug(row.title),
+      })) as (typeof schema.instructions.$inferInsert)[],
+    )
     .onConflictDoNothing();
 }
+
+/** Domain instructions only — Root Runtime Protocol lives in loopos-mcp skill. */
+const DOMAIN_INSTRUCTIONS = [
+  {
+    title: "Document creation",
+    triggerPatterns: [
+      "create document",
+      "new document",
+      "document creation",
+    ],
+    applicableNodeTypes: ["Document"],
+    requiredActions: ["create_document"],
+    optionalActions: ["promote_document"],
+    lifecycle: "Active" as const,
+    body: "Create documents as Draft. Include title, content, and provenance. Promote only through Human Gate.",
+    workflowSteps: [
+      {
+        id: "contract",
+        title: "Load contract",
+        actionRefs: ["create_document"],
+      },
+      {
+        id: "execute",
+        title: "Create draft",
+        actionRefs: ["create_document"],
+      },
+    ],
+    allowedActions: ["create_document"],
+    gatePolicy: { promote: "human_required" },
+    completionCriteria: "Document node exists in Draft",
+  },
+  {
+    title: "Document mutation",
+    triggerPatterns: [
+      "document mutation",
+      "edit document",
+      "update document",
+    ],
+    applicableNodeTypes: ["Document"],
+    requiredActions: [],
+    optionalActions: ["create_document"],
+    lifecycle: "Active" as const,
+    body: "Confirm document mutability and authority before updating. Gate if authority or document kind is unclear. Load target via get_node first.",
+    workflowSteps: [],
+    allowedActions: ["create_document"],
+    gatePolicy: { unclear_mutability: "gate" },
+    completionCriteria: "Mutation plan recorded or gated",
+  },
+  {
+    title: "Context assembly and retrieval",
+    triggerPatterns: [
+      "context assembly",
+      "retrieval",
+      "answering",
+      "summarize",
+    ],
+    applicableNodeTypes: ["Document", "Note", "Project", "Task"],
+    requiredActions: [],
+    optionalActions: [],
+    lifecycle: "Active" as const,
+    body: "Read-only intent. Use query_nodes, get_node, query_neighbors, traverse_graph. Prefer Active authoritative sources.",
+    workflowSteps: [],
+    allowedActions: [],
+    gatePolicy: {},
+    completionCriteria: "Answer cites graph context or states gaps",
+  },
+  {
+    title: "Meeting processing and task derivation",
+    triggerPatterns: [
+      "meeting processing",
+      "task derivation",
+      "meeting notes",
+    ],
+    applicableNodeTypes: ["Meeting", "Task", "Note"],
+    requiredActions: ["create_note"],
+    optionalActions: ["create_document"],
+    lifecycle: "Active" as const,
+    body: "Extract candidates from meetings. Do not finalize tasks without source provenance. Default new work items to Draft.",
+    workflowSteps: [],
+    allowedActions: ["create_note", "create_document"],
+    gatePolicy: { finalize_task: "human_required" },
+    completionCriteria: "Provenance links meeting to derived work",
+  },
+  {
+    title: "Graph hygiene",
+    triggerPatterns: [
+      "graph hygiene",
+      "deduplication",
+      "merge",
+      "cleanup",
+    ],
+    applicableNodeTypes: ["Document", "Task", "Project", "Edge"],
+    requiredActions: [],
+    optionalActions: [],
+    lifecycle: "Active" as const,
+    body: "Identify duplicates and stale items. Auto merge or delete requires Human Gate.",
+    workflowSteps: [],
+    allowedActions: [],
+    gatePolicy: { merge: "always", delete: "always" },
+    completionCriteria: "Hygiene proposal recorded or gated",
+  },
+  {
+    title: "Replay and audit",
+    triggerPatterns: ["replay", "audit", "provenance", "action log"],
+    applicableNodeTypes: ["Document", "Task", "Project"],
+    requiredActions: [],
+    optionalActions: [],
+    lifecycle: "Active" as const,
+    body: "Use get_action_log and get_action_log_entry. Prefer log and provenance over inference.",
+    workflowSteps: [],
+    allowedActions: [],
+    gatePolicy: {},
+    completionCriteria: "Audit trail cited in response",
+  },
+];
 
 async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: string) {
   const [org] = await db

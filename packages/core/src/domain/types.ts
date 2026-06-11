@@ -250,6 +250,11 @@ export interface GraphReadPort {
 
 export interface GatePort {
   listPendingGates(): Promise<Gate[]>;
+  queryGates(params: {
+    status?: GateStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<Gate[]>;
   getGate(gateId: string): Promise<Gate | null>;
   createGate(gate: Omit<Gate, "id" | "createdAt" | "decisionNote">): Promise<Gate>;
 }
@@ -261,6 +266,7 @@ export interface ActionCommitPort {
     offset?: number;
     actionType?: string;
   }): Promise<ActionLogRecord[]>;
+  getActionLogEntry(logId: string): Promise<ActionLogRecord | null>;
   findByIdempotencyKey(key: string): Promise<ActionLogRecord | null>;
 }
 
