@@ -13,7 +13,8 @@ test.describe("LoopOS Console", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "graph");
     await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
-    await expect(page.getByRole("link", { name: "Document", exact: true })).toBeVisible();
+    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page.getByText("Nodes", { exact: true })).toBeVisible();
   });
 
   test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
