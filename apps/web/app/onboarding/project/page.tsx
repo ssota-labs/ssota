@@ -19,12 +19,9 @@ export default async function OnboardingProjectPage({
   }
 
   let workspaceName = "Your Workspace";
-  if (profile.personalOrganizationId) {
-    const consolePort = getConsolePort();
-    const orgs = await consolePort.listOrganizationsForUser(user.id);
-    const org = orgs.find((item) => item.id === profile.personalOrganizationId);
-    if (org) workspaceName = org.name;
-  }
+  const consolePort = getConsolePort();
+  const personalOrg = await consolePort.getPersonalOrganizationForUser(user.id);
+  if (personalOrg) workspaceName = personalOrg.name;
 
   const { error } = await searchParams;
 
