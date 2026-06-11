@@ -9,16 +9,29 @@ import { executeAction } from "@loopos/core";
 import {
   ExecuteActionInputSchema,
   FindInstructionInputSchema,
+  GetActionLogEntryInputSchema,
   GetActionLogInputSchema,
+  GetArchetypeInputSchema,
+  GetEdgeTypeInputSchema,
+  GetGateInputSchema,
+  GetInstructionInputSchema,
+  GetNodeInputSchema,
+  GetNodeTypeInputSchema,
+  GetPropertyInputSchema,
+  QueryGatesInputSchema,
+  QueryNeighborsInputSchema,
   QueryNodesInputSchema,
   SubmitForApprovalInputSchema,
   TraverseEdgesInputSchema,
+  TraverseGraphInputSchema,
 } from "@loopos/contracts";
 import { verifyBearerToken } from "@/lib/auth";
+import { queryNeighbors, traverseGraph } from "@/lib/graph-query";
 import { getActionPorts } from "@/lib/ports";
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
+function jsonContent(data: unknown) {
+  return { content: [{ type: "text" as const, text: JSON.stringify(data, null, 2) }] };
+}
 
 const mcpHandler = createMcpHandler(
   (server) => {
@@ -26,7 +39,8 @@ const mcpHandler = createMcpHandler(
       "list_node_types",
       {
         title: "List Node Types",
-        description: "List all node types from the catalog",
+        description:
+          "Discover: list node type catalog index. Fetch details with get_node_type.",
         inputSchema: {},
       },
       async () => {
@@ -42,7 +56,8 @@ const mcpHandler = createMcpHandler(
       "list_edge_types",
       {
         title: "List Edge Types",
-        description: "List all edge types from the catalog",
+        description:
+          "Discover: list edge type catalog index. Fetch details with get_edge_type.",
         inputSchema: {},
       },
       async () => {
@@ -58,7 +73,8 @@ const mcpHandler = createMcpHandler(
       "list_properties",
       {
         title: "List Properties",
-        description: "List all properties from the catalog",
+        description:
+          "Discover: list property catalog index. Fetch details with get_property.",
         inputSchema: {},
       },
       async () => {
@@ -74,7 +90,8 @@ const mcpHandler = createMcpHandler(
       "list_action_contracts",
       {
         title: "List Action Contracts",
-        description: "List all action contracts from the catalog",
+        description:
+          "Discover: list action contract index. Fetch details with get_action_contract.",
         inputSchema: {},
       },
       async () => {
@@ -90,7 +107,8 @@ const mcpHandler = createMcpHandler(
       "list_archetypes",
       {
         title: "List Archetypes",
-        description: "List all archetypes from the catalog",
+        description:
+          "Discover: list archetype index. Fetch details with get_archetype.",
         inputSchema: {},
       },
       async () => {
@@ -114,9 +132,116 @@ const mcpHandler = createMcpHandler(
       async ({ actionType }) => {
         const ports = getActionPorts();
         const entry = await ports.catalog.getActionCatalogEntry(actionType);
-        return {
-          content: [{ type: "text", text: JSON.stringify(entry, null, 2) }],
-        };
+        return jsonContent(entry);
+      },
+    );
+
+    server.registerTool(
+      "get_node_type",
+      {
+        title: "Get Node Type",
+        description: "Fetch one node type catalog entry by nodeType",
+        inputSchema: { nodeType: z.string().min(1) },
+      },
+      async (args) => {
+        const parsed = GetNodeTypeInputSchema.parse(args);
+        const ports = getActionPorts();
+        const entry = await ports.catalog.getNodeCatalogEntry(parsed.nodeType);
+        return jsonContent(entry);
+      },
+    );
+
+    server.registerTool(
+      "get_edge_type",
+      {
+        title: "Get Edge Type",
+        description: "Fetch one edge type catalog entry by edgeType",
+        inputSchema: { edgeType: z.string().min(1) },
+      },
+      async (args) => {
+        const parsed = GetEdgeTypeInputSchema.parse(args);
+        const ports = getActionPorts();
+        const entry = await ports.catalog.getEdgeCatalogEntry(parsed.edgeType);
+        return jsonContent(entry);
+      },
+    );
+
+    server.registerTool(
+      "get_property",
+      {
+        title: "Get Property",
+        description: "Fetch one property catalog entry by propertyKey",
+        inputSchema: { propertyKey: z.string().min(1) },
+      },
+      async (args) => {
+        const parsed = GetPropertyInputSchema.parse(args);
+        const ports = getActionPorts();
+        const entry = await ports.catalog.getPropertyCatalogEntry(
+          parsed.propertyKey,
+        );
+        return jsonContent(entry);
+      },
+    );
+
+    server.registerTool(
+      "get_archetype",
+      {
+        title: "Get Archetype",
+        description: "Fetch one archetype by archetypeId",
+        inputSchema: { archetypeId: z.string().min(1) },
+      },
+      async (args) => {
+        const parsed = GetArchetypeInputSchema.parse(args);
+        const ports = getActionPorts();
+        const entry = await ports.catalog.getArchetype(parsed.archetypeId);
+        return jsonContent(entry);
+      },
+    );
+
+    server.registerTool(
+      "get_node",
+      {
+        title: "Get Node",
+        description: "Fetch one graph node by nodeId",
+        inputSchema: { nodeId: z.string().uuid() },
+      },
+      async (args) => {
+        const parsed = GetNodeInputSchema.parse(args);
+        const ports = getActionPorts();
+        const node = await ports.graph.getNode(parsed.nodeId);
+        return jsonContent(node);
+      },
+    );
+
+    server.registerTool(
+      "get_instruction",
+      {
+        title: "Get Instruction",
+        description: "Fetch one domain instruction by instructionId",
+        inputSchema: { instructionId: z.string().uuid() },
+      },
+      async (args) => {
+        const parsed = GetInstructionInputSchema.parse(args);
+        const ports = getActionPorts();
+        const instruction = await ports.catalog.getInstruction(
+          parsed.instructionId,
+        );
+        return jsonContent(instruction);
+      },
+    );
+
+    server.registerTool(
+      "get_gate",
+      {
+        title: "Get Gate",
+        description: "Fetch one gate by gateId",
+        inputSchema: { gateId: z.string().uuid() },
+      },
+      async (args) => {
+        const parsed = GetGateInputSchema.parse(args);
+        const ports = getActionPorts();
+        const gate = await ports.gate.getGate(parsed.gateId);
+        return jsonContent(gate);
       },
     );
 
@@ -148,7 +273,8 @@ const mcpHandler = createMcpHandler(
       "traverse_edges",
       {
         title: "Traverse Edges",
-        description: "Traverse edges from a node",
+        description:
+          "Query: list 1-hop edges from a node. For neighbor nodes use query_neighbors; for multi-hop use traverse_graph.",
         inputSchema: {
           nodeId: z.string().uuid(),
           direction: z.enum(["outgoing", "incoming", "both"]).optional(),
@@ -159,9 +285,50 @@ const mcpHandler = createMcpHandler(
         const parsed = TraverseEdgesInputSchema.parse(args);
         const ports = getActionPorts();
         const edges = await ports.graph.traverseEdges(parsed);
-        return {
-          content: [{ type: "text", text: JSON.stringify(edges, null, 2) }],
-        };
+        return jsonContent(edges);
+      },
+    );
+
+    server.registerTool(
+      "query_neighbors",
+      {
+        title: "Query Neighbors",
+        description:
+          "Query: 1-hop neighbors with edges and resolved neighbor nodes",
+        inputSchema: {
+          nodeId: z.string().uuid(),
+          direction: z.enum(["outgoing", "incoming", "both"]).optional(),
+          edgeType: z.string().optional(),
+        },
+      },
+      async (args) => {
+        const parsed = QueryNeighborsInputSchema.parse(args);
+        const ports = getActionPorts();
+        const result = await queryNeighbors(ports, parsed);
+        return jsonContent(result);
+      },
+    );
+
+    server.registerTool(
+      "traverse_graph",
+      {
+        title: "Traverse Graph",
+        description:
+          "Query: multi-hop graph traversal from a start node with optional edge and node type filters",
+        inputSchema: {
+          startNodeId: z.string().uuid(),
+          maxHops: z.number().int().positive().max(5).optional(),
+          direction: z.enum(["outgoing", "incoming", "both"]).optional(),
+          edgeTypes: z.array(z.string()).optional(),
+          nodeTypes: z.array(z.string()).optional(),
+          limit: z.number().int().positive().max(100).optional(),
+        },
+      },
+      async (args) => {
+        const parsed = TraverseGraphInputSchema.parse(args);
+        const ports = getActionPorts();
+        const result = await traverseGraph(ports, parsed);
+        return jsonContent(result);
       },
     );
 
@@ -234,7 +401,8 @@ const mcpHandler = createMcpHandler(
       "list_pending_gates",
       {
         title: "List Pending Gates",
-        description: "List pending human gates",
+        description:
+          "Discover: list pending gates only. Query with filters via query_gates.",
         inputSchema: {},
       },
       async () => {
@@ -243,6 +411,25 @@ const mcpHandler = createMcpHandler(
         return {
           content: [{ type: "text", text: JSON.stringify(gates, null, 2) }],
         };
+      },
+    );
+
+    server.registerTool(
+      "query_gates",
+      {
+        title: "Query Gates",
+        description: "Query gates with optional status filter and pagination",
+        inputSchema: {
+          status: z.enum(["pending", "approved", "rejected"]).optional(),
+          limit: z.number().int().positive().max(100).optional(),
+          offset: z.number().int().nonnegative().optional(),
+        },
+      },
+      async (args) => {
+        const parsed = QueryGatesInputSchema.parse(args);
+        const ports = getActionPorts();
+        const gates = await ports.gate.queryGates(parsed);
+        return jsonContent(gates);
       },
     );
 
@@ -290,9 +477,27 @@ const mcpHandler = createMcpHandler(
         const parsed = GetActionLogInputSchema.parse(args);
         const ports = getActionPorts();
         const log = await ports.commit.getActionLog(parsed);
-        return {
-          content: [{ type: "text", text: JSON.stringify(log, null, 2) }],
-        };
+        return jsonContent(log);
+      },
+    );
+
+    server.registerTool(
+      "get_action_log_entry",
+      {
+        title: "Get Action Log Entry",
+        description: "Fetch one action log entry by logId or idempotencyKey",
+        inputSchema: {
+          logId: z.string().uuid().optional(),
+          idempotencyKey: z.string().min(1).optional(),
+        },
+      },
+      async (args) => {
+        const parsed = GetActionLogEntryInputSchema.parse(args);
+        const ports = getActionPorts();
+        const entry = parsed.logId
+          ? await ports.commit.getActionLogEntry(parsed.logId)
+          : await ports.commit.findByIdempotencyKey(parsed.idempotencyKey!);
+        return jsonContent(entry);
       },
     );
   },

@@ -6,6 +6,7 @@ LoopOS Plugin is designed to preserve LoopOS runtime invariants while giving age
 
 - All LoopOS writes must use MCP `execute_action`.
 - LoopOS MCP is the only mutation interface for this plugin.
+- The root runtime protocol lives in the `loopos-mcp` skill, not in graph instructions.
 - Gate approval is Human-only unless LoopOS policy explicitly changes.
 - Action log verification should be used for important writes.
 

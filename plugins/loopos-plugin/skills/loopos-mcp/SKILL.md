@@ -1,19 +1,97 @@
 ---
 name: loopos-mcp
-description: Use this skill when an agent needs to operate LoopOS through MCP: discover instructions, inspect action contracts, execute LoopOS actions, handle gates and rejections, or record work in the LoopOS graph.
+description: LoopOS Root Protocol — classify intent, assemble context, route to domain instructions via MCP, execute only through action contracts. Mount before any LoopOS work.
 ---
 
-# LoopOS MCP
+# LoopOS Root Protocol
 
-Use LoopOS MCP as the operational interface for LoopOS-backed automation. This skill is about using LoopOS itself, not about general coding best practices.
+This skill is the **Runtime Protocol** for LoopOS-backed automation. It replaces a graph-stored root instruction: bootstrap, routing, and safety rules live here. **Domain instructions** live in LoopOS and are fetched through MCP after intent classification.
 
-## Required behavior
+LoopOS MCP is your only interface. This skill is about operating LoopOS, not general coding.
 
-1. Connect to the configured LoopOS MCP server.
-2. Discover the relevant instruction and action contract before acting.
-3. Use `execute_action` for every LoopOS write.
-4. Verify committed or gated outcomes through read tools.
-5. Report rejections with the rejection reason and the next corrective action.
+## 0. Non-negotiable bootstrap
+
+Before any LoopOS write:
+
+1. Classify the user request (see §1).
+2. Gather graph context if needed (`query_nodes`, `get_node`, `query_neighbors`, `traverse_graph`).
+3. Find and **fetch** the domain instruction (`find_instruction` → `get_instruction`).
+4. Fetch the action contract (`get_action_contract`).
+5. Confirm `preconditions`, `executor`, and `effects`.
+6. Execute only through `execute_action`.
+7. Verify outcome and run self-check (§6).
+
+**Failure policy:** If the domain instruction or action contract cannot be confirmed, **do not execute**. Ask for missing context, keep work as a proposal, or escalate to Human Gate.
+
+## 1. Intent classification
+
+Classify every request into one primary intent before searching instructions:
+
+| Intent | Meaning |
+|--------|---------|
+| **read** | Summarize, answer, inspect graph state |
+| **create** | New node, document, note, catalog entry |
+| **update** | Modify existing node or metadata |
+| **connect** | Create or traverse relationships (edges) |
+| **verify** | Check gates, lifecycle, archetype compliance |
+| **audit** | Trace provenance, action log, who changed what |
+
+Use `references/routing.md` to map intent → `find_instruction` search terms.
+
+## 2. Context assembly
+
+Use query/fetch tools before writes when the workflow depends on existing state:
+
+- `query_nodes` — filter by `nodeType`, `lifecycleStatus`
+- `get_node` — one node by id
+- `query_neighbors` — 1-hop edges + neighbor nodes
+- `traverse_graph` — multi-hop context assembly
+- `get_action_log` / `get_action_log_entry` — prior decisions
+
+Use `list_*` only as catalog **index**. Fetch details with `get_*`.
+
+## 3. Domain instruction routing
+
+LoopOS instructions are **domain recipes**, not this root protocol.
+
+1. `find_instruction` with terms from `references/routing.md`
+2. `get_instruction(instructionId)` for the full recipe
+3. Follow `workflowSteps`, `requiredActions`, `allowedActions`, `gatePolicy`
+4. If no suitable instruction exists, **do not improvise** — propose defining one
+
+## 4. Action contract
+
+Before `execute_action`:
+
+- `get_action_contract(actionType)`
+- Shape input to the contract
+- Add rationale for meta/catalog changes
+- Use `idempotencyKey` for retryable operations
+- If `executor` is Human or Human+Agent, stop at Draft/proposal unless policy allows more
+
+## 5. Execute and verify
+
+All writes: `execute_action` only.
+
+| Outcome | Next step |
+|---------|-----------|
+| `committed` | `get_action_log_entry` or `get_node` to verify |
+| `gated` | Record `gateId`, summarize for Human review — do not self-approve |
+| `rejected` | Report reason; repair only contract/input issues |
+
+See `references/result-handling.md`.
+
+## 6. Response self-check
+
+Before responding:
+
+- [ ] Classified intent?
+- [ ] Loaded domain instruction via `get_instruction`?
+- [ ] Loaded action contract via `get_action_contract`?
+- [ ] Checked preconditions and executor?
+- [ ] Verified `committed` / `gated` / `rejected` — not assumed?
+- [ ] Left provenance/rationale where required?
+- [ ] Avoided duplicate creates (queried context first)?
 
 ## Never do this
 
@@ -23,78 +101,14 @@ Use LoopOS MCP as the operational interface for LoopOS-backed automation. This s
 - Do not treat `approve_gate` as an Agent action.
 - Do not commit access tokens, smoke credentials, OAuth secrets, or `.env` files.
 
-## Default workflow
-
-```txt
-Connect -> Discover -> Read Instruction -> Get Contract -> Execute Action -> Verify -> Continue or Escalate
-```
-
-### 1. Connect
-
-- Confirm the LoopOS MCP server is available.
-- For local dogfood, use the smoke account flow documented in `references/auth.md`.
-- For hosted deployments, use OAuth when available.
-
-### 2. Discover
-
-Use read tools before writes:
-
-- `find_instruction` to locate the relevant automation workflow.
-- `list_action_contracts` to inspect available actions.
-- `get_action_contract` to inspect the exact input and execution contract.
-- `query_nodes` when the workflow needs existing graph context.
-- `get_action_log` when previous action history matters.
-
-### 3. Read instruction
-
-Treat LoopOS instructions as automation recipes. An instruction may define:
-
-- trigger conditions
-- required context reads
-- action sequence
-- allowed actions
-- success checks
-- escalation conditions
-
-Follow the instruction's action order unless the request or runtime evidence makes it unsafe.
-
-### 4. Get contract
-
-Before calling `execute_action`:
-
-- Fetch the target action contract.
-- Shape the input according to that contract.
-- Include a clear rationale when the action affects catalog, instruction, or other meta behavior.
-- Use an idempotency key for retryable operations.
-
-### 5. Execute
-
-All writes use `execute_action`. The response must be interpreted as one of:
-
-- `committed`
-- `gated`
-- `rejected`
-
-### 6. Verify
-
-- For `committed`, confirm the expected node, edge, catalog entry, or log entry exists.
-- For `gated`, record the gate id and explain what human or policy follow-up is needed.
-- For `rejected`, read the rejection reason and either repair the input or stop with a clear explanation.
-
 ## Agent-led meta changes
 
-Agent-driven meta changes are allowed when action policy permits them. Do not assume every catalog or instruction mutation requires Human approval. Do assume these remain high risk:
+High-risk changes (action contract breaking updates, node/edge type mutation, destructive deprecation, gate approval) need strong rationale. Let LoopOS policy decide commit vs gate.
 
-- action contract definition or breaking update
-- node type or edge type mutation
-- destructive deprecation or delete
-- gate approval
+## References
 
-When uncertain, prefer proposing the action with a strong rationale and let LoopOS policy decide whether it commits or gates.
-
-## Supporting references
-
-- `references/auth.md`
-- `references/tools.md`
-- `references/workflows.md`
-- `references/result-handling.md`
+- `references/routing.md` — intent → instruction search
+- `references/tools.md` — MCP tool tiers (discover / fetch / query / write)
+- `references/workflows.md` — domain workflow examples
+- `references/result-handling.md` — outcome handling
+- `references/auth.md` — smoke and OAuth

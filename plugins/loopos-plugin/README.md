@@ -6,7 +6,7 @@ Phase 4 keeps this plugin inside the LoopOS monorepo at `plugins/loopos-plugin/`
 
 ## What this plugin provides
 
-- A portable `loopos-mcp` Agent Skill.
+- A portable `loopos-mcp` Agent Skill (**Root Runtime Protocol** — intent routing, MCP safety, self-check).
 - Cursor plugin metadata and MCP config examples.
 - Codex metadata for MCP dependency discovery.
 - Claude packaging notes for reusing the same skill core.
@@ -25,6 +25,7 @@ plugins/loopos-plugin/
       SKILL.md
       references/
         auth.md
+        routing.md
         tools.md
         workflows.md
         result-handling.md
@@ -72,6 +73,7 @@ See `examples/cursor-local.md` and `examples/smoke-workflow.md` for details.
 
 ## Safety rules
 
+- The `loopos-mcp` skill is the Root Protocol; domain instructions live in LoopOS.
 - LoopOS MCP is the only mutation interface.
 - All LoopOS mutations must go through MCP `execute_action`.
 - Treat `approve_gate` as Human-only.
