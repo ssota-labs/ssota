@@ -14,16 +14,16 @@ export function OnboardingShell({
   preview,
 }: OnboardingShellProps) {
   return (
-    <div className="min-h-screen bg-muted/30">
+    <div className="min-h-screen overflow-x-hidden bg-muted/30">
       <header className="border-b bg-background px-6 py-4">
         <Link href="/" className="text-lg font-semibold">
           LoopOS
         </Link>
       </header>
 
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-6xl gap-0 lg:grid-cols-2">
-        <section className="flex flex-col justify-center px-6 py-10 lg:px-10">
-          <div className="mx-auto w-full max-w-md space-y-6">
+      <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-3">
+        <section className="flex flex-col justify-center px-6 py-10 lg:col-span-1 lg:px-12 xl:px-16">
+          <div className="w-full max-w-md space-y-6">
             <div className="space-y-2">
               <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
               <p className="text-sm text-muted-foreground">{description}</p>
@@ -32,8 +32,10 @@ export function OnboardingShell({
           </div>
         </section>
 
-        <section className="hidden border-l bg-background p-8 lg:flex lg:items-center">
-          <div className="w-full">{preview}</div>
+        <section className="relative hidden items-center lg:col-span-2 lg:flex">
+          <div className="w-[128%] min-w-[44rem] origin-left scale-[1.06] pr-0 shadow-2xl">
+            {preview}
+          </div>
         </section>
       </div>
     </div>

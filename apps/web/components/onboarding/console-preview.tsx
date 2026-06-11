@@ -16,8 +16,8 @@ export function ConsolePreview({ workspaceName, projectName }: ConsolePreviewPro
   const projectLabel = projectName?.trim() || "Your Project";
 
   return (
-    <div className="flex h-full min-h-[480px] flex-col overflow-hidden rounded-xl border bg-background shadow-sm">
-      <header className="flex h-12 shrink-0 items-center gap-2 border-b px-4 text-sm">
+    <div className="flex min-h-[34rem] flex-col overflow-hidden rounded-xl border bg-background shadow-lg">
+      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-5 text-sm">
         <span className="font-semibold">LoopOS</span>
         <span className="text-muted-foreground">|</span>
         <span className="rounded-md border px-2 py-0.5">{orgLabel}</span>
@@ -26,7 +26,7 @@ export function ConsolePreview({ workspaceName, projectName }: ConsolePreviewPro
       </header>
 
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-48 shrink-0 border-r bg-sidebar p-4 text-sm sm:block">
+        <aside className="hidden w-52 shrink-0 border-r bg-sidebar p-5 text-sm sm:block">
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Project
           </p>
@@ -40,11 +40,11 @@ export function ConsolePreview({ workspaceName, projectName }: ConsolePreviewPro
           </ul>
         </aside>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-8">
           <p className="text-xs text-muted-foreground">
             loopos.dev/{orgSlug}/{projectSlug}
           </p>
-          <h2 className="mt-2 text-2xl font-semibold">{projectLabel}</h2>
+          <h2 className="mt-2 text-3xl font-semibold">{projectLabel}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Context graph runtime for agent decision harness.
           </p>
