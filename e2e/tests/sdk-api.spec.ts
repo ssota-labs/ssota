@@ -80,7 +80,6 @@ test.describe("LoopOS SDK → HTTP API v1", () => {
     const preview = await loopos.actions.preview({
       actionType: "create_note",
       input: {
-        title: "SDK e2e note",
         content: "created via @loopos/client",
       },
     });

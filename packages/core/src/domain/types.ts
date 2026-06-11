@@ -1,6 +1,5 @@
 import type {
   ActionCatalogEntry as ContractActionCatalogEntry,
-  ActionScope,
   Archetype as ContractArchetype,
   EdgeCatalogEntry as ContractEdgeCatalogEntry,
   Effect,
@@ -10,7 +9,6 @@ import type {
   InstructionWorkflowStep,
   LifecycleStatus,
   NodeCatalogEntry as ContractNodeCatalogEntry,
-  NodeFamily,
   PermissionOperation,
   PermissionType,
   PropertyCatalogEntry as ContractPropertyCatalogEntry,
