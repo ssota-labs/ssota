@@ -18,6 +18,17 @@ test.describe("LoopOS Console", () => {
     await expect(page.getByRole("link", { name: "Note" })).toBeVisible();
   });
 
+  test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
+    await loginAsSmoke(page);
+    await page.goto("/context-graph/verticals/homepage-agent");
+    await expect(page.getByRole("heading", { name: "Homepage Agent" })).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "HomepageProject" }),
+    ).toBeVisible();
+    await expect(page.getByText("create_homepage_project").first()).toBeVisible();
+    await expect(page.getByText("Homepage creation workflow")).toBeVisible();
+  });
+
   test("smoke: Studio 페이지", async ({ page }) => {
     await loginAsSmoke(page);
     await page.getByRole("navigation").getByRole("link", { name: "Studio" }).click();

@@ -24,6 +24,14 @@ export default async function ContextGraphPage() {
 
   const cards = [
     {
+      title: "Homepage Agent",
+      description: "Reference B2B2C vertical catalog (subject_id tenancy)",
+      href: "/context-graph/verticals/homepage-agent",
+      count: nodes.filter((n) =>
+        ["HomepageProject", "DesignBrief", "PageSection"].includes(n.nodeType),
+      ).length,
+    },
+    {
       title: "Nodes",
       description: "Node tables and structured context envelopes",
       href: "/context-graph/nodes",

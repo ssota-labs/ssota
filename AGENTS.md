@@ -100,6 +100,8 @@ LoopOS 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그 등)의 
 
 LoopOS Console 운영자(카탈로그 편집·Human Gate)는 `subject_id` 스코핑 **바깥**의 별도 auth 경로다 — smoke 계정·org membership으로 처리하며, 최종 고객 데이터와 섞지 않는다.
 
+**Embedder BFF 예시**: `examples/embedder-bff/` — 고객사 A가 `X-Embedder-User-Id`(자체 `users.id`)를 검증 후 LoopOS MCP로 프록시. 로컬 실행: `pnpm embedder-bff` (MCP 기동 후).
+
 ## Setup Commands
 
 ```bash
