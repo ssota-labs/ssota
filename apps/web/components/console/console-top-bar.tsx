@@ -18,6 +18,7 @@ import {
 } from "@ssota/ui/components/ui/dropdown-menu";
 import { Separator } from "@ssota/ui/components/ui/separator";
 import { CaretDownIcon } from "@phosphor-icons/react";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { projectPath } from "@/lib/console/paths";
 import { ConsoleBreadcrumbs } from "./console-breadcrumbs";
 import { useProjectContext } from "./project-context";
@@ -43,6 +44,7 @@ export function ConsoleTopBar({
   const ctx = useProjectContext();
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLocale();
 
   function switchOrg(org: Organization) {
     if (org.slug === ctx.orgSlug) return;
@@ -74,7 +76,7 @@ export function ConsoleTopBar({
             <CaretDownIcon className="size-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuLabel>Organization</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("nav.organization")}</DropdownMenuLabel>
             {organizations.map((org) => (
               <DropdownMenuItem key={org.id} onClick={() => switchOrg(org)}>
                 {org.name}
@@ -93,7 +95,7 @@ export function ConsoleTopBar({
             <CaretDownIcon className="size-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuLabel>Project</DropdownMenuLabel>
+            <DropdownMenuLabel>{t("nav.project")}</DropdownMenuLabel>
             {projects.map((project) => (
               <DropdownMenuItem key={project.id} onClick={() => switchProject(project)}>
                 {project.name}
@@ -126,7 +128,7 @@ export function ConsoleTopBar({
           />
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
-              <div className="text-xs text-muted-foreground">Signed in as</div>
+              <div className="text-xs text-muted-foreground">{t("nav.signedInAs")}</div>
               <div className="truncate text-sm">{userEmail}</div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -134,7 +136,7 @@ export function ConsoleTopBar({
               <DropdownMenuItem
                 render={<button type="submit" className="w-full cursor-pointer" />}
               >
-                로그아웃
+                {t("common.signOut")}
               </DropdownMenuItem>
             </form>
           </DropdownMenuContent>

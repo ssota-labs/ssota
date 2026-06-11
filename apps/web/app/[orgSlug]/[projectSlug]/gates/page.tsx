@@ -1,4 +1,5 @@
 import { approveGateFormAction } from "@/app/actions";
+import { getTranslations } from "@/lib/i18n/server";
 import { getActionPorts } from "@/lib/ports";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Badge } from "@ssota/ui/components/ui/badge";
@@ -23,14 +24,15 @@ export default async function GatesPage({
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
   await params;
+  const { t } = await getTranslations();
   const ports = getActionPorts();
   const gates = await ports.gate.listPendingGates();
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Human Gate</h1>
+      <h1 className="text-2xl font-semibold">{t("gates.title")}</h1>
       {gates.length === 0 ? (
-        <p className="text-muted-foreground">대기 중인 게이트가 없습니다.</p>
+        <p className="text-muted-foreground">{t("gates.empty")}</p>
       ) : (
         <div className="space-y-4">
           <div className="overflow-hidden rounded-lg border">
@@ -81,14 +83,14 @@ export default async function GatesPage({
                       <input type="hidden" name="gateId" value={gate.id} />
                       <input type="hidden" name="approved" value="true" />
                       <Button type="submit" size="sm">
-                        승인
+                        {t("gates.approve")}
                       </Button>
                     </form>
                     <form action={approveGateFormAction}>
                       <input type="hidden" name="gateId" value={gate.id} />
                       <input type="hidden" name="approved" value="false" />
                       <Button type="submit" variant="outline" size="sm">
-                        반려
+                        {t("gates.reject")}
                       </Button>
                     </form>
                   </div>

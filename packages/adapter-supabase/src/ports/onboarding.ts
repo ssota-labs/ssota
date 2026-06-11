@@ -1,13 +1,23 @@
 import { toRouteSlug } from "@ssota/core";
-import type {
-  OnboardingPort,
-  Organization,
-  Profile,
-  Project,
+import {
+  DEFAULT_LOCALE,
+  LOCALES,
+  type Locale,
+  type OnboardingPort,
+  type Organization,
+  type Profile,
+  type Project,
 } from "@ssota/core";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
+
+function parseLocale(value: string | null | undefined): Locale {
+  if (value && (LOCALES as readonly string[]).includes(value)) {
+    return value as Locale;
+  }
+  return DEFAULT_LOCALE;
+}
 
 function mapProfile(row: typeof schema.profiles.$inferSelect): Profile {
   return {
@@ -17,6 +27,7 @@ function mapProfile(row: typeof schema.profiles.$inferSelect): Profile {
     personalOrganizationId: row.personalOrganizationId,
     onboardingStep: row.onboardingStep as Profile["onboardingStep"],
     onboardingCompletedAt: row.onboardingCompletedAt,
+    locale: parseLocale(row.locale),
   };
 }
 
@@ -90,6 +101,14 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         .limit(1);
       const row = rows[0];
       return row ? mapProfile(row) : null;
+    },
+
+    async updateLocale(userId, locale) {
+      const now = new Date();
+      await db
+        .update(schema.profiles)
+        .set({ locale, updatedAt: now })
+        .where(eq(schema.profiles.id, userId));
     },
 
     async completeProfileStep({ userId, email, displayName, workspaceName }) {

@@ -1,5 +1,8 @@
+"use client";
+
 import { signInAction } from "@/app/actions";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
@@ -21,13 +24,13 @@ export function LoginForm({
   error,
   googleAuthEnabled = false,
 }: LoginFormProps) {
+  const { t } = useLocale();
+
   return (
     <Card className="mx-auto max-w-md">
       <CardHeader className="space-y-2">
-        <CardTitle>로그인</CardTitle>
-        <CardDescription>
-          계정이 없으면 이메일과 비밀번호로 자동 가입됩니다.
-        </CardDescription>
+        <CardTitle>{t("auth.title")}</CardTitle>
+        <CardDescription>{t("auth.description")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form action={signInAction} className="space-y-4">
@@ -56,14 +59,14 @@ export function LoginForm({
           </div>
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <Button type="submit" className="w-full">
-            로그인
+            {t("common.signIn")}
           </Button>
         </form>
         {googleAuthEnabled ? (
           <div className="mt-6 space-y-4">
             <div className="flex items-center gap-3">
               <Separator className="flex-1" />
-              <span className="text-xs text-muted-foreground">또는</span>
+              <span className="text-xs text-muted-foreground">{t("common.or")}</span>
               <Separator className="flex-1" />
             </div>
             <GoogleSignInButton />
