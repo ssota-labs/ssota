@@ -3,16 +3,18 @@
 import { toRouteSlug } from "@ssota/core";
 
 type ConsolePreviewProps = {
-  workspaceName: string;
+  organizationName: string;
   projectName?: string;
 };
 
-export function ConsolePreview({ workspaceName, projectName }: ConsolePreviewProps) {
-  const orgSlug = workspaceName.trim() ? toRouteSlug(workspaceName) : "your-workspace";
+export function ConsolePreview({ organizationName, projectName }: ConsolePreviewProps) {
+  const orgSlug = organizationName.trim()
+    ? toRouteSlug(organizationName)
+    : "your-organization";
   const projectSlug = projectName?.trim()
     ? toRouteSlug(projectName)
     : "your-project";
-  const orgLabel = workspaceName.trim() || "Your Workspace";
+  const orgLabel = organizationName.trim() || "Your Organization";
   const projectLabel = projectName?.trim() || "Your Project";
 
   return (

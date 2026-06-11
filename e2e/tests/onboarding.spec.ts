@@ -9,28 +9,28 @@ import {
 
 test.describe("Console onboarding", () => {
   test("신규 로그인(자동 가입) → profile → project → Project Home", async ({ page }) => {
-    const { orgSlug, projectSlug, workspaceName, projectName } =
+    const { orgSlug, projectSlug, organizationName, projectName } =
       await completeOnboardingFlow(page);
 
-    expect(orgSlug).toMatch(/^e2e-workspace-/);
+    expect(orgSlug).toMatch(/^e2e-organization-/);
     expect(projectSlug).toMatch(/^e2e-project-/);
     await expect(page).toHaveURL(new RegExp(`/${orgSlug}/${projectSlug}$`));
     await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible();
     await expect(page.getByText(projectName).first()).toBeVisible();
   });
 
-  test("project 스텝에서 workspace로 돌아가기", async ({ page }) => {
+  test("project 스텝에서 organization으로 돌아가기", async ({ page }) => {
     const email = uniqueOnboardingEmail();
     await signInOnLoginPage(page, email);
-    await completeProfileOnboarding(page, "Back Test Workspace");
+    await completeProfileOnboarding(page, "Back Test Organization");
 
     await expect(page.getByText("Step 2 of 2")).toBeVisible();
-    await page.getByRole("link", { name: "Back to workspace" }).click();
+    await page.getByRole("button", { name: "Back to organization" }).click();
 
     await expect(page).toHaveURL(/\/onboarding\/profile/);
     await expect(page.getByText("Step 1 of 2")).toBeVisible();
-    await expect(page.getByLabel("Workspace name")).toHaveValue(
-      "Back Test Workspace",
+    await expect(page.getByLabel("Organization name")).toHaveValue(
+      "Back Test Organization",
     );
 
     await page.locator('button[type="submit"]').click();
@@ -42,9 +42,9 @@ test.describe("Console onboarding", () => {
   }) => {
     const email = uniqueOnboardingEmail();
     await signInOnLoginPage(page, email);
-    await completeProfileOnboarding(page, "Redirect Workspace");
+    await completeProfileOnboarding(page, "Redirect Organization");
 
-    await page.goto("/redirect-workspace/should-not-exist");
+    await page.goto("/redirect-organization/should-not-exist");
     await expect(page).toHaveURL(/\/onboarding\/project/);
   });
 

@@ -122,7 +122,7 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         .where(eq(schema.profiles.id, userId));
     },
 
-    async completeProfileStep({ userId, email, displayName, workspaceName }) {
+    async completeProfileStep({ userId, email, displayName, organizationName }) {
       return db.transaction(async (tx) => {
         const existingProfile = await tx
           .select()
@@ -155,16 +155,16 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         if (organization) {
           await tx
             .update(schema.organizations)
-            .set({ name: workspaceName.trim() })
+            .set({ name: organizationName.trim() })
             .where(eq(schema.organizations.id, organization.id));
-          organization = { ...organization, name: workspaceName.trim() };
+          organization = { ...organization, name: organizationName.trim() };
         } else {
-          const slug = await allocateUniqueOrgSlug(tx as unknown as Db, workspaceName);
+          const slug = await allocateUniqueOrgSlug(tx as unknown as Db, organizationName);
           const [inserted] = await tx
             .insert(schema.organizations)
             .values({
               slug,
-              name: workspaceName.trim(),
+              name: organizationName.trim(),
               ownerUserId: userId,
             })
             .returning();

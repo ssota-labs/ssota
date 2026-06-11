@@ -20,18 +20,18 @@ export default async function OnboardingProfilePage({
 
   const { error } = await searchParams;
 
-  let defaultWorkspaceName =
+  let defaultOrganizationName =
     profile?.displayName ??
     user.email?.split("@")[0]?.replace(/[^A-Za-z0-9 '-]/g, "") ??
     "";
 
   const consolePort = getConsolePort();
   const personalOrg = await consolePort.getPersonalOrganizationForUser(user.id);
-  if (personalOrg) defaultWorkspaceName = personalOrg.name;
+  if (personalOrg) defaultOrganizationName = personalOrg.name;
 
   return (
     <ProfileOnboardingForm
-      defaultWorkspaceName={defaultWorkspaceName}
+      defaultOrganizationName={defaultOrganizationName}
       error={error}
     />
   );

@@ -14,11 +14,11 @@ export async function completeProfileOnboardingAction(formData: FormData) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const workspaceName = String(formData.get("workspaceName") ?? "").trim();
+  const organizationName = String(formData.get("organizationName") ?? "").trim();
 
-  if (!isEnglishDisplayName(workspaceName)) {
+  if (!isEnglishDisplayName(organizationName)) {
     validationError(
-      "Workspace name must be 2–64 English letters, numbers, spaces, or hyphens.",
+      "Organization name must be 2–64 English letters, numbers, spaces, or hyphens.",
       "profile",
     );
   }
@@ -27,8 +27,8 @@ export async function completeProfileOnboardingAction(formData: FormData) {
   await onboardingPort.completeProfileStep({
     userId: user.id,
     email: user.email ?? "",
-    displayName: workspaceName,
-    workspaceName,
+    displayName: organizationName,
+    organizationName,
   });
 
   redirect("/onboarding/project");
