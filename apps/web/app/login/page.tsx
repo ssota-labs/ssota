@@ -1,4 +1,5 @@
 import { LoginForm } from "@/components/auth/login-form";
+import { isGoogleAuthEnabled } from "@/lib/auth/config";
 
 export default async function LoginPage({
   searchParams,
@@ -11,6 +12,7 @@ export default async function LoginPage({
     <LoginForm
       error={error}
       initialMode={mode === "signup" ? "signup" : "signin"}
+      googleAuthEnabled={isGoogleAuthEnabled()}
     />
   );
 }

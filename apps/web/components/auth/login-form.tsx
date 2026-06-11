@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signInAction, signUpAction } from "@/app/actions";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { Button } from "@loopos/ui/components/ui/button";
 import {
   Card,
@@ -11,14 +12,20 @@ import {
 } from "@loopos/ui/components/ui/card";
 import { Input } from "@loopos/ui/components/ui/input";
 import { Label } from "@loopos/ui/components/ui/label";
+import { Separator } from "@loopos/ui/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 type LoginFormProps = {
   error?: string;
   initialMode?: "signin" | "signup";
+  googleAuthEnabled?: boolean;
 };
 
-export function LoginForm({ error, initialMode = "signin" }: LoginFormProps) {
+export function LoginForm({
+  error,
+  initialMode = "signin",
+  googleAuthEnabled = false,
+}: LoginFormProps) {
   const [mode, setMode] = useState<"signin" | "signup">(initialMode);
 
   return (
@@ -87,6 +94,16 @@ export function LoginForm({ error, initialMode = "signin" }: LoginFormProps) {
             {mode === "signin" ? "로그인" : "계정 만들기"}
           </Button>
         </form>
+        {googleAuthEnabled && mode === "signin" ? (
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">또는</span>
+              <Separator className="flex-1" />
+            </div>
+            <GoogleSignInButton />
+          </div>
+        ) : null}
       </CardContent>
     </Card>
   );
