@@ -1,3 +1,5 @@
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { isGoogleAuthEnabled } from "@/lib/auth/config";
 import { signInAction } from "../actions";
 import { Button } from "@loopos/ui/components/ui/button";
 import {
@@ -8,6 +10,7 @@ import {
 } from "@loopos/ui/components/ui/card";
 import { Input } from "@loopos/ui/components/ui/input";
 import { Label } from "@loopos/ui/components/ui/label";
+import { Separator } from "@loopos/ui/components/ui/separator";
 
 export default async function LoginPage({
   searchParams,
@@ -15,6 +18,7 @@ export default async function LoginPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
+  const googleAuthEnabled = isGoogleAuthEnabled();
 
   return (
     <Card className="mx-auto max-w-md">
@@ -50,6 +54,16 @@ export default async function LoginPage({
             로그인
           </Button>
         </form>
+        {googleAuthEnabled && (
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <Separator className="flex-1" />
+              <span className="text-xs text-muted-foreground">또는</span>
+              <Separator className="flex-1" />
+            </div>
+            <GoogleSignInButton />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
