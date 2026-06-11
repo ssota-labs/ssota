@@ -1,11 +1,20 @@
 import { test, expect } from "@playwright/test";
 import { createClient } from "@ssota/client";
-import { getSmokeAccessToken } from "../helpers/mcp";
+import { getDefaultProjectId, getSmokeAccessToken, projectIdHeaders } from "../helpers/mcp";
 import fs from "node:fs";
 import path from "node:path";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 const apiBase = `${mcpUrl}/api/v1`;
+
+async function authedClient(token: string) {
+  const projectId = await getDefaultProjectId();
+  return createClient({
+    url: apiBase,
+    auth: { accessToken: token },
+    projectId,
+  });
+}
 
 test.describe("SSOTA SDK → HTTP API v1", () => {
   test("401: Bearer 없이 API 거부", async ({ request }) => {
@@ -17,10 +26,7 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
 
   test("거부: 카탈로그에 없는 actionType은 rejected (HTTP 200)", async () => {
     const token = await getSmokeAccessToken();
-    const ssota = createClient({
-      url: apiBase,
-      auth: { accessToken: token },
-    });
+    const ssota = await authedClient(token);
 
     const result = await ssota.actions.execute({
       actionType: "definitely_not_in_catalog_xyz",
@@ -37,10 +43,12 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
     request,
   }) => {
     const token = await getSmokeAccessToken();
+    const projectId = await getDefaultProjectId();
     const res = await request.post(`${apiBase}/actions/execute`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        ...projectIdHeaders(projectId),
       },
       data: {
         actionType: "definitely_not_in_catalog_xyz",
@@ -57,10 +65,7 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
 
   test("smoke: SDK catalog 조회 + fetch", async () => {
     const token = await getSmokeAccessToken();
-    const ssota = createClient({
-      url: apiBase,
-      auth: { accessToken: token },
-    });
+    const ssota = await authedClient(token);
 
     const nodeTypes = await ssota.catalog.listNodeTypes();
     expect(nodeTypes.length).toBeGreaterThan(0);
@@ -75,10 +80,7 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
 
   test("smoke: SDK instructions find + get", async () => {
     const token = await getSmokeAccessToken();
-    const ssota = createClient({
-      url: apiBase,
-      auth: { accessToken: token },
-    });
+    const ssota = await authedClient(token);
 
     const found = await ssota.instructions.find({
       query: "document",
@@ -92,10 +94,7 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
 
   test("smoke: SDK execute → preview 플로우", async () => {
     const token = await getSmokeAccessToken();
-    const ssota = createClient({
-      url: apiBase,
-      auth: { accessToken: token },
-    });
+    const ssota = await authedClient(token);
 
     const preview = await ssota.actions.preview({
       actionType: "create_note",
@@ -114,10 +113,12 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
     request,
   }) => {
     const token = await getSmokeAccessToken();
+    const projectId = await getDefaultProjectId();
     const res = await request.get(`${apiBase}/catalog/node-types`, {
       headers: {
         Authorization: `Bearer ${token}`,
         "X-SSOTA-Subject-Id": "e2e-subject-1",
+        ...projectIdHeaders(projectId),
       },
     });
     expect(res.ok()).toBeTruthy();
@@ -125,11 +126,13 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
 
   test("subjectId: SDK client가 헤더를 설정함", async ({ request }) => {
     const token = await getSmokeAccessToken();
+    const projectId = await getDefaultProjectId();
     let sawSubjectHeader = false;
 
     const ssota = createClient({
       url: apiBase,
       auth: { accessToken: token },
+      projectId,
       subjectId: "e2e-sdk-subject",
       fetch: async (input, init) => {
         const headers = init?.headers as Record<string, string>;

@@ -2,9 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ExecuteActionResponseSchema,
   NodeCatalogListResponseSchema,
+  PROJECT_ID_HEADER,
 } from "@ssota/contracts";
 import { createClient } from "./client.js";
 import { SsotaApiError } from "./error.js";
+
+const TEST_PROJECT_ID = "00000000-0000-4000-8000-000000000001";
 
 function mockFetch(
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
@@ -16,6 +19,27 @@ function mockFetch(
 }
 
 describe("createClient", () => {
+  it("sends X-SSOTA-Project-Id when projectId is configured", async () => {
+    const payload = NodeCatalogListResponseSchema.parse({ data: [] });
+    let capturedProjectId: string | undefined;
+
+    const fetch = mockFetch((_url, init) => {
+      const headers = init?.headers as Record<string, string>;
+      capturedProjectId = headers[PROJECT_ID_HEADER];
+      return new Response(JSON.stringify(payload), { status: 200 });
+    });
+
+    const ssota = createClient({
+      url: "http://localhost:3001/api/v1",
+      auth: { accessToken: "test-token" },
+      projectId: TEST_PROJECT_ID,
+      fetch,
+    });
+
+    await ssota.catalog.listNodeTypes();
+    expect(capturedProjectId).toBe(TEST_PROJECT_ID);
+  });
+
   it("sends X-SSOTA-Subject-Id when subjectId is configured", async () => {
     const payload = NodeCatalogListResponseSchema.parse({ data: [] });
     let capturedSubjectId: string | undefined;

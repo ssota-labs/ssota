@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { graphPath } from "@/lib/console/paths";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphOverviewPage({
@@ -9,7 +10,8 @@ export default async function GraphOverviewPage({
 }) {
   const { orgSlug, projectSlug } = await params;
   const ctx = { orgSlug, projectSlug };
-  const ports = getActionPorts();
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
   const nodeTypes = await ports.catalog.listNodeCatalogEntries();
 
   if (nodeTypes[0]) {

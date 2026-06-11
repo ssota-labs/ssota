@@ -13,6 +13,7 @@ export async function POST(request: Request) {
     if (!parsed.ok) return parsed.response;
 
     const result = await previewActionForClient(
+      ctx.projectId,
       parsed.data,
       ctx.user.id,
       ctx.executorType,

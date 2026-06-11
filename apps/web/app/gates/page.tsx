@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { approveGateFormAction } from "@/app/actions";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Badge } from "@ssota/ui/components/ui/badge";
@@ -23,7 +23,8 @@ export default async function GatesPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const gates = await ports.gate.listPendingGates();
 
   return (
@@ -78,6 +79,7 @@ export default async function GatesPage() {
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <form action={approveGateFormAction}>
+                      <input type="hidden" name="projectId" value={projectId} />
                       <input type="hidden" name="gateId" value={gate.id} />
                       <input type="hidden" name="approved" value="true" />
                       <Button type="submit" size="sm">
@@ -85,6 +87,7 @@ export default async function GatesPage() {
                       </Button>
                     </form>
                     <form action={approveGateFormAction}>
+                      <input type="hidden" name="projectId" value={projectId} />
                       <input type="hidden" name="gateId" value={gate.id} />
                       <input type="hidden" name="approved" value="false" />
                       <Button type="submit" variant="outline" size="sm">

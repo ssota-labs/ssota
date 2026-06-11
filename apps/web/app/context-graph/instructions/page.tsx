@@ -28,10 +28,11 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineWorkflowInstructionFormAction } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 
 export default async function ContextGraphInstructionsPage() {
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const [instructions, logs] = await Promise.all([
     ports.catalog.listInstructions({ limit: 100 }),
     ports.commit.getActionLog({ limit: 100 }),

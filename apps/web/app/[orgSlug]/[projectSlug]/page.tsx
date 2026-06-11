@@ -10,6 +10,7 @@ import {
 } from "@ssota/ui/components/ui/card";
 import { PageHeader } from "@/components/studio/page-header";
 import { graphPath, projectPath } from "@/lib/console/paths";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function ProjectHomePage({
@@ -19,7 +20,8 @@ export default async function ProjectHomePage({
 }) {
   const { orgSlug, projectSlug } = await params;
   const ctx = { orgSlug, projectSlug };
-  const ports = getActionPorts();
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
 
   const [nodes, edges, actions, instructions, gates, logs] = await Promise.all([
     ports.catalog.listNodeCatalogEntries(),

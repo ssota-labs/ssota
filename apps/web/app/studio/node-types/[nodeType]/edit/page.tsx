@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { deprecateNodeTypeAction, updateNodeTypeAction } from "@/app/actions";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -25,7 +25,8 @@ export default async function EditNodeTypePage({
 
   const { nodeType } = await params;
   const decoded = decodeURIComponent(nodeType);
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const entry = await ports.catalog.getNodeCatalogEntry(decoded);
 
   if (!entry) {

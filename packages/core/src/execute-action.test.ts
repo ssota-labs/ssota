@@ -6,6 +6,7 @@ import {
   createInMemoryState,
   createTestNode,
   seedTestCatalog,
+  TEST_PROJECT_ID,
 } from "./testing/in-memory.js";
 import type { ActionLogRecord } from "./domain/types.js";
 
@@ -20,6 +21,7 @@ describe("executeAction — 4대 강제", () => {
       input: {},
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -38,6 +40,7 @@ describe("executeAction — 4대 강제", () => {
       input: {},
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -56,6 +59,7 @@ describe("executeAction — 4대 강제", () => {
       input: { content: "Hello SSOTA" },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("committed");
@@ -75,6 +79,7 @@ describe("executeAction — 4대 강제", () => {
       input: { nodeId: node.id },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("gated");
@@ -111,6 +116,7 @@ describe("executeAction — 4대 강제", () => {
       input: { content: "x", properties: { secret: "no" } },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -130,6 +136,7 @@ describe("executeAction — 4대 강제", () => {
       executorId: "agent-1",
       executorType: "Agent" as const,
       idempotencyKey: "key-123",
+      projectId: TEST_PROJECT_ID,
     };
 
     const first = await executeAction(ports, params);
@@ -153,6 +160,7 @@ describe("executeAction — 4대 강제", () => {
       input: { content: "Logged" },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(state.actionLog.length).toBe(1);
@@ -187,6 +195,7 @@ describe("executeAction — define_node_type", () => {
       input: { definition: validDefinition },
       executorId: "human-1",
       executorType: "Human",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("committed");
@@ -208,6 +217,7 @@ describe("executeAction — define_node_type", () => {
       },
       executorId: "human-1",
       executorType: "Human",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -228,6 +238,7 @@ describe("executeAction — define_node_type", () => {
       },
       executorId: "human-1",
       executorType: "Human",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -251,6 +262,7 @@ describe("executeAction — define_node_type", () => {
       },
       executorId: "human-1",
       executorType: "Human",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -269,6 +281,7 @@ describe("executeAction — define_node_type", () => {
       input: { definition: validDefinition },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("gated");
@@ -332,6 +345,7 @@ describe("executeAction — follow-up catalog meta actions", () => {
       },
       executorId: "human-1",
       executorType: "Human",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("gated");
@@ -361,6 +375,7 @@ describe("executeAction — follow-up catalog meta actions", () => {
       input: { nodeType: "Note" },
       executorId: "human-1",
       executorType: "Human",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -402,6 +417,7 @@ describe("executeAction — follow-up catalog meta actions", () => {
       },
       executorId: "human-1",
       executorType: "Human",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -422,6 +438,7 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
       input: { content: "x", properties: { unknown_property: "no" } },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -440,6 +457,7 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
       input: { content: "x", properties: { title: 42 } },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -474,6 +492,7 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
       input: { content: "x", properties: { priority: "high" } },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("gated");
@@ -493,6 +512,7 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
       input: { content: "x" },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -558,6 +578,7 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
       },
       executorId: "human-1",
       executorType: "Human",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -667,6 +688,7 @@ describe("executeAction — subject_id tenancy", () => {
       input: { title: "Acme homepage" },
       executorId: "agent-1",
       executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -686,6 +708,7 @@ describe("executeAction — subject_id tenancy", () => {
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_acme_42",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("committed");
@@ -708,6 +731,7 @@ describe("executeAction — subject_id tenancy", () => {
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_acme_42",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -751,6 +775,7 @@ describe("executeAction — subject_id tenancy", () => {
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_acme_42",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("rejected");
@@ -783,5 +808,54 @@ describe("executeAction — subject_id tenancy", () => {
     const aNodes = await ports.graph.queryNodes({ subjectId: "usr_a" });
     expect(aNodes).toHaveLength(1);
     expect(aNodes[0]?.id).toBe("a");
+  });
+});
+
+const OTHER_PROJECT_ID = "00000000-0000-4000-8000-000000000099";
+
+describe("executeAction — project_id tenancy", () => {
+  it("거부: 다른 project 노드 update (scoped ports는 노드를 찾지 못함)", async () => {
+    const state = createInMemoryState();
+    seedSubjectScopedProjectCatalog(state);
+    const node = createTestNode({
+      nodeType: "Project",
+      projectId: OTHER_PROJECT_ID,
+      properties: { title: "Other project", subject_id: "usr_acme_42" },
+    });
+    state.nodes.set(node.id, node);
+    state.actionCatalog.set("update_project_title", {
+      actionType: "update_project_title",
+      slug: toCatalogSlug("update_project_title"),
+      label: toCatalogLabel("update_project_title"),
+      scope: { kind: "node_type", nodeType: "Project" },
+      preconditions: { requiresExistingNode: true, requiredFields: ["nodeId", "title"] },
+      effects: [
+        {
+          kind: "update_node",
+          nodeId: "",
+          patch: { properties: {} },
+        },
+      ],
+      executor: "Agent",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "update_project_title",
+      input: { nodeId: node.id, title: "Hijacked" },
+      executorId: "agent-1",
+      executorType: "Agent",
+      subjectId: "usr_acme_42",
+      projectId: TEST_PROJECT_ID,
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("PRECONDITION_FAILED");
+    }
   });
 });

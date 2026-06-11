@@ -4,6 +4,7 @@ import type {
   ActionCommitPort,
   ActionLogRecord,
   ActionPorts,
+  ActionPortsScope,
   ActionPropertyPermission,
   Archetype,
   CatalogPort,
@@ -21,6 +22,8 @@ import type {
 } from "../domain/types.js";
 import type { Effect, GateStatus, LifecycleStatus } from "@ssota/contracts";
 import { toCatalogLabel, toCatalogSlug } from "../catalog-slug.js";
+
+export const TEST_PROJECT_ID = "00000000-0000-4000-8000-000000000001";
 
 export interface InMemoryState {
   nodes: Map<string, Node>;
@@ -76,13 +79,18 @@ export function createInMemoryState(
   return state;
 }
 
-function applyEffect(state: InMemoryState, effect: Effect): void {
+function applyEffect(
+  state: InMemoryState,
+  effect: Effect,
+  projectId: string,
+): void {
   const now = new Date();
 
   if (effect.kind === "create_node") {
     const id = effect.node.id ?? randomUUID();
     state.nodes.set(id, {
       id,
+      projectId,
       nodeType: effect.node.nodeType,
       lifecycleStatus: effect.node.lifecycleStatus,
       properties: effect.node.properties,
@@ -115,6 +123,7 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
     const id = effect.edge.id ?? randomUUID();
     state.edges.set(id, {
       id,
+      projectId,
       edgeType: effect.edge.edgeType,
       sourceNodeId: effect.edge.sourceNodeId,
       targetNodeId: effect.edge.targetNodeId,
@@ -132,7 +141,7 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
 
       if (effect.status === "approved") {
         for (const proposed of gate.proposedEffects) {
-          applyEffect(state, proposed);
+          applyEffect(state, proposed, projectId);
         }
       }
     }
@@ -215,6 +224,7 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
       );
       const next = {
         id: effect.entry.instructionId,
+        projectId,
         slug: toCatalogSlug(effect.entry.title),
         title: effect.entry.title,
         triggerPatterns: effect.entry.triggerPatterns,
@@ -239,6 +249,7 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
     } else {
       state.instructions.push({
         id: randomUUID(),
+        projectId,
         slug: toCatalogSlug(effect.entry.title),
         title: effect.entry.title,
         triggerPatterns: effect.entry.triggerPatterns,
@@ -259,7 +270,12 @@ function applyEffect(state: InMemoryState, effect: Effect): void {
   }
 }
 
-export function createInMemoryPorts(state: InMemoryState): ActionPorts {
+export function createInMemoryPorts(
+  state: InMemoryState,
+  scope?: ActionPortsScope,
+): ActionPorts {
+  const projectId = scope?.projectId ?? TEST_PROJECT_ID;
+
   const catalog: CatalogPort = {
     async getNodeCatalogEntry(nodeType) {
       return state.nodeCatalog.get(nodeType) ?? null;
@@ -345,10 +361,13 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
 
   const graph: GraphReadPort = {
     async getNode(nodeId) {
-      return state.nodes.get(nodeId) ?? null;
+      const node = state.nodes.get(nodeId);
+      return node?.projectId === projectId ? node : null;
     },
     async queryNodes(params) {
-      let results = [...state.nodes.values()];
+      let results = [...state.nodes.values()].filter(
+        (n) => n.projectId === projectId,
+      );
       if (params.nodeType) {
         results = results.filter((n) => n.nodeType === params.nodeType);
       }
@@ -369,6 +388,7 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
     async traverseEdges(params) {
       const results: Edge[] = [];
       for (const edge of state.edges.values()) {
+        if (edge.projectId !== projectId) continue;
         if (params.edgeType && edge.edgeType !== params.edgeType) continue;
         if (
           params.direction === "outgoing" ||
@@ -392,10 +412,14 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
 
   const gate: GatePort = {
     async listPendingGates() {
-      return [...state.gates.values()].filter((g) => g.status === "pending");
+      return [...state.gates.values()].filter(
+        (g) => g.projectId === projectId && g.status === "pending",
+      );
     },
     async queryGates(params) {
-      let results = [...state.gates.values()];
+      let results = [...state.gates.values()].filter(
+        (g) => g.projectId === projectId,
+      );
       if (params.status) {
         results = results.filter((g) => g.status === params.status);
       }
@@ -404,12 +428,14 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
       return results.slice(offset, offset + limit);
     },
     async getGate(gateId) {
-      return state.gates.get(gateId) ?? null;
+      const gate = state.gates.get(gateId);
+      return gate?.projectId === projectId ? gate : null;
     },
     async createGate(g) {
       const id = randomUUID();
       const gate: Gate = {
         ...g,
+        projectId,
         id,
         createdAt: new Date(),
         decisionNote: null,
@@ -424,20 +450,25 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
       const logId = randomUUID();
 
       if (params.gateDecision) {
-        applyEffect(state, {
-          kind: "update_gate",
-          gateId: params.gateDecision.gateId,
-          status: params.gateDecision.status,
-          decisionNote: params.gateDecision.decisionNote,
-        });
+        applyEffect(
+          state,
+          {
+            kind: "update_gate",
+            gateId: params.gateDecision.gateId,
+            status: params.gateDecision.status,
+            decisionNote: params.gateDecision.decisionNote,
+          },
+          projectId,
+        );
       }
 
       for (const effect of params.effects) {
-        applyEffect(state, effect);
+        applyEffect(state, effect, projectId);
       }
 
       state.actionLog.push({
         id: logId,
+        projectId,
         actionType: params.logEntry.actionType,
         executorId: params.logEntry.executorId,
         executorType: params.logEntry.executorType,
@@ -454,7 +485,7 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
       return { logId, appliedEffects: params.effects };
     },
     async getActionLog(params) {
-      let results = [...state.actionLog];
+      let results = state.actionLog.filter((r) => r.projectId === projectId);
       if (params.actionType) {
         results = results.filter((r) => r.actionType === params.actionType);
       }
@@ -463,12 +494,16 @@ export function createInMemoryPorts(state: InMemoryState): ActionPorts {
       return results.slice(offset, offset + limit);
     },
     async getActionLogEntry(logId) {
-      return state.actionLog.find((r) => r.id === logId) ?? null;
+      const entry = state.actionLog.find((r) => r.id === logId);
+      return entry?.projectId === projectId ? entry : null;
     },
     async findByIdempotencyKey(key) {
       return (
         state.actionLog.find(
-          (r) => r.idempotencyKey === key && r.outcome === "committed",
+          (r) =>
+            r.projectId === projectId &&
+            r.idempotencyKey === key &&
+            r.outcome === "committed",
         ) ?? null
       );
     },
@@ -630,6 +665,7 @@ export function createTestNode(
   const id = overrides?.id ?? randomUUID();
   return {
     id,
+    projectId: TEST_PROJECT_ID,
     nodeType: "Note",
     lifecycleStatus: "Draft" as LifecycleStatus,
     properties: {},
@@ -647,6 +683,7 @@ export function createTestGate(
 ): Gate {
   return {
     id: overrides?.id ?? randomUUID(),
+    projectId: TEST_PROJECT_ID,
     actionType: "promote_note",
     executorId: "agent-1",
     input: { nodeId: randomUUID() },

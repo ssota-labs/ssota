@@ -8,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ archetypeId: string }> },
 ) {
   const { archetypeId } = await params;
-  return withAuth(request, async () => {
-    const data = await getArchetype(archetypeId);
+  return withAuth(request, async (ctx) => {
+    const data = await getArchetype(ctx.projectId, archetypeId);
     return jsonOk(ArchetypeResponseSchema.parse({ data }).data);
   });
 }

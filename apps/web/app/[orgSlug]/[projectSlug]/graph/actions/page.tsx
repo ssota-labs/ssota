@@ -12,6 +12,7 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineScopedActionFormAction } from "@/app/actions";
 import { ActionCatalogDataTable } from "@/components/graph/action-catalog-data-table";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphActionsPage({
@@ -19,8 +20,9 @@ export default async function GraphActionsPage({
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
-  await params;
-  const ports = getActionPorts();
+  const { orgSlug, projectSlug } = await params;
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
   const [actions, logs] = await Promise.all([
     ports.catalog.listActionCatalogEntries(),
     ports.commit.getActionLog({ limit: 100 }),
@@ -36,7 +38,7 @@ export default async function GraphActionsPage({
     runs: runCounts.get(action.actionType) ?? 0,
   }));
 
-  const toolbar = <NewActionSheet />;
+  const toolbar = <NewActionSheet projectId={project.id} />;
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -60,7 +62,7 @@ function formatScope(scope: { kind: string } & Record<string, unknown>) {
   return "global";
 }
 
-function NewActionSheet() {
+function NewActionSheet({ projectId }: { projectId: string }) {
   return (
     <Sheet>
       <SheetTrigger render={<Button size="sm" />}>New action</SheetTrigger>
@@ -72,6 +74,7 @@ function NewActionSheet() {
           </SheetDescription>
         </SheetHeader>
         <form action={defineScopedActionFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={projectId} />
           <input type="hidden" name="scopeKind" value="global" />
           <div className="space-y-2">
             <Label htmlFor="actionType">Action type</Label>

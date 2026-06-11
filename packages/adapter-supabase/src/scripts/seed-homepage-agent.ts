@@ -1,5 +1,5 @@
 import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
@@ -14,13 +14,19 @@ const defaultTransitions = {
 
 async function mergeOwningActions(
   db: Db,
+  projectId: string,
   propertyKey: string,
   actions: string[],
 ): Promise<void> {
   const rows = await db
     .select()
     .from(schema.propertyCatalog)
-    .where(eq(schema.propertyCatalog.propertyKey, propertyKey))
+    .where(
+      and(
+        eq(schema.propertyCatalog.propertyKey, propertyKey),
+        eq(schema.propertyCatalog.projectId, projectId),
+      ),
+    )
     .limit(1);
   const row = rows[0];
   if (!row) return;
@@ -28,15 +34,24 @@ async function mergeOwningActions(
   await db
     .update(schema.propertyCatalog)
     .set({ owningActions: merged })
-    .where(eq(schema.propertyCatalog.propertyKey, propertyKey));
+    .where(
+      and(
+        eq(schema.propertyCatalog.propertyKey, propertyKey),
+        eq(schema.propertyCatalog.projectId, projectId),
+      ),
+    );
 }
 
 /** 홈페이지 제작 에이전트 버티컬 카탈로그 — 고객사 A가 세팅하는 스키마 예시 */
-export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
+export async function seedHomepageAgentCatalog(
+  db: Db,
+  projectId: string,
+): Promise<void> {
   await db
     .insert(schema.nodeCatalog)
     .values([
       {
+        projectId,
         nodeType: "HomepageProject",
         slug: toCatalogSlug("HomepageProject"),
         label: toCatalogLabel("HomepageProject"),
@@ -54,6 +69,7 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
         ],
       },
       {
+        projectId,
         nodeType: "DesignBrief",
         slug: toCatalogSlug("DesignBrief"),
         label: toCatalogLabel("DesignBrief"),
@@ -66,6 +82,7 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
         allowedActionRefs: ["create_design_brief", "link_homepage_contains"],
       },
       {
+        projectId,
         nodeType: "PageSection",
         slug: toCatalogSlug("PageSection"),
         label: toCatalogLabel("PageSection"),
@@ -84,6 +101,7 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     .insert(schema.edgeCatalog)
     .values([
       {
+        projectId,
         edgeType: "homepage_contains",
         slug: toCatalogSlug("homepage_contains"),
         label: toCatalogLabel("homepage_contains"),
@@ -99,6 +117,7 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     .insert(schema.propertyCatalog)
     .values([
       {
+        projectId,
         propertyKey: "section_key",
         valueType: "string",
         constraints: { maxLength: 100 },
@@ -107,12 +126,12 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     ])
     .onConflictDoNothing();
 
-  await mergeOwningActions(db, "subject_id", [
+  await mergeOwningActions(db, projectId, "subject_id", [
     "create_homepage_project",
     "create_design_brief",
     "create_page_section",
   ]);
-  await mergeOwningActions(db, "title", [
+  await mergeOwningActions(db, projectId, "title", [
     "create_homepage_project",
     "create_design_brief",
     "create_page_section",
@@ -216,6 +235,7 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     .values(
       actionCatalogRows.map((row) => ({
         ...row,
+        projectId,
         slug: toCatalogSlug(row.actionType),
         label: toCatalogLabel(row.actionType),
         executor: row.executor as "Agent" | "Human" | "System",
@@ -237,6 +257,7 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     await db
       .insert(schema.actionPropertyPermissions)
       .values({
+        projectId,
         actionType,
         nodeType,
         propertyKey,
@@ -252,6 +273,7 @@ export async function seedHomepageAgentCatalog(db: Db): Promise<void> {
     .insert(schema.instructions)
     .values([
       {
+        projectId,
         title: "Homepage creation workflow",
         slug: toCatalogSlug("Homepage creation workflow"),
         triggerPatterns: [

@@ -3,11 +3,18 @@ import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
 } from "@ssota/adapter-supabase";
+import { PROJECT_ID_HEADER } from "@ssota/contracts";
 
 const supabaseUrl = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
 const supabaseAnonKey =
   process.env.SUPABASE_ANON_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
+
+const defaultDatabaseUrl =
+  process.env.DATABASE_URL ??
+  "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+
+let cachedDefaultProjectId: string | null = null;
 
 export async function getSmokeAccessToken(): Promise<string> {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
@@ -19,6 +26,35 @@ export async function getSmokeAccessToken(): Promise<string> {
     throw new Error(error?.message ?? "Failed to authenticate smoke user");
   }
   return data.session.access_token;
+}
+
+/** Resolves ssota-labs/ssota-dev project id from the graph DB (cached per process). */
+export async function getDefaultProjectId(): Promise<string> {
+  if (cachedDefaultProjectId) return cachedDefaultProjectId;
+
+  const postgres = (await import("postgres")).default;
+  const sql = postgres(defaultDatabaseUrl, { max: 1 });
+  try {
+    const rows = await sql<{ id: string }[]>`
+      select p.id
+      from projects p
+      join organizations o on o.id = p.organization_id
+      where o.slug = 'ssota-labs' and p.slug = 'ssota-dev'
+      limit 1
+    `;
+    const projectId = rows[0]?.id;
+    if (!projectId) {
+      throw new Error("Default project not found — run db:seed");
+    }
+    cachedDefaultProjectId = projectId;
+    return projectId;
+  } finally {
+    await sql.end({ timeout: 1 });
+  }
+}
+
+export function projectIdHeaders(projectId: string): Record<string, string> {
+  return { [PROJECT_ID_HEADER]: projectId };
 }
 
 export async function mcpToolCall(
@@ -35,12 +71,14 @@ export async function mcpToolCall(
   token: string,
   toolName: string,
   args: Record<string, unknown> = {},
-  options?: { subjectId?: string },
+  options?: { subjectId?: string; projectId?: string },
 ): Promise<unknown> {
+  const projectId = options?.projectId ?? (await getDefaultProjectId());
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
     Accept: "application/json, text/event-stream",
+    ...projectIdHeaders(projectId),
   };
   if (options?.subjectId) {
     headers["X-SSOTA-Subject-Id"] = options.subjectId;

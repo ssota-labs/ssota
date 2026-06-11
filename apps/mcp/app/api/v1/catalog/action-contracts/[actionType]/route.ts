@@ -8,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ actionType: string }> },
 ) {
   const { actionType } = await params;
-  return withAuth(request, async () => {
-    const data = await getActionContract(actionType);
+  return withAuth(request, async (ctx) => {
+    const data = await getActionContract(ctx.projectId, actionType);
     return jsonOk(ActionContractResponseSchema.parse({ data }).data);
   });
 }

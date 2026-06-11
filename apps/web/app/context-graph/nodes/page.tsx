@@ -29,10 +29,11 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { createNodeTableFormAction } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 
 export default async function ContextGraphNodesPage() {
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const [nodeTypes, archetypes] = await Promise.all([
     ports.catalog.listNodeCatalogEntries(),
     ports.catalog.listArchetypes(),

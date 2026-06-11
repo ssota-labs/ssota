@@ -1,6 +1,7 @@
 import { OutcomeBadge } from "@/components/outcome-badge";
 import { PageHeader } from "@/components/studio/page-header";
 import { getTranslations } from "@/lib/i18n/server";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 import {
   Card,
@@ -23,9 +24,10 @@ export default async function LogPage({
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
-  await params;
+  const { orgSlug, projectSlug } = await params;
   const { t } = await getTranslations();
-  const ports = getActionPorts();
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
   const log = await ports.commit.getActionLog({ limit: 50 });
 
   return (

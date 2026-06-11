@@ -28,10 +28,11 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineScopedActionFormAction } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 
 export default async function ContextGraphActionsPage() {
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const [actions, logs] = await Promise.all([
     ports.catalog.listActionCatalogEntries(),
     ports.commit.getActionLog({ limit: 100 }),

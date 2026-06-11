@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { OutcomeBadge } from "@/components/outcome-badge";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 import {
   Table,
@@ -15,7 +15,8 @@ export default async function LogPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const log = await ports.commit.getActionLog({ limit: 50 });
 
   return (

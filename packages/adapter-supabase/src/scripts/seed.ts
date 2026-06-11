@@ -1,6 +1,6 @@
 import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
 import { createClient } from "@supabase/supabase-js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
@@ -29,7 +29,10 @@ const operationalArchetypes = [
   { id: "op-milestone", name: "Milestone", typical: { stateMachine: "milestone" } },
 ];
 
-async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
+async function seedCatalog(
+  db: ReturnType<typeof createDb>["db"],
+  projectId: string,
+) {
   for (const a of [...documentArchetypes, ...operationalArchetypes]) {
     await db
       .insert(schema.archetypes)
@@ -54,6 +57,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
     .insert(schema.nodeCatalog)
     .values([
       {
+        projectId,
         nodeType: "Note",
         slug: "note",
         label: "Note",
@@ -66,6 +70,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         allowedActionRefs: [],
       },
       {
+        projectId,
         nodeType: "Document",
         slug: "document",
         label: "Document",
@@ -78,6 +83,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         allowedActionRefs: [],
       },
       {
+        projectId,
         nodeType: "Instruction",
         slug: "instruction",
         label: "Instruction",
@@ -90,6 +96,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         allowedActionRefs: [],
       },
       {
+        projectId,
         nodeType: "Project",
         slug: "project",
         label: "Project",
@@ -102,6 +109,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         allowedActionRefs: [],
       },
       {
+        projectId,
         nodeType: "Task",
         slug: "task",
         label: "Task",
@@ -120,6 +128,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
     .insert(schema.edgeCatalog)
     .values([
       {
+        projectId,
         edgeType: "references",
         slug: "references",
         label: "References",
@@ -129,6 +138,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         representation: "directed",
       },
       {
+        projectId,
         edgeType: "contains",
         slug: "contains",
         label: "Contains",
@@ -144,6 +154,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
     .insert(schema.propertyCatalog)
     .values([
       {
+        projectId,
         propertyKey: "title",
         valueType: "string",
         constraints: { maxLength: 500 },
@@ -155,6 +166,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         ],
       },
       {
+        projectId,
         propertyKey: "subject_id",
         valueType: "string",
         constraints: { minLength: 1 },
@@ -579,6 +591,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
 
   const actionCatalogValues = actionCatalogRows.map((row) => ({
     ...row,
+    projectId,
     slug: toCatalogSlug(row.actionType),
     label: toCatalogLabel(row.actionType),
     executor: row.executor as "Agent" | "Human" | "System",
@@ -586,64 +599,29 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
 
   await db.insert(schema.actionCatalog).values(actionCatalogValues).onConflictDoNothing();
 
+  const permissionRows = [
+    ["create_note", "Note", "title"],
+    ["create_document", "Document", "title"],
+    ["create_project", "Project", "title"],
+    ["create_project", "Project", "subject_id"],
+    ["create_task", "Task", "title"],
+    ["create_task", "Task", "subject_id"],
+  ] as const;
+
   await db
     .insert(schema.actionPropertyPermissions)
-    .values([
-      {
-        actionType: "create_note",
-        nodeType: "Note",
-        propertyKey: "title",
-        operation: "write",
-        permissionType: "allow",
+    .values(
+      permissionRows.map(([actionType, nodeType, propertyKey]) => ({
+        projectId,
+        actionType,
+        nodeType,
+        propertyKey,
+        operation: "write" as const,
+        permissionType: "allow" as const,
         requiresHumanGate: false,
         status: "active",
-      },
-      {
-        actionType: "create_document",
-        nodeType: "Document",
-        propertyKey: "title",
-        operation: "write",
-        permissionType: "allow",
-        requiresHumanGate: false,
-        status: "active",
-      },
-      {
-        actionType: "create_project",
-        nodeType: "Project",
-        propertyKey: "title",
-        operation: "write",
-        permissionType: "allow",
-        requiresHumanGate: false,
-        status: "active",
-      },
-      {
-        actionType: "create_project",
-        nodeType: "Project",
-        propertyKey: "subject_id",
-        operation: "write",
-        permissionType: "allow",
-        requiresHumanGate: false,
-        status: "active",
-      },
-      {
-        actionType: "create_task",
-        nodeType: "Task",
-        propertyKey: "title",
-        operation: "write",
-        permissionType: "allow",
-        requiresHumanGate: false,
-        status: "active",
-      },
-      {
-        actionType: "create_task",
-        nodeType: "Task",
-        propertyKey: "subject_id",
-        operation: "write",
-        permissionType: "allow",
-        requiresHumanGate: false,
-        status: "active",
-      },
-    ])
+      })),
+    )
     .onConflictDoNothing();
 
   await db
@@ -651,12 +629,13 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
     .values(
       DOMAIN_INSTRUCTIONS.map((row) => ({
         ...row,
+        projectId,
         slug: toCatalogSlug(row.title),
       })) as (typeof schema.instructions.$inferInsert)[],
     )
     .onConflictDoNothing();
 
-  await seedHomepageAgentCatalog(db);
+  await seedHomepageAgentCatalog(db, projectId);
 }
 
 /** Domain instructions only — Root Runtime Protocol lives in ssota-mcp skill. */
@@ -884,14 +863,45 @@ async function seedSmokeUser() {
   return smokeUser.id;
 }
 
+async function resolveDefaultProjectId(
+  db: ReturnType<typeof createDb>["db"],
+): Promise<string> {
+  const orgRows = await db
+    .select()
+    .from(schema.organizations)
+    .where(eq(schema.organizations.slug, DEFAULT_ORG_SLUG))
+    .limit(1);
+  const organizationId = orgRows[0]?.id;
+  if (!organizationId) {
+    throw new Error(`Organization not found: ${DEFAULT_ORG_SLUG}`);
+  }
+
+  const projectRows = await db
+    .select()
+    .from(schema.projects)
+    .where(
+      and(
+        eq(schema.projects.organizationId, organizationId),
+        eq(schema.projects.slug, DEFAULT_PROJECT_SLUG),
+      ),
+    )
+    .limit(1);
+  const projectId = projectRows[0]?.id;
+  if (!projectId) {
+    throw new Error(`Project not found: ${DEFAULT_PROJECT_SLUG}`);
+  }
+  return projectId;
+}
+
 async function main() {
   const { db, client } = createDb();
-  console.log("Seeding catalog...");
-  await seedCatalog(db);
   console.log("Seeding smoke user...");
   const smokeUserId = await seedSmokeUser();
   console.log("Seeding console org/project...");
   await seedConsole(db, smokeUserId);
+  const projectId = await resolveDefaultProjectId(db);
+  console.log("Seeding catalog...");
+  await seedCatalog(db, projectId);
   console.log("Seed complete.");
   await client.end();
 }

@@ -1,4 +1,5 @@
 import type { z } from "zod";
+import { PROJECT_ID_HEADER } from "@ssota/contracts";
 import { throwIfNotOk } from "./error.js";
 
 export type FetchLike = typeof fetch;
@@ -7,6 +8,7 @@ export interface HttpClientOptions {
   baseUrl: string;
   getAccessToken: () => string | Promise<string>;
   getSubjectId?: () => string | undefined | Promise<string | undefined>;
+  getProjectId?: () => string | undefined | Promise<string | undefined>;
   fetch?: FetchLike;
 }
 
@@ -14,12 +16,14 @@ export class HttpClient {
   private readonly baseUrl: string;
   private readonly getAccessToken: () => string | Promise<string>;
   private readonly getSubjectId?: () => string | undefined | Promise<string | undefined>;
+  private readonly getProjectId?: () => string | undefined | Promise<string | undefined>;
   private readonly fetchImpl: FetchLike;
 
   constructor(options: HttpClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.getAccessToken = options.getAccessToken;
     this.getSubjectId = options.getSubjectId;
+    this.getProjectId = options.getProjectId;
     this.fetchImpl = options.fetch ?? fetch;
   }
 
@@ -66,6 +70,7 @@ export class HttpClient {
   ): Promise<z.infer<T>> {
     const token = await this.getAccessToken();
     const subjectId = this.getSubjectId ? await this.getSubjectId() : undefined;
+    const projectId = this.getProjectId ? await this.getProjectId() : undefined;
     const headers: Record<string, string> = {
       ...(init.headers as Record<string, string> | undefined),
       Authorization: `Bearer ${token}`,
@@ -73,6 +78,9 @@ export class HttpClient {
     };
     if (subjectId) {
       headers["X-SSOTA-Subject-Id"] = subjectId;
+    }
+    if (projectId) {
+      headers[PROJECT_ID_HEADER] = projectId;
     }
 
     const response = await this.fetchImpl(String(url), {

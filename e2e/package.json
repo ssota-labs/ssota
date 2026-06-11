@@ -8,9 +8,10 @@
     "test:report": "playwright test && playwright show-report report/html"
   },
   "devDependencies": {
+    "@playwright/test": "^1.52.0",
     "@ssota/adapter-supabase": "workspace:*",
     "@ssota/client": "workspace:*",
-    "@playwright/test": "^1.52.0",
-    "@supabase/supabase-js": "^2.108.1"
+    "@supabase/supabase-js": "^2.108.1",
+    "postgres": "^3.4.9"
   }
 }

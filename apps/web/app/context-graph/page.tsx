@@ -9,10 +9,11 @@ import {
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 
 export default async function ContextGraphPage() {
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const [nodes, edges, actions, instructions, gates, logs] = await Promise.all([
     ports.catalog.listNodeCatalogEntries(),
     ports.catalog.listEdgeCatalogEntries(),

@@ -11,12 +11,12 @@ export async function POST(
   { params }: { params: Promise<{ gateId: string }> },
 ) {
   const { gateId } = await params;
-  return withAuth(request, async () => {
+  return withAuth(request, async (ctx) => {
     const body = await request.json().catch(() => ({}));
     const parsed = parseJsonBody(SubmitForApprovalClientInputSchema, body);
     if (!parsed.ok) return parsed.response;
 
-    const result = await submitForApproval(gateId, parsed.data.note);
+    const result = await submitForApproval(ctx.projectId, gateId, parsed.data.note);
     const data = SubmitForApprovalResponseSchema.parse({ data: result }).data;
     return jsonOk(data);
   });

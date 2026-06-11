@@ -8,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ propertyKey: string }> },
 ) {
   const { propertyKey } = await params;
-  return withAuth(request, async () => {
-    const data = await getProperty(propertyKey);
+  return withAuth(request, async (ctx) => {
+    const data = await getProperty(ctx.projectId, propertyKey);
     return jsonOk(PropertyCatalogEntryResponseSchema.parse({ data }).data);
   });
 }

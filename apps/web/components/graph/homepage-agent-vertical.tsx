@@ -23,10 +23,12 @@ import { getActionPorts } from "@/lib/ports";
 
 export async function HomepageAgentVerticalView({
   ctx,
+  projectId,
 }: {
   ctx: ProjectRouteContext;
+  projectId: string;
 }) {
-  const ports = getActionPorts();
+  const ports = getActionPorts(projectId);
   const [nodeTypes, edgeTypes, actions, instructions, ...instanceSets] =
     await Promise.all([
       ports.catalog.listNodeCatalogEntries(),

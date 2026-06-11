@@ -7,6 +7,7 @@
  * 실행: SSOTA_MCP_URL=http://127.0.0.1:3001 pnpm embedder-bff
  */
 import { createClient } from "@ssota/client";
+import { createConsolePort, createDb } from "@ssota/adapter-supabase";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 
 const PORT = Number(process.env.EMBEDDER_BFF_PORT ?? 3200);
@@ -21,8 +22,10 @@ const SSOTA_SERVICE_EMAIL =
   process.env.SSOTA_SERVICE_EMAIL ?? "smoke@ssota.test";
 const SSOTA_SERVICE_PASSWORD =
   process.env.SSOTA_SERVICE_PASSWORD ?? "smoke-test-password-123";
+const SSOTA_PROJECT_ID = process.env.SSOTA_PROJECT_ID;
 
 let cachedMcpToken: { token: string; expiresAt: number } | null = null;
+let cachedProjectId: string | null = null;
 
 async function getLoopOsMcpToken(): Promise<string> {
   if (cachedMcpToken && cachedMcpToken.expiresAt > Date.now() + 60_000) {
@@ -59,10 +62,28 @@ async function getLoopOsMcpToken(): Promise<string> {
 /** 요청마다 embedder가 검증한 최종 사용자 id — SDK가 X-SSOTA-Subject-Id로 전송 */
 let requestSubjectId: string | undefined;
 
+async function resolveProjectId(): Promise<string> {
+  if (SSOTA_PROJECT_ID) return SSOTA_PROJECT_ID;
+  if (cachedProjectId) return cachedProjectId;
+
+  const consolePort = createConsolePort(createDb(process.env.DATABASE_URL).db);
+  const org = await consolePort.getOrganizationBySlug("ssota-labs");
+  if (!org) {
+    throw new Error("Default organization not found — run db:seed");
+  }
+  const project = await consolePort.getProjectBySlug(org.id, "ssota-dev");
+  if (!project) {
+    throw new Error("Default SSOTA project not found — run db:seed");
+  }
+  cachedProjectId = project.id;
+  return project.id;
+}
+
 const ssota = createClient({
   url: SSOTA_API_URL,
   auth: { accessToken: getLoopOsMcpToken },
   subjectId: () => requestSubjectId,
+  projectId: resolveProjectId,
 });
 
 async function readJson<T>(req: IncomingMessage): Promise<T> {

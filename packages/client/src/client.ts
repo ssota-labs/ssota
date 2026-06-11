@@ -19,6 +19,11 @@ export interface SsotaClientOptions {
    * Sent as `X-SSOTA-Subject-Id`; server injects `subjectId` on scoped reads/writes.
    */
   subjectId?: string | (() => string | undefined | Promise<string | undefined>);
+  /**
+   * Project scope — one catalog/graph space per agent domain.
+   * Sent as `X-SSOTA-Project-Id`; required on all API requests.
+   */
+  projectId?: string | (() => string | undefined | Promise<string | undefined>);
   fetch?: FetchLike;
 }
 
@@ -45,10 +50,17 @@ export function createClient(options: SsotaClientOptions): SsotaClient {
       : () => options.subjectId as string
     : undefined;
 
+  const getProjectId = options.projectId
+    ? typeof options.projectId === "function"
+      ? options.projectId
+      : () => options.projectId as string
+    : undefined;
+
   const http = new HttpClient({
     baseUrl: options.url,
     getAccessToken,
     getSubjectId,
+    getProjectId,
     fetch: options.fetch,
   });
 
