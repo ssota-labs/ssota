@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@loopos/ui/components/ui/badge";
-import { DataTable } from "@loopos/ui/components/ui/data-table";
-import { DataTableColumnHeader } from "@loopos/ui/components/ui/data-table-column-header";
+import { Badge } from "@ssota/ui/components/ui/badge";
+import { DataTable } from "@ssota/ui/components/ui/data-table";
+import { DataTableColumnHeader } from "@ssota/ui/components/ui/data-table-column-header";
 
 export type NodeCatalogRow = {
   slug: string;

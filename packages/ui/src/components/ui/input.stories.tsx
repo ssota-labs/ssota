@@ -11,7 +11,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: { placeholder: "smoke@loopos.test", type: "email" },
+  args: { placeholder: "smoke@ssota.test", type: "email" },
 };
 
 export const Disabled: Story = {

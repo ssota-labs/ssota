@@ -1,6 +1,6 @@
-import { Button } from "@loopos/ui/components/ui/button";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
+import { Button } from "@ssota/ui/components/ui/button";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -8,8 +8,8 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@loopos/ui/components/ui/sheet";
-import { Textarea } from "@loopos/ui/components/ui/textarea";
+} from "@ssota/ui/components/ui/sheet";
+import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineScopedActionFormAction } from "@/app/actions";
 import { ActionCatalogDataTable } from "@/components/graph/action-catalog-data-table";
 import { getActionPorts } from "@/lib/ports";

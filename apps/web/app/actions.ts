@@ -1,6 +1,6 @@
 "use server";
 
-import { executeAction, previewAction } from "@loopos/core";
+import { executeAction, previewAction } from "@ssota/core";
 import {
   ActionScopeSchema,
   DefineActionContractInputSchema,
@@ -19,8 +19,8 @@ import {
   UpdateNodeTypeInputSchema,
   UpdatePropertyInputSchema,
   UpdatePropertyPermissionInputSchema,
-} from "@loopos/contracts";
-import type { ExecuteActionResult } from "@loopos/contracts";
+} from "@ssota/contracts";
+import type { ExecuteActionResult } from "@ssota/contracts";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";

@@ -1,4 +1,4 @@
-import { ActionCatalogListResponseSchema } from "@loopos/contracts";
+import { ActionCatalogListResponseSchema } from "@ssota/contracts";
 import { listActionContracts } from "@/lib/api/services";
 import { jsonOk } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

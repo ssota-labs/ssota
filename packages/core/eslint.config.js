@@ -1,3 +1,3 @@
-import baseConfig from "@loopos/config/eslint/base.js";
+import baseConfig from "@ssota/config/eslint/base.js";
 
 export default baseConfig;

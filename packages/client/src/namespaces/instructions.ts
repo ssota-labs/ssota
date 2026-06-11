@@ -4,7 +4,7 @@ import {
   InstructionResponseSchema,
   type FindInstructionInput,
   type Instruction,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import type { HttpClient } from "../http.js";
 
 export function createInstructionsApi(http: HttpClient) {

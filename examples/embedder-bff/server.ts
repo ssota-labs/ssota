@@ -1,26 +1,26 @@
 /**
- * 고객사 A BFF 예시 — embedder auth 이후 LoopOS HTTP API v1로 프록시.
+ * 고객사 A BFF 예시 — embedder auth 이후 SSOTA HTTP API v1로 프록시.
  *
  * 흐름:
- *   [최종 사용자] → [A 앱 auth] → [이 BFF] → [LoopOS /api/v1 + X-LoopOS-Subject-Id]
+ *   [최종 사용자] → [A 앱 auth] → [이 BFF] → [SSOTA /api/v1 + X-SSOTA-Subject-Id]
  *
- * 실행: LOOPOS_MCP_URL=http://127.0.0.1:3001 pnpm embedder-bff
+ * 실행: SSOTA_MCP_URL=http://127.0.0.1:3001 pnpm embedder-bff
  */
-import { createClient } from "@loopos/client";
+import { createClient } from "@ssota/client";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 
 const PORT = Number(process.env.EMBEDDER_BFF_PORT ?? 3200);
-const LOOPOS_MCP_URL = process.env.LOOPOS_MCP_URL ?? "http://127.0.0.1:3001";
-const LOOPOS_API_URL =
-  process.env.LOOPOS_API_URL ?? `${LOOPOS_MCP_URL.replace(/\/$/, "")}/api/v1`;
+const SSOTA_MCP_URL = process.env.SSOTA_MCP_URL ?? "http://127.0.0.1:3001";
+const SSOTA_API_URL =
+  process.env.SSOTA_API_URL ?? `${SSOTA_MCP_URL.replace(/\/$/, "")}/api/v1`;
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
 const SUPABASE_ANON_KEY =
   process.env.SUPABASE_ANON_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
-const LOOPOS_SERVICE_EMAIL =
-  process.env.LOOPOS_SERVICE_EMAIL ?? "smoke@loopos.test";
-const LOOPOS_SERVICE_PASSWORD =
-  process.env.LOOPOS_SERVICE_PASSWORD ?? "smoke-test-password-123";
+const SSOTA_SERVICE_EMAIL =
+  process.env.SSOTA_SERVICE_EMAIL ?? "smoke@ssota.test";
+const SSOTA_SERVICE_PASSWORD =
+  process.env.SSOTA_SERVICE_PASSWORD ?? "smoke-test-password-123";
 
 let cachedMcpToken: { token: string; expiresAt: number } | null = null;
 
@@ -35,19 +35,19 @@ async function getLoopOsMcpToken(): Promise<string> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      email: LOOPOS_SERVICE_EMAIL,
-      password: LOOPOS_SERVICE_PASSWORD,
+      email: SSOTA_SERVICE_EMAIL,
+      password: SSOTA_SERVICE_PASSWORD,
     }),
   });
   if (!res.ok) {
-    throw new Error(`LoopOS service login failed: ${res.status}`);
+    throw new Error(`SSOTA service login failed: ${res.status}`);
   }
   const data = (await res.json()) as {
     access_token?: string;
     expires_in?: number;
   };
   if (!data.access_token) {
-    throw new Error("LoopOS service login returned no access_token");
+    throw new Error("SSOTA service login returned no access_token");
   }
   cachedMcpToken = {
     token: data.access_token,
@@ -56,11 +56,11 @@ async function getLoopOsMcpToken(): Promise<string> {
   return data.access_token;
 }
 
-/** 요청마다 embedder가 검증한 최종 사용자 id — SDK가 X-LoopOS-Subject-Id로 전송 */
+/** 요청마다 embedder가 검증한 최종 사용자 id — SDK가 X-SSOTA-Subject-Id로 전송 */
 let requestSubjectId: string | undefined;
 
-const loopos = createClient({
-  url: LOOPOS_API_URL,
+const ssota = createClient({
+  url: SSOTA_API_URL,
   auth: { accessToken: getLoopOsMcpToken },
   subjectId: () => requestSubjectId,
 });
@@ -94,7 +94,7 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  if (req.method === "POST" && req.url === "/loopos/execute") {
+  if (req.method === "POST" && req.url === "/ssota/execute") {
     try {
       const subjectId = resolveEmbedderUserId(req);
       if (!subjectId) {
@@ -115,7 +115,7 @@ const server = createServer(async (req, res) => {
       }
 
       requestSubjectId = subjectId;
-      const result = await loopos.actions.execute({
+      const result = await ssota.actions.execute({
         actionType: body.actionType,
         input: body.input ?? {},
       });
@@ -135,6 +135,6 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Embedder BFF listening on http://127.0.0.1:${PORT}`);
-  console.log(`  POST /loopos/execute  +  X-Embedder-User-Id: <A.users.id>`);
-  console.log(`  Proxies to ${LOOPOS_API_URL} via @loopos/client`);
+  console.log(`  POST /ssota/execute  +  X-Embedder-User-Id: <A.users.id>`);
+  console.log(`  Proxies to ${SSOTA_API_URL} via @ssota/client`);
 });

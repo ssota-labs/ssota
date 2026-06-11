@@ -3,16 +3,16 @@
 import { useState } from "react";
 import { signInAction, signUpAction } from "@/app/actions";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
-import { Separator } from "@loopos/ui/components/ui/separator";
+} from "@ssota/ui/components/ui/card";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
+import { Separator } from "@ssota/ui/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 type LoginFormProps = {

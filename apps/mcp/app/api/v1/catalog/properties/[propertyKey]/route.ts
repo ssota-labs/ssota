@@ -1,4 +1,4 @@
-import { PropertyCatalogEntryResponseSchema } from "@loopos/contracts";
+import { PropertyCatalogEntryResponseSchema } from "@ssota/contracts";
 import { getProperty } from "@/lib/api/services";
 import { jsonOk } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

@@ -1,6 +1,6 @@
 "use server";
 
-import { isEnglishDisplayName } from "@loopos/core";
+import { isEnglishDisplayName } from "@ssota/core";
 import { redirect } from "next/navigation";
 import { projectPath } from "@/lib/console/paths";
 import { getOnboardingPort } from "@/lib/ports";

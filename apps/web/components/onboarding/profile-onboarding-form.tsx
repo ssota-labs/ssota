@@ -4,9 +4,9 @@ import { useState } from "react";
 import { completeProfileOnboardingAction } from "@/app/onboarding/actions";
 import { ConsolePreview } from "@/components/onboarding/console-preview";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
-import { Button } from "@loopos/ui/components/ui/button";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
+import { Button } from "@ssota/ui/components/ui/button";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 
 type ProfileOnboardingFormProps = {
   defaultDisplayName: string;
@@ -23,7 +23,7 @@ export function ProfileOnboardingForm({
   return (
     <OnboardingShell
       title="Create your workspace"
-      description="Set up your personal LoopOS workspace. Names must use English letters and numbers."
+      description="Set up your personal SSOTA workspace. Names must use English letters and numbers."
       form={
         <form action={completeProfileOnboardingAction} className="space-y-4">
           <div className="space-y-2">

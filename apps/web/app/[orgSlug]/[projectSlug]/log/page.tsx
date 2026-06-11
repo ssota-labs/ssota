@@ -7,7 +7,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
+} from "@ssota/ui/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@loopos/ui/components/ui/table";
+} from "@ssota/ui/components/ui/table";
 
 export default async function LogPage({
   params,

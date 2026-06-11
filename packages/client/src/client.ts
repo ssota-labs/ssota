@@ -8,21 +8,21 @@ import { createInstructionsApi } from "./namespaces/instructions.js";
 import { createLogApi } from "./namespaces/log.js";
 import { createNodesApi } from "./namespaces/nodes.js";
 
-export interface LooposClientOptions {
-  /** LoopOS HTTP API base URL including `/api/v1` (e.g. `http://localhost:3001/api/v1`). */
+export interface SsotaClientOptions {
+  /** SSOTA HTTP API base URL including `/api/v1` (e.g. `http://localhost:3001/api/v1`). */
   url: string;
   auth: {
     accessToken: string | (() => string | Promise<string>);
   };
   /**
    * Tenant scope for embedder apps — maps to the end-user id.
-   * Sent as `X-LoopOS-Subject-Id`; server injects `subjectId` on scoped reads/writes.
+   * Sent as `X-SSOTA-Subject-Id`; server injects `subjectId` on scoped reads/writes.
    */
   subjectId?: string | (() => string | undefined | Promise<string | undefined>);
   fetch?: FetchLike;
 }
 
-export interface LooposClient {
+export interface SsotaClient {
   catalog: ReturnType<typeof createCatalogApi>;
   nodes: ReturnType<typeof createNodesApi>;
   edges: ReturnType<typeof createEdgesApi>;
@@ -33,7 +33,7 @@ export interface LooposClient {
   log: ReturnType<typeof createLogApi>;
 }
 
-export function createClient(options: LooposClientOptions): LooposClient {
+export function createClient(options: SsotaClientOptions): SsotaClient {
   const getAccessToken =
     typeof options.auth.accessToken === "function"
       ? options.auth.accessToken

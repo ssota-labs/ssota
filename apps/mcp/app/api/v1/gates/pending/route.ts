@@ -1,4 +1,4 @@
-import { GateListResponseSchema } from "@loopos/contracts";
+import { GateListResponseSchema } from "@ssota/contracts";
 import { listPendingGates } from "@/lib/api/services";
 import { jsonOk } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

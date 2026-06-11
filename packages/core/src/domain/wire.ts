@@ -9,7 +9,7 @@ import type {
   Node as WireNode,
   NodeCatalogEntry as WireNodeCatalogEntry,
   PropertyCatalogEntry as WirePropertyCatalogEntry,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import type {
   ActionCatalogEntry,
   ActionLogRecord,

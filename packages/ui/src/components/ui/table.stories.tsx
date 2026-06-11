@@ -31,7 +31,7 @@ export const ActionLog: Story = {
       <TableBody>
         <TableRow>
           <TableCell>approve_gate</TableCell>
-          <TableCell>smoke@loopos.test</TableCell>
+          <TableCell>smoke@ssota.test</TableCell>
           <TableCell>
             <Badge variant="outline">committed</Badge>
           </TableCell>

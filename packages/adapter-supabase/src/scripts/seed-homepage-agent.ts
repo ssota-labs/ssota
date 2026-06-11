@@ -1,4 +1,4 @@
-import { toCatalogLabel, toCatalogSlug } from "@loopos/core";
+import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
 import { eq } from "drizzle-orm";
 import type { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";

@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { Badge } from "@loopos/ui/components/ui/badge";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Badge } from "@ssota/ui/components/ui/badge";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
+} from "@ssota/ui/components/ui/card";
 import { PageHeader } from "@/components/studio/page-header";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { getActionPorts } from "@/lib/ports";

@@ -1,5 +1,5 @@
 import type { JWTPayload } from "jose";
-import type { ExecutorType } from "@loopos/contracts";
+import type { ExecutorType } from "@ssota/contracts";
 import { verifyBearerToken, type AuthUser } from "@/lib/auth";
 import { resolveSubjectId } from "@/lib/subject-context";
 

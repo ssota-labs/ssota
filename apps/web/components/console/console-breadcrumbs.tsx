@@ -10,7 +10,7 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@loopos/ui/components/ui/breadcrumb";
+} from "@ssota/ui/components/ui/breadcrumb";
 import { projectPath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 

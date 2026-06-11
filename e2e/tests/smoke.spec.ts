@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
-test.describe("LoopOS Console", () => {
+test.describe("SSOTA Console", () => {
   test("smoke: 로그인 → 프로젝트 홈", async ({ page }) => {
     await loginAsSmoke(page);
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
@@ -65,7 +65,7 @@ test.describe("LoopOS Console", () => {
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
-test.describe("LoopOS MCP HTTP", () => {
+test.describe("SSOTA MCP HTTP", () => {
   test("smoke: Bearer 없이 401", async ({ request }) => {
     const res = await request.post(`${mcpUrl}/api/mcp`, {
       data: { jsonrpc: "2.0", method: "initialize", id: 1 },

@@ -1,10 +1,10 @@
-import { toRouteSlug } from "@loopos/core";
+import { toRouteSlug } from "@ssota/core";
 import type {
   OnboardingPort,
   Organization,
   Profile,
   Project,
-} from "@loopos/core";
+} from "@ssota/core";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";

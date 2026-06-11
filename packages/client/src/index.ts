@@ -1,2 +1,2 @@
-export { createClient, type LooposClient, type LooposClientOptions } from "./client.js";
-export { LooposApiError } from "./error.js";
+export { createClient, type SsotaClient, type SsotaClientOptions } from "./client.js";
+export { SsotaApiError } from "./error.js";

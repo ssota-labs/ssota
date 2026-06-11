@@ -1,5 +1,5 @@
 {
-  "name": "@loopos/core",
+  "name": "@ssota/core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -17,10 +17,10 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@loopos/contracts": "workspace:*"
+    "@ssota/contracts": "workspace:*"
   },
   "devDependencies": {
-    "@loopos/config": "workspace:*",
+    "@ssota/config": "workspace:*",
     "@types/node": "^22.15.30",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",

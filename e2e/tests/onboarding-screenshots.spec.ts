@@ -12,7 +12,7 @@ test.describe("Console onboarding screenshots", () => {
     const suffix = uniqueOnboardingSuffix();
     const email = uniqueOnboardingEmail();
     const workspaceName = `Acme Workspace ${suffix}`;
-    const projectName = `LoopOS Dev ${suffix}`;
+    const projectName = `SSOTA Dev ${suffix}`;
 
     await signUpOnLoginPage(page, email);
     await expect(

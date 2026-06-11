@@ -8,7 +8,7 @@ test.describe("Embedder BFF proxy", () => {
   }) => {
     const subjectId = `e2e_bff_${Date.now()}`;
 
-    const res = await request.post(`${bffUrl}/loopos/execute`, {
+    const res = await request.post(`${bffUrl}/ssota/execute`, {
       headers: { "X-Embedder-User-Id": subjectId },
       data: {
         actionType: "create_homepage_project",
@@ -26,7 +26,7 @@ test.describe("Embedder BFF proxy", () => {
   });
 
   test("거부: X-Embedder-User-Id 없이 401", async ({ request }) => {
-    const res = await request.post(`${bffUrl}/loopos/execute`, {
+    const res = await request.post(`${bffUrl}/ssota/execute`, {
       data: {
         actionType: "create_homepage_project",
         input: { title: "No embedder user" },

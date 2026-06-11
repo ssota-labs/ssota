@@ -1,4 +1,4 @@
-import { InstructionResponseSchema } from "@loopos/contracts";
+import { InstructionResponseSchema } from "@ssota/contracts";
 import { getInstruction } from "@/lib/api/services";
 import { jsonOk } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

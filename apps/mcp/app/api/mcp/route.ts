@@ -22,7 +22,7 @@ import {
   SubmitForApprovalInputSchema,
   TraverseEdgesInputSchema,
   TraverseGraphInputSchema,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import {
   executeActionForClient,
   findInstructions,
@@ -429,7 +429,7 @@ const mcpHandler = createMcpHandler(
     );
   },
   {
-    serverInfo: { name: "loopos-mcp", version: "0.1.0" },
+    serverInfo: { name: "ssota-mcp", version: "0.1.0" },
   },
   {
     basePath: "/api",

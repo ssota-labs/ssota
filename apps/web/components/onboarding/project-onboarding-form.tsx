@@ -4,9 +4,9 @@ import { useState } from "react";
 import { completeProjectOnboardingAction } from "@/app/onboarding/actions";
 import { ConsolePreview } from "@/components/onboarding/console-preview";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
-import { Button } from "@loopos/ui/components/ui/button";
-import { Input } from "@loopos/ui/components/ui/input";
-import { Label } from "@loopos/ui/components/ui/label";
+import { Button } from "@ssota/ui/components/ui/button";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 
 type ProjectOnboardingFormProps = {
   workspaceName: string;
@@ -32,7 +32,7 @@ export function ProjectOnboardingForm({
               name="projectName"
               value={projectName}
               onChange={(event) => setProjectName(event.target.value)}
-              placeholder="LoopOS Dev"
+              placeholder="SSOTA Dev"
               required
             />
             <p className="text-xs text-muted-foreground">

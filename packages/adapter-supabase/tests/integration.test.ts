@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
-import { executeAction } from "@loopos/core";
+import { executeAction } from "@ssota/core";
 import {
   createActionPorts,
   createConsolePort,
@@ -9,7 +9,7 @@ import {
   DEFAULT_PROJECT_SLUG,
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
-} from "@loopos/adapter-supabase";
+} from "@ssota/adapter-supabase";
 
 const supabaseUrl = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
 const supabaseAnonKey =

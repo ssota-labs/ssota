@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# LoopOS — sync .env.local files from running local Supabase (supabase status).
+# SSOTA — sync .env.local files from running local Supabase (supabase status).
 # Idempotent: preserves app-specific keys (e.g. MCP_RESOURCE_URL) and updates Supabase keys.
 set -euo pipefail
 

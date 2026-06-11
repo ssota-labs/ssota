@@ -19,7 +19,7 @@ import type {
   NodeCatalogEntry,
   PropertyCatalogEntry,
 } from "../domain/types.js";
-import type { Effect, GateStatus, LifecycleStatus } from "@loopos/contracts";
+import type { Effect, GateStatus, LifecycleStatus } from "@ssota/contracts";
 import { toCatalogLabel, toCatalogSlug } from "../catalog-slug.js";
 
 export interface InMemoryState {

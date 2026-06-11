@@ -6,7 +6,7 @@ import {
   type ActionLogRecord,
   type GetActionLogEntryInput,
   type GetActionLogInput,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import type { HttpClient } from "../http.js";
 
 export function createLogApi(http: HttpClient) {

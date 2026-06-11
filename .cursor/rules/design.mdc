@@ -1,5 +1,5 @@
 ---
-description: LoopOS design system — read DESIGN.md and use @loopos/ui before generating UI
+description: SSOTA design system — read DESIGN.md and use @ssota/ui before generating UI
 globs:
   - "**/*.tsx"
   - "**/*.css"
@@ -13,7 +13,7 @@ globs:
 Before generating or modifying UI:
 
 1. Read [DESIGN.md](../../DESIGN.md) at the repository root.
-2. Import components from `@loopos/ui/components/ui/*` — do not duplicate shadcn components in apps.
+2. Import components from `@ssota/ui/components/ui/*` — do not duplicate shadcn components in apps.
 3. Use semantic tokens only (`bg-background`, `text-primary`, `border-border`, etc.). Do not introduce raw hex or ad-hoc `neutral-*` / `green-*` palette classes.
 4. **Base UI** primitives — use `render` prop for triggers/closes. Do **not** use Radix `asChild` patterns or copy Radix examples.
 5. Select/Combobox: use Base UI `items` prop patterns from installed components.

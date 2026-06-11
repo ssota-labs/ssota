@@ -1,7 +1,7 @@
 import {
   ExecuteActionClientInputSchema,
   ExecuteActionResponseSchema,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import { executeActionForClient } from "@/lib/api/services";
 import { jsonOk, parseJsonBody } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

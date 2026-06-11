@@ -1,7 +1,7 @@
 import {
   ActionLogEntryResponseSchema,
   GetActionLogEntryInputSchema,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import { getActionLogEntry } from "@/lib/api/services";
 import { jsonOk, parseQuery } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

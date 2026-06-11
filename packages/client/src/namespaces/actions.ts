@@ -7,7 +7,7 @@ import {
   type ActionPreviewResult,
   type ExecuteActionClientInput,
   type ExecuteActionResult,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import type { HttpClient } from "../http.js";
 
 export function createActionsApi(http: HttpClient) {

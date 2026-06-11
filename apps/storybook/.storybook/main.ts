@@ -17,7 +17,7 @@ const config: StorybookConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       "@": uiRoot,
-      "@loopos/ui": uiRoot,
+      "@ssota/ui": uiRoot,
     };
     return config;
   },

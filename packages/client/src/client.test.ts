@@ -2,9 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ExecuteActionResponseSchema,
   NodeCatalogListResponseSchema,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import { createClient } from "./client.js";
-import { LooposApiError } from "./error.js";
+import { SsotaApiError } from "./error.js";
 
 function mockFetch(
   handler: (url: string, init?: RequestInit) => Response | Promise<Response>,
@@ -16,24 +16,24 @@ function mockFetch(
 }
 
 describe("createClient", () => {
-  it("sends X-LoopOS-Subject-Id when subjectId is configured", async () => {
+  it("sends X-SSOTA-Subject-Id when subjectId is configured", async () => {
     const payload = NodeCatalogListResponseSchema.parse({ data: [] });
     let capturedSubjectId: string | undefined;
 
     const fetch = mockFetch((url, init) => {
       const headers = init?.headers as Record<string, string>;
-      capturedSubjectId = headers["X-LoopOS-Subject-Id"];
+      capturedSubjectId = headers["X-SSOTA-Subject-Id"];
       return new Response(JSON.stringify(payload), { status: 200 });
     });
 
-    const loopos = createClient({
+    const ssota = createClient({
       url: "http://localhost:3001/api/v1",
       auth: { accessToken: "test-token" },
       subjectId: "end-user-42",
       fetch,
     });
 
-    await loopos.catalog.listNodeTypes();
+    await ssota.catalog.listNodeTypes();
     expect(capturedSubjectId).toBe("end-user-42");
   });
 
@@ -68,13 +68,13 @@ describe("createClient", () => {
       return new Response(JSON.stringify(payload), { status: 200 });
     });
 
-    const loopos = createClient({
+    const ssota = createClient({
       url: "http://localhost:3001/api/v1",
       auth: { accessToken: "test-token" },
       fetch,
     });
 
-    const types = await loopos.catalog.listNodeTypes();
+    const types = await ssota.catalog.listNodeTypes();
     expect(types).toHaveLength(1);
     expect(types[0]?.nodeType).toBe("Note");
   });
@@ -92,20 +92,20 @@ describe("createClient", () => {
       new Response(JSON.stringify(payload), { status: 200 }),
     );
 
-    const loopos = createClient({
+    const ssota = createClient({
       url: "http://localhost:3001/api/v1",
       auth: { accessToken: "test-token" },
       fetch,
     });
 
-    const result = await loopos.actions.execute({
+    const result = await ssota.actions.execute({
       actionType: "nope",
       input: {},
     });
     expect(result.status).toBe("rejected");
   });
 
-  it("throws LooposApiError on 401", async () => {
+  it("throws SsotaApiError on 401", async () => {
     const fetch = mockFetch(() =>
       new Response(
         JSON.stringify({ code: "UNAUTHORIZED", message: "Bearer token required" }),
@@ -113,18 +113,18 @@ describe("createClient", () => {
       ),
     );
 
-    const loopos = createClient({
+    const ssota = createClient({
       url: "http://localhost:3001/api/v1",
       auth: { accessToken: "bad" },
       fetch,
     });
 
-    await expect(loopos.catalog.listActionContracts()).rejects.toBeInstanceOf(
-      LooposApiError,
+    await expect(ssota.catalog.listActionContracts()).rejects.toBeInstanceOf(
+      SsotaApiError,
     );
   });
 
-  it("throws LooposApiError on 422 validation errors", async () => {
+  it("throws SsotaApiError on 422 validation errors", async () => {
     const fetch = mockFetch(() =>
       new Response(
         JSON.stringify({ code: "VALIDATION_ERROR", message: "Invalid input" }),
@@ -132,13 +132,13 @@ describe("createClient", () => {
       ),
     );
 
-    const loopos = createClient({
+    const ssota = createClient({
       url: "http://localhost:3001/api/v1",
       auth: { accessToken: "test-token" },
       fetch,
     });
 
-    await expect(loopos.catalog.listNodeTypes()).rejects.toMatchObject({
+    await expect(ssota.catalog.listNodeTypes()).rejects.toMatchObject({
       status: 422,
       code: "VALIDATION_ERROR",
     });
@@ -154,12 +154,12 @@ describe("createClient", () => {
       ),
     );
 
-    const loopos = createClient({
+    const ssota = createClient({
       url: "http://localhost:3001/api/v1",
       auth: { accessToken: "test-token" },
       fetch,
     });
 
-    await expect(loopos.catalog.listActionContracts()).rejects.toThrow();
+    await expect(ssota.catalog.listActionContracts()).rejects.toThrow();
   });
 });

@@ -3,14 +3,14 @@
 import { createClient } from "@supabase/supabase-js";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@loopos/ui/components/ui/card";
+} from "@ssota/ui/components/ui/card";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
@@ -81,7 +81,7 @@ export function ConsentForm() {
         <CardHeader>
           <CardTitle>OAuth 동의</CardTitle>
           <CardDescription>
-            MCP 클라이언트가 LoopOS에 접근하려 합니다.
+            MCP 클라이언트가 SSOTA에 접근하려 합니다.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

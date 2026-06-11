@@ -2,16 +2,16 @@
  * M6: 노션 프로토타입 1차 마이그레이션
  *
  * Policy:
- * - Skip Notion instructions with intent_class = Root (Runtime Protocol → loopos-mcp skill).
+ * - Skip Notion instructions with intent_class = Root (Runtime Protocol → ssota-mcp skill).
  * - Migrate domain instructions only via define_instruction / upsert paths.
  * - Migrate representative documents as create_document actions.
  */
-import { executeAction } from "@loopos/core";
-import { createActionPorts, createDb } from "@loopos/adapter-supabase";
+import { executeAction } from "@ssota/core";
+import { createActionPorts, createDb } from "@ssota/adapter-supabase";
 
 const NOTION_PROTOTYPE_DOCUMENTS = [
   {
-    title: "LoopOS 코어 스펙",
+    title: "SSOTA 코어 스펙",
     content:
       "8 프리미티브 + 4대 런타임 강제 + MCP 인터페이스. 모든 쓰기는 executeAction()으로 수렴.",
   },
@@ -22,7 +22,7 @@ const NOTION_PROTOTYPE_DOCUMENTS = [
   },
 ];
 
-/** Notion Root instruction — migrated to plugins/loopos-plugin/skills/loopos-mcp, not stored in graph. */
+/** Notion Root instruction — migrated to plugins/ssota-plugin/skills/ssota-mcp, not stored in graph. */
 const SKIP_NOTION_INTENT_CLASSES = new Set(["Root"]);
 
 const NOTION_DOMAIN_INSTRUCTIONS = [
@@ -44,7 +44,7 @@ async function main() {
   const executorId = "migration-script";
 
   console.log(
-    "M6 policy: skipping Root instructions (see loopos-mcp skill). Skipped intent classes:",
+    "M6 policy: skipping Root instructions (see ssota-mcp skill). Skipped intent classes:",
     [...SKIP_NOTION_INTENT_CLASSES].join(", "),
   );
 

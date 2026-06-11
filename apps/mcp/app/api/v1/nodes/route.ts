@@ -1,4 +1,4 @@
-import { NodeListResponseSchema, QueryNodesInputSchema } from "@loopos/contracts";
+import { NodeListResponseSchema, QueryNodesInputSchema } from "@ssota/contracts";
 import { queryNodes } from "@/lib/api/services";
 import { jsonOk, parseQuery } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";

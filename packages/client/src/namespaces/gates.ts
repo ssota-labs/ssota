@@ -7,7 +7,7 @@ import {
   type Gate,
   type QueryGatesInput,
   type SubmitForApprovalClientInput,
-} from "@loopos/contracts";
+} from "@ssota/contracts";
 import type { HttpClient } from "../http.js";
 
 export function createGatesApi(http: HttpClient) {

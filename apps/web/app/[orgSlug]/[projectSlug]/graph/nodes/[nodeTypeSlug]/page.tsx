@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Button } from "@loopos/ui/components/ui/button";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   ActionRunner,
   AddActionSheet,

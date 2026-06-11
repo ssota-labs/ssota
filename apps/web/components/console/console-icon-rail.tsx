@@ -10,12 +10,12 @@ import {
   ListBulletsIcon,
   ShieldCheckIcon,
 } from "@phosphor-icons/react";
-import { cn } from "@loopos/ui/lib/utils";
+import { cn } from "@ssota/ui/lib/utils";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@loopos/ui/components/ui/tooltip";
+} from "@ssota/ui/components/ui/tooltip";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 

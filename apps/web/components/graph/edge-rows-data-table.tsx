@@ -1,8 +1,8 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { DataTable } from "@loopos/ui/components/ui/data-table";
-import { DataTableColumnHeader } from "@loopos/ui/components/ui/data-table-column-header";
+import { DataTable } from "@ssota/ui/components/ui/data-table";
+import { DataTableColumnHeader } from "@ssota/ui/components/ui/data-table-column-header";
 
 export type EdgeRowRecord = {
   id: string;

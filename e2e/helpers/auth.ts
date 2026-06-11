@@ -3,7 +3,7 @@ import { expect } from "@playwright/test";
 import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
-} from "@loopos/adapter-supabase";
+} from "@ssota/adapter-supabase";
 
 export async function loginAsSmoke(page: Page): Promise<void> {
   await page.goto("/login");

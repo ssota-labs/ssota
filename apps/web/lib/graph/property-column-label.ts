@@ -1,4 +1,4 @@
-import { toCatalogLabel } from "@loopos/core";
+import { toCatalogLabel } from "@ssota/core";
 
 /** Property catalog key → human-readable column label */
 export function propertyColumnLabel(propertyKey: string): string {

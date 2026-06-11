@@ -2,9 +2,9 @@
 
 ## Project Overview
 
-LoopOS — 에이전트에게 결정을 위임하기 위한 컨텍스트 그래프 런타임. "결정 공간 하네스의 Supabase"가 포지셔닝이다. 8개 프리미티브(Node, Node Catalog, Edge, Edge Catalog, Action, Action Catalog, Property Catalog, Instruction)를 저장하고, 4대 런타임 강제(카탈로그·계약·게이트·감사)를 API 동작으로 보장하며, MCP로 에이전트에게 마운트된다.
+SSOTA — 에이전트에게 결정을 위임하기 위한 컨텍스트 그래프 런타임. "결정 공간 하네스의 Supabase"가 포지셔닝이다. 8개 프리미티브(Node, Node Catalog, Edge, Edge Catalog, Action, Action Catalog, Property Catalog, Instruction)를 저장하고, 4대 런타임 강제(카탈로그·계약·게이트·감사)를 API 동작으로 보장하며, MCP로 에이전트에게 마운트된다.
 
-기획·스펙의 SSOT는 Notion에 있다 (LoopOS 기획 시리즈 1–5, 특히 "LoopOS 코어 스펙 — 프리미티브·런타임 강제·MCP"). 구현 계획은 Cursor plan `loopos_mvp_구현_c63c2b4a.plan.md`를 따른다.
+기획·스펙의 SSOT는 Notion에 있다 (SSOTA 기획 시리즈 1–5, 특히 "SSOTA 코어 스펙 — 프리미티브·런타임 강제·MCP"). 구현 계획은 Cursor plan `ssota_mvp_구현_c63c2b4a.plan.md`를 따른다.
 
 ### Stack
 
@@ -53,10 +53,10 @@ B2B2C(고객사 A가 자체 에이전트를 만들고, A의 최종 고객마다 
 | 레이어 | 담당 | 식별자 |
 |---|---|---|
 | 고객사 A 앱 (자체 Supabase) | 최종 사용자 인증·앱 데이터 RLS | A의 `users.id` (또는 동등한 PK) |
-| LoopOS 그래프 DB | 컨텍스트 그래프 인스턴스 저장 | `nodes.properties.subject_id` |
-| LoopOS Console / MCP 서버 | 카탈로그·`executeAction`·쿼리 스코핑 | 요청 context의 `subjectId` |
+| SSOTA 그래프 DB | 컨텍스트 그래프 인스턴스 저장 | `nodes.properties.subject_id` |
+| SSOTA Console / MCP 서버 | 카탈로그·`executeAction`·쿼리 스코핑 | 요청 context의 `subjectId` |
 
-고객사 A의 최종 고객 Acme을 구분하는 값은 **LoopOS Project slug가 아니라 `subject_id`**다. A의 백엔드가 자체 auth를 검증한 뒤, 해당 사용자의 id를 그대로 `subject_id`에 넣어 LoopOS API/MCP에 전달한다. LoopOS는 이 값을 opaque string으로 취급한다 — 형식·FK 검증은 A의 책임.
+고객사 A의 최종 고객 Acme을 구분하는 값은 **SSOTA Project slug가 아니라 `subject_id`**다. A의 백엔드가 자체 auth를 검증한 뒤, 해당 사용자의 id를 그대로 `subject_id`에 넣어 SSOTA API/MCP에 전달한다. SSOTA는 이 값을 opaque string으로 취급한다 — 형식·FK 검증은 A의 책임.
 
 ### `subject_id` 규칙
 
@@ -77,18 +77,18 @@ query_nodes({ nodeType: "HomepageProject" }) + context.subjectId → Acme row만
 
 ### Postgres RLS — 전 테이블 deny-all (의도적)
 
-LoopOS 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그, org/project 등) **전부 RLS를 켠다**. 각 테이블에 `deny_all` 정책(`USING (false)`, `WITH CHECK (false)`)을 둬 **anon/authenticated PostgREST 접근을 차단**한다.
+SSOTA 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그, org/project 등) **전부 RLS를 켠다**. 각 테이블에 `deny_all` 정책(`USING (false)`, `WITH CHECK (false)`)을 둬 **anon/authenticated PostgREST 접근을 차단**한다.
 
 1. **격리의 SSOT는 `executeAction` + 서버 context**다. Property Permission 튜플은 액션 계약 강제(4대 강제 중 계약·권한)이지, Postgres row policy가 아니다.
 2. **서버만 DB 접근**: adapter는 `createDb` / `createAdminDb`로 `DATABASE_URL`(postgres superuser 또는 service role 직접 연결)만 사용한다. 이 경로는 RLS를 bypass한다.
-3. **고객사 A의 최종 사용자 RLS**는 A의 자체 Supabase에서 처리한다. LoopOS 그래프 DB는 A의 백엔드·LoopOS 서버만 접근하는 **서버사이드 데이터 플레인**이다.
+3. **고객사 A의 최종 사용자 RLS**는 A의 자체 Supabase에서 처리한다. SSOTA 그래프 DB는 A의 백엔드·SSOTA 서버만 접근하는 **서버사이드 데이터 플레인**이다.
 
 ### Defense in depth (서버사이드)
 
 ```
 [최종 사용자] → [고객사 A API — A의 Supabase Auth + A의 RLS]
                       ↓ subjectId = A.users.id
-              [LoopOS apps/web | apps/mcp — JWT·context 검증]
+              [SSOTA apps/web | apps/mcp — JWT·context 검증]
                       ↓ subjectId 주입·검증
               [executeAction / queryNodes — core 4대 강제 + subject 스코핑]
                       ↓
@@ -96,11 +96,11 @@ LoopOS 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그, org/pro
 ```
 
 - **금지**: anon/authenticated PostgREST로 `nodes`/`edges` 직접 노출, 클라이언트가 보낸 `subject_id`를 검증 없이 신뢰, permissive RLS policy 추가.
-- **필수**: 모든 graph read/write는 apps 라우트·MCP 핸들러를 통과; context `subjectId`는 A의 백엔드 또는 LoopOS OAuth 이후 서버에서만 설정; RLS 거부 케이스 integration 테스트.
+- **필수**: 모든 graph read/write는 apps 라우트·MCP 핸들러를 통과; context `subjectId`는 A의 백엔드 또는 SSOTA OAuth 이후 서버에서만 설정; RLS 거부 케이스 integration 테스트.
 
-LoopOS Console 운영자(카탈로그 편집·Human Gate)는 `subject_id` 스코핑 **바깥**의 별도 auth 경로다 — smoke 계정·org membership으로 처리하며, 최종 고객 데이터와 섞지 않는다.
+SSOTA Console 운영자(카탈로그 편집·Human Gate)는 `subject_id` 스코핑 **바깥**의 별도 auth 경로다 — smoke 계정·org membership으로 처리하며, 최종 고객 데이터와 섞지 않는다.
 
-**Embedder BFF 예시**: `examples/embedder-bff/` — 고객사 A가 `X-Embedder-User-Id`(자체 `users.id`)를 검증 후 LoopOS MCP로 프록시. 로컬 실행: `pnpm embedder-bff` (MCP 기동 후).
+**Embedder BFF 예시**: `examples/embedder-bff/` — 고객사 A가 `X-Embedder-User-Id`(자체 `users.id`)를 검증 후 SSOTA MCP로 프록시. 로컬 실행: `pnpm embedder-bff` (MCP 기동 후).
 
 ## Setup Commands
 
@@ -131,13 +131,13 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 
 ## MVP 마일스톤 커밋 (에이전트·개발자 공통)
 
-Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0–M6) 하나가 끝날 때마다** git 커밋을 남긴다. 한 PR에 여러 마일스톤을 섞지 않는다.
+Phase 1 구현 계획(`ssota_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0–M6) 하나가 끝날 때마다** git 커밋을 남긴다. 한 PR에 여러 마일스톤을 섞지 않는다.
 
 | 마일스톤 | 접두사 | 포함 범위 | 커밋 전 확인 |
 |---|---|---|---|
 | M0 | `[infra]` | turbo/pnpm/nvm, `packages/config`, `supabase/config.toml`, 루트 `package.json`·`tsconfig` | `pnpm install` |
 | M1 | `[core]` | `packages/contracts`, `packages/core` | `pnpm test --filter core` |
-| M2 | `[adapter]` | `packages/adapter-supabase` (+ `supabase/migrations/`) | `pnpm --filter @loopos/adapter-supabase build` |
+| M2 | `[adapter]` | `packages/adapter-supabase` (+ `supabase/migrations/`) | `pnpm --filter @ssota/adapter-supabase build` |
 | M3 | `[mcp]` | `apps/mcp` | `pnpm --filter mcp typecheck` |
 | M4 | `[web]` | `apps/web` | `pnpm --filter web typecheck` |
 | M5 | `[e2e]` | `e2e/` | `pnpm e2e` (Supabase·앱 기동 후) |
@@ -168,7 +168,7 @@ Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0
 | Integration | `pnpm test --filter adapter-supabase` | **smoke 계정** | 트랜잭션 원자성(실패 시 로그도 롤백), permission 튜플 매칭, 시드 무결성 |
 | E2E | `pnpm e2e` | **smoke 계정** | 콘솔(로그인→게이트 승인→로그) + MCP HTTP(Bearer→initialize→execute_action→거부 케이스) |
 
-- **Smoke 계정**: `smoke@loopos.test` — 시드 단계에서 Auth Admin API로 생성되는 전용 테스트 사용자. integration·e2e는 반드시 이 계정으로만 인증한다. 실제 사용자 계정이나 service key 우회로 테스트하지 않는다.
+- **Smoke 계정**: `smoke@ssota.test` — 시드 단계에서 Auth Admin API로 생성되는 전용 테스트 사용자. integration·e2e는 반드시 이 계정으로만 인증한다. 실제 사용자 계정이나 service key 우회로 테스트하지 않는다.
 - Integration·e2e 실행 전 `supabase start`가 떠 있어야 한다. **로컬**에서는 `pnpm e2e:prepare` (= supabase start + migrate + seed). **Cursor Cloud**에서는 세션마다 `pnpm cloud:prepare`로 Docker·Supabase·시드를 한 번에 부트스트랩한다 (`scripts/cloud-bootstrap.sh`). `pnpm e2e` global setup은 smoke 로그인 실패 시 migrate+seed만 자동 재시도한다 (`e2e/global-setup.ts`) — Cloud에서 Docker가 안 떠 있으면 `cloud:prepare`가 필요하다.
 - E2E 로그인은 `e2e/helpers/auth.ts`의 `loginAsSmoke()`를 사용한다 — 헤더의「로그인」링크와 폼 submit 버튼 이름이 같아 `getByRole('button', { name: '로그인' })` 단독 사용 시 strict mode violation이 난다.
 - 새 강제 규칙·포트를 추가하면 **거부 케이스 테스트가 필수다.** 통과 케이스만 있는 PR은 불완전하다.
@@ -208,12 +208,12 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 - Zod 스키마는 `packages/contracts`에 정의하고 core/apps가 공유한다 — 스키마를 앱에 중복 정의하지 않는다.
 - 도메인 용어는 코어 스펙의 명칭을 그대로 쓴다: `executeAction`, `ActionCommitPort`, `gate`, `archetype`, `lifecycle_status` 등. 임의로 동의어를 만들지 않는다.
 - 파일 코멘트·문서는 한국어, 식별자는 영어.
-- UI는 `@loopos/ui` (`packages/ui`) shadcn Base UI 컴포넌트 우선. `pnpm dlx shadcn@latest add <component> -y -c apps/web`로 추가. 디자인 규칙은 루트 [DESIGN.md](DESIGN.md) 및 `.cursor/rules/design.mdc` 참조.
+- UI는 `@ssota/ui` (`packages/ui`) shadcn Base UI 컴포넌트 우선. `pnpm dlx shadcn@latest add <component> -y -c apps/web`로 추가. 디자인 규칙은 루트 [DESIGN.md](DESIGN.md) 및 `.cursor/rules/design.mdc` 참조.
 
 ## MCP App Notes (apps/mcp)
 
 - 엔드포인트는 `/api/mcp` (Streamable HTTP, `mcp-handler` + `@modelcontextprotocol/sdk`).
-- **Root Runtime Protocol**은 `loopos-mcp` 스킬이 담당한다. 배포 번들 SSOT는 `plugins/loopos-plugin/`이며, 설치 복제본은 `.cursor/plugins/local/loopos-plugin/`·`.agents/plugins/loopos-plugin/`(전체 번들), `.agents/skills/loopos-mcp`·`.cursor/skills/loopos-mcp`·`.cursor/mcp.json`(설치 시 풀리는 스킬·MCP)에 있다. 플러그인 수정 시 같은 PR에서 복제본도 함께 갱신한다. 그래프의 Instructions는 **도메인 레시피**만 저장한다.
+- **Root Runtime Protocol**은 `ssota-mcp` 스킬이 담당한다. 배포 번들 SSOT는 `plugins/ssota-plugin/`이며, 설치 복제본은 `.cursor/plugins/local/ssota-plugin/`·`.agents/plugins/ssota-plugin/`(전체 번들), `.agents/skills/ssota-mcp`·`.cursor/skills/ssota-mcp`·`.cursor/mcp.json`(설치 시 풀리는 스킬·MCP)에 있다. 플러그인 수정 시 같은 PR에서 복제본도 함께 갱신한다. 그래프의 Instructions는 **도메인 레시피**만 저장한다.
 - MCP 읽기 3층: **Discover** (`list_*` 인덱스) / **Fetch** (`get_*` 단건) / **Query** (`query_*`, `find_*`, `traverse_graph`, `query_neighbors`).
 - **`execute_action`이 유일한 쓰기.** 게이트: `query_gates`, `list_pending_gates`, `submit_for_approval`. 로그: `get_action_log`, `get_action_log_entry`.
 - 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. 이 앱은 (1) `/oauth/consent` 화면(`supabase.auth.oauth.getAuthorizationDetails/approveAuthorization/denyAuthorization`)과 (2) Bearer JWT의 JWKS 검증 + `.well-known/oauth-protected-resource` 메타데이터만 구현한다.
@@ -227,7 +227,7 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 
 ## Additional Notes
 
-- 이 저장소는 도그푸딩 대상이다: 노션 프로토타입(Documents·Instructions·Actions DB)을 LoopOS로 이전하는 것이 첫 마이그레이션 케이스(M6).
+- 이 저장소는 도그푸딩 대상이다: 노션 프로토타입(Documents·Instructions·Actions DB)을 SSOTA로 이전하는 것이 첫 마이그레이션 케이스(M6).
 - 기획 변경은 코드가 아니라 Notion 문서(Draft → Human Gate 승인) 쪽에서 먼저 일어난다. 스펙과 코드가 충돌하면 Notion 코어 스펙이 우선이며, 코드 쪽 이슈로 제기한다.
 
 ## Cursor Cloud specific instructions
@@ -303,12 +303,12 @@ pnpm db:migrate && pnpm db:seed
 표준 명령은 위 **Development Workflow** 참고. Cloud에서는 장시간 프로세스를 tmux로 띄운다:
 
 ```bash
-tmux -f /exec-daemon/tmux.portal.conf new-session -d -s loopos-dev -c /workspace -- bash -l
+tmux -f /exec-daemon/tmux.portal.conf new-session -d -s ssota-dev -c /workspace -- bash -l
 # 세션에 nvm/Node 24 PATH 설정 후:
 pnpm dev   # web :3000, mcp :3001
 ```
 
-`pnpm e2e`는 Playwright가 **3100/3101**에서 자체 `next dev`를 띄우므로, `pnpm dev` tmux 세션이 살아 있으면 Next.js dev lock 충돌로 실패한다. e2e 전에 `tmux kill-session -t loopos-dev`로 dev 서버를 내린다.
+`pnpm e2e`는 Playwright가 **3100/3101**에서 자체 `next dev`를 띄우므로, `pnpm dev` tmux 세션이 살아 있으면 Next.js dev lock 충돌로 실패한다. e2e 전에 `tmux kill-session -t ssota-dev`로 dev 서버를 내린다.
 
 ### 검증 명령 (Cloud 세션)
 
@@ -316,8 +316,8 @@ pnpm dev   # web :3000, mcp :3001
 |---|---|---|
 | 부트스트랩 | `pnpm cloud:prepare` | Node 24 |
 | 린트·타입 | `pnpm lint && pnpm typecheck` | 없음 |
-| 코어 유닛 | `pnpm test --filter @loopos/core` | 없음 |
-| 어댑터 통합 | `pnpm test --filter @loopos/adapter-supabase` | `cloud:prepare` |
+| 코어 유닛 | `pnpm test --filter @ssota/core` | 없음 |
+| 어댑터 통합 | `pnpm test --filter @ssota/adapter-supabase` | `cloud:prepare` |
 | E2E | `pnpm e2e` | `cloud:prepare` |
 
-스모크 계정: `smoke@loopos.test` / `smoke-test-password-123` (시드 생성).
+스모크 계정: `smoke@ssota.test` / `smoke-test-password-123` (시드 생성).

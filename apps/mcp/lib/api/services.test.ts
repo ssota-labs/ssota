@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ExecuteActionInputSchema } from "@loopos/contracts";
+import { ExecuteActionInputSchema } from "@ssota/contracts";
 import { toExecuteActionInput } from "./services";
 
 describe("toExecuteActionInput", () => {

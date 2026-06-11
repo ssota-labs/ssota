@@ -1,12 +1,12 @@
-import { ApiErrorSchema } from "@loopos/contracts";
+import { ApiErrorSchema } from "@ssota/contracts";
 
-export class LooposApiError extends Error {
+export class SsotaApiError extends Error {
   readonly status: number;
   readonly code: string;
 
   constructor(status: number, code: string, message: string) {
     super(message);
-    this.name = "LooposApiError";
+    this.name = "SsotaApiError";
     this.status = status;
     this.code = code;
   }
@@ -29,5 +29,5 @@ export async function throwIfNotOk(response: Response): Promise<void> {
     // ignore JSON parse errors
   }
 
-  throw new LooposApiError(response.status, code, message);
+  throw new SsotaApiError(response.status, code, message);
 }
