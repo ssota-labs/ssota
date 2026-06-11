@@ -16,6 +16,9 @@ const defaultDatabaseUrl =
 
 let cachedDefaultProjectId: string | null = null;
 
+export const DEFAULT_MCP_ORG_SLUG = "ssota-labs";
+export const DEFAULT_MCP_PROJECT_SLUG = "ssota-dev";
+
 export async function getSmokeAccessToken(): Promise<string> {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -28,7 +31,7 @@ export async function getSmokeAccessToken(): Promise<string> {
   return data.session.access_token;
 }
 
-/** Resolves ssota-labs/ssota-dev project id from the graph DB (cached per process). */
+/** REST v1 tests still use X-SSOTA-Project-Id header (MCP uses URL path). */
 export async function getDefaultProjectId(): Promise<string> {
   if (cachedDefaultProjectId) return cachedDefaultProjectId;
 
@@ -57,6 +60,15 @@ export function projectIdHeaders(projectId: string): Record<string, string> {
   return { [PROJECT_ID_HEADER]: projectId };
 }
 
+export function projectScopedMcpUrl(
+  mcpUrl: string,
+  orgSlug = DEFAULT_MCP_ORG_SLUG,
+  projectSlug = DEFAULT_MCP_PROJECT_SLUG,
+): string {
+  const base = mcpUrl.replace(/\/$/, "");
+  return `${base}/api/mcp/${orgSlug}/${projectSlug}`;
+}
+
 export async function mcpToolCall(
   request: {
     post: (
@@ -71,20 +83,27 @@ export async function mcpToolCall(
   token: string,
   toolName: string,
   args: Record<string, unknown> = {},
-  options?: { subjectId?: string; projectId?: string },
+  options?: {
+    subjectId?: string;
+    orgSlug?: string;
+    projectSlug?: string;
+  },
 ): Promise<unknown> {
-  const projectId = options?.projectId ?? (await getDefaultProjectId());
+  const endpoint = projectScopedMcpUrl(
+    mcpUrl,
+    options?.orgSlug,
+    options?.projectSlug,
+  );
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
     Accept: "application/json, text/event-stream",
-    ...projectIdHeaders(projectId),
   };
   if (options?.subjectId) {
     headers["X-SSOTA-Subject-Id"] = options.subjectId;
   }
 
-  const initRes = await request.post(`${mcpUrl}/api/mcp`, {
+  const initRes = await request.post(endpoint, {
     headers,
     data: {
       jsonrpc: "2.0",
@@ -101,7 +120,7 @@ export async function mcpToolCall(
     throw new Error("MCP initialize failed");
   }
 
-  const callRes = await request.post(`${mcpUrl}/api/mcp`, {
+  const callRes = await request.post(endpoint, {
     headers,
     data: {
       jsonrpc: "2.0",

@@ -1,8 +1,21 @@
 # SSOTA MCP Tools
 
-Three read tiers plus one write path.
+MCP is split by URL (Supabase-style):
 
-## Discover (`list_*`)
+| MCP URL | Tools |
+|---|---|
+| `/api/mcp` | Account discover only (`list_organizations`, `list_projects`, `get_project`) |
+| `/api/mcp/{orgSlug}/{projectSlug}` | Project graph/catalog/action tools below |
+
+Configure Cursor `mcp.json` with the **project URL** — no `X-SSOTA-Project-Id` header.
+
+## Account discover (root `/api/mcp` only)
+
+- `list_organizations` — orgs the user belongs to
+- `list_projects` — accessible projects + MCP URLs (optional `orgSlug` filter)
+- `get_project` — one project by `orgSlug` + `projectSlug`
+
+## Discover (`list_*`) — project MCP only
 
 Catalog or queue **index only**. Do not read full details from list responses.
 
