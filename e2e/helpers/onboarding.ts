@@ -1,8 +1,12 @@
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
+export function uniqueOnboardingSuffix(): string {
+  return `${Date.now()}`;
+}
+
 export function uniqueOnboardingEmail(): string {
-  return `onboarding-e2e-${Date.now()}@loopos.test`;
+  return `onboarding-e2e-${uniqueOnboardingSuffix()}@loopos.test`;
 }
 
 export const ONBOARDING_PASSWORD = "onboarding-test-password-123";
@@ -63,16 +67,26 @@ export async function completeProjectOnboarding(
 export async function completeOnboardingFlow(
   page: Page,
   email = uniqueOnboardingEmail(),
-): Promise<{ email: string; orgSlug: string; projectSlug: string }> {
+): Promise<{
+  email: string;
+  orgSlug: string;
+  projectSlug: string;
+  workspaceName: string;
+  projectName: string;
+}> {
+  const suffix = uniqueOnboardingSuffix();
+  const workspaceName = `E2E Workspace ${suffix}`;
+  const projectName = `E2E Project ${suffix}`;
+
   await signUpOnLoginPage(page, email);
   await completeProfileOnboarding(page, {
     displayName: "E2E User",
-    workspaceName: "E2E Workspace",
+    workspaceName,
   });
   const { orgSlug, projectSlug } = await completeProjectOnboarding(
     page,
-    "E2E Project",
+    projectName,
   );
 
-  return { email, orgSlug, projectSlug };
+  return { email, orgSlug, projectSlug, workspaceName, projectName };
 }

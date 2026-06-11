@@ -9,13 +9,14 @@ import {
 
 test.describe("Console onboarding", () => {
   test("신규 회원가입 → profile → project → Project Home", async ({ page }) => {
-    const { orgSlug, projectSlug } = await completeOnboardingFlow(page);
+    const { orgSlug, projectSlug, workspaceName, projectName } =
+      await completeOnboardingFlow(page);
 
-    expect(orgSlug).toBe("e2e-workspace");
-    expect(projectSlug).toBe("e2e-project");
+    expect(orgSlug).toMatch(/^e2e-workspace-/);
+    expect(projectSlug).toMatch(/^e2e-project-/);
     await expect(page).toHaveURL(new RegExp(`/${orgSlug}/${projectSlug}$`));
     await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible();
-    await expect(page.getByText("E2E Project").first()).toBeVisible();
+    await expect(page.getByText(projectName).first()).toBeVisible();
   });
 
   test("온보딩 미완료 시 콘솔 URL 접근 → project 스텝으로 리다이렉트", async ({
