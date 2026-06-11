@@ -1,34 +1,24 @@
 import type {
+  ActionCatalogEntry as ContractActionCatalogEntry,
   ActionScope,
+  Archetype as ContractArchetype,
+  EdgeCatalogEntry as ContractEdgeCatalogEntry,
   Effect,
   ExecutorType,
   GateStatus,
   InstructionScope,
   InstructionWorkflowStep,
   LifecycleStatus,
+  NodeCatalogEntry as ContractNodeCatalogEntry,
   NodeFamily,
   PermissionOperation,
   PermissionType,
+  PropertyCatalogEntry as ContractPropertyCatalogEntry,
 } from "@loopos/contracts";
 
-export interface Archetype {
-  id: string;
-  name: string;
-  family: NodeFamily;
-  typicalValues: Record<string, unknown>;
-  allowedMutations: string[];
-}
+export type Archetype = ContractArchetype;
 
-export interface NodeCatalogEntry {
-  nodeType: string;
-  family: NodeFamily;
-  archetypeId: string;
-  typicalValueOverrides: Record<string, unknown>;
-  lifecycleTransitions: Record<LifecycleStatus, LifecycleStatus[]>;
-  contentGuide: string | null;
-  propertyRefs: string[];
-  allowedActionRefs: string[];
-}
+export type NodeCatalogEntry = ContractNodeCatalogEntry;
 
 export interface Node {
   id: string;
@@ -42,13 +32,7 @@ export interface Node {
   updatedAt: Date;
 }
 
-export interface EdgeCatalogEntry {
-  edgeType: string;
-  domain: string[];
-  range: string[];
-  cardinality: string;
-  representation: string;
-}
+export type EdgeCatalogEntry = ContractEdgeCatalogEntry;
 
 export interface Edge {
   id: string;
@@ -59,24 +43,9 @@ export interface Edge {
   createdAt: Date;
 }
 
-export interface PropertyCatalogEntry {
-  propertyKey: string;
-  valueType: string;
-  constraints: Record<string, unknown>;
-  owningActions: string[];
-}
+export type PropertyCatalogEntry = ContractPropertyCatalogEntry;
 
-export interface ActionCatalogEntry {
-  actionType: string;
-  scope: ActionScope;
-  preconditions: Record<string, unknown>;
-  effects: Effect[];
-  executor: ExecutorType;
-  allowedLifecycleTransitions: Record<string, LifecycleStatus[]>;
-  failureMode: string;
-  idempotencyRule: string | null;
-  logPayloadSchema: Record<string, unknown>;
-}
+export type ActionCatalogEntry = ContractActionCatalogEntry;
 
 export interface ActionPropertyPermission {
   actionType: string;
