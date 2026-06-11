@@ -8,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ nodeType: string }> },
 ) {
   const { nodeType } = await params;
-  return withAuth(request, async () => {
-    const data = await getNodeType(nodeType);
+  return withAuth(request, async (ctx) => {
+    const data = await getNodeType(ctx.projectId, nodeType);
     return jsonOk(NodeCatalogEntryResponseSchema.parse({ data }).data);
   });
 }

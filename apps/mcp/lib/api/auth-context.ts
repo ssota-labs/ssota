@@ -1,11 +1,13 @@
 import type { JWTPayload } from "jose";
 import type { ExecutorType } from "@ssota/contracts";
 import { verifyBearerToken, type AuthUser } from "@/lib/auth";
+import { resolveProjectId } from "@/lib/project-context";
 import { resolveSubjectId } from "@/lib/subject-context";
 
 export interface AuthContext {
   user: AuthUser;
   executorType: ExecutorType;
+  projectId: string;
   subjectId?: string;
 }
 
@@ -30,6 +32,9 @@ export async function requireAuthContext(
   const user = await verifyBearerToken(request.headers.get("authorization"));
   if (!user) return null;
 
+  const projectId = resolveProjectId(request);
+  if (!projectId) return null;
+
   const token = request.headers.get("authorization")?.slice("Bearer ".length);
   let executorType: ExecutorType = "Human";
 
@@ -51,5 +56,5 @@ export async function requireAuthContext(
     return null;
   }
 
-  return { user, executorType, subjectId };
+  return { user, executorType, projectId, subjectId };
 }

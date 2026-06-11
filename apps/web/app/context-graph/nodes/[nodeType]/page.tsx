@@ -24,7 +24,7 @@ import {
   AddPropertySheet,
 } from "@/components/context-graph/node-table-actions";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 
 export default async function ContextGraphNodeTablePage({
   params,
@@ -33,7 +33,8 @@ export default async function ContextGraphNodeTablePage({
 }) {
   const { nodeType } = await params;
   const decoded = decodeURIComponent(nodeType);
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const [entry, rows, properties, actions, instructions] = await Promise.all([
     ports.catalog.getNodeCatalogEntry(decoded),
     ports.graph.queryNodes({ nodeType: decoded, limit: 50 }),
@@ -70,10 +71,13 @@ export default async function ContextGraphNodeTablePage({
       />
 
       <div className="flex flex-wrap gap-2">
-        <ActionRunner actions={localActions.length ? localActions.map((a) => a.actionType) : actions.map((a) => a.actionType)} />
-        <AddPropertySheet nodeType={decoded} />
-        <AddActionSheet nodeType={decoded} />
-        <AddInstructionSheet nodeType={decoded} />
+        <ActionRunner
+          projectId={projectId}
+          actions={localActions.length ? localActions.map((a) => a.actionType) : actions.map((a) => a.actionType)}
+        />
+        <AddPropertySheet nodeType={decoded} projectId={projectId} />
+        <AddActionSheet nodeType={decoded} projectId={projectId} />
+        <AddInstructionSheet nodeType={decoded} projectId={projectId} />
         <Button render={<Link href="/log" />} variant="outline" nativeButton={false}>
           View logs
         </Button>

@@ -15,7 +15,7 @@ export async function GET(
     const url = new URL(request.url);
     const parsed = parseQuery(TraverseEdgesInputSchema, url.searchParams);
     if (!parsed.ok) return parsed.response;
-    const data = await traverseEdges({
+    const data = await traverseEdges(ctx.projectId, {
       ...parsed.data,
       nodeId,
       subjectId: ctx.subjectId,

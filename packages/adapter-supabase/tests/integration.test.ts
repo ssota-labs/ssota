@@ -21,13 +21,29 @@ let skip = false;
 describe("adapter-supabase integration", () => {
   let ports: ReturnType<typeof createActionPorts>;
   let smokeUserId: string;
+  let projectId: string;
   let client: ReturnType<typeof createDb>["client"] | undefined;
 
   beforeAll(async () => {
     try {
       const dbBundle = createDb();
       client = dbBundle.client;
-      ports = createActionPorts(dbBundle.db);
+
+      const consolePort = createConsolePort(dbBundle.db);
+      const org = await consolePort.getOrganizationBySlug(DEFAULT_ORG_SLUG);
+      if (!org) {
+        skip = true;
+        console.warn("Skipping integration tests: default org not found");
+        return;
+      }
+      const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+      if (!project) {
+        skip = true;
+        console.warn("Skipping integration tests: default project not found");
+        return;
+      }
+      projectId = project.id;
+      ports = createActionPorts(dbBundle.db, { projectId: project.id });
 
       const supabase = createClient(supabaseUrl, supabaseAnonKey);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -118,6 +134,7 @@ describe("adapter-supabase integration", () => {
       input: { content: "Integration test note" },
       executorId: smokeUserId,
       executorType: "Agent",
+      projectId,
     });
 
     expect(result.status).toBe("committed");
@@ -137,6 +154,7 @@ describe("adapter-supabase integration", () => {
         input: { content: "Audit test" },
         executorId: smokeUserId,
         executorType: "Agent",
+        projectId,
       });
 
       const afterCount = (await ports.commit.getActionLog({ limit: 1000 })).length;
@@ -150,6 +168,7 @@ describe("adapter-supabase integration", () => {
       input: { title: "Gate Test", content: "Body" },
       executorId: smokeUserId,
       executorType: "Agent",
+      projectId,
     });
     expect(createResult.status).toBe("committed");
 
@@ -162,6 +181,7 @@ describe("adapter-supabase integration", () => {
       input: { nodeId: node!.id },
       executorId: smokeUserId,
       executorType: "Agent",
+      projectId,
     });
 
     expect(promoteResult.status).toBe("gated");
@@ -191,8 +211,9 @@ describe("adapter-supabase integration", () => {
           },
         },
         executorId: smokeUserId,
-        executorType: "Human",
-      });
+      executorType: "Human",
+      projectId,
+    });
 
       expect(result.status).toBe("committed");
 
@@ -241,8 +262,9 @@ describe("adapter-supabase integration", () => {
           },
         },
         executorId: smokeUserId,
-        executorType: "Human",
-      });
+      executorType: "Human",
+      projectId,
+    });
 
       expect(result.status).toBe("committed");
       const instructions = await ports.catalog.listInstructions({ limit: 100 });
@@ -276,6 +298,7 @@ describe("adapter-supabase integration", () => {
         },
         executorId: smokeUserId,
         executorType: "Agent",
+        projectId,
       });
 
       expect(gated.status).toBe("gated");
@@ -288,8 +311,9 @@ describe("adapter-supabase integration", () => {
         actionType: "approve_gate",
         input: { gateId: gated.gateId, status: "approved" },
         executorId: smokeUserId,
-        executorType: "Human",
-      });
+      executorType: "Human",
+      projectId,
+    });
       expect(approved.status).toBe("committed");
 
       const after = await ports.catalog.getNodeCatalogEntry(nodeType);
@@ -311,6 +335,7 @@ describe("adapter-supabase integration", () => {
       executorId: smokeUserId,
       executorType: "Agent",
       subjectId: subjectA,
+      projectId,
     });
     expect(createA.status).toBe("committed");
 
@@ -320,6 +345,7 @@ describe("adapter-supabase integration", () => {
       executorId: smokeUserId,
       executorType: "Agent",
       subjectId: subjectB,
+      projectId,
     });
     expect(createB.status).toBe("committed");
 
@@ -346,6 +372,7 @@ describe("adapter-supabase integration", () => {
       input: { title: "No subject" },
       executorId: smokeUserId,
       executorType: "Agent",
+      projectId,
     });
 
     expect(result.status).toBe("rejected");
@@ -363,6 +390,7 @@ describe("adapter-supabase integration", () => {
       executorId: smokeUserId,
       executorType: "Agent",
       subjectId,
+      projectId,
     });
     expect(project.status).toBe("committed");
 
@@ -375,6 +403,7 @@ describe("adapter-supabase integration", () => {
       executorId: smokeUserId,
       executorType: "Agent",
       subjectId,
+      projectId,
     });
     expect(brief.status).toBe("committed");
 
@@ -402,6 +431,7 @@ describe("adapter-supabase integration", () => {
       executorId: smokeUserId,
       executorType: "Agent",
       subjectId,
+      projectId,
     });
     expect(link.status).toBe("committed");
 

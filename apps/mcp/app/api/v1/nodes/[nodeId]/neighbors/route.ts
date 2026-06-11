@@ -13,13 +13,13 @@ export async function GET(
   { params }: { params: Promise<{ nodeId: string }> },
 ) {
   const { nodeId } = await params;
-  return withAuth(request, async () => {
+  return withAuth(request, async (ctx) => {
     const parsed = parseQuery(
       NeighborQueryParamsSchema,
       new URL(request.url).searchParams,
     );
     if (!parsed.ok) return parsed.response;
-    const data = await queryNeighborsService({ ...parsed.data, nodeId });
+    const data = await queryNeighborsService(ctx.projectId, { ...parsed.data, nodeId });
     return jsonOk(NeighborQueryResponseSchema.parse({ data }).data);
   });
 }

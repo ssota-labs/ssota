@@ -29,7 +29,7 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineScopedActionFormAction, runActionJsonFormAction } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 
 export default async function ContextGraphEdgeTablePage({
   params,
@@ -38,7 +38,8 @@ export default async function ContextGraphEdgeTablePage({
 }) {
   const { edgeType } = await params;
   const decoded = decodeURIComponent(edgeType);
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const [entry, nodes, actions] = await Promise.all([
     ports.catalog.getEdgeCatalogEntry(decoded),
     ports.graph.queryNodes({ limit: 100 }),

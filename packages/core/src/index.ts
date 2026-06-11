@@ -19,6 +19,7 @@ import {
   enforceSubjectScope,
   injectSubjectIntoEffects,
 } from "./domain/subject-scope.js";
+import { enforceProjectScope } from "./domain/project-scope.js";
 import {
   mergeUpdateActionContractInput,
   mergeUpdateEdgeTypeInput,
@@ -44,7 +45,7 @@ async function prepareAction(
   ports: ActionPorts,
   params: ExecuteActionInput,
 ): Promise<PreparedAction | { rejected: ExecuteActionResult }> {
-  const { actionType, input, subjectId } = params;
+  const { actionType, input, subjectId, projectId } = params;
   const actionEntry = await ports.catalog.getActionCatalogEntry(actionType);
 
   let resolvedInput = input;
@@ -252,6 +253,9 @@ async function prepareAction(
   }
 
   try {
+    await enforceProjectScope(projectId, effects, (nodeId) =>
+      ports.graph.getNode(nodeId),
+    );
     await enforceSubjectScope(subjectId, effects, {
       getNode: (nodeId) => ports.graph.getNode(nodeId),
       getNodeCatalogEntry: (nodeType) =>
@@ -348,7 +352,7 @@ export async function executeAction(
   ports: ActionPorts,
   params: ExecuteActionInput,
 ): Promise<ExecuteActionResult> {
-  const { actionType, input, executorId, executorType, idempotencyKey } =
+  const { actionType, input, executorId, executorType, idempotencyKey, projectId } =
     params;
 
   if (idempotencyKey) {
@@ -427,6 +431,7 @@ export async function executeAction(
       proposedEffects: effects,
       status: "pending",
       reason: gateReason,
+      projectId,
     });
 
     await ports.commit.commit({
@@ -522,6 +527,7 @@ export async function approveGate(
   ports: ActionPorts,
   params: {
     gateId: string;
+    projectId: string;
     executorId: string;
     executorType: "Human";
     approved: boolean;
@@ -537,6 +543,7 @@ export async function approveGate(
     },
     executorId: params.executorId,
     executorType: params.executorType,
+    projectId: params.projectId,
   });
 }
 
@@ -544,5 +551,6 @@ export * from "./domain/types.js";
 export * from "./domain/enforcement.js";
 export * from "./domain/wire.js";
 export * from "./domain/subject-scope.js";
+export * from "./domain/project-scope.js";
 export * from "./catalog-slug.js";
 export * from "./console-slug.js";

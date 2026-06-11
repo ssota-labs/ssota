@@ -13,6 +13,7 @@ import {
 import { createEdgeTableFormAction } from "@/app/actions";
 import { EdgeCatalogDataTable } from "@/components/graph/edge-catalog-data-table";
 import { graphPath } from "@/lib/console/paths";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphEdgesPage({
@@ -22,7 +23,8 @@ export default async function GraphEdgesPage({
 }) {
   const { orgSlug, projectSlug } = await params;
   const ctx = { orgSlug, projectSlug };
-  const ports = getActionPorts();
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
   const edges = await ports.catalog.listEdgeCatalogEntries();
 
   if (edges.length === 1) {
@@ -47,6 +49,7 @@ export default async function GraphEdgesPage({
           <SheetDescription>define_edge_type 메타 액션을 실행합니다.</SheetDescription>
         </SheetHeader>
         <form action={createEdgeTableFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={project.id} />
           <div className="space-y-2">
             <Label htmlFor="edgeType">Key</Label>
             <Input id="edgeType" name="edgeType" placeholder="cites" required />

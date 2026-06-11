@@ -28,6 +28,7 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineWorkflowInstructionFormAction } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function ProjectInstructionsPage({
@@ -35,8 +36,9 @@ export default async function ProjectInstructionsPage({
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
-  await params;
-  const ports = getActionPorts();
+  const { orgSlug, projectSlug } = await params;
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
   const [instructions, logs] = await Promise.all([
     ports.catalog.listInstructions({ limit: 100 }),
     ports.commit.getActionLog({ limit: 100 }),
@@ -49,7 +51,7 @@ export default async function ProjectInstructionsPage({
         description="Agent workflow packages: context gathering, action sequence, output contract, and gate policy."
       />
       <div className="flex justify-end">
-        <NewInstructionSheet />
+        <NewInstructionSheet projectId={project.id} />
       </div>
 
       <Card>
@@ -108,7 +110,7 @@ function formatInstructionScope(scope: { kind: string } & Record<string, unknown
   return "global";
 }
 
-function NewInstructionSheet() {
+function NewInstructionSheet({ projectId }: { projectId: string }) {
   return (
     <Sheet>
       <SheetTrigger render={<Button />}>New instruction</SheetTrigger>
@@ -118,6 +120,7 @@ function NewInstructionSheet() {
           <SheetDescription>define_instruction 메타 액션으로 agent workflow를 추가합니다.</SheetDescription>
         </SheetHeader>
         <form action={defineWorkflowInstructionFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={projectId} />
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input id="title" name="title" required />

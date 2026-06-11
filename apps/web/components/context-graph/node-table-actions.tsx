@@ -22,7 +22,13 @@ import {
 
 const sheetClassName = "inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg";
 
-export function ActionRunner({ actions }: { actions: string[] }) {
+export function ActionRunner({
+  actions,
+  projectId,
+}: {
+  actions: string[];
+  projectId: string;
+}) {
   return (
     <Sheet>
       <SheetTrigger render={<Button />}>Create node / Run action</SheetTrigger>
@@ -34,6 +40,7 @@ export function ActionRunner({ actions }: { actions: string[] }) {
           </SheetDescription>
         </SheetHeader>
         <form action={runActionJsonFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={projectId} />
           <div className="space-y-2">
             <Label htmlFor="actionType">Action type</Label>
             <Input id="actionType" name="actionType" list="node-actions" required />
@@ -54,7 +61,13 @@ export function ActionRunner({ actions }: { actions: string[] }) {
   );
 }
 
-export function AddPropertySheet({ nodeType }: { nodeType: string }) {
+export function AddPropertySheet({
+  nodeType,
+  projectId,
+}: {
+  nodeType: string;
+  projectId: string;
+}) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
 
@@ -89,6 +102,7 @@ export function AddPropertySheet({ nodeType }: { nodeType: string }) {
             </div>
           </div>
           <form action={handleSubmit} className="space-y-4 px-6 pb-6">
+            <input type="hidden" name="projectId" value={projectId} />
             <input type="hidden" name="nodeType" value={nodeType} />
             <div className="space-y-2">
               <Label htmlFor="propertyKey">Property key</Label>
@@ -116,7 +130,13 @@ export function AddPropertySheet({ nodeType }: { nodeType: string }) {
   );
 }
 
-export function AddActionSheet({ nodeType }: { nodeType: string }) {
+export function AddActionSheet({
+  nodeType,
+  projectId,
+}: {
+  nodeType: string;
+  projectId: string;
+}) {
   return (
     <Sheet>
       <SheetTrigger render={<Button variant="outline" />}>Add action</SheetTrigger>
@@ -126,6 +146,7 @@ export function AddActionSheet({ nodeType }: { nodeType: string }) {
           <SheetDescription>scope=node_type:{nodeType}로 action contract를 생성합니다.</SheetDescription>
         </SheetHeader>
         <form action={defineScopedActionFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={projectId} />
           <input type="hidden" name="scopeKind" value="node_type" />
           <input type="hidden" name="nodeType" value={nodeType} />
           <div className="space-y-2">
@@ -151,7 +172,13 @@ export function AddActionSheet({ nodeType }: { nodeType: string }) {
   );
 }
 
-export function AddInstructionSheet({ nodeType }: { nodeType: string }) {
+export function AddInstructionSheet({
+  nodeType,
+  projectId,
+}: {
+  nodeType: string;
+  projectId: string;
+}) {
   return (
     <Sheet>
       <SheetTrigger render={<Button variant="outline" />}>Add instruction</SheetTrigger>
@@ -161,6 +188,7 @@ export function AddInstructionSheet({ nodeType }: { nodeType: string }) {
           <SheetDescription>이 node table에 적용되는 agent workflow를 정의합니다.</SheetDescription>
         </SheetHeader>
         <form action={defineWorkflowInstructionFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={projectId} />
           <input type="hidden" name="scopeKind" value="node_type" />
           <input type="hidden" name="nodeType" value={nodeType} />
           <input type="hidden" name="applicableNodeTypes" value={nodeType} />

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { EmptyState } from "@/components/studio/empty-state";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import {
   Card,
@@ -10,7 +10,8 @@ import {
 } from "@ssota/ui/components/ui/card";
 
 export default async function ActionsPage() {
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const entries = await ports.catalog.listActionCatalogEntries();
 
   return (

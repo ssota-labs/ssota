@@ -4,8 +4,8 @@ import { jsonOk } from "@/lib/api/response";
 import { withAuth } from "@/lib/api/with-auth";
 
 export async function GET(request: Request) {
-  return withAuth(request, async () => {
-    const data = await listNodeTypes();
+  return withAuth(request, async (ctx) => {
+    const data = await listNodeTypes(ctx.projectId);
     return jsonOk(NodeCatalogListResponseSchema.parse({ data }).data);
   });
 }

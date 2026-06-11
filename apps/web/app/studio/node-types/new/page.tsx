@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { PageHeader } from "@/components/studio/page-header";
 import { DefineNodeTypeForm } from "@/components/studio/define-node-type-form";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { Button } from "@ssota/ui/components/ui/button";
 
@@ -10,7 +10,8 @@ export default async function NewNodeTypePage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const archetypes = await ports.catalog.listArchetypes();
 
   return (

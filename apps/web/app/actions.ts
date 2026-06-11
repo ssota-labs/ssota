@@ -26,7 +26,7 @@ import { redirect } from "next/navigation";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { withConsolePaths } from "@/lib/console/revalidate";
 import { graphPath, DEFAULT_PROJECT } from "@/lib/console/paths";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
@@ -44,15 +44,25 @@ async function resolvePostSignInPath(userId: string, next?: string | null) {
   return resolvePostAuthPath(userId);
 }
 
+async function requireProjectId(formData?: FormData): Promise<string> {
+  const fromForm = formData?.get("projectId");
+  if (typeof fromForm === "string" && fromForm.trim()) {
+    return fromForm.trim();
+  }
+  return resolveDefaultProjectId();
+}
+
 export async function approveGateAction(
   gateId: string,
   approved: boolean,
   note?: string,
+  projectId?: string,
 ) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const ports = getActionPorts();
+  const resolvedProjectId = projectId ?? (await resolveDefaultProjectId());
+  const ports = getActionPorts(resolvedProjectId);
   const result = await executeAction(ports, {
     actionType: "approve_gate",
     input: {
@@ -62,6 +72,7 @@ export async function approveGateAction(
     },
     executorId: user.id,
     executorType: "Human",
+    projectId: resolvedProjectId,
   });
 
   for (const path of withConsolePaths(["/gates", "/log"])) {
@@ -75,7 +86,8 @@ export async function approveGateFormAction(formData: FormData) {
   const approved = formData.get("approved") === "true";
   if (typeof gateId !== "string") throw new Error("gateId required");
 
-  await approveGateAction(gateId, approved);
+  const projectId = await requireProjectId(formData);
+  await approveGateAction(gateId, approved, undefined, projectId);
 }
 
 export async function signInWithGoogleAction(formData: FormData) {
@@ -183,16 +195,18 @@ async function runMetaAction(
   actionType: string,
   input: Record<string, unknown>,
   revalidatePaths: string[],
+  projectId: string,
 ): Promise<ExecuteActionResult> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const ports = getActionPorts();
+  const ports = getActionPorts(projectId);
   const result = await executeAction(ports, {
     actionType,
     input,
     executorId: user.id,
     executorType: "Human",
+    projectId,
   });
 
   for (const path of withConsolePaths(revalidatePaths)) {
@@ -240,8 +254,12 @@ function defaultLifecycleTransitions() {
 
 export async function defineNodeTypeAction(input: {
   definition: Record<string, unknown>;
+  projectId?: string;
 }) {
-  const parsed = DefineNodeTypeInputSchema.parse(input);
+  const projectId = input.projectId ?? (await resolveDefaultProjectId());
+  const parsed = DefineNodeTypeInputSchema.parse({
+    definition: input.definition,
+  });
   return runMetaAction("define_node_type", parsed, [
     "/studio/node-types",
     "/context-graph",
@@ -249,10 +267,11 @@ export async function defineNodeTypeAction(input: {
     "/catalog",
     "/log",
     "/gates",
-  ]);
+  ], projectId);
 }
 
 export async function defineNodeTypeFormAction(formData: FormData) {
+  const projectId = await requireProjectId(formData);
   const lifecycleTransitions = {
     ...defaultLifecycleTransitions(),
   };
@@ -266,167 +285,243 @@ export async function defineNodeTypeFormAction(formData: FormData) {
     contentGuide: String(formData.get("contentGuide") ?? "") || null,
   };
 
-  return defineNodeTypeAction({ definition });
+  return defineNodeTypeAction({ definition, projectId });
 }
 
 export async function updateNodeTypeAction(input: Record<string, unknown>) {
-  const parsed = UpdateNodeTypeInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = UpdateNodeTypeInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("update_node_type", parsed, [
     "/studio/node-types",
     "/context-graph",
     "/context-graph/nodes",
     "/catalog",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function deprecateNodeTypeAction(input: Record<string, unknown>) {
-  const parsed = DeprecateNodeTypeInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DeprecateNodeTypeInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("deprecate_node_type", parsed, [
     "/studio/node-types",
     "/context-graph",
     "/context-graph/nodes",
     "/catalog",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function defineEdgeTypeAction(input: Record<string, unknown>) {
-  const parsed = DefineEdgeTypeInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DefineEdgeTypeInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("define_edge_type", parsed, [
     "/studio/edge-types",
     "/context-graph",
     "/context-graph/edges",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function definePropertyAction(input: Record<string, unknown>) {
-  const parsed = DefinePropertyInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DefinePropertyInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("define_property", parsed, [
     "/studio/properties",
     "/context-graph",
     "/context-graph/nodes",
     "/context-graph/edges",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function defineInstructionAction(input: Record<string, unknown>) {
-  const parsed = DefineInstructionInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DefineInstructionInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("define_instruction", parsed, [
     "/studio/instructions",
     "/context-graph",
     "/context-graph/instructions",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function updateEdgeTypeAction(input: Record<string, unknown>) {
-  const parsed = UpdateEdgeTypeInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = UpdateEdgeTypeInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("update_edge_type", parsed, [
     "/studio/edge-types",
     "/context-graph",
     "/context-graph/edges",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function deprecateEdgeTypeAction(input: Record<string, unknown>) {
-  const parsed = DeprecateEdgeTypeInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DeprecateEdgeTypeInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("deprecate_edge_type", parsed, [
     "/studio/edge-types",
     "/context-graph",
     "/context-graph/edges",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function updatePropertyAction(input: Record<string, unknown>) {
-  const parsed = UpdatePropertyInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = UpdatePropertyInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("update_property", parsed, [
     "/studio/properties",
     "/context-graph",
     "/context-graph/nodes",
     "/context-graph/edges",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function deprecatePropertyAction(input: Record<string, unknown>) {
-  const parsed = DeprecatePropertyInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DeprecatePropertyInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("deprecate_property", parsed, [
     "/studio/properties",
     "/context-graph",
     "/context-graph/nodes",
     "/context-graph/edges",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function updatePropertyPermissionAction(
   input: Record<string, unknown>,
 ) {
-  const parsed = UpdatePropertyPermissionInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = UpdatePropertyPermissionInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("update_property_permission", parsed, [
     "/context-graph",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function defineActionContractAction(input: Record<string, unknown>) {
-  const parsed = DefineActionContractInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DefineActionContractInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("define_action_contract", parsed, [
     "/studio/actions",
     "/context-graph",
     "/context-graph/actions",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function updateActionContractAction(input: Record<string, unknown>) {
-  const parsed = UpdateActionContractInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = UpdateActionContractInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("update_action_contract", parsed, [
     "/studio/actions",
     "/context-graph",
     "/context-graph/actions",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function deprecateActionContractAction(
   input: Record<string, unknown>,
 ) {
-  const parsed = DeprecateActionContractInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DeprecateActionContractInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("deprecate_action_contract", parsed, [
     "/studio/actions",
     "/context-graph",
     "/context-graph/actions",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function updateInstructionAction(input: Record<string, unknown>) {
-  const parsed = UpdateInstructionInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = UpdateInstructionInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("update_instruction", parsed, [
     "/studio/instructions",
     "/context-graph",
     "/context-graph/instructions",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function deprecateInstructionAction(input: Record<string, unknown>) {
-  const parsed = DeprecateInstructionInputSchema.parse(input);
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DeprecateInstructionInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
   return runMetaAction("deprecate_instruction", parsed, [
     "/studio/instructions",
     "/context-graph",
     "/context-graph/instructions",
     "/log",
-  ]);
+  ], projectId);
 }
 
 export async function createNodeTableFormAction(formData: FormData): Promise<void> {
+  const projectId = await requireProjectId(formData);
   await defineNodeTypeAction({
     definition: {
       nodeType: String(formData.get("nodeType") ?? ""),
@@ -438,6 +533,7 @@ export async function createNodeTableFormAction(formData: FormData): Promise<voi
       propertyRefs: parseCsv(formData.get("propertyRefs")),
       allowedActionRefs: parseCsv(formData.get("allowedActionRefs")),
     },
+    projectId,
   });
 }
 
@@ -445,10 +541,11 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
+  const projectId = await requireProjectId(formData);
   const nodeType = String(formData.get("nodeType") ?? "");
   const propertyKey = String(formData.get("propertyKey") ?? "");
   const valueType = String(formData.get("valueType") ?? "string");
-  const ports = getActionPorts();
+  const ports = getActionPorts(projectId);
   const existingProperty = await ports.catalog.getPropertyCatalogEntry(propertyKey);
 
   if (!existingProperty) {
@@ -464,6 +561,7 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
       },
       executorId: user.id,
       executorType: "Human",
+      projectId,
     });
     if (propertyResult.status === "rejected") return;
   }
@@ -489,6 +587,7 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
     input: { nodeType, patch: { propertyRefs } },
     executorId: user.id,
     executorType: "Human",
+    projectId,
   });
 
   const nodeSlug = nodeEntry.slug;
@@ -508,6 +607,7 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
 }
 
 export async function createEdgeTableFormAction(formData: FormData): Promise<void> {
+  const projectId = await requireProjectId(formData);
   await defineEdgeTypeAction({
     definition: {
       edgeType: String(formData.get("edgeType") ?? ""),
@@ -516,10 +616,12 @@ export async function createEdgeTableFormAction(formData: FormData): Promise<voi
       cardinality: String(formData.get("cardinality") ?? "many-to-many"),
       representation: String(formData.get("representation") ?? "directed"),
     },
+    projectId,
   });
 }
 
 export async function defineScopedActionFormAction(formData: FormData): Promise<void> {
+  const projectId = await requireProjectId(formData);
   const scopeKind = String(formData.get("scopeKind") ?? "global");
   const scope = ActionScopeSchema.parse(
     scopeKind === "node_type"
@@ -552,10 +654,12 @@ export async function defineScopedActionFormAction(formData: FormData): Promise<
       idempotencyRule: null,
       logPayloadSchema: {},
     },
+    projectId,
   });
 }
 
 export async function defineWorkflowInstructionFormAction(formData: FormData): Promise<void> {
+  const projectId = await requireProjectId(formData);
   const triggerPatterns = parseCsv(formData.get("triggerPatterns"));
   const scopeKind = String(formData.get("scopeKind") ?? "global");
   const scopedNodeType = String(formData.get("nodeType") ?? "");
@@ -584,20 +688,23 @@ export async function defineWorkflowInstructionFormAction(formData: FormData): P
       gatePolicy: parseJsonObject(formData.get("gatePolicy")),
       completionCriteria: String(formData.get("completionCriteria") ?? "") || null,
     },
+    projectId,
   });
 }
 
 export async function runActionJsonFormAction(formData: FormData): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
+  const projectId = await requireProjectId(formData);
   const actionType = String(formData.get("actionType") ?? "");
   const input = parseJsonObject(formData.get("input"));
-  const ports = getActionPorts();
+  const ports = getActionPorts(projectId);
   await executeAction(ports, {
     actionType,
     input,
     executorId: user.id,
     executorType: "Human",
+    projectId,
   });
   for (const path of withConsolePaths([
     "/context-graph",
@@ -609,16 +716,24 @@ export async function runActionJsonFormAction(formData: FormData): Promise<void>
   }
 }
 
-export async function previewActionContractAction(input: Record<string, unknown>) {
+export async function previewActionContractAction(
+  input: Record<string, unknown>,
+) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const parsed = DefineActionContractInputSchema.parse(input);
-  const ports = getActionPorts();
+  const { projectId: inputProjectId, ...rest } = input;
+  const parsed = DefineActionContractInputSchema.parse(rest);
+  const projectId =
+    typeof inputProjectId === "string" && inputProjectId
+      ? inputProjectId
+      : await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   return previewAction(ports, {
     actionType: "define_action_contract",
     input: parsed,
     executorId: user.id,
     executorType: "Human",
+    projectId,
   });
 }

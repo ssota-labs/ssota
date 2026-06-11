@@ -1,11 +1,28 @@
-import { createActionPorts, createDb } from "@ssota/adapter-supabase";
+import {
+  createActionPorts,
+  createConsolePort,
+  createDb,
+} from "@ssota/adapter-supabase";
 
-let cachedPorts: ReturnType<typeof createActionPorts> | null = null;
+type Db = ReturnType<typeof createDb>["db"];
 
-export function getActionPorts() {
-  if (!cachedPorts) {
-    const { db } = createDb(process.env.DATABASE_URL);
-    cachedPorts = createActionPorts(db);
+export function getDb(): Db {
+  return createDb(process.env.DATABASE_URL).db;
+}
+
+export function getActionPorts(projectId: string) {
+  return createActionPorts(getDb(), { projectId });
+}
+
+export async function resolveDefaultProjectId(): Promise<string> {
+  const consolePort = createConsolePort(getDb());
+  const org = await consolePort.getOrganizationBySlug("ssota-labs");
+  if (!org) {
+    throw new Error("Default organization not found — run db:seed");
   }
-  return cachedPorts;
+  const project = await consolePort.getProjectBySlug(org.id, "ssota-dev");
+  if (!project) {
+    throw new Error("Default project not found — run db:seed");
+  }
+  return project.id;
 }

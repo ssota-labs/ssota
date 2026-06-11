@@ -10,7 +10,7 @@ export async function GET(request: Request) {
       new URL(request.url).searchParams,
     );
     if (!parsed.ok) return parsed.response;
-    const data = await queryNodes({ ...parsed.data, subjectId: ctx.subjectId });
+    const data = await queryNodes(ctx.projectId, { ...parsed.data, subjectId: ctx.subjectId });
     return jsonOk(NodeListResponseSchema.parse({ data }).data);
   });
 }

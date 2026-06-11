@@ -7,7 +7,11 @@
  * - Migrate representative documents as create_document actions.
  */
 import { executeAction } from "@ssota/core";
-import { createActionPorts, createDb } from "@ssota/adapter-supabase";
+import {
+  createActionPorts,
+  createConsolePort,
+  createDb,
+} from "@ssota/adapter-supabase";
 
 const NOTION_PROTOTYPE_DOCUMENTS = [
   {
@@ -38,9 +42,25 @@ const NOTION_DOMAIN_INSTRUCTIONS = [
   },
 ];
 
+async function resolveDefaultProjectId(
+  db: ReturnType<typeof createDb>["db"],
+): Promise<string> {
+  const consolePort = createConsolePort(db);
+  const org = await consolePort.getOrganizationBySlug("ssota-labs");
+  if (!org) {
+    throw new Error("Default organization not found — run db:seed");
+  }
+  const project = await consolePort.getProjectBySlug(org.id, "ssota-dev");
+  if (!project) {
+    throw new Error("Default project not found — run db:seed");
+  }
+  return project.id;
+}
+
 async function main() {
   const { db, client } = createDb();
-  const ports = createActionPorts(db);
+  const projectId = await resolveDefaultProjectId(db);
+  const ports = createActionPorts(db, { projectId });
   const executorId = "migration-script";
 
   console.log(
@@ -58,6 +78,7 @@ async function main() {
       },
       executorId,
       executorType: "System",
+      projectId,
     });
     console.log(`Migrated document: ${doc.title} → ${JSON.stringify(result)}`);
   }

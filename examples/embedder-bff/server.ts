@@ -21,8 +21,10 @@ const SSOTA_SERVICE_EMAIL =
   process.env.SSOTA_SERVICE_EMAIL ?? "smoke@ssota.test";
 const SSOTA_SERVICE_PASSWORD =
   process.env.SSOTA_SERVICE_PASSWORD ?? "smoke-test-password-123";
+const SSOTA_PROJECT_ID = process.env.SSOTA_PROJECT_ID;
 
 let cachedMcpToken: { token: string; expiresAt: number } | null = null;
+let cachedProjectId: string | null = null;
 
 async function getLoopOsMcpToken(): Promise<string> {
   if (cachedMcpToken && cachedMcpToken.expiresAt > Date.now() + 60_000) {
@@ -59,10 +61,39 @@ async function getLoopOsMcpToken(): Promise<string> {
 /** 요청마다 embedder가 검증한 최종 사용자 id — SDK가 X-SSOTA-Subject-Id로 전송 */
 let requestSubjectId: string | undefined;
 
+async function resolveProjectId(): Promise<string> {
+  if (SSOTA_PROJECT_ID) return SSOTA_PROJECT_ID;
+  if (cachedProjectId) return cachedProjectId;
+
+  const databaseUrl =
+    process.env.DATABASE_URL ??
+    "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+  const postgres = (await import("postgres")).default;
+  const sql = postgres(databaseUrl, { max: 1 });
+  try {
+    const rows = await sql<{ id: string }[]>`
+      select p.id
+      from projects p
+      join organizations o on o.id = p.organization_id
+      where o.slug = 'ssota-labs' and p.slug = 'ssota-dev'
+      limit 1
+    `;
+    const projectId = rows[0]?.id;
+    if (!projectId) {
+      throw new Error("Default SSOTA project not found — run db:seed");
+    }
+    cachedProjectId = projectId;
+    return projectId;
+  } finally {
+    await sql.end({ timeout: 1 });
+  }
+}
+
 const ssota = createClient({
   url: SSOTA_API_URL,
   auth: { accessToken: getLoopOsMcpToken },
   subjectId: () => requestSubjectId,
+  projectId: resolveProjectId,
 });
 
 async function readJson<T>(req: IncomingMessage): Promise<T> {

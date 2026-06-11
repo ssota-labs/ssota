@@ -5,6 +5,7 @@ import {
   createInMemoryPorts,
   createInMemoryState,
   seedTestCatalog,
+  TEST_PROJECT_ID,
 } from "./testing/in-memory.js";
 import type { LifecycleStatus } from "@ssota/contracts";
 
@@ -193,6 +194,7 @@ describe("homepage agent vertical slice", () => {
       executorId: "agent-1",
       executorType: "Agent",
       subjectId,
+      projectId: TEST_PROJECT_ID,
     });
     expect(project.status).toBe("committed");
 
@@ -205,6 +207,7 @@ describe("homepage agent vertical slice", () => {
       executorId: "agent-1",
       executorType: "Agent",
       subjectId,
+      projectId: TEST_PROJECT_ID,
     });
     expect(brief.status).toBe("committed");
 
@@ -228,6 +231,7 @@ describe("homepage agent vertical slice", () => {
       executorId: "agent-1",
       executorType: "Agent",
       subjectId,
+      projectId: TEST_PROJECT_ID,
     });
     expect(link.status).toBe("committed");
 
@@ -252,6 +256,7 @@ describe("homepage agent vertical slice", () => {
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_a",
+      projectId: TEST_PROJECT_ID,
     });
     await executeAction(ports, {
       actionType: "create_design_brief",
@@ -259,6 +264,7 @@ describe("homepage agent vertical slice", () => {
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_b",
+      projectId: TEST_PROJECT_ID,
     });
 
     const project = (
@@ -280,6 +286,7 @@ describe("homepage agent vertical slice", () => {
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_a",
+      projectId: TEST_PROJECT_ID,
     });
 
     expect(link.status).toBe("rejected");

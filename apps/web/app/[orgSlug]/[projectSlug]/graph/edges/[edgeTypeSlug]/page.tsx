@@ -13,6 +13,7 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineScopedActionFormAction, runActionJsonFormAction } from "@/app/actions";
 import { EdgeRowsDataTable } from "@/components/graph/edge-rows-data-table";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphEdgeTablePage({
@@ -20,9 +21,10 @@ export default async function GraphEdgeTablePage({
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string; edgeTypeSlug: string }>;
 }) {
-  const { edgeTypeSlug } = await params;
+  const { orgSlug, projectSlug, edgeTypeSlug } = await params;
   const slug = decodeURIComponent(edgeTypeSlug);
-  const ports = getActionPorts();
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
   const entry = await ports.catalog.getEdgeCatalogEntryBySlug(slug);
   if (!entry) notFound();
   const decoded = entry.edgeType;
@@ -53,8 +55,8 @@ export default async function GraphEdgeTablePage({
 
   const toolbar = (
     <div className="ml-auto flex flex-wrap items-center gap-2">
-      <RunEdgeActionSheet edgeType={decoded} />
-      <AddEdgeActionSheet edgeType={decoded} />
+      <RunEdgeActionSheet edgeType={decoded} projectId={project.id} />
+      <AddEdgeActionSheet edgeType={decoded} projectId={project.id} />
     </div>
   );
 
@@ -79,7 +81,13 @@ function nodeLabel(
   return typeof title === "string" ? title : nodeId.slice(0, 8);
 }
 
-function RunEdgeActionSheet({ edgeType }: { edgeType: string }) {
+function RunEdgeActionSheet({
+  edgeType,
+  projectId,
+}: {
+  edgeType: string;
+  projectId: string;
+}) {
   return (
     <Sheet>
       <SheetTrigger render={<Button size="sm" />}>Create edge / Run action</SheetTrigger>
@@ -89,6 +97,7 @@ function RunEdgeActionSheet({ edgeType }: { edgeType: string }) {
           <SheetDescription>create_edge action input을 JSON으로 제출합니다.</SheetDescription>
         </SheetHeader>
         <form action={runActionJsonFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={projectId} />
           <div className="space-y-2">
             <Label htmlFor="actionType">Action type</Label>
             <Input id="actionType" name="actionType" required />
@@ -108,7 +117,13 @@ function RunEdgeActionSheet({ edgeType }: { edgeType: string }) {
   );
 }
 
-function AddEdgeActionSheet({ edgeType }: { edgeType: string }) {
+function AddEdgeActionSheet({
+  edgeType,
+  projectId,
+}: {
+  edgeType: string;
+  projectId: string;
+}) {
   return (
     <Sheet>
       <SheetTrigger render={<Button variant="outline" size="sm" />}>Add action</SheetTrigger>
@@ -118,6 +133,7 @@ function AddEdgeActionSheet({ edgeType }: { edgeType: string }) {
           <SheetDescription>scope=edge_type:{edgeType}로 action contract를 생성합니다.</SheetDescription>
         </SheetHeader>
         <form action={defineScopedActionFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={projectId} />
           <input type="hidden" name="scopeKind" value="edge_type" />
           <input type="hidden" name="edgeType" value={edgeType} />
           <div className="space-y-2">

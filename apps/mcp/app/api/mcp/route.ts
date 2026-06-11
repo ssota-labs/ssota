@@ -50,6 +50,7 @@ import {
   traverseGraphService,
 } from "@/lib/api/services";
 import { verifyBearerToken } from "@/lib/auth";
+import { resolveProjectId } from "@/lib/project-context";
 import { resolveSubjectId } from "@/lib/subject-context";
 
 function jsonContent(data: unknown) {
@@ -68,7 +69,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list node type catalog index. Fetch details with get_node_type.",
         inputSchema: {},
       },
-      async () => jsonContent(await listNodeTypes()),
+      async (_args, extra) => jsonContent(await listNodeTypes(requireProjectFromExtra(extra))),
     );
 
     server.registerTool(
@@ -79,7 +80,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list edge type catalog index. Fetch details with get_edge_type.",
         inputSchema: {},
       },
-      async () => jsonContent(await listEdgeTypes()),
+      async (_args, extra) => jsonContent(await listEdgeTypes(requireProjectFromExtra(extra))),
     );
 
     server.registerTool(
@@ -90,7 +91,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list property catalog index. Fetch details with get_property.",
         inputSchema: {},
       },
-      async () => jsonContent(await listProperties()),
+      async (_args, extra) => jsonContent(await listProperties(requireProjectFromExtra(extra))),
     );
 
     server.registerTool(
@@ -101,7 +102,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list action contract index. Fetch details with get_action_contract.",
         inputSchema: {},
       },
-      async () => jsonContent(await listActionContracts()),
+      async (_args, extra) => jsonContent(await listActionContracts(requireProjectFromExtra(extra))),
     );
 
     server.registerTool(
@@ -112,7 +113,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list archetype index. Fetch details with get_archetype.",
         inputSchema: {},
       },
-      async () => jsonContent(await listArchetypes()),
+      async (_args, extra) => jsonContent(await listArchetypes(requireProjectFromExtra(extra))),
     );
 
     server.registerTool(
@@ -122,7 +123,7 @@ const mcpHandler = createMcpHandler(
         description: "Get action contract from catalog",
         inputSchema: { actionType: z.string() },
       },
-      async ({ actionType }) => jsonContent(await getActionContract(actionType)),
+      async ({ actionType }, extra) => jsonContent(await getActionContract(requireProjectFromExtra(extra), actionType)),
     );
 
     server.registerTool(
@@ -132,9 +133,9 @@ const mcpHandler = createMcpHandler(
         description: "Fetch one node type catalog entry by nodeType",
         inputSchema: { nodeType: z.string().min(1) },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = GetNodeTypeInputSchema.parse(args);
-        return jsonContent(await getNodeType(parsed.nodeType));
+        return jsonContent(await getNodeType(requireProjectFromExtra(extra), parsed.nodeType));
       },
     );
 
@@ -145,9 +146,9 @@ const mcpHandler = createMcpHandler(
         description: "Fetch one edge type catalog entry by edgeType",
         inputSchema: { edgeType: z.string().min(1) },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = GetEdgeTypeInputSchema.parse(args);
-        return jsonContent(await getEdgeType(parsed.edgeType));
+        return jsonContent(await getEdgeType(requireProjectFromExtra(extra), parsed.edgeType));
       },
     );
 
@@ -158,9 +159,9 @@ const mcpHandler = createMcpHandler(
         description: "Fetch one property catalog entry by propertyKey",
         inputSchema: { propertyKey: z.string().min(1) },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = GetPropertyInputSchema.parse(args);
-        return jsonContent(await getProperty(parsed.propertyKey));
+        return jsonContent(await getProperty(requireProjectFromExtra(extra), parsed.propertyKey));
       },
     );
 
@@ -171,9 +172,9 @@ const mcpHandler = createMcpHandler(
         description: "Fetch one archetype by archetypeId",
         inputSchema: { archetypeId: z.string().min(1) },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = GetArchetypeInputSchema.parse(args);
-        return jsonContent(await getArchetype(parsed.archetypeId));
+        return jsonContent(await getArchetype(requireProjectFromExtra(extra), parsed.archetypeId));
       },
     );
 
@@ -184,9 +185,9 @@ const mcpHandler = createMcpHandler(
         description: "Fetch one graph node by nodeId",
         inputSchema: { nodeId: z.string().uuid() },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = GetNodeInputSchema.parse(args);
-        return jsonContent(await getNode(parsed.nodeId));
+        return jsonContent(await getNode(requireProjectFromExtra(extra), parsed.nodeId));
       },
     );
 
@@ -197,9 +198,9 @@ const mcpHandler = createMcpHandler(
         description: "Fetch one domain instruction by instructionId",
         inputSchema: { instructionId: z.string().uuid() },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = GetInstructionInputSchema.parse(args);
-        return jsonContent(await getInstruction(parsed.instructionId));
+        return jsonContent(await getInstruction(requireProjectFromExtra(extra), parsed.instructionId));
       },
     );
 
@@ -210,9 +211,9 @@ const mcpHandler = createMcpHandler(
         description: "Fetch one gate by gateId",
         inputSchema: { gateId: z.string().uuid() },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = GetGateInputSchema.parse(args);
-        return jsonContent(await getGate(parsed.gateId));
+        return jsonContent(await getGate(requireProjectFromExtra(extra), parsed.gateId));
       },
     );
 
@@ -233,7 +234,7 @@ const mcpHandler = createMcpHandler(
       async (args, extra) => {
         const subjectId = readSubjectFromExtra(extra);
         const parsed = QueryNodesInputSchema.parse({ ...args, subjectId });
-        return jsonContent(await queryNodes(parsed));
+        return jsonContent(await queryNodes(requireProjectFromExtra(extra), parsed));
       },
     );
 
@@ -252,7 +253,7 @@ const mcpHandler = createMcpHandler(
       async (args, extra) => {
         const subjectId = readSubjectFromExtra(extra);
         const parsed = TraverseEdgesInputSchema.parse({ ...args, subjectId });
-        return jsonContent(await traverseEdges(parsed));
+        return jsonContent(await traverseEdges(requireProjectFromExtra(extra), parsed));
       },
     );
 
@@ -268,9 +269,9 @@ const mcpHandler = createMcpHandler(
           edgeType: z.string().optional(),
         },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = QueryNeighborsInputSchema.parse(args);
-        return jsonContent(await queryNeighborsService(parsed));
+        return jsonContent(await queryNeighborsService(requireProjectFromExtra(extra), parsed));
       },
     );
 
@@ -289,9 +290,9 @@ const mcpHandler = createMcpHandler(
           limit: z.number().int().positive().max(100).optional(),
         },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = TraverseGraphInputSchema.parse(args);
-        return jsonContent(await traverseGraphService(parsed));
+        return jsonContent(await traverseGraphService(requireProjectFromExtra(extra), parsed));
       },
     );
 
@@ -306,9 +307,9 @@ const mcpHandler = createMcpHandler(
           limit: z.number().int().positive().max(20).optional(),
         },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = FindInstructionInputSchema.parse(args);
-        return jsonContent(await findInstructions(parsed));
+        return jsonContent(await findInstructions(requireProjectFromExtra(extra), parsed));
       },
     );
 
@@ -341,7 +342,9 @@ const mcpHandler = createMcpHandler(
           idempotencyKey: args.idempotencyKey,
         });
 
+        const projectId = requireProjectFromExtra(extra);
         const result = await executeActionForClient(
+          projectId,
           parsed,
           user.id,
           "Agent",
@@ -359,7 +362,7 @@ const mcpHandler = createMcpHandler(
           "Discover: list pending gates only. Query with filters via query_gates.",
         inputSchema: {},
       },
-      async () => jsonContent(await listPendingGates()),
+      async (_args, extra) => jsonContent(await listPendingGates(requireProjectFromExtra(extra))),
     );
 
     server.registerTool(
@@ -373,9 +376,9 @@ const mcpHandler = createMcpHandler(
           offset: z.number().int().nonnegative().optional(),
         },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = QueryGatesInputSchema.parse(args);
-        return jsonContent(await queryGates(parsed));
+        return jsonContent(await queryGates(requireProjectFromExtra(extra), parsed));
       },
     );
 
@@ -389,9 +392,9 @@ const mcpHandler = createMcpHandler(
           note: z.string().optional(),
         },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = SubmitForApprovalInputSchema.parse(args);
-        return jsonContent(await submitForApproval(parsed.gateId, parsed.note));
+        return jsonContent(await submitForApproval(requireProjectFromExtra(extra), parsed.gateId, parsed.note));
       },
     );
 
@@ -406,9 +409,9 @@ const mcpHandler = createMcpHandler(
           actionType: z.string().optional(),
         },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = GetActionLogInputSchema.parse(args);
-        return jsonContent(await getActionLog(parsed));
+        return jsonContent(await getActionLog(requireProjectFromExtra(extra), parsed));
       },
     );
 
@@ -422,9 +425,9 @@ const mcpHandler = createMcpHandler(
           idempotencyKey: z.string().min(1).optional(),
         },
       },
-      async (args) => {
+      async (args, extra) => {
         const parsed = GetActionLogEntryInputSchema.parse(args);
-        return jsonContent(await getActionLogEntry(parsed));
+        return jsonContent(await getActionLogEntry(requireProjectFromExtra(extra), parsed));
       },
     );
   },
@@ -446,6 +449,16 @@ function readSubjectFromExtra(
     : undefined;
 }
 
+function requireProjectFromExtra(
+  extra: { authInfo?: AuthInfo } | undefined,
+): string {
+  const projectId = extra?.authInfo?.extra?.projectId;
+  if (typeof projectId !== "string" || projectId.length === 0) {
+    throw new Error("X-SSOTA-Project-Id header is required");
+  }
+  return projectId;
+}
+
 async function verifyToken(
   req: Request,
   bearerToken?: string,
@@ -454,6 +467,9 @@ async function verifyToken(
     bearerToken ? `Bearer ${bearerToken}` : null,
   );
   if (!user) return undefined;
+
+  const projectId = resolveProjectId(req);
+  if (!projectId) return undefined;
 
   let subjectId: string | undefined;
   try {
@@ -466,7 +482,7 @@ async function verifyToken(
     token: bearerToken ?? "",
     clientId: user.id,
     scopes: ["openid"],
-    extra: { user, subjectId },
+    extra: { user, subjectId, projectId },
   };
 }
 

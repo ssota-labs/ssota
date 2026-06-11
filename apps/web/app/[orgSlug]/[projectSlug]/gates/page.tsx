@@ -1,5 +1,6 @@
 import { approveGateFormAction } from "@/app/actions";
 import { getTranslations } from "@/lib/i18n/server";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Badge } from "@ssota/ui/components/ui/badge";
@@ -23,9 +24,10 @@ export default async function GatesPage({
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
-  await params;
+  const { orgSlug, projectSlug } = await params;
   const { t } = await getTranslations();
-  const ports = getActionPorts();
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
   const gates = await ports.gate.listPendingGates();
 
   return (
@@ -80,6 +82,7 @@ export default async function GatesPage({
                   </div>
                   <div className="flex shrink-0 gap-2">
                     <form action={approveGateFormAction}>
+                      <input type="hidden" name="projectId" value={project.id} />
                       <input type="hidden" name="gateId" value={gate.id} />
                       <input type="hidden" name="approved" value="true" />
                       <Button type="submit" size="sm">
@@ -87,6 +90,7 @@ export default async function GatesPage({
                       </Button>
                     </form>
                     <form action={approveGateFormAction}>
+                      <input type="hidden" name="projectId" value={project.id} />
                       <input type="hidden" name="gateId" value={gate.id} />
                       <input type="hidden" name="approved" value="false" />
                       <Button type="submit" variant="outline" size="sm">

@@ -13,6 +13,7 @@ import type {
   ActionCommitPort,
   ActionLogRecord,
   ActionPorts,
+  ActionPortsScope,
   ActionPropertyPermission,
   ActionCatalogEntry,
   Archetype,
@@ -32,9 +33,12 @@ import type {
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
+export type { ActionPortsScope };
+
 function mapNode(row: typeof schema.nodes.$inferSelect): Node {
   return {
     id: row.id,
+    projectId: row.projectId,
     nodeType: row.nodeType,
     lifecycleStatus: row.lifecycleStatus as LifecycleStatus,
     properties: row.properties,
@@ -104,6 +108,7 @@ function mapEdgeCatalogEntry(
 function mapInstruction(row: typeof schema.instructions.$inferSelect): Instruction {
   return {
     id: row.id,
+    projectId: row.projectId,
     slug: row.slug,
     title: row.title,
     triggerPatterns: row.triggerPatterns,
@@ -122,13 +127,20 @@ function mapInstruction(row: typeof schema.instructions.$inferSelect): Instructi
   };
 }
 
-export function createCatalogPort(db: Db): CatalogPort {
+export function createCatalogPort(db: Db, scope: ActionPortsScope): CatalogPort {
+  const { projectId } = scope;
+
   return {
     async getNodeCatalogEntry(nodeType) {
       const rows = await db
         .select()
         .from(schema.nodeCatalog)
-        .where(eq(schema.nodeCatalog.nodeType, nodeType))
+        .where(
+          and(
+            eq(schema.nodeCatalog.projectId, projectId),
+            eq(schema.nodeCatalog.nodeType, nodeType),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -139,7 +151,12 @@ export function createCatalogPort(db: Db): CatalogPort {
       const rows = await db
         .select()
         .from(schema.nodeCatalog)
-        .where(eq(schema.nodeCatalog.slug, slug))
+        .where(
+          and(
+            eq(schema.nodeCatalog.projectId, projectId),
+            eq(schema.nodeCatalog.slug, slug),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -147,7 +164,10 @@ export function createCatalogPort(db: Db): CatalogPort {
     },
 
     async listNodeCatalogEntries() {
-      const rows = await db.select().from(schema.nodeCatalog);
+      const rows = await db
+        .select()
+        .from(schema.nodeCatalog)
+        .where(eq(schema.nodeCatalog.projectId, projectId));
       return rows.map(mapNodeCatalogEntry);
     },
 
@@ -155,7 +175,12 @@ export function createCatalogPort(db: Db): CatalogPort {
       const rows = await db
         .select()
         .from(schema.edgeCatalog)
-        .where(eq(schema.edgeCatalog.edgeType, edgeType))
+        .where(
+          and(
+            eq(schema.edgeCatalog.projectId, projectId),
+            eq(schema.edgeCatalog.edgeType, edgeType),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -166,7 +191,12 @@ export function createCatalogPort(db: Db): CatalogPort {
       const rows = await db
         .select()
         .from(schema.edgeCatalog)
-        .where(eq(schema.edgeCatalog.slug, slug))
+        .where(
+          and(
+            eq(schema.edgeCatalog.projectId, projectId),
+            eq(schema.edgeCatalog.slug, slug),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -174,7 +204,10 @@ export function createCatalogPort(db: Db): CatalogPort {
     },
 
     async listEdgeCatalogEntries() {
-      const rows = await db.select().from(schema.edgeCatalog);
+      const rows = await db
+        .select()
+        .from(schema.edgeCatalog)
+        .where(eq(schema.edgeCatalog.projectId, projectId));
       return rows.map(mapEdgeCatalogEntry);
     },
 
@@ -182,7 +215,12 @@ export function createCatalogPort(db: Db): CatalogPort {
       const rows = await db
         .select()
         .from(schema.propertyCatalog)
-        .where(eq(schema.propertyCatalog.propertyKey, propertyKey))
+        .where(
+          and(
+            eq(schema.propertyCatalog.projectId, projectId),
+            eq(schema.propertyCatalog.propertyKey, propertyKey),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -195,7 +233,10 @@ export function createCatalogPort(db: Db): CatalogPort {
     },
 
     async listPropertyCatalogEntries() {
-      const rows = await db.select().from(schema.propertyCatalog);
+      const rows = await db
+        .select()
+        .from(schema.propertyCatalog)
+        .where(eq(schema.propertyCatalog.projectId, projectId));
       return rows.map(
         (row) =>
           ({
@@ -211,7 +252,12 @@ export function createCatalogPort(db: Db): CatalogPort {
       const rows = await db
         .select()
         .from(schema.actionCatalog)
-        .where(eq(schema.actionCatalog.actionType, actionType))
+        .where(
+          and(
+            eq(schema.actionCatalog.projectId, projectId),
+            eq(schema.actionCatalog.actionType, actionType),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -222,7 +268,12 @@ export function createCatalogPort(db: Db): CatalogPort {
       const rows = await db
         .select()
         .from(schema.actionCatalog)
-        .where(eq(schema.actionCatalog.slug, slug))
+        .where(
+          and(
+            eq(schema.actionCatalog.projectId, projectId),
+            eq(schema.actionCatalog.slug, slug),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -230,7 +281,10 @@ export function createCatalogPort(db: Db): CatalogPort {
     },
 
     async listActionCatalogEntries() {
-      const rows = await db.select().from(schema.actionCatalog);
+      const rows = await db
+        .select()
+        .from(schema.actionCatalog)
+        .where(eq(schema.actionCatalog.projectId, projectId));
       return rows.map(mapActionCatalogEntry);
     },
 
@@ -271,6 +325,7 @@ export function createCatalogPort(db: Db): CatalogPort {
         .from(schema.actionPropertyPermissions)
         .where(
           and(
+            eq(schema.actionPropertyPermissions.projectId, projectId),
             eq(schema.actionPropertyPermissions.actionType, actionType),
             eq(schema.actionPropertyPermissions.nodeType, nodeType),
           ),
@@ -297,6 +352,7 @@ export function createCatalogPort(db: Db): CatalogPort {
         .from(schema.instructions)
         .where(
           and(
+            eq(schema.instructions.projectId, projectId),
             or(
               sql`lower(${schema.instructions.title}) like ${pattern}`,
               sql`lower(${schema.instructions.body}) like ${pattern}`,
@@ -315,6 +371,7 @@ export function createCatalogPort(db: Db): CatalogPort {
       const rows = await db
         .select()
         .from(schema.instructions)
+        .where(eq(schema.instructions.projectId, projectId))
         .limit(input?.limit ?? 100);
       return rows.map(mapInstruction);
     },
@@ -323,7 +380,12 @@ export function createCatalogPort(db: Db): CatalogPort {
       const rows = await db
         .select()
         .from(schema.instructions)
-        .where(eq(schema.instructions.id, instructionId))
+        .where(
+          and(
+            eq(schema.instructions.projectId, projectId),
+            eq(schema.instructions.id, instructionId),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -334,7 +396,12 @@ export function createCatalogPort(db: Db): CatalogPort {
       const rows = await db
         .select()
         .from(schema.instructions)
-        .where(eq(schema.instructions.slug, slug))
+        .where(
+          and(
+            eq(schema.instructions.projectId, projectId),
+            eq(schema.instructions.slug, slug),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -343,20 +410,28 @@ export function createCatalogPort(db: Db): CatalogPort {
   };
 }
 
-export function createGraphReadPort(db: Db): GraphReadPort {
+export function createGraphReadPort(db: Db, scope: ActionPortsScope): GraphReadPort {
+  const { projectId } = scope;
+
   return {
     async getNode(nodeId) {
       const rows = await db
         .select()
         .from(schema.nodes)
-        .where(eq(schema.nodes.id, nodeId))
+        .where(
+          and(eq(schema.nodes.id, nodeId), eq(schema.nodes.projectId, projectId)),
+        )
         .limit(1);
       const row = rows[0];
       return row ? mapNode(row) : null;
     },
 
     async queryNodes(params) {
-      let query = db.select().from(schema.nodes).$dynamic();
+      let query = db
+        .select()
+        .from(schema.nodes)
+        .where(eq(schema.nodes.projectId, projectId))
+        .$dynamic();
       const conditions = [];
       if (params.nodeType) {
         conditions.push(eq(schema.nodes.nodeType, params.nodeType));
@@ -372,7 +447,7 @@ export function createGraphReadPort(db: Db): GraphReadPort {
         );
       }
       if (conditions.length > 0) {
-        query = query.where(and(...conditions));
+        query = query.where(and(eq(schema.nodes.projectId, projectId), ...conditions));
       }
       const rows = await query
         .limit(params.limit ?? 20)
@@ -395,7 +470,7 @@ export function createGraphReadPort(db: Db): GraphReadPort {
         }
       }
 
-      const conditions = [];
+      const conditions = [eq(schema.edges.projectId, projectId)];
       if (params.edgeType) {
         conditions.push(eq(schema.edges.edgeType, params.edgeType));
       }
@@ -408,7 +483,7 @@ export function createGraphReadPort(db: Db): GraphReadPort {
               .where(
                 and(
                   eq(schema.edges.sourceNodeId, params.nodeId),
-                  ...(conditions.length ? conditions : []),
+                  ...conditions,
                 ),
               )
           : Promise.resolve([]);
@@ -421,7 +496,7 @@ export function createGraphReadPort(db: Db): GraphReadPort {
               .where(
                 and(
                   eq(schema.edges.targetNodeId, params.nodeId),
-                  ...(conditions.length ? conditions : []),
+                  ...conditions,
                 ),
               )
           : Promise.resolve([]);
@@ -433,6 +508,7 @@ export function createGraphReadPort(db: Db): GraphReadPort {
         (row) =>
           ({
             id: row.id,
+            projectId: row.projectId,
             edgeType: row.edgeType,
             sourceNodeId: row.sourceNodeId,
             targetNodeId: row.targetNodeId,
@@ -446,7 +522,12 @@ export function createGraphReadPort(db: Db): GraphReadPort {
       const rows = await db
         .select()
         .from(schema.edgeCatalog)
-        .where(eq(schema.edgeCatalog.edgeType, edgeType))
+        .where(
+          and(
+            eq(schema.edgeCatalog.projectId, projectId),
+            eq(schema.edgeCatalog.edgeType, edgeType),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -458,20 +539,36 @@ export function createGraphReadPort(db: Db): GraphReadPort {
 export { createConsolePort } from "./console.js";
 export { createOnboardingPort } from "./onboarding.js";
 
-export function createGatePort(db: Db): GatePort {
+export function createGatePort(db: Db, scope: ActionPortsScope): GatePort {
+  const { projectId } = scope;
+
   return {
     async listPendingGates() {
       const rows = await db
         .select()
         .from(schema.gates)
-        .where(eq(schema.gates.status, "pending"));
+        .where(
+          and(
+            eq(schema.gates.projectId, projectId),
+            eq(schema.gates.status, "pending"),
+          ),
+        );
       return rows.map(mapGate);
     },
 
     async queryGates(params) {
-      let query = db.select().from(schema.gates).$dynamic();
+      let query = db
+        .select()
+        .from(schema.gates)
+        .where(eq(schema.gates.projectId, projectId))
+        .$dynamic();
       if (params.status) {
-        query = query.where(eq(schema.gates.status, params.status));
+        query = query.where(
+          and(
+            eq(schema.gates.projectId, projectId),
+            eq(schema.gates.status, params.status),
+          ),
+        );
       }
       const rows = await query
         .orderBy(sql`${schema.gates.createdAt} desc`)
@@ -484,7 +581,9 @@ export function createGatePort(db: Db): GatePort {
       const rows = await db
         .select()
         .from(schema.gates)
-        .where(eq(schema.gates.id, gateId))
+        .where(
+          and(eq(schema.gates.id, gateId), eq(schema.gates.projectId, projectId)),
+        )
         .limit(1);
       const row = rows[0];
       return row ? mapGate(row) : null;
@@ -494,6 +593,7 @@ export function createGatePort(db: Db): GatePort {
       const rows = await db
         .insert(schema.gates)
         .values({
+          projectId,
           actionType: g.actionType,
           executorId: g.executorId,
           input: g.input,
@@ -510,6 +610,7 @@ export function createGatePort(db: Db): GatePort {
 function mapGate(row: typeof schema.gates.$inferSelect): Gate {
   return {
     id: row.id,
+    projectId: row.projectId,
     actionType: row.actionType,
     executorId: row.executorId,
     input: row.input,
@@ -521,9 +622,14 @@ function mapGate(row: typeof schema.gates.$inferSelect): Gate {
   };
 }
 
-async function applyEffect(tx: Db, effect: Effect): Promise<void> {
+async function applyEffect(
+  tx: Db,
+  effect: Effect,
+  projectId: string,
+): Promise<void> {
   if (effect.kind === "create_node") {
     await tx.insert(schema.nodes).values({
+      projectId,
       nodeType: effect.node.nodeType,
       lifecycleStatus: effect.node.lifecycleStatus,
       properties: effect.node.properties,
@@ -542,7 +648,12 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
       const existing = await tx
         .select()
         .from(schema.nodes)
-        .where(eq(schema.nodes.id, effect.nodeId))
+        .where(
+          and(
+            eq(schema.nodes.id, effect.nodeId),
+            eq(schema.nodes.projectId, projectId),
+          ),
+        )
         .limit(1);
       const node = existing[0];
       if (node) {
@@ -558,9 +669,15 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
     await tx
       .update(schema.nodes)
       .set(patch)
-      .where(eq(schema.nodes.id, effect.nodeId));
+      .where(
+        and(
+          eq(schema.nodes.id, effect.nodeId),
+          eq(schema.nodes.projectId, projectId),
+        ),
+      );
   } else if (effect.kind === "create_edge") {
     await tx.insert(schema.edges).values({
+      projectId,
       edgeType: effect.edge.edgeType,
       sourceNodeId: effect.edge.sourceNodeId,
       targetNodeId: effect.edge.targetNodeId,
@@ -573,18 +690,28 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         status: effect.status,
         decisionNote: effect.decisionNote ?? null,
       })
-      .where(eq(schema.gates.id, effect.gateId));
+      .where(
+        and(
+          eq(schema.gates.id, effect.gateId),
+          eq(schema.gates.projectId, projectId),
+        ),
+      );
 
     if (effect.status === "approved") {
       const gateRows = await tx
         .select()
         .from(schema.gates)
-        .where(eq(schema.gates.id, effect.gateId))
+        .where(
+          and(
+            eq(schema.gates.id, effect.gateId),
+            eq(schema.gates.projectId, projectId),
+          ),
+        )
         .limit(1);
       const gate = gateRows[0];
       if (gate) {
         for (const proposed of gate.proposedEffects as Effect[]) {
-          await applyEffect(tx, proposed);
+          await applyEffect(tx, proposed, projectId);
         }
       }
     }
@@ -594,6 +721,7 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
     await tx
       .insert(schema.nodeCatalog)
       .values({
+        projectId,
         nodeType: effect.entry.nodeType,
         slug,
         label,
@@ -606,7 +734,7 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         allowedActionRefs: effect.entry.allowedActionRefs ?? [],
       })
       .onConflictDoUpdate({
-        target: schema.nodeCatalog.nodeType,
+        target: [schema.nodeCatalog.projectId, schema.nodeCatalog.nodeType],
         set: {
           family: effect.entry.family,
           archetypeId: effect.entry.archetypeId,
@@ -620,29 +748,55 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
   } else if (effect.kind === "deprecate_node_catalog_entry") {
     await tx
       .delete(schema.nodeCatalog)
-      .where(eq(schema.nodeCatalog.nodeType, effect.nodeType));
+      .where(
+        and(
+          eq(schema.nodeCatalog.projectId, projectId),
+          eq(schema.nodeCatalog.nodeType, effect.nodeType),
+        ),
+      );
   } else if (effect.kind === "deprecate_edge_catalog_entry") {
     await tx
       .delete(schema.edgeCatalog)
-      .where(eq(schema.edgeCatalog.edgeType, effect.edgeType));
+      .where(
+        and(
+          eq(schema.edgeCatalog.projectId, projectId),
+          eq(schema.edgeCatalog.edgeType, effect.edgeType),
+        ),
+      );
   } else if (effect.kind === "deprecate_property_catalog_entry") {
     await tx
       .delete(schema.propertyCatalog)
-      .where(eq(schema.propertyCatalog.propertyKey, effect.propertyKey));
+      .where(
+        and(
+          eq(schema.propertyCatalog.projectId, projectId),
+          eq(schema.propertyCatalog.propertyKey, effect.propertyKey),
+        ),
+      );
   } else if (effect.kind === "deprecate_action_catalog_entry") {
     await tx
       .delete(schema.actionCatalog)
-      .where(eq(schema.actionCatalog.actionType, effect.actionType));
+      .where(
+        and(
+          eq(schema.actionCatalog.projectId, projectId),
+          eq(schema.actionCatalog.actionType, effect.actionType),
+        ),
+      );
   } else if (effect.kind === "deprecate_instruction_catalog_entry") {
     await tx
       .delete(schema.instructions)
-      .where(eq(schema.instructions.id, effect.instructionId));
+      .where(
+        and(
+          eq(schema.instructions.projectId, projectId),
+          eq(schema.instructions.id, effect.instructionId),
+        ),
+      );
   } else if (effect.kind === "upsert_edge_catalog_entry") {
     const slug = toCatalogSlug(effect.entry.edgeType);
     const label = toCatalogLabel(effect.entry.edgeType);
     await tx
       .insert(schema.edgeCatalog)
       .values({
+        projectId,
         edgeType: effect.entry.edgeType,
         slug,
         label,
@@ -652,7 +806,7 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         representation: effect.entry.representation,
       })
       .onConflictDoUpdate({
-        target: schema.edgeCatalog.edgeType,
+        target: [schema.edgeCatalog.projectId, schema.edgeCatalog.edgeType],
         set: {
           domain: effect.entry.domain,
           range: effect.entry.range,
@@ -664,13 +818,17 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
     await tx
       .insert(schema.propertyCatalog)
       .values({
+        projectId,
         propertyKey: effect.entry.propertyKey,
         valueType: effect.entry.valueType,
         constraints: effect.entry.constraints,
         owningActions: effect.entry.owningActions,
       })
       .onConflictDoUpdate({
-        target: schema.propertyCatalog.propertyKey,
+        target: [
+          schema.propertyCatalog.projectId,
+          schema.propertyCatalog.propertyKey,
+        ],
         set: {
           valueType: effect.entry.valueType,
           constraints: effect.entry.constraints,
@@ -683,9 +841,16 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
       .from(schema.actionPropertyPermissions)
       .where(
         and(
-          eq(schema.actionPropertyPermissions.actionType, effect.permission.actionType),
+          eq(schema.actionPropertyPermissions.projectId, projectId),
+          eq(
+            schema.actionPropertyPermissions.actionType,
+            effect.permission.actionType,
+          ),
           eq(schema.actionPropertyPermissions.nodeType, effect.permission.nodeType),
-          eq(schema.actionPropertyPermissions.propertyKey, effect.permission.propertyKey),
+          eq(
+            schema.actionPropertyPermissions.propertyKey,
+            effect.permission.propertyKey,
+          ),
         ),
       )
       .limit(1);
@@ -702,6 +867,7 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         .where(eq(schema.actionPropertyPermissions.id, existing[0].id));
     } else {
       await tx.insert(schema.actionPropertyPermissions).values({
+        projectId,
         actionType: effect.permission.actionType,
         nodeType: effect.permission.nodeType,
         propertyKey: effect.permission.propertyKey,
@@ -718,6 +884,7 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
     await tx
       .insert(schema.actionCatalog)
       .values({
+        projectId,
         actionType: effect.entry.actionType,
         slug,
         label,
@@ -731,7 +898,7 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
         logPayloadSchema: effect.entry.logPayloadSchema,
       })
       .onConflictDoUpdate({
-        target: schema.actionCatalog.actionType,
+        target: [schema.actionCatalog.projectId, schema.actionCatalog.actionType],
         set: {
           preconditions: effect.entry.preconditions,
           scope: effect.entry.scope,
@@ -763,10 +930,16 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
           gatePolicy: effect.entry.gatePolicy,
           completionCriteria: effect.entry.completionCriteria ?? null,
         })
-        .where(eq(schema.instructions.id, effect.entry.instructionId));
+        .where(
+          and(
+            eq(schema.instructions.projectId, projectId),
+            eq(schema.instructions.id, effect.entry.instructionId),
+          ),
+        );
     } else {
       const slug = toCatalogSlug(effect.entry.title);
       await tx.insert(schema.instructions).values({
+        projectId,
         slug,
         title: effect.entry.title,
         triggerPatterns: effect.entry.triggerPatterns,
@@ -787,26 +960,36 @@ async function applyEffect(tx: Db, effect: Effect): Promise<void> {
   }
 }
 
-export function createActionCommitPort(db: Db): ActionCommitPort {
+export function createActionCommitPort(
+  db: Db,
+  scope: ActionPortsScope,
+): ActionCommitPort {
+  const { projectId } = scope;
+
   return {
     async commit(params: CommitParams): Promise<CommitResult> {
       return db.transaction(async (tx) => {
         if (params.gateDecision) {
-          await applyEffect(tx as unknown as Db, {
-            kind: "update_gate",
-            gateId: params.gateDecision.gateId,
-            status: params.gateDecision.status,
-            decisionNote: params.gateDecision.decisionNote,
-          });
+          await applyEffect(
+            tx as unknown as Db,
+            {
+              kind: "update_gate",
+              gateId: params.gateDecision.gateId,
+              status: params.gateDecision.status,
+              decisionNote: params.gateDecision.decisionNote,
+            },
+            projectId,
+          );
         }
 
         for (const effect of params.effects) {
-          await applyEffect(tx as unknown as Db, effect);
+          await applyEffect(tx as unknown as Db, effect, projectId);
         }
 
         const logRows = await tx
           .insert(schema.actionLog)
           .values({
+            projectId,
             actionType: params.logEntry.actionType,
             executorId: params.logEntry.executorId,
             executorType: params.logEntry.executorType,
@@ -828,9 +1011,18 @@ export function createActionCommitPort(db: Db): ActionCommitPort {
     },
 
     async getActionLog(params) {
-      let query = db.select().from(schema.actionLog).$dynamic();
+      let query = db
+        .select()
+        .from(schema.actionLog)
+        .where(eq(schema.actionLog.projectId, projectId))
+        .$dynamic();
       if (params.actionType) {
-        query = query.where(eq(schema.actionLog.actionType, params.actionType));
+        query = query.where(
+          and(
+            eq(schema.actionLog.projectId, projectId),
+            eq(schema.actionLog.actionType, params.actionType),
+          ),
+        );
       }
       const rows = await query
         .orderBy(sql`${schema.actionLog.createdAt} desc`)
@@ -844,7 +1036,12 @@ export function createActionCommitPort(db: Db): ActionCommitPort {
       const rows = await db
         .select()
         .from(schema.actionLog)
-        .where(eq(schema.actionLog.id, logId))
+        .where(
+          and(
+            eq(schema.actionLog.id, logId),
+            eq(schema.actionLog.projectId, projectId),
+          ),
+        )
         .limit(1);
       const row = rows[0];
       return row ? mapLogRecord(row) : null;
@@ -856,6 +1053,7 @@ export function createActionCommitPort(db: Db): ActionCommitPort {
         .from(schema.actionLog)
         .where(
           and(
+            eq(schema.actionLog.projectId, projectId),
             eq(schema.actionLog.idempotencyKey, key),
             eq(schema.actionLog.outcome, "committed"),
           ),
@@ -870,6 +1068,7 @@ export function createActionCommitPort(db: Db): ActionCommitPort {
 function mapLogRecord(row: typeof schema.actionLog.$inferSelect): ActionLogRecord {
   return {
     id: row.id,
+    projectId: row.projectId,
     actionType: row.actionType,
     executorId: row.executorId,
     executorType: row.executorType,
@@ -884,11 +1083,11 @@ function mapLogRecord(row: typeof schema.actionLog.$inferSelect): ActionLogRecor
   };
 }
 
-export function createActionPorts(db: Db): ActionPorts {
+export function createActionPorts(db: Db, scope: ActionPortsScope): ActionPorts {
   return {
-    catalog: createCatalogPort(db),
-    graph: createGraphReadPort(db),
-    gate: createGatePort(db),
-    commit: createActionCommitPort(db),
+    catalog: createCatalogPort(db, scope),
+    graph: createGraphReadPort(db, scope),
+    gate: createGatePort(db, scope),
+    commit: createActionCommitPort(db, scope),
   };
 }

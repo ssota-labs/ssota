@@ -14,6 +14,7 @@ import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { createNodeTableFormAction } from "@/app/actions";
 import { NodeCatalogDataTable } from "@/components/graph/node-catalog-data-table";
 import { graphPath } from "@/lib/console/paths";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphNodesPage({
@@ -23,7 +24,8 @@ export default async function GraphNodesPage({
 }) {
   const { orgSlug, projectSlug } = await params;
   const ctx = { orgSlug, projectSlug };
-  const ports = getActionPorts();
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
   const [nodeTypes, archetypes] = await Promise.all([
     ports.catalog.listNodeCatalogEntries(),
     ports.catalog.listArchetypes(),
@@ -55,6 +57,7 @@ export default async function GraphNodesPage({
           </SheetDescription>
         </SheetHeader>
         <form action={createNodeTableFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={project.id} />
           <div className="space-y-2">
             <Label htmlFor="nodeType">Key</Label>
             <Input id="nodeType" name="nodeType" placeholder="DecisionInput" required />

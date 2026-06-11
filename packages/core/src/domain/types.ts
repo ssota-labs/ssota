@@ -35,6 +35,7 @@ export interface NodeCatalogEntry {
 
 export interface Node {
   id: string;
+  projectId: string;
   nodeType: string;
   lifecycleStatus: LifecycleStatus;
   properties: Record<string, unknown>;
@@ -57,6 +58,7 @@ export interface EdgeCatalogEntry {
 
 export interface Edge {
   id: string;
+  projectId: string;
   edgeType: string;
   sourceNodeId: string;
   targetNodeId: string;
@@ -93,6 +95,7 @@ export interface ActionPropertyPermission {
 
 export interface Instruction {
   id: string;
+  projectId: string;
   slug: string;
   title: string;
   triggerPatterns: string[];
@@ -112,6 +115,7 @@ export interface Instruction {
 
 export interface Gate {
   id: string;
+  projectId: string;
   actionType: string;
   executorId: string;
   input: Record<string, unknown>;
@@ -124,6 +128,7 @@ export interface Gate {
 
 export interface ActionLogRecord {
   id: string;
+  projectId: string;
   actionType: string;
   executorId: string;
   executorType: ExecutorType;
@@ -306,6 +311,11 @@ export interface ActionPorts {
   graph: GraphReadPort;
   gate: GatePort;
   commit: ActionCommitPort;
+}
+
+/** Resolved once per request — scopes catalog/graph IO to one SSOTA project. */
+export interface ActionPortsScope {
+  projectId: string;
 }
 
 export class ActionRejectedError extends Error {

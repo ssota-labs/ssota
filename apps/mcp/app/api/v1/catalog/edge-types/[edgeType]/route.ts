@@ -8,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ edgeType: string }> },
 ) {
   const { edgeType } = await params;
-  return withAuth(request, async () => {
-    const data = await getEdgeType(edgeType);
+  return withAuth(request, async (ctx) => {
+    const data = await getEdgeType(ctx.projectId, edgeType);
     return jsonOk(EdgeCatalogEntryResponseSchema.parse({ data }).data);
   });
 }

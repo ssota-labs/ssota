@@ -8,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ instructionId: string }> },
 ) {
   const { instructionId } = await params;
-  return withAuth(request, async () => {
-    const data = await getInstruction(instructionId);
+  return withAuth(request, async (ctx) => {
+    const data = await getInstruction(ctx.projectId, instructionId);
     return jsonOk(InstructionResponseSchema.parse({ data }).data);
   });
 }

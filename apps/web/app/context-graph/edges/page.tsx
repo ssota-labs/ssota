@@ -27,10 +27,11 @@ import {
 } from "@ssota/ui/components/ui/table";
 import { createEdgeTableFormAction } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 
 export default async function ContextGraphEdgesPage() {
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const edges = await ports.catalog.listEdgeCatalogEntries();
 
   return (

@@ -8,8 +8,8 @@ export async function GET(
   { params }: { params: Promise<{ gateId: string }> },
 ) {
   const { gateId } = await params;
-  return withAuth(request, async () => {
-    const data = await getGate(gateId);
+  return withAuth(request, async (ctx) => {
+    const data = await getGate(ctx.projectId, gateId);
     return jsonOk(GateResponseSchema.parse({ data }).data);
   });
 }

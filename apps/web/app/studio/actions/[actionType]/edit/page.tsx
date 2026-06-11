@@ -5,7 +5,7 @@ import {
   updateActionContractAction,
 } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -31,7 +31,8 @@ export default async function EditActionContractPage({
 
   const { actionType } = await params;
   const decoded = decodeURIComponent(actionType);
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const entry = await ports.catalog.getActionCatalogEntry(decoded);
   if (!entry) redirect("/studio/actions");
 

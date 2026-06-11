@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getActionPorts } from "@/lib/ports";
+import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import {
@@ -13,7 +13,8 @@ export default async function CatalogPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const ports = getActionPorts();
+  const projectId = await resolveDefaultProjectId();
+  const ports = getActionPorts(projectId);
   const nodeTypes = await ports.catalog.listNodeCatalogEntries();
   const actionTypes = await ports.catalog.listActionCatalogEntries();
 

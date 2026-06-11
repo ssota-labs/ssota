@@ -9,6 +9,7 @@ import {
 } from "@/components/context-graph/node-table-actions";
 import { NodeRowsDataTable } from "@/components/graph/node-rows-data-table";
 import { projectPath } from "@/lib/console/paths";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { propertyColumnLabel } from "@/lib/graph/property-column-label";
 import { getActionPorts } from "@/lib/ports";
 
@@ -20,7 +21,8 @@ export default async function GraphNodeTablePage({
   const { orgSlug, projectSlug, nodeTypeSlug } = await params;
   const ctx = { orgSlug, projectSlug };
   const slug = decodeURIComponent(nodeTypeSlug);
-  const ports = getActionPorts();
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ports = getActionPorts(project.id);
   const entry = await ports.catalog.getNodeCatalogEntryBySlug(slug);
   if (!entry) notFound();
 
@@ -65,15 +67,16 @@ export default async function GraphNodeTablePage({
   const toolbar = (
     <div className="ml-auto flex flex-wrap items-center gap-2">
       <ActionRunner
+        projectId={project.id}
         actions={
           localActions.length
             ? localActions.map((action) => action.actionType)
             : actions.map((action) => action.actionType)
         }
       />
-      <AddPropertySheet nodeType={decoded} />
-      <AddActionSheet nodeType={decoded} />
-      <AddInstructionSheet nodeType={decoded} />
+      <AddPropertySheet nodeType={decoded} projectId={project.id} />
+      <AddActionSheet nodeType={decoded} projectId={project.id} />
+      <AddInstructionSheet nodeType={decoded} projectId={project.id} />
       <Button
         render={<Link href={projectPath(ctx, "log")} />}
         variant="outline"

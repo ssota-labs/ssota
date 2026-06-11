@@ -227,6 +227,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.108.1
         version: 2.108.1
+      postgres:
+        specifier: ^3.4.9
+        version: 3.4.9
 
   packages/adapter-supabase:
     dependencies:
