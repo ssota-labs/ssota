@@ -209,6 +209,9 @@ importers:
       '@loopos/adapter-supabase':
         specifier: workspace:*
         version: link:../packages/adapter-supabase
+      '@loopos/client':
+        specifier: workspace:*
+        version: link:../packages/client
       '@playwright/test':
         specifier: ^1.52.0
         version: 1.60.0
