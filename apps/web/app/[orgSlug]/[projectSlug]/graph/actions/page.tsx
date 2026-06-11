@@ -1,12 +1,4 @@
-import { Badge } from "@loopos/ui/components/ui/badge";
 import { Button } from "@loopos/ui/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@loopos/ui/components/ui/card";
 import { Input } from "@loopos/ui/components/ui/input";
 import { Label } from "@loopos/ui/components/ui/label";
 import {
@@ -17,17 +9,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@loopos/ui/components/ui/sheet";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@loopos/ui/components/ui/table";
 import { Textarea } from "@loopos/ui/components/ui/textarea";
 import { defineScopedActionFormAction } from "@/app/actions";
-import { PageHeader } from "@/components/studio/page-header";
+import { ActionCatalogDataTable } from "@/components/graph/action-catalog-data-table";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphActionsPage({
@@ -44,48 +28,26 @@ export default async function GraphActionsPage({
   const runCounts = new Map<string, number>();
   for (const log of logs) runCounts.set(log.actionType, (runCounts.get(log.actionType) ?? 0) + 1);
 
-  return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Actions"
-        description="Global registry of typed capabilities. Actions can also be created from Nodes, Edges, Properties, and Instructions."
-      />
-      <div className="flex justify-end">
-        <NewActionSheet />
-      </div>
+  const tableData = actions.map((action) => ({
+    actionType: action.actionType,
+    scope: formatScope(action.scope),
+    executor: action.executor,
+    effectsCount: action.effects.length,
+    runs: runCounts.get(action.actionType) ?? 0,
+  }));
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Action registry</CardTitle>
-          <CardDescription>Scope controls where an action can mutate the graph.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>action_type</TableHead>
-                <TableHead>scope</TableHead>
-                <TableHead>executor</TableHead>
-                <TableHead>effects</TableHead>
-                <TableHead>runs</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {actions.map((action) => (
-                <TableRow key={action.actionType}>
-                  <TableCell className="font-medium">{action.actionType}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{formatScope(action.scope)}</Badge>
-                  </TableCell>
-                  <TableCell>{action.executor}</TableCell>
-                  <TableCell>{action.effects.map((effect) => effect.kind).join(", ") || "-"}</TableCell>
-                  <TableCell>{runCounts.get(action.actionType) ?? 0}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+  const toolbar = <NewActionSheet />;
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="shrink-0 border-b px-4 py-2">
+        <h1 className="text-sm font-semibold">Actions</h1>
+        <p className="text-xs text-muted-foreground">
+          Global registry of typed capabilities. Actions can also be created from Nodes, Edges,
+          Properties, and Instructions.
+        </p>
+      </div>
+      <ActionCatalogDataTable data={tableData} toolbar={toolbar} />
     </div>
   );
 }
@@ -101,11 +63,13 @@ function formatScope(scope: { kind: string } & Record<string, unknown>) {
 function NewActionSheet() {
   return (
     <Sheet>
-      <SheetTrigger render={<Button />}>New action</SheetTrigger>
+      <SheetTrigger render={<Button size="sm" />}>New action</SheetTrigger>
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New action contract</SheetTitle>
-          <SheetDescription>Global action을 생성합니다. Local action은 node/edge/property 화면에서 생성하세요.</SheetDescription>
+          <SheetDescription>
+            Global action을 생성합니다. Local action은 node/edge/property 화면에서 생성하세요.
+          </SheetDescription>
         </SheetHeader>
         <form action={defineScopedActionFormAction} className="space-y-4 px-6 pb-6">
           <input type="hidden" name="scopeKind" value="global" />
