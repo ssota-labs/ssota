@@ -253,7 +253,7 @@ export interface OnboardingPort {
     userId: string;
     email: string;
     displayName: string;
-    workspaceName: string;
+    organizationName: string;
   }): Promise<{ organization: Organization }>;
   completeProjectStep(input: {
     userId: string;
