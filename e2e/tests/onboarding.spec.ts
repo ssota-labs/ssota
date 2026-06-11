@@ -19,6 +19,24 @@ test.describe("Console onboarding", () => {
     await expect(page.getByText(projectName).first()).toBeVisible();
   });
 
+  test("project 스텝에서 workspace로 돌아가기", async ({ page }) => {
+    const email = uniqueOnboardingEmail();
+    await signInOnLoginPage(page, email);
+    await completeProfileOnboarding(page, "Back Test Workspace");
+
+    await expect(page.getByText("Step 2 of 2")).toBeVisible();
+    await page.getByRole("link", { name: "Back to workspace" }).click();
+
+    await expect(page).toHaveURL(/\/onboarding\/profile/);
+    await expect(page.getByText("Step 1 of 2")).toBeVisible();
+    await expect(page.getByLabel("Workspace name")).toHaveValue(
+      "Back Test Workspace",
+    );
+
+    await page.locator('button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/onboarding\/project/, { timeout: 15_000 });
+  });
+
   test("온보딩 미완료 시 콘솔 URL 접근 → project 스텝으로 리다이렉트", async ({
     page,
   }) => {
