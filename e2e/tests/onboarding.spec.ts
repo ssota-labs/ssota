@@ -24,10 +24,7 @@ test.describe("Console onboarding", () => {
   }) => {
     const email = uniqueOnboardingEmail();
     await signInOnLoginPage(page, email);
-    await completeProfileOnboarding(page, {
-      displayName: "Redirect User",
-      workspaceName: "Redirect Workspace",
-    });
+    await completeProfileOnboarding(page, "Redirect Workspace");
 
     await page.goto("/redirect-workspace/should-not-exist");
     await expect(page).toHaveURL(/\/onboarding\/project/);

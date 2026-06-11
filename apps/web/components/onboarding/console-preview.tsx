@@ -42,7 +42,7 @@ export function ConsolePreview({ workspaceName, projectName }: ConsolePreviewPro
 
         <main className="flex-1 p-8">
           <p className="text-xs text-muted-foreground">
-            ssota.dev/{orgSlug}/{projectSlug}
+            {orgSlug}/{projectSlug}
           </p>
           <h2 className="mt-2 text-3xl font-semibold">{projectLabel}</h2>
           <p className="mt-1 text-sm text-muted-foreground">

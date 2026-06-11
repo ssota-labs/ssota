@@ -18,7 +18,6 @@ test.describe("Console onboarding screenshots", () => {
     await expect(
       page.getByRole("heading", { name: "Create your workspace" }),
     ).toBeVisible();
-    await page.getByLabel("Display name").fill("Alex Kim");
     await page.getByLabel("Workspace name").fill(workspaceName);
     await page.screenshot({
       path: "report/screenshots/onboarding-01-profile.png",

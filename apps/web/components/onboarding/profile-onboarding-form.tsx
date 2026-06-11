@@ -9,16 +9,15 @@ import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 
 type ProfileOnboardingFormProps = {
-  defaultDisplayName: string;
+  defaultWorkspaceName: string;
   error?: string;
 };
 
 export function ProfileOnboardingForm({
-  defaultDisplayName,
+  defaultWorkspaceName,
   error,
 }: ProfileOnboardingFormProps) {
-  const [displayName, setDisplayName] = useState(defaultDisplayName);
-  const [workspaceName, setWorkspaceName] = useState("");
+  const [workspaceName, setWorkspaceName] = useState(defaultWorkspaceName);
 
   return (
     <OnboardingShell
@@ -26,19 +25,6 @@ export function ProfileOnboardingForm({
       description="Set up your personal SSOTA workspace. Names must use English letters and numbers."
       form={
         <form action={completeProfileOnboardingAction} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="displayName">Display name</Label>
-            <Input
-              id="displayName"
-              name="displayName"
-              value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
-              placeholder="Alex Kim"
-              required
-              autoComplete="name"
-            />
-          </div>
-
           <div className="space-y-2">
             <Label htmlFor="workspaceName">Workspace name</Label>
             <Input
@@ -62,9 +48,7 @@ export function ProfileOnboardingForm({
         </form>
       }
       preview={
-        <ConsolePreview
-          workspaceName={workspaceName || displayName || "Your Workspace"}
-        />
+        <ConsolePreview workspaceName={workspaceName || "Your Workspace"} />
       }
     />
   );

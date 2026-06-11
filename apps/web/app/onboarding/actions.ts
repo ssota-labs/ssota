@@ -14,15 +14,7 @@ export async function completeProfileOnboardingAction(formData: FormData) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const displayName = String(formData.get("displayName") ?? "").trim();
   const workspaceName = String(formData.get("workspaceName") ?? "").trim();
-
-  if (!isEnglishDisplayName(displayName)) {
-    validationError(
-      "Display name must be 2–64 English letters, numbers, spaces, or hyphens.",
-      "profile",
-    );
-  }
 
   if (!isEnglishDisplayName(workspaceName)) {
     validationError(
@@ -35,7 +27,7 @@ export async function completeProfileOnboardingAction(formData: FormData) {
   await onboardingPort.completeProfileStep({
     userId: user.id,
     email: user.email ?? "",
-    displayName,
+    displayName: workspaceName,
     workspaceName,
   });
 
