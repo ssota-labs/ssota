@@ -28,7 +28,21 @@ import { withConsolePaths } from "@/lib/console/revalidate";
 import { graphPath, DEFAULT_PROJECT } from "@/lib/console/paths";
 import { getActionPorts } from "@/lib/ports";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
+
+function loginRedirect(error: string, next?: string | null): never {
+  const params = new URLSearchParams({ error });
+  const safe = safeNextPath(next);
+  if (safe) params.set("next", safe);
+  redirect(`/login?${params.toString()}`);
+}
+
+async function resolvePostSignInPath(userId: string, next?: string | null) {
+  const safe = safeNextPath(next);
+  if (safe) return safe;
+  return resolvePostAuthPath(userId);
+}
 
 export async function approveGateAction(
   gateId: string,
@@ -64,28 +78,37 @@ export async function approveGateFormAction(formData: FormData) {
   await approveGateAction(gateId, approved);
 }
 
-export async function signInWithGoogleAction() {
+export async function signInWithGoogleAction(formData: FormData) {
+  const next = formData.get("next");
+  const nextValue = typeof next === "string" ? next : undefined;
+
   if (!isGoogleAuthEnabled()) {
-    redirect("/login?error=" + encodeURIComponent("Google 로그인이 활성화되지 않았습니다"));
+    loginRedirect("Google 로그인이 활성화되지 않았습니다", nextValue);
   }
+
+  const callbackParams = new URLSearchParams();
+  const safe = safeNextPath(nextValue);
+  if (safe) callbackParams.set("next", safe);
+  const callbackQuery = callbackParams.toString();
+  const redirectTo = `${getSiteUrl()}/auth/callback${callbackQuery ? `?${callbackQuery}` : ""}`;
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${getSiteUrl()}/auth/callback`,
+      redirectTo,
     },
   });
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+    loginRedirect(error.message, nextValue);
   }
 
   if (data.url) {
     redirect(data.url);
   }
 
-  redirect("/login?error=" + encodeURIComponent("Google 로그인을 시작할 수 없습니다"));
+  loginRedirect("Google 로그인을 시작할 수 없습니다", nextValue);
 }
 
 const INVALID_CREDENTIALS_MESSAGE = "이메일 또는 비밀번호가 올바르지 않습니다";
@@ -104,6 +127,9 @@ function isUserAlreadyRegistered(error: { message: string }) {
 export async function signInAction(formData: FormData) {
   const email = formData.get("email");
   const password = formData.get("password");
+  const next = formData.get("next");
+  const nextValue = typeof next === "string" ? next : undefined;
+
   if (typeof email !== "string" || typeof password !== "string") {
     throw new Error("email and password required");
   }
@@ -115,7 +141,7 @@ export async function signInAction(formData: FormData) {
   });
 
   if (!signInError && signInData.user) {
-    const path = await resolvePostAuthPath(signInData.user.id);
+    const path = await resolvePostSignInPath(signInData.user.id, nextValue);
     redirect(path);
   }
 
@@ -127,26 +153,24 @@ export async function signInAction(formData: FormData) {
 
     if (!signUpError && signUpData.user) {
       if (signUpData.user.identities?.length === 0) {
-        redirect(`/login?error=${encodeURIComponent(INVALID_CREDENTIALS_MESSAGE)}`);
+        loginRedirect(INVALID_CREDENTIALS_MESSAGE, nextValue);
       }
 
-      const path = await resolvePostAuthPath(signUpData.user.id);
+      const path = await resolvePostSignInPath(signUpData.user.id, nextValue);
       redirect(path);
     }
 
     if (signUpError) {
       if (isUserAlreadyRegistered(signUpError)) {
-        redirect(`/login?error=${encodeURIComponent(INVALID_CREDENTIALS_MESSAGE)}`);
+        loginRedirect(INVALID_CREDENTIALS_MESSAGE, nextValue);
       }
-      redirect(`/login?error=${encodeURIComponent(signUpError.message)}`);
+      loginRedirect(signUpError.message, nextValue);
     }
 
-    redirect("/login?error=Sign%20up%20failed");
+    loginRedirect("Sign up failed", nextValue);
   }
 
-  redirect(
-    `/login?error=${encodeURIComponent(signInError?.message ?? "로그인에 실패했습니다")}`,
-  );
+  loginRedirect(signInError?.message ?? "로그인에 실패했습니다", nextValue);
 }
 
 export async function signOutAction() {

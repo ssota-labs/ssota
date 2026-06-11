@@ -6,9 +6,10 @@ Use this flow when SSOTA MCP is deployed (production/staging). OAuth is handled 
 
 Deployed SSOTA MCP with:
 
-- `MCP_RESOURCE_URL=https://<mcp-host>/api/mcp`
+- `MCP_RESOURCE_URL=https://<mcp-host>/api/mcp` (e.g. `https://mcp.ssota.ai/api/mcp`)
 - `NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co` (+ anon key)
-- Supabase Auth → URL configuration: redirect URLs include MCP origin and `cursor://anysphere.cursor-mcp/oauth/callback` if using static client registration
+- Supabase Auth → **Site URL** = console origin (e.g. `https://www.ssota.ai`) — OAuth consent is `{Site URL}/oauth/consent` on the **web** app, not the MCP host
+- Redirect URLs: console origin, MCP origin, and `cursor://anysphere.cursor-mcp/oauth/callback` if using static client registration
 - `[auth.oauth_server] enabled = true` on the Supabase project
 
 ## Cursor dashboard (recommended)

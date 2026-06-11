@@ -1,8 +1,9 @@
 "use client";
 
-import { createClient } from "@supabase/supabase-js";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useLocale } from "@/components/i18n/locale-provider";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
@@ -12,13 +13,12 @@ import {
   CardTitle,
 } from "@ssota/ui/components/ui/card";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0",
-);
+function consentReturnPath(authorizationId: string): string {
+  return `/oauth/consent?authorization_id=${encodeURIComponent(authorizationId)}`;
+}
 
 export function ConsentForm() {
+  const { t } = useLocale();
   const searchParams = useSearchParams();
   const authorizationId = searchParams.get("authorization_id");
   const [details, setDetails] = useState<Record<string, unknown> | null>(null);
@@ -27,13 +27,15 @@ export function ConsentForm() {
   useEffect(() => {
     async function load() {
       if (!authorizationId) {
-        setError("authorization_id가 필요합니다.");
+        setError(t("oauth.missingAuthorizationId"));
         return;
       }
 
+      const supabase = createSupabaseBrowserClient();
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) {
-        window.location.href = `/oauth/login?authorization_id=${authorizationId}`;
+        const next = consentReturnPath(authorizationId);
+        window.location.href = `/login?next=${encodeURIComponent(next)}`;
         return;
       }
 
@@ -47,10 +49,11 @@ export function ConsentForm() {
       setDetails(data as Record<string, unknown>);
     }
     void load();
-  }, [authorizationId]);
+  }, [authorizationId, t]);
 
   async function handleApprove() {
     if (!authorizationId) return;
+    const supabase = createSupabaseBrowserClient();
     const { data, error: approveError } =
       await supabase.auth.oauth.approveAuthorization(authorizationId);
     if (approveError) {
@@ -64,6 +67,7 @@ export function ConsentForm() {
 
   async function handleDeny() {
     if (!authorizationId) return;
+    const supabase = createSupabaseBrowserClient();
     const { data, error: denyError } =
       await supabase.auth.oauth.denyAuthorization(authorizationId);
     if (denyError) {
@@ -79,10 +83,8 @@ export function ConsentForm() {
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center p-8">
       <Card>
         <CardHeader>
-          <CardTitle>OAuth 동의</CardTitle>
-          <CardDescription>
-            MCP 클라이언트가 SSOTA에 접근하려 합니다.
-          </CardDescription>
+          <CardTitle>{t("oauth.consentTitle")}</CardTitle>
+          <CardDescription>{t("oauth.consentDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -93,10 +95,10 @@ export function ConsentForm() {
           )}
           <div className="flex gap-3">
             <Button type="button" onClick={() => void handleApprove()}>
-              승인
+              {t("oauth.approve")}
             </Button>
             <Button type="button" variant="outline" onClick={() => void handleDeny()}>
-              거부
+              {t("oauth.deny")}
             </Button>
           </div>
         </CardContent>

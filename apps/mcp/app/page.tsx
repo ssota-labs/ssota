@@ -6,7 +6,7 @@ export default function Home() {
         MCP endpoint: <code>/api/mcp</code>
       </p>
       <p className="text-neutral-600">
-        OAuth consent: <code>/oauth/consent</code>
+        OAuth consent is hosted on the SSOTA Console (web app).
       </p>
     </main>
   );
