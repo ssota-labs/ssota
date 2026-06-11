@@ -3,15 +3,12 @@
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { Button } from "@ssota/ui/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@ssota/ui/components/ui/card";
+  parseOAuthAuthorizationDetails,
+  type OAuthAuthorizationDetails,
+} from "@/lib/auth/oauth-authorization-details";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { OAuthConsentView } from "./oauth-consent-view";
 
 function consentReturnPath(authorizationId: string): string {
   return `/oauth/consent?authorization_id=${encodeURIComponent(authorizationId)}`;
@@ -21,13 +18,15 @@ export function ConsentForm() {
   const { t } = useLocale();
   const searchParams = useSearchParams();
   const authorizationId = searchParams.get("authorization_id");
-  const [details, setDetails] = useState<Record<string, unknown> | null>(null);
+  const [details, setDetails] = useState<OAuthAuthorizationDetails | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       if (!authorizationId) {
         setError(t("oauth.missingAuthorizationId"));
+        setLoading(false);
         return;
       }
 
@@ -44,9 +43,12 @@ export function ConsentForm() {
 
       if (detailsError) {
         setError(detailsError.message);
+        setLoading(false);
         return;
       }
-      setDetails(data as Record<string, unknown>);
+
+      setDetails(parseOAuthAuthorizationDetails(data as Record<string, unknown>));
+      setLoading(false);
     }
     void load();
   }, [authorizationId, t]);
@@ -80,29 +82,13 @@ export function ConsentForm() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center p-8">
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("oauth.consentTitle")}</CardTitle>
-          <CardDescription>{t("oauth.consentDescription")}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          {details && (
-            <pre className="overflow-auto rounded-md bg-muted p-4 text-xs">
-              {JSON.stringify(details, null, 2)}
-            </pre>
-          )}
-          <div className="flex gap-3">
-            <Button type="button" onClick={() => void handleApprove()}>
-              {t("oauth.approve")}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => void handleDeny()}>
-              {t("oauth.deny")}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </main>
+    <OAuthConsentView
+      t={t}
+      details={details}
+      loading={loading}
+      error={error}
+      onApprove={() => void handleApprove()}
+      onDeny={() => void handleDeny()}
+    />
   );
 }
