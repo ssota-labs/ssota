@@ -7,6 +7,7 @@
  * 실행: SSOTA_MCP_URL=http://127.0.0.1:3001 pnpm embedder-bff
  */
 import { createClient } from "@ssota/client";
+import { createConsolePort, createDb } from "@ssota/adapter-supabase";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 
 const PORT = Number(process.env.EMBEDDER_BFF_PORT ?? 3200);
@@ -65,28 +66,17 @@ async function resolveProjectId(): Promise<string> {
   if (SSOTA_PROJECT_ID) return SSOTA_PROJECT_ID;
   if (cachedProjectId) return cachedProjectId;
 
-  const databaseUrl =
-    process.env.DATABASE_URL ??
-    "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
-  const postgres = (await import("postgres")).default;
-  const sql = postgres(databaseUrl, { max: 1 });
-  try {
-    const rows = await sql<{ id: string }[]>`
-      select p.id
-      from projects p
-      join organizations o on o.id = p.organization_id
-      where o.slug = 'ssota-labs' and p.slug = 'ssota-dev'
-      limit 1
-    `;
-    const projectId = rows[0]?.id;
-    if (!projectId) {
-      throw new Error("Default SSOTA project not found — run db:seed");
-    }
-    cachedProjectId = projectId;
-    return projectId;
-  } finally {
-    await sql.end({ timeout: 1 });
+  const consolePort = createConsolePort(createDb(process.env.DATABASE_URL).db);
+  const org = await consolePort.getOrganizationBySlug("ssota-labs");
+  if (!org) {
+    throw new Error("Default organization not found — run db:seed");
   }
+  const project = await consolePort.getProjectBySlug(org.id, "ssota-dev");
+  if (!project) {
+    throw new Error("Default SSOTA project not found — run db:seed");
+  }
+  cachedProjectId = project.id;
+  return project.id;
 }
 
 const ssota = createClient({
