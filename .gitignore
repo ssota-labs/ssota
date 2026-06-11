@@ -65,3 +65,5 @@ venv/
 .turbo/
 .vercel/
 storybook-static/
+supabase/.branches/
+supabase/.temp/
