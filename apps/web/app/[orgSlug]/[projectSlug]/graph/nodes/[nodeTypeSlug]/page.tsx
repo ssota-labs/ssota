@@ -6,7 +6,7 @@ import {
   AddActionSheet,
   AddInstructionSheet,
   AddPropertySheet,
-} from "@/components/context-graph/node-table-actions";
+} from "@/components/graph/node-table-actions";
 import { NodeRowsDataTable } from "@/components/graph/node-rows-data-table";
 import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";

@@ -29,6 +29,8 @@ export function ConsoleShell({
 }: ConsoleShellProps) {
   const pathname = usePathname();
   const isGraphContext = pathname.includes(`/${ctx.projectSlug}/graph`);
+  const isFullBleedTable =
+    isGraphContext || pathname === `/${ctx.orgSlug}/${ctx.projectSlug}/log`;
 
   return (
     <ProjectProvider value={ctx}>
@@ -44,7 +46,7 @@ export function ConsoleShell({
           />
           <main
             className={
-              isGraphContext
+              isFullBleedTable
                 ? "flex min-h-0 flex-1 flex-col overflow-hidden"
                 : "flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4 md:p-6"
             }
