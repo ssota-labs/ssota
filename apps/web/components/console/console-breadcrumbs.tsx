@@ -11,21 +11,22 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@ssota/ui/components/ui/breadcrumb";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { projectPath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 
-const segmentLabels: Record<string, string> = {
-  graph: "Graph",
-  nodes: "Nodes",
-  edges: "Edges",
-  actions: "Actions",
-  instructions: "Instructions",
-  gates: "Gates",
-  log: "Action Log",
-  settings: "Settings",
-  general: "General",
-  verticals: "Verticals",
-  "homepage-agent": "Homepage Agent",
+const segmentLabelKeys: Record<string, string> = {
+  graph: "breadcrumbs.graph",
+  nodes: "breadcrumbs.nodes",
+  edges: "breadcrumbs.edges",
+  actions: "breadcrumbs.actions",
+  instructions: "breadcrumbs.instructions",
+  gates: "breadcrumbs.gates",
+  log: "breadcrumbs.log",
+  settings: "breadcrumbs.settings",
+  general: "breadcrumbs.general",
+  verticals: "breadcrumbs.verticals",
+  "homepage-agent": "breadcrumbs.homepageAgent",
 };
 
 function titleCaseSlug(slug: string) {
@@ -38,6 +39,7 @@ function titleCaseSlug(slug: string) {
 export function ConsoleBreadcrumbs() {
   const ctx = useProjectContext();
   const pathname = usePathname();
+  const { t } = useLocale();
   const base = projectPath(ctx);
   const relative = pathname.startsWith(base)
     ? pathname.slice(base.length).replace(/^\//, "")
@@ -52,9 +54,9 @@ export function ConsoleBreadcrumbs() {
     pathAcc = `${pathAcc}/${segment}`;
     const isLast = i === segments.length - 1;
     const prev = segments[i - 1];
-    const known = segmentLabels[segment];
+    const labelKey = segmentLabelKeys[segment];
     const label =
-      known ??
+      (labelKey ? t(labelKey) : undefined) ??
       (prev === "nodes" || prev === "edges" ? titleCaseSlug(segment) : titleCaseSlug(segment));
 
     crumbs.push(isLast ? { label } : { href: pathAcc, label });

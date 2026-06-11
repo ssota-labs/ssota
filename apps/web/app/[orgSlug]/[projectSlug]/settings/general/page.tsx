@@ -1,4 +1,6 @@
+import { LanguageForm } from "@/components/settings/language-form";
 import { PageHeader } from "@/components/studio/page-header";
+import { getTranslations } from "@/lib/i18n/server";
 import {
   Card,
   CardContent,
@@ -13,24 +15,24 @@ export default async function SettingsGeneralPage({
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
+  const { locale, t } = await getTranslations();
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Settings"
-        description="Project and organization configuration."
+        title={t("settings.title")}
+        description={t("settings.description")}
       />
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">General</CardTitle>
+          <CardTitle className="text-base">{t("settings.general")}</CardTitle>
           <CardDescription>
-            Org slug: {orgSlug} · Project slug: {projectSlug}
+            {t("settings.orgProjectSlugs", { orgSlug, projectSlug })}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            MCP 연동·멤버 관리 설정은 후속 마일스톤에서 추가됩니다.
-          </p>
+        <CardContent className="space-y-6">
+          <LanguageForm currentLocale={locale} />
+          <p className="text-sm text-muted-foreground">{t("settings.comingSoon")}</p>
         </CardContent>
       </Card>
     </div>

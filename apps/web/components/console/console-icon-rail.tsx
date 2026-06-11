@@ -16,28 +16,31 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@ssota/ui/components/ui/tooltip";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 
 const navItems = [
-  { segment: "", label: "Project Home", icon: HouseIcon },
-  { segment: "graph", label: "Graph", icon: GraphIcon },
-  { segment: "instructions", label: "Instruction", icon: BookOpenIcon },
-  { segment: "gates", label: "Gates", icon: ShieldCheckIcon },
-  { segment: "log", label: "Action Log", icon: ListBulletsIcon },
-  { segment: "settings/general", label: "Settings", icon: GearIcon },
+  { segment: "", labelKey: "nav.projectHome", icon: HouseIcon },
+  { segment: "graph", labelKey: "nav.graph", icon: GraphIcon },
+  { segment: "instructions", labelKey: "nav.instruction", icon: BookOpenIcon },
+  { segment: "gates", labelKey: "nav.gates", icon: ShieldCheckIcon },
+  { segment: "log", labelKey: "nav.actionLog", icon: ListBulletsIcon },
+  { segment: "settings/general", labelKey: "nav.settings", icon: GearIcon },
 ] as const;
 
 export function ConsoleIconRail() {
   const ctx = useProjectContext();
   const pathname = usePathname();
+  const { t } = useLocale();
 
   return (
     <nav
-      aria-label="Primary"
+      aria-label={t("nav.primary")}
       className="flex w-12 shrink-0 flex-col items-center gap-1 border-r bg-sidebar py-3"
     >
       {navItems.map((item) => {
+        const label = t(item.labelKey);
         const href =
           item.segment === "graph"
             ? graphPath(ctx, "nodes")
@@ -58,7 +61,7 @@ export function ConsoleIconRail() {
               render={
                 <Link
                   href={href}
-                  aria-label={item.label}
+                  aria-label={label}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -69,7 +72,7 @@ export function ConsoleIconRail() {
             >
               <Icon className="size-4" weight={active ? "fill" : "regular"} />
             </TooltipTrigger>
-            <TooltipContent side="right">{item.label}</TooltipContent>
+            <TooltipContent side="right">{label}</TooltipContent>
           </Tooltip>
         );
       })}

@@ -169,6 +169,12 @@ export interface InstructionListInput {
 
 export type OnboardingStep = "profile" | "project" | "completed";
 
+export type Locale = "en" | "ko";
+
+export const LOCALES: readonly Locale[] = ["en", "ko"] as const;
+
+export const DEFAULT_LOCALE: Locale = "en";
+
 export interface Profile {
   id: string;
   email: string;
@@ -176,6 +182,7 @@ export interface Profile {
   personalOrganizationId: string | null;
   onboardingStep: OnboardingStep;
   onboardingCompletedAt: Date | null;
+  locale: Locale;
 }
 
 export interface Organization {
@@ -241,6 +248,7 @@ export interface ConsolePort {
 
 export interface OnboardingPort {
   getProfile(userId: string): Promise<Profile | null>;
+  updateLocale(userId: string, locale: Locale): Promise<void>;
   completeProfileStep(input: {
     userId: string;
     email: string;

@@ -1,4 +1,7 @@
+"use client";
+
 import { signInWithGoogleAction } from "@/app/actions";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { Button } from "@ssota/ui/components/ui/button";
 
 function GoogleIcon() {
@@ -25,11 +28,13 @@ function GoogleIcon() {
 }
 
 export function GoogleSignInButton() {
+  const { t } = useLocale();
+
   return (
     <form action={signInWithGoogleAction}>
       <Button type="submit" variant="outline" className="w-full" data-icon="inline-start">
         <GoogleIcon />
-        Google로 로그인
+        {t("auth.googleSignIn")}
       </Button>
     </form>
   );

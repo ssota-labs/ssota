@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TooltipProvider } from "@ssota/ui/components/ui/tooltip";
+import { LocaleProvider } from "@/components/i18n/locale-provider";
+import { getTranslations } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/supabase/server";
 import "./globals.css";
 import { Geist } from "next/font/google";
@@ -20,34 +22,37 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const user = await getCurrentUser();
+  const { locale, messages, t } = await getTranslations();
 
   return (
-    <html lang="ko" className={cn("font-sans", geist.variable)}>
+    <html lang={locale} className={cn("font-sans", geist.variable)}>
       <body className="min-h-screen bg-background text-foreground">
-        <TooltipProvider>
-          {!user ? (
-            <header className="border-b bg-card">
-              <div className="flex items-center justify-between px-6 py-4">
-                <Link href="/" className="text-lg font-semibold">
-                  SSOTA
-                </Link>
-                <Button
-                  render={<Link href="/login" />}
-                  variant="ghost"
-                  size="sm"
-                  nativeButton={false}
-                >
-                  로그인
-                </Button>
-              </div>
-            </header>
-          ) : null}
-          {user ? (
-            children
-          ) : (
-            <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
-          )}
-        </TooltipProvider>
+        <LocaleProvider locale={locale} messages={messages}>
+          <TooltipProvider>
+            {!user ? (
+              <header className="border-b bg-card">
+                <div className="flex items-center justify-between px-6 py-4">
+                  <Link href="/" className="text-lg font-semibold">
+                    SSOTA
+                  </Link>
+                  <Button
+                    render={<Link href="/login" />}
+                    variant="ghost"
+                    size="sm"
+                    nativeButton={false}
+                  >
+                    {t("common.signIn")}
+                  </Button>
+                </div>
+              </header>
+            ) : null}
+            {user ? (
+              children
+            ) : (
+              <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
+            )}
+          </TooltipProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

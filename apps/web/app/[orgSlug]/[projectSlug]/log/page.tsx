@@ -1,5 +1,6 @@
 import { OutcomeBadge } from "@/components/outcome-badge";
 import { PageHeader } from "@/components/studio/page-header";
+import { getTranslations } from "@/lib/i18n/server";
 import { getActionPorts } from "@/lib/ports";
 import {
   Card,
@@ -23,33 +24,32 @@ export default async function LogPage({
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
   await params;
+  const { t } = await getTranslations();
   const ports = getActionPorts();
   const log = await ports.commit.getActionLog({ limit: 50 });
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Action Log"
-        description="모든 executeAction 커밋·게이트·거부 이벤트의 감사 타임라인입니다."
+        title={t("log.title")}
+        description={t("log.description")}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Recent activity</CardTitle>
-          <CardDescription>
-            Outcome badges reflect committed, gated, or rejected runtime decisions.
-          </CardDescription>
+          <CardTitle className="text-base">{t("log.recentActivity")}</CardTitle>
+          <CardDescription>{t("log.recentDescription")}</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>시간</TableHead>
-                <TableHead>액션</TableHead>
-                <TableHead>scope</TableHead>
-                <TableHead>instruction</TableHead>
-                <TableHead>결과</TableHead>
-                <TableHead>실행자</TableHead>
+                <TableHead>{t("log.time")}</TableHead>
+                <TableHead>{t("log.action")}</TableHead>
+                <TableHead>{t("log.scope")}</TableHead>
+                <TableHead>{t("log.instruction")}</TableHead>
+                <TableHead>{t("log.outcome")}</TableHead>
+                <TableHead>{t("log.executor")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
