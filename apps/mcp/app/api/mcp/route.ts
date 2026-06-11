@@ -470,10 +470,16 @@ async function verifyToken(
   };
 }
 
+// withMcpAuth uses resourceUrl as the public *origin* when building the
+// WWW-Authenticate resource_metadata link — not the full MCP resource path.
+const mcpPublicOrigin = new URL(
+  process.env.MCP_RESOURCE_URL ?? "http://127.0.0.1:3001/api/mcp",
+).origin;
+
 const authHandler = withMcpAuth(mcpHandler, verifyToken, {
   required: true,
   resourceMetadataPath: "/.well-known/oauth-protected-resource",
-  resourceUrl: process.env.MCP_RESOURCE_URL ?? "http://127.0.0.1:3001/api/mcp",
+  resourceUrl: mcpPublicOrigin,
 });
 
 export { authHandler as GET, authHandler as POST };
