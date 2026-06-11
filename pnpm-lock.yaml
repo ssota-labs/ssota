@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@loopos/client':
+        specifier: workspace:*
+        version: link:packages/client
       supabase:
         specifier: ^2.105.0
         version: 2.105.0

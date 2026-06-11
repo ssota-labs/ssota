@@ -24,6 +24,7 @@
     "storybook": "pnpm --filter storybook dev"
   },
   "devDependencies": {
+    "@loopos/client": "workspace:*",
     "supabase": "^2.105.0",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",

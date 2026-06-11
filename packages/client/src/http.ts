@@ -6,29 +6,35 @@ export type FetchLike = typeof fetch;
 export interface HttpClientOptions {
   baseUrl: string;
   getAccessToken: () => string | Promise<string>;
+  getSubjectId?: () => string | undefined | Promise<string | undefined>;
   fetch?: FetchLike;
 }
 
 export class HttpClient {
   private readonly baseUrl: string;
   private readonly getAccessToken: () => string | Promise<string>;
+  private readonly getSubjectId?: () => string | undefined | Promise<string | undefined>;
   private readonly fetchImpl: FetchLike;
 
   constructor(options: HttpClientOptions) {
     this.baseUrl = options.baseUrl.replace(/\/$/, "");
     this.getAccessToken = options.getAccessToken;
+    this.getSubjectId = options.getSubjectId;
     this.fetchImpl = options.fetch ?? fetch;
   }
 
   async get<T extends z.ZodType>(
     path: string,
     schema: T,
-    searchParams?: Record<string, string | number | undefined>,
+    searchParams?: Record<string, string | number | string[] | undefined>,
   ): Promise<z.infer<T>> {
     const url = new URL(`${this.baseUrl}${path}`);
     if (searchParams) {
       for (const [key, value] of Object.entries(searchParams)) {
-        if (value !== undefined) {
+        if (value === undefined) continue;
+        if (Array.isArray(value)) {
+          url.searchParams.set(key, value.join(","));
+        } else {
           url.searchParams.set(key, String(value));
         }
       }
@@ -59,18 +65,23 @@ export class HttpClient {
     schema: T,
   ): Promise<z.infer<T>> {
     const token = await this.getAccessToken();
+    const subjectId = this.getSubjectId ? await this.getSubjectId() : undefined;
+    const headers: Record<string, string> = {
+      ...(init.headers as Record<string, string> | undefined),
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    };
+    if (subjectId) {
+      headers["X-LoopOS-Subject-Id"] = subjectId;
+    }
+
     const response = await this.fetchImpl(String(url), {
       ...init,
-      headers: {
-        ...init.headers,
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
+      headers,
     });
 
     await throwIfNotOk(response);
     const json: unknown = await response.json();
-    const envelope = schema.parse(json);
-    return envelope;
+    return schema.parse(json);
   }
 }

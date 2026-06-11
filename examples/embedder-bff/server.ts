@@ -1,15 +1,18 @@
 /**
- * 고객사 A BFF 예시 — embedder auth 이후 LoopOS MCP로 프록시.
+ * 고객사 A BFF 예시 — embedder auth 이후 LoopOS HTTP API v1로 프록시.
  *
  * 흐름:
- *   [최종 사용자] → [A 앱 auth] → [이 BFF] → [LoopOS MCP + X-LoopOS-Subject-Id]
+ *   [최종 사용자] → [A 앱 auth] → [이 BFF] → [LoopOS /api/v1 + X-LoopOS-Subject-Id]
  *
- * 실행: LOOPOS_MCP_URL=http://127.0.0.1:3001 pnpm exec tsx examples/embedder-bff/server.ts
+ * 실행: LOOPOS_MCP_URL=http://127.0.0.1:3001 pnpm embedder-bff
  */
+import { createClient } from "@loopos/client";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 
 const PORT = Number(process.env.EMBEDDER_BFF_PORT ?? 3200);
 const LOOPOS_MCP_URL = process.env.LOOPOS_MCP_URL ?? "http://127.0.0.1:3001";
+const LOOPOS_API_URL =
+  process.env.LOOPOS_API_URL ?? `${LOOPOS_MCP_URL.replace(/\/$/, "")}/api/v1`;
 const SUPABASE_URL = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
 const SUPABASE_ANON_KEY =
   process.env.SUPABASE_ANON_KEY ??
@@ -53,6 +56,15 @@ async function getLoopOsMcpToken(): Promise<string> {
   return data.access_token;
 }
 
+/** 요청마다 embedder가 검증한 최종 사용자 id — SDK가 X-LoopOS-Subject-Id로 전송 */
+let requestSubjectId: string | undefined;
+
+const loopos = createClient({
+  url: LOOPOS_API_URL,
+  auth: { accessToken: getLoopOsMcpToken },
+  subjectId: () => requestSubjectId,
+});
+
 async function readJson<T>(req: IncomingMessage): Promise<T> {
   const chunks: Buffer[] = [];
   for await (const chunk of req) chunks.push(chunk as Buffer);
@@ -74,73 +86,6 @@ function resolveEmbedderUserId(req: IncomingMessage): string | null {
   const header = req.headers["x-embedder-user-id"];
   if (typeof header === "string" && header.trim()) return header.trim();
   return null;
-}
-
-async function mcpExecuteAction(
-  subjectId: string,
-  actionType: string,
-  input: Record<string, unknown>,
-): Promise<unknown> {
-  const token = await getLoopOsMcpToken();
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-    Accept: "application/json, text/event-stream",
-    "X-LoopOS-Subject-Id": subjectId,
-  };
-
-  const initRes = await fetch(`${LOOPOS_MCP_URL}/api/mcp`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      method: "initialize",
-      params: {
-        protocolVersion: "2024-11-05",
-        capabilities: {},
-        clientInfo: { name: "embedder-bff", version: "0.1.0" },
-      },
-      id: 1,
-    }),
-  });
-  if (!initRes.ok) {
-    throw new Error(`MCP initialize failed: ${initRes.status}`);
-  }
-
-  const callRes = await fetch(`${LOOPOS_MCP_URL}/api/mcp`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      method: "tools/call",
-      params: {
-        name: "execute_action",
-        arguments: { actionType, input },
-      },
-      id: 2,
-    }),
-  });
-  if (!callRes.ok) {
-    throw new Error(`MCP execute_action failed: ${callRes.status}`);
-  }
-
-  const raw = await callRes.text();
-  const parsed = parseJsonRpc(raw) as {
-    result?: { content?: Array<{ text?: string }> };
-  };
-  const text = parsed.result?.content?.[0]?.text;
-  return text ? JSON.parse(text) : parsed;
-}
-
-function parseJsonRpc(raw: string): unknown {
-  const trimmed = raw.trim();
-  if (!trimmed.includes("\ndata:")) return JSON.parse(trimmed);
-  const data = trimmed
-    .split(/\r?\n/)
-    .filter((line) => line.startsWith("data:"))
-    .map((line) => line.slice("data:".length).trim())
-    .join("\n");
-  return JSON.parse(data);
 }
 
 const server = createServer(async (req, res) => {
@@ -169,13 +114,16 @@ const server = createServer(async (req, res) => {
         return;
       }
 
-      const result = await mcpExecuteAction(
-        subjectId,
-        body.actionType,
-        body.input ?? {},
-      );
+      requestSubjectId = subjectId;
+      const result = await loopos.actions.execute({
+        actionType: body.actionType,
+        input: body.input ?? {},
+      });
+      requestSubjectId = undefined;
+
       sendJson(res, 200, { subjectId, result });
     } catch (err) {
+      requestSubjectId = undefined;
       const message = err instanceof Error ? err.message : "Proxy failed";
       sendJson(res, 502, { error: message });
     }
@@ -188,5 +136,5 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Embedder BFF listening on http://127.0.0.1:${PORT}`);
   console.log(`  POST /loopos/execute  +  X-Embedder-User-Id: <A.users.id>`);
-  console.log(`  Proxies to ${LOOPOS_MCP_URL}/api/mcp`);
+  console.log(`  Proxies to ${LOOPOS_API_URL} via @loopos/client`);
 });

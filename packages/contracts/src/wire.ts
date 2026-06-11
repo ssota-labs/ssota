@@ -227,6 +227,48 @@ export const ActionContractResponseSchema = SingleResponseSchema(
   ActionCatalogEntrySchema,
 );
 
+export const NodeCatalogEntryResponseSchema = SingleResponseSchema(
+  NodeCatalogEntrySchema,
+);
+export const EdgeCatalogEntryResponseSchema = SingleResponseSchema(
+  EdgeCatalogEntrySchema,
+);
+export const PropertyCatalogEntryResponseSchema = SingleResponseSchema(
+  PropertyCatalogEntrySchema,
+);
+export const ArchetypeResponseSchema = SingleResponseSchema(ArchetypeSchema);
+export const NodeResponseSchema = SingleResponseSchema(NodeSchema);
+export const InstructionResponseSchema = SingleResponseSchema(InstructionSchema);
+export const GateResponseSchema = SingleResponseSchema(GateSchema);
+export const ActionLogEntryResponseSchema = SingleResponseSchema(
+  ActionLogRecordSchema,
+);
+
+export const NeighborQueryResponseSchema = z.object({
+  data: z.object({
+    nodeId: z.string().uuid(),
+    edges: z.array(EdgeSchema),
+    nodes: z.array(NodeSchema),
+  }),
+});
+
+export type NeighborQueryResult = z.infer<
+  typeof NeighborQueryResponseSchema
+>["data"];
+
+export const GraphTraversalResponseSchema = z.object({
+  data: z.object({
+    startNodeId: z.string().uuid(),
+    maxHops: z.number().int(),
+    edges: z.array(EdgeSchema),
+    nodes: z.array(NodeSchema),
+  }),
+});
+
+export type GraphTraversalResult = z.infer<
+  typeof GraphTraversalResponseSchema
+>["data"];
+
 export const ExecuteActionResponseSchema = z.object({
   data: ExecuteActionResultSchema,
 });

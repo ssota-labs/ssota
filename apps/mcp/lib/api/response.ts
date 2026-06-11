@@ -40,8 +40,10 @@ export function parseQuery<T extends z.ZodType>(
 ): { ok: true; data: z.infer<T> } | { ok: false; response: Response } {
   const raw: Record<string, unknown> = {};
   for (const [key, value] of searchParams.entries()) {
-    if (key === "limit" || key === "offset") {
+    if (key === "limit" || key === "offset" || key === "maxHops") {
       raw[key] = Number(value);
+    } else if (key === "edgeTypes" || key === "nodeTypes") {
+      raw[key] = value.split(",").filter(Boolean);
     } else {
       raw[key] = value;
     }

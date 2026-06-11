@@ -1,0 +1,15 @@
+import { PropertyCatalogEntryResponseSchema } from "@loopos/contracts";
+import { getProperty } from "@/lib/api/services";
+import { jsonOk } from "@/lib/api/response";
+import { withAuth } from "@/lib/api/with-auth";
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ propertyKey: string }> },
+) {
+  const { propertyKey } = await params;
+  return withAuth(request, async () => {
+    const data = await getProperty(propertyKey);
+    return jsonOk(PropertyCatalogEntryResponseSchema.parse({ data }).data);
+  });
+}

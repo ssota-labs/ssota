@@ -2,8 +2,12 @@ import {
   ActionCatalogListResponseSchema,
   ActionContractResponseSchema,
   ArchetypeListResponseSchema,
+  ArchetypeResponseSchema,
+  EdgeCatalogEntryResponseSchema,
   EdgeCatalogListResponseSchema,
+  NodeCatalogEntryResponseSchema,
   NodeCatalogListResponseSchema,
+  PropertyCatalogEntryResponseSchema,
   PropertyCatalogListResponseSchema,
   type ActionCatalogEntry,
   type Archetype,
@@ -23,6 +27,14 @@ export function createCatalogApi(http: HttpClient) {
       return result.data;
     },
 
+    async getNodeType(nodeType: string): Promise<NodeCatalogEntry | null> {
+      const result = await http.get(
+        `/catalog/node-types/${encodeURIComponent(nodeType)}`,
+        NodeCatalogEntryResponseSchema,
+      );
+      return result.data;
+    },
+
     async listEdgeTypes(): Promise<EdgeCatalogEntry[]> {
       const result = await http.get(
         "/catalog/edge-types",
@@ -31,10 +43,26 @@ export function createCatalogApi(http: HttpClient) {
       return result.data;
     },
 
+    async getEdgeType(edgeType: string): Promise<EdgeCatalogEntry | null> {
+      const result = await http.get(
+        `/catalog/edge-types/${encodeURIComponent(edgeType)}`,
+        EdgeCatalogEntryResponseSchema,
+      );
+      return result.data;
+    },
+
     async listProperties(): Promise<PropertyCatalogEntry[]> {
       const result = await http.get(
         "/catalog/properties",
         PropertyCatalogListResponseSchema,
+      );
+      return result.data;
+    },
+
+    async getProperty(propertyKey: string): Promise<PropertyCatalogEntry | null> {
+      const result = await http.get(
+        `/catalog/properties/${encodeURIComponent(propertyKey)}`,
+        PropertyCatalogEntryResponseSchema,
       );
       return result.data;
     },
@@ -61,6 +89,14 @@ export function createCatalogApi(http: HttpClient) {
       const result = await http.get(
         "/catalog/archetypes",
         ArchetypeListResponseSchema,
+      );
+      return result.data;
+    },
+
+    async getArchetype(archetypeId: string): Promise<Archetype | null> {
+      const result = await http.get(
+        `/catalog/archetypes/${encodeURIComponent(archetypeId)}`,
+        ArchetypeResponseSchema,
       );
       return result.data;
     },

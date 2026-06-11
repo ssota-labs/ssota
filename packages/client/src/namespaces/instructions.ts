@@ -1,6 +1,7 @@
 import {
   FindInstructionInputSchema,
   InstructionListResponseSchema,
+  InstructionResponseSchema,
   type FindInstructionInput,
   type Instruction,
 } from "@loopos/contracts";
@@ -18,6 +19,14 @@ export function createInstructionsApi(http: HttpClient) {
           nodeType: parsed.nodeType,
           limit: parsed.limit,
         },
+      );
+      return result.data;
+    },
+
+    async get(instructionId: string): Promise<Instruction | null> {
+      const result = await http.get(
+        `/instructions/${instructionId}`,
+        InstructionResponseSchema,
       );
       return result.data;
     },
