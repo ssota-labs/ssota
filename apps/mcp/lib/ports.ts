@@ -6,8 +6,13 @@ import {
 
 type Db = ReturnType<typeof createDb>["db"];
 
+let cachedDb: Db | undefined;
+
 export function getDb(): Db {
-  return createDb(process.env.DATABASE_URL).db;
+  if (!cachedDb) {
+    cachedDb = createDb(process.env.DATABASE_URL).db;
+  }
+  return cachedDb;
 }
 
 export function getActionPorts(projectId: string) {

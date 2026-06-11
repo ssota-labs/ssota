@@ -810,3 +810,52 @@ describe("executeAction — subject_id tenancy", () => {
     expect(aNodes[0]?.id).toBe("a");
   });
 });
+
+const OTHER_PROJECT_ID = "00000000-0000-4000-8000-000000000099";
+
+describe("executeAction — project_id tenancy", () => {
+  it("거부: 다른 project 노드 update (scoped ports는 노드를 찾지 못함)", async () => {
+    const state = createInMemoryState();
+    seedSubjectScopedProjectCatalog(state);
+    const node = createTestNode({
+      nodeType: "Project",
+      projectId: OTHER_PROJECT_ID,
+      properties: { title: "Other project", subject_id: "usr_acme_42" },
+    });
+    state.nodes.set(node.id, node);
+    state.actionCatalog.set("update_project_title", {
+      actionType: "update_project_title",
+      slug: toCatalogSlug("update_project_title"),
+      label: toCatalogLabel("update_project_title"),
+      scope: { kind: "node_type", nodeType: "Project" },
+      preconditions: { requiresExistingNode: true, requiredFields: ["nodeId", "title"] },
+      effects: [
+        {
+          kind: "update_node",
+          nodeId: "",
+          patch: { properties: {} },
+        },
+      ],
+      executor: "Agent",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "update_project_title",
+      input: { nodeId: node.id, title: "Hijacked" },
+      executorId: "agent-1",
+      executorType: "Agent",
+      subjectId: "usr_acme_42",
+      projectId: TEST_PROJECT_ID,
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("PRECONDITION_FAILED");
+    }
+  });
+});

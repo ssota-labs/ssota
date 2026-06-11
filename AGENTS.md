@@ -44,36 +44,53 @@ e2e/                    # Playwright — 콘솔 + MCP HTTP 플로우
 4. **게이트 승인도 액션이다.** `approve_gate` 역시 Action Log에 남는다. 전형 이탈(아키타입 typical values 위반)은 자동으로 gates 큐로 보낸다.
 5. **노드 = 정형 봉투 + 비정형 content.** 런타임(게이트·권한·전이)이 참조하는 것만 필드로 구조화한다. 의미는 content(내장 text 또는 외부 링크)가 담당한다 — 결정 입력을 필드로 깎아내지 않는다.
 
-## Tenancy & Security — `subject_id` + 서버사이드 격리
+## Tenancy & Security — `project_id` + `subject_id` + 서버사이드 격리
 
-B2B2C(고객사 A가 자체 에이전트를 만들고, A의 최종 고객마다 그래프 인스턴스를 나누는 모델)에서 **그래프는 하나의 카탈로그(스키마) 공간**이고, Node Type = 테이블, Node 인스턴스 = row다. 최종 고객 구분은 **별도 그래프/DB가 아니라 `subject_id` property**로 한다.
+B2B2C(고객사 A가 자체 에이전트를 만들고, A의 최종 고객마다 그래프 인스턴스를 나누는 모델)에서 **Organization 아래 Project마다 별도 카탈로그·그래프 공간**을 둔다. 홈페이지 에이전트와 마케팅 에이전트는 **서로 다른 Project**이며, 각 Project 안에서 Node Type = 테이블, Node 인스턴스 = row다. 최종 고객(Acme, Beta) 구분은 **별도 그래프/DB가 아니라 `subject_id` property**로 한다.
+
+```plain text
+Organization (고객사 A)
+├── Project: homepage-agent   → 카탈로그 + 그래프 (project_id)
+└── Project: marketing-agent  → 카탈로그 + 그래프 (project_id)
+    └── 각 project 내부: subject_id로 최종 고객 row 격리
+```
 
 ### 레이어 분리
 
 | 레이어 | 담당 | 식별자 |
 |---|---|---|
 | 고객사 A 앱 (자체 Supabase) | 최종 사용자 인증·앱 데이터 RLS | A의 `users.id` (또는 동등한 PK) |
-| SSOTA 그래프 DB | 컨텍스트 그래프 인스턴스 저장 | `nodes.properties.subject_id` |
-| SSOTA Console / MCP 서버 | 카탈로그·`executeAction`·쿼리 스코핑 | 요청 context의 `subjectId` |
+| SSOTA 그래프 DB | Project별 카탈로그·그래프 인스턴스 저장 | `project_id` (FK → `projects.id`) + `nodes.properties.subject_id` |
+| SSOTA Console / MCP 서버 | 카탈로그·`executeAction`·쿼리 스코핑 | 요청 context의 `projectId` + `subjectId` |
 
-고객사 A의 최종 고객 Acme을 구분하는 값은 **SSOTA Project slug가 아니라 `subject_id`**다. A의 백엔드가 자체 auth를 검증한 뒤, 해당 사용자의 id를 그대로 `subject_id`에 넣어 SSOTA API/MCP에 전달한다. SSOTA는 이 값을 opaque string으로 취급한다 — 형식·FK 검증은 A의 책임.
+Console URL `[orgSlug]/[projectSlug]`와 MCP/API 헤더 `X-SSOTA-Project-Id`가 **project 격리의 SSOT**다. Embedder BFF는 org/project slug 또는 project UUID를 MCP에 전달한다.
 
-### `subject_id` 규칙
+고객사 A의 최종 고객 Acme을 구분하는 값은 **`subject_id`**다. A의 백엔드가 자체 auth를 검증한 뒤, 해당 사용자의 id를 `subject_id`로 SSOTA API/MCP에 전달한다. SSOTA는 opaque string으로 취급한다 — 형식·FK 검증은 A의 책임.
 
-- **카탈로그(스키마) 엔트리** — Node/Edge/Action Catalog, Instruction, Property Catalog — 는 tenant-scoped가 **아니다**. 고객사 A가 한 번 정의하면 모든 최종 고객이 같은 타입 체계를 쓴다.
+### `project_id` 규칙
+
+- **project-scoped** — Node/Edge/Action Catalog, Instruction, Property Catalog, `nodes`, `edges`, `action_log`, `gates`, `action_property_permissions` — 는 **`project_id` 필수**. adapter 포트는 `createActionPorts(db, { projectId })`로 생성하며 모든 쿼리·커밋을 project로 필터한다.
+- **global** — `archetypes` 등 스키마 메타는 org/project와 무관하게 공유한다.
+- **쓰기**: `executeAction` input에 `projectId`가 **필수**다. effect가 참조하는 기존 노드·엣지가 다른 project에 속하면 `PROJECT_MISMATCH`로 거부한다.
+- **조회**: MCP/Console read API는 auth context의 `projectId`로 카탈로그·그래프·로그·게이트를 스코핑한다. 다른 project의 UUID를 header에 넣어도 해당 project 데이터만 반환한다(멤버십 검증은 Console auth 경로).
+
+### `subject_id` 규칙 (project 내부)
+
 - **tenant-scoped 인스턴스 노드** — `HomepageProject`, `DesignBrief` 등 최종 고객별 row — 는 `properties.subject_id`를 **필수**로 둔다. Property Catalog에 `subject_id`를 등록하고, 해당 node type의 create/update 액션 effect·precondition에서 강제한다.
 - **조회**: `query_nodes`·`traverse_edges`는 서버가 항상 요청 context의 `subjectId`로 필터한다. 클라이언트가 `subject_id`를 생략·위조해도 서버가 주입·검증한다.
 - **쓰기**: `executeAction`은 effect에 선언된 `subject_id`가 context `subjectId`와 일치하지 않으면 거부한다. 다른 subject의 노드를 patch하려 하면 거부.
-- **인덱스**: adapter 마이그레이션에서 `(node_type, (properties->>'subject_id'))` 복합 인덱스를 둔다 (구현 시).
+- **인덱스**: adapter 마이그레이션에서 `(project_id, node_type, (properties->>'subject_id'))` 복합 인덱스를 둔다.
 
-예시 (홈페이지 제작 에이전트):
+예시 (홈페이지 제작 에이전트 — `homepage-agent` project):
 
 ```plain text
-고객사 A 카탈로그: Customer-facing node types = HomepageProject, DesignBrief, PageSection
+Project homepage-agent 카탈로그: HomepageProject, DesignBrief, PageSection
 Acme 사용자 (A의 users.id = "usr_acme_42") → subject_id = "usr_acme_42"
 create_homepage_project effect → properties: { subject_id: "usr_acme_42", title: "..." }
-query_nodes({ nodeType: "HomepageProject" }) + context.subjectId → Acme row만
+query_nodes({ nodeType: "HomepageProject" }) + context.projectId + context.subjectId → Acme row만
 ```
+
+별도 Project `marketing-agent`는 **독립 카탈로그·그래프** — homepage project의 node type/action catalog와 섞이지 않는다.
 
 ### Postgres RLS — 전 테이블 deny-all (의도적)
 
@@ -90,7 +107,7 @@ SSOTA 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그, org/proj
                       ↓ subjectId = A.users.id
               [SSOTA apps/web | apps/mcp — JWT·context 검증]
                       ↓ subjectId 주입·검증
-              [executeAction / queryNodes — core 4대 강제 + subject 스코핑]
+              [executeAction / queryNodes — core 4대 강제 + project·subject 스코핑]
                       ↓
               [adapter-supabase — createAdminDb / DATABASE_URL, RLS bypass]
 ```
@@ -306,7 +323,7 @@ pnpm cloud:prepare
 
 1. Node 24 (`.nvmrc`) 확인 — nvm에 24가 없으면 update script(또는 `nvm install 24`)가 먼저 설치해야 한다
 2. `node_modules` 없으면 `pnpm install`
-3. **Build**: `pnpm build --filter @loopos/adapter-supabase --filter @loopos/client` — 워크스페이스 라이브러리(contracts/core/adapter/client) `dist/` 생성. `dist/`는 git·세션 간에 유지되지 않으므로 seed·통합 테스트·앱이 `@loopos/core/dist`를 import하기 전에 **반드시** 빌드돼 있어야 한다 (`pnpm dev`는 tsc watch로 자체 빌드하지만 standalone seed/test는 아니다)
+3. **Build**: `pnpm build --filter @ssota/adapter-supabase --filter @ssota/client` — 워크스페이스 라이브러리(contracts/core/adapter/client) `dist/` 생성. `dist/`는 git·세션 간에 유지되지 않으므로 seed·통합 테스트·앱이 `@ssota/core/dist`를 import하기 전에 **반드시** 빌드돼 있어야 한다 (`pnpm dev`는 tsc watch로 자체 빌드하지만 standalone seed/test는 아니다)
 4. `apps/web/.env.local`, `apps/mcp/.env.local` 없으면 `.env.example` 복사
 5. **Docker**: `docker`/`dockerd`가 없으면 `apt-get install -y docker.io`로 설치한 뒤, `iptables-legacy` + **`vfs` storage driver**로 `dockerd` 기동 (Cloud VM에서 기본 `iptables-nft`/`overlayfs`는 실패함)
 6. **Supabase**: `pnpm exec supabase start` (CLI **2.105.0** pinned)
