@@ -545,3 +545,4 @@ export * from "./domain/enforcement.js";
 export * from "./domain/wire.js";
 export * from "./domain/subject-scope.js";
 export * from "./catalog-slug.js";
+export * from "./console-slug.js";
