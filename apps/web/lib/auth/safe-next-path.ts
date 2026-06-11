@@ -1,6 +1,5 @@
 /**
  * Validates post-login redirect targets (open-redirect safe).
- * Currently limited to Supabase OAuth MCP consent return paths.
  */
 export function safeNextPath(next: string | null | undefined): string | null {
   if (!next) return null;
@@ -9,8 +8,21 @@ export function safeNextPath(next: string | null | undefined): string | null {
   }
 
   const url = new URL(next, "http://localhost");
-  if (url.pathname !== "/oauth/consent") return null;
-  if (!url.searchParams.get("authorization_id")?.trim()) return null;
+  const path = `${url.pathname}${url.search}`;
 
-  return `${url.pathname}${url.search}`;
+  if (url.pathname === "/oauth/consent") {
+    if (!url.searchParams.get("authorization_id")?.trim()) return null;
+    return path;
+  }
+
+  if (url.pathname === "/" || url.pathname.startsWith("/onboarding/")) {
+    return path;
+  }
+
+  // Console routes: /{orgSlug}/{projectSlug}/...
+  if (/^\/[^/]+\/[^/]+(\/.*)?$/.test(url.pathname)) {
+    return path;
+  }
+
+  return null;
 }
