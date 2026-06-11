@@ -85,9 +85,14 @@ ensure_env_files() {
     local example="apps/$app/.env.example"
     if [[ ! -f "$env_file" && -f "$example" ]]; then
       cp "$example" "$env_file"
-      log "Created $env_file from .env.example"
+      log "Created $env_file from .env.example (placeholder — synced after Supabase starts)"
     fi
   done
+}
+
+sync_supabase_env() {
+  log "Syncing .env.local from local Supabase status…"
+  bash "$ROOT_DIR/scripts/sync-supabase-env.sh"
 }
 
 ensure_docker_binaries() {
@@ -210,6 +215,7 @@ main() {
   ensure_iptables_legacy
   ensure_docker
   ensure_supabase
+  sync_supabase_env
   ensure_database
   ensure_playwright
   log "Ready."

@@ -112,7 +112,7 @@ pnpm db:migrate              # Supabase 마이그레이션 적용 (supabase migr
 pnpm db:seed                 # 아키타입 2계열 + 코어 카탈로그 + smoke 계정 시드
 ```
 
-- 환경변수는 각 앱의 `.env.example`을 복사해 `.env.local` 작성. 시크릿은 절대 커밋하지 않는다.
+- 환경변수는 각 앱의 `.env.example`을 복사해 `.env.local` 작성. 로컬 Supabase 기동 후 `pnpm sync:env`로 `supabase status` 키를 자동 반영한다 (`cloud:prepare`가 세션마다 실행). 시크릿은 절대 커밋하지 않는다.
 - Supabase OAuth 2.1 Server는 `supabase/config.toml`의 `[auth.oauth_server] enabled = true`, `allow_dynamic_registration = true`로 설정한다.
 
 ## Development Workflow
@@ -296,7 +296,7 @@ pnpm db:migrate && pnpm db:seed
 
 **반복 방지 메모:** Cloud VM은 세션마다 Docker daemon뿐 아니라 Docker 패키지 자체가 없을 수 있다. `dockerd`가 없다고 E2E를 포기하지 말고 `pnpm cloud:prepare`가 `docker.io`를 설치하게 하거나 위 수동 명령으로 설치한 뒤 재시도한다. daemon 로그가 `API listen on /var/run/docker.sock`까지 갔는데 bootstrap이 실패하면 거의 항상 socket 권한 문제다.
 
-`apps/web/.env.local`, `apps/mcp/.env.local`은 `.env.example` 복사본이면 로컬 Supabase 기본 키로 동작한다.
+`pnpm cloud:prepare`는 Supabase 기동 후 `scripts/sync-supabase-env.sh`로 `apps/web/.env.local`, `apps/mcp/.env.local`, 루트 `.env.local`에 `supabase status` 키(URL·anon·service_role·DATABASE_URL)를 동기화한다. 수동 갱신: `pnpm sync:env`.
 
 ### 앱 기동
 
