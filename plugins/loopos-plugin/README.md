@@ -60,15 +60,9 @@ plugins/loopos-plugin/
    pnpm dev --filter mcp
    ```
 
-3. Install this plugin into the workspace (replicates a marketplace download):
+3. Workspace copies already live at `.agents/skills/loopos-mcp`, `.cursor/skills/loopos-mcp`, and `.cursor/mcp.json`. When you edit this plugin, update those copies in the same PR.
 
-   ```bash
-   pnpm plugin:install
-   ```
-
-   This links `loopos-mcp` into `.agents/skills/` and `.cursor/skills/`, and copies MCP config to `.cursor/mcp.json`.
-
-4. Optionally also install into the Cursor user plugin directory:
+4. Optionally install into the Cursor user plugin directory:
 
    ```bash
    mkdir -p ~/.cursor/plugins/local
