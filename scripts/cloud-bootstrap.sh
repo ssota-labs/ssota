@@ -139,6 +139,15 @@ ensure_docker() {
   sudo pkill containerd 2>/dev/null || true
   sleep 2
 
+  # Cloud VM images may ship /etc/docker/daemon.json with fuse-overlayfs, which
+  # conflicts with --storage-driver=vfs on the CLI.
+  local daemon_json="/etc/docker/daemon.json"
+  local daemon_json_bak="/etc/docker/daemon.json.loopos-vfs.bak"
+  if [[ -f "$daemon_json" ]] && grep -q '"storage-driver"' "$daemon_json" 2>/dev/null; then
+    log "Temporarily moving $daemon_json (storage-driver flag conflict)"
+    sudo mv "$daemon_json" "$daemon_json_bak"
+  fi
+
   sudo mkdir -p /tmp/docker-vfs /tmp/docker-exec
   sudo dockerd \
     --storage-driver=vfs \
@@ -157,6 +166,11 @@ ensure_docker() {
     fi
     sleep 1
   done
+
+  # Restore daemon.json if we moved it
+  if [[ -f "$daemon_json_bak" ]]; then
+    sudo mv "$daemon_json_bak" "$daemon_json"
+  fi
 
   log "Docker failed to start — see /tmp/dockerd-vfs.log"
   exit 1

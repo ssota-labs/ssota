@@ -21,10 +21,10 @@ apps/
   mcp/                  # Next.js 16 — 독립 MCP 앱: /api/mcp 라우트 + /oauth/consent 화면
 packages/
   core/                 # 도메인 헥사곤 — 엔티티, 포트(인터페이스), executeAction 유스케이스, 4대 강제
-  adapter-supabase/     # 드리븐 어댑터 — Drizzle 스키마·마이그레이션·시드, core 포트 구현
+  adapter-supabase/     # 드리븐 어댑터 — Drizzle 스키마·시드, core 포트 구현
   contracts/            # Zod 스키마 공유 — 액션 입력, MCP 도구 IO, log_payload
   config/               # tsconfig/eslint/vitest 공유 설정
-supabase/               # supabase CLI 설정 (config.toml: [auth.oauth_server] enabled)
+supabase/               # supabase CLI 설정 (config.toml, migrations/)
 e2e/                    # Playwright — 콘솔 + MCP HTTP 플로우
 ```
 
@@ -50,7 +50,7 @@ e2e/                    # Playwright — 콘솔 + MCP HTTP 플로우
 nvm use                      # .nvmrc 기준 Node 버전
 pnpm install                 # 전체 워크스페이스 의존성
 supabase start               # 로컬 Supabase docker 기동
-pnpm db:migrate              # Drizzle 마이그레이션 적용
+pnpm db:migrate              # Supabase 마이그레이션 적용 (supabase migration up --local)
 pnpm db:seed                 # 아키타입 2계열 + 코어 카탈로그 + smoke 계정 시드
 ```
 
@@ -69,7 +69,7 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 ```
 
 - 패키지 추가는 `pnpm add <pkg> --filter <workspace>` 사용.
-- 스키마 변경 시: `packages/adapter-supabase`에서 Drizzle 스키마 수정 → `pnpm db:generate`로 마이그레이션 생성 → `pnpm db:migrate`.
+- 스키마 변경 시: `packages/adapter-supabase`에서 Drizzle 스키마 수정 → `pnpm db:generate`로 SQL diff 생성 → `supabase/migrations/`에 `pnpm db:migration:new <name>`으로 파일 추가( diff SQL 이식) → `pnpm db:migrate`. Drizzle은 스키마 정의·diff용, **적용 SSOT는 `supabase/migrations/`** (branching 호환).
 
 ## MVP 마일스톤 커밋 (에이전트·개발자 공통)
 
@@ -79,7 +79,7 @@ Phase 1 구현 계획(`loopos_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0
 |---|---|---|---|
 | M0 | `[infra]` | turbo/pnpm/nvm, `packages/config`, `supabase/config.toml`, 루트 `package.json`·`tsconfig` | `pnpm install` |
 | M1 | `[core]` | `packages/contracts`, `packages/core` | `pnpm test --filter core` |
-| M2 | `[adapter]` | `packages/adapter-supabase` (+ `drizzle/`) | `pnpm --filter @loopos/adapter-supabase build` |
+| M2 | `[adapter]` | `packages/adapter-supabase` (+ `supabase/migrations/`) | `pnpm --filter @loopos/adapter-supabase build` |
 | M3 | `[mcp]` | `apps/mcp` | `pnpm --filter mcp typecheck` |
 | M4 | `[web]` | `apps/web` | `pnpm --filter web typecheck` |
 | M5 | `[e2e]` | `e2e/` | `pnpm e2e` (Supabase·앱 기동 후) |
