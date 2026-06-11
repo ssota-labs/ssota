@@ -17,9 +17,9 @@ Use LoopOS MCP as the operational interface for LoopOS-backed automation. This s
 
 ## Never do this
 
-- Do not write directly to the database, Supabase API, Drizzle adapter, or internal HTTP routes to mutate LoopOS state.
+- LoopOS MCP is your only interface. All mutations must go through `execute_action`.
 - Do not invent action inputs without checking the action contract.
-- Do not bypass `execute_action`.
+- Do not assume a write succeeded until you verify `committed`, `gated`, or `rejected`.
 - Do not treat `approve_gate` as an Agent action.
 - Do not commit access tokens, smoke credentials, OAuth secrets, or `.env` files.
 
