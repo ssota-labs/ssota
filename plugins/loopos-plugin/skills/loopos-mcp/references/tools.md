@@ -43,12 +43,21 @@ Filtered sets, search, graph traversal.
 
 - `execute_action` — **only** mutation path
 
+LoopOS MCP is the only mutation interface. Do not look for alternate write APIs outside MCP.
+
 ## Gates (read + propose)
 
 - `query_gates` / `list_pending_gates` / `get_gate`
 - `submit_for_approval` — informational only; does not approve
 
 `approve_gate` is Human-only unless policy changes.
+
+## Audit
+
+- `get_action_log` — filtered log list
+- `get_action_log_entry` — single entry by `logId` or `idempotencyKey`
+
+Verify important writes through the action log.
 
 ## Recommended sequence
 
