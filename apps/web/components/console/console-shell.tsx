@@ -2,12 +2,8 @@
 
 import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@loopos/core";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@loopos/ui/components/ui/sidebar";
-import { ConsoleGraphSidebar } from "./console-graph-sidebar";
-import { ConsolePrimarySidebar } from "./console-primary-sidebar";
+import { ConsoleGraphCatalogSidebar } from "./console-graph-catalog-sidebar";
+import { ConsoleIconRail } from "./console-icon-rail";
 import { ConsoleTopBar } from "./console-top-bar";
 import {
   ProjectProvider,
@@ -36,18 +32,27 @@ export function ConsoleShell({
 
   return (
     <ProjectProvider value={ctx}>
-      <SidebarProvider>
-        {isGraphContext ? <ConsoleGraphSidebar /> : <ConsolePrimarySidebar />}
-        <SidebarInset>
+      <div className="flex h-svh w-full overflow-hidden">
+        <ConsoleIconRail />
+        {isGraphContext ? <ConsoleGraphCatalogSidebar /> : null}
+        <div className="flex min-w-0 flex-1 flex-col">
           <ConsoleTopBar
             userEmail={userEmail}
             organizations={organizations}
             projects={projects}
             signOutAction={signOutAction}
           />
-          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6">{children}</div>
-        </SidebarInset>
-      </SidebarProvider>
+          <main
+            className={
+              isGraphContext
+                ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                : "flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4 md:p-6"
+            }
+          >
+            {children}
+          </main>
+        </div>
+      </div>
     </ProjectProvider>
   );
 }

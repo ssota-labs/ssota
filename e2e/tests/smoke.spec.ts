@@ -9,13 +9,12 @@ test.describe("LoopOS Console", () => {
     await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible();
   });
 
-  test("smoke: Graph → Nodes", async ({ page }) => {
+  test("smoke: Graph → node table", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "graph");
-    await expect(page.getByRole("heading", { name: "Graph" })).toBeVisible();
-    await page.getByRole("link", { name: /Nodes \d+/ }).click();
-    await expect(page.getByRole("heading", { name: "Nodes" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Document" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page.getByText("Nodes", { exact: true })).toBeVisible();
   });
 
   test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
@@ -41,8 +40,9 @@ test.describe("LoopOS Console", () => {
     await expect(page.getByRole("heading", { name: "Action Log" })).toBeVisible();
   });
 
-  test("smoke: sidebar exposes primary nav", async ({ page }) => {
+  test("smoke: icon rail exposes primary nav", async ({ page }) => {
     await loginAsSmoke(page);
+    await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Action Log", exact: true })).toBeVisible();
   });
