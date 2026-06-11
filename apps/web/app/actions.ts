@@ -88,6 +88,19 @@ export async function signInWithGoogleAction() {
   redirect("/login?error=" + encodeURIComponent("Google 로그인을 시작할 수 없습니다"));
 }
 
+const INVALID_CREDENTIALS_MESSAGE = "이메일 또는 비밀번호가 올바르지 않습니다";
+
+function isInvalidLoginCredentials(error: { message: string; code?: string }) {
+  return (
+    error.code === "invalid_credentials" ||
+    error.message.toLowerCase().includes("invalid login credentials")
+  );
+}
+
+function isUserAlreadyRegistered(error: { message: string }) {
+  return error.message.toLowerCase().includes("user already registered");
+}
+
 export async function signInAction(formData: FormData) {
   const email = formData.get("email");
   const password = formData.get("password");
@@ -96,34 +109,44 @@ export async function signInAction(formData: FormData) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) {
-    redirect(`/login?error=${encodeURIComponent(error.message)}`);
+  const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (!signInError && signInData.user) {
+    const path = await resolvePostAuthPath(signInData.user.id);
+    redirect(path);
   }
 
-  const path = await resolvePostAuthPath(data.user!.id);
-  redirect(path);
-}
+  if (signInError && isInvalidLoginCredentials(signInError)) {
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
-export async function signUpAction(formData: FormData) {
-  const email = formData.get("email");
-  const password = formData.get("password");
-  if (typeof email !== "string" || typeof password !== "string") {
-    throw new Error("email and password required");
+    if (!signUpError && signUpData.user) {
+      if (signUpData.user.identities?.length === 0) {
+        redirect(`/login?error=${encodeURIComponent(INVALID_CREDENTIALS_MESSAGE)}`);
+      }
+
+      const path = await resolvePostAuthPath(signUpData.user.id);
+      redirect(path);
+    }
+
+    if (signUpError) {
+      if (isUserAlreadyRegistered(signUpError)) {
+        redirect(`/login?error=${encodeURIComponent(INVALID_CREDENTIALS_MESSAGE)}`);
+      }
+      redirect(`/login?error=${encodeURIComponent(signUpError.message)}`);
+    }
+
+    redirect("/login?error=Sign%20up%20failed");
   }
 
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) {
-    redirect(`/login?mode=signup&error=${encodeURIComponent(error.message)}`);
-  }
-
-  if (!data.user) {
-    redirect("/login?mode=signup&error=Sign%20up%20failed");
-  }
-
-  const path = await resolvePostAuthPath(data.user.id);
-  redirect(path);
+  redirect(
+    `/login?error=${encodeURIComponent(signInError?.message ?? "로그인에 실패했습니다")}`,
+  );
 }
 
 export async function signOutAction() {
