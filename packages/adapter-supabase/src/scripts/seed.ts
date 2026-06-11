@@ -806,6 +806,26 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
 
   if (smokeUserId) {
     await db
+      .insert(schema.profiles)
+      .values({
+        id: smokeUserId,
+        email: SMOKE_EMAIL,
+        displayName: "Smoke Operator",
+        onboardingStep: "completed",
+        onboardingCompletedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: schema.profiles.id,
+        set: {
+          email: SMOKE_EMAIL,
+          displayName: "Smoke Operator",
+          onboardingStep: "completed",
+          onboardingCompletedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+    await db
       .update(schema.organizations)
       .set({ ownerUserId: smokeUserId })
       .where(eq(schema.organizations.id, organizationId));
@@ -831,28 +851,6 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
         set: {
           orgSlug: DEFAULT_ORG_SLUG,
           projectSlug: DEFAULT_PROJECT_SLUG,
-          updatedAt: new Date(),
-        },
-      });
-
-    await db
-      .insert(schema.profiles)
-      .values({
-        id: smokeUserId,
-        email: SMOKE_EMAIL,
-        displayName: "Smoke Operator",
-        personalOrganizationId: organizationId,
-        onboardingStep: "completed",
-        onboardingCompletedAt: new Date(),
-      })
-      .onConflictDoUpdate({
-        target: schema.profiles.id,
-        set: {
-          email: SMOKE_EMAIL,
-          displayName: "Smoke Operator",
-          personalOrganizationId: organizationId,
-          onboardingStep: "completed",
-          onboardingCompletedAt: new Date(),
           updatedAt: new Date(),
         },
       });
