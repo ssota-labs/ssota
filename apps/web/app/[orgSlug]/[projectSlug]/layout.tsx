@@ -1,7 +1,10 @@
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { signOutAction } from "@/app/actions";
 import { ConsoleShell } from "@/components/console/console-shell";
+import { getDefaultProjectPath } from "@/lib/console/default-landing";
 import { resolveProject } from "@/lib/console/resolve-project";
+import { loginRedirect } from "@/lib/auth/login-redirect";
 import { getConsolePort, getOnboardingPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -12,8 +15,13 @@ export default async function ProjectLayout({
   children: React.ReactNode;
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
+  const { orgSlug, projectSlug } = await params;
+  const requestHeaders = await headers();
+  const returnTo =
+    requestHeaders.get("x-pathname") ?? `/${orgSlug}/${projectSlug}`;
+
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) loginRedirect(returnTo);
 
   const profile = await getOnboardingPort().getProfile(user.id);
   if (!profile || profile.onboardingStep !== "completed") {
@@ -24,13 +32,12 @@ export default async function ProjectLayout({
     );
   }
 
-  const { orgSlug, projectSlug } = await params;
   const { org, project } = await resolveProject(orgSlug, projectSlug);
   const consolePort = getConsolePort();
 
   const organizations = await consolePort.listOrganizationsForUser(user.id);
   if (!organizations.some((item) => item.id === org.id)) {
-    notFound();
+    redirect(await getDefaultProjectPath(user.id));
   }
 
   const projects = await consolePort.listProjectsForOrganization(org.id);
