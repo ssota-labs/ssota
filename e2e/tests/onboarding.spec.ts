@@ -25,7 +25,7 @@ test.describe("Console onboarding", () => {
     await completeProfileOnboarding(page, "Back Test Organization");
 
     await expect(page.getByText("Step 2 of 2")).toBeVisible();
-    await page.getByRole("link", { name: "Back to organization" }).click();
+    await page.getByRole("button", { name: "Back to organization" }).click();
 
     await expect(page).toHaveURL(/\/onboarding\/profile/);
     await expect(page.getByText("Step 1 of 2")).toBeVisible();
