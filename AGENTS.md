@@ -243,13 +243,14 @@ pnpm cloud:prepare
 
 `pnpm cloud:prepare` (= `scripts/cloud-bootstrap.sh`)가 하는 일:
 
-1. Node 24 (`.nvmrc`) 확인
+1. Node 24 (`.nvmrc`) 확인 — nvm에 24가 없으면 update script(또는 `nvm install 24`)가 먼저 설치해야 한다
 2. `node_modules` 없으면 `pnpm install`
-3. `apps/web/.env.local`, `apps/mcp/.env.local` 없으면 `.env.example` 복사
-4. **Docker**: `docker`/`dockerd`가 없으면 `apt-get install -y docker.io`로 설치한 뒤, `iptables-legacy` + **`vfs` storage driver**로 `dockerd` 기동 (Cloud VM에서 기본 `iptables-nft`/`overlayfs`는 실패함)
-5. **Supabase**: `pnpm exec supabase start` (CLI **2.105.0** pinned)
-6. **DB**: `pnpm db:migrate` + `pnpm db:seed` (smoke 계정 포함)
-7. **Playwright**: `pnpm --filter e2e exec playwright install chromium`
+3. **Build**: `pnpm build --filter @loopos/adapter-supabase --filter @loopos/client` — 워크스페이스 라이브러리(contracts/core/adapter/client) `dist/` 생성. `dist/`는 git·세션 간에 유지되지 않으므로 seed·통합 테스트·앱이 `@loopos/core/dist`를 import하기 전에 **반드시** 빌드돼 있어야 한다 (`pnpm dev`는 tsc watch로 자체 빌드하지만 standalone seed/test는 아니다)
+4. `apps/web/.env.local`, `apps/mcp/.env.local` 없으면 `.env.example` 복사
+5. **Docker**: `docker`/`dockerd`가 없으면 `apt-get install -y docker.io`로 설치한 뒤, `iptables-legacy` + **`vfs` storage driver**로 `dockerd` 기동 (Cloud VM에서 기본 `iptables-nft`/`overlayfs`는 실패함)
+6. **Supabase**: `pnpm exec supabase start` (CLI **2.105.0** pinned)
+7. **DB**: `pnpm db:migrate` + `pnpm db:seed` (smoke 계정 포함)
+8. **Playwright**: `pnpm --filter e2e exec playwright install chromium`
 
 옵션: `--skip-install`, `--skip-playwright`
 

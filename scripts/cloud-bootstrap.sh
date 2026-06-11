@@ -79,6 +79,14 @@ ensure_dependencies() {
   log "node_modules present — skipping pnpm install"
 }
 
+ensure_build() {
+  # 워크스페이스 라이브러리(contracts·core·adapter·client)를 빌드한다.
+  # dist/는 git에 없고 세션 간 유지되지 않으므로, seed·통합 테스트·앱이
+  # @loopos/core/dist 등을 import하기 전에 반드시 빌드되어 있어야 한다.
+  log "Building workspace libraries (contracts/core/adapter/client)…"
+  pnpm build --filter @loopos/adapter-supabase --filter @loopos/client
+}
+
 ensure_env_files() {
   for app in web mcp; do
     local env_file="apps/$app/.env.local"
@@ -210,6 +218,7 @@ main() {
   log "LoopOS Cloud bootstrap (session-local runtime)"
   ensure_node
   ensure_dependencies
+  ensure_build
   ensure_env_files
   ensure_docker_binaries
   ensure_iptables_legacy
