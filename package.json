@@ -10,6 +10,7 @@
     "e2e": "pnpm --filter e2e test",
     "e2e:prepare": "pnpm exec supabase start && pnpm db:migrate && pnpm db:seed",
     "cloud:prepare": "bash scripts/cloud-bootstrap.sh",
+    "plugin:install": "bash scripts/install-loopos-plugin.sh",
     "e2e:report": "pnpm --filter e2e test:report",
     "db:generate": "pnpm --filter @loopos/adapter-supabase db:generate",
     "db:migrate": "pnpm --filter @loopos/adapter-supabase db:migrate",

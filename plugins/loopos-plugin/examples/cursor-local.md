@@ -10,6 +10,24 @@ Use this flow to dogfood LoopOS Plugin from the monorepo before marketplace publ
 
 ## Install
 
+### Monorepo dogfood (project skills + MCP)
+
+From the repository root:
+
+```bash
+pnpm plugin:install
+```
+
+This replicates a marketplace install into:
+
+- `.agents/skills/loopos-mcp` — Cloud Agent / workspace skills
+- `.cursor/skills/loopos-mcp` — Cursor project skills
+- `.cursor/mcp.json` — LoopOS MCP server config (`loopos-local`)
+
+Reload Cursor after install. Re-run when `plugins/loopos-plugin/` changes.
+
+### Cursor user plugin directory (desktop IDE)
+
 From any shell on the local machine:
 
 ```bash
