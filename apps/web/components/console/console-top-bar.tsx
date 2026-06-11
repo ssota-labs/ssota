@@ -11,6 +11,7 @@ import { Button } from "@ssota/ui/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -76,12 +77,14 @@ export function ConsoleTopBar({
             <CaretDownIcon className="size-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuLabel>{t("nav.organization")}</DropdownMenuLabel>
-            {organizations.map((org) => (
-              <DropdownMenuItem key={org.id} onClick={() => switchOrg(org)}>
-                {org.name}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{t("nav.organization")}</DropdownMenuLabel>
+              {organizations.map((org) => (
+                <DropdownMenuItem key={org.id} onClick={() => switchOrg(org)}>
+                  {org.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -95,12 +98,14 @@ export function ConsoleTopBar({
             <CaretDownIcon className="size-3.5 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuLabel>{t("nav.project")}</DropdownMenuLabel>
-            {projects.map((project) => (
-              <DropdownMenuItem key={project.id} onClick={() => switchProject(project)}>
-                {project.name}
-              </DropdownMenuItem>
-            ))}
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>{t("nav.project")}</DropdownMenuLabel>
+              {projects.map((project) => (
+                <DropdownMenuItem key={project.id} onClick={() => switchProject(project)}>
+                  {project.name}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
 
@@ -127,10 +132,12 @@ export function ConsoleTopBar({
             }
           />
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel className="font-normal">
-              <div className="text-xs text-muted-foreground">{t("nav.signedInAs")}</div>
-              <div className="truncate text-sm">{userEmail}</div>
-            </DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="font-normal">
+                <div className="text-xs text-muted-foreground">{t("nav.signedInAs")}</div>
+                <div className="truncate text-sm">{userEmail}</div>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <form action={signOutAction}>
               <DropdownMenuItem
