@@ -2,8 +2,13 @@ import { createRemoteJWKSet, jwtVerify } from "jose";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
 
+/** Supabase OAuth 2.1 authorization server issuer (RFC 8414). */
+export function supabaseAuthIssuerUrl(url = supabaseUrl): string {
+  return `${url.replace(/\/$/, "")}/auth/v1`;
+}
+
 const jwks = createRemoteJWKSet(
-  new URL(`${supabaseUrl}/auth/v1/.well-known/jwks.json`),
+  new URL(`${supabaseAuthIssuerUrl()}/.well-known/jwks.json`),
 );
 
 export interface AuthUser {
@@ -19,7 +24,7 @@ export async function verifyBearerToken(
 
   try {
     const { payload } = await jwtVerify(token, jwks, {
-      issuer: `${supabaseUrl}/auth/v1`,
+      issuer: supabaseAuthIssuerUrl(),
     });
     const sub = payload.sub;
     if (!sub) return null;
