@@ -75,13 +75,13 @@ create_homepage_project effect → properties: { subject_id: "usr_acme_42", titl
 query_nodes({ nodeType: "HomepageProject" }) + context.subjectId → Acme row만
 ```
 
-### Postgres RLS — 항상 비활성 (의도적)
+### Postgres RLS — 전 테이블 deny-all (의도적)
 
-LoopOS 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그 등)의 **Postgres RLS는 켜지 않는다** (`isRLSEnabled: false` 유지). 이유:
+LoopOS 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그, org/project 등) **전부 RLS를 켠다**. 각 테이블에 `deny_all` 정책(`USING (false)`, `WITH CHECK (false)`)을 둬 **anon/authenticated PostgREST 접근을 차단**한다.
 
-1. **고객사 A가 자체 Supabase에서 최종 사용자 RLS를 이미 처리**한다. LoopOS 그래프 DB는 A의 백엔드·LoopOS 서버만 접근하는 **서버사이드 데이터 플레인**이다.
-2. **격리의 SSOT는 `executeAction` + 서버 context**다. Property Permission 튜플은 액션 계약 강제(4대 강제 중 계약·권한)이지, Postgres row policy가 아니다.
-3. **단일 접근 경로**: adapter는 `DATABASE_URL`(service role / direct Postgres)로만 연결한다. 브라우저·MCP 클라이언트가 anon key로 그래프 테이블에 직접 쿼리하는 경로를 만들지 않는다.
+1. **격리의 SSOT는 `executeAction` + 서버 context**다. Property Permission 튜플은 액션 계약 강제(4대 강제 중 계약·권한)이지, Postgres row policy가 아니다.
+2. **서버만 DB 접근**: adapter는 `createDb` / `createAdminDb`로 `DATABASE_URL`(postgres superuser 또는 service role 직접 연결)만 사용한다. 이 경로는 RLS를 bypass한다.
+3. **고객사 A의 최종 사용자 RLS**는 A의 자체 Supabase에서 처리한다. LoopOS 그래프 DB는 A의 백엔드·LoopOS 서버만 접근하는 **서버사이드 데이터 플레인**이다.
 
 ### Defense in depth (서버사이드)
 
@@ -92,11 +92,11 @@ LoopOS 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그 등)의 
                       ↓ subjectId 주입·검증
               [executeAction / queryNodes — core 4대 강제 + subject 스코핑]
                       ↓
-              [adapter-supabase — admin client, RLS 없음]
+              [adapter-supabase — createAdminDb / DATABASE_URL, RLS bypass]
 ```
 
-- **금지**: 그래프 테이블에 RLS policy 추가, anon/authenticated PostgREST로 `nodes`/`edges` 직접 노출, 클라이언트가 보낸 `subject_id`를 검증 없이 신뢰.
-- **필수**: 모든 graph read/write는 apps 라우트·MCP 핸들러를 통과; context `subjectId`는 A의 백엔드 또는 LoopOS OAuth 이후 서버에서만 설정; 거부 케이스 integration 테스트.
+- **금지**: anon/authenticated PostgREST로 `nodes`/`edges` 직접 노출, 클라이언트가 보낸 `subject_id`를 검증 없이 신뢰, permissive RLS policy 추가.
+- **필수**: 모든 graph read/write는 apps 라우트·MCP 핸들러를 통과; context `subjectId`는 A의 백엔드 또는 LoopOS OAuth 이후 서버에서만 설정; RLS 거부 케이스 integration 테스트.
 
 LoopOS Console 운영자(카탈로그 편집·Human Gate)는 `subject_id` 스코핑 **바깥**의 별도 auth 경로다 — smoke 계정·org membership으로 처리하며, 최종 고객 데이터와 섞지 않는다.
 

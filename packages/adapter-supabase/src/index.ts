@@ -1,4 +1,4 @@
-export { createDb, schema } from "./db/client.js";
+export { createAdminDb, createDb, schema } from "./db/client.js";
 export { createActionPorts, createConsolePort } from "./ports/index.js";
 export {
   SMOKE_EMAIL,
