@@ -33,6 +33,8 @@ Thumbs.db
 .cursor/*
 !.cursor/rules/
 !.cursor/rules/**
+!.cursor/plugins/
+!.cursor/plugins/**
 !.cursor/skills/
 !.cursor/skills/**
 !.cursor/mcp.json

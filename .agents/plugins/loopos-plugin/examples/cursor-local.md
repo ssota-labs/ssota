@@ -12,13 +12,13 @@ Use this flow to dogfood LoopOS Plugin from the monorepo before marketplace publ
 
 ### Monorepo dogfood (project skills + MCP)
 
-The repo already contains marketplace-style install copies:
+The repo already contains marketplace-style copies:
 
-- `.cursor/plugins/local/loopos-plugin/` — full plugin bundle
-- `.agents/plugins/loopos-plugin/` — full plugin bundle
-- `.agents/skills/loopos-mcp`, `.cursor/skills/loopos-mcp`, `.cursor/mcp.json` — skill + MCP config
+- `.agents/skills/loopos-mcp`
+- `.cursor/skills/loopos-mcp`
+- `.cursor/mcp.json`
 
-When you change `plugins/loopos-plugin/`, update all of those copies in the same PR.
+When you change `plugins/loopos-plugin/`, update those copies in the same PR.
 
 ### Cursor user plugin directory (desktop IDE)
 
