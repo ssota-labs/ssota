@@ -17,12 +17,15 @@ export default async function OnboardingProfilePage({
   }
 
   const { error } = await searchParams;
-  const defaultDisplayName =
+  const defaultWorkspaceName =
     profile?.displayName ??
     user.email?.split("@")[0]?.replace(/[^A-Za-z0-9 '-]/g, "") ??
     "";
 
   return (
-    <ProfileOnboardingForm defaultDisplayName={defaultDisplayName} error={error} />
+    <ProfileOnboardingForm
+      defaultWorkspaceName={defaultWorkspaceName}
+      error={error}
+    />
   );
 }

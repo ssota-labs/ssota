@@ -29,14 +29,13 @@ export const signUpOnLoginPage = signInOnLoginPage;
 
 export async function completeProfileOnboarding(
   page: Page,
-  input: { displayName: string; workspaceName: string },
+  workspaceName: string,
 ): Promise<void> {
   await expect(
     page.getByRole("heading", { name: "Create your workspace" }),
   ).toBeVisible();
 
-  await page.getByLabel("Display name").fill(input.displayName);
-  await page.getByLabel("Workspace name").fill(input.workspaceName);
+  await page.getByLabel("Workspace name").fill(workspaceName);
   await page.locator('button[type="submit"]').click();
 
   await expect(page).toHaveURL(/\/onboarding\/project/, { timeout: 15_000 });
@@ -81,10 +80,7 @@ export async function completeOnboardingFlow(
   const projectName = `E2E Project ${suffix}`;
 
   await signInOnLoginPage(page, email);
-  await completeProfileOnboarding(page, {
-    displayName: "E2E User",
-    workspaceName,
-  });
+  await completeProfileOnboarding(page, workspaceName);
   const { orgSlug, projectSlug } = await completeProjectOnboarding(
     page,
     projectName,
