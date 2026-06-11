@@ -82,7 +82,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational project node",
-        propertyRefs: ["title"],
+        propertyRefs: ["title", "subject_id"],
         allowedActionRefs: [],
       },
       {
@@ -92,7 +92,7 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational task node",
-        propertyRefs: ["title"],
+        propertyRefs: ["title", "subject_id"],
         allowedActionRefs: [],
       },
     ])
@@ -125,7 +125,18 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         propertyKey: "title",
         valueType: "string",
         constraints: { maxLength: 500 },
-        owningActions: ["create_document", "update_document"],
+        owningActions: [
+          "create_document",
+          "update_document",
+          "create_project",
+          "create_task",
+        ],
+      },
+      {
+        propertyKey: "subject_id",
+        valueType: "string",
+        constraints: { minLength: 1 },
+        owningActions: ["create_project", "create_task"],
       },
     ])
     .onConflictDoNothing();
@@ -133,6 +144,48 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
   await db
     .insert(schema.actionCatalog)
     .values([
+      {
+        actionType: "create_project",
+        preconditions: { requiredFields: ["title"] },
+        effects: [
+          {
+            kind: "create_node",
+            node: {
+              nodeType: "Project",
+              lifecycleStatus: "Draft",
+              properties: {},
+              content: null,
+              provenance: {},
+            },
+          },
+        ],
+        executor: "Agent",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: "key",
+        logPayloadSchema: {},
+      },
+      {
+        actionType: "create_task",
+        preconditions: { requiredFields: ["title"] },
+        effects: [
+          {
+            kind: "create_node",
+            node: {
+              nodeType: "Task",
+              lifecycleStatus: "Draft",
+              properties: {},
+              content: null,
+              provenance: {},
+            },
+          },
+        ],
+        executor: "Agent",
+        allowedLifecycleTransitions: {},
+        failureMode: "reject",
+        idempotencyRule: "key",
+        logPayloadSchema: {},
+      },
       {
         actionType: "create_note",
         preconditions: { requiredFields: ["content"] },
@@ -521,6 +574,42 @@ async function seedCatalog(db: ReturnType<typeof createDb>["db"]) {
         actionType: "create_document",
         nodeType: "Document",
         propertyKey: "title",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
+      {
+        actionType: "create_project",
+        nodeType: "Project",
+        propertyKey: "title",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
+      {
+        actionType: "create_project",
+        nodeType: "Project",
+        propertyKey: "subject_id",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
+      {
+        actionType: "create_task",
+        nodeType: "Task",
+        propertyKey: "title",
+        operation: "write",
+        permissionType: "allow",
+        requiresHumanGate: false,
+        status: "active",
+      },
+      {
+        actionType: "create_task",
+        nodeType: "Task",
+        propertyKey: "subject_id",
         operation: "write",
         permissionType: "allow",
         requiresHumanGate: false,

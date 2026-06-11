@@ -7,6 +7,7 @@ import type {
   InstructionWorkflowStep,
   LifecycleStatus,
 } from "@loopos/contracts";
+import { SUBJECT_ID_PROPERTY_KEY } from "@loopos/contracts";
 import type {
   ActionCommitPort,
   ActionLogRecord,
@@ -316,6 +317,11 @@ export function createGraphReadPort(db: Db): GraphReadPort {
           eq(schema.nodes.lifecycleStatus, params.lifecycleStatus),
         );
       }
+      if (params.subjectId) {
+        conditions.push(
+          sql`${schema.nodes.properties}->>${SUBJECT_ID_PROPERTY_KEY} = ${params.subjectId}`,
+        );
+      }
       if (conditions.length > 0) {
         query = query.where(and(...conditions));
       }
@@ -326,6 +332,20 @@ export function createGraphReadPort(db: Db): GraphReadPort {
     },
 
     async traverseEdges(params) {
+      if (params.subjectId) {
+        const anchor = await this.getNode(params.nodeId);
+        const anchorSubject = anchor?.properties[SUBJECT_ID_PROPERTY_KEY];
+        if (
+          typeof anchorSubject === "string" &&
+          anchorSubject.length > 0 &&
+          anchorSubject !== params.subjectId
+        ) {
+          throw new Error(
+            `Node '${params.nodeId}' belongs to a different subject`,
+          );
+        }
+      }
+
       const conditions = [];
       if (params.edgeType) {
         conditions.push(eq(schema.edges.edgeType, params.edgeType));

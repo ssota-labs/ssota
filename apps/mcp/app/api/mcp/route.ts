@@ -16,6 +16,7 @@ import {
 } from "@loopos/contracts";
 import { verifyBearerToken } from "@/lib/auth";
 import { getActionPorts } from "@/lib/ports";
+import { resolveSubjectId } from "@/lib/subject-context";
 
 const supabaseUrl =
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321";
@@ -134,8 +135,12 @@ const mcpHandler = createMcpHandler(
           offset: z.number().int().nonnegative().optional(),
         },
       },
-      async (args) => {
-        const parsed = QueryNodesInputSchema.parse(args);
+      async (args, extra) => {
+        const subjectId = readSubjectFromExtra(extra);
+        const parsed = QueryNodesInputSchema.parse({
+          ...args,
+          subjectId,
+        });
         const ports = getActionPorts();
         const nodes = await ports.graph.queryNodes(parsed);
         return {
@@ -155,8 +160,12 @@ const mcpHandler = createMcpHandler(
           edgeType: z.string().optional(),
         },
       },
-      async (args) => {
-        const parsed = TraverseEdgesInputSchema.parse(args);
+      async (args, extra) => {
+        const subjectId = readSubjectFromExtra(extra);
+        const parsed = TraverseEdgesInputSchema.parse({
+          ...args,
+          subjectId,
+        });
         const ports = getActionPorts();
         const edges = await ports.graph.traverseEdges(parsed);
         return {
@@ -214,12 +223,14 @@ const mcpHandler = createMcpHandler(
           };
         }
 
+        const subjectId = readSubjectFromExtra(extra);
         const parsed = ExecuteActionInputSchema.parse({
           actionType: args.actionType,
           input: args.input ?? {},
           executorId: user.id,
           executorType: "Agent",
           idempotencyKey: args.idempotencyKey,
+          subjectId,
         });
 
         const ports = getActionPorts();
@@ -305,8 +316,17 @@ const mcpHandler = createMcpHandler(
   },
 );
 
+function readSubjectFromExtra(
+  extra: { authInfo?: AuthInfo } | undefined,
+): string | undefined {
+  const subjectId = extra?.authInfo?.extra?.subjectId;
+  return typeof subjectId === "string" && subjectId.length > 0
+    ? subjectId
+    : undefined;
+}
+
 async function verifyToken(
-  _req: Request,
+  req: Request,
   bearerToken?: string,
 ): Promise<AuthInfo | undefined> {
   const user = await verifyBearerToken(
@@ -314,11 +334,18 @@ async function verifyToken(
   );
   if (!user) return undefined;
 
+  let subjectId: string | undefined;
+  try {
+    subjectId = resolveSubjectId(req);
+  } catch {
+    return undefined;
+  }
+
   return {
     token: bearerToken ?? "",
     clientId: user.id,
     scopes: ["openid"],
-    extra: { user },
+    extra: { user, subjectId },
   };
 }
 

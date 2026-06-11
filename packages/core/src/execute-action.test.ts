@@ -557,3 +557,216 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
     }
   });
 });
+
+function seedSubjectScopedProjectCatalog(
+  state: ReturnType<typeof createInMemoryState>,
+): void {
+  seedTestCatalog(state);
+  state.propertyCatalog.set("title", {
+    propertyKey: "title",
+    valueType: "string",
+    constraints: { maxLength: 500 },
+    owningActions: ["create_project"],
+  });
+  state.propertyCatalog.set("subject_id", {
+    propertyKey: "subject_id",
+    valueType: "string",
+    constraints: { minLength: 1 },
+    owningActions: ["create_project"],
+  });
+  state.nodeCatalog.set("Project", {
+    nodeType: "Project",
+    family: "operational",
+    archetypeId: "op-project",
+    typicalValueOverrides: {},
+    lifecycleTransitions: {
+      Draft: ["Active", "Archived"],
+      Active: ["Archived", "Draft"],
+      Archived: ["Active"],
+      Deleted: [],
+    },
+    contentGuide: "Tenant-scoped project",
+    propertyRefs: ["title", "subject_id"],
+    allowedActionRefs: [],
+  });
+  state.archetypes.set("op-project", {
+    id: "op-project",
+    name: "Project",
+    family: "operational",
+    typicalValues: { stateMachine: "project" },
+    allowedMutations: ["update_properties"],
+  });
+  state.actionCatalog.set("create_project", {
+    actionType: "create_project",
+    scope: { kind: "global" },
+    preconditions: { requiredFields: ["title"] },
+    effects: [
+      {
+        kind: "create_node",
+        node: {
+          nodeType: "Project",
+          lifecycleStatus: "Draft",
+          properties: {},
+          content: null,
+          contentUrl: null,
+          provenance: {},
+        },
+      },
+    ],
+    executor: "Agent",
+    allowedLifecycleTransitions: {},
+    failureMode: "reject",
+    idempotencyRule: "key",
+    logPayloadSchema: {},
+  });
+  state.permissions.push(
+    {
+      actionType: "create_project",
+      nodeType: "Project",
+      propertyKey: "title",
+      operation: "write",
+      permissionType: "allow",
+      valueConstraint: null,
+      requiresHumanGate: false,
+      status: "active",
+    },
+    {
+      actionType: "create_project",
+      nodeType: "Project",
+      propertyKey: "subject_id",
+      operation: "write",
+      permissionType: "allow",
+      valueConstraint: null,
+      requiresHumanGate: false,
+      status: "active",
+    },
+  );
+}
+
+describe("executeAction — subject_id tenancy", () => {
+  it("거부: subject-scoped create without subjectId context", async () => {
+    const state = createInMemoryState();
+    seedSubjectScopedProjectCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "create_project",
+      input: { title: "Acme homepage" },
+      executorId: "agent-1",
+      executorType: "Agent",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("SUBJECT_REQUIRED");
+    }
+  });
+
+  it("통과: subjectId 주입 + create_project 커밋", async () => {
+    const state = createInMemoryState();
+    seedSubjectScopedProjectCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "create_project",
+      input: { title: "Acme homepage" },
+      executorId: "agent-1",
+      executorType: "Agent",
+      subjectId: "usr_acme_42",
+    });
+
+    expect(result.status).toBe("committed");
+    const nodes = await ports.graph.queryNodes({
+      nodeType: "Project",
+      subjectId: "usr_acme_42",
+    });
+    expect(nodes).toHaveLength(1);
+    expect(nodes[0]?.properties.subject_id).toBe("usr_acme_42");
+  });
+
+  it("거부: input subject_id가 context와 불일치", async () => {
+    const state = createInMemoryState();
+    seedSubjectScopedProjectCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "create_project",
+      input: { title: "X", subject_id: "usr_other" },
+      executorId: "agent-1",
+      executorType: "Agent",
+      subjectId: "usr_acme_42",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("SUBJECT_MISMATCH");
+    }
+  });
+
+  it("거부: 다른 subject 노드 update", async () => {
+    const state = createInMemoryState();
+    seedSubjectScopedProjectCatalog(state);
+    const node = createTestNode({
+      nodeType: "Project",
+      properties: { title: "Owned", subject_id: "usr_beta" },
+    });
+    state.nodes.set(node.id, node);
+    state.actionCatalog.set("update_project_title", {
+      actionType: "update_project_title",
+      scope: { kind: "node_type", nodeType: "Project" },
+      preconditions: { requiresExistingNode: true, requiredFields: ["nodeId", "title"] },
+      effects: [
+        {
+          kind: "update_node",
+          nodeId: "",
+          patch: { properties: {} },
+        },
+      ],
+      executor: "Agent",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "update_project_title",
+      input: { nodeId: node.id, title: "Hijacked" },
+      executorId: "agent-1",
+      executorType: "Agent",
+      subjectId: "usr_acme_42",
+    });
+
+    expect(result.status).toBe("rejected");
+    if (result.status === "rejected") {
+      expect(result.code).toBe("SUBJECT_MISMATCH");
+    }
+  });
+
+  it("query_nodes: subjectId 필터 격리", async () => {
+    const state = createInMemoryState();
+    seedSubjectScopedProjectCatalog(state);
+    state.nodes.set(
+      "a",
+      createTestNode({
+        id: "a",
+        nodeType: "Project",
+        properties: { subject_id: "usr_a" },
+      }),
+    );
+    state.nodes.set(
+      "b",
+      createTestNode({
+        id: "b",
+        nodeType: "Project",
+        properties: { subject_id: "usr_b" },
+      }),
+    );
+    const ports = createInMemoryPorts(state);
+
+    const aNodes = await ports.graph.queryNodes({ subjectId: "usr_a" });
+    expect(aNodes).toHaveLength(1);
+    expect(aNodes[0]?.id).toBe("a");
+  });
+});
