@@ -15,11 +15,21 @@ export { THEME_MANIFEST, type ThemeVariable } from "./theme-manifest";
 
 export {
   buildStoryCatalog,
+  buildComponentDocsMeta,
   groupStoriesByTitle,
   DEFAULT_STORY_ID,
+  type ArgTypeDef,
+  type ComponentDocsMeta,
   type StoryCatalogEntry,
+  type StoryMeta,
   type StoryModule,
 } from "./lib/story-catalog";
+
+export {
+  buildDocsCatalog,
+  type DocsCatalogEntry,
+  type DocsModule,
+} from "./lib/docs-catalog";
 
 export {
   buildCatalogGroups,
@@ -50,3 +60,12 @@ export {
   resolveTokensFromElement,
   type ResolvedSelection,
 } from "./lib/token-resolver";
+
+export {
+  buildUrlSearchParams,
+  buildDesignLabUrl,
+  parseUrlState,
+  type DesignLabUrlState,
+} from "./lib/url-state";
+
+export { VISUAL_MANIFEST, type VisualTarget } from "./visual-manifest";

@@ -4,11 +4,25 @@ import {
   type ReactNode,
 } from "react";
 
-export type StoryModule = {
-  default?: {
-    title?: string;
-    component?: ComponentType<Record<string, unknown>>;
+export type ArgTypeDef = {
+  control?: string | { type: string };
+  options?: readonly string[];
+  description?: string;
+  table?: {
+    defaultValue?: { summary?: string };
   };
+};
+
+export type StoryMeta = {
+  title?: string;
+  component?: ComponentType<Record<string, unknown>>;
+  tags?: string[];
+  argTypes?: Record<string, ArgTypeDef>;
+  parameters?: Record<string, unknown>;
+};
+
+export type StoryModule = {
+  default?: StoryMeta;
   [key: string]: unknown;
 };
 
@@ -20,8 +34,21 @@ export type StoryCatalogEntry = {
   render: () => ReactNode;
 };
 
+export type ComponentDocsMeta = {
+  title: string;
+  itemId: string;
+  tags?: string[];
+  argTypes?: Record<string, ArgTypeDef>;
+  parameters?: Record<string, unknown>;
+};
+
 /** @deprecated Use DEFAULT_SELECTION from catalog-navigation */
 export const DEFAULT_STORY_ID = "Components/Button/AllVariants";
+
+function componentKeyFromTitle(title: string): string {
+  const name = title.replace(/^Components\//, "");
+  return name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+}
 
 function renderStory(
   meta: StoryModule["default"],
@@ -73,6 +100,28 @@ export function buildStoryCatalog(
     if (titleCmp !== 0) return titleCmp;
     return a.storyName.localeCompare(b.storyName);
   });
+}
+
+export function buildComponentDocsMeta(
+  storyModules: Record<string, StoryModule>,
+): Map<string, ComponentDocsMeta> {
+  const metaByItem = new Map<string, ComponentDocsMeta>();
+
+  for (const mod of Object.values(storyModules)) {
+    const meta = mod.default;
+    if (!meta?.title?.startsWith("Components/")) continue;
+
+    const itemId = componentKeyFromTitle(meta.title);
+    metaByItem.set(itemId, {
+      title: meta.title,
+      itemId,
+      tags: meta.tags,
+      argTypes: meta.argTypes,
+      parameters: meta.parameters,
+    });
+  }
+
+  return metaByItem;
 }
 
 export function groupStoriesByTitle(

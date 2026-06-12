@@ -18,6 +18,8 @@ import type { ResolvedSelection } from "../lib/token-resolver";
 type DesignLabContextValue = {
   isDark: boolean;
   setIsDark: (dark: boolean) => void;
+  visualMode: boolean;
+  setVisualMode: (visual: boolean) => void;
   tokenOverrides: TokenOverrides;
   themeOverrides: ThemeOverrides;
   setTokenOverride: (
@@ -37,6 +39,7 @@ const DesignLabContext = createContext<DesignLabContextValue | null>(null);
 
 export function DesignLabProvider({ children }: { children: ReactNode }) {
   const [isDark, setIsDark] = useState(false);
+  const [visualMode, setVisualMode] = useState(false);
   const [tokenOverrides, setTokenOverrides] = useState<TokenOverrides>({});
   const [themeOverrides, setThemeOverrides] = useState<ThemeOverrides>({});
   const [selection, setSelection] = useState<ResolvedSelection | null>(null);
@@ -80,6 +83,8 @@ export function DesignLabProvider({ children }: { children: ReactNode }) {
     () => ({
       isDark,
       setIsDark,
+      visualMode,
+      setVisualMode,
       tokenOverrides,
       themeOverrides,
       setTokenOverride,
@@ -92,6 +97,7 @@ export function DesignLabProvider({ children }: { children: ReactNode }) {
     }),
     [
       isDark,
+      visualMode,
       tokenOverrides,
       themeOverrides,
       setTokenOverride,

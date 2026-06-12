@@ -9,14 +9,24 @@ import { InspectorPanel } from "./InspectorPanel";
 import { PreviewFrame } from "./PreviewFrame";
 import type { CatalogGroup, CatalogSelection } from "../lib/catalog-navigation";
 import { findCatalogItem } from "../lib/catalog-navigation";
+import type { DocsCatalogEntry } from "../lib/docs-catalog";
+import type { ComponentDocsMeta } from "../lib/story-catalog";
 
 type ShellProps = {
   groups: CatalogGroup[];
   selection: CatalogSelection;
   onSelect: (selection: CatalogSelection) => void;
+  docsMeta: Map<string, ComponentDocsMeta>;
+  docsCatalog: Map<string, DocsCatalogEntry>;
 };
 
-export function Shell({ groups, selection, onSelect }: ShellProps) {
+export function Shell({
+  groups,
+  selection,
+  onSelect,
+  docsMeta,
+  docsCatalog,
+}: ShellProps) {
   const selectedItem = findCatalogItem(
     groups,
     selection.groupId,
@@ -66,7 +76,12 @@ export function Shell({ groups, selection, onSelect }: ShellProps) {
         maxSize="36%"
         className="min-h-0"
       >
-        <InspectorPanel />
+        <InspectorPanel
+          selection={selection}
+          selectedItem={selectedItem ?? null}
+          docsMeta={docsMeta}
+          docsCatalog={docsCatalog}
+        />
       </ResizablePanel>
     </ResizablePanelGroup>
   );

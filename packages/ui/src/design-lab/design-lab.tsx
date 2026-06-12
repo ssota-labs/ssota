@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { createBuiltInCatalogItems } from "./components/built-in-previews";
 import { OverrideStyle } from "./components/OverrideStyle";
@@ -9,11 +9,19 @@ import {
   DEFAULT_SELECTION,
   type CatalogSelection,
 } from "./lib/catalog-navigation";
-import type { StoryCatalogEntry } from "./lib/story-catalog";
+import type { DocsCatalogEntry } from "./lib/docs-catalog";
+import {
+  buildUrlSearchParams,
+  parseUrlState,
+} from "./lib/url-state";
+import type { ComponentDocsMeta, StoryCatalogEntry } from "./lib/story-catalog";
 
 export type DesignLabProps = {
   stories: StoryCatalogEntry[];
+  docsCatalog: Map<string, DocsCatalogEntry>;
+  docsMeta: Map<string, ComponentDocsMeta>;
   defaultSelection?: CatalogSelection;
+  visualMode?: boolean;
 };
 
 function DesignLabHeader() {
@@ -40,9 +48,32 @@ function DesignLabHeader() {
   );
 }
 
+function getInitialState(
+  defaultSelection: CatalogSelection,
+  visualMode?: boolean,
+): {
+  selection: CatalogSelection;
+  isDark: boolean;
+  visualMode: boolean;
+} {
+  if (typeof window === "undefined") {
+    return { selection: defaultSelection, isDark: false, visualMode: visualMode ?? false };
+  }
+
+  const parsed = parseUrlState(new URLSearchParams(window.location.search));
+  return {
+    selection: parsed.selection ?? defaultSelection,
+    isDark: parsed.isDark ?? false,
+    visualMode: visualMode ?? parsed.visualMode ?? false,
+  };
+}
+
 function DesignLabContent({
   stories,
+  docsCatalog,
+  docsMeta,
   defaultSelection = DEFAULT_SELECTION,
+  visualMode: visualModeProp,
 }: DesignLabProps) {
   const builtIn = useMemo(() => createBuiltInCatalogItems(), []);
   const groups = useMemo(
@@ -50,8 +81,31 @@ function DesignLabContent({
     [stories, builtIn],
   );
 
-  const [selection, setSelection] =
-    useState<CatalogSelection>(defaultSelection);
+  const initial = useMemo(
+    () => getInitialState(defaultSelection, visualModeProp),
+    [defaultSelection, visualModeProp],
+  );
+
+  const [selection, setSelection] = useState<CatalogSelection>(initial.selection);
+  const { isDark, setIsDark, setVisualMode } = useDesignLab();
+  const skipUrlSync = useRef(true);
+
+  useEffect(() => {
+    setIsDark(initial.isDark);
+    setVisualMode(initial.visualMode);
+  }, [initial.isDark, initial.visualMode, setIsDark, setVisualMode]);
+
+  useEffect(() => {
+    if (skipUrlSync.current) {
+      skipUrlSync.current = false;
+      return;
+    }
+    if (typeof window === "undefined") return;
+
+    const params = buildUrlSearchParams(selection, isDark);
+    const next = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, "", next);
+  }, [selection, isDark]);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
@@ -61,6 +115,8 @@ function DesignLabContent({
           groups={groups}
           selection={selection}
           onSelect={setSelection}
+          docsMeta={docsMeta}
+          docsCatalog={docsCatalog}
         />
       </div>
       <OverrideStyle />
@@ -68,12 +124,21 @@ function DesignLabContent({
   );
 }
 
-export function DesignLab({ stories, defaultSelection }: DesignLabProps) {
+export function DesignLab({
+  stories,
+  docsCatalog,
+  docsMeta,
+  defaultSelection,
+  visualMode,
+}: DesignLabProps) {
   return (
     <DesignLabProvider>
       <DesignLabContent
         stories={stories}
+        docsCatalog={docsCatalog}
+        docsMeta={docsMeta}
         defaultSelection={defaultSelection}
+        visualMode={visualMode}
       />
     </DesignLabProvider>
   );

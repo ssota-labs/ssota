@@ -22,7 +22,9 @@
     "migrate:notion": "tsx scripts/m6-notion-migration.ts",
     "embedder-bff": "tsx examples/embedder-bff/server.ts",
     "storybook": "pnpm --filter storybook dev",
-    "design-lab": "pnpm --filter design-lab dev"
+    "design-lab": "pnpm --filter design-lab dev",
+    "design-lab:build": "pnpm --filter design-lab build",
+    "e2e:design-lab": "pnpm --filter e2e exec playwright test -c playwright.design-lab.config.ts"
   },
   "devDependencies": {
     "@ssota/client": "workspace:*",

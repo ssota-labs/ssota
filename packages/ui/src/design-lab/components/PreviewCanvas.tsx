@@ -10,11 +10,12 @@ type PreviewCanvasProps = {
 const HIGHLIGHT_CLASS = "design-lab-selected";
 
 export function PreviewCanvas({ children }: PreviewCanvasProps) {
-  const { isDark, selection, setSelection } = useDesignLab();
+  const { isDark, selection, setSelection, visualMode } = useDesignLab();
   const canvasRef = useRef<HTMLDivElement>(null);
   const prevHighlighted = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    if (visualMode) return;
     if (prevHighlighted.current) {
       prevHighlighted.current.classList.remove(HIGHLIGHT_CLASS);
       prevHighlighted.current = null;
@@ -23,9 +24,10 @@ export function PreviewCanvas({ children }: PreviewCanvasProps) {
       selection.element.classList.add(HIGHLIGHT_CLASS);
       prevHighlighted.current = selection.element;
     }
-  }, [selection]);
+  }, [selection, visualMode]);
 
   function handleClick(event: React.MouseEvent) {
+    if (visualMode) return;
     const resolved = resolveSelection(event.target);
     setSelection(resolved);
   }
@@ -43,7 +45,10 @@ export function PreviewCanvas({ children }: PreviewCanvasProps) {
         className={isDark ? "dark min-h-0 flex-1 overflow-auto" : "min-h-0 flex-1 overflow-auto"}
         onClick={handleClick}
       >
-        <div className="style-ssota design-lab-preview min-h-full bg-background p-8">
+        <div
+          data-testid="design-lab-canvas"
+          className="style-ssota design-lab-preview min-h-full bg-background p-8"
+        >
           {children}
         </div>
       </div>
