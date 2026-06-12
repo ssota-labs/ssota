@@ -9,29 +9,41 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 
-const meta = {
-  title: "Components/Combobox",
-  component: Combobox,
-  tags: ["autodocs"],
-} satisfies Meta<typeof Combobox>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
 const nodeTypes = ["HomepageProject", "DesignBrief", "PageSection"];
 
+type ComboboxStoryArgs = {
+  placeholder: string;
+  emptyMessage: string;
+};
+
+const meta = {
+  title: "Components/Combobox",
+  tags: ["autodocs"],
+  argTypes: {
+    placeholder: { control: "text" },
+    emptyMessage: { control: "text" },
+  },
+} satisfies Meta<ComboboxStoryArgs>;
+
+export default meta;
+type Story = StoryObj<ComboboxStoryArgs>;
+
 export const Default: Story = {
-  render: function ComboboxDemo() {
+  args: {
+    placeholder: "Select node type...",
+    emptyMessage: "No node types found.",
+  },
+  render: function ComboboxDemo(args) {
     const [value, setValue] = useState<string | null>(null);
     return (
-      <Combobox value={value} onValueChange={setValue}>
+      <Combobox value={value} onValueChange={setValue} items={nodeTypes}>
         <ComboboxInput
-          placeholder="Select node type..."
+          placeholder={args.placeholder}
           className="w-[260px]"
           showClear
         />
         <ComboboxContent>
-          <ComboboxEmpty>No node types found.</ComboboxEmpty>
+          <ComboboxEmpty>{args.emptyMessage}</ComboboxEmpty>
           <ComboboxList>
             {nodeTypes.map((type) => (
               <ComboboxItem key={type} value={type}>

@@ -8,29 +8,44 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
+type BreadcrumbStoryArgs = {
+  rootLabel: string;
+  orgLabel: string;
+  projectLabel: string;
+};
+
 const meta = {
   title: "Components/Breadcrumb",
-  component: Breadcrumb,
   tags: ["autodocs"],
-} satisfies Meta<typeof Breadcrumb>;
+  argTypes: {
+    rootLabel: { control: "text" },
+    orgLabel: { control: "text" },
+    projectLabel: { control: "text" },
+  },
+} satisfies Meta<BreadcrumbStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<BreadcrumbStoryArgs>;
 
-export const ConsolePath: Story = {
-  render: () => (
+export const Default: Story = {
+  args: {
+    rootLabel: "ssota",
+    orgLabel: "smoke-org",
+    projectLabel: "homepage-agent",
+  },
+  render: (args) => (
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
-          <BreadcrumbLink href="#">ssota</BreadcrumbLink>
+          <BreadcrumbLink href="#">{args.rootLabel}</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="#">smoke-org</BreadcrumbLink>
+          <BreadcrumbLink href="#">{args.orgLabel}</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbPage>homepage-agent</BreadcrumbPage>
+          <BreadcrumbPage>{args.projectLabel}</BreadcrumbPage>
         </BreadcrumbItem>
       </BreadcrumbList>
     </Breadcrumb>

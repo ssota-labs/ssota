@@ -6,15 +6,20 @@ const meta = {
   title: "Components/Checkbox",
   component: Checkbox,
   tags: ["autodocs"],
+  argTypes: {
+    checked: { control: "boolean" },
+    disabled: { control: "boolean" },
+  },
 } satisfies Meta<typeof Checkbox>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => (
+  args: { checked: true, disabled: false },
+  render: (args) => (
     <div className="flex items-center gap-2">
-      <Checkbox id="audit" defaultChecked />
+      <Checkbox id="audit" {...args} />
       <Label htmlFor="audit">Include action log in export</Label>
     </div>
   ),

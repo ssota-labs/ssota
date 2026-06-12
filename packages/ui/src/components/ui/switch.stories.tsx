@@ -6,15 +6,20 @@ const meta = {
   title: "Components/Switch",
   component: Switch,
   tags: ["autodocs"],
+  argTypes: {
+    disabled: { control: "boolean" },
+    defaultChecked: { control: "boolean" },
+  },
 } satisfies Meta<typeof Switch>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => (
+  args: { disabled: false, defaultChecked: true },
+  render: (args) => (
     <div className="flex items-center gap-2">
-      <Switch id="human-gate" defaultChecked />
+      <Switch id="human-gate" {...args} />
       <Label htmlFor="human-gate">Require human gate</Label>
     </div>
   ),

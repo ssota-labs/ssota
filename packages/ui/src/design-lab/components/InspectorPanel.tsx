@@ -67,9 +67,11 @@ export function InspectorPanel({
                   <>
                     <span className="font-medium text-foreground">
                       {variantLabel}
-                    </span>
-                    은 정적 쇼케이스입니다. Controls를 쓰려면 Default 등 args
-                    variant를 선택하세요.
+                    </span>{" "}
+                    story는 <code className="text-foreground">args</code>가 없어
+                    Props 조작을 지원하지 않습니다. 툴바에서{" "}
+                    <span className="font-medium text-foreground">Default</span>{" "}
+                    variant를 선택하거나 story에 args를 추가하세요.
                   </>
                 ) : (
                   "컴포넌트를 선택하면 props controls가 표시됩니다."

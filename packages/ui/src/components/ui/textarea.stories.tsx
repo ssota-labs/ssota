@@ -6,12 +6,23 @@ const meta = {
   title: "Components/Textarea",
   component: Textarea,
   tags: ["autodocs"],
+  argTypes: {
+    placeholder: { control: "text" },
+    disabled: { control: "boolean" },
+  },
 } satisfies Meta<typeof Textarea>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: {
+    placeholder: "Domain recipe for the mounted agent...",
+    disabled: false,
+  },
+};
+
+export const Showcase: Story = {
   render: () => (
     <div className="grid w-full max-w-sm gap-2">
       <Label htmlFor="instruction">Instruction</Label>

@@ -5,20 +5,35 @@ import {
   AvatarImage,
 } from "@/components/ui/avatar";
 
+type AvatarStoryArgs = {
+  imageSrc: string;
+  alt: string;
+  fallback: string;
+};
+
 const meta = {
   title: "Components/Avatar",
-  component: Avatar,
   tags: ["autodocs"],
-} satisfies Meta<typeof Avatar>;
+  argTypes: {
+    imageSrc: { control: "text" },
+    alt: { control: "text" },
+    fallback: { control: "text" },
+  },
+} satisfies Meta<AvatarStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<AvatarStoryArgs>;
 
 export const Default: Story = {
-  render: () => (
+  args: {
+    imageSrc: "https://github.com/shadcn.png",
+    alt: "Operator",
+    fallback: "SM",
+  },
+  render: (args) => (
     <Avatar>
-      <AvatarImage src="https://github.com/shadcn.png" alt="Operator" />
-      <AvatarFallback>SM</AvatarFallback>
+      <AvatarImage src={args.imageSrc} alt={args.alt} />
+      <AvatarFallback>{args.fallback}</AvatarFallback>
     </Avatar>
   ),
 };

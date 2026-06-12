@@ -51,9 +51,15 @@ export function pickDefaultVariant(
   variants: StoryCatalogEntry[],
 ): StoryCatalogEntry | null {
   if (variants.length === 0) return null;
+
+  const nonGallery = variants.filter((v) => v.storyName !== "AllVariants");
+
   return (
+    nonGallery.find((v) => v.storyName === "Default") ??
+    nonGallery.find((v) => v.storyName === "Preview") ??
+    nonGallery.find((v) => v.storyName === "Open") ??
+    nonGallery[0] ??
     variants.find((v) => v.storyName === "AllVariants") ??
-    variants.find((v) => v.storyName === "Default") ??
     variants[0] ??
     null
   );

@@ -7,13 +7,10 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 
-const meta = {
-  title: "Components/Chart",
-  tags: ["autodocs"],
-} satisfies Meta;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
+type ChartStoryArgs = {
+  height: number;
+  seriesLabel: string;
+};
 
 const data = [
   { action: "create", count: 12 },
@@ -21,13 +18,33 @@ const data = [
   { action: "approve", count: 5 },
 ];
 
-const config = {
-  count: { label: "Commits", color: "var(--chart-1)" },
-} satisfies ChartConfig;
+const meta = {
+  title: "Components/Chart",
+  tags: ["autodocs"],
+  argTypes: {
+    height: {
+      control: { type: "number", min: 160, max: 400, step: 20 },
+    },
+    seriesLabel: { control: "text" },
+  },
+} satisfies Meta<ChartStoryArgs>;
 
-export const ActionVolume: Story = {
-  render: () => (
-    <ChartContainer config={config} className="h-[240px] w-full max-w-md">
+export default meta;
+type Story = StoryObj<ChartStoryArgs>;
+
+export const Default: Story = {
+  args: {
+    height: 240,
+    seriesLabel: "Commits",
+  },
+  render: (args) => (
+    <ChartContainer
+      config={{
+        count: { label: args.seriesLabel, color: "var(--chart-1)" },
+      }}
+      className="w-full max-w-md"
+      style={{ height: args.height }}
+    >
       <BarChart data={data} accessibilityLayer>
         <CartesianGrid vertical={false} />
         <XAxis dataKey="action" tickLine={false} axisLine={false} />

@@ -11,28 +11,52 @@ import {
 } from "@/components/ui/item";
 import { Badge } from "@/components/ui/badge";
 
+type ItemStoryArgs = {
+  firstTitle: string;
+  firstDescription: string;
+  firstBadge: string;
+  secondTitle: string;
+  secondDescription: string;
+  secondBadge: string;
+};
+
 const meta = {
   title: "Components/Item",
-  component: Item,
   tags: ["autodocs"],
-} satisfies Meta<typeof Item>;
+  argTypes: {
+    firstTitle: { control: "text" },
+    firstDescription: { control: "text" },
+    firstBadge: { control: "text" },
+    secondTitle: { control: "text" },
+    secondDescription: { control: "text" },
+    secondBadge: { control: "text" },
+  },
+} satisfies Meta<ItemStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<ItemStoryArgs>;
 
-export const List: Story = {
-  render: () => (
+export const Default: Story = {
+  args: {
+    firstTitle: "approve_gate",
+    firstDescription: "Human executor · committed",
+    firstBadge: "log",
+    secondTitle: "create_node",
+    secondDescription: "Agent executor · gate pending",
+    secondBadge: "gate",
+  },
+  render: (args) => (
     <ItemGroup className="max-w-md">
       <Item variant="outline">
         <ItemMedia variant="icon">
           <FileTextIcon />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle>approve_gate</ItemTitle>
-          <ItemDescription>Human executor · committed</ItemDescription>
+          <ItemTitle>{args.firstTitle}</ItemTitle>
+          <ItemDescription>{args.firstDescription}</ItemDescription>
         </ItemContent>
         <ItemActions>
-          <Badge variant="secondary">log</Badge>
+          <Badge variant="secondary">{args.firstBadge}</Badge>
         </ItemActions>
       </Item>
       <Item variant="outline">
@@ -40,11 +64,11 @@ export const List: Story = {
           <FileTextIcon />
         </ItemMedia>
         <ItemContent>
-          <ItemTitle>create_node</ItemTitle>
-          <ItemDescription>Agent executor · gate pending</ItemDescription>
+          <ItemTitle>{args.secondTitle}</ItemTitle>
+          <ItemDescription>{args.secondDescription}</ItemDescription>
         </ItemContent>
         <ItemActions>
-          <Badge>gate</Badge>
+          <Badge>{args.secondBadge}</Badge>
         </ItemActions>
       </Item>
     </ItemGroup>

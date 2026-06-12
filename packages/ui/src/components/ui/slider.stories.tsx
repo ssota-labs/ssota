@@ -6,16 +6,21 @@ const meta = {
   title: "Components/Slider",
   component: Slider,
   tags: ["autodocs"],
+  argTypes: {
+    defaultValue: { control: "object" },
+    max: { control: "number" },
+  },
 } satisfies Meta<typeof Slider>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => (
+  args: { defaultValue: [70], max: 100 },
+  render: (args) => (
     <div className="grid w-full max-w-sm gap-3">
       <Label>Gate confidence threshold</Label>
-      <Slider defaultValue={[70]} max={100} step={1} />
+      <Slider {...args} />
     </div>
   ),
 };

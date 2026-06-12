@@ -1,22 +1,44 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ComponentProps } from "react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
+
+type ButtonGroupStoryArgs = ComponentProps<typeof ButtonGroup> & {
+  firstLabel: string;
+  secondLabel: string;
+  thirdLabel: string;
+};
 
 const meta = {
   title: "Components/ButtonGroup",
   component: ButtonGroup,
   tags: ["autodocs"],
-} satisfies Meta<typeof ButtonGroup>;
+  argTypes: {
+    orientation: {
+      control: "select",
+      options: ["horizontal", "vertical"],
+    },
+    firstLabel: { control: "text" },
+    secondLabel: { control: "text" },
+    thirdLabel: { control: "text" },
+  },
+} satisfies Meta<ButtonGroupStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<ButtonGroupStoryArgs>;
 
-export const Horizontal: Story = {
-  render: () => (
-    <ButtonGroup>
-      <Button variant="outline">List</Button>
-      <Button variant="outline">Graph</Button>
-      <Button variant="outline">Log</Button>
+export const Default: Story = {
+  args: {
+    orientation: "horizontal",
+    firstLabel: "List",
+    secondLabel: "Graph",
+    thirdLabel: "Log",
+  },
+  render: (args) => (
+    <ButtonGroup orientation={args.orientation}>
+      <Button variant="outline">{args.firstLabel}</Button>
+      <Button variant="outline">{args.secondLabel}</Button>
+      <Button variant="outline">{args.thirdLabel}</Button>
     </ButtonGroup>
   ),
 };

@@ -9,21 +9,33 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 
+type CommandStoryArgs = {
+  placeholder: string;
+  emptyMessage: string;
+};
+
 const meta = {
   title: "Components/Command",
-  component: Command,
   tags: ["autodocs"],
-} satisfies Meta<typeof Command>;
+  argTypes: {
+    placeholder: { control: "text" },
+    emptyMessage: { control: "text" },
+  },
+} satisfies Meta<CommandStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<CommandStoryArgs>;
 
-export const Palette: Story = {
-  render: () => (
+export const Default: Story = {
+  args: {
+    placeholder: "Search catalog...",
+    emptyMessage: "No results.",
+  },
+  render: (args) => (
     <Command className="max-w-md rounded-lg border shadow-md">
-      <CommandInput placeholder="Search catalog..." />
+      <CommandInput placeholder={args.placeholder} />
       <CommandList>
-        <CommandEmpty>No results.</CommandEmpty>
+        <CommandEmpty>{args.emptyMessage}</CommandEmpty>
         <CommandGroup heading="Nodes">
           <CommandItem>HomepageProject</CommandItem>
           <CommandItem>DesignBrief</CommandItem>

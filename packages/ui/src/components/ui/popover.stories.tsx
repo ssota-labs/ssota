@@ -11,31 +11,72 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
+type PopoverStoryArgs = {
+  title: string;
+  description: string;
+  fieldLabel: string;
+  placeholder: string;
+  triggerLabel: string;
+};
+
 const meta = {
   title: "Components/Popover",
-  component: Popover,
   tags: ["autodocs"],
-} satisfies Meta<typeof Popover>;
+  argTypes: {
+    title: { control: "text" },
+    description: { control: "text" },
+    fieldLabel: { control: "text" },
+    placeholder: { control: "text" },
+    triggerLabel: { control: "text" },
+  },
+} satisfies Meta<PopoverStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<PopoverStoryArgs>;
+
+export const Preview: Story = {
+  args: {
+    title: "Action filter",
+    description: "Narrow the audit log by action name.",
+    fieldLabel: "Action",
+    placeholder: "approve_gate",
+    triggerLabel: "Filter log",
+  },
+  render: (args) => (
+    <div className="cn-popover-content cn-menu-translucent w-72 rounded-md border border-border bg-popover p-4 shadow-md">
+      <div className="flex flex-col gap-1">
+        <p className="font-medium">{args.title}</p>
+        <p className="text-sm text-muted-foreground">{args.description}</p>
+      </div>
+      <div className="grid gap-2 pt-3">
+        <Label htmlFor="action-filter-preview">{args.fieldLabel}</Label>
+        <Input id="action-filter-preview" placeholder={args.placeholder} />
+      </div>
+    </div>
+  ),
+};
 
 export const Filter: Story = {
-  render: () => (
+  args: {
+    title: "Action filter",
+    description: "Narrow the audit log by action name.",
+    fieldLabel: "Action",
+    placeholder: "approve_gate",
+    triggerLabel: "Filter log",
+  },
+  render: (args) => (
     <Popover>
       <PopoverTrigger render={<Button variant="outline" />}>
-        Filter log
+        {args.triggerLabel}
       </PopoverTrigger>
       <PopoverContent className="w-72">
         <PopoverHeader>
-          <PopoverTitle>Action filter</PopoverTitle>
-          <PopoverDescription>
-            Narrow the audit log by action name.
-          </PopoverDescription>
+          <PopoverTitle>{args.title}</PopoverTitle>
+          <PopoverDescription>{args.description}</PopoverDescription>
         </PopoverHeader>
         <div className="grid gap-2 pt-2">
-          <Label htmlFor="action-filter">Action</Label>
-          <Input id="action-filter" placeholder="approve_gate" />
+          <Label htmlFor="action-filter">{args.fieldLabel}</Label>
+          <Input id="action-filter" placeholder={args.placeholder} />
         </div>
       </PopoverContent>
     </Popover>

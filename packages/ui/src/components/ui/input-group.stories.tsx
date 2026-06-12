@@ -6,22 +6,31 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 
+type InputGroupStoryArgs = {
+  placeholder: string;
+};
+
 const meta = {
   title: "Components/InputGroup",
-  component: InputGroup,
   tags: ["autodocs"],
-} satisfies Meta<typeof InputGroup>;
+  argTypes: {
+    placeholder: { control: "text" },
+  },
+} satisfies Meta<InputGroupStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<InputGroupStoryArgs>;
 
-export const WithIcon: Story = {
-  render: () => (
+export const Default: Story = {
+  args: {
+    placeholder: "Search action log...",
+  },
+  render: (args) => (
     <InputGroup className="max-w-sm">
       <InputGroupAddon>
         <MagnifyingGlassIcon />
       </InputGroupAddon>
-      <InputGroupInput placeholder="Search action log..." />
+      <InputGroupInput placeholder={args.placeholder} />
     </InputGroup>
   ),
 };

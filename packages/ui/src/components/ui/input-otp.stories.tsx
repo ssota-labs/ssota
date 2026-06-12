@@ -6,17 +6,29 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 
+type InputOtpStoryArgs = {
+  maxLength: number;
+};
+
 const meta = {
   title: "Components/InputOTP",
   tags: ["autodocs"],
-} satisfies Meta;
+  argTypes: {
+    maxLength: {
+      control: { type: "number", min: 4, max: 6, step: 1 },
+    },
+  },
+} satisfies Meta<InputOtpStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<InputOtpStoryArgs>;
 
 export const Default: Story = {
-  render: () => (
-    <InputOTP maxLength={6}>
+  args: {
+    maxLength: 6,
+  },
+  render: (args) => (
+    <InputOTP maxLength={args.maxLength}>
       <InputOTPGroup>
         <InputOTPSlot index={0} />
         <InputOTPSlot index={1} />
