@@ -70,13 +70,12 @@ export default async function GraphNodesPage({
             <Input id="family" name="family" defaultValue="document" required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="archetypeId">Archetype</Label>
+            <Label htmlFor="archetypeId">Archetype (선택)</Label>
             <Input
               id="archetypeId"
               name="archetypeId"
               list="archetypes"
-              placeholder={archetypes[0]?.id ?? "doc-note"}
-              required
+              placeholder={archetypes[0]?.id ?? "없음"}
             />
             <datalist id="archetypes">
               {archetypes.map((archetype) => (

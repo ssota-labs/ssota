@@ -37,7 +37,7 @@ export async function NodeCatalogSettings({ projectId, slug }: NodeCatalogSettin
       <dl className="grid gap-4 p-4 text-sm sm:grid-cols-2">
         <DefinitionItem label="Node type" value={entry.nodeType} />
         <DefinitionItem label="Family" value={entry.family} />
-        <DefinitionItem label="Archetype" value={entry.archetypeId} />
+        <DefinitionItem label="Archetype" value={entry.archetypeId ?? "—"} />
         <DefinitionItem label="Slug" value={entry.slug} mono />
         <DefinitionItem
           label="Lifecycle"

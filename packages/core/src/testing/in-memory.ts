@@ -157,7 +157,7 @@ function applyEffect(
       slug: toCatalogSlug(effect.entry.nodeType),
       label: toCatalogLabel(effect.entry.nodeType),
       family: effect.entry.family,
-      archetypeId: effect.entry.archetypeId,
+      archetypeId: effect.entry.archetypeId ?? null,
       typicalValueOverrides: effect.entry.typicalValueOverrides,
       lifecycleTransitions: effect.entry.lifecycleTransitions as Record<
         LifecycleStatus,

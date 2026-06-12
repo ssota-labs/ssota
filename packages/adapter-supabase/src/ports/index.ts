@@ -68,7 +68,7 @@ function mapNodeCatalogEntry(
     slug: row.slug,
     label: row.label,
     family: row.family,
-    archetypeId: row.archetypeId,
+    archetypeId: row.archetypeId ?? null,
     typicalValueOverrides: row.typicalValueOverrides,
     lifecycleTransitions: row.lifecycleTransitions as Record<
       LifecycleStatus,
@@ -703,7 +703,7 @@ async function applyEffect(
         slug,
         label,
         family: effect.entry.family,
-        archetypeId: effect.entry.archetypeId,
+        archetypeId: effect.entry.archetypeId ?? null,
         typicalValueOverrides: effect.entry.typicalValueOverrides,
         lifecycleTransitions: effect.entry.lifecycleTransitions,
         contentGuide: effect.entry.contentGuide ?? null,
@@ -714,7 +714,7 @@ async function applyEffect(
         target: [schema.nodeCatalog.projectId, schema.nodeCatalog.nodeType],
         set: {
           family: effect.entry.family,
-          archetypeId: effect.entry.archetypeId,
+          archetypeId: effect.entry.archetypeId ?? null,
           typicalValueOverrides: effect.entry.typicalValueOverrides,
           lifecycleTransitions: effect.entry.lifecycleTransitions,
           contentGuide: effect.entry.contentGuide ?? null,

@@ -70,6 +70,14 @@ export function validateLifecycleTransitions(
   }
 }
 
+function normalizeArchetypeId(
+  archetypeId: string | null | undefined,
+): string | null {
+  if (archetypeId == null) return null;
+  const trimmed = archetypeId.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
 function parseNodeDefinition(input: Record<string, unknown>): NodeTypeDefinition {
   const parsed = NodeTypeDefinitionSchema.safeParse(input.definition ?? input);
   if (!parsed.success) {
@@ -80,6 +88,7 @@ function parseNodeDefinition(input: Record<string, unknown>): NodeTypeDefinition
   }
   return {
     ...parsed.data,
+    archetypeId: normalizeArchetypeId(parsed.data.archetypeId),
     propertySchema: ensureTitleInPropertySchema(parsed.data.propertySchema),
   };
 }
@@ -571,7 +580,7 @@ export async function checkArchetypeDeviation(
     }
 
     const catalog = await getNodeCatalog(nodeType);
-    if (!catalog) continue;
+    if (!catalog?.archetypeId) continue;
 
     const archetype = await getArchetype(catalog.archetypeId);
     if (!archetype) continue;
@@ -682,12 +691,14 @@ export async function enforceCatalogMutationIntegrity(
     if (effect.kind === "upsert_node_catalog_entry") {
       validateLifecycleTransitions(effect.entry.lifecycleTransitions);
 
-      const archetype = await catalog.getArchetype(effect.entry.archetypeId);
-      if (!archetype) {
-        throw new ActionRejectedError(
-          "CATALOG_NOT_FOUND",
-          `Archetype '${effect.entry.archetypeId}' does not exist`,
-        );
+      if (effect.entry.archetypeId) {
+        const archetype = await catalog.getArchetype(effect.entry.archetypeId);
+        if (!archetype) {
+          throw new ActionRejectedError(
+            "CATALOG_NOT_FOUND",
+            `Archetype '${effect.entry.archetypeId}' does not exist`,
+          );
+        }
       }
 
       const existing = await catalog.getNodeCatalogEntry(effect.entry.nodeType);

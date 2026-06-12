@@ -77,6 +77,6 @@ export async function getNodeTableMeta(projectId: string, slug: string) {
   const propertyCount = Object.keys(entry.propertySchema).length;
   return {
     label: entry.label,
-    description: `${entry.family} · ${entry.archetypeId} · ${propertyCount} properties`,
+    description: `${entry.family} · ${entry.archetypeId ?? "no archetype"} · ${propertyCount} properties`,
   };
 }
