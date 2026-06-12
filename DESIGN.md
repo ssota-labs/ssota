@@ -72,8 +72,8 @@ Import path: `@ssota/ui/components/ui/<component>`
 ```
 packages/ui/src/styles/globals.css   # @theme + CSS variables
 packages/ui/src/components/ui/       # shadcn Base UI components
-apps/storybook/                      # Storybook catalog (port 6006)
-pnpm storybook                       # dev command
+apps/design-lab/                     # Design Lab catalog (port 6007)
+pnpm design-lab                      # dev command
 ```
 
 CLI (추가 컴포넌트):
@@ -84,4 +84,5 @@ pnpm dlx shadcn@latest add <name> -y -c apps/web
 
 ## 9. Changelog
 
+- 2026-06-12: Storybook app removed; Design Lab (`apps/design-lab`, port 6007) is the component catalog
 - 2026-06-10: preset `b2CimoD3a`, Base UI, `@ssota/ui` monorepo, Storybook, console migration

@@ -11,7 +11,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "storybook-static/**", "apps/design-lab/dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "apps/design-lab/dist/**"]
     },
     "dev": {
       "cache": false,
@@ -25,10 +25,6 @@
     },
     "test": {
       "dependsOn": ["^build"]
-    },
-    "build-storybook": {
-      "dependsOn": ["^build"],
-      "outputs": ["storybook-static/**"]
     }
   }
 }

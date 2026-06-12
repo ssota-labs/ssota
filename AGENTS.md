@@ -138,7 +138,7 @@ pnpm db:seed                 # 아키타입 2계열 + 코어 카탈로그 + smok
 pnpm dev                     # turbo run dev — web + mcp 동시 기동
 pnpm dev --filter web        # 콘솔만
 pnpm dev --filter mcp        # MCP 앱만
-pnpm storybook               # Storybook (apps/storybook, port 6006)
+pnpm design-lab              # Design Lab (apps/design-lab, port 6007)
 pnpm build                   # turbo run build (전체)
 pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 ```
