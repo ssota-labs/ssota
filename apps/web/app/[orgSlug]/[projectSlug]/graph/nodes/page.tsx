@@ -14,6 +14,7 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { createNodeTableFormAction } from "@/app/actions";
 import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
+import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { NodeCatalogSettings } from "@/components/graph/node-catalog-settings";
 import {
   getNodeTableMeta,
@@ -44,23 +45,11 @@ export default async function GraphNodesPage({
     redirect(`${graphPath(ctx, "nodes")}?table=${encodeURIComponent(nodeTypes[0]!.slug)}`);
   }
 
-  const catalogItems = nodeTypes.map((nodeType) => ({
-    slug: nodeType.slug,
-    label: nodeType.label,
-    meta: `${nodeType.family} · ${nodeType.propertyRefs.length} properties`,
-  }));
-
   const selectedMeta = table ? await getNodeTableMeta(project.id, table) : null;
 
   const newTableTrigger = (
     <Sheet>
-      <SheetTrigger
-        render={
-          <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" />
-        }
-      >
-        New table
-      </SheetTrigger>
+      <SheetTrigger render={<NewTableButton>New table</NewTableButton>} />
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New node table</SheetTitle>
@@ -130,8 +119,7 @@ export default async function GraphNodesPage({
   return (
     <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading catalog…</div>}>
       <GraphCatalogExplorer
-        title="Node catalog"
-        items={catalogItems}
+        kind="node"
         newTableTrigger={newTableTrigger}
         mainHeader={
           selectedMeta

@@ -14,6 +14,7 @@ import {
 import { createEdgeTableFormAction } from "@/app/actions";
 import { EdgeCatalogSettings } from "@/components/graph/edge-catalog-settings";
 import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
+import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import {
   EdgeTableDetail,
   getEdgeTableMeta,
@@ -40,23 +41,11 @@ export default async function GraphEdgesPage({
     redirect(`${graphPath(ctx, "edges")}?table=${encodeURIComponent(edges[0]!.slug)}`);
   }
 
-  const catalogItems = edges.map((edge) => ({
-    slug: edge.slug,
-    label: edge.label,
-    meta: `${edge.domain.join(", ")} → ${edge.range.join(", ")}`,
-  }));
-
   const selectedMeta = table ? await getEdgeTableMeta(project.id, table) : null;
 
   const newTableTrigger = (
     <Sheet>
-      <SheetTrigger
-        render={
-          <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" />
-        }
-      >
-        New table
-      </SheetTrigger>
+      <SheetTrigger render={<NewTableButton>New table</NewTableButton>} />
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New edge table</SheetTitle>
@@ -107,8 +96,7 @@ export default async function GraphEdgesPage({
   return (
     <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading catalog…</div>}>
       <GraphCatalogExplorer
-        title="Edge catalog"
-        items={catalogItems}
+        kind="edge"
         newTableTrigger={newTableTrigger}
         mainHeader={
           selectedMeta

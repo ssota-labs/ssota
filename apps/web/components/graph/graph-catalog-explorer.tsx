@@ -3,41 +3,68 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
+import { useGraphCatalog } from "@/components/console/graph-catalog-context";
+import { useProjectContext } from "@/components/console/project-context";
 import { GraphTableSheet } from "@/components/graph/graph-table-sheet";
 import {
   TableCatalogPanel,
-  type TableCatalogItem,
+  type GraphCatalogKind,
 } from "@/components/graph/table-catalog-panel";
+import { graphPath } from "@/lib/console/paths";
 
 type GraphCatalogExplorerProps = {
-  title: string;
-  items: TableCatalogItem[];
+  kind?: GraphCatalogKind;
   newTableTrigger: React.ReactNode;
   mainHeader?: { title: string; description?: string } | null;
   mainContent: React.ReactNode | null;
   catalogSheetTitle?: string;
   catalogSheetDescription?: string;
-  catalogSheetContent: React.ReactNode | null;
+  catalogSheetContent?: React.ReactNode | null;
   emptyHint?: string;
+  showDefinition?: boolean;
+  requireSelection?: boolean;
 };
 
+function kindFromPathname(pathname: string): GraphCatalogKind {
+  if (pathname.includes("/graph/edges")) return "edge";
+  if (pathname.includes("/graph/actions")) return "action";
+  return "node";
+}
+
+function actionSlugFromPathname(pathname: string): string | null {
+  const match = pathname.match(/\/graph\/actions\/([^/]+)/);
+  return match ? decodeURIComponent(match[1]!) : null;
+}
+
 export function GraphCatalogExplorer({
-  title,
-  items,
+  kind: kindProp,
   newTableTrigger,
   mainHeader,
   mainContent,
   catalogSheetTitle,
   catalogSheetDescription,
   catalogSheetContent,
-  emptyHint = "Select a table from the catalog to view rows.",
+  emptyHint,
+  showDefinition = true,
+  requireSelection = true,
 }: GraphCatalogExplorerProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const ctx = useProjectContext();
+  const catalog = useGraphCatalog();
   const [query, setQuery] = useState("");
 
-  const selectedSlug = searchParams.get("table");
+  const kind = kindProp ?? kindFromPathname(pathname);
+  const items =
+    kind === "node"
+      ? (catalog?.nodeTypes ?? [])
+      : kind === "edge"
+        ? (catalog?.edgeTypes ?? [])
+        : (catalog?.actionTypes ?? []);
+
+  const selectedSlug =
+    kind === "action" ? actionSlugFromPathname(pathname) : searchParams.get("table");
   const definitionOpen = searchParams.get("definition") === "1";
 
   const filteredItems = useMemo(() => {
@@ -45,17 +72,29 @@ export function GraphCatalogExplorer({
     if (!q) return items;
     return items.filter(
       (item) =>
-        item.label.toLowerCase().includes(q) ||
-        item.slug.toLowerCase().includes(q) ||
-        item.meta?.toLowerCase().includes(q),
+        item.label.toLowerCase().includes(q) || item.slug.toLowerCase().includes(q),
     );
   }, [items, query]);
 
   const selectedItem = items.find((item) => item.slug === selectedSlug) ?? null;
-  const showMain = Boolean(selectedSlug && selectedItem && mainContent);
+  const showMain = requireSelection
+    ? Boolean(selectedSlug && selectedItem && mainContent)
+    : Boolean(mainContent);
   const showCatalogSheet = Boolean(
-    selectedSlug && selectedItem && definitionOpen && catalogSheetContent,
+    showDefinition &&
+      kind !== "action" &&
+      selectedSlug &&
+      selectedItem &&
+      definitionOpen &&
+      catalogSheetContent,
   );
+
+  const defaultEmptyHint =
+    kind === "node"
+      ? "Select a node table to view instance rows."
+      : kind === "edge"
+        ? "Select an edge table to view instance rows."
+        : "Select an action to view runs.";
 
   function pushParams(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
@@ -65,6 +104,10 @@ export function GraphCatalogExplorer({
   }
 
   function setSelectedSlug(slug: string) {
+    if (kind === "action") {
+      router.push(graphPath(ctx, "actions", slug), { scroll: false });
+      return;
+    }
     pushParams((params) => {
       params.set("table", slug);
       params.delete("definition");
@@ -84,17 +127,45 @@ export function GraphCatalogExplorer({
     });
   }
 
+  function handleKindChange(nextKind: GraphCatalogKind) {
+    if (nextKind === kind) return;
+
+    if (nextKind === "action") {
+      const fallback = catalog?.actionTypes[0]?.slug;
+      router.push(
+        fallback ? graphPath(ctx, "actions", fallback) : graphPath(ctx, "actions"),
+        { scroll: false },
+      );
+      return;
+    }
+
+    const route = nextKind === "edge" ? "edges" : "nodes";
+    const candidates =
+      nextKind === "edge" ? (catalog?.edgeTypes ?? []) : (catalog?.nodeTypes ?? []);
+    const preserved = candidates.some((item) => item.slug === selectedSlug)
+      ? selectedSlug
+      : candidates[0]?.slug;
+    const base = graphPath(ctx, route);
+    router.push(preserved ? `${base}?table=${encodeURIComponent(preserved)}` : base, {
+      scroll: false,
+    });
+  }
+
   return (
     <div className="flex h-full min-h-0">
       <TableCatalogPanel
-        title={title}
+        kind={kind}
+        onKindChange={handleKindChange}
         items={filteredItems}
         selectedSlug={selectedSlug}
         onSelect={setSelectedSlug}
-        onOpenSettings={openDefinition}
+        onOpenSettings={showDefinition && kind !== "action" ? openDefinition : undefined}
         searchQuery={query}
         onSearchQueryChange={setQuery}
         newTableTrigger={newTableTrigger}
+        emptyMessage={
+          kind === "action" ? "No actions found." : `No ${kind} tables found.`
+        }
       />
       <div className="flex min-w-0 flex-1 flex-col bg-background">
         {showMain ? (
@@ -106,21 +177,25 @@ export function GraphCatalogExplorer({
                   <p className="text-xs text-muted-foreground">{mainHeader.description}</p>
                 ) : null}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                data-testid="open-definition"
-                onClick={() => openDefinition(selectedSlug!)}
-              >
-                Definition
-              </Button>
+              {showDefinition && kind !== "action" ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0"
+                  data-testid="open-definition"
+                  onClick={() => openDefinition(selectedSlug!)}
+                >
+                  Definition
+                </Button>
+              ) : null}
             </div>
             <div className="flex min-h-0 flex-1 flex-col">{mainContent}</div>
           </>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
-            <p className="max-w-sm text-sm text-muted-foreground">{emptyHint}</p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              {emptyHint ?? defaultEmptyHint}
+            </p>
           </div>
         )}
       </div>
@@ -129,7 +204,7 @@ export function GraphCatalogExplorer({
         onOpenChange={(open) => {
           if (!open) closeDefinition();
         }}
-        title={catalogSheetTitle ?? `Definition · ${selectedItem?.label ?? title}`}
+        title={catalogSheetTitle ?? `Definition · ${selectedItem?.label ?? kind}`}
         description={catalogSheetDescription}
       >
         {catalogSheetContent}

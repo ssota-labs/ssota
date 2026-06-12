@@ -1,12 +1,26 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@ssota/ui/components/ui/sheet";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
+import { Textarea } from "@ssota/ui/components/ui/textarea";
+import { defineScopedActionFormAction } from "@/app/actions";
 import {
   RunActionSheet,
   ViewFullLogButton,
 } from "@/components/graph/action-table-actions";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
+import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
+import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { projectPath } from "@/lib/console/paths";
 import { formatActionScope } from "@/lib/graph/format-scope";
 import { resolveProject } from "@/lib/console/resolve-project";
@@ -57,23 +71,64 @@ export default async function GraphActionDetailPage({
     </div>
   );
 
+  const mainContent = (
+    <ActionLogDataTable
+      rows={tableRows}
+      toolbar={toolbar}
+      filterColumn="scope"
+      emptyMessage={`${entry.actionType} 실행 기록이 아직 없습니다.`}
+    />
+  );
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b px-4 py-2">
-        <h1 className="text-sm font-semibold">{entry.label}</h1>
-        <p className="text-xs text-muted-foreground">
-          <Badge variant="secondary" className="mr-2">
-            {formatActionScope(entry.scope)}
-          </Badge>
-          {entry.executor} · {entry.effects.length} effects · {logs.length} runs
-        </p>
-      </div>
-      <ActionLogDataTable
-        rows={tableRows}
-        toolbar={toolbar}
-        filterColumn="scope"
-        emptyMessage={`${entry.actionType} 실행 기록이 아직 없습니다.`}
+    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading catalog…</div>}>
+      <GraphCatalogExplorer
+        kind="action"
+        showDefinition={false}
+        newTableTrigger={<NewActionSheet projectId={project.id} />}
+        mainHeader={{
+          title: entry.label,
+          description: `${formatActionScope(entry.scope)} · ${entry.executor} · ${entry.effects.length} effects · ${logs.length} runs`,
+        }}
+        mainContent={mainContent}
       />
-    </div>
+    </Suspense>
+  );
+}
+
+function NewActionSheet({ projectId }: { projectId: string }) {
+  return (
+    <Sheet>
+      <SheetTrigger render={<NewTableButton>New action</NewTableButton>} />
+      <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
+        <SheetHeader>
+          <SheetTitle>New action contract</SheetTitle>
+          <SheetDescription>
+            Global action을 생성합니다. Local action은 node/edge/property 화면에서 생성하세요.
+          </SheetDescription>
+        </SheetHeader>
+        <form action={defineScopedActionFormAction} className="space-y-4 px-6 pb-6">
+          <input type="hidden" name="projectId" value={projectId} />
+          <input type="hidden" name="scopeKind" value="global" />
+          <div className="space-y-2">
+            <Label htmlFor="actionType">Action type</Label>
+            <Input id="actionType" name="actionType" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="executor">Executor</Label>
+            <Input id="executor" name="executor" defaultValue="Agent" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="preconditions">Preconditions JSON</Label>
+            <Textarea id="preconditions" name="preconditions" defaultValue="{}" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="effects">Effects JSON array</Label>
+            <Textarea id="effects" name="effects" defaultValue="[]" />
+          </div>
+          <Button type="submit">Submit action contract</Button>
+        </form>
+      </SheetContent>
+    </Sheet>
   );
 }
