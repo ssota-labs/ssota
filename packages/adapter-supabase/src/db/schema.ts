@@ -156,7 +156,10 @@ export const nodeCatalog = pgTable(
       .notNull()
       .$type<Record<string, string[]>>(),
     contentGuide: text("content_guide"),
-    propertyRefs: jsonb("property_refs").notNull().default([]).$type<string[]>(),
+    propertySchema: jsonb("property_schema")
+      .notNull()
+      .default({})
+      .$type<Record<string, Record<string, unknown>>>(),
     allowedActionRefs: jsonb("allowed_action_refs")
       .notNull()
       .default([])
@@ -239,23 +242,6 @@ export const edges = pgTable(
   },
   (table) => ({
     projectIdIdx: index("edges_project_id_idx").on(table.projectId),
-  }),
-);
-
-export const propertyCatalog = pgTable(
-  "property_catalog",
-  {
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id),
-    propertyKey: text("property_key").notNull(),
-    valueType: text("value_type").notNull(),
-    constraints: jsonb("constraints").notNull().$type<Record<string, unknown>>(),
-    owningActions: jsonb("owning_actions").notNull().$type<string[]>(),
-    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  },
-  (table) => ({
-    pk: primaryKey({ columns: [table.projectId, table.propertyKey] }),
   }),
 );
 

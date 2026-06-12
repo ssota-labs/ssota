@@ -97,8 +97,10 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
     const ssota = await authedClient(token);
 
     const preview = await ssota.actions.preview({
-      actionType: "create_note",
+      actionType: "create_node",
       input: {
+        nodeType: "Note",
+        title: "SDK preview note",
         content: "created via @ssota/client",
       },
     });

@@ -141,9 +141,9 @@ export async function HomepageAgentVerticalView({
                     </Link>
                   </TableCell>
                   <TableCell>{node.family}</TableCell>
-                  <TableCell>{node.propertyRefs.join(", ")}</TableCell>
+                  <TableCell>{Object.keys(node.propertySchema).join(", ")}</TableCell>
                   <TableCell>
-                    {node.propertyRefs.includes("subject_id") ? (
+                    {Object.keys(node.propertySchema).includes("subject_id") ? (
                       <Badge>yes</Badge>
                     ) : (
                       <Badge variant="secondary">no</Badge>

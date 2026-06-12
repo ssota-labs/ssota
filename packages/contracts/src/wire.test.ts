@@ -22,7 +22,7 @@ describe("wire schemas", () => {
         Deleted: [],
       },
       contentGuide: null,
-      propertyRefs: [],
+      propertySchema: { title: { valueType: "string", system: true } },
       allowedActionRefs: [],
     });
     expect(parsed.nodeType).toBe("Note");

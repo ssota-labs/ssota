@@ -9,7 +9,6 @@ import type {
   Instruction as WireInstruction,
   Node as WireNode,
   NodeCatalogEntry as WireNodeCatalogEntry,
-  PropertyCatalogEntry as WirePropertyCatalogEntry,
 } from "@ssota/contracts";
 import type {
   ActionCatalogEntry,
@@ -22,7 +21,6 @@ import type {
   Instruction,
   Node,
   NodeCatalogEntry,
-  PropertyCatalogEntry,
 } from "./types.js";
 
 function toIso(date: Date): string {
@@ -82,12 +80,6 @@ export function serializeNodeCatalogEntry(
 export function serializeEdgeCatalogEntry(
   entry: EdgeCatalogEntry,
 ): WireEdgeCatalogEntry {
-  return { ...entry };
-}
-
-export function serializePropertyCatalogEntry(
-  entry: PropertyCatalogEntry,
-): WirePropertyCatalogEntry {
   return { ...entry };
 }
 

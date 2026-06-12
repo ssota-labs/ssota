@@ -107,26 +107,6 @@ const BUILTIN_META_ACTION_ROWS: BuiltinMetaActionRow[] = [
     logPayloadSchema: {},
   },
   {
-    actionType: "define_property",
-    preconditions: { requiredFields: ["definition"] },
-    effects: [
-      {
-        kind: "upsert_property_catalog_entry",
-        entry: {
-          propertyKey: "",
-          valueType: "string",
-          constraints: {},
-          owningActions: [],
-        },
-      },
-    ],
-    executor: "Agent",
-    allowedLifecycleTransitions: {},
-    failureMode: "reject",
-    idempotencyRule: null,
-    logPayloadSchema: {},
-  },
-  {
     actionType: "define_action_contract",
     preconditions: { requiredFields: ["definition"] },
     effects: [
@@ -199,36 +179,6 @@ const BUILTIN_META_ACTION_ROWS: BuiltinMetaActionRow[] = [
     actionType: "deprecate_edge_type",
     preconditions: { requiredFields: ["edgeType"] },
     effects: [{ kind: "deprecate_edge_catalog_entry", edgeType: "" }],
-    executor: "Agent",
-    allowedLifecycleTransitions: {},
-    failureMode: "reject",
-    idempotencyRule: null,
-    logPayloadSchema: {},
-  },
-  {
-    actionType: "update_property",
-    preconditions: { requiredFields: ["propertyKey", "patch"] },
-    effects: [
-      {
-        kind: "upsert_property_catalog_entry",
-        entry: {
-          propertyKey: "",
-          valueType: "string",
-          constraints: {},
-          owningActions: [],
-        },
-      },
-    ],
-    executor: "Agent",
-    allowedLifecycleTransitions: {},
-    failureMode: "reject",
-    idempotencyRule: null,
-    logPayloadSchema: {},
-  },
-  {
-    actionType: "deprecate_property",
-    preconditions: { requiredFields: ["propertyKey"] },
-    effects: [{ kind: "deprecate_property_catalog_entry", propertyKey: "" }],
     executor: "Agent",
     allowedLifecycleTransitions: {},
     failureMode: "reject",
@@ -354,12 +304,12 @@ const builtinBySlug = new Map(
   [...builtinByActionType.values()].map((entry) => [entry.slug, entry]),
 );
 
-export const BUILTIN_ACTION_TYPES: ReadonlySet<string> = new Set(
+export const BUILTIN_META_ACTION_TYPES: ReadonlySet<string> = new Set(
   BUILTIN_META_ACTION_ROWS.map((row) => row.actionType),
 );
 
-export function isBuiltinActionType(actionType: string): boolean {
-  return BUILTIN_ACTION_TYPES.has(actionType);
+export function isBuiltinMetaActionType(actionType: string): boolean {
+  return BUILTIN_META_ACTION_TYPES.has(actionType);
 }
 
 export function getBuiltinActionCatalogEntry(

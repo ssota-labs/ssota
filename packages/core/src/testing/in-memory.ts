@@ -23,8 +23,8 @@ import type {
   Instruction,
   Node,
   NodeCatalogEntry,
-  PropertyCatalogEntry,
 } from "../domain/types.js";
+import { DEFAULT_TITLE_FIELD, ensureTitleInPropertySchema } from "../catalog/property-schema.js";
 import type { Effect, GateStatus, LifecycleStatus } from "@ssota/contracts";
 import {
   mergeActionCatalogEntries,
@@ -47,7 +47,6 @@ export interface InMemoryState {
   permissions: ActionPropertyPermission[];
   instructions: Instruction[];
   edgeCatalog: Map<string, EdgeCatalogEntry>;
-  propertyCatalog: Map<string, PropertyCatalogEntry>;
 }
 
 export function createInMemoryState(
@@ -58,7 +57,6 @@ export function createInMemoryState(
     permissions: ActionPropertyPermission[];
     instructions: Instruction[];
     edgeCatalog: EdgeCatalogEntry[];
-    propertyCatalog: PropertyCatalogEntry[];
     nodes: Node[];
   }>,
 ): InMemoryState {
@@ -74,7 +72,6 @@ export function createInMemoryState(
     permissions: [],
     instructions: [],
     edgeCatalog: new Map(),
-    propertyCatalog: new Map(),
   };
 
   seed?.nodeCatalog?.forEach((e) => state.nodeCatalog.set(e.nodeType, e));
@@ -83,9 +80,6 @@ export function createInMemoryState(
   seed?.permissions?.forEach((p) => state.permissions.push(p));
   seed?.instructions?.forEach((i) => state.instructions.push(i));
   seed?.edgeCatalog?.forEach((e) => state.edgeCatalog.set(e.edgeType, e));
-  seed?.propertyCatalog?.forEach((e) =>
-    state.propertyCatalog.set(e.propertyKey, e),
-  );
   seed?.nodes?.forEach((n) => state.nodes.set(n.id, n));
 
   return state;
@@ -170,15 +164,13 @@ function applyEffect(
         LifecycleStatus[]
       >,
       contentGuide: effect.entry.contentGuide ?? null,
-      propertyRefs: effect.entry.propertyRefs ?? [],
+      propertySchema: ensureTitleInPropertySchema(effect.entry.propertySchema),
       allowedActionRefs: effect.entry.allowedActionRefs ?? [],
     });
   } else if (effect.kind === "deprecate_node_catalog_entry") {
     state.nodeCatalog.delete(effect.nodeType);
   } else if (effect.kind === "deprecate_edge_catalog_entry") {
     state.edgeCatalog.delete(effect.edgeType);
-  } else if (effect.kind === "deprecate_property_catalog_entry") {
-    state.propertyCatalog.delete(effect.propertyKey);
   } else if (effect.kind === "deprecate_action_catalog_entry") {
     state.actionCatalog.delete(effect.actionType);
   } else if (effect.kind === "deprecate_instruction_catalog_entry") {
@@ -191,8 +183,6 @@ function applyEffect(
       slug: toCatalogSlug(effect.entry.edgeType),
       label: toCatalogLabel(effect.entry.edgeType),
     });
-  } else if (effect.kind === "upsert_property_catalog_entry") {
-    state.propertyCatalog.set(effect.entry.propertyKey, effect.entry);
   } else if (effect.kind === "upsert_property_permission_entry") {
     const idx = state.permissions.findIndex(
       (permission) =>
@@ -312,12 +302,6 @@ export function createInMemoryPorts(
     },
     async listEdgeCatalogEntries() {
       return [...state.edgeCatalog.values()];
-    },
-    async getPropertyCatalogEntry(propertyKey) {
-      return state.propertyCatalog.get(propertyKey) ?? null;
-    },
-    async listPropertyCatalogEntries() {
-      return [...state.propertyCatalog.values()];
     },
     async getActionCatalogEntry(actionType) {
       return mergeActionCatalogEntry(
@@ -715,34 +699,8 @@ export function seedTestCatalog(state: InMemoryState): void {
       Deleted: [],
     },
     contentGuide: "Free-form note content",
-    propertyRefs: [],
+    propertySchema: { title: { ...DEFAULT_TITLE_FIELD } },
     allowedActionRefs: [],
-  });
-
-  state.actionCatalog.set("create_note", {
-    actionType: "create_note",
-    slug: "create_note",
-    label: "Create Note",
-    scope: { kind: "global" },
-    preconditions: { requiredFields: ["content"] },
-    effects: [
-      {
-        kind: "create_node",
-        node: {
-          nodeType: "Note",
-          lifecycleStatus: "Draft",
-          properties: {},
-          content: null,
-          contentUrl: null,
-          provenance: {},
-        },
-      },
-    ],
-    executor: "Agent",
-    allowedLifecycleTransitions: {},
-    failureMode: "reject",
-    idempotencyRule: "key",
-    logPayloadSchema: {},
   });
 
   state.actionCatalog.set("promote_note", {
@@ -766,21 +724,14 @@ export function seedTestCatalog(state: InMemoryState): void {
   });
 
   state.permissions.push({
-    actionType: "create_note",
+    actionType: "create_node",
     nodeType: "Note",
     propertyKey: "title",
-    operation: "write",
+    operation: "create",
     permissionType: "allow",
     valueConstraint: null,
     requiresHumanGate: false,
     status: "active",
-  });
-
-  state.propertyCatalog.set("title", {
-    propertyKey: "title",
-    valueType: "string",
-    constraints: { maxLength: 500 },
-    owningActions: ["create_note"],
   });
 }
 

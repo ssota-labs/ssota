@@ -1,11 +1,15 @@
-import { isBuiltinActionType } from "../catalog/builtin-meta-actions.js";
+import { isBuiltinActionType } from "../catalog/builtin-actions.js";
+import {
+  ensureTitleInPropertySchema,
+  enforcePropertyFieldValue,
+  getPropertyField,
+} from "../catalog/property-schema.js";
 import type {
   ActionCatalogEntry,
   ActionPropertyPermission,
   Archetype,
   Node,
   NodeCatalogEntry,
-  PropertyCatalogEntry,
 } from "./types.js";
 import type {
   ActionScope,
@@ -74,7 +78,10 @@ function parseNodeDefinition(input: Record<string, unknown>): NodeTypeDefinition
       parsed.error.message,
     );
   }
-  return parsed.data;
+  return {
+    ...parsed.data,
+    propertySchema: ensureTitleInPropertySchema(parsed.data.propertySchema),
+  };
 }
 
 export function enforceCatalog(
@@ -232,11 +239,6 @@ export function resolveEffects(
         kind: "deprecate_edge_catalog_entry",
         edgeType: input.edgeType as string,
       });
-    } else if (template.kind === "deprecate_property_catalog_entry") {
-      effects.push({
-        kind: "deprecate_property_catalog_entry",
-        propertyKey: input.propertyKey as string,
-      });
     } else if (template.kind === "deprecate_action_catalog_entry") {
       effects.push({
         kind: "deprecate_action_catalog_entry",
@@ -257,17 +259,6 @@ export function resolveEffects(
       };
       effects.push({
         kind: "upsert_edge_catalog_entry",
-        entry: definition,
-      });
-    } else if (template.kind === "upsert_property_catalog_entry") {
-      const definition = input.definition as {
-        propertyKey: string;
-        valueType: string;
-        constraints: Record<string, unknown>;
-        owningActions: string[];
-      };
-      effects.push({
-        kind: "upsert_property_catalog_entry",
         entry: definition,
       });
     } else if (template.kind === "upsert_property_permission_entry") {
@@ -350,9 +341,6 @@ export async function enforcePermissions(
   ) => Promise<ActionPropertyPermission[]>,
   getNode: (nodeId: string) => Promise<Node | null>,
   getNodeCatalog: (nodeType: string) => Promise<NodeCatalogEntry | null>,
-  getPropertyCatalog: (
-    propertyKey: string,
-  ) => Promise<PropertyCatalogEntry | null>,
 ): Promise<{ requiresGate: boolean; reason: string }> {
   let requiresGate = false;
   let reason = "";
@@ -364,32 +352,23 @@ export async function enforcePermissions(
     operation: PermissionOperation,
   ) {
     const catalog = await getNodeCatalog(nodeType);
-    if (catalog?.propertyRefs.length && !catalog.propertyRefs.includes(propertyKey)) {
-      throw new ActionRejectedError(
-        "PROPERTY_NOT_BOUND",
-        `Property '${propertyKey}' is not bound to node type '${nodeType}'`,
-      );
-    }
-
-    const property = await getPropertyCatalog(propertyKey);
-    if (!property) {
+    if (!catalog) {
       throw new ActionRejectedError(
         "CATALOG_NOT_FOUND",
-        `Property '${propertyKey}' is not in the property catalog`,
+        `Node type '${nodeType}' is not in the node catalog`,
       );
     }
 
-    if (
-      property.owningActions.length > 0 &&
-      !property.owningActions.includes(actionType)
-    ) {
+    const schema = ensureTitleInPropertySchema(catalog.propertySchema);
+    const field = getPropertyField(schema, propertyKey);
+    if (!field) {
       throw new ActionRejectedError(
-        "PERMISSION_DENIED",
-        `Action '${actionType}' does not own property '${propertyKey}'`,
+        "PROPERTY_NOT_BOUND",
+        `Property '${propertyKey}' is not defined on node type '${nodeType}'`,
       );
     }
 
-    enforcePropertyValue(property, value);
+    enforcePropertyFieldValue(propertyKey, field, value);
 
     const perms = await getPermissions(actionType, nodeType);
     const active = perms.filter(
@@ -433,55 +412,6 @@ export async function enforcePermissions(
   }
 
   return { requiresGate, reason };
-}
-
-function enforcePropertyValue(
-  property: PropertyCatalogEntry,
-  value: unknown,
-): void {
-  if (value === undefined || value === null) return;
-
-  const valueType = property.valueType.toLowerCase();
-  const constraints = property.constraints;
-  const enumValues =
-    (constraints.enum as unknown[] | undefined) ??
-    (constraints.options as unknown[] | undefined) ??
-    (constraints.enumOptions as unknown[] | undefined);
-
-  if ((valueType === "string" || valueType === "text") && typeof value !== "string") {
-    throw new ActionRejectedError(
-      "INVALID_PROPERTY_VALUE",
-      `Property '${property.propertyKey}' must be a string`,
-    );
-  }
-  if (valueType === "number" && typeof value !== "number") {
-    throw new ActionRejectedError(
-      "INVALID_PROPERTY_VALUE",
-      `Property '${property.propertyKey}' must be a number`,
-    );
-  }
-  if (valueType === "boolean" && typeof value !== "boolean") {
-    throw new ActionRejectedError(
-      "INVALID_PROPERTY_VALUE",
-      `Property '${property.propertyKey}' must be a boolean`,
-    );
-  }
-  if (valueType === "enum" && enumValues && !enumValues.includes(value)) {
-    throw new ActionRejectedError(
-      "INVALID_PROPERTY_VALUE",
-      `Property '${property.propertyKey}' must match one of its enum options`,
-    );
-  }
-  if (
-    typeof value === "string" &&
-    typeof constraints.maxLength === "number" &&
-    value.length > constraints.maxLength
-  ) {
-    throw new ActionRejectedError(
-      "INVALID_PROPERTY_VALUE",
-      `Property '${property.propertyKey}' exceeds maxLength ${constraints.maxLength}`,
-    );
-  }
 }
 
 export async function enforceActionScopeAndGraphIntegrity(
@@ -692,8 +622,6 @@ const CATALOG_EFFECT_KINDS = new Set([
   "deprecate_node_catalog_entry",
   "upsert_edge_catalog_entry",
   "deprecate_edge_catalog_entry",
-  "upsert_property_catalog_entry",
-  "deprecate_property_catalog_entry",
   "upsert_property_permission_entry",
   "upsert_action_catalog_entry",
   "deprecate_action_catalog_entry",
@@ -739,9 +667,6 @@ export async function enforceCatalogMutationIntegrity(
       nodeType: string,
     ) => Promise<NodeCatalogEntry | null>;
     getArchetype: (archetypeId: string) => Promise<Archetype | null>;
-    getPropertyCatalogEntry: (
-      propertyKey: string,
-    ) => Promise<PropertyCatalogEntry | null>;
     getActionCatalogEntry: (
       actionType: string,
     ) => Promise<ActionCatalogEntry | null>;
@@ -772,24 +697,20 @@ export async function enforceCatalogMutationIntegrity(
           `Node type '${effect.entry.nodeType}' already exists`,
         );
       }
-      if (actionType === "update_node_type" && !existing) {
+      if (
+        (actionType === "update_node_type" ||
+          actionType === "update_node_property_schema") &&
+        !existing
+      ) {
         throw new ActionRejectedError(
           "CATALOG_NOT_FOUND",
           `Node type '${effect.entry.nodeType}' does not exist`,
         );
       }
 
-      if (effect.entry.propertyRefs) {
-        for (const key of effect.entry.propertyRefs) {
-          const prop = await catalog.getPropertyCatalogEntry(key);
-          if (!prop) {
-            throw new ActionRejectedError(
-              "CATALOG_NOT_FOUND",
-              `Property '${key}' is not in the property catalog`,
-            );
-          }
-        }
-      }
+      effect.entry.propertySchema = ensureTitleInPropertySchema(
+        effect.entry.propertySchema,
+      );
 
       if (effect.entry.allowedActionRefs) {
         for (const ref of effect.entry.allowedActionRefs) {
@@ -853,16 +774,6 @@ export async function enforceCatalogMutationIntegrity(
       }
     }
 
-    if (effect.kind === "deprecate_property_catalog_entry") {
-      const existing = await catalog.getPropertyCatalogEntry(effect.propertyKey);
-      if (!existing) {
-        throw new ActionRejectedError(
-          "CATALOG_NOT_FOUND",
-          `Property '${effect.propertyKey}' does not exist`,
-        );
-      }
-    }
-
     if (effect.kind === "deprecate_action_catalog_entry") {
       if (isBuiltinActionType(effect.actionType)) {
         throw new ActionRejectedError(
@@ -914,24 +825,6 @@ export async function enforceCatalogMutationIntegrity(
       }
     }
 
-    if (effect.kind === "upsert_property_catalog_entry") {
-      const existing = await catalog.getPropertyCatalogEntry(
-        effect.entry.propertyKey,
-      );
-      if (actionType === "define_property" && existing) {
-        throw new ActionRejectedError(
-          "DUPLICATE_PROPERTY",
-          `Property '${effect.entry.propertyKey}' already exists`,
-        );
-      }
-      if (actionType === "update_property" && !existing) {
-        throw new ActionRejectedError(
-          "CATALOG_NOT_FOUND",
-          `Property '${effect.entry.propertyKey}' does not exist`,
-        );
-      }
-    }
-
     if (effect.kind === "upsert_property_permission_entry") {
       const nodeEntry = await catalog.getNodeCatalogEntry(
         effect.permission.nodeType,
@@ -951,13 +844,11 @@ export async function enforceCatalogMutationIntegrity(
           `Action '${effect.permission.actionType}' does not exist`,
         );
       }
-      const propertyEntry = await catalog.getPropertyCatalogEntry(
-        effect.permission.propertyKey,
-      );
-      if (!propertyEntry) {
+      const schema = ensureTitleInPropertySchema(nodeEntry.propertySchema);
+      if (!getPropertyField(schema, effect.permission.propertyKey)) {
         throw new ActionRejectedError(
           "CATALOG_NOT_FOUND",
-          `Property '${effect.permission.propertyKey}' does not exist`,
+          `Property '${effect.permission.propertyKey}' is not defined on node type '${effect.permission.nodeType}'`,
         );
       }
     }

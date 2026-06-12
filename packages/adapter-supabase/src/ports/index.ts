@@ -39,7 +39,6 @@ import type {
   Instruction,
   Node,
   NodeCatalogEntry,
-  PropertyCatalogEntry,
 } from "@ssota/core";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
@@ -76,7 +75,7 @@ function mapNodeCatalogEntry(
       LifecycleStatus[]
     >,
     contentGuide: row.contentGuide,
-    propertyRefs: row.propertyRefs ?? [],
+    propertySchema: (row.propertySchema ?? {}) as NodeCatalogEntry["propertySchema"],
     allowedActionRefs: row.allowedActionRefs ?? [],
   };
 }
@@ -220,43 +219,6 @@ export function createCatalogPort(db: Db, scope: ActionPortsScope): CatalogPort 
         .from(schema.edgeCatalog)
         .where(eq(schema.edgeCatalog.projectId, projectId));
       return rows.map(mapEdgeCatalogEntry);
-    },
-
-    async getPropertyCatalogEntry(propertyKey) {
-      const rows = await db
-        .select()
-        .from(schema.propertyCatalog)
-        .where(
-          and(
-            eq(schema.propertyCatalog.projectId, projectId),
-            eq(schema.propertyCatalog.propertyKey, propertyKey),
-          ),
-        )
-        .limit(1);
-      const row = rows[0];
-      if (!row) return null;
-      return {
-        propertyKey: row.propertyKey,
-        valueType: row.valueType,
-        constraints: row.constraints,
-        owningActions: row.owningActions,
-      } satisfies PropertyCatalogEntry;
-    },
-
-    async listPropertyCatalogEntries() {
-      const rows = await db
-        .select()
-        .from(schema.propertyCatalog)
-        .where(eq(schema.propertyCatalog.projectId, projectId));
-      return rows.map(
-        (row) =>
-          ({
-            propertyKey: row.propertyKey,
-            valueType: row.valueType,
-            constraints: row.constraints,
-            owningActions: row.owningActions,
-          }) satisfies PropertyCatalogEntry,
-      );
     },
 
     async getActionCatalogEntry(actionType) {
@@ -745,7 +707,7 @@ async function applyEffect(
         typicalValueOverrides: effect.entry.typicalValueOverrides,
         lifecycleTransitions: effect.entry.lifecycleTransitions,
         contentGuide: effect.entry.contentGuide ?? null,
-        propertyRefs: effect.entry.propertyRefs ?? [],
+        propertySchema: effect.entry.propertySchema ?? {},
         allowedActionRefs: effect.entry.allowedActionRefs ?? [],
       })
       .onConflictDoUpdate({
@@ -756,7 +718,7 @@ async function applyEffect(
           typicalValueOverrides: effect.entry.typicalValueOverrides,
           lifecycleTransitions: effect.entry.lifecycleTransitions,
           contentGuide: effect.entry.contentGuide ?? null,
-          propertyRefs: effect.entry.propertyRefs ?? [],
+          propertySchema: effect.entry.propertySchema ?? {},
           allowedActionRefs: effect.entry.allowedActionRefs ?? [],
         },
       });
@@ -776,15 +738,6 @@ async function applyEffect(
         and(
           eq(schema.edgeCatalog.projectId, projectId),
           eq(schema.edgeCatalog.edgeType, effect.edgeType),
-        ),
-      );
-  } else if (effect.kind === "deprecate_property_catalog_entry") {
-    await tx
-      .delete(schema.propertyCatalog)
-      .where(
-        and(
-          eq(schema.propertyCatalog.projectId, projectId),
-          eq(schema.propertyCatalog.propertyKey, effect.propertyKey),
         ),
       );
   } else if (effect.kind === "deprecate_action_catalog_entry") {
@@ -827,27 +780,6 @@ async function applyEffect(
           range: effect.entry.range,
           cardinality: effect.entry.cardinality,
           representation: effect.entry.representation,
-        },
-      });
-  } else if (effect.kind === "upsert_property_catalog_entry") {
-    await tx
-      .insert(schema.propertyCatalog)
-      .values({
-        projectId,
-        propertyKey: effect.entry.propertyKey,
-        valueType: effect.entry.valueType,
-        constraints: effect.entry.constraints,
-        owningActions: effect.entry.owningActions,
-      })
-      .onConflictDoUpdate({
-        target: [
-          schema.propertyCatalog.projectId,
-          schema.propertyCatalog.propertyKey,
-        ],
-        set: {
-          valueType: effect.entry.valueType,
-          constraints: effect.entry.constraints,
-          owningActions: effect.entry.owningActions,
         },
       });
   } else if (effect.kind === "upsert_property_permission_entry") {

@@ -15,24 +15,23 @@ export async function NodeTableDetail({ projectId, slug }: NodeTableDetailProps)
   if (!entry) notFound();
 
   const decoded = entry.nodeType;
-  const [rows, properties, actions] = await Promise.all([
+  const [rows, actions] = await Promise.all([
     ports.graph.queryNodes({ nodeType: decoded, limit: 500 }),
-    ports.catalog.listPropertyCatalogEntries(),
     ports.catalog.listActionCatalogEntries(),
   ]);
 
+  const schemaKeys = Object.keys(entry.propertySchema);
   const propertyKeys =
-    entry.propertyRefs.length > 0
-      ? entry.propertyRefs
+    schemaKeys.length > 0
+      ? schemaKeys
       : Array.from(new Set(rows.flatMap((row) => Object.keys(row.properties))));
 
-  const propertyByKey = new Map(properties.map((property) => [property.propertyKey, property]));
   const propertyColumns = propertyKeys.map((key) => {
-    const catalog = propertyByKey.get(key);
+    const field = entry.propertySchema[key];
     return {
       key,
       label: propertyColumnLabel(key),
-      valueType: catalog?.valueType ?? "unknown",
+      valueType: field?.valueType ?? "unknown",
     };
   });
 
@@ -75,8 +74,9 @@ export async function getNodeTableMeta(projectId: string, slug: string) {
   const ports = getActionPorts(projectId);
   const entry = await ports.catalog.getNodeCatalogEntryBySlug(slug);
   if (!entry) return null;
+  const propertyCount = Object.keys(entry.propertySchema).length;
   return {
     label: entry.label,
-    description: `${entry.family} · ${entry.archetypeId} · ${entry.propertyRefs.length} properties`,
+    description: `${entry.family} · ${entry.archetypeId} · ${propertyCount} properties`,
   };
 }

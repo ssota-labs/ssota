@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_TITLE_FIELD } from "./catalog/property-schema.js";
 import { toCatalogLabel, toCatalogSlug } from "./catalog-slug.js";
 import { executeAction } from "./index.js";
 import {
@@ -21,47 +22,39 @@ function seedHomepageAgentInMemory(
 ): void {
   seedTestCatalog(state);
 
-  state.propertyCatalog.set("section_key", {
-    propertyKey: "section_key",
-    valueType: "string",
-    constraints: { maxLength: 100 },
-    owningActions: ["create_page_section"],
-  });
-  state.propertyCatalog.set("title", {
-    propertyKey: "title",
-    valueType: "string",
-    constraints: { maxLength: 500 },
-    owningActions: [
-      "create_homepage_project",
-      "create_design_brief",
-      "create_page_section",
-    ],
-  });
-  state.propertyCatalog.set("subject_id", {
-    propertyKey: "subject_id",
-    valueType: "string",
-    constraints: { minLength: 1 },
-    owningActions: [
-      "create_homepage_project",
-      "create_design_brief",
-      "create_page_section",
-    ],
-  });
+  const tenantSchema = {
+    title: { ...DEFAULT_TITLE_FIELD },
+    subject_id: {
+      valueType: "string",
+      constraints: { minLength: 1 },
+      required: true,
+      system: false,
+    },
+  };
 
-  for (const [nodeType, family, archetypeId, refs] of [
+  for (const [nodeType, family, archetypeId, refs, extraSchema] of [
     [
       "HomepageProject",
       "operational",
       "op-project",
-      [
-        "create_homepage_project",
-        "create_design_brief",
-        "create_page_section",
-        "link_homepage_contains",
-      ],
+      ["create_node", "link_homepage_contains"],
+      {},
     ],
-    ["DesignBrief", "document", "doc-spec", ["create_design_brief", "link_homepage_contains"]],
-    ["PageSection", "document", "doc-spec", ["create_page_section", "link_homepage_contains"]],
+    ["DesignBrief", "document", "doc-spec", ["create_node", "link_homepage_contains"], {}],
+    [
+      "PageSection",
+      "document",
+      "doc-spec",
+      ["create_node", "link_homepage_contains"],
+      {
+        section_key: {
+          valueType: "string",
+          constraints: { maxLength: 100 },
+          required: false,
+          system: false,
+        },
+      },
+    ],
   ] as const) {
     state.archetypes.set(archetypeId, {
       id: archetypeId,
@@ -79,10 +72,7 @@ function seedHomepageAgentInMemory(
       typicalValueOverrides: {},
       lifecycleTransitions: defaultTransitions,
       contentGuide: null,
-      propertyRefs:
-        nodeType === "PageSection"
-          ? ["title", "subject_id", "section_key"]
-          : ["title", "subject_id"],
+      propertySchema: { ...tenantSchema, ...extraSchema },
       allowedActionRefs: [...refs],
     });
   }
@@ -97,44 +87,6 @@ function seedHomepageAgentInMemory(
     representation: "directed",
   });
 
-  const nodeEffect = (nodeType: string) => ({
-    kind: "create_node" as const,
-    node: {
-      nodeType,
-      lifecycleStatus: "Draft" as const,
-      properties: {},
-      content: null as string | null,
-      contentUrl: null,
-      provenance: {},
-    },
-  });
-
-  state.actionCatalog.set("create_homepage_project", {
-    actionType: "create_homepage_project",
-    slug: toCatalogSlug("create_homepage_project"),
-    label: toCatalogLabel("create_homepage_project"),
-    scope: { kind: "node_type", nodeType: "HomepageProject" },
-    preconditions: { requiredFields: ["title"] },
-    effects: [nodeEffect("HomepageProject")],
-    executor: "Agent",
-    allowedLifecycleTransitions: {},
-    failureMode: "reject",
-    idempotencyRule: "key",
-    logPayloadSchema: {},
-  });
-  state.actionCatalog.set("create_design_brief", {
-    actionType: "create_design_brief",
-    slug: toCatalogSlug("create_design_brief"),
-    label: toCatalogLabel("create_design_brief"),
-    scope: { kind: "node_type", nodeType: "DesignBrief" },
-    preconditions: { requiredFields: ["title", "content"] },
-    effects: [nodeEffect("DesignBrief")],
-    executor: "Agent",
-    allowedLifecycleTransitions: {},
-    failureMode: "reject",
-    idempotencyRule: "key",
-    logPayloadSchema: {},
-  });
   state.actionCatalog.set("link_homepage_contains", {
     actionType: "link_homepage_contains",
     slug: toCatalogSlug("link_homepage_contains"),
@@ -162,17 +114,20 @@ function seedHomepageAgentInMemory(
     logPayloadSchema: {},
   });
 
-  for (const [actionType, nodeType, propertyKey] of [
-    ["create_homepage_project", "HomepageProject", "title"],
-    ["create_homepage_project", "HomepageProject", "subject_id"],
-    ["create_design_brief", "DesignBrief", "title"],
-    ["create_design_brief", "DesignBrief", "subject_id"],
+  for (const [nodeType, propertyKey] of [
+    ["HomepageProject", "title"],
+    ["HomepageProject", "subject_id"],
+    ["DesignBrief", "title"],
+    ["DesignBrief", "subject_id"],
+    ["PageSection", "title"],
+    ["PageSection", "subject_id"],
+    ["PageSection", "section_key"],
   ] as const) {
     state.permissions.push({
-      actionType,
+      actionType: "create_node",
       nodeType,
       propertyKey,
-      operation: "write",
+      operation: "create",
       permissionType: "allow",
       valueConstraint: null,
       requiresHumanGate: false,
@@ -189,8 +144,8 @@ describe("homepage agent vertical slice", () => {
     const subjectId = "usr_acme_42";
 
     const project = await executeAction(ports, {
-      actionType: "create_homepage_project",
-      input: { title: "Acme 2026 Homepage" },
+      actionType: "create_node",
+      input: { nodeType: "HomepageProject", title: "Acme 2026 Homepage" },
       executorId: "agent-1",
       executorType: "Agent",
       subjectId,
@@ -199,8 +154,9 @@ describe("homepage agent vertical slice", () => {
     expect(project.status).toBe("committed");
 
     const brief = await executeAction(ports, {
-      actionType: "create_design_brief",
+      actionType: "create_node",
       input: {
+        nodeType: "DesignBrief",
         title: "Acme brief",
         content: "B2B SaaS, trustworthy tone, Korean + English",
       },
@@ -251,16 +207,16 @@ describe("homepage agent vertical slice", () => {
     const ports = createInMemoryPorts(state);
 
     await executeAction(ports, {
-      actionType: "create_homepage_project",
-      input: { title: "A" },
+      actionType: "create_node",
+      input: { nodeType: "HomepageProject", title: "A" },
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_a",
       projectId: TEST_PROJECT_ID,
     });
     await executeAction(ports, {
-      actionType: "create_design_brief",
-      input: { title: "B brief", content: "body" },
+      actionType: "create_node",
+      input: { nodeType: "DesignBrief", title: "B brief", content: "body" },
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_b",

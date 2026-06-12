@@ -128,10 +128,14 @@ describe("adapter-supabase integration", () => {
     await dbBundle.client?.end();
   });
 
-  it("create_note 커밋 + action_log 기록", async () => {
+  it("create_node(Note) 커밋 + action_log 기록", async () => {
     const result = await executeAction(ports, {
-      actionType: "create_note",
-      input: { content: "Integration test note" },
+      actionType: "create_node",
+      input: {
+        nodeType: "Note",
+        title: "Integration test note",
+        content: "Integration test note",
+      },
       executorId: smokeUserId,
       executorType: "Agent",
       projectId,
@@ -150,8 +154,12 @@ describe("adapter-supabase integration", () => {
       const beforeCount = (await ports.commit.getActionLog({ limit: 1000 })).length;
 
       await executeAction(ports, {
-        actionType: "create_note",
-        input: { content: "Audit test" },
+        actionType: "create_node",
+        input: {
+          nodeType: "Note",
+          title: "Audit test",
+          content: "Audit test",
+        },
         executorId: smokeUserId,
         executorType: "Agent",
         projectId,
@@ -164,8 +172,12 @@ describe("adapter-supabase integration", () => {
 
   it("promote_document는 Agent 호출 시 게이트 큐", async () => {
     const createResult = await executeAction(ports, {
-      actionType: "create_document",
-      input: { title: "Gate Test", content: "Body" },
+      actionType: "create_node",
+      input: {
+        nodeType: "Document",
+        title: "Gate Test",
+        content: "Body",
+      },
       executorId: smokeUserId,
       executorType: "Agent",
       projectId,
@@ -206,8 +218,15 @@ describe("adapter-supabase integration", () => {
               Deleted: [],
             },
             contentGuide: "Integration test node type",
-            propertyRefs: ["title"],
-            allowedActionRefs: ["create_document"],
+            propertySchema: {
+              title: {
+                valueType: "string",
+                constraints: {},
+                required: true,
+                system: true,
+              },
+            },
+            allowedActionRefs: ["create_node"],
           },
         },
         executorId: smokeUserId,
@@ -220,8 +239,8 @@ describe("adapter-supabase integration", () => {
       const entry = await ports.catalog.getNodeCatalogEntry(nodeType);
       expect(entry).toBeTruthy();
       expect(entry?.contentGuide).toBe("Integration test node type");
-      expect(entry?.propertyRefs).toContain("title");
-      expect(entry?.allowedActionRefs).toContain("create_document");
+      expect(entry?.propertySchema.title).toBeTruthy();
+      expect(entry?.allowedActionRefs).toContain("create_node");
 
       const log = await ports.commit.getActionLog({
         actionType: "define_node_type",
@@ -242,7 +261,7 @@ describe("adapter-supabase integration", () => {
             title,
             triggerPatterns: ["manual"],
             applicableNodeTypes: ["Document"],
-            requiredActions: ["create_document"],
+            requiredActions: ["create_node"],
             optionalActions: ["promote_document"],
             lifecycle: "Active",
             body: "Gather context, create a document, and report the result.",
@@ -252,10 +271,10 @@ describe("adapter-supabase integration", () => {
               {
                 id: "gather_context",
                 title: "Gather context",
-                actionRefs: ["create_document"],
+                actionRefs: ["create_node"],
               },
             ],
-            allowedActions: ["create_document", "promote_document"],
+            allowedActions: ["create_node", "promote_document"],
             outputContract: { format: "markdown" },
             gatePolicy: { catalogChanges: "always" },
             completionCriteria: "Document draft exists",
@@ -271,7 +290,7 @@ describe("adapter-supabase integration", () => {
       const created = instructions.find((instruction) => instruction.title === title);
       expect(created?.scope).toEqual({ kind: "node_type", nodeType: "Document" });
       expect(created?.workflowSteps[0]?.id).toBe("gather_context");
-      expect(created?.allowedActions).toContain("create_document");
+      expect(created?.allowedActions).toContain("create_node");
     },
   );
 
@@ -315,13 +334,13 @@ describe("adapter-supabase integration", () => {
     },
   );
 
-  it("subject_id: create_project 격리 + query_nodes 필터", async () => {
+  it("subject_id: create_node(Project) 격리 + query_nodes 필터", async () => {
     const subjectA = `usr_a_${Date.now()}`;
     const subjectB = `usr_b_${Date.now()}`;
 
     const createA = await executeAction(ports, {
-      actionType: "create_project",
-      input: { title: "Project A" },
+      actionType: "create_node",
+      input: { nodeType: "Project", title: "Project A" },
       executorId: smokeUserId,
       executorType: "Agent",
       subjectId: subjectA,
@@ -330,8 +349,8 @@ describe("adapter-supabase integration", () => {
     expect(createA.status).toBe("committed");
 
     const createB = await executeAction(ports, {
-      actionType: "create_project",
-      input: { title: "Project B" },
+      actionType: "create_node",
+      input: { nodeType: "Project", title: "Project B" },
       executorId: smokeUserId,
       executorType: "Agent",
       subjectId: subjectB,
@@ -356,10 +375,10 @@ describe("adapter-supabase integration", () => {
     expect(nodesA.some((n) => n.properties.title === "Project B")).toBe(false);
   });
 
-  it("subject_id: context 없이 create_project 거부", async () => {
+  it("subject_id: context 없이 create_node(Project) 거부", async () => {
     const result = await executeAction(ports, {
-      actionType: "create_project",
-      input: { title: "No subject" },
+      actionType: "create_node",
+      input: { nodeType: "Project", title: "No subject" },
       executorId: smokeUserId,
       executorType: "Agent",
       projectId,
@@ -375,8 +394,8 @@ describe("adapter-supabase integration", () => {
     const subjectId = `usr_homepage_${Date.now()}`;
 
     const project = await executeAction(ports, {
-      actionType: "create_homepage_project",
-      input: { title: "Smoke Homepage" },
+      actionType: "create_node",
+      input: { nodeType: "HomepageProject", title: "Smoke Homepage" },
       executorId: smokeUserId,
       executorType: "Agent",
       subjectId,
@@ -385,8 +404,9 @@ describe("adapter-supabase integration", () => {
     expect(project.status).toBe("committed");
 
     const brief = await executeAction(ports, {
-      actionType: "create_design_brief",
+      actionType: "create_node",
       input: {
+        nodeType: "DesignBrief",
         title: "Smoke brief",
         content: "Integration test homepage brief",
       },

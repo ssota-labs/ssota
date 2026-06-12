@@ -11,7 +11,7 @@ import {
   NodeFamilySchema,
   NodeTypeDefinitionSchema,
   EdgeTypeDefinitionSchema,
-  PropertyDefinitionSchema,
+  PropertySchemaSchema,
   PermissionOperationSchema,
   PermissionTypeSchema,
   ExecuteActionResultSchema,
@@ -41,7 +41,7 @@ export type Archetype = z.infer<typeof ArchetypeSchema>;
 export const NodeCatalogEntrySchema = NodeTypeDefinitionSchema.extend({
   slug: z.string().min(1),
   label: z.string().min(1),
-  propertyRefs: z.array(z.string()).default([]),
+  propertySchema: PropertySchemaSchema.default({}),
   allowedActionRefs: z.array(z.string()).default([]),
 });
 
@@ -53,10 +53,6 @@ export const EdgeCatalogEntrySchema = EdgeTypeDefinitionSchema.extend({
 });
 
 export type EdgeCatalogEntry = z.infer<typeof EdgeCatalogEntrySchema>;
-
-export const PropertyCatalogEntrySchema = PropertyDefinitionSchema;
-
-export type PropertyCatalogEntry = z.infer<typeof PropertyCatalogEntrySchema>;
 
 export const ActionCatalogEntrySchema = z.object({
   actionType: z.string(),
@@ -246,9 +242,6 @@ export const NodeCatalogListResponseSchema = ListResponseSchema(
 export const EdgeCatalogListResponseSchema = ListResponseSchema(
   EdgeCatalogEntrySchema,
 );
-export const PropertyCatalogListResponseSchema = ListResponseSchema(
-  PropertyCatalogEntrySchema,
-);
 export const ActionCatalogListResponseSchema = ListResponseSchema(
   ActionCatalogEntrySchema,
 );
@@ -263,9 +256,6 @@ export const NodeCatalogEntryResponseSchema = SingleResponseSchema(
 );
 export const EdgeCatalogEntryResponseSchema = SingleResponseSchema(
   EdgeCatalogEntrySchema,
-);
-export const PropertyCatalogEntryResponseSchema = SingleResponseSchema(
-  PropertyCatalogEntrySchema,
 );
 export const ArchetypeResponseSchema = SingleResponseSchema(ArchetypeSchema);
 export const NodeResponseSchema = SingleResponseSchema(NodeSchema);

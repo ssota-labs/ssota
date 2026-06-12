@@ -76,6 +76,25 @@ export const LifecycleTransitionsSchema = z.record(
 
 export type LifecycleTransitions = z.infer<typeof LifecycleTransitionsSchema>;
 
+/** Node-local property field definition (Notion database column). */
+export const PropertySchemaFieldSchema = z.object({
+  valueType: z.string().min(1),
+  constraints: z.record(z.unknown()).default({}),
+  required: z.boolean().default(false),
+  default: z.unknown().optional(),
+  system: z.boolean().default(false),
+  options: z.array(z.string()).optional(),
+});
+
+export type PropertySchemaField = z.infer<typeof PropertySchemaFieldSchema>;
+
+export const PropertySchemaSchema = z.record(
+  z.string().min(1),
+  PropertySchemaFieldSchema,
+);
+
+export type PropertySchema = z.infer<typeof PropertySchemaSchema>;
+
 export const NodeTypeDefinitionSchema = z.object({
   nodeType: z.string().min(1),
   family: NodeFamilySchema,
@@ -83,7 +102,7 @@ export const NodeTypeDefinitionSchema = z.object({
   typicalValueOverrides: z.record(z.unknown()).default({}),
   lifecycleTransitions: LifecycleTransitionsSchema,
   contentGuide: z.string().nullable().optional(),
-  propertyRefs: z.array(z.string()).optional(),
+  propertySchema: PropertySchemaSchema.optional(),
   allowedActionRefs: z.array(z.string()).optional(),
 });
 
@@ -151,41 +170,49 @@ export const DeprecateEdgeTypeInputSchema = z.object({
 
 export type DeprecateEdgeTypeInput = z.infer<typeof DeprecateEdgeTypeInputSchema>;
 
-export const PropertyDefinitionSchema = z.object({
-  propertyKey: z.string().min(1),
-  valueType: z.string().min(1),
-  constraints: z.record(z.unknown()).default({}),
-  owningActions: z.array(z.string()).default([]),
+/** Patch ops for update_node_property_schema. */
+export const PropertySchemaPatchSchema = z.object({
+  add: z
+    .record(z.string().min(1), PropertySchemaFieldSchema)
+    .optional(),
+  update: z
+    .record(z.string().min(1), PropertySchemaFieldSchema.partial())
+    .optional(),
+  remove: z.array(z.string().min(1)).optional(),
+  rename: z
+    .record(z.string().min(1), z.string().min(1))
+    .optional(),
 });
 
-export type PropertyDefinition = z.infer<typeof PropertyDefinitionSchema>;
+export type PropertySchemaPatch = z.infer<typeof PropertySchemaPatchSchema>;
 
-export const PropertyDefinitionPatchSchema = PropertyDefinitionSchema.partial().extend(
-  {
-    propertyKey: z.string().min(1),
-  },
-);
-
-export type PropertyDefinitionPatch = z.infer<typeof PropertyDefinitionPatchSchema>;
-
-export const DefinePropertyInputSchema = z.object({
-  definition: PropertyDefinitionSchema,
+export const UpdateNodePropertySchemaInputSchema = z.object({
+  nodeType: z.string().min(1),
+  patch: PropertySchemaPatchSchema,
 });
 
-export type DefinePropertyInput = z.infer<typeof DefinePropertyInputSchema>;
+export type UpdateNodePropertySchemaInput = z.infer<
+  typeof UpdateNodePropertySchemaInputSchema
+>;
 
-export const UpdatePropertyInputSchema = z.object({
-  propertyKey: z.string().min(1),
-  patch: PropertyDefinitionPatchSchema.omit({ propertyKey: true }),
+export const CreateNodeInputSchema = z.object({
+  nodeType: z.string().min(1),
+  properties: z.record(z.unknown()).default({}),
+  lifecycleStatus: LifecycleStatusSchema.optional(),
+  content: z.string().nullable().optional(),
+  contentUrl: z.string().url().nullable().optional(),
 });
 
-export type UpdatePropertyInput = z.infer<typeof UpdatePropertyInputSchema>;
+export type CreateNodeInput = z.infer<typeof CreateNodeInputSchema>;
 
-export const DeprecatePropertyInputSchema = z.object({
-  propertyKey: z.string().min(1),
+export const UpdateNodePropertiesInputSchema = z.object({
+  nodeId: z.string().uuid(),
+  properties: z.record(z.unknown()),
 });
 
-export type DeprecatePropertyInput = z.infer<typeof DeprecatePropertyInputSchema>;
+export type UpdateNodePropertiesInput = z.infer<
+  typeof UpdateNodePropertiesInputSchema
+>;
 
 export const PropertyPermissionDefinitionSchema = z.object({
   actionType: z.string().min(1),
@@ -394,14 +421,6 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     edgeType: z.string().min(1),
   }),
   z.object({
-    kind: z.literal("upsert_property_catalog_entry"),
-    entry: PropertyDefinitionSchema,
-  }),
-  z.object({
-    kind: z.literal("deprecate_property_catalog_entry"),
-    propertyKey: z.string().min(1),
-  }),
-  z.object({
     kind: z.literal("upsert_property_permission_entry"),
     permission: PropertyPermissionDefinitionSchema,
   }),
@@ -558,12 +577,6 @@ export const GetEdgeTypeInputSchema = z.object({
 });
 
 export type GetEdgeTypeInput = z.infer<typeof GetEdgeTypeInputSchema>;
-
-export const GetPropertyInputSchema = z.object({
-  propertyKey: z.string().min(1),
-});
-
-export type GetPropertyInput = z.infer<typeof GetPropertyInputSchema>;
 
 export const GetArchetypeInputSchema = z.object({
   archetypeId: z.string().min(1),

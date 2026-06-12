@@ -8,8 +8,6 @@ const CATALOG_EFFECT_KINDS = new Set([
   "deprecate_node_catalog_entry",
   "upsert_edge_catalog_entry",
   "deprecate_edge_catalog_entry",
-  "upsert_property_catalog_entry",
-  "deprecate_property_catalog_entry",
   "upsert_property_permission_entry",
   "upsert_action_catalog_entry",
   "deprecate_action_catalog_entry",
@@ -18,7 +16,7 @@ const CATALOG_EFFECT_KINDS = new Set([
 ]);
 
 export function nodeTypeRequiresSubject(entry: NodeCatalogEntry): boolean {
-  return entry.propertyRefs.includes(SUBJECT_ID_PROPERTY_KEY);
+  return SUBJECT_ID_PROPERTY_KEY in (entry.propertySchema ?? {});
 }
 
 export function readSubjectId(
