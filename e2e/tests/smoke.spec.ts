@@ -13,8 +13,8 @@ test.describe("SSOTA Console", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "graph/nodes?table=document");
     await expect(page.getByText("Table Editor", { exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Document" })).toBeVisible();
     await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Document", exact: true })).toBeVisible();
   });
 
   test("smoke: Homepage Agent vertical catalog", async ({ page }) => {

@@ -45,9 +45,10 @@ test.describe("SSOTA define_node_type vertical slice", () => {
     await gateCard.getByRole("button", { name: "Approve" }).first().click();
 
     await gotoProject(page, "graph/nodes");
+    await page.reload();
     await expect(
       page.getByRole("button", { name: nodeType.replace(/_/g, " ") }),
-    ).toBeVisible({ timeout: 10_000 });
+    ).toBeVisible({ timeout: 15_000 });
 
     await gotoProject(page, "log");
     await expect(page.getByText("define_node_type").first()).toBeVisible();

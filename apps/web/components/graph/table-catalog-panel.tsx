@@ -67,6 +67,8 @@ export function TableCatalogPanel({
                   <button
                     type="button"
                     onClick={() => onSelect(item.slug)}
+                    aria-current={active ? "true" : undefined}
+                    data-testid={`catalog-table-${item.slug}`}
                     className={cn(
                       "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted",
                       active && "bg-muted font-medium text-foreground",

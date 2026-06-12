@@ -16,7 +16,6 @@ import {
   EdgeTableDetail,
   getEdgeTableMeta,
 } from "@/components/graph/edge-table-detail";
-import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
@@ -43,7 +42,13 @@ export default async function GraphEdgesPage({
 
   const newTableTrigger = (
     <Sheet>
-      <SheetTrigger render={<NewTableButton>New table</NewTableButton>} />
+      <SheetTrigger
+        render={
+          <Button variant="outline" size="sm" className="h-7 gap-1 px-2 text-xs" />
+        }
+      >
+        New table
+      </SheetTrigger>
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New edge table</SheetTitle>
