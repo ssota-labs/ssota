@@ -1,20 +1,15 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Button } from "@ssota/ui/components/ui/button";
 import { ActionRunner } from "@/components/graph/node-table-actions";
 import { NodeRowsDataTable } from "@/components/graph/node-rows-data-table";
-import { projectPath } from "@/lib/console/paths";
-import type { ProjectRouteContext } from "@/lib/console/paths";
 import { propertyColumnLabel } from "@/lib/graph/property-column-label";
 import { getActionPorts } from "@/lib/ports";
 
 type NodeTableDetailProps = {
-  ctx: ProjectRouteContext;
   projectId: string;
   slug: string;
 };
 
-export async function NodeTableDetail({ ctx, projectId, slug }: NodeTableDetailProps) {
+export async function NodeTableDetail({ projectId, slug }: NodeTableDetailProps) {
   const ports = getActionPorts(projectId);
   const entry = await ports.catalog.getNodeCatalogEntryBySlug(slug);
   if (!entry) notFound();
@@ -57,24 +52,14 @@ export async function NodeTableDetail({ ctx, projectId, slug }: NodeTableDetailP
   }));
 
   const toolbar = (
-    <>
-      <Button
-        render={<Link href={projectPath(ctx, "log")} />}
-        variant="outline"
-        size="sm"
-        nativeButton={false}
-      >
-        View logs
-      </Button>
-      <ActionRunner
-        projectId={projectId}
-        actions={
-          localActions.length
-            ? localActions.map((action) => action.actionType)
-            : actions.map((action) => action.actionType)
-        }
-      />
-    </>
+    <ActionRunner
+      projectId={projectId}
+      actions={
+        localActions.length
+          ? localActions.map((action) => action.actionType)
+          : actions.map((action) => action.actionType)
+      }
+    />
   );
 
   return (

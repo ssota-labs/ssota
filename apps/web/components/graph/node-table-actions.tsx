@@ -31,7 +31,7 @@ export function ActionRunner({
 }) {
   return (
     <Sheet>
-      <SheetTrigger render={<Button />}>Create node / Run action</SheetTrigger>
+      <SheetTrigger render={<Button size="sm" />}>Insert</SheetTrigger>
       <SheetContent className={sheetClassName}>
         <SheetHeader>
           <SheetTitle>Run action</SheetTitle>

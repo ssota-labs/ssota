@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
-import { DEFAULT_CONSOLE_BASE, gotoGraphNodes } from "../helpers/console";
+import { DEFAULT_CONSOLE_BASE, gotoGraphNodes, gotoProject } from "../helpers/console";
 
 test.describe("Context Graph Nodes", () => {
   test("Node table에서 property를 추가하면 schema에 표시된다", async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe("Context Graph Nodes", () => {
     await expect(page.getByRole("columnheader", { name: new RegExp(propertyLabel) })).toBeVisible({
       timeout: 10_000,
     });
-    await page.getByRole("button", { name: "View logs" }).click();
+    await gotoProject(page, "log");
     await expect(page.getByText("define_property").first()).toBeVisible();
     await expect(page.getByText("update_node_type").first()).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/log`));

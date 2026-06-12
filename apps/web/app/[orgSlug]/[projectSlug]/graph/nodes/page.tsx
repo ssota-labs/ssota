@@ -116,7 +116,7 @@ export default async function GraphNodesPage({
   const mainContent =
     table && selectedMeta ? (
       <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading rows…</div>}>
-        <NodeTableDetail ctx={ctx} projectId={project.id} slug={table} />
+        <NodeTableDetail projectId={project.id} slug={table} />
       </Suspense>
     ) : null;
 
