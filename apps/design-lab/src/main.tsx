@@ -6,7 +6,6 @@ import {
   buildComponentDocsMeta,
   buildDocsCatalog,
   buildStoryCatalog,
-  type DocsModule,
   type StoryModule,
 } from "@ssota/ui/design-lab";
 import "@ssota/ui/styles/globals.css";
@@ -16,14 +15,14 @@ const storyModules = import.meta.glob(
   { eager: true },
 ) as Record<string, StoryModule>;
 
-const mdxModules = import.meta.glob(
-  "../../../packages/ui/src/**/*.docs.mdx",
-  { eager: true },
-) as Record<string, DocsModule>;
+const docsModules = import.meta.glob(
+  "../../../packages/ui/src/**/*.docs.md",
+  { eager: true, query: "?raw", import: "default" },
+) as Record<string, string>;
 
 const stories = buildStoryCatalog(storyModules);
 const docsMeta = buildComponentDocsMeta(storyModules);
-const docsCatalog = buildDocsCatalog(mdxModules);
+const docsCatalog = buildDocsCatalog(docsModules);
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Root element not found");

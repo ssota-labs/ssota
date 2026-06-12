@@ -4,14 +4,21 @@ import {
   resolveVariant,
   type CatalogItem,
 } from "../lib/catalog-navigation";
-import type { StoryCatalogEntry } from "../lib/story-catalog";
+import type { DocsCatalogEntry } from "../lib/docs-catalog";
+import type { CanvasView } from "../lib/url-state";
+import type { ComponentDocsMeta, StoryCatalogEntry } from "../lib/story-catalog";
+import { CanvasViewToolbar } from "./CanvasViewToolbar";
+import { DocumentationPanel } from "./DocumentationPanel";
 import { PreviewCanvas } from "./PreviewCanvas";
-import { VariantToolbar } from "./VariantToolbar";
 
 type PreviewFrameProps = {
   item: CatalogItem | null;
   variantId: string | null;
   onSelectVariant: (variantId: string) => void;
+  canvasView: CanvasView;
+  onCanvasViewChange: (view: CanvasView) => void;
+  docsMeta: Map<string, ComponentDocsMeta>;
+  docsCatalog: Map<string, DocsCatalogEntry>;
 };
 
 function renderPreviewContent(
@@ -31,6 +38,10 @@ export function PreviewFrame({
   item,
   variantId,
   onSelectVariant,
+  canvasView,
+  onCanvasViewChange,
+  docsMeta,
+  docsCatalog,
 }: PreviewFrameProps) {
   if (!item) {
     return (
@@ -42,24 +53,43 @@ export function PreviewFrame({
     );
   }
 
-  const variant = item.variants
-    ? resolveVariant(item, variantId)
-    : null;
+  const variant = item.variants ? resolveVariant(item, variantId) : null;
   const activeVariantId = variant?.id ?? variantId ?? "";
+  const isComponent = item.groupId === "components";
+  const hasDocumentation =
+    isComponent &&
+    (docsCatalog.has(item.id) ||
+      docsMeta.get(item.id)?.tags?.includes("autodocs") === true);
+  const effectiveView =
+    canvasView === "documentation" && hasDocumentation
+      ? "documentation"
+      : "preview";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {item.variants && item.variants.length > 1 && variant && (
-        <VariantToolbar
+      {isComponent && (
+        <CanvasViewToolbar
           componentLabel={item.label}
           variants={item.variants}
           selectedVariantId={activeVariantId}
           onSelectVariant={onSelectVariant}
+          canvasView={effectiveView}
+          onCanvasViewChange={onCanvasViewChange}
+          showDocumentation={hasDocumentation}
         />
       )}
-      <PreviewCanvas>
-        {renderPreviewContent(item, variant)}
-      </PreviewCanvas>
+
+      {effectiveView === "documentation" ? (
+        <div className="min-h-0 flex-1 overflow-y-auto bg-background">
+          <DocumentationPanel
+            selectedItem={item}
+            docsMeta={docsMeta.get(item.id)}
+            docs={docsCatalog.get(item.id)}
+          />
+        </div>
+      ) : (
+        <PreviewCanvas>{renderPreviewContent(item, variant)}</PreviewCanvas>
+      )}
     </div>
   );
 }

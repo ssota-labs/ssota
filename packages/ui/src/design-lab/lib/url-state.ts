@@ -1,9 +1,12 @@
 import type { CatalogGroupId, CatalogSelection } from "./catalog-navigation";
 
+export type CanvasView = "preview" | "documentation";
+
 export type DesignLabUrlState = {
   selection: CatalogSelection;
   isDark: boolean;
   visualMode: boolean;
+  canvasView: CanvasView;
 };
 
 const GROUP_IDS: CatalogGroupId[] = ["tokens", "components", "typography"];
@@ -35,13 +38,18 @@ export function parseUrlState(
     result.visualMode = true;
   }
 
+  const view = searchParams.get("view");
+  if (view === "docs" || view === "documentation") {
+    result.canvasView = "documentation";
+  }
+
   return result;
 }
 
 export function buildUrlSearchParams(
   selection: CatalogSelection,
   isDark: boolean,
-  options?: { visualMode?: boolean },
+  options?: { visualMode?: boolean; canvasView?: CanvasView },
 ): URLSearchParams {
   const params = new URLSearchParams();
   params.set("g", selection.groupId);
@@ -50,6 +58,9 @@ export function buildUrlSearchParams(
     params.set("v", selection.variantId);
   }
   params.set("theme", isDark ? "dark" : "light");
+  if (options?.canvasView === "documentation") {
+    params.set("view", "docs");
+  }
   if (options?.visualMode) {
     params.set("visual", "1");
   }
@@ -60,7 +71,7 @@ export function buildDesignLabUrl(
   baseUrl: string,
   selection: CatalogSelection,
   isDark = false,
-  options?: { visualMode?: boolean },
+  options?: { visualMode?: boolean; canvasView?: CanvasView },
 ): string {
   const params = buildUrlSearchParams(selection, isDark, options);
   const separator = baseUrl.includes("?") ? "&" : "?";

@@ -13,8 +13,11 @@ import type { DocsCatalogEntry } from "./lib/docs-catalog";
 import {
   buildUrlSearchParams,
   parseUrlState,
+  type CanvasView,
 } from "./lib/url-state";
 import type { ComponentDocsMeta, StoryCatalogEntry } from "./lib/story-catalog";
+
+import "./styles/design-lab-docs.css";
 
 export type DesignLabProps = {
   stories: StoryCatalogEntry[];
@@ -55,9 +58,15 @@ function getInitialState(
   selection: CatalogSelection;
   isDark: boolean;
   visualMode: boolean;
+  canvasView: CanvasView;
 } {
   if (typeof window === "undefined") {
-    return { selection: defaultSelection, isDark: false, visualMode: visualMode ?? false };
+    return {
+      selection: defaultSelection,
+      isDark: false,
+      visualMode: visualMode ?? false,
+      canvasView: "preview",
+    };
   }
 
   const parsed = parseUrlState(new URLSearchParams(window.location.search));
@@ -65,6 +74,7 @@ function getInitialState(
     selection: parsed.selection ?? defaultSelection,
     isDark: parsed.isDark ?? false,
     visualMode: visualMode ?? parsed.visualMode ?? false,
+    canvasView: parsed.canvasView ?? "preview",
   };
 }
 
@@ -87,6 +97,7 @@ function DesignLabContent({
   );
 
   const [selection, setSelection] = useState<CatalogSelection>(initial.selection);
+  const [canvasView, setCanvasView] = useState<CanvasView>(initial.canvasView);
   const { isDark, setIsDark, setVisualMode } = useDesignLab();
   const skipUrlSync = useRef(true);
 
@@ -102,10 +113,17 @@ function DesignLabContent({
     }
     if (typeof window === "undefined") return;
 
-    const params = buildUrlSearchParams(selection, isDark);
+    const params = buildUrlSearchParams(selection, isDark, { canvasView });
     const next = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState(null, "", next);
-  }, [selection, isDark]);
+  }, [selection, isDark, canvasView]);
+
+  function handleSelect(nextSelection: CatalogSelection) {
+    setSelection(nextSelection);
+    if (nextSelection.groupId !== "components") {
+      setCanvasView("preview");
+    }
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
@@ -114,9 +132,11 @@ function DesignLabContent({
         <Shell
           groups={groups}
           selection={selection}
-          onSelect={setSelection}
+          onSelect={handleSelect}
           docsMeta={docsMeta}
           docsCatalog={docsCatalog}
+          canvasView={canvasView}
+          onCanvasViewChange={setCanvasView}
         />
       </div>
       <OverrideStyle />

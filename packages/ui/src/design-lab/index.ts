@@ -28,7 +28,6 @@ export {
 export {
   buildDocsCatalog,
   type DocsCatalogEntry,
-  type DocsModule,
 } from "./lib/docs-catalog";
 
 export {
@@ -65,6 +64,7 @@ export {
   buildUrlSearchParams,
   buildDesignLabUrl,
   parseUrlState,
+  type CanvasView,
   type DesignLabUrlState,
 } from "./lib/url-state";
 

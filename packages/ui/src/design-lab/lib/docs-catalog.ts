@@ -1,34 +1,28 @@
-import type { ComponentType } from "react";
-
-export type DocsModule = {
-  default: ComponentType<Record<string, unknown>>;
-};
-
 export type DocsCatalogEntry = {
   itemId: string;
   path: string;
-  Component: ComponentType<Record<string, unknown>>;
+  content: string;
 };
 
 function itemIdFromDocsPath(path: string): string | null {
-  const match = path.match(/\/([^/]+)\.docs\.mdx$/);
+  const match = path.match(/\/([^/]+)\.docs\.md$/);
   if (!match) return null;
   return match[1] ?? null;
 }
 
 export function buildDocsCatalog(
-  mdxModules: Record<string, DocsModule>,
+  markdownModules: Record<string, string>,
 ): Map<string, DocsCatalogEntry> {
   const catalog = new Map<string, DocsCatalogEntry>();
 
-  for (const [path, mod] of Object.entries(mdxModules)) {
+  for (const [path, content] of Object.entries(markdownModules)) {
     const itemId = itemIdFromDocsPath(path);
-    if (!itemId || !mod.default) continue;
+    if (!itemId || !content.trim()) continue;
 
     catalog.set(itemId, {
       itemId,
       path,
-      Component: mod.default,
+      content,
     });
   }
 
