@@ -20,6 +20,23 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const Preview: Story = {
+  render: () => (
+    <div className="cn-popover-content cn-menu-translucent w-72 rounded-md border border-border bg-popover p-4 shadow-md">
+      <div className="flex flex-col gap-1">
+        <p className="font-medium">Action filter</p>
+        <p className="text-sm text-muted-foreground">
+          Narrow the audit log by action name.
+        </p>
+      </div>
+      <div className="grid gap-2 pt-3">
+        <Label htmlFor="action-filter-preview">Action</Label>
+        <Input id="action-filter-preview" placeholder="approve_gate" />
+      </div>
+    </div>
+  ),
+};
+
 export const Filter: Story = {
   render: () => (
     <Popover>

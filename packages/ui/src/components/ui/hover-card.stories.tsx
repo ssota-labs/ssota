@@ -15,6 +15,22 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const Preview: Story = {
+  render: () => (
+    <div className="flex max-w-md flex-col gap-3">
+      <Button variant="link" className="h-auto w-fit p-0">
+        HomepageProject
+      </Button>
+      <div className="cn-hover-card-content w-64 rounded-md border border-border bg-popover p-4 shadow-md">
+        <p className="text-sm font-medium">HomepageProject</p>
+        <p className="text-xs text-muted-foreground">
+          subject_id scoped instance node for the homepage agent catalog.
+        </p>
+      </div>
+    </div>
+  ),
+};
+
 export const NodePreview: Story = {
   render: () => (
     <HoverCard>

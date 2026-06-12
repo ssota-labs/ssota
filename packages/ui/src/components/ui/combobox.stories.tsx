@@ -24,7 +24,7 @@ export const Default: Story = {
   render: function ComboboxDemo() {
     const [value, setValue] = useState<string | null>(null);
     return (
-      <Combobox value={value} onValueChange={setValue}>
+      <Combobox value={value} onValueChange={setValue} items={nodeTypes}>
         <ComboboxInput
           placeholder="Select node type..."
           className="w-[260px]"

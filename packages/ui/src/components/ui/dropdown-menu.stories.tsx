@@ -18,6 +18,26 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const Preview: Story = {
+  render: () => (
+    <div className="cn-dropdown-menu-content cn-menu-translucent w-56 rounded-md border border-border bg-popover p-1 shadow-md">
+      <div className="cn-dropdown-menu-label px-2 py-1.5 text-sm font-medium">
+        homepage-agent
+      </div>
+      <div className="cn-dropdown-menu-separator -mx-1 my-1 h-px bg-border" />
+      <div className="cn-dropdown-menu-item relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none">
+        Catalog
+      </div>
+      <div className="cn-dropdown-menu-item relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none">
+        Action log
+      </div>
+      <div className="cn-dropdown-menu-item relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm text-destructive outline-none">
+        Leave project
+      </div>
+    </div>
+  ),
+};
+
 export const Default: Story = {
   render: () => (
     <DropdownMenu>

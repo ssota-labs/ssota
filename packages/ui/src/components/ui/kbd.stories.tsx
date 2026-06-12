@@ -5,10 +5,17 @@ const meta = {
   title: "Components/Kbd",
   component: Kbd,
   tags: ["autodocs"],
+  argTypes: {
+    children: { control: "text" },
+  },
 } satisfies Meta<typeof Kbd>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: { children: "⌘" },
+};
 
 export const Shortcut: Story = {
   render: () => (

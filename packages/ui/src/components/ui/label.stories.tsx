@@ -6,12 +6,20 @@ const meta = {
   title: "Components/Label",
   component: Label,
   tags: ["autodocs"],
+  argTypes: {
+    children: { control: "text" },
+    htmlFor: { control: "text" },
+  },
 } satisfies Meta<typeof Label>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: { children: "Subject ID", htmlFor: "subject" },
+};
+
+export const Showcase: Story = {
   render: () => (
     <div className="grid w-full max-w-sm gap-2">
       <Label htmlFor="subject">Subject ID</Label>

@@ -5,10 +5,33 @@ const meta = {
   title: "Components/Separator",
   component: Separator,
   tags: ["autodocs"],
+  argTypes: {
+    orientation: {
+      control: "select",
+      options: ["horizontal", "vertical"],
+    },
+  },
 } satisfies Meta<typeof Separator>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: { orientation: "horizontal" },
+  render: (args) => (
+    <div
+      className={
+        args.orientation === "vertical"
+          ? "flex h-8 items-center gap-2 text-sm"
+          : "w-64 space-y-2 text-sm"
+      }
+    >
+      <span>Before</span>
+      <Separator {...args} />
+      <span>After</span>
+    </div>
+  ),
+};
 
 export const Horizontal: Story = {
   render: () => (
