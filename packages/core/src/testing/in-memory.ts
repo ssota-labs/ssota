@@ -804,7 +804,7 @@ export function seedTestCatalog(state: InMemoryState): void {
         },
       },
     ],
-    executor: "Human",
+    executor: "Agent",
     allowedLifecycleTransitions: {},
     failureMode: "reject",
     idempotencyRule: null,

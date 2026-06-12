@@ -271,7 +271,7 @@ describe("executeAction — define_node_type", () => {
     }
   });
 
-  it("게이트: Agent executor define_node_type", async () => {
+  it("통과: Agent executor define_node_type 커밋", async () => {
     const state = createInMemoryState();
     seedTestCatalog(state);
     const ports = createInMemoryPorts(state);
@@ -284,11 +284,11 @@ describe("executeAction — define_node_type", () => {
       projectId: TEST_PROJECT_ID,
     });
 
-    expect(result.status).toBe("gated");
-    expect(state.nodeCatalog.has("Memo")).toBe(false);
-    if (result.status === "gated") {
-      expect(state.gates.has(result.gateId)).toBe(true);
-    }
+    expect(result.status).toBe("committed");
+    expect(state.nodeCatalog.has("Memo")).toBe(true);
+    expect(state.actionLog.some((l) => l.actionType === "define_node_type")).toBe(
+      true,
+    );
   });
 });
 

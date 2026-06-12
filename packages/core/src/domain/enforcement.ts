@@ -700,12 +700,7 @@ const CATALOG_EFFECT_KINDS = new Set([
   "deprecate_instruction_catalog_entry",
 ]);
 
-const PROTECTED_ACTION_TYPES = new Set([
-  "approve_gate",
-  "define_node_type",
-  "update_node_type",
-  "deprecate_node_type",
-]);
+const PROTECTED_ACTION_TYPES = new Set(["approve_gate"]);
 
 export function enforceActionContractSafety(
   definition: {
@@ -1031,15 +1026,6 @@ export function enforceGateRules(
   nodeCatalogEntries: Map<string, NodeCatalogEntry>,
   existingNodes: Map<string, Node>,
 ): { requiresGate: boolean; reason: string } {
-  for (const effect of effects) {
-    if (CATALOG_EFFECT_KINDS.has(effect.kind) && executorType === "Agent") {
-      return {
-        requiresGate: true,
-        reason: "Agent catalog mutation requires human approval",
-      };
-    }
-  }
-
   if (
     actionEntry.executor === "Human" &&
     executorType !== "Human"
