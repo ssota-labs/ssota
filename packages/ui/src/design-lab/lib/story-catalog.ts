@@ -20,6 +20,7 @@ export type StoryCatalogEntry = {
   render: () => ReactNode;
 };
 
+/** @deprecated Use DEFAULT_SELECTION from catalog-navigation */
 export const DEFAULT_STORY_ID = "Components/Button/AllVariants";
 
 function renderStory(

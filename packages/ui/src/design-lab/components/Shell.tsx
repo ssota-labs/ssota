@@ -4,24 +4,25 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 
+import { DesignCatalog } from "./DesignCatalog";
 import { InspectorPanel } from "./InspectorPanel";
-import { PreviewCanvas } from "./PreviewCanvas";
-import { StoryCatalog } from "./StoryCatalog";
-import type { StoryCatalogEntry } from "../lib/story-catalog";
+import { PreviewFrame } from "./PreviewFrame";
+import type { CatalogGroup, CatalogSelection } from "../lib/catalog-navigation";
+import { findCatalogItem } from "../lib/catalog-navigation";
 
 type ShellProps = {
-  stories: StoryCatalogEntry[];
-  selectedStory: StoryCatalogEntry | null;
-  selectedId: string | null;
-  onSelectStory: (entry: StoryCatalogEntry) => void;
+  groups: CatalogGroup[];
+  selection: CatalogSelection;
+  onSelect: (selection: CatalogSelection) => void;
 };
 
-export function Shell({
-  stories,
-  selectedStory,
-  selectedId,
-  onSelectStory,
-}: ShellProps) {
+export function Shell({ groups, selection, onSelect }: ShellProps) {
+  const selectedItem = findCatalogItem(
+    groups,
+    selection.groupId,
+    selection.itemId,
+  );
+
   return (
     <ResizablePanelGroup
       id="design-lab-shell"
@@ -36,10 +37,10 @@ export function Shell({
         maxSize="28%"
         className="min-h-0"
       >
-        <StoryCatalog
-          stories={stories}
-          selectedId={selectedId}
-          onSelect={onSelectStory}
+        <DesignCatalog
+          groups={groups}
+          selection={selection}
+          onSelect={onSelect}
         />
       </ResizablePanel>
       <ResizableHandle withHandle />
@@ -49,13 +50,13 @@ export function Shell({
         minSize="35%"
         className="min-h-0"
       >
-        <PreviewCanvas>
-          {selectedStory ? selectedStory.render() : (
-            <p className="text-sm text-muted-foreground">
-              왼쪽에서 스토리를 선택하세요.
-            </p>
-          )}
-        </PreviewCanvas>
+        <PreviewFrame
+          item={selectedItem ?? null}
+          variantId={selection.variantId}
+          onSelectVariant={(variantId) =>
+            onSelect({ ...selection, variantId })
+          }
+        />
       </ResizablePanel>
       <ResizableHandle withHandle />
       <ResizablePanel

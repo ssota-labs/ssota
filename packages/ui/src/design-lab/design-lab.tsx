@@ -1,16 +1,19 @@
 import { useMemo, useState } from "react";
 
+import { createBuiltInCatalogItems } from "./components/built-in-previews";
 import { OverrideStyle } from "./components/OverrideStyle";
 import { Shell } from "./components/Shell";
 import { DesignLabProvider, useDesignLab } from "./context/design-lab-context";
 import {
-  DEFAULT_STORY_ID,
-  type StoryCatalogEntry,
-} from "./lib/story-catalog";
+  buildCatalogGroups,
+  DEFAULT_SELECTION,
+  type CatalogSelection,
+} from "./lib/catalog-navigation";
+import type { StoryCatalogEntry } from "./lib/story-catalog";
 
 export type DesignLabProps = {
   stories: StoryCatalogEntry[];
-  defaultStoryId?: string;
+  defaultSelection?: CatalogSelection;
 };
 
 function DesignLabHeader() {
@@ -39,27 +42,25 @@ function DesignLabHeader() {
 
 function DesignLabContent({
   stories,
-  defaultStoryId = DEFAULT_STORY_ID,
+  defaultSelection = DEFAULT_SELECTION,
 }: DesignLabProps) {
-  const defaultStory = useMemo(
-    () =>
-      stories.find((s) => s.id === defaultStoryId) ?? stories[0] ?? null,
-    [stories, defaultStoryId],
+  const builtIn = useMemo(() => createBuiltInCatalogItems(), []);
+  const groups = useMemo(
+    () => buildCatalogGroups(stories, builtIn),
+    [stories, builtIn],
   );
 
-  const [selectedStory, setSelectedStory] = useState<StoryCatalogEntry | null>(
-    defaultStory,
-  );
+  const [selection, setSelection] =
+    useState<CatalogSelection>(defaultSelection);
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
       <DesignLabHeader />
       <div className="min-h-0 flex-1 overflow-hidden">
         <Shell
-          stories={stories}
-          selectedStory={selectedStory}
-          selectedId={selectedStory?.id ?? null}
-          onSelectStory={setSelectedStory}
+          groups={groups}
+          selection={selection}
+          onSelect={setSelection}
         />
       </div>
       <OverrideStyle />
@@ -67,10 +68,13 @@ function DesignLabContent({
   );
 }
 
-export function DesignLab({ stories, defaultStoryId }: DesignLabProps) {
+export function DesignLab({ stories, defaultSelection }: DesignLabProps) {
   return (
     <DesignLabProvider>
-      <DesignLabContent stories={stories} defaultStoryId={defaultStoryId} />
+      <DesignLabContent
+        stories={stories}
+        defaultSelection={defaultSelection}
+      />
     </DesignLabProvider>
   );
 }

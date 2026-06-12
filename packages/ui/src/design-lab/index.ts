@@ -22,6 +22,21 @@ export {
 } from "./lib/story-catalog";
 
 export {
+  buildCatalogGroups,
+  buildComponentItems,
+  DEFAULT_SELECTION,
+  filterCatalogGroups,
+  findCatalogItem,
+  formatVariantLabel,
+  pickDefaultVariant,
+  resolveVariant,
+  type CatalogGroup,
+  type CatalogGroupId,
+  type CatalogItem,
+  type CatalogSelection,
+} from "./lib/catalog-navigation";
+
+export {
   buildExportCss,
   buildOverrideCss,
   formatLengthFromPx,
