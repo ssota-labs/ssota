@@ -27,7 +27,7 @@ export interface NodeCatalogEntry {
   slug: string;
   label: string;
   family: NodeFamily;
-  archetypeId: string;
+  archetypeId: string | null;
   typicalValueOverrides: Record<string, unknown>;
   lifecycleTransitions: Record<LifecycleStatus, LifecycleStatus[]>;
   contentGuide: string | null;

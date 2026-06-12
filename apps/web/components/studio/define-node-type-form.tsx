@@ -77,17 +77,14 @@ export function DefineNodeTypeForm({ archetypes }: DefineNodeTypeFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="archetypeId">Archetype</Label>
+              <Label htmlFor="archetypeId">Archetype (선택)</Label>
               <NativeSelect
                 id="archetypeId"
                 name="archetypeId"
-                required
                 className="w-full"
                 defaultValue=""
               >
-                <NativeSelectOption value="" disabled>
-                  아키타입 선택
-                </NativeSelectOption>
+                <NativeSelectOption value="">없음</NativeSelectOption>
                 {archetypes.map((archetype) => (
                   <NativeSelectOption key={archetype.id} value={archetype.id}>
                     {archetype.name} ({archetype.id})

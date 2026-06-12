@@ -272,10 +272,11 @@ export async function defineNodeTypeFormAction(formData: FormData) {
     ...defaultLifecycleTransitions(),
   };
 
+  const archetypeId = String(formData.get("archetypeId") ?? "").trim();
   const definition = {
     nodeType: String(formData.get("nodeType") ?? ""),
     family: String(formData.get("family") ?? "document"),
-    archetypeId: String(formData.get("archetypeId") ?? ""),
+    ...(archetypeId ? { archetypeId } : {}),
     typicalValueOverrides: {},
     lifecycleTransitions,
     contentGuide: String(formData.get("contentGuide") ?? "") || null,
@@ -462,11 +463,12 @@ export async function deprecateInstructionAction(input: Record<string, unknown>)
 
 export async function createNodeTableFormAction(formData: FormData): Promise<void> {
   const projectId = await requireProjectId(formData);
+  const archetypeId = String(formData.get("archetypeId") ?? "").trim();
   await defineNodeTypeAction({
     definition: {
       nodeType: String(formData.get("nodeType") ?? ""),
       family: String(formData.get("family") ?? "document"),
-      archetypeId: String(formData.get("archetypeId") ?? ""),
+      ...(archetypeId ? { archetypeId } : {}),
       typicalValueOverrides: parseJsonObject(formData.get("typicalValueOverrides")),
       lifecycleTransitions: defaultLifecycleTransitions(),
       contentGuide: String(formData.get("contentGuide") ?? "") || null,

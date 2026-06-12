@@ -146,9 +146,7 @@ export const nodeCatalog = pgTable(
     slug: text("slug").notNull(),
     label: text("label").notNull(),
     family: nodeFamilyEnum("family").notNull(),
-    archetypeId: text("archetype_id")
-      .notNull()
-      .references(() => archetypes.id),
+    archetypeId: text("archetype_id").references(() => archetypes.id),
     typicalValueOverrides: jsonb("typical_value_overrides")
       .notNull()
       .$type<Record<string, unknown>>(),
