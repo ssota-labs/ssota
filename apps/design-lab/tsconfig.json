@@ -1,0 +1,13 @@
+{
+  "extends": "@ssota/config/typescript/base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noEmit": true,
+    "paths": {
+      "@/*": ["../../packages/ui/src/*"],
+      "@ssota/ui/*": ["../../packages/ui/src/*"]
+    }
+  },
+  "include": ["src/main.tsx", "src/vite-env.d.ts"]
+}
