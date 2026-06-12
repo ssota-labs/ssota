@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
 import {
   Avatar,
@@ -19,7 +20,7 @@ import {
 import { Separator } from "@ssota/ui/components/ui/separator";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { projectPath } from "@/lib/console/paths";
+import { projectPath, switchConsolePath } from "@/lib/console/paths";
 import { ConsoleBreadcrumbs } from "./console-breadcrumbs";
 import { useProjectContext } from "./project-context";
 
@@ -42,6 +43,7 @@ export function ConsoleTopBar({
   signOutAction,
 }: ConsoleTopBarProps) {
   const ctx = useProjectContext();
+  const pathname = usePathname();
   const { t } = useLocale();
 
   return (
@@ -71,7 +73,7 @@ export function ConsoleTopBar({
                   key={org.id}
                   render={
                     <Link
-                      href={projectPath({
+                      href={switchConsolePath(pathname, ctx, {
                         orgSlug: org.slug,
                         projectSlug: ctx.projectSlug,
                       })}
@@ -103,7 +105,7 @@ export function ConsoleTopBar({
                   key={project.id}
                   render={
                     <Link
-                      href={projectPath({
+                      href={switchConsolePath(pathname, ctx, {
                         orgSlug: ctx.org.slug,
                         projectSlug: project.slug,
                       })}

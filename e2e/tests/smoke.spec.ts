@@ -48,7 +48,7 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("link", { name: "Action Log", exact: true })).toBeVisible();
   });
 
-  test("smoke: project selector navigates to project home", async ({ page }) => {
+  test("smoke: project selector preserves current route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "graph/nodes?table=document");
     await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
@@ -56,8 +56,10 @@ test.describe("SSOTA Console", () => {
     await page.getByRole("button", { name: "SSOTA Dev" }).click();
     await page.getByRole("menuitem", { name: "SSOTA Dev" }).click();
 
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
-    await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible();
+    await expect(page).toHaveURL(
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
+    );
+    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
   });
 
   test("smoke: profile menu opens", async ({ page }) => {
