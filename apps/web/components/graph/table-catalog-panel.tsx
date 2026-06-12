@@ -1,6 +1,6 @@
 "use client";
 
-import { FunnelIcon, PlusIcon, TableIcon } from "@phosphor-icons/react";
+import { DotsThreeIcon, FunnelIcon, PlusIcon, TableIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
@@ -18,6 +18,7 @@ type TableCatalogPanelProps = {
   items: TableCatalogItem[];
   selectedSlug?: string | null;
   onSelect: (slug: string) => void;
+  onOpenSettings?: (slug: string) => void;
   searchQuery: string;
   onSearchQueryChange: (value: string) => void;
   newTableTrigger: React.ReactNode;
@@ -30,6 +31,7 @@ export function TableCatalogPanel({
   items,
   selectedSlug,
   onSelect,
+  onOpenSettings,
   searchQuery,
   onSearchQueryChange,
   newTableTrigger,
@@ -64,19 +66,40 @@ export function TableCatalogPanel({
               const active = selectedSlug === item.slug;
               return (
                 <li key={item.slug}>
-                  <button
-                    type="button"
-                    onClick={() => onSelect(item.slug)}
-                    aria-current={active ? "true" : undefined}
-                    data-testid={`catalog-table-${item.slug}`}
+                  <div
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted",
-                      active && "bg-muted font-medium text-foreground",
+                      "group flex items-center gap-0.5 rounded-md pr-1",
+                      active && "bg-muted",
                     )}
                   >
-                    <TableIcon className="size-3.5 shrink-0 text-muted-foreground" weight="regular" />
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => onSelect(item.slug)}
+                      aria-current={active ? "true" : undefined}
+                      data-testid={`catalog-table-${item.slug}`}
+                      className={cn(
+                        "flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors hover:bg-muted/80",
+                        active && "font-medium text-foreground",
+                      )}
+                    >
+                      <TableIcon
+                        className="size-3.5 shrink-0 text-muted-foreground"
+                        weight="regular"
+                      />
+                      <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    </button>
+                    {onOpenSettings ? (
+                      <button
+                        type="button"
+                        aria-label={`Catalog settings for ${item.label}`}
+                        data-testid={`catalog-settings-${item.slug}`}
+                        onClick={() => onOpenSettings(item.slug)}
+                        className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-background hover:text-foreground group-hover:opacity-100"
+                      >
+                        <DotsThreeIcon className="size-3.5" weight="bold" />
+                      </button>
+                    ) : null}
+                  </div>
                   {item.meta ? (
                     <p className="truncate px-2 pb-1 pl-7 text-[10px] text-muted-foreground">
                       {item.meta}

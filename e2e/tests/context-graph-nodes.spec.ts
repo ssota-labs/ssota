@@ -10,11 +10,17 @@ test.describe("Context Graph Nodes", () => {
     await gotoGraphNodes(page, "document");
     await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
 
+    await page.getByTestId("open-definition").click();
     await page.getByRole("button", { name: "Add property" }).click();
     await page.getByLabel("Property key").fill(propertyKey);
     await page.getByLabel("Value type").fill("string");
     await page.getByLabel("Owning actions").fill("create_document");
+    const submit = page.waitForResponse(
+      (response) => response.request().method() === "POST" && response.ok(),
+    );
     await page.getByRole("button", { name: "Submit change" }).click();
+    await submit;
+    await gotoGraphNodes(page, "document");
 
     const propertyLabel = propertyKey
       .split("_")

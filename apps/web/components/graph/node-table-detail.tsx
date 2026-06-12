@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  ActionRunner,
-  AddActionSheet,
-  AddInstructionSheet,
-  AddPropertySheet,
-} from "@/components/graph/node-table-actions";
+import { ActionRunner } from "@/components/graph/node-table-actions";
 import { NodeRowsDataTable } from "@/components/graph/node-rows-data-table";
 import { projectPath } from "@/lib/console/paths";
 import type { ProjectRouteContext } from "@/lib/console/paths";
@@ -71,9 +66,6 @@ export async function NodeTableDetail({ ctx, projectId, slug }: NodeTableDetailP
             : actions.map((action) => action.actionType)
         }
       />
-      <AddPropertySheet nodeType={decoded} projectId={projectId} />
-      <AddActionSheet nodeType={decoded} projectId={projectId} />
-      <AddInstructionSheet nodeType={decoded} projectId={projectId} />
       <Button
         render={<Link href={projectPath(ctx, "log")} />}
         variant="outline"

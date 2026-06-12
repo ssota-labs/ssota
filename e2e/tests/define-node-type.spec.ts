@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
 import { loginAsSmoke } from "../helpers/auth";
-import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
+import { DEFAULT_CONSOLE_BASE, gotoProject, toCatalogSlug } from "../helpers/console";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
@@ -46,9 +46,9 @@ test.describe("SSOTA define_node_type vertical slice", () => {
 
     await gotoProject(page, "graph/nodes");
     await page.reload();
-    await expect(
-      page.getByRole("button", { name: nodeType.replace(/_/g, " ") }),
-    ).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId(`catalog-table-${toCatalogSlug(nodeType)}`)).toBeVisible({
+      timeout: 15_000,
+    });
 
     await gotoProject(page, "log");
     await expect(page.getByText("define_node_type").first()).toBeVisible();
@@ -67,7 +67,6 @@ test.describe("SSOTA define_node_type vertical slice", () => {
     await page.locator("#nodeType").fill(nodeType);
     await page.locator("#archetypeId").fill("doc-note");
     await page.locator("#contentGuide").fill("Web form test");
-    const label = nodeType.replace(/_/g, " ");
     const submit = page.waitForResponse(
       (response) =>
         response.request().method() === "POST" && response.ok(),
@@ -75,7 +74,7 @@ test.describe("SSOTA define_node_type vertical slice", () => {
     await page.getByRole("button", { name: "Create node table" }).click();
     await submit;
     await gotoProject(page, "graph/nodes");
-    await expect(page.getByRole("button", { name: label })).toBeVisible({
+    await expect(page.getByTestId(`catalog-table-${toCatalogSlug(nodeType)}`)).toBeVisible({
       timeout: 15_000,
     });
   });

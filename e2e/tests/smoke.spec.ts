@@ -12,8 +12,8 @@ test.describe("SSOTA Console", () => {
   test("smoke: Graph → node table", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "graph/nodes?table=document");
-    await expect(page.getByText("Table Editor", { exact: true })).toBeVisible();
-    await expect(page.getByRole("dialog", { name: "Document" })).toBeVisible();
+    await expect(page.getByText("Node catalog", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
     await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
   });
 

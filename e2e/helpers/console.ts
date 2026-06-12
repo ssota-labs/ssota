@@ -16,8 +16,18 @@ export async function gotoGraphNodes(page: Page, nodeTypeSlug = "document") {
   await gotoProject(page, `graph/nodes?table=${encodeURIComponent(nodeTypeSlug)}`);
 }
 
-export async function openNodeTable(page: Page, label: string) {
-  await page.getByRole("button", { name: label, exact: true }).click();
+export function toCatalogSlug(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .toLowerCase();
+}
+
+export async function openNodeTable(page: Page, nodeTypeOrSlug: string) {
+  const slug = nodeTypeOrSlug.includes("_")
+    ? nodeTypeOrSlug.toLowerCase()
+    : toCatalogSlug(nodeTypeOrSlug);
+  await page.getByTestId(`catalog-table-${slug}`).click();
 }
 
 export async function clickIconNav(page: Page, label: string) {

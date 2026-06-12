@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -11,11 +12,13 @@ import {
   SheetTrigger,
 } from "@ssota/ui/components/ui/sheet";
 import { createEdgeTableFormAction } from "@/app/actions";
+import { EdgeCatalogSettings } from "@/components/graph/edge-catalog-settings";
 import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
 import {
   EdgeTableDetail,
   getEdgeTableMeta,
 } from "@/components/graph/edge-table-detail";
+import { graphPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
@@ -24,13 +27,18 @@ export default async function GraphEdgesPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
-  searchParams: Promise<{ table?: string }>;
+  searchParams: Promise<{ table?: string; definition?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const { table } = await searchParams;
+  const { table, definition } = await searchParams;
+  const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
   const edges = await ports.catalog.listEdgeCatalogEntries();
+
+  if (!table && edges.length === 1) {
+    redirect(`${graphPath(ctx, "edges")}?table=${encodeURIComponent(edges[0]!.slug)}`);
+  }
 
   const catalogItems = edges.map((edge) => ({
     slug: edge.slug,
@@ -82,23 +90,36 @@ export default async function GraphEdgesPage({
     </Sheet>
   );
 
-  const sheetContent =
+  const mainContent =
     table && selectedMeta ? (
       <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading rows…</div>}>
         <EdgeTableDetail projectId={project.id} slug={table} />
       </Suspense>
     ) : null;
 
+  const catalogSheetContent =
+    table && selectedMeta && definition === "1" ? (
+      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading definition…</div>}>
+        <EdgeCatalogSettings projectId={project.id} slug={table} />
+      </Suspense>
+    ) : null;
+
   return (
     <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading catalog…</div>}>
       <GraphCatalogExplorer
-        title="Table Editor"
+        title="Edge catalog"
         items={catalogItems}
         newTableTrigger={newTableTrigger}
-        sheetTitle={selectedMeta?.label}
-        sheetDescription={selectedMeta?.description}
-        sheetContent={sheetContent}
-        emptyHint="Select an edge table from the catalog to view rows."
+        mainHeader={
+          selectedMeta
+            ? { title: selectedMeta.label, description: selectedMeta.description }
+            : null
+        }
+        mainContent={mainContent}
+        catalogSheetTitle={selectedMeta ? `Definition · ${selectedMeta.label}` : undefined}
+        catalogSheetDescription={selectedMeta?.description}
+        catalogSheetContent={catalogSheetContent}
+        emptyHint="Select an edge table from the catalog to view instance rows."
       />
     </Suspense>
   );

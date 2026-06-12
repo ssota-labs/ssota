@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { AddEdgeActionSheet, RunEdgeActionSheet } from "@/components/graph/edge-table-actions";
+import { RunEdgeActionSheet } from "@/components/graph/edge-table-actions";
 import { EdgeRowsDataTable } from "@/components/graph/edge-rows-data-table";
 import { propertyColumnLabel } from "@/lib/graph/property-column-label";
 import { getActionPorts } from "@/lib/ports";
@@ -56,7 +56,6 @@ export async function EdgeTableDetail({ projectId, slug }: EdgeTableDetailProps)
   const toolbar = (
     <div className="ml-auto flex flex-wrap items-center gap-2">
       <RunEdgeActionSheet edgeType={decoded} projectId={projectId} />
-      <AddEdgeActionSheet edgeType={decoded} projectId={projectId} />
     </div>
   );
 

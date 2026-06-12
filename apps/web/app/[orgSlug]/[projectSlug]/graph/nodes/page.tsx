@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -13,10 +14,12 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { createNodeTableFormAction } from "@/app/actions";
 import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
+import { NodeCatalogSettings } from "@/components/graph/node-catalog-settings";
 import {
   getNodeTableMeta,
   NodeTableDetail,
 } from "@/components/graph/node-table-detail";
+import { graphPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
@@ -25,10 +28,10 @@ export default async function GraphNodesPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
-  searchParams: Promise<{ table?: string }>;
+  searchParams: Promise<{ table?: string; definition?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const { table } = await searchParams;
+  const { table, definition } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
@@ -36,6 +39,10 @@ export default async function GraphNodesPage({
     ports.catalog.listNodeCatalogEntries(),
     ports.catalog.listArchetypes(),
   ]);
+
+  if (!table && nodeTypes.length === 1) {
+    redirect(`${graphPath(ctx, "nodes")}?table=${encodeURIComponent(nodeTypes[0]!.slug)}`);
+  }
 
   const catalogItems = nodeTypes.map((nodeType) => ({
     slug: nodeType.slug,
@@ -106,23 +113,36 @@ export default async function GraphNodesPage({
     </Sheet>
   );
 
-  const sheetContent =
+  const mainContent =
     table && selectedMeta ? (
       <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading rows…</div>}>
         <NodeTableDetail ctx={ctx} projectId={project.id} slug={table} />
       </Suspense>
     ) : null;
 
+  const catalogSheetContent =
+    table && selectedMeta && definition === "1" ? (
+      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading definition…</div>}>
+        <NodeCatalogSettings projectId={project.id} slug={table} />
+      </Suspense>
+    ) : null;
+
   return (
     <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading catalog…</div>}>
       <GraphCatalogExplorer
-        title="Table Editor"
+        title="Node catalog"
         items={catalogItems}
         newTableTrigger={newTableTrigger}
-        sheetTitle={selectedMeta?.label}
-        sheetDescription={selectedMeta?.description}
-        sheetContent={sheetContent}
-        emptyHint="Select a node table from the catalog to view rows."
+        mainHeader={
+          selectedMeta
+            ? { title: selectedMeta.label, description: selectedMeta.description }
+            : null
+        }
+        mainContent={mainContent}
+        catalogSheetTitle={selectedMeta ? `Definition · ${selectedMeta.label}` : undefined}
+        catalogSheetDescription={selectedMeta?.description}
+        catalogSheetContent={catalogSheetContent}
+        emptyHint="Select a node table from the catalog to view instance rows."
       />
     </Suspense>
   );

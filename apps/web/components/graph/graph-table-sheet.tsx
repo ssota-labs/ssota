@@ -27,7 +27,7 @@ export function GraphTableSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="inset-y-0 right-0 flex h-full w-[calc(100%-3rem)] max-w-none flex-col border-l p-0 sm:max-w-none lg:w-[calc(100%-15rem)]"
+        className="inset-y-0 right-0 flex h-full w-full max-w-lg flex-col border-l p-0 sm:max-w-xl"
       >
         <SheetHeader className="shrink-0 border-b px-4 py-3">
           <SheetTitle className="text-sm">{title}</SheetTitle>
