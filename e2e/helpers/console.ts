@@ -23,13 +23,6 @@ export async function expectCanvasNode(page: Page, label: string) {
   ).toBeVisible();
 }
 
-export function toCatalogSlug(key: string): string {
-  return key
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .replace(/[-\s]+/g, "_")
-    .toLowerCase();
-}
-
 export async function clickIconNav(page: Page, label: string) {
   await page.getByRole("link", { name: label, exact: true }).click();
 }
