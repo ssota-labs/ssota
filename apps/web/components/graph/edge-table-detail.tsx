@@ -53,11 +53,7 @@ export async function EdgeTableDetail({ projectId, slug }: EdgeTableDetailProps)
     createdAt: edge.createdAt.toISOString(),
   }));
 
-  const toolbar = (
-    <div className="ml-auto flex flex-wrap items-center gap-2">
-      <RunEdgeActionSheet edgeType={decoded} projectId={projectId} />
-    </div>
-  );
+  const toolbar = <RunEdgeActionSheet edgeType={decoded} projectId={projectId} />;
 
   return (
     <EdgeRowsDataTable

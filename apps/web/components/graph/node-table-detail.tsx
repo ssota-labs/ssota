@@ -57,15 +57,7 @@ export async function NodeTableDetail({ ctx, projectId, slug }: NodeTableDetailP
   }));
 
   const toolbar = (
-    <div className="ml-auto flex flex-wrap items-center gap-2">
-      <ActionRunner
-        projectId={projectId}
-        actions={
-          localActions.length
-            ? localActions.map((action) => action.actionType)
-            : actions.map((action) => action.actionType)
-        }
-      />
+    <>
       <Button
         render={<Link href={projectPath(ctx, "log")} />}
         variant="outline"
@@ -74,7 +66,15 @@ export async function NodeTableDetail({ ctx, projectId, slug }: NodeTableDetailP
       >
         View logs
       </Button>
-    </div>
+      <ActionRunner
+        projectId={projectId}
+        actions={
+          localActions.length
+            ? localActions.map((action) => action.actionType)
+            : actions.map((action) => action.actionType)
+        }
+      />
+    </>
   );
 
   return (
