@@ -19,8 +19,6 @@
     "db:migration:list": "pnpm exec supabase migration list --local",
     "db:reset": "pnpm exec supabase db reset --local",
     "db:seed": "pnpm --filter @ssota/adapter-supabase db:seed",
-    "db:seed:ops": "pnpm --filter @ssota/adapter-supabase db:seed:ops",
-    "db:seed:dogfood": "pnpm --filter @ssota/adapter-supabase db:seed:dogfood",
     "migrate:notion": "tsx scripts/m6-notion-migration.ts",
     "embedder-bff": "tsx examples/embedder-bff/server.ts",
     "storybook": "pnpm --filter storybook dev"
