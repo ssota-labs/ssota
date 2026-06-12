@@ -9,47 +9,77 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+type DropdownMenuStoryArgs = {
+  projectName: string;
+  catalogLabel: string;
+  logLabel: string;
+  destructiveLabel: string;
+  triggerLabel: string;
+};
+
 const meta = {
   title: "Components/DropdownMenu",
-  component: DropdownMenu,
   tags: ["autodocs"],
-} satisfies Meta<typeof DropdownMenu>;
+  argTypes: {
+    projectName: { control: "text" },
+    catalogLabel: { control: "text" },
+    logLabel: { control: "text" },
+    destructiveLabel: { control: "text" },
+    triggerLabel: { control: "text" },
+  },
+} satisfies Meta<DropdownMenuStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<DropdownMenuStoryArgs>;
 
 export const Preview: Story = {
-  render: () => (
+  args: {
+    projectName: "homepage-agent",
+    catalogLabel: "Catalog",
+    logLabel: "Action log",
+    destructiveLabel: "Leave project",
+    triggerLabel: "Project menu",
+  },
+  render: (args) => (
     <div className="cn-dropdown-menu-content cn-menu-translucent w-56 rounded-md border border-border bg-popover p-1 shadow-md">
       <div className="cn-dropdown-menu-label px-2 py-1.5 text-sm font-medium">
-        homepage-agent
+        {args.projectName}
       </div>
       <div className="cn-dropdown-menu-separator -mx-1 my-1 h-px bg-border" />
       <div className="cn-dropdown-menu-item relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none">
-        Catalog
+        {args.catalogLabel}
       </div>
       <div className="cn-dropdown-menu-item relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none">
-        Action log
+        {args.logLabel}
       </div>
       <div className="cn-dropdown-menu-item relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm text-destructive outline-none">
-        Leave project
+        {args.destructiveLabel}
       </div>
     </div>
   ),
 };
 
 export const Default: Story = {
-  render: () => (
+  args: {
+    projectName: "homepage-agent",
+    catalogLabel: "Catalog",
+    logLabel: "Action log",
+    destructiveLabel: "Leave project",
+    triggerLabel: "Project menu",
+  },
+  render: (args) => (
     <DropdownMenu>
       <DropdownMenuTrigger render={<Button variant="outline" />}>
-        Project menu
+        {args.triggerLabel}
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <DropdownMenuLabel>homepage-agent</DropdownMenuLabel>
+        <DropdownMenuLabel>{args.projectName}</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem>Catalog</DropdownMenuItem>
-        <DropdownMenuItem>Action log</DropdownMenuItem>
-        <DropdownMenuItem variant="destructive">Leave project</DropdownMenuItem>
+        <DropdownMenuItem>{args.catalogLabel}</DropdownMenuItem>
+        <DropdownMenuItem>{args.logLabel}</DropdownMenuItem>
+        <DropdownMenuItem variant="destructive">
+          {args.destructiveLabel}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   ),

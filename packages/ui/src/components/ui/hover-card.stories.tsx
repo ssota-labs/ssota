@@ -6,42 +6,56 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 
+type HoverCardStoryArgs = {
+  nodeName: string;
+  description: string;
+};
+
 const meta = {
   title: "Components/HoverCard",
-  component: HoverCard,
   tags: ["autodocs"],
-} satisfies Meta<typeof HoverCard>;
+  argTypes: {
+    nodeName: { control: "text" },
+    description: { control: "text" },
+  },
+} satisfies Meta<HoverCardStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<HoverCardStoryArgs>;
 
 export const Preview: Story = {
-  render: () => (
+  args: {
+    nodeName: "HomepageProject",
+    description:
+      "subject_id scoped instance node for the homepage agent catalog.",
+  },
+  render: (args) => (
     <div className="flex max-w-md flex-col gap-3">
       <Button variant="link" className="h-auto w-fit p-0">
-        HomepageProject
+        {args.nodeName}
       </Button>
       <div className="cn-hover-card-content w-64 rounded-md border border-border bg-popover p-4 shadow-md">
-        <p className="text-sm font-medium">HomepageProject</p>
-        <p className="text-xs text-muted-foreground">
-          subject_id scoped instance node for the homepage agent catalog.
-        </p>
+        <p className="text-sm font-medium">{args.nodeName}</p>
+        <p className="text-xs text-muted-foreground">{args.description}</p>
       </div>
     </div>
   ),
 };
 
 export const NodePreview: Story = {
-  render: () => (
+  args: {
+    nodeName: "HomepageProject",
+    description:
+      "subject_id scoped instance node for the homepage agent catalog.",
+  },
+  render: (args) => (
     <HoverCard>
       <HoverCardTrigger render={<Button variant="link" />}>
-        HomepageProject
+        {args.nodeName}
       </HoverCardTrigger>
       <HoverCardContent className="w-64">
-        <p className="text-sm font-medium">HomepageProject</p>
-        <p className="text-xs text-muted-foreground">
-          subject_id scoped instance node for the homepage agent catalog.
-        </p>
+        <p className="text-sm font-medium">{args.nodeName}</p>
+        <p className="text-xs text-muted-foreground">{args.description}</p>
       </HoverCardContent>
     </HoverCard>
   ),

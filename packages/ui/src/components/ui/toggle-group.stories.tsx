@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ComponentProps } from "react";
 import {
   TextAlignCenterIcon,
   TextAlignLeftIcon,
@@ -9,18 +10,31 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
 
+type ToggleGroupStoryArgs = ComponentProps<typeof ToggleGroup> & {
+  defaultSelection: "left" | "center" | "right";
+};
+
 const meta = {
   title: "Components/ToggleGroup",
   component: ToggleGroup,
   tags: ["autodocs"],
-} satisfies Meta<typeof ToggleGroup>;
+  argTypes: {
+    defaultSelection: {
+      control: "select",
+      options: ["left", "center", "right"],
+    },
+  },
+} satisfies Meta<ToggleGroupStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<ToggleGroupStoryArgs>;
 
-export const Single: Story = {
-  render: () => (
-    <ToggleGroup defaultValue={["left"]}>
+export const Default: Story = {
+  args: {
+    defaultSelection: "left",
+  },
+  render: (args) => (
+    <ToggleGroup defaultValue={[args.defaultSelection]}>
       <ToggleGroupItem value="left" aria-label="Align left">
         <TextAlignLeftIcon />
       </ToggleGroupItem>
