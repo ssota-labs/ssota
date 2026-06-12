@@ -1,13 +1,13 @@
 # SSOTA MCP Tools
 
-MCP is split by URL (Supabase-style):
+MCP is split by URL query params on the **single** endpoint `/api/mcp`:
 
 | MCP URL | Tools |
 |---|---|
-| `/api/mcp` | Account discover only (`list_organizations`, `list_projects`, `get_project`) |
-| `/api/mcp/{orgSlug}/{projectSlug}` | Project graph/catalog/action tools below |
+| `/api/mcp` | Account discover (`list_organizations`, `list_projects`, `get_project`) |
+| `/api/mcp?org={orgSlug}&project={projectSlug}` | Project graph/catalog/action tools below |
 
-Configure Cursor `mcp.json` with the **project URL** — no `X-SSOTA-Project-Id` header.
+Configure Cursor `mcp.json` with the project query URL — no headers.
 
 ## Account discover (root `/api/mcp` only)
 

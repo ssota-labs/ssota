@@ -31,7 +31,7 @@ export async function getSmokeAccessToken(): Promise<string> {
   return data.session.access_token;
 }
 
-/** REST v1 tests still use X-SSOTA-Project-Id header (MCP uses URL path). */
+/** REST v1 tests still use X-SSOTA-Project-Id header (MCP uses ?org=&project= query). */
 export async function getDefaultProjectId(): Promise<string> {
   if (cachedDefaultProjectId) return cachedDefaultProjectId;
 
@@ -66,7 +66,9 @@ export function projectScopedMcpUrl(
   projectSlug = DEFAULT_MCP_PROJECT_SLUG,
 ): string {
   const base = mcpUrl.replace(/\/$/, "");
-  return `${base}/api/mcp/${orgSlug}/${projectSlug}`;
+  const endpoint = base.endsWith("/api/mcp") ? base : `${base}/api/mcp`;
+  const params = new URLSearchParams({ org: orgSlug, project: projectSlug });
+  return `${endpoint}?${params.toString()}`;
 }
 
 export async function mcpToolCall(

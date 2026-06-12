@@ -4,9 +4,14 @@ import { verifyBearerToken } from "@/lib/auth";
 import { resolveProjectAccess } from "@/lib/mcp/project-access";
 import { registerAccountTools } from "@/lib/mcp/register-account-tools";
 import { registerProjectTools } from "@/lib/mcp/register-project-tools";
+import { parseMcpProjectScope } from "@/lib/mcp/resource-url";
 import { resolveProjectId } from "@/lib/project-context";
 import { resolveSubjectId } from "@/lib/subject-context";
-import { buildMcpResourceUrl, mcpPublicOrigin } from "@/lib/mcp/resource-url";
+import {
+  buildMcpResourceUrl,
+  mcpPublicOrigin,
+  mcpResourceMetadataPath,
+} from "@/lib/mcp/resource-url";
 
 const mcpHandlerOptions = {
   serverInfo: { name: "ssota-mcp", version: "0.1.0" },
@@ -85,7 +90,7 @@ function createVerifyProjectToken(orgSlug: string, projectSlug: string) {
   };
 }
 
-/** Legacy embedder path: project UUID via X-SSOTA-Project-Id header (no URL slug). */
+/** Embedder BFF: project UUID via X-SSOTA-Project-Id header. */
 async function verifyLegacyProjectToken(
   req: Request,
   bearerToken?: string,
@@ -118,7 +123,7 @@ export const accountAuthHandler = withMcpAuth(
   verifyAccountToken,
   {
     required: true,
-    resourceMetadataPath: "/.well-known/oauth-protected-resource",
+    resourceMetadataPath: mcpResourceMetadataPath(),
     resourceUrl: mcpPublicOrigin(),
   },
 );
@@ -129,21 +134,59 @@ export function createProjectAuthHandler(orgSlug: string, projectSlug: string) {
     createVerifyProjectToken(orgSlug, projectSlug),
     {
       required: true,
-      resourceMetadataPath: `/.well-known/oauth-protected-resource?org=${encodeURIComponent(orgSlug)}&project=${encodeURIComponent(projectSlug)}`,
+      resourceMetadataPath: mcpResourceMetadataPath(orgSlug, projectSlug),
       resourceUrl: mcpPublicOrigin(),
     },
   );
 }
 
-/** @deprecated Prefer URL-scoped /api/mcp/{orgSlug}/{projectSlug}. Kept for embedder BFF header auth. */
 export const legacyProjectAuthHandler = withMcpAuth(
   projectMcpHandler,
   verifyLegacyProjectToken,
   {
     required: true,
-    resourceMetadataPath: "/.well-known/oauth-protected-resource",
+    resourceMetadataPath: mcpResourceMetadataPath(),
     resourceUrl: mcpPublicOrigin(),
   },
 );
+
+const projectHandlerCache = new Map<
+  string,
+  (req: Request) => Promise<Response>
+>();
+
+function projectHandlerKey(orgSlug: string, projectSlug: string): string {
+  return `${orgSlug}/${projectSlug}`;
+}
+
+function getProjectAuthHandler(orgSlug: string, projectSlug: string) {
+  const key = projectHandlerKey(orgSlug, projectSlug);
+  let handler = projectHandlerCache.get(key);
+  if (!handler) {
+    handler = createProjectAuthHandler(orgSlug, projectSlug);
+    projectHandlerCache.set(key, handler);
+  }
+  return handler;
+}
+
+/** Single MCP URL — account tools without query; project tools with ?org=&project=. */
+export async function dispatchMcpRequest(req: Request): Promise<Response> {
+  try {
+    const scope = parseMcpProjectScope(req);
+    if (scope) {
+      return getProjectAuthHandler(scope.orgSlug, scope.projectSlug)(req);
+    }
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Invalid MCP project scope";
+    return Response.json({ error: message }, { status: 400 });
+  }
+
+  if (resolveProjectId(req)) {
+    return legacyProjectAuthHandler(req);
+  }
+
+  return accountAuthHandler(req);
+}
 
 export { buildMcpResourceUrl };

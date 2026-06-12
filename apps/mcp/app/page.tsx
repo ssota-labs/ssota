@@ -6,7 +6,7 @@ export default function Home() {
         Account MCP: <code>/api/mcp</code> (list_organizations, list_projects)
       </p>
       <p className="text-neutral-600">
-        Project MCP: <code>/api/mcp/&#123;orgSlug&#125;/&#123;projectSlug&#125;</code>{" "}
+        Project MCP: <code>/api/mcp?org=&#123;orgSlug&#125;&amp;project=&#123;projectSlug&#125;</code>{" "}
         (graph, catalog, execute_action)
       </p>
       <p className="text-neutral-600">

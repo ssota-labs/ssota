@@ -12,7 +12,7 @@ ACCOUNT_METADATA_URL="${ORIGIN}/.well-known/oauth-protected-resource"
 SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL:-}"
 
 if [[ -n "${ORG_SLUG}" && -n "${PROJECT_SLUG}" ]]; then
-  PROJECT_RESOURCE_URL="${ORIGIN}/api/mcp/${ORG_SLUG}/${PROJECT_SLUG}"
+  PROJECT_RESOURCE_URL="${ORIGIN}/api/mcp?org=${ORG_SLUG}&project=${PROJECT_SLUG}"
   PROJECT_METADATA_URL="${ORIGIN}/.well-known/oauth-protected-resource?org=${ORG_SLUG}&project=${PROJECT_SLUG}"
 else
   PROJECT_RESOURCE_URL=""

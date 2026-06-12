@@ -46,7 +46,7 @@ export function registerAccountTools(server: McpToolServer) {
     {
       title: "List Projects",
       description:
-        "Discover: accessible projects with MCP URLs (/api/mcp/{orgSlug}/{projectSlug}). Optional org filter.",
+        "Discover: accessible projects with MCP URLs (/api/mcp?org=&project=). Optional org filter.",
       inputSchema: {
         orgSlug: z.string().min(1).optional(),
       },

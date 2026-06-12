@@ -31,7 +31,7 @@ export async function listProjectsForUser(userId: string, orgSlug?: string) {
       results.push({
         organization: { id: org.id, slug: org.slug, name: org.name },
         project: { id: project.id, slug: project.slug, name: project.name },
-        mcpUrl: `/api/mcp/${org.slug}/${project.slug}`,
+        mcpUrl: `/api/mcp?org=${encodeURIComponent(org.slug)}&project=${encodeURIComponent(project.slug)}`,
       });
     }
   }
@@ -57,6 +57,6 @@ export async function getProjectForUser(
   return {
     organization: { id: org.id, slug: org.slug, name: org.name },
     project: { id: project.id, slug: project.slug, name: project.name },
-    mcpUrl: `/api/mcp/${org.slug}/${project.slug}`,
+    mcpUrl: `/api/mcp?org=${encodeURIComponent(org.slug)}&project=${encodeURIComponent(project.slug)}`,
   };
 }

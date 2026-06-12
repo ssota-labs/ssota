@@ -1,1 +1,4 @@
-export { accountAuthHandler as GET, accountAuthHandler as POST } from "@/lib/mcp/create-handlers";
+export {
+  dispatchMcpRequest as GET,
+  dispatchMcpRequest as POST,
+} from "@/lib/mcp/create-handlers";
