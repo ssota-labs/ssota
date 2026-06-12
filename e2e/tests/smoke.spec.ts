@@ -9,13 +9,11 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible();
   });
 
-  test("smoke: Graph → node table", async ({ page }) => {
+  test("smoke: Graph → schema canvas", async ({ page }) => {
     await loginAsSmoke(page);
-    await gotoProject(page, "graph/nodes?table=document");
-    await expect(page.getByText("Graph Editor", { exact: true })).toBeVisible();
-    await expect(page.getByTestId("graph-kind-node")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await gotoProject(page, "graph");
+    await expect(page.getByRole("heading", { name: "Nodes" })).toBeVisible();
+    await expect(page.locator(".react-flow")).toBeVisible();
   });
 
   test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
@@ -57,16 +55,14 @@ test.describe("SSOTA Console", () => {
 
   test("smoke: project selector preserves current route", async ({ page }) => {
     await loginAsSmoke(page);
-    await gotoProject(page, "graph/nodes?table=document");
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await gotoProject(page, "graph/nodes");
+    await expect(page.locator(".react-flow")).toBeVisible();
 
     await page.getByRole("button", { name: "SSOTA Dev" }).click();
     await page.getByRole("menuitem", { name: "SSOTA Dev" }).click();
 
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
-    );
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes`));
+    await expect(page.locator(".react-flow")).toBeVisible();
   });
 
   test("smoke: profile menu opens", async ({ page }) => {
@@ -80,9 +76,10 @@ test.describe("SSOTA Console", () => {
     await loginAsSmoke(page);
     await page.goto("/context-graph/nodes/Document");
     await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes/document`),
     );
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
+    await expect(page.locator(".react-flow")).toBeVisible();
   });
 
   test("smoke: /studio redirect", async ({ page }) => {

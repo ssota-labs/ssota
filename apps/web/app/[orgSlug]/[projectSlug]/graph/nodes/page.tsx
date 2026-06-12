@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -13,45 +11,22 @@ import {
 } from "@ssota/ui/components/ui/sheet";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { createNodeTableFormAction } from "@/app/actions";
-import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
-import { NewTableButton } from "@/components/graph/table-catalog-panel";
-import { NodeCatalogSettings } from "@/components/graph/node-catalog-settings";
-import {
-  getNodeTableMeta,
-  NodeTableDetail,
-} from "@/components/graph/node-table-detail";
-import {
-  getCachedArchetypes,
-  getCachedNodeCatalog,
-} from "@/lib/console/cached-catalog";
-import { graphPath } from "@/lib/console/paths";
+import { GraphSchemaView } from "@/components/graph/graph-schema-view";
+import { getCachedArchetypes } from "@/lib/console/cached-catalog";
 import { resolveProject } from "@/lib/console/resolve-project";
 
 export default async function GraphNodesPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
-  searchParams: Promise<{ table?: string; definition?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const { table, definition } = await searchParams;
-  const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
-  const [nodeTypes, archetypes] = await Promise.all([
-    getCachedNodeCatalog(project.id),
-    getCachedArchetypes(project.id),
-  ]);
+  const archetypes = await getCachedArchetypes(project.id);
 
-  if (!table && nodeTypes.length === 1) {
-    redirect(`${graphPath(ctx, "nodes")}?table=${encodeURIComponent(nodeTypes[0]!.slug)}`);
-  }
-
-  const selectedMeta = table ? await getNodeTableMeta(project.id, table) : null;
-
-  const newTableTrigger = (
+  const toolbar = (
     <Sheet>
-      <SheetTrigger render={<NewTableButton />}>New table</SheetTrigger>
+      <SheetTrigger render={<Button size="sm" />}>New table</SheetTrigger>
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New node table</SheetTitle>
@@ -87,7 +62,11 @@ export default async function GraphNodesPage({
           </div>
           <div className="space-y-2">
             <Label htmlFor="allowedActionRefs">Allowed actions</Label>
-            <Input id="allowedActionRefs" name="allowedActionRefs" placeholder="create_node, promote_document" />
+            <Input
+              id="allowedActionRefs"
+              name="allowedActionRefs"
+              placeholder="create_node, promote_document"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="contentGuide">Content guide</Label>
@@ -99,36 +78,11 @@ export default async function GraphNodesPage({
     </Sheet>
   );
 
-  const mainContent =
-    table && selectedMeta ? (
-      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading rows…</div>}>
-        <NodeTableDetail projectId={project.id} slug={table} />
-      </Suspense>
-    ) : null;
-
-  const catalogSheetContent =
-    table && selectedMeta && definition === "1" ? (
-      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading definition…</div>}>
-        <NodeCatalogSettings projectId={project.id} slug={table} />
-      </Suspense>
-    ) : null;
-
   return (
-    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading catalog…</div>}>
-      <GraphCatalogExplorer
-        kind="node"
-        newTableTrigger={newTableTrigger}
-        mainHeader={
-          selectedMeta
-            ? { title: selectedMeta.label, description: selectedMeta.description }
-            : null
-        }
-        mainContent={mainContent}
-        catalogSheetTitle={selectedMeta ? `Definition · ${selectedMeta.label}` : undefined}
-        catalogSheetDescription={selectedMeta?.description}
-        catalogSheetContent={catalogSheetContent}
-        emptyHint="Select a node table from the catalog to view instance rows."
-      />
-    </Suspense>
+    <GraphSchemaView
+      title="Nodes"
+      description="Node catalog and allowed relationships between node types."
+      toolbar={toolbar}
+    />
   );
 }

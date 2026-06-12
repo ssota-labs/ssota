@@ -1,5 +1,3 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -12,39 +10,20 @@ import {
   SheetTrigger,
 } from "@ssota/ui/components/ui/sheet";
 import { createEdgeTableFormAction } from "@/app/actions";
-import { EdgeCatalogSettings } from "@/components/graph/edge-catalog-settings";
-import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
-import { NewTableButton } from "@/components/graph/table-catalog-panel";
-import {
-  EdgeTableDetail,
-  getEdgeTableMeta,
-} from "@/components/graph/edge-table-detail";
-import { getCachedEdgeCatalog } from "@/lib/console/cached-catalog";
-import { graphPath } from "@/lib/console/paths";
+import { GraphSchemaView } from "@/components/graph/graph-schema-view";
 import { resolveProject } from "@/lib/console/resolve-project";
 
 export default async function GraphEdgesPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
-  searchParams: Promise<{ table?: string; definition?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const { table, definition } = await searchParams;
-  const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
-  const edges = await getCachedEdgeCatalog(project.id);
 
-  if (!table && edges.length === 1) {
-    redirect(`${graphPath(ctx, "edges")}?table=${encodeURIComponent(edges[0]!.slug)}`);
-  }
-
-  const selectedMeta = table ? await getEdgeTableMeta(project.id, table) : null;
-
-  const newTableTrigger = (
+  const toolbar = (
     <Sheet>
-      <SheetTrigger render={<NewTableButton />}>New table</SheetTrigger>
+      <SheetTrigger render={<Button size="sm" />}>New table</SheetTrigger>
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New edge table</SheetTitle>
@@ -78,36 +57,11 @@ export default async function GraphEdgesPage({
     </Sheet>
   );
 
-  const mainContent =
-    table && selectedMeta ? (
-      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading rows…</div>}>
-        <EdgeTableDetail projectId={project.id} slug={table} />
-      </Suspense>
-    ) : null;
-
-  const catalogSheetContent =
-    table && selectedMeta && definition === "1" ? (
-      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading definition…</div>}>
-        <EdgeCatalogSettings projectId={project.id} slug={table} />
-      </Suspense>
-    ) : null;
-
   return (
-    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading catalog…</div>}>
-      <GraphCatalogExplorer
-        kind="edge"
-        newTableTrigger={newTableTrigger}
-        mainHeader={
-          selectedMeta
-            ? { title: selectedMeta.label, description: selectedMeta.description }
-            : null
-        }
-        mainContent={mainContent}
-        catalogSheetTitle={selectedMeta ? `Definition · ${selectedMeta.label}` : undefined}
-        catalogSheetDescription={selectedMeta?.description}
-        catalogSheetContent={catalogSheetContent}
-        emptyHint="Select an edge table from the catalog to view instance rows."
-      />
-    </Suspense>
+    <GraphSchemaView
+      title="Edges"
+      description="Relationships between node types defined in the edge catalog."
+      toolbar={toolbar}
+    />
   );
 }
