@@ -19,14 +19,21 @@ type PreviewFrameProps = {
   onCanvasViewChange: (view: CanvasView) => void;
   docsMeta: Map<string, ComponentDocsMeta>;
   docsCatalog: Map<string, DocsCatalogEntry>;
+  storyArgs: Record<string, unknown>;
 };
 
 function renderPreviewContent(
   item: CatalogItem,
   variant: StoryCatalogEntry | null,
+  storyArgs: Record<string, unknown>,
 ): ReactNode {
   if (item.render) return item.render();
-  if (variant) return variant.render();
+  if (variant) {
+    if (variant.supportsControls) {
+      return variant.renderWithArgs(storyArgs);
+    }
+    return variant.render();
+  }
   return (
     <p className="text-sm text-muted-foreground">
       이 항목에 대한 프리뷰가 없습니다.
@@ -42,6 +49,7 @@ export function PreviewFrame({
   onCanvasViewChange,
   docsMeta,
   docsCatalog,
+  storyArgs,
 }: PreviewFrameProps) {
   if (!item) {
     return (
@@ -88,7 +96,9 @@ export function PreviewFrame({
           />
         </div>
       ) : (
-        <PreviewCanvas>{renderPreviewContent(item, variant)}</PreviewCanvas>
+        <PreviewCanvas>
+          {renderPreviewContent(item, variant, storyArgs)}
+        </PreviewCanvas>
       )}
     </div>
   );

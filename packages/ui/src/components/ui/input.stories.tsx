@@ -5,6 +5,14 @@ const meta = {
   title: "Components/Input",
   component: Input,
   tags: ["autodocs"],
+  argTypes: {
+    placeholder: { control: "text" },
+    disabled: { control: "boolean" },
+    type: {
+      control: "select",
+      options: ["text", "email", "password", "search"],
+    },
+  },
 } satisfies Meta<typeof Input>;
 
 export default meta;

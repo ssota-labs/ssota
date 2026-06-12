@@ -17,6 +17,7 @@ export {
   buildStoryCatalog,
   buildComponentDocsMeta,
   groupStoriesByTitle,
+  renderStoryWithArgs,
   DEFAULT_STORY_ID,
   type ArgTypeDef,
   type ComponentDocsMeta,
