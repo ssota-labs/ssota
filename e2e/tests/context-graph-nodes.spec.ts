@@ -12,6 +12,6 @@ test.describe("Context Graph Nodes", () => {
     await page.locator(".react-flow__node").filter({ hasText: "Document" }).first().click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByText("Node definition")).toBeVisible();
-    await expect(page.getByText("Properties")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Properties" })).toBeVisible();
   });
 });

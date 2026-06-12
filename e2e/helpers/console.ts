@@ -16,6 +16,13 @@ export async function gotoGraphNodes(page: Page, nodeTypeSlug = "document") {
   await gotoProject(page, `graph/nodes/${nodeTypeSlug}`);
 }
 
+/** React Flow canvas node (replaces legacy sidebar link assertions). */
+export async function expectCanvasNode(page: Page, label: string) {
+  await expect(
+    page.locator(".react-flow__node").filter({ hasText: label }).first(),
+  ).toBeVisible();
+}
+
 export async function clickIconNav(page: Page, label: string) {
   await page.getByRole("link", { name: label, exact: true }).click();
 }

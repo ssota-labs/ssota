@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
 import { loginAsSmoke } from "../helpers/auth";
-import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
+import { DEFAULT_CONSOLE_BASE, expectCanvasNode, gotoProject } from "../helpers/console";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
@@ -45,9 +45,7 @@ test.describe("LoopOS define_node_type vertical slice", () => {
     await gateCard.getByRole("button", { name: "승인" }).first().click();
 
     await gotoProject(page, "graph/nodes");
-    await expect(
-      page.getByRole("link", { name: nodeType.replace(/_/g, " ") }),
-    ).toBeVisible({ timeout: 10_000 });
+    await expectCanvasNode(page, nodeType.replace(/_/g, " "));
 
     await gotoProject(page, "log");
     await expect(page.getByText("define_node_type").first()).toBeVisible();
@@ -74,8 +72,6 @@ test.describe("LoopOS define_node_type vertical slice", () => {
     await page.getByRole("button", { name: "Create node table" }).click();
     await submit;
     await gotoProject(page, "graph/nodes");
-    await expect(page.getByRole("link", { name: label })).toBeVisible({
-      timeout: 15_000,
-    });
+    await expectCanvasNode(page, label);
   });
 });

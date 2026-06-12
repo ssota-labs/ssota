@@ -12,9 +12,8 @@ test.describe("LoopOS Console", () => {
   test("smoke: Graph → schema canvas", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "graph");
-    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Nodes" })).toBeVisible();
     await expect(page.locator(".react-flow")).toBeVisible();
-    await expect(page.getByText("Nodes", { exact: true })).toBeVisible();
   });
 
   test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
