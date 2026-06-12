@@ -17,11 +17,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@ssota/ui/components/ui/dropdown-menu";
-import { Separator } from "@ssota/ui/components/ui/separator";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { projectPath, switchConsolePath } from "@/lib/console/paths";
-import { ConsoleBreadcrumbs } from "./console-breadcrumbs";
 import { useProjectContext } from "./project-context";
 
 type ConsoleTopBarProps = {
@@ -55,9 +53,7 @@ export function ConsoleTopBar({
         SSOTA
       </Link>
 
-      <Separator orientation="vertical" className="h-4 self-center" />
-
-      <div className="flex min-w-0 items-center gap-1.5">
+      <div className="flex min-w-0 items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={<Button variant="ghost" size="sm" className="h-8 gap-1 px-2" />}
@@ -88,7 +84,7 @@ export function ConsoleTopBar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Separator orientation="vertical" className="h-3.5 self-center" />
+        <span className="text-sm text-muted-foreground">/</span>
 
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -119,12 +115,6 @@ export function ConsoleTopBar({
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-
-        <Separator orientation="vertical" className="mx-0.5 hidden h-4 self-center sm:block" />
-
-        <div className="hidden min-w-0 sm:block">
-          <ConsoleBreadcrumbs />
-        </div>
       </div>
 
       <div className="ml-auto">
