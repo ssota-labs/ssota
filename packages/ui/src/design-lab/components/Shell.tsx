@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useState } from "react";
+
 import {
   ResizableHandle,
   ResizablePanel,
@@ -8,7 +10,11 @@ import { DesignCatalog } from "./DesignCatalog";
 import { InspectorPanel } from "./InspectorPanel";
 import { PreviewFrame } from "./PreviewFrame";
 import type { CatalogGroup, CatalogSelection } from "../lib/catalog-navigation";
-import { findCatalogItem } from "../lib/catalog-navigation";
+import {
+  findCatalogItem,
+  formatVariantLabel,
+  resolveVariant,
+} from "../lib/catalog-navigation";
 import type { DocsCatalogEntry } from "../lib/docs-catalog";
 import type { CanvasView } from "../lib/url-state";
 import type { ComponentDocsMeta } from "../lib/story-catalog";
@@ -37,6 +43,28 @@ export function Shell({
     selection.groupId,
     selection.itemId,
   );
+  const activeVariant = selectedItem?.variants
+    ? resolveVariant(selectedItem, selection.variantId)
+    : null;
+  const componentDocs = docsMeta.get(selection.itemId);
+  const showProps = selection.groupId === "components";
+  const propsEnabled = Boolean(activeVariant?.supportsControls);
+  const defaultStoryArgs = activeVariant?.defaultArgs ?? {};
+
+  const [storyArgs, setStoryArgs] =
+    useState<Record<string, unknown>>(defaultStoryArgs);
+
+  useEffect(() => {
+    setStoryArgs(activeVariant?.defaultArgs ?? {});
+  }, [activeVariant?.id]);
+
+  const setStoryArg = useCallback((key: string, value: unknown) => {
+    setStoryArgs((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const resetStoryArgs = useCallback(() => {
+    setStoryArgs(activeVariant?.defaultArgs ?? {});
+  }, [activeVariant?.defaultArgs]);
 
   return (
     <ResizablePanelGroup
@@ -75,6 +103,7 @@ export function Shell({
           onCanvasViewChange={onCanvasViewChange}
           docsMeta={docsMeta}
           docsCatalog={docsCatalog}
+          storyArgs={storyArgs}
         />
       </ResizablePanel>
       <ResizableHandle withHandle />
@@ -85,7 +114,17 @@ export function Shell({
         maxSize="36%"
         className="min-h-0"
       >
-        <InspectorPanel />
+        <InspectorPanel
+          showProps={showProps}
+          propsEnabled={propsEnabled}
+          argTypes={componentDocs?.argTypes}
+          storyArgs={storyArgs}
+          onStoryArgChange={setStoryArg}
+          onResetStoryArgs={resetStoryArgs}
+          variantLabel={
+            activeVariant ? formatVariantLabel(activeVariant.storyName) : undefined
+          }
+        />
       </ResizablePanel>
     </ResizablePanelGroup>
   );

@@ -32,6 +32,9 @@ export type StoryCatalogEntry = {
   storyName: string;
   path: string;
   render: () => ReactNode;
+  defaultArgs?: Record<string, unknown>;
+  supportsControls: boolean;
+  renderWithArgs: (args: Record<string, unknown>) => ReactNode;
 };
 
 export type ComponentDocsMeta = {
@@ -50,23 +53,50 @@ function componentKeyFromTitle(title: string): string {
   return name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
 }
 
+function resolveStoryArgs(
+  story: Record<string, unknown>,
+  args?: Record<string, unknown>,
+): Record<string, unknown> {
+  if (args) return args;
+  if (story.args && typeof story.args === "object") {
+    return story.args as Record<string, unknown>;
+  }
+  return {};
+}
+
+function storySupportsControls(
+  meta: StoryModule["default"],
+  story: Record<string, unknown>,
+  storyName: string,
+): boolean {
+  if (storyName === "AllVariants") return false;
+  if (story.args !== undefined) return true;
+  return Boolean(meta?.component && typeof story.render !== "function");
+}
+
+export function renderStoryWithArgs(
+  meta: StoryModule["default"],
+  story: Record<string, unknown>,
+  args?: Record<string, unknown>,
+): ReactNode {
+  const resolvedArgs = resolveStoryArgs(story, args);
+
+  if (typeof story.render === "function") {
+    return (story.render as (a: Record<string, unknown>) => ReactNode)(
+      resolvedArgs,
+    );
+  }
+  if (meta?.component) {
+    return createElement(meta.component, resolvedArgs);
+  }
+  return null;
+}
+
 function renderStory(
   meta: StoryModule["default"],
   story: Record<string, unknown>,
 ): ReactNode {
-  if (typeof story.render === "function") {
-    return (story.render as () => ReactNode)();
-  }
-  if (meta?.component && story.args) {
-    return createElement(
-      meta.component,
-      story.args as Record<string, unknown>,
-    );
-  }
-  if (meta?.component) {
-    return createElement(meta.component);
-  }
-  return null;
+  return renderStoryWithArgs(meta, story);
 }
 
 export function buildStoryCatalog(
@@ -85,12 +115,19 @@ export function buildStoryCatalog(
       const story = value as Record<string, unknown>;
       const id = `${meta.title}/${exportName}`;
 
+      const defaultArgs = resolveStoryArgs(story);
+      const supportsControls = storySupportsControls(meta, story, exportName);
+
       entries.push({
         id,
         title: meta.title,
         storyName: exportName,
         path,
         render: () => renderStory(meta, story),
+        defaultArgs:
+          Object.keys(defaultArgs).length > 0 ? defaultArgs : undefined,
+        supportsControls,
+        renderWithArgs: (args) => renderStoryWithArgs(meta, story, args),
       });
     }
   }
