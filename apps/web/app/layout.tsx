@@ -9,6 +9,7 @@ import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Button } from "@ssota/ui/components/ui/button";
 import { VercelAnalytics } from "@/components/analytics/vercel-analytics";
+import { VercelSpeedInsights } from "@/components/analytics/vercel-speed-insights";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -55,6 +56,7 @@ export default async function RootLayout({
           </TooltipProvider>
         </LocaleProvider>
         <VercelAnalytics />
+        <VercelSpeedInsights />
       </body>
     </html>
   );
