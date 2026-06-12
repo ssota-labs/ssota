@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
@@ -11,38 +12,40 @@ import {
   SheetTrigger,
 } from "@ssota/ui/components/ui/sheet";
 import { createEdgeTableFormAction } from "@/app/actions";
-import { EdgeCatalogDataTable } from "@/components/graph/edge-catalog-data-table";
+import { EdgeCatalogSettings } from "@/components/graph/edge-catalog-settings";
+import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
+import { NewTableButton } from "@/components/graph/table-catalog-panel";
+import {
+  EdgeTableDetail,
+  getEdgeTableMeta,
+} from "@/components/graph/edge-table-detail";
 import { graphPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphEdgesPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
+  searchParams: Promise<{ table?: string; definition?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
+  const { table, definition } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
   const edges = await ports.catalog.listEdgeCatalogEntries();
 
-  if (edges.length === 1) {
-    redirect(graphPath(ctx, "edges", edges[0]!.slug));
+  if (!table && edges.length === 1) {
+    redirect(`${graphPath(ctx, "edges")}?table=${encodeURIComponent(edges[0]!.slug)}`);
   }
 
-  const tableData = edges.map((edge) => ({
-    label: edge.label,
-    domain: edge.domain.join(", "),
-    range: edge.range.join(", "),
-    cardinality: edge.cardinality,
-    representation: edge.representation,
-    href: graphPath(ctx, "edges", edge.slug),
-  }));
+  const selectedMeta = table ? await getEdgeTableMeta(project.id, table) : null;
 
-  const toolbar = (
+  const newTableTrigger = (
     <Sheet>
-      <SheetTrigger render={<Button size="sm" />}>New edge table</SheetTrigger>
+      <SheetTrigger render={<NewTableButton />}>New table</SheetTrigger>
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New edge table</SheetTitle>
@@ -76,15 +79,36 @@ export default async function GraphEdgesPage({
     </Sheet>
   );
 
+  const mainContent =
+    table && selectedMeta ? (
+      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading rows…</div>}>
+        <EdgeTableDetail projectId={project.id} slug={table} />
+      </Suspense>
+    ) : null;
+
+  const catalogSheetContent =
+    table && selectedMeta && definition === "1" ? (
+      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading definition…</div>}>
+        <EdgeCatalogSettings projectId={project.id} slug={table} />
+      </Suspense>
+    ) : null;
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b px-4 py-2">
-        <h1 className="text-sm font-semibold">Edges</h1>
-        <p className="text-xs text-muted-foreground">
-          Edge tables define allowed relationships between node tables.
-        </p>
-      </div>
-      <EdgeCatalogDataTable data={tableData} toolbar={toolbar} />
-    </div>
+    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading catalog…</div>}>
+      <GraphCatalogExplorer
+        kind="edge"
+        newTableTrigger={newTableTrigger}
+        mainHeader={
+          selectedMeta
+            ? { title: selectedMeta.label, description: selectedMeta.description }
+            : null
+        }
+        mainContent={mainContent}
+        catalogSheetTitle={selectedMeta ? `Definition · ${selectedMeta.label}` : undefined}
+        catalogSheetDescription={selectedMeta?.description}
+        catalogSheetContent={catalogSheetContent}
+        emptyHint="Select an edge table from the catalog to view instance rows."
+      />
+    </Suspense>
   );
 }

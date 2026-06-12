@@ -15,7 +15,9 @@ export default async function GraphOverviewPage({
   const nodeTypes = await ports.catalog.listNodeCatalogEntries();
 
   if (nodeTypes[0]) {
-    redirect(graphPath(ctx, "nodes", nodeTypes[0].slug));
+    redirect(
+      `${graphPath(ctx, "nodes")}?table=${encodeURIComponent(nodeTypes[0].slug)}`,
+    );
   }
 
   redirect(graphPath(ctx, "nodes"));

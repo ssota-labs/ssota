@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
-import { ConsoleGraphCatalogSidebar } from "./console-graph-catalog-sidebar";
 import { ConsoleIconRail } from "./console-icon-rail";
 import { ConsoleTopBar } from "./console-top-bar";
 import {
@@ -36,7 +35,6 @@ export function ConsoleShell({
     <ProjectProvider value={ctx}>
       <div className="flex h-svh w-full overflow-hidden">
         <ConsoleIconRail />
-        {isGraphContext ? <ConsoleGraphCatalogSidebar /> : null}
         <div className="flex min-w-0 flex-1 flex-col">
           <ConsoleTopBar
             userEmail={userEmail}

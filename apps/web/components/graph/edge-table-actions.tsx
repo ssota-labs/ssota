@@ -25,7 +25,7 @@ export function RunEdgeActionSheet({
 }) {
   return (
     <Sheet>
-      <SheetTrigger render={<Button size="sm" />}>Create edge / Run action</SheetTrigger>
+      <SheetTrigger render={<Button size="sm" />}>Insert</SheetTrigger>
       <SheetContent className={sheetClassName}>
         <SheetHeader>
           <SheetTitle>Run edge action</SheetTitle>

@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Input } from "@ssota/ui/components/ui/input";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
-import { graphPath } from "@/lib/console/paths";
+import { graphPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 import { useGraphCatalog } from "./graph-catalog-context";
 
@@ -17,13 +17,11 @@ export function ConsoleGraphCatalogSidebar() {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
-    if (!catalog) return { nodes: [], edges: [], actions: [] };
+    if (!catalog) return { actions: [] };
     const q = query.trim().toLowerCase();
     const match = (item: { label: string; slug: string }) =>
       !q || item.label.toLowerCase().includes(q) || item.slug.toLowerCase().includes(q);
     return {
-      nodes: catalog.nodeTypes.filter(match),
-      edges: catalog.edgeTypes.filter(match),
       actions: catalog.actionTypes.filter(match),
     };
   }, [catalog, query]);
@@ -43,18 +41,7 @@ export function ConsoleGraphCatalogSidebar() {
       </div>
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-4 p-2">
-          <CatalogGroup
-            title="Nodes"
-            items={filtered.nodes}
-            pathname={pathname}
-            hrefFor={(slug) => graphPath(ctx, "nodes", slug)}
-          />
-          <CatalogGroup
-            title="Edges"
-            items={filtered.edges}
-            pathname={pathname}
-            hrefFor={(slug) => graphPath(ctx, "edges", slug)}
-          />
+          <RegistryLinks pathname={pathname} ctx={ctx} />
           <CatalogGroup
             title="Actions"
             items={filtered.actions}
@@ -65,6 +52,47 @@ export function ConsoleGraphCatalogSidebar() {
         </div>
       </ScrollArea>
     </aside>
+  );
+}
+
+function RegistryLinks({
+  pathname,
+  ctx,
+}: {
+  pathname: string;
+  ctx: ProjectRouteContext;
+}) {
+  const nodesHref = graphPath(ctx, "nodes");
+  const edgesHref = graphPath(ctx, "edges");
+
+  return (
+    <div>
+      <p className="px-2 py-1 text-xs text-muted-foreground">Catalog</p>
+      <ul className="space-y-0.5">
+        <li>
+          <Link
+            href={nodesHref}
+            className={cn(
+              "block truncate rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-muted",
+              pathname.startsWith(nodesHref) && "bg-muted font-medium text-foreground",
+            )}
+          >
+            Node tables
+          </Link>
+        </li>
+        <li>
+          <Link
+            href={edgesHref}
+            className={cn(
+              "block truncate rounded-md px-2 py-1.5 text-xs transition-colors hover:bg-muted",
+              pathname.startsWith(edgesHref) && "bg-muted font-medium text-foreground",
+            )}
+          >
+            Edge tables
+          </Link>
+        </li>
+      </ul>
+    </div>
   );
 }
 
