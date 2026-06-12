@@ -1,4 +1,5 @@
-import { notFound, redirect } from "next/navigation";
+import { after } from "next/server";
+import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { signOutAction } from "@/app/actions";
 import { ConsoleShell } from "@/components/console/console-shell";
@@ -23,7 +24,14 @@ export default async function ProjectLayout({
   const user = await getCurrentUser();
   if (!user) loginRedirect(returnTo);
 
-  const profile = await getOnboardingPort().getProfile(user.id);
+  const consolePort = getConsolePort();
+  const onboardingPort = getOnboardingPort();
+
+  const [profile, { org, project }] = await Promise.all([
+    onboardingPort.getProfile(user.id),
+    resolveProject(orgSlug, projectSlug),
+  ]);
+
   if (!profile || profile.onboardingStep !== "completed") {
     redirect(
       !profile || profile.onboardingStep === "profile"
@@ -32,16 +40,18 @@ export default async function ProjectLayout({
     );
   }
 
-  const { org, project } = await resolveProject(orgSlug, projectSlug);
-  const consolePort = getConsolePort();
+  const [organizations, projects] = await Promise.all([
+    consolePort.listOrganizationsForUser(user.id),
+    consolePort.listProjectsForOrganization(org.id),
+  ]);
 
-  const organizations = await consolePort.listOrganizationsForUser(user.id);
   if (!organizations.some((item) => item.id === org.id)) {
     redirect(await getDefaultProjectPath(user.id));
   }
 
-  const projects = await consolePort.listProjectsForOrganization(org.id);
-  await consolePort.setUserProjectPreference(user.id, orgSlug, projectSlug);
+  after(async () => {
+    await consolePort.setUserProjectPreference(user.id, orgSlug, projectSlug);
+  });
 
   return (
     <ConsoleShell

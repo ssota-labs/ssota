@@ -20,9 +20,12 @@ import {
   getNodeTableMeta,
   NodeTableDetail,
 } from "@/components/graph/node-table-detail";
+import {
+  getCachedArchetypes,
+  getCachedNodeCatalog,
+} from "@/lib/console/cached-catalog";
 import { graphPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
-import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphNodesPage({
   params,
@@ -35,10 +38,9 @@ export default async function GraphNodesPage({
   const { table, definition } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
-  const ports = getActionPorts(project.id);
   const [nodeTypes, archetypes] = await Promise.all([
-    ports.catalog.listNodeCatalogEntries(),
-    ports.catalog.listArchetypes(),
+    getCachedNodeCatalog(project.id),
+    getCachedArchetypes(project.id),
   ]);
 
   if (!table && nodeTypes.length === 1) {

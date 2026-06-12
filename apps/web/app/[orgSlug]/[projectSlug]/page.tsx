@@ -9,6 +9,11 @@ import {
   CardTitle,
 } from "@ssota/ui/components/ui/card";
 import { PageHeader } from "@/components/studio/page-header";
+import {
+  getCachedActionCatalog,
+  getCachedEdgeCatalog,
+  getCachedNodeCatalog,
+} from "@/lib/console/cached-catalog";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
@@ -24,9 +29,9 @@ export default async function ProjectHomePage({
   const ports = getActionPorts(project.id);
 
   const [nodes, edges, actions, instructions, gates, logs] = await Promise.all([
-    ports.catalog.listNodeCatalogEntries(),
-    ports.catalog.listEdgeCatalogEntries(),
-    ports.catalog.listActionCatalogEntries(),
+    getCachedNodeCatalog(project.id),
+    getCachedEdgeCatalog(project.id),
+    getCachedActionCatalog(project.id),
     ports.catalog.listInstructions({ limit: 100 }),
     ports.gate.listPendingGates(),
     ports.commit.getActionLog({ limit: 8 }),

@@ -17,6 +17,7 @@ import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer"
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { graphPath } from "@/lib/console/paths";
 import { formatActionScope } from "@/lib/graph/format-scope";
+import { getCachedActionCatalog } from "@/lib/console/cached-catalog";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
@@ -30,7 +31,7 @@ export default async function GraphActionsPage({
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
   const [actions, logs] = await Promise.all([
-    ports.catalog.listActionCatalogEntries(),
+    getCachedActionCatalog(project.id),
     ports.commit.getActionLog({ limit: 100 }),
   ]);
 
