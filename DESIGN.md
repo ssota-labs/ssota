@@ -41,6 +41,7 @@ Primary는 cyan 계열 oklch (`--primary: oklch(0.52 0.105 223.128)`). **임의 
 | Nav / CTA | `Button`, `Link` |
 | Dashboard cards | `Card`, `CardHeader`, `CardTitle`, `CardDescription` |
 | Gate queue | `Card` + `Button` (approve/reject) |
+| Impact queue | `Table`, `Badge` (status), `Sheet` (detail) |
 | Action log | `Table`, `Badge` (outcome) |
 | Login | `Card`, `Input`, `Button`, `Label` |
 | Catalog | `Card`, `Badge` |

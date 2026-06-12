@@ -8,6 +8,7 @@ import {
   GraphIcon,
   HouseIcon,
   ListBulletsIcon,
+  ArrowsClockwiseIcon,
   ShieldCheckIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@ssota/ui/lib/utils";
@@ -25,6 +26,7 @@ const navItems = [
   { segment: "graph", labelKey: "nav.graph", icon: GraphIcon },
   { segment: "instructions", labelKey: "nav.instruction", icon: BookOpenIcon },
   { segment: "gates", labelKey: "nav.gates", icon: ShieldCheckIcon },
+  { segment: "impact", labelKey: "nav.impact", icon: ArrowsClockwiseIcon },
   { segment: "log", labelKey: "nav.actionLog", icon: ListBulletsIcon },
   { segment: "settings/general", labelKey: "nav.settings", icon: GearIcon },
 ] as const;

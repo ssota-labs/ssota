@@ -17,6 +17,7 @@ export function withConsolePaths(paths: string[]): string[] {
   set.add(projectPath(defaultCtx, "graph", "actions"));
   set.add(projectPath(defaultCtx, "instructions"));
   set.add(projectPath(defaultCtx, "gates"));
+  set.add(projectPath(defaultCtx, "impact"));
   set.add(projectPath(defaultCtx, "log"));
   set.add(projectPath(defaultCtx, "settings", "general"));
 
