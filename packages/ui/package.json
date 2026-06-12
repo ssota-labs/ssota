@@ -6,6 +6,9 @@
   "exports": {
     "./styles/globals.css": "./src/styles/globals.css",
     "./styles/style-ssota.css": "./src/styles/style-ssota.css",
+    "./design-lab/token-manifest": "./src/design-lab/token-manifest.ts",
+    "./design-lab/theme-manifest": "./src/design-lab/theme-manifest.ts",
+    "./design-lab": "./src/design-lab/index.ts",
     "./lib/utils": "./src/lib/utils.ts",
     "./hooks/*": "./src/hooks/*",
     "./components/ui/*": "./src/components/ui/*"
