@@ -1,27 +1,26 @@
-import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
-import type { Db } from "../db/client.js";
-import * as schema from "../db/schema.js";
+import type { Effect, ExecutorType } from "@ssota/contracts";
+import type { ActionCatalogEntry } from "../domain/types.js";
+import { toCatalogLabel, toCatalogSlug } from "../catalog-slug.js";
 
 export const DEFAULT_LIFECYCLE_TRANSITIONS = {
   Draft: ["Active", "Archived"],
   Active: ["Archived", "Draft"],
   Archived: ["Active"],
   Deleted: [],
-} as const;
+};
 
-export type MetaActionCatalogRow = {
+type BuiltinMetaActionRow = {
   actionType: string;
   preconditions: Record<string, unknown>;
   effects: Record<string, unknown>[];
-  executor: "Agent" | "Human";
+  executor: ExecutorType;
   allowedLifecycleTransitions: Record<string, string[]>;
   failureMode: string;
   idempotencyRule: string | null;
   logPayloadSchema: Record<string, unknown>;
 };
 
-/** Project-scoped meta actions. All open to Agent except approve_gate. */
-export const META_ACTION_CATALOG_ROWS: MetaActionCatalogRow[] = [
+const BUILTIN_META_ACTION_ROWS: BuiltinMetaActionRow[] = [
   {
     actionType: "approve_gate",
     preconditions: { requiredFields: ["gateId", "status"] },
@@ -43,7 +42,7 @@ export const META_ACTION_CATALOG_ROWS: MetaActionCatalogRow[] = [
           family: "document",
           archetypeId: "",
           typicalValueOverrides: {},
-          lifecycleTransitions: DEFAULT_LIFECYCLE_TRANSITIONS,
+          lifecycleTransitions: { ...DEFAULT_LIFECYCLE_TRANSITIONS },
           contentGuide: null,
         },
       },
@@ -65,7 +64,7 @@ export const META_ACTION_CATALOG_ROWS: MetaActionCatalogRow[] = [
           family: "document",
           archetypeId: "",
           typicalValueOverrides: {},
-          lifecycleTransitions: DEFAULT_LIFECYCLE_TRANSITIONS,
+          lifecycleTransitions: { ...DEFAULT_LIFECYCLE_TRANSITIONS },
           contentGuide: null,
         },
       },
@@ -135,6 +134,7 @@ export const META_ACTION_CATALOG_ROWS: MetaActionCatalogRow[] = [
         kind: "upsert_action_catalog_entry",
         entry: {
           actionType: "",
+          scope: { kind: "global" },
           preconditions: {},
           effects: [],
           executor: "Agent",
@@ -266,6 +266,7 @@ export const META_ACTION_CATALOG_ROWS: MetaActionCatalogRow[] = [
         kind: "upsert_action_catalog_entry",
         entry: {
           actionType: "",
+          scope: { kind: "global" },
           preconditions: {},
           effects: [],
           executor: "Agent",
@@ -328,17 +329,51 @@ export const META_ACTION_CATALOG_ROWS: MetaActionCatalogRow[] = [
   },
 ];
 
-export async function seedMetaActionCatalog(
-  db: Db,
-  projectId: string,
-): Promise<void> {
-  const values = META_ACTION_CATALOG_ROWS.map((row) => ({
-    ...row,
-    projectId,
+function toBuiltinEntry(row: BuiltinMetaActionRow): ActionCatalogEntry {
+  return {
+    actionType: row.actionType,
     slug: toCatalogSlug(row.actionType),
     label: toCatalogLabel(row.actionType),
-    executor: row.executor as "Agent" | "Human" | "System",
-  })) as (typeof schema.actionCatalog.$inferInsert)[];
+    scope: { kind: "global" },
+    preconditions: row.preconditions,
+    effects: row.effects as Effect[],
+    executor: row.executor,
+    allowedLifecycleTransitions: row.allowedLifecycleTransitions as ActionCatalogEntry["allowedLifecycleTransitions"],
+    failureMode: row.failureMode,
+    idempotencyRule: row.idempotencyRule,
+    logPayloadSchema: row.logPayloadSchema,
+    catalogSource: "builtin",
+  };
+}
 
-  await db.insert(schema.actionCatalog).values(values).onConflictDoNothing();
+const builtinByActionType = new Map(
+  BUILTIN_META_ACTION_ROWS.map((row) => [row.actionType, toBuiltinEntry(row)]),
+);
+
+const builtinBySlug = new Map(
+  [...builtinByActionType.values()].map((entry) => [entry.slug, entry]),
+);
+
+export const BUILTIN_ACTION_TYPES: ReadonlySet<string> = new Set(
+  BUILTIN_META_ACTION_ROWS.map((row) => row.actionType),
+);
+
+export function isBuiltinActionType(actionType: string): boolean {
+  return BUILTIN_ACTION_TYPES.has(actionType);
+}
+
+export function getBuiltinActionCatalogEntry(
+  actionType: string,
+): ActionCatalogEntry | null {
+  return builtinByActionType.get(actionType) ?? null;
+}
+
+export function getBuiltinActionCatalogEntryBySlug(
+  slug: string,
+): ActionCatalogEntry | null {
+  return builtinBySlug.get(slug) ?? null;
+}
+
+export function listBuiltinActionCatalogEntries(): ActionCatalogEntry[] {
+  return [...builtinByActionType.values()];
 }

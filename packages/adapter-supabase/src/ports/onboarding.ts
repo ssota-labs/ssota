@@ -11,7 +11,6 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { seedMetaActionCatalog } from "../seed/meta-action-catalog.js";
 
 function parseLocale(value: string | null | undefined): Locale {
   if (value && (LOCALES as readonly string[]).includes(value)) {
@@ -216,8 +215,6 @@ export function createOnboardingPort(db: Db): OnboardingPort {
 
         const project = mapProject(projectRow!);
         const now = new Date();
-
-        await seedMetaActionCatalog(tx as unknown as Db, project.id);
 
         await tx
           .insert(schema.userProjectPreferences)

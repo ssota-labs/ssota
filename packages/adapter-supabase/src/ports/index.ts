@@ -1,5 +1,11 @@
 import { asc, desc, eq, and, inArray, lte, or, sql } from "drizzle-orm";
-import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
+import {
+  mergeActionCatalogEntries,
+  mergeActionCatalogEntry,
+  mergeActionCatalogEntryBySlug,
+  toCatalogLabel,
+  toCatalogSlug,
+} from "@ssota/core";
 import type {
   ActionScope,
   Effect,
@@ -265,8 +271,10 @@ export function createCatalogPort(db: Db, scope: ActionPortsScope): CatalogPort 
         )
         .limit(1);
       const row = rows[0];
-      if (!row) return null;
-      return mapActionCatalogEntry(row);
+      return mergeActionCatalogEntry(
+        row ? mapActionCatalogEntry(row) : null,
+        actionType,
+      );
     },
 
     async getActionCatalogEntryBySlug(slug) {
@@ -281,8 +289,10 @@ export function createCatalogPort(db: Db, scope: ActionPortsScope): CatalogPort 
         )
         .limit(1);
       const row = rows[0];
-      if (!row) return null;
-      return mapActionCatalogEntry(row);
+      return mergeActionCatalogEntryBySlug(
+        row ? mapActionCatalogEntry(row) : null,
+        slug,
+      );
     },
 
     async listActionCatalogEntries() {
@@ -290,7 +300,7 @@ export function createCatalogPort(db: Db, scope: ActionPortsScope): CatalogPort 
         .select()
         .from(schema.actionCatalog)
         .where(eq(schema.actionCatalog.projectId, projectId));
-      return rows.map(mapActionCatalogEntry);
+      return mergeActionCatalogEntries(rows.map(mapActionCatalogEntry));
     },
 
     async getArchetype(archetypeId) {

@@ -81,6 +81,8 @@ export interface ActionCatalogEntry {
   failureMode: string;
   idempotencyRule: string | null;
   logPayloadSchema: Record<string, unknown>;
+  /** builtin = core registry; project = action_catalog row */
+  catalogSource?: "builtin" | "project";
 }
 
 export interface ActionPropertyPermission {

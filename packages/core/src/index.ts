@@ -554,4 +554,6 @@ export * from "./domain/subject-scope.js";
 export * from "./domain/project-scope.js";
 export * from "./impact-queue.js";
 export * from "./catalog-slug.js";
+export * from "./catalog/builtin-meta-actions.js";
+export * from "./catalog/merge-action-catalog.js";
 export * from "./console-slug.js";

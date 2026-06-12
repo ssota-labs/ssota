@@ -10,7 +10,6 @@ import {
   SMOKE_PASSWORD,
 } from "../constants.js";
 import { seedHomepageAgentCatalog } from "./seed-homepage-agent.js";
-import { META_ACTION_CATALOG_ROWS } from "../seed/meta-action-catalog.js";
 
 const documentArchetypes = [
   { id: "doc-note", name: "Note", typical: { temporality: "ephemeral", authority: "personal" } },
@@ -277,7 +276,6 @@ async function seedCatalog(
         idempotencyRule: null,
         logPayloadSchema: {},
       },
-      ...META_ACTION_CATALOG_ROWS,
     ];
 
   const actionCatalogValues = actionCatalogRows.map((row) => ({
