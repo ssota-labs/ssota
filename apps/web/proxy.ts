@@ -6,7 +6,9 @@ const defaultBase = `/${DEFAULT_ORG_SLUG}/${DEFAULT_PROJECT_SLUG}`;
 
 function legacyRedirect(request: NextRequest, targetPath: string) {
   const url = request.nextUrl.clone();
-  url.pathname = targetPath;
+  const queryIndex = targetPath.indexOf("?");
+  url.pathname = queryIndex === -1 ? targetPath : targetPath.slice(0, queryIndex);
+  url.search = queryIndex === -1 ? "" : targetPath.slice(queryIndex);
   return NextResponse.redirect(url, 308);
 }
 
@@ -21,10 +23,12 @@ function mapLegacyPath(pathname: string): string | null {
     }
     const segments = rest.split("/");
     if (segments[0] === "nodes" && segments[1]) {
-      segments[1] = segments[1].toLowerCase();
+      const slug = segments[1].toLowerCase();
+      return `${defaultBase}/graph/nodes?table=${encodeURIComponent(slug)}`;
     }
     if (segments[0] === "edges" && segments[1]) {
-      segments[1] = segments[1].toLowerCase();
+      const slug = segments[1].toLowerCase();
+      return `${defaultBase}/graph/edges?table=${encodeURIComponent(slug)}`;
     }
     if (segments[0] === "actions" && segments[1]) {
       segments[1] = segments[1].toLowerCase();
@@ -39,10 +43,17 @@ function mapLegacyPath(pathname: string): string | null {
   }
 
   const labelNodeMatch = pathname.match(
-    /^\/graph\/nodes\/([A-Z][a-zA-Z0-9_]*)$/,
+    /^\/graph\/nodes\/([A-Za-z][a-zA-Z0-9_-]*)$/,
   );
   if (labelNodeMatch) {
-    return `${defaultBase}/graph/nodes/${labelNodeMatch[1]!.toLowerCase()}`;
+    return `${defaultBase}/graph/nodes?table=${encodeURIComponent(labelNodeMatch[1]!.toLowerCase())}`;
+  }
+
+  const labelEdgeMatch = pathname.match(
+    /^\/graph\/edges\/([A-Za-z][a-zA-Z0-9_-]*)$/,
+  );
+  if (labelEdgeMatch) {
+    return `${defaultBase}/graph/edges?table=${encodeURIComponent(labelEdgeMatch[1]!.toLowerCase())}`;
   }
 
   return null;

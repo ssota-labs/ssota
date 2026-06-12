@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
@@ -12,43 +13,45 @@ import {
 } from "@ssota/ui/components/ui/sheet";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { createNodeTableFormAction } from "@/app/actions";
-import { NodeCatalogDataTable } from "@/components/graph/node-catalog-data-table";
+import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
+import { NewTableButton } from "@/components/graph/table-catalog-panel";
+import { NodeCatalogSettings } from "@/components/graph/node-catalog-settings";
+import {
+  getNodeTableMeta,
+  NodeTableDetail,
+} from "@/components/graph/node-table-detail";
+import {
+  getCachedArchetypes,
+  getCachedNodeCatalog,
+} from "@/lib/console/cached-catalog";
 import { graphPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
-import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphNodesPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
+  searchParams: Promise<{ table?: string; definition?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
+  const { table, definition } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
-  const ports = getActionPorts(project.id);
   const [nodeTypes, archetypes] = await Promise.all([
-    ports.catalog.listNodeCatalogEntries(),
-    ports.catalog.listArchetypes(),
+    getCachedNodeCatalog(project.id),
+    getCachedArchetypes(project.id),
   ]);
 
-  if (nodeTypes.length === 1) {
-    redirect(graphPath(ctx, "nodes", nodeTypes[0]!.slug));
+  if (!table && nodeTypes.length === 1) {
+    redirect(`${graphPath(ctx, "nodes")}?table=${encodeURIComponent(nodeTypes[0]!.slug)}`);
   }
 
-  const tableData = nodeTypes.map((nodeType) => ({
-    slug: nodeType.slug,
-    label: nodeType.label,
-    family: nodeType.family,
-    archetypeId: nodeType.archetypeId,
-    propertyCount: nodeType.propertyRefs.length,
-    actionCount: nodeType.allowedActionRefs.length,
-    lifecycle: Object.keys(nodeType.lifecycleTransitions).join(", "),
-    href: graphPath(ctx, "nodes", nodeType.slug),
-  }));
+  const selectedMeta = table ? await getNodeTableMeta(project.id, table) : null;
 
-  const toolbar = (
+  const newTableTrigger = (
     <Sheet>
-      <SheetTrigger render={<Button size="sm" />}>New node table</SheetTrigger>
+      <SheetTrigger render={<NewTableButton />}>New table</SheetTrigger>
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New node table</SheetTitle>
@@ -101,15 +104,36 @@ export default async function GraphNodesPage({
     </Sheet>
   );
 
+  const mainContent =
+    table && selectedMeta ? (
+      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading rows…</div>}>
+        <NodeTableDetail projectId={project.id} slug={table} />
+      </Suspense>
+    ) : null;
+
+  const catalogSheetContent =
+    table && selectedMeta && definition === "1" ? (
+      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading definition…</div>}>
+        <NodeCatalogSettings projectId={project.id} slug={table} />
+      </Suspense>
+    ) : null;
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b px-4 py-2">
-        <h1 className="text-sm font-semibold">Nodes</h1>
-        <p className="text-xs text-muted-foreground">
-          Node tables define structured context envelopes and runtime node instances.
-        </p>
-      </div>
-      <NodeCatalogDataTable data={tableData} toolbar={toolbar} />
-    </div>
+    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading catalog…</div>}>
+      <GraphCatalogExplorer
+        kind="node"
+        newTableTrigger={newTableTrigger}
+        mainHeader={
+          selectedMeta
+            ? { title: selectedMeta.label, description: selectedMeta.description }
+            : null
+        }
+        mainContent={mainContent}
+        catalogSheetTitle={selectedMeta ? `Definition · ${selectedMeta.label}` : undefined}
+        catalogSheetDescription={selectedMeta?.description}
+        catalogSheetContent={catalogSheetContent}
+        emptyHint="Select a node table from the catalog to view instance rows."
+      />
+    </Suspense>
   );
 }

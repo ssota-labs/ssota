@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { DataTable } from "@ssota/ui/components/ui/data-table";
 import { DataTableColumnHeader } from "@ssota/ui/components/ui/data-table-column-header";
+import { formatTableCell } from "@/lib/graph/format-table-cell";
 
 export type NodeRowRecord = {
   id: string;
@@ -18,14 +19,6 @@ export type PropertyColumn = {
   label: string;
   valueType: string;
 };
-
-function formatCell(value: unknown) {
-  if (value === undefined || value === null) return "-";
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
-    return String(value);
-  }
-  return JSON.stringify(value);
-}
 
 export function NodeRowsDataTable({
   rows,
@@ -58,7 +51,7 @@ export function NodeRowsDataTable({
     ...propertyColumns.map(
       (property): ColumnDef<NodeRowRecord> => ({
         id: property.key,
-        accessorFn: (row) => formatCell(row.properties[property.key]),
+        accessorFn: (row) => formatTableCell(row.properties[property.key]),
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
@@ -66,7 +59,7 @@ export function NodeRowsDataTable({
             subtitle={property.valueType}
           />
         ),
-        cell: ({ row }) => formatCell(row.original.properties[property.key]),
+        cell: ({ row }) => formatTableCell(row.original.properties[property.key]),
       }),
     ),
     {

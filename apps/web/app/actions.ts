@@ -262,8 +262,6 @@ export async function defineNodeTypeAction(input: {
   });
   return runMetaAction("define_node_type", parsed, [
     "/studio/node-types",
-    "/context-graph",
-    "/context-graph/nodes",
     "/catalog",
     "/log",
     "/gates",
@@ -297,8 +295,6 @@ export async function updateNodeTypeAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("update_node_type", parsed, [
     "/studio/node-types",
-    "/context-graph",
-    "/context-graph/nodes",
     "/catalog",
     "/log",
   ], projectId);
@@ -313,8 +309,6 @@ export async function deprecateNodeTypeAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("deprecate_node_type", parsed, [
     "/studio/node-types",
-    "/context-graph",
-    "/context-graph/nodes",
     "/catalog",
     "/log",
   ], projectId);
@@ -329,8 +323,6 @@ export async function defineEdgeTypeAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("define_edge_type", parsed, [
     "/studio/edge-types",
-    "/context-graph",
-    "/context-graph/edges",
     "/log",
   ], projectId);
 }
@@ -344,9 +336,6 @@ export async function definePropertyAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("define_property", parsed, [
     "/studio/properties",
-    "/context-graph",
-    "/context-graph/nodes",
-    "/context-graph/edges",
     "/log",
   ], projectId);
 }
@@ -360,8 +349,6 @@ export async function defineInstructionAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("define_instruction", parsed, [
     "/studio/instructions",
-    "/context-graph",
-    "/context-graph/instructions",
     "/log",
   ], projectId);
 }
@@ -375,8 +362,6 @@ export async function updateEdgeTypeAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("update_edge_type", parsed, [
     "/studio/edge-types",
-    "/context-graph",
-    "/context-graph/edges",
     "/log",
   ], projectId);
 }
@@ -390,8 +375,6 @@ export async function deprecateEdgeTypeAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("deprecate_edge_type", parsed, [
     "/studio/edge-types",
-    "/context-graph",
-    "/context-graph/edges",
     "/log",
   ], projectId);
 }
@@ -405,9 +388,6 @@ export async function updatePropertyAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("update_property", parsed, [
     "/studio/properties",
-    "/context-graph",
-    "/context-graph/nodes",
-    "/context-graph/edges",
     "/log",
   ], projectId);
 }
@@ -421,9 +401,6 @@ export async function deprecatePropertyAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("deprecate_property", parsed, [
     "/studio/properties",
-    "/context-graph",
-    "/context-graph/nodes",
-    "/context-graph/edges",
     "/log",
   ], projectId);
 }
@@ -437,10 +414,7 @@ export async function updatePropertyPermissionAction(
     typeof inputProjectId === "string" && inputProjectId
       ? inputProjectId
       : await resolveDefaultProjectId();
-  return runMetaAction("update_property_permission", parsed, [
-    "/context-graph",
-    "/log",
-  ], projectId);
+  return runMetaAction("update_property_permission", parsed, ["/log"], projectId);
 }
 
 export async function defineActionContractAction(input: Record<string, unknown>) {
@@ -452,8 +426,6 @@ export async function defineActionContractAction(input: Record<string, unknown>)
       : await resolveDefaultProjectId();
   return runMetaAction("define_action_contract", parsed, [
     "/studio/actions",
-    "/context-graph",
-    "/context-graph/actions",
     "/log",
   ], projectId);
 }
@@ -467,8 +439,6 @@ export async function updateActionContractAction(input: Record<string, unknown>)
       : await resolveDefaultProjectId();
   return runMetaAction("update_action_contract", parsed, [
     "/studio/actions",
-    "/context-graph",
-    "/context-graph/actions",
     "/log",
   ], projectId);
 }
@@ -484,8 +454,6 @@ export async function deprecateActionContractAction(
       : await resolveDefaultProjectId();
   return runMetaAction("deprecate_action_contract", parsed, [
     "/studio/actions",
-    "/context-graph",
-    "/context-graph/actions",
     "/log",
   ], projectId);
 }
@@ -499,8 +467,6 @@ export async function updateInstructionAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("update_instruction", parsed, [
     "/studio/instructions",
-    "/context-graph",
-    "/context-graph/instructions",
     "/log",
   ], projectId);
 }
@@ -514,8 +480,6 @@ export async function deprecateInstructionAction(input: Record<string, unknown>)
       : await resolveDefaultProjectId();
   return runMetaAction("deprecate_instruction", parsed, [
     "/studio/instructions",
-    "/context-graph",
-    "/context-graph/instructions",
     "/log",
   ], projectId);
 }
@@ -592,9 +556,6 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
 
   const nodeSlug = nodeEntry.slug;
   for (const path of withConsolePaths([
-    "/context-graph",
-    "/context-graph/nodes",
-    `/context-graph/nodes/${nodeType}`,
     "/studio/node-types",
     "/studio/properties",
     "/catalog",
@@ -707,8 +668,6 @@ export async function runActionJsonFormAction(formData: FormData): Promise<void>
     projectId,
   });
   for (const path of withConsolePaths([
-    "/context-graph",
-    "/context-graph/nodes",
     "/log",
     "/gates",
   ])) {

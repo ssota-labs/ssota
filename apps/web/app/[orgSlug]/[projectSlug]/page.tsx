@@ -10,6 +10,11 @@ import {
 } from "@ssota/ui/components/ui/card";
 import { ImpactStatusBadge } from "@/components/impact/impact-status-badge";
 import { PageHeader } from "@/components/studio/page-header";
+import {
+  getCachedActionCatalog,
+  getCachedEdgeCatalog,
+  getCachedNodeCatalog,
+} from "@/lib/console/cached-catalog";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getTranslations } from "@/lib/i18n/server";
@@ -28,9 +33,9 @@ export default async function ProjectHomePage({
 
   const [nodes, edges, actions, instructions, gates, logs, pendingImpacts] =
     await Promise.all([
-      ports.catalog.listNodeCatalogEntries(),
-      ports.catalog.listEdgeCatalogEntries(),
-      ports.catalog.listActionCatalogEntries(),
+      getCachedNodeCatalog(project.id),
+      getCachedEdgeCatalog(project.id),
+      getCachedActionCatalog(project.id),
       ports.catalog.listInstructions({ limit: 100 }),
       ports.gate.listPendingGates(),
       ports.commit.getActionLog({ limit: 8 }),

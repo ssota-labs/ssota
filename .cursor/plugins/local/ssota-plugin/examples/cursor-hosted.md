@@ -2,59 +2,63 @@
 
 Use this flow when SSOTA MCP is deployed (production/staging). OAuth is handled by Cursor — do not put bearer tokens in `mcp.json`.
 
-## Prerequisites
+## Single MCP endpoint
 
-Deployed SSOTA MCP with:
+All tools live on **`https://<mcp-host>/api/mcp`**.
 
-- `MCP_RESOURCE_URL=https://<mcp-host>/api/mcp` (e.g. `https://mcp.ssota.ai/api/mcp`)
-- `NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co` (+ anon key)
-- Supabase Auth → **Site URL** = console origin (e.g. `https://www.ssota.ai`) — OAuth consent is `{Site URL}/oauth/consent` on the **web** app, not the MCP host
-- Redirect URLs: console origin, MCP origin, and `cursor://anysphere.cursor-mcp/oauth/callback` if using static client registration
-- `[auth.oauth_server] enabled = true` on the Supabase project
+Project scope is passed as **tool params** on every project-scoped call:
 
-## Cursor dashboard (recommended)
+```json
+{
+  "orgSlug": "ssota-labs",
+  "projectSlug": "ssota-dev",
+  "query": "document creation"
+}
+```
 
-1. Open **Cursor Settings → Tools & MCP**.
-2. **Add MCP server** (or edit project `.cursor/mcp.json` for the team):
+The server validates user membership on each call.
 
 ```json
 {
   "mcpServers": {
     "ssota": {
-      "url": "https://<mcp-host>/api/mcp"
+      "url": "https://mcp.ssota.ai/api/mcp"
     }
   }
 }
 ```
 
-Do **not** add `headers.Authorization` for OAuth — Cursor manages tokens.
+## Workflow
 
-3. Click **Connect** on the server → browser OAuth → approve.
-4. Confirm tools appear (e.g. `list_action_contracts`, `find_instruction`).
-5. Confirm the `ssota-mcp` skill is available (plugin install or `.cursor/skills/ssota-mcp`).
+1. Connect MCP (OAuth once).
+2. `list_projects` → pick `orgSlug` + `projectSlug`.
+3. Pass scope on every project tool (`find_instruction`, `execute_action`, …).
 
-## Verify deployment before connecting
+## Prerequisites
 
-From the monorepo root (replace host):
+- `MCP_RESOURCE_URL=https://<mcp-host>/api/mcp`
+- Supabase Auth → **Site URL** = console origin (`https://www.ssota.ai`)
+- Redirect URLs include `cursor://anysphere.cursor-mcp/oauth/callback` and Cloud Agent callbacks
+- `[auth.oauth_server] enabled = true`
+
+## Connect in Cursor
+
+1. Set the MCP URL to `https://<mcp-host>/api/mcp` (no query params).
+2. Do **not** add `headers.Authorization` — Cursor manages OAuth tokens.
+3. Connect → approve on `{Site URL}/oauth/consent`.
+4. Confirm all tools appear (`list_projects`, `list_action_contracts`, `execute_action`, …).
+
+## Verify deployment
 
 ```bash
 MCP_RESOURCE_URL=https://<mcp-host>/api/mcp \
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co \
-./scripts/verify-mcp-oauth.sh https://<mcp-host>
-```
-
-## Smoke after OAuth
-
-Ask the agent:
-
-```txt
-Use ssota-mcp: call list_action_contracts, then find_instruction for "document creation".
+./scripts/verify-mcp-oauth.sh https://<mcp-host> ssota-labs ssota-dev
 ```
 
 ## Local vs hosted
 
-| | Local dogfood | Hosted (this doc) |
+| | Local | Hosted |
 |---|---|---|
 | MCP URL | `http://127.0.0.1:3001/api/mcp` | `https://<mcp-host>/api/mcp` |
-| Auth | `SSOTA_MCP_TOKEN` / smoke bearer | Cursor OAuth |
-| `mcp.json` headers | `Bearer ${SSOTA_MCP_TOKEN}` OK | **No** Authorization header |
+| Project scope | `orgSlug` + `projectSlug` tool params | same |

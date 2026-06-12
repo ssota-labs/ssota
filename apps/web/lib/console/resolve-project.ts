@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
 import { getConsolePort } from "@/lib/ports";
@@ -7,10 +8,10 @@ export type ResolvedProject = {
   project: Project;
 };
 
-export async function resolveProject(
+export const resolveProject = cache(async (
   orgSlug: string,
   projectSlug: string,
-): Promise<ResolvedProject> {
+): Promise<ResolvedProject> => {
   const consolePort = getConsolePort();
   const org = await consolePort.getOrganizationBySlug(orgSlug);
   if (!org) notFound();
@@ -19,4 +20,4 @@ export async function resolveProject(
   if (!project) notFound();
 
   return { org, project };
-}
+});

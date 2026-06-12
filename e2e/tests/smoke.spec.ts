@@ -11,10 +11,11 @@ test.describe("SSOTA Console", () => {
 
   test("smoke: Graph → node table", async ({ page }) => {
     await loginAsSmoke(page);
-    await gotoProject(page, "graph");
-    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    await gotoProject(page, "graph/nodes?table=document");
+    await expect(page.getByText("Graph Editor", { exact: true })).toBeVisible();
+    await expect(page.getByTestId("graph-kind-node")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
     await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
-    await expect(page.getByText("Nodes", { exact: true })).toBeVisible();
   });
 
   test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
@@ -54,13 +55,34 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("link", { name: "Action Log", exact: true })).toBeVisible();
   });
 
+  test("smoke: project selector preserves current route", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "graph/nodes?table=document");
+    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+
+    await page.getByRole("button", { name: "SSOTA Dev" }).click();
+    await page.getByRole("menuitem", { name: "SSOTA Dev" }).click();
+
+    await expect(page).toHaveURL(
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
+    );
+    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+  });
+
+  test("smoke: profile menu opens", async ({ page }) => {
+    await loginAsSmoke(page);
+    await page.getByRole("button", { name: "Signed in as" }).click();
+    await expect(page.getByText("smoke@ssota.test")).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+  });
+
   test("smoke: legacy /context-graph redirect", async ({ page }) => {
     await loginAsSmoke(page);
     await page.goto("/context-graph/nodes/Document");
     await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes/document`),
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
     );
-    await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
+    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
   });
 
   test("smoke: /studio redirect", async ({ page }) => {

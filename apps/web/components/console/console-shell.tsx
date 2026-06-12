@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
-import { ConsoleGraphCatalogSidebar } from "./console-graph-catalog-sidebar";
 import { ConsoleIconRail } from "./console-icon-rail";
 import { ConsoleTopBar } from "./console-top-bar";
 import {
@@ -29,12 +28,13 @@ export function ConsoleShell({
 }: ConsoleShellProps) {
   const pathname = usePathname();
   const isGraphContext = pathname.includes(`/${ctx.projectSlug}/graph`);
+  const isFullBleedTable =
+    isGraphContext || pathname === `/${ctx.orgSlug}/${ctx.projectSlug}/log`;
 
   return (
     <ProjectProvider value={ctx}>
       <div className="flex h-svh w-full overflow-hidden">
         <ConsoleIconRail />
-        {isGraphContext ? <ConsoleGraphCatalogSidebar /> : null}
         <div className="flex min-w-0 flex-1 flex-col">
           <ConsoleTopBar
             userEmail={userEmail}
@@ -44,7 +44,7 @@ export function ConsoleShell({
           />
           <main
             className={
-              isGraphContext
+              isFullBleedTable
                 ? "flex min-h-0 flex-1 flex-col overflow-hidden"
                 : "flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4 md:p-6"
             }

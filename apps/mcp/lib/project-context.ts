@@ -1,8 +1,8 @@
 import { PROJECT_ID_HEADER } from "@ssota/contracts";
 
 /**
- * Project scope — one catalog/graph space per agent domain.
- * Authority: X-SSOTA-Project-Id header (required on all API/MCP requests).
+ * Legacy embedder BFF: project UUID via X-SSOTA-Project-Id header.
+ * MCP project scope is orgSlug + projectSlug on tool params (see project-scope.ts).
  */
 export function resolveProjectId(request: Request): string | undefined {
   const header = request.headers.get(PROJECT_ID_HEADER)?.trim();

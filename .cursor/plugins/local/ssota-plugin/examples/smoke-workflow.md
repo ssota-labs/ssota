@@ -10,7 +10,7 @@ pnpm cloud:prepare
 pnpm dev --filter mcp
 ```
 
-MCP URL: `http://127.0.0.1:3001/api/mcp`
+MCP URL: `http://127.0.0.1:3001/api/mcp` (project scope via tool params)
 
 ## Root skill sequence
 
@@ -24,18 +24,20 @@ MCP URL: `http://127.0.0.1:3001/api/mcp`
 ## Minimum read flow
 
 ```txt
-find_instruction
-get_instruction
-get_action_contract
+list_projects
+find_instruction        { orgSlug, projectSlug, query }
+get_instruction         { orgSlug, projectSlug, instructionId }
+get_action_contract     { orgSlug, projectSlug, actionType }
 get_node_type (optional)
 ```
 
 ## Minimum write flow
 
 ```txt
-execute_action -> committed | gated | rejected
-get_action_log_entry
-get_node (if a node was created)
+execute_action          { orgSlug, projectSlug, actionType, input }
+  -> committed | gated | rejected
+get_action_log_entry    { orgSlug, projectSlug, logId }
+get_node                { orgSlug, projectSlug, nodeId }
 ```
 
 ## Graph context (optional)

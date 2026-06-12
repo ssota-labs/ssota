@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
 import {
   Avatar,
@@ -20,7 +20,7 @@ import {
 import { Separator } from "@ssota/ui/components/ui/separator";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { projectPath } from "@/lib/console/paths";
+import { projectPath, switchConsolePath } from "@/lib/console/paths";
 import { ConsoleBreadcrumbs } from "./console-breadcrumbs";
 import { useProjectContext } from "./project-context";
 
@@ -44,18 +44,7 @@ export function ConsoleTopBar({
 }: ConsoleTopBarProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
-  const router = useRouter();
   const { t } = useLocale();
-
-  function switchOrg(org: Organization) {
-    if (org.slug === ctx.orgSlug) return;
-    router.push(`/${org.slug}/${ctx.projectSlug}`);
-  }
-
-  function switchProject(project: Project) {
-    const suffix = pathname.replace(`/${ctx.orgSlug}/${ctx.projectSlug}`, "");
-    router.push(`/${ctx.org.slug}/${project.slug}${suffix || ""}`);
-  }
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-b bg-background px-4">
@@ -80,7 +69,18 @@ export function ConsoleTopBar({
             <DropdownMenuGroup>
               <DropdownMenuLabel>{t("nav.organization")}</DropdownMenuLabel>
               {organizations.map((org) => (
-                <DropdownMenuItem key={org.id} onClick={() => switchOrg(org)}>
+                <DropdownMenuItem
+                  key={org.id}
+                  render={
+                    <Link
+                      href={switchConsolePath(pathname, ctx, {
+                        orgSlug: org.slug,
+                        projectSlug: ctx.projectSlug,
+                      })}
+                      prefetch
+                    />
+                  }
+                >
                   {org.name}
                 </DropdownMenuItem>
               ))}
@@ -101,7 +101,18 @@ export function ConsoleTopBar({
             <DropdownMenuGroup>
               <DropdownMenuLabel>{t("nav.project")}</DropdownMenuLabel>
               {projects.map((project) => (
-                <DropdownMenuItem key={project.id} onClick={() => switchProject(project)}>
+                <DropdownMenuItem
+                  key={project.id}
+                  render={
+                    <Link
+                      href={switchConsolePath(pathname, ctx, {
+                        orgSlug: ctx.org.slug,
+                        projectSlug: project.slug,
+                      })}
+                      prefetch
+                    />
+                  }
+                >
                   {project.name}
                 </DropdownMenuItem>
               ))}
@@ -119,18 +130,17 @@ export function ConsoleTopBar({
       <div className="ml-auto">
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={
-              <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
-                <Avatar size="sm">
-                  <AvatarFallback>{initialsFromEmail(userEmail)}</AvatarFallback>
-                </Avatar>
-                <span className="hidden max-w-[10rem] truncate text-xs md:inline">
-                  {userEmail}
-                </span>
-                <CaretDownIcon className="size-3.5 text-muted-foreground" />
-              </Button>
-            }
-          />
+            aria-label={t("nav.signedInAs")}
+            render={<Button variant="ghost" size="sm" className="h-8 gap-2 px-2" />}
+          >
+            <Avatar size="sm">
+              <AvatarFallback>{initialsFromEmail(userEmail)}</AvatarFallback>
+            </Avatar>
+            <span className="hidden max-w-[10rem] truncate text-xs md:inline">
+              {userEmail}
+            </span>
+            <CaretDownIcon className="size-3.5 text-muted-foreground" />
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuGroup>
               <DropdownMenuLabel className="font-normal">
@@ -139,13 +149,9 @@ export function ConsoleTopBar({
               </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <form action={signOutAction}>
-              <DropdownMenuItem
-                render={<button type="submit" className="w-full cursor-pointer" />}
-              >
-                {t("common.signOut")}
-              </DropdownMenuItem>
-            </form>
+            <DropdownMenuItem onClick={() => void signOutAction()}>
+              {t("common.signOut")}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

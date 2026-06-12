@@ -90,8 +90,10 @@ export function DataTable<TData, TValue>({
               className="h-8 max-w-sm"
             />
           ) : null}
-          {toolbar}
           {showViewOptions ? <DataTableViewOptions table={table} /> : null}
+          {toolbar ? (
+            <div className="ml-auto flex flex-wrap items-center gap-2">{toolbar}</div>
+          ) : null}
         </div>
       )}
 

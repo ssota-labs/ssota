@@ -5,12 +5,13 @@ import { createContext, useContext } from "react";
 export type GraphCatalogEntry = {
   slug: string;
   label: string;
-  kind: "node" | "edge";
+  kind: "node" | "edge" | "action";
 };
 
 export type GraphCatalogContextValue = {
   nodeTypes: GraphCatalogEntry[];
   edgeTypes: GraphCatalogEntry[];
+  actionTypes: GraphCatalogEntry[];
 };
 
 const GraphCatalogContext = createContext<GraphCatalogContextValue | null>(null);
