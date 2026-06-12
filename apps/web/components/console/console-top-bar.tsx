@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
 import {
   Avatar,
@@ -43,19 +42,7 @@ export function ConsoleTopBar({
   signOutAction,
 }: ConsoleTopBarProps) {
   const ctx = useProjectContext();
-  const pathname = usePathname();
-  const router = useRouter();
   const { t } = useLocale();
-
-  function switchOrg(org: Organization) {
-    if (org.slug === ctx.orgSlug) return;
-    router.push(`/${org.slug}/${ctx.projectSlug}`);
-  }
-
-  function switchProject(project: Project) {
-    const suffix = pathname.replace(`/${ctx.orgSlug}/${ctx.projectSlug}`, "");
-    router.push(`/${ctx.org.slug}/${project.slug}${suffix || ""}`);
-  }
 
   return (
     <header className="flex h-12 shrink-0 items-center gap-3 border-b bg-background px-4">
@@ -80,7 +67,18 @@ export function ConsoleTopBar({
             <DropdownMenuGroup>
               <DropdownMenuLabel>{t("nav.organization")}</DropdownMenuLabel>
               {organizations.map((org) => (
-                <DropdownMenuItem key={org.id} onClick={() => switchOrg(org)}>
+                <DropdownMenuItem
+                  key={org.id}
+                  render={
+                    <Link
+                      href={projectPath({
+                        orgSlug: org.slug,
+                        projectSlug: ctx.projectSlug,
+                      })}
+                      prefetch
+                    />
+                  }
+                >
                   {org.name}
                 </DropdownMenuItem>
               ))}
@@ -101,7 +99,18 @@ export function ConsoleTopBar({
             <DropdownMenuGroup>
               <DropdownMenuLabel>{t("nav.project")}</DropdownMenuLabel>
               {projects.map((project) => (
-                <DropdownMenuItem key={project.id} onClick={() => switchProject(project)}>
+                <DropdownMenuItem
+                  key={project.id}
+                  render={
+                    <Link
+                      href={projectPath({
+                        orgSlug: ctx.org.slug,
+                        projectSlug: project.slug,
+                      })}
+                      prefetch
+                    />
+                  }
+                >
                   {project.name}
                 </DropdownMenuItem>
               ))}

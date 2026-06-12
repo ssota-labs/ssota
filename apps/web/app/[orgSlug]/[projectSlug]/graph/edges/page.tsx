@@ -19,9 +19,9 @@ import {
   EdgeTableDetail,
   getEdgeTableMeta,
 } from "@/components/graph/edge-table-detail";
+import { getCachedEdgeCatalog } from "@/lib/console/cached-catalog";
 import { graphPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
-import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphEdgesPage({
   params,
@@ -34,8 +34,7 @@ export default async function GraphEdgesPage({
   const { table, definition } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
-  const ports = getActionPorts(project.id);
-  const edges = await ports.catalog.listEdgeCatalogEntries();
+  const edges = await getCachedEdgeCatalog(project.id);
 
   if (!table && edges.length === 1) {
     redirect(`${graphPath(ctx, "edges")}?table=${encodeURIComponent(edges[0]!.slug)}`);

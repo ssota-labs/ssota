@@ -1,6 +1,10 @@
 import { GraphCatalogProvider } from "@/components/console/graph-catalog-context";
+import {
+  getCachedActionCatalog,
+  getCachedEdgeCatalog,
+  getCachedNodeCatalog,
+} from "@/lib/console/cached-catalog";
 import { resolveProject } from "@/lib/console/resolve-project";
-import { getActionPorts } from "@/lib/ports";
 
 export default async function GraphLayout({
   children,
@@ -11,11 +15,10 @@ export default async function GraphLayout({
 }) {
   const { orgSlug, projectSlug } = await params;
   const { project } = await resolveProject(orgSlug, projectSlug);
-  const ports = getActionPorts(project.id);
   const [nodeTypes, edgeTypes, actionTypes] = await Promise.all([
-    ports.catalog.listNodeCatalogEntries(),
-    ports.catalog.listEdgeCatalogEntries(),
-    ports.catalog.listActionCatalogEntries(),
+    getCachedNodeCatalog(project.id),
+    getCachedEdgeCatalog(project.id),
+    getCachedActionCatalog(project.id),
   ]);
 
   return (
