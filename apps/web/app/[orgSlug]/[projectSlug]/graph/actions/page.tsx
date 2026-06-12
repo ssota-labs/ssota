@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -12,6 +13,8 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineScopedActionFormAction } from "@/app/actions";
 import { ActionCatalogDataTable } from "@/components/graph/action-catalog-data-table";
+import { graphPath } from "@/lib/console/paths";
+import { formatActionScope } from "@/lib/graph/format-scope";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
@@ -21,21 +24,30 @@ export default async function GraphActionsPage({
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
+  const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
   const [actions, logs] = await Promise.all([
     ports.catalog.listActionCatalogEntries(),
     ports.commit.getActionLog({ limit: 100 }),
   ]);
+
+  if (actions.length === 1) {
+    redirect(graphPath(ctx, "actions", actions[0]!.slug));
+  }
+
   const runCounts = new Map<string, number>();
   for (const log of logs) runCounts.set(log.actionType, (runCounts.get(log.actionType) ?? 0) + 1);
 
   const tableData = actions.map((action) => ({
+    slug: action.slug,
+    label: action.label,
     actionType: action.actionType,
-    scope: formatScope(action.scope),
+    scope: formatActionScope(action.scope),
     executor: action.executor,
     effectsCount: action.effects.length,
     runs: runCounts.get(action.actionType) ?? 0,
+    href: graphPath(ctx, "actions", action.slug),
   }));
 
   const toolbar = <NewActionSheet projectId={project.id} />;
@@ -52,14 +64,6 @@ export default async function GraphActionsPage({
       <ActionCatalogDataTable data={tableData} toolbar={toolbar} />
     </div>
   );
-}
-
-function formatScope(scope: { kind: string } & Record<string, unknown>) {
-  if (scope.kind === "node_type") return `node:${scope.nodeType}`;
-  if (scope.kind === "edge_type") return `edge:${scope.edgeType}`;
-  if (scope.kind === "property") return `property:${scope.nodeType}.${scope.propertyKey}`;
-  if (scope.kind === "instruction") return `instruction:${scope.title ?? scope.instructionId ?? "*"}`;
-  return "global";
 }
 
 function NewActionSheet({ projectId }: { projectId: string }) {
