@@ -1,0 +1,6 @@
+{
+  "installCommand": "cd ../.. && corepack enable && pnpm install --frozen-lockfile",
+  "buildCommand": "cd ../.. && pnpm exec turbo run build --filter=storybook",
+  "outputDirectory": "storybook-static",
+  "framework": null
+}
