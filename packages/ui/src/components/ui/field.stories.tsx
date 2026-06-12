@@ -11,31 +11,61 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 
+type FieldStoryArgs = {
+  legend: string;
+  slugLabel: string;
+  slugValue: string;
+  slugDescription: string;
+  checkboxLabel: string;
+  checkboxChecked: boolean;
+  checkboxOrientation: "horizontal" | "vertical";
+};
+
 const meta = {
   title: "Components/Field",
-  component: Field,
   tags: ["autodocs"],
-} satisfies Meta<typeof Field>;
+  argTypes: {
+    legend: { control: "text" },
+    slugLabel: { control: "text" },
+    slugValue: { control: "text" },
+    slugDescription: { control: "text" },
+    checkboxLabel: { control: "text" },
+    checkboxChecked: { control: "boolean" },
+    checkboxOrientation: {
+      control: "select",
+      options: ["horizontal", "vertical"],
+    },
+  },
+} satisfies Meta<FieldStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<FieldStoryArgs>;
 
-export const Vertical: Story = {
-  render: () => (
+export const Default: Story = {
+  args: {
+    legend: "Project settings",
+    slugLabel: "Project slug",
+    slugValue: "homepage-agent",
+    slugDescription: "Used in console URL paths.",
+    checkboxLabel: "Export audit trail",
+    checkboxChecked: true,
+    checkboxOrientation: "horizontal",
+  },
+  render: (args) => (
     <FieldSet className="max-w-sm">
-      <FieldLegend>Project settings</FieldLegend>
+      <FieldLegend>{args.legend}</FieldLegend>
       <FieldGroup>
         <Field>
-          <FieldLabel htmlFor="slug">Project slug</FieldLabel>
+          <FieldLabel htmlFor="slug">{args.slugLabel}</FieldLabel>
           <FieldContent>
-            <Input id="slug" defaultValue="homepage-agent" />
-            <FieldDescription>Used in console URL paths.</FieldDescription>
+            <Input id="slug" defaultValue={args.slugValue} />
+            <FieldDescription>{args.slugDescription}</FieldDescription>
           </FieldContent>
         </Field>
-        <Field orientation="horizontal">
-          <Checkbox id="audit-export" defaultChecked />
+        <Field orientation={args.checkboxOrientation}>
+          <Checkbox id="audit-export" defaultChecked={args.checkboxChecked} />
           <FieldContent>
-            <FieldLabel htmlFor="audit-export">Export audit trail</FieldLabel>
+            <FieldLabel htmlFor="audit-export">{args.checkboxLabel}</FieldLabel>
           </FieldContent>
         </Field>
       </FieldGroup>

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { ComponentProps } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -6,29 +7,44 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
+type AccordionStoryArgs = ComponentProps<typeof Accordion> & {
+  firstTitle: string;
+  firstContent: string;
+  secondTitle: string;
+  secondContent: string;
+};
+
 const meta = {
   title: "Components/Accordion",
   component: Accordion,
   tags: ["autodocs"],
-} satisfies Meta<typeof Accordion>;
+  argTypes: {
+    firstTitle: { control: "text" },
+    firstContent: { control: "text" },
+    secondTitle: { control: "text" },
+    secondContent: { control: "text" },
+  },
+} satisfies Meta<AccordionStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<AccordionStoryArgs>;
 
 export const Default: Story = {
-  render: () => (
+  args: {
+    firstTitle: "Node Catalog",
+    firstContent: "Registered node types for this project.",
+    secondTitle: "Pending Gates",
+    secondContent: "Human approval queue for atypical values.",
+  },
+  render: (args) => (
     <Accordion className="w-full max-w-md">
       <AccordionItem value="catalog">
-        <AccordionTrigger>Node Catalog</AccordionTrigger>
-        <AccordionContent>
-          Registered node types for this project.
-        </AccordionContent>
+        <AccordionTrigger>{args.firstTitle}</AccordionTrigger>
+        <AccordionContent>{args.firstContent}</AccordionContent>
       </AccordionItem>
       <AccordionItem value="gates">
-        <AccordionTrigger>Pending Gates</AccordionTrigger>
-        <AccordionContent>
-          Human approval queue for atypical values.
-        </AccordionContent>
+        <AccordionTrigger>{args.secondTitle}</AccordionTrigger>
+        <AccordionContent>{args.secondContent}</AccordionContent>
       </AccordionItem>
     </Accordion>
   ),

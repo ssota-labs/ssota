@@ -16,6 +16,23 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+export const Preview: Story = {
+  render: () => (
+    <div className="cn-context-menu-content cn-menu-translucent w-56 rounded-md border border-border bg-popover p-1 shadow-md">
+      <div className="cn-context-menu-item relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none">
+        Traverse edges
+      </div>
+      <div className="cn-context-menu-item relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none">
+        View action log
+      </div>
+      <div className="cn-context-menu-separator -mx-1 my-1 h-px bg-border" />
+      <div className="cn-context-menu-item relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm text-destructive outline-none">
+        Submit for approval
+      </div>
+    </div>
+  ),
+};
+
 export const Default: Story = {
   render: () => (
     <ContextMenu>

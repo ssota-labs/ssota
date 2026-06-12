@@ -9,32 +9,47 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 
+type PaginationStoryArgs = {
+  activePage: number;
+};
+
 const meta = {
   title: "Components/Pagination",
-  component: Pagination,
   tags: ["autodocs"],
-} satisfies Meta<typeof Pagination>;
+  argTypes: {
+    activePage: {
+      control: { type: "number", min: 1, max: 3, step: 1 },
+    },
+  },
+} satisfies Meta<PaginationStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<PaginationStoryArgs>;
 
 export const Default: Story = {
-  render: () => (
+  args: {
+    activePage: 2,
+  },
+  render: (args) => (
     <Pagination>
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious href="#" />
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">1</PaginationLink>
+          <PaginationLink href="#" isActive={args.activePage === 1}>
+            1
+          </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#" isActive>
+          <PaginationLink href="#" isActive={args.activePage === 2}>
             2
           </PaginationLink>
         </PaginationItem>
         <PaginationItem>
-          <PaginationLink href="#">3</PaginationLink>
+          <PaginationLink href="#" isActive={args.activePage === 3}>
+            3
+          </PaginationLink>
         </PaginationItem>
         <PaginationItem>
           <PaginationEllipsis />

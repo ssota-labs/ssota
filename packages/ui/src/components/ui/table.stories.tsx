@@ -9,14 +9,65 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
+type TableStoryArgs = {
+  rowCount: number;
+};
+
+const outcomes = ["committed", "gate_pending", "rejected"] as const;
+const actions = ["approve_gate", "create_node", "update_node", "execute_action"];
+
 const meta = {
   title: "Components/Table",
-  component: Table,
   tags: ["autodocs"],
-} satisfies Meta<typeof Table>;
+  argTypes: {
+    rowCount: {
+      control: { type: "number", min: 1, max: 6, step: 1 },
+    },
+  },
+} satisfies Meta<TableStoryArgs>;
 
 export default meta;
-type Story = StoryObj<typeof meta>;
+type Story = StoryObj<TableStoryArgs>;
+
+export const Default: Story = {
+  args: {
+    rowCount: 2,
+  },
+  render: (args) => {
+    const rows = Array.from({ length: args.rowCount }, (_, index) => ({
+      action: actions[index % actions.length],
+      actor: index % 2 === 0 ? "smoke@ssota.test" : "agent",
+      outcome: outcomes[index % outcomes.length],
+    }));
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Action</TableHead>
+            <TableHead>Actor</TableHead>
+            <TableHead>Outcome</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow key={`${row.action}-${row.actor}`}>
+              <TableCell>{row.action}</TableCell>
+              <TableCell>{row.actor}</TableCell>
+              <TableCell>
+                <Badge
+                  variant={row.outcome === "committed" ? "outline" : "secondary"}
+                >
+                  {row.outcome}
+                </Badge>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  },
+};
 
 export const ActionLog: Story = {
   render: () => (
