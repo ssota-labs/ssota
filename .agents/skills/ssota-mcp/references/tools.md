@@ -1,8 +1,21 @@
 # SSOTA MCP Tools
 
-Three read tiers plus one write path.
+MCP is split by URL query params on the **single** endpoint `/api/mcp`:
 
-## Discover (`list_*`)
+| MCP URL | Tools |
+|---|---|
+| `/api/mcp` | Account discover (`list_organizations`, `list_projects`, `get_project`) |
+| `/api/mcp?org={orgSlug}&project={projectSlug}` | Project graph/catalog/action tools below |
+
+Configure Cursor `mcp.json` with the project query URL — no headers.
+
+## Account discover (root `/api/mcp` only)
+
+- `list_organizations` — orgs the user belongs to
+- `list_projects` — accessible projects + MCP URLs (optional `orgSlug` filter)
+- `get_project` — one project by `orgSlug` + `projectSlug`
+
+## Discover (`list_*`) — project MCP only
 
 Catalog or queue **index only**. Do not read full details from list responses.
 

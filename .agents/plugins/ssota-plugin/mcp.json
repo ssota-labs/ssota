@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "ssota-local": {
-      "url": "http://127.0.0.1:3001/api/mcp",
+      "url": "http://127.0.0.1:3001/api/mcp?org=ssota-labs&project=ssota-dev",
       "transport": "http",
       "headers": {
         "Authorization": "Bearer ${SSOTA_MCP_TOKEN}"
