@@ -16,7 +16,7 @@ export function InspectorPanel() {
   ];
 
   return (
-    <div className="flex h-full flex-col border-l border-border bg-card">
+    <div className="flex h-full min-h-0 flex-col border-l border-border bg-card">
       <div className="flex border-b border-border">
         {tabs.map((t) => (
           <button
@@ -33,7 +33,7 @@ export function InspectorPanel() {
           </button>
         ))}
       </div>
-      <div className="flex-1 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {tab === "tokens" && <TokenInspector />}
         {tab === "theme" && <ThemeInspector />}
         {tab === "export" && <ExportPanel />}

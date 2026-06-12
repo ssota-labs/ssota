@@ -3,7 +3,7 @@ import {
   SLOT_DEFAULT_TOKENS,
   TOKEN_MANIFEST,
   type TokenDefinition,
-} from "@ssota/ui/design-lab/token-manifest";
+} from "../token-manifest";
 
 export type ResolvedSelection = {
   element: HTMLElement;

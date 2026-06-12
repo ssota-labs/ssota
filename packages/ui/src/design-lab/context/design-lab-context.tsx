@@ -10,7 +10,6 @@ import {
 import {
   buildExportCss,
   buildOverrideCss,
-  getDefaultThemeOverrides,
   type ThemeOverrides,
   type TokenOverrides,
 } from "../lib/override-engine";
@@ -116,5 +115,3 @@ export function useDesignLab(): DesignLabContextValue {
   }
   return ctx;
 }
-
-export { getDefaultThemeOverrides };

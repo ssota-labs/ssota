@@ -1,4 +1,4 @@
-import { THEME_MANIFEST } from "@ssota/ui/design-lab/theme-manifest";
+import { THEME_MANIFEST } from "../theme-manifest";
 
 export type TokenOverrides = Record<string, Record<string, string>>;
 export type ThemeOverrides = Record<string, string>;

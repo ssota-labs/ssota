@@ -9,5 +9,5 @@
       "@ssota/ui/*": ["../../packages/ui/src/*"]
     }
   },
-  "include": ["src", "src/vite-env.d.ts", "../../packages/ui/src/**/*.stories.tsx"]
+  "include": ["src/main.tsx", "src/vite-env.d.ts"]
 }

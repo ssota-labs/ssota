@@ -4,7 +4,7 @@ import {
   type ReactNode,
 } from "react";
 
-type StoryModule = {
+export type StoryModule = {
   default?: {
     title?: string;
     component?: ComponentType<Record<string, unknown>>;
@@ -20,10 +20,7 @@ export type StoryCatalogEntry = {
   render: () => ReactNode;
 };
 
-const storyModules = import.meta.glob(
-  "../../../../packages/ui/src/**/*.stories.tsx",
-  { eager: true },
-) as Record<string, StoryModule>;
+export const DEFAULT_STORY_ID = "Components/Button/AllVariants";
 
 function renderStory(
   meta: StoryModule["default"],
@@ -44,7 +41,9 @@ function renderStory(
   return null;
 }
 
-function buildCatalog(): StoryCatalogEntry[] {
+export function buildStoryCatalog(
+  storyModules: Record<string, StoryModule>,
+): StoryCatalogEntry[] {
   const entries: StoryCatalogEntry[] = [];
 
   for (const [path, mod] of Object.entries(storyModules)) {
@@ -74,10 +73,6 @@ function buildCatalog(): StoryCatalogEntry[] {
     return a.storyName.localeCompare(b.storyName);
   });
 }
-
-export const STORY_CATALOG = buildCatalog();
-
-export const DEFAULT_STORY_ID = "Components/Button/AllVariants";
 
 export function groupStoriesByTitle(
   entries: StoryCatalogEntry[],

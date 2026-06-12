@@ -1,19 +1,23 @@
 import { useMemo, useState } from "react";
 
-import { DesignLabProvider, useDesignLab } from "./context/design-lab-context";
 import { OverrideStyle } from "./components/OverrideStyle";
 import { Shell } from "./components/Shell";
+import { DesignLabProvider, useDesignLab } from "./context/design-lab-context";
 import {
   DEFAULT_STORY_ID,
-  STORY_CATALOG,
   type StoryCatalogEntry,
 } from "./lib/story-catalog";
 
-function AppHeader() {
+export type DesignLabProps = {
+  stories: StoryCatalogEntry[];
+  defaultStoryId?: string;
+};
+
+function DesignLabHeader() {
   const { isDark, setIsDark } = useDesignLab();
 
   return (
-    <header className="flex h-10 items-center justify-between border-b border-border bg-card px-4">
+    <header className="flex h-10 shrink-0 items-center justify-between border-b border-border bg-card px-4">
       <div className="flex items-center gap-2">
         <span className="text-sm font-semibold text-foreground">
           SSOTA Design Lab
@@ -33,13 +37,14 @@ function AppHeader() {
   );
 }
 
-function AppContent() {
+function DesignLabContent({
+  stories,
+  defaultStoryId = DEFAULT_STORY_ID,
+}: DesignLabProps) {
   const defaultStory = useMemo(
     () =>
-      STORY_CATALOG.find((s) => s.id === DEFAULT_STORY_ID) ??
-      STORY_CATALOG[0] ??
-      null,
-    [],
+      stories.find((s) => s.id === defaultStoryId) ?? stories[0] ?? null,
+    [stories, defaultStoryId],
   );
 
   const [selectedStory, setSelectedStory] = useState<StoryCatalogEntry | null>(
@@ -47,10 +52,11 @@ function AppContent() {
   );
 
   return (
-    <div className="flex h-screen flex-col bg-background text-foreground">
-      <AppHeader />
-      <div className="flex-1 overflow-hidden">
+    <div className="flex h-full min-h-0 flex-col bg-background text-foreground">
+      <DesignLabHeader />
+      <div className="min-h-0 flex-1 overflow-hidden">
         <Shell
+          stories={stories}
           selectedStory={selectedStory}
           selectedId={selectedStory?.id ?? null}
           onSelectStory={setSelectedStory}
@@ -61,10 +67,10 @@ function AppContent() {
   );
 }
 
-export function App() {
+export function DesignLab({ stories, defaultStoryId }: DesignLabProps) {
   return (
     <DesignLabProvider>
-      <AppContent />
+      <DesignLabContent stories={stories} defaultStoryId={defaultStoryId} />
     </DesignLabProvider>
   );
 }

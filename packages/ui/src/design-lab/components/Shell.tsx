@@ -2,7 +2,7 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@ssota/ui/components/ui/resizable";
+} from "@/components/ui/resizable";
 
 import { InspectorPanel } from "./InspectorPanel";
 import { PreviewCanvas } from "./PreviewCanvas";
@@ -10,23 +10,45 @@ import { StoryCatalog } from "./StoryCatalog";
 import type { StoryCatalogEntry } from "../lib/story-catalog";
 
 type ShellProps = {
+  stories: StoryCatalogEntry[];
   selectedStory: StoryCatalogEntry | null;
   selectedId: string | null;
   onSelectStory: (entry: StoryCatalogEntry) => void;
 };
 
 export function Shell({
+  stories,
   selectedStory,
   selectedId,
   onSelectStory,
 }: ShellProps) {
   return (
-    <ResizablePanelGroup orientation="horizontal" className="h-full">
-      <ResizablePanel defaultSize={18} minSize={14} maxSize={28}>
-        <StoryCatalog selectedId={selectedId} onSelect={onSelectStory} />
+    <ResizablePanelGroup
+      id="design-lab-shell"
+      orientation="horizontal"
+      className="h-full min-h-0"
+      defaultLayout={{ catalog: 18, canvas: 58, inspector: 24 }}
+    >
+      <ResizablePanel
+        id="catalog"
+        defaultSize="18%"
+        minSize="14%"
+        maxSize="28%"
+        className="min-h-0"
+      >
+        <StoryCatalog
+          stories={stories}
+          selectedId={selectedId}
+          onSelect={onSelectStory}
+        />
       </ResizablePanel>
-      <ResizableHandle className="w-px bg-border" />
-      <ResizablePanel defaultSize={58} minSize={40}>
+      <ResizableHandle withHandle />
+      <ResizablePanel
+        id="canvas"
+        defaultSize="58%"
+        minSize="35%"
+        className="min-h-0"
+      >
         <PreviewCanvas>
           {selectedStory ? selectedStory.render() : (
             <p className="text-sm text-muted-foreground">
@@ -35,8 +57,14 @@ export function Shell({
           )}
         </PreviewCanvas>
       </ResizablePanel>
-      <ResizableHandle className="w-px bg-border" />
-      <ResizablePanel defaultSize={24} minSize={18} maxSize={36}>
+      <ResizableHandle withHandle />
+      <ResizablePanel
+        id="inspector"
+        defaultSize="24%"
+        minSize="18%"
+        maxSize="36%"
+        className="min-h-0"
+      >
         <InspectorPanel />
       </ResizablePanel>
     </ResizablePanelGroup>

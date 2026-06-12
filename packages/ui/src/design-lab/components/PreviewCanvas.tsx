@@ -31,7 +31,7 @@ export function PreviewCanvas({ children }: PreviewCanvasProps) {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <style>{`
         .design-lab-selected {
           outline: 2px solid oklch(0.52 0.105 223.128 / 0.6) !important;
@@ -40,7 +40,7 @@ export function PreviewCanvas({ children }: PreviewCanvasProps) {
       `}</style>
       <div
         ref={canvasRef}
-        className={isDark ? "dark flex-1 overflow-auto" : "flex-1 overflow-auto"}
+        className={isDark ? "dark min-h-0 flex-1 overflow-auto" : "min-h-0 flex-1 overflow-auto"}
         onClick={handleClick}
       >
         <div className="style-ssota design-lab-preview min-h-full bg-background p-8">

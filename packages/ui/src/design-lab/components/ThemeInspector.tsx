@@ -1,5 +1,4 @@
-import { THEME_MANIFEST } from "@ssota/ui/design-lab/theme-manifest";
-
+import { THEME_MANIFEST } from "../theme-manifest";
 import { useDesignLab } from "../context/design-lab-context";
 import {
   formatLengthFromPx,
