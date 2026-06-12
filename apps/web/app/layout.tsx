@@ -27,7 +27,7 @@ export default async function RootLayout({
   const { locale, messages, t } = await getTranslations();
 
   return (
-    <html lang={locale} className={cn("font-sans", geist.variable)}>
+    <html lang={locale} className={cn("style-ssota font-sans", geist.variable)}>
       <body className="min-h-screen bg-background text-foreground">
         <LocaleProvider locale={locale} messages={messages}>
           <TooltipProvider>

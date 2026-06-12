@@ -30,7 +30,7 @@ const preview: Preview = {
           "div",
           {
             className:
-              "min-h-[120px] bg-background p-6 font-sans text-foreground",
+              "style-ssota min-h-[120px] bg-background p-6 font-sans text-foreground",
           },
           React.createElement(Story),
         ),
