@@ -7,17 +7,15 @@ import {
   DefineEdgeTypeInputSchema,
   DefineInstructionInputSchema,
   DefineNodeTypeInputSchema,
-  DefinePropertyInputSchema,
   DeprecateActionContractInputSchema,
   DeprecateEdgeTypeInputSchema,
   DeprecateInstructionInputSchema,
   DeprecateNodeTypeInputSchema,
-  DeprecatePropertyInputSchema,
   UpdateActionContractInputSchema,
   UpdateEdgeTypeInputSchema,
   UpdateInstructionInputSchema,
   UpdateNodeTypeInputSchema,
-  UpdatePropertyInputSchema,
+  UpdateNodePropertySchemaInputSchema,
   UpdatePropertyPermissionInputSchema,
 } from "@ssota/contracts";
 import type { ExecuteActionResult } from "@ssota/contracts";
@@ -327,19 +325,6 @@ export async function defineEdgeTypeAction(input: Record<string, unknown>) {
   ], projectId);
 }
 
-export async function definePropertyAction(input: Record<string, unknown>) {
-  const { projectId: inputProjectId, ...rest } = input;
-  const parsed = DefinePropertyInputSchema.parse(rest);
-  const projectId =
-    typeof inputProjectId === "string" && inputProjectId
-      ? inputProjectId
-      : await resolveDefaultProjectId();
-  return runMetaAction("define_property", parsed, [
-    "/studio/properties",
-    "/log",
-  ], projectId);
-}
-
 export async function defineInstructionAction(input: Record<string, unknown>) {
   const { projectId: inputProjectId, ...rest } = input;
   const parsed = DefineInstructionInputSchema.parse(rest);
@@ -379,29 +364,20 @@ export async function deprecateEdgeTypeAction(input: Record<string, unknown>) {
   ], projectId);
 }
 
-export async function updatePropertyAction(input: Record<string, unknown>) {
+export async function updateNodePropertySchemaAction(
+  input: Record<string, unknown>,
+) {
   const { projectId: inputProjectId, ...rest } = input;
-  const parsed = UpdatePropertyInputSchema.parse(rest);
+  const parsed = UpdateNodePropertySchemaInputSchema.parse(rest);
   const projectId =
     typeof inputProjectId === "string" && inputProjectId
       ? inputProjectId
       : await resolveDefaultProjectId();
-  return runMetaAction("update_property", parsed, [
-    "/studio/properties",
+  return runMetaAction("update_node_property_schema", parsed, [
+    "/studio/node-types",
+    "/catalog",
     "/log",
-  ], projectId);
-}
-
-export async function deprecatePropertyAction(input: Record<string, unknown>) {
-  const { projectId: inputProjectId, ...rest } = input;
-  const parsed = DeprecatePropertyInputSchema.parse(rest);
-  const projectId =
-    typeof inputProjectId === "string" && inputProjectId
-      ? inputProjectId
-      : await resolveDefaultProjectId();
-  return runMetaAction("deprecate_property", parsed, [
-    "/studio/properties",
-    "/log",
+    "/gates",
   ], projectId);
 }
 
@@ -494,7 +470,6 @@ export async function createNodeTableFormAction(formData: FormData): Promise<voi
       typicalValueOverrides: parseJsonObject(formData.get("typicalValueOverrides")),
       lifecycleTransitions: defaultLifecycleTransitions(),
       contentGuide: String(formData.get("contentGuide") ?? "") || null,
-      propertyRefs: parseCsv(formData.get("propertyRefs")),
       allowedActionRefs: parseCsv(formData.get("allowedActionRefs")),
     },
     projectId,
@@ -509,55 +484,33 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
   const nodeType = String(formData.get("nodeType") ?? "");
   const propertyKey = String(formData.get("propertyKey") ?? "");
   const valueType = String(formData.get("valueType") ?? "string");
+  const required = formData.get("required") === "true";
   const ports = getActionPorts(projectId);
-  const existingProperty = await ports.catalog.getPropertyCatalogEntry(propertyKey);
 
-  if (!existingProperty) {
-    const propertyResult = await executeAction(ports, {
-      actionType: "define_property",
-      input: {
-        definition: {
-          propertyKey,
-          valueType,
-          constraints: parseJsonObject(formData.get("constraints")),
-          owningActions: parseCsv(formData.get("owningActions")),
+  const result = await executeAction(ports, {
+    actionType: "update_node_property_schema",
+    input: {
+      nodeType,
+      patch: {
+        add: {
+          [propertyKey]: {
+            valueType,
+            constraints: parseJsonObject(formData.get("constraints")),
+            required,
+          },
         },
       },
-      executorId: user.id,
-      executorType: "Human",
-      projectId,
-    });
-    if (propertyResult.status === "rejected") return;
-  }
-
-  const nodeEntry = await ports.catalog.getNodeCatalogEntry(nodeType);
-  if (!nodeEntry) throw new Error(`Node type '${nodeType}' not found`);
-  const existingPropertyRefs =
-    nodeEntry.propertyRefs.length > 0
-      ? nodeEntry.propertyRefs
-      : (await ports.catalog.listPropertyCatalogEntries()).map(
-          (property) => property.propertyKey,
-        );
-  const titleProperty = await ports.catalog.getPropertyCatalogEntry("title");
-  const propertyRefs = Array.from(
-    new Set([
-      ...existingPropertyRefs,
-      ...(titleProperty ? ["title"] : []),
-      propertyKey,
-    ]),
-  );
-  await executeAction(ports, {
-    actionType: "update_node_type",
-    input: { nodeType, patch: { propertyRefs } },
+    },
     executorId: user.id,
     executorType: "Human",
     projectId,
   });
+  if (result.status === "rejected") return;
 
-  const nodeSlug = nodeEntry.slug;
+  const nodeEntry = await ports.catalog.getNodeCatalogEntry(nodeType);
+  const nodeSlug = nodeEntry?.slug ?? nodeType;
   for (const path of withConsolePaths([
     "/studio/node-types",
-    "/studio/properties",
     "/catalog",
     "/log",
     "/gates",

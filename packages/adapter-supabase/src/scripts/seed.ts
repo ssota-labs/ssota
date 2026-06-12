@@ -53,6 +53,24 @@ async function seedCatalog(
     Deleted: [],
   };
 
+  const titlePropertySchema = {
+    title: {
+      valueType: "string",
+      constraints: { minLength: 1, maxLength: 500 },
+      required: true,
+      system: true,
+    },
+  };
+
+  const titleSubjectPropertySchema = {
+    ...titlePropertySchema,
+    subject_id: {
+      valueType: "string",
+      constraints: { minLength: 1 },
+      required: true,
+    },
+  };
+
   await db
     .insert(schema.nodeCatalog)
     .values([
@@ -66,7 +84,7 @@ async function seedCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Free-form note content",
-        propertyRefs: ["title"],
+        propertySchema: titlePropertySchema,
         allowedActionRefs: [],
       },
       {
@@ -79,7 +97,7 @@ async function seedCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Structured document with title and body",
-        propertyRefs: ["title"],
+        propertySchema: titlePropertySchema,
         allowedActionRefs: [],
       },
       {
@@ -92,7 +110,7 @@ async function seedCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Agent instruction with trigger patterns",
-        propertyRefs: ["title"],
+        propertySchema: titlePropertySchema,
         allowedActionRefs: [],
       },
       {
@@ -105,7 +123,7 @@ async function seedCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational project node",
-        propertyRefs: ["title", "subject_id"],
+        propertySchema: titleSubjectPropertySchema,
         allowedActionRefs: [],
       },
       {
@@ -118,7 +136,7 @@ async function seedCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational task node",
-        propertyRefs: ["title", "subject_id"],
+        propertySchema: titleSubjectPropertySchema,
         allowedActionRefs: [],
       },
     ])
@@ -150,40 +168,15 @@ async function seedCatalog(
     ])
     .onConflictDoNothing();
 
-  await db
-    .insert(schema.propertyCatalog)
-    .values([
-      {
-        projectId,
-        propertyKey: "title",
-        valueType: "string",
-        constraints: { maxLength: 500 },
-        owningActions: [
-          "create_document",
-          "update_document",
-          "create_project",
-          "create_task",
-        ],
-      },
-      {
-        projectId,
-        propertyKey: "subject_id",
-        valueType: "string",
-        constraints: { minLength: 1 },
-        owningActions: ["create_project", "create_task"],
-      },
-    ])
-    .onConflictDoNothing();
-
   const actionCatalogRows = [
       {
-        actionType: "create_project",
-        preconditions: { requiredFields: ["title"] },
+        actionType: "create_node",
+        preconditions: { requiredFields: ["nodeType"] },
         effects: [
           {
             kind: "create_node",
             node: {
-              nodeType: "Project",
+              nodeType: "",
               lifecycleStatus: "Draft",
               properties: {},
               content: null,
@@ -194,70 +187,26 @@ async function seedCatalog(
         executor: "Agent",
         allowedLifecycleTransitions: {},
         failureMode: "reject",
-        idempotencyRule: "key",
+        idempotencyRule: null,
         logPayloadSchema: {},
       },
       {
-        actionType: "create_task",
-        preconditions: { requiredFields: ["title"] },
+        actionType: "update_node_properties",
+        preconditions: {
+          requiredFields: ["nodeId", "properties"],
+          requiresExistingNode: true,
+        },
         effects: [
           {
-            kind: "create_node",
-            node: {
-              nodeType: "Task",
-              lifecycleStatus: "Draft",
-              properties: {},
-              content: null,
-              provenance: {},
-            },
+            kind: "update_node",
+            nodeId: "",
+            patch: { properties: {} },
           },
         ],
         executor: "Agent",
         allowedLifecycleTransitions: {},
         failureMode: "reject",
-        idempotencyRule: "key",
-        logPayloadSchema: {},
-      },
-      {
-        actionType: "create_note",
-        preconditions: { requiredFields: ["content"] },
-        effects: [
-          {
-            kind: "create_node",
-            node: {
-              nodeType: "Note",
-              lifecycleStatus: "Draft",
-              properties: {},
-              content: null,
-              provenance: {},
-            },
-          },
-        ],
-        executor: "Agent",
-        allowedLifecycleTransitions: {},
-        failureMode: "reject",
-        idempotencyRule: "key",
-        logPayloadSchema: {},
-      },
-      {
-        actionType: "create_document",
-        preconditions: { requiredFields: ["title", "content"] },
-        effects: [
-          {
-            kind: "create_node",
-            node: {
-              nodeType: "Document",
-              lifecycleStatus: "Draft",
-              properties: {},
-              content: null,
-              provenance: {},
-            },
-          },
-        ],
-        executor: "Agent",
-        allowedLifecycleTransitions: {},
-        failureMode: "reject",
-        idempotencyRule: "key",
+        idempotencyRule: null,
         logPayloadSchema: {},
       },
       {
@@ -289,12 +238,13 @@ async function seedCatalog(
   await db.insert(schema.actionCatalog).values(actionCatalogValues).onConflictDoNothing();
 
   const permissionRows = [
-    ["create_note", "Note", "title"],
-    ["create_document", "Document", "title"],
-    ["create_project", "Project", "title"],
-    ["create_project", "Project", "subject_id"],
-    ["create_task", "Task", "title"],
-    ["create_task", "Task", "subject_id"],
+    ["create_node", "Note", "title"],
+    ["create_node", "Document", "title"],
+    ["create_node", "Project", "title"],
+    ["create_node", "Project", "subject_id"],
+    ["create_node", "Task", "title"],
+    ["create_node", "Task", "subject_id"],
+    ["update_node_properties", "Document", "title"],
   ] as const;
 
   await db
@@ -305,7 +255,9 @@ async function seedCatalog(
         actionType,
         nodeType,
         propertyKey,
-        operation: "write" as const,
+        operation: (actionType === "create_node" ? "create" : "write") as
+          | "create"
+          | "write",
         permissionType: "allow" as const,
         requiresHumanGate: false,
         status: "active",
@@ -337,7 +289,7 @@ const DOMAIN_INSTRUCTIONS = [
       "document creation",
     ],
     applicableNodeTypes: ["Document"],
-    requiredActions: ["create_document"],
+    requiredActions: ["create_node"],
     optionalActions: ["promote_document"],
     lifecycle: "Active" as const,
     body: "Create documents as Draft. Include title, content, and provenance. Promote only through Human Gate.",
@@ -345,15 +297,15 @@ const DOMAIN_INSTRUCTIONS = [
       {
         id: "contract",
         title: "Load contract",
-        actionRefs: ["create_document"],
+        actionRefs: ["create_node"],
       },
       {
         id: "execute",
         title: "Create draft",
-        actionRefs: ["create_document"],
+        actionRefs: ["create_node"],
       },
     ],
-    allowedActions: ["create_document"],
+    allowedActions: ["create_node"],
     gatePolicy: { promote: "human_required" },
     completionCriteria: "Document node exists in Draft",
   },
@@ -366,11 +318,11 @@ const DOMAIN_INSTRUCTIONS = [
     ],
     applicableNodeTypes: ["Document"],
     requiredActions: [],
-    optionalActions: ["create_document"],
+    optionalActions: ["create_node", "update_node_properties"],
     lifecycle: "Active" as const,
     body: "Confirm document mutability and authority before updating. Gate if authority or document kind is unclear. Load target via get_node first.",
     workflowSteps: [],
-    allowedActions: ["create_document"],
+    allowedActions: ["create_node", "update_node_properties"],
     gatePolicy: { unclear_mutability: "gate" },
     completionCriteria: "Mutation plan recorded or gated",
   },
@@ -400,12 +352,12 @@ const DOMAIN_INSTRUCTIONS = [
       "meeting notes",
     ],
     applicableNodeTypes: ["Meeting", "Task", "Note"],
-    requiredActions: ["create_note"],
-    optionalActions: ["create_document"],
+    requiredActions: ["create_node"],
+    optionalActions: ["create_node"],
     lifecycle: "Active" as const,
     body: "Extract candidates from meetings. Do not finalize tasks without source provenance. Default new work items to Draft.",
     workflowSteps: [],
-    allowedActions: ["create_note", "create_document"],
+    allowedActions: ["create_node"],
     gatePolicy: { finalize_task: "human_required" },
     completionCriteria: "Provenance links meeting to derived work",
   },

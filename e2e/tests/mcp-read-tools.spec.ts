@@ -21,14 +21,15 @@ test.describe("MCP read tools", () => {
       mcpUrl,
       token,
       "get_action_contract",
-      { actionType: "create_document" },
+      { actionType: "create_node" },
     )) as { actionType: string } | null;
-    expect(createContract?.actionType).toBe("create_document");
+    expect(createContract?.actionType).toBe("create_node");
 
     const nodeType = (await mcpToolCall(request, mcpUrl, token, "get_node_type", {
       nodeType: "Document",
-    })) as { nodeType: string } | null;
+    })) as { nodeType: string; propertySchema: Record<string, unknown> } | null;
     expect(nodeType?.nodeType).toBe("Document");
+    expect(nodeType?.propertySchema?.title).toBeTruthy();
 
     const found = (await mcpToolCall(request, mcpUrl, token, "find_instruction", {
       query: "document creation",

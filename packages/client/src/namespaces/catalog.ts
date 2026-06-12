@@ -7,13 +7,10 @@ import {
   EdgeCatalogListResponseSchema,
   NodeCatalogEntryResponseSchema,
   NodeCatalogListResponseSchema,
-  PropertyCatalogEntryResponseSchema,
-  PropertyCatalogListResponseSchema,
   type ActionCatalogEntry,
   type Archetype,
   type EdgeCatalogEntry,
   type NodeCatalogEntry,
-  type PropertyCatalogEntry,
 } from "@ssota/contracts";
 import type { HttpClient } from "../http.js";
 
@@ -47,22 +44,6 @@ export function createCatalogApi(http: HttpClient) {
       const result = await http.get(
         `/catalog/edge-types/${encodeURIComponent(edgeType)}`,
         EdgeCatalogEntryResponseSchema,
-      );
-      return result.data;
-    },
-
-    async listProperties(): Promise<PropertyCatalogEntry[]> {
-      const result = await http.get(
-        "/catalog/properties",
-        PropertyCatalogListResponseSchema,
-      );
-      return result.data;
-    },
-
-    async getProperty(propertyKey: string): Promise<PropertyCatalogEntry | null> {
-      const result = await http.get(
-        `/catalog/properties/${encodeURIComponent(propertyKey)}`,
-        PropertyCatalogEntryResponseSchema,
       );
       return result.data;
     },

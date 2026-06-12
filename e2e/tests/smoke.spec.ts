@@ -25,7 +25,7 @@ test.describe("SSOTA Console", () => {
     await expect(
       page.getByRole("link", { name: "HomepageProject" }),
     ).toBeVisible();
-    await expect(page.getByText("create_homepage_project").first()).toBeVisible();
+    await expect(page.getByText("create_node").first()).toBeVisible();
     await expect(page.getByText("Homepage creation workflow")).toBeVisible();
   });
 

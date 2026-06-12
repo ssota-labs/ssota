@@ -4,7 +4,7 @@ import {
   getBuiltinActionCatalogEntryBySlug,
   isBuiltinActionType,
   listBuiltinActionCatalogEntries,
-} from "./builtin-meta-actions.js";
+} from "./builtin-actions.js";
 
 function withProjectSource(entry: ActionCatalogEntry): ActionCatalogEntry {
   return entry.catalogSource ? entry : { ...entry, catalogSource: "project" };

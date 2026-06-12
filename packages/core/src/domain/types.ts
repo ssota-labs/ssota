@@ -10,7 +10,8 @@ import type {
   NodeFamily,
   PermissionOperation,
   PermissionType,
-  PropertyCatalogEntry as ContractPropertyCatalogEntry,
+  PropertySchema,
+  PropertySchemaField,
 } from "@ssota/contracts";
 
 export interface Archetype {
@@ -30,9 +31,11 @@ export interface NodeCatalogEntry {
   typicalValueOverrides: Record<string, unknown>;
   lifecycleTransitions: Record<LifecycleStatus, LifecycleStatus[]>;
   contentGuide: string | null;
-  propertyRefs: string[];
+  propertySchema: PropertySchema;
   allowedActionRefs: string[];
 }
+
+export type { PropertySchema, PropertySchemaField };
 
 export interface Node {
   id: string;
@@ -66,8 +69,6 @@ export interface Edge {
   properties: Record<string, unknown>;
   createdAt: Date;
 }
-
-export type PropertyCatalogEntry = ContractPropertyCatalogEntry;
 
 export interface ActionCatalogEntry {
   actionType: string;
@@ -265,10 +266,6 @@ export interface CatalogPort {
   getEdgeCatalogEntry(edgeType: string): Promise<EdgeCatalogEntry | null>;
   getEdgeCatalogEntryBySlug(slug: string): Promise<EdgeCatalogEntry | null>;
   listEdgeCatalogEntries(): Promise<EdgeCatalogEntry[]>;
-  getPropertyCatalogEntry(
-    propertyKey: string,
-  ): Promise<PropertyCatalogEntry | null>;
-  listPropertyCatalogEntries(): Promise<PropertyCatalogEntry[]>;
   getActionCatalogEntry(actionType: string): Promise<ActionCatalogEntry | null>;
   getActionCatalogEntryBySlug(slug: string): Promise<ActionCatalogEntry | null>;
   listActionCatalogEntries(): Promise<ActionCatalogEntry[]>;

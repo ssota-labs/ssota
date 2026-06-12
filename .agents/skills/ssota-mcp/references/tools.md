@@ -25,9 +25,8 @@ Tenant scope (B2B2C embedders): `X-SSOTA-Subject-Id` header — set by embedder 
 
 Catalog or queue **index only**. Requires `orgSlug` + `projectSlug`.
 
-- `list_node_types` → use `get_node_type`
+- `list_node_types` → use `get_node_type` (includes `propertySchema`)
 - `list_edge_types` → use `get_edge_type`
-- `list_properties` → use `get_property`
 - `list_action_contracts` → use `get_action_contract`
 - `list_archetypes` → use `get_archetype`
 - `list_pending_gates` → use `get_gate` or `query_gates`
@@ -39,9 +38,8 @@ Single entity by primary key. Requires `orgSlug` + `projectSlug`.
 - `get_node` — `nodeId`
 - `get_instruction` — `instructionId`
 - `get_gate` — `gateId`
-- `get_node_type` — `nodeType`
+- `get_node_type` — `nodeType` (property fields live in `propertySchema`)
 - `get_edge_type` — `edgeType`
-- `get_property` — `propertyKey`
 - `get_archetype` — `archetypeId`
 - `get_action_contract` — `actionType`
 - `get_action_log_entry` — `logId` or `idempotencyKey`

@@ -87,12 +87,8 @@ export default async function GraphNodesPage({
             </datalist>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="propertyRefs">Initial properties</Label>
-            <Input id="propertyRefs" name="propertyRefs" placeholder="title, authority_level" />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="allowedActionRefs">Allowed actions</Label>
-            <Input id="allowedActionRefs" name="allowedActionRefs" placeholder="create_document" />
+            <Input id="allowedActionRefs" name="allowedActionRefs" placeholder="create_node, promote_document" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="contentGuide">Content guide</Label>

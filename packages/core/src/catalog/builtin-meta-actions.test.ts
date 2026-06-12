@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  BUILTIN_ACTION_TYPES,
+  BUILTIN_META_ACTION_TYPES,
   getBuiltinActionCatalogEntry,
   listBuiltinActionCatalogEntries,
 } from "./builtin-meta-actions.js";
@@ -11,9 +11,9 @@ import {
 import type { ActionCatalogEntry } from "../domain/types.js";
 
 describe("builtin meta actions", () => {
-  it("exposes 17 built-in meta/runtime actions", () => {
-    expect(BUILTIN_ACTION_TYPES.size).toBe(17);
-    expect(listBuiltinActionCatalogEntries()).toHaveLength(17);
+  it("exposes 14 built-in meta actions", () => {
+    expect(BUILTIN_META_ACTION_TYPES.size).toBe(14);
+    expect(listBuiltinActionCatalogEntries()).toHaveLength(14);
   });
 
   it("marks built-in entries with catalogSource builtin", () => {
@@ -50,13 +50,13 @@ describe("builtin meta actions", () => {
 
   it("merge list dedupes project copies of built-in actions", () => {
     const projectOnly: ActionCatalogEntry = {
-      actionType: "create_note",
-      slug: "create_note",
-      label: "Create Note",
+      actionType: "promote_document",
+      slug: "promote_document",
+      label: "Promote Document",
       scope: { kind: "global" },
-      preconditions: { requiredFields: ["content"] },
+      preconditions: { requiredFields: ["nodeId"] },
       effects: [],
-      executor: "Agent",
+      executor: "Human",
       allowedLifecycleTransitions: {},
       failureMode: "reject",
       idempotencyRule: null,
@@ -79,7 +79,7 @@ describe("builtin meta actions", () => {
     expect(merged.find((e) => e.actionType === "define_node_type")?.catalogSource).toBe(
       "builtin",
     );
-    expect(merged.find((e) => e.actionType === "create_note")?.catalogSource).toBe(
+    expect(merged.find((e) => e.actionType === "promote_document")?.catalogSource).toBe(
       "project",
     );
   });

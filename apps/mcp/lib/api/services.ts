@@ -10,7 +10,6 @@ import {
   GetInstructionInputSchema,
   GetNodeInputSchema,
   GetNodeTypeInputSchema,
-  GetPropertyInputSchema,
   QueryGatesInputSchema,
   QueryNeighborsInputSchema,
   QueryNodesInputSchema,
@@ -31,7 +30,6 @@ import {
   serializeInstruction,
   serializeNode,
   serializeNodeCatalogEntry,
-  serializePropertyCatalogEntry,
 } from "@ssota/core";
 import type { ExecutorType } from "@ssota/contracts";
 import { queryNeighbors, traverseGraph } from "@/lib/graph-query";
@@ -47,12 +45,6 @@ export async function listEdgeTypes(projectId: string) {
   const ports = getActionPorts(projectId);
   const entries = await ports.catalog.listEdgeCatalogEntries();
   return entries.map(serializeEdgeCatalogEntry);
-}
-
-export async function listProperties(projectId: string) {
-  const ports = getActionPorts(projectId);
-  const entries = await ports.catalog.listPropertyCatalogEntries();
-  return entries.map(serializePropertyCatalogEntry);
 }
 
 export async function listActionContracts(projectId: string) {
@@ -77,12 +69,6 @@ export async function getEdgeType(projectId: string, edgeType: string) {
   const ports = getActionPorts(projectId);
   const entry = await ports.catalog.getEdgeCatalogEntry(edgeType);
   return entry ? serializeEdgeCatalogEntry(entry) : null;
-}
-
-export async function getProperty(projectId: string, propertyKey: string) {
-  const ports = getActionPorts(projectId);
-  const entry = await ports.catalog.getPropertyCatalogEntry(propertyKey);
-  return entry ? serializePropertyCatalogEntry(entry) : null;
 }
 
 export async function getArchetype(projectId: string, archetypeId: string) {

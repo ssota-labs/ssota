@@ -1,5 +1,4 @@
 import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
-import { and, eq } from "drizzle-orm";
 import type { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
@@ -12,35 +11,32 @@ const defaultTransitions = {
   Deleted: [] as string[],
 };
 
-async function mergeOwningActions(
-  db: Db,
-  projectId: string,
-  propertyKey: string,
-  actions: string[],
-): Promise<void> {
-  const rows = await db
-    .select()
-    .from(schema.propertyCatalog)
-    .where(
-      and(
-        eq(schema.propertyCatalog.propertyKey, propertyKey),
-        eq(schema.propertyCatalog.projectId, projectId),
-      ),
-    )
-    .limit(1);
-  const row = rows[0];
-  if (!row) return;
-  const merged = [...new Set([...(row.owningActions as string[]), ...actions])];
-  await db
-    .update(schema.propertyCatalog)
-    .set({ owningActions: merged })
-    .where(
-      and(
-        eq(schema.propertyCatalog.propertyKey, propertyKey),
-        eq(schema.propertyCatalog.projectId, projectId),
-      ),
-    );
-}
+const titlePropertySchema = {
+  title: {
+    valueType: "string",
+    constraints: { minLength: 1, maxLength: 500 },
+    required: true,
+    system: true,
+  },
+};
+
+const titleSubjectPropertySchema = {
+  ...titlePropertySchema,
+  subject_id: {
+    valueType: "string",
+    constraints: { minLength: 1 },
+    required: true,
+  },
+};
+
+const pageSectionPropertySchema = {
+  ...titleSubjectPropertySchema,
+  section_key: {
+    valueType: "string",
+    constraints: { maxLength: 100 },
+    required: true,
+  },
+};
 
 /** 홈페이지 제작 에이전트 버티컬 카탈로그 — 고객사 A가 세팅하는 스키마 예시 */
 export async function seedHomepageAgentCatalog(
@@ -60,13 +56,8 @@ export async function seedHomepageAgentCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "End-customer homepage engagement root",
-        propertyRefs: ["title", "subject_id"],
-        allowedActionRefs: [
-          "create_homepage_project",
-          "create_design_brief",
-          "create_page_section",
-          "link_homepage_contains",
-        ],
+        propertySchema: titleSubjectPropertySchema,
+        allowedActionRefs: ["create_node", "link_homepage_contains"],
       },
       {
         projectId,
@@ -78,8 +69,8 @@ export async function seedHomepageAgentCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Goals, audience, and constraints for the homepage",
-        propertyRefs: ["title", "subject_id"],
-        allowedActionRefs: ["create_design_brief", "link_homepage_contains"],
+        propertySchema: titleSubjectPropertySchema,
+        allowedActionRefs: ["create_node", "link_homepage_contains"],
       },
       {
         projectId,
@@ -91,8 +82,8 @@ export async function seedHomepageAgentCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "A single homepage section (hero, features, CTA, etc.)",
-        propertyRefs: ["title", "subject_id", "section_key"],
-        allowedActionRefs: ["create_page_section", "link_homepage_contains"],
+        propertySchema: pageSectionPropertySchema,
+        allowedActionRefs: ["create_node", "link_homepage_contains"],
       },
     ])
     .onConflictDoNothing();
@@ -113,122 +104,72 @@ export async function seedHomepageAgentCatalog(
     ])
     .onConflictDoNothing();
 
-  await db
-    .insert(schema.propertyCatalog)
-    .values([
-      {
-        projectId,
-        propertyKey: "section_key",
-        valueType: "string",
-        constraints: { maxLength: 100 },
-        owningActions: ["create_page_section"],
-      },
-    ])
-    .onConflictDoNothing();
-
-  await mergeOwningActions(db, projectId, "subject_id", [
-    "create_homepage_project",
-    "create_design_brief",
-    "create_page_section",
-  ]);
-  await mergeOwningActions(db, projectId, "title", [
-    "create_homepage_project",
-    "create_design_brief",
-    "create_page_section",
-  ]);
-
   const actionCatalogRows = [
-      {
-        actionType: "create_homepage_project",
-        scope: { kind: "node_type", nodeType: "HomepageProject" },
-        preconditions: { requiredFields: ["title"] },
-        effects: [
-          {
-            kind: "create_node",
-            node: {
-              nodeType: "HomepageProject",
-              lifecycleStatus: "Draft",
-              properties: {},
-              content: null,
-              provenance: {},
-            },
+    {
+      actionType: "create_node",
+      preconditions: { requiredFields: ["nodeType"] },
+      effects: [
+        {
+          kind: "create_node",
+          node: {
+            nodeType: "",
+            lifecycleStatus: "Draft",
+            properties: {},
+            content: null,
+            provenance: {},
           },
-        ],
-        executor: "Agent",
-        allowedLifecycleTransitions: {},
-        failureMode: "reject",
-        idempotencyRule: "key",
-        logPayloadSchema: {},
-      },
-      {
-        actionType: "create_design_brief",
-        scope: { kind: "node_type", nodeType: "DesignBrief" },
-        preconditions: { requiredFields: ["title", "content"] },
-        effects: [
-          {
-            kind: "create_node",
-            node: {
-              nodeType: "DesignBrief",
-              lifecycleStatus: "Draft",
-              properties: {},
-              content: null,
-              provenance: {},
-            },
-          },
-        ],
-        executor: "Agent",
-        allowedLifecycleTransitions: {},
-        failureMode: "reject",
-        idempotencyRule: "key",
-        logPayloadSchema: {},
-      },
-      {
-        actionType: "create_page_section",
-        scope: { kind: "node_type", nodeType: "PageSection" },
-        preconditions: { requiredFields: ["title", "properties.section_key"] },
-        effects: [
-          {
-            kind: "create_node",
-            node: {
-              nodeType: "PageSection",
-              lifecycleStatus: "Draft",
-              properties: {},
-              content: null,
-              provenance: {},
-            },
-          },
-        ],
-        executor: "Agent",
-        allowedLifecycleTransitions: {},
-        failureMode: "reject",
-        idempotencyRule: "key",
-        logPayloadSchema: {},
-      },
-      {
-        actionType: "link_homepage_contains",
-        scope: { kind: "edge_type", edgeType: "homepage_contains" },
-        preconditions: {
-          requiresExistingNode: true,
-          requiredFields: ["sourceNodeId", "targetNodeId"],
         },
-        effects: [
-          {
-            kind: "create_edge",
-            edge: {
-              edgeType: "homepage_contains",
-              sourceNodeId: "",
-              targetNodeId: "",
-              properties: {},
-            },
-          },
-        ],
-        executor: "Agent",
-        allowedLifecycleTransitions: {},
-        failureMode: "reject",
-        idempotencyRule: "key",
-        logPayloadSchema: {},
+      ],
+      executor: "Agent",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
+    },
+    {
+      actionType: "update_node_properties",
+      preconditions: {
+        requiredFields: ["nodeId", "properties"],
+        requiresExistingNode: true,
       },
-    ];
+      effects: [
+        {
+          kind: "update_node",
+          nodeId: "",
+          patch: { properties: {} },
+        },
+      ],
+      executor: "Agent",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
+    },
+    {
+      actionType: "link_homepage_contains",
+      scope: { kind: "edge_type", edgeType: "homepage_contains" },
+      preconditions: {
+        requiresExistingNode: true,
+        requiredFields: ["sourceNodeId", "targetNodeId"],
+      },
+      effects: [
+        {
+          kind: "create_edge",
+          edge: {
+            edgeType: "homepage_contains",
+            sourceNodeId: "",
+            targetNodeId: "",
+            properties: {},
+          },
+        },
+      ],
+      executor: "Agent",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: "key",
+      logPayloadSchema: {},
+    },
+  ];
 
   await db
     .insert(schema.actionCatalog)
@@ -244,13 +185,13 @@ export async function seedHomepageAgentCatalog(
     .onConflictDoNothing();
 
   const permissionRows = [
-    ["create_homepage_project", "HomepageProject", "title"],
-    ["create_homepage_project", "HomepageProject", "subject_id"],
-    ["create_design_brief", "DesignBrief", "title"],
-    ["create_design_brief", "DesignBrief", "subject_id"],
-    ["create_page_section", "PageSection", "title"],
-    ["create_page_section", "PageSection", "subject_id"],
-    ["create_page_section", "PageSection", "section_key"],
+    ["create_node", "HomepageProject", "title"],
+    ["create_node", "HomepageProject", "subject_id"],
+    ["create_node", "DesignBrief", "title"],
+    ["create_node", "DesignBrief", "subject_id"],
+    ["create_node", "PageSection", "title"],
+    ["create_node", "PageSection", "subject_id"],
+    ["create_node", "PageSection", "section_key"],
   ] as const;
 
   for (const [actionType, nodeType, propertyKey] of permissionRows) {
@@ -261,7 +202,7 @@ export async function seedHomepageAgentCatalog(
         actionType,
         nodeType,
         propertyKey,
-        operation: "write",
+        operation: "create",
         permissionType: "allow",
         requiresHumanGate: false,
         status: "active",
@@ -286,30 +227,26 @@ export async function seedHomepageAgentCatalog(
           "DesignBrief",
           "PageSection",
         ],
-        requiredActions: [
-          "create_homepage_project",
-          "create_design_brief",
-          "link_homepage_contains",
-        ],
-        optionalActions: ["create_page_section"],
+        requiredActions: ["create_node", "link_homepage_contains"],
+        optionalActions: ["create_node"],
         lifecycle: "Active",
         body: [
-          "1. create_homepage_project with a title for the engagement.",
-          "2. create_design_brief with title + content (goals, audience, tone).",
+          "1. create_node with nodeType HomepageProject and a title.",
+          "2. create_node with nodeType DesignBrief, title + content (goals, audience, tone).",
           "3. link_homepage_contains from the HomepageProject to the DesignBrief.",
-          "4. Optionally create_page_section nodes and link them to the project.",
+          "4. Optionally create_node PageSection nodes and link them to the project.",
           "All instance nodes are scoped by subject_id from the embedder context.",
         ].join("\n"),
         workflowSteps: [
           {
             id: "open_project",
             title: "Open homepage project",
-            actionRefs: ["create_homepage_project"],
+            actionRefs: ["create_node"],
           },
           {
             id: "capture_brief",
             title: "Capture design brief",
-            actionRefs: ["create_design_brief"],
+            actionRefs: ["create_node"],
           },
           {
             id: "link_brief",
@@ -317,12 +254,7 @@ export async function seedHomepageAgentCatalog(
             actionRefs: ["link_homepage_contains"],
           },
         ],
-        allowedActions: [
-          "create_homepage_project",
-          "create_design_brief",
-          "create_page_section",
-          "link_homepage_contains",
-        ],
+        allowedActions: ["create_node", "link_homepage_contains"],
       },
     ])
     .onConflictDoNothing();

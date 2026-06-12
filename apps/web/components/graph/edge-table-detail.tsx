@@ -15,10 +15,7 @@ export async function EdgeTableDetail({ projectId, slug }: EdgeTableDetailProps)
   if (!entry) notFound();
 
   const decoded = entry.edgeType;
-  const [nodes, properties] = await Promise.all([
-    ports.graph.queryNodes({ limit: 100 }),
-    ports.catalog.listPropertyCatalogEntries(),
-  ]);
+  const nodes = await ports.graph.queryNodes({ limit: 100 });
 
   const edgeMap = new Map<string, Awaited<ReturnType<typeof ports.graph.traverseEdges>>[number]>();
   for (const node of nodes) {
@@ -35,15 +32,11 @@ export async function EdgeTableDetail({ projectId, slug }: EdgeTableDetailProps)
   const propertyKeys = Array.from(
     new Set(rows.flatMap((row) => Object.keys(row.properties))),
   );
-  const propertyByKey = new Map(properties.map((property) => [property.propertyKey, property]));
-  const propertyColumns = propertyKeys.map((key) => {
-    const catalog = propertyByKey.get(key);
-    return {
-      key,
-      label: propertyColumnLabel(key),
-      valueType: catalog?.valueType ?? "unknown",
-    };
-  });
+  const propertyColumns = propertyKeys.map((key) => ({
+    key,
+    label: propertyColumnLabel(key),
+    valueType: "unknown",
+  }));
 
   const tableRows = rows.map((edge) => ({
     id: edge.id,

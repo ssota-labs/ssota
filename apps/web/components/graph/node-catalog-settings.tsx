@@ -21,6 +21,8 @@ export async function NodeCatalogSettings({ projectId, slug }: NodeCatalogSettin
     .map(([from, targets]) => `${from} → ${targets.join(", ") || "—"}`)
     .join("; ");
 
+  const propertyEntries = Object.entries(entry.propertySchema);
+
   const toolbar = (
     <div className="flex flex-wrap gap-2 border-b px-4 py-3">
       <AddPropertySheet nodeType={entry.nodeType} projectId={projectId} />
@@ -48,16 +50,17 @@ export async function NodeCatalogSettings({ projectId, slug }: NodeCatalogSettin
           className="sm:col-span-2"
         />
         <div className="sm:col-span-2">
-          <dt className="mb-2 text-xs font-medium text-muted-foreground">Properties</dt>
+          <dt className="mb-2 text-xs font-medium text-muted-foreground">Property schema</dt>
           <dd className="flex flex-wrap gap-1.5">
-            {entry.propertyRefs.length > 0 ? (
-              entry.propertyRefs.map((key) => (
-                <Badge key={key} variant="secondary">
+            {propertyEntries.length > 0 ? (
+              propertyEntries.map(([key, field]) => (
+                <Badge key={key} variant={field.system ? "default" : "secondary"}>
                   {key}
+                  {field.system ? " (system)" : ""}
                 </Badge>
               ))
             ) : (
-              <span className="text-muted-foreground">No properties registered</span>
+              <span className="text-muted-foreground">No properties defined (title auto-injected on write)</span>
             )}
           </dd>
         </div>

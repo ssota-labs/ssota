@@ -78,7 +78,7 @@ describe("createClient", () => {
             Deleted: [],
           },
           contentGuide: null,
-          propertyRefs: [],
+          propertySchema: { title: { valueType: "string", constraints: {}, required: true, system: true } },
           allowedActionRefs: [],
         },
       ],

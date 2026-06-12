@@ -1,14 +1,19 @@
+import type { PropertySchemaPatch } from "@ssota/contracts";
 import type {
   ActionCatalogEntry,
   EdgeCatalogEntry,
   Instruction,
   NodeCatalogEntry,
-  PropertyCatalogEntry,
 } from "./domain/types.js";
 import {
   detectBreakingNodeTypeChange,
   validateLifecycleTransitions,
 } from "./domain/enforcement.js";
+import {
+  applyPropertySchemaPatch,
+  detectBreakingPropertySchemaChange,
+  ensureTitleInPropertySchema,
+} from "./catalog/property-schema.js";
 import { ActionRejectedError } from "./domain/types.js";
 
 export function mergeUpdateNodeTypeInput(
@@ -34,8 +39,10 @@ export function mergeUpdateNodeTypeInput(
       patch.contentGuide !== undefined
         ? (patch.contentGuide as string | null)
         : existing.contentGuide,
-    propertyRefs:
-      (patch.propertyRefs as string[] | undefined) ?? existing.propertyRefs,
+    propertySchema:
+      patch.propertySchema !== undefined
+        ? ensureTitleInPropertySchema(patch.propertySchema as NodeCatalogEntry["propertySchema"])
+        : existing.propertySchema,
     allowedActionRefs:
       (patch.allowedActionRefs as string[] | undefined) ??
       existing.allowedActionRefs,
@@ -66,22 +73,33 @@ export function mergeUpdateEdgeTypeInput(
   };
 }
 
-export function mergeUpdatePropertyInput(
+export function mergeUpdateNodePropertySchemaInput(
   input: Record<string, unknown>,
-  existing: PropertyCatalogEntry,
-): Record<string, unknown> {
-  const propertyKey = input.propertyKey as string;
-  const patch = input.patch as Record<string, unknown>;
+  existing: NodeCatalogEntry,
+): { definition: Record<string, unknown>; breaking: boolean } {
+  const nodeType = input.nodeType as string;
+  const patch = input.patch as PropertySchemaPatch;
+  const nextSchema = applyPropertySchemaPatch(
+    ensureTitleInPropertySchema(existing.propertySchema),
+    patch,
+  );
+  const merged = {
+    nodeType,
+    family: existing.family,
+    archetypeId: existing.archetypeId,
+    typicalValueOverrides: existing.typicalValueOverrides,
+    lifecycleTransitions: existing.lifecycleTransitions,
+    contentGuide: existing.contentGuide,
+    propertySchema: nextSchema,
+    allowedActionRefs: existing.allowedActionRefs,
+  };
+  validateLifecycleTransitions(merged.lifecycleTransitions);
   return {
-    definition: {
-      propertyKey,
-      valueType: (patch.valueType as string | undefined) ?? existing.valueType,
-      constraints:
-        (patch.constraints as Record<string, unknown> | undefined) ??
-        existing.constraints,
-      owningActions:
-        (patch.owningActions as string[] | undefined) ?? existing.owningActions,
-    },
+    definition: merged,
+    breaking: detectBreakingPropertySchemaChange(
+      ensureTitleInPropertySchema(existing.propertySchema),
+      nextSchema,
+    ),
   };
 }
 

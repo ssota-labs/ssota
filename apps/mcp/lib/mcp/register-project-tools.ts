@@ -10,7 +10,6 @@ import {
   GetInstructionInputSchema,
   GetNodeInputSchema,
   GetNodeTypeInputSchema,
-  GetPropertyInputSchema,
   QueryGatesInputSchema,
   QueryNeighborsInputSchema,
   QueryNodesInputSchema,
@@ -30,13 +29,11 @@ import {
   getInstruction,
   getNode,
   getNodeType,
-  getProperty,
   listActionContracts,
   listArchetypes,
   listEdgeTypes,
   listNodeTypes,
   listPendingGates,
-  listProperties,
   queryGates,
   queryNeighborsService,
   queryNodes,
@@ -81,17 +78,6 @@ export function registerProjectTools(server: McpToolServer) {
         "Discover: list edge type catalog index. Fetch details with get_edge_type.",
     },
     async ({ projectId }) => jsonContent(await listEdgeTypes(projectId)),
-  );
-
-  registerScopedProjectTool(
-    server,
-    "list_properties",
-    {
-      title: "List Properties",
-      description:
-        "Discover: list property catalog index. Fetch details with get_property.",
-    },
-    async ({ projectId }) => jsonContent(await listProperties(projectId)),
   );
 
   registerScopedProjectTool(
@@ -155,20 +141,6 @@ export function registerProjectTools(server: McpToolServer) {
     async ({ projectId, args }) => {
       const parsed = GetEdgeTypeInputSchema.parse(args);
       return jsonContent(await getEdgeType(projectId, parsed.edgeType));
-    },
-  );
-
-  registerScopedProjectTool(
-    server,
-    "get_property",
-    {
-      title: "Get Property",
-      description: "Fetch one property catalog entry by propertyKey",
-      inputSchema: { propertyKey: z.string().min(1) },
-    },
-    async ({ projectId, args }) => {
-      const parsed = GetPropertyInputSchema.parse(args);
-      return jsonContent(await getProperty(projectId, parsed.propertyKey));
     },
   );
 

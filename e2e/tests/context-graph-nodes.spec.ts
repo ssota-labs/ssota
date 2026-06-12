@@ -14,7 +14,6 @@ test.describe("Context Graph Nodes", () => {
     await page.getByRole("button", { name: "Add property" }).click();
     await page.getByLabel("Property key").fill(propertyKey);
     await page.getByLabel("Value type").fill("string");
-    await page.getByLabel("Owning actions").fill("create_document");
     const submit = page.waitForResponse(
       (response) => response.request().method() === "POST" && response.ok(),
     );
@@ -30,8 +29,7 @@ test.describe("Context Graph Nodes", () => {
       timeout: 10_000,
     });
     await gotoProject(page, "log");
-    await expect(page.getByText("define_property").first()).toBeVisible();
-    await expect(page.getByText("update_node_type").first()).toBeVisible();
+    await expect(page.getByText("update_node_property_schema").first()).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/log`));
   });
 });

@@ -25,8 +25,9 @@ import {
   mergeUpdateEdgeTypeInput,
   mergeUpdateInstructionInput,
   mergeUpdateNodeTypeInput,
-  mergeUpdatePropertyInput,
+  mergeUpdateNodePropertySchemaInput,
 } from "./meta-action-input.js";
+import { resolveDisplayAction } from "./catalog/property-schema.js";
 import {
   ActionRejectedError,
   type ActionPorts,
@@ -39,6 +40,19 @@ interface PreparedAction {
   resolvedInput: Record<string, unknown>;
   breakingChange: boolean;
   permissionGateReason: string;
+}
+
+function buildActionLogMetadata(
+  actionType: string,
+  input: Record<string, unknown>,
+  actionEntry: Awaited<ReturnType<CatalogPort["getActionCatalogEntry"]>>,
+): Record<string, unknown> {
+  const nodeType = input.nodeType as string | undefined;
+  const displayAction = resolveDisplayAction(actionType, input, nodeType);
+  return {
+    scope: actionEntry?.scope ?? { kind: "global" },
+    ...(displayAction ? { displayAction, baseActionType: actionType } : {}),
+  };
 }
 
 async function prepareAction(
@@ -111,28 +125,39 @@ async function prepareAction(
     resolvedInput = mergeUpdateEdgeTypeInput(input, existing);
   }
 
-  if (actionType === "update_property") {
-    const propertyKey = input.propertyKey as string | undefined;
-    if (!propertyKey || !input.patch) {
+  if (actionType === "update_node_property_schema") {
+    const nodeType = input.nodeType as string | undefined;
+    if (!nodeType || !input.patch) {
       return {
         rejected: {
           status: "rejected",
-          reason: "update_property requires propertyKey and patch",
+          reason: "update_node_property_schema requires nodeType and patch",
           code: "PRECONDITION_FAILED",
         },
       };
     }
-    const existing = await ports.catalog.getPropertyCatalogEntry(propertyKey);
+    const existing = await ports.catalog.getNodeCatalogEntry(nodeType);
     if (!existing) {
       return {
         rejected: {
           status: "rejected",
-          reason: `Property '${propertyKey}' does not exist`,
+          reason: `Node type '${nodeType}' does not exist`,
           code: "CATALOG_NOT_FOUND",
         },
       };
     }
-    resolvedInput = mergeUpdatePropertyInput(input, existing);
+    try {
+      const merged = mergeUpdateNodePropertySchemaInput(input, existing);
+      resolvedInput = { definition: merged.definition };
+      breakingChange = merged.breaking;
+    } catch (err) {
+      if (err instanceof ActionRejectedError) {
+        return {
+          rejected: { status: "rejected", reason: err.message, code: err.code },
+        };
+      }
+      throw err;
+    }
   }
 
   if (actionType === "update_action_contract") {
@@ -282,7 +307,6 @@ async function prepareAction(
       (at, nt) => ports.catalog.getPropertyPermissions(at, nt),
       (nodeId) => ports.graph.getNode(nodeId),
       (nodeType) => ports.catalog.getNodeCatalogEntry(nodeType),
-      (propertyKey) => ports.catalog.getPropertyCatalogEntry(propertyKey),
     );
     if (permissionCheck.requiresGate) {
       permissionGateReason = permissionCheck.reason;
@@ -312,8 +336,6 @@ async function prepareAction(
       getNodeCatalogEntry: (nodeType) =>
         ports.catalog.getNodeCatalogEntry(nodeType),
       getArchetype: (archetypeId) => ports.catalog.getArchetype(archetypeId),
-      getPropertyCatalogEntry: (propertyKey) =>
-        ports.catalog.getPropertyCatalogEntry(propertyKey),
       getActionCatalogEntry: (at) => ports.catalog.getActionCatalogEntry(at),
       getEdgeCatalogEntry: (edgeType) =>
         ports.catalog.getEdgeCatalogEntry(edgeType),
@@ -415,7 +437,9 @@ export async function executeAction(
     gateCheck.requiresGate ||
     Boolean(permissionGateReason) ||
     deviation.deviates ||
-    (breakingChange && actionType === "update_node_type");
+    (breakingChange &&
+      (actionType === "update_node_type" ||
+        actionType === "update_node_property_schema"));
 
   if (needsGate && actionType !== "approve_gate") {
     const gateReason =
@@ -445,7 +469,7 @@ export async function executeAction(
         outcome: "gated",
         gateId: gate.id,
         idempotencyKey,
-        metadata: { scope: actionEntry?.scope ?? { kind: "global" } },
+        metadata: buildActionLogMetadata(actionType, input, actionEntry),
       },
     });
 
@@ -467,7 +491,7 @@ export async function executeAction(
         effects,
         outcome: "committed",
         idempotencyKey,
-        metadata: { scope: actionEntry?.scope ?? { kind: "global" } },
+        metadata: buildActionLogMetadata(actionType, input, actionEntry),
       },
     });
 

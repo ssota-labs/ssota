@@ -4,7 +4,7 @@
  * Policy:
  * - Skip Notion instructions with intent_class = Root (Runtime Protocol → ssota-mcp skill).
  * - Migrate domain instructions only via define_instruction / upsert paths.
- * - Migrate representative documents as create_document actions.
+ * - Migrate representative documents as create_node(Document) actions.
  */
 import { executeAction } from "@ssota/core";
 import {
@@ -70,8 +70,9 @@ async function main() {
 
   for (const doc of NOTION_PROTOTYPE_DOCUMENTS) {
     const result = await executeAction(ports, {
-      actionType: "create_document",
+      actionType: "create_node",
       input: {
+        nodeType: "Document",
         title: doc.title,
         content: doc.content,
         properties: { title: doc.title, source: "notion-prototype" },

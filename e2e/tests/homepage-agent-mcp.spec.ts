@@ -14,8 +14,8 @@ test.describe("Homepage agent MCP + subject_id", () => {
       token,
       "execute_action",
       {
-        actionType: "create_homepage_project",
-        input: { title: "E2E Homepage" },
+        actionType: "create_node",
+        input: { nodeType: "HomepageProject", title: "E2E Homepage" },
       },
       { subjectId },
     )) as { status: string };
@@ -27,8 +27,9 @@ test.describe("Homepage agent MCP + subject_id", () => {
       token,
       "execute_action",
       {
-        actionType: "create_design_brief",
+        actionType: "create_node",
         input: {
+          nodeType: "DesignBrief",
           title: "E2E Brief",
           content: "B2B SaaS homepage, professional tone",
         },
@@ -43,8 +44,9 @@ test.describe("Homepage agent MCP + subject_id", () => {
       token,
       "execute_action",
       {
-        actionType: "create_page_section",
+        actionType: "create_node",
         input: {
+          nodeType: "PageSection",
           title: "Hero",
           properties: { section_key: "hero" },
         },
@@ -137,11 +139,11 @@ test.describe("Homepage agent MCP + subject_id", () => {
     expect(edges.length).toBeGreaterThanOrEqual(2);
   });
 
-  test("거부: subject 없이 create_homepage_project", async ({ request }) => {
+  test("거부: subject 없이 create_node(HomepageProject)", async ({ request }) => {
     const token = await getSmokeAccessToken();
     const result = (await mcpToolCall(request, mcpUrl, token, "execute_action", {
-      actionType: "create_homepage_project",
-      input: { title: "No subject" },
+      actionType: "create_node",
+      input: { nodeType: "HomepageProject", title: "No subject" },
     })) as { status: string; code?: string };
 
     expect(result.status).toBe("rejected");

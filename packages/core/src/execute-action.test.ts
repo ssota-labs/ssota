@@ -10,6 +10,15 @@ import {
 } from "./testing/in-memory.js";
 import type { ActionLogRecord } from "./domain/types.js";
 
+function noteCreateInput(overrides?: Record<string, unknown>) {
+  return {
+    nodeType: "Note",
+    title: "Test note",
+    content: "Hello SSOTA",
+    ...overrides,
+  };
+}
+
 describe("executeAction — 4대 강제", () => {
   it("거부: 카탈로그에 없는 액션", async () => {
     const state = createInMemoryState();
@@ -36,7 +45,7 @@ describe("executeAction — 4대 강제", () => {
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_note",
+      actionType: "create_node",
       input: {},
       executorId: "agent-1",
       executorType: "Agent",
@@ -45,18 +54,19 @@ describe("executeAction — 4대 강제", () => {
 
     expect(result.status).toBe("rejected");
     if (result.status === "rejected") {
-      expect(result.code).toBe("PRECONDITION_FAILED");
+      // resolveEffects runs before checkPreconditions; empty nodeType fails catalog first
+      expect(result.code).toBe("CATALOG_NOT_FOUND");
     }
   });
 
-  it("통과: create_note 커밋 + 로그", async () => {
+  it("통과: create_node(Note) 커밋 + 로그", async () => {
     const state = createInMemoryState();
     seedTestCatalog(state);
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_note",
-      input: { content: "Hello SSOTA" },
+      actionType: "create_node",
+      input: noteCreateInput({ content: "Hello SSOTA" }),
       executorId: "agent-1",
       executorType: "Agent",
       projectId: TEST_PROJECT_ID,
@@ -93,8 +103,16 @@ describe("executeAction — 4대 강제", () => {
   it("거부: permission deny", async () => {
     const state = createInMemoryState();
     seedTestCatalog(state);
+    const noteEntry = state.nodeCatalog.get("Note")!;
+    state.nodeCatalog.set("Note", {
+      ...noteEntry,
+      propertySchema: {
+        ...noteEntry.propertySchema,
+        secret: { valueType: "string", constraints: {}, required: false, system: false },
+      },
+    });
     state.permissions.push({
-      actionType: "create_note",
+      actionType: "create_node",
       nodeType: "Note",
       propertyKey: "secret",
       operation: "write",
@@ -103,17 +121,14 @@ describe("executeAction — 4대 강제", () => {
       requiresHumanGate: false,
       status: "active",
     });
-    state.propertyCatalog.set("secret", {
-      propertyKey: "secret",
-      valueType: "string",
-      constraints: {},
-      owningActions: ["create_note"],
-    });
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_note",
-      input: { content: "x", properties: { secret: "no" } },
+      actionType: "create_node",
+      input: noteCreateInput({
+        content: "x",
+        properties: { title: "x", secret: "no" },
+      }),
       executorId: "agent-1",
       executorType: "Agent",
       projectId: TEST_PROJECT_ID,
@@ -131,8 +146,8 @@ describe("executeAction — 4대 강제", () => {
     const ports = createInMemoryPorts(state);
 
     const params = {
-      actionType: "create_note",
-      input: { content: "Once" },
+      actionType: "create_node",
+      input: noteCreateInput({ content: "Once" }),
       executorId: "agent-1",
       executorType: "Agent" as const,
       idempotencyKey: "key-123",
@@ -156,15 +171,16 @@ describe("executeAction — 4대 강제", () => {
     const ports = createInMemoryPorts(state);
 
     await executeAction(ports, {
-      actionType: "create_note",
-      input: { content: "Logged" },
+      actionType: "create_node",
+      input: noteCreateInput({ content: "Logged" }),
       executorId: "agent-1",
       executorType: "Agent",
       projectId: TEST_PROJECT_ID,
     });
 
     expect(state.actionLog.length).toBe(1);
-    expect(state.actionLog[0]?.actionType).toBe("create_note");
+    expect(state.actionLog[0]?.actionType).toBe("create_node");
+    expect(state.actionLog[0]?.metadata?.displayAction).toBe("create_note");
   });
 });
 
@@ -317,7 +333,7 @@ describe("executeAction — follow-up catalog meta actions", () => {
               Deleted: [],
             },
             contentGuide: null,
-            propertyRefs: [],
+            propertySchema: {},
             allowedActionRefs: [],
           },
         },
@@ -428,14 +444,17 @@ describe("executeAction — follow-up catalog meta actions", () => {
 });
 
 describe("executeAction — Phase 3 scoped graph enforcement", () => {
-  it("거부: catalog에 없는 property write", async () => {
+  it("거부: schema에 없는 property write", async () => {
     const state = createInMemoryState();
     seedTestCatalog(state);
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_note",
-      input: { content: "x", properties: { unknown_property: "no" } },
+      actionType: "create_node",
+      input: noteCreateInput({
+        content: "x",
+        properties: { title: "x", unknown_property: "no" },
+      }),
       executorId: "agent-1",
       executorType: "Agent",
       projectId: TEST_PROJECT_ID,
@@ -443,7 +462,7 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
 
     expect(result.status).toBe("rejected");
     if (result.status === "rejected") {
-      expect(result.code).toBe("CATALOG_NOT_FOUND");
+      expect(result.code).toBe("PROPERTY_NOT_BOUND");
     }
   });
 
@@ -453,8 +472,12 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_note",
-      input: { content: "x", properties: { title: 42 } },
+      actionType: "create_node",
+      input: {
+        nodeType: "Note",
+        content: "x",
+        properties: { title: 42 },
+      },
       executorId: "agent-1",
       executorType: "Agent",
       projectId: TEST_PROJECT_ID,
@@ -469,14 +492,16 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
   it("게이트: property permission requiresHumanGate", async () => {
     const state = createInMemoryState();
     seedTestCatalog(state);
-    state.propertyCatalog.set("priority", {
-      propertyKey: "priority",
-      valueType: "string",
-      constraints: {},
-      owningActions: ["create_note"],
+    const noteEntry = state.nodeCatalog.get("Note")!;
+    state.nodeCatalog.set("Note", {
+      ...noteEntry,
+      propertySchema: {
+        ...noteEntry.propertySchema,
+        priority: { valueType: "string", constraints: {}, required: false, system: false },
+      },
     });
     state.permissions.push({
-      actionType: "create_note",
+      actionType: "create_node",
       nodeType: "Note",
       propertyKey: "priority",
       operation: "write",
@@ -488,8 +513,11 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_note",
-      input: { content: "x", properties: { priority: "high" } },
+      actionType: "create_node",
+      input: noteCreateInput({
+        content: "x",
+        properties: { title: "x", priority: "high" },
+      }),
       executorId: "agent-1",
       executorType: "Agent",
       projectId: TEST_PROJECT_ID,
@@ -501,15 +529,36 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
   it("거부: action scope와 node type 불일치", async () => {
     const state = createInMemoryState();
     seedTestCatalog(state);
-    state.actionCatalog.set("create_note", {
-      ...state.actionCatalog.get("create_note")!,
+    state.actionCatalog.set("scoped_document_create", {
+      actionType: "scoped_document_create",
+      slug: "scoped_document_create",
+      label: "Scoped Document Create",
       scope: { kind: "node_type", nodeType: "Document" },
+      preconditions: { requiredFields: ["nodeType"] },
+      effects: [
+        {
+          kind: "create_node",
+          node: {
+            nodeType: "Note",
+            lifecycleStatus: "Draft",
+            properties: {},
+            content: null,
+            contentUrl: null,
+            provenance: {},
+          },
+        },
+      ],
+      executor: "Agent",
+      allowedLifecycleTransitions: {},
+      failureMode: "reject",
+      idempotencyRule: null,
+      logPayloadSchema: {},
     });
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_note",
-      input: { content: "x" },
+      actionType: "scoped_document_create",
+      input: { nodeType: "Note", title: "x", content: "x" },
       executorId: "agent-1",
       executorType: "Agent",
       projectId: TEST_PROJECT_ID,
@@ -592,18 +641,6 @@ function seedSubjectScopedProjectCatalog(
   state: ReturnType<typeof createInMemoryState>,
 ): void {
   seedTestCatalog(state);
-  state.propertyCatalog.set("title", {
-    propertyKey: "title",
-    valueType: "string",
-    constraints: { maxLength: 500 },
-    owningActions: ["create_project"],
-  });
-  state.propertyCatalog.set("subject_id", {
-    propertyKey: "subject_id",
-    valueType: "string",
-    constraints: { minLength: 1 },
-    owningActions: ["create_project"],
-  });
   state.nodeCatalog.set("Project", {
     nodeType: "Project",
     slug: toCatalogSlug("Project"),
@@ -618,7 +655,15 @@ function seedSubjectScopedProjectCatalog(
       Deleted: [],
     },
     contentGuide: "Tenant-scoped project",
-    propertyRefs: ["title", "subject_id"],
+    propertySchema: {
+      title: { valueType: "string", constraints: { maxLength: 500 }, required: true, system: true },
+      subject_id: {
+        valueType: "string",
+        constraints: { minLength: 1 },
+        required: true,
+        system: false,
+      },
+    },
     allowedActionRefs: [],
   });
   state.archetypes.set("op-project", {
@@ -628,47 +673,22 @@ function seedSubjectScopedProjectCatalog(
     typicalValues: { stateMachine: "project" },
     allowedMutations: ["update_properties"],
   });
-  state.actionCatalog.set("create_project", {
-    actionType: "create_project",
-    slug: toCatalogSlug("create_project"),
-    label: toCatalogLabel("create_project"),
-    scope: { kind: "global" },
-    preconditions: { requiredFields: ["title"] },
-    effects: [
-      {
-        kind: "create_node",
-        node: {
-          nodeType: "Project",
-          lifecycleStatus: "Draft",
-          properties: {},
-          content: null,
-          contentUrl: null,
-          provenance: {},
-        },
-      },
-    ],
-    executor: "Agent",
-    allowedLifecycleTransitions: {},
-    failureMode: "reject",
-    idempotencyRule: "key",
-    logPayloadSchema: {},
-  });
   state.permissions.push(
     {
-      actionType: "create_project",
+      actionType: "create_node",
       nodeType: "Project",
       propertyKey: "title",
-      operation: "write",
+      operation: "create",
       permissionType: "allow",
       valueConstraint: null,
       requiresHumanGate: false,
       status: "active",
     },
     {
-      actionType: "create_project",
+      actionType: "create_node",
       nodeType: "Project",
       propertyKey: "subject_id",
-      operation: "write",
+      operation: "create",
       permissionType: "allow",
       valueConstraint: null,
       requiresHumanGate: false,
@@ -684,8 +704,8 @@ describe("executeAction — subject_id tenancy", () => {
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_project",
-      input: { title: "Acme homepage" },
+      actionType: "create_node",
+      input: { nodeType: "Project", title: "Acme homepage" },
       executorId: "agent-1",
       executorType: "Agent",
       projectId: TEST_PROJECT_ID,
@@ -697,14 +717,14 @@ describe("executeAction — subject_id tenancy", () => {
     }
   });
 
-  it("통과: subjectId 주입 + create_project 커밋", async () => {
+  it("통과: subjectId 주입 + create_node(Project) 커밋", async () => {
     const state = createInMemoryState();
     seedSubjectScopedProjectCatalog(state);
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_project",
-      input: { title: "Acme homepage" },
+      actionType: "create_node",
+      input: { nodeType: "Project", title: "Acme homepage" },
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_acme_42",
@@ -726,8 +746,8 @@ describe("executeAction — subject_id tenancy", () => {
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "create_project",
-      input: { title: "X", subject_id: "usr_other" },
+      actionType: "create_node",
+      input: { nodeType: "Project", title: "X", subject_id: "usr_other" },
       executorId: "agent-1",
       executorType: "Agent",
       subjectId: "usr_acme_42",

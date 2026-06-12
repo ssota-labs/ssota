@@ -20,11 +20,6 @@ const sections = [
     description: "엣지 타입 카탈로그 — domain, range, cardinality",
   },
   {
-    href: "/studio/properties",
-    title: "Properties",
-    description: "속성 카탈로그 — value type, constraints",
-  },
-  {
     href: "/studio/actions",
     title: "Action Contracts",
     description: "액션 컨트랙트 — preconditions, effects, executor",

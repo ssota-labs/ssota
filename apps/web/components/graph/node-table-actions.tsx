@@ -93,7 +93,7 @@ export function AddPropertySheet({
               <div>
                 <h2 className="text-sm font-medium">Add property to {nodeType}</h2>
                 <p className="text-xs/relaxed text-muted-foreground">
-                  define_property 후 update_node_type으로 property binding을 추가합니다.
+                  update_node_property_schema로 node-local schema에 필드를 추가합니다.
                 </p>
               </div>
               <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
@@ -111,10 +111,6 @@ export function AddPropertySheet({
             <div className="space-y-2">
               <Label htmlFor="valueType">Value type</Label>
               <Input id="valueType" name="valueType" defaultValue="string" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="owningActions">Owning actions</Label>
-              <Input id="owningActions" name="owningActions" placeholder="create_document, update_document" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="constraints">Constraints JSON</Label>

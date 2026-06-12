@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 const bffUrl = process.env.EMBEDDER_BFF_URL ?? "http://127.0.0.1:3200";
 
 test.describe("Embedder BFF proxy", () => {
-  test("X-Embedder-User-Id → create_homepage_project via BFF", async ({
+  test("X-Embedder-User-Id → create_node(HomepageProject) via BFF", async ({
     request,
   }) => {
     const subjectId = `e2e_bff_${Date.now()}`;
@@ -11,8 +11,8 @@ test.describe("Embedder BFF proxy", () => {
     const res = await request.post(`${bffUrl}/ssota/execute`, {
       headers: { "X-Embedder-User-Id": subjectId },
       data: {
-        actionType: "create_homepage_project",
-        input: { title: "BFF E2E Homepage" },
+        actionType: "create_node",
+        input: { nodeType: "HomepageProject", title: "BFF E2E Homepage" },
       },
     });
 
@@ -28,8 +28,8 @@ test.describe("Embedder BFF proxy", () => {
   test("거부: X-Embedder-User-Id 없이 401", async ({ request }) => {
     const res = await request.post(`${bffUrl}/ssota/execute`, {
       data: {
-        actionType: "create_homepage_project",
-        input: { title: "No embedder user" },
+        actionType: "create_node",
+        input: { nodeType: "HomepageProject", title: "No embedder user" },
       },
     });
 
