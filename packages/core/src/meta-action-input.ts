@@ -26,7 +26,12 @@ export function mergeUpdateNodeTypeInput(
     nodeType,
     family: (patch.family as NodeCatalogEntry["family"] | undefined) ?? existing.family,
     archetypeId:
-      (patch.archetypeId as string | undefined) ?? existing.archetypeId,
+      patch.archetypeId !== undefined
+        ? (() => {
+            const trimmed = String(patch.archetypeId ?? "").trim();
+            return trimmed.length > 0 ? trimmed : null;
+          })()
+        : existing.archetypeId,
     typicalValueOverrides: {
       ...existing.typicalValueOverrides,
       ...((patch.typicalValueOverrides as Record<string, unknown> | undefined) ??

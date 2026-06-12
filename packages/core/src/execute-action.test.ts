@@ -242,7 +242,27 @@ describe("executeAction — define_node_type", () => {
     }
   });
 
-  it("거부: missing archetype", async () => {
+  it("통과: define_node_type without archetypeId", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const { archetypeId: _removed, ...withoutArchetype } = validDefinition;
+    const result = await executeAction(ports, {
+      actionType: "define_node_type",
+      input: {
+        definition: { ...withoutArchetype, nodeType: "MemoNoArchetype" },
+      },
+      executorId: "human-1",
+      executorType: "Human",
+      projectId: TEST_PROJECT_ID,
+    });
+
+    expect(result.status).toBe("committed");
+    expect(state.nodeCatalog.get("MemoNoArchetype")?.archetypeId).toBeNull();
+  });
+
+  it("거부: invalid archetype when provided", async () => {
     const state = createInMemoryState();
     seedTestCatalog(state);
     const ports = createInMemoryPorts(state);

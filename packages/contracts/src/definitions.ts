@@ -98,7 +98,8 @@ export type PropertySchema = z.infer<typeof PropertySchemaSchema>;
 export const NodeTypeDefinitionSchema = z.object({
   nodeType: z.string().min(1),
   family: NodeFamilySchema,
-  archetypeId: z.string().min(1),
+  /** Optional — when omitted or null, no archetype deviation gate applies. */
+  archetypeId: z.string().min(1).nullish(),
   typicalValueOverrides: z.record(z.unknown()).default({}),
   lifecycleTransitions: LifecycleTransitionsSchema,
   contentGuide: z.string().nullable().optional(),
