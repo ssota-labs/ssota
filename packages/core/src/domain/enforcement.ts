@@ -1,3 +1,4 @@
+import { isBuiltinActionType } from "../catalog/builtin-meta-actions.js";
 import type {
   ActionCatalogEntry,
   ActionPropertyPermission,
@@ -700,12 +701,7 @@ const CATALOG_EFFECT_KINDS = new Set([
   "deprecate_instruction_catalog_entry",
 ]);
 
-const PROTECTED_ACTION_TYPES = new Set([
-  "approve_gate",
-  "define_node_type",
-  "update_node_type",
-  "deprecate_node_type",
-]);
+const HUMAN_ONLY_ACTION_TYPES = new Set(["approve_gate"]);
 
 export function enforceActionContractSafety(
   definition: {
@@ -715,7 +711,7 @@ export function enforceActionContractSafety(
   },
 ): void {
   if (
-    PROTECTED_ACTION_TYPES.has(definition.actionType) &&
+    HUMAN_ONLY_ACTION_TYPES.has(definition.actionType) &&
     definition.executor !== "Human"
   ) {
     throw new ActionRejectedError(
@@ -868,10 +864,10 @@ export async function enforceCatalogMutationIntegrity(
     }
 
     if (effect.kind === "deprecate_action_catalog_entry") {
-      if (PROTECTED_ACTION_TYPES.has(effect.actionType)) {
+      if (isBuiltinActionType(effect.actionType)) {
         throw new ActionRejectedError(
           "UNSAFE_EFFECT",
-          `Action '${effect.actionType}' is protected and cannot be deprecated`,
+          `Action '${effect.actionType}' is built-in and cannot be deprecated`,
         );
       }
       const existing = await catalog.getActionCatalogEntry(effect.actionType);
@@ -967,6 +963,12 @@ export async function enforceCatalogMutationIntegrity(
     }
 
     if (effect.kind === "upsert_action_catalog_entry") {
+      if (isBuiltinActionType(effect.entry.actionType)) {
+        throw new ActionRejectedError(
+          "UNSAFE_EFFECT",
+          `Action '${effect.entry.actionType}' is built-in and cannot be defined or updated via catalog`,
+        );
+      }
       if (
         actionType === "define_action_contract" ||
         actionType === "update_action_contract"
@@ -1031,15 +1033,6 @@ export function enforceGateRules(
   nodeCatalogEntries: Map<string, NodeCatalogEntry>,
   existingNodes: Map<string, Node>,
 ): { requiresGate: boolean; reason: string } {
-  for (const effect of effects) {
-    if (CATALOG_EFFECT_KINDS.has(effect.kind) && executorType === "Agent") {
-      return {
-        requiresGate: true,
-        reason: "Agent catalog mutation requires human approval",
-      };
-    }
-  }
-
   if (
     actionEntry.executor === "Human" &&
     executorType !== "Human"

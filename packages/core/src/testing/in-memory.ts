@@ -26,6 +26,11 @@ import type {
   PropertyCatalogEntry,
 } from "../domain/types.js";
 import type { Effect, GateStatus, LifecycleStatus } from "@ssota/contracts";
+import {
+  mergeActionCatalogEntries,
+  mergeActionCatalogEntry,
+  mergeActionCatalogEntryBySlug,
+} from "../catalog/merge-action-catalog.js";
 import { toCatalogLabel, toCatalogSlug } from "../catalog-slug.js";
 
 export const TEST_PROJECT_ID = "00000000-0000-4000-8000-000000000001";
@@ -315,16 +320,20 @@ export function createInMemoryPorts(
       return [...state.propertyCatalog.values()];
     },
     async getActionCatalogEntry(actionType) {
-      return state.actionCatalog.get(actionType) ?? null;
+      return mergeActionCatalogEntry(
+        state.actionCatalog.get(actionType) ?? null,
+        actionType,
+      );
     },
     async getActionCatalogEntryBySlug(slug) {
-      return (
+      return mergeActionCatalogEntryBySlug(
         [...state.actionCatalog.values()].find((entry) => entry.slug === slug) ??
-        null
+          null,
+        slug,
       );
     },
     async listActionCatalogEntries() {
-      return [...state.actionCatalog.values()];
+      return mergeActionCatalogEntries([...state.actionCatalog.values()]);
     },
     async getArchetype(archetypeId) {
       return state.archetypes.get(archetypeId) ?? null;
@@ -751,61 +760,6 @@ export function seedTestCatalog(state: InMemoryState): void {
     ],
     executor: "Human",
     allowedLifecycleTransitions: { Draft: ["Active"] },
-    failureMode: "reject",
-    idempotencyRule: null,
-    logPayloadSchema: {},
-  });
-
-  state.actionCatalog.set("approve_gate", {
-    actionType: "approve_gate",
-    slug: "approve_gate",
-    label: "Approve Gate",
-    scope: { kind: "global" },
-    preconditions: { requiredFields: ["gateId", "status"] },
-    effects: [
-      {
-        kind: "update_gate",
-        gateId: "",
-        status: "approved",
-      },
-    ],
-    executor: "Human",
-    allowedLifecycleTransitions: {},
-    failureMode: "reject",
-    idempotencyRule: null,
-    logPayloadSchema: {},
-  });
-
-  const defaultTransitions: Record<LifecycleStatus, LifecycleStatus[]> = {
-    Draft: ["Active", "Archived"],
-    Active: ["Archived", "Draft"],
-    Archived: ["Active"],
-    Deleted: [],
-  };
-
-  state.actionCatalog.set("define_node_type", {
-    actionType: "define_node_type",
-    slug: "define_node_type",
-    label: "Define Node Type",
-    scope: { kind: "global" },
-    preconditions: { requiredFields: ["definition"] },
-    effects: [
-      {
-        kind: "upsert_node_catalog_entry",
-        entry: {
-          nodeType: "",
-          family: "document",
-          archetypeId: "",
-          typicalValueOverrides: {},
-          lifecycleTransitions: defaultTransitions,
-          contentGuide: null,
-          propertyRefs: [],
-          allowedActionRefs: [],
-        },
-      },
-    ],
-    executor: "Human",
-    allowedLifecycleTransitions: {},
     failureMode: "reject",
     idempotencyRule: null,
     logPayloadSchema: {},
