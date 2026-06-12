@@ -1,23 +1,29 @@
 # SSOTA MCP Tools
 
-MCP is split by URL query params on the **single** endpoint `/api/mcp`:
+Single endpoint: **`/api/mcp`**. Configure one MCP server in Cursor — no per-project URLs.
 
-| MCP URL | Tools |
+## Project scope (required on project tools)
+
+Every project-scoped tool accepts:
+
+| Param | Source |
 |---|---|
-| `/api/mcp` | Account discover (`list_organizations`, `list_projects`, `get_project`) |
-| `/api/mcp?org={orgSlug}&project={projectSlug}` | Project graph/catalog/action tools below |
+| `orgSlug` | `list_projects` / `get_project` |
+| `projectSlug` | `list_projects` / `get_project` |
 
-Configure Cursor `mcp.json` with the project query URL — no headers.
+The server validates membership on **every** tool call. Do not trust client-supplied scope without server checks.
 
-## Account discover (root `/api/mcp` only)
+Tenant scope (B2B2C embedders): `X-SSOTA-Subject-Id` header — set by embedder backend, not the agent.
+
+## Account discover (no project scope)
 
 - `list_organizations` — orgs the user belongs to
-- `list_projects` — accessible projects + MCP URLs (optional `orgSlug` filter)
+- `list_projects` — accessible projects + `{ orgSlug, projectSlug }` scope (optional `orgSlug` filter)
 - `get_project` — one project by `orgSlug` + `projectSlug`
 
-## Discover (`list_*`) — project MCP only
+## Discover (`list_*`)
 
-Catalog or queue **index only**. Do not read full details from list responses.
+Catalog or queue **index only**. Requires `orgSlug` + `projectSlug`.
 
 - `list_node_types` → use `get_node_type`
 - `list_edge_types` → use `get_edge_type`
@@ -28,7 +34,7 @@ Catalog or queue **index only**. Do not read full details from list responses.
 
 ## Fetch (`get_*`)
 
-Single entity by primary key.
+Single entity by primary key. Requires `orgSlug` + `projectSlug`.
 
 - `get_node` — `nodeId`
 - `get_instruction` — `instructionId`
@@ -42,7 +48,7 @@ Single entity by primary key.
 
 ## Query (`query_*`, `find_*`)
 
-Filtered sets, search, graph traversal.
+Requires `orgSlug` + `projectSlug`.
 
 - `query_nodes` — `nodeType`, `lifecycleStatus`, pagination
 - `query_neighbors` — 1-hop edges + neighbor nodes
@@ -54,7 +60,7 @@ Filtered sets, search, graph traversal.
 
 ## Write
 
-- `execute_action` — **only** mutation path
+- `execute_action` — **only** mutation path (requires `orgSlug` + `projectSlug`)
 
 SSOTA MCP is the only mutation interface. Do not look for alternate write APIs outside MCP.
 
@@ -75,10 +81,11 @@ Verify important writes through the action log.
 ## Recommended sequence
 
 ```txt
-find_instruction
-get_instruction
-get_action_contract
-query_nodes / get_node / query_neighbors / traverse_graph
-execute_action
-get_action_log_entry / get_node / query_gates
+list_projects
+find_instruction          { orgSlug, projectSlug, query }
+get_instruction           { orgSlug, projectSlug, instructionId }
+get_action_contract       { orgSlug, projectSlug, actionType }
+query_nodes / get_node    { orgSlug, projectSlug, ... }
+execute_action            { orgSlug, projectSlug, actionType, input }
+get_action_log_entry      { orgSlug, projectSlug, logId }
 ```

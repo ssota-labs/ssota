@@ -32,7 +32,7 @@ export function registerAccountTools(server: McpToolServer) {
     {
       title: "List Organizations",
       description:
-        "Discover: organizations the authenticated user can access. Use list_projects to find MCP project URLs.",
+        "Discover: organizations the authenticated user can access. Use list_projects, then pass orgSlug + projectSlug to project tools.",
       inputSchema: {},
     },
     async (_args, extra) => {
@@ -46,7 +46,7 @@ export function registerAccountTools(server: McpToolServer) {
     {
       title: "List Projects",
       description:
-        "Discover: accessible projects with MCP URLs (/api/mcp?org=&project=). Optional org filter.",
+        "Discover: accessible projects. Pass returned orgSlug + projectSlug on every project-scoped tool call.",
       inputSchema: {
         orgSlug: z.string().min(1).optional(),
       },
@@ -64,7 +64,7 @@ export function registerAccountTools(server: McpToolServer) {
     {
       title: "Get Project",
       description:
-        "Fetch one accessible project by orgSlug + projectSlug, including its MCP URL.",
+        "Fetch one accessible project by orgSlug + projectSlug for use in project tool params.",
       inputSchema: {
         orgSlug: z.string().min(1),
         projectSlug: z.string().min(1),

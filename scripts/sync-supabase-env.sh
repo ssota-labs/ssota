@@ -47,7 +47,14 @@ main() {
     const fs = require('fs');
     const path = require('path');
 
-    const status = JSON.parse(process.argv[1]);
+    const raw = process.argv[1];
+    const start = raw.indexOf('{');
+    const end = raw.lastIndexOf('}');
+    if (start < 0 || end < start) {
+      console.error('[sync-supabase-env] invalid supabase status JSON');
+      process.exit(1);
+    }
+    const status = JSON.parse(raw.slice(start, end + 1));
     const root = process.argv[2];
 
     const updates = {
