@@ -6,6 +6,7 @@ import {
   timestamp,
   uuid,
   boolean,
+  integer,
   uniqueIndex,
   primaryKey,
   index,
@@ -45,6 +46,15 @@ export const actionOutcomeEnum = pgEnum("action_outcome", [
   "committed",
   "gated",
   "rejected",
+]);
+
+export const impactQueueStatusEnum = pgEnum("impact_queue_status", [
+  "pending",
+  "running",
+  "succeeded",
+  "failed",
+  "dead",
+  "skipped",
 ]);
 
 export const profiles = pgTable("profiles", {
@@ -383,5 +393,58 @@ export const gates = pgTable(
   },
   (table) => ({
     projectIdIdx: index("gates_project_id_idx").on(table.projectId),
+  }),
+);
+
+export const impactQueue = pgTable(
+  "impact_queue",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    sourceActionLogId: uuid("source_action_log_id")
+      .notNull()
+      .references(() => actionLog.id),
+    sourceNodeId: uuid("source_node_id").references(() => nodes.id),
+    targetNodeId: uuid("target_node_id").references(() => nodes.id),
+    dependencyEdgeId: uuid("dependency_edge_id").references(() => edges.id),
+    workflowKey: text("workflow_key").notNull(),
+    instructionId: uuid("instruction_id").references(() => instructions.id),
+    status: impactQueueStatusEnum("status").notNull().default("pending"),
+    priority: integer("priority").notNull().default(0),
+    runAt: timestamp("run_at", { withTimezone: true }).defaultNow().notNull(),
+    lockedBy: text("locked_by"),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    idempotencyKey: text("idempotency_key").notNull(),
+    lastError: text("last_error"),
+    payload: jsonb("payload").notNull().default({}).$type<Record<string, unknown>>(),
+    result: jsonb("result").notNull().default({}).$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+  },
+  (table) => ({
+    idempotencyUnique: uniqueIndex("impact_queue_project_idempotency_unique").on(
+      table.projectId,
+      table.idempotencyKey,
+    ),
+    claimIdx: index("impact_queue_claim_idx").on(
+      table.projectId,
+      table.status,
+      table.runAt,
+      table.priority,
+      table.createdAt,
+    ),
+    sourceLogIdx: index("impact_queue_project_source_log_idx").on(
+      table.projectId,
+      table.sourceActionLogId,
+    ),
+    targetNodeIdx: index("impact_queue_project_target_node_idx").on(
+      table.projectId,
+      table.targetNodeId,
+    ),
   }),
 );

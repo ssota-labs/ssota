@@ -15,6 +15,11 @@ import type {
   Gate,
   GatePort,
   GraphReadPort,
+  ImpactQueueClaimInput,
+  ImpactQueueCreateInput,
+  ImpactQueueItem,
+  ImpactQueuePort,
+  ImpactQueueQueryInput,
   Instruction,
   Node,
   NodeCatalogEntry,
@@ -29,6 +34,7 @@ export interface InMemoryState {
   nodes: Map<string, Node>;
   edges: Map<string, Edge>;
   gates: Map<string, Gate>;
+  impactQueue: Map<string, ImpactQueueItem>;
   actionLog: ActionLogRecord[];
   nodeCatalog: Map<string, NodeCatalogEntry>;
   actionCatalog: Map<string, ActionCatalogEntry>;
@@ -55,6 +61,7 @@ export function createInMemoryState(
     nodes: new Map(),
     edges: new Map(),
     gates: new Map(),
+    impactQueue: new Map(),
     actionLog: [],
     nodeCatalog: new Map(),
     actionCatalog: new Map(),
@@ -509,7 +516,171 @@ export function createInMemoryPorts(
     },
   };
 
-  return { catalog, graph, gate, commit };
+  const impactQueue = createInMemoryImpactQueuePort(state, projectId);
+
+  return { catalog, graph, gate, commit, impactQueue };
+}
+
+function createInMemoryImpactQueuePort(
+  state: InMemoryState,
+  projectId: string,
+): ImpactQueuePort {
+  function now(): Date {
+    return new Date();
+  }
+
+  function sortForClaim(a: ImpactQueueItem, b: ImpactQueueItem): number {
+    return (
+      b.priority - a.priority ||
+      a.runAt.getTime() - b.runAt.getTime() ||
+      a.createdAt.getTime() - b.createdAt.getTime()
+    );
+  }
+
+  function queryItems(params?: ImpactQueueQueryInput): ImpactQueueItem[] {
+    let items = [...state.impactQueue.values()].filter(
+      (item) => item.projectId === projectId,
+    );
+    if (params?.status) {
+      items = items.filter((item) => item.status === params.status);
+    }
+    if (params?.workflowKey) {
+      items = items.filter((item) => item.workflowKey === params.workflowKey);
+    }
+    return items.slice(params?.offset ?? 0, (params?.offset ?? 0) + (params?.limit ?? 20));
+  }
+
+  return {
+    async enqueueImpact(input: ImpactQueueCreateInput) {
+      const existing = [...state.impactQueue.values()].find(
+        (item) =>
+          item.projectId === projectId &&
+          item.idempotencyKey === input.idempotencyKey,
+      );
+      if (existing) return existing;
+
+      const createdAt = now();
+      const item: ImpactQueueItem = {
+        id: randomUUID(),
+        projectId,
+        sourceActionLogId: input.sourceActionLogId,
+        sourceNodeId: input.sourceNodeId ?? null,
+        targetNodeId: input.targetNodeId ?? null,
+        dependencyEdgeId: input.dependencyEdgeId ?? null,
+        workflowKey: input.workflowKey,
+        instructionId: input.instructionId ?? null,
+        status: "pending",
+        priority: input.priority ?? 0,
+        runAt: input.runAt ?? createdAt,
+        lockedBy: null,
+        lockedUntil: null,
+        attemptCount: 0,
+        maxAttempts: input.maxAttempts ?? 5,
+        idempotencyKey: input.idempotencyKey,
+        lastError: null,
+        payload: input.payload ?? {},
+        result: {},
+        createdAt,
+        updatedAt: createdAt,
+        completedAt: null,
+      };
+      state.impactQueue.set(item.id, item);
+      return item;
+    },
+
+    async claimImpactQueue(input: ImpactQueueClaimInput) {
+      const currentTime = input.now ?? now();
+      const lockMs = input.lockMs ?? 5 * 60 * 1000;
+      const limit = input.limit ?? 1;
+      const available = [...state.impactQueue.values()]
+        .filter((item) => {
+          if (item.projectId !== projectId) return false;
+          if (item.runAt > currentTime) return false;
+          if (item.status === "pending" || item.status === "failed") return true;
+          return (
+            item.status === "running" &&
+            item.lockedUntil !== null &&
+            item.lockedUntil <= currentTime
+          );
+        })
+        .sort(sortForClaim)
+        .slice(0, limit);
+
+      return available.map((item) => {
+        const updated: ImpactQueueItem = {
+          ...item,
+          status: "running",
+          lockedBy: input.workerId,
+          lockedUntil: new Date(currentTime.getTime() + lockMs),
+          attemptCount: item.attemptCount + 1,
+          updatedAt: currentTime,
+        };
+        state.impactQueue.set(item.id, updated);
+        return updated;
+      });
+    },
+
+    async completeImpactQueue(queueId, result = {}) {
+      const item = state.impactQueue.get(queueId);
+      if (!item || item.projectId !== projectId) return null;
+      const updated: ImpactQueueItem = {
+        ...item,
+        status: "succeeded",
+        lockedBy: null,
+        lockedUntil: null,
+        result,
+        updatedAt: now(),
+        completedAt: now(),
+      };
+      state.impactQueue.set(queueId, updated);
+      return updated;
+    },
+
+    async failImpactQueue(queueId, error, retryAt) {
+      const item = state.impactQueue.get(queueId);
+      if (!item || item.projectId !== projectId) return null;
+      const currentTime = now();
+      const willRetry = item.attemptCount < item.maxAttempts;
+      const updated: ImpactQueueItem = {
+        ...item,
+        status: willRetry ? "failed" : "dead",
+        lockedBy: null,
+        lockedUntil: null,
+        runAt: willRetry ? (retryAt ?? currentTime) : item.runAt,
+        lastError: error,
+        updatedAt: currentTime,
+        completedAt: willRetry ? null : currentTime,
+      };
+      state.impactQueue.set(queueId, updated);
+      return updated;
+    },
+
+    async skipImpactQueue(queueId, result = {}) {
+      const item = state.impactQueue.get(queueId);
+      if (!item || item.projectId !== projectId) return null;
+      const currentTime = now();
+      const updated: ImpactQueueItem = {
+        ...item,
+        status: "skipped",
+        lockedBy: null,
+        lockedUntil: null,
+        result,
+        updatedAt: currentTime,
+        completedAt: currentTime,
+      };
+      state.impactQueue.set(queueId, updated);
+      return updated;
+    },
+
+    async queryImpactQueue(params) {
+      return queryItems(params);
+    },
+
+    async getImpactQueueItem(queueId) {
+      const item = state.impactQueue.get(queueId);
+      return item?.projectId === projectId ? item : null;
+    },
+  };
 }
 
 export function seedTestCatalog(state: InMemoryState): void {

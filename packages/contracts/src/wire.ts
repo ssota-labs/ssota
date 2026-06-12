@@ -4,6 +4,7 @@ import {
   EffectSchema,
   ExecutorTypeSchema,
   GateStatusSchema,
+  ImpactQueueStatusSchema,
   InstructionScopeSchema,
   InstructionWorkflowStepSchema,
   LifecycleStatusSchema,
@@ -165,6 +166,33 @@ export const ActionLogRecordSchema = z.object({
 
 export type ActionLogRecord = z.infer<typeof ActionLogRecordSchema>;
 
+export const ImpactQueueItemSchema = z.object({
+  id: z.string().uuid(),
+  projectId: z.string().uuid(),
+  sourceActionLogId: z.string().uuid(),
+  sourceNodeId: z.string().uuid().nullable(),
+  targetNodeId: z.string().uuid().nullable(),
+  dependencyEdgeId: z.string().uuid().nullable(),
+  workflowKey: z.string().min(1),
+  instructionId: z.string().uuid().nullable(),
+  status: ImpactQueueStatusSchema,
+  priority: z.number().int(),
+  runAt: IsoDateTimeSchema,
+  lockedBy: z.string().nullable(),
+  lockedUntil: IsoDateTimeSchema.nullable(),
+  attemptCount: z.number().int().nonnegative(),
+  maxAttempts: z.number().int().positive(),
+  idempotencyKey: z.string().min(1),
+  lastError: z.string().nullable(),
+  payload: z.record(z.unknown()),
+  result: z.record(z.unknown()),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+  completedAt: IsoDateTimeSchema.nullable(),
+});
+
+export type ImpactQueueItem = z.infer<typeof ImpactQueueItemSchema>;
+
 /** Client-facing action input — executor fields are server-derived. */
 export const ExecuteActionClientInputSchema = z.object({
   actionType: z.string(),
@@ -206,6 +234,9 @@ export const GateListResponseSchema = ListResponseSchema(GateSchema);
 export const ActionLogListResponseSchema = ListResponseSchema(
   ActionLogRecordSchema,
 );
+export const ImpactQueueListResponseSchema = ListResponseSchema(
+  ImpactQueueItemSchema,
+);
 export const InstructionListResponseSchema = ListResponseSchema(
   InstructionSchema,
 );
@@ -242,6 +273,9 @@ export const InstructionResponseSchema = SingleResponseSchema(InstructionSchema)
 export const GateResponseSchema = SingleResponseSchema(GateSchema);
 export const ActionLogEntryResponseSchema = SingleResponseSchema(
   ActionLogRecordSchema,
+);
+export const ImpactQueueItemResponseSchema = SingleResponseSchema(
+  ImpactQueueItemSchema,
 );
 
 export const NeighborQueryResponseSchema = z.object({

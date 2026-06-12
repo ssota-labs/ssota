@@ -552,5 +552,6 @@ export * from "./domain/enforcement.js";
 export * from "./domain/wire.js";
 export * from "./domain/subject-scope.js";
 export * from "./domain/project-scope.js";
+export * from "./impact-queue.js";
 export * from "./catalog-slug.js";
 export * from "./console-slug.js";

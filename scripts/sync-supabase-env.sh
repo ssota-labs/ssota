@@ -36,7 +36,12 @@ main() {
           console.error('supabase status JSON not found — is the local stack running?');
           process.exit(1);
         }
-        process.stdout.write(text.slice(start));
+        const end = text.lastIndexOf('}');
+        if (end < start) {
+          console.error('supabase status JSON is incomplete');
+          process.exit(1);
+        }
+        process.stdout.write(text.slice(start, end + 1));
       });
     "
   )"; then

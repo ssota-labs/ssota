@@ -1,4 +1,4 @@
-import { eq, and, or, sql } from "drizzle-orm";
+import { asc, desc, eq, and, inArray, lte, or, sql } from "drizzle-orm";
 import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
 import type {
   ActionScope,
@@ -25,6 +25,11 @@ import type {
   Gate,
   GatePort,
   GraphReadPort,
+  ImpactQueueClaimInput,
+  ImpactQueueCreateInput,
+  ImpactQueueItem,
+  ImpactQueuePort,
+  ImpactQueueQueryInput,
   Instruction,
   Node,
   NodeCatalogEntry,
@@ -1083,11 +1088,284 @@ function mapLogRecord(row: typeof schema.actionLog.$inferSelect): ActionLogRecor
   };
 }
 
+function mapImpactQueueItem(
+  row: typeof schema.impactQueue.$inferSelect,
+): ImpactQueueItem {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    sourceActionLogId: row.sourceActionLogId,
+    sourceNodeId: row.sourceNodeId,
+    targetNodeId: row.targetNodeId,
+    dependencyEdgeId: row.dependencyEdgeId,
+    workflowKey: row.workflowKey,
+    instructionId: row.instructionId,
+    status: row.status,
+    priority: row.priority,
+    runAt: row.runAt,
+    lockedBy: row.lockedBy,
+    lockedUntil: row.lockedUntil,
+    attemptCount: row.attemptCount,
+    maxAttempts: row.maxAttempts,
+    idempotencyKey: row.idempotencyKey,
+    lastError: row.lastError,
+    payload: row.payload,
+    result: row.result,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    completedAt: row.completedAt,
+  };
+}
+
+export function createImpactQueuePort(
+  db: Db,
+  scope: ActionPortsScope,
+): ImpactQueuePort {
+  const { projectId } = scope;
+
+  async function getByIdempotencyKey(
+    idempotencyKey: string,
+  ): Promise<ImpactQueueItem | null> {
+    const rows = await db
+      .select()
+      .from(schema.impactQueue)
+      .where(
+        and(
+          eq(schema.impactQueue.projectId, projectId),
+          eq(schema.impactQueue.idempotencyKey, idempotencyKey),
+        ),
+      )
+      .limit(1);
+    return rows[0] ? mapImpactQueueItem(rows[0]) : null;
+  }
+
+  return {
+    async enqueueImpact(input: ImpactQueueCreateInput) {
+      const rows = await db
+        .insert(schema.impactQueue)
+        .values({
+          projectId,
+          sourceActionLogId: input.sourceActionLogId,
+          sourceNodeId: input.sourceNodeId ?? null,
+          targetNodeId: input.targetNodeId ?? null,
+          dependencyEdgeId: input.dependencyEdgeId ?? null,
+          workflowKey: input.workflowKey,
+          instructionId: input.instructionId ?? null,
+          priority: input.priority ?? 0,
+          runAt: input.runAt ?? new Date(),
+          maxAttempts: input.maxAttempts ?? 5,
+          idempotencyKey: input.idempotencyKey,
+          payload: input.payload ?? {},
+        })
+        .onConflictDoNothing({
+          target: [
+            schema.impactQueue.projectId,
+            schema.impactQueue.idempotencyKey,
+          ],
+        })
+        .returning();
+      const inserted = rows[0];
+      if (inserted) return mapImpactQueueItem(inserted);
+
+      const existing = await getByIdempotencyKey(input.idempotencyKey);
+      if (!existing) {
+        throw new Error("impact_queue enqueue conflict did not return existing row");
+      }
+      return existing;
+    },
+
+    async claimImpactQueue(input: ImpactQueueClaimInput) {
+      const currentTime = input.now ?? new Date();
+      const lockMs = input.lockMs ?? 5 * 60 * 1000;
+      const lockUntil = new Date(currentTime.getTime() + lockMs);
+      const limit = input.limit ?? 1;
+
+      return db.transaction(async (tx) => {
+        const picked = await tx
+          .select({ id: schema.impactQueue.id })
+          .from(schema.impactQueue)
+          .where(
+            and(
+              eq(schema.impactQueue.projectId, projectId),
+              lte(schema.impactQueue.runAt, currentTime),
+              or(
+                eq(schema.impactQueue.status, "pending"),
+                eq(schema.impactQueue.status, "failed"),
+                and(
+                  eq(schema.impactQueue.status, "running"),
+                  lte(schema.impactQueue.lockedUntil, currentTime),
+                ),
+              ),
+            ),
+          )
+          .orderBy(
+            desc(schema.impactQueue.priority),
+            asc(schema.impactQueue.runAt),
+            asc(schema.impactQueue.createdAt),
+          )
+          .limit(limit)
+          .for("update", { skipLocked: true });
+
+        const ids = picked.map((row) => row.id);
+        if (ids.length === 0) return [];
+
+        const rows = await tx
+          .update(schema.impactQueue)
+          .set({
+            status: "running",
+            lockedBy: input.workerId,
+            lockedUntil: lockUntil,
+            attemptCount: sql`${schema.impactQueue.attemptCount} + 1`,
+            updatedAt: currentTime,
+          })
+          .where(
+            and(
+              eq(schema.impactQueue.projectId, projectId),
+              inArray(schema.impactQueue.id, ids),
+            ),
+          )
+          .returning();
+
+        const rowById = new Map(rows.map((row) => [row.id, row]));
+        return ids
+          .map((id) => rowById.get(id))
+          .filter((row): row is NonNullable<typeof row> => row !== undefined)
+          .map(mapImpactQueueItem);
+      });
+    },
+
+    async completeImpactQueue(queueId, result = {}) {
+      const currentTime = new Date();
+      const rows = await db
+        .update(schema.impactQueue)
+        .set({
+          status: "succeeded",
+          lockedBy: null,
+          lockedUntil: null,
+          result,
+          updatedAt: currentTime,
+          completedAt: currentTime,
+        })
+        .where(
+          and(
+            eq(schema.impactQueue.projectId, projectId),
+            eq(schema.impactQueue.id, queueId),
+          ),
+        )
+        .returning();
+      return rows[0] ? mapImpactQueueItem(rows[0]) : null;
+    },
+
+    async failImpactQueue(queueId, error, retryAt) {
+      const currentTime = new Date();
+      const existingRows = await db
+        .select()
+        .from(schema.impactQueue)
+        .where(
+          and(
+            eq(schema.impactQueue.projectId, projectId),
+            eq(schema.impactQueue.id, queueId),
+          ),
+        )
+        .limit(1);
+      const existing = existingRows[0];
+      if (!existing) return null;
+
+      const willRetry = existing.attemptCount < existing.maxAttempts;
+      const rows = await db
+        .update(schema.impactQueue)
+        .set({
+          status: willRetry ? "failed" : "dead",
+          lockedBy: null,
+          lockedUntil: null,
+          runAt: willRetry ? (retryAt ?? currentTime) : existing.runAt,
+          lastError: error,
+          updatedAt: currentTime,
+          completedAt: willRetry ? null : currentTime,
+        })
+        .where(
+          and(
+            eq(schema.impactQueue.projectId, projectId),
+            eq(schema.impactQueue.id, queueId),
+          ),
+        )
+        .returning();
+      return rows[0] ? mapImpactQueueItem(rows[0]) : null;
+    },
+
+    async skipImpactQueue(queueId, result = {}) {
+      const currentTime = new Date();
+      const rows = await db
+        .update(schema.impactQueue)
+        .set({
+          status: "skipped",
+          lockedBy: null,
+          lockedUntil: null,
+          result,
+          updatedAt: currentTime,
+          completedAt: currentTime,
+        })
+        .where(
+          and(
+            eq(schema.impactQueue.projectId, projectId),
+            eq(schema.impactQueue.id, queueId),
+          ),
+        )
+        .returning();
+      return rows[0] ? mapImpactQueueItem(rows[0]) : null;
+    },
+
+    async queryImpactQueue(params?: ImpactQueueQueryInput) {
+      let query = db
+        .select()
+        .from(schema.impactQueue)
+        .where(eq(schema.impactQueue.projectId, projectId))
+        .$dynamic();
+      if (params?.status) {
+        query = query.where(
+          and(
+            eq(schema.impactQueue.projectId, projectId),
+            eq(schema.impactQueue.status, params.status),
+          ),
+        );
+      }
+      if (params?.workflowKey) {
+        query = query.where(
+          and(
+            eq(schema.impactQueue.projectId, projectId),
+            eq(schema.impactQueue.workflowKey, params.workflowKey),
+          ),
+        );
+      }
+      const rows = await query
+        .orderBy(sql`${schema.impactQueue.createdAt} desc`)
+        .limit(params?.limit ?? 20)
+        .offset(params?.offset ?? 0);
+      return rows.map(mapImpactQueueItem);
+    },
+
+    async getImpactQueueItem(queueId) {
+      const rows = await db
+        .select()
+        .from(schema.impactQueue)
+        .where(
+          and(
+            eq(schema.impactQueue.projectId, projectId),
+            eq(schema.impactQueue.id, queueId),
+          ),
+        )
+        .limit(1);
+      return rows[0] ? mapImpactQueueItem(rows[0]) : null;
+    },
+  };
+}
+
 export function createActionPorts(db: Db, scope: ActionPortsScope): ActionPorts {
   return {
     catalog: createCatalogPort(db, scope),
     graph: createGraphReadPort(db, scope),
     gate: createGatePort(db, scope),
     commit: createActionCommitPort(db, scope),
+    impactQueue: createImpactQueuePort(db, scope),
   };
 }
