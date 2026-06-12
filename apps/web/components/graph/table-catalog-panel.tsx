@@ -137,9 +137,18 @@ export function TableCatalogPanel({
   );
 }
 
-export function NewTableButton({ children }: { children: React.ReactNode }) {
+export function NewTableButton({
+  children,
+  className,
+  ...props
+}: React.ComponentProps<typeof Button>) {
   return (
-    <Button variant="outline" size="sm" className="h-7 w-full gap-1 px-2 text-xs">
+    <Button
+      variant="outline"
+      size="sm"
+      className={cn("h-7 w-full gap-1 px-2 text-xs", className)}
+      {...props}
+    >
       <PlusIcon className="size-3" />
       {children}
     </Button>

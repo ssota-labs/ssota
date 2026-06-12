@@ -75,7 +75,7 @@ export default async function GraphActionsPage({
 function NewActionSheet({ projectId }: { projectId: string }) {
   return (
     <Sheet>
-      <SheetTrigger render={<NewTableButton>New action</NewTableButton>} />
+      <SheetTrigger render={<NewTableButton />}>New action</SheetTrigger>
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New action contract</SheetTitle>
