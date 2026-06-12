@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { Button } from "@loopos/ui/components/ui/button";
 import { Input } from "@loopos/ui/components/ui/input";
 import { Label } from "@loopos/ui/components/ui/label";
@@ -11,33 +10,9 @@ import {
   SheetTrigger,
 } from "@loopos/ui/components/ui/sheet";
 import { createEdgeTableFormAction } from "@/app/actions";
-import { EdgeCatalogDataTable } from "@/components/graph/edge-catalog-data-table";
-import { graphPath } from "@/lib/console/paths";
-import { getActionPorts } from "@/lib/ports";
+import { GraphSchemaView } from "@/components/graph/graph-schema-view";
 
-export default async function GraphEdgesPage({
-  params,
-}: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
-}) {
-  const { orgSlug, projectSlug } = await params;
-  const ctx = { orgSlug, projectSlug };
-  const ports = getActionPorts();
-  const edges = await ports.catalog.listEdgeCatalogEntries();
-
-  if (edges.length === 1) {
-    redirect(graphPath(ctx, "edges", edges[0]!.slug));
-  }
-
-  const tableData = edges.map((edge) => ({
-    label: edge.label,
-    domain: edge.domain.join(", "),
-    range: edge.range.join(", "),
-    cardinality: edge.cardinality,
-    representation: edge.representation,
-    href: graphPath(ctx, "edges", edge.slug),
-  }));
-
+export default async function GraphEdgesPage() {
   const toolbar = (
     <Sheet>
       <SheetTrigger render={<Button size="sm" />}>New edge table</SheetTrigger>
@@ -74,14 +49,10 @@ export default async function GraphEdgesPage({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 border-b px-4 py-2">
-        <h1 className="text-sm font-semibold">Edges</h1>
-        <p className="text-xs text-muted-foreground">
-          Edge tables define allowed relationships between node tables.
-        </p>
-      </div>
-      <EdgeCatalogDataTable data={tableData} toolbar={toolbar} />
-    </div>
+    <GraphSchemaView
+      title="Edges"
+      description="Relationships between node types defined in the edge catalog."
+      toolbar={toolbar}
+    />
   );
 }

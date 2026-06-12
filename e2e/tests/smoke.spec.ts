@@ -9,11 +9,11 @@ test.describe("LoopOS Console", () => {
     await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible();
   });
 
-  test("smoke: Graph → node table", async ({ page }) => {
+  test("smoke: Graph → schema canvas", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "graph");
     await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page.locator(".react-flow")).toBeVisible();
     await expect(page.getByText("Nodes", { exact: true })).toBeVisible();
   });
 
