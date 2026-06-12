@@ -6,7 +6,7 @@ import { DEFAULT_CONSOLE_BASE, gotoProject, toCatalogSlug } from "../helpers/con
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
 test.describe("SSOTA define_node_type vertical slice", () => {
-  test("Agent MCP propose → Human gate approve → catalog visible", async ({
+  test("Agent MCP define_node_type committed → catalog visible", async ({
     page,
     request,
   }) => {
@@ -30,19 +30,11 @@ test.describe("SSOTA define_node_type vertical slice", () => {
           contentGuide: "E2E agent proposed node type",
         },
       },
-    })) as { status: string; gateId?: string };
+    })) as { status: string };
 
-    expect(mcpResult.status).toBe("gated");
-    expect(mcpResult.gateId).toBeTruthy();
+    expect(mcpResult.status).toBe("committed");
 
     await loginAsSmoke(page);
-
-    await gotoProject(page, "gates");
-    const gateCard = page.locator(".rounded-lg, .rounded-md, [data-slot='card']").filter({ hasText: nodeType });
-    await expect(page.getByText("define_node_type").first()).toBeVisible({
-      timeout: 10_000,
-    });
-    await gateCard.getByRole("button", { name: "Approve" }).first().click();
 
     await gotoProject(page, "graph/nodes");
     await page.reload();
@@ -52,7 +44,6 @@ test.describe("SSOTA define_node_type vertical slice", () => {
 
     await gotoProject(page, "log");
     await expect(page.getByText("define_node_type").first()).toBeVisible();
-    await expect(page.getByText("approve_gate").first()).toBeVisible();
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/log`));
   });
 

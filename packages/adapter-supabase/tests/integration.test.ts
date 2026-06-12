@@ -276,10 +276,10 @@ describe("adapter-supabase integration", () => {
   );
 
   it(
-    "define_node_type Agent → gate 승인 → catalog 반영",
+    "define_node_type Agent 커밋 + catalog 반영",
     async () => {
       const nodeType = `AgentType_${Date.now()}`;
-      const gated = await executeAction(ports, {
+      const result = await executeAction(ports, {
         actionType: "define_node_type",
         input: {
           definition: {
@@ -301,27 +301,17 @@ describe("adapter-supabase integration", () => {
         projectId,
       });
 
-      expect(gated.status).toBe("gated");
-      if (gated.status !== "gated") return;
+      expect(result.status).toBe("committed");
 
-      const before = await ports.catalog.getNodeCatalogEntry(nodeType);
-      expect(before).toBeNull();
+      const entry = await ports.catalog.getNodeCatalogEntry(nodeType);
+      expect(entry?.nodeType).toBe(nodeType);
+      expect(entry?.contentGuide).toBe("Agent proposed type");
 
-      const approved = await executeAction(ports, {
-        actionType: "approve_gate",
-        input: { gateId: gated.gateId, status: "approved" },
-        executorId: smokeUserId,
-      executorType: "Human",
-      projectId,
-    });
-      expect(approved.status).toBe("committed");
-
-      const after = await ports.catalog.getNodeCatalogEntry(nodeType);
-      expect(after?.nodeType).toBe(nodeType);
-
-      const log = await ports.commit.getActionLog({ limit: 10 });
-      expect(log.some((l) => l.actionType === "define_node_type")).toBe(true);
-      expect(log.some((l) => l.actionType === "approve_gate")).toBe(true);
+      const log = await ports.commit.getActionLog({
+        actionType: "define_node_type",
+        limit: 1,
+      });
+      expect(log[0]?.outcome).toBe("committed");
     },
   );
 
