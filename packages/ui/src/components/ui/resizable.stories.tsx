@@ -20,13 +20,13 @@ export const Horizontal: Story = {
       orientation="horizontal"
       className="min-h-[200px] max-w-2xl rounded-lg border"
     >
-      <ResizablePanel defaultSize={35} minSize={20}>
+      <ResizablePanel id="catalog" defaultSize="35%" minSize="20%">
         <div className="flex h-full items-center justify-center p-4 text-sm text-muted-foreground">
           Catalog
         </div>
       </ResizablePanel>
       <ResizableHandle withHandle />
-      <ResizablePanel defaultSize={65} minSize={30}>
+      <ResizablePanel id="canvas" defaultSize="65%" minSize="30%">
         <div className="flex h-full items-center justify-center p-4 text-sm text-muted-foreground">
           Graph canvas
         </div>
