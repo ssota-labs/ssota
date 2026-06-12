@@ -58,6 +58,17 @@ export const GateStatusSchema = z.enum(["pending", "approved", "rejected"]);
 
 export type GateStatus = z.infer<typeof GateStatusSchema>;
 
+export const ImpactQueueStatusSchema = z.enum([
+  "pending",
+  "running",
+  "succeeded",
+  "failed",
+  "dead",
+  "skipped",
+]);
+
+export type ImpactQueueStatus = z.infer<typeof ImpactQueueStatusSchema>;
+
 export const LifecycleTransitionsSchema = z.record(
   LifecycleStatusSchema,
   z.array(LifecycleStatusSchema),
@@ -499,6 +510,15 @@ export const GetActionLogInputSchema = z.object({
 });
 
 export type GetActionLogInput = z.infer<typeof GetActionLogInputSchema>;
+
+export const QueryImpactQueueInputSchema = z.object({
+  status: ImpactQueueStatusSchema.optional(),
+  workflowKey: z.string().min(1).optional(),
+  limit: z.number().int().positive().max(100).default(20),
+  offset: z.number().int().nonnegative().default(0),
+});
+
+export type QueryImpactQueueInput = z.infer<typeof QueryImpactQueueInputSchema>;
 
 export const SubmitForApprovalInputSchema = z.object({
   gateId: z.string().uuid(),

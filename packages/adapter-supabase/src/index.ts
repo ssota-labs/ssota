@@ -2,6 +2,7 @@ export { createAdminDb, createDb, schema } from "./db/client.js";
 export {
   createActionPorts,
   createConsolePort,
+  createImpactQueuePort,
   createOnboardingPort,
 } from "./ports/index.js";
 export {

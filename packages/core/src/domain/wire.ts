@@ -5,6 +5,7 @@ import type {
   Edge as WireEdge,
   EdgeCatalogEntry as WireEdgeCatalogEntry,
   Gate as WireGate,
+  ImpactQueueItem as WireImpactQueueItem,
   Instruction as WireInstruction,
   Node as WireNode,
   NodeCatalogEntry as WireNodeCatalogEntry,
@@ -17,6 +18,7 @@ import type {
   Edge,
   EdgeCatalogEntry,
   Gate,
+  ImpactQueueItem,
   Instruction,
   Node,
   NodeCatalogEntry,
@@ -55,6 +57,19 @@ export function serializeActionLogRecord(
   return {
     ...record,
     createdAt: toIso(record.createdAt),
+  };
+}
+
+export function serializeImpactQueueItem(
+  item: ImpactQueueItem,
+): WireImpactQueueItem {
+  return {
+    ...item,
+    runAt: toIso(item.runAt),
+    lockedUntil: item.lockedUntil ? toIso(item.lockedUntil) : null,
+    createdAt: toIso(item.createdAt),
+    updatedAt: toIso(item.updatedAt),
+    completedAt: item.completedAt ? toIso(item.completedAt) : null,
   };
 }
 

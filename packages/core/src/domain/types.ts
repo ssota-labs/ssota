@@ -3,6 +3,7 @@ import type {
   Effect,
   ExecutorType,
   GateStatus,
+  ImpactQueueStatus,
   InstructionScope,
   InstructionWorkflowStep,
   LifecycleStatus,
@@ -140,6 +141,59 @@ export interface ActionLogRecord {
   idempotencyKey: string | null;
   metadata: Record<string, unknown>;
   createdAt: Date;
+}
+
+export interface ImpactQueueItem {
+  id: string;
+  projectId: string;
+  sourceActionLogId: string;
+  sourceNodeId: string | null;
+  targetNodeId: string | null;
+  dependencyEdgeId: string | null;
+  workflowKey: string;
+  instructionId: string | null;
+  status: ImpactQueueStatus;
+  priority: number;
+  runAt: Date;
+  lockedBy: string | null;
+  lockedUntil: Date | null;
+  attemptCount: number;
+  maxAttempts: number;
+  idempotencyKey: string;
+  lastError: string | null;
+  payload: Record<string, unknown>;
+  result: Record<string, unknown>;
+  createdAt: Date;
+  updatedAt: Date;
+  completedAt: Date | null;
+}
+
+export interface ImpactQueueCreateInput {
+  sourceActionLogId: string;
+  sourceNodeId?: string | null;
+  targetNodeId?: string | null;
+  dependencyEdgeId?: string | null;
+  workflowKey: string;
+  instructionId?: string | null;
+  priority?: number;
+  runAt?: Date;
+  maxAttempts?: number;
+  idempotencyKey: string;
+  payload?: Record<string, unknown>;
+}
+
+export interface ImpactQueueClaimInput {
+  workerId: string;
+  limit?: number;
+  lockMs?: number;
+  now?: Date;
+}
+
+export interface ImpactQueueQueryInput {
+  status?: ImpactQueueStatus;
+  workflowKey?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export interface CommitParams {
@@ -306,11 +360,32 @@ export interface ActionCommitPort {
   findByIdempotencyKey(key: string): Promise<ActionLogRecord | null>;
 }
 
+export interface ImpactQueuePort {
+  enqueueImpact(input: ImpactQueueCreateInput): Promise<ImpactQueueItem>;
+  claimImpactQueue(input: ImpactQueueClaimInput): Promise<ImpactQueueItem[]>;
+  completeImpactQueue(
+    queueId: string,
+    result?: Record<string, unknown>,
+  ): Promise<ImpactQueueItem | null>;
+  failImpactQueue(
+    queueId: string,
+    error: string,
+    retryAt?: Date,
+  ): Promise<ImpactQueueItem | null>;
+  skipImpactQueue(
+    queueId: string,
+    result?: Record<string, unknown>,
+  ): Promise<ImpactQueueItem | null>;
+  queryImpactQueue(params?: ImpactQueueQueryInput): Promise<ImpactQueueItem[]>;
+  getImpactQueueItem(queueId: string): Promise<ImpactQueueItem | null>;
+}
+
 export interface ActionPorts {
   catalog: CatalogPort;
   graph: GraphReadPort;
   gate: GatePort;
   commit: ActionCommitPort;
+  impactQueue: ImpactQueuePort;
 }
 
 /** Resolved once per request — scopes catalog/graph IO to one SSOTA project. */
