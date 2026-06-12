@@ -19,4 +19,4 @@ Before generating or modifying UI:
 5. Select/Combobox: use Base UI `items` prop patterns from installed components.
 6. New shadcn components: `pnpm dlx shadcn@latest add <name> -y -c apps/web` (installs to `packages/ui`).
 
-Storybook reference: `pnpm storybook` → `apps/storybook` (port 6006).
+Design Lab reference: `pnpm design-lab` → `apps/design-lab` (port 6007).
