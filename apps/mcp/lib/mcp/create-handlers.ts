@@ -22,76 +22,21 @@ const mcpTransportOptions = {
   verboseLogs: process.env.NODE_ENV === "development",
 } as const;
 
-const accountMcpHandler = createMcpHandler(
+const unifiedMcpHandler = createMcpHandler(
   (server) => {
     registerAccountTools(server as never);
-  },
-  mcpHandlerOptions,
-  mcpTransportOptions,
-);
-
-const projectMcpHandler = createMcpHandler(
-  (server) => {
     registerProjectTools(server as never);
   },
   mcpHandlerOptions,
   mcpTransportOptions,
 );
 
-async function verifyAccountToken(
-  _req: Request,
-  bearerToken?: string,
-): Promise<AuthInfo | undefined> {
-  const user = await verifyBearerToken(
-    bearerToken ? `Bearer ${bearerToken}` : null,
-  );
-  if (!user) return undefined;
-
-  return {
-    token: bearerToken ?? "",
-    clientId: user.id,
-    scopes: ["openid"],
-    extra: { user },
-  };
-}
-
-function createVerifyProjectToken(orgSlug: string, projectSlug: string) {
-  return async function verifyProjectToken(
-    req: Request,
-    bearerToken?: string,
-  ): Promise<AuthInfo | undefined> {
-    const user = await verifyBearerToken(
-      bearerToken ? `Bearer ${bearerToken}` : null,
-    );
-    if (!user) return undefined;
-
-    const access = await resolveProjectAccess(user.id, orgSlug, projectSlug);
-    if (!access) return undefined;
-
-    let subjectId: string | undefined;
-    try {
-      subjectId = resolveSubjectId(req);
-    } catch {
-      return undefined;
-    }
-
-    return {
-      token: bearerToken ?? "",
-      clientId: user.id,
-      scopes: ["openid"],
-      extra: {
-        user,
-        subjectId,
-        projectId: access.project.id,
-        orgSlug: access.org.slug,
-        projectSlug: access.project.slug,
-      },
-    };
-  };
-}
-
-/** Embedder BFF: project UUID via X-SSOTA-Project-Id header. */
-async function verifyLegacyProjectToken(
+/**
+ * Single MCP auth path: JWT + optional subject header.
+ * Project scope is resolved per tool call via orgSlug/projectSlug args
+ * (with optional URL query defaults for backward compatibility).
+ */
+async function verifyMcpToken(
   req: Request,
   bearerToken?: string,
 ): Promise<AuthInfo | undefined> {
@@ -100,9 +45,6 @@ async function verifyLegacyProjectToken(
   );
   if (!user) return undefined;
 
-  const projectId = resolveProjectId(req);
-  if (!projectId) return undefined;
-
   let subjectId: string | undefined;
   try {
     subjectId = resolveSubjectId(req);
@@ -110,83 +52,51 @@ async function verifyLegacyProjectToken(
     return undefined;
   }
 
+  const extra: Record<string, unknown> = { user, subjectId };
+
+  try {
+    const urlScope = parseMcpProjectScope(req);
+    if (urlScope) {
+      const access = await resolveProjectAccess(
+        user.id,
+        urlScope.orgSlug,
+        urlScope.projectSlug,
+      );
+      if (access) {
+        extra.orgSlug = access.org.slug;
+        extra.projectSlug = access.project.slug;
+        extra.projectId = access.project.id;
+      }
+    }
+  } catch {
+    return undefined;
+  }
+
+  const headerProjectId = resolveProjectId(req);
+  if (headerProjectId && !extra.projectId) {
+    extra.projectId = headerProjectId;
+  }
+
   return {
     token: bearerToken ?? "",
     clientId: user.id,
     scopes: ["openid"],
-    extra: { user, subjectId, projectId },
+    extra,
   };
 }
 
-export const accountAuthHandler = withMcpAuth(
-  accountMcpHandler,
-  verifyAccountToken,
-  {
-    required: true,
-    resourceMetadataPath: mcpResourceMetadataPath(),
-    resourceUrl: mcpPublicOrigin(),
-  },
-);
+export const mcpAuthHandler = withMcpAuth(unifiedMcpHandler, verifyMcpToken, {
+  required: true,
+  resourceMetadataPath: mcpResourceMetadataPath(),
+  resourceUrl: mcpPublicOrigin(),
+});
 
-export function createProjectAuthHandler(orgSlug: string, projectSlug: string) {
-  return withMcpAuth(
-    projectMcpHandler,
-    createVerifyProjectToken(orgSlug, projectSlug),
-    {
-      required: true,
-      resourceMetadataPath: mcpResourceMetadataPath(orgSlug, projectSlug),
-      resourceUrl: mcpPublicOrigin(),
-    },
-  );
-}
+/** @deprecated Use mcpAuthHandler — kept for imports that referenced accountAuthHandler. */
+export const accountAuthHandler = mcpAuthHandler;
 
-export const legacyProjectAuthHandler = withMcpAuth(
-  projectMcpHandler,
-  verifyLegacyProjectToken,
-  {
-    required: true,
-    resourceMetadataPath: mcpResourceMetadataPath(),
-    resourceUrl: mcpPublicOrigin(),
-  },
-);
-
-const projectHandlerCache = new Map<
-  string,
-  (req: Request) => Promise<Response>
->();
-
-function projectHandlerKey(orgSlug: string, projectSlug: string): string {
-  return `${orgSlug}/${projectSlug}`;
-}
-
-function getProjectAuthHandler(orgSlug: string, projectSlug: string) {
-  const key = projectHandlerKey(orgSlug, projectSlug);
-  let handler = projectHandlerCache.get(key);
-  if (!handler) {
-    handler = createProjectAuthHandler(orgSlug, projectSlug);
-    projectHandlerCache.set(key, handler);
-  }
-  return handler;
-}
-
-/** Single MCP URL — account tools without query; project tools with ?org=&project=. */
+/** Single MCP URL — all tools; project scope via tool params. */
 export async function dispatchMcpRequest(req: Request): Promise<Response> {
-  try {
-    const scope = parseMcpProjectScope(req);
-    if (scope) {
-      return getProjectAuthHandler(scope.orgSlug, scope.projectSlug)(req);
-    }
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Invalid MCP project scope";
-    return Response.json({ error: message }, { status: 400 });
-  }
-
-  if (resolveProjectId(req)) {
-    return legacyProjectAuthHandler(req);
-  }
-
-  return accountAuthHandler(req);
+  return mcpAuthHandler(req);
 }
 
 export { buildMcpResourceUrl };

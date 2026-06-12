@@ -44,204 +44,194 @@ import {
   traverseEdges,
   traverseGraphService,
 } from "@/lib/api/services";
-import {
-  readSubjectFromExtra,
-  requireProjectFromExtra,
-} from "@/lib/mcp/auth-extra";
 import { jsonContent } from "@/lib/mcp/json-content";
+import { readSubjectFromExtra } from "@/lib/mcp/project-scope";
+import { registerScopedProjectTool } from "@/lib/mcp/register-scoped-tool";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 
 type McpToolServer = {
   registerTool: (
     name: string,
     config: Record<string, unknown>,
-    handler: (args: Record<string, unknown>, extra: { authInfo?: AuthInfo }) => Promise<unknown>,
+    handler: (
+      args: Record<string, unknown>,
+      extra: { authInfo?: AuthInfo },
+    ) => Promise<unknown>,
   ) => void;
 };
 
 export function registerProjectTools(server: McpToolServer) {
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "list_node_types",
     {
       title: "List Node Types",
       description:
         "Discover: list node type catalog index. Fetch details with get_node_type.",
-      inputSchema: {},
     },
-    async (_args, extra) =>
-      jsonContent(await listNodeTypes(requireProjectFromExtra(extra))),
+    async ({ projectId }) => jsonContent(await listNodeTypes(projectId)),
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "list_edge_types",
     {
       title: "List Edge Types",
       description:
         "Discover: list edge type catalog index. Fetch details with get_edge_type.",
-      inputSchema: {},
     },
-    async (_args, extra) =>
-      jsonContent(await listEdgeTypes(requireProjectFromExtra(extra))),
+    async ({ projectId }) => jsonContent(await listEdgeTypes(projectId)),
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "list_properties",
     {
       title: "List Properties",
       description:
         "Discover: list property catalog index. Fetch details with get_property.",
-      inputSchema: {},
     },
-    async (_args, extra) =>
-      jsonContent(await listProperties(requireProjectFromExtra(extra))),
+    async ({ projectId }) => jsonContent(await listProperties(projectId)),
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "list_action_contracts",
     {
       title: "List Action Contracts",
       description:
         "Discover: list action contract index. Fetch details with get_action_contract.",
-      inputSchema: {},
     },
-    async (_args, extra) =>
-      jsonContent(await listActionContracts(requireProjectFromExtra(extra))),
+    async ({ projectId }) => jsonContent(await listActionContracts(projectId)),
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "list_archetypes",
     {
       title: "List Archetypes",
       description:
         "Discover: list archetype index. Fetch details with get_archetype.",
-      inputSchema: {},
     },
-    async (_args, extra) =>
-      jsonContent(await listArchetypes(requireProjectFromExtra(extra))),
+    async ({ projectId }) => jsonContent(await listArchetypes(projectId)),
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_action_contract",
     {
       title: "Get Action Contract",
       description: "Get action contract from catalog",
       inputSchema: { actionType: z.string() },
     },
-    async ({ actionType }, extra) =>
+    async ({ projectId, args }) =>
       jsonContent(
-        await getActionContract(requireProjectFromExtra(extra), String(actionType)),
+        await getActionContract(projectId, String(args.actionType)),
       ),
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_node_type",
     {
       title: "Get Node Type",
       description: "Fetch one node type catalog entry by nodeType",
       inputSchema: { nodeType: z.string().min(1) },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = GetNodeTypeInputSchema.parse(args);
-      return jsonContent(
-        await getNodeType(requireProjectFromExtra(extra), parsed.nodeType),
-      );
+      return jsonContent(await getNodeType(projectId, parsed.nodeType));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_edge_type",
     {
       title: "Get Edge Type",
       description: "Fetch one edge type catalog entry by edgeType",
       inputSchema: { edgeType: z.string().min(1) },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = GetEdgeTypeInputSchema.parse(args);
-      return jsonContent(
-        await getEdgeType(requireProjectFromExtra(extra), parsed.edgeType),
-      );
+      return jsonContent(await getEdgeType(projectId, parsed.edgeType));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_property",
     {
       title: "Get Property",
       description: "Fetch one property catalog entry by propertyKey",
       inputSchema: { propertyKey: z.string().min(1) },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = GetPropertyInputSchema.parse(args);
-      return jsonContent(
-        await getProperty(requireProjectFromExtra(extra), parsed.propertyKey),
-      );
+      return jsonContent(await getProperty(projectId, parsed.propertyKey));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_archetype",
     {
       title: "Get Archetype",
       description: "Fetch one archetype by archetypeId",
       inputSchema: { archetypeId: z.string().min(1) },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = GetArchetypeInputSchema.parse(args);
-      return jsonContent(
-        await getArchetype(requireProjectFromExtra(extra), parsed.archetypeId),
-      );
+      return jsonContent(await getArchetype(projectId, parsed.archetypeId));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_node",
     {
       title: "Get Node",
       description: "Fetch one graph node by nodeId",
       inputSchema: { nodeId: z.string().uuid() },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = GetNodeInputSchema.parse(args);
-      return jsonContent(
-        await getNode(requireProjectFromExtra(extra), parsed.nodeId),
-      );
+      return jsonContent(await getNode(projectId, parsed.nodeId));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_instruction",
     {
       title: "Get Instruction",
       description: "Fetch one domain instruction by instructionId",
       inputSchema: { instructionId: z.string().uuid() },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = GetInstructionInputSchema.parse(args);
       return jsonContent(
-        await getInstruction(
-          requireProjectFromExtra(extra),
-          parsed.instructionId,
-        ),
+        await getInstruction(projectId, parsed.instructionId),
       );
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_gate",
     {
       title: "Get Gate",
       description: "Fetch one gate by gateId",
       inputSchema: { gateId: z.string().uuid() },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = GetGateInputSchema.parse(args);
-      return jsonContent(
-        await getGate(requireProjectFromExtra(extra), parsed.gateId),
-      );
+      return jsonContent(await getGate(projectId, parsed.gateId));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "query_nodes",
     {
       title: "Query Nodes",
@@ -255,16 +245,15 @@ export function registerProjectTools(server: McpToolServer) {
         offset: z.number().int().nonnegative().optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args, extra }) => {
       const subjectId = readSubjectFromExtra(extra);
       const parsed = QueryNodesInputSchema.parse({ ...args, subjectId });
-      return jsonContent(
-        await queryNodes(requireProjectFromExtra(extra), parsed),
-      );
+      return jsonContent(await queryNodes(projectId, parsed));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "traverse_edges",
     {
       title: "Traverse Edges",
@@ -276,16 +265,15 @@ export function registerProjectTools(server: McpToolServer) {
         edgeType: z.string().optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args, extra }) => {
       const subjectId = readSubjectFromExtra(extra);
       const parsed = TraverseEdgesInputSchema.parse({ ...args, subjectId });
-      return jsonContent(
-        await traverseEdges(requireProjectFromExtra(extra), parsed),
-      );
+      return jsonContent(await traverseEdges(projectId, parsed));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "query_neighbors",
     {
       title: "Query Neighbors",
@@ -297,15 +285,14 @@ export function registerProjectTools(server: McpToolServer) {
         edgeType: z.string().optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = QueryNeighborsInputSchema.parse(args);
-      return jsonContent(
-        await queryNeighborsService(requireProjectFromExtra(extra), parsed),
-      );
+      return jsonContent(await queryNeighborsService(projectId, parsed));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "traverse_graph",
     {
       title: "Traverse Graph",
@@ -320,15 +307,14 @@ export function registerProjectTools(server: McpToolServer) {
         limit: z.number().int().positive().max(100).optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = TraverseGraphInputSchema.parse(args);
-      return jsonContent(
-        await traverseGraphService(requireProjectFromExtra(extra), parsed),
-      );
+      return jsonContent(await traverseGraphService(projectId, parsed));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "find_instruction",
     {
       title: "Find Instruction",
@@ -339,15 +325,14 @@ export function registerProjectTools(server: McpToolServer) {
         limit: z.number().int().positive().max(20).optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = FindInstructionInputSchema.parse(args);
-      return jsonContent(
-        await findInstructions(requireProjectFromExtra(extra), parsed),
-      );
+      return jsonContent(await findInstructions(projectId, parsed));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "execute_action",
     {
       title: "Execute Action",
@@ -358,7 +343,7 @@ export function registerProjectTools(server: McpToolServer) {
         idempotencyKey: z.string().optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args, extra }) => {
       const user = extra?.authInfo?.extra?.user as
         | { id: string }
         | undefined;
@@ -376,7 +361,6 @@ export function registerProjectTools(server: McpToolServer) {
         idempotencyKey: args.idempotencyKey,
       });
 
-      const projectId = requireProjectFromExtra(extra);
       const result = await executeActionForClient(
         projectId,
         parsed,
@@ -388,19 +372,19 @@ export function registerProjectTools(server: McpToolServer) {
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "list_pending_gates",
     {
       title: "List Pending Gates",
       description:
         "Discover: list pending gates only. Query with filters via query_gates.",
-      inputSchema: {},
     },
-    async (_args, extra) =>
-      jsonContent(await listPendingGates(requireProjectFromExtra(extra))),
+    async ({ projectId }) => jsonContent(await listPendingGates(projectId)),
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "query_gates",
     {
       title: "Query Gates",
@@ -411,15 +395,14 @@ export function registerProjectTools(server: McpToolServer) {
         offset: z.number().int().nonnegative().optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = QueryGatesInputSchema.parse(args);
-      return jsonContent(
-        await queryGates(requireProjectFromExtra(extra), parsed),
-      );
+      return jsonContent(await queryGates(projectId, parsed));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "submit_for_approval",
     {
       title: "Submit For Approval",
@@ -429,19 +412,16 @@ export function registerProjectTools(server: McpToolServer) {
         note: z.string().optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = SubmitForApprovalInputSchema.parse(args);
       return jsonContent(
-        await submitForApproval(
-          requireProjectFromExtra(extra),
-          parsed.gateId,
-          parsed.note,
-        ),
+        await submitForApproval(projectId, parsed.gateId, parsed.note),
       );
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_action_log",
     {
       title: "Get Action Log",
@@ -452,15 +432,14 @@ export function registerProjectTools(server: McpToolServer) {
         actionType: z.string().optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = GetActionLogInputSchema.parse(args);
-      return jsonContent(
-        await getActionLog(requireProjectFromExtra(extra), parsed),
-      );
+      return jsonContent(await getActionLog(projectId, parsed));
     },
   );
 
-  server.registerTool(
+  registerScopedProjectTool(
+    server,
     "get_action_log_entry",
     {
       title: "Get Action Log Entry",
@@ -470,11 +449,9 @@ export function registerProjectTools(server: McpToolServer) {
         idempotencyKey: z.string().min(1).optional(),
       },
     },
-    async (args, extra) => {
+    async ({ projectId, args }) => {
       const parsed = GetActionLogEntryInputSchema.parse(args);
-      return jsonContent(
-        await getActionLogEntry(requireProjectFromExtra(extra), parsed),
-      );
+      return jsonContent(await getActionLogEntry(projectId, parsed));
     },
   );
 }

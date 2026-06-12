@@ -1,16 +1,11 @@
-import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+export {
+  readSubjectFromExtra,
+  requireUserFromExtra,
+} from "@/lib/mcp/project-scope";
 
-export function readSubjectFromExtra(
-  extra: { authInfo?: AuthInfo } | undefined,
-): string | undefined {
-  const subjectId = extra?.authInfo?.extra?.subjectId;
-  return typeof subjectId === "string" && subjectId.length > 0
-    ? subjectId
-    : undefined;
-}
-
+/** @deprecated Use resolveProjectIdForTool from project-scope.ts */
 export function requireProjectFromExtra(
-  extra: { authInfo?: AuthInfo } | undefined,
+  extra: { authInfo?: import("@modelcontextprotocol/sdk/server/auth/types.js").AuthInfo } | undefined,
 ): string {
   const projectId = extra?.authInfo?.extra?.projectId;
   if (typeof projectId !== "string" || projectId.length === 0) {

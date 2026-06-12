@@ -19,6 +19,12 @@ let cachedDefaultProjectId: string | null = null;
 export const DEFAULT_MCP_ORG_SLUG = "ssota-labs";
 export const DEFAULT_MCP_PROJECT_SLUG = "ssota-dev";
 
+const ACCOUNT_MCP_TOOLS = new Set([
+  "list_organizations",
+  "list_projects",
+  "get_project",
+]);
+
 export async function getSmokeAccessToken(): Promise<string> {
   const supabase = createClient(supabaseUrl, supabaseAnonKey);
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -31,7 +37,7 @@ export async function getSmokeAccessToken(): Promise<string> {
   return data.session.access_token;
 }
 
-/** REST v1 tests still use X-SSOTA-Project-Id header (MCP uses ?org=&project= query). */
+/** REST v1 tests still use X-SSOTA-Project-Id header. */
 export async function getDefaultProjectId(): Promise<string> {
   if (cachedDefaultProjectId) return cachedDefaultProjectId;
 
@@ -60,13 +66,18 @@ export function projectIdHeaders(projectId: string): Record<string, string> {
   return { [PROJECT_ID_HEADER]: projectId };
 }
 
+export function mcpEndpoint(mcpUrl: string): string {
+  const base = mcpUrl.replace(/\/$/, "");
+  return base.endsWith("/api/mcp") ? base : `${base}/api/mcp`;
+}
+
+/** @deprecated URL query scope — project scope is passed via tool args. */
 export function projectScopedMcpUrl(
   mcpUrl: string,
   orgSlug = DEFAULT_MCP_ORG_SLUG,
   projectSlug = DEFAULT_MCP_PROJECT_SLUG,
 ): string {
-  const base = mcpUrl.replace(/\/$/, "");
-  const endpoint = base.endsWith("/api/mcp") ? base : `${base}/api/mcp`;
+  const endpoint = mcpEndpoint(mcpUrl);
   const params = new URLSearchParams({ org: orgSlug, project: projectSlug });
   return `${endpoint}?${params.toString()}`;
 }
@@ -91,11 +102,14 @@ export async function mcpToolCall(
     projectSlug?: string;
   },
 ): Promise<unknown> {
-  const endpoint = projectScopedMcpUrl(
-    mcpUrl,
-    options?.orgSlug,
-    options?.projectSlug,
-  );
+  const endpoint = mcpEndpoint(mcpUrl);
+  const toolArgs = { ...args };
+
+  if (!ACCOUNT_MCP_TOOLS.has(toolName)) {
+    toolArgs.orgSlug ??= options?.orgSlug ?? DEFAULT_MCP_ORG_SLUG;
+    toolArgs.projectSlug ??= options?.projectSlug ?? DEFAULT_MCP_PROJECT_SLUG;
+  }
+
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
@@ -127,7 +141,7 @@ export async function mcpToolCall(
     data: {
       jsonrpc: "2.0",
       method: "tools/call",
-      params: { name: toolName, arguments: args },
+      params: { name: toolName, arguments: toolArgs },
       id: 2,
     },
   });

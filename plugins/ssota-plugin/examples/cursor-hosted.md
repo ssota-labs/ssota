@@ -2,43 +2,37 @@
 
 Use this flow when SSOTA MCP is deployed (production/staging). OAuth is handled by Cursor — do not put bearer tokens in `mcp.json`.
 
-## One MCP host, query params for project (Supabase-style)
+## Single MCP endpoint
 
-All MCP traffic goes to **`https://<mcp-host>/api/mcp`** only.
+All tools live on **`https://<mcp-host>/api/mcp`**.
 
-| URL | Tools |
-|---|---|
-| `https://<mcp-host>/api/mcp` | `list_organizations`, `list_projects`, `get_project` |
-| `https://<mcp-host>/api/mcp?org=<orgSlug>&project=<projectSlug>` | Graph/catalog/action tools |
+Project scope is passed as **tool params** on every project-scoped call:
 
-Project scope is in the **URL query string** — no path segments, no headers.
+```json
+{
+  "orgSlug": "ssota-labs",
+  "projectSlug": "ssota-dev",
+  "query": "document creation"
+}
+```
 
-Example:
+The server validates user membership on each call.
 
 ```json
 {
   "mcpServers": {
     "ssota": {
-      "url": "https://mcp.ssota.ai/api/mcp?org=ssota-labs&project=ssota-dev"
-    }
-  }
-}
-```
-
-To discover projects first, add a second entry without query params:
-
-```json
-{
-  "mcpServers": {
-    "ssota-account": {
       "url": "https://mcp.ssota.ai/api/mcp"
-    },
-    "ssota-dev": {
-      "url": "https://mcp.ssota.ai/api/mcp?org=ssota-labs&project=ssota-dev"
     }
   }
 }
 ```
+
+## Workflow
+
+1. Connect MCP (OAuth once).
+2. `list_projects` → pick `orgSlug` + `projectSlug`.
+3. Pass scope on every project tool (`find_instruction`, `execute_action`, …).
 
 ## Prerequisites
 
@@ -49,10 +43,10 @@ To discover projects first, add a second entry without query params:
 
 ## Connect in Cursor
 
-1. Set the **project URL** (with `?org=&project=`) in MCP settings.
+1. Set the MCP URL to `https://<mcp-host>/api/mcp` (no query params).
 2. Do **not** add `headers.Authorization` — Cursor manages OAuth tokens.
 3. Connect → approve on `{Site URL}/oauth/consent`.
-4. Confirm project tools appear (`list_action_contracts`, …).
+4. Confirm all tools appear (`list_projects`, `list_action_contracts`, `execute_action`, …).
 
 ## Verify deployment
 
@@ -66,5 +60,5 @@ NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co \
 
 | | Local | Hosted |
 |---|---|---|
-| Account | `http://127.0.0.1:3001/api/mcp` | `https://<mcp-host>/api/mcp` |
-| Project | `http://127.0.0.1:3001/api/mcp?org=ssota-labs&project=ssota-dev` | same pattern on host |
+| MCP URL | `http://127.0.0.1:3001/api/mcp` | `https://<mcp-host>/api/mcp` |
+| Project scope | `orgSlug` + `projectSlug` tool params | same |

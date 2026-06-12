@@ -22,7 +22,7 @@ export async function listProjectsForUser(userId: string, orgSlug?: string) {
   const results: Array<{
     organization: { id: string; slug: string; name: string };
     project: { id: string; slug: string; name: string };
-    mcpUrl: string;
+    scope: { orgSlug: string; projectSlug: string };
   }> = [];
 
   for (const org of orgs) {
@@ -31,7 +31,7 @@ export async function listProjectsForUser(userId: string, orgSlug?: string) {
       results.push({
         organization: { id: org.id, slug: org.slug, name: org.name },
         project: { id: project.id, slug: project.slug, name: project.name },
-        mcpUrl: `/api/mcp?org=${encodeURIComponent(org.slug)}&project=${encodeURIComponent(project.slug)}`,
+        scope: { orgSlug: org.slug, projectSlug: project.slug },
       });
     }
   }
@@ -57,6 +57,6 @@ export async function getProjectForUser(
   return {
     organization: { id: org.id, slug: org.slug, name: org.name },
     project: { id: project.id, slug: project.slug, name: project.name },
-    mcpUrl: `/api/mcp?org=${encodeURIComponent(org.slug)}&project=${encodeURIComponent(project.slug)}`,
+    scope: { orgSlug: org.slug, projectSlug: project.slug },
   };
 }
