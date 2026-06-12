@@ -11,10 +11,10 @@ test.describe("SSOTA Console", () => {
 
   test("smoke: Graph → node table", async ({ page }) => {
     await loginAsSmoke(page);
-    await gotoProject(page, "graph");
-    await expect(page.getByRole("heading", { level: 1 }).first()).toBeVisible();
+    await gotoProject(page, "graph/nodes?table=document");
+    await expect(page.getByText("Table Editor", { exact: true })).toBeVisible();
     await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
-    await expect(page.getByText("Nodes", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Document", exact: true })).toBeVisible();
   });
 
   test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
@@ -58,9 +58,9 @@ test.describe("SSOTA Console", () => {
     await loginAsSmoke(page);
     await page.goto("/context-graph/nodes/Document");
     await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes/document`),
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
     );
-    await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
+    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
   });
 
   test("smoke: /studio redirect", async ({ page }) => {

@@ -46,7 +46,7 @@ test.describe("SSOTA define_node_type vertical slice", () => {
 
     await gotoProject(page, "graph/nodes");
     await expect(
-      page.getByRole("link", { name: nodeType.replace(/_/g, " ") }),
+      page.getByRole("button", { name: nodeType.replace(/_/g, " ") }),
     ).toBeVisible({ timeout: 10_000 });
 
     await gotoProject(page, "log");
@@ -61,7 +61,7 @@ test.describe("SSOTA define_node_type vertical slice", () => {
     await loginAsSmoke(page);
 
     await gotoProject(page, "graph/nodes");
-    await page.getByRole("button", { name: "New node table" }).click();
+    await page.getByRole("button", { name: "New table" }).click();
     await expect(page.locator("#nodeType")).toBeVisible();
     await page.locator("#nodeType").fill(nodeType);
     await page.locator("#archetypeId").fill("doc-note");
@@ -74,7 +74,7 @@ test.describe("SSOTA define_node_type vertical slice", () => {
     await page.getByRole("button", { name: "Create node table" }).click();
     await submit;
     await gotoProject(page, "graph/nodes");
-    await expect(page.getByRole("link", { name: label })).toBeVisible({
+    await expect(page.getByRole("button", { name: label })).toBeVisible({
       timeout: 15_000,
     });
   });

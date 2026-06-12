@@ -13,7 +13,11 @@ export async function gotoProject(page: Page, path = "") {
 }
 
 export async function gotoGraphNodes(page: Page, nodeTypeSlug = "document") {
-  await gotoProject(page, `graph/nodes/${nodeTypeSlug}`);
+  await gotoProject(page, `graph/nodes?table=${encodeURIComponent(nodeTypeSlug)}`);
+}
+
+export async function openNodeTable(page: Page, label: string) {
+  await page.getByRole("button", { name: label, exact: true }).click();
 }
 
 export async function clickIconNav(page: Page, label: string) {

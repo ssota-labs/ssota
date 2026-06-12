@@ -8,7 +8,7 @@ test.describe("Context Graph Nodes", () => {
 
     await loginAsSmoke(page);
     await gotoGraphNodes(page, "document");
-    await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
+    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
 
     await page.getByRole("button", { name: "Add property" }).click();
     await page.getByLabel("Property key").fill(propertyKey);
