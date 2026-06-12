@@ -22,6 +22,7 @@ const segmentLabelKeys: Record<string, string> = {
   actions: "breadcrumbs.actions",
   instructions: "breadcrumbs.instructions",
   gates: "breadcrumbs.gates",
+  impact: "breadcrumbs.impact",
   log: "breadcrumbs.log",
   settings: "breadcrumbs.settings",
   general: "breadcrumbs.general",

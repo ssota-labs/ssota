@@ -41,10 +41,17 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("heading", { name: "Action Log" })).toBeVisible();
   });
 
+  test("smoke: Impact Queue route", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "impact");
+    await expect(page.getByRole("heading", { name: "Impact Queue" })).toBeVisible();
+  });
+
   test("smoke: icon rail exposes primary nav", async ({ page }) => {
     await loginAsSmoke(page);
     await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Impact", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Action Log", exact: true })).toBeVisible();
   });
 

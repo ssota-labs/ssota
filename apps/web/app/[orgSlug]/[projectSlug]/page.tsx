@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@ssota/ui/components/ui/card";
+import { ImpactStatusBadge } from "@/components/impact/impact-status-badge";
 import { PageHeader } from "@/components/studio/page-header";
 import {
   getCachedActionCatalog,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/console/cached-catalog";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
+import { getTranslations } from "@/lib/i18n/server";
 import { getActionPorts } from "@/lib/ports";
 
 export default async function ProjectHomePage({
@@ -25,17 +27,20 @@ export default async function ProjectHomePage({
 }) {
   const { orgSlug, projectSlug } = await params;
   const ctx = { orgSlug, projectSlug };
+  const { t } = await getTranslations();
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
 
-  const [nodes, edges, actions, instructions, gates, logs] = await Promise.all([
-    getCachedNodeCatalog(project.id),
-    getCachedEdgeCatalog(project.id),
-    getCachedActionCatalog(project.id),
-    ports.catalog.listInstructions({ limit: 100 }),
-    ports.gate.listPendingGates(),
-    ports.commit.getActionLog({ limit: 8 }),
-  ]);
+  const [nodes, edges, actions, instructions, gates, logs, pendingImpacts] =
+    await Promise.all([
+      getCachedNodeCatalog(project.id),
+      getCachedEdgeCatalog(project.id),
+      getCachedActionCatalog(project.id),
+      ports.catalog.listInstructions({ limit: 100 }),
+      ports.gate.listPendingGates(),
+      ports.commit.getActionLog({ limit: 8 }),
+      ports.impactQueue.queryImpactQueue({ status: "pending", limit: 5 }),
+    ]);
 
   const cards = [
     {
@@ -68,7 +73,7 @@ export default async function ProjectHomePage({
     <div className="space-y-6">
       <PageHeader
         title="Project Home"
-        description="Context graph overview, gates, and recent activity."
+        description={t("home.description")}
       />
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -91,7 +96,7 @@ export default async function ProjectHomePage({
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Pending Gates</CardTitle>
@@ -119,6 +124,44 @@ export default async function ProjectHomePage({
               nativeButton={false}
             >
               Review gates
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t("home.pendingImpacts")}</CardTitle>
+            <CardDescription>{t("home.pendingImpactsDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {pendingImpacts.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {t("home.pendingImpactsEmpty")}
+              </p>
+            ) : (
+              pendingImpacts.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between rounded-md border p-3 text-sm"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{item.workflowKey}</div>
+                    <div className="truncate text-muted-foreground">
+                      {item.sourceNodeId?.slice(0, 8) ?? "-"} →{" "}
+                      {item.targetNodeId?.slice(0, 8) ?? "-"}
+                    </div>
+                  </div>
+                  <ImpactStatusBadge status={item.status} />
+                </div>
+              ))
+            )}
+            <Button
+              render={<Link href={projectPath(ctx, "impact")} />}
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+            >
+              {t("home.viewImpactQueue")}
             </Button>
           </CardContent>
         </Card>
