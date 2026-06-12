@@ -55,9 +55,9 @@ export function ConsoleTopBar({
         SSOTA
       </Link>
 
-      <Separator orientation="vertical" className="h-4" />
+      <Separator orientation="vertical" className="h-4 self-center" />
 
-      <div className="flex min-w-0 items-center gap-2">
+      <div className="flex min-w-0 items-center gap-1.5">
         <DropdownMenu>
           <DropdownMenuTrigger
             render={<Button variant="ghost" size="sm" className="h-8 gap-1 px-2" />}
@@ -88,7 +88,7 @@ export function ConsoleTopBar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <span className="text-muted-foreground">/</span>
+        <Separator orientation="vertical" className="h-3.5 self-center" />
 
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -120,7 +120,7 @@ export function ConsoleTopBar({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Separator orientation="vertical" className="mx-1 hidden h-4 sm:block" />
+        <Separator orientation="vertical" className="mx-0.5 hidden h-4 self-center sm:block" />
 
         <div className="hidden min-w-0 sm:block">
           <ConsoleBreadcrumbs />
