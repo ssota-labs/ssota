@@ -50,6 +50,19 @@ export async function NodeTableDetail({
     };
   });
 
+  const propertyFields = propertyKeys.map((key) => {
+    const field = entry.propertySchema[key];
+    return {
+      key,
+      label: propertyColumnLabel(key),
+      valueType: field?.valueType ?? "string",
+      required: field?.required,
+      system: field?.system,
+      options: field?.options,
+      constraints: field?.constraints as Record<string, unknown> | undefined,
+    };
+  });
+
   const localActions = actions.filter((action) => {
     if (entry.allowedActionRefs.includes(action.actionType)) return true;
     if (action.scope.kind === "node_type") return action.scope.nodeType === decoded;
@@ -157,11 +170,13 @@ export async function NodeTableDetail({
         />
       ) : (
         <NodeInstancesView
+          projectId={projectId}
+          nodeSlug={slug}
           rows={tableRows}
           propertyColumns={propertyColumns}
+          propertyFields={propertyFields}
           toolbar={toolbar}
           relations={relationEdges}
-          actions={visibleActions.map((action) => action.actionType)}
         />
       )}
     </div>

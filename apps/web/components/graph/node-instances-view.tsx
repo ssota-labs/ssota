@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Sheet,
@@ -10,7 +9,13 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@ssota/ui/components/ui/sheet";
-import { formatTableCell } from "@/lib/graph/format-table-cell";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@ssota/ui/components/ui/tabs";
+import { InstancePropertiesPanel } from "@/components/graph/instance-properties-panel";
 import {
   GraphFlowCanvas,
   type GraphFlowEdge,
@@ -21,6 +26,7 @@ import {
   type NodeRowRecord,
   type PropertyColumn,
 } from "./node-rows-data-table";
+import type { PropertyFieldDefinition } from "@/lib/graph/property-field-types";
 
 export type InstanceGraphRelation = {
   id: string;
@@ -34,21 +40,37 @@ export type InstanceGraphRelation = {
 };
 
 type NodeInstancesViewProps = {
+  projectId: string;
+  nodeSlug: string;
   rows: NodeRowRecord[];
   propertyColumns: PropertyColumn[];
+  propertyFields: PropertyFieldDefinition[];
   toolbar?: React.ReactNode;
   relations: InstanceGraphRelation[];
-  actions: string[];
 };
 
 export function NodeInstancesView({
+  projectId,
+  nodeSlug,
   rows,
   propertyColumns,
+  propertyFields,
   toolbar,
   relations,
-  actions,
 }: NodeInstancesViewProps) {
-  const [selected, setSelected] = useState<NodeRowRecord | null>(null);
+  const [editedRows, setEditedRows] = useState<Record<string, NodeRowRecord>>({});
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sheetTab, setSheetTab] = useState<"relations" | "properties">("relations");
+
+  const mergedRows = useMemo(
+    () => rows.map((row) => editedRows[row.id] ?? row),
+    [editedRows, rows],
+  );
+
+  const selected = useMemo(
+    () => (selectedId ? mergedRows.find((row) => row.id === selectedId) ?? null : null),
+    [mergedRows, selectedId],
+  );
 
   const selectedRelations = useMemo(() => {
     if (!selected) return [];
@@ -90,7 +112,7 @@ export function NodeInstancesView({
         id: neighborId,
         type: "graphNode",
         position: {
-          x: isOutgoing ? 720 : 0,
+          x: isOutgoing ? 720 : 40,
           y: 80 + index * 140,
         },
         data: {
@@ -98,6 +120,7 @@ export function NodeInstancesView({
           eyebrow: neighborType,
           label: neighborLabel,
           description: neighborId.slice(0, 8),
+          align: isOutgoing ? "left" : "right",
         },
       });
 
@@ -109,104 +132,87 @@ export function NodeInstancesView({
       });
     }
 
-    actions.slice(0, 6).forEach((action, index) => {
-      const id = `action-${action}`;
-      nodes.set(id, {
-        id,
-        type: "graphNode",
-        position: { x: 360 + (index % 3) * 180, y: 420 + Math.floor(index / 3) * 110 },
-        data: {
-          kind: "action",
-          eyebrow: "action",
-          label: action,
-          description: "Available through executeAction()",
-        },
-      });
-      flowEdges.push({
-        id: `${selected.id}-${id}`,
-        source: selected.id,
-        target: id,
-        label: "can run",
-      });
-    });
-
     return { nodes: [...nodes.values()], edges: flowEdges };
-  }, [actions, selected, selectedRelations]);
+  }, [selected, selectedRelations]);
+
+  function openDetail(row: NodeRowRecord) {
+    setSelectedId(row.id);
+    setSheetTab("relations");
+  }
+
+  function updateRow(row: NodeRowRecord) {
+    setEditedRows((current) => ({ ...current, [row.id]: row }));
+  }
+
+  function updateSelectedProperties(properties: Record<string, unknown>) {
+    if (!selected) return;
+    updateRow({ ...selected, properties });
+  }
 
   return (
     <>
       <NodeRowsDataTable
-        rows={rows}
+        rows={mergedRows}
         propertyColumns={propertyColumns}
+        propertyFields={propertyFields}
         toolbar={toolbar}
-        onRowSelect={setSelected}
+        projectId={projectId}
+        nodeSlug={nodeSlug}
+        onOpenDetail={openDetail}
+        onRowChange={updateRow}
       />
       <Sheet
-        open={selected !== null}
+        open={selectedId !== null}
         onOpenChange={(open) => {
-          if (!open) setSelected(null);
+          if (!open) setSelectedId(null);
         }}
       >
-        <SheetContent className="inset-y-0 right-0 h-full w-[85vw] max-w-none border-l lg:w-[72vw]">
+        <SheetContent className="inset-y-0 right-0 h-full w-[96vw] max-w-[1440px] border-l p-0 sm:max-w-none">
           {selected ? (
             <div className="flex h-full min-h-0 flex-col">
-              <SheetHeader>
-                <SheetTitle>Instance graph</SheetTitle>
-                <SheetDescription>
-                  Related edges, neighbor nodes, and actions for the selected row.
+              <SheetHeader className="shrink-0 border-b px-6 py-4">
+                <SheetTitle className="text-base">
+                  {String(selected.properties.title ?? selected.id.slice(0, 8))}
+                </SheetTitle>
+                <SheetDescription className="font-mono text-xs">
+                  {selected.id}
                 </SheetDescription>
               </SheetHeader>
-              <div className="grid min-h-0 flex-1 gap-4 px-4 pb-4 lg:grid-cols-[1fr_18rem]">
-                <GraphFlowCanvas
-                  nodes={flow.nodes}
-                  edges={flow.edges}
-                  emptyMessage="This instance has no loaded graph relationships yet."
-                />
-                <aside className="min-h-0 space-y-4 overflow-auto rounded-lg border bg-muted/20 p-3">
-                  <div>
-                    <div className="text-xs font-medium text-muted-foreground">
-                      Selected instance
-                    </div>
-                    <div className="mt-1 font-mono text-xs">{selected.id}</div>
-                    <Badge variant="outline" className="mt-2">
-                      {selected.lifecycleStatus}
-                    </Badge>
-                  </div>
-                  <div>
-                    <div className="mb-2 text-xs font-medium text-muted-foreground">
-                      Properties
-                    </div>
-                    <dl className="space-y-1 text-xs">
-                      {Object.entries(selected.properties).map(([key, value]) => (
-                        <div key={key} className="grid grid-cols-[6rem_1fr] gap-2">
-                          <dt className="truncate text-muted-foreground">{key}</dt>
-                          <dd className="truncate">{formatTableCell(value)}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </div>
-                  <div>
-                    <div className="mb-2 text-xs font-medium text-muted-foreground">
-                      Available actions
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {actions.length ? (
-                        actions.map((action) => (
-                          <Badge key={action} variant="secondary">
-                            {action}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-xs text-muted-foreground">
-                          No scoped actions found.
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <Button type="button" variant="outline" onClick={() => setSelected(null)}>
-                    Back to table
-                  </Button>
-                </aside>
+              <Tabs
+                value={sheetTab}
+                onValueChange={(value) =>
+                  setSheetTab(value as "relations" | "properties")
+                }
+                className="flex min-h-0 flex-1 flex-col gap-0"
+              >
+                <div className="shrink-0 border-b px-6 py-2">
+                  <TabsList variant="line">
+                    <TabsTrigger value="relations">Relations</TabsTrigger>
+                    <TabsTrigger value="properties">Properties</TabsTrigger>
+                  </TabsList>
+                </div>
+                <TabsContent value="relations" className="min-h-0 flex-1 px-6 py-4">
+                  <GraphFlowCanvas
+                    nodes={flow.nodes}
+                    edges={flow.edges}
+                    emptyMessage="This instance has no loaded graph relationships yet."
+                  />
+                </TabsContent>
+                <TabsContent value="properties" className="min-h-0 flex-1 px-6 py-4">
+                  <InstancePropertiesPanel
+                    projectId={projectId}
+                    nodeSlug={nodeSlug}
+                    nodeId={selected.id}
+                    properties={selected.properties}
+                    fields={propertyFields}
+                    onUpdated={updateSelectedProperties}
+                  />
+                </TabsContent>
+              </Tabs>
+              <div className="shrink-0 border-t px-6 py-3">
+                <Button type="button" variant="outline" onClick={() => setSelectedId(null)}>
+                  Back to table
+                </Button>
               </div>
             </div>
           ) : null}

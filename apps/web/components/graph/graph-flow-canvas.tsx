@@ -30,6 +30,7 @@ export type GraphFlowNodeData = {
   description?: string;
   badges?: string[];
   kind?: FlowNodeKind;
+  align?: "left" | "right";
 };
 
 export type GraphFlowNode = Node<GraphFlowNodeData, "graphNode">;
@@ -48,11 +49,13 @@ const nodeStyles: Record<FlowNodeKind, string> = {
 
 function GraphNode({ data }: NodeProps<GraphFlowNode>) {
   const kind = data.kind ?? "object";
+  const align = data.align ?? "left";
 
   return (
     <div
       className={cn(
-        "min-w-44 rounded-xl border px-3 py-2 text-left",
+        "min-w-44 rounded-xl border px-3 py-2",
+        align === "right" ? "text-right" : "text-left",
         nodeStyles[kind],
       )}
     >
