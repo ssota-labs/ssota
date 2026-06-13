@@ -7,6 +7,15 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "@phosphor-icons/react"
 
+const sheetSizeClasses = {
+  default:
+    "data-[side=left]:w-3/4 data-[side=right]:w-3/4 sm:data-[side=left]:max-w-sm sm:data-[side=right]:max-w-sm",
+  wide:
+    "data-[side=left]:!w-[96vw] data-[side=right]:!w-[96vw] data-[side=left]:!max-w-[1440px] data-[side=right]:!max-w-[1440px]",
+  full:
+    "data-[side=left]:!w-full data-[side=right]:!w-full data-[side=left]:!max-w-none data-[side=right]:!max-w-none sm:data-[side=left]:!max-w-none sm:data-[side=right]:!max-w-none",
+} as const
+
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
 }
@@ -40,10 +49,12 @@ function SheetContent({
   className,
   children,
   side = "right",
+  size = "default",
   showCloseButton = true,
   ...props
 }: SheetPrimitive.Popup.Props & {
   side?: "top" | "right" | "bottom" | "left"
+  size?: "default" | "wide" | "full"
   showCloseButton?: boolean
 }) {
   return (
@@ -52,8 +63,10 @@ function SheetContent({
       <SheetPrimitive.Popup
         data-slot="sheet-content"
         data-side={side}
+        data-size={size}
         className={cn(
           "cn-sheet-content data-ending-style:opacity-0 data-starting-style:opacity-0 data-[side=bottom]:data-ending-style:translate-y-[2.5rem] data-[side=bottom]:data-starting-style:translate-y-[2.5rem] data-[side=left]:data-ending-style:translate-x-[-2.5rem] data-[side=left]:data-starting-style:translate-x-[-2.5rem] data-[side=right]:data-ending-style:translate-x-[2.5rem] data-[side=right]:data-starting-style:translate-x-[2.5rem] data-[side=top]:data-ending-style:translate-y-[-2.5rem] data-[side=top]:data-starting-style:translate-y-[-2.5rem]",
+          sheetSizeClasses[size],
           className
         )}
         {...props}

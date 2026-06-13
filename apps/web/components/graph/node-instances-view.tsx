@@ -106,10 +106,7 @@ export function NodeInstancesView({
           if (!open) setSelectedId(null);
         }}
       >
-        <SheetContent
-          side="right"
-          className="inset-y-0 right-0 h-full w-full max-w-none border-l p-0 sm:max-w-none"
-        >
+        <SheetContent side="right" size="wide" className="p-0">
           {selected ? (
             <InstanceRowInspector
               key={selected.id}
