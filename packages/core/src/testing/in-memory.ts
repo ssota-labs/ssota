@@ -136,6 +136,24 @@ function applyEffect(
       properties: effect.edge.properties,
       createdAt: now,
     });
+  } else if (effect.kind === "delete_node") {
+    for (const [edgeId, edge] of state.edges) {
+      if (
+        edge.projectId === projectId &&
+        (edge.sourceNodeId === effect.nodeId || edge.targetNodeId === effect.nodeId)
+      ) {
+        state.edges.delete(edgeId);
+      }
+    }
+    for (const [queueId, item] of state.impactQueue) {
+      if (
+        item.projectId === projectId &&
+        (item.sourceNodeId === effect.nodeId || item.targetNodeId === effect.nodeId)
+      ) {
+        state.impactQueue.delete(queueId);
+      }
+    }
+    state.nodes.delete(effect.nodeId);
   } else if (effect.kind === "update_gate") {
     const gate = state.gates.get(effect.gateId);
     if (gate) {

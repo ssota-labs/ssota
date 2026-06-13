@@ -217,6 +217,11 @@ export function resolveEffects(
             template.edge.properties,
         },
       });
+    } else if (template.kind === "delete_node") {
+      effects.push({
+        kind: "delete_node",
+        nodeId: input.nodeId as string,
+      });
     } else if (template.kind === "update_gate") {
       effects.push({
         kind: "update_gate",
@@ -456,6 +461,17 @@ export async function enforceActionScopeAndGraphIntegrity(
         node.nodeType,
         Object.keys(effect.patch.properties ?? {}),
       );
+      await enforceAllowedActionRef(actionEntry.actionType, node.nodeType, catalog);
+    }
+
+    if (effect.kind === "delete_node") {
+      const node = await graph.getNode(effect.nodeId);
+      if (!node) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          `Node '${effect.nodeId}' does not exist`,
+        );
+      }
       await enforceAllowedActionRef(actionEntry.actionType, node.nodeType, catalog);
     }
 
@@ -931,6 +947,13 @@ export function enforceGateRules(
   nodeCatalogEntries: Map<string, NodeCatalogEntry>,
   existingNodes: Map<string, Node>,
 ): { requiresGate: boolean; reason: string } {
+  if (actionEntry.actionType === "delete_node" && executorType !== "Human") {
+    return {
+      requiresGate: true,
+      reason: "Human approval required for node deletion",
+    };
+  }
+
   if (
     actionEntry.executor === "Human" &&
     executorType !== "Human"

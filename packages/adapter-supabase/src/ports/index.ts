@@ -640,6 +640,37 @@ async function applyEffect(
       targetNodeId: effect.edge.targetNodeId,
       properties: effect.edge.properties,
     });
+  } else if (effect.kind === "delete_node") {
+    await tx
+      .delete(schema.impactQueue)
+      .where(
+        and(
+          eq(schema.impactQueue.projectId, projectId),
+          or(
+            eq(schema.impactQueue.sourceNodeId, effect.nodeId),
+            eq(schema.impactQueue.targetNodeId, effect.nodeId),
+          ),
+        ),
+      );
+    await tx
+      .delete(schema.edges)
+      .where(
+        and(
+          eq(schema.edges.projectId, projectId),
+          or(
+            eq(schema.edges.sourceNodeId, effect.nodeId),
+            eq(schema.edges.targetNodeId, effect.nodeId),
+          ),
+        ),
+      );
+    await tx
+      .delete(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.id, effect.nodeId),
+          eq(schema.nodes.projectId, projectId),
+        ),
+      );
   } else if (effect.kind === "update_gate") {
     await tx
       .update(schema.gates)
