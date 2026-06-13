@@ -41,7 +41,7 @@ export default async function GatesPage({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>action</TableHead>
+                  <TableHead>review point</TableHead>
                   <TableHead>target</TableHead>
                   <TableHead>surface</TableHead>
                   <TableHead>proposed by</TableHead>
@@ -53,7 +53,7 @@ export default async function GatesPage({
                   const meta = deriveGateMetadata(gate);
                   return (
                     <TableRow key={gate.id}>
-                      <TableCell className="font-medium">{gate.actionType}</TableCell>
+                      <TableCell className="font-medium">{reviewTitle(gate.actionType)}</TableCell>
                       <TableCell>{meta.target}</TableCell>
                       <TableCell>{meta.surface}</TableCell>
                       <TableCell className="text-muted-foreground">{gate.executorId.slice(0, 8)}</TableCell>
@@ -73,7 +73,7 @@ export default async function GatesPage({
               <Card key={gate.id}>
                 <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
                   <div className="min-w-0 flex-1">
-                    <CardTitle className="text-base">{gate.actionType}</CardTitle>
+                    <CardTitle className="text-base">{reviewTitle(gate.actionType)}</CardTitle>
                     <p className="mt-1 text-sm text-muted-foreground">{gate.reason}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
                       <Badge variant="secondary">{meta.surface}</Badge>
@@ -138,10 +138,14 @@ function deriveGateMetadata(gate: {
     };
   }
   if (first.kind.includes("instruction")) {
-    return { surface: "Instructions", target: gate.actionType, risk: "high" };
+    return { surface: "Workflows", target: gate.actionType, risk: "high" };
   }
   if (first.kind.includes("action")) {
     return { surface: "Actions", target: gate.actionType, risk: "high" };
   }
   return { surface: "Context Graph", target: gate.actionType, risk: "medium" };
+}
+
+function reviewTitle(actionType: string) {
+  return `Review ${actionType}`;
 }

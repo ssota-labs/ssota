@@ -15,7 +15,7 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "SSOTA Console",
-  description: "Context Graph · Human Gate · Action Log",
+  description: "Context Graph · Reviews · Runs",
 };
 
 export default async function RootLayout({

@@ -21,7 +21,7 @@ export default async function LogPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Action Log</h1>
+      <h1 className="text-2xl font-semibold">Runs</h1>
       <div className="overflow-hidden rounded-lg border">
         <Table>
           <TableHeader>
@@ -29,7 +29,7 @@ export default async function LogPage() {
               <TableHead>시간</TableHead>
               <TableHead>액션</TableHead>
               <TableHead>scope</TableHead>
-              <TableHead>instruction</TableHead>
+              <TableHead>workflow</TableHead>
               <TableHead>결과</TableHead>
               <TableHead>실행자</TableHead>
             </TableRow>

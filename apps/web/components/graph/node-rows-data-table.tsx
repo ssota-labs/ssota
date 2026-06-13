@@ -24,11 +24,13 @@ export function NodeRowsDataTable({
   rows,
   propertyColumns,
   toolbar,
+  onRowSelect,
   emptyMessage = "아직 생성된 node row가 없습니다.",
 }: {
   rows: NodeRowRecord[];
   propertyColumns: PropertyColumn[];
   toolbar?: React.ReactNode;
+  onRowSelect?: (row: NodeRowRecord) => void;
   emptyMessage?: string;
 }) {
   const columns: ColumnDef<NodeRowRecord>[] = [
@@ -93,6 +95,7 @@ export function NodeRowsDataTable({
       toolbar={toolbar}
       emptyMessage={emptyMessage}
       className="h-full"
+      onRowClick={onRowSelect}
     />
   );
 }

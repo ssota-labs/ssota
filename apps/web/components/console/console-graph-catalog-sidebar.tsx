@@ -77,7 +77,7 @@ function RegistryLinks({
               pathname.startsWith(nodesHref) && "bg-muted font-medium text-foreground",
             )}
           >
-            Node tables
+            Graph objects
           </Link>
         </li>
         <li>
@@ -88,7 +88,7 @@ function RegistryLinks({
               pathname.startsWith(edgesHref) && "bg-muted font-medium text-foreground",
             )}
           >
-            Edge tables
+            Relations
           </Link>
         </li>
       </ul>

@@ -26,8 +26,8 @@ const sections = [
   },
   {
     href: "/studio/instructions",
-    title: "Instructions",
-    description: "에이전트 지침 — trigger patterns, applicable node types",
+    title: "Workflows",
+    description: "에이전트 워크플로우 — trigger patterns, applicable node types",
   },
   {
     href: "/studio/archetypes",

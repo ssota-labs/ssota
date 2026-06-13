@@ -9,7 +9,7 @@ const studioLinks = [
   { href: "/studio/node-types", label: "Node Types" },
   { href: "/studio/edge-types", label: "Edge Types" },
   { href: "/studio/actions", label: "Actions" },
-  { href: "/studio/instructions", label: "Instructions" },
+  { href: "/studio/instructions", label: "Workflows" },
   { href: "/studio/archetypes", label: "Archetypes" },
 ];
 

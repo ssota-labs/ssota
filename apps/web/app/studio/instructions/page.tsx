@@ -18,13 +18,13 @@ export default async function InstructionsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Instructions"
-        description="에이전트 지침 카탈로그"
-        action={{ label: "새 Instruction", href: "/studio/instructions/new" }}
+        title="Workflows"
+        description="에이전트 워크플로우 카탈로그"
+        action={{ label: "새 Workflow", href: "/studio/instructions/new" }}
       />
 
       {entries.length === 0 ? (
-        <EmptyState message="등록된 Instruction이 없습니다." />
+        <EmptyState message="등록된 Workflow가 없습니다." />
       ) : (
         <div className="space-y-3">
           {entries.map((entry) => (

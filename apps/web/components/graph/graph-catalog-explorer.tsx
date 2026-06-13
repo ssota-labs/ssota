@@ -23,6 +23,7 @@ type GraphCatalogExplorerProps = {
   emptyHint?: string;
   showDefinition?: boolean;
   requireSelection?: boolean;
+  showKindSwitch?: boolean;
 };
 
 function kindFromPathname(pathname: string): GraphCatalogKind {
@@ -47,6 +48,7 @@ export function GraphCatalogExplorer({
   emptyHint,
   showDefinition = true,
   requireSelection = true,
+  showKindSwitch = true,
 }: GraphCatalogExplorerProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -156,6 +158,7 @@ export function GraphCatalogExplorer({
       <TableCatalogPanel
         kind={kind}
         onKindChange={handleKindChange}
+        showKindSwitch={showKindSwitch}
         items={filteredItems}
         selectedSlug={selectedSlug}
         onSelect={setSelectedSlug}

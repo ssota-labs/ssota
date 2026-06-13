@@ -12,9 +12,10 @@ test.describe("SSOTA Console", () => {
   test("smoke: Graph → node table", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "graph/nodes?table=document");
-    await expect(page.getByText("Graph Editor", { exact: true })).toBeVisible();
-    await expect(page.getByTestId("graph-kind-node")).toBeVisible();
+    await expect(page.getByText("Choose a graph object", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Table" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Schema" })).toBeVisible();
     await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
   });
 
@@ -29,16 +30,16 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByText("Homepage creation workflow")).toBeVisible();
   });
 
-  test("smoke: Instructions route", async ({ page }) => {
+  test("smoke: Workflows route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "instructions");
-    await expect(page.getByRole("heading", { name: "Instructions" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
   });
 
-  test("smoke: Action Log route", async ({ page }) => {
+  test("smoke: Runs route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "log");
-    await expect(page.getByRole("heading", { name: "Action Log" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Runs" })).toBeVisible();
   });
 
   test("smoke: Impact Queue route", async ({ page }) => {
@@ -52,7 +53,7 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Impact", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Action Log", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Runs", exact: true })).toBeVisible();
   });
 
   test("smoke: project selector preserves current route", async ({ page }) => {

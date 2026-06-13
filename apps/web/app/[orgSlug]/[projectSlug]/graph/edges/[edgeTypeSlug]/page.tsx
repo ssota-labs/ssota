@@ -6,7 +6,6 @@ export default async function GraphEdgeTableRedirectPage({
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string; edgeTypeSlug: string }>;
 }) {
-  const { orgSlug, projectSlug, edgeTypeSlug } = await params;
-  const slug = decodeURIComponent(edgeTypeSlug).toLowerCase();
-  redirect(`${graphPath({ orgSlug, projectSlug }, "edges")}?table=${encodeURIComponent(slug)}`);
+  const { orgSlug, projectSlug } = await params;
+  redirect(graphPath({ orgSlug, projectSlug }, "nodes"));
 }

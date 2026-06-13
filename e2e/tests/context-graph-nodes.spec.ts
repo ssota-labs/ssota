@@ -10,7 +10,7 @@ test.describe("Context Graph Nodes", () => {
     await gotoGraphNodes(page, "document");
     await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
 
-    await page.getByTestId("open-definition").click();
+    await page.getByRole("link", { name: "Schema" }).click();
     await page.getByRole("button", { name: "Add property" }).click();
     await page.getByLabel("Property key").fill(propertyKey);
     await page.getByLabel("Value type").fill("string");

@@ -177,10 +177,10 @@ export function AddInstructionSheet({
 }) {
   return (
     <Sheet>
-      <SheetTrigger render={<Button variant="outline" />}>Add instruction</SheetTrigger>
+      <SheetTrigger render={<Button variant="outline" />}>Add workflow</SheetTrigger>
       <SheetContent className={sheetClassName}>
         <SheetHeader>
-          <SheetTitle>Add instruction to {nodeType}</SheetTitle>
+          <SheetTitle>Add workflow to {nodeType}</SheetTitle>
           <SheetDescription>이 node table에 적용되는 agent workflow를 정의합니다.</SheetDescription>
         </SheetHeader>
         <form action={defineWorkflowInstructionFormAction} className="space-y-4 px-6 pb-6">
@@ -208,7 +208,7 @@ export function AddInstructionSheet({
             <Label htmlFor="body">Body</Label>
             <Textarea id="body" name="body" required />
           </div>
-          <Button type="submit">Submit instruction</Button>
+          <Button type="submit">Submit workflow</Button>
         </form>
       </SheetContent>
     </Sheet>

@@ -15,7 +15,6 @@ import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { createNodeTableFormAction } from "@/app/actions";
 import { GraphCatalogExplorer } from "@/components/graph/graph-catalog-explorer";
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
-import { NodeCatalogSettings } from "@/components/graph/node-catalog-settings";
 import {
   getNodeTableMeta,
   NodeTableDetail,
@@ -32,10 +31,10 @@ export default async function GraphNodesPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
-  searchParams: Promise<{ table?: string; definition?: string }>;
+  searchParams: Promise<{ table?: string; definition?: string; tab?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const { table, definition } = await searchParams;
+  const { table, definition, tab } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const [nodeTypes, archetypes] = await Promise.all([
@@ -47,7 +46,15 @@ export default async function GraphNodesPage({
     redirect(`${graphPath(ctx, "nodes")}?table=${encodeURIComponent(nodeTypes[0]!.slug)}`);
   }
 
+  if (table && definition === "1") {
+    redirect(`${graphPath(ctx, "nodes")}?table=${encodeURIComponent(table)}&tab=schema`);
+  }
+
   const selectedMeta = table ? await getNodeTableMeta(project.id, table) : null;
+  const activeTab = tab === "schema" || tab === "runs" ? tab : "table";
+  const baseHref = table
+    ? `${graphPath(ctx, "nodes")}?table=${encodeURIComponent(table)}`
+    : graphPath(ctx, "nodes");
 
   const newTableTrigger = (
     <Sheet>
@@ -102,14 +109,12 @@ export default async function GraphNodesPage({
   const mainContent =
     table && selectedMeta ? (
       <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading rows…</div>}>
-        <NodeTableDetail projectId={project.id} slug={table} />
-      </Suspense>
-    ) : null;
-
-  const catalogSheetContent =
-    table && selectedMeta && definition === "1" ? (
-      <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Loading definition…</div>}>
-        <NodeCatalogSettings projectId={project.id} slug={table} />
+        <NodeTableDetail
+          projectId={project.id}
+          slug={table}
+          baseHref={baseHref}
+          activeTab={activeTab}
+        />
       </Suspense>
     ) : null;
 
@@ -118,16 +123,15 @@ export default async function GraphNodesPage({
       <GraphCatalogExplorer
         kind="node"
         newTableTrigger={newTableTrigger}
+        showKindSwitch={false}
         mainHeader={
           selectedMeta
             ? { title: selectedMeta.label, description: selectedMeta.description }
             : null
         }
         mainContent={mainContent}
-        catalogSheetTitle={selectedMeta ? `Definition · ${selectedMeta.label}` : undefined}
-        catalogSheetDescription={selectedMeta?.description}
-        catalogSheetContent={catalogSheetContent}
-        emptyHint="Select a node table from the catalog to view instance rows."
+        showDefinition={false}
+        emptyHint="Select a graph object from the list to view instances."
       />
     </Suspense>
   );

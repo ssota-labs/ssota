@@ -121,16 +121,16 @@ export function DefineNodeTypeForm({ archetypes }: DefineNodeTypeFormProps) {
               <p>
                 커밋됨 ·{" "}
                 <Link href="/log" className="underline">
-                  Action Log
+                  Runs
                 </Link>{" "}
                 에서 확인하세요.
               </p>
             )}
             {result.status === "gated" && (
               <p>
-                Human Gate 대기 ·{" "}
+                Review 대기 ·{" "}
                 <Link href="/gates" className="underline">
-                  Gate #{result.gateId.slice(0, 8)}
+                  Review #{result.gateId.slice(0, 8)}
                 </Link>
               </p>
             )}

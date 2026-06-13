@@ -37,7 +37,7 @@ export function ConsolePreview({ organizationName, projectName }: ConsolePreview
               Project Home
             </li>
             <li className="px-2 py-1">Graph</li>
-            <li className="px-2 py-1">Instruction</li>
+            <li className="px-2 py-1">Workflows</li>
             <li className="px-2 py-1">Settings</li>
           </ul>
         </aside>
@@ -52,7 +52,7 @@ export function ConsolePreview({ organizationName, projectName }: ConsolePreview
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {["Node tables", "Edge tables", "Actions", "Workflows"].map((label) => (
+            {["Graph", "Workflows", "Reviews", "Runs"].map((label) => (
               <div
                 key={label}
                 className="rounded-lg border bg-card p-4 text-sm text-muted-foreground"
