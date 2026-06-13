@@ -3,7 +3,7 @@ export const HOMEPAGE_AGENT = {
   id: "homepage-agent",
   label: "Homepage Agent",
   description:
-    "B2B2C 홈페이지 제작 에이전트 — subject_id로 최종 고객 row를 격리하는 참조 카탈로그",
+    "B2B2C 홈페이지 제작 에이전트 — 고객 정의 property(예: subject_id)로 tenant row를 격리하는 참조 카탈로그",
   nodeTypes: ["HomepageProject", "DesignBrief", "PageSection"] as const,
   edgeTypes: ["homepage_contains"] as const,
   actions: [

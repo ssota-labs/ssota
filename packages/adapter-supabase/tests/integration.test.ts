@@ -334,71 +334,18 @@ describe("adapter-supabase integration", () => {
     },
   );
 
-  it("subject_id: create_node(Project) 격리 + query_nodes 필터", async () => {
-    const subjectA = `usr_a_${Date.now()}`;
-    const subjectB = `usr_b_${Date.now()}`;
-
-    const createA = await executeAction(ports, {
-      actionType: "create_node",
-      input: { nodeType: "Project", title: "Project A" },
-      executorId: smokeUserId,
-      executorType: "Agent",
-      subjectId: subjectA,
-      projectId,
-    });
-    expect(createA.status).toBe("committed");
-
-    const createB = await executeAction(ports, {
-      actionType: "create_node",
-      input: { nodeType: "Project", title: "Project B" },
-      executorId: smokeUserId,
-      executorType: "Agent",
-      subjectId: subjectB,
-      projectId,
-    });
-    expect(createB.status).toBe("committed");
-
-    const nodesA = await ports.graph.queryNodes({
-      nodeType: "Project",
-      subjectId: subjectA,
-      limit: 10,
-    });
-    const nodesB = await ports.graph.queryNodes({
-      nodeType: "Project",
-      subjectId: subjectB,
-      limit: 10,
-    });
-
-    expect(nodesA.every((n) => n.properties.subject_id === subjectA)).toBe(true);
-    expect(nodesB.every((n) => n.properties.subject_id === subjectB)).toBe(true);
-    expect(nodesA.some((n) => n.properties.title === "Project A")).toBe(true);
-    expect(nodesA.some((n) => n.properties.title === "Project B")).toBe(false);
-  });
-
-  it("subject_id: context 없이 create_node(Project) 거부", async () => {
-    const result = await executeAction(ports, {
-      actionType: "create_node",
-      input: { nodeType: "Project", title: "No subject" },
-      executorId: smokeUserId,
-      executorType: "Agent",
-      projectId,
-    });
-
-    expect(result.status).toBe("rejected");
-    if (result.status === "rejected") {
-      expect(result.code).toBe("SUBJECT_REQUIRED");
-    }
-  });
-
   it("homepage agent: project → brief → link", async () => {
-    const subjectId = `usr_homepage_${Date.now()}`;
+    const tenantId = `usr_homepage_${Date.now()}`;
 
     const project = await executeAction(ports, {
       actionType: "create_node",
-      input: { nodeType: "HomepageProject", title: "Smoke Homepage" },
+      input: {
+        nodeType: "HomepageProject",
+        title: "Smoke Homepage",
+        properties: { subject_id: tenantId },
+      },
       executorId: smokeUserId,
       executorType: "Agent",
-      subjectId,
       projectId,
     });
     expect(project.status).toBe("committed");
@@ -409,22 +356,20 @@ describe("adapter-supabase integration", () => {
         nodeType: "DesignBrief",
         title: "Smoke brief",
         content: "Integration test homepage brief",
+        properties: { subject_id: tenantId },
       },
       executorId: smokeUserId,
       executorType: "Agent",
-      subjectId,
       projectId,
     });
     expect(brief.status).toBe("committed");
 
     const projects = await ports.graph.queryNodes({
       nodeType: "HomepageProject",
-      subjectId,
       limit: 5,
     });
     const briefs = await ports.graph.queryNodes({
       nodeType: "DesignBrief",
-      subjectId,
       limit: 5,
     });
     const homepage = projects.find((n) => n.properties.title === "Smoke Homepage");
@@ -440,7 +385,6 @@ describe("adapter-supabase integration", () => {
       },
       executorId: smokeUserId,
       executorType: "Agent",
-      subjectId,
       projectId,
     });
     expect(link.status).toBe("committed");

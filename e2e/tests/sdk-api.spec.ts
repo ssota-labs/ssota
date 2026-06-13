@@ -111,44 +111,6 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
     }
   });
 
-  test("subjectId: X-SSOTA-Subject-Id 헤더가 API에 전달됨", async ({
-    request,
-  }) => {
-    const token = await getSmokeAccessToken();
-    const projectId = await getDefaultProjectId();
-    const res = await request.get(`${apiBase}/catalog/node-types`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "X-SSOTA-Subject-Id": "e2e-subject-1",
-        ...projectIdHeaders(projectId),
-      },
-    });
-    expect(res.ok()).toBeTruthy();
-  });
-
-  test("subjectId: SDK client가 헤더를 설정함", async ({ request }) => {
-    const token = await getSmokeAccessToken();
-    const projectId = await getDefaultProjectId();
-    let sawSubjectHeader = false;
-
-    const ssota = createClient({
-      url: apiBase,
-      auth: { accessToken: token },
-      projectId,
-      subjectId: "e2e-sdk-subject",
-      fetch: async (input, init) => {
-        const headers = init?.headers as Record<string, string>;
-        if (headers["X-SSOTA-Subject-Id"] === "e2e-sdk-subject") {
-          sawSubjectHeader = true;
-        }
-        return request.fetch(String(input), init ?? {});
-      },
-    });
-
-    await ssota.catalog.listNodeTypes();
-    expect(sawSubjectHeader).toBe(true);
-  });
-
   test("구조: 쓰기 엔드포인트는 actions/execute 하나뿐", async () => {
     const apiRoot = path.join(
       process.env.WORKSPACE_ROOT ?? `${process.cwd()}/..`,

@@ -17,7 +17,6 @@ export async function POST(request: Request) {
       parsed.data,
       ctx.user.id,
       ctx.executorType,
-      ctx.subjectId,
     );
     const data = ExecuteActionResponseSchema.parse({ data: result }).data;
     return jsonOk(data);

@@ -163,14 +163,12 @@ export function toExecuteActionInput(
   executorId: string,
   executorType: ExecutorType,
   projectId: string,
-  subjectId?: string,
 ): ExecuteActionInput {
   return ExecuteActionInputSchema.parse({
     ...clientInput,
     executorId,
     executorType,
     projectId,
-    subjectId,
   });
 }
 
@@ -179,7 +177,6 @@ export async function executeActionForClient(
   clientInput: ExecuteActionClientInput,
   executorId: string,
   executorType: ExecutorType,
-  subjectId?: string,
 ) {
   const ports = getActionPorts(projectId);
   const input = toExecuteActionInput(
@@ -187,7 +184,6 @@ export async function executeActionForClient(
     executorId,
     executorType,
     projectId,
-    subjectId,
   );
   return executeAction(ports, input);
 }
@@ -197,7 +193,6 @@ export async function previewActionForClient(
   clientInput: ExecuteActionClientInput,
   executorId: string,
   executorType: ExecutorType,
-  subjectId?: string,
 ) {
   const ports = getActionPorts(projectId);
   const input = toExecuteActionInput(
@@ -205,7 +200,6 @@ export async function previewActionForClient(
     executorId,
     executorType,
     projectId,
-    subjectId,
   );
   return previewAction(ports, input);
 }

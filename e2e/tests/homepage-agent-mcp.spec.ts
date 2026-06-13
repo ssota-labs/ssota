@@ -3,10 +3,12 @@ import { getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
-test.describe("Homepage agent MCP + subject_id", () => {
-  test("project → brief → section → links under subject", async ({ request }) => {
+test.describe("Homepage agent MCP", () => {
+  test("project → brief → section → links with tenant property", async ({
+    request,
+  }) => {
     const token = await getSmokeAccessToken();
-    const subjectId = `e2e_homepage_${Date.now()}`;
+    const tenantId = `e2e_homepage_${Date.now()}`;
 
     const projectResult = (await mcpToolCall(
       request,
@@ -15,9 +17,12 @@ test.describe("Homepage agent MCP + subject_id", () => {
       "execute_action",
       {
         actionType: "create_node",
-        input: { nodeType: "HomepageProject", title: "E2E Homepage" },
+        input: {
+          nodeType: "HomepageProject",
+          title: "E2E Homepage",
+          properties: { subject_id: tenantId },
+        },
       },
-      { subjectId },
     )) as { status: string };
     expect(projectResult.status).toBe("committed");
 
@@ -32,9 +37,9 @@ test.describe("Homepage agent MCP + subject_id", () => {
           nodeType: "DesignBrief",
           title: "E2E Brief",
           content: "B2B SaaS homepage, professional tone",
+          properties: { subject_id: tenantId },
         },
       },
-      { subjectId },
     )) as { status: string };
     expect(briefResult.status).toBe("committed");
 
@@ -48,10 +53,9 @@ test.describe("Homepage agent MCP + subject_id", () => {
         input: {
           nodeType: "PageSection",
           title: "Hero",
-          properties: { section_key: "hero" },
+          properties: { section_key: "hero", subject_id: tenantId },
         },
       },
-      { subjectId },
     )) as { status: string };
     expect(sectionResult.status).toBe("committed");
 
@@ -61,7 +65,6 @@ test.describe("Homepage agent MCP + subject_id", () => {
       token,
       "query_nodes",
       { nodeType: "HomepageProject", limit: 10 },
-      { subjectId },
     )) as Array<{ id: string; properties: Record<string, unknown> }>;
 
     const briefs = (await mcpToolCall(
@@ -70,7 +73,6 @@ test.describe("Homepage agent MCP + subject_id", () => {
       token,
       "query_nodes",
       { nodeType: "DesignBrief", limit: 10 },
-      { subjectId },
     )) as Array<{ id: string }>;
 
     const sections = (await mcpToolCall(
@@ -79,7 +81,6 @@ test.describe("Homepage agent MCP + subject_id", () => {
       token,
       "query_nodes",
       { nodeType: "PageSection", limit: 10 },
-      { subjectId },
     )) as Array<{ id: string; properties: Record<string, unknown> }>;
 
     expect(projects.length).toBeGreaterThanOrEqual(1);
@@ -103,7 +104,6 @@ test.describe("Homepage agent MCP + subject_id", () => {
           targetNodeId: brief.id,
         },
       },
-      { subjectId },
     )) as { status: string };
     expect(linkBrief.status).toBe("committed");
 
@@ -119,7 +119,6 @@ test.describe("Homepage agent MCP + subject_id", () => {
           targetNodeId: section.id,
         },
       },
-      { subjectId },
     )) as { status: string };
     expect(linkSection.status).toBe("committed");
 
@@ -133,20 +132,8 @@ test.describe("Homepage agent MCP + subject_id", () => {
         direction: "outgoing",
         edgeType: "homepage_contains",
       },
-      { subjectId },
     )) as Array<{ targetNodeId: string }>;
 
     expect(edges.length).toBeGreaterThanOrEqual(2);
-  });
-
-  test("거부: subject 없이 create_node(HomepageProject)", async ({ request }) => {
-    const token = await getSmokeAccessToken();
-    const result = (await mcpToolCall(request, mcpUrl, token, "execute_action", {
-      actionType: "create_node",
-      input: { nodeType: "HomepageProject", title: "No subject" },
-    })) as { status: string; code?: string };
-
-    expect(result.status).toBe("rejected");
-    expect(result.code).toBe("SUBJECT_REQUIRED");
   });
 });

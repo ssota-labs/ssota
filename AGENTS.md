@@ -44,15 +44,15 @@ e2e/                    # Playwright — 콘솔 + MCP HTTP 플로우
 4. **게이트 승인도 액션이다.** `approve_gate` 역시 Action Log에 남는다. 전형 이탈(아키타입 typical values 위반)은 자동으로 gates 큐로 보낸다.
 5. **노드 = 정형 봉투 + 비정형 content.** 런타임(게이트·권한·전이)이 참조하는 것만 필드로 구조화한다. 의미는 content(내장 text 또는 외부 링크)가 담당한다 — 결정 입력을 필드로 깎아내지 않는다.
 
-## Tenancy & Security — `project_id` + `subject_id` + 서버사이드 격리
+## Tenancy & Security — `project_id` + 서버사이드 격리
 
-B2B2C(고객사 A가 자체 에이전트를 만들고, A의 최종 고객마다 그래프 인스턴스를 나누는 모델)에서 **Organization 아래 Project마다 별도 카탈로그·그래프 공간**을 둔다. 홈페이지 에이전트와 마케팅 에이전트는 **서로 다른 Project**이며, 각 Project 안에서 Node Type = 테이블, Node 인스턴스 = row다. 최종 고객(Acme, Beta) 구분은 **별도 그래프/DB가 아니라 `subject_id` property**로 한다.
+SSOTA 플랫폼이 강제하는 격리 단위는 **`project_id` 하나**다. Supabase가 고객사 DB 스키마에 tenant 컬럼을 강제하지 않듯, SSOTA도 최종 고객(tenant) 구분을 플랫폼 헤더·런타임 검증으로 강제하지 않는다. B2B2C에서 Acme/Beta row 격리는 **고객사가 카탈로그·액션 계약에 정의한 property**(예: `subject_id`)와 **embedder BFF**가 담당한다.
 
 ```plain text
 Organization (고객사 A)
 ├── Project: homepage-agent   → 카탈로그 + 그래프 (project_id)
 └── Project: marketing-agent  → 카탈로그 + 그래프 (project_id)
-    └── 각 project 내부: subject_id로 최종 고객 row 격리
+    └── tenant 컬럼(예: subject_id)은 고객 카탈로그·BFF 책임 — 플랫폼 미강제
 ```
 
 ### 레이어 분리
@@ -60,12 +60,10 @@ Organization (고객사 A)
 | 레이어 | 담당 | 식별자 |
 |---|---|---|
 | 고객사 A 앱 (자체 Supabase) | 최종 사용자 인증·앱 데이터 RLS | A의 `users.id` (또는 동등한 PK) |
-| SSOTA 그래프 DB | Project별 카탈로그·그래프 인스턴스 저장 | `project_id` (FK → `projects.id`) + `nodes.properties.subject_id` |
-| SSOTA Console / MCP 서버 | 카탈로그·`executeAction`·쿼리 스코핑 | 요청 context의 `projectId` + `subjectId` |
+| SSOTA 그래프 DB | Project별 카탈로그·그래프 인스턴스 저장 | `project_id` (FK → `projects.id`) |
+| SSOTA Console / MCP 서버 | 카탈로그·`executeAction`·쿼리 스코핑 | 요청 context의 `projectId` |
 
 Console URL `[orgSlug]/[projectSlug]`와 MCP/API 헤더 `X-SSOTA-Project-Id`가 **project 격리의 SSOT**다. Embedder BFF는 org/project slug 또는 project UUID를 MCP에 전달한다.
-
-고객사 A의 최종 고객 Acme을 구분하는 값은 **`subject_id`**다. A의 백엔드가 자체 auth를 검증한 뒤, 해당 사용자의 id를 `subject_id`로 SSOTA API/MCP에 전달한다. SSOTA는 opaque string으로 취급한다 — 형식·FK 검증은 A의 책임.
 
 ### `project_id` 규칙
 
@@ -74,20 +72,21 @@ Console URL `[orgSlug]/[projectSlug]`와 MCP/API 헤더 `X-SSOTA-Project-Id`가 
 - **쓰기**: `executeAction` input에 `projectId`가 **필수**다. effect가 참조하는 기존 노드·엣지가 다른 project에 속하면 `PROJECT_MISMATCH`로 거부한다.
 - **조회**: MCP/Console read API는 auth context의 `projectId`로 카탈로그·그래프·로그·게이트를 스코핑한다. 다른 project의 UUID를 header에 넣어도 해당 project 데이터만 반환한다(멤버십 검증은 Console auth 경로).
 
-### `subject_id` 규칙 (project 내부)
+### Tenant property (고객 정의, 플랫폼 미강제)
 
-- **tenant-scoped 인스턴스 노드** — `HomepageProject`, `DesignBrief` 등 최종 고객별 row — 는 `properties.subject_id`를 **필수**로 둔다. Property Catalog에 `subject_id`를 등록하고, 해당 node type의 create/update 액션 effect·precondition에서 강제한다.
-- **조회**: `query_nodes`·`traverse_edges`는 서버가 항상 요청 context의 `subjectId`로 필터한다. 클라이언트가 `subject_id`를 생략·위조해도 서버가 주입·검증한다.
-- **쓰기**: `executeAction`은 effect에 선언된 `subject_id`가 context `subjectId`와 일치하지 않으면 거부한다. 다른 subject의 노드를 patch하려 하면 거부.
-- **인덱스**: adapter 마이그레이션에서 `(project_id, node_type, (properties->>'subject_id'))` 복합 인덱스를 둔다.
+- **카탈로그 책임** — `HomepageProject` 등 최종 고객별 row에 `subject_id`(또는 고객이 정한 이름)를 둘지는 **node type `propertySchema`·액션 계약**으로 정의한다. SSOTA는 해당 property를 자동 주입·검증·쿼리 필터하지 않는다.
+- **BFF 패턴** — embedder가 auth 검증 후 `create_node` input의 `properties.subject_id`에 A의 `users.id`를 넣어 `execute_action`으로 전달한다 (`examples/embedder-bff/`).
+- **조회** — `query_nodes`·`traverse_edges`는 `project_id`로만 스코핑한다. tenant별 필터가 필요하면 고객 액션·쿼리 설계 또는 BFF가 담당한다.
+- **인덱스** — 고객이 tenant property를 쓰면 adapter 마이그레이션에서 `(project_id, node_type, (properties->>'subject_id'))` 등 **선택적** 복합 인덱스를 둘 수 있다.
 
 예시 (홈페이지 제작 에이전트 — `homepage-agent` project):
 
 ```plain text
 Project homepage-agent 카탈로그: HomepageProject, DesignBrief, PageSection
-Acme 사용자 (A의 users.id = "usr_acme_42") → subject_id = "usr_acme_42"
-create_homepage_project effect → properties: { subject_id: "usr_acme_42", title: "..." }
-query_nodes({ nodeType: "HomepageProject" }) + context.projectId + context.subjectId → Acme row만
+Acme 사용자 (A의 users.id = "usr_acme_42")
+  → BFF: create_node { properties: { subject_id: "usr_acme_42", title: "..." } }
+query_nodes({ nodeType: "HomepageProject" }) + context.projectId → project 내 전체 row
+  (Acme만 보려면 BFF/앱이 properties 필터 또는 별도 액션으로 처리)
 ```
 
 별도 Project `marketing-agent`는 **독립 카탈로그·그래프** — homepage project의 node type/action catalog와 섞이지 않는다.
@@ -96,7 +95,7 @@ query_nodes({ nodeType: "HomepageProject" }) + context.projectId + context.subje
 
 SSOTA 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그, org/project 등) **전부 RLS를 켠다**. 각 테이블에 `deny_all` 정책(`USING (false)`, `WITH CHECK (false)`)을 둬 **anon/authenticated PostgREST 접근을 차단**한다.
 
-1. **격리의 SSOT는 `executeAction` + 서버 context**다. Property Permission 튜플은 액션 계약 강제(4대 강제 중 계약·권한)이지, Postgres row policy가 아니다.
+1. **격리의 SSOT는 `executeAction` + 서버 `projectId` context**다. Property Permission 튜플은 액션 계약 강제(4대 강제 중 계약·권한)이지, Postgres row policy가 아니다.
 2. **서버만 DB 접근**: adapter는 `createDb` / `createAdminDb`로 `DATABASE_URL`(postgres superuser 또는 service role 직접 연결)만 사용한다. 이 경로는 RLS를 bypass한다.
 3. **고객사 A의 최종 사용자 RLS**는 A의 자체 Supabase에서 처리한다. SSOTA 그래프 DB는 A의 백엔드·SSOTA 서버만 접근하는 **서버사이드 데이터 플레인**이다.
 
@@ -104,20 +103,20 @@ SSOTA 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그, org/proj
 
 ```
 [최종 사용자] → [고객사 A API — A의 Supabase Auth + A의 RLS]
-                      ↓ subjectId = A.users.id
-              [SSOTA apps/web | apps/mcp — JWT·context 검증]
-                      ↓ subjectId 주입·검증
-              [executeAction / queryNodes — core 4대 강제 + project·subject 스코핑]
+                      ↓ (선택) tenant property in action input
+              [SSOTA apps/web | apps/mcp — JWT·projectId 검증]
+                      ↓
+              [executeAction / queryNodes — core 4대 강제 + project 스코핑]
                       ↓
               [adapter-supabase — createAdminDb / DATABASE_URL, RLS bypass]
 ```
 
-- **금지**: anon/authenticated PostgREST로 `nodes`/`edges` 직접 노출, 클라이언트가 보낸 `subject_id`를 검증 없이 신뢰, permissive RLS policy 추가.
-- **필수**: 모든 graph read/write는 apps 라우트·MCP 핸들러를 통과; context `subjectId`는 A의 백엔드 또는 SSOTA OAuth 이후 서버에서만 설정; RLS 거부 케이스 integration 테스트.
+- **금지**: anon/authenticated PostgREST로 `nodes`/`edges` 직접 노출, permissive RLS policy 추가, 플랫폼 레벨 tenant 헤더(`X-SSOTA-Subject-Id`)로 런타임 강제.
+- **필수**: 모든 graph read/write는 apps 라우트·MCP 핸들러를 통과; RLS 거부 케이스 integration 테스트.
 
-SSOTA Console 운영자(카탈로그 편집·Human Gate)는 `subject_id` 스코핑 **바깥**의 별도 auth 경로다 — smoke 계정·org membership으로 처리하며, 최종 고객 데이터와 섞지 않는다.
+SSOTA Console 운영자(카탈로그 편집·Human Gate)는 org membership auth로 project 전체 데이터에 접근한다.
 
-**Embedder BFF 예시**: `examples/embedder-bff/` — 고객사 A가 `X-Embedder-User-Id`(자체 `users.id`)를 검증 후 SSOTA MCP로 프록시. 로컬 실행: `pnpm embedder-bff` (MCP 기동 후).
+**Embedder BFF 예시**: `examples/embedder-bff/` — 고객사 A가 `X-Embedder-User-Id`(자체 `users.id`)를 검증 후 `properties.subject_id`를 넣어 SSOTA API로 프록시. 로컬 실행: `pnpm embedder-bff` (MCP 기동 후).
 
 ## Setup Commands
 

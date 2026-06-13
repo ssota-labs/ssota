@@ -6,7 +6,6 @@ import { registerAccountTools } from "@/lib/mcp/register-account-tools";
 import { registerProjectTools } from "@/lib/mcp/register-project-tools";
 import { parseMcpProjectScope } from "@/lib/mcp/resource-url";
 import { resolveProjectId } from "@/lib/project-context";
-import { resolveSubjectId } from "@/lib/subject-context";
 import {
   buildMcpResourceUrl,
   mcpPublicOrigin,
@@ -32,7 +31,7 @@ const unifiedMcpHandler = createMcpHandler(
 );
 
 /**
- * Single MCP auth path: JWT + optional subject header.
+ * Single MCP auth path: JWT verification.
  * Project scope is resolved per tool call via orgSlug/projectSlug args
  * (with optional URL query defaults for backward compatibility).
  */
@@ -45,14 +44,7 @@ async function verifyMcpToken(
   );
   if (!user) return undefined;
 
-  let subjectId: string | undefined;
-  try {
-    subjectId = resolveSubjectId(req);
-  } catch {
-    return undefined;
-  }
-
-  const extra: Record<string, unknown> = { user, subjectId };
+  const extra: Record<string, unknown> = { user };
 
   try {
     const urlScope = parseMcpProjectScope(req);

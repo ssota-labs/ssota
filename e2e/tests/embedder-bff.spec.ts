@@ -6,10 +6,10 @@ test.describe("Embedder BFF proxy", () => {
   test("X-Embedder-User-Id → create_node(HomepageProject) via BFF", async ({
     request,
   }) => {
-    const subjectId = `e2e_bff_${Date.now()}`;
+    const embedderUserId = `e2e_bff_${Date.now()}`;
 
     const res = await request.post(`${bffUrl}/ssota/execute`, {
-      headers: { "X-Embedder-User-Id": subjectId },
+      headers: { "X-Embedder-User-Id": embedderUserId },
       data: {
         actionType: "create_node",
         input: { nodeType: "HomepageProject", title: "BFF E2E Homepage" },
@@ -18,10 +18,10 @@ test.describe("Embedder BFF proxy", () => {
 
     expect(res.ok()).toBeTruthy();
     const body = (await res.json()) as {
-      subjectId: string;
+      embedderUserId: string;
       result: { status: string };
     };
-    expect(body.subjectId).toBe(subjectId);
+    expect(body.embedderUserId).toBe(embedderUserId);
     expect(body.result.status).toBe("committed");
   });
 

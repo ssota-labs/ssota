@@ -15,11 +15,6 @@ export interface SsotaClientOptions {
     accessToken: string | (() => string | Promise<string>);
   };
   /**
-   * Tenant scope for embedder apps — maps to the end-user id.
-   * Sent as `X-SSOTA-Subject-Id`; server injects `subjectId` on scoped reads/writes.
-   */
-  subjectId?: string | (() => string | undefined | Promise<string | undefined>);
-  /**
    * Project scope — one catalog/graph space per agent domain.
    * Sent as `X-SSOTA-Project-Id`; required on all API requests.
    */
@@ -44,12 +39,6 @@ export function createClient(options: SsotaClientOptions): SsotaClient {
       ? options.auth.accessToken
       : () => options.auth.accessToken as string;
 
-  const getSubjectId = options.subjectId
-    ? typeof options.subjectId === "function"
-      ? options.subjectId
-      : () => options.subjectId as string
-    : undefined;
-
   const getProjectId = options.projectId
     ? typeof options.projectId === "function"
       ? options.projectId
@@ -59,7 +48,6 @@ export function createClient(options: SsotaClientOptions): SsotaClient {
   const http = new HttpClient({
     baseUrl: options.url,
     getAccessToken,
-    getSubjectId,
     getProjectId,
     fetch: options.fetch,
   });

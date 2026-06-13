@@ -1,5 +1,4 @@
 export {
-  readSubjectFromExtra,
   requireUserFromExtra,
 } from "@/lib/mcp/project-scope";
 

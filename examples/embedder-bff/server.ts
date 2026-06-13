@@ -2,7 +2,10 @@
  * 고객사 A BFF 예시 — embedder auth 이후 SSOTA HTTP API v1로 프록시.
  *
  * 흐름:
- *   [최종 사용자] → [A 앱 auth] → [이 BFF] → [SSOTA /api/v1 + X-SSOTA-Subject-Id]
+ *   [최종 사용자] → [A 앱 auth] → [이 BFF] → [SSOTA /api/v1]
+ *
+ * Tenant 구분은 SSOTA 플랫폼이 강제하지 않는다. BFF가 검증한 user id를
+ * 액션 input.properties(예: subject_id)에 넣어 execute_action으로 전달한다.
  *
  * 실행: SSOTA_MCP_URL=http://127.0.0.1:3001 pnpm embedder-bff
  */
@@ -59,9 +62,6 @@ async function getLoopOsMcpToken(): Promise<string> {
   return data.access_token;
 }
 
-/** 요청마다 embedder가 검증한 최종 사용자 id — SDK가 X-SSOTA-Subject-Id로 전송 */
-let requestSubjectId: string | undefined;
-
 async function resolveProjectId(): Promise<string> {
   if (SSOTA_PROJECT_ID) return SSOTA_PROJECT_ID;
   if (cachedProjectId) return cachedProjectId;
@@ -71,9 +71,9 @@ async function resolveProjectId(): Promise<string> {
   if (!org) {
     throw new Error("Default organization not found — run db:seed");
   }
-  const project = await consolePort.getProjectBySlug(org.id, "ssota-dev");
+  const project = await consolePort.getProjectBySlug(org.id, "homepage-agent");
   if (!project) {
-    throw new Error("Default SSOTA project not found — run db:seed");
+    throw new Error("Homepage agent project not found — run db:seed");
   }
   cachedProjectId = project.id;
   return project.id;
@@ -82,9 +82,30 @@ async function resolveProjectId(): Promise<string> {
 const ssota = createClient({
   url: SSOTA_API_URL,
   auth: { accessToken: getLoopOsMcpToken },
-  subjectId: () => requestSubjectId,
   projectId: resolveProjectId,
 });
+
+function withEmbedderTenant(
+  actionType: string,
+  input: Record<string, unknown>,
+  embedderUserId: string,
+): Record<string, unknown> {
+  if (actionType !== "create_node") {
+    return input;
+  }
+  const properties =
+    (input.properties as Record<string, unknown> | undefined) ?? {};
+  if (properties.subject_id !== undefined) {
+    return input;
+  }
+  return {
+    ...input,
+    properties: {
+      ...properties,
+      subject_id: embedderUserId,
+    },
+  };
+}
 
 async function readJson<T>(req: IncomingMessage): Promise<T> {
   const chunks: Buffer[] = [];
@@ -117,8 +138,8 @@ const server = createServer(async (req, res) => {
 
   if (req.method === "POST" && req.url === "/ssota/execute") {
     try {
-      const subjectId = resolveEmbedderUserId(req);
-      if (!subjectId) {
+      const embedderUserId = resolveEmbedderUserId(req);
+      if (!embedderUserId) {
         sendJson(res, 401, {
           error: "Missing X-Embedder-User-Id (embedder auth must set this)",
         });
@@ -135,16 +156,18 @@ const server = createServer(async (req, res) => {
         return;
       }
 
-      requestSubjectId = subjectId;
+      const input = withEmbedderTenant(
+        body.actionType,
+        body.input ?? {},
+        embedderUserId,
+      );
       const result = await ssota.actions.execute({
         actionType: body.actionType,
-        input: body.input ?? {},
+        input,
       });
-      requestSubjectId = undefined;
 
-      sendJson(res, 200, { subjectId, result });
+      sendJson(res, 200, { embedderUserId, result });
     } catch (err) {
-      requestSubjectId = undefined;
       const message = err instanceof Error ? err.message : "Proxy failed";
       sendJson(res, 502, { error: message });
     }

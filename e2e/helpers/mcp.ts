@@ -97,7 +97,6 @@ export async function mcpToolCall(
   toolName: string,
   args: Record<string, unknown> = {},
   options?: {
-    subjectId?: string;
     orgSlug?: string;
     projectSlug?: string;
   },
@@ -115,9 +114,6 @@ export async function mcpToolCall(
     "Content-Type": "application/json",
     Accept: "application/json, text/event-stream",
   };
-  if (options?.subjectId) {
-    headers["X-SSOTA-Subject-Id"] = options.subjectId;
-  }
 
   const initRes = await request.post(endpoint, {
     headers,
