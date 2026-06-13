@@ -133,7 +133,7 @@ function PropertyFieldEditorInner({
     );
   }
 
-  if (isTextAreaField(field) && (variant === "panel" || supabase)) {
+  if (isTextAreaField(field, variant) && (variant === "panel" || supabase)) {
     return (
       <Textarea
         value={draft}

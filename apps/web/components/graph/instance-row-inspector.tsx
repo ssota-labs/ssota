@@ -156,7 +156,7 @@ export function InstanceRowInspector({
               }
             />
           ))}
-          <ReadOnlyField label="content" type="text" value={content ?? "NULL"} />
+          <ReadOnlyTextField label="content" type="text" value={content ?? "NULL"} />
           <ReadOnlyField label="updated_at" type="timestamptz" value={updatedAt} />
         </TabsContent>
 
@@ -187,6 +187,30 @@ export function InstanceRowInspector({
           {isPending ? "Saving…" : "Queue changes"}
           <span className="ml-2 text-[10px] opacity-70">⌘↵</span>
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function ReadOnlyTextField({
+  label,
+  type,
+  value,
+}: {
+  label: string;
+  type: string;
+  value: string;
+}) {
+  return (
+    <div className="instance-field-row">
+      <FieldMeta label={label} type={type} />
+      <div className="instance-field-control">
+        <textarea
+          readOnly
+          rows={3}
+          value={value}
+          className="min-h-16 w-full resize-y bg-transparent font-mono text-sm text-muted-foreground outline-none"
+        />
       </div>
     </div>
   );
@@ -259,7 +283,7 @@ function EditableFieldRow({
         </div>
       ) : (
         <div className="instance-field-control">
-          <PropertyFieldEditor field={field} value={value} variant="panel" onChange={onChange} />
+          <PropertyFieldEditor field={field} value={value} variant="supabase" onChange={onChange} />
         </div>
       )}
     </div>

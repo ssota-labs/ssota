@@ -85,10 +85,27 @@
 
 .instance-field-control input,
 .instance-field-control textarea,
-.instance-field-control select {
+.instance-field-control select,
+.instance-field-control .cn-input,
+.instance-field-control .cn-textarea,
+.instance-field-control .cn-native-select,
+.instance-field-control [data-slot="input"],
+.instance-field-control [data-slot="textarea"],
+.instance-field-control [data-slot="native-select"] {
+  width: 100%;
+  min-height: 0;
+  border: 0 !important;
+  background: transparent !important;
+  outline: none;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+
+.instance-field-control .cn-native-select-wrapper,
+.instance-field-control [data-slot="native-select-wrapper"] {
   width: 100%;
   border: 0;
   background: transparent;
-  outline: none;
   box-shadow: none;
 }

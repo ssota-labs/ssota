@@ -24,8 +24,14 @@ export function isNumberField(field: PropertyFieldDefinition): boolean {
   return field.valueType === "number";
 }
 
-export function isTextAreaField(field: PropertyFieldDefinition): boolean {
-  return field.valueType === "text";
+export function isTextAreaField(
+  field: PropertyFieldDefinition,
+  variant: "panel" | "inline" | "supabase" = "panel",
+): boolean {
+  if (field.valueType === "text") return true;
+  // Supabase row inspector treats catalog string fields as multiline text.
+  if (field.valueType === "string" && variant !== "inline") return true;
+  return false;
 }
 
 export function isEnumField(field: PropertyFieldDefinition): boolean {
