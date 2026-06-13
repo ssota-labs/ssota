@@ -1,2 +1,3 @@
 @import "@ssota/ui/styles/globals.css";
+@import "@xyflow/react/dist/style.css";
 @source "../**/*.{ts,tsx}";

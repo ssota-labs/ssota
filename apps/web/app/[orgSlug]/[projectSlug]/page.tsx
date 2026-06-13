@@ -44,28 +44,28 @@ export default async function ProjectHomePage({
 
   const cards = [
     {
-      title: "Nodes",
-      description: "Node tables and structured context envelopes",
+      title: "Graph",
+      description: `${nodes.length} object types · ${edges.length} relations · ${actions.length} actions`,
       href: graphPath(ctx, "nodes"),
       count: nodes.length,
     },
     {
-      title: "Edges",
-      description: "Allowed relationships between node tables",
-      href: graphPath(ctx, "edges"),
-      count: edges.length,
-    },
-    {
-      title: "Actions",
-      description: "Typed capabilities for humans and agents",
-      href: graphPath(ctx, "actions"),
-      count: actions.length,
-    },
-    {
-      title: "Instructions",
-      description: "Agent workflow packages",
-      href: projectPath(ctx, "instructions"),
+      title: "Workflows",
+      description: "Agent instructions with flow canvas and run history",
+      href: projectPath(ctx, "workflows"),
       count: instructions.length,
+    },
+    {
+      title: "Reviews",
+      description: "Human decisions requested by agentic runs",
+      href: projectPath(ctx, "gates"),
+      count: gates.length,
+    },
+    {
+      title: "Runs",
+      description: "Execution timeline for graph actions",
+      href: projectPath(ctx, "log"),
+      count: logs.length,
     },
   ];
 
@@ -99,7 +99,7 @@ export default async function ProjectHomePage({
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Pending Gates</CardTitle>
+            <CardTitle className="text-base">Needs review</CardTitle>
             <CardDescription>
               Runtime, catalog, and workflow changes awaiting review.
             </CardDescription>
@@ -123,7 +123,7 @@ export default async function ProjectHomePage({
               size="sm"
               nativeButton={false}
             >
-              Review gates
+              Open reviews
             </Button>
           </CardContent>
         </Card>
@@ -168,8 +168,8 @@ export default async function ProjectHomePage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Recent Graph Changes</CardTitle>
-            <CardDescription>Action Log projection for graph activity.</CardDescription>
+            <CardTitle className="text-base">Recent runs</CardTitle>
+            <CardDescription>Run projection for graph activity.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {logs.length === 0 ? (
@@ -194,7 +194,7 @@ export default async function ProjectHomePage({
               size="sm"
               nativeButton={false}
             >
-              Open Action Log
+              Open runs
             </Button>
           </CardContent>
         </Card>

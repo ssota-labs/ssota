@@ -1,4 +1,5 @@
 import { cache } from "react";
+import type { NodeCatalogEntry } from "@ssota/core";
 import { getActionPorts } from "@/lib/ports";
 
 export const getCachedNodeCatalog = cache(async (projectId: string) => {
@@ -16,3 +17,7 @@ export const getCachedActionCatalog = cache(async (projectId: string) => {
 export const getCachedArchetypes = cache(async (projectId: string) => {
   return getActionPorts(projectId).catalog.listArchetypes();
 });
+
+export function displayNodeCatalogLabel(entry: Pick<NodeCatalogEntry, "nodeType" | "label">) {
+  return entry.nodeType === "Instruction" ? "Workflow" : entry.label;
+}

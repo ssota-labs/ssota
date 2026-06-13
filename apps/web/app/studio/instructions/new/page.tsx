@@ -45,10 +45,10 @@ export default async function NewInstructionPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Define Instruction" description="define_instruction 메타 액션" />
+      <PageHeader title="Define Workflow" description="define_instruction 메타 액션" />
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Instruction Definition</CardTitle>
+          <CardTitle className="text-base">Workflow Definition</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={createAction} className="space-y-4">
@@ -77,7 +77,7 @@ export default async function NewInstructionPage() {
         </CardContent>
       </Card>
       <Button render={<Link href="/studio/instructions" />} variant="ghost" nativeButton={false}>
-        ← Instructions
+        ← Workflows
       </Button>
     </div>
   );

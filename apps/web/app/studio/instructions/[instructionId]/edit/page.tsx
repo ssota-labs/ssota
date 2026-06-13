@@ -51,10 +51,10 @@ export default async function EditInstructionPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader title={`Edit: ${entry.title}`} description="update / deprecate instruction" />
+      <PageHeader title={`Edit: ${entry.title}`} description="update / deprecate workflow" />
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Update Instruction</CardTitle>
+          <CardTitle className="text-base">Update Workflow</CardTitle>
         </CardHeader>
         <CardContent>
           <form action={updateAction} className="space-y-4">
@@ -76,7 +76,7 @@ export default async function EditInstructionPage({
         </Button>
       </form>
       <Button render={<Link href="/studio/instructions" />} variant="ghost" nativeButton={false}>
-        ← Instructions
+        ← Workflows
       </Button>
     </div>
   );

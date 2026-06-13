@@ -19,7 +19,7 @@ export function ActionLogDataTable({
   rows,
   toolbar,
   filterColumn = "actionType",
-  emptyMessage = "아직 기록된 action run이 없습니다.",
+  emptyMessage = "No runs recorded yet.",
 }: {
   rows: ActionLogRow[];
   toolbar?: React.ReactNode;
@@ -49,7 +49,7 @@ export function ActionLogDataTable({
     {
       accessorKey: "instruction",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="instruction" />
+        <DataTableColumnHeader column={column} title="workflow" />
       ),
       cell: ({ row }) => (
         <span className="text-muted-foreground">{row.original.instruction}</span>

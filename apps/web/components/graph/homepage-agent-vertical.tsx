@@ -91,19 +91,19 @@ export async function HomepageAgentVerticalView({
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Node tables</CardTitle>
+            <CardTitle className="text-base">Graph objects</CardTitle>
             <CardDescription>{verticalNodes.length} types</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Edge tables</CardTitle>
+            <CardTitle className="text-base">Relations</CardTitle>
             <CardDescription>{verticalEdges.length} types</CardDescription>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Actions</CardTitle>
+          <CardTitle className="text-base">Graph actions</CardTitle>
             <CardDescription>{verticalActions.length} contracts</CardDescription>
           </CardHeader>
         </Card>
@@ -159,7 +159,7 @@ export async function HomepageAgentVerticalView({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Actions</CardTitle>
+            <CardTitle className="text-base">Graph actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
             {verticalActions.map((action) => (
@@ -168,7 +168,7 @@ export async function HomepageAgentVerticalView({
                 className="flex items-center justify-between rounded-md border p-3 text-sm"
               >
                 <Link
-                  href={graphPath(ctx, "actions")}
+                  href={graphPath(ctx, "nodes")}
                   className="font-medium hover:underline"
                 >
                   {action.actionType}
@@ -181,7 +181,7 @@ export async function HomepageAgentVerticalView({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Workflow instruction</CardTitle>
+            <CardTitle className="text-base">Workflow</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
             {workflow ? (
@@ -191,12 +191,12 @@ export async function HomepageAgentVerticalView({
                   {workflow.body}
                 </p>
                 <Button
-                  render={<Link href={projectPath(ctx, "instructions")} />}
+                  render={<Link href={projectPath(ctx, "workflows")} />}
                   variant="outline"
                   size="sm"
                   nativeButton={false}
                 >
-                  All instructions
+                  Workflows
                 </Button>
               </>
             ) : (

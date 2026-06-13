@@ -17,6 +17,7 @@ export type TableCatalogItem = {
 type TableCatalogPanelProps = {
   kind: GraphCatalogKind;
   onKindChange: (kind: GraphCatalogKind) => void;
+  showKindSwitch?: boolean;
   items: TableCatalogItem[];
   selectedSlug?: string | null;
   onSelect: (slug: string) => void;
@@ -36,6 +37,7 @@ const KIND_LABELS: Record<GraphCatalogKind, string> = {
 export function TableCatalogPanel({
   kind,
   onKindChange,
+  showKindSwitch = true,
   items,
   selectedSlug,
   onSelect,
@@ -48,35 +50,38 @@ export function TableCatalogPanel({
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col border-r bg-muted/30">
       <div className="border-b px-3 py-2.5">
-        <p className="text-sm font-semibold text-foreground">Graph Editor</p>
+        <p className="text-sm font-semibold text-foreground">Graph</p>
+        <p className="text-xs text-muted-foreground">Choose a graph object</p>
       </div>
       <div className="space-y-2 border-b px-3 py-2">
-        <ToggleGroup
-          value={[kind]}
-          onValueChange={(values) => {
-            const next = values[0] as GraphCatalogKind | undefined;
-            if (next) onKindChange(next);
-          }}
-          variant="outline"
-          size="sm"
-          spacing={0}
-          className="grid w-full grid-cols-3"
-        >
-          {(Object.keys(KIND_LABELS) as GraphCatalogKind[]).map((value) => (
-            <ToggleGroupItem
-              key={value}
-              value={value}
-              className="h-7 flex-1 px-0 text-xs"
-              data-testid={`graph-kind-${value}`}
-            >
-              {KIND_LABELS[value]}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+        {showKindSwitch ? (
+          <ToggleGroup
+            value={[kind]}
+            onValueChange={(values) => {
+              const next = values[0] as GraphCatalogKind | undefined;
+              if (next) onKindChange(next);
+            }}
+            variant="outline"
+            size="sm"
+            spacing={0}
+            className="grid w-full grid-cols-3"
+          >
+            {(Object.keys(KIND_LABELS) as GraphCatalogKind[]).map((value) => (
+              <ToggleGroupItem
+                key={value}
+                value={value}
+                className="h-7 flex-1 px-0 text-xs"
+                data-testid={`graph-kind-${value}`}
+              >
+                {KIND_LABELS[value]}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        ) : null}
         <div className="flex items-center gap-2">{newTableTrigger}</div>
         <div className="relative">
           <Input
-            placeholder="Search tables..."
+            placeholder="Search graph..."
             value={searchQuery}
             onChange={(event) => onSearchQueryChange(event.target.value)}
             className="h-7 bg-background pr-8 text-xs"
