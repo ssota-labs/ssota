@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { randomUUID } from "node:crypto";
 import { toCatalogLabel, toCatalogSlug } from "./catalog-slug.js";
-import { executeAction } from "./index.js";
+import { approveGate, executeAction } from "./index.js";
 import {
   createInMemoryPorts,
   createInMemoryState,
@@ -784,5 +785,102 @@ describe("executeAction — project_id tenancy", () => {
     if (result.status === "rejected") {
       expect(result.code).toBe("PRECONDITION_FAILED");
     }
+  });
+
+  it("통과: deprecate_node는 lifecycle을 Archived로 변경", async () => {
+    const node = createTestNode({ lifecycleStatus: "Active" });
+    const state = createInMemoryState({ nodes: [node] });
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "deprecate_node",
+      input: { nodeId: node.id },
+      executorId: "agent-1",
+      executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
+    });
+
+    expect(result.status).toBe("committed");
+    expect(state.nodes.get(node.id)?.lifecycleStatus).toBe("Archived");
+  });
+
+  it("게이트: delete_node는 Agent 호출 시 Human 승인 큐로", async () => {
+    const node = createTestNode();
+    const state = createInMemoryState({ nodes: [node] });
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "delete_node",
+      input: { nodeId: node.id },
+      executorId: "agent-1",
+      executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
+    });
+
+    expect(result.status).toBe("gated");
+    if (result.status === "gated") {
+      expect(state.gates.has(result.gateId)).toBe(true);
+    }
+    expect(state.nodes.has(node.id)).toBe(true);
+  });
+
+  it("통과: delete_node Human 승인 시 노드·연결 엣지 삭제", async () => {
+    const node = createTestNode();
+    const edgeId = randomUUID();
+    const state = createInMemoryState({ nodes: [node] });
+    state.edges.set(edgeId, {
+      id: edgeId,
+      projectId: TEST_PROJECT_ID,
+      edgeType: "links",
+      sourceNodeId: node.id,
+      targetNodeId: randomUUID(),
+      properties: {},
+      createdAt: new Date(),
+    });
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const gated = await executeAction(ports, {
+      actionType: "delete_node",
+      input: { nodeId: node.id },
+      executorId: "agent-1",
+      executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
+    });
+
+    expect(gated.status).toBe("gated");
+    if (gated.status !== "gated") return;
+
+    const approved = await approveGate(ports, {
+      gateId: gated.gateId,
+      projectId: TEST_PROJECT_ID,
+      executorId: "human-1",
+      executorType: "Human",
+      approved: true,
+    });
+
+    expect(approved.status).toBe("committed");
+    expect(state.nodes.has(node.id)).toBe(false);
+    expect(state.edges.has(edgeId)).toBe(false);
+  });
+
+  it("통과: Human이 delete_node를 직접 호출하면 즉시 삭제", async () => {
+    const node = createTestNode();
+    const state = createInMemoryState({ nodes: [node] });
+    seedTestCatalog(state);
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "delete_node",
+      input: { nodeId: node.id },
+      executorId: "human-1",
+      executorType: "Human",
+      projectId: TEST_PROJECT_ID,
+    });
+
+    expect(result.status).toBe("committed");
+    expect(state.nodes.has(node.id)).toBe(false);
   });
 });

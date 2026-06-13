@@ -247,7 +247,7 @@ async function prepareAction(
 
   const existingNodes = new Map<string, Node>();
   for (const effect of effects) {
-    if (effect.kind === "update_node") {
+    if (effect.kind === "update_node" || effect.kind === "delete_node") {
       const node = await ports.graph.getNode(effect.nodeId);
       if (node) existingNodes.set(effect.nodeId, node);
     }
@@ -377,7 +377,7 @@ export async function executeAction(
 
   const existingNodes = new Map<string, Node>();
   for (const effect of effects) {
-    if (effect.kind === "update_node") {
+    if (effect.kind === "update_node" || effect.kind === "delete_node") {
       const node = await ports.graph.getNode(effect.nodeId);
       if (node) existingNodes.set(effect.nodeId, node);
     }
@@ -389,6 +389,12 @@ export async function executeAction(
       const entry = await ports.catalog.getNodeCatalogEntry(effect.node.nodeType);
       if (entry) nodeCatalogEntries.set(effect.node.nodeType, entry);
     } else if (effect.kind === "update_node") {
+      const node = existingNodes.get(effect.nodeId);
+      if (node) {
+        const entry = await ports.catalog.getNodeCatalogEntry(node.nodeType);
+        if (entry) nodeCatalogEntries.set(node.nodeType, entry);
+      }
+    } else if (effect.kind === "delete_node") {
       const node = existingNodes.get(effect.nodeId);
       if (node) {
         const entry = await ports.catalog.getNodeCatalogEntry(node.nodeType);

@@ -8,7 +8,7 @@ export async function enforceProjectScope(
   getNode: (nodeId: string) => Promise<Node | null>,
 ): Promise<void> {
   for (const effect of effects) {
-    if (effect.kind === "update_node") {
+    if (effect.kind === "update_node" || effect.kind === "delete_node") {
       await assertNodeInProjectScope(projectId, await getNode(effect.nodeId));
       continue;
     }

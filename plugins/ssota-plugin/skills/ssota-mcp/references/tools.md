@@ -62,6 +62,15 @@ Requires `orgSlug` + `projectSlug`.
 
 SSOTA MCP is the only mutation interface. Do not look for alternate write APIs outside MCP.
 
+### Graph instance lifecycle (built-in)
+
+| Action | Purpose | Gate |
+|---|---|---|
+| `deprecate_node` | Soft-remove instance (`lifecycleStatus` → `Archived`) | None (Agent) |
+| `delete_node` | Hard delete node + connected edges + impact queue rows | **Human Gate** when called by Agent; Human executor may commit directly |
+
+Input: `{ nodeId }` for both. Prefer `deprecate_node` for reversible retirement; use `delete_node` only when permanent removal is required.
+
 ## Gates (read + propose)
 
 - `query_gates` / `list_pending_gates` / `get_gate`

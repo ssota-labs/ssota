@@ -78,6 +78,38 @@ const BUILTIN_GRAPH_ACTION_ROWS: BuiltinGraphActionRow[] = [
     idempotencyRule: null,
     logPayloadSchema: {},
   },
+  {
+    actionType: "deprecate_node",
+    preconditions: {
+      requiredFields: ["nodeId"],
+      requiresExistingNode: true,
+    },
+    effects: [
+      {
+        kind: "update_node",
+        nodeId: "",
+        patch: { lifecycleStatus: "Archived" },
+      },
+    ],
+    executor: "Agent",
+    allowedLifecycleTransitions: {},
+    failureMode: "reject",
+    idempotencyRule: null,
+    logPayloadSchema: {},
+  },
+  {
+    actionType: "delete_node",
+    preconditions: {
+      requiredFields: ["nodeId"],
+      requiresExistingNode: true,
+    },
+    effects: [{ kind: "delete_node", nodeId: "" }],
+    executor: "Agent",
+    allowedLifecycleTransitions: {},
+    failureMode: "reject",
+    idempotencyRule: null,
+    logPayloadSchema: {},
+  },
 ];
 
 function toBuiltinEntry(row: BuiltinGraphActionRow): ActionCatalogEntry {
