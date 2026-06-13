@@ -80,6 +80,7 @@ export default async function GraphNodesPage({
 
   return (
     <GraphSchemaView
+      projectId={project.id}
       title="Nodes"
       description="Node catalog and allowed relationships between node types."
       toolbar={toolbar}

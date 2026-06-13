@@ -59,6 +59,7 @@ export default async function GraphEdgesPage({
 
   return (
     <GraphSchemaView
+      projectId={project.id}
       title="Edges"
       description="Relationships between node types defined in the edge catalog."
       toolbar={toolbar}

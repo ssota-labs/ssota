@@ -3,6 +3,7 @@ import { getActionPorts } from "@/lib/ports";
 import { GraphSchemaCanvas, type SchemaSelection } from "./schema-canvas";
 
 type GraphSchemaViewProps = {
+  projectId: string;
   initialSelection?: SchemaSelection;
   toolbar?: ReactNode;
   title?: string;
@@ -10,12 +11,13 @@ type GraphSchemaViewProps = {
 };
 
 export async function GraphSchemaView({
+  projectId,
   initialSelection,
   toolbar,
   title,
   description,
 }: GraphSchemaViewProps) {
-  const ports = getActionPorts();
+  const ports = getActionPorts(projectId);
   const [nodeEntries, edgeEntries] = await Promise.all([
     ports.catalog.listNodeCatalogEntries(),
     ports.catalog.listEdgeCatalogEntries(),

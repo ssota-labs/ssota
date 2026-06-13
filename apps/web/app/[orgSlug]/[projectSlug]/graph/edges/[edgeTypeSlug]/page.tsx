@@ -17,6 +17,7 @@ export default async function GraphEdgeSchemaPage({
 
   return (
     <GraphSchemaView
+      projectId={project.id}
       initialSelection={{ kind: "edge", slug: entry.slug }}
       title={entry.label}
       description={`${entry.domain.join(", ")} → ${entry.range.join(", ")} · ${entry.cardinality}`}

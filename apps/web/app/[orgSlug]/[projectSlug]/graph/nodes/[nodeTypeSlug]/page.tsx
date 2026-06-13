@@ -19,6 +19,7 @@ export default async function GraphNodeSchemaPage({
 
   return (
     <GraphSchemaView
+      projectId={project.id}
       initialSelection={{ kind: "node", slug: entry.slug }}
       title={entry.label}
       description={`${entry.family} · ${entry.archetypeId ?? "—"} · ${propertyCount} properties`}
