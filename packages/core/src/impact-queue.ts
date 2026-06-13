@@ -25,7 +25,7 @@ export interface ProjectImpactQueueInput {
 }
 
 function changedNodeIdsFromEffect(effect: ActionLogRecord["effects"][number]): string[] {
-  if (effect.kind === "update_node") {
+  if (effect.kind === "update_node" || effect.kind === "delete_node") {
     return [effect.nodeId];
   }
   if (effect.kind === "create_node" && effect.node.id) {

@@ -13,6 +13,11 @@ export async function enforceProjectScope(
       continue;
     }
 
+    if (effect.kind === "delete_node") {
+      await assertNodeInProjectScope(projectId, await getNode(effect.nodeId));
+      continue;
+    }
+
     if (effect.kind === "create_edge") {
       await assertNodeInProjectScope(projectId, await getNode(effect.edge.sourceNodeId));
       await assertNodeInProjectScope(projectId, await getNode(effect.edge.targetNodeId));

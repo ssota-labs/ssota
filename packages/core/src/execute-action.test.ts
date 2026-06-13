@@ -785,4 +785,40 @@ describe("executeAction — project_id tenancy", () => {
       expect(result.code).toBe("PRECONDITION_FAILED");
     }
   });
+
+  it("통과: delete_node — 인스턴스·연결 엣지 삭제 + action_log 기록", async () => {
+    const state = createInMemoryState();
+    seedTestCatalog(state);
+    const source = createTestNode({ properties: { title: "Source" } });
+    const target = createTestNode({ properties: { title: "Target" } });
+    state.nodes.set(source.id, source);
+    state.nodes.set(target.id, target);
+    state.edges.set("edge-1", {
+      id: "edge-1",
+      projectId: TEST_PROJECT_ID,
+      edgeType: "relates_to",
+      sourceNodeId: source.id,
+      targetNodeId: target.id,
+      properties: {},
+      createdAt: new Date(),
+    });
+    const ports = createInMemoryPorts(state);
+
+    const result = await executeAction(ports, {
+      actionType: "delete_node",
+      input: { nodeId: source.id },
+      executorId: "agent-1",
+      executorType: "Agent",
+      projectId: TEST_PROJECT_ID,
+    });
+
+    expect(result.status).toBe("committed");
+    expect(state.nodes.has(source.id)).toBe(false);
+    expect(state.edges.has("edge-1")).toBe(false);
+    expect(state.nodes.has(target.id)).toBe(true);
+    expect(state.actionLog).toHaveLength(1);
+    if (result.status === "committed") {
+      expect(result.effects[0]?.kind).toBe("delete_node");
+    }
+  });
 });

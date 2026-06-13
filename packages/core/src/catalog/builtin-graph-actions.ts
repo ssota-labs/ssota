@@ -56,6 +56,19 @@ const BUILTIN_GRAPH_ACTION_ROWS: BuiltinGraphActionRow[] = [
     logPayloadSchema: {},
   },
   {
+    actionType: "delete_node",
+    preconditions: {
+      requiredFields: ["nodeId"],
+      requiresExistingNode: true,
+    },
+    effects: [{ kind: "delete_node", nodeId: "" }],
+    executor: "Agent",
+    allowedLifecycleTransitions: {},
+    failureMode: "reject",
+    idempotencyRule: null,
+    logPayloadSchema: {},
+  },
+  {
     actionType: "update_node_property_schema",
     preconditions: { requiredFields: ["nodeType", "patch"] },
     effects: [

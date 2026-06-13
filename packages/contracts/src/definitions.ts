@@ -212,6 +212,12 @@ export type UpdateNodePropertiesInput = z.infer<
   typeof UpdateNodePropertiesInputSchema
 >;
 
+export const DeleteNodeInputSchema = z.object({
+  nodeId: z.string().uuid(),
+});
+
+export type DeleteNodeInput = z.infer<typeof DeleteNodeInputSchema>;
+
 export const PropertyPermissionDefinitionSchema = z.object({
   actionType: z.string().min(1),
   nodeType: z.string().min(1),
@@ -384,6 +390,10 @@ export const EffectSchema = z.discriminatedUnion("kind", [
       content: z.string().nullable().optional(),
       contentUrl: z.string().url().nullable().optional(),
     }),
+  }),
+  z.object({
+    kind: z.literal("delete_node"),
+    nodeId: z.string().uuid(),
   }),
   z.object({
     kind: z.literal("create_edge"),

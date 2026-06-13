@@ -125,6 +125,22 @@ function applyEffect(
         updatedAt: now,
       });
     }
+  } else if (effect.kind === "delete_node") {
+    const nodeId = effect.nodeId;
+    state.nodes.delete(nodeId);
+    for (const [edgeId, edge] of state.edges) {
+      if (edge.sourceNodeId === nodeId || edge.targetNodeId === nodeId) {
+        state.edges.delete(edgeId);
+      }
+    }
+    for (const [queueId, item] of state.impactQueue) {
+      if (
+        item.sourceNodeId === nodeId ||
+        item.targetNodeId === nodeId
+      ) {
+        state.impactQueue.delete(queueId);
+      }
+    }
   } else if (effect.kind === "create_edge") {
     const id = effect.edge.id ?? randomUUID();
     state.edges.set(id, {

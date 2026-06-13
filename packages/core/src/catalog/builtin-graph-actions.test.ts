@@ -12,17 +12,17 @@ import {
 import { resolveDisplayAction } from "./property-schema.js";
 
 describe("builtin graph actions", () => {
-  it("exposes create_node, update_node_properties, update_node_property_schema", () => {
-    expect(BUILTIN_GRAPH_ACTION_TYPES.size).toBe(3);
-    expect(listBuiltinGraphActionCatalogEntries()).toHaveLength(3);
+  it("exposes create_node, update_node_properties, update_node_property_schema, delete_node", () => {
+    expect(BUILTIN_GRAPH_ACTION_TYPES.size).toBe(4);
+    expect(listBuiltinGraphActionCatalogEntries()).toHaveLength(4);
     expect(getBuiltinGraphActionCatalogEntry("create_node")?.catalogSource).toBe(
       "builtin",
     );
   });
 
-  it("merges meta + graph builtins (17 total)", () => {
-    expect(BUILTIN_ACTION_TYPES.size).toBe(17);
-    expect(listBuiltinActionCatalogEntries()).toHaveLength(17);
+  it("merges meta + graph builtins (18 total)", () => {
+    expect(BUILTIN_ACTION_TYPES.size).toBe(18);
+    expect(listBuiltinActionCatalogEntries()).toHaveLength(18);
     expect(getBuiltinActionCatalogEntry("create_node")?.executor).toBe("Agent");
   });
 

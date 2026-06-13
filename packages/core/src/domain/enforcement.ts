@@ -205,6 +205,11 @@ export function resolveEffects(
             template.patch.contentUrl,
         },
       });
+    } else if (template.kind === "delete_node") {
+      effects.push({
+        kind: "delete_node",
+        nodeId: input.nodeId as string,
+      });
     } else if (template.kind === "create_edge") {
       effects.push({
         kind: "create_edge",
@@ -456,6 +461,18 @@ export async function enforceActionScopeAndGraphIntegrity(
         node.nodeType,
         Object.keys(effect.patch.properties ?? {}),
       );
+      await enforceAllowedActionRef(actionEntry.actionType, node.nodeType, catalog);
+    }
+
+    if (effect.kind === "delete_node") {
+      const node = await graph.getNode(effect.nodeId);
+      if (!node) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          `Node '${effect.nodeId}' does not exist`,
+        );
+      }
+      await enforceNodeScope(actionEntry.actionType, scope, node.nodeType, []);
       await enforceAllowedActionRef(actionEntry.actionType, node.nodeType, catalog);
     }
 

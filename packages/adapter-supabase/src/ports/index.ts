@@ -632,6 +632,50 @@ async function applyEffect(
           eq(schema.nodes.projectId, projectId),
         ),
       );
+  } else if (effect.kind === "delete_node") {
+    const nodeId = effect.nodeId;
+    const connectedEdges = await tx
+      .select({ id: schema.edges.id })
+      .from(schema.edges)
+      .where(
+        and(
+          eq(schema.edges.projectId, projectId),
+          or(
+            eq(schema.edges.sourceNodeId, nodeId),
+            eq(schema.edges.targetNodeId, nodeId),
+          ),
+        ),
+      );
+    const edgeIds = connectedEdges.map((row) => row.id);
+
+    const impactFilters = [
+      eq(schema.impactQueue.sourceNodeId, nodeId),
+      eq(schema.impactQueue.targetNodeId, nodeId),
+    ];
+    if (edgeIds.length > 0) {
+      impactFilters.push(inArray(schema.impactQueue.dependencyEdgeId, edgeIds));
+    }
+    await tx
+      .delete(schema.impactQueue)
+      .where(and(eq(schema.impactQueue.projectId, projectId), or(...impactFilters)));
+
+    await tx
+      .delete(schema.edges)
+      .where(
+        and(
+          eq(schema.edges.projectId, projectId),
+          or(
+            eq(schema.edges.sourceNodeId, nodeId),
+            eq(schema.edges.targetNodeId, nodeId),
+          ),
+        ),
+      );
+
+    await tx
+      .delete(schema.nodes)
+      .where(
+        and(eq(schema.nodes.id, nodeId), eq(schema.nodes.projectId, projectId)),
+      );
   } else if (effect.kind === "create_edge") {
     await tx.insert(schema.edges).values({
       projectId,
