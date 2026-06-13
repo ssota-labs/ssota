@@ -5,6 +5,7 @@ import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
 import { NodeInstancesView, type InstanceGraphRelation } from "@/components/graph/node-instances-view";
 import { NodeSchemaView, type SchemaAction, type SchemaRelation } from "@/components/graph/node-schema-view";
 import { Button } from "@ssota/ui/components/ui/button";
+import { displayNodeCatalogLabel } from "@/lib/console/cached-catalog";
 import { propertyColumnLabel } from "@/lib/graph/property-column-label";
 import { formatActionScope } from "@/lib/graph/format-scope";
 import { getActionPorts } from "@/lib/ports";
@@ -139,7 +140,7 @@ export async function NodeTableDetail({
         <NodeSchemaView
           projectId={projectId}
           nodeType={entry.nodeType}
-          label={entry.label}
+          label={displayNodeCatalogLabel(entry)}
           family={entry.family}
           archetypeId={entry.archetypeId}
           lifecycle={lifecycle}
@@ -152,7 +153,7 @@ export async function NodeTableDetail({
         <ActionLogDataTable
           rows={runRows}
           filterColumn="actionType"
-          emptyMessage={`No runs recorded for ${entry.label} yet.`}
+          emptyMessage={`No runs recorded for ${displayNodeCatalogLabel(entry)} yet.`}
         />
       ) : (
         <NodeInstancesView
@@ -173,7 +174,7 @@ export async function getNodeTableMeta(projectId: string, slug: string) {
   if (!entry) return null;
   const propertyCount = Object.keys(entry.propertySchema).length;
   return {
-    label: entry.label,
+    label: displayNodeCatalogLabel(entry),
     description: `${entry.family} · ${entry.archetypeId ?? "no archetype"} · ${propertyCount} properties`,
   };
 }

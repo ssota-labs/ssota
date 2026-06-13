@@ -1,5 +1,6 @@
 import { GraphCatalogProvider } from "@/components/console/graph-catalog-context";
 import {
+  displayNodeCatalogLabel,
   getCachedActionCatalog,
   getCachedEdgeCatalog,
   getCachedNodeCatalog,
@@ -26,7 +27,7 @@ export default async function GraphLayout({
       value={{
         nodeTypes: nodeTypes.map((entry) => ({
           slug: entry.slug,
-          label: entry.label,
+          label: displayNodeCatalogLabel(entry),
           kind: "node" as const,
         })),
         edgeTypes: edgeTypes.map((entry) => ({
