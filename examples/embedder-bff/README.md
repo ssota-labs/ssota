@@ -1,6 +1,6 @@
 # Embedder BFF 예시 (고객사 A)
 
-고객사 A의 백엔드가 **자체 Supabase auth/RLS**로 최종 사용자를 검증한 뒤, `@ssota/client`의 `subjectId` 옵션으로 `X-SSOTA-Subject-Id`를 주입하는 최소 BFF 예시입니다.
+고객사 A의 백엔드가 **자체 Supabase auth/RLS**로 최종 사용자를 검증한 뒤, 검증된 user id를 `create_node` **properties**(예: `subject_id`)에 넣어 SSOTA `execute_action`으로 프록시하는 최소 BFF 예시입니다. SSOTA 플랫폼은 tenant 헤더를 강제하지 않습니다.
 
 ## 흐름
 
@@ -8,7 +8,7 @@
 [브라우저] → [A API — A.users auth]
                 ↓ X-Embedder-User-Id: usr_acme_42
            [이 BFF :3200]
-                ↓ Bearer (SSOTA service) + X-SSOTA-Subject-Id
+                ↓ Bearer (SSOTA service) + properties.subject_id in action input
            [SSOTA HTTP API /api/v1]
 ```
 
@@ -25,10 +25,10 @@ SSOTA_MCP_URL=http://127.0.0.1:3001 pnpm exec tsx examples/embedder-bff/server.t
 curl -s http://127.0.0.1:3200/ssota/execute \
   -H 'Content-Type: application/json' \
   -H 'X-Embedder-User-Id: usr_acme_42' \
-  -d '{"actionType":"create_homepage_project","input":{"title":"Acme 2026"}}'
+  -d '{"actionType":"create_node","input":{"nodeType":"HomepageProject","title":"Acme 2026"}}'
 ```
 
-BFF는 내부적으로 `smoke@ssota.test`로 SSOTA 토큰을 받고, `createClient({ subjectId: () => requestSubjectId })`로 **embedder가 넘긴 user id**만 subject로 사용합니다.
+BFF는 내부적으로 `smoke@ssota.test`로 SSOTA 토큰을 받고, `create_node` 요청에 `properties.subject_id`가 없으면 **embedder가 넘긴 user id**를 주입합니다.
 
 ## 환경변수
 

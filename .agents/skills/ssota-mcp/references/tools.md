@@ -13,7 +13,7 @@ Every project-scoped tool accepts:
 
 The server validates membership on **every** tool call. Do not trust client-supplied scope without server checks.
 
-Tenant scope (B2B2C embedders): `X-SSOTA-Subject-Id` header — set by embedder backend, not the agent.
+Tenant rows (B2B2C embedders): not a platform header — embedder BFF sets customer-defined properties (e.g. `subject_id`) in `execute_action` / `create_node` input after auth.
 
 ## Account discover (no project scope)
 

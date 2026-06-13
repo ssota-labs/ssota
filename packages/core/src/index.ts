@@ -15,10 +15,6 @@ import {
   enforcePermissions,
   resolveEffects,
 } from "./domain/enforcement.js";
-import {
-  enforceSubjectScope,
-  injectSubjectIntoEffects,
-} from "./domain/subject-scope.js";
 import { enforceProjectScope } from "./domain/project-scope.js";
 import {
   mergeUpdateActionContractInput,
@@ -59,7 +55,7 @@ async function prepareAction(
   ports: ActionPorts,
   params: ExecuteActionInput,
 ): Promise<PreparedAction | { rejected: ExecuteActionResult }> {
-  const { actionType, input, subjectId, projectId } = params;
+  const { actionType, input, projectId } = params;
   const actionEntry = await ports.catalog.getActionCatalogEntry(actionType);
 
   let resolvedInput = input;
@@ -269,23 +265,10 @@ async function prepareAction(
     throw err;
   }
 
-  const nodeCatalogForSubject = new Map<string, NonNullable<Awaited<ReturnType<CatalogPort["getNodeCatalogEntry"]>>>>();
-  for (const effect of effects) {
-    if (effect.kind === "create_node") {
-      const entry = await ports.catalog.getNodeCatalogEntry(effect.node.nodeType);
-      if (entry) nodeCatalogForSubject.set(effect.node.nodeType, entry);
-    }
-  }
-
   try {
     await enforceProjectScope(projectId, effects, (nodeId) =>
       ports.graph.getNode(nodeId),
     );
-    await enforceSubjectScope(subjectId, effects, {
-      getNode: (nodeId) => ports.graph.getNode(nodeId),
-      getNodeCatalogEntry: (nodeType) =>
-        ports.catalog.getNodeCatalogEntry(nodeType),
-    });
   } catch (err) {
     if (err instanceof ActionRejectedError) {
       return {
@@ -293,10 +276,6 @@ async function prepareAction(
       };
     }
     throw err;
-  }
-
-  if (subjectId) {
-    effects = injectSubjectIntoEffects(effects, subjectId, nodeCatalogForSubject);
   }
 
   let permissionGateReason = "";
@@ -574,7 +553,6 @@ export async function approveGate(
 export * from "./domain/types.js";
 export * from "./domain/enforcement.js";
 export * from "./domain/wire.js";
-export * from "./domain/subject-scope.js";
 export * from "./domain/project-scope.js";
 export * from "./impact-queue.js";
 export * from "./catalog-slug.js";

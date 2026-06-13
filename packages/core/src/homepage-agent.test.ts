@@ -27,7 +27,7 @@ function seedHomepageAgentInMemory(
     subject_id: {
       valueType: "string",
       constraints: { minLength: 1 },
-      required: true,
+      required: false,
       system: false,
     },
   };
@@ -137,18 +137,21 @@ function seedHomepageAgentInMemory(
 }
 
 describe("homepage agent vertical slice", () => {
-  it("통과: project → brief → link under same subject_id", async () => {
+  it("통과: project → brief → link with tenant property in input", async () => {
     const state = createInMemoryState();
     seedHomepageAgentInMemory(state);
     const ports = createInMemoryPorts(state);
-    const subjectId = "usr_acme_42";
+    const tenantId = "usr_acme_42";
 
     const project = await executeAction(ports, {
       actionType: "create_node",
-      input: { nodeType: "HomepageProject", title: "Acme 2026 Homepage" },
+      input: {
+        nodeType: "HomepageProject",
+        title: "Acme 2026 Homepage",
+        properties: { subject_id: tenantId },
+      },
       executorId: "agent-1",
       executorType: "Agent",
-      subjectId,
       projectId: TEST_PROJECT_ID,
     });
     expect(project.status).toBe("committed");
@@ -159,24 +162,23 @@ describe("homepage agent vertical slice", () => {
         nodeType: "DesignBrief",
         title: "Acme brief",
         content: "B2B SaaS, trustworthy tone, Korean + English",
+        properties: { subject_id: tenantId },
       },
       executorId: "agent-1",
       executorType: "Agent",
-      subjectId,
       projectId: TEST_PROJECT_ID,
     });
     expect(brief.status).toBe("committed");
 
     const projects = await ports.graph.queryNodes({
       nodeType: "HomepageProject",
-      subjectId,
     });
     const briefs = await ports.graph.queryNodes({
       nodeType: "DesignBrief",
-      subjectId,
     });
     expect(projects).toHaveLength(1);
     expect(briefs).toHaveLength(1);
+    expect(projects[0]?.properties.subject_id).toBe(tenantId);
 
     const link = await executeAction(ports, {
       actionType: "link_homepage_contains",
@@ -186,7 +188,6 @@ describe("homepage agent vertical slice", () => {
       },
       executorId: "agent-1",
       executorType: "Agent",
-      subjectId,
       projectId: TEST_PROJECT_ID,
     });
     expect(link.status).toBe("committed");
@@ -195,45 +196,45 @@ describe("homepage agent vertical slice", () => {
       nodeId: projects[0]!.id,
       direction: "outgoing",
       edgeType: "homepage_contains",
-      subjectId,
     });
     expect(edges).toHaveLength(1);
     expect(edges[0]?.targetNodeId).toBe(briefs[0]!.id);
   });
 
-  it("거부: link across different subjects", async () => {
+  it("통과: 다른 tenant property를 가진 노드끼리도 link 가능 (플랫폼 미강제)", async () => {
     const state = createInMemoryState();
     seedHomepageAgentInMemory(state);
     const ports = createInMemoryPorts(state);
 
     await executeAction(ports, {
       actionType: "create_node",
-      input: { nodeType: "HomepageProject", title: "A" },
+      input: {
+        nodeType: "HomepageProject",
+        title: "A",
+        properties: { subject_id: "usr_a" },
+      },
       executorId: "agent-1",
       executorType: "Agent",
-      subjectId: "usr_a",
       projectId: TEST_PROJECT_ID,
     });
     await executeAction(ports, {
       actionType: "create_node",
-      input: { nodeType: "DesignBrief", title: "B brief", content: "body" },
+      input: {
+        nodeType: "DesignBrief",
+        title: "B brief",
+        content: "body",
+        properties: { subject_id: "usr_b" },
+      },
       executorId: "agent-1",
       executorType: "Agent",
-      subjectId: "usr_b",
       projectId: TEST_PROJECT_ID,
     });
 
     const project = (
-      await ports.graph.queryNodes({
-        nodeType: "HomepageProject",
-        subjectId: "usr_a",
-      })
+      await ports.graph.queryNodes({ nodeType: "HomepageProject" })
     )[0]!;
     const brief = (
-      await ports.graph.queryNodes({
-        nodeType: "DesignBrief",
-        subjectId: "usr_b",
-      })
+      await ports.graph.queryNodes({ nodeType: "DesignBrief" })
     )[0]!;
 
     const link = await executeAction(ports, {
@@ -241,13 +242,9 @@ describe("homepage agent vertical slice", () => {
       input: { sourceNodeId: project.id, targetNodeId: brief.id },
       executorId: "agent-1",
       executorType: "Agent",
-      subjectId: "usr_a",
       projectId: TEST_PROJECT_ID,
     });
 
-    expect(link.status).toBe("rejected");
-    if (link.status === "rejected") {
-      expect(link.code).toBe("SUBJECT_MISMATCH");
-    }
+    expect(link.status).toBe("committed");
   });
 });

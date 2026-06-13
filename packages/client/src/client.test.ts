@@ -40,27 +40,6 @@ describe("createClient", () => {
     expect(capturedProjectId).toBe(TEST_PROJECT_ID);
   });
 
-  it("sends X-SSOTA-Subject-Id when subjectId is configured", async () => {
-    const payload = NodeCatalogListResponseSchema.parse({ data: [] });
-    let capturedSubjectId: string | undefined;
-
-    const fetch = mockFetch((url, init) => {
-      const headers = init?.headers as Record<string, string>;
-      capturedSubjectId = headers["X-SSOTA-Subject-Id"];
-      return new Response(JSON.stringify(payload), { status: 200 });
-    });
-
-    const ssota = createClient({
-      url: "http://localhost:3001/api/v1",
-      auth: { accessToken: "test-token" },
-      subjectId: "end-user-42",
-      fetch,
-    });
-
-    await ssota.catalog.listNodeTypes();
-    expect(capturedSubjectId).toBe("end-user-42");
-  });
-
   it("lists node types with response re-parsing", async () => {
     const payload = NodeCatalogListResponseSchema.parse({
       data: [

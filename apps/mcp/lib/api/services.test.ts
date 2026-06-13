@@ -14,13 +14,11 @@ describe("toExecuteActionInput", () => {
       "real-user-id",
       "Human",
       TEST_PROJECT_ID,
-      "subject-abc",
     );
 
     expect(input.executorId).toBe("real-user-id");
     expect(input.executorType).toBe("Human");
     expect(input.projectId).toBe(TEST_PROJECT_ID);
-    expect(input.subjectId).toBe("subject-abc");
     expect(ExecuteActionInputSchema.parse(input)).toEqual(input);
   });
 });

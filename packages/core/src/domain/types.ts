@@ -324,7 +324,6 @@ export interface GraphReadPort {
   queryNodes(params: {
     nodeType?: string;
     lifecycleStatus?: LifecycleStatus;
-    subjectId?: string;
     limit?: number;
     offset?: number;
   }): Promise<Node[]>;
@@ -332,7 +331,6 @@ export interface GraphReadPort {
     nodeId: string;
     direction: "outgoing" | "incoming" | "both";
     edgeType?: string;
-    subjectId?: string;
   }): Promise<Edge[]>;
   getEdgeCatalogEntry(edgeType: string): Promise<EdgeCatalogEntry | null>;
 }

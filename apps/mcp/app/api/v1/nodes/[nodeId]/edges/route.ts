@@ -18,7 +18,6 @@ export async function GET(
     const data = await traverseEdges(ctx.projectId, {
       ...parsed.data,
       nodeId,
-      subjectId: ctx.subjectId,
     });
     return jsonOk(EdgeListResponseSchema.parse({ data }).data);
   });

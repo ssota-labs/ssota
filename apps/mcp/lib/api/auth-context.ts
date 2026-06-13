@@ -2,13 +2,11 @@ import type { JWTPayload } from "jose";
 import type { ExecutorType } from "@ssota/contracts";
 import { verifyBearerToken, type AuthUser } from "@/lib/auth";
 import { resolveProjectId } from "@/lib/project-context";
-import { resolveSubjectId } from "@/lib/subject-context";
 
 export interface AuthContext {
   user: AuthUser;
   executorType: ExecutorType;
   projectId: string;
-  subjectId?: string;
 }
 
 /** JWT 클레임에서 executorType을 서버가 도출한다 (클라이언트 주장 무시). */
@@ -49,12 +47,5 @@ export async function requireAuthContext(
     }
   }
 
-  let subjectId: string | undefined;
-  try {
-    subjectId = resolveSubjectId(request);
-  } catch {
-    return null;
-  }
-
-  return { user, executorType, projectId, subjectId };
+  return { user, executorType, projectId };
 }

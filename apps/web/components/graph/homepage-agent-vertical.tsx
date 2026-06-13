@@ -83,7 +83,7 @@ export async function HomepageAgentVerticalView({
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2 text-sm text-muted-foreground">
           <Badge variant="outline">BFF: examples/embedder-bff</Badge>
-          <Badge variant="outline">Header: X-SSOTA-Subject-Id</Badge>
+          <Badge variant="outline">BFF → properties.subject_id</Badge>
           <Badge variant="outline">RLS: embedder Supabase</Badge>
         </CardContent>
       </Card>

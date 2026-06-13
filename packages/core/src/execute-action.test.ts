@@ -657,7 +657,7 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
   });
 });
 
-function seedSubjectScopedProjectCatalog(
+function seedProjectCatalog(
   state: ReturnType<typeof createInMemoryState>,
 ): void {
   seedTestCatalog(state);
@@ -674,15 +674,9 @@ function seedSubjectScopedProjectCatalog(
       Archived: ["Active"],
       Deleted: [],
     },
-    contentGuide: "Tenant-scoped project",
+    contentGuide: "Execution bundle",
     propertySchema: {
       title: { valueType: "string", constraints: { maxLength: 500 }, required: true, system: true },
-      subject_id: {
-        valueType: "string",
-        constraints: { minLength: 1 },
-        required: true,
-        system: false,
-      },
     },
     allowedActionRefs: [],
   });
@@ -693,161 +687,55 @@ function seedSubjectScopedProjectCatalog(
     typicalValues: { stateMachine: "project" },
     allowedMutations: ["update_properties"],
   });
-  state.permissions.push(
-    {
-      actionType: "create_node",
-      nodeType: "Project",
-      propertyKey: "title",
-      operation: "create",
-      permissionType: "allow",
-      valueConstraint: null,
-      requiresHumanGate: false,
-      status: "active",
-    },
-    {
-      actionType: "create_node",
-      nodeType: "Project",
-      propertyKey: "subject_id",
-      operation: "create",
-      permissionType: "allow",
-      valueConstraint: null,
-      requiresHumanGate: false,
-      status: "active",
-    },
-  );
+  state.permissions.push({
+    actionType: "create_node",
+    nodeType: "Project",
+    propertyKey: "title",
+    operation: "create",
+    permissionType: "allow",
+    valueConstraint: null,
+    requiresHumanGate: false,
+    status: "active",
+  });
 }
 
-describe("executeAction — subject_id tenancy", () => {
-  it("거부: subject-scoped create without subjectId context", async () => {
+describe("executeAction — tenant property in input", () => {
+  it("통과: create_node에 properties.tenant_id를 넣으면 커밋", async () => {
     const state = createInMemoryState();
-    seedSubjectScopedProjectCatalog(state);
-    const ports = createInMemoryPorts(state);
-
-    const result = await executeAction(ports, {
+    seedProjectCatalog(state);
+    state.nodeCatalog.get("Project")!.propertySchema.tenant_id = {
+      valueType: "string",
+      constraints: { minLength: 1 },
+      required: false,
+      system: false,
+    };
+    state.permissions.push({
       actionType: "create_node",
-      input: { nodeType: "Project", title: "Acme homepage" },
-      executorId: "agent-1",
-      executorType: "Agent",
-      projectId: TEST_PROJECT_ID,
+      nodeType: "Project",
+      propertyKey: "tenant_id",
+      operation: "create",
+      permissionType: "allow",
+      valueConstraint: null,
+      requiresHumanGate: false,
+      status: "active",
     });
-
-    expect(result.status).toBe("rejected");
-    if (result.status === "rejected") {
-      expect(result.code).toBe("SUBJECT_REQUIRED");
-    }
-  });
-
-  it("통과: subjectId 주입 + create_node(Project) 커밋", async () => {
-    const state = createInMemoryState();
-    seedSubjectScopedProjectCatalog(state);
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
       actionType: "create_node",
-      input: { nodeType: "Project", title: "Acme homepage" },
+      input: {
+        nodeType: "Project",
+        title: "Acme homepage",
+        properties: { tenant_id: "usr_acme_42" },
+      },
       executorId: "agent-1",
       executorType: "Agent",
-      subjectId: "usr_acme_42",
       projectId: TEST_PROJECT_ID,
     });
 
     expect(result.status).toBe("committed");
-    const nodes = await ports.graph.queryNodes({
-      nodeType: "Project",
-      subjectId: "usr_acme_42",
-    });
-    expect(nodes).toHaveLength(1);
-    expect(nodes[0]?.properties.subject_id).toBe("usr_acme_42");
-  });
-
-  it("거부: input subject_id가 context와 불일치", async () => {
-    const state = createInMemoryState();
-    seedSubjectScopedProjectCatalog(state);
-    const ports = createInMemoryPorts(state);
-
-    const result = await executeAction(ports, {
-      actionType: "create_node",
-      input: { nodeType: "Project", title: "X", subject_id: "usr_other" },
-      executorId: "agent-1",
-      executorType: "Agent",
-      subjectId: "usr_acme_42",
-      projectId: TEST_PROJECT_ID,
-    });
-
-    expect(result.status).toBe("rejected");
-    if (result.status === "rejected") {
-      expect(result.code).toBe("SUBJECT_MISMATCH");
-    }
-  });
-
-  it("거부: 다른 subject 노드 update", async () => {
-    const state = createInMemoryState();
-    seedSubjectScopedProjectCatalog(state);
-    const node = createTestNode({
-      nodeType: "Project",
-      properties: { title: "Owned", subject_id: "usr_beta" },
-    });
-    state.nodes.set(node.id, node);
-    state.actionCatalog.set("update_project_title", {
-      actionType: "update_project_title",
-      slug: toCatalogSlug("update_project_title"),
-      label: toCatalogLabel("update_project_title"),
-      scope: { kind: "node_type", nodeType: "Project" },
-      preconditions: { requiresExistingNode: true, requiredFields: ["nodeId", "title"] },
-      effects: [
-        {
-          kind: "update_node",
-          nodeId: "",
-          patch: { properties: {} },
-        },
-      ],
-      executor: "Agent",
-      allowedLifecycleTransitions: {},
-      failureMode: "reject",
-      idempotencyRule: null,
-      logPayloadSchema: {},
-    });
-    const ports = createInMemoryPorts(state);
-
-    const result = await executeAction(ports, {
-      actionType: "update_project_title",
-      input: { nodeId: node.id, title: "Hijacked" },
-      executorId: "agent-1",
-      executorType: "Agent",
-      subjectId: "usr_acme_42",
-      projectId: TEST_PROJECT_ID,
-    });
-
-    expect(result.status).toBe("rejected");
-    if (result.status === "rejected") {
-      expect(result.code).toBe("SUBJECT_MISMATCH");
-    }
-  });
-
-  it("query_nodes: subjectId 필터 격리", async () => {
-    const state = createInMemoryState();
-    seedSubjectScopedProjectCatalog(state);
-    state.nodes.set(
-      "a",
-      createTestNode({
-        id: "a",
-        nodeType: "Project",
-        properties: { subject_id: "usr_a" },
-      }),
-    );
-    state.nodes.set(
-      "b",
-      createTestNode({
-        id: "b",
-        nodeType: "Project",
-        properties: { subject_id: "usr_b" },
-      }),
-    );
-    const ports = createInMemoryPorts(state);
-
-    const aNodes = await ports.graph.queryNodes({ subjectId: "usr_a" });
-    expect(aNodes).toHaveLength(1);
-    expect(aNodes[0]?.id).toBe("a");
+    const nodes = await ports.graph.queryNodes({ nodeType: "Project" });
+    expect(nodes[0]?.properties.tenant_id).toBe("usr_acme_42");
   });
 });
 
@@ -856,11 +744,11 @@ const OTHER_PROJECT_ID = "00000000-0000-4000-8000-000000000099";
 describe("executeAction — project_id tenancy", () => {
   it("거부: 다른 project 노드 update (scoped ports는 노드를 찾지 못함)", async () => {
     const state = createInMemoryState();
-    seedSubjectScopedProjectCatalog(state);
+    seedProjectCatalog(state);
     const node = createTestNode({
       nodeType: "Project",
       projectId: OTHER_PROJECT_ID,
-      properties: { title: "Other project", subject_id: "usr_acme_42" },
+      properties: { title: "Other project" },
     });
     state.nodes.set(node.id, node);
     state.actionCatalog.set("update_project_title", {
@@ -889,7 +777,6 @@ describe("executeAction — project_id tenancy", () => {
       input: { nodeId: node.id, title: "Hijacked" },
       executorId: "agent-1",
       executorType: "Agent",
-      subjectId: "usr_acme_42",
       projectId: TEST_PROJECT_ID,
     });
 

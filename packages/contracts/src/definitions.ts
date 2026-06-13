@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-/** Tenant partition key on node instances — maps to the embedder's user id (opaque string). */
-export const SUBJECT_ID_PROPERTY_KEY = "subject_id" as const;
-
 /** SSOTA project scope — one catalog/graph space per agent domain. */
 export const PROJECT_ID_HEADER = "X-SSOTA-Project-Id" as const;
 
@@ -468,8 +465,6 @@ export const ExecuteActionInputSchema = z.object({
   idempotencyKey: z.string().optional(),
   /** Server-injected project scope — catalog and graph boundary. */
   projectId: z.string().uuid(),
-  /** Server-injected tenant scope (embedder user id). Omit for console/meta actions. */
-  subjectId: z.string().min(1).optional(),
 });
 
 export type ExecuteActionInput = z.infer<typeof ExecuteActionInputSchema>;
@@ -497,8 +492,6 @@ export type ExecuteActionResult = z.infer<typeof ExecuteActionResultSchema>;
 export const QueryNodesInputSchema = z.object({
   nodeType: z.string().optional(),
   lifecycleStatus: LifecycleStatusSchema.optional(),
-  /** Server-injected — filters nodes.properties.subject_id */
-  subjectId: z.string().min(1).optional(),
   limit: z.number().int().positive().max(100).default(20),
   offset: z.number().int().nonnegative().default(0),
 });
@@ -509,8 +502,6 @@ export const TraverseEdgesInputSchema = z.object({
   nodeId: z.string().uuid(),
   direction: z.enum(["outgoing", "incoming", "both"]).default("both"),
   edgeType: z.string().optional(),
-  /** Server-injected — rejects traverse when anchor node is outside subject */
-  subjectId: z.string().min(1).optional(),
 });
 
 export type TraverseEdgesInput = z.infer<typeof TraverseEdgesInputSchema>;

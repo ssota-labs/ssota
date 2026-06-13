@@ -84,12 +84,3 @@ export async function resolveProjectIdForTool(
 
   throw new Error("orgSlug and projectSlug are required for this tool");
 }
-
-export function readSubjectFromExtra(
-  extra: { authInfo?: AuthInfo } | undefined,
-): string | undefined {
-  const subjectId = extra?.authInfo?.extra?.subjectId;
-  return typeof subjectId === "string" && subjectId.length > 0
-    ? subjectId
-    : undefined;
-}

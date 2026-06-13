@@ -42,7 +42,7 @@ import {
   traverseGraphService,
 } from "@/lib/api/services";
 import { jsonContent } from "@/lib/mcp/json-content";
-import { readSubjectFromExtra } from "@/lib/mcp/project-scope";
+import { requireUserFromExtra } from "@/lib/mcp/project-scope";
 import { registerScopedProjectTool } from "@/lib/mcp/register-scoped-tool";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 
@@ -217,9 +217,8 @@ export function registerProjectTools(server: McpToolServer) {
         offset: z.number().int().nonnegative().optional(),
       },
     },
-    async ({ projectId, args, extra }) => {
-      const subjectId = readSubjectFromExtra(extra);
-      const parsed = QueryNodesInputSchema.parse({ ...args, subjectId });
+    async ({ projectId, args }) => {
+      const parsed = QueryNodesInputSchema.parse(args);
       return jsonContent(await queryNodes(projectId, parsed));
     },
   );
@@ -237,9 +236,8 @@ export function registerProjectTools(server: McpToolServer) {
         edgeType: z.string().optional(),
       },
     },
-    async ({ projectId, args, extra }) => {
-      const subjectId = readSubjectFromExtra(extra);
-      const parsed = TraverseEdgesInputSchema.parse({ ...args, subjectId });
+    async ({ projectId, args }) => {
+      const parsed = TraverseEdgesInputSchema.parse(args);
       return jsonContent(await traverseEdges(projectId, parsed));
     },
   );
@@ -326,7 +324,6 @@ export function registerProjectTools(server: McpToolServer) {
         };
       }
 
-      const subjectId = readSubjectFromExtra(extra);
       const parsed = ExecuteActionClientInputSchema.parse({
         actionType: args.actionType,
         input: args.input ?? {},
@@ -338,7 +335,6 @@ export function registerProjectTools(server: McpToolServer) {
         parsed,
         user.id,
         "Agent",
-        subjectId,
       );
       return jsonContent(result);
     },
