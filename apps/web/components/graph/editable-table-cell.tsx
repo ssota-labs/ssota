@@ -60,8 +60,8 @@ export function EditableTableCell({
       tabIndex={0}
       className={cn(
         "supabase-grid-cell relative flex h-8 min-w-[132px] max-w-[280px] items-center px-0",
-        isActive && !isEditing && "ring-2 ring-inset ring-primary/80 z-[1]",
-        isEditing && "ring-2 ring-inset ring-primary z-[2] bg-background",
+        isActive && !isEditing && "supabase-grid-cell-active",
+        isEditing && "supabase-grid-cell-editing",
         isPending && "opacity-70",
       )}
       onClick={(event) => {

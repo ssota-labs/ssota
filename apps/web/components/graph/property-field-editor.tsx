@@ -25,7 +25,7 @@ type PropertyFieldEditorProps = {
   onChange: (value: unknown) => void;
   onCommit?: (value: unknown) => void;
   disabled?: boolean;
-  variant?: "panel" | "inline";
+  variant?: "panel" | "inline" | "supabase";
   autoFocus?: boolean;
 };
 
@@ -49,6 +49,7 @@ function PropertyFieldEditorInner({
 }: PropertyFieldEditorProps) {
   const [draft, setDraft] = useState<string>(() => serializeDraft(value));
   const compact = variant === "inline";
+  const supabase = variant === "supabase";
 
   function commit(nextValue: unknown) {
     onChange(nextValue);
@@ -83,7 +84,7 @@ function PropertyFieldEditorInner({
         autoFocus={autoFocus}
         className={cn(
           "w-full border-0 bg-transparent shadow-none focus-visible:ring-0",
-          compact ? "h-8 text-xs" : "h-9 text-sm",
+          compact ? "h-8 text-xs" : supabase ? "h-auto min-h-0 py-0 text-[0.8125rem]" : "h-9 text-sm",
         )}
         onChange={(event) => {
           const next = event.target.value;
@@ -109,7 +110,11 @@ function PropertyFieldEditorInner({
         autoFocus={autoFocus}
         className={cn(
           "border-0 bg-transparent shadow-none focus-visible:ring-0",
-          compact ? "h-8 rounded-none px-2 text-xs" : "h-9 text-sm",
+          compact
+            ? "h-8 rounded-none px-2 text-xs"
+            : supabase
+              ? "h-auto min-h-0 px-0 py-0 text-[0.8125rem]"
+              : "h-9 text-sm",
         )}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => {
@@ -128,14 +133,17 @@ function PropertyFieldEditorInner({
     );
   }
 
-  if (isTextAreaField(field) && variant === "panel") {
+  if (isTextAreaField(field) && (variant === "panel" || supabase)) {
     return (
       <Textarea
         value={draft}
         disabled={disabled}
         autoFocus={autoFocus}
-        rows={4}
-        className="min-h-24 resize-y border-0 bg-transparent text-sm shadow-none focus-visible:ring-0"
+        rows={supabase ? 3 : 4}
+        className={cn(
+          "resize-y border-0 bg-transparent shadow-none focus-visible:ring-0",
+          supabase ? "min-h-16 text-[0.8125rem]" : "min-h-24 text-sm",
+        )}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => commit(draft.trim() === "" && !field.required ? null : draft)}
       />
@@ -149,7 +157,11 @@ function PropertyFieldEditorInner({
       autoFocus={autoFocus}
       className={cn(
         "border-0 bg-transparent shadow-none focus-visible:ring-0",
-        compact ? "h-8 rounded-none px-2 text-xs" : "h-9 text-sm",
+        compact
+          ? "h-8 rounded-none px-2 text-xs"
+          : supabase
+            ? "h-auto min-h-0 px-0 py-0 text-[0.8125rem]"
+            : "h-9 text-sm",
       )}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={() => commit(draft.trim() === "" && !field.required ? null : draft)}

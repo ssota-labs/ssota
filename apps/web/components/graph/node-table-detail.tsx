@@ -172,6 +172,7 @@ export async function NodeTableDetail({
         <NodeInstancesView
           projectId={projectId}
           nodeSlug={slug}
+          nodeTypeLabel={displayNodeCatalogLabel(entry)}
           rows={tableRows}
           propertyColumns={propertyColumns}
           propertyFields={propertyFields}

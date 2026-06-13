@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@ssota/ui/components/ui/badge";
+import { Checkbox } from "@ssota/ui/components/ui/checkbox";
 import { DataTable } from "@ssota/ui/components/ui/data-table";
 import { DataTableColumnHeader } from "@ssota/ui/components/ui/data-table-column-header";
 import { EditableTableCell } from "@/components/graph/editable-table-cell";
@@ -33,7 +34,9 @@ type NodeRowsDataTableProps = {
   propertyColumns: PropertyColumn[];
   propertyFields: PropertyFieldDefinition[];
   toolbar?: React.ReactNode;
-  onOpenDetail?: (row: NodeRowRecord) => void;
+  selectedRowId?: string | null;
+  filterPlaceholder?: string;
+  onSelectRow?: (row: NodeRowRecord) => void;
   projectId?: string;
   nodeSlug?: string;
   onRowChange?: (row: NodeRowRecord) => void;
@@ -45,7 +48,9 @@ export function NodeRowsDataTable({
   propertyColumns,
   propertyFields,
   toolbar,
-  onOpenDetail,
+  selectedRowId = null,
+  filterPlaceholder = "Filter rows…",
+  onSelectRow,
   projectId,
   nodeSlug,
   onRowChange,
@@ -70,13 +75,35 @@ export function NodeRowsDataTable({
 
   const columns: ColumnDef<NodeRowRecord>[] = [
     {
+      id: "select",
+      header: () => <span className="sr-only">Select row</span>,
+      cell: ({ row }) => (
+        <div className="supabase-grid-cell flex h-8 items-center justify-center px-0">
+          <Checkbox
+            checked={selectedRowId === row.original.id}
+            aria-label={`Select row ${row.original.id}`}
+            className="border-[var(--sb-border-strong)] data-[state=checked]:border-[var(--sb-green)] data-[state=checked]:bg-[var(--sb-green)]"
+            onCheckedChange={() => onSelectRow?.(row.original)}
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
       accessorKey: "id",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="id" />,
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title="id" subtitle="uuid" />
+      ),
       cell: ({ row }) => (
         <button
           type="button"
-          className="supabase-grid-cell flex h-8 w-full items-center px-2 text-left font-mono text-xs text-primary hover:underline"
-          onClick={() => onOpenDetail?.(row.original)}
+          className="supabase-grid-cell flex h-8 w-full items-center px-2 text-left font-mono text-xs text-[var(--sb-green)] hover:underline"
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelectRow?.(row.original);
+          }}
         >
           {row.original.id.slice(0, 8)}
         </button>
@@ -85,11 +112,14 @@ export function NodeRowsDataTable({
     {
       accessorKey: "lifecycleStatus",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="lifecycle" />
+        <DataTableColumnHeader column={column} title="lifecycle_status" subtitle="text" />
       ),
       cell: ({ row }) => (
         <div className="supabase-grid-cell flex h-8 items-center px-2">
-          <Badge variant="outline" className="text-[10px]">
+          <Badge
+            variant="outline"
+            className="border-[var(--sb-border-strong)] bg-transparent text-[10px] text-[var(--sb-text)]"
+          >
             {row.original.lifecycleStatus}
           </Badge>
         </div>
@@ -102,7 +132,7 @@ export function NodeRowsDataTable({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title={property.label}
+            title={property.key}
             subtitle={property.valueType}
           />
         ),
@@ -161,22 +191,22 @@ export function NodeRowsDataTable({
     {
       accessorKey: "content",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="content" />
+        <DataTableColumnHeader column={column} title="content" subtitle="text" />
       ),
       cell: ({ row }) => (
-        <div className="supabase-grid-cell flex h-8 max-w-xs items-center px-2 text-xs text-muted-foreground">
-          <span className="truncate">{row.original.content ?? "-"}</span>
+        <div className="supabase-grid-cell flex h-8 max-w-xs items-center px-2 text-xs text-[var(--sb-muted)]">
+          <span className="truncate">{row.original.content ?? "NULL"}</span>
         </div>
       ),
     },
     {
       accessorKey: "updatedAt",
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="updated" />
+        <DataTableColumnHeader column={column} title="updated_at" subtitle="timestamptz" />
       ),
       cell: ({ row }) => (
-        <div className="supabase-grid-cell flex h-8 items-center px-2 text-xs text-muted-foreground">
-          {row.original.updatedAt.slice(0, 10)}
+        <div className="supabase-grid-cell flex h-8 items-center px-2 text-xs text-[var(--sb-muted)]">
+          {row.original.updatedAt.slice(0, 19).replace("T", " ")}
         </div>
       ),
     },
@@ -194,10 +224,14 @@ export function NodeRowsDataTable({
         columns={columns}
         data={rows}
         filterColumn="id"
-        filterPlaceholder="Filter rows..."
+        filterPlaceholder={filterPlaceholder}
         toolbar={toolbar}
         emptyMessage={emptyMessage}
         className="h-full"
+        getRowId={(row) => row.id}
+        selectedRowId={selectedRowId}
+        headerClassName="bg-[var(--sb-surface)] backdrop-blur-none"
+        onRowClick={(row) => onSelectRow?.(row)}
       />
     </div>
   );
