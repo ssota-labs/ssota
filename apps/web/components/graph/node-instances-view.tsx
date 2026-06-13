@@ -167,7 +167,7 @@ export function NodeInstancesView({
           if (!open) setSelectedId(null);
         }}
       >
-        <SheetContent className="inset-y-0 right-0 h-full w-[96vw] max-w-[1440px] border-l p-0 sm:max-w-none">
+        <SheetContent className="inset-y-0 right-0 h-full !w-[96vw] !max-w-[1440px] border-l p-0 sm:!max-w-[1440px]">
           {selected ? (
             <div className="flex h-full min-h-0 flex-col">
               <SheetHeader className="shrink-0 border-b px-6 py-4">
