@@ -26,6 +26,8 @@ type GraphCatalogExplorerProps = {
   showKindSwitch?: boolean;
 };
 
+const EMPTY_CATALOG_ITEMS: { slug: string; label: string; kind: GraphCatalogKind }[] = [];
+
 function kindFromPathname(pathname: string): GraphCatalogKind {
   if (pathname.includes("/graph/edges")) return "edge";
   if (pathname.includes("/graph/actions")) return "action";
@@ -58,12 +60,14 @@ export function GraphCatalogExplorer({
   const [query, setQuery] = useState("");
 
   const kind = kindProp ?? kindFromPathname(pathname);
-  const items =
-    kind === "node"
-      ? (catalog?.nodeTypes ?? [])
-      : kind === "edge"
-        ? (catalog?.edgeTypes ?? [])
-        : (catalog?.actionTypes ?? []);
+  const nodeItems = catalog?.nodeTypes ?? EMPTY_CATALOG_ITEMS;
+  const edgeItems = catalog?.edgeTypes ?? EMPTY_CATALOG_ITEMS;
+  const actionItems = catalog?.actionTypes ?? EMPTY_CATALOG_ITEMS;
+  const items = useMemo(() => {
+    if (kind === "node") return nodeItems;
+    if (kind === "edge") return edgeItems;
+    return actionItems;
+  }, [actionItems, edgeItems, kind, nodeItems]);
 
   const selectedSlug =
     kind === "action" ? actionSlugFromPathname(pathname) : searchParams.get("table");
