@@ -14,8 +14,8 @@ test.describe("SSOTA Console", () => {
     await gotoProject(page, "graph/nodes?table=document");
     await expect(page.getByText("Choose a graph object", { exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Table" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Schema" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Schema", exact: true })).toBeVisible();
     await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
   });
 
@@ -73,7 +73,7 @@ test.describe("SSOTA Console", () => {
   test("smoke: profile menu opens", async ({ page }) => {
     await loginAsSmoke(page);
     await page.getByRole("button", { name: "Signed in as" }).click();
-    await expect(page.getByText("smoke@ssota.test")).toBeVisible();
+    await expect(page.getByText("smoke@ssota.test").last()).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
   });
 
