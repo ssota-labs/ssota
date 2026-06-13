@@ -9,7 +9,7 @@ import {
   type GraphFlowEdge,
   type GraphFlowNode,
 } from "@/components/graph/graph-flow-canvas";
-import type { InstanceGraphRelation } from "@/components/graph/node-instances-view";
+import type { InstanceGraphRelation } from "@/components/graph/node-instances-view.types";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Tabs,
@@ -23,7 +23,6 @@ import {
   type PropertyFieldDefinition,
 } from "@/lib/graph/property-field-types";
 import { formatTableCell } from "@/lib/graph/format-table-cell";
-import { cn } from "@ssota/ui/lib/utils";
 
 type InstanceRowInspectorProps = {
   projectId: string;
@@ -117,9 +116,11 @@ export function InstanceRowInspector({
   }, [queueChanges]);
 
   return (
-    <aside className="supabase-row-inspector flex h-full min-h-0 w-[min(42vw,560px)] shrink-0 flex-col">
-      <div className="supabase-row-inspector-header shrink-0">
-        Update row from <strong className="font-semibold">{nodeTypeLabel}</strong>
+    <div className="flex h-full min-h-0 flex-col bg-background">
+      <div className="shrink-0 border-b px-6 py-4 pr-14">
+        <h2 className="text-sm font-medium">
+          Update row from <span className="font-semibold">{nodeTypeLabel}</span>
+        </h2>
       </div>
 
       <Tabs
@@ -127,7 +128,7 @@ export function InstanceRowInspector({
         onValueChange={(value) => setTab(value as "fields" | "relations")}
         className="flex min-h-0 flex-1 flex-col gap-0"
       >
-        <div className="supabase-row-inspector-tabs shrink-0 py-1">
+        <div className="shrink-0 border-b px-6 py-1">
           <TabsList variant="line" className="bg-transparent">
             <TabsTrigger value="fields">Fields</TabsTrigger>
             <TabsTrigger value="relations">
@@ -159,7 +160,7 @@ export function InstanceRowInspector({
           <ReadOnlyField label="updated_at" type="timestamptz" value={updatedAt} />
         </TabsContent>
 
-        <TabsContent value="relations" className="min-h-0 flex-1 p-4">
+        <TabsContent value="relations" className="min-h-0 flex-1 p-6">
           <GraphFlowCanvas
             nodes={flow.nodes}
             edges={flow.edges}
@@ -169,18 +170,17 @@ export function InstanceRowInspector({
       </Tabs>
 
       {error ? (
-        <div className="shrink-0 border-t border-destructive/40 bg-destructive/10 px-5 py-2 text-xs text-red-400">
+        <div className="shrink-0 border-t border-destructive/30 bg-destructive/5 px-6 py-2 text-xs text-destructive">
           {error}
         </div>
       ) : null}
 
-      <div className="supabase-inspector-footer shrink-0 flex items-center justify-end gap-2">
+      <div className="shrink-0 flex items-center justify-end gap-2 border-t bg-background px-6 py-3">
         <Button type="button" variant="ghost" onClick={onClose} disabled={isPending}>
           Cancel
         </Button>
         <Button
           type="button"
-          className="supabase-btn-queue"
           disabled={!hasChanges || isPending}
           onClick={queueChanges}
         >
@@ -188,7 +188,7 @@ export function InstanceRowInspector({
           <span className="ml-2 text-[10px] opacity-70">⌘↵</span>
         </Button>
       </div>
-    </aside>
+    </div>
   );
 }
 
@@ -202,12 +202,9 @@ function ReadOnlyField({
   value: string;
 }) {
   return (
-    <div className="supabase-field-row">
-      <div>
-        <div className="supabase-field-label">{label}</div>
-        <div className="supabase-field-type">{type}</div>
-      </div>
-      <div className="supabase-field-input opacity-80">{value}</div>
+    <div className="instance-field-row">
+      <FieldMeta label={label} type={type} />
+      <div className="min-w-0 py-1.5 font-mono text-sm text-muted-foreground">{value}</div>
     </div>
   );
 }
@@ -228,66 +225,52 @@ function EditableFieldRow({
   const json = isJsonField(field, value);
 
   return (
-    <div className="supabase-field-row">
-      <div>
-        <div className="supabase-field-label">{field.key}</div>
-        <div className="supabase-field-type">{supabaseTypeLabel(field)}</div>
-      </div>
+    <div className="instance-field-row">
+      <FieldMeta label={field.key} type={supabaseTypeLabel(field)} />
       {json && !editingJson ? (
-        <div className="supabase-field-input supabase-json-preview">
-          <div className="supabase-json-value">
-            {formatTableCell(value)}
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-7 shrink-0 border-[var(--sb-border-strong)] bg-transparent text-xs text-[var(--sb-text)]"
-            onClick={onToggleJsonEdit}
-          >
+        <div className="instance-field-control flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 break-all font-mono text-sm">{formatTableCell(value)}</div>
+          <Button type="button" variant="outline" size="sm" className="h-7 shrink-0" onClick={onToggleJsonEdit}>
             <PencilSimpleIcon className="mr-1 size-3.5" />
             Edit
           </Button>
         </div>
+      ) : json && editingJson ? (
+        <div className="instance-field-control">
+          <textarea
+            className="min-h-28 w-full resize-y bg-transparent font-mono text-sm outline-none"
+            defaultValue={JSON.stringify(value ?? null, null, 2)}
+            rows={6}
+            onBlur={(event) => {
+              try {
+                const parsed = JSON.parse(event.target.value) as unknown;
+                onChange(parsed);
+                onToggleJsonEdit();
+              } catch {
+                /* keep editing on invalid JSON */
+              }
+            }}
+          />
+          <div className="mt-2 flex justify-end">
+            <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onToggleJsonEdit}>
+              Done
+            </Button>
+          </div>
+        </div>
       ) : (
-        <div className={cn("supabase-field-input", json && editingJson && "pb-2")}>
-          {json && editingJson ? (
-            <>
-              <textarea
-                defaultValue={JSON.stringify(value ?? null, null, 2)}
-                rows={5}
-                onBlur={(event) => {
-                  try {
-                    const parsed = JSON.parse(event.target.value) as unknown;
-                    onChange(parsed);
-                    onToggleJsonEdit();
-                  } catch {
-                    /* keep editing on invalid JSON */
-                  }
-                }}
-              />
-              <div className="mt-2 flex justify-end">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={onToggleJsonEdit}
-                >
-                  Done
-                </Button>
-              </div>
-            </>
-          ) : (
-            <PropertyFieldEditor
-              field={field}
-              value={value}
-              variant="supabase"
-              onChange={onChange}
-            />
-          )}
+        <div className="instance-field-control">
+          <PropertyFieldEditor field={field} value={value} variant="panel" onChange={onChange} />
         </div>
       )}
+    </div>
+  );
+}
+
+function FieldMeta({ label, type }: { label: string; type: string }) {
+  return (
+    <div className="pt-0.5">
+      <div className="text-sm font-medium text-foreground">{label}</div>
+      <div className="mt-0.5 font-mono text-[11px] lowercase text-muted-foreground">{type}</div>
     </div>
   );
 }

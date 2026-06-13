@@ -59,9 +59,9 @@ export function EditableTableCell({
       role="gridcell"
       tabIndex={0}
       className={cn(
-        "supabase-grid-cell relative flex h-8 min-w-[132px] max-w-[280px] items-center px-0",
-        isActive && !isEditing && "supabase-grid-cell-active",
-        isEditing && "supabase-grid-cell-editing",
+        "instance-grid-cell relative flex h-8 min-w-[132px] max-w-[280px] items-center px-0",
+        isActive && !isEditing && "instance-grid-cell-active",
+        isEditing && "instance-grid-cell-editing",
         isPending && "opacity-70",
       )}
       onClick={(event) => {

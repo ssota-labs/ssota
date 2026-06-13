@@ -1,29 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { InstanceRowInspector } from "@/components/graph/instance-row-inspector";
 import {
-  GraphFlowCanvas,
-  type GraphFlowEdge,
-  type GraphFlowNode,
-} from "./graph-flow-canvas";
+  Sheet,
+  SheetContent,
+} from "@ssota/ui/components/ui/sheet";
+import { InstanceRowInspector } from "@/components/graph/instance-row-inspector";
+import type { GraphFlowEdge, GraphFlowNode } from "./graph-flow-canvas";
 import {
   NodeRowsDataTable,
   type NodeRowRecord,
   type PropertyColumn,
 } from "./node-rows-data-table";
 import type { PropertyFieldDefinition } from "@/lib/graph/property-field-types";
+import type { InstanceGraphRelation } from "./node-instances-view.types";
 
-export type InstanceGraphRelation = {
-  id: string;
-  edgeType: string;
-  sourceNodeId: string;
-  sourceLabel: string;
-  sourceNodeType: string;
-  targetNodeId: string;
-  targetLabel: string;
-  targetNodeType: string;
-};
+export type { InstanceGraphRelation } from "./node-instances-view.types";
 
 type NodeInstancesViewProps = {
   projectId: string;
@@ -72,7 +64,7 @@ export function NodeInstancesView({
     selectedRelations,
   ]);
 
-  function selectRow(row: NodeRowRecord) {
+  function openDetail(row: NodeRowRecord) {
     setSelectedId(row.id);
   }
 
@@ -93,8 +85,8 @@ export function NodeInstancesView({
     : "Filter rows…";
 
   return (
-    <div className="supabase-table-editor flex min-h-0 flex-1 overflow-hidden">
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+    <>
+      <div className="instance-grid-table flex min-h-0 flex-1 flex-col">
         <NodeRowsDataTable
           rows={mergedRows}
           propertyColumns={propertyColumns}
@@ -104,36 +96,48 @@ export function NodeInstancesView({
           nodeSlug={nodeSlug}
           selectedRowId={selectedId}
           filterPlaceholder={filterPlaceholder}
-          onSelectRow={selectRow}
+          onOpenDetail={openDetail}
           onRowChange={updateRow}
         />
       </div>
-      {selected ? (
-        <InstanceRowInspector
-          key={selected.id}
-          projectId={projectId}
-          nodeSlug={nodeSlug}
-          nodeTypeLabel={nodeTypeLabel}
-          nodeId={selected.id}
-          lifecycleStatus={selected.lifecycleStatus}
-          content={selected.content}
-          updatedAt={selected.updatedAt}
-          properties={selected.properties}
-          fields={propertyFields}
-          relations={selectedRelations}
-          flow={flow}
-          onClose={() => setSelectedId(null)}
-          onUpdated={updateSelectedProperties}
-        />
-      ) : null}
-    </div>
+      <Sheet
+        open={selectedId !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedId(null);
+        }}
+      >
+        <SheetContent
+          side="right"
+          className="inset-y-0 right-0 h-full w-full max-w-none border-l p-0 sm:max-w-none"
+        >
+          {selected ? (
+            <InstanceRowInspector
+              key={selected.id}
+              projectId={projectId}
+              nodeSlug={nodeSlug}
+              nodeTypeLabel={nodeTypeLabel}
+              nodeId={selected.id}
+              lifecycleStatus={selected.lifecycleStatus}
+              content={selected.content}
+              updatedAt={selected.updatedAt}
+              properties={selected.properties}
+              fields={propertyFields}
+              relations={selectedRelations}
+              flow={flow}
+              onClose={() => setSelectedId(null)}
+              onUpdated={updateSelectedProperties}
+            />
+          ) : null}
+        </SheetContent>
+      </Sheet>
+    </>
   );
 }
 
 function buildInstanceFlow(
   selected: NodeRowRecord | null,
   selectedRelations: InstanceGraphRelation[],
-): { nodes: GraphFlowNode[]; edges: GraphFlowEdge[] } {
+) {
   if (!selected) return { nodes: [], edges: [] };
 
   const nodes = new Map<string, GraphFlowNode>();

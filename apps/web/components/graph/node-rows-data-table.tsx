@@ -36,7 +36,7 @@ type NodeRowsDataTableProps = {
   toolbar?: React.ReactNode;
   selectedRowId?: string | null;
   filterPlaceholder?: string;
-  onSelectRow?: (row: NodeRowRecord) => void;
+  onOpenDetail?: (row: NodeRowRecord) => void;
   projectId?: string;
   nodeSlug?: string;
   onRowChange?: (row: NodeRowRecord) => void;
@@ -50,7 +50,7 @@ export function NodeRowsDataTable({
   toolbar,
   selectedRowId = null,
   filterPlaceholder = "Filter rows…",
-  onSelectRow,
+  onOpenDetail,
   projectId,
   nodeSlug,
   onRowChange,
@@ -78,12 +78,11 @@ export function NodeRowsDataTable({
       id: "select",
       header: () => <span className="sr-only">Select row</span>,
       cell: ({ row }) => (
-        <div className="supabase-grid-cell flex h-8 items-center justify-center px-0">
+        <div className="instance-grid-cell flex h-8 items-center justify-center px-0">
           <Checkbox
             checked={selectedRowId === row.original.id}
             aria-label={`Select row ${row.original.id}`}
-            className="border-[var(--sb-border-strong)] data-[state=checked]:border-[var(--sb-green)] data-[state=checked]:bg-[var(--sb-green)]"
-            onCheckedChange={() => onSelectRow?.(row.original)}
+            onCheckedChange={() => onOpenDetail?.(row.original)}
             onClick={(event) => event.stopPropagation()}
           />
         </div>
@@ -99,10 +98,10 @@ export function NodeRowsDataTable({
       cell: ({ row }) => (
         <button
           type="button"
-          className="supabase-grid-cell flex h-8 w-full items-center px-2 text-left font-mono text-xs text-[var(--sb-green)] hover:underline"
+          className="instance-grid-cell flex h-8 w-full items-center px-2 text-left font-mono text-xs text-primary hover:underline"
           onClick={(event) => {
             event.stopPropagation();
-            onSelectRow?.(row.original);
+            onOpenDetail?.(row.original);
           }}
         >
           {row.original.id.slice(0, 8)}
@@ -115,11 +114,8 @@ export function NodeRowsDataTable({
         <DataTableColumnHeader column={column} title="lifecycle_status" subtitle="text" />
       ),
       cell: ({ row }) => (
-        <div className="supabase-grid-cell flex h-8 items-center px-2">
-          <Badge
-            variant="outline"
-            className="border-[var(--sb-border-strong)] bg-transparent text-[10px] text-[var(--sb-text)]"
-          >
+        <div className="instance-grid-cell flex h-8 items-center px-2">
+          <Badge variant="outline" className="text-[10px]">
             {row.original.lifecycleStatus}
           </Badge>
         </div>
@@ -152,7 +148,7 @@ export function NodeRowsDataTable({
 
           if (!canEdit) {
             return (
-              <div className="supabase-grid-cell flex h-8 items-center px-2 text-xs">
+              <div className="instance-grid-cell flex h-8 items-center px-2 text-xs">
                 {String(row.original.properties[property.key] ?? "-")}
               </div>
             );
@@ -194,7 +190,7 @@ export function NodeRowsDataTable({
         <DataTableColumnHeader column={column} title="content" subtitle="text" />
       ),
       cell: ({ row }) => (
-        <div className="supabase-grid-cell flex h-8 max-w-xs items-center px-2 text-xs text-[var(--sb-muted)]">
+        <div className="instance-grid-cell flex h-8 max-w-xs items-center px-2 text-xs text-muted-foreground">
           <span className="truncate">{row.original.content ?? "NULL"}</span>
         </div>
       ),
@@ -205,7 +201,7 @@ export function NodeRowsDataTable({
         <DataTableColumnHeader column={column} title="updated_at" subtitle="timestamptz" />
       ),
       cell: ({ row }) => (
-        <div className="supabase-grid-cell flex h-8 items-center px-2 text-xs text-[var(--sb-muted)]">
+        <div className="instance-grid-cell flex h-8 items-center px-2 text-xs text-muted-foreground">
           {row.original.updatedAt.slice(0, 19).replace("T", " ")}
         </div>
       ),
@@ -214,7 +210,7 @@ export function NodeRowsDataTable({
 
   return (
     <div
-      className={cn("supabase-grid-table flex min-h-0 flex-1 flex-col")}
+      className={cn("instance-grid-table-inner flex min-h-0 flex-1 flex-col")}
       onClick={() => {
         setActiveCell(null);
         setEditingCell(null);
@@ -230,8 +226,8 @@ export function NodeRowsDataTable({
         className="h-full"
         getRowId={(row) => row.id}
         selectedRowId={selectedRowId}
-        headerClassName="bg-[var(--sb-surface)] backdrop-blur-none"
-        onRowClick={(row) => onSelectRow?.(row)}
+        headerClassName="bg-muted/80 backdrop-blur-none"
+        onRowClick={(row) => onOpenDetail?.(row)}
       />
     </div>
   );
