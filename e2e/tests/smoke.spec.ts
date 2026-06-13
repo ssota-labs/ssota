@@ -16,7 +16,7 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Schema", exact: true })).toBeVisible();
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page.getByPlaceholder(/Filter by id/)).toBeVisible();
   });
 
   test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
@@ -59,7 +59,7 @@ test.describe("SSOTA Console", () => {
   test("smoke: project selector preserves current route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "graph/nodes?table=document");
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page.getByPlaceholder(/Filter by id/)).toBeVisible();
 
     await page.getByRole("button", { name: "SSOTA Dev" }).click();
     await page.getByRole("menuitem", { name: "SSOTA Dev" }).click();
@@ -67,7 +67,7 @@ test.describe("SSOTA Console", () => {
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
     );
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page.getByPlaceholder(/Filter by id/)).toBeVisible();
   });
 
   test("smoke: profile menu opens", async ({ page }) => {
@@ -83,7 +83,7 @@ test.describe("SSOTA Console", () => {
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
     );
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page.getByPlaceholder(/Filter by id/)).toBeVisible();
   });
 
   test("smoke: /studio redirect", async ({ page }) => {
