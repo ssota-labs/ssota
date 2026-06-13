@@ -59,7 +59,7 @@ export default async function ProjectInstructionsPage({
     instructions[0] ??
     null;
   const activeTab = tab === "flow" || tab === "runs" ? tab : "instruction";
-  const baseHref = projectPath({ orgSlug, projectSlug }, "instructions");
+  const baseHref = projectPath({ orgSlug, projectSlug }, "workflows");
   const selectedHref = selected
     ? `${baseHref}?workflow=${encodeURIComponent(selected.slug)}`
     : baseHref;

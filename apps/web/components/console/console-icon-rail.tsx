@@ -24,7 +24,7 @@ import { useProjectContext } from "./project-context";
 const navItems = [
   { segment: "", labelKey: "nav.projectHome", icon: HouseIcon },
   { segment: "graph", labelKey: "nav.graph", icon: GraphIcon },
-  { segment: "instructions", labelKey: "nav.instruction", icon: BookOpenIcon },
+  { segment: "workflows", labelKey: "nav.instruction", icon: BookOpenIcon },
   { segment: "gates", labelKey: "nav.gates", icon: ShieldCheckIcon },
   { segment: "impact", labelKey: "nav.impact", icon: ArrowsClockwiseIcon },
   { segment: "log", labelKey: "nav.actionLog", icon: ListBulletsIcon },

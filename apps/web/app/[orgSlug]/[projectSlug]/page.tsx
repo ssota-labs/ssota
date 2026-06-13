@@ -52,7 +52,7 @@ export default async function ProjectHomePage({
     {
       title: "Workflows",
       description: "Agent instructions with flow canvas and run history",
-      href: projectPath(ctx, "instructions"),
+      href: projectPath(ctx, "workflows"),
       count: instructions.length,
     },
     {

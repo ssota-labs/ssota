@@ -32,7 +32,7 @@ test.describe("SSOTA Console", () => {
 
   test("smoke: Workflows route", async ({ page }) => {
     await loginAsSmoke(page);
-    await gotoProject(page, "instructions");
+    await gotoProject(page, "workflows");
     await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
   });
 
