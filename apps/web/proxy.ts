@@ -24,11 +24,11 @@ function mapLegacyPath(pathname: string): string | null {
     const segments = rest.split("/");
     if (segments[0] === "nodes" && segments[1]) {
       const slug = segments[1].toLowerCase();
-      return `${defaultBase}/graph/nodes?table=${encodeURIComponent(slug)}`;
+      return `${defaultBase}/graph/nodes/${encodeURIComponent(slug)}`;
     }
     if (segments[0] === "edges" && segments[1]) {
       const slug = segments[1].toLowerCase();
-      return `${defaultBase}/graph/edges?table=${encodeURIComponent(slug)}`;
+      return `${defaultBase}/graph/edges/${encodeURIComponent(slug)}`;
     }
     if (segments[0] === "actions" && segments[1]) {
       segments[1] = segments[1].toLowerCase();
@@ -46,14 +46,14 @@ function mapLegacyPath(pathname: string): string | null {
     /^\/graph\/nodes\/([A-Za-z][a-zA-Z0-9_-]*)$/,
   );
   if (labelNodeMatch) {
-    return `${defaultBase}/graph/nodes?table=${encodeURIComponent(labelNodeMatch[1]!.toLowerCase())}`;
+    return `${defaultBase}/graph/nodes/${encodeURIComponent(labelNodeMatch[1]!.toLowerCase())}`;
   }
 
   const labelEdgeMatch = pathname.match(
     /^\/graph\/edges\/([A-Za-z][a-zA-Z0-9_-]*)$/,
   );
   if (labelEdgeMatch) {
-    return `${defaultBase}/graph/edges?table=${encodeURIComponent(labelEdgeMatch[1]!.toLowerCase())}`;
+    return `${defaultBase}/graph/edges/${encodeURIComponent(labelEdgeMatch[1]!.toLowerCase())}`;
   }
 
   return null;
