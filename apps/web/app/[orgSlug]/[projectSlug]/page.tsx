@@ -17,8 +17,15 @@ import {
 } from "@/lib/console/cached-catalog";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
-import { getTranslations } from "@/lib/i18n/server";
 import { getActionPorts } from "@/lib/ports";
+
+type StartStep = {
+  title: string;
+  description: string;
+  href: string;
+  cta: string;
+  completed: boolean;
+};
 
 export default async function ProjectHomePage({
   params,
@@ -27,7 +34,6 @@ export default async function ProjectHomePage({
 }) {
   const { orgSlug, projectSlug } = await params;
   const ctx = { orgSlug, projectSlug };
-  const { t } = await getTranslations();
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
 
@@ -41,6 +47,53 @@ export default async function ProjectHomePage({
       ports.commit.getActionLog({ limit: 8 }),
       ports.impactQueue.queryImpactQueue({ status: "pending", limit: 5 }),
     ]);
+
+  const taskTableHref = `${graphPath(ctx, "nodes")}?table=task`;
+  const hasWorkflow = instructions.length > 0;
+  const hasGraphShape = nodes.length > 0 && actions.length > 0;
+  const hasRunHistory = logs.length > 0;
+  const startSteps: StartStep[] = [
+    {
+      title: "Connect an agent",
+      description:
+        "Copy this project's MCP details and mount SSOTA where your agent works.",
+      href: projectPath(ctx, "settings/general"),
+      cta: "Open setup",
+      completed: false,
+    },
+    {
+      title: "Pick a workflow",
+      description:
+        "Review the steward instructions that decide which actions an agent may run.",
+      href: projectPath(ctx, "workflows"),
+      cta: "View workflows",
+      completed: hasWorkflow,
+    },
+    {
+      title: "Create a first Task",
+      description:
+        "Use Task rows as the shared work queue for humans and automation.",
+      href: taskTableHref,
+      cta: "Open Task table",
+      completed: hasGraphShape,
+    },
+    {
+      title: "Review a Gate",
+      description:
+        "Approve or reject graph changes before they affect the project state.",
+      href: projectPath(ctx, "gates"),
+      cta: "Open reviews",
+      completed: gates.length === 0 && hasRunHistory,
+    },
+    {
+      title: "Inspect the audit trail",
+      description:
+        "Confirm every accepted, gated, or rejected graph action in Runs.",
+      href: projectPath(ctx, "log"),
+      cta: "Open runs",
+      completed: hasRunHistory,
+    },
+  ];
 
   const cards = [
     {
@@ -72,29 +125,51 @@ export default async function ProjectHomePage({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Project Home"
-        description={t("home.description")}
+        title="Developer Start"
+        description="Connect an agent, choose a workflow, create a Task, review the Gate, and inspect the audit trail."
       />
 
-      <div className="grid gap-4 md:grid-cols-4">
-        {cards.map((card) => (
-          <Link
-            key={card.href}
-            href={card.href}
-            className="block transition-opacity hover:opacity-90"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-base">
-                  {card.title}
-                  <Badge variant="secondary">{card.count}</Badge>
-                </CardTitle>
-                <CardDescription>{card.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      <Card className="overflow-hidden">
+        <CardHeader className="border-b bg-muted/30">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle>Ship the first SSOTA-on-SSOTA loop</CardTitle>
+              <CardDescription>
+                Follow the same path an automated steward will use: workflow,
+                Task, Gate, audit, and Notion output.
+              </CardDescription>
+            </div>
+            <Button
+              render={<Link href={projectPath(ctx, "workflows")} />}
+              nativeButton={false}
+            >
+              Choose workflow
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 p-4 lg:grid-cols-5">
+          {startSteps.map((step, index) => (
+            <Link
+              key={step.title}
+              href={step.href}
+              className="group rounded-lg border bg-background p-3 transition-colors hover:bg-muted/40"
+            >
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <Badge variant={step.completed ? "default" : "secondary"}>
+                  {step.completed ? "Done" : `Step ${index + 1}`}
+                </Badge>
+                <span className="text-xs text-muted-foreground group-hover:text-foreground">
+                  {step.cta}
+                </span>
+              </div>
+              <div className="font-medium">{step.title}</div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {step.description}
+              </p>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card>
@@ -199,6 +274,35 @@ export default async function ProjectHomePage({
           </CardContent>
         </Card>
       </div>
+
+      <section className="space-y-3">
+        <div>
+          <h2 className="text-sm font-semibold">Advanced Graph Admin</h2>
+          <p className="text-sm text-muted-foreground">
+            Inspect catalog tables and low-level runtime projections after the
+            first loop is working.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          {cards.map((card) => (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="block transition-opacity hover:opacity-90"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between text-base">
+                    {card.title}
+                    <Badge variant="secondary">{card.count}</Badge>
+                  </CardTitle>
+                  <CardDescription>{card.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
