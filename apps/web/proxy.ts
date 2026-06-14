@@ -19,7 +19,7 @@ function mapLegacyPath(pathname: string): string | null {
   if (pathname.startsWith("/context-graph/")) {
     const rest = pathname.slice("/context-graph/".length);
     if (rest === "instructions") {
-      return `${defaultBase}/workflows`;
+      return `${defaultBase}/workflow`;
     }
     const segments = rest.split("/");
     if (segments[0] === "nodes" && segments[1]) {
@@ -35,9 +35,10 @@ function mapLegacyPath(pathname: string): string | null {
     }
     return `${defaultBase}/graph/${segments.join("/")}`;
   }
-  if (pathname === "/gates") return `${defaultBase}/gates`;
-  if (pathname === "/log") return `${defaultBase}/log`;
-  if (pathname === "/workflows") return `${defaultBase}/workflows`;
+  if (pathname === "/gates") return `${defaultBase}/workflow?tab=reviews`;
+  if (pathname === "/log") return `${defaultBase}/workflow?tab=runs`;
+  if (pathname === "/workflows") return `${defaultBase}/workflow`;
+  if (pathname === "/impact") return defaultBase;
   if (pathname === "/catalog") return `${defaultBase}/graph`;
   if (pathname.startsWith("/studio")) {
     return `${defaultBase}/graph/nodes`;

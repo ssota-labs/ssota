@@ -10,6 +10,7 @@ import type {
   Node as WireNode,
   NodeCatalogEntry as WireNodeCatalogEntry,
 } from "@ssota/contracts";
+import { buildWorkflowInstructionPackage } from "../workflow/render-instruction-package.js";
 import type {
   ActionCatalogEntry,
   ActionLogRecord,
@@ -98,4 +99,19 @@ export function serializeInstruction(
 ): WireInstruction {
   const { projectId: _projectId, ...wire } = instruction;
   return wire;
+}
+
+export function serializeInstructionPackage(
+  instruction: Instruction,
+): WireInstruction & {
+  workflow: ReturnType<typeof buildWorkflowInstructionPackage>["workflow"];
+  renderedText: string;
+} {
+  const wire = serializeInstruction(instruction);
+  const pkg = buildWorkflowInstructionPackage(instruction);
+  return {
+    ...wire,
+    workflow: pkg.workflow,
+    renderedText: pkg.renderedText,
+  };
 }

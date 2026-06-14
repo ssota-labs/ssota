@@ -28,6 +28,7 @@ import {
   serializeEdgeCatalogEntry,
   serializeGate,
   serializeInstruction,
+  serializeInstructionPackage,
   serializeNode,
   serializeNodeCatalogEntry,
 } from "@ssota/core";
@@ -93,7 +94,7 @@ export async function getInstruction(
     : input.instructionKey
       ? await ports.catalog.getInstructionByKey(input.instructionKey)
       : null;
-  return instruction ? serializeInstruction(instruction) : null;
+  return instruction ? serializeInstructionPackage(instruction) : null;
 }
 
 export async function getGate(projectId: string, gateId: string) {

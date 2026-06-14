@@ -74,7 +74,7 @@ export async function approveGateAction(
     projectId: resolvedProjectId,
   });
 
-  for (const path of withConsolePaths(["/gates", "/log"])) {
+  for (const path of withConsolePaths(["/workflow"])) {
     revalidatePath(path);
   }
   return result;
@@ -274,8 +274,8 @@ export async function defineNodeTypeAction(input: {
   return runMetaAction("define_node_type", parsed, [
     "/studio/node-types",
     "/catalog",
-    "/log",
-    "/gates",
+    "/workflow",
+    "/workflow",
   ], projectId);
 }
 
@@ -308,7 +308,7 @@ export async function updateNodeTypeAction(input: Record<string, unknown>) {
   return runMetaAction("update_node_type", parsed, [
     "/studio/node-types",
     "/catalog",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -322,7 +322,7 @@ export async function deprecateNodeTypeAction(input: Record<string, unknown>) {
   return runMetaAction("deprecate_node_type", parsed, [
     "/studio/node-types",
     "/catalog",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -335,7 +335,7 @@ export async function defineEdgeTypeAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("define_edge_type", parsed, [
     "/studio/edge-types",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -348,7 +348,7 @@ export async function defineInstructionAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("define_instruction", parsed, [
     "/studio/instructions",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -361,7 +361,7 @@ export async function updateEdgeTypeAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("update_edge_type", parsed, [
     "/studio/edge-types",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -374,7 +374,7 @@ export async function deprecateEdgeTypeAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("deprecate_edge_type", parsed, [
     "/studio/edge-types",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -390,8 +390,8 @@ export async function updateNodePropertySchemaAction(
   return runMetaAction("update_node_property_schema", parsed, [
     "/studio/node-types",
     "/catalog",
-    "/log",
-    "/gates",
+    "/workflow",
+    "/workflow",
   ], projectId);
 }
 
@@ -404,7 +404,7 @@ export async function updatePropertyPermissionAction(
     typeof inputProjectId === "string" && inputProjectId
       ? inputProjectId
       : await resolveDefaultProjectId();
-  return runMetaAction("update_property_permission", parsed, ["/log"], projectId);
+  return runMetaAction("update_property_permission", parsed, ["/workflow"], projectId);
 }
 
 export async function defineActionContractAction(input: Record<string, unknown>) {
@@ -416,7 +416,7 @@ export async function defineActionContractAction(input: Record<string, unknown>)
       : await resolveDefaultProjectId();
   return runMetaAction("define_action_contract", parsed, [
     "/studio/actions",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -429,7 +429,7 @@ export async function updateActionContractAction(input: Record<string, unknown>)
       : await resolveDefaultProjectId();
   return runMetaAction("update_action_contract", parsed, [
     "/studio/actions",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -444,7 +444,7 @@ export async function deprecateActionContractAction(
       : await resolveDefaultProjectId();
   return runMetaAction("deprecate_action_contract", parsed, [
     "/studio/actions",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -457,9 +457,9 @@ export async function updateInstructionAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("update_instruction", parsed, [
     "/studio/instructions",
-    "/instructions",
-    "/workflows",
-    "/log",
+    "/workflow",
+    "/workflow",
+    "/workflow",
   ], projectId);
 }
 
@@ -488,7 +488,7 @@ export async function deprecateInstructionAction(input: Record<string, unknown>)
       : await resolveDefaultProjectId();
   return runMetaAction("deprecate_instruction", parsed, [
     "/studio/instructions",
-    "/log",
+    "/workflow",
   ], projectId);
 }
 
@@ -545,8 +545,8 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
   for (const path of withConsolePaths([
     "/studio/node-types",
     "/catalog",
-    "/log",
-    "/gates",
+    "/workflow",
+    "/workflow",
     graphPath(DEFAULT_PROJECT, "nodes", nodeSlug),
   ])) {
     revalidatePath(path);
@@ -587,8 +587,8 @@ export async function updateNodePropertiesFormAction(
   }
 
   for (const path of withConsolePaths([
-    "/log",
-    "/gates",
+    "/workflow",
+    "/workflow",
     graphPath(DEFAULT_PROJECT, "nodes", nodeSlug),
   ])) {
     revalidatePath(path);
@@ -627,8 +627,8 @@ export async function updateNodePropertiesBatchFormAction(
   }
 
   for (const path of withConsolePaths([
-    "/log",
-    "/gates",
+    "/workflow",
+    "/workflow",
     graphPath(DEFAULT_PROJECT, "nodes", nodeSlug),
   ])) {
     revalidatePath(path);
@@ -743,8 +743,8 @@ export async function runActionJsonFormAction(formData: FormData): Promise<void>
     projectId,
   });
   for (const path of withConsolePaths([
-    "/log",
-    "/gates",
+    "/workflow",
+    "/workflow",
   ])) {
     revalidatePath(path);
   }

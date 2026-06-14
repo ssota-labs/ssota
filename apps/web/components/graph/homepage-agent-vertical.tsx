@@ -191,7 +191,7 @@ export async function HomepageAgentVerticalView({
                   {workflow.body}
                 </p>
                 <Button
-                  render={<Link href={projectPath(ctx, "workflows")} />}
+                  render={<Link href={projectPath(ctx, "workflow")} />}
                   variant="outline"
                   size="sm"
                   nativeButton={false}

@@ -8,8 +8,6 @@ import {
   GraphIcon,
   HouseIcon,
   ListBulletsIcon,
-  ArrowsClockwiseIcon,
-  ShieldCheckIcon,
 } from "@phosphor-icons/react";
 import { cn } from "@ssota/ui/lib/utils";
 import {
@@ -23,14 +21,10 @@ import { useProjectContext } from "./project-context";
 
 const navItems = [
   { segment: "", labelKey: "nav.projectHome", icon: HouseIcon },
-  { segment: "developer/setup", labelKey: "nav.developer", icon: GearIcon },
-  { segment: "workflow", labelKey: "nav.workflowLens", icon: GraphIcon },
+  { segment: "workflow", labelKey: "nav.workflow", icon: BookOpenIcon },
   { segment: "graph", labelKey: "nav.graph", icon: GraphIcon },
   { segment: "tasks", labelKey: "nav.tasks", icon: ListBulletsIcon },
-  { segment: "workflows", labelKey: "nav.instruction", icon: BookOpenIcon },
-  { segment: "gates", labelKey: "nav.gates", icon: ShieldCheckIcon },
-  { segment: "impact", labelKey: "nav.impact", icon: ArrowsClockwiseIcon },
-  { segment: "log", labelKey: "nav.actionLog", icon: ListBulletsIcon },
+  { segment: "developer/setup", labelKey: "nav.developer", icon: GearIcon },
   { segment: "settings/general", labelKey: "nav.settings", icon: GearIcon },
 ] as const;
 
@@ -57,7 +51,9 @@ export function ConsoleIconRail() {
             ? pathname === projectPath(ctx)
             : item.segment === "graph"
               ? pathname.includes(`/${ctx.projectSlug}/graph`)
-              : pathname.startsWith(projectPath(ctx, item.segment));
+              : item.segment === "workflow"
+                ? pathname.includes(`/${ctx.projectSlug}/workflow`)
+                : pathname.startsWith(projectPath(ctx, item.segment));
         const Icon = item.icon;
 
         return (

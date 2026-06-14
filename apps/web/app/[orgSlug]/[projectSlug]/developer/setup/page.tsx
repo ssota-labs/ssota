@@ -138,18 +138,18 @@ export default async function DeveloperSetupPage({
       </Card>
 
       <div className="flex flex-wrap gap-2">
-        <Button render={<Link href={projectPath(ctx, "workflows")} />} nativeButton={false}>
+        <Button render={<Link href={projectPath(ctx, "workflow")} />} nativeButton={false}>
           View workflows
         </Button>
         <Button
-          render={<Link href={projectPath(ctx, "gates")} />}
+          render={<Link href={`${projectPath(ctx, "workflow")}?tab=reviews`} />}
           variant="outline"
           nativeButton={false}
         >
           Open reviews
         </Button>
         <Button
-          render={<Link href={projectPath(ctx, "log")} />}
+          render={<Link href={`${projectPath(ctx, "workflow")}?tab=runs`} />}
           variant="outline"
           nativeButton={false}
         >

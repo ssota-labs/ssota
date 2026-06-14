@@ -32,7 +32,15 @@ test.describe("SSOTA Console", () => {
 
   test("smoke: Workflows route", async ({ page }) => {
     await loginAsSmoke(page);
+    await gotoProject(page, "workflow");
+    await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
+    await expect(page.getByText("Workflow registry")).toBeVisible();
+  });
+
+  test("smoke: legacy /workflows redirect", async ({ page }) => {
+    await loginAsSmoke(page);
     await gotoProject(page, "workflows");
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow`));
     await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
   });
 
@@ -52,35 +60,30 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByText("Advanced table", { exact: true })).toBeVisible();
   });
 
-  test("smoke: Workflow Lens route", async ({ page }) => {
-    await loginAsSmoke(page);
-    await gotoProject(page, "workflow");
-    await expect(page.getByRole("heading", { name: "Workflow Lens" })).toBeVisible();
-    await expect(page.getByText("Strategy", { exact: true })).toBeVisible();
-    await expect(page.getByText("Delivery", { exact: true })).toBeVisible();
-  });
-
-  test("smoke: Runs route", async ({ page }) => {
+  test("smoke: workflow runs tab via legacy /log redirect", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "log");
-    await expect(page.getByRole("heading", { name: "Runs" })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow`));
+    await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
   });
 
-  test("smoke: Impact Queue route", async ({ page }) => {
+  test("smoke: workflow reviews tab via legacy /gates redirect", async ({ page }) => {
     await loginAsSmoke(page);
-    await gotoProject(page, "impact");
-    await expect(page.getByRole("heading", { name: "Impact Queue" })).toBeVisible();
+    await gotoProject(page, "gates");
+    await expect(page).toHaveURL(
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow\\?tab=reviews`),
+    );
+    await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
   });
 
   test("smoke: icon rail exposes primary nav", async ({ page }) => {
     await loginAsSmoke(page);
     await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Developer", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Workflow Lens", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Workflows", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Impact", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Runs", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
   });
 
   test("smoke: project selector preserves current route", async ({ page }) => {
