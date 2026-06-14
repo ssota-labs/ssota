@@ -10,6 +10,9 @@ import { XIcon } from "@phosphor-icons/react"
 const sheetSizeClasses = {
   default:
     "data-[side=left]:w-3/4 data-[side=right]:w-3/4 sm:data-[side=left]:max-w-sm sm:data-[side=right]:max-w-sm",
+  /** Supabase-style create panels — half viewport */
+  half:
+    "data-[side=left]:!w-1/2 data-[side=right]:!w-1/2 data-[side=left]:!max-w-none data-[side=right]:!max-w-none sm:data-[side=left]:!max-w-none sm:data-[side=right]:!max-w-none",
   /** Supabase Table Editor row inspector — ~42vw capped at 560px */
   inspector:
     "data-[side=left]:!w-[min(42vw,560px)] data-[side=right]:!w-[min(42vw,560px)] data-[side=left]:!max-w-[560px] data-[side=right]:!max-w-[560px]",
@@ -57,7 +60,7 @@ function SheetContent({
   ...props
 }: SheetPrimitive.Popup.Props & {
   side?: "top" | "right" | "bottom" | "left"
-  size?: "default" | "inspector" | "wide" | "full"
+  size?: "default" | "half" | "inspector" | "wide" | "full"
   showCloseButton?: boolean
 }) {
   return (
