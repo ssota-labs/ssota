@@ -20,6 +20,28 @@ import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 
+const formRowClassName =
+  "grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] items-start gap-x-8 gap-y-5";
+
+function FormRow({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  htmlFor?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <Label htmlFor={htmlFor} className="pt-2.5 text-sm font-normal">
+        {label}
+      </Label>
+      <div className="min-w-0">{children}</div>
+    </>
+  );
+}
+
 export function NewWorkflowSheet({ projectId }: { projectId: string }) {
   const [addTriggerOpen, setAddTriggerOpen] = useState(false);
 
@@ -48,42 +70,49 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
             <input type="hidden" name="outputContract" value="{}" />
             <input type="hidden" name="gatePolicy" value="{}" />
 
-            <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
-              <div className="space-y-2">
-                <Label htmlFor="workflow-title">Name</Label>
-                <Input
-                  id="workflow-title"
-                  name="title"
-                  placeholder="Homepage creation"
-                  required
-                />
-              </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+              <section className="border-b border-border pb-6">
+                <div className={formRowClassName}>
+                  <FormRow label="Name" htmlFor="workflow-title">
+                    <Input
+                      id="workflow-title"
+                      name="title"
+                      placeholder="Homepage creation"
+                      required
+                    />
+                  </FormRow>
 
-              <div className="space-y-2">
-                <Label htmlFor="workflow-description">Description</Label>
-                <Textarea
-                  id="workflow-description"
-                  name="body"
-                  placeholder="에이전트가 이 워크플로우를 언제, 어떤 목적으로 실행하는지 설명합니다."
-                  rows={4}
-                  required
-                />
-              </div>
+                  <FormRow label="Description" htmlFor="workflow-description">
+                    <Textarea
+                      id="workflow-description"
+                      name="body"
+                      placeholder="에이전트가 이 워크플로우를 언제, 어떤 목적으로 실행하는지 설명합니다."
+                      rows={4}
+                      required
+                    />
+                  </FormRow>
+                </div>
+              </section>
 
-              <div className="space-y-2">
-                <Label htmlFor="workflow-key">Key</Label>
-                <Input
-                  id="workflow-key"
-                  name="instructionKey"
-                  placeholder="homepage_creation"
-                  pattern="[a-z][a-z0-9_]*"
-                />
-                <p className="text-xs text-muted-foreground">
-                  선택. MCP·로그에서 쓰는 snake_case 식별자입니다.
-                </p>
-              </div>
+              <section className="pt-6">
+                <div className={formRowClassName}>
+                  <FormRow label="Key" htmlFor="workflow-key">
+                    <Input
+                      id="workflow-key"
+                      name="instructionKey"
+                      placeholder="homepage_creation"
+                      pattern="[a-z][a-z0-9_]*"
+                    />
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      선택. MCP·로그에서 쓰는 snake_case 식별자입니다.
+                    </p>
+                  </FormRow>
 
-              <WorkflowTriggersField onAddTrigger={() => setAddTriggerOpen(true)} />
+                  <WorkflowTriggersField
+                    onAddTrigger={() => setAddTriggerOpen(true)}
+                  />
+                </div>
+              </section>
             </div>
 
             <SheetFooter className="sticky bottom-0 z-10 shrink-0 flex-row justify-end gap-2 border-t border-border bg-popover px-6 py-4">
