@@ -30,7 +30,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { withConsolePaths } from "@/lib/console/revalidate";
-import { graphPath, DEFAULT_PROJECT } from "@/lib/console/paths";
+import { graphPath, DEFAULT_PROJECT, projectPath } from "@/lib/console/paths";
 import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
@@ -768,7 +768,7 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
       ? [{ id: "runbook", title: "Runbook", kind: "url" as const, url: contentUrl }]
       : []),
   ];
-  await defineWorkflowAction({
+  const result = await defineWorkflowAction({
     definition: {
       title,
       workflowKey,
@@ -795,6 +795,17 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
     },
     projectId,
   });
+
+  if (result.status === "committed") {
+    const created = (await ports.catalog.listWorkflows({ limit: 100 })).find(
+      (workflow) => workflow.workflowKey === workflowKey,
+    );
+    if (created) {
+      redirect(
+        `${projectPath(DEFAULT_PROJECT, "workflow")}?workflow=${encodeURIComponent(created.slug)}`,
+      );
+    }
+  }
 }
 
 export async function runActionJsonFormAction(formData: FormData): Promise<void> {

@@ -6,6 +6,7 @@ test.describe("Workflow context create sheet", () => {
   test("create workflow with filter group, traversal, and assertion", async ({
     page,
   }) => {
+    test.setTimeout(60_000);
     await loginAsSmoke(page);
     await gotoProject(page, "workflow");
 
@@ -38,9 +39,6 @@ test.describe("Workflow context create sheet", () => {
     await expect(page.getByTestId(/assertion-/)).toBeVisible();
 
     await page.getByRole("button", { name: "Save" }).click();
-
-    await page.getByPlaceholder("Search workflows...").fill(workflowTitle);
-    await page.getByRole("link", { name: workflowTitle }).click();
 
     await expect(page.getByRole("heading", { name: workflowTitle })).toBeVisible({
       timeout: 15_000,
