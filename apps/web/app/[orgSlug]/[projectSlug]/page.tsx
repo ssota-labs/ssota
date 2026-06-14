@@ -40,7 +40,7 @@ export default async function ProjectHomePage({
     getCachedNodeCatalog(project.id),
     getCachedEdgeCatalog(project.id),
     getCachedActionCatalog(project.id),
-    ports.catalog.listInstructions({ limit: 100 }),
+    ports.catalog.listWorkflows({ limit: 100 }),
     ports.gate.listPendingGates(),
     ports.commit.getActionLog({ limit: 8 }),
   ]);

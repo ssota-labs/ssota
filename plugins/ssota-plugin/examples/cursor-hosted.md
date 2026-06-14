@@ -32,7 +32,7 @@ The server validates user membership on each call.
 
 1. Connect MCP (OAuth once).
 2. `list_projects` → pick `orgSlug` + `projectSlug`.
-3. Pass scope on every project tool (`find_instruction`, `execute_action`, …).
+3. Pass scope on every project tool (`find_workflow`, `execute_action`, …).
 
 ## Prerequisites
 

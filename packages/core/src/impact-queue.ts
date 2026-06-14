@@ -11,7 +11,7 @@ export interface ImpactProjectionRule {
   direction?: "outgoing" | "incoming" | "both";
   edgeTypes?: string[];
   targetNodeTypes?: string[];
-  instructionId?: string;
+  workflowId?: string;
   priority?: number;
   maxAttempts?: number;
   workflowKeyProperty?: string;
@@ -128,7 +128,7 @@ export async function projectImpactQueueItems({
             targetNodeId,
             dependencyEdgeId: edge.id,
             workflowKey,
-            instructionId: rule.instructionId ?? null,
+            workflowId: rule.workflowId ?? null,
             priority: rule.priority,
             runAt,
             maxAttempts: rule.maxAttempts,

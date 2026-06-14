@@ -29,12 +29,12 @@ export async function HomepageAgentVerticalView({
   projectId: string;
 }) {
   const ports = getActionPorts(projectId);
-  const [nodeTypes, edgeTypes, actions, instructions, ...instanceSets] =
+  const [nodeTypes, edgeTypes, actions, workflows, ...instanceSets] =
     await Promise.all([
       ports.catalog.listNodeCatalogEntries(),
       ports.catalog.listEdgeCatalogEntries(),
       ports.catalog.listActionCatalogEntries(),
-      ports.catalog.listInstructions({ limit: 100 }),
+      ports.catalog.listWorkflows({ limit: 100 }),
       ...HOMEPAGE_AGENT.nodeTypes.map((nodeType) =>
         ports.graph.queryNodes({ nodeType, limit: 20 }),
       ),
@@ -49,8 +49,8 @@ export async function HomepageAgentVerticalView({
   const verticalActions = actions.filter((a) =>
     (HOMEPAGE_AGENT.actions as readonly string[]).includes(a.actionType),
   );
-  const workflow = instructions.find(
-    (i) => i.title === HOMEPAGE_AGENT.instructionTitle,
+  const workflow = workflows.find(
+    (entry) => entry.spec.title === HOMEPAGE_AGENT.workflowTitle,
   );
 
   const instancesByType = Object.fromEntries(
@@ -186,9 +186,9 @@ export async function HomepageAgentVerticalView({
           <CardContent className="space-y-3 text-sm">
             {workflow ? (
               <>
-                <p className="font-medium">{workflow.title}</p>
+                <p className="font-medium">{workflow.spec.title}</p>
                 <p className="text-muted-foreground whitespace-pre-line">
-                  {workflow.body}
+                  {workflow.spec.agentNotes}
                 </p>
                 <Button
                   render={<Link href={projectPath(ctx, "workflow")} />}

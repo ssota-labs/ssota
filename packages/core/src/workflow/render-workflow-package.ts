@@ -1,23 +1,32 @@
-import { instructionToWorkflow, type Workflow } from "@ssota/contracts";
-import type { Instruction } from "../domain/types.js";
-import { serializeInstruction } from "../domain/wire.js";
+import {
+  workflowRowToWire,
+  type Workflow as WireWorkflow,
+} from "@ssota/contracts";
+import type { Workflow } from "../domain/types.js";
 
-export type WorkflowInstructionPackage = {
-  workflow: Workflow;
+export type WorkflowPackage = {
+  workflow: WireWorkflow;
   renderedText: string;
 };
 
-export function buildWorkflowInstructionPackage(
-  instruction: Instruction,
-): WorkflowInstructionPackage {
-  const workflow = instructionToWorkflow(serializeInstruction(instruction));
+export function buildWorkflowPackage(workflow: Workflow): WorkflowPackage {
+  const wire = workflowRowToWire({
+    id: workflow.id,
+    slug: workflow.slug,
+    workflowKey: workflow.workflowKey,
+    lifecycle: workflow.lifecycle,
+    scope: workflow.scope,
+    spec: workflow.spec,
+    createdAt: workflow.createdAt.toISOString(),
+    updatedAt: workflow.updatedAt.toISOString(),
+  });
   return {
-    workflow,
-    renderedText: renderWorkflowInstructionText(workflow),
+    workflow: wire,
+    renderedText: renderWorkflowText(wire),
   };
 }
 
-export function renderWorkflowInstructionText(workflow: Workflow): string {
+export function renderWorkflowText(workflow: WireWorkflow): string {
   const lines: string[] = [`# ${workflow.title}`, ""];
 
   appendTriggerSection(lines, workflow);
@@ -33,7 +42,7 @@ export function renderWorkflowInstructionText(workflow: Workflow): string {
   return lines.join("\n").trimEnd();
 }
 
-function appendTriggerSection(lines: string[], workflow: Workflow) {
+function appendTriggerSection(lines: string[], workflow: WireWorkflow) {
   lines.push("## Trigger", "");
   const patterns = workflow.trigger.patterns;
   const events = workflow.trigger.events;
@@ -53,7 +62,7 @@ function appendTriggerSection(lines: string[], workflow: Workflow) {
   lines.push("");
 }
 
-function appendContextSection(lines: string[], workflow: Workflow) {
+function appendContextSection(lines: string[], workflow: WireWorkflow) {
   const { context } = workflow;
   const hasContext =
     context.queries.length > 0 ||
@@ -120,7 +129,7 @@ function appendContextSection(lines: string[], workflow: Workflow) {
   }
 }
 
-function appendConditionsSection(lines: string[], workflow: Workflow) {
+function appendConditionsSection(lines: string[], workflow: WireWorkflow) {
   if (workflow.conditions.length === 0) return;
   lines.push("## Conditions", "");
   for (const condition of workflow.conditions) {
@@ -133,7 +142,7 @@ function appendConditionsSection(lines: string[], workflow: Workflow) {
   }
 }
 
-function appendStepsSection(lines: string[], workflow: Workflow) {
+function appendStepsSection(lines: string[], workflow: WireWorkflow) {
   lines.push("## Steps", "");
   workflow.steps.forEach((step, index) => {
     lines.push(`### ${index + 1}. ${step.title}`);
@@ -158,7 +167,7 @@ function appendStepsSection(lines: string[], workflow: Workflow) {
   });
 }
 
-function appendGatesSection(lines: string[], workflow: Workflow) {
+function appendGatesSection(lines: string[], workflow: WireWorkflow) {
   if (workflow.gates.length === 0) return;
   lines.push("## Gate policy", "");
   for (const gate of workflow.gates) {
@@ -168,7 +177,7 @@ function appendGatesSection(lines: string[], workflow: Workflow) {
   lines.push("");
 }
 
-function appendOutputSection(lines: string[], workflow: Workflow) {
+function appendOutputSection(lines: string[], workflow: WireWorkflow) {
   lines.push("## Output", "");
   if (workflow.output.format) lines.push(`- format: ${workflow.output.format}`);
   if (workflow.output.completionCriteria) {
@@ -180,7 +189,7 @@ function appendOutputSection(lines: string[], workflow: Workflow) {
   lines.push("");
 }
 
-function appendReferencesSection(lines: string[], workflow: Workflow) {
+function appendReferencesSection(lines: string[], workflow: WireWorkflow) {
   if (workflow.references.length === 0) return;
   lines.push("## References", "");
   for (const reference of workflow.references) {
@@ -196,7 +205,7 @@ function appendReferencesSection(lines: string[], workflow: Workflow) {
   }
 }
 
-function appendRoutesSection(lines: string[], workflow: Workflow) {
+function appendRoutesSection(lines: string[], workflow: WireWorkflow) {
   if (workflow.routes.length === 0) return;
   lines.push("## Routes", "");
   for (const route of workflow.routes) {
@@ -208,7 +217,7 @@ function appendRoutesSection(lines: string[], workflow: Workflow) {
   lines.push("");
 }
 
-function appendAgentNotesSection(lines: string[], workflow: Workflow) {
+function appendAgentNotesSection(lines: string[], workflow: WireWorkflow) {
   if (!workflow.agentNotes?.trim()) return;
   if (workflow.references.some((ref) => ref.id === "agent_body")) return;
   lines.push("## Agent notes", "", workflow.agentNotes.trim(), "");

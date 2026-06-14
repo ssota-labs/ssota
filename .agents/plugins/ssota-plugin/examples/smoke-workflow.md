@@ -15,7 +15,7 @@ MCP URL: `http://127.0.0.1:3001/api/mcp` (project scope via tool params)
 ## Root skill sequence
 
 1. Classify intent (read / create / update / …)
-2. `find_instruction` → `get_instruction`
+2. `find_workflow` → `get_workflow`
 3. `get_action_contract`
 4. Context: `query_nodes` / `get_node` as needed
 5. `execute_action`
@@ -25,8 +25,8 @@ MCP URL: `http://127.0.0.1:3001/api/mcp` (project scope via tool params)
 
 ```txt
 list_projects
-find_instruction        { orgSlug, projectSlug, query }
-get_instruction         { orgSlug, projectSlug, instructionId }
+find_workflow        { orgSlug, projectSlug, query }
+get_workflow         { orgSlug, projectSlug, workflowId }
 get_action_contract     { orgSlug, projectSlug, actionType }
 get_node_type (optional)
 ```

@@ -1,8 +1,19 @@
 import { z } from "zod";
-import {
-  InstructionScopeSchema,
-  LifecycleStatusSchema,
-} from "./definitions.js";
+import { LifecycleStatusSchema } from "./definitions.js";
+
+export const WorkflowScopeSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("global") }),
+  z.object({ kind: z.literal("node_type"), nodeType: z.string().min(1) }),
+  z.object({ kind: z.literal("edge_type"), edgeType: z.string().min(1) }),
+  z.object({
+    kind: z.literal("property"),
+    nodeType: z.string().min(1),
+    propertyKey: z.string().min(1),
+  }),
+  z.object({ kind: z.literal("action"), actionType: z.string().min(1) }),
+]);
+
+export type WorkflowScope = z.infer<typeof WorkflowScopeSchema>;
 
 /** Stable snake_case identifier for workflow routing and MCP lookup. */
 export const WorkflowKeySchema = z
@@ -13,9 +24,9 @@ export type WorkflowKey = z.infer<typeof WorkflowKeySchema>;
 
 /** When and why a workflow may start. */
 export const WorkflowTriggerSpecSchema = z.object({
-  /** Intent patterns matched by find_instruction / agent routing. */
+  /** Intent patterns matched by find_workflow / agent routing. */
   patterns: z.array(z.string()).default([]),
-  /** Event or automation hook identifiers (legacy instruction.triggers). */
+  /** Event or automation hook identifiers. */
   events: z.array(z.string()).default([]),
 });
 
@@ -71,7 +82,7 @@ export type ContextAssertion = z.infer<typeof ContextAssertionSchema>;
 
 /**
  * Structured retrieval plan — SSOT for context assembly.
- * Agent instruction text is rendered from this spec, not the other way around.
+ * Agent-readable text is rendered from this spec, not the other way around.
  */
 export const ContextSpecSchema = z.object({
   queries: z.array(ContextQueryPlanSchema).default([]),
@@ -130,8 +141,7 @@ export const WorkflowGateSpecSchema = z.object({
 export type WorkflowGateSpec = z.infer<typeof WorkflowGateSpecSchema>;
 
 /**
- * Semantic work unit. Actions attach here; gates may block promotion.
- * Legacy instruction.workflowSteps map into this shape.
+ * Semantic work unit inside a workflow graph.
  */
 export const WorkflowStepSpecSchema = z.object({
   id: z.string().min(1),
@@ -183,7 +193,7 @@ const WorkflowDefinitionBaseSchema = z.object({
   title: z.string().min(1),
   workflowKey: WorkflowKeySchema.optional(),
   lifecycle: LifecycleStatusSchema.default("Active"),
-  scope: InstructionScopeSchema.default({ kind: "global" }),
+  scope: WorkflowScopeSchema.default({ kind: "global" }),
   trigger: WorkflowTriggerSpecSchema,
   context: ContextSpecSchema.default({
     queries: [],
@@ -196,11 +206,11 @@ const WorkflowDefinitionBaseSchema = z.object({
   output: WorkflowOutputSpecSchema.default({ contract: {} }),
   references: z.array(WorkflowReferenceSpecSchema).default([]),
   routes: z.array(WorkflowRouteSpecSchema).default([]),
-  /** Freeform agent guidance rendered as an instruction section. */
+  /** Freeform agent guidance rendered in the agent package. */
   agentNotes: z.string().nullable().optional(),
-  /** Node types this workflow commonly applies to (legacy applicableNodeTypes). */
+  /** Node types this workflow commonly applies to. */
   applicableNodeTypes: z.array(z.string()).default([]),
-  /** Workflow-level allowed actions (legacy allowedActions). */
+  /** Workflow-level allowed actions. */
   allowedActions: z.array(z.string()).default([]),
   requiredActions: z.array(z.string()).default([]),
   optionalActions: z.array(z.string()).default([]),
@@ -211,21 +221,64 @@ export const WorkflowDefinitionSchema = WorkflowDefinitionBaseSchema;
 
 export type WorkflowDefinition = z.infer<typeof WorkflowDefinitionSchema>;
 
-/** Persisted workflow wire shape (Instruction row is the v0 storage backend). */
+/** Persisted workflow wire shape (workflows catalog row). */
 export const WorkflowSchema = WorkflowDefinitionBaseSchema.extend({
   id: z.string().uuid(),
   slug: z.string().min(1),
-  /** v0: same UUID as the backing instruction catalog row. */
-  instructionId: z.string().uuid(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });
 
 export type Workflow = z.infer<typeof WorkflowSchema>;
 
-export const WorkflowCatalogUpsertSchema = WorkflowDefinitionBaseSchema.extend({
+export const WorkflowCatalogUpsertSchema = z.object({
   workflowId: z.string().uuid().optional(),
-  instructionId: z.string().uuid().optional(),
+  slug: z.string().min(1).optional(),
+  workflowKey: WorkflowKeySchema.nullable().optional(),
+  lifecycle: LifecycleStatusSchema,
+  scope: WorkflowScopeSchema,
+  spec: WorkflowDefinitionSchema,
 });
 
 export type WorkflowCatalogUpsert = z.infer<typeof WorkflowCatalogUpsertSchema>;
+
+export const DefineWorkflowInputSchema = z.object({
+  definition: WorkflowDefinitionSchema,
+});
+
+export type DefineWorkflowInput = z.infer<typeof DefineWorkflowInputSchema>;
+
+export const UpdateWorkflowInputSchema = z.object({
+  workflowId: z.string().uuid(),
+  patch: WorkflowDefinitionBaseSchema.partial().extend({
+    lifecycle: LifecycleStatusSchema.optional(),
+    scope: WorkflowScopeSchema.optional(),
+  }),
+});
+
+export type UpdateWorkflowInput = z.infer<typeof UpdateWorkflowInputSchema>;
+
+export const DeprecateWorkflowInputSchema = z.object({
+  workflowId: z.string().uuid(),
+});
+
+export type DeprecateWorkflowInput = z.infer<typeof DeprecateWorkflowInputSchema>;
+
+export const FindWorkflowInputSchema = z.object({
+  query: z.string().min(1),
+  nodeType: z.string().optional(),
+  limit: z.number().int().positive().max(20).default(5),
+});
+
+export type FindWorkflowInput = z.infer<typeof FindWorkflowInputSchema>;
+
+export const GetWorkflowInputSchema = z
+  .object({
+    workflowId: z.string().uuid().optional(),
+    workflowKey: WorkflowKeySchema.optional(),
+  })
+  .refine((value) => value.workflowId || value.workflowKey, {
+    message: "workflowId or workflowKey is required",
+  });
+
+export type GetWorkflowInput = z.infer<typeof GetWorkflowInputSchema>;

@@ -18,6 +18,6 @@ export const getCachedArchetypes = cache(async (projectId: string) => {
   return getActionPorts(projectId).catalog.listArchetypes();
 });
 
-export function displayNodeCatalogLabel(entry: Pick<NodeCatalogEntry, "nodeType" | "label">) {
-  return entry.nodeType === "Instruction" ? "Workflow" : entry.label;
+export function displayNodeCatalogLabel(entry: Pick<NodeCatalogEntry, "label">) {
+  return entry.label;
 }

@@ -16,7 +16,7 @@ const documentArchetypes = [
   { id: "doc-memo", name: "Memo", typical: { temporality: "persistent", authority: "team" } },
   { id: "doc-spec", name: "Spec", typical: { temporality: "persistent", authority: "canonical" } },
   { id: "doc-decision", name: "Decision", typical: { temporality: "persistent", authority: "binding" } },
-  { id: "doc-instruction", name: "Instruction", typical: { temporality: "persistent", authority: "canonical" } },
+  { id: "doc-workflow", name: "Workflow", typical: { temporality: "persistent", authority: "canonical" } },
   { id: "doc-reference", name: "Reference", typical: { temporality: "persistent", authority: "external" } },
   { id: "doc-log", name: "Log", typical: { temporality: "append-only", authority: "system" } },
   { id: "doc-template", name: "Template", typical: { temporality: "persistent", authority: "reusable" } },
@@ -102,14 +102,14 @@ async function seedCatalog(
       },
       {
         projectId,
-        nodeType: "Instruction",
-        slug: "instruction",
-        label: "Instruction",
+        nodeType: "Workflow",
+        slug: "workflow",
+        label: "Workflow",
         family: "document",
-        archetypeId: "doc-instruction",
+        archetypeId: "doc-workflow",
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
-        contentGuide: "Agent instruction with trigger patterns",
+        contentGuide: "Agent workflow with trigger patterns",
         propertySchema: titlePropertySchema,
         allowedActionRefs: [],
       },
@@ -150,8 +150,8 @@ async function seedCatalog(
         edgeType: "references",
         slug: "references",
         label: "References",
-        domain: ["Document", "Note", "Instruction"],
-        range: ["Document", "Note", "Instruction"],
+        domain: ["Document", "Note", "Workflow"],
+        range: ["Document", "Note", "Workflow"],
         cardinality: "many-to-many",
         representation: "directed",
       },
@@ -266,20 +266,96 @@ async function seedCatalog(
     .onConflictDoNothing();
 
   await db
-    .insert(schema.instructions)
+    .insert(schema.workflows)
     .values(
-      DOMAIN_INSTRUCTIONS.map((row) => ({
-        ...row,
-        projectId,
-        slug: toCatalogSlug(row.title),
-      })) as (typeof schema.instructions.$inferInsert)[],
+      DOMAIN_INSTRUCTIONS.map((row) => legacyInstructionSeedToWorkflowRow(projectId, row)),
     )
     .onConflictDoNothing();
 
   await seedHomepageAgentCatalog(db, projectId);
 }
 
-/** Domain instructions only — Root Runtime Protocol lives in ssota-mcp skill. */
+type LegacyInstructionSeed = (typeof DOMAIN_INSTRUCTIONS)[number];
+
+function legacyInstructionSeedToWorkflowRow(
+  projectId: string,
+  legacy: LegacyInstructionSeed,
+): typeof schema.workflows.$inferInsert {
+  const workflowKey = toCatalogSlug(legacy.title);
+  const steps =
+    legacy.workflowSteps.length > 0
+      ? legacy.workflowSteps.map((step) => ({
+          id: step.id,
+          title: step.title,
+          mode: "agentic" as const,
+          actions: step.actionRefs.map((actionType) => ({
+            actionType,
+            required: false,
+          })),
+          referenceIds: [] as string[],
+          ...("gate" in step && step.gate
+            ? {
+                gate: {
+                  id: `${step.id}_gate`,
+                  policy: legacy.gatePolicy,
+                  required: true,
+                },
+              }
+            : {}),
+        }))
+      : [
+          {
+            id: "execute",
+            title: legacy.title,
+            mode: "agentic" as const,
+            actions: legacy.allowedActions.map((actionType) => ({
+              actionType,
+              required: false,
+            })),
+          },
+        ];
+
+  return {
+    projectId,
+    slug: workflowKey,
+    workflowKey,
+    lifecycle: legacy.lifecycle,
+    scope: { kind: "global" },
+    spec: {
+      title: legacy.title,
+      workflowKey,
+      lifecycle: legacy.lifecycle,
+      scope: { kind: "global" },
+      trigger: { patterns: legacy.triggerPatterns, events: [] },
+      context: { queries: [], traversals: [], assertions: [] },
+      conditions: [],
+      steps,
+      gates: [],
+      routes: [],
+      references: legacy.body
+        ? [
+            {
+              id: "agent_body",
+              title: "Agent notes",
+              kind: "inline" as const,
+              body: legacy.body,
+            },
+          ]
+        : [],
+      output: {
+        contract: {},
+        completionCriteria: legacy.completionCriteria,
+      },
+      agentNotes: legacy.body,
+      applicableNodeTypes: legacy.applicableNodeTypes,
+      allowedActions: legacy.allowedActions,
+      requiredActions: legacy.requiredActions,
+      optionalActions: legacy.optionalActions,
+    },
+  };
+}
+
+/** Domain workflows only — Root Runtime Protocol lives in ssota-mcp skill. */
 const DOMAIN_INSTRUCTIONS = [
   {
     title: "Document creation",

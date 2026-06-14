@@ -4,8 +4,8 @@ import type {
   ExecutorType,
   GateStatus,
   ImpactQueueStatus,
-  InstructionScope,
-  InstructionWorkflowStep,
+  WorkflowDefinition,
+  WorkflowScope,
   LifecycleStatus,
   NodeFamily,
   PermissionOperation,
@@ -97,26 +97,16 @@ export interface ActionPropertyPermission {
   status: string;
 }
 
-export interface Instruction {
+export interface Workflow {
   id: string;
   projectId: string;
   slug: string;
-  instructionKey: string | null;
-  title: string;
-  triggerPatterns: string[];
-  applicableNodeTypes: string[];
-  requiredActions: string[];
-  optionalActions: string[];
+  workflowKey: string | null;
   lifecycle: LifecycleStatus;
-  body: string | null;
-  contentUrl: string | null;
-  scope: InstructionScope;
-  triggers: string[];
-  workflowSteps: InstructionWorkflowStep[];
-  allowedActions: string[];
-  outputContract: Record<string, unknown>;
-  gatePolicy: Record<string, unknown>;
-  completionCriteria: string | null;
+  scope: WorkflowScope;
+  spec: WorkflowDefinition;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Gate {
@@ -156,7 +146,7 @@ export interface ImpactQueueItem {
   targetNodeId: string | null;
   dependencyEdgeId: string | null;
   workflowKey: string;
-  instructionId: string | null;
+  workflowId: string | null;
   status: ImpactQueueStatus;
   priority: number;
   runAt: Date;
@@ -179,7 +169,7 @@ export interface ImpactQueueCreateInput {
   targetNodeId?: string | null;
   dependencyEdgeId?: string | null;
   workflowKey: string;
-  instructionId?: string | null;
+  workflowId?: string | null;
   priority?: number;
   runAt?: Date;
   maxAttempts?: number;
@@ -227,7 +217,7 @@ export interface CommitResult {
   appliedEffects: Effect[];
 }
 
-export interface InstructionListInput {
+export interface WorkflowListInput {
   limit?: number;
 }
 
@@ -277,15 +267,15 @@ export interface CatalogPort {
     actionType: string,
     nodeType: string,
   ): Promise<ActionPropertyPermission[]>;
-  findInstructions(
+  findWorkflows(
     query: string,
     nodeType?: string,
     limit?: number,
-  ): Promise<Instruction[]>;
-  listInstructions(input?: InstructionListInput): Promise<Instruction[]>;
-  getInstruction(instructionId: string): Promise<Instruction | null>;
-  getInstructionBySlug(slug: string): Promise<Instruction | null>;
-  getInstructionByKey(instructionKey: string): Promise<Instruction | null>;
+  ): Promise<Workflow[]>;
+  listWorkflows(input?: WorkflowListInput): Promise<Workflow[]>;
+  getWorkflow(workflowId: string): Promise<Workflow | null>;
+  getWorkflowBySlug(slug: string): Promise<Workflow | null>;
+  getWorkflowByKey(workflowKey: string): Promise<Workflow | null>;
 }
 
 export interface ConsolePort {

@@ -133,8 +133,8 @@ export async function NodeTableDetail({
       createdAt: log.createdAt.toISOString(),
       actionType: log.actionType,
       scope: formatActionScope(log.metadata.scope ?? log.input.scope),
-      instruction: String(
-        log.metadata.instructionRunId ?? log.metadata.instructionId ?? "-",
+      workflow: String(
+        log.metadata.workflowRunId ?? log.metadata.workflowId ?? "-",
       ),
       outcome: log.outcome,
       executorType: log.executorType,

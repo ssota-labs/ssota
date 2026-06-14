@@ -132,20 +132,19 @@ const BUILTIN_META_ACTION_ROWS: BuiltinMetaActionRow[] = [
     logPayloadSchema: {},
   },
   {
-    actionType: "define_instruction",
+    actionType: "define_workflow",
     preconditions: { requiredFields: ["definition"] },
     effects: [
       {
-        kind: "upsert_instruction_catalog_entry",
+        kind: "upsert_workflow_catalog_entry",
         entry: {
-          title: "",
-          triggerPatterns: [],
-          applicableNodeTypes: [],
-          requiredActions: [],
-          optionalActions: [],
           lifecycle: "Active",
-          body: null,
-          contentUrl: null,
+          scope: { kind: "global" },
+          spec: {
+            title: "",
+            trigger: { patterns: [], events: [] },
+            steps: [{ id: "execute", title: "", mode: "agentic", actions: [] }],
+          },
         },
       },
     ],
@@ -245,21 +244,20 @@ const BUILTIN_META_ACTION_ROWS: BuiltinMetaActionRow[] = [
     logPayloadSchema: {},
   },
   {
-    actionType: "update_instruction",
-    preconditions: { requiredFields: ["instructionId", "patch"] },
+    actionType: "update_workflow",
+    preconditions: { requiredFields: ["workflowId", "patch"] },
     effects: [
       {
-        kind: "upsert_instruction_catalog_entry",
+        kind: "upsert_workflow_catalog_entry",
         entry: {
-          instructionId: "",
-          title: "",
-          triggerPatterns: [],
-          applicableNodeTypes: [],
-          requiredActions: [],
-          optionalActions: [],
+          workflowId: "",
           lifecycle: "Active",
-          body: null,
-          contentUrl: null,
+          scope: { kind: "global" },
+          spec: {
+            title: "",
+            trigger: { patterns: [], events: [] },
+            steps: [{ id: "execute", title: "", mode: "agentic", actions: [] }],
+          },
         },
       },
     ],
@@ -270,9 +268,9 @@ const BUILTIN_META_ACTION_ROWS: BuiltinMetaActionRow[] = [
     logPayloadSchema: {},
   },
   {
-    actionType: "deprecate_instruction",
-    preconditions: { requiredFields: ["instructionId"] },
-    effects: [{ kind: "deprecate_instruction_catalog_entry", instructionId: "" }],
+    actionType: "deprecate_workflow",
+    preconditions: { requiredFields: ["workflowId"] },
+    effects: [{ kind: "deprecate_workflow_catalog_entry", workflowId: "" }],
     executor: "Agent",
     allowedLifecycleTransitions: {},
     failureMode: "reject",

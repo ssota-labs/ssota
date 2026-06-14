@@ -1,12 +1,12 @@
 # Intent → Instruction Routing
 
-This root skill routes agents to **domain instructions** in SSOTA. Use `find_instruction`, then `get_instruction` for the full recipe.
+This root skill routes agents to **domain instructions** in SSOTA. Use `find_workflow`, then `get_workflow` for the full recipe.
 
 Always prefer **Active** instructions whose `triggerPatterns` match the task.
 
 ## Routing table
 
-| User intent | `find_instruction` query hints | Notes |
+| User intent | `find_workflow` query hints | Notes |
 |-------------|-------------------------------|-------|
 | Read / summarize / answer | `context assembly`, `retrieval`, `answering` | Prefer authoritative sources in graph |
 | Create document | `document creation`, `document mutation` | Check mutability and document kind |
@@ -21,9 +21,9 @@ Always prefer **Active** instructions whose `triggerPatterns` match the task.
 
 1. Classify intent (see skill §1).
 2. Identify relevant node types or graph anchors (`query_nodes`, `get_node`).
-3. Call `find_instruction` with 2–4 keywords from the table.
+3. Call `find_workflow` with 2–4 keywords from the table.
 4. If multiple matches, prefer the instruction whose `applicableNodeTypes` fits the context.
-5. `get_instruction(id)` — read the full body and `workflowSteps`.
+5. `get_workflow(id)` — read the full body and `workflowSteps`.
 6. If no match, stop and propose a new domain instruction — do not execute blindly.
 
 ## Context assembly hints

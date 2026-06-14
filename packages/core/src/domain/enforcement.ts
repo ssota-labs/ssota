@@ -18,9 +18,27 @@ import type {
   LifecycleStatus,
   NodeTypeDefinition,
   PermissionOperation,
+  WorkflowDefinition,
 } from "@ssota/contracts";
-import { NodeTypeDefinitionSchema } from "@ssota/contracts";
+import {
+  NodeTypeDefinitionSchema,
+  WorkflowCatalogUpsertSchema,
+  WorkflowDefinitionSchema,
+  parseWorkflowSpec,
+  workflowDefinitionToCatalogUpsert,
+} from "@ssota/contracts";
 import { ActionRejectedError } from "./types.js";
+
+function collectWorkflowActionRefs(spec: WorkflowDefinition): string[] {
+  const refs = new Set<string>();
+  for (const action of spec.requiredActions) refs.add(action);
+  for (const action of spec.optionalActions) refs.add(action);
+  for (const action of spec.allowedActions) refs.add(action);
+  for (const step of spec.steps) {
+    for (const action of step.actions) refs.add(action.actionType);
+  }
+  return [...refs];
+}
 
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   const parts = path.split(".");
@@ -254,10 +272,10 @@ export function resolveEffects(
         kind: "deprecate_action_catalog_entry",
         actionType: input.actionType as string,
       });
-    } else if (template.kind === "deprecate_instruction_catalog_entry") {
+    } else if (template.kind === "deprecate_workflow_catalog_entry") {
       effects.push({
-        kind: "deprecate_instruction_catalog_entry",
-        instructionId: input.instructionId as string,
+        kind: "deprecate_workflow_catalog_entry",
+        workflowId: input.workflowId as string,
       });
     } else if (template.kind === "upsert_edge_catalog_entry") {
       const definition = input.definition as {
@@ -305,49 +323,20 @@ export function resolveEffects(
           effects: definition.effects as Record<string, unknown>[],
         },
       });
-    } else if (template.kind === "upsert_instruction_catalog_entry") {
-      const definition = input.definition as {
-        instructionId?: string;
-        instructionKey?: string;
-        title: string;
-        triggerPatterns: string[];
-        applicableNodeTypes: string[];
-        requiredActions: string[];
-        optionalActions: string[];
-        lifecycle: LifecycleStatus;
-        body?: string | null;
-        contentUrl?: string | null;
-        scope?: import("@ssota/contracts").InstructionScope;
-        triggers?: string[];
-        workflowSteps?: import("@ssota/contracts").InstructionWorkflowStep[];
-        allowedActions?: string[];
-        outputContract?: Record<string, unknown>;
-        gatePolicy?: Record<string, unknown>;
-        completionCriteria?: string | null;
-      };
-      const hasBody = (definition.body?.trim().length ?? 0) > 0;
-      const hasContentUrl = (definition.contentUrl?.trim().length ?? 0) > 0;
-      if (!hasBody && !hasContentUrl) {
-        throw new ActionRejectedError(
-          "PRECONDITION_FAILED",
-          "Instruction requires at least one of body or contentUrl",
-        );
+    } else if (template.kind === "upsert_workflow_catalog_entry") {
+      const definition = input.definition as Record<string, unknown>;
+      if (definition.spec) {
+        effects.push({
+          kind: "upsert_workflow_catalog_entry",
+          entry: WorkflowCatalogUpsertSchema.parse(definition),
+        });
+      } else {
+        const spec = WorkflowDefinitionSchema.parse(definition);
+        effects.push({
+          kind: "upsert_workflow_catalog_entry",
+          entry: workflowDefinitionToCatalogUpsert(spec),
+        });
       }
-      effects.push({
-        kind: "upsert_instruction_catalog_entry",
-        entry: {
-          ...definition,
-          body: hasBody ? definition.body!.trim() : null,
-          contentUrl: hasContentUrl ? definition.contentUrl!.trim() : null,
-          scope: definition.scope ?? { kind: "global" },
-          triggers: definition.triggers ?? [],
-          workflowSteps: definition.workflowSteps ?? [],
-          allowedActions: definition.allowedActions ?? [],
-          outputContract: definition.outputContract ?? {},
-          gatePolicy: definition.gatePolicy ?? {},
-          completionCriteria: definition.completionCriteria ?? null,
-        },
-      });
     }
   }
 
@@ -504,7 +493,7 @@ export async function enforceActionScopeAndGraphIntegrity(
       if (
         scope.kind !== "global" &&
         scope.kind !== "edge_type" &&
-        scope.kind !== "instruction"
+        scope.kind !== "workflow"
       ) {
         throw new ActionRejectedError(
           "ACTION_SCOPE_MISMATCH",
@@ -544,7 +533,7 @@ async function enforceNodeScope(
   nodeType: string,
   propertyKeys: string[],
 ): Promise<void> {
-  if (scope.kind === "global" || scope.kind === "instruction") return;
+  if (scope.kind === "global" || scope.kind === "workflow") return;
   if (scope.kind === "node_type" && scope.nodeType === nodeType) return;
   if (
     scope.kind === "property" &&
@@ -658,8 +647,8 @@ const CATALOG_EFFECT_KINDS = new Set([
   "upsert_property_permission_entry",
   "upsert_action_catalog_entry",
   "deprecate_action_catalog_entry",
-  "upsert_instruction_catalog_entry",
-  "deprecate_instruction_catalog_entry",
+  "upsert_workflow_catalog_entry",
+  "deprecate_workflow_catalog_entry",
 ]);
 
 const HUMAN_ONLY_ACTION_TYPES = new Set(["approve_gate"]);
@@ -706,10 +695,10 @@ export async function enforceCatalogMutationIntegrity(
     getEdgeCatalogEntry: (
       edgeType: string,
     ) => Promise<import("./types.js").EdgeCatalogEntry | null>;
-    getInstruction?: (instructionId: string) => Promise<import("./types.js").Instruction | null>;
-    getInstructionByKey?: (
-      instructionKey: string,
-    ) => Promise<import("./types.js").Instruction | null>;
+    getWorkflow?: (workflowId: string) => Promise<import("./types.js").Workflow | null>;
+    getWorkflowByKey?: (
+      workflowKey: string,
+    ) => Promise<import("./types.js").Workflow | null>;
     hasNodesOfType?: (nodeType: string) => Promise<boolean>;
     hasEdgesOfType?: (edgeType: string) => Promise<boolean>;
   },
@@ -828,12 +817,12 @@ export async function enforceCatalogMutationIntegrity(
       }
     }
 
-    if (effect.kind === "deprecate_instruction_catalog_entry") {
-      const existing = await catalog.getInstruction?.(effect.instructionId);
+    if (effect.kind === "deprecate_workflow_catalog_entry") {
+      const existing = await catalog.getWorkflow?.(effect.workflowId);
       if (!existing) {
         throw new ActionRejectedError(
           "CATALOG_NOT_FOUND",
-          `Instruction '${effect.instructionId}' does not exist`,
+          `Workflow '${effect.workflowId}' does not exist`,
         );
       }
     }
@@ -921,52 +910,46 @@ export async function enforceCatalogMutationIntegrity(
       }
     }
 
-    if (effect.kind === "upsert_instruction_catalog_entry") {
-      const hasBody = (effect.entry.body?.trim().length ?? 0) > 0;
-      const hasContentUrl = (effect.entry.contentUrl?.trim().length ?? 0) > 0;
-      if (!hasBody && !hasContentUrl) {
+    if (effect.kind === "upsert_workflow_catalog_entry") {
+      const spec = parseWorkflowSpec(effect.entry.spec);
+      if (spec.steps.length === 0) {
         throw new ActionRejectedError(
           "PRECONDITION_FAILED",
-          "Instruction requires at least one of body or contentUrl",
+          "Workflow requires at least one step",
         );
       }
-      if (effect.entry.instructionKey) {
-        const byKey = await catalog.getInstructionByKey?.(
-          effect.entry.instructionKey,
+      if (effect.entry.workflowKey) {
+        const byKey = await catalog.getWorkflowByKey?.(
+          effect.entry.workflowKey,
         );
-        if (byKey && byKey.id !== effect.entry.instructionId) {
+        if (byKey && byKey.id !== effect.entry.workflowId) {
           throw new ActionRejectedError(
-            "DUPLICATE_INSTRUCTION_KEY",
-            `Instruction key '${effect.entry.instructionKey}' already exists`,
+            "DUPLICATE_WORKFLOW_KEY",
+            `Workflow key '${effect.entry.workflowKey}' already exists`,
           );
         }
       }
-      if (effect.entry.instructionId) {
-        const existing = await catalog.getInstruction?.(effect.entry.instructionId);
-        if (actionType === "update_instruction" && !existing) {
+      if (effect.entry.workflowId) {
+        const existing = await catalog.getWorkflow?.(effect.entry.workflowId);
+        if (actionType === "update_workflow" && !existing) {
           throw new ActionRejectedError(
             "CATALOG_NOT_FOUND",
-            `Instruction '${effect.entry.instructionId}' does not exist`,
+            `Workflow '${effect.entry.workflowId}' does not exist`,
           );
         }
-      } else if (actionType === "update_instruction") {
+      } else if (actionType === "update_workflow") {
         throw new ActionRejectedError(
           "PRECONDITION_FAILED",
-          "update_instruction requires instructionId in merged definition",
+          "update_workflow requires workflowId in merged definition",
         );
       }
-      const actionRefs = new Set([
-        ...effect.entry.requiredActions,
-        ...effect.entry.optionalActions,
-        ...effect.entry.allowedActions,
-        ...effect.entry.workflowSteps.flatMap((step) => step.actionRefs),
-      ]);
+      const actionRefs = collectWorkflowActionRefs(spec);
       for (const ref of actionRefs) {
         const action = await catalog.getActionCatalogEntry(ref);
         if (!action) {
           throw new ActionRejectedError(
             "CATALOG_NOT_FOUND",
-            `Instruction references missing action '${ref}'`,
+            `Workflow references missing action '${ref}'`,
           );
         }
       }

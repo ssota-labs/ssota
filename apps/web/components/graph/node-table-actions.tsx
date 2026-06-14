@@ -16,7 +16,7 @@ import { Textarea } from "@ssota/ui/components/ui/textarea";
 import {
   addNodePropertyFormAction,
   defineScopedActionFormAction,
-  defineWorkflowInstructionFormAction,
+  defineWorkflowFormAction,
   runActionJsonFormAction,
 } from "@/app/actions";
 
@@ -343,7 +343,7 @@ export function AddActionSheet({
   );
 }
 
-export function AddInstructionSheet({
+export function AddWorkflowSheet({
   nodeType,
   projectId,
 }: {
@@ -358,7 +358,7 @@ export function AddInstructionSheet({
           <SheetTitle>Add workflow to {nodeType}</SheetTitle>
           <SheetDescription>이 node table에 적용되는 agent workflow를 정의합니다.</SheetDescription>
         </SheetHeader>
-        <form action={defineWorkflowInstructionFormAction} className="space-y-4 px-6 pb-6">
+        <form action={defineWorkflowFormAction} className="space-y-4 px-6 pb-6">
           <input type="hidden" name="projectId" value={projectId} />
           <input type="hidden" name="scopeKind" value="node_type" />
           <input type="hidden" name="nodeType" value={nodeType} />

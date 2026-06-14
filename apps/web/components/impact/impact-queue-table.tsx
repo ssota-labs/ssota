@@ -139,8 +139,8 @@ export function ImpactQueueTable({
                       {selected.dependencyEdgeId ?? "-"}
                     </div>
                     <div>
-                      <span className="text-foreground">instructionId:</span>{" "}
-                      {selected.instructionId ?? "-"}
+                      <span className="text-foreground">workflowId:</span>{" "}
+                      {selected.workflowId ?? "-"}
                     </div>
                   </dl>
                 </div>

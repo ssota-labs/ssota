@@ -5,8 +5,6 @@ import {
   ExecutorTypeSchema,
   GateStatusSchema,
   ImpactQueueStatusSchema,
-  InstructionScopeSchema,
-  InstructionWorkflowStepSchema,
   LifecycleStatusSchema,
   NodeFamilySchema,
   NodeTypeDefinitionSchema,
@@ -99,32 +97,11 @@ export type ActionPropertyPermission = z.infer<
   typeof ActionPropertyPermissionSchema
 >;
 
-export const InstructionSchema = z.object({
-  id: z.string().uuid(),
-  slug: z.string().min(1),
-  instructionKey: z.string().nullable(),
-  title: z.string(),
-  triggerPatterns: z.array(z.string()),
-  applicableNodeTypes: z.array(z.string()),
-  requiredActions: z.array(z.string()),
-  optionalActions: z.array(z.string()),
-  lifecycle: LifecycleStatusSchema,
-  body: z.string().nullable(),
-  contentUrl: z.string().nullable(),
-  scope: InstructionScopeSchema,
-  triggers: z.array(z.string()),
-  workflowSteps: z.array(InstructionWorkflowStepSchema),
-  allowedActions: z.array(z.string()),
-  outputContract: z.record(z.unknown()),
-  gatePolicy: z.record(z.unknown()),
-  completionCriteria: z.string().nullable(),
-  /** Derived Workflow SSOT — populated by get_instruction package renderer. */
-  workflow: WorkflowSchema.optional(),
-  /** Agent-readable instruction text rendered from workflow spec. */
+export const WorkflowWireSchema = WorkflowSchema.extend({
   renderedText: z.string().optional(),
 });
 
-export type Instruction = z.infer<typeof InstructionSchema>;
+export type WorkflowWire = z.infer<typeof WorkflowWireSchema>;
 
 export const NodeSchema = z.object({
   id: z.string().uuid(),
@@ -190,7 +167,7 @@ export const ImpactQueueItemSchema = z.object({
   targetNodeId: z.string().uuid().nullable(),
   dependencyEdgeId: z.string().uuid().nullable(),
   workflowKey: z.string().min(1),
-  instructionId: z.string().uuid().nullable(),
+  workflowId: z.string().uuid().nullable(),
   status: ImpactQueueStatusSchema,
   priority: z.number().int(),
   runAt: IsoDateTimeSchema,
@@ -253,9 +230,7 @@ export const ActionLogListResponseSchema = ListResponseSchema(
 export const ImpactQueueListResponseSchema = ListResponseSchema(
   ImpactQueueItemSchema,
 );
-export const InstructionListResponseSchema = ListResponseSchema(
-  InstructionSchema,
-);
+export const WorkflowListResponseSchema = ListResponseSchema(WorkflowWireSchema);
 export const NodeCatalogListResponseSchema = ListResponseSchema(
   NodeCatalogEntrySchema,
 );
@@ -285,7 +260,7 @@ export const PropertyCatalogEntryResponseSchema = SingleResponseSchema(
   PropertyCatalogEntrySchema,
 );
 export const NodeResponseSchema = SingleResponseSchema(NodeSchema);
-export const InstructionResponseSchema = SingleResponseSchema(InstructionSchema);
+export const WorkflowResponseSchema = SingleResponseSchema(WorkflowWireSchema);
 export const GateResponseSchema = SingleResponseSchema(GateSchema);
 export const ActionLogEntryResponseSchema = SingleResponseSchema(
   ActionLogRecordSchema,

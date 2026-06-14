@@ -25,7 +25,7 @@ const sections = [
     description: "액션 컨트랙트 — preconditions, effects, executor",
   },
   {
-    href: "/studio/instructions",
+    href: "/studio/workflows",
     title: "Workflows",
     description: "에이전트 워크플로우 — trigger patterns, applicable node types",
   },

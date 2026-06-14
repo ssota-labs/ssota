@@ -9,7 +9,7 @@ export type SerializedImpactQueueItem = {
   targetNodeId: string | null;
   dependencyEdgeId: string | null;
   workflowKey: string;
-  instructionId: string | null;
+  workflowId: string | null;
   status: ImpactQueueStatus;
   priority: number;
   runAt: string;
@@ -37,7 +37,7 @@ export function serializeImpactQueueItem(
     targetNodeId: item.targetNodeId,
     dependencyEdgeId: item.dependencyEdgeId,
     workflowKey: item.workflowKey,
-    instructionId: item.instructionId,
+    workflowId: item.workflowId,
     status: item.status,
     priority: item.priority,
     runAt: item.runAt.toISOString(),

@@ -5,15 +5,15 @@ import {
   ActionScopeSchema,
   DefineActionContractInputSchema,
   DefineEdgeTypeInputSchema,
-  DefineInstructionInputSchema,
+  DefineWorkflowInputSchema,
   DefineNodeTypeInputSchema,
   DeprecateActionContractInputSchema,
   DeprecateEdgeTypeInputSchema,
-  DeprecateInstructionInputSchema,
+  DeprecateWorkflowInputSchema,
   DeprecateNodeTypeInputSchema,
   UpdateActionContractInputSchema,
   UpdateEdgeTypeInputSchema,
-  UpdateInstructionInputSchema,
+  UpdateWorkflowInputSchema,
   UpdateNodeTypeInputSchema,
   UpdateNodePropertiesInputSchema,
   UpdateNodePropertySchemaInputSchema,
@@ -339,15 +339,15 @@ export async function defineEdgeTypeAction(input: Record<string, unknown>) {
   ], projectId);
 }
 
-export async function defineInstructionAction(input: Record<string, unknown>) {
+export async function defineWorkflowAction(input: Record<string, unknown>) {
   const { projectId: inputProjectId, ...rest } = input;
-  const parsed = DefineInstructionInputSchema.parse(rest);
+  const parsed = DefineWorkflowInputSchema.parse(rest);
   const projectId =
     typeof inputProjectId === "string" && inputProjectId
       ? inputProjectId
       : await resolveDefaultProjectId();
-  return runMetaAction("define_instruction", parsed, [
-    "/studio/instructions",
+  return runMetaAction("define_workflow", parsed, [
+    "/studio/workflows",
     "/workflow",
   ], projectId);
 }
@@ -448,46 +448,44 @@ export async function deprecateActionContractAction(
   ], projectId);
 }
 
-export async function updateInstructionAction(input: Record<string, unknown>) {
+export async function updateWorkflowAction(input: Record<string, unknown>) {
   const { projectId: inputProjectId, ...rest } = input;
-  const parsed = UpdateInstructionInputSchema.parse(rest);
+  const parsed = UpdateWorkflowInputSchema.parse(rest);
   const projectId =
     typeof inputProjectId === "string" && inputProjectId
       ? inputProjectId
       : await resolveDefaultProjectId();
-  return runMetaAction("update_instruction", parsed, [
-    "/studio/instructions",
-    "/workflow",
-    "/workflow",
+  return runMetaAction("update_workflow", parsed, [
+    "/studio/workflows",
     "/workflow",
   ], projectId);
 }
 
-export async function attachInstructionRunbookFormAction(formData: FormData) {
+export async function attachWorkflowRunbookFormAction(formData: FormData) {
   const projectId = await requireProjectId(formData);
-  const instructionId = String(formData.get("instructionId") ?? "");
+  const workflowId = String(formData.get("workflowId") ?? "");
   const runbookUrl = String(formData.get("runbookUrl") ?? "").trim();
-  if (!instructionId) throw new Error("instructionId required");
+  if (!workflowId) throw new Error("workflowId required");
   if (!runbookUrl) throw new Error("runbookUrl required");
 
-  await updateInstructionAction({
+  await updateWorkflowAction({
     projectId,
-    instructionId,
+    workflowId,
     patch: {
-      contentUrl: runbookUrl,
+      references: [{ id: "runbook", title: "Runbook", kind: "url", url: runbookUrl }],
     },
   });
 }
 
-export async function deprecateInstructionAction(input: Record<string, unknown>) {
+export async function deprecateWorkflowAction(input: Record<string, unknown>) {
   const { projectId: inputProjectId, ...rest } = input;
-  const parsed = DeprecateInstructionInputSchema.parse(rest);
+  const parsed = DeprecateWorkflowInputSchema.parse(rest);
   const projectId =
     typeof inputProjectId === "string" && inputProjectId
       ? inputProjectId
       : await resolveDefaultProjectId();
-  return runMetaAction("deprecate_instruction", parsed, [
-    "/studio/instructions",
+  return runMetaAction("deprecate_workflow", parsed, [
+    "/studio/workflows",
     "/workflow",
   ], projectId);
 }
@@ -665,10 +663,10 @@ export async function defineScopedActionFormAction(formData: FormData): Promise<
               nodeType: String(formData.get("nodeType") ?? ""),
               propertyKey: String(formData.get("propertyKey") ?? ""),
             }
-          : scopeKind === "instruction"
+          : scopeKind === "workflow"
             ? {
-                kind: "instruction",
-                title: String(formData.get("instructionTitle") ?? "Instruction"),
+                kind: "workflow",
+                title: String(formData.get("workflowTitle") ?? "Workflow"),
               }
             : { kind: "global" },
   );
@@ -689,7 +687,7 @@ export async function defineScopedActionFormAction(formData: FormData): Promise<
   });
 }
 
-export async function defineWorkflowInstructionFormAction(formData: FormData): Promise<void> {
+export async function defineWorkflowFormAction(formData: FormData): Promise<void> {
   const projectId = await requireProjectId(formData);
   const triggerPatterns = parseCsv(formData.get("triggerPatterns"));
   const scopeKind = String(formData.get("scopeKind") ?? "global");
@@ -701,28 +699,58 @@ export async function defineWorkflowInstructionFormAction(formData: FormData): P
   const applicableNodeTypes = parseCsv(formData.get("applicableNodeTypes"));
   const body = String(formData.get("body") ?? "").trim();
   const contentUrl = String(formData.get("contentUrl") ?? "").trim();
-  const instructionKey = String(formData.get("instructionKey") ?? "").trim();
-  await defineInstructionAction({
+  const workflowKey = String(formData.get("workflowKey") ?? "").trim();
+  const rawSteps = parseJsonArray(formData.get("workflowSteps")) as Array<
+    Record<string, unknown>
+  >;
+  const steps =
+    rawSteps.length > 0
+      ? rawSteps.map((step) => ({
+          id: String(step.id ?? "step"),
+          title: String(step.title ?? "Step"),
+          mode: "agentic" as const,
+          actions: (Array.isArray(step.actionRefs) ? step.actionRefs : []).map(
+            (actionType) => ({
+              actionType: String(actionType),
+              required: false,
+            }),
+          ),
+        }))
+      : [{ id: "execute", title: String(formData.get("title") ?? "Workflow"), mode: "agentic" as const, actions: [] }];
+  const references = [
+    ...(body
+      ? [{ id: "agent_body", title: "Body", kind: "inline" as const, body }]
+      : []),
+    ...(contentUrl
+      ? [{ id: "runbook", title: "Runbook", kind: "url" as const, url: contentUrl }]
+      : []),
+  ];
+  await defineWorkflowAction({
     definition: {
       title: String(formData.get("title") ?? ""),
-      ...(instructionKey ? { instructionKey } : {}),
-      triggerPatterns: triggerPatterns.length ? triggerPatterns : ["manual"],
+      ...(workflowKey ? { workflowKey } : {}),
+      lifecycle: "Active",
+      scope,
+      trigger: {
+        patterns: triggerPatterns.length ? triggerPatterns : ["manual"],
+        events: parseCsv(formData.get("triggers")),
+      },
       applicableNodeTypes:
         applicableNodeTypes.length || !scopedNodeType
           ? applicableNodeTypes
-          : [scopedNodeType],
+          : scopedNodeType
+            ? [scopedNodeType]
+            : [],
       requiredActions: parseCsv(formData.get("requiredActions")),
       optionalActions: parseCsv(formData.get("optionalActions")),
-      lifecycle: "Active",
-      ...(body ? { body } : {}),
-      ...(contentUrl ? { contentUrl } : {}),
-      scope,
-      triggers: parseCsv(formData.get("triggers")),
-      workflowSteps: parseJsonArray(formData.get("workflowSteps")),
       allowedActions: parseCsv(formData.get("allowedActions")),
-      outputContract: parseJsonObject(formData.get("outputContract")),
-      gatePolicy: parseJsonObject(formData.get("gatePolicy")),
-      completionCriteria: String(formData.get("completionCriteria") ?? "") || null,
+      steps,
+      output: {
+        contract: parseJsonObject(formData.get("outputContract")),
+        completionCriteria: String(formData.get("completionCriteria") ?? "") || null,
+      },
+      ...(references.length ? { references } : {}),
+      ...(body ? { agentNotes: body } : {}),
     },
     projectId,
   });

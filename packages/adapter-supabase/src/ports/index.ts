@@ -10,10 +10,10 @@ import type {
   ActionScope,
   Effect,
   GateStatus,
-  InstructionScope,
-  InstructionWorkflowStep,
+  WorkflowScope,
   LifecycleStatus,
 } from "@ssota/contracts";
+import { parseWorkflowSpec } from "@ssota/contracts";
 import type {
   ActionCommitPort,
   ActionLogRecord,
@@ -35,7 +35,7 @@ import type {
   ImpactQueueItem,
   ImpactQueuePort,
   ImpactQueueQueryInput,
-  Instruction,
+  Workflow,
   Node,
   NodeCatalogEntry,
 } from "@ssota/core";
@@ -114,27 +114,17 @@ function mapEdgeCatalogEntry(
   };
 }
 
-function mapInstruction(row: typeof schema.instructions.$inferSelect): Instruction {
+function mapWorkflow(row: typeof schema.workflows.$inferSelect): Workflow {
   return {
     id: row.id,
     projectId: row.projectId,
     slug: row.slug,
-    instructionKey: row.instructionKey,
-    title: row.title,
-    triggerPatterns: row.triggerPatterns,
-    applicableNodeTypes: row.applicableNodeTypes,
-    requiredActions: row.requiredActions,
-    optionalActions: row.optionalActions,
+    workflowKey: row.workflowKey,
     lifecycle: row.lifecycle as LifecycleStatus,
-    body: row.body,
-    contentUrl: row.contentUrl,
-    scope: row.scope as InstructionScope,
-    triggers: row.triggers,
-    workflowSteps: row.workflowSteps as InstructionWorkflowStep[],
-    allowedActions: row.allowedActions,
-    outputContract: row.outputContract,
-    gatePolicy: row.gatePolicy,
-    completionCriteria: row.completionCriteria,
+    scope: row.scope as WorkflowScope,
+    spec: parseWorkflowSpec(row.spec),
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
   };
 }
 
@@ -323,84 +313,84 @@ export function createCatalogPort(db: Db, scope: ActionPortsScope): CatalogPort 
       );
     },
 
-    async findInstructions(query, nodeType, limit = 5) {
+    async findWorkflows(query, nodeType, limit = 5) {
       const pattern = `%${query.toLowerCase()}%`;
       const rows = await db
         .select()
-        .from(schema.instructions)
+        .from(schema.workflows)
         .where(
           and(
-            eq(schema.instructions.projectId, projectId),
+            eq(schema.workflows.projectId, projectId),
             or(
-              sql`lower(${schema.instructions.title}) like ${pattern}`,
-              sql`lower(${schema.instructions.body}) like ${pattern}`,
-              sql`lower(${schema.instructions.instructionKey}) like ${pattern}`,
+              sql`lower(${schema.workflows.spec}->>'title') like ${pattern}`,
+              sql`lower(coalesce(${schema.workflows.spec}->>'agentNotes', '')) like ${pattern}`,
+              sql`lower(coalesce(${schema.workflows.workflowKey}, '')) like ${pattern}`,
             ),
             nodeType
-              ? sql`${schema.instructions.applicableNodeTypes} @> ${JSON.stringify([nodeType])}::jsonb`
+              ? sql`${schema.workflows.spec}->'applicableNodeTypes' @> ${JSON.stringify([nodeType])}::jsonb`
               : undefined,
           ),
         )
         .limit(limit);
 
-      return rows.map(mapInstruction);
+      return rows.map(mapWorkflow);
     },
 
-    async listInstructions(input) {
+    async listWorkflows(input) {
       const rows = await db
         .select()
-        .from(schema.instructions)
-        .where(eq(schema.instructions.projectId, projectId))
+        .from(schema.workflows)
+        .where(eq(schema.workflows.projectId, projectId))
         .limit(input?.limit ?? 100);
-      return rows.map(mapInstruction);
+      return rows.map(mapWorkflow);
     },
 
-    async getInstruction(instructionId) {
+    async getWorkflow(workflowId) {
       const rows = await db
         .select()
-        .from(schema.instructions)
+        .from(schema.workflows)
         .where(
           and(
-            eq(schema.instructions.projectId, projectId),
-            eq(schema.instructions.id, instructionId),
+            eq(schema.workflows.projectId, projectId),
+            eq(schema.workflows.id, workflowId),
           ),
         )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
-      return mapInstruction(row);
+      return mapWorkflow(row);
     },
 
-    async getInstructionBySlug(slug) {
+    async getWorkflowBySlug(slug) {
       const rows = await db
         .select()
-        .from(schema.instructions)
+        .from(schema.workflows)
         .where(
           and(
-            eq(schema.instructions.projectId, projectId),
-            eq(schema.instructions.slug, slug),
+            eq(schema.workflows.projectId, projectId),
+            eq(schema.workflows.slug, slug),
           ),
         )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
-      return mapInstruction(row);
+      return mapWorkflow(row);
     },
 
-    async getInstructionByKey(instructionKey) {
+    async getWorkflowByKey(workflowKey) {
       const rows = await db
         .select()
-        .from(schema.instructions)
+        .from(schema.workflows)
         .where(
           and(
-            eq(schema.instructions.projectId, projectId),
-            eq(schema.instructions.instructionKey, instructionKey),
+            eq(schema.workflows.projectId, projectId),
+            eq(schema.workflows.workflowKey, workflowKey),
           ),
         )
         .limit(1);
       const row = rows[0];
       if (!row) return null;
-      return mapInstruction(row);
+      return mapWorkflow(row);
     },
   };
 }
@@ -779,13 +769,13 @@ async function applyEffect(
           eq(schema.actionCatalog.actionType, effect.actionType),
         ),
       );
-  } else if (effect.kind === "deprecate_instruction_catalog_entry") {
+  } else if (effect.kind === "deprecate_workflow_catalog_entry") {
     await tx
-      .delete(schema.instructions)
+      .delete(schema.workflows)
       .where(
         and(
-          eq(schema.instructions.projectId, projectId),
-          eq(schema.instructions.id, effect.instructionId),
+          eq(schema.workflows.projectId, projectId),
+          eq(schema.workflows.id, effect.workflowId),
         ),
       );
   } else if (effect.kind === "upsert_edge_catalog_entry") {
@@ -887,55 +877,35 @@ async function applyEffect(
           logPayloadSchema: effect.entry.logPayloadSchema,
         },
       });
-  } else if (effect.kind === "upsert_instruction_catalog_entry") {
-    if (effect.entry.instructionId) {
+  } else if (effect.kind === "upsert_workflow_catalog_entry") {
+    const spec = parseWorkflowSpec(effect.entry.spec);
+    const slug = effect.entry.slug ?? toCatalogSlug(spec.title);
+    const scope = effect.entry.scope as WorkflowScope;
+    if (effect.entry.workflowId) {
       await tx
-        .update(schema.instructions)
+        .update(schema.workflows)
         .set({
-          title: effect.entry.title,
-          instructionKey: effect.entry.instructionKey ?? null,
-          triggerPatterns: effect.entry.triggerPatterns,
-          applicableNodeTypes: effect.entry.applicableNodeTypes,
-          requiredActions: effect.entry.requiredActions,
-          optionalActions: effect.entry.optionalActions,
+          slug,
+          workflowKey: effect.entry.workflowKey ?? null,
           lifecycle: effect.entry.lifecycle,
-          body: effect.entry.body ?? null,
-          contentUrl: effect.entry.contentUrl ?? null,
-          scope: effect.entry.scope,
-          triggers: effect.entry.triggers,
-          workflowSteps: effect.entry.workflowSteps,
-          allowedActions: effect.entry.allowedActions,
-          outputContract: effect.entry.outputContract,
-          gatePolicy: effect.entry.gatePolicy,
-          completionCriteria: effect.entry.completionCriteria ?? null,
+          scope,
+          spec: effect.entry.spec,
+          updatedAt: new Date(),
         })
         .where(
           and(
-            eq(schema.instructions.projectId, projectId),
-            eq(schema.instructions.id, effect.entry.instructionId),
+            eq(schema.workflows.projectId, projectId),
+            eq(schema.workflows.id, effect.entry.workflowId),
           ),
         );
     } else {
-      const slug = toCatalogSlug(effect.entry.title);
-      await tx.insert(schema.instructions).values({
+      await tx.insert(schema.workflows).values({
         projectId,
         slug,
-        instructionKey: effect.entry.instructionKey ?? null,
-        title: effect.entry.title,
-        triggerPatterns: effect.entry.triggerPatterns,
-        applicableNodeTypes: effect.entry.applicableNodeTypes,
-        requiredActions: effect.entry.requiredActions,
-        optionalActions: effect.entry.optionalActions,
+        workflowKey: effect.entry.workflowKey ?? spec.workflowKey ?? null,
         lifecycle: effect.entry.lifecycle,
-        body: effect.entry.body ?? null,
-        contentUrl: effect.entry.contentUrl ?? null,
-        scope: effect.entry.scope,
-        triggers: effect.entry.triggers,
-        workflowSteps: effect.entry.workflowSteps,
-        allowedActions: effect.entry.allowedActions,
-        outputContract: effect.entry.outputContract,
-        gatePolicy: effect.entry.gatePolicy,
-        completionCriteria: effect.entry.completionCriteria ?? null,
+        scope,
+        spec: effect.entry.spec,
       });
     }
   }
@@ -1075,7 +1045,7 @@ function mapImpactQueueItem(
     targetNodeId: row.targetNodeId,
     dependencyEdgeId: row.dependencyEdgeId,
     workflowKey: row.workflowKey,
-    instructionId: row.instructionId,
+    workflowId: row.workflowId,
     status: row.status,
     priority: row.priority,
     runAt: row.runAt,
@@ -1126,7 +1096,7 @@ export function createImpactQueuePort(
           targetNodeId: input.targetNodeId ?? null,
           dependencyEdgeId: input.dependencyEdgeId ?? null,
           workflowKey: input.workflowKey,
-          instructionId: input.instructionId ?? null,
+          workflowId: input.workflowId ?? null,
           priority: input.priority ?? 0,
           runAt: input.runAt ?? new Date(),
           maxAttempts: input.maxAttempts ?? 5,

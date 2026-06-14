@@ -43,9 +43,9 @@ export const ActionScopeSchema = z.discriminatedUnion("kind", [
     propertyKey: z.string().min(1),
   }),
   z.object({
-    kind: z.literal("instruction"),
-    instructionId: z.string().uuid().optional(),
-    title: z.string().min(1).optional(),
+    kind: z.literal("workflow"),
+    workflowId: z.string().uuid().optional(),
+    workflowKey: z.string().min(1).optional(),
   }),
 ]);
 
@@ -299,108 +299,14 @@ export type DeprecateActionContractInput = z.infer<
   typeof DeprecateActionContractInputSchema
 >;
 
-export const InstructionScopeSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("global") }),
-  z.object({ kind: z.literal("node_type"), nodeType: z.string().min(1) }),
-  z.object({ kind: z.literal("edge_type"), edgeType: z.string().min(1) }),
-  z.object({
-    kind: z.literal("property"),
-    nodeType: z.string().min(1),
-    propertyKey: z.string().min(1),
-  }),
-  z.object({ kind: z.literal("action"), actionType: z.string().min(1) }),
-]);
-
-export type InstructionScope = z.infer<typeof InstructionScopeSchema>;
-
-export const InstructionWorkflowStepSchema = z.object({
-  id: z.string().min(1),
-  title: z.string().min(1),
-  description: z.string().optional(),
-  actionRefs: z.array(z.string()).default([]),
-  output: z.string().optional(),
-  gate: z.boolean().default(false),
+export const WorkflowCatalogUpsertEffectEntrySchema = z.object({
+  workflowId: z.string().uuid().optional(),
+  slug: z.string().min(1).optional(),
+  workflowKey: z.string().nullable().optional(),
+  lifecycle: LifecycleStatusSchema,
+  scope: z.record(z.unknown()),
+  spec: z.record(z.unknown()),
 });
-
-export type InstructionWorkflowStep = z.infer<
-  typeof InstructionWorkflowStepSchema
->;
-
-const InstructionKeySchema = z
-  .string()
-  .regex(/^[a-z][a-z0-9_]*$/, "instructionKey must be snake_case");
-
-function hasInstructionContent(data: {
-  body?: string | null;
-  contentUrl?: string | null;
-}): boolean {
-  return (
-    (data.body?.trim().length ?? 0) > 0 ||
-    (data.contentUrl?.trim().length ?? 0) > 0
-  );
-}
-
-const InstructionDefinitionBaseSchema = z.object({
-  title: z.string().min(1),
-  instructionKey: InstructionKeySchema.optional(),
-  triggerPatterns: z.array(z.string()).min(1),
-  applicableNodeTypes: z.array(z.string()).default([]),
-  requiredActions: z.array(z.string()).default([]),
-  optionalActions: z.array(z.string()).default([]),
-  lifecycle: LifecycleStatusSchema.default("Active"),
-  body: z.string().nullable().optional(),
-  contentUrl: z.string().url().nullable().optional(),
-  scope: InstructionScopeSchema.default({ kind: "global" }),
-  triggers: z.array(z.string()).default([]),
-  workflowSteps: z.array(InstructionWorkflowStepSchema).default([]),
-  allowedActions: z.array(z.string()).default([]),
-  outputContract: z.record(z.unknown()).default({}),
-  gatePolicy: z.record(z.unknown()).default({}),
-  completionCriteria: z.string().nullable().optional(),
-});
-
-export const InstructionDefinitionSchema = InstructionDefinitionBaseSchema.refine(
-  hasInstructionContent,
-  {
-    message: "At least one of body or contentUrl is required",
-    path: ["body"],
-  },
-);
-
-export type InstructionDefinition = z.infer<typeof InstructionDefinitionSchema>;
-
-export const DefineInstructionInputSchema = z.object({
-  definition: InstructionDefinitionSchema,
-});
-
-export type DefineInstructionInput = z.infer<typeof DefineInstructionInputSchema>;
-
-export const InstructionCatalogUpsertSchema =
-  InstructionDefinitionBaseSchema.extend({
-    instructionId: z.string().uuid().optional(),
-  }).refine(hasInstructionContent, {
-    message: "At least one of body or contentUrl is required",
-    path: ["body"],
-  });
-
-export type InstructionCatalogUpsert = z.infer<
-  typeof InstructionCatalogUpsertSchema
->;
-
-export const UpdateInstructionInputSchema = z.object({
-  instructionId: z.string().uuid(),
-  patch: InstructionDefinitionBaseSchema.partial(),
-});
-
-export type UpdateInstructionInput = z.infer<typeof UpdateInstructionInputSchema>;
-
-export const DeprecateInstructionInputSchema = z.object({
-  instructionId: z.string().uuid(),
-});
-
-export type DeprecateInstructionInput = z.infer<
-  typeof DeprecateInstructionInputSchema
->;
 
 export const EffectSchema = z.discriminatedUnion("kind", [
   z.object({
@@ -475,12 +381,12 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     actionType: z.string().min(1),
   }),
   z.object({
-    kind: z.literal("upsert_instruction_catalog_entry"),
-    entry: InstructionCatalogUpsertSchema,
+    kind: z.literal("upsert_workflow_catalog_entry"),
+    entry: WorkflowCatalogUpsertEffectEntrySchema,
   }),
   z.object({
-    kind: z.literal("deprecate_instruction_catalog_entry"),
-    instructionId: z.string().uuid(),
+    kind: z.literal("deprecate_workflow_catalog_entry"),
+    workflowId: z.string().uuid(),
   }),
 ]);
 
@@ -550,14 +456,6 @@ export const TraverseEdgesInputSchema = z.object({
 
 export type TraverseEdgesInput = z.infer<typeof TraverseEdgesInputSchema>;
 
-export const FindInstructionInputSchema = z.object({
-  query: z.string().min(1),
-  nodeType: z.string().optional(),
-  limit: z.number().int().positive().max(20).default(5),
-});
-
-export type FindInstructionInput = z.infer<typeof FindInstructionInputSchema>;
-
 export const GetActionLogInputSchema = z.object({
   limit: z.number().int().positive().max(100).default(20),
   offset: z.number().int().nonnegative().default(0),
@@ -589,17 +487,6 @@ export const GetNodeInputSchema = z.object({
 });
 
 export type GetNodeInput = z.infer<typeof GetNodeInputSchema>;
-
-export const GetInstructionInputSchema = z
-  .object({
-    instructionId: z.string().uuid().optional(),
-    instructionKey: InstructionKeySchema.optional(),
-  })
-  .refine((value) => value.instructionId || value.instructionKey, {
-    message: "instructionId or instructionKey is required",
-  });
-
-export type GetInstructionInput = z.infer<typeof GetInstructionInputSchema>;
 
 export const GetGateInputSchema = z.object({
   gateId: z.string().uuid(),

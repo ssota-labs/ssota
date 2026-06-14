@@ -78,18 +78,18 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
     expect(Array.isArray(log)).toBe(true);
   });
 
-  test("smoke: SDK instructions find + get", async () => {
+  test("smoke: SDK workflows find + get", async () => {
     const token = await getSmokeAccessToken();
     const ssota = await authedClient(token);
 
-    const found = await ssota.instructions.find({
+    const found = await ssota.workflows.find({
       query: "document",
       limit: 3,
     });
     expect(found.length).toBeGreaterThan(0);
 
-    const instruction = await ssota.instructions.get(found[0]!.id);
-    expect(instruction?.id).toBe(found[0]!.id);
+    const workflow = await ssota.workflows.get(found[0]!.id);
+    expect(workflow?.id).toBe(found[0]!.id);
   });
 
   test("smoke: SDK execute → preview 플로우", async () => {
@@ -188,8 +188,8 @@ test.describe("SSOTA SDK → HTTP API v1", () => {
       "/nodes/:nodeId/edges",
       "/nodes/:nodeId/neighbors",
       "/graph/traverse",
-      "/instructions/search",
-      "/instructions/:instructionId",
+      "/workflows/search",
+      "/workflows/:workflowId",
       "/gates",
       "/gates/pending",
       "/gates/:gateId",

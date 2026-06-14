@@ -142,7 +142,7 @@ function deriveGateMetadata(gate: {
       risk: "medium",
     };
   }
-  if (first.kind.includes("instruction")) {
+  if (first.kind.includes("workflow")) {
     return { surface: "Workflows", target: gate.actionType, risk: "high" };
   }
   if (first.kind.includes("action")) {
@@ -176,8 +176,8 @@ function summarizeEffects(
     if (kind.includes("edge")) {
       return `Change edge relationship ${String(record.edgeType ?? input.edgeType ?? "unknown")}.`;
     }
-    if (kind.includes("instruction")) {
-      return `Change workflow instruction ${String(input.instructionId ?? input.title ?? "unknown")}.`;
+    if (kind.includes("workflow")) {
+      return `Change workflow ${String(input.workflowId ?? input.title ?? "unknown")}.`;
     }
     if (kind.includes("action")) {
       return `Change action contract ${String(input.actionType ?? "unknown")}.`;
@@ -191,8 +191,8 @@ export function gateMatchesWorkflow(
   workflowId: string,
   allowedActions: string[],
 ): boolean {
-  if (gate.input.instructionId === workflowId) return true;
+  if (gate.input.workflowId === workflowId) return true;
   if (allowedActions.includes(gate.actionType)) return true;
-  if (gate.actionType.includes("instruction")) return true;
+  if (gate.actionType.includes("workflow")) return true;
   return false;
 }

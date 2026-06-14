@@ -1,8 +1,12 @@
-import type { PropertySchemaPatch } from "@ssota/contracts";
+import {
+  mergeWorkflowDefinition,
+  type PropertySchemaPatch,
+  type WorkflowDefinition,
+} from "@ssota/contracts";
 import type {
   ActionCatalogEntry,
   EdgeCatalogEntry,
-  Instruction,
+  Workflow,
   NodeCatalogEntry,
 } from "./domain/types.js";
 import {
@@ -145,63 +149,27 @@ export function mergeUpdateActionContractInput(
   };
 }
 
-export function mergeUpdateInstructionInput(
+export function mergeUpdateWorkflowInput(
   input: Record<string, unknown>,
-  existing: Instruction,
+  existing: Workflow,
 ): Record<string, unknown> {
-  const instructionId = input.instructionId as string;
-  const patch = input.patch as Record<string, unknown>;
+  const workflowId = input.workflowId as string;
+  const patch = input.patch as Partial<WorkflowDefinition> & {
+    lifecycle?: Workflow["lifecycle"];
+    scope?: Workflow["scope"];
+  };
+  const mergedSpec = mergeWorkflowDefinition(existing.spec, patch);
   return {
     definition: {
-      instructionId,
-      instructionKey:
-        patch.instructionKey !== undefined
-          ? (patch.instructionKey as string | null)
-          : existing.instructionKey,
-      title: (patch.title as string | undefined) ?? existing.title,
-      triggerPatterns:
-        (patch.triggerPatterns as string[] | undefined) ??
-        existing.triggerPatterns,
-      applicableNodeTypes:
-        (patch.applicableNodeTypes as string[] | undefined) ??
-        existing.applicableNodeTypes,
-      requiredActions:
-        (patch.requiredActions as string[] | undefined) ??
-        existing.requiredActions,
-      optionalActions:
-        (patch.optionalActions as string[] | undefined) ??
-        existing.optionalActions,
-      lifecycle:
-        (patch.lifecycle as Instruction["lifecycle"] | undefined) ??
-        existing.lifecycle,
-      body:
-        patch.body !== undefined
-          ? (patch.body as string | null)
-          : existing.body,
-      contentUrl:
-        patch.contentUrl !== undefined
-          ? (patch.contentUrl as string | null)
-          : existing.contentUrl,
-      scope:
-        (patch.scope as Instruction["scope"] | undefined) ?? existing.scope,
-      triggers:
-        (patch.triggers as string[] | undefined) ?? existing.triggers,
-      workflowSteps:
-        (patch.workflowSteps as Instruction["workflowSteps"] | undefined) ??
-        existing.workflowSteps,
-      allowedActions:
-        (patch.allowedActions as string[] | undefined) ??
-        existing.allowedActions,
-      outputContract:
-        (patch.outputContract as Record<string, unknown> | undefined) ??
-        existing.outputContract,
-      gatePolicy:
-        (patch.gatePolicy as Record<string, unknown> | undefined) ??
-        existing.gatePolicy,
-      completionCriteria:
-        patch.completionCriteria !== undefined
-          ? (patch.completionCriteria as string | null)
-          : existing.completionCriteria,
+      workflowId,
+      slug: existing.slug,
+      workflowKey:
+        patch.workflowKey !== undefined
+          ? (patch.workflowKey as string | null)
+          : existing.workflowKey,
+      lifecycle: patch.lifecycle ?? existing.lifecycle,
+      scope: patch.scope ?? existing.scope,
+      spec: mergedSpec,
     },
   };
 }

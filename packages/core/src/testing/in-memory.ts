@@ -20,12 +20,13 @@ import type {
   ImpactQueueItem,
   ImpactQueuePort,
   ImpactQueueQueryInput,
-  Instruction,
+  Workflow,
   Node,
   NodeCatalogEntry,
 } from "../domain/types.js";
 import { DEFAULT_TITLE_FIELD, ensureTitleInPropertySchema } from "../catalog/property-schema.js";
 import type { Effect, GateStatus, LifecycleStatus } from "@ssota/contracts";
+import { parseWorkflowSpec } from "@ssota/contracts";
 import {
   mergeActionCatalogEntries,
   mergeActionCatalogEntry,
@@ -45,7 +46,7 @@ export interface InMemoryState {
   actionCatalog: Map<string, ActionCatalogEntry>;
   archetypes: Map<string, Archetype>;
   permissions: ActionPropertyPermission[];
-  instructions: Instruction[];
+  workflows: Workflow[];
   edgeCatalog: Map<string, EdgeCatalogEntry>;
 }
 
@@ -55,7 +56,7 @@ export function createInMemoryState(
     actionCatalog: ActionCatalogEntry[];
     archetypes: Archetype[];
     permissions: ActionPropertyPermission[];
-    instructions: Instruction[];
+    workflows: Workflow[];
     edgeCatalog: EdgeCatalogEntry[];
     nodes: Node[];
   }>,
@@ -70,7 +71,7 @@ export function createInMemoryState(
     actionCatalog: new Map(),
     archetypes: new Map(),
     permissions: [],
-    instructions: [],
+    workflows: [],
     edgeCatalog: new Map(),
   };
 
@@ -78,7 +79,7 @@ export function createInMemoryState(
   seed?.actionCatalog?.forEach((e) => state.actionCatalog.set(e.actionType, e));
   seed?.archetypes?.forEach((a) => state.archetypes.set(a.id, a));
   seed?.permissions?.forEach((p) => state.permissions.push(p));
-  seed?.instructions?.forEach((i) => state.instructions.push(i));
+  seed?.workflows?.forEach((w) => state.workflows.push(w));
   seed?.edgeCatalog?.forEach((e) => state.edgeCatalog.set(e.edgeType, e));
   seed?.nodes?.forEach((n) => state.nodes.set(n.id, n));
 
@@ -191,9 +192,9 @@ function applyEffect(
     state.edgeCatalog.delete(effect.edgeType);
   } else if (effect.kind === "deprecate_action_catalog_entry") {
     state.actionCatalog.delete(effect.actionType);
-  } else if (effect.kind === "deprecate_instruction_catalog_entry") {
-    state.instructions = state.instructions.filter(
-      (instruction) => instruction.id !== effect.instructionId,
+  } else if (effect.kind === "deprecate_workflow_catalog_entry") {
+    state.workflows = state.workflows.filter(
+      (workflow) => workflow.id !== effect.workflowId,
     );
   } else if (effect.kind === "upsert_edge_catalog_entry") {
     state.edgeCatalog.set(effect.entry.edgeType, {
@@ -237,58 +238,41 @@ function applyEffect(
       idempotencyRule: effect.entry.idempotencyRule ?? null,
       logPayloadSchema: effect.entry.logPayloadSchema,
     });
-  } else if (effect.kind === "upsert_instruction_catalog_entry") {
-    if (effect.entry.instructionId) {
-      const idx = state.instructions.findIndex(
-        (instruction) => instruction.id === effect.entry.instructionId,
+  } else if (effect.kind === "upsert_workflow_catalog_entry") {
+    const spec = parseWorkflowSpec(effect.entry.spec);
+    const slug = effect.entry.slug ?? toCatalogSlug(spec.title);
+    const scope = effect.entry.scope as Workflow["scope"];
+    if (effect.entry.workflowId) {
+      const idx = state.workflows.findIndex(
+        (workflow) => workflow.id === effect.entry.workflowId,
       );
-      const next = {
-        id: effect.entry.instructionId,
+      const next: Workflow = {
+        id: effect.entry.workflowId,
         projectId,
-        slug: toCatalogSlug(effect.entry.title),
-        instructionKey: effect.entry.instructionKey ?? null,
-        title: effect.entry.title,
-        triggerPatterns: effect.entry.triggerPatterns,
-        applicableNodeTypes: effect.entry.applicableNodeTypes,
-        requiredActions: effect.entry.requiredActions,
-        optionalActions: effect.entry.optionalActions,
+        slug,
+        workflowKey: effect.entry.workflowKey ?? null,
         lifecycle: effect.entry.lifecycle,
-        body: effect.entry.body ?? null,
-        contentUrl: effect.entry.contentUrl ?? null,
-        scope: effect.entry.scope,
-        triggers: effect.entry.triggers,
-        workflowSteps: effect.entry.workflowSteps,
-        allowedActions: effect.entry.allowedActions,
-        outputContract: effect.entry.outputContract,
-        gatePolicy: effect.entry.gatePolicy,
-        completionCriteria: effect.entry.completionCriteria ?? null,
+        scope,
+        spec,
+        createdAt: idx >= 0 ? state.workflows[idx]!.createdAt : now,
+        updatedAt: now,
       };
       if (idx >= 0) {
-        state.instructions[idx] = next;
+        state.workflows[idx] = next;
       } else {
-        state.instructions.push(next);
+        state.workflows.push(next);
       }
     } else {
-      state.instructions.push({
+      state.workflows.push({
         id: randomUUID(),
         projectId,
-        slug: toCatalogSlug(effect.entry.title),
-        instructionKey: effect.entry.instructionKey ?? null,
-        title: effect.entry.title,
-        triggerPatterns: effect.entry.triggerPatterns,
-        applicableNodeTypes: effect.entry.applicableNodeTypes,
-        requiredActions: effect.entry.requiredActions,
-        optionalActions: effect.entry.optionalActions,
+        slug,
+        workflowKey: effect.entry.workflowKey ?? spec.workflowKey ?? null,
         lifecycle: effect.entry.lifecycle,
-        body: effect.entry.body ?? null,
-        contentUrl: effect.entry.contentUrl ?? null,
-        scope: effect.entry.scope,
-        triggers: effect.entry.triggers,
-        workflowSteps: effect.entry.workflowSteps,
-        allowedActions: effect.entry.allowedActions,
-        outputContract: effect.entry.outputContract,
-        gatePolicy: effect.entry.gatePolicy,
-        completionCriteria: effect.entry.completionCriteria ?? null,
+        scope,
+        spec,
+        createdAt: now,
+        updatedAt: now,
       });
     }
   }
@@ -352,39 +336,34 @@ export function createInMemoryPorts(
         (p) => p.actionType === actionType && p.nodeType === nodeType,
       );
     },
-    async findInstructions(query, nodeType, limit = 5) {
+    async findWorkflows(query, nodeType, limit = 5) {
       const q = query.toLowerCase();
-      return state.instructions
+      return state.workflows
         .filter(
-          (i) =>
-            (i.title.toLowerCase().includes(q) ||
-              (i.body?.toLowerCase().includes(q) ?? false) ||
-              (i.instructionKey?.toLowerCase().includes(q) ?? false)) &&
-            (!nodeType || i.applicableNodeTypes.includes(nodeType)),
+          (workflow) =>
+            (workflow.spec.title.toLowerCase().includes(q) ||
+              (workflow.spec.agentNotes?.toLowerCase().includes(q) ?? false) ||
+              (workflow.workflowKey?.toLowerCase().includes(q) ?? false)) &&
+            (!nodeType || workflow.spec.applicableNodeTypes.includes(nodeType)),
         )
         .slice(0, limit);
     },
-    async listInstructions(input) {
+    async listWorkflows(input) {
       const limit = input?.limit ?? 100;
-      return state.instructions.slice(0, limit);
+      return state.workflows.slice(0, limit);
     },
-    async getInstruction(instructionId) {
+    async getWorkflow(workflowId) {
       return (
-        state.instructions.find((instruction) => instruction.id === instructionId) ??
-        null
+        state.workflows.find((workflow) => workflow.id === workflowId) ?? null
       );
     },
-    async getInstructionBySlug(slug) {
-      return (
-        state.instructions.find((instruction) => instruction.slug === slug) ??
-        null
-      );
+    async getWorkflowBySlug(slug) {
+      return state.workflows.find((workflow) => workflow.slug === slug) ?? null;
     },
-    async getInstructionByKey(instructionKey) {
+    async getWorkflowByKey(workflowKey) {
       return (
-        state.instructions.find(
-          (instruction) => instruction.instructionKey === instructionKey,
-        ) ?? null
+        state.workflows.find((workflow) => workflow.workflowKey === workflowKey) ??
+        null
       );
     },
   };
@@ -586,7 +565,7 @@ function createInMemoryImpactQueuePort(
         targetNodeId: input.targetNodeId ?? null,
         dependencyEdgeId: input.dependencyEdgeId ?? null,
         workflowKey: input.workflowKey,
-        instructionId: input.instructionId ?? null,
+        workflowId: input.workflowId ?? null,
         status: "pending",
         priority: input.priority ?? 0,
         runAt: input.runAt ?? createdAt,

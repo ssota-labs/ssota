@@ -134,7 +134,7 @@ function deriveGateMetadata(gate: {
       risk: "medium",
     };
   }
-  if (first.kind.includes("instruction")) {
+  if (first.kind.includes("workflow")) {
     return { surface: "Workflows", target: gate.actionType, risk: "high" };
   }
   if (first.kind.includes("action")) {
