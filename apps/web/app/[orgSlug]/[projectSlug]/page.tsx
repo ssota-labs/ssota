@@ -50,7 +50,7 @@ export default async function ProjectHomePage({
       ports.impactQueue.queryImpactQueue({ status: "pending", limit: 5 }),
     ]);
 
-  const taskTableHref = `${graphPath(ctx, "nodes")}?table=task`;
+  const taskTableHref = projectPath(ctx, "tasks");
   const hasWorkflow = instructions.length > 0;
   const hasGraphShape = nodes.length > 0 && actions.length > 0;
   const hasRunHistory = logs.length > 0;
@@ -76,7 +76,7 @@ export default async function ProjectHomePage({
       description:
         "Use Task rows as the shared work queue for humans and automation.",
       href: taskTableHref,
-      cta: "Open Task table",
+      cta: "Open Tasks",
       completed: hasGraphShape,
     },
     {
