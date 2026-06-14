@@ -64,13 +64,34 @@ function appendContextSection(lines: string[], workflow: WireWorkflow) {
     context.assertions.length > 0 ||
     Boolean(context.notes?.trim());
 
-  if (!hasContext) return;
+  const nodeBindings =
+    workflow.nodeBindings.length > 0
+      ? workflow.nodeBindings
+      : workflow.applicableNodeTypes.map((nodeType) => ({
+          nodeType,
+          disabledActions: [] as string[],
+        }));
+
+  if (!hasContext && nodeBindings.length === 0) return;
 
   lines.push("## Context", "");
-  lines.push(
-    "Fetch nodes with query_nodes, then apply filter groups below. MCP does not filter by property — evaluate conditions in agent context.",
-    "",
-  );
+  if (nodeBindings.length) {
+    lines.push("Applicable nodes:");
+    for (const binding of nodeBindings) {
+      const enabledActions =
+        binding.disabledActions.length > 0
+          ? ` (disabled: ${binding.disabledActions.join(", ")})`
+          : "";
+      lines.push(`- ${binding.nodeType}${enabledActions}`);
+    }
+    lines.push("");
+  }
+  if (hasContext) {
+    lines.push(
+      "Fetch nodes with query_nodes, then apply filter groups below. MCP does not filter by property — evaluate conditions in agent context.",
+      "",
+    );
+  }
 
   for (const group of context.filterGroups) {
     const label = group.label ?? group.id;

@@ -8,6 +8,7 @@ import {
   type Workflow,
   type WorkflowCatalogUpsert,
   type WorkflowDefinition,
+  type WorkflowNodeBinding,
 } from "./workflow.js";
 
 export type WorkflowRow = {
@@ -21,6 +22,35 @@ export type WorkflowRow = {
   updatedAt?: string;
 };
 
+export function normalizeWorkflowNodeBindings(
+  definition: Pick<WorkflowDefinition, "nodeBindings" | "applicableNodeTypes">,
+): WorkflowNodeBinding[] {
+  if (definition.nodeBindings.length > 0) {
+    return definition.nodeBindings;
+  }
+  return definition.applicableNodeTypes.map((nodeType) => ({
+    nodeType,
+    disabledActions: [],
+  }));
+}
+
+export function syncApplicableNodeTypesFromBindings(
+  nodeBindings: WorkflowNodeBinding[],
+): string[] {
+  return nodeBindings.map((binding) => binding.nodeType);
+}
+
+export function applyWorkflowNodeBindingSync(
+  definition: WorkflowDefinition,
+): WorkflowDefinition {
+  const nodeBindings = normalizeWorkflowNodeBindings(definition);
+  return {
+    ...definition,
+    nodeBindings,
+    applicableNodeTypes: syncApplicableNodeTypesFromBindings(nodeBindings),
+  };
+}
+
 function normalizeWorkflowSpecInput(input: unknown): unknown {
   if (!input || typeof input !== "object") return input;
   const obj = input as Record<string, unknown>;
@@ -29,17 +59,26 @@ function normalizeWorkflowSpecInput(input: unknown): unknown {
         (value): value is string => typeof value === "string" && value.trim().length > 0,
       )
     : [];
+  const hasNodeBindings =
+    Array.isArray(obj.nodeBindings) && obj.nodeBindings.length > 0;
   const context = normalizeWorkflowContext(obj.context, applicableNodeTypes);
+  const derivedFromContext = deriveApplicableNodeTypes(context);
+  const nextApplicableNodeTypes = hasNodeBindings
+    ? applicableNodeTypes
+    : applicableNodeTypes.length > 0
+      ? applicableNodeTypes
+      : derivedFromContext;
   return {
     ...obj,
     trigger: normalizeWorkflowTriggerSpec(obj.trigger),
     context,
-    applicableNodeTypes: deriveApplicableNodeTypes(context),
+    applicableNodeTypes: nextApplicableNodeTypes,
   };
 }
 
 export function parseWorkflowSpec(input: unknown): WorkflowDefinition {
-  return WorkflowDefinitionSchema.parse(normalizeWorkflowSpecInput(input));
+  const parsed = WorkflowDefinitionSchema.parse(normalizeWorkflowSpecInput(input));
+  return applyWorkflowNodeBindingSync(parsed);
 }
 
 export function materializeWorkflowDefinition(
@@ -101,6 +140,9 @@ export function mergeWorkflowDefinition(
     gates: patch.gates ?? existing.gates,
     references: patch.references ?? existing.references,
     routes: patch.routes ?? existing.routes,
+    nodeBindings: patch.nodeBindings ?? existing.nodeBindings,
+    applicableNodeTypes:
+      patch.applicableNodeTypes ?? existing.applicableNodeTypes,
     allowedActions: patch.allowedActions ?? existing.allowedActions,
     requiredActions: patch.requiredActions ?? existing.requiredActions,
     optionalActions: patch.optionalActions ?? existing.optionalActions,

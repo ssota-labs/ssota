@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buildWorkflowPackage } from "@ssota/core";
 import type { ActionLogRecord, Gate, Workflow } from "@ssota/core";
+import type { ActionCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
@@ -34,6 +35,7 @@ export function WorkflowsWorkspace({
   selected,
   activeTab,
   nodeCatalog,
+  actionCatalog,
   edgeCatalog,
 }: {
   orgSlug: string;
@@ -44,7 +46,8 @@ export function WorkflowsWorkspace({
   pendingGates: Gate[];
   selected: Workflow | null;
   activeTab: "builder" | "agent" | "flow" | "runs" | "reviews";
-  nodeCatalog: Array<{ nodeType: string; label: string; propertyKeys: string[] }>;
+  nodeCatalog: NodeCatalogEntry[];
+  actionCatalog: ActionCatalogEntry[];
   edgeCatalog: Array<{ edgeType: string; label: string }>;
 }) {
   const ctx = { orgSlug, projectSlug };
@@ -166,7 +169,10 @@ export function WorkflowsWorkspace({
       newWorkflowTrigger={
         <NewWorkflowSheet
           projectId={projectId}
+          orgSlug={orgSlug}
+          projectSlug={projectSlug}
           nodeCatalog={nodeCatalog}
+          actionCatalog={actionCatalog}
           edgeCatalog={edgeCatalog}
         />
       }

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { WorkflowsWorkspace } from "@/components/workflows/workflows-workspace";
 import {
-  displayNodeCatalogLabel,
+  getCachedActionCatalog,
   getCachedEdgeCatalog,
   getCachedNodeCatalog,
 } from "@/lib/console/cached-catalog";
@@ -22,13 +22,15 @@ export default async function WorkflowListPage({
   const { workflow: workflowParam, tab } = await searchParams;
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
-  const [workflows, logs, pendingGates, nodeCatalog, edgeCatalog] = await Promise.all([
-    ports.catalog.listWorkflows({ limit: 100 }),
-    ports.commit.getActionLog({ limit: 100 }),
-    ports.gate.listPendingGates(),
-    getCachedNodeCatalog(project.id),
-    getCachedEdgeCatalog(project.id),
-  ]);
+  const [workflows, logs, pendingGates, nodeCatalog, actionCatalog, edgeCatalog] =
+    await Promise.all([
+      ports.catalog.listWorkflows({ limit: 100 }),
+      ports.commit.getActionLog({ limit: 100 }),
+      ports.gate.listPendingGates(),
+      getCachedNodeCatalog(project.id),
+      getCachedActionCatalog(project.id),
+      getCachedEdgeCatalog(project.id),
+    ]);
   const selected =
     workflows.find(
       (entry) =>
@@ -59,11 +61,8 @@ export default async function WorkflowListPage({
       pendingGates={pendingGates}
       selected={selected}
       activeTab={activeTab}
-      nodeCatalog={nodeCatalog.map((entry) => ({
-        nodeType: entry.nodeType,
-        label: displayNodeCatalogLabel(entry),
-        propertyKeys: Object.keys(entry.propertySchema ?? {}),
-      }))}
+      nodeCatalog={nodeCatalog}
+      actionCatalog={actionCatalog}
       edgeCatalog={edgeCatalog.map((entry) => ({
         edgeType: entry.edgeType,
         label: entry.label,

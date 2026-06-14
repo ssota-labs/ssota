@@ -75,6 +75,7 @@ const sampleWorkflow: Workflow = {
     },
     agentNotes: "Create documents as Draft.",
     applicableNodeTypes: ["Document"],
+    nodeBindings: [{ nodeType: "Document", disabledActions: [] }],
     allowedActions: ["create_node"],
     requiredActions: ["create_node"],
     optionalActions: ["promote_document"],
@@ -89,6 +90,8 @@ describe("renderWorkflowText", () => {
     expect(text).toContain("# Document creation");
     expect(text).toContain("## Trigger");
     expect(text).toContain("## Context");
+    expect(text).toContain("Applicable nodes:");
+    expect(text).toContain("- Document");
     expect(text).toContain("## Steps");
     expect(text).toContain("### 1. Create draft");
     expect(text).toContain("## Output");

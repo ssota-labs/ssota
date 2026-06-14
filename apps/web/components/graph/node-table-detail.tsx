@@ -8,6 +8,7 @@ import { Button } from "@ssota/ui/components/ui/button";
 import { displayNodeCatalogLabel } from "@/lib/console/cached-catalog";
 import { propertyColumnLabel } from "@/lib/graph/property-column-label";
 import { formatActionScope } from "@/lib/graph/format-scope";
+import { resolveActionsForNodeType } from "@/lib/graph/resolve-node-actions";
 import { getActionPorts } from "@/lib/ports";
 
 type NodeTableDetailProps = {
@@ -64,13 +65,8 @@ export async function NodeTableDetail({
     };
   });
 
-  const localActions = actions.filter((action) => {
-    if (entry.allowedActionRefs.includes(action.actionType)) return true;
-    if (action.scope.kind === "node_type") return action.scope.nodeType === decoded;
-    if (action.scope.kind === "property") return action.scope.nodeType === decoded;
-    return false;
-  });
-  const visibleActions = localActions.length ? localActions : actions;
+  const localActions = resolveActionsForNodeType(entry, actions);
+  const visibleActions = localActions;
 
   const tableRows = rows.map((row) => ({
     id: row.id,

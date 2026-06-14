@@ -21,6 +21,7 @@ import {
   UpdatePropertyPermissionInputSchema,
   WorkflowTriggerEventSchema,
   createManualWorkflowTrigger,
+  applyWorkflowNodeBindingSync,
   deriveApplicableNodeTypes,
   type ExecuteActionResult,
   type WorkflowTriggerEvent,
@@ -35,6 +36,7 @@ import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
+import { parseWorkflowNodeBindings } from "@/lib/workflows/workflow-node-bindings";
 
 function loginRedirect(error: string, next?: string | null): never {
   const params = new URLSearchParams({ error });
@@ -724,11 +726,15 @@ function parseWorkflowContext(raw: FormDataEntryValue | null) {
 export async function defineWorkflowFormAction(formData: FormData): Promise<void> {
   const projectId = await requireProjectId(formData);
   const triggerEvents = parseWorkflowTriggerEvents(formData.get("workflowTriggers"));
+  const nodeBindings = parseWorkflowNodeBindings(formData.get("workflowNodeBindings"));
   const context = parseWorkflowContext(formData.get("workflowContext"));
-  const applicableNodeTypes = deriveApplicableNodeTypes(context);
+  const applicableNodeTypesFromContext = deriveApplicableNodeTypes(context);
+  const allowedActionsFromBindings = parseCsv(formData.get("allowedActions"));
   const body = String(formData.get("body") ?? "").trim();
   const contentUrl = String(formData.get("contentUrl") ?? "").trim();
   const title = String(formData.get("title") ?? "").trim();
+  const orgSlug = String(formData.get("orgSlug") ?? "").trim();
+  const projectSlug = String(formData.get("projectSlug") ?? "").trim();
   const scopeKind = String(formData.get("scopeKind") ?? "global");
   const scopedNodeType = String(formData.get("nodeType") ?? "");
   const scope =
@@ -752,6 +758,7 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
           id: String(step.id ?? "step"),
           title: String(step.title ?? "Step"),
           mode: "agentic" as const,
+          referenceIds: [],
           actions: (Array.isArray(step.actionRefs) ? step.actionRefs : []).map(
             (actionType) => ({
               actionType: String(actionType),
@@ -759,7 +766,15 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
             }),
           ),
         }))
-      : [{ id: "execute", title: title || "Workflow", mode: "agentic" as const, actions: [] }];
+      : [
+          {
+            id: "execute",
+            title: title || "Workflow",
+            mode: "agentic" as const,
+            referenceIds: [],
+            actions: [],
+          },
+        ];
   const references = [
     ...(body
       ? [{ id: "agent_body", title: "Body", kind: "inline" as const, body }]
@@ -769,30 +784,36 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
       : []),
   ];
   const result = await defineWorkflowAction({
-    definition: {
+    definition: applyWorkflowNodeBindingSync({
       title,
       workflowKey,
       lifecycle: "Active",
       scope,
       trigger: { events: triggerEvents },
       context,
+      conditions: [],
+      gates: [],
+      routes: [],
+      nodeBindings,
       applicableNodeTypes:
-        applicableNodeTypes.length || !scopedNodeType
-          ? applicableNodeTypes
-          : scopedNodeType
-            ? [scopedNodeType]
-            : [],
+        nodeBindings.length > 0
+          ? nodeBindings.map((binding) => binding.nodeType)
+          : applicableNodeTypesFromContext.length || !scopedNodeType
+            ? applicableNodeTypesFromContext
+            : scopedNodeType
+              ? [scopedNodeType]
+              : [],
       requiredActions: parseCsv(formData.get("requiredActions")),
       optionalActions: parseCsv(formData.get("optionalActions")),
-      allowedActions: parseCsv(formData.get("allowedActions")),
+      allowedActions: allowedActionsFromBindings,
       steps,
       output: {
         contract: parseJsonObject(formData.get("outputContract")),
         completionCriteria: String(formData.get("completionCriteria") ?? "") || null,
       },
-      ...(references.length ? { references } : {}),
+      references,
       ...(body ? { agentNotes: body } : {}),
-    },
+    }),
     projectId,
   });
 
@@ -802,7 +823,12 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
     );
     if (created) {
       redirect(
-        `${projectPath(DEFAULT_PROJECT, "workflow")}?workflow=${encodeURIComponent(created.slug)}`,
+        orgSlug && projectSlug
+          ? projectPath(
+              { orgSlug, projectSlug },
+              `workflow?workflow=${encodeURIComponent(created.slug)}`,
+            )
+          : `${projectPath(DEFAULT_PROJECT, "workflow")}?workflow=${encodeURIComponent(created.slug)}`,
       );
     }
   }
