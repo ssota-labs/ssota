@@ -3,7 +3,12 @@ import Link from "next/link";
 import { ActionRunner } from "@/components/graph/node-table-actions";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
 import { NodeInstancesView, type InstanceGraphRelation } from "@/components/graph/node-instances-view";
-import { NodeSchemaView, type SchemaAction, type SchemaRelation } from "@/components/graph/node-schema-view";
+import { NodeSchemaView, type SchemaRelation } from "@/components/graph/node-schema-view";
+import {
+  AddActionSheet,
+  AddInstructionSheet,
+  AddPropertySheet,
+} from "@/components/graph/node-table-actions";
 import { Button } from "@ssota/ui/components/ui/button";
 import { displayNodeCatalogLabel } from "@/lib/console/cached-catalog";
 import { propertyColumnLabel } from "@/lib/graph/property-column-label";
@@ -28,10 +33,11 @@ export async function NodeTableDetail({
   if (!entry) notFound();
 
   const decoded = entry.nodeType;
-  const [rows, actions, edgeCatalog, logs] = await Promise.all([
+  const [rows, actions, edgeCatalog, nodeCatalog, logs] = await Promise.all([
     ports.graph.queryNodes({ nodeType: decoded, limit: 500 }),
     ports.catalog.listActionCatalogEntries(),
     ports.catalog.listEdgeCatalogEntries(),
+    ports.catalog.listNodeCatalogEntries(),
     ports.commit.getActionLog({ limit: 200 }),
   ]);
 
@@ -95,15 +101,9 @@ export async function NodeTableDetail({
       range: edge.range,
       cardinality: edge.cardinality,
     }));
-  const schemaActions: SchemaAction[] = visibleActions.map((action) => ({
-    actionType: action.actionType,
-    label: action.label,
-    executor: action.executor,
-    effectsCount: action.effects.length,
-  }));
-  const lifecycle = Object.entries(entry.lifecycleTransitions)
-    .map(([from, targets]) => `${from} → ${targets.join(", ") || "—"}`)
-    .join("; ");
+  const nodeTypeLabels = Object.fromEntries(
+    nodeCatalog.map((entry) => [entry.nodeType, displayNodeCatalogLabel(entry)]),
+  );
 
   const relationEdges = await loadInstanceRelations(
     ports,
@@ -145,22 +145,29 @@ export async function NodeTableDetail({
             Runs
           </TabLink>
         </div>
-        <div className="text-xs text-muted-foreground">
-          {rows.length} instances · {schemaRelations.length} relations · {schemaActions.length} actions
+        <div className="flex items-center gap-3">
+          {activeTab === "schema" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <AddPropertySheet nodeType={entry.nodeType} projectId={projectId} />
+              <AddActionSheet nodeType={entry.nodeType} projectId={projectId} />
+              <AddInstructionSheet nodeType={entry.nodeType} projectId={projectId} />
+            </div>
+          ) : null}
+          <div className="text-xs text-muted-foreground">
+            {rows.length} instances · {schemaRelations.length} relations · {visibleActions.length} actions
+          </div>
         </div>
       </div>
       {activeTab === "schema" ? (
         <NodeSchemaView
-          projectId={projectId}
           nodeType={entry.nodeType}
           label={displayNodeCatalogLabel(entry)}
           family={entry.family}
           archetypeId={entry.archetypeId}
-          lifecycle={lifecycle}
           contentGuide={entry.contentGuide}
           propertySchema={entry.propertySchema}
           relations={schemaRelations}
-          actions={schemaActions}
+          nodeTypeLabels={nodeTypeLabels}
         />
       ) : activeTab === "runs" ? (
         <ActionLogDataTable

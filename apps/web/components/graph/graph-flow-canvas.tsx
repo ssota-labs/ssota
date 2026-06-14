@@ -30,7 +30,8 @@ export type GraphFlowNodeData = {
   description?: string;
   badges?: string[];
   kind?: FlowNodeKind;
-  align?: "left" | "right";
+  /** dagre/edge alignment width — keeps rendered card width in sync with layout math */
+  layoutWidth?: number;
 };
 
 export type GraphFlowNode = Node<GraphFlowNodeData, "graphNode">;
@@ -49,13 +50,13 @@ const nodeStyles: Record<FlowNodeKind, string> = {
 
 function GraphNode({ data }: NodeProps<GraphFlowNode>) {
   const kind = data.kind ?? "object";
-  const align = data.align ?? "left";
 
   return (
     <div
+      style={data.layoutWidth ? { width: data.layoutWidth } : undefined}
       className={cn(
-        "min-w-44 rounded-xl border px-3 py-2",
-        align === "right" ? "text-right" : "text-left",
+        "min-w-44 max-w-[220px] rounded-xl border px-3 py-2 text-left",
+        !data.layoutWidth && "w-max",
         nodeStyles[kind],
       )}
     >
@@ -68,9 +69,7 @@ function GraphNode({ data }: NodeProps<GraphFlowNode>) {
       ) : null}
       <div className="text-sm font-semibold">{data.label}</div>
       {data.description ? (
-        <div className="mt-1 max-w-52 text-xs text-muted-foreground">
-          {data.description}
-        </div>
+        <div className="mt-1 text-xs text-muted-foreground">{data.description}</div>
       ) : null}
       {data.badges?.length ? (
         <div className="mt-2 flex flex-wrap gap-1">
@@ -91,10 +90,12 @@ export function GraphFlowCanvas({
   nodes,
   edges,
   emptyMessage = "No graph relationships yet.",
+  fitViewPadding = 0.15,
 }: {
   nodes: GraphFlowNode[];
   edges: GraphFlowEdge[];
   emptyMessage?: string;
+  fitViewPadding?: number;
 }) {
   if (nodes.length === 0) {
     return (
@@ -115,6 +116,7 @@ export function GraphFlowCanvas({
         }))}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: fitViewPadding }}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
