@@ -299,7 +299,7 @@ function WorkflowVisualBuilderInner({
           />
         </ReactFlow>
       </div>
-      {!readOnly ? (
+      {!readOnly && selectedNode ? (
         <WorkflowNodeInspector workflow={workflow} selectedNode={selectedNode} />
       ) : null}
     </div>
