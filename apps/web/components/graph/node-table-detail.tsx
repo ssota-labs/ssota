@@ -83,7 +83,12 @@ export async function NodeTableDetail({
   const toolbar = (
     <ActionRunner
       projectId={projectId}
-      actions={visibleActions.map((action) => action.actionType)}
+      actions={visibleActions.map((action) => ({
+        actionType: action.actionType,
+        label: action.label,
+        executor: action.executor,
+        preconditions: action.preconditions,
+      }))}
     />
   );
 
