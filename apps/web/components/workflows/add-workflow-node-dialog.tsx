@@ -65,8 +65,8 @@ function NodeCatalogPanel({
   alreadyAdded: boolean;
 }) {
   return (
-    <div className="flex min-h-0 flex-col">
-      <div className="flex items-start gap-3 border-b px-5 py-4">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex shrink-0 items-start gap-3 border-b px-5 py-4">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/30">
           <TableIcon className="size-4 text-muted-foreground" />
         </span>
@@ -80,7 +80,7 @@ function NodeCatalogPanel({
         </div>
       </div>
 
-      <div className="h-72 shrink-0 overflow-hidden border-b bg-muted/10">
+      <div className="relative min-h-0 flex-1">
         <NodeSchemaView
           nodeType={entry.nodeType}
           label={entry.label}
@@ -90,19 +90,16 @@ function NodeCatalogPanel({
           propertySchema={entry.propertySchema}
           relations={relations}
           nodeTypeCatalog={nodeTypeCatalog}
-          className="h-full p-2"
-          canvasClassName="h-full min-h-0 rounded-md"
+          className="absolute inset-0 h-full p-0"
+          canvasClassName="h-full min-h-0 rounded-none border-0 bg-transparent"
           fitViewPadding={0.2}
         />
       </div>
 
       {alreadyAdded ? (
-        <div className="mx-5 mb-4 mt-auto rounded-md border bg-muted/20 px-4 py-6 text-center">
-          <p className="text-xs font-medium">Already added</p>
-          <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-muted-foreground">
-            This node type is already registered for this workflow.
-          </p>
-        </div>
+        <p className="shrink-0 border-t px-5 py-2 text-xs text-muted-foreground">
+          Already added — this node type is registered for this workflow.
+        </p>
       ) : null}
     </div>
   );
@@ -225,7 +222,7 @@ export function AddWorkflowNodeDialog({
             ))}
           </nav>
 
-          <div className="min-h-0 overflow-y-auto bg-background">
+          <div className="flex min-h-0 flex-col overflow-hidden bg-background">
             {selectedEntry ? (
               <NodeCatalogPanel
                 entry={selectedEntry}
