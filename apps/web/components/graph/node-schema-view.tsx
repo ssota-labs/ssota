@@ -2,7 +2,13 @@ import {
   GraphFlowCanvas,
   type GraphFlowEdge,
   type GraphFlowNode,
+  type GraphFlowNodeData,
 } from "./graph-flow-canvas";
+import {
+  estimateGraphNodeWidth,
+  GRAPH_NODE_LAYOUT_SIZE,
+  layoutGraphWithDagre,
+} from "@/lib/graph/dagre-layout";
 
 export type SchemaRelation = {
   edgeType: string;
@@ -10,6 +16,14 @@ export type SchemaRelation = {
   domain: string[];
   range: string[];
   cardinality: string;
+};
+
+export type SchemaNodeTypeMeta = {
+  label: string;
+  family: string;
+  archetypeId: string | null;
+  contentGuide: string | null;
+  propertyCount: number;
 };
 
 type NodeSchemaViewProps = {
@@ -20,8 +34,33 @@ type NodeSchemaViewProps = {
   contentGuide: string | null;
   propertySchema: Record<string, { valueType?: string; system?: boolean }>;
   relations: SchemaRelation[];
-  nodeTypeLabels: Record<string, string>;
+  nodeTypeCatalog: Record<string, SchemaNodeTypeMeta>;
 };
+
+function objectNodeData(meta: SchemaNodeTypeMeta): GraphFlowNodeData {
+  const data = {
+    kind: "object" as const,
+    eyebrow: meta.family,
+    label: meta.label,
+    description: meta.contentGuide ?? `${meta.propertyCount} properties`,
+    badges: [
+      meta.archetypeId ?? "no archetype",
+      `${meta.propertyCount} properties`,
+    ],
+  };
+  return {
+    ...data,
+    layoutWidth: estimateGraphNodeWidth(data),
+  };
+}
+
+function incomingNodeId(type: string) {
+  return `incoming:${type}`;
+}
+
+function outgoingNodeId(type: string) {
+  return `outgoing:${type}`;
+}
 
 export function NodeSchemaView({
   nodeType,
@@ -31,12 +70,20 @@ export function NodeSchemaView({
   contentGuide,
   propertySchema,
   relations,
-  nodeTypeLabels,
+  nodeTypeCatalog,
 }: NodeSchemaViewProps) {
   const propertyEntries = Object.entries(propertySchema);
 
-  const incomingTypes = new Map<string, string>();
-  const outgoingTypes = new Map<string, string>();
+  const centerMeta: SchemaNodeTypeMeta = {
+    label,
+    family,
+    archetypeId,
+    contentGuide,
+    propertyCount: propertyEntries.length,
+  };
+
+  const incomingTypes = new Map<string, SchemaNodeTypeMeta>();
+  const outgoingTypes = new Map<string, SchemaNodeTypeMeta>();
 
   for (const relation of relations) {
     if (relation.range.includes(nodeType)) {
@@ -45,7 +92,7 @@ export function NodeSchemaView({
         if (!incomingTypes.has(connectedType)) {
           incomingTypes.set(
             connectedType,
-            nodeTypeLabels[connectedType] ?? connectedType,
+            nodeTypeCatalog[connectedType] ?? fallbackMeta(connectedType),
           );
         }
       }
@@ -56,7 +103,7 @@ export function NodeSchemaView({
         if (!outgoingTypes.has(connectedType)) {
           outgoingTypes.set(
             connectedType,
-            nodeTypeLabels[connectedType] ?? connectedType,
+            nodeTypeCatalog[connectedType] ?? fallbackMeta(connectedType),
           );
         }
       }
@@ -70,39 +117,20 @@ export function NodeSchemaView({
     {
       id: nodeType,
       type: "graphNode",
-      position: { x: 360, y: 160 },
-      data: {
-        kind: "object",
-        eyebrow: family,
-        label,
-        description: contentGuide ?? `${propertyEntries.length} properties`,
-        badges: [
-          archetypeId ?? "no archetype",
-          `${propertyEntries.length} properties`,
-        ],
-      },
+      position: { x: 0, y: 0 },
+      data: objectNodeData(centerMeta),
     },
-    ...incomingList.map(([type, typeLabel], index) => ({
-      id: type,
+    ...incomingList.map(([type, meta]) => ({
+      id: incomingNodeId(type),
       type: "graphNode" as const,
-      position: { x: 40, y: 80 + index * 140 },
-      data: {
-        kind: "object" as const,
-        eyebrow: type,
-        label: typeLabel,
-        align: "right" as const,
-      },
+      position: { x: 0, y: 0 },
+      data: objectNodeData(meta),
     })),
-    ...outgoingList.map(([type, typeLabel], index) => ({
-      id: type,
+    ...outgoingList.map(([type, meta]) => ({
+      id: outgoingNodeId(type),
       type: "graphNode" as const,
-      position: { x: 720, y: 80 + index * 140 },
-      data: {
-        kind: "object" as const,
-        eyebrow: type,
-        label: typeLabel,
-        align: "left" as const,
-      },
+      position: { x: 0, y: 0 },
+      data: objectNodeData(meta),
     })),
   ];
 
@@ -114,7 +142,7 @@ export function NodeSchemaView({
         if (connectedType === nodeType) continue;
         edges.push({
           id: `incoming-${connectedType}-${relation.edgeType}`,
-          source: connectedType,
+          source: incomingNodeId(connectedType),
           target: nodeType,
           label: relation.label,
         });
@@ -126,16 +154,59 @@ export function NodeSchemaView({
         edges.push({
           id: `outgoing-${connectedType}-${relation.edgeType}`,
           source: nodeType,
-          target: connectedType,
+          target: outgoingNodeId(connectedType),
           label: relation.label,
         });
       }
     }
   }
 
+  const nodeWidthById = Object.fromEntries(
+    nodes.map((node) => [
+      node.id,
+      node.data.layoutWidth ?? estimateGraphNodeWidth(node.data),
+    ]),
+  );
+
+  const { nodes: layoutedNodes, edges: layoutedEdges } = layoutGraphWithDagre(
+    nodes,
+    edges,
+    "LR",
+    {
+      getNodeSize: (node) => ({
+        width: nodeWidthById[node.id] ?? GRAPH_NODE_LAYOUT_SIZE.width,
+        height: GRAPH_NODE_LAYOUT_SIZE.height,
+      }),
+      alignColumns: [
+        {
+          match: (node) => node.id.startsWith("incoming:"),
+          edge: "right",
+        },
+        {
+          match: (node) => node.id.startsWith("outgoing:"),
+          edge: "left",
+        },
+      ],
+    },
+  );
+
   return (
     <div className="min-h-0 flex-1 p-4">
-      <GraphFlowCanvas nodes={nodes} edges={edges} />
+      <GraphFlowCanvas
+        nodes={layoutedNodes as GraphFlowNode[]}
+        edges={layoutedEdges}
+        fitViewPadding={0.25}
+      />
     </div>
   );
+}
+
+function fallbackMeta(nodeType: string): SchemaNodeTypeMeta {
+  return {
+    label: nodeType,
+    family: nodeType,
+    archetypeId: null,
+    contentGuide: null,
+    propertyCount: 0,
+  };
 }

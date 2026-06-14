@@ -4,11 +4,6 @@ import { ActionRunner } from "@/components/graph/node-table-actions";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
 import { NodeInstancesView, type InstanceGraphRelation } from "@/components/graph/node-instances-view";
 import { NodeSchemaView, type SchemaRelation } from "@/components/graph/node-schema-view";
-import {
-  AddActionSheet,
-  AddInstructionSheet,
-  AddPropertySheet,
-} from "@/components/graph/node-table-actions";
 import { Button } from "@ssota/ui/components/ui/button";
 import { displayNodeCatalogLabel } from "@/lib/console/cached-catalog";
 import { propertyColumnLabel } from "@/lib/graph/property-column-label";
@@ -101,8 +96,17 @@ export async function NodeTableDetail({
       range: edge.range,
       cardinality: edge.cardinality,
     }));
-  const nodeTypeLabels = Object.fromEntries(
-    nodeCatalog.map((entry) => [entry.nodeType, displayNodeCatalogLabel(entry)]),
+  const nodeTypeCatalog = Object.fromEntries(
+    nodeCatalog.map((catalogEntry) => [
+      catalogEntry.nodeType,
+      {
+        label: displayNodeCatalogLabel(catalogEntry),
+        family: catalogEntry.family,
+        archetypeId: catalogEntry.archetypeId,
+        contentGuide: catalogEntry.contentGuide,
+        propertyCount: Object.keys(catalogEntry.propertySchema).length,
+      },
+    ]),
   );
 
   const relationEdges = await loadInstanceRelations(
@@ -145,18 +149,11 @@ export async function NodeTableDetail({
             Runs
           </TabLink>
         </div>
-        <div className="flex items-center gap-3">
-          {activeTab === "schema" ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <AddPropertySheet nodeType={entry.nodeType} projectId={projectId} />
-              <AddActionSheet nodeType={entry.nodeType} projectId={projectId} />
-              <AddInstructionSheet nodeType={entry.nodeType} projectId={projectId} />
-            </div>
-          ) : null}
+        {activeTab !== "schema" ? (
           <div className="text-xs text-muted-foreground">
             {rows.length} instances · {schemaRelations.length} relations · {visibleActions.length} actions
           </div>
-        </div>
+        ) : null}
       </div>
       {activeTab === "schema" ? (
         <NodeSchemaView
@@ -167,7 +164,7 @@ export async function NodeTableDetail({
           contentGuide={entry.contentGuide}
           propertySchema={entry.propertySchema}
           relations={schemaRelations}
-          nodeTypeLabels={nodeTypeLabels}
+          nodeTypeCatalog={nodeTypeCatalog}
         />
       ) : activeTab === "runs" ? (
         <ActionLogDataTable
