@@ -91,10 +91,12 @@ export function GraphFlowCanvas({
   nodes,
   edges,
   emptyMessage = "No graph relationships yet.",
+  fitViewPadding = 0.15,
 }: {
   nodes: GraphFlowNode[];
   edges: GraphFlowEdge[];
   emptyMessage?: string;
+  fitViewPadding?: number;
 }) {
   if (nodes.length === 0) {
     return (
@@ -115,6 +117,7 @@ export function GraphFlowCanvas({
         }))}
         nodeTypes={nodeTypes}
         fitView
+        fitViewOptions={{ padding: fitViewPadding }}
         nodesDraggable={false}
         nodesConnectable={false}
         elementsSelectable={false}
