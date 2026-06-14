@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type {
   ActionCatalogEntry,
+  EdgeCatalogEntry,
   NodeCatalogEntry,
   WorkflowNodeBinding,
 } from "@ssota/contracts";
@@ -30,7 +31,6 @@ import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-
 import { syncWorkflowNodeCatalogFields } from "@/lib/workflows/workflow-node-bindings";
 import {
   defaultContextSpec,
-  type WorkflowEdgeCatalogOption,
 } from "@/lib/workflows/workflow-context-defaults";
 import {
   createWorkflowTriggerEventFromKind,
@@ -72,7 +72,7 @@ export function NewWorkflowSheet({
   projectSlug: string;
   nodeCatalog: NodeCatalogEntry[];
   actionCatalog: ActionCatalogEntry[];
-  edgeCatalog: WorkflowEdgeCatalogOption[];
+  edgeCatalog: EdgeCatalogEntry[];
 }) {
   const [addTriggerOpen, setAddTriggerOpen] = useState(false);
   const [addNodeOpen, setAddNodeOpen] = useState(false);
@@ -93,6 +93,15 @@ export function NewWorkflowSheet({
         propertyKeys: Object.keys(entry.propertySchema ?? {}),
       })),
     [nodeCatalog],
+  );
+
+  const edgeCatalogOptions = useMemo(
+    () =>
+      edgeCatalog.map((entry) => ({
+        edgeType: entry.edgeType,
+        label: entry.label,
+      })),
+    [edgeCatalog],
   );
 
   return (
@@ -174,7 +183,7 @@ export function NewWorkflowSheet({
                   context={context}
                   onContextChange={setContext}
                   nodeCatalog={nodeCatalogOptions}
-                  edgeCatalog={edgeCatalog}
+                  edgeCatalog={edgeCatalogOptions}
                 />
               </section>
             </div>
@@ -206,7 +215,7 @@ export function NewWorkflowSheet({
         onOpenChange={setAddNodeOpen}
         existingNodeTypes={nodeBindings.map((binding) => binding.nodeType)}
         nodeCatalog={nodeCatalog}
-        actionCatalog={actionCatalog}
+        edgeCatalog={edgeCatalog}
         onAddNode={(nodeType) => {
           if (nodeBindings.some((binding) => binding.nodeType === nodeType)) {
             return;

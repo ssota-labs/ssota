@@ -1,6 +1,6 @@
 import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
 import { createClient } from "@supabase/supabase-js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
@@ -85,7 +85,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Free-form note content",
         propertySchema: titlePropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node"],
       },
       {
         projectId,
@@ -98,7 +98,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Structured document with title and body",
         propertySchema: titlePropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node", "update_node_properties", "promote_document"],
       },
       {
         projectId,
@@ -124,7 +124,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational project node",
         propertySchema: titleSubjectPropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node"],
       },
       {
         projectId,
@@ -137,10 +137,15 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational task node",
         propertySchema: titleSubjectPropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node"],
       },
     ])
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [schema.nodeCatalog.projectId, schema.nodeCatalog.nodeType],
+      set: {
+        allowedActionRefs: sql`excluded.allowed_action_refs`,
+      },
+    });
 
   await db
     .insert(schema.edgeCatalog)

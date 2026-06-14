@@ -1,9 +1,10 @@
 "use client";
 
 import {
-  DotsThreeVerticalIcon,
+  PencilSimpleIcon,
   PlusIcon,
   TableIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import type {
   ActionCatalogEntry,
@@ -17,7 +18,6 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@ssota/ui/components/ui/dropdown-menu";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -119,71 +119,81 @@ export function WorkflowNodeBindingsField({
                         {binding.nodeType}
                       </span>
                     </span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            className="size-8 shrink-0"
-                            disabled={disabled}
-                            data-testid={`edit-workflow-node-${binding.nodeType}`}
-                          />
-                        }
-                      >
-                        <DotsThreeVerticalIcon className="size-4" />
-                        <span className="sr-only">Edit {binding.nodeType}</span>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-72">
-                        <DropdownMenuGroup>
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          {actions.length === 0 ? (
-                            <DropdownMenuItem disabled>
-                              No associated actions
-                            </DropdownMenuItem>
-                          ) : (
-                            actions.map((action) => {
-                              const enabled = !binding.disabledActions.includes(
-                                action.actionType,
-                              );
-                              return (
-                                <DropdownMenuItem
-                                  key={action.actionType}
-                                  className="flex items-center justify-between gap-3"
-                                  onSelect={(event) => event.preventDefault()}
-                                >
-                                  <span className="min-w-0 truncate text-sm">
-                                    {action.label || action.actionType}
-                                  </span>
-                                  <Switch
-                                    checked={enabled}
-                                    disabled={disabled}
-                                    aria-label={`${action.actionType} enabled`}
-                                    data-testid={`toggle-action-${binding.nodeType}-${action.actionType}`}
-                                    onCheckedChange={(checked) =>
-                                      setActionEnabled(
-                                        binding.nodeType,
-                                        action.actionType,
-                                        checked,
-                                      )
-                                    }
-                                  />
-                                </DropdownMenuItem>
-                              );
-                            })
-                          )}
-                        </DropdownMenuGroup>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          variant="destructive"
-                          disabled={disabled}
-                          onClick={() => removeBinding(binding.nodeType)}
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="size-8 shrink-0"
+                              disabled={disabled}
+                              data-testid={`edit-workflow-node-${binding.nodeType}`}
+                            />
+                          }
                         >
-                          Remove node
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          <PencilSimpleIcon className="size-4" />
+                          <span className="sr-only">
+                            Edit actions for {binding.nodeType}
+                          </span>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-72">
+                          <DropdownMenuGroup>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            {actions.length === 0 ? (
+                              <DropdownMenuItem disabled>
+                                No associated actions
+                              </DropdownMenuItem>
+                            ) : (
+                              actions.map((action) => {
+                                const enabled = !binding.disabledActions.includes(
+                                  action.actionType,
+                                );
+                                return (
+                                  <DropdownMenuItem
+                                    key={action.actionType}
+                                    className="flex items-center justify-between gap-3"
+                                    onSelect={(event) => event.preventDefault()}
+                                  >
+                                    <span className="min-w-0 truncate text-sm">
+                                      {action.label || action.actionType}
+                                    </span>
+                                    <Switch
+                                      checked={enabled}
+                                      disabled={disabled}
+                                      aria-label={`${action.actionType} enabled`}
+                                      data-testid={`toggle-action-${binding.nodeType}-${action.actionType}`}
+                                      onCheckedChange={(checked) =>
+                                        setActionEnabled(
+                                          binding.nodeType,
+                                          action.actionType,
+                                          checked,
+                                        )
+                                      }
+                                    />
+                                  </DropdownMenuItem>
+                                );
+                              })
+                            )}
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-sm"
+                        className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                        disabled={disabled}
+                        data-testid={`delete-workflow-node-${binding.nodeType}`}
+                        onClick={() => removeBinding(binding.nodeType)}
+                      >
+                        <TrashIcon className="size-4" />
+                        <span className="sr-only">
+                          Remove {binding.nodeType}
+                        </span>
+                      </Button>
+                    </div>
                   </li>
                 );
               })}
