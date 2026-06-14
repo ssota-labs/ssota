@@ -29,6 +29,7 @@ export const en = {
   nav: {
     projectHome: "Project Home",
     developer: "Developer",
+    workflowLens: "Workflow Lens",
     graph: "Graph",
     tasks: "Tasks",
     instruction: "Workflows",
@@ -158,6 +159,7 @@ export const ko = {
   nav: {
     projectHome: "프로젝트 홈",
     developer: "개발자",
+    workflowLens: "워크플로우 렌즈",
     graph: "그래프",
     tasks: "태스크",
     instruction: "워크플로우",
