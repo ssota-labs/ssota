@@ -4,6 +4,7 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Badge } from "@ssota/ui/components/ui/badge";
+import { Input } from "@ssota/ui/components/ui/input";
 import {
   Card,
   CardContent,
@@ -69,6 +70,7 @@ export default async function GatesPage({
 
           {gates.map((gate) => {
             const meta = deriveGateMetadata(gate);
+            const changes = summarizeEffects(gate.proposedEffects, gate.input);
             return (
               <Card key={gate.id}>
                 <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
@@ -80,29 +82,65 @@ export default async function GatesPage({
                       <Badge variant="secondary">{meta.target}</Badge>
                     </div>
                   </div>
-                  <div className="flex shrink-0 gap-2">
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="mb-2 text-sm font-medium">What will change</div>
+                    <ul className="space-y-2">
+                      {changes.map((change) => (
+                        <li
+                          key={change}
+                          className="rounded-md border bg-muted/30 p-3 text-sm"
+                        >
+                          {change}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
                     <form action={approveGateFormAction}>
                       <input type="hidden" name="projectId" value={project.id} />
                       <input type="hidden" name="gateId" value={gate.id} />
                       <input type="hidden" name="approved" value="true" />
-                      <Button type="submit" size="sm">
-                        {t("gates.approve")}
-                      </Button>
+                      <div className="space-y-2">
+                        <Input
+                          name="decisionNote"
+                          placeholder="Approval note…"
+                          aria-label="Approval note"
+                        />
+                        <Button type="submit" size="sm" className="w-full">
+                          {t("gates.approve")}
+                        </Button>
+                      </div>
                     </form>
                     <form action={approveGateFormAction}>
                       <input type="hidden" name="projectId" value={project.id} />
                       <input type="hidden" name="gateId" value={gate.id} />
                       <input type="hidden" name="approved" value="false" />
-                      <Button type="submit" variant="outline" size="sm">
-                        {t("gates.reject")}
-                      </Button>
+                      <div className="space-y-2">
+                        <Input
+                          name="decisionNote"
+                          placeholder="Rejection reason…"
+                          aria-label="Rejection reason"
+                        />
+                        <Button type="submit" variant="outline" size="sm" className="w-full">
+                          {t("gates.reject")}
+                        </Button>
+                      </div>
                     </form>
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <pre className="overflow-auto rounded-md bg-muted p-2 text-xs">
-                    {JSON.stringify({ input: gate.input, proposedEffects: gate.proposedEffects }, null, 2)}
-                  </pre>
+                  <details className="rounded-md border bg-muted/30 p-3">
+                    <summary className="cursor-pointer text-sm font-medium">
+                      Advanced JSON
+                    </summary>
+                    <pre className="mt-3 overflow-auto rounded-md bg-background p-2 text-xs">
+                      {JSON.stringify(
+                        { input: gate.input, proposedEffects: gate.proposedEffects },
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </details>
                 </CardContent>
               </Card>
             );
@@ -148,4 +186,35 @@ function deriveGateMetadata(gate: {
 
 function reviewTitle(actionType: string) {
   return `Review ${actionType}`;
+}
+
+function summarizeEffects(
+  effects: { kind: string }[],
+  input: Record<string, unknown>,
+) {
+  if (effects.length === 0) return ["No concrete effects were proposed."];
+  return effects.map((effect) => {
+    const record = effect as { kind: string } & Record<string, unknown>;
+    const kind = effect.kind;
+    if (kind === "create_node") {
+      const node = record.node as Record<string, unknown> | undefined;
+      return `Create ${String(node?.nodeType ?? input.nodeType ?? "node")} in Draft.`;
+    }
+    if (kind === "update_node") {
+      return `Update node ${String(record.nodeId ?? input.nodeId ?? "unknown")}.`;
+    }
+    if (kind.includes("node_catalog") || kind.includes("node_type")) {
+      return `Change node catalog entry ${String(record.nodeType ?? input.nodeType ?? "unknown")}.`;
+    }
+    if (kind.includes("edge")) {
+      return `Change edge relationship ${String(record.edgeType ?? input.edgeType ?? "unknown")}.`;
+    }
+    if (kind.includes("instruction")) {
+      return `Change workflow instruction ${String(input.instructionId ?? input.title ?? "unknown")}.`;
+    }
+    if (kind.includes("action")) {
+      return `Change action contract ${String(input.actionType ?? "unknown")}.`;
+    }
+    return `Apply ${kind}.`;
+  });
 }
