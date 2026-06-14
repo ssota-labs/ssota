@@ -1,9 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@ssota/ui/components/ui/dialog";
 import {
   InputGroup,
   InputGroupAddon,
@@ -21,7 +25,6 @@ type AddWorkflowTriggerDialogProps = {
   onOpenChange: (open: boolean) => void;
   existingKinds: string[];
   onAddTrigger: (kind: string) => void;
-  nestedInSheet?: boolean;
 };
 
 function triggerKindAlreadyAdded(
@@ -93,30 +96,16 @@ export function AddWorkflowTriggerDialog({
   onOpenChange,
   existingKinds,
   onAddTrigger,
-  nestedInSheet = false,
 }: AddWorkflowTriggerDialogProps) {
-  const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
   const [selection, setSelection] = useState(DEFAULT_WORKFLOW_TRIGGER_SELECTION);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!open) {
       setQuery("");
       setSelection(DEFAULT_WORKFLOW_TRIGGER_SELECTION);
-      return;
     }
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onOpenChange(false);
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onOpenChange]);
+  }, [open]);
 
   const filteredCatalog = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -145,31 +134,14 @@ export function AddWorkflowTriggerDialog({
     onOpenChange(false);
   }
 
-  if (!open || !mounted) return null;
-
-  return createPortal(
-    <>
-      <button
-        type="button"
-        aria-label="Close add trigger dialog"
-        className={cn(
-          "fixed inset-0 z-[60]",
-          nestedInSheet
-            ? "bg-transparent"
-            : "bg-black/80 supports-backdrop-filter:backdrop-blur-xs",
-        )}
-        onClick={() => onOpenChange(false)}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="add-workflow-trigger-title"
-        className="fixed top-1/2 left-1/2 z-[61] flex h-[min(640px,calc(100vh-3rem))] w-[min(760px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10"
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        showCloseButton={false}
+        className="flex h-[min(640px,calc(100vh-3rem))] w-[min(760px,calc(100vw-2rem))] max-w-[760px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[760px]"
       >
         <div className="flex items-center gap-2 border-b px-3 py-2.5">
-          <h2 id="add-workflow-trigger-title" className="text-sm font-medium">
-            Add trigger
-          </h2>
+          <DialogTitle className="text-sm font-medium">Add trigger</DialogTitle>
           <InputGroup className="ml-auto h-7 max-w-[11rem]">
             <InputGroupAddon>
               <MagnifyingGlassIcon className="size-3 shrink-0 opacity-50" />
@@ -264,8 +236,7 @@ export function AddWorkflowTriggerDialog({
             Add trigger
           </Button>
         </div>
-      </div>
-    </>,
-    document.body,
+      </DialogContent>
+    </Dialog>
   );
 }
