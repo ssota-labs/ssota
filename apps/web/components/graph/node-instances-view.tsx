@@ -15,6 +15,10 @@ import {
   type GraphFlowNode,
 } from "./graph-flow-canvas";
 import {
+  alignNodesByColumnEdge,
+  estimateGraphNodeWidth,
+} from "@/lib/graph/dagre-layout";
+import {
   NodeRowsDataTable,
   type NodeRowRecord,
   type PropertyColumn,
@@ -74,6 +78,8 @@ export function NodeInstancesView({
     const flowEdges: GraphFlowEdge[] = [];
     let incomingIndex = 0;
     let outgoingIndex = 0;
+    const incomingNodeIds: string[] = [];
+    const outgoingNodeIds: string[] = [];
 
     for (const relation of selectedRelations) {
       const isOutgoing = relation.sourceNodeId === selected.id;
@@ -82,6 +88,20 @@ export function NodeInstancesView({
       const neighborType = isOutgoing ? relation.targetNodeType : relation.sourceNodeType;
       const index = isOutgoing ? outgoingIndex++ : incomingIndex++;
 
+      const neighborData = {
+        kind: "object" as const,
+        eyebrow: neighborType,
+        label: neighborLabel,
+        description: neighborId.slice(0, 8),
+      };
+      const layoutWidth = estimateGraphNodeWidth(neighborData);
+
+      if (isOutgoing) {
+        outgoingNodeIds.push(neighborId);
+      } else {
+        incomingNodeIds.push(neighborId);
+      }
+
       nodes.set(neighborId, {
         id: neighborId,
         type: "graphNode",
@@ -89,13 +109,7 @@ export function NodeInstancesView({
           x: isOutgoing ? 720 : 40,
           y: 80 + index * 140,
         },
-        data: {
-          kind: "object",
-          eyebrow: neighborType,
-          label: neighborLabel,
-          description: neighborId.slice(0, 8),
-          align: isOutgoing ? "left" : "right",
-        },
+        data: { ...neighborData, layoutWidth },
       });
 
       flowEdges.push({
@@ -106,7 +120,28 @@ export function NodeInstancesView({
       });
     }
 
-    return { nodes: [...nodes.values()], edges: flowEdges };
+    const widthById = Object.fromEntries(
+      [...nodes.values()].map((node) => [
+        node.id,
+        node.data.layoutWidth ?? estimateGraphNodeWidth(node.data),
+      ]),
+    );
+
+    let positionedNodes = [...nodes.values()];
+    positionedNodes = alignNodesByColumnEdge(
+      positionedNodes,
+      (node) => incomingNodeIds.includes(node.id),
+      "right",
+      widthById,
+    );
+    positionedNodes = alignNodesByColumnEdge(
+      positionedNodes,
+      (node) => outgoingNodeIds.includes(node.id),
+      "left",
+      widthById,
+    );
+
+    return { nodes: positionedNodes, edges: flowEdges };
   }, [selected, selectedRelations]);
 
   return (

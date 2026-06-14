@@ -4,7 +4,11 @@ import {
   type GraphFlowNode,
   type GraphFlowNodeData,
 } from "./graph-flow-canvas";
-import { layoutGraphWithDagre } from "@/lib/graph/dagre-layout";
+import {
+  estimateGraphNodeWidth,
+  GRAPH_NODE_LAYOUT_SIZE,
+  layoutGraphWithDagre,
+} from "@/lib/graph/dagre-layout";
 
 export type SchemaRelation = {
   edgeType: string;
@@ -34,8 +38,8 @@ type NodeSchemaViewProps = {
 };
 
 function objectNodeData(meta: SchemaNodeTypeMeta): GraphFlowNodeData {
-  return {
-    kind: "object",
+  const data = {
+    kind: "object" as const,
     eyebrow: meta.family,
     label: meta.label,
     description: meta.contentGuide ?? `${meta.propertyCount} properties`,
@@ -43,6 +47,10 @@ function objectNodeData(meta: SchemaNodeTypeMeta): GraphFlowNodeData {
       meta.archetypeId ?? "no archetype",
       `${meta.propertyCount} properties`,
     ],
+  };
+  return {
+    ...data,
+    layoutWidth: estimateGraphNodeWidth(data),
   };
 }
 
@@ -116,10 +124,7 @@ export function NodeSchemaView({
       id: incomingNodeId(type),
       type: "graphNode" as const,
       position: { x: 0, y: 0 },
-      data: {
-        ...objectNodeData(meta),
-        align: "right" as const,
-      },
+      data: objectNodeData(meta),
     })),
     ...outgoingList.map(([type, meta]) => ({
       id: outgoingNodeId(type),
@@ -156,10 +161,33 @@ export function NodeSchemaView({
     }
   }
 
+  const nodeWidthById = Object.fromEntries(
+    nodes.map((node) => [
+      node.id,
+      node.data.layoutWidth ?? estimateGraphNodeWidth(node.data),
+    ]),
+  );
+
   const { nodes: layoutedNodes, edges: layoutedEdges } = layoutGraphWithDagre(
     nodes,
     edges,
     "LR",
+    {
+      getNodeSize: (node) => ({
+        width: nodeWidthById[node.id] ?? GRAPH_NODE_LAYOUT_SIZE.width,
+        height: GRAPH_NODE_LAYOUT_SIZE.height,
+      }),
+      alignColumns: [
+        {
+          match: (node) => node.id.startsWith("incoming:"),
+          edge: "right",
+        },
+        {
+          match: (node) => node.id.startsWith("outgoing:"),
+          edge: "left",
+        },
+      ],
+    },
   );
 
   return (

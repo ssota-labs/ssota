@@ -30,7 +30,8 @@ export type GraphFlowNodeData = {
   description?: string;
   badges?: string[];
   kind?: FlowNodeKind;
-  align?: "left" | "right";
+  /** dagre/edge alignment width — keeps rendered card width in sync with layout math */
+  layoutWidth?: number;
 };
 
 export type GraphFlowNode = Node<GraphFlowNodeData, "graphNode">;
@@ -49,54 +50,29 @@ const nodeStyles: Record<FlowNodeKind, string> = {
 
 function GraphNode({ data }: NodeProps<GraphFlowNode>) {
   const kind = data.kind ?? "object";
-  const align = data.align ?? "left";
-  const isRight = align === "right";
 
   return (
     <div
+      style={data.layoutWidth ? { width: data.layoutWidth } : undefined}
       className={cn(
-        "w-[220px] rounded-xl border px-3 py-2",
-        isRight ? "flex flex-col items-end text-right" : "text-left",
+        "min-w-44 max-w-[220px] rounded-xl border px-3 py-2 text-left",
+        !data.layoutWidth && "w-max",
         nodeStyles[kind],
       )}
     >
       <Handle type="target" position={Position.Left} className="size-2" />
       <Handle type="source" position={Position.Right} className="size-2" />
       {data.eyebrow ? (
-        <div
-          className={cn(
-            "mb-1 max-w-full text-[10px] font-medium tracking-wide text-muted-foreground uppercase",
-            isRight ? "text-right" : "w-full text-left",
-          )}
-        >
+        <div className="mb-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
           {data.eyebrow}
         </div>
       ) : null}
-      <div
-        className={cn(
-          "max-w-full text-sm font-semibold",
-          isRight ? "text-right" : "w-full text-left",
-        )}
-      >
-        {data.label}
-      </div>
+      <div className="text-sm font-semibold">{data.label}</div>
       {data.description ? (
-        <div
-          className={cn(
-            "mt-1 max-w-full text-xs text-muted-foreground",
-            isRight ? "text-right" : "w-full text-left",
-          )}
-        >
-          {data.description}
-        </div>
+        <div className="mt-1 text-xs text-muted-foreground">{data.description}</div>
       ) : null}
       {data.badges?.length ? (
-        <div
-          className={cn(
-            "mt-2 flex max-w-full flex-wrap gap-1",
-            isRight ? "justify-end" : "w-full justify-start",
-          )}
-        >
+        <div className="mt-2 flex flex-wrap gap-1">
           {data.badges.slice(0, 4).map((badge) => (
             <Badge key={badge} variant="secondary" className="text-[10px]">
               {badge}
