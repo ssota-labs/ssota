@@ -66,11 +66,8 @@ export function ContextExpandableBlock({
       </div>
 
       {expanded ? (
-        <div
-          className="bg-muted/10 px-3 py-3"
-          data-testid={expandedTestId ?? `${testId}-expanded`}
-        >
-          {children}
+        <div className="bg-muted/10 px-3 py-3" data-testid={expandedTestId ?? `${testId}-expanded`}>
+          <div className="rounded-md border bg-card p-3 shadow-xs">{children}</div>
         </div>
       ) : null}
     </li>

@@ -92,7 +92,6 @@ export function ContextAssertionForm({
       <ContextConditionList
         conditions={assertion.conditions}
         propertyKeys={propertyKeys}
-        itemLabel="Check"
         addLabel="+ Add check"
         addTestId="add-assertion-check"
         onChange={(conditions) => onChange({ ...assertion, conditions })}

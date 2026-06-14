@@ -89,7 +89,6 @@ export function ContextFilterGroupForm({
       <ContextConditionList
         conditions={group.conditions}
         propertyKeys={propertyKeys}
-        itemLabel="Rule"
         addLabel="+ Add filter rule"
         addTestId="add-filter-condition"
         onChange={(conditions) => onChange({ ...group, conditions })}

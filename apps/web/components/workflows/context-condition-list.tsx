@@ -7,7 +7,6 @@ import { ContextFilterConditionRow } from "@/components/workflows/context-filter
 type ContextConditionListProps = {
   conditions: ContextFilterCondition[];
   propertyKeys: string[];
-  itemLabel: string;
   addLabel: string;
   addTestId: string;
   onChange: (conditions: ContextFilterCondition[]) => void;
@@ -17,7 +16,6 @@ type ContextConditionListProps = {
 export function ContextConditionList({
   conditions,
   propertyKeys,
-  itemLabel,
   addLabel,
   addTestId,
   onChange,
@@ -25,31 +23,28 @@ export function ContextConditionList({
 }: ContextConditionListProps) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground">Where</span>
-      </div>
+      <span className="text-xs text-muted-foreground">Where</span>
 
       {conditions.length === 0 ? (
-        <p className="rounded-md border border-dashed bg-muted/10 px-3 py-2 text-xs text-muted-foreground">
-          No {itemLabel.toLowerCase()}s yet.
-        </p>
+        <p className="text-xs text-muted-foreground">No checks yet.</p>
       ) : (
-        conditions.map((condition, index) => (
-          <ContextFilterConditionRow
-            key={condition.id}
-            condition={condition}
-            propertyKeys={propertyKeys}
-            itemLabel={`${itemLabel} ${index + 1}`}
-            onChange={(next) =>
-              onChange(
-                conditions.map((item) => (item.id === condition.id ? next : item)),
-              )
-            }
-            onRemove={() =>
-              onChange(conditions.filter((item) => item.id !== condition.id))
-            }
-          />
-        ))
+        <div className="space-y-2">
+          {conditions.map((condition) => (
+            <ContextFilterConditionRow
+              key={condition.id}
+              condition={condition}
+              propertyKeys={propertyKeys}
+              onChange={(next) =>
+                onChange(
+                  conditions.map((item) => (item.id === condition.id ? next : item)),
+                )
+              }
+              onRemove={() =>
+                onChange(conditions.filter((item) => item.id !== condition.id))
+              }
+            />
+          ))}
+        </div>
       )}
 
       <Button
