@@ -1,6 +1,6 @@
 import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
 import { createClient } from "@supabase/supabase-js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
@@ -140,7 +140,12 @@ async function seedCatalog(
         allowedActionRefs: ["create_node"],
       },
     ])
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [schema.nodeCatalog.projectId, schema.nodeCatalog.nodeType],
+      set: {
+        allowedActionRefs: sql`excluded.allowed_action_refs`,
+      },
+    });
 
   await db
     .insert(schema.edgeCatalog)
