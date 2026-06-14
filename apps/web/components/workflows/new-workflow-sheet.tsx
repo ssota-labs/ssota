@@ -121,6 +121,7 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
       <AddWorkflowTriggerDialog
         open={addTriggerOpen}
         onOpenChange={setAddTriggerOpen}
+        nestedInSheet
         existingKinds={triggers.map((trigger) => trigger.kind)}
         onAddTrigger={(kind) => {
           setTriggers((current) => [

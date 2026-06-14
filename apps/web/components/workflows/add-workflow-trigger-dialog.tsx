@@ -21,6 +21,7 @@ type AddWorkflowTriggerDialogProps = {
   onOpenChange: (open: boolean) => void;
   existingKinds: string[];
   onAddTrigger: (kind: string) => void;
+  nestedInSheet?: boolean;
 };
 
 function triggerKindAlreadyAdded(
@@ -92,6 +93,7 @@ export function AddWorkflowTriggerDialog({
   onOpenChange,
   existingKinds,
   onAddTrigger,
+  nestedInSheet = false,
 }: AddWorkflowTriggerDialogProps) {
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
@@ -150,7 +152,12 @@ export function AddWorkflowTriggerDialog({
       <button
         type="button"
         aria-label="Close add trigger dialog"
-        className="fixed inset-0 z-[60] bg-transparent"
+        className={cn(
+          "fixed inset-0 z-[60]",
+          nestedInSheet
+            ? "bg-transparent"
+            : "bg-black/80 supports-backdrop-filter:backdrop-blur-xs",
+        )}
         onClick={() => onOpenChange(false)}
       />
       <div
