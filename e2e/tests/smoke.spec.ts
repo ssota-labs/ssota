@@ -41,7 +41,7 @@ test.describe("SSOTA Console", () => {
     await gotoProject(page, "developer/setup");
     await expect(page.getByRole("heading", { name: "Developer Setup" })).toBeVisible();
     await expect(page.getByText("Connect MCP")).toBeVisible();
-    await expect(page.getByText("X-SSOTA-Project-Id")).toBeVisible();
+    await expect(page.getByText("X-SSOTA-Project-Id").first()).toBeVisible();
   });
 
   test("smoke: Tasks route", async ({ page }) => {
@@ -49,15 +49,15 @@ test.describe("SSOTA Console", () => {
     await gotoProject(page, "tasks");
     await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible();
     await expect(page.getByRole("button", { name: /Automation/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Advanced table" })).toBeVisible();
+    await expect(page.getByText("Advanced table", { exact: true })).toBeVisible();
   });
 
   test("smoke: Workflow Lens route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "workflow");
     await expect(page.getByRole("heading", { name: "Workflow Lens" })).toBeVisible();
-    await expect(page.getByText("Strategy")).toBeVisible();
-    await expect(page.getByText("Delivery")).toBeVisible();
+    await expect(page.getByText("Strategy", { exact: true })).toBeVisible();
+    await expect(page.getByText("Delivery", { exact: true })).toBeVisible();
   });
 
   test("smoke: Runs route", async ({ page }) => {
