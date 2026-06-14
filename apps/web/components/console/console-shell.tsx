@@ -28,8 +28,11 @@ export function ConsoleShell({
 }: ConsoleShellProps) {
   const pathname = usePathname();
   const isGraphContext = pathname.includes(`/${ctx.projectSlug}/graph`);
+  const isWorkflowContext = pathname.includes(`/${ctx.projectSlug}/workflow`);
   const isFullBleedTable =
-    isGraphContext || pathname === `/${ctx.orgSlug}/${ctx.projectSlug}/log`;
+    isGraphContext ||
+    isWorkflowContext ||
+    pathname === `/${ctx.orgSlug}/${ctx.projectSlug}/log`;
 
   return (
     <ProjectProvider value={ctx}>

@@ -1,10 +1,14 @@
 "use client";
 
+import { buildWorkflowInstructionPackage } from "@ssota/core";
+import type { Instruction } from "@ssota/core";
+import type { Workflow } from "@ssota/contracts";
 import {
   GraphFlowCanvas,
   type GraphFlowEdge,
   type GraphFlowNode,
 } from "@/components/graph/graph-flow-canvas";
+import { workflowToFlowGraph } from "@/lib/workflows/workflow-flow-model";
 
 export type WorkflowStepView = {
   id: string;
@@ -15,9 +19,53 @@ export type WorkflowStepView = {
   gate: boolean;
 };
 
-export function WorkflowFlowCanvas({ steps }: { steps: WorkflowStepView[] }) {
+/** Read-only linear diagram — prefer WorkflowVisualBuilder for interactive editing. */
+export function WorkflowFlowCanvas({
+  steps,
+  instruction,
+  workflow,
+}: {
+  steps?: WorkflowStepView[];
+  instruction?: Instruction;
+  workflow?: Workflow;
+}) {
+  if (workflow || instruction) {
+    const pkg = workflow
+      ? { workflow, renderedText: "" }
+      : buildWorkflowInstructionPackage(instruction!);
+    const { nodes, edges } = workflowToFlowGraph(pkg.workflow);
+    const graphNodes: GraphFlowNode[] = nodes.map((node) => ({
+      ...node,
+      type: "graphNode",
+      data: {
+        label: node.data.label,
+        eyebrow: node.data.eyebrow,
+        description: node.data.description,
+        badges: node.data.badges,
+        kind:
+          node.data.kind === "gate"
+            ? "review"
+            : node.data.kind === "step"
+              ? "action"
+              : node.data.kind === "condition"
+                ? "decision"
+                : node.data.kind === "trigger" || node.data.kind === "context"
+                  ? "workflow"
+                  : node.data.kind,
+        layoutWidth: node.data.layoutWidth,
+      },
+    }));
+    return (
+      <GraphFlowCanvas
+        nodes={graphNodes}
+        edges={edges as GraphFlowEdge[]}
+        emptyMessage="No workflow steps yet."
+      />
+    );
+  }
+
   const normalizedSteps =
-    steps.length > 0
+    steps && steps.length > 0
       ? steps
       : [
           {

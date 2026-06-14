@@ -33,15 +33,16 @@ test.describe("SSOTA Console", () => {
   test("smoke: Workflows route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "workflow");
-    await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
-    await expect(page.getByText("Workflow registry")).toBeVisible();
+    await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
+    await expect(page.getByPlaceholder("Search workflows...")).toBeVisible();
+    await expect(page.getByTestId("workflow-auto-layout")).toBeVisible();
   });
 
   test("smoke: legacy /workflows redirect", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "workflows");
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow`));
-    await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
+    await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
   });
 
   test("smoke: Developer Setup route", async ({ page }) => {
@@ -64,7 +65,7 @@ test.describe("SSOTA Console", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "log");
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow`));
-    await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
+    await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
   });
 
   test("smoke: workflow reviews tab via legacy /gates redirect", async ({ page }) => {
@@ -73,7 +74,7 @@ test.describe("SSOTA Console", () => {
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow\\?tab=reviews`),
     );
-    await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
+    await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
   });
 
   test("smoke: icon rail exposes primary nav", async ({ page }) => {
