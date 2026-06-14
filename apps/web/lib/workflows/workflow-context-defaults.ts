@@ -136,3 +136,63 @@ export function getAssertionKindLabel(kind: ContextAssertionKind): string {
 export function operatorNeedsValue(operator: ContextFilterOperator): boolean {
   return operator !== "is_empty" && operator !== "is_not_empty";
 }
+
+export function nodeCatalogLabel(
+  nodeCatalog: WorkflowNodeCatalogOption[],
+  nodeType: string,
+): string {
+  return (
+    nodeCatalog.find((entry) => entry.nodeType === nodeType)?.label ?? nodeType
+  );
+}
+
+export function filterGroupSummary(
+  group: ContextFilterGroup,
+  nodeCatalog: WorkflowNodeCatalogOption[],
+): { title: string; description: string } {
+  const nodeLabel = nodeCatalogLabel(nodeCatalog, group.nodeType);
+  const matchLabel = group.combinator === "or" ? "Any condition" : "All conditions";
+  const conditionLabel =
+    group.conditions.length === 0
+      ? "No property filters"
+      : group.conditions.length === 1
+        ? "1 condition"
+        : `${group.conditions.length} conditions`;
+
+  return {
+    title: group.label ?? nodeLabel,
+    description: `${nodeLabel} · ${matchLabel} · ${conditionLabel}`,
+  };
+}
+
+export function traversalSummary(
+  traversal: ContextTraversalPlan,
+  filterGroupRefs: Array<{ id: string; label: string }>,
+): { title: string; description: string } {
+  const startLabel =
+    filterGroupRefs.find((ref) => ref.id === traversal.startNodeRef)?.label ??
+    traversal.startNodeRef;
+
+  return {
+    title: traversal.label ?? "Graph traversal",
+    description: `From ${startLabel} · ${traversal.direction} · ${traversal.maxHops} hop(s)`,
+  };
+}
+
+export function assertionSummary(assertion: ContextAssertion): {
+  title: string;
+  description: string;
+} {
+  const kindLabel = getAssertionKindLabel(assertion.kind);
+  const paramHint =
+    assertion.kind === "status_equals" && assertion.params.status
+      ? ` · ${String(assertion.params.status)}`
+      : assertion.kind === "property_equals" && assertion.params.value
+        ? ` · ${String(assertion.params.value)}`
+        : "";
+
+  return {
+    title: assertion.label ?? kindLabel,
+    description: `${kindLabel} · ${assertion.mode} · ${assertion.enforcement}${paramHint}`,
+  };
+}

@@ -17,56 +17,6 @@ import {
 import { cn } from "@ssota/ui/lib/utils";
 import { CONTEXT_ASSERTION_CATALOG } from "@/lib/workflows/workflow-context-defaults";
 
-type AddContextTraversalDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  hasFilterGroups: boolean;
-  onConfirm: () => void;
-};
-
-export function AddContextTraversalDialog({
-  open,
-  onOpenChange,
-  hasFilterGroups,
-  onConfirm,
-}: AddContextTraversalDialogProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-md">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <DialogTitle className="text-sm font-medium">Add traversal</DialogTitle>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => onOpenChange(false)}
-          >
-            <XIcon className="size-4" />
-          </Button>
-        </div>
-        <div className="space-y-3 px-4 py-4 text-sm">
-          <p className="text-muted-foreground">
-            Traversals hop from a filter group ref through edges in the graph.
-          </p>
-          {!hasFilterGroups ? (
-            <p className="rounded-md border border-dashed bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-              Add at least one filter group first so start refs are available.
-            </p>
-          ) : null}
-        </div>
-        <div className="flex justify-end gap-2 border-t px-4 py-3">
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="button" disabled={!hasFilterGroups} onClick={onConfirm}>
-            Add traversal
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 type AddContextAssertionDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;

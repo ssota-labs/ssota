@@ -27,16 +27,32 @@ test.describe("Workflow context create sheet", () => {
     await page.getByRole("button", { name: "Document" }).click();
     await page.getByRole("button", { name: "Add filter group" }).click();
 
-    await expect(page.getByTestId(/filter-group-/)).toBeVisible();
+    const filterGroupRow = page.getByTestId(/filter-group-row-/).first();
+    await expect(filterGroupRow).toBeVisible();
+    await expect(filterGroupRow).toContainText("Document");
+    await expect(filterGroupRow).toContainText(/All conditions/);
+
+    await filterGroupRow.getByRole("button").first().click();
+    await expect(page.getByRole("heading", { name: "Edit filter group" })).toBeVisible();
+    await page.getByRole("button", { name: "Done" }).click();
 
     await page.getByTestId("add-context-traversal").click();
-    await page.getByRole("button", { name: "Add traversal" }).click();
-    await expect(page.getByTestId(/traversal-/)).toBeVisible();
+    const traversalRow = page.getByTestId(/traversal-row-/).first();
+    await expect(traversalRow).toBeVisible();
+    await expect(traversalRow).toContainText(/From Document/);
 
     await page.getByTestId("add-context-assertion").click();
     await page.getByRole("button", { name: "Status equals" }).click();
     await page.getByRole("button", { name: "Add assertion" }).click();
-    await expect(page.getByTestId(/assertion-/)).toBeVisible();
+    const assertionRow = page.getByTestId(/assertion-row-/).first();
+    await expect(assertionRow).toBeVisible();
+    await expect(assertionRow).toContainText("Status equals");
+
+    await assertionRow.getByRole("button").first().click();
+    await expect(page.getByRole("heading", { name: "Edit assertion" })).toBeVisible();
+    await page.getByLabel("Status").fill("Approved");
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(assertionRow).toContainText(/Approved/);
 
     await page.getByRole("button", { name: "Save" }).click();
 
@@ -49,5 +65,42 @@ test.describe("Workflow context create sheet", () => {
     await expect(page.getByText("Traversals", { exact: true })).toBeVisible();
     await expect(page.getByText("Assertions", { exact: true })).toBeVisible();
     await expect(page.getByText(/fg_document_.* · Document/)).toBeVisible();
+  });
+
+  test("context sections use compact card lists like triggers", async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    await loginAsSmoke(page);
+    await gotoProject(page, "workflow");
+
+    await page.getByRole("button", { name: "New workflow" }).click();
+
+    const triggerCard = page
+      .getByText("When should this workflow run?")
+      .locator("xpath=ancestor::div[contains(@class,'space-y-3')][1]")
+      .locator(".overflow-hidden.rounded-lg.border.bg-card");
+    await expect(triggerCard).toBeVisible();
+
+    const filterGroupCard = page
+      .getByText("Filter groups", { exact: true })
+      .locator("xpath=ancestor::section[1]")
+      .locator(".overflow-hidden.rounded-lg.border.bg-card");
+    await expect(filterGroupCard).toBeVisible();
+    await expect(filterGroupCard.getByTestId("add-filter-group")).toBeVisible();
+
+    const traversalCard = page
+      .getByText("Traversals", { exact: true })
+      .locator("xpath=ancestor::section[1]")
+      .locator(".overflow-hidden.rounded-lg.border.bg-card");
+    await expect(traversalCard).toBeVisible();
+    await expect(traversalCard.getByTestId("add-context-traversal")).toBeVisible();
+
+    const assertionCard = page
+      .getByText("Assertions", { exact: true })
+      .locator("xpath=ancestor::section[1]")
+      .locator(".overflow-hidden.rounded-lg.border.bg-card");
+    await expect(assertionCard).toBeVisible();
+    await expect(assertionCard.getByTestId("add-context-assertion")).toBeVisible();
   });
 });
