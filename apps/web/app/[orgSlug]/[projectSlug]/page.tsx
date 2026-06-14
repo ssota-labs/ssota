@@ -17,7 +17,6 @@ import {
 } from "@/lib/console/cached-catalog";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
-import { getTranslations } from "@/lib/i18n/server";
 import { getActionPorts } from "@/lib/ports";
 
 type StartStep = {
@@ -35,7 +34,6 @@ export default async function ProjectHomePage({
 }) {
   const { orgSlug, projectSlug } = await params;
   const ctx = { orgSlug, projectSlug };
-  const { t } = await getTranslations();
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
 
