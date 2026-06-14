@@ -52,7 +52,7 @@ export async function completeProjectOnboarding(
   await page.getByLabel("Project name").fill(projectName);
   await page.locator('button[type="submit"]').click();
 
-  await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible({
+  await expect(page.getByRole("heading", { name: "Developer Start" })).toBeVisible({
     timeout: 15_000,
   });
 
