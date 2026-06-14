@@ -26,11 +26,10 @@ export function isNumberField(field: PropertyFieldDefinition): boolean {
 
 export function isTextAreaField(
   field: PropertyFieldDefinition,
-  variant: "panel" | "inline" | "supabase" = "panel",
+  variant: "panel" | "inline" = "panel",
 ): boolean {
   if (field.valueType === "text") return true;
-  // Supabase row inspector treats catalog string fields as multiline text.
-  if (field.valueType === "string" && variant !== "inline") return true;
+  if (field.valueType === "string" && variant === "panel") return true;
   return false;
 }
 
@@ -43,7 +42,8 @@ export function isJsonField(field: PropertyFieldDefinition, value: unknown): boo
   return value !== null && value !== undefined && typeof value === "object";
 }
 
-export function supabaseTypeLabel(field: PropertyFieldDefinition): string {
+/** Postgres-style type label shown under field names in the row inspector layout. */
+export function fieldTypeLabel(field: PropertyFieldDefinition): string {
   switch (field.valueType) {
     case "string":
       return "text";

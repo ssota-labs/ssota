@@ -60,7 +60,7 @@
   width: 100%;
 }
 
-/* Sheet row inspector — single control surface (no nested input boxes) */
+/* Sheet row inspector — label/type left, shadcn control right (layout only) */
 .instance-field-row {
   display: grid;
   grid-template-columns: 10rem minmax(0, 1fr);
@@ -70,42 +70,6 @@
   align-items: start;
 }
 
-.instance-field-control {
-  min-height: 2.25rem;
-  border: 1px solid color-mix(in oklab, var(--border) 90%, transparent);
-  border-radius: 0.375rem;
-  background: color-mix(in oklab, var(--muted) 35%, var(--background));
-  padding: 0.375rem 0.625rem;
-}
-
-.instance-field-control:focus-within {
-  border-color: color-mix(in oklab, var(--primary) 55%, var(--border));
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--primary) 18%, transparent);
-}
-
-.instance-field-control input,
-.instance-field-control textarea,
-.instance-field-control select,
-.instance-field-control .cn-input,
-.instance-field-control .cn-textarea,
-.instance-field-control .cn-native-select,
-.instance-field-control [data-slot="input"],
-.instance-field-control [data-slot="textarea"],
-.instance-field-control [data-slot="native-select"] {
-  width: 100%;
-  min-height: 0;
-  border: 0 !important;
-  background: transparent !important;
-  outline: none;
-  box-shadow: none !important;
-  --tw-ring-shadow: 0 0 #0000 !important;
-  --tw-ring-offset-shadow: 0 0 #0000 !important;
-}
-
-.instance-field-control .cn-native-select-wrapper,
-.instance-field-control [data-slot="native-select-wrapper"] {
-  width: 100%;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
+.instance-field-value {
+  min-width: 0;
 }

@@ -11,6 +11,7 @@ import {
 } from "@/components/graph/graph-flow-canvas";
 import type { InstanceGraphRelation } from "@/components/graph/node-instances-view.types";
 import { Button } from "@ssota/ui/components/ui/button";
+import { Textarea } from "@ssota/ui/components/ui/textarea";
 import {
   Tabs,
   TabsContent,
@@ -18,8 +19,8 @@ import {
   TabsTrigger,
 } from "@ssota/ui/components/ui/tabs";
 import {
+  fieldTypeLabel,
   isJsonField,
-  supabaseTypeLabel,
   type PropertyFieldDefinition,
 } from "@/lib/graph/property-field-types";
 import { formatTableCell } from "@/lib/graph/format-table-cell";
@@ -204,12 +205,12 @@ function ReadOnlyTextField({
   return (
     <div className="instance-field-row">
       <FieldMeta label={label} type={type} />
-      <div className="instance-field-control">
-        <textarea
+      <div className="instance-field-value">
+        <Textarea
           readOnly
           rows={3}
           value={value}
-          className="min-h-16 w-full resize-y bg-transparent font-mono text-sm text-muted-foreground outline-none"
+          className="min-h-16 resize-y font-mono text-muted-foreground"
         />
       </div>
     </div>
@@ -250,19 +251,24 @@ function EditableFieldRow({
 
   return (
     <div className="instance-field-row">
-      <FieldMeta label={field.key} type={supabaseTypeLabel(field)} />
+      <FieldMeta label={field.key} type={fieldTypeLabel(field)} />
       {json && !editingJson ? (
-        <div className="instance-field-control flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 break-all font-mono text-sm">{formatTableCell(value)}</div>
+        <div className="instance-field-value flex items-start gap-3">
+          <Textarea
+            readOnly
+            rows={3}
+            value={formatTableCell(value)}
+            className="min-h-16 flex-1 resize-y font-mono"
+          />
           <Button type="button" variant="outline" size="sm" className="h-7 shrink-0" onClick={onToggleJsonEdit}>
             <PencilSimpleIcon className="mr-1 size-3.5" />
             Edit
           </Button>
         </div>
       ) : json && editingJson ? (
-        <div className="instance-field-control">
-          <textarea
-            className="min-h-28 w-full resize-y bg-transparent font-mono text-sm outline-none"
+        <div className="instance-field-value space-y-2">
+          <Textarea
+            className="min-h-28 resize-y font-mono"
             defaultValue={JSON.stringify(value ?? null, null, 2)}
             rows={6}
             onBlur={(event) => {
@@ -275,15 +281,15 @@ function EditableFieldRow({
               }
             }}
           />
-          <div className="mt-2 flex justify-end">
+          <div className="flex justify-end">
             <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onToggleJsonEdit}>
               Done
             </Button>
           </div>
         </div>
       ) : (
-        <div className="instance-field-control">
-          <PropertyFieldEditor field={field} value={value} variant="supabase" onChange={onChange} />
+        <div className="instance-field-value">
+          <PropertyFieldEditor field={field} value={value} onChange={onChange} />
         </div>
       )}
     </div>

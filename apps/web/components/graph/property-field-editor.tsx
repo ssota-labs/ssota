@@ -25,7 +25,7 @@ type PropertyFieldEditorProps = {
   onChange: (value: unknown) => void;
   onCommit?: (value: unknown) => void;
   disabled?: boolean;
-  variant?: "panel" | "inline" | "supabase";
+  variant?: "panel" | "inline";
   autoFocus?: boolean;
 };
 
@@ -49,27 +49,10 @@ function PropertyFieldEditorInner({
 }: PropertyFieldEditorProps) {
   const [draft, setDraft] = useState<string>(() => serializeDraft(value));
   const compact = variant === "inline";
-  const supabase = variant === "supabase";
 
   function commit(nextValue: unknown) {
     onChange(nextValue);
     onCommit?.(nextValue);
-  }
-
-  // Supabase row inspector: plain native controls inside .instance-field-control
-  // (shadcn Input/Textarea carry .cn-* borders that stack on the outer box).
-  if (supabase) {
-    return (
-      <SupabaseFieldControl
-        field={field}
-        value={value}
-        draft={draft}
-        disabled={disabled}
-        autoFocus={autoFocus}
-        onDraftChange={setDraft}
-        onCommit={commit}
-      />
-    );
   }
 
   if (isBooleanField(field)) {
@@ -99,8 +82,9 @@ function PropertyFieldEditorInner({
         disabled={disabled}
         autoFocus={autoFocus}
         className={cn(
-          "w-full border-0 bg-transparent shadow-none focus-visible:ring-0",
-          compact ? "h-8 text-xs" : supabase ? "h-auto min-h-0 py-0 text-[0.8125rem]" : "h-9 text-sm",
+          "w-full",
+          compact &&
+            "h-8 border-0 bg-transparent text-xs shadow-none focus-visible:ring-0",
         )}
         onChange={(event) => {
           const next = event.target.value;
@@ -125,12 +109,9 @@ function PropertyFieldEditorInner({
         disabled={disabled}
         autoFocus={autoFocus}
         className={cn(
-          "border-0 bg-transparent shadow-none focus-visible:ring-0",
-          compact
-            ? "h-8 rounded-none px-2 text-xs"
-            : supabase
-              ? "h-auto min-h-0 px-0 py-0 text-[0.8125rem]"
-              : "h-9 text-sm",
+          "w-full",
+          compact &&
+            "h-8 rounded-none border-0 bg-transparent px-2 text-xs shadow-none focus-visible:ring-0",
         )}
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => {
@@ -149,17 +130,14 @@ function PropertyFieldEditorInner({
     );
   }
 
-  if (isTextAreaField(field, variant) && (variant === "panel" || supabase)) {
+  if (isTextAreaField(field, variant) && variant === "panel") {
     return (
       <Textarea
         value={draft}
         disabled={disabled}
         autoFocus={autoFocus}
-        rows={supabase ? 3 : 4}
-        className={cn(
-          "resize-y border-0 bg-transparent shadow-none focus-visible:ring-0",
-          supabase ? "min-h-16 text-[0.8125rem]" : "min-h-24 text-sm",
-        )}
+        rows={3}
+        className="min-h-16 w-full resize-y"
         onChange={(event) => setDraft(event.target.value)}
         onBlur={() => commit(draft.trim() === "" && !field.required ? null : draft)}
       />
@@ -172,12 +150,9 @@ function PropertyFieldEditorInner({
       disabled={disabled}
       autoFocus={autoFocus}
       className={cn(
-        "border-0 bg-transparent shadow-none focus-visible:ring-0",
-        compact
-          ? "h-8 rounded-none px-2 text-xs"
-          : supabase
-            ? "h-auto min-h-0 px-0 py-0 text-[0.8125rem]"
-            : "h-9 text-sm",
+        "w-full",
+        compact &&
+          "h-8 rounded-none border-0 bg-transparent px-2 text-xs shadow-none focus-visible:ring-0",
       )}
       onChange={(event) => setDraft(event.target.value)}
       onBlur={() => commit(draft.trim() === "" && !field.required ? null : draft)}
@@ -214,116 +189,4 @@ function serializeDraft(value: unknown) {
   if (typeof value === "string") return value;
   if (typeof value === "number" || typeof value === "boolean") return String(value);
   return JSON.stringify(value);
-}
-
-const supabaseControlClass =
-  "w-full border-0 bg-transparent p-0 text-[0.8125rem] shadow-none outline-none ring-0 focus:ring-0";
-
-function SupabaseFieldControl({
-  field,
-  value,
-  draft,
-  disabled,
-  autoFocus,
-  onDraftChange,
-  onCommit,
-}: {
-  field: PropertyFieldDefinition;
-  value: unknown;
-  draft: string;
-  disabled: boolean;
-  autoFocus: boolean;
-  onDraftChange: (next: string) => void;
-  onCommit: (value: unknown) => void;
-}) {
-  if (isBooleanField(field)) {
-    const checked = value === true;
-    return (
-      <div className="flex h-9 items-center">
-        <Switch
-          checked={checked}
-          disabled={disabled}
-          onCheckedChange={(next) => onCommit(next)}
-        />
-        <span className="ml-2 text-xs text-muted-foreground">
-          {checked ? "true" : "false"}
-        </span>
-      </div>
-    );
-  }
-
-  if (isEnumField(field)) {
-    const options = enumOptions(field);
-    const current = value === null || value === undefined ? "" : String(value);
-    return (
-      <select
-        value={current}
-        disabled={disabled}
-        autoFocus={autoFocus}
-        className={cn(supabaseControlClass, "h-9 cursor-pointer")}
-        onChange={(event) => {
-          const next = event.target.value;
-          onCommit(next === "" ? null : next);
-        }}
-      >
-        {!field.required ? <option value="">NULL</option> : null}
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    );
-  }
-
-  if (isNumberField(field)) {
-    return (
-      <input
-        type="number"
-        value={draft}
-        disabled={disabled}
-        autoFocus={autoFocus}
-        className={cn(supabaseControlClass, "h-9")}
-        onChange={(event) => onDraftChange(event.target.value)}
-        onBlur={() => {
-          if (draft.trim() === "" && !field.required) {
-            onCommit(null);
-            return;
-          }
-          const parsed = Number(draft);
-          if (!Number.isNaN(parsed)) onCommit(parsed);
-        }}
-      />
-    );
-  }
-
-  if (isTextAreaField(field, "supabase")) {
-    return (
-      <textarea
-        value={draft}
-        disabled={disabled}
-        autoFocus={autoFocus}
-        rows={3}
-        className={cn(supabaseControlClass, "min-h-16 resize-y")}
-        onChange={(event) => onDraftChange(event.target.value)}
-        onBlur={() =>
-          onCommit(draft.trim() === "" && !field.required ? null : draft)
-        }
-      />
-    );
-  }
-
-  return (
-    <input
-      type="text"
-      value={draft}
-      disabled={disabled}
-      autoFocus={autoFocus}
-      className={cn(supabaseControlClass, "h-9")}
-      onChange={(event) => onDraftChange(event.target.value)}
-      onBlur={() =>
-        onCommit(draft.trim() === "" && !field.required ? null : draft)
-      }
-    />
-  );
 }
