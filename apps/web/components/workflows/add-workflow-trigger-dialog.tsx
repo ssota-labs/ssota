@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Dialog,
-  DialogContent,
 } from "@ssota/ui/components/ui/dialog";
 import { cn } from "@ssota/ui/lib/utils";
 import {
@@ -13,8 +12,8 @@ import {
   type WorkflowTriggerCatalogItem,
 } from "@/lib/workflows/workflow-trigger-catalog";
 import {
-  WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS,
   WORKFLOW_CATALOG_DIALOG_GRID_CLASS,
+  WorkflowCatalogDialogContent,
   WorkflowCatalogDialogFooter,
   WorkflowCatalogDialogHeader,
 } from "@/components/workflows/workflow-catalog-dialog-shell";
@@ -136,10 +135,7 @@ export function AddWorkflowTriggerDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className={WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS}
-      >
+      <WorkflowCatalogDialogContent>
         <WorkflowCatalogDialogHeader
           title="Add trigger"
           query={query}
@@ -219,7 +215,7 @@ export function AddWorkflowTriggerDialog({
             Add trigger
           </Button>
         </WorkflowCatalogDialogFooter>
-      </DialogContent>
+      </WorkflowCatalogDialogContent>
     </Dialog>
   );
 }

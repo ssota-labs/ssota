@@ -6,13 +6,12 @@ import type { ActionCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Dialog,
-  DialogContent,
 } from "@ssota/ui/components/ui/dialog";
 import { cn } from "@ssota/ui/lib/utils";
 import { countActionsForNodeType } from "@/lib/workflows/workflow-node-bindings";
 import {
-  WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS,
   WORKFLOW_CATALOG_DIALOG_GRID_CLASS,
+  WorkflowCatalogDialogContent,
   WorkflowCatalogDialogFooter,
   WorkflowCatalogDialogHeader,
 } from "@/components/workflows/workflow-catalog-dialog-shell";
@@ -151,10 +150,7 @@ export function AddWorkflowNodeDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className={WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS}
-      >
+      <WorkflowCatalogDialogContent>
         <WorkflowCatalogDialogHeader
           title="Add node"
           query={query}
@@ -228,7 +224,7 @@ export function AddWorkflowNodeDialog({
             Add node
           </Button>
         </WorkflowCatalogDialogFooter>
-      </DialogContent>
+      </WorkflowCatalogDialogContent>
     </Dialog>
   );
 }

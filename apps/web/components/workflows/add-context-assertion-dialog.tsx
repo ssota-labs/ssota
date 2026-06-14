@@ -4,11 +4,11 @@ import { useMemo, useState } from "react";
 import { CheckCircleIcon } from "@phosphor-icons/react";
 import type { ContextAssertionKind } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
-import { Dialog, DialogContent } from "@ssota/ui/components/ui/dialog";
+import { Dialog } from "@ssota/ui/components/ui/dialog";
 import { cn } from "@ssota/ui/lib/utils";
 import {
-  WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS,
   WORKFLOW_CATALOG_DIALOG_GRID_CLASS,
+  WorkflowCatalogDialogContent,
   WorkflowCatalogDialogFooter,
   WorkflowCatalogDialogHeader,
 } from "@/components/workflows/workflow-catalog-dialog-shell";
@@ -102,10 +102,7 @@ export function AddContextAssertionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        showCloseButton={false}
-        className={WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS}
-      >
+      <WorkflowCatalogDialogContent>
         <WorkflowCatalogDialogHeader
           title="Add assertion"
           query={query}
@@ -172,7 +169,7 @@ export function AddContextAssertionDialog({
             Add assertion
           </Button>
         </WorkflowCatalogDialogFooter>
-      </DialogContent>
+      </WorkflowCatalogDialogContent>
     </Dialog>
   );
 }
