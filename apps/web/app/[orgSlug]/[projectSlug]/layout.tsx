@@ -27,10 +27,7 @@ export default async function ProjectLayout({
   const consolePort = getConsolePort();
   const onboardingPort = getOnboardingPort();
 
-  const [profile, { org, project }] = await Promise.all([
-    onboardingPort.getProfile(user.id),
-    resolveProject(orgSlug, projectSlug),
-  ]);
+  const profile = await onboardingPort.getProfile(user.id);
 
   if (!profile || profile.onboardingStep !== "completed") {
     redirect(
@@ -39,6 +36,8 @@ export default async function ProjectLayout({
         : "/onboarding/project",
     );
   }
+
+  const { org, project } = await resolveProject(orgSlug, projectSlug);
 
   const [organizations, projects] = await Promise.all([
     consolePort.listOrganizationsForUser(user.id),
