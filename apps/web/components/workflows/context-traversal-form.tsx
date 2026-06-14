@@ -33,20 +33,8 @@ export function ContextTraversalForm({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label className="text-xs text-muted-foreground">Label (optional)</Label>
-          <Input
-            className="h-8"
-            value={traversal.label ?? ""}
-            placeholder={traversal.startNodeType}
-            onChange={(event) =>
-              patch({ label: event.target.value.trim() || undefined })
-            }
-          />
-        </div>
-
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Start node type</Label>
           <Select
@@ -99,26 +87,11 @@ export function ContextTraversalForm({
             }
           />
         </div>
+      </div>
 
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Limit</Label>
-          <Input
-            className="h-8"
-            type="number"
-            min={1}
-            max={100}
-            value={traversal.limit ?? ""}
-            placeholder="Optional"
-            onChange={(event) =>
-              patch({
-                limit: event.target.value ? Number(event.target.value) : undefined,
-              })
-            }
-          />
-        </div>
-
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label className="text-xs text-muted-foreground">Edge types</Label>
+          <Label className="text-xs text-muted-foreground">Edge type</Label>
           <Select
             value={traversal.edgeTypes?.[0] ?? "__any__"}
             onValueChange={(value) =>
@@ -127,7 +100,7 @@ export function ContextTraversalForm({
               })
             }
           >
-            <SelectTrigger className="h-8 w-full">
+            <SelectTrigger className="h-8 w-full" data-testid="traversal-edge-type">
               <SelectValue placeholder="Any edge type" />
             </SelectTrigger>
             <SelectContent>
@@ -141,8 +114,8 @@ export function ContextTraversalForm({
           </Select>
         </div>
 
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label className="text-xs text-muted-foreground">Target node types</Label>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Target node type</Label>
           <Select
             value={traversal.nodeTypes?.[0] ?? "__any__"}
             onValueChange={(value) =>
@@ -151,7 +124,7 @@ export function ContextTraversalForm({
               })
             }
           >
-            <SelectTrigger className="h-8 w-full">
+            <SelectTrigger className="h-8 w-full" data-testid="traversal-target-node-type">
               <SelectValue placeholder="Any node type" />
             </SelectTrigger>
             <SelectContent>

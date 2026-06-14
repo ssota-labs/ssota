@@ -2,7 +2,6 @@
 
 import type { ContextFilterGroup } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
-import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import {
   Select,
@@ -86,21 +85,6 @@ export function ContextFilterGroupForm({
             </SelectContent>
           </Select>
         </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Label (optional)</Label>
-        <Input
-          className="h-8"
-          value={group.label ?? ""}
-          placeholder={group.nodeType}
-          onChange={(event) =>
-            onChange({
-              ...group,
-              label: event.target.value.trim() || undefined,
-            })
-          }
-        />
       </div>
 
       <div className="space-y-2">

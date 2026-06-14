@@ -10,11 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ssota/ui/components/ui/select";
-import {
-  CONTEXT_ASSERTION_CATALOG,
-  createAssertionFromKind,
-  type WorkflowNodeCatalogOption,
-} from "@/lib/workflows/workflow-context-defaults";
+import type { WorkflowNodeCatalogOption } from "@/lib/workflows/workflow-context-defaults";
 
 type ContextAssertionFormProps = {
   assertion: ContextAssertion;
@@ -35,53 +31,9 @@ export function ContextAssertionForm({
     onChange({ ...assertion, params } as ContextAssertion);
   }
 
-  function changeKind(kind: ContextAssertionKind) {
-    const next = createAssertionFromKind(kind);
-    onChange({
-      ...next,
-      id: assertion.id,
-      label: assertion.label,
-      mode: assertion.mode,
-      enforcement: assertion.enforcement,
-    });
-  }
-
   return (
-    <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label className="text-xs text-muted-foreground">Kind</Label>
-          <Select
-            value={assertion.kind}
-            onValueChange={(value) =>
-              value && changeKind(value as ContextAssertionKind)
-            }
-          >
-            <SelectTrigger className="h-8 w-full" data-testid="assertion-kind">
-              <SelectValue placeholder="Select assertion kind" />
-            </SelectTrigger>
-            <SelectContent>
-              {CONTEXT_ASSERTION_CATALOG.map((entry) => (
-                <SelectItem key={entry.kind} value={entry.kind}>
-                  {entry.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-1.5 sm:col-span-2">
-          <Label className="text-xs text-muted-foreground">Label (optional)</Label>
-          <Input
-            className="h-8"
-            value={assertion.label ?? ""}
-            placeholder={assertion.kind}
-            onChange={(event) =>
-              patch({ label: event.target.value.trim() || undefined })
-            }
-          />
-        </div>
-
+    <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Mode</Label>
           <Select
@@ -118,14 +70,14 @@ export function ContextAssertionForm({
             </SelectContent>
           </Select>
         </div>
-
-        <AssertionParamsEditor
-          kind={assertion.kind}
-          params={assertion.params}
-          nodeCatalog={nodeCatalog}
-          onChange={updateParams}
-        />
       </div>
+
+      <AssertionParamsEditor
+        kind={assertion.kind}
+        params={assertion.params}
+        nodeCatalog={nodeCatalog}
+        onChange={updateParams}
+      />
     </div>
   );
 }
@@ -143,25 +95,27 @@ function AssertionParamsEditor({
 }) {
   if (kind === "node_exists" || kind === "count_at_least") {
     return (
-      <div className="space-y-1.5 sm:col-span-2">
-        <Label className="text-xs text-muted-foreground">Node type</Label>
-        <Select
-          value={String(params.nodeType ?? "")}
-          onValueChange={(value) => onChange({ ...params, nodeType: value ?? "" })}
-        >
-          <SelectTrigger className="h-8 w-full">
-            <SelectValue placeholder="Select node type" />
-          </SelectTrigger>
-          <SelectContent>
-            {nodeCatalog.map((entry) => (
-              <SelectItem key={entry.nodeType} value={entry.nodeType}>
-                {entry.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Node type</Label>
+          <Select
+            value={String(params.nodeType ?? "")}
+            onValueChange={(value) => onChange({ ...params, nodeType: value ?? "" })}
+          >
+            <SelectTrigger className="h-8 w-full">
+              <SelectValue placeholder="Select node type" />
+            </SelectTrigger>
+            <SelectContent>
+              {nodeCatalog.map((entry) => (
+                <SelectItem key={entry.nodeType} value={entry.nodeType}>
+                  {entry.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         {kind === "count_at_least" ? (
-          <div className="space-y-1.5 pt-2">
+          <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Minimum count</Label>
             <Input
               className="h-8"
@@ -180,8 +134,8 @@ function AssertionParamsEditor({
 
   if (kind === "property_present" || kind === "property_equals") {
     return (
-      <>
-        <div className="space-y-1.5 sm:col-span-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Property key</Label>
           <Input
             className="h-8"
@@ -192,7 +146,7 @@ function AssertionParamsEditor({
           />
         </div>
         {kind === "property_equals" ? (
-          <div className="space-y-1.5 sm:col-span-2">
+          <div className="space-y-1.5">
             <Label className="text-xs text-muted-foreground">Expected value</Label>
             <Input
               className="h-8"
@@ -201,13 +155,13 @@ function AssertionParamsEditor({
             />
           </div>
         ) : null}
-      </>
+      </div>
     );
   }
 
   if (kind === "status_equals") {
     return (
-      <div className="space-y-1.5 sm:col-span-2">
+      <div className="space-y-1.5">
         <Label htmlFor="assertion-status" className="text-xs text-muted-foreground">
           Status
         </Label>
