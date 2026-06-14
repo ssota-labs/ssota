@@ -59,35 +59,45 @@ function appendTriggerSection(lines: string[], workflow: WireWorkflow) {
 function appendContextSection(lines: string[], workflow: WireWorkflow) {
   const { context } = workflow;
   const hasContext =
-    context.queries.length > 0 ||
+    context.filterGroups.length > 0 ||
     context.traversals.length > 0 ||
     context.assertions.length > 0 ||
     Boolean(context.notes?.trim());
 
-  if (!hasContext && workflow.applicableNodeTypes.length === 0) return;
+  if (!hasContext) return;
 
   lines.push("## Context", "");
-  if (workflow.applicableNodeTypes.length) {
-    lines.push("Applicable node types:");
-    for (const nodeType of workflow.applicableNodeTypes) {
-      lines.push(`- ${nodeType}`);
-    }
-    lines.push("");
-  }
+  lines.push(
+    "Fetch nodes with query_nodes, then apply filter groups below. MCP does not filter by property — evaluate conditions in agent context.",
+    "",
+  );
 
-  for (const query of context.queries) {
-    const label = query.label ?? query.id;
-    const filters = [
-      query.nodeType ? `nodeType=${query.nodeType}` : null,
-      query.lifecycleStatus ? `lifecycle=${query.lifecycleStatus}` : null,
-      query.limit ? `limit=${query.limit}` : null,
-    ].filter(Boolean);
-    lines.push(`### Query: ${label}`);
-    lines.push(
-      filters.length
-        ? `Run query_nodes({ ${filters.join(", ")} }).`
-        : "Run query_nodes with the parameters declared in the workflow spec.",
-    );
+  for (const group of context.filterGroups) {
+    const label = group.label ?? group.id;
+    const matchLabel = group.combinator === "or" ? "any" : "all";
+    lines.push(`### Filter group: ${label}`);
+    lines.push(`- nodeType: ${group.nodeType}`);
+    lines.push(`- match: ${matchLabel}`);
+    if (group.lifecycleStatus) {
+      lines.push(`- lifecycle: ${group.lifecycleStatus}`);
+    }
+    if (group.limit) {
+      lines.push(`- limit: ${group.limit}`);
+    }
+    if (group.conditions.length) {
+      lines.push("- conditions:");
+      for (const condition of group.conditions) {
+        const value =
+          condition.value !== undefined && condition.value !== ""
+            ? ` "${condition.value}"`
+            : "";
+        lines.push(
+          `  - ${condition.propertyKey} ${condition.operator}${value}`,
+        );
+      }
+    } else {
+      lines.push("- conditions: (none — include all rows of this node type)");
+    }
     lines.push("");
   }
 

@@ -2,6 +2,8 @@ import {
   WorkflowCatalogUpsertSchema,
   WorkflowDefinitionSchema,
   WorkflowSchema,
+  deriveApplicableNodeTypes,
+  normalizeWorkflowContext,
   normalizeWorkflowTriggerSpec,
   type Workflow,
   type WorkflowCatalogUpsert,
@@ -19,17 +21,31 @@ export type WorkflowRow = {
   updatedAt?: string;
 };
 
+function normalizeWorkflowSpecInput(input: unknown): unknown {
+  if (!input || typeof input !== "object") return input;
+  const obj = input as Record<string, unknown>;
+  const applicableNodeTypes = Array.isArray(obj.applicableNodeTypes)
+    ? obj.applicableNodeTypes.filter(
+        (value): value is string => typeof value === "string" && value.trim().length > 0,
+      )
+    : [];
+  const context = normalizeWorkflowContext(obj.context, applicableNodeTypes);
+  return {
+    ...obj,
+    trigger: normalizeWorkflowTriggerSpec(obj.trigger),
+    context,
+    applicableNodeTypes: deriveApplicableNodeTypes(context),
+  };
+}
+
 export function parseWorkflowSpec(input: unknown): WorkflowDefinition {
-  const normalized =
-    input && typeof input === "object"
-      ? {
-          ...(input as Record<string, unknown>),
-          trigger: normalizeWorkflowTriggerSpec(
-            (input as Record<string, unknown>).trigger,
-          ),
-        }
-      : input;
-  return WorkflowDefinitionSchema.parse(normalized);
+  return WorkflowDefinitionSchema.parse(normalizeWorkflowSpecInput(input));
+}
+
+export function materializeWorkflowDefinition(
+  definition: WorkflowDefinition,
+): WorkflowDefinition {
+  return parseWorkflowSpec(definition);
 }
 
 export function workflowRowToWire(row: WorkflowRow): Workflow {
@@ -53,13 +69,14 @@ export function workflowDefinitionToCatalogUpsert(
     slug?: string;
   },
 ): WorkflowCatalogUpsert {
+  const materialized = materializeWorkflowDefinition(definition);
   return WorkflowCatalogUpsertSchema.parse({
     workflowId: options?.workflowId,
     slug: options?.slug,
-    workflowKey: definition.workflowKey ?? null,
-    lifecycle: definition.lifecycle,
-    scope: definition.scope,
-    spec: definition,
+    workflowKey: materialized.workflowKey ?? null,
+    lifecycle: materialized.lifecycle,
+    scope: materialized.scope,
+    spec: materialized,
   });
 }
 
@@ -67,7 +84,7 @@ export function mergeWorkflowDefinition(
   existing: WorkflowDefinition,
   patch: Partial<WorkflowDefinition>,
 ): WorkflowDefinition {
-  return WorkflowDefinitionSchema.parse({
+  return parseWorkflowSpec({
     ...existing,
     ...patch,
     trigger: patch.trigger
@@ -84,8 +101,6 @@ export function mergeWorkflowDefinition(
     gates: patch.gates ?? existing.gates,
     references: patch.references ?? existing.references,
     routes: patch.routes ?? existing.routes,
-    applicableNodeTypes:
-      patch.applicableNodeTypes ?? existing.applicableNodeTypes,
     allowedActions: patch.allowedActions ?? existing.allowedActions,
     requiredActions: patch.requiredActions ?? existing.requiredActions,
     optionalActions: patch.optionalActions ?? existing.optionalActions,

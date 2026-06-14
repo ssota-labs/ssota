@@ -267,6 +267,34 @@ describe("adapter-supabase integration", () => {
                 { id: "task_assigned", kind: "task_assigned", enabled: true, config: {} },
               ],
             },
+            context: {
+              filterGroups: [
+                {
+                  id: "fg_document",
+                  nodeType: "Document",
+                  combinator: "and",
+                  conditions: [],
+                },
+              ],
+              traversals: [
+                {
+                  id: "gather_context",
+                  label: "Gather context",
+                  startNodeRef: "fg_document",
+                  direction: "outgoing",
+                  maxHops: 1,
+                },
+              ],
+              assertions: [
+                {
+                  id: "assert_draft",
+                  kind: "status_equals",
+                  mode: "agentic",
+                  enforcement: "soft",
+                  params: { status: "Draft" },
+                },
+              ],
+            },
             applicableNodeTypes: ["Document"],
             requiredActions: ["create_node"],
             optionalActions: ["promote_document"],
@@ -295,6 +323,10 @@ describe("adapter-supabase integration", () => {
       const workflows = await ports.catalog.listWorkflows({ limit: 100 });
       const created = workflows.find((entry) => entry.spec.title === title);
       expect(created?.scope).toEqual({ kind: "node_type", nodeType: "Document" });
+      expect(created?.spec.context.filterGroups).toHaveLength(1);
+      expect(created?.spec.context.traversals).toHaveLength(1);
+      expect(created?.spec.context.assertions).toHaveLength(1);
+      expect(created?.spec.applicableNodeTypes).toEqual(["Document"]);
       expect(created?.spec.steps[0]?.id).toBe("gather_context");
       expect(created?.spec.allowedActions).toContain("create_node");
     },

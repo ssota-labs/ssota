@@ -33,6 +33,8 @@ export function WorkflowsWorkspace({
   pendingGates,
   selected,
   activeTab,
+  nodeCatalog,
+  edgeCatalog,
 }: {
   orgSlug: string;
   projectSlug: string;
@@ -42,6 +44,8 @@ export function WorkflowsWorkspace({
   pendingGates: Gate[];
   selected: Workflow | null;
   activeTab: "builder" | "agent" | "flow" | "runs" | "reviews";
+  nodeCatalog: Array<{ nodeType: string; label: string; propertyKeys: string[] }>;
+  edgeCatalog: Array<{ edgeType: string; label: string }>;
 }) {
   const ctx = { orgSlug, projectSlug };
   const baseHref = projectPath(ctx, "workflow");
@@ -159,7 +163,13 @@ export function WorkflowsWorkspace({
   return (
     <WorkflowCatalogExplorer
       items={catalogItems}
-      newWorkflowTrigger={<NewWorkflowSheet projectId={projectId} />}
+      newWorkflowTrigger={
+        <NewWorkflowSheet
+          projectId={projectId}
+          nodeCatalog={nodeCatalog}
+          edgeCatalog={edgeCatalog}
+        />
+      }
       mainHeader={
         selected && package_
           ? {

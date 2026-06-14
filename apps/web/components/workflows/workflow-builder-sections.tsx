@@ -36,14 +36,17 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
         description="Structured retrieval plan for agents"
       >
         <div className="space-y-3 text-sm">
-          {workflow.context.queries.length ? (
+          {workflow.context.filterGroups.length ? (
             <div>
-              <div className="mb-1 font-medium">Queries</div>
+              <div className="mb-1 font-medium">Filter groups</div>
               <ul className="space-y-1 text-muted-foreground">
-                {workflow.context.queries.map((query) => (
-                  <li key={query.id}>
-                    {query.label ?? query.id}
-                    {query.nodeType ? ` · ${query.nodeType}` : ""}
+                {workflow.context.filterGroups.map((group) => (
+                  <li key={group.id}>
+                    {group.label ?? group.id}
+                    {group.nodeType ? ` · ${group.nodeType}` : ""}
+                    {group.conditions.length
+                      ? ` · ${group.conditions.length} condition(s)`
+                      : ""}
                   </li>
                 ))}
               </ul>
@@ -75,7 +78,7 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
               </ul>
             </div>
           ) : null}
-          {!workflow.context.queries.length &&
+          {!workflow.context.filterGroups.length &&
           !workflow.context.traversals.length &&
           !workflow.context.assertions.length ? (
             <p className="text-muted-foreground">
