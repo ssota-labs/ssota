@@ -4,7 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
-import { Input } from "@ssota/ui/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@ssota/ui/components/ui/input-group";
 import { cn } from "@ssota/ui/lib/utils";
 import {
   DEFAULT_WORKFLOW_TRIGGER_SELECTION,
@@ -44,35 +48,37 @@ function TriggerCatalogPanel({
   const ItemIcon = item.icon;
 
   return (
-    <div className="flex min-h-[280px] flex-col px-6 py-5">
-      <div className="flex items-start gap-3">
-        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
-          <ItemIcon className="size-4 text-muted-foreground" />
+    <div className="flex min-h-[240px] flex-col px-5 py-4">
+      <div className="flex items-start gap-2.5">
+        <div className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-muted/40">
+          <ItemIcon className="size-3.5 text-muted-foreground" />
         </div>
-        <div className="space-y-1">
-          <p className="text-sm font-medium">{item.label}</p>
-          <p className="text-xs text-muted-foreground">{item.description}</p>
+        <div className="space-y-0.5">
+          <p className="text-xs font-medium">{item.label}</p>
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            {item.description}
+          </p>
         </div>
       </div>
 
       {alreadyAdded ? (
-        <div className="mt-auto rounded-lg border bg-muted/20 px-6 py-10 text-center">
-          <p className="text-sm font-medium">Already added</p>
-          <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+        <div className="mt-auto rounded-md border bg-muted/20 px-4 py-8 text-center">
+          <p className="text-xs font-medium">Already added</p>
+          <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-muted-foreground">
             This trigger is already in the workflow list. Toggle it on or off from
             the sheet.
           </p>
         </div>
       ) : item.available ? (
-        <div className="mt-auto rounded-lg border border-dashed bg-muted/20 px-6 py-10 text-center">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-auto rounded-md border border-dashed bg-muted/20 px-4 py-8 text-center">
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
             Additional configuration for this trigger will be available soon.
           </p>
         </div>
       ) : (
-        <div className="mt-auto flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/20 px-6 py-10 text-center">
-          <p className="text-sm font-medium">준비 중</p>
-          <p className="max-w-sm text-xs text-muted-foreground">
+        <div className="mt-auto flex flex-col items-center justify-center gap-1.5 rounded-md border border-dashed bg-muted/20 px-4 py-8 text-center">
+          <p className="text-xs font-medium">준비 중</p>
+          <p className="max-w-sm text-[11px] leading-relaxed text-muted-foreground">
             런타임 연결 전이지만 카탈로그에 추가해 저장할 수 있습니다.
           </p>
         </div>
@@ -153,36 +159,37 @@ export function AddWorkflowTriggerDialog({
         aria-labelledby="add-workflow-trigger-title"
         className="fixed top-1/2 left-1/2 z-[61] flex h-[min(640px,calc(100vh-3rem))] w-[min(760px,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10"
       >
-        <div className="flex items-center gap-3 border-b px-4 py-3">
-          <h2 id="add-workflow-trigger-title" className="text-base font-medium">
+        <div className="flex items-center gap-2 border-b px-3 py-2.5">
+          <h2 id="add-workflow-trigger-title" className="text-sm font-medium">
             Add trigger
           </h2>
-          <div className="relative ml-auto w-full max-w-xs">
-            <MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <Input
+          <InputGroup className="ml-auto h-7 max-w-[11rem]">
+            <InputGroupAddon>
+              <MagnifyingGlassIcon className="size-3 shrink-0 opacity-50" />
+            </InputGroupAddon>
+            <InputGroupInput
               value={query}
               onChange={(event) => setQuery(event.currentTarget.value)}
               placeholder="Search"
-              className="h-8 pl-8"
             />
-          </div>
+          </InputGroup>
           <Button
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="shrink-0"
+            className="size-7 shrink-0"
             onClick={() => onOpenChange(false)}
           >
-            <XIcon />
+            <XIcon className="size-3.5" />
             <span className="sr-only">Close</span>
           </Button>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)]">
-          <nav className="overflow-y-auto border-r bg-muted/10 p-2">
+        <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)]">
+          <nav className="overflow-y-auto border-r bg-muted/10 p-1.5">
             {filteredCatalog.map((category) => (
-              <div key={category.id} className="mb-3 last:mb-0">
-                <p className="px-2 py-1 text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+              <div key={category.id} className="mb-2 last:mb-0">
+                <p className="px-2 py-0.5 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
                   {category.label}
                 </p>
                 <ul className="space-y-0.5">
@@ -204,13 +211,13 @@ export function AddWorkflowTriggerDialog({
                             })
                           }
                           className={cn(
-                            "flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors",
+                            "flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-xs transition-colors",
                             active
                               ? "bg-accent text-accent-foreground"
                               : "text-foreground hover:bg-muted/60",
                           )}
                         >
-                          <ItemIcon className="size-4 shrink-0 text-muted-foreground" />
+                          <ItemIcon className="size-3 shrink-0 text-muted-foreground" />
                           <span className="truncate">{item.label}</span>
                           {isAdded ? (
                             <span className="ml-auto text-[10px] text-muted-foreground">
@@ -233,16 +240,17 @@ export function AddWorkflowTriggerDialog({
                 alreadyAdded={alreadyAdded}
               />
             ) : (
-              <div className="flex h-full items-center justify-center px-6 text-sm text-muted-foreground">
+              <div className="flex h-full items-center justify-center px-5 text-xs text-muted-foreground">
                 트리거 유형을 선택하세요.
               </div>
             )}
           </div>
         </div>
 
-        <div className="flex justify-end border-t px-4 py-3">
+        <div className="flex justify-end border-t px-3 py-2.5">
           <Button
             type="button"
+            size="sm"
             disabled={!selectedItem || alreadyAdded}
             onClick={handleAddTrigger}
           >
