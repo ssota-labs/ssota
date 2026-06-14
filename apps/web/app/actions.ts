@@ -15,6 +15,7 @@ import {
   UpdateEdgeTypeInputSchema,
   UpdateInstructionInputSchema,
   UpdateNodeTypeInputSchema,
+  UpdateNodePropertiesInputSchema,
   UpdateNodePropertySchemaInputSchema,
   UpdatePropertyPermissionInputSchema,
 } from "@ssota/contracts";
@@ -239,6 +240,12 @@ function parseJsonArray(value: FormDataEntryValue | null): Record<string, unknow
     throw new Error("Expected JSON array");
   }
   return parsed as Record<string, unknown>[];
+}
+
+function parseJsonValue(value: FormDataEntryValue | null): unknown {
+  const raw = String(value ?? "").trim();
+  if (!raw) return null;
+  return JSON.parse(raw) as unknown;
 }
 
 function defaultLifecycleTransitions() {
@@ -520,6 +527,90 @@ export async function addNodePropertyFormAction(formData: FormData): Promise<voi
   ])) {
     revalidatePath(path);
   }
+}
+
+export async function updateNodePropertiesFormAction(
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const projectId = await requireProjectId(formData);
+  const nodeId = String(formData.get("nodeId") ?? "");
+  const propertyKey = String(formData.get("propertyKey") ?? "");
+  const nodeSlug = String(formData.get("nodeSlug") ?? "");
+  const value = parseJsonValue(formData.get("value"));
+
+  const parsed = UpdateNodePropertiesInputSchema.parse({
+    nodeId,
+    properties: { [propertyKey]: value },
+  });
+
+  const ports = getActionPorts(projectId);
+  const result = await executeAction(ports, {
+    actionType: "update_node_properties",
+    input: parsed,
+    executorId: user.id,
+    executorType: "Human",
+    projectId,
+  });
+
+  if (result.status === "rejected") {
+    return { ok: false, error: result.reason ?? "Action rejected" };
+  }
+  if (result.status === "gated") {
+    return { ok: false, error: "Change is pending human review" };
+  }
+
+  for (const path of withConsolePaths([
+    "/log",
+    "/gates",
+    graphPath(DEFAULT_PROJECT, "nodes", nodeSlug),
+  ])) {
+    revalidatePath(path);
+  }
+
+  return { ok: true };
+}
+
+export async function updateNodePropertiesBatchFormAction(
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const projectId = await requireProjectId(formData);
+  const nodeId = String(formData.get("nodeId") ?? "");
+  const nodeSlug = String(formData.get("nodeSlug") ?? "");
+  const properties = parseJsonObject(formData.get("properties"));
+
+  const parsed = UpdateNodePropertiesInputSchema.parse({ nodeId, properties });
+
+  const ports = getActionPorts(projectId);
+  const result = await executeAction(ports, {
+    actionType: "update_node_properties",
+    input: parsed,
+    executorId: user.id,
+    executorType: "Human",
+    projectId,
+  });
+
+  if (result.status === "rejected") {
+    return { ok: false, error: result.reason ?? "Action rejected" };
+  }
+  if (result.status === "gated") {
+    return { ok: false, error: "Change is pending human review" };
+  }
+
+  for (const path of withConsolePaths([
+    "/log",
+    "/gates",
+    graphPath(DEFAULT_PROJECT, "nodes", nodeSlug),
+  ])) {
+    revalidatePath(path);
+  }
+
+  return { ok: true };
 }
 
 export async function createEdgeTableFormAction(formData: FormData): Promise<void> {
