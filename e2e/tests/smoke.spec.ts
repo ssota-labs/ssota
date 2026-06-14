@@ -6,7 +6,7 @@ test.describe("SSOTA Console", () => {
   test("smoke: 로그인 → 프로젝트 홈", async ({ page }) => {
     await loginAsSmoke(page);
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
-    await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Developer Start" })).toBeVisible();
   });
 
   test("smoke: Graph → node table", async ({ page }) => {
