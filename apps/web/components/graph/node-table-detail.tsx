@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ActionRunner } from "@/components/graph/node-table-actions";
+import { ActionRunner, AddPropertySheet } from "@/components/graph/node-table-actions";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
 import { NodeInstancesView, type InstanceGraphRelation } from "@/components/graph/node-instances-view";
 import { NodeSchemaView, type SchemaRelation } from "@/components/graph/node-schema-view";
@@ -83,7 +83,12 @@ export async function NodeTableDetail({
   const toolbar = (
     <ActionRunner
       projectId={projectId}
-      actions={visibleActions.map((action) => action.actionType)}
+      actions={visibleActions.map((action) => ({
+        actionType: action.actionType,
+        label: action.label,
+        executor: action.executor,
+        preconditions: action.preconditions,
+      }))}
     />
   );
 
@@ -149,11 +154,13 @@ export async function NodeTableDetail({
             Runs
           </TabLink>
         </div>
-        {activeTab !== "schema" ? (
+        {activeTab === "schema" ? (
+          <AddPropertySheet nodeType={entry.nodeType} projectId={projectId} />
+        ) : (
           <div className="text-xs text-muted-foreground">
             {rows.length} instances · {schemaRelations.length} relations · {visibleActions.length} actions
           </div>
-        ) : null}
+        )}
       </div>
       {activeTab === "schema" ? (
         <NodeSchemaView

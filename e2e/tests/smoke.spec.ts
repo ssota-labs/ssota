@@ -6,7 +6,7 @@ test.describe("SSOTA Console", () => {
   test("smoke: 로그인 → 프로젝트 홈", async ({ page }) => {
     await loginAsSmoke(page);
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
-    await expect(page.getByRole("heading", { name: "Project Home" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Developer Start" })).toBeVisible();
   });
 
   test("smoke: Graph → node table", async ({ page }) => {
@@ -36,6 +36,30 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("heading", { name: "Workflows" })).toBeVisible();
   });
 
+  test("smoke: Developer Setup route", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "developer/setup");
+    await expect(page.getByRole("heading", { name: "Developer Setup" })).toBeVisible();
+    await expect(page.getByText("Connect MCP")).toBeVisible();
+    await expect(page.getByText("X-SSOTA-Project-Id").first()).toBeVisible();
+  });
+
+  test("smoke: Tasks route", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "tasks");
+    await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Automation/ })).toBeVisible();
+    await expect(page.getByText("Advanced table", { exact: true })).toBeVisible();
+  });
+
+  test("smoke: Workflow Lens route", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "workflow");
+    await expect(page.getByRole("heading", { name: "Workflow Lens" })).toBeVisible();
+    await expect(page.getByText("Strategy", { exact: true })).toBeVisible();
+    await expect(page.getByText("Delivery", { exact: true })).toBeVisible();
+  });
+
   test("smoke: Runs route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "log");
@@ -51,7 +75,10 @@ test.describe("SSOTA Console", () => {
   test("smoke: icon rail exposes primary nav", async ({ page }) => {
     await loginAsSmoke(page);
     await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Developer", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Workflow Lens", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Impact", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Runs", exact: true })).toBeVisible();
   });

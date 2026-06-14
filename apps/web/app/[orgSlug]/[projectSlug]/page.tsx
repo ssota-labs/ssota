@@ -50,7 +50,7 @@ export default async function ProjectHomePage({
       ports.impactQueue.queryImpactQueue({ status: "pending", limit: 5 }),
     ]);
 
-  const taskTableHref = `${graphPath(ctx, "nodes")}?table=task`;
+  const taskTableHref = projectPath(ctx, "tasks");
   const hasWorkflow = instructions.length > 0;
   const hasGraphShape = nodes.length > 0 && actions.length > 0;
   const hasRunHistory = logs.length > 0;
@@ -59,7 +59,7 @@ export default async function ProjectHomePage({
       title: "Connect an agent",
       description:
         "Copy this project's MCP details and mount SSOTA where your agent works.",
-      href: projectPath(ctx, "settings/general"),
+      href: projectPath(ctx, "developer/setup"),
       cta: "Open setup",
       completed: false,
     },
@@ -76,7 +76,7 @@ export default async function ProjectHomePage({
       description:
         "Use Task rows as the shared work queue for humans and automation.",
       href: taskTableHref,
-      cta: "Open Task table",
+      cta: "Open Tasks",
       completed: hasGraphShape,
     },
     {
@@ -98,6 +98,12 @@ export default async function ProjectHomePage({
   ];
 
   const cards = [
+    {
+      title: "Workflow Lens",
+      description: "Product development phases over the same graph",
+      href: projectPath(ctx, "workflow"),
+      count: nodes.length,
+    },
     {
       title: "Graph",
       description: `${nodes.length} object types · ${edges.length} relations · ${actions.length} actions`,
@@ -285,7 +291,7 @@ export default async function ProjectHomePage({
             first loop is working.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
           {cards.map((card) => (
             <Link
               key={card.href}
