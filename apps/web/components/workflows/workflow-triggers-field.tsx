@@ -5,33 +5,27 @@ import type { WorkflowTriggerEvent } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
-import { useState } from "react";
 import {
-  defaultWorkflowTriggerEvents,
   getWorkflowTriggerMeta,
   serializeWorkflowTriggers,
 } from "@/lib/workflows/workflow-trigger-catalog";
 
 export function WorkflowTriggersField({
+  triggers,
+  onTriggersChange,
   onAddTrigger,
 }: {
+  triggers: WorkflowTriggerEvent[];
+  onTriggersChange: (triggers: WorkflowTriggerEvent[]) => void;
   onAddTrigger: () => void;
 }) {
-  const [triggers, setTriggers] = useState<WorkflowTriggerEvent[]>(
-    defaultWorkflowTriggerEvents,
-  );
-
   function setTriggerEnabled(id: string, enabled: boolean) {
-    setTriggers((current) => {
-      const next = current.map((trigger) =>
-        trigger.id === id ? { ...trigger, enabled } : trigger,
-      );
-      const enabledCount = next.filter((trigger) => trigger.enabled).length;
-      if (enabledCount === 0) {
-        return current;
-      }
-      return next;
-    });
+    const next = triggers.map((trigger) =>
+      trigger.id === id ? { ...trigger, enabled } : trigger,
+    );
+    const enabledCount = next.filter((trigger) => trigger.enabled).length;
+    if (enabledCount === 0) return;
+    onTriggersChange(next);
   }
 
   return (

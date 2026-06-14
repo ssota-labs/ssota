@@ -175,6 +175,24 @@ export function defaultWorkflowTriggerEvents(): WorkflowTriggerEvent[] {
   return [{ id: "manual", kind: "manual", enabled: true, config: {} }];
 }
 
+export function hasWorkflowTriggerKind(
+  triggers: WorkflowTriggerEvent[],
+  kind: string,
+): boolean {
+  return triggers.some((trigger) => trigger.kind === kind);
+}
+
+export function createWorkflowTriggerEventFromKind(
+  kind: string,
+): WorkflowTriggerEvent {
+  return {
+    id: crypto.randomUUID(),
+    kind,
+    enabled: true,
+    config: {},
+  };
+}
+
 export function serializeWorkflowTriggers(
   triggers: WorkflowTriggerEvent[],
 ): string {

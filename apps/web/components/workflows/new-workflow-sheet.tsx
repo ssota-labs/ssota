@@ -19,6 +19,10 @@ import { defineWorkflowInstructionFormAction } from "@/app/actions";
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
+import {
+  createWorkflowTriggerEventFromKind,
+  defaultWorkflowTriggerEvents,
+} from "@/lib/workflows/workflow-trigger-catalog";
 
 const formRowClassName =
   "grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] items-start gap-x-8 gap-y-5 px-6";
@@ -44,6 +48,7 @@ function FormRow({
 
 export function NewWorkflowSheet({ projectId }: { projectId: string }) {
   const [addTriggerOpen, setAddTriggerOpen] = useState(false);
+  const [triggers, setTriggers] = useState(defaultWorkflowTriggerEvents);
 
   return (
     <>
@@ -96,6 +101,8 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
 
               <section className="pt-6">
                 <WorkflowTriggersField
+                  triggers={triggers}
+                  onTriggersChange={setTriggers}
                   onAddTrigger={() => setAddTriggerOpen(true)}
                 />
               </section>
@@ -114,6 +121,13 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
       <AddWorkflowTriggerDialog
         open={addTriggerOpen}
         onOpenChange={setAddTriggerOpen}
+        existingKinds={triggers.map((trigger) => trigger.kind)}
+        onAddTrigger={(kind) => {
+          setTriggers((current) => [
+            ...current,
+            createWorkflowTriggerEventFromKind(kind),
+          ]);
+        }}
       />
     </>
   );

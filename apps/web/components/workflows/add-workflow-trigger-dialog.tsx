@@ -15,7 +15,16 @@ import {
 type AddWorkflowTriggerDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  existingKinds: string[];
+  onAddTrigger: (kind: string) => void;
 };
+
+function triggerKindAlreadyAdded(
+  existingKinds: string[],
+  kind: string,
+): boolean {
+  return existingKinds.includes(kind);
+}
 
 function findCatalogItem(categoryId: string, itemId: string) {
   const category = WORKFLOW_TRIGGER_CATALOG.find(
@@ -27,8 +36,10 @@ function findCatalogItem(categoryId: string, itemId: string) {
 
 function TriggerCatalogPanel({
   item,
+  alreadyAdded,
 }: {
   item: WorkflowTriggerCatalogItem;
+  alreadyAdded: boolean;
 }) {
   const ItemIcon = item.icon;
 
@@ -44,12 +55,28 @@ function TriggerCatalogPanel({
         </div>
       </div>
 
-      <div className="mt-auto flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/20 px-6 py-10 text-center">
-        <p className="text-sm font-medium">준비 중</p>
-        <p className="max-w-sm text-xs text-muted-foreground">
-          이 트리거 유형은 곧 설정할 수 있습니다. 지금은 수동 실행만 지원합니다.
-        </p>
-      </div>
+      {alreadyAdded ? (
+        <div className="mt-auto rounded-lg border bg-muted/20 px-6 py-10 text-center">
+          <p className="text-sm font-medium">Already added</p>
+          <p className="mt-1 max-w-sm text-xs text-muted-foreground">
+            This trigger is already in the workflow list. Toggle it on or off from
+            the sheet.
+          </p>
+        </div>
+      ) : item.available ? (
+        <div className="mt-auto rounded-lg border border-dashed bg-muted/20 px-6 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            Additional configuration for this trigger will be available soon.
+          </p>
+        </div>
+      ) : (
+        <div className="mt-auto flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-muted/20 px-6 py-10 text-center">
+          <p className="text-sm font-medium">준비 중</p>
+          <p className="max-w-sm text-xs text-muted-foreground">
+            런타임 연결 전이지만 카탈로그에 추가해 저장할 수 있습니다.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -57,6 +84,8 @@ function TriggerCatalogPanel({
 export function AddWorkflowTriggerDialog({
   open,
   onOpenChange,
+  existingKinds,
+  onAddTrigger,
 }: AddWorkflowTriggerDialogProps) {
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState("");
@@ -67,7 +96,11 @@ export function AddWorkflowTriggerDialog({
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setQuery("");
+      setSelection(DEFAULT_WORKFLOW_TRIGGER_SELECTION);
+      return;
+    }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onOpenChange(false);
@@ -94,6 +127,15 @@ export function AddWorkflowTriggerDialog({
   const selected = findCatalogItem(selection.categoryId, selection.itemId);
   const selectedItem =
     selected.item ?? WORKFLOW_TRIGGER_CATALOG[0]?.items[0] ?? null;
+  const alreadyAdded = selectedItem
+    ? triggerKindAlreadyAdded(existingKinds, selectedItem.id)
+    : false;
+
+  function handleAddTrigger() {
+    if (!selectedItem || alreadyAdded) return;
+    onAddTrigger(selectedItem.id);
+    onOpenChange(false);
+  }
 
   if (!open || !mounted) return null;
 
@@ -149,6 +191,7 @@ export function AddWorkflowTriggerDialog({
                     const active =
                       selection.categoryId === category.id &&
                       selection.itemId === item.id;
+                    const isAdded = existingKinds.includes(item.id);
 
                     return (
                       <li key={item.id}>
@@ -169,6 +212,11 @@ export function AddWorkflowTriggerDialog({
                         >
                           <ItemIcon className="size-4 shrink-0 text-muted-foreground" />
                           <span className="truncate">{item.label}</span>
+                          {isAdded ? (
+                            <span className="ml-auto text-[10px] text-muted-foreground">
+                              Added
+                            </span>
+                          ) : null}
                         </button>
                       </li>
                     );
@@ -180,7 +228,10 @@ export function AddWorkflowTriggerDialog({
 
           <div className="min-h-0 overflow-y-auto bg-background">
             {selectedItem ? (
-              <TriggerCatalogPanel item={selectedItem} />
+              <TriggerCatalogPanel
+                item={selectedItem}
+                alreadyAdded={alreadyAdded}
+              />
             ) : (
               <div className="flex h-full items-center justify-center px-6 text-sm text-muted-foreground">
                 트리거 유형을 선택하세요.
@@ -190,7 +241,11 @@ export function AddWorkflowTriggerDialog({
         </div>
 
         <div className="flex justify-end border-t px-4 py-3">
-          <Button type="button" disabled>
+          <Button
+            type="button"
+            disabled={!selectedItem || alreadyAdded}
+            onClick={handleAddTrigger}
+          >
             Add trigger
           </Button>
         </div>
