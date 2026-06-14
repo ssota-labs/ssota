@@ -1,9 +1,29 @@
 import { z } from "zod";
 import { LifecycleStatusSchema } from "./definitions.js";
+import { ContextSpecSchema } from "./workflow-context.js";
 import {
   WorkflowTriggerSpecSchema,
   createManualWorkflowTrigger,
 } from "./workflow-trigger-event.js";
+
+export {
+  ContextAssertionKindSchema,
+  ContextAssertionSchema,
+  ContextFilterConditionSchema,
+  ContextFilterGroupSchema,
+  ContextFilterOperatorSchema,
+  ContextSpecSchema,
+  ContextTraversalPlanSchema,
+  deriveApplicableNodeTypes,
+  normalizeWorkflowContext,
+  type ContextAssertion,
+  type ContextAssertionKind,
+  type ContextFilterCondition,
+  type ContextFilterGroup,
+  type ContextFilterOperator,
+  type ContextSpec,
+  type ContextTraversalPlan,
+} from "./workflow-context.js";
 
 export {
   WorkflowTriggerEventSchema,
@@ -35,67 +55,6 @@ export const WorkflowKeySchema = z
   .regex(/^[a-z][a-z0-9_]*$/, "workflowKey must be snake_case");
 
 export type WorkflowKey = z.infer<typeof WorkflowKeySchema>;
-
-/** Node query plan agents execute before acting. */
-export const ContextQueryPlanSchema = z.object({
-  id: z.string().min(1),
-  label: z.string().optional(),
-  nodeType: z.string().optional(),
-  lifecycleStatus: LifecycleStatusSchema.optional(),
-  limit: z.number().int().positive().max(100).optional(),
-});
-
-export type ContextQueryPlan = z.infer<typeof ContextQueryPlanSchema>;
-
-/** Graph hop / neighbor retrieval plan. */
-export const ContextTraversalPlanSchema = z.object({
-  id: z.string().min(1),
-  label: z.string().optional(),
-  /** Reference to a query result id or runtime parameter name. */
-  startNodeRef: z.string().min(1),
-  direction: z.enum(["outgoing", "incoming", "both"]).default("both"),
-  edgeTypes: z.array(z.string()).optional(),
-  nodeTypes: z.array(z.string()).optional(),
-  maxHops: z.number().int().positive().max(5).default(2),
-  limit: z.number().int().positive().max(100).optional(),
-});
-
-export type ContextTraversalPlan = z.infer<typeof ContextTraversalPlanSchema>;
-
-export const ContextAssertionKindSchema = z.enum([
-  "node_exists",
-  "property_present",
-  "property_equals",
-  "status_equals",
-  "count_at_least",
-]);
-
-export type ContextAssertionKind = z.infer<typeof ContextAssertionKindSchema>;
-
-/** Precondition on retrieved context — engine or agent evaluated. */
-export const ContextAssertionSchema = z.object({
-  id: z.string().min(1),
-  label: z.string().optional(),
-  mode: z.enum(["deterministic", "agentic"]).default("deterministic"),
-  enforcement: z.enum(["hard", "soft"]).default("soft"),
-  kind: ContextAssertionKindSchema,
-  params: z.record(z.unknown()).default({}),
-});
-
-export type ContextAssertion = z.infer<typeof ContextAssertionSchema>;
-
-/**
- * Structured retrieval plan — SSOT for context assembly.
- * Agent-readable text is rendered from this spec, not the other way around.
- */
-export const ContextSpecSchema = z.object({
-  queries: z.array(ContextQueryPlanSchema).default([]),
-  traversals: z.array(ContextTraversalPlanSchema).default([]),
-  assertions: z.array(ContextAssertionSchema).default([]),
-  notes: z.string().optional(),
-});
-
-export type ContextSpec = z.infer<typeof ContextSpecSchema>;
 
 export const WorkflowEvaluationModeSchema = z.enum([
   "deterministic",
@@ -211,7 +170,7 @@ const WorkflowDefinitionBaseSchema = z.object({
     events: [createManualWorkflowTrigger()],
   }),
   context: ContextSpecSchema.default({
-    queries: [],
+    filterGroups: [],
     traversals: [],
     assertions: [],
   }),

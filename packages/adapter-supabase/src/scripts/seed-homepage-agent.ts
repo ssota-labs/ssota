@@ -247,7 +247,18 @@ export async function seedHomepageAgentCatalog(
               },
             ],
           },
-          context: { queries: [], traversals: [], assertions: [] },
+          context: {
+            filterGroups: [
+              {
+                id: "homepage_projects",
+                nodeType: "HomepageProject",
+                combinator: "and",
+                conditions: [],
+              },
+            ],
+            traversals: [],
+            assertions: [],
+          },
           conditions: [],
           steps: [
             {

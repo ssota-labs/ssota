@@ -36,6 +36,7 @@ export function WorkflowsWorkspace({
   activeTab,
   nodeCatalog,
   actionCatalog,
+  edgeCatalog,
 }: {
   orgSlug: string;
   projectSlug: string;
@@ -47,6 +48,7 @@ export function WorkflowsWorkspace({
   activeTab: "builder" | "agent" | "flow" | "runs" | "reviews";
   nodeCatalog: NodeCatalogEntry[];
   actionCatalog: ActionCatalogEntry[];
+  edgeCatalog: Array<{ edgeType: string; label: string }>;
 }) {
   const ctx = { orgSlug, projectSlug };
   const baseHref = projectPath(ctx, "workflow");
@@ -171,6 +173,7 @@ export function WorkflowsWorkspace({
           projectSlug={projectSlug}
           nodeCatalog={nodeCatalog}
           actionCatalog={actionCatalog}
+          edgeCatalog={edgeCatalog}
         />
       }
       mainHeader={

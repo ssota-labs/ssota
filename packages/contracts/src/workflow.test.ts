@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   mergeWorkflowDefinition,
+  parseWorkflowSpec,
   workflowDefinitionToCatalogUpsert,
   workflowRowToWire,
 } from "./workflow-store.js";
@@ -25,7 +26,15 @@ const sampleDefinition = WorkflowDefinitionSchema.parse({
   workflowKey: "document_creation",
   trigger: { events: [manualTrigger, taskAssignedTrigger] },
   context: {
-    queries: [{ id: "docs", nodeType: "Document" }],
+    filterGroups: [
+      {
+        id: "docs",
+        label: "Documents",
+        nodeType: "Document",
+        combinator: "and",
+        conditions: [],
+      },
+    ],
     traversals: [],
     assertions: [],
   },
@@ -59,7 +68,7 @@ const sampleDefinition = WorkflowDefinitionSchema.parse({
 describe("workflow v0 schemas", () => {
   it("parses a workflow definition with structured trigger events", () => {
     expect(sampleDefinition.steps).toHaveLength(1);
-    expect(sampleDefinition.context.queries[0]?.nodeType).toBe("Document");
+    expect(sampleDefinition.context.filterGroups[0]?.nodeType).toBe("Document");
     expect(sampleDefinition.trigger.events[0]?.kind).toBe("manual");
   });
 });
@@ -92,18 +101,28 @@ describe("workflow store helpers", () => {
     expect(upsert.lifecycle).toBe("Active");
   });
 
+  it("migrates legacy queries when parsing stored specs", () => {
+    const parsed = parseWorkflowSpec({
+      title: "Legacy",
+      trigger: { events: [manualTrigger] },
+      context: {
+        queries: [{ id: "docs", nodeType: "Document" }],
+        traversals: [],
+        assertions: [],
+      },
+      applicableNodeTypes: ["Document"],
+      steps: [{ id: "execute", title: "Run", actions: [] }],
+    });
+
+    expect(parsed.context.filterGroups[0]?.nodeType).toBe("Document");
+    expect(parsed.applicableNodeTypes).toEqual(["Document"]);
+  });
+
   it("merges partial workflow definition patches", () => {
     const merged = mergeWorkflowDefinition(sampleDefinition, {
       title: "Updated document creation",
       trigger: {
-        events: [
-          {
-            id: "manual",
-            kind: "manual",
-            enabled: true,
-            config: {},
-          },
-        ],
+        events: [manualTrigger],
       },
     });
 

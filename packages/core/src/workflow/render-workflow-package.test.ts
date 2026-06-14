@@ -36,7 +36,25 @@ const sampleWorkflow: Workflow = {
         },
       ],
     },
-    context: { queries: [], traversals: [], assertions: [] },
+    context: {
+      filterGroups: [
+        {
+          id: "docs",
+          nodeType: "Document",
+          combinator: "and",
+          conditions: [
+            {
+              id: "c1",
+              propertyKey: "title",
+              operator: "contains",
+              value: "create",
+            },
+          ],
+        },
+      ],
+      traversals: [],
+      assertions: [],
+    },
     conditions: [],
     steps: [
       {
@@ -77,7 +95,8 @@ describe("renderWorkflowText", () => {
     expect(text).toContain("## Steps");
     expect(text).toContain("### 1. Create draft");
     expect(text).toContain("## Output");
-    expect(text).toContain("create_document");
+    expect(text).toContain("Filter group");
+    expect(text).toContain("Document");
     expect(text).toContain("Document node exists in Draft");
   });
 

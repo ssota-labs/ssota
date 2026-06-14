@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ActionCatalogEntry, NodeCatalogEntry, WorkflowNodeBinding } from "@ssota/contracts";
+import type {
+  ActionCatalogEntry,
+  NodeCatalogEntry,
+  WorkflowNodeBinding,
+} from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -20,9 +24,14 @@ import { defineWorkflowFormAction } from "@/app/actions";
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { AddWorkflowNodeDialog } from "@/components/workflows/add-workflow-node-dialog";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
+import { WorkflowContextField } from "@/components/workflows/workflow-context-field";
 import { WorkflowNodeBindingsField } from "@/components/workflows/workflow-node-bindings-field";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 import { syncWorkflowNodeCatalogFields } from "@/lib/workflows/workflow-node-bindings";
+import {
+  defaultContextSpec,
+  type WorkflowEdgeCatalogOption,
+} from "@/lib/workflows/workflow-context-defaults";
 import {
   createWorkflowTriggerEventFromKind,
   defaultWorkflowTriggerEvents,
@@ -56,21 +65,34 @@ export function NewWorkflowSheet({
   projectSlug,
   nodeCatalog,
   actionCatalog,
+  edgeCatalog,
 }: {
   projectId: string;
   orgSlug: string;
   projectSlug: string;
   nodeCatalog: NodeCatalogEntry[];
   actionCatalog: ActionCatalogEntry[];
+  edgeCatalog: WorkflowEdgeCatalogOption[];
 }) {
   const [addTriggerOpen, setAddTriggerOpen] = useState(false);
   const [addNodeOpen, setAddNodeOpen] = useState(false);
   const [triggers, setTriggers] = useState(defaultWorkflowTriggerEvents);
   const [nodeBindings, setNodeBindings] = useState<WorkflowNodeBinding[]>([]);
+  const [context, setContext] = useState(defaultContextSpec);
 
   const syncedCatalogFields = useMemo(
     () => syncWorkflowNodeCatalogFields(nodeBindings, nodeCatalog, actionCatalog),
     [actionCatalog, nodeBindings, nodeCatalog],
+  );
+
+  const nodeCatalogOptions = useMemo(
+    () =>
+      nodeCatalog.map((entry) => ({
+        nodeType: entry.nodeType,
+        label: entry.label,
+        propertyKeys: Object.keys(entry.propertySchema ?? {}),
+      })),
+    [nodeCatalog],
   );
 
   return (
@@ -85,8 +107,8 @@ export function NewWorkflowSheet({
           <SheetHeader className="sticky top-0 z-10 shrink-0 border-b border-border bg-popover px-6 py-5">
             <SheetTitle>Create a new workflow</SheetTitle>
             <SheetDescription>
-              이름과 설명만 입력하세요. 단계·게이트·액션은 Builder에서 React Flow로
-              구성합니다.
+              Metadata, triggers, and context를 설정하세요. 단계·게이트·액션은 Builder에서
+              React Flow로 구성합니다.
             </SheetDescription>
           </SheetHeader>
           <form
@@ -129,7 +151,7 @@ export function NewWorkflowSheet({
                 </div>
               </section>
 
-              <section className="border-b border-border py-6">
+              <section className="border-b border-border pb-6 pt-6">
                 <WorkflowTriggersField
                   triggers={triggers}
                   onTriggersChange={setTriggers}
@@ -137,13 +159,22 @@ export function NewWorkflowSheet({
                 />
               </section>
 
-              <section className="pt-6">
+              <section className="border-b border-border py-6">
                 <WorkflowNodeBindingsField
                   nodeBindings={nodeBindings}
                   onNodeBindingsChange={setNodeBindings}
                   nodeCatalog={nodeCatalog}
                   actionCatalog={actionCatalog}
                   onAddNodeClick={() => setAddNodeOpen(true)}
+                />
+              </section>
+
+              <section className="pt-6">
+                <WorkflowContextField
+                  context={context}
+                  onContextChange={setContext}
+                  nodeCatalog={nodeCatalogOptions}
+                  edgeCatalog={edgeCatalog}
                 />
               </section>
             </div>

@@ -91,9 +91,14 @@ function ContextInspector({ workflow }: { workflow: Workflow }) {
   return (
     <>
       <ReadonlyArea
-        label="Queries"
-        value={workflow.context.queries
-          .map((query) => `${query.label ?? query.id}${query.nodeType ? ` · ${query.nodeType}` : ""}`)
+        label="Filter groups"
+        value={workflow.context.filterGroups
+          .map((group) => {
+            const conditionCount = group.conditions.length
+              ? ` · ${group.conditions.length} condition(s)`
+              : "";
+            return `${group.label ?? group.id}${group.nodeType ? ` · ${group.nodeType}` : ""}${conditionCount}`;
+          })
           .join("\n")}
       />
       <ReadonlyArea
