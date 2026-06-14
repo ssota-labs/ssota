@@ -22,10 +22,16 @@ test.describe("Workflow context create sheet", () => {
       "E2E workflow with structured context filter groups.",
     );
 
+    const dialog = page.getByRole("dialog");
     await page.getByTestId("add-filter-group").click();
-    await page.getByPlaceholder("Search node types...").fill("Document");
-    await page.getByRole("button", { name: "Document" }).click();
-    await page.getByRole("button", { name: "Add filter group" }).click();
+    await expect(
+      dialog.getByRole("heading", { name: "Add filter group" }),
+    ).toBeVisible();
+    await dialog
+      .locator("nav")
+      .getByRole("button", { name: "Document", exact: true })
+      .click();
+    await page.getByTestId("confirm-add-filter-group").click();
 
     const filterGroupRow = page.getByTestId(/filter-group-row-/).first();
     await expect(filterGroupRow).toBeVisible();

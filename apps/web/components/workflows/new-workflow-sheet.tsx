@@ -174,6 +174,7 @@ export function NewWorkflowSheet({
                   context={context}
                   onContextChange={setContext}
                   nodeCatalog={nodeCatalogOptions}
+                  nodeCatalogEntries={nodeCatalog}
                   edgeCatalog={edgeCatalog}
                 />
               </section>

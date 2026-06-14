@@ -6,7 +6,7 @@ import {
   FlowArrowIcon,
   FunnelIcon,
 } from "@phosphor-icons/react";
-import type { ContextSpec } from "@ssota/contracts";
+import type { ContextSpec, NodeCatalogEntry } from "@ssota/contracts";
 import { Label } from "@ssota/ui/components/ui/label";
 import { AddContextFilterGroupDialog } from "@/components/workflows/add-context-filter-group-dialog";
 import { AddContextAssertionDialog } from "@/components/workflows/add-context-traversal-dialog";
@@ -33,6 +33,7 @@ type WorkflowContextFieldProps = {
   context: ContextSpec;
   onContextChange: (context: ContextSpec) => void;
   nodeCatalog: WorkflowNodeCatalogOption[];
+  nodeCatalogEntries: NodeCatalogEntry[];
   edgeCatalog: WorkflowEdgeCatalogOption[];
 };
 
@@ -40,6 +41,7 @@ export function WorkflowContextField({
   context,
   onContextChange,
   nodeCatalog,
+  nodeCatalogEntries,
   edgeCatalog,
 }: WorkflowContextFieldProps) {
   const [addFilterGroupOpen, setAddFilterGroupOpen] = useState(false);
@@ -142,7 +144,6 @@ export function WorkflowContextField({
           description="Hop through edges from a filter group ref."
           addLabel="Add traversal"
           addTestId="add-context-traversal"
-          className="border-t border-border pt-6"
           hasItems={context.traversals.length > 0}
           emptyMessage={
             context.filterGroups.length === 0
@@ -188,7 +189,6 @@ export function WorkflowContextField({
           description="Soft checks agents should evaluate against assembled context."
           addLabel="Add assertion"
           addTestId="add-context-assertion"
-          className="border-t border-border pt-6"
           hasItems={context.assertions.length > 0}
           onAdd={() => setAddAssertionOpen(true)}
         >
@@ -225,7 +225,7 @@ export function WorkflowContextField({
       <AddContextFilterGroupDialog
         open={addFilterGroupOpen}
         onOpenChange={setAddFilterGroupOpen}
-        nodeCatalog={nodeCatalog}
+        nodeCatalog={nodeCatalogEntries}
         existingNodeTypes={context.filterGroups.map((group) => group.nodeType)}
         onAddGroup={(nodeType) =>
           patchContext({
