@@ -1,4 +1,5 @@
 import type { Workflow } from "@ssota/contracts";
+import { getWorkflowTriggerMeta } from "@/lib/workflows/workflow-trigger-catalog";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import {
   Card,
@@ -13,16 +14,19 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
     <div className="grid gap-4 lg:grid-cols-2">
       <SectionCard title="Trigger" description="When this workflow may start">
         <div className="flex flex-wrap gap-1.5">
-          {[...workflow.trigger.patterns, ...workflow.trigger.events].length ? (
-            [...workflow.trigger.patterns, ...workflow.trigger.events].map(
-              (item) => (
-                <Badge key={item} variant="secondary">
-                  {item}
-                </Badge>
-              ),
-            )
+          {workflow.trigger.events.filter((event) => event.enabled).length ? (
+            workflow.trigger.events
+              .filter((event) => event.enabled)
+              .map((event) => {
+                const meta = getWorkflowTriggerMeta(event.kind);
+                return (
+                  <Badge key={event.id} variant="secondary">
+                    {meta.label}
+                  </Badge>
+                );
+              })
           ) : (
-            <span className="text-sm text-muted-foreground">manual</span>
+            <span className="text-sm text-muted-foreground">No active triggers</span>
           )}
         </div>
       </SectionCard>

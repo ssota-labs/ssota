@@ -11,15 +11,17 @@ import type {
   Node,
   NodeCatalogEntry,
 } from "./types.js";
-import type {
-  ActionScope,
-  Effect,
-  ExecutorType,
-  LifecycleStatus,
-  NodeTypeDefinition,
-  PermissionOperation,
+import {
+  NodeTypeDefinitionSchema,
+  normalizeInstructionTriggerEvents,
+  type ActionScope,
+  type Effect,
+  type ExecutorType,
+  type LifecycleStatus,
+  type NodeTypeDefinition,
+  type PermissionOperation,
+  type WorkflowTriggerEvent,
 } from "@ssota/contracts";
-import { NodeTypeDefinitionSchema } from "@ssota/contracts";
 import { ActionRejectedError } from "./types.js";
 
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
@@ -318,7 +320,7 @@ export function resolveEffects(
         body?: string | null;
         contentUrl?: string | null;
         scope?: import("@ssota/contracts").InstructionScope;
-        triggers?: string[];
+        triggers?: WorkflowTriggerEvent[];
         workflowSteps?: import("@ssota/contracts").InstructionWorkflowStep[];
         allowedActions?: string[];
         outputContract?: Record<string, unknown>;
@@ -340,7 +342,7 @@ export function resolveEffects(
           body: hasBody ? definition.body!.trim() : null,
           contentUrl: hasContentUrl ? definition.contentUrl!.trim() : null,
           scope: definition.scope ?? { kind: "global" },
-          triggers: definition.triggers ?? [],
+          triggers: normalizeInstructionTriggerEvents(definition.triggers),
           workflowSteps: definition.workflowSteps ?? [],
           allowedActions: definition.allowedActions ?? [],
           outputContract: definition.outputContract ?? {},

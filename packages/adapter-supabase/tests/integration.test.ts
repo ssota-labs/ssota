@@ -266,7 +266,9 @@ describe("adapter-supabase integration", () => {
             lifecycle: "Active",
             body: "Gather context, create a document, and report the result.",
             scope: { kind: "node_type", nodeType: "Document" },
-            triggers: ["task_assigned"],
+            triggers: [
+              { id: "task_assigned", kind: "task_assigned", enabled: true, config: {} },
+            ],
             workflowSteps: [
               {
                 id: "gather_context",

@@ -35,19 +35,13 @@ export function renderWorkflowInstructionText(workflow: Workflow): string {
 
 function appendTriggerSection(lines: string[], workflow: Workflow) {
   lines.push("## Trigger", "");
-  const patterns = workflow.trigger.patterns;
-  const events = workflow.trigger.events;
-  if (patterns.length === 0 && events.length === 0) {
+  const events = workflow.trigger.events.filter((event) => event.enabled);
+  if (events.length === 0) {
     lines.push("- manual");
   } else {
-    if (patterns.length) {
-      lines.push("Intent patterns:");
-      for (const pattern of patterns) lines.push(`- ${pattern}`);
-    }
-    if (events.length) {
-      if (patterns.length) lines.push("");
-      lines.push("Automation events:");
-      for (const event of events) lines.push(`- ${event}`);
+    for (const event of events) {
+      const status = event.enabled ? "on" : "off";
+      lines.push(`- ${event.kind} (${status})`);
     }
   }
   lines.push("");

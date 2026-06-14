@@ -6,13 +6,14 @@ import {
   toCatalogLabel,
   toCatalogSlug,
 } from "@ssota/core";
-import type {
-  ActionScope,
-  Effect,
-  GateStatus,
-  InstructionScope,
-  InstructionWorkflowStep,
-  LifecycleStatus,
+import {
+  normalizeInstructionTriggerEvents,
+  type ActionScope,
+  type Effect,
+  type GateStatus,
+  type InstructionScope,
+  type InstructionWorkflowStep,
+  type LifecycleStatus,
 } from "@ssota/contracts";
 import type {
   ActionCommitPort,
@@ -129,7 +130,7 @@ function mapInstruction(row: typeof schema.instructions.$inferSelect): Instructi
     body: row.body,
     contentUrl: row.contentUrl,
     scope: row.scope as InstructionScope,
-    triggers: row.triggers,
+    triggers: normalizeInstructionTriggerEvents(row.triggers),
     workflowSteps: row.workflowSteps as InstructionWorkflowStep[],
     allowedActions: row.allowedActions,
     outputContract: row.outputContract,

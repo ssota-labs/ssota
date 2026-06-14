@@ -1,6 +1,7 @@
 import type { Workflow, WorkflowStepSpec } from "@ssota/contracts";
 import type { ComponentType } from "react";
 import type { Edge, Node } from "@xyflow/react";
+import { getWorkflowTriggerMeta } from "@/lib/workflows/workflow-trigger-catalog";
 import {
   estimateGraphNodeWidth,
   layoutGraphWithDagre,
@@ -157,8 +158,10 @@ export function workflowToFlowGraph(workflow: Workflow): {
       eyebrow: "trigger",
       label: "Trigger",
       description:
-        [...workflow.trigger.patterns, ...workflow.trigger.events].join(", ") ||
-        "manual",
+        workflow.trigger.events
+          .filter((event) => event.enabled)
+          .map((event) => getWorkflowTriggerMeta(event.kind).label)
+          .join(", ") || "No active triggers",
     }),
     buildNode({
       id: "context",

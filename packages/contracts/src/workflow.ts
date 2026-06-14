@@ -3,6 +3,21 @@ import {
   InstructionScopeSchema,
   LifecycleStatusSchema,
 } from "./definitions.js";
+import {
+  WorkflowTriggerEventSchema,
+  WorkflowTriggerSpecSchema,
+  createManualWorkflowTrigger,
+  normalizeInstructionTriggerEvents,
+} from "./workflow-trigger-event.js";
+
+export {
+  WorkflowTriggerEventSchema,
+  WorkflowTriggerSpecSchema,
+  createManualWorkflowTrigger,
+  normalizeInstructionTriggerEvents,
+  type WorkflowTriggerEvent,
+  type WorkflowTriggerSpec,
+} from "./workflow-trigger-event.js";
 
 /** Stable snake_case identifier for workflow routing and MCP lookup. */
 export const WorkflowKeySchema = z
@@ -10,16 +25,6 @@ export const WorkflowKeySchema = z
   .regex(/^[a-z][a-z0-9_]*$/, "workflowKey must be snake_case");
 
 export type WorkflowKey = z.infer<typeof WorkflowKeySchema>;
-
-/** When and why a workflow may start. */
-export const WorkflowTriggerSpecSchema = z.object({
-  /** Intent patterns matched by find_instruction / agent routing. */
-  patterns: z.array(z.string()).default([]),
-  /** Event or automation hook identifiers (legacy instruction.triggers). */
-  events: z.array(z.string()).default([]),
-});
-
-export type WorkflowTriggerSpec = z.infer<typeof WorkflowTriggerSpecSchema>;
 
 /** Node query plan agents execute before acting. */
 export const ContextQueryPlanSchema = z.object({
@@ -184,7 +189,9 @@ const WorkflowDefinitionBaseSchema = z.object({
   workflowKey: WorkflowKeySchema.optional(),
   lifecycle: LifecycleStatusSchema.default("Active"),
   scope: InstructionScopeSchema.default({ kind: "global" }),
-  trigger: WorkflowTriggerSpecSchema,
+  trigger: WorkflowTriggerSpecSchema.default({
+    events: [createManualWorkflowTrigger()],
+  }),
   context: ContextSpecSchema.default({
     queries: [],
     traversals: [],
