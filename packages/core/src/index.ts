@@ -565,3 +565,4 @@ export * from "./catalog-slug.js";
 export * from "./catalog/builtin-meta-actions.js";
 export * from "./catalog/merge-action-catalog.js";
 export * from "./console-slug.js";
+export * from "./workflow/render-instruction-package.js";

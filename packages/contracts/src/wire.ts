@@ -17,6 +17,7 @@ import {
   ExecuteActionResultSchema,
   ActionPreviewResultSchema,
 } from "./definitions.js";
+import { WorkflowSchema } from "./workflow.js";
 
 /** ISO-8601 timestamp string on the wire (JSON-serialized Date). */
 export const IsoDateTimeSchema = z.string().min(1);
@@ -117,6 +118,10 @@ export const InstructionSchema = z.object({
   outputContract: z.record(z.unknown()),
   gatePolicy: z.record(z.unknown()),
   completionCriteria: z.string().nullable(),
+  /** Derived Workflow SSOT — populated by get_instruction package renderer. */
+  workflow: WorkflowSchema.optional(),
+  /** Agent-readable instruction text rendered from workflow spec. */
+  renderedText: z.string().optional(),
 });
 
 export type Instruction = z.infer<typeof InstructionSchema>;
