@@ -190,11 +190,7 @@ export function WorkflowsWorkspace({
   return (
     <WorkflowCatalogExplorer
       items={catalogItems}
-      newWorkflowTrigger={
-        <NewWorkflowSheet projectId={projectId}>
-          <NewTableButton>New workflow</NewTableButton>
-        </NewWorkflowSheet>
-      }
+      newWorkflowTrigger={<NewWorkflowSheet projectId={projectId} />}
       mainHeader={
         selected && package_
           ? {
@@ -270,16 +266,10 @@ function WorkflowMetaCard({
   );
 }
 
-function NewWorkflowSheet({
-  projectId,
-  children,
-}: {
-  projectId: string;
-  children: React.ReactNode;
-}) {
+function NewWorkflowSheet({ projectId }: { projectId: string }) {
   return (
     <Sheet>
-      <SheetTrigger className="block w-full">{children}</SheetTrigger>
+      <SheetTrigger render={<NewTableButton />}>New workflow</SheetTrigger>
       <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
         <SheetHeader>
           <SheetTitle>New workflow</SheetTitle>
