@@ -48,6 +48,6 @@ test.describe("Workflow context create sheet", () => {
     await expect(page.getByText("Filter groups", { exact: true })).toBeVisible();
     await expect(page.getByText("Traversals", { exact: true })).toBeVisible();
     await expect(page.getByText("Assertions", { exact: true })).toBeVisible();
-    await expect(page.getByText("Document")).toBeVisible();
+    await expect(page.getByText(/fg_document_.* · Document/)).toBeVisible();
   });
 });
