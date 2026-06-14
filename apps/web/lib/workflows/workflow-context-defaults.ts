@@ -28,11 +28,13 @@ export const CONTEXT_FILTER_OPERATOR_LABELS: Record<ContextFilterOperator, strin
   is_not_empty: "is not empty",
 };
 
-export const CONTEXT_ASSERTION_CATALOG: Array<{
+export type ContextAssertionCatalogEntry = {
   kind: ContextAssertionKind;
   label: string;
   description: string;
-}> = [
+};
+
+export const CONTEXT_ASSERTION_CATALOG: ContextAssertionCatalogEntry[] = [
   {
     kind: "node_exists",
     label: "Node exists",
@@ -59,6 +61,39 @@ export const CONTEXT_ASSERTION_CATALOG: Array<{
     description: "Expect a minimum number of matching nodes.",
   },
 ];
+
+export const CONTEXT_ASSERTION_CATALOG_GROUPS: Array<{
+  id: string;
+  label: string;
+  items: ContextAssertionCatalogEntry[];
+}> = [
+  {
+    id: "node",
+    label: "Node",
+    items: CONTEXT_ASSERTION_CATALOG.filter((entry) =>
+      ["node_exists", "count_at_least"].includes(entry.kind),
+    ),
+  },
+  {
+    id: "property",
+    label: "Property",
+    items: CONTEXT_ASSERTION_CATALOG.filter((entry) =>
+      ["property_present", "property_equals"].includes(entry.kind),
+    ),
+  },
+  {
+    id: "lifecycle",
+    label: "Lifecycle",
+    items: CONTEXT_ASSERTION_CATALOG.filter((entry) =>
+      entry.kind === "status_equals",
+    ),
+  },
+];
+
+export const DEFAULT_CONTEXT_ASSERTION_SELECTION = {
+  groupId: CONTEXT_ASSERTION_CATALOG_GROUPS[0]?.id ?? "node",
+  kind: CONTEXT_ASSERTION_CATALOG_GROUPS[0]?.items[0]?.kind ?? "node_exists",
+};
 
 export function defaultContextSpec(): ContextSpec {
   return {

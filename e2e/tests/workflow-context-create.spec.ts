@@ -43,13 +43,27 @@ test.describe("Workflow context create sheet", () => {
     await page.getByRole("button", { name: "Done" }).click();
 
     await page.getByTestId("add-context-traversal").click();
+    await expect(
+      dialog.getByRole("heading", { name: "Add traversal" }),
+    ).toBeVisible();
+    await dialog
+      .locator("nav")
+      .getByRole("button", { name: "Document", exact: true })
+      .click();
+    await page.getByTestId("confirm-add-context-traversal").click();
     const traversalRow = page.getByTestId(/traversal-row-/).first();
     await expect(traversalRow).toBeVisible();
     await expect(traversalRow).toContainText(/From Document/);
 
     await page.getByTestId("add-context-assertion").click();
-    await page.getByRole("button", { name: "Status equals" }).click();
-    await page.getByRole("button", { name: "Add assertion" }).click();
+    await expect(
+      dialog.getByRole("heading", { name: "Add assertion" }),
+    ).toBeVisible();
+    await dialog
+      .locator("nav")
+      .getByRole("button", { name: "Status equals", exact: true })
+      .click();
+    await page.getByTestId("confirm-add-context-assertion").click();
     const assertionRow = page.getByTestId(/assertion-row-/).first();
     await expect(assertionRow).toBeVisible();
     await expect(assertionRow).toContainText("Status equals");

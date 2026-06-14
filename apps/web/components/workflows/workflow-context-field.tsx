@@ -9,7 +9,8 @@ import {
 import type { ContextSpec, NodeCatalogEntry } from "@ssota/contracts";
 import { Label } from "@ssota/ui/components/ui/label";
 import { AddContextFilterGroupDialog } from "@/components/workflows/add-context-filter-group-dialog";
-import { AddContextAssertionDialog } from "@/components/workflows/add-context-traversal-dialog";
+import { AddContextAssertionDialog } from "@/components/workflows/add-context-assertion-dialog";
+import { AddContextTraversalDialog } from "@/components/workflows/add-context-traversal-dialog";
 import { ContextAssertionEditDialog } from "@/components/workflows/context-assertion-edit-dialog";
 import { ContextFilterGroupEditDialog } from "@/components/workflows/context-filter-group-edit-dialog";
 import {
@@ -45,6 +46,7 @@ export function WorkflowContextField({
   edgeCatalog,
 }: WorkflowContextFieldProps) {
   const [addFilterGroupOpen, setAddFilterGroupOpen] = useState(false);
+  const [addTraversalOpen, setAddTraversalOpen] = useState(false);
   const [addAssertionOpen, setAddAssertionOpen] = useState(false);
   const [editFilterGroupId, setEditFilterGroupId] = useState<string | null>(null);
   const [editTraversalId, setEditTraversalId] = useState<string | null>(null);
@@ -151,14 +153,8 @@ export function WorkflowContextField({
               : "None added yet."
           }
           onAdd={() => {
-            const firstGroup = context.filterGroups[0];
-            if (!firstGroup) return;
-            patchContext({
-              traversals: [
-                ...context.traversals,
-                createTraversalFromFilterGroup(firstGroup),
-              ],
-            });
+            if (context.filterGroups.length === 0) return;
+            setAddTraversalOpen(true);
           }}
         >
           {context.traversals.map((traversal) => {
@@ -257,6 +253,21 @@ export function WorkflowContextField({
         nodeCatalog={nodeCatalog}
         edgeCatalog={edgeCatalog}
         onSave={updateTraversal}
+      />
+
+      <AddContextTraversalDialog
+        open={addTraversalOpen}
+        onOpenChange={setAddTraversalOpen}
+        filterGroups={context.filterGroups}
+        nodeCatalog={nodeCatalog}
+        onAddTraversal={(filterGroup) =>
+          patchContext({
+            traversals: [
+              ...context.traversals,
+              createTraversalFromFilterGroup(filterGroup),
+            ],
+          })
+        }
       />
 
       <AddContextAssertionDialog
