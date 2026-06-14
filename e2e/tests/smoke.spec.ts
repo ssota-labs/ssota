@@ -35,7 +35,19 @@ test.describe("SSOTA Console", () => {
     await gotoProject(page, "workflow");
     await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
     await expect(page.getByPlaceholder("Search workflows...")).toBeVisible();
-    await expect(page.getByTestId("workflow-auto-layout")).toBeVisible();
+    await expect(page.getByText("Trigger", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Context", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Output", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("Auto layout", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Detail" })).toHaveCount(0);
+
+    await page.getByText("Load contract", { exact: true }).click();
+    await expect(page.getByText("Configure the selected workflow block.")).toBeVisible();
+    await expect(page.getByText("Action refs")).toBeVisible();
+
+    await page.getByTestId("add-node-step").first().click();
+    await expect(page.getByTestId("add-node-option-reference")).toBeVisible();
+    await expect(page.getByTestId("add-node-option-route")).toBeVisible();
   });
 
   test("smoke: legacy /workflows redirect", async ({ page }) => {

@@ -17,7 +17,6 @@ import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineWorkflowInstructionFormAction } from "@/app/actions";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
-import { WorkflowBuilderSections } from "@/components/workflows/workflow-builder-sections";
 import { WorkflowCatalogExplorer } from "@/components/workflows/workflow-catalog-explorer";
 import {
   WorkflowReviewsPanel,
@@ -119,30 +118,12 @@ export function WorkflowsWorkspace({
           </Badge>
         ) : null}
       </WorkflowTabLink>
-      <Button
-        render={<Link href={projectPath(ctx, "workflow", selected.slug)} />}
-        variant="outline"
-        size="sm"
-        nativeButton={false}
-        className="ml-auto h-7"
-      >
-        Detail
-      </Button>
     </>
   ) : null;
 
   const mainContent = selected && package_ ? (
     activeTab === "builder" ? (
-      <div className="flex h-full min-h-0 flex-col lg:flex-row">
-        <div className="min-h-64 flex-1 border-b lg:min-h-0 lg:border-r lg:border-b-0">
-          <WorkflowVisualBuilder workflow={package_.workflow} />
-        </div>
-        <div className="h-72 shrink-0 overflow-auto lg:h-auto lg:w-96 lg:shrink-0">
-          <div className="p-4">
-            <WorkflowBuilderSections workflow={package_.workflow} />
-          </div>
-        </div>
-      </div>
+      <WorkflowVisualBuilder workflow={package_.workflow} />
     ) : activeTab === "flow" ? (
       <WorkflowVisualBuilder workflow={package_.workflow} readOnly />
     ) : activeTab === "runs" ? (
