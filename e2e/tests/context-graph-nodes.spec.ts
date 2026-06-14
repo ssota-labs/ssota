@@ -8,7 +8,7 @@ test.describe("Context Graph Nodes", () => {
 
     await loginAsSmoke(page);
     await gotoGraphNodes(page, "document");
-    await expect(page.getByPlaceholder("Filter rows...")).toBeVisible();
+    await expect(page.getByPlaceholder(/Filter by id/)).toBeVisible();
 
     await page.getByRole("button", { name: "Schema" }).click();
     await page.getByRole("button", { name: "Add property" }).click();
@@ -21,11 +21,7 @@ test.describe("Context Graph Nodes", () => {
     await submit;
     await gotoGraphNodes(page, "document");
 
-    const propertyLabel = propertyKey
-      .split("_")
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-    await expect(page.getByRole("columnheader", { name: new RegExp(propertyLabel) })).toBeVisible({
+    await expect(page.getByRole("columnheader", { name: new RegExp(propertyKey) })).toBeVisible({
       timeout: 10_000,
     });
     await gotoProject(page, "log");

@@ -1,3 +1,75 @@
 @import "@ssota/ui/styles/globals.css";
 @import "@xyflow/react/dist/style.css";
 @source "../**/*.{ts,tsx}";
+
+/* Graph instance table — Supabase-like grid (light theme) */
+.instance-grid-table .instance-grid-table-inner .cn-table-head {
+  height: 2.25rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 500;
+  vertical-align: bottom;
+}
+
+.instance-grid-table .instance-grid-table-inner .cn-table-head:last-child {
+  border-right: 0;
+}
+
+.instance-grid-table .instance-grid-table-inner .cn-table-cell {
+  padding: 0;
+  height: 2rem;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+}
+
+.instance-grid-table .instance-grid-table-inner .cn-table-cell:last-child {
+  border-right: 0;
+}
+
+.instance-grid-table .instance-grid-table-inner .cn-table-row:hover .cn-table-cell {
+  background: color-mix(in oklab, var(--muted) 45%, var(--background));
+}
+
+.instance-grid-table .instance-grid-table-inner .cn-table-row[data-state="selected"] .cn-table-cell {
+  background: color-mix(in oklab, var(--primary) 8%, var(--background));
+}
+
+.instance-grid-table .instance-grid-cell-active {
+  box-shadow: inset 0 0 0 2px var(--primary);
+  z-index: 1;
+}
+
+.instance-grid-table .instance-grid-cell-editing {
+  box-shadow: inset 0 0 0 2px var(--primary);
+  background: var(--background) !important;
+  z-index: 2;
+}
+
+.instance-grid-table .instance-grid-table-inner .cn-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.instance-grid-table .instance-grid-cell {
+  width: 100%;
+}
+
+/* Sheet row inspector — label/type left, shadcn control right (layout only) */
+.instance-field-row {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: 1.25rem;
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  align-items: start;
+}
+
+.instance-field-value {
+  min-width: 0;
+}
