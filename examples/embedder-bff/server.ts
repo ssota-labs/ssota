@@ -10,7 +10,12 @@
  * 실행: SSOTA_MCP_URL=http://127.0.0.1:3001 pnpm embedder-bff
  */
 import { createClient } from "@ssota/client";
-import { createConsolePort, createDb } from "@ssota/adapter-supabase";
+import {
+  createConsolePort,
+  createDb,
+  DEFAULT_ORG_SLUG,
+  DEFAULT_PROJECT_SLUG,
+} from "@ssota/adapter-supabase";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 
 const PORT = Number(process.env.EMBEDDER_BFF_PORT ?? 3200);
@@ -67,13 +72,13 @@ async function resolveProjectId(): Promise<string> {
   if (cachedProjectId) return cachedProjectId;
 
   const consolePort = createConsolePort(createDb(process.env.DATABASE_URL).db);
-  const org = await consolePort.getOrganizationBySlug("ssota-labs");
+  const org = await consolePort.getOrganizationBySlug(DEFAULT_ORG_SLUG);
   if (!org) {
     throw new Error("Default organization not found — run db:seed");
   }
-  const project = await consolePort.getProjectBySlug(org.id, "homepage-agent");
+  const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
   if (!project) {
-    throw new Error("Homepage agent project not found — run db:seed");
+    throw new Error("Default project not found — run db:seed");
   }
   cachedProjectId = project.id;
   return project.id;

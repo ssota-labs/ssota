@@ -70,6 +70,19 @@ export const ActionCatalogEntrySchema = z.object({
 
 export type ActionCatalogEntry = z.infer<typeof ActionCatalogEntrySchema>;
 
+export const PropertyCatalogEntrySchema = z.object({
+  propertyKey: z.string().min(1),
+  valueType: z.string().min(1),
+  constraints: z.record(z.unknown()).default({}),
+  required: z.boolean().default(false),
+  default: z.unknown().optional(),
+  system: z.boolean().default(false),
+  options: z.array(z.string()).optional(),
+  nodeTypes: z.array(z.string()).default([]),
+});
+
+export type PropertyCatalogEntry = z.infer<typeof PropertyCatalogEntrySchema>;
+
 export const ActionPropertyPermissionSchema = z.object({
   actionType: z.string(),
   nodeType: z.string(),
@@ -246,6 +259,9 @@ export const ActionCatalogListResponseSchema = ListResponseSchema(
   ActionCatalogEntrySchema,
 );
 export const ArchetypeListResponseSchema = ListResponseSchema(ArchetypeSchema);
+export const PropertyCatalogListResponseSchema = ListResponseSchema(
+  PropertyCatalogEntrySchema,
+);
 
 export const ActionContractResponseSchema = SingleResponseSchema(
   ActionCatalogEntrySchema,
@@ -258,6 +274,9 @@ export const EdgeCatalogEntryResponseSchema = SingleResponseSchema(
   EdgeCatalogEntrySchema,
 );
 export const ArchetypeResponseSchema = SingleResponseSchema(ArchetypeSchema);
+export const PropertyCatalogEntryResponseSchema = SingleResponseSchema(
+  PropertyCatalogEntrySchema,
+);
 export const NodeResponseSchema = SingleResponseSchema(NodeSchema);
 export const InstructionResponseSchema = SingleResponseSchema(InstructionSchema);
 export const GateResponseSchema = SingleResponseSchema(GateSchema);
