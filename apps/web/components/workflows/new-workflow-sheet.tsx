@@ -14,6 +14,7 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineWorkflowInstructionFormAction } from "@/app/actions";
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
+import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 
 export function NewWorkflowSheet({ projectId }: { projectId: string }) {
   return (
@@ -75,19 +76,7 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="workflow-triggers">Trigger patterns</Label>
-              <Input
-                id="workflow-triggers"
-                name="triggerPatterns"
-                defaultValue="manual"
-                placeholder="manual, create_homepage"
-              />
-              <p className="text-xs text-muted-foreground">
-                쉼표로 구분. 에이전트가 이 워크플로우를 선택할 때 매칭하는
-                패턴입니다.
-              </p>
-            </div>
+            <WorkflowTriggersField />
           </div>
 
           <SheetFooter className="sticky bottom-0 z-10 shrink-0 flex-row justify-end gap-2 border-t border-border bg-popover px-6 py-4">

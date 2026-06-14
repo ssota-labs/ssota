@@ -248,6 +248,34 @@ function parseJsonArray(value: FormDataEntryValue | null): Record<string, unknow
   return parsed as Record<string, unknown>[];
 }
 
+function parseStructuredWorkflowTriggers(
+  value: FormDataEntryValue | null,
+): Array<{ kind: string }> {
+  const raw = String(value ?? "").trim();
+  if (!raw) return [{ kind: "manual" }];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [{ kind: "manual" }];
+    return parsed.filter(
+      (entry): entry is { kind: string } =>
+        Boolean(entry) &&
+        typeof entry === "object" &&
+        typeof (entry as { kind?: unknown }).kind === "string",
+    );
+  } catch {
+    return [{ kind: "manual" }];
+  }
+}
+
+function triggerPatternsFromStructuredTriggers(
+  triggers: Array<{ kind: string }>,
+): string[] {
+  const patterns = triggers
+    .map((trigger) => trigger.kind)
+    .filter((kind) => kind.length > 0);
+  return patterns.length > 0 ? patterns : ["manual"];
+}
+
 function parseJsonValue(value: FormDataEntryValue | null): unknown {
   const raw = String(value ?? "").trim();
   if (!raw) return null;
@@ -691,7 +719,9 @@ export async function defineScopedActionFormAction(formData: FormData): Promise<
 
 export async function defineWorkflowInstructionFormAction(formData: FormData): Promise<void> {
   const projectId = await requireProjectId(formData);
-  const triggerPatterns = parseCsv(formData.get("triggerPatterns"));
+  const structuredTriggers = parseStructuredWorkflowTriggers(
+    formData.get("workflowTriggers"),
+  );
   const scopeKind = String(formData.get("scopeKind") ?? "global");
   const scopedNodeType = String(formData.get("nodeType") ?? "");
   const scope =
@@ -706,7 +736,7 @@ export async function defineWorkflowInstructionFormAction(formData: FormData): P
     definition: {
       title: String(formData.get("title") ?? ""),
       ...(instructionKey ? { instructionKey } : {}),
-      triggerPatterns: triggerPatterns.length ? triggerPatterns : ["manual"],
+      triggerPatterns: triggerPatternsFromStructuredTriggers(structuredTriggers),
       applicableNodeTypes:
         applicableNodeTypes.length || !scopedNodeType
           ? applicableNodeTypes
