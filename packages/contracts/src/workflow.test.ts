@@ -50,6 +50,7 @@ const sampleDefinition = WorkflowDefinitionSchema.parse({
   },
   agentNotes: "Create documents as Draft.",
   applicableNodeTypes: ["Document"],
+  nodeBindings: [{ nodeType: "Document", disabledActions: [] }],
   allowedActions: ["create_node", "promote_document"],
   requiredActions: ["create_node"],
   optionalActions: ["promote_document"],
@@ -109,5 +110,39 @@ describe("workflow store helpers", () => {
     expect(merged.title).toBe("Updated document creation");
     expect(merged.trigger.events).toHaveLength(1);
     expect(merged.steps).toEqual(sampleDefinition.steps);
+  });
+
+  it("backfills nodeBindings from applicableNodeTypes when missing", () => {
+    const legacy = WorkflowDefinitionSchema.parse({
+      ...sampleDefinition,
+      nodeBindings: [],
+      applicableNodeTypes: ["Document", "Note"],
+    });
+    const wire = workflowRowToWire({
+      id: "550e8400-e29b-41d4-a716-446655440010",
+      slug: "document-creation",
+      workflowKey: "document_creation",
+      lifecycle: "Active",
+      scope: { kind: "global" },
+      spec: legacy,
+    });
+
+    expect(wire.nodeBindings).toEqual([
+      { nodeType: "Document", disabledActions: [] },
+      { nodeType: "Note", disabledActions: [] },
+    ]);
+    expect(wire.applicableNodeTypes).toEqual(["Document", "Note"]);
+  });
+
+  it("syncs applicableNodeTypes from nodeBindings on merge", () => {
+    const merged = mergeWorkflowDefinition(sampleDefinition, {
+      nodeBindings: [
+        { nodeType: "Task", disabledActions: ["delete_node"] },
+        { nodeType: "Note", disabledActions: [] },
+      ],
+    });
+
+    expect(merged.applicableNodeTypes).toEqual(["Task", "Note"]);
+    expect(merged.nodeBindings[0]?.disabledActions).toEqual(["delete_node"]);
   });
 });

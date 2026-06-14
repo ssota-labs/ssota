@@ -1,5 +1,9 @@
 import { redirect } from "next/navigation";
 import { WorkflowsWorkspace } from "@/components/workflows/workflows-workspace";
+import {
+  getCachedActionCatalog,
+  getCachedNodeCatalog,
+} from "@/lib/console/cached-catalog";
 import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
@@ -17,11 +21,14 @@ export default async function WorkflowListPage({
   const { workflow: workflowParam, tab } = await searchParams;
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
-  const [workflows, logs, pendingGates] = await Promise.all([
-    ports.catalog.listWorkflows({ limit: 100 }),
-    ports.commit.getActionLog({ limit: 100 }),
-    ports.gate.listPendingGates(),
-  ]);
+  const [workflows, logs, pendingGates, nodeCatalog, actionCatalog] =
+    await Promise.all([
+      ports.catalog.listWorkflows({ limit: 100 }),
+      ports.commit.getActionLog({ limit: 100 }),
+      ports.gate.listPendingGates(),
+      getCachedNodeCatalog(project.id),
+      getCachedActionCatalog(project.id),
+    ]);
   const selected =
     workflows.find(
       (entry) =>
@@ -52,6 +59,8 @@ export default async function WorkflowListPage({
       pendingGates={pendingGates}
       selected={selected}
       activeTab={activeTab}
+      nodeCatalog={nodeCatalog}
+      actionCatalog={actionCatalog}
     />
   );
 }

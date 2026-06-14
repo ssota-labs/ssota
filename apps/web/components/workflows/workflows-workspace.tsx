@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { buildWorkflowPackage } from "@ssota/core";
 import type { ActionLogRecord, Gate, Workflow } from "@ssota/core";
+import type { ActionCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
@@ -33,6 +34,8 @@ export function WorkflowsWorkspace({
   pendingGates,
   selected,
   activeTab,
+  nodeCatalog,
+  actionCatalog,
 }: {
   orgSlug: string;
   projectSlug: string;
@@ -42,6 +45,8 @@ export function WorkflowsWorkspace({
   pendingGates: Gate[];
   selected: Workflow | null;
   activeTab: "builder" | "agent" | "flow" | "runs" | "reviews";
+  nodeCatalog: NodeCatalogEntry[];
+  actionCatalog: ActionCatalogEntry[];
 }) {
   const ctx = { orgSlug, projectSlug };
   const baseHref = projectPath(ctx, "workflow");
@@ -111,9 +116,22 @@ export function WorkflowsWorkspace({
 
   const mainContent = selected && package_ ? (
     activeTab === "builder" ? (
-      <WorkflowVisualBuilder workflow={package_.workflow} />
+      <WorkflowVisualBuilder
+        workflow={package_.workflow}
+        workflowId={selected.id}
+        projectId={projectId}
+        nodeCatalog={nodeCatalog}
+        actionCatalog={actionCatalog}
+      />
     ) : activeTab === "flow" ? (
-      <WorkflowVisualBuilder workflow={package_.workflow} readOnly />
+      <WorkflowVisualBuilder
+        workflow={package_.workflow}
+        workflowId={selected.id}
+        projectId={projectId}
+        nodeCatalog={nodeCatalog}
+        actionCatalog={actionCatalog}
+        readOnly
+      />
     ) : activeTab === "runs" ? (
       <ActionLogDataTable
         rows={runRows}

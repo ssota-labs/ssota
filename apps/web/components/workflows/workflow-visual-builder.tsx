@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
-import type { Workflow } from "@ssota/contracts";
+import type { ActionCatalogEntry, NodeCatalogEntry, Workflow } from "@ssota/contracts";
 import {
   Background,
   Controls,
@@ -147,6 +147,10 @@ const NODE_LABELS: Record<WorkflowFlowNodeKind, string> = {
 
 type WorkflowVisualBuilderInnerProps = {
   workflow: Workflow;
+  workflowId: string;
+  projectId: string;
+  nodeCatalog: NodeCatalogEntry[];
+  actionCatalog: ActionCatalogEntry[];
   readOnly?: boolean;
 };
 
@@ -189,6 +193,10 @@ function decorateWorkflowNodes(
 
 function WorkflowVisualBuilderInner({
   workflow,
+  workflowId,
+  projectId,
+  nodeCatalog,
+  actionCatalog,
   readOnly = false,
 }: WorkflowVisualBuilderInnerProps) {
   const initial = useMemo(() => workflowToFlowGraph(workflow), [workflow]);
@@ -319,7 +327,14 @@ function WorkflowVisualBuilderInner({
         </ReactFlow>
       </div>
       {!readOnly && selectedNode ? (
-        <WorkflowNodeInspector workflow={workflow} selectedNode={selectedNode} />
+        <WorkflowNodeInspector
+          workflow={workflow}
+          workflowId={workflowId}
+          projectId={projectId}
+          nodeCatalog={nodeCatalog}
+          actionCatalog={actionCatalog}
+          selectedNode={selectedNode}
+        />
       ) : null}
     </div>
   );

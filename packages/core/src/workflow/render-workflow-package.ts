@@ -64,13 +64,24 @@ function appendContextSection(lines: string[], workflow: WireWorkflow) {
     context.assertions.length > 0 ||
     Boolean(context.notes?.trim());
 
-  if (!hasContext && workflow.applicableNodeTypes.length === 0) return;
+  const nodeBindings =
+    workflow.nodeBindings.length > 0
+      ? workflow.nodeBindings
+      : workflow.applicableNodeTypes.map((nodeType) => ({
+          nodeType,
+          disabledActions: [] as string[],
+        }));
+
+  if (!hasContext && nodeBindings.length === 0) return;
 
   lines.push("## Context", "");
-  if (workflow.applicableNodeTypes.length) {
-    lines.push("Applicable node types:");
-    for (const nodeType of workflow.applicableNodeTypes) {
-      lines.push(`- ${nodeType}`);
+  if (nodeBindings.length) {
+    lines.push("Applicable nodes:");
+    for (const binding of nodeBindings) {
+      const disabled = binding.disabledActions.length
+        ? ` (disabled: ${binding.disabledActions.join(", ")})`
+        : "";
+      lines.push(`- ${binding.nodeType}${disabled}`);
     }
     lines.push("");
   }

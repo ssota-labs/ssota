@@ -1,20 +1,41 @@
 "use client";
 
-import type { Workflow } from "@ssota/contracts";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import type {
+  ActionCatalogEntry,
+  NodeCatalogEntry,
+  Workflow,
+  WorkflowNodeBinding,
+} from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
+import { updateWorkflowAction } from "@/app/actions";
+import { WorkflowNodeBindingsField } from "@/components/workflows/workflow-node-bindings-field";
 import type { WorkflowFlowNode } from "@/lib/workflows/workflow-flow-model";
+import {
+  normalizeNodeBindingsFromWorkflow,
+  syncWorkflowNodeCatalogFields,
+} from "@/lib/workflows/workflow-node-bindings";
 import { getWorkflowTriggerMeta } from "@/lib/workflows/workflow-trigger-catalog";
 
 type WorkflowNodeInspectorProps = {
   workflow: Workflow;
+  workflowId: string;
+  projectId: string;
+  nodeCatalog: NodeCatalogEntry[];
+  actionCatalog: ActionCatalogEntry[];
   selectedNode: WorkflowFlowNode | null;
 };
 
 export function WorkflowNodeInspector({
   workflow,
+  workflowId,
+  projectId,
+  nodeCatalog,
+  actionCatalog,
   selectedNode,
 }: WorkflowNodeInspectorProps) {
   if (!selectedNode) {
@@ -47,7 +68,15 @@ export function WorkflowNodeInspector({
       </div>
       <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4">
         {data.kind === "trigger" ? <TriggerInspector workflow={workflow} /> : null}
-        {data.kind === "context" ? <ContextInspector workflow={workflow} /> : null}
+        {data.kind === "context" ? (
+          <ContextInspector
+            workflow={workflow}
+            workflowId={workflowId}
+            projectId={projectId}
+            nodeCatalog={nodeCatalog}
+            actionCatalog={actionCatalog}
+          />
+        ) : null}
         {data.kind === "condition" ? (
           <ConditionInspector workflow={workflow} conditionId={data.conditionId} />
         ) : null}
@@ -87,13 +116,70 @@ function TriggerInspector({ workflow }: { workflow: Workflow }) {
   );
 }
 
-function ContextInspector({ workflow }: { workflow: Workflow }) {
+function ContextInspector({
+  workflow,
+  workflowId,
+  projectId,
+  nodeCatalog,
+  actionCatalog,
+}: {
+  workflow: Workflow;
+  workflowId: string;
+  projectId: string;
+  nodeCatalog: NodeCatalogEntry[];
+  actionCatalog: ActionCatalogEntry[];
+}) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [bindings, setBindings] = useState<WorkflowNodeBinding[]>(() =>
+    normalizeNodeBindingsFromWorkflow(
+      workflow.nodeBindings,
+      workflow.applicableNodeTypes,
+    ),
+  );
+
+  useEffect(() => {
+    setBindings(
+      normalizeNodeBindingsFromWorkflow(
+        workflow.nodeBindings,
+        workflow.applicableNodeTypes,
+      ),
+    );
+  }, [workflow.applicableNodeTypes, workflow.nodeBindings]);
+
+  function persist(nextBindings: WorkflowNodeBinding[]) {
+    setBindings(nextBindings);
+    const patch = syncWorkflowNodeCatalogFields(
+      nextBindings,
+      nodeCatalog,
+      actionCatalog,
+    );
+    startTransition(async () => {
+      await updateWorkflowAction({
+        projectId,
+        workflowId,
+        patch,
+      });
+      router.refresh();
+    });
+  }
+
   return (
     <>
+      <WorkflowNodeBindingsField
+        nodeBindings={bindings}
+        onNodeBindingsChange={persist}
+        nodeCatalog={nodeCatalog}
+        actionCatalog={actionCatalog}
+        disabled={isPending}
+      />
       <ReadonlyArea
         label="Queries"
         value={workflow.context.queries
-          .map((query) => `${query.label ?? query.id}${query.nodeType ? ` · ${query.nodeType}` : ""}`)
+          .map(
+            (query) =>
+              `${query.label ?? query.id}${query.nodeType ? ` · ${query.nodeType}` : ""}`,
+          )
           .join("\n")}
       />
       <ReadonlyArea
@@ -153,7 +239,10 @@ function StepInspector({
       <ReadonlyArea
         label="Action refs"
         value={step?.actions
-          .map((action) => `${action.actionType}${action.required ? " · required" : ""}`)
+          .map(
+            (action) =>
+              `${action.actionType}${action.required ? " · required" : ""}`,
+          )
           .join("\n")}
       />
       <ReadonlyArea label="Reference refs" value={step?.referenceIds.join("\n")} />

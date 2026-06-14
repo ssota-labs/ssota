@@ -6,6 +6,7 @@ import {
   type Workflow,
   type WorkflowCatalogUpsert,
   type WorkflowDefinition,
+  type WorkflowNodeBinding,
 } from "./workflow.js";
 
 export type WorkflowRow = {
@@ -19,6 +20,35 @@ export type WorkflowRow = {
   updatedAt?: string;
 };
 
+export function normalizeWorkflowNodeBindings(
+  definition: Pick<WorkflowDefinition, "nodeBindings" | "applicableNodeTypes">,
+): WorkflowNodeBinding[] {
+  if (definition.nodeBindings.length > 0) {
+    return definition.nodeBindings;
+  }
+  return definition.applicableNodeTypes.map((nodeType) => ({
+    nodeType,
+    disabledActions: [],
+  }));
+}
+
+export function syncApplicableNodeTypesFromBindings(
+  nodeBindings: WorkflowNodeBinding[],
+): string[] {
+  return nodeBindings.map((binding) => binding.nodeType);
+}
+
+export function applyWorkflowNodeBindingSync(
+  definition: WorkflowDefinition,
+): WorkflowDefinition {
+  const nodeBindings = normalizeWorkflowNodeBindings(definition);
+  return {
+    ...definition,
+    nodeBindings,
+    applicableNodeTypes: syncApplicableNodeTypesFromBindings(nodeBindings),
+  };
+}
+
 export function parseWorkflowSpec(input: unknown): WorkflowDefinition {
   const normalized =
     input && typeof input === "object"
@@ -29,7 +59,8 @@ export function parseWorkflowSpec(input: unknown): WorkflowDefinition {
           ),
         }
       : input;
-  return WorkflowDefinitionSchema.parse(normalized);
+  const parsed = WorkflowDefinitionSchema.parse(normalized);
+  return applyWorkflowNodeBindingSync(parsed);
 }
 
 export function workflowRowToWire(row: WorkflowRow): Workflow {
@@ -53,13 +84,14 @@ export function workflowDefinitionToCatalogUpsert(
     slug?: string;
   },
 ): WorkflowCatalogUpsert {
+  const synced = applyWorkflowNodeBindingSync(definition);
   return WorkflowCatalogUpsertSchema.parse({
     workflowId: options?.workflowId,
     slug: options?.slug,
-    workflowKey: definition.workflowKey ?? null,
-    lifecycle: definition.lifecycle,
-    scope: definition.scope,
-    spec: definition,
+    workflowKey: synced.workflowKey ?? null,
+    lifecycle: synced.lifecycle,
+    scope: synced.scope,
+    spec: synced,
   });
 }
 
@@ -67,7 +99,7 @@ export function mergeWorkflowDefinition(
   existing: WorkflowDefinition,
   patch: Partial<WorkflowDefinition>,
 ): WorkflowDefinition {
-  return WorkflowDefinitionSchema.parse({
+  const merged = WorkflowDefinitionSchema.parse({
     ...existing,
     ...patch,
     trigger: patch.trigger
@@ -84,10 +116,12 @@ export function mergeWorkflowDefinition(
     gates: patch.gates ?? existing.gates,
     references: patch.references ?? existing.references,
     routes: patch.routes ?? existing.routes,
+    nodeBindings: patch.nodeBindings ?? existing.nodeBindings,
     applicableNodeTypes:
       patch.applicableNodeTypes ?? existing.applicableNodeTypes,
     allowedActions: patch.allowedActions ?? existing.allowedActions,
     requiredActions: patch.requiredActions ?? existing.requiredActions,
     optionalActions: patch.optionalActions ?? existing.optionalActions,
   });
+  return applyWorkflowNodeBindingSync(merged);
 }

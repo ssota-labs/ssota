@@ -193,6 +193,15 @@ export const WorkflowOutputSpecSchema = z.object({
 
 export type WorkflowOutputSpec = z.infer<typeof WorkflowOutputSpecSchema>;
 
+/** Workflow-scoped node catalog binding with per-action opt-out. */
+export const WorkflowNodeBindingSchema = z.object({
+  nodeType: z.string().min(1),
+  /** Opt-out: empty means all associated actions are enabled for this workflow. */
+  disabledActions: z.array(z.string()).default([]),
+});
+
+export type WorkflowNodeBinding = z.infer<typeof WorkflowNodeBindingSchema>;
+
 const WorkflowDefinitionBaseSchema = z.object({
   title: z.string().min(1),
   workflowKey: WorkflowKeySchema.optional(),
@@ -214,8 +223,10 @@ const WorkflowDefinitionBaseSchema = z.object({
   routes: z.array(WorkflowRouteSpecSchema).default([]),
   /** Freeform agent guidance rendered in the agent package. */
   agentNotes: z.string().nullable().optional(),
-  /** Node types this workflow commonly applies to. */
+  /** Node types this workflow commonly applies to (derived from nodeBindings). */
   applicableNodeTypes: z.array(z.string()).default([]),
+  /** Registered node catalog entries with workflow-scoped action toggles. */
+  nodeBindings: z.array(WorkflowNodeBindingSchema).default([]),
   /** Workflow-level allowed actions. */
   allowedActions: z.array(z.string()).default([]),
   requiredActions: z.array(z.string()).default([]),
