@@ -157,6 +157,23 @@ export default async function ProjectInstructionsPage({
                     </CardDescription>
                   </div>
                   <div className="flex gap-1">
+                    <Button
+                      render={
+                        <Link
+                          href={projectPath(
+                            { orgSlug, projectSlug },
+                            "workflows",
+                            selected.slug,
+                          )}
+                        />
+                      }
+                      variant="outline"
+                      size="sm"
+                      nativeButton={false}
+                      className="h-7"
+                    >
+                      Detail
+                    </Button>
                     <WorkflowTabLink
                       href={selectedHref}
                       active={activeTab === "instruction"}
