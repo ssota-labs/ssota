@@ -28,6 +28,7 @@ export const en = {
   },
   nav: {
     projectHome: "Project Home",
+    developer: "Developer",
     graph: "Graph",
     instruction: "Workflows",
     gates: "Reviews",
@@ -120,7 +121,7 @@ export const en = {
     languageDescription: "Choose the display language for the console UI.",
     languageSaved: "Language preference saved.",
     comingSoon:
-      "MCP integration and member management settings will be added in a later milestone.",
+      "MCP connection details now live in Developer Setup. Member management will be added in a later milestone.",
     english: "English",
     korean: "Korean",
   },
@@ -155,6 +156,7 @@ export const ko = {
   },
   nav: {
     projectHome: "프로젝트 홈",
+    developer: "개발자",
     graph: "그래프",
     instruction: "워크플로우",
     gates: "리뷰",
@@ -246,7 +248,8 @@ export const ko = {
     languageTitle: "언어",
     languageDescription: "콘솔 UI에 표시할 언어를 선택합니다.",
     languageSaved: "언어 설정이 저장되었습니다.",
-    comingSoon: "MCP 연동·멤버 관리 설정은 후속 마일스톤에서 추가됩니다.",
+    comingSoon:
+      "MCP 연결 정보는 Developer Setup에서 확인합니다. 멤버 관리는 후속 마일스톤에서 추가됩니다.",
     english: "English",
     korean: "한국어",
   },

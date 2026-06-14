@@ -59,7 +59,7 @@ export default async function ProjectHomePage({
       title: "Connect an agent",
       description:
         "Copy this project's MCP details and mount SSOTA where your agent works.",
-      href: projectPath(ctx, "settings/general"),
+      href: projectPath(ctx, "developer/setup"),
       cta: "Open setup",
       completed: false,
     },
