@@ -3,20 +3,8 @@ import { buildWorkflowInstructionPackage } from "@ssota/core";
 import type { ActionLogRecord, Gate, Instruction } from "@ssota/core";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
-import { Input } from "@ssota/ui/components/ui/input";
-import { Label } from "@ssota/ui/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@ssota/ui/components/ui/sheet";
-import { Textarea } from "@ssota/ui/components/ui/textarea";
-import { defineWorkflowInstructionFormAction } from "@/app/actions";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
-import { NewTableButton } from "@/components/graph/table-catalog-panel";
+import { NewWorkflowSheet } from "@/components/workflows/new-workflow-sheet";
 import { WorkflowCatalogExplorer } from "@/components/workflows/workflow-catalog-explorer";
 import {
   WorkflowReviewsPanel,
@@ -244,77 +232,5 @@ function WorkflowMetaCard({
         )}
       </div>
     </div>
-  );
-}
-
-function NewWorkflowSheet({ projectId }: { projectId: string }) {
-  return (
-    <Sheet>
-      <SheetTrigger render={<NewTableButton />}>New workflow</SheetTrigger>
-      <SheetContent className="inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-lg">
-        <SheetHeader>
-          <SheetTitle>New workflow</SheetTitle>
-          <SheetDescription>
-            define_instruction 메타 액션으로 agent workflow를 추가합니다.
-          </SheetDescription>
-        </SheetHeader>
-        <form
-          action={defineWorkflowInstructionFormAction}
-          className="space-y-4 px-6 pb-6"
-        >
-          <input type="hidden" name="projectId" value={projectId} />
-          <div className="space-y-2">
-            <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="triggerPatterns">Trigger patterns</Label>
-            <Input id="triggerPatterns" name="triggerPatterns" defaultValue="manual" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="triggers">Automation triggers</Label>
-            <Input id="triggers" name="triggers" placeholder="task_assigned" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="allowedActions">Allowed actions</Label>
-            <Input id="allowedActions" name="allowedActions" placeholder="create_node" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="workflowSteps">Workflow steps JSON array</Label>
-            <Textarea
-              id="workflowSteps"
-              name="workflowSteps"
-              defaultValue='[{ "id": "gather_context", "title": "Gather context", "actionRefs": [] }]'
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="outputContract">Output contract JSON</Label>
-            <Textarea id="outputContract" name="outputContract" defaultValue="{}" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="gatePolicy">Gate policy JSON</Label>
-            <Textarea id="gatePolicy" name="gatePolicy" defaultValue="{}" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="instructionKey">Workflow key (optional)</Label>
-            <Input
-              id="instructionKey"
-              name="instructionKey"
-              placeholder="document_creation"
-              pattern="[a-z][a-z0-9_]*"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="contentUrl">External runbook URL (optional)</Label>
-            <Input id="contentUrl" name="contentUrl" type="url" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="body">Inline body (optional if URL set)</Label>
-            <Textarea id="body" name="body" />
-          </div>
-          <Button type="submit">Submit workflow</Button>
-        </form>
-      </SheetContent>
-    </Sheet>
   );
 }
