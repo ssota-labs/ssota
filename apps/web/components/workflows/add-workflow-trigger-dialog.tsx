@@ -19,6 +19,10 @@ import {
   WORKFLOW_TRIGGER_CATALOG,
   type WorkflowTriggerCatalogItem,
 } from "@/lib/workflows/workflow-trigger-catalog";
+import {
+  WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS,
+  WORKFLOW_CATALOG_DIALOG_GRID_CLASS,
+} from "@/components/workflows/workflow-catalog-dialog-shell";
 
 type AddWorkflowTriggerDialogProps = {
   open: boolean;
@@ -139,7 +143,7 @@ export function AddWorkflowTriggerDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex h-[min(640px,calc(100vh-3rem))] w-[min(760px,calc(100vw-2rem))] max-w-[760px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[760px]"
+        className={WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS}
       >
         <div className="flex items-center gap-2 border-b px-3 py-2.5">
           <DialogTitle className="text-sm font-medium">Add trigger</DialogTitle>
@@ -165,7 +169,7 @@ export function AddWorkflowTriggerDialog({
           </Button>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)]">
+        <div className={WORKFLOW_CATALOG_DIALOG_GRID_CLASS}>
           <nav className="overflow-y-auto border-r bg-muted/10 p-1.5">
             {filteredCatalog.map((category) => (
               <div key={category.id} className="mb-2 last:mb-0">

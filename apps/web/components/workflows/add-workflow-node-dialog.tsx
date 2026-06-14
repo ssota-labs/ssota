@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { MagnifyingGlassIcon, TableIcon, XIcon } from "@phosphor-icons/react";
 import type { ActionCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -16,6 +16,10 @@ import {
 } from "@ssota/ui/components/ui/input-group";
 import { cn } from "@ssota/ui/lib/utils";
 import { countActionsForNodeType } from "@/lib/workflows/workflow-node-bindings";
+import {
+  WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS,
+  WORKFLOW_CATALOG_DIALOG_GRID_CLASS,
+} from "@/components/workflows/workflow-catalog-dialog-shell";
 
 type AddWorkflowNodeDialogProps = {
   open: boolean;
@@ -110,12 +114,13 @@ export function AddWorkflowNodeDialog({
     nodeCatalog[0]?.nodeType ?? "",
   );
 
-  useEffect(() => {
-    if (!open) {
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
       setQuery("");
       setSelectedNodeType(nodeCatalog[0]?.nodeType ?? "");
     }
-  }, [open, nodeCatalog]);
+    onOpenChange(nextOpen);
+  }
 
   const groupedCatalog = useMemo(() => groupNodeCatalog(nodeCatalog), [nodeCatalog]);
 
@@ -145,14 +150,14 @@ export function AddWorkflowNodeDialog({
   function handleAddNode() {
     if (!selectedEntry || alreadyAdded) return;
     onAddNode(selectedEntry.nodeType);
-    onOpenChange(false);
+    handleOpenChange(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex h-[min(720px,calc(100vh-3rem))] w-[min(960px,calc(100vw-2rem))] max-w-[960px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[960px]"
+        className={WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS}
       >
         <div className="flex items-center gap-2 border-b px-3 py-2.5">
           <DialogTitle className="text-sm font-medium">Add node</DialogTitle>
@@ -171,14 +176,14 @@ export function AddWorkflowNodeDialog({
             variant="ghost"
             size="icon-sm"
             className="size-7 shrink-0"
-            onClick={() => onOpenChange(false)}
+            onClick={() => handleOpenChange(false)}
           >
             <XIcon className="size-3.5" />
             <span className="sr-only">Close</span>
           </Button>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-[280px_minmax(0,1fr)]">
+        <div className={WORKFLOW_CATALOG_DIALOG_GRID_CLASS}>
           <nav className="overflow-y-auto border-r bg-muted/10 p-1.5">
             {filteredCatalog.map((group) => (
               <div key={group.id} className="mb-2 last:mb-0">

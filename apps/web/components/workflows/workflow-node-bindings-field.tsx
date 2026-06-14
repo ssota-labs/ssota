@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   DotsThreeVerticalIcon,
   PlusIcon,
@@ -24,7 +23,6 @@ import {
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import { resolveActionsForNodeType } from "@/lib/graph/resolve-node-actions";
-import { AddWorkflowNodeDialog } from "@/components/workflows/add-workflow-node-dialog";
 import { serializeWorkflowNodeBindings } from "@/lib/workflows/workflow-node-bindings";
 
 export function WorkflowNodeBindingsField({
@@ -32,15 +30,16 @@ export function WorkflowNodeBindingsField({
   onNodeBindingsChange,
   nodeCatalog,
   actionCatalog,
+  onAddNodeClick,
   disabled,
 }: {
   nodeBindings: WorkflowNodeBinding[];
   onNodeBindingsChange: (bindings: WorkflowNodeBinding[]) => void;
   nodeCatalog: NodeCatalogEntry[];
   actionCatalog: ActionCatalogEntry[];
+  onAddNodeClick: () => void;
   disabled?: boolean;
 }) {
-  const [addOpen, setAddOpen] = useState(false);
 
   function updateBinding(
     nodeType: string,
@@ -76,14 +75,6 @@ export function WorkflowNodeBindingsField({
     onNodeBindingsChange(
       nodeBindings.filter((binding) => binding.nodeType !== nodeType),
     );
-  }
-
-  function addBinding(nodeType: string) {
-    if (nodeBindings.some((binding) => binding.nodeType === nodeType)) return;
-    onNodeBindingsChange([
-      ...nodeBindings,
-      { nodeType, disabledActions: [] },
-    ]);
   }
 
   return (
@@ -207,7 +198,7 @@ export function WorkflowNodeBindingsField({
               className="h-8 px-2 text-muted-foreground"
               disabled={disabled}
               data-testid="add-workflow-node"
-              onClick={() => setAddOpen(true)}
+              onClick={onAddNodeClick}
             >
               <PlusIcon className="size-3.5" />
               Add node
@@ -215,15 +206,6 @@ export function WorkflowNodeBindingsField({
           </div>
         </div>
       </div>
-
-      <AddWorkflowNodeDialog
-        open={addOpen}
-        onOpenChange={setAddOpen}
-        existingNodeTypes={nodeBindings.map((binding) => binding.nodeType)}
-        nodeCatalog={nodeCatalog}
-        actionCatalog={actionCatalog}
-        onAddNode={addBinding}
-      />
 
       <input
         type="hidden"

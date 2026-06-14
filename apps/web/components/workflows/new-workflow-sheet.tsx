@@ -18,6 +18,7 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineWorkflowFormAction } from "@/app/actions";
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
+import { AddWorkflowNodeDialog } from "@/components/workflows/add-workflow-node-dialog";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
 import { WorkflowNodeBindingsField } from "@/components/workflows/workflow-node-bindings-field";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
@@ -63,6 +64,7 @@ export function NewWorkflowSheet({
   actionCatalog: ActionCatalogEntry[];
 }) {
   const [addTriggerOpen, setAddTriggerOpen] = useState(false);
+  const [addNodeOpen, setAddNodeOpen] = useState(false);
   const [triggers, setTriggers] = useState(defaultWorkflowTriggerEvents);
   const [nodeBindings, setNodeBindings] = useState<WorkflowNodeBinding[]>([]);
 
@@ -141,6 +143,7 @@ export function NewWorkflowSheet({
                   onNodeBindingsChange={setNodeBindings}
                   nodeCatalog={nodeCatalog}
                   actionCatalog={actionCatalog}
+                  onAddNodeClick={() => setAddNodeOpen(true)}
                 />
               </section>
             </div>
@@ -163,6 +166,23 @@ export function NewWorkflowSheet({
           setTriggers((current) => [
             ...current,
             createWorkflowTriggerEventFromKind(kind),
+          ]);
+        }}
+      />
+
+      <AddWorkflowNodeDialog
+        open={addNodeOpen}
+        onOpenChange={setAddNodeOpen}
+        existingNodeTypes={nodeBindings.map((binding) => binding.nodeType)}
+        nodeCatalog={nodeCatalog}
+        actionCatalog={actionCatalog}
+        onAddNode={(nodeType) => {
+          if (nodeBindings.some((binding) => binding.nodeType === nodeType)) {
+            return;
+          }
+          setNodeBindings((current) => [
+            ...current,
+            { nodeType, disabledActions: [] },
           ]);
         }}
       />
