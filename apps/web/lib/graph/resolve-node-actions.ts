@@ -4,7 +4,7 @@ export function resolveActionsForNodeType(
   nodeEntry: NodeCatalogEntry,
   allActions: ActionCatalogEntry[],
 ): ActionCatalogEntry[] {
-  const localActions = allActions.filter((action) => {
+  return allActions.filter((action) => {
     if (nodeEntry.allowedActionRefs.includes(action.actionType)) return true;
     if (action.scope.kind === "node_type") {
       return action.scope.nodeType === nodeEntry.nodeType;
@@ -14,7 +14,6 @@ export function resolveActionsForNodeType(
     }
     return false;
   });
-  return localActions.length ? localActions : allActions;
 }
 
 export function enabledActionTypesForBinding(

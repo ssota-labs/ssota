@@ -66,6 +66,20 @@ function NodeCatalogPanel({
 }) {
   return (
     <div className="flex min-h-0 flex-col">
+      <div className="flex items-start gap-3 border-b px-5 py-4">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/30">
+          <TableIcon className="size-4 text-muted-foreground" />
+        </span>
+        <div className="min-w-0 space-y-1">
+          <p className="text-sm font-medium">{entry.label}</p>
+          {entry.contentGuide ? (
+            <p className="text-xs leading-relaxed text-muted-foreground">
+              {entry.contentGuide}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
       <div className="h-72 shrink-0 overflow-hidden border-b bg-muted/10">
         <NodeSchemaView
           nodeType={entry.nodeType}
@@ -80,15 +94,6 @@ function NodeCatalogPanel({
           canvasClassName="h-full min-h-0 rounded-md"
           fitViewPadding={0.2}
         />
-      </div>
-
-      <div className="space-y-1 px-5 py-4">
-        <p className="text-sm font-medium">{entry.label}</p>
-        {entry.contentGuide ? (
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            {entry.contentGuide}
-          </p>
-        ) : null}
       </div>
 
       {alreadyAdded ? (

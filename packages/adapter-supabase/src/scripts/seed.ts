@@ -85,7 +85,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Free-form note content",
         propertySchema: titlePropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node"],
       },
       {
         projectId,
@@ -98,7 +98,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Structured document with title and body",
         propertySchema: titlePropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node", "update_node_properties", "promote_document"],
       },
       {
         projectId,
@@ -124,7 +124,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational project node",
         propertySchema: titleSubjectPropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node"],
       },
       {
         projectId,
@@ -137,7 +137,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational task node",
         propertySchema: titleSubjectPropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node"],
       },
     ])
     .onConflictDoNothing();
