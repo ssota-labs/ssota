@@ -32,7 +32,7 @@ export function ContextFilterGroupForm({
   const propertyKeys = selectedEntry?.propertyKeys ?? [];
 
   return (
-    <div className="space-y-4 px-4 py-4">
+    <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Node type</Label>
@@ -104,11 +104,12 @@ export function ContextFilterGroupForm({
       </div>
 
       <div className="space-y-2">
-        {group.conditions.map((condition) => (
+        {group.conditions.map((condition, index) => (
           <ContextFilterConditionRow
             key={condition.id}
             condition={condition}
             propertyKeys={propertyKeys}
+            showWhereLabel={index === 0}
             onChange={(next) =>
               onChange({
                 ...group,
@@ -142,7 +143,7 @@ export function ContextFilterGroupForm({
             })
           }
         >
-          + Add condition
+          + Add filter rule
         </Button>
       </div>
     </div>

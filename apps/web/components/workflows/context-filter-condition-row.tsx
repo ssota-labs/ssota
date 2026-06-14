@@ -24,6 +24,7 @@ type ContextFilterConditionRowProps = {
   propertyKeys: string[];
   onChange: (condition: ContextFilterCondition) => void;
   onRemove: () => void;
+  showWhereLabel?: boolean;
 };
 
 export function ContextFilterConditionRow({
@@ -31,11 +32,15 @@ export function ContextFilterConditionRow({
   propertyKeys,
   onChange,
   onRemove,
+  showWhereLabel = false,
 }: ContextFilterConditionRowProps) {
   const keys = propertyKeys.length ? propertyKeys : ["title"];
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto] items-center gap-2">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto]">
+      {showWhereLabel ? (
+        <span className="hidden text-xs text-muted-foreground sm:block">Where</span>
+      ) : null}
       <Select
         value={condition.propertyKey}
         onValueChange={(value) =>

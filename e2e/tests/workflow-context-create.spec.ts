@@ -3,7 +3,7 @@ import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
 
 test.describe("Workflow context create sheet", () => {
-  test("create workflow with filter group, traversal, and assertion", async ({
+  test("create workflow with filter group, traversal, and assertion inline", async ({
     page,
   }) => {
     test.setTimeout(60_000);
@@ -19,59 +19,40 @@ test.describe("Workflow context create sheet", () => {
 
     await page.getByLabel("Name").fill(workflowTitle);
     await page.getByLabel("Description").fill(
-      "E2E workflow with structured context filter groups.",
+      "E2E workflow with inline structured context.",
     );
 
-    const dialog = page.getByRole("dialog");
     await page.getByTestId("add-filter-group").click();
-    await expect(
-      dialog.getByRole("heading", { name: "Add filter group" }),
-    ).toBeVisible();
-    await dialog
-      .locator("nav")
-      .getByRole("button", { name: "Document", exact: true })
-      .click();
-    await page.getByTestId("confirm-add-filter-group").click();
-
     const filterGroupRow = page.getByTestId(/filter-group-row-/).first();
     await expect(filterGroupRow).toBeVisible();
+    await expect(page.getByTestId(/filter-group-expanded-/).first()).toBeVisible();
+
+    const filterNodeType = page
+      .getByTestId(/filter-group-expanded-/)
+      .first()
+      .locator('[data-slot="select-trigger"]')
+      .first();
+    await filterNodeType.click();
+    await page.getByRole("option", { name: "Document", exact: true }).click();
     await expect(filterGroupRow).toContainText("Document");
     await expect(filterGroupRow).toContainText(/All conditions/);
 
-    await filterGroupRow.getByRole("button").first().click();
-    await expect(page.getByRole("heading", { name: "Edit filter group" })).toBeVisible();
-    await page.getByRole("button", { name: "Done" }).click();
-
     await page.getByTestId("add-context-traversal").click();
-    await expect(
-      dialog.getByRole("heading", { name: "Add traversal" }),
-    ).toBeVisible();
-    await dialog
-      .locator("nav")
-      .getByRole("button", { name: "Document", exact: true })
-      .click();
-    await page.getByTestId("confirm-add-context-traversal").click();
     const traversalRow = page.getByTestId(/traversal-row-/).first();
     await expect(traversalRow).toBeVisible();
+    await expect(page.getByTestId(/traversal-expanded-/).first()).toBeVisible();
+
+    await page.getByTestId("traversal-start-node-type").click();
+    await page.getByRole("option", { name: "Document", exact: true }).click();
     await expect(traversalRow).toContainText(/From Document/);
 
     await page.getByTestId("add-context-assertion").click();
-    await expect(
-      dialog.getByRole("heading", { name: "Add assertion" }),
-    ).toBeVisible();
-    await dialog
-      .locator("nav")
-      .getByRole("button", { name: "Status equals", exact: true })
-      .click();
-    await page.getByTestId("confirm-add-context-assertion").click();
     const assertionRow = page.getByTestId(/assertion-row-/).first();
     await expect(assertionRow).toBeVisible();
+    await expect(page.getByTestId(/assertion-expanded-/).first()).toBeVisible();
     await expect(assertionRow).toContainText("Status equals");
 
-    await assertionRow.getByRole("button").first().click();
-    await expect(page.getByRole("heading", { name: "Edit assertion" })).toBeVisible();
     await page.getByLabel("Status").fill("Approved");
-    await page.getByRole("button", { name: "Done" }).click();
     await expect(assertionRow).toContainText(/Approved/);
 
     await page.getByRole("button", { name: "Save" }).click();
@@ -84,7 +65,20 @@ test.describe("Workflow context create sheet", () => {
     await expect(page.getByText("Filter groups", { exact: true })).toBeVisible();
     await expect(page.getByText("Traversals", { exact: true })).toBeVisible();
     await expect(page.getByText("Assertions", { exact: true })).toBeVisible();
-    await expect(page.getByText(/fg_document_.* · Document/)).toBeVisible();
+    await expect(page.getByText("Document", { exact: true }).first()).toBeVisible();
+  });
+
+  test("traversal can be added before filter group", async ({ page }) => {
+    test.setTimeout(60_000);
+    await loginAsSmoke(page);
+    await gotoProject(page, "workflow");
+
+    await page.getByRole("button", { name: "New workflow" }).click();
+    await page.getByTestId("add-context-traversal").click();
+
+    await expect(page.getByTestId(/traversal-row-/).first()).toBeVisible();
+    await expect(page.getByTestId(/traversal-expanded-/).first()).toBeVisible();
+    await expect(page.getByTestId("traversal-start-node-type")).toBeVisible();
   });
 
   test("context sections use compact card lists like triggers", async ({

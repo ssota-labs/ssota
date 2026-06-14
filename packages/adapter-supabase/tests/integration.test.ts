@@ -280,7 +280,7 @@ describe("adapter-supabase integration", () => {
                 {
                   id: "gather_context",
                   label: "Gather context",
-                  startNodeRef: "fg_document",
+                  startNodeType: "Document",
                   direction: "outgoing",
                   maxHops: 1,
                 },

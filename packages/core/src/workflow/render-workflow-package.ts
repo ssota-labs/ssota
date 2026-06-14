@@ -126,7 +126,7 @@ function appendContextSection(lines: string[], workflow: WireWorkflow) {
     const label = traversal.label ?? traversal.id;
     lines.push(`### Traversal: ${label}`);
     lines.push(
-      `From ${traversal.startNodeRef}, traverse ${traversal.direction} up to ${traversal.maxHops} hop(s).`,
+      `From node type ${traversal.startNodeType}, traverse ${traversal.direction} up to ${traversal.maxHops} hop(s).`,
     );
     if (traversal.edgeTypes?.length) {
       lines.push(`Edge types: ${traversal.edgeTypes.join(", ")}`);

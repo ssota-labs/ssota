@@ -83,6 +83,31 @@ describe("workflow context", () => {
     expect(types).toEqual(["Document", "Task"]);
   });
 
+  it("migrates legacy startNodeRef traversals to startNodeType", () => {
+    const migrated = normalizeWorkflowContext({
+      filterGroups: [
+        {
+          id: "fg1",
+          nodeType: "HomepageProject",
+          combinator: "and",
+          conditions: [],
+        },
+      ],
+      traversals: [
+        {
+          id: "t1",
+          startNodeRef: "fg1",
+          direction: "outgoing",
+          maxHops: 2,
+        },
+      ],
+      assertions: [],
+    });
+
+    expect(migrated.traversals[0]?.startNodeType).toBe("HomepageProject");
+    expect(migrated.traversals[0]?.startNodeRef).toBeUndefined();
+  });
+
   it("round-trips structured context without queries key", () => {
     const input = {
       filterGroups: [
@@ -96,7 +121,7 @@ describe("workflow context", () => {
       traversals: [
         {
           id: "t1",
-          startNodeRef: "fg1",
+          startNodeType: "HomepageProject",
           direction: "outgoing",
           maxHops: 2,
         },

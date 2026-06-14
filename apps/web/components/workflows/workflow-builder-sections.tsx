@@ -58,8 +58,9 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
               <ul className="space-y-1 text-muted-foreground">
                 {workflow.context.traversals.map((traversal) => (
                   <li key={traversal.id}>
-                    {traversal.label ?? traversal.id} · {traversal.maxHops}{" "}
-                    hop(s) {traversal.direction}
+                    {traversal.label ?? traversal.id} · from{" "}
+                    {traversal.startNodeType} · {traversal.maxHops} hop(s){" "}
+                    {traversal.direction}
                   </li>
                 ))}
               </ul>

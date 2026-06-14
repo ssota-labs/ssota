@@ -33,11 +33,14 @@ export const ContextFilterGroupSchema = z.object({
 
 export type ContextFilterGroup = z.infer<typeof ContextFilterGroupSchema>;
 
-/** Graph hop / neighbor retrieval plan. */
+/** Graph hop / neighbor retrieval plan (independent of filter groups). */
 export const ContextTraversalPlanSchema = z.object({
   id: z.string().min(1),
   label: z.string().optional(),
-  startNodeRef: z.string().min(1),
+  /** Node type to anchor graph hops. */
+  startNodeType: z.string().min(1),
+  /** @deprecated Legacy filter-group ref; migrated to startNodeType on read. */
+  startNodeRef: z.string().optional(),
   direction: z.enum(["outgoing", "incoming", "both"]).default("both"),
   edgeTypes: z.array(z.string()).optional(),
   nodeTypes: z.array(z.string()).optional(),
@@ -76,6 +79,44 @@ export const ContextSpecSchema = z.object({
 });
 
 export type ContextSpec = z.infer<typeof ContextSpecSchema>;
+
+function migrateTraversalPlan(
+  raw: unknown,
+  filterGroups: ContextFilterGroup[],
+): ContextTraversalPlan {
+  const item =
+    raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const filterGroupById = new Map(filterGroups.map((group) => [group.id, group]));
+
+  const startNodeRef =
+    typeof item.startNodeRef === "string" && item.startNodeRef.trim()
+      ? item.startNodeRef.trim()
+      : undefined;
+  const explicitStartNodeType =
+    typeof item.startNodeType === "string" && item.startNodeType.trim()
+      ? item.startNodeType.trim()
+      : undefined;
+  const legacyStartNodeType = startNodeRef
+    ? filterGroupById.get(startNodeRef)?.nodeType
+    : undefined;
+
+  return ContextTraversalPlanSchema.parse({
+    ...item,
+    startNodeType:
+      explicitStartNodeType ?? legacyStartNodeType ?? startNodeRef ?? "Node",
+    startNodeRef: undefined,
+  });
+}
+
+function migrateContextTraversals(
+  rawTraversals: unknown,
+  filterGroups: ContextFilterGroup[],
+): ContextTraversalPlan[] {
+  if (!Array.isArray(rawTraversals)) return [];
+  return rawTraversals.map((traversal) =>
+    migrateTraversalPlan(traversal, filterGroups),
+  );
+}
 
 export function deriveApplicableNodeTypes(context: ContextSpec): string[] {
   const types = context.filterGroups
@@ -132,27 +173,32 @@ export function normalizeWorkflowContext(
     raw && typeof raw === "object" ? (raw as Record<string, unknown>) : null;
 
   if (obj && Array.isArray(obj.filterGroups)) {
+    const filterGroups = ContextSpecSchema.shape.filterGroups.parse(
+      obj.filterGroups,
+    );
     return ContextSpecSchema.parse({
-      filterGroups: obj.filterGroups,
-      traversals: obj.traversals ?? [],
+      filterGroups,
+      traversals: migrateContextTraversals(obj.traversals, filterGroups),
       assertions: obj.assertions ?? [],
       notes: typeof obj.notes === "string" ? obj.notes : undefined,
     });
   }
 
   if (obj && Array.isArray(obj.queries) && obj.queries.length > 0) {
+    const filterGroups = filterGroupsFromLegacyQueries(obj.queries);
     return ContextSpecSchema.parse({
-      filterGroups: filterGroupsFromLegacyQueries(obj.queries),
-      traversals: obj.traversals ?? [],
+      filterGroups,
+      traversals: migrateContextTraversals(obj.traversals, filterGroups),
       assertions: obj.assertions ?? [],
       notes: typeof obj.notes === "string" ? obj.notes : undefined,
     });
   }
 
   if (applicableNodeTypes.length > 0) {
+    const filterGroups = filterGroupsFromApplicableNodeTypes(applicableNodeTypes);
     return ContextSpecSchema.parse({
-      filterGroups: filterGroupsFromApplicableNodeTypes(applicableNodeTypes),
-      traversals: obj?.traversals ?? [],
+      filterGroups,
+      traversals: migrateContextTraversals(obj?.traversals, filterGroups),
       assertions: obj?.assertions ?? [],
       notes: typeof obj?.notes === "string" ? obj.notes : undefined,
     });
@@ -160,7 +206,7 @@ export function normalizeWorkflowContext(
 
   return ContextSpecSchema.parse({
     filterGroups: [],
-    traversals: obj?.traversals ?? [],
+    traversals: migrateContextTraversals(obj?.traversals, []),
     assertions: obj?.assertions ?? [],
     notes: typeof obj?.notes === "string" ? obj.notes : undefined,
   });

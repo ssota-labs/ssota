@@ -107,14 +107,19 @@ export function serializeWorkflowContext(context: ContextSpec): string {
   return JSON.stringify(context);
 }
 
-export function createFilterGroupFromNodeType(nodeType: string): ContextFilterGroup {
-  const slug = nodeType.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+export function createFilterGroupDraft(nodeType: string): ContextFilterGroup {
+  const slug = nodeType.toLowerCase().replace(/[^a-z0-9]+/g, "_") || "group";
   return {
     id: `fg_${slug}_${crypto.randomUUID().slice(0, 8)}`,
     nodeType,
     combinator: "and",
     conditions: [],
   };
+}
+
+/** @deprecated Use createFilterGroupDraft */
+export function createFilterGroupFromNodeType(nodeType: string): ContextFilterGroup {
+  return createFilterGroupDraft(nodeType);
 }
 
 export function createFilterCondition(propertyKey = "title"): ContextFilterCondition {
@@ -126,13 +131,11 @@ export function createFilterCondition(propertyKey = "title"): ContextFilterCondi
   };
 }
 
-export function createTraversalFromFilterGroup(
-  filterGroup: ContextFilterGroup,
-): ContextTraversalPlan {
+export function createTraversalDraft(startNodeType: string): ContextTraversalPlan {
+  const slug = startNodeType.toLowerCase().replace(/[^a-z0-9]+/g, "_") || "hop";
   return {
-    id: `tr_${crypto.randomUUID().slice(0, 8)}`,
-    label: `From ${filterGroup.label ?? filterGroup.nodeType}`,
-    startNodeRef: filterGroup.id,
+    id: `tr_${slug}_${crypto.randomUUID().slice(0, 8)}`,
+    startNodeType,
     direction: "both",
     maxHops: 2,
   };
@@ -202,15 +205,19 @@ export function filterGroupSummary(
 
 export function traversalSummary(
   traversal: ContextTraversalPlan,
-  filterGroupRefs: Array<{ id: string; label: string }>,
+  nodeCatalog: WorkflowNodeCatalogOption[],
 ): { title: string; description: string } {
-  const startLabel =
-    filterGroupRefs.find((ref) => ref.id === traversal.startNodeRef)?.label ??
-    traversal.startNodeRef;
+  const startLabel = nodeCatalogLabel(nodeCatalog, traversal.startNodeType);
+  const directionLabel =
+    traversal.direction === "both"
+      ? "Both directions"
+      : traversal.direction === "outgoing"
+        ? "Outgoing"
+        : "Incoming";
 
   return {
-    title: traversal.label ?? "Graph traversal",
-    description: `From ${startLabel} · ${traversal.direction} · ${traversal.maxHops} hop(s)`,
+    title: traversal.label ?? `From ${startLabel}`,
+    description: `${startLabel} · ${directionLabel} · ${traversal.maxHops} hop(s)`,
   };
 }
 
