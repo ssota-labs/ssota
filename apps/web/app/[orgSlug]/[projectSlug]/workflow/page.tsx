@@ -1,4 +1,6 @@
+import { redirect } from "next/navigation";
 import { WorkflowsWorkspace } from "@/components/workflows/workflows-workspace";
+import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
@@ -31,6 +33,14 @@ export default async function WorkflowListPage({
     tab && tabs.includes(tab as (typeof tabs)[number])
       ? (tab as (typeof tabs)[number])
       : "builder";
+
+  if (!workflow && selected) {
+    const params = new URLSearchParams({ workflow: selected.slug });
+    if (activeTab !== "builder") params.set("tab", activeTab);
+    redirect(
+      `${projectPath({ orgSlug, projectSlug }, "workflow")}?${params.toString()}`,
+    );
+  }
 
   return (
     <WorkflowsWorkspace
