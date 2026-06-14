@@ -50,30 +50,36 @@ const nodeStyles: Record<FlowNodeKind, string> = {
 function GraphNode({ data }: NodeProps<GraphFlowNode>) {
   const kind = data.kind ?? "object";
   const align = data.align ?? "left";
+  const isRight = align === "right";
 
   return (
     <div
       className={cn(
-        "min-w-44 rounded-xl border px-3 py-2",
-        align === "right" ? "text-right" : "text-left",
+        "w-[220px] rounded-xl border px-3 py-2",
+        isRight ? "flex flex-col items-end text-right" : "text-left",
         nodeStyles[kind],
       )}
     >
       <Handle type="target" position={Position.Left} className="size-2" />
       <Handle type="source" position={Position.Right} className="size-2" />
       {data.eyebrow ? (
-        <div className="mb-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
+        <div className="mb-1 w-full text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
           {data.eyebrow}
         </div>
       ) : null}
-      <div className="text-sm font-semibold">{data.label}</div>
+      <div className="w-full text-sm font-semibold">{data.label}</div>
       {data.description ? (
-        <div className="mt-1 max-w-52 text-xs text-muted-foreground">
+        <div className="mt-1 w-full text-xs text-muted-foreground">
           {data.description}
         </div>
       ) : null}
       {data.badges?.length ? (
-        <div className="mt-2 flex flex-wrap gap-1">
+        <div
+          className={cn(
+            "mt-2 flex w-full flex-wrap gap-1",
+            isRight ? "justify-end" : "justify-start",
+          )}
+        >
           {data.badges.slice(0, 4).map((badge) => (
             <Badge key={badge} variant="secondary" className="text-[10px]">
               {badge}
