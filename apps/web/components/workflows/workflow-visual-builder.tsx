@@ -61,10 +61,20 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
       )}
     >
       {showTarget ? (
-        <Handle type="target" position={Position.Left} className="!size-2" />
+        <Handle
+          type="target"
+          position={Position.Left}
+          className="!size-2"
+          style={{ top: 18 }}
+        />
       ) : null}
       {showSource ? (
-        <Handle type="source" position={Position.Right} className="!size-2" />
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="!size-2"
+          style={{ top: 18 }}
+        />
       ) : null}
       {data.eyebrow ? (
         <div className="mb-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
