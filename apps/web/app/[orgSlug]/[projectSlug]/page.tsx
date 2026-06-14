@@ -99,6 +99,12 @@ export default async function ProjectHomePage({
 
   const cards = [
     {
+      title: "Workflow Lens",
+      description: "Product development phases over the same graph",
+      href: projectPath(ctx, "workflow"),
+      count: nodes.length,
+    },
+    {
       title: "Graph",
       description: `${nodes.length} object types · ${edges.length} relations · ${actions.length} actions`,
       href: graphPath(ctx, "nodes"),
@@ -285,7 +291,7 @@ export default async function ProjectHomePage({
             first loop is working.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-5">
           {cards.map((card) => (
             <Link
               key={card.href}
