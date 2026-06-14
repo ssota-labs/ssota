@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@ssota/ui/components/ui/card";
-import { ImpactStatusBadge } from "@/components/impact/impact-status-badge";
 import { PageHeader } from "@/components/studio/page-header";
 import {
   getCachedActionCatalog,
@@ -17,7 +16,6 @@ import {
 } from "@/lib/console/cached-catalog";
 import { graphPath, projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
-import { getTranslations } from "@/lib/i18n/server";
 import { getActionPorts } from "@/lib/ports";
 
 type StartStep = {
@@ -35,22 +33,21 @@ export default async function ProjectHomePage({
 }) {
   const { orgSlug, projectSlug } = await params;
   const ctx = { orgSlug, projectSlug };
-  const { t } = await getTranslations();
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
 
-  const [nodes, edges, actions, instructions, gates, logs, pendingImpacts] =
-    await Promise.all([
-      getCachedNodeCatalog(project.id),
-      getCachedEdgeCatalog(project.id),
-      getCachedActionCatalog(project.id),
-      ports.catalog.listInstructions({ limit: 100 }),
-      ports.gate.listPendingGates(),
-      ports.commit.getActionLog({ limit: 8 }),
-      ports.impactQueue.queryImpactQueue({ status: "pending", limit: 5 }),
-    ]);
+  const [nodes, edges, actions, instructions, gates, logs] = await Promise.all([
+    getCachedNodeCatalog(project.id),
+    getCachedEdgeCatalog(project.id),
+    getCachedActionCatalog(project.id),
+    ports.catalog.listInstructions({ limit: 100 }),
+    ports.gate.listPendingGates(),
+    ports.commit.getActionLog({ limit: 8 }),
+  ]);
 
-  const taskTableHref = projectPath(ctx, "tasks");
+  const workflowHref = projectPath(ctx, "workflow");
+  const reviewsHref = `${workflowHref}?tab=reviews`;
+  const runsHref = `${workflowHref}?tab=runs`;
   const hasWorkflow = instructions.length > 0;
   const hasGraphShape = nodes.length > 0 && actions.length > 0;
   const hasRunHistory = logs.length > 0;
@@ -66,8 +63,8 @@ export default async function ProjectHomePage({
     {
       title: "Pick a workflow",
       description:
-        "Review the steward instructions that decide which actions an agent may run.",
-      href: projectPath(ctx, "workflows"),
+        "Define structured trigger, context, steps, and output contracts for agents.",
+      href: workflowHref,
       cta: "View workflows",
       completed: hasWorkflow,
     },
@@ -75,23 +72,23 @@ export default async function ProjectHomePage({
       title: "Create a first Task",
       description:
         "Use Task rows as the shared work queue for humans and automation.",
-      href: taskTableHref,
+      href: projectPath(ctx, "tasks"),
       cta: "Open Tasks",
       completed: hasGraphShape,
     },
     {
       title: "Review a Gate",
       description:
-        "Approve or reject graph changes before they affect the project state.",
-      href: projectPath(ctx, "gates"),
+        "Approve or reject graph changes before they affect project state.",
+      href: reviewsHref,
       cta: "Open reviews",
       completed: gates.length === 0 && hasRunHistory,
     },
     {
       title: "Inspect the audit trail",
       description:
-        "Confirm every accepted, gated, or rejected graph action in Runs.",
-      href: projectPath(ctx, "log"),
+        "Confirm every accepted, gated, or rejected graph action per workflow.",
+      href: runsHref,
       cta: "Open runs",
       completed: hasRunHistory,
     },
@@ -99,10 +96,10 @@ export default async function ProjectHomePage({
 
   const cards = [
     {
-      title: "Workflow Lens",
-      description: "Product development phases over the same graph",
-      href: projectPath(ctx, "workflow"),
-      count: nodes.length,
+      title: "Workflows",
+      description: "Structured workflow builder and agent instruction renderer",
+      href: workflowHref,
+      count: instructions.length,
     },
     {
       title: "Graph",
@@ -111,22 +108,16 @@ export default async function ProjectHomePage({
       count: nodes.length,
     },
     {
-      title: "Workflows",
-      description: "Agent instructions with flow canvas and run history",
-      href: projectPath(ctx, "workflows"),
-      count: instructions.length,
+      title: "Tasks",
+      description: "Shared work queue for humans and automation",
+      href: projectPath(ctx, "tasks"),
+      count: nodes.find((n) => n.nodeType === "Task") ? 1 : 0,
     },
     {
-      title: "Reviews",
-      description: "Human decisions requested by agentic runs",
-      href: projectPath(ctx, "gates"),
-      count: gates.length,
-    },
-    {
-      title: "Runs",
-      description: "Execution timeline for graph actions",
-      href: projectPath(ctx, "log"),
-      count: logs.length,
+      title: "Developer",
+      description: "MCP connect and project-scoped agent setup",
+      href: projectPath(ctx, "developer/setup"),
+      count: 0,
     },
   ];
 
@@ -134,7 +125,7 @@ export default async function ProjectHomePage({
     <div className="space-y-6">
       <PageHeader
         title="Developer Start"
-        description="Connect an agent, choose a workflow, create a Task, review the Gate, and inspect the audit trail."
+        description="Connect an agent, choose a workflow, create a Task, review gates, and inspect runs — all scoped to workflows."
       />
 
       <Card className="overflow-hidden">
@@ -144,13 +135,10 @@ export default async function ProjectHomePage({
               <CardTitle>Ship the first SSOTA-on-SSOTA loop</CardTitle>
               <CardDescription>
                 Follow the same path an automated steward will use: workflow,
-                Task, Gate, audit, and Notion output.
+                Task, gate review, and audit trail.
               </CardDescription>
             </div>
-            <Button
-              render={<Link href={projectPath(ctx, "workflows")} />}
-              nativeButton={false}
-            >
+            <Button render={<Link href={workflowHref} />} nativeButton={false}>
               Choose workflow
             </Button>
           </div>
@@ -179,12 +167,12 @@ export default async function ProjectHomePage({
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Needs review</CardTitle>
             <CardDescription>
-              Runtime, catalog, and workflow changes awaiting review.
+              Pending human gates across workflow contracts.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -201,7 +189,7 @@ export default async function ProjectHomePage({
               ))
             )}
             <Button
-              render={<Link href={projectPath(ctx, "gates")} />}
+              render={<Link href={reviewsHref} />}
               variant="outline"
               size="sm"
               nativeButton={false}
@@ -213,50 +201,16 @@ export default async function ProjectHomePage({
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t("home.pendingImpacts")}</CardTitle>
-            <CardDescription>{t("home.pendingImpactsDescription")}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {pendingImpacts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t("home.pendingImpactsEmpty")}
-              </p>
-            ) : (
-              pendingImpacts.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between rounded-md border p-3 text-sm"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{item.workflowKey}</div>
-                    <div className="truncate text-muted-foreground">
-                      {item.sourceNodeId?.slice(0, 8) ?? "-"} →{" "}
-                      {item.targetNodeId?.slice(0, 8) ?? "-"}
-                    </div>
-                  </div>
-                  <ImpactStatusBadge status={item.status} />
-                </div>
-              ))
-            )}
-            <Button
-              render={<Link href={projectPath(ctx, "impact")} />}
-              variant="outline"
-              size="sm"
-              nativeButton={false}
-            >
-              {t("home.viewImpactQueue")}
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
             <CardTitle className="text-base">Recent runs</CardTitle>
-            <CardDescription>Run projection for graph activity.</CardDescription>
+            <CardDescription>
+              Latest graph actions across all workflows.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">최근 액션 로그가 없습니다.</p>
+              <p className="text-sm text-muted-foreground">
+                최근 액션 로그가 없습니다.
+              </p>
             ) : (
               logs.map((log) => (
                 <div
@@ -265,14 +219,16 @@ export default async function ProjectHomePage({
                 >
                   <div>
                     <div className="font-medium">{log.actionType}</div>
-                    <div className="text-muted-foreground">{log.executorType}</div>
+                    <div className="text-muted-foreground">
+                      {log.executorType}
+                    </div>
                   </div>
                   <Badge variant="outline">{log.outcome}</Badge>
                 </div>
               ))
             )}
             <Button
-              render={<Link href={projectPath(ctx, "log")} />}
+              render={<Link href={runsHref} />}
               variant="outline"
               size="sm"
               nativeButton={false}
@@ -285,13 +241,12 @@ export default async function ProjectHomePage({
 
       <section className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold">Advanced Graph Admin</h2>
+          <h2 className="text-sm font-semibold">Console</h2>
           <p className="text-sm text-muted-foreground">
-            Inspect catalog tables and low-level runtime projections after the
-            first loop is working.
+            Primary surfaces for workflow-first agent development.
           </p>
         </div>
-        <div className="grid gap-4 md:grid-cols-5">
+        <div className="grid gap-4 md:grid-cols-4">
           {cards.map((card) => (
             <Link
               key={card.href}
@@ -302,7 +257,9 @@ export default async function ProjectHomePage({
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between text-base">
                     {card.title}
-                    <Badge variant="secondary">{card.count}</Badge>
+                    {card.count > 0 ? (
+                      <Badge variant="secondary">{card.count}</Badge>
+                    ) : null}
                   </CardTitle>
                   <CardDescription>{card.description}</CardDescription>
                 </CardHeader>
