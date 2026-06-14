@@ -1,8 +1,6 @@
 "use client";
 
 import type { ContextFilterGroup } from "@ssota/contracts";
-import { Button } from "@ssota/ui/components/ui/button";
-import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import {
   Select,
@@ -11,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ssota/ui/components/ui/select";
-import { ContextFilterConditionRow } from "@/components/workflows/context-filter-condition-row";
+import { ContextConditionList } from "@/components/workflows/context-condition-list";
 import {
   createFilterCondition,
   type WorkflowNodeCatalogOption,
@@ -32,7 +30,7 @@ export function ContextFilterGroupForm({
   const propertyKeys = selectedEntry?.propertyKeys ?? [];
 
   return (
-    <div className="space-y-4 px-4 py-4">
+    <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Node type</Label>
@@ -88,63 +86,14 @@ export function ContextFilterGroupForm({
         </div>
       </div>
 
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Label (optional)</Label>
-        <Input
-          className="h-8"
-          value={group.label ?? ""}
-          placeholder={group.nodeType}
-          onChange={(event) =>
-            onChange({
-              ...group,
-              label: event.target.value.trim() || undefined,
-            })
-          }
-        />
-      </div>
-
-      <div className="space-y-2">
-        {group.conditions.map((condition) => (
-          <ContextFilterConditionRow
-            key={condition.id}
-            condition={condition}
-            propertyKeys={propertyKeys}
-            onChange={(next) =>
-              onChange({
-                ...group,
-                conditions: group.conditions.map((item) =>
-                  item.id === condition.id ? next : item,
-                ),
-              })
-            }
-            onRemove={() =>
-              onChange({
-                ...group,
-                conditions: group.conditions.filter((item) => item.id !== condition.id),
-              })
-            }
-          />
-        ))}
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-muted-foreground"
-          data-testid="add-filter-condition"
-          onClick={() =>
-            onChange({
-              ...group,
-              conditions: [
-                ...group.conditions,
-                createFilterCondition(propertyKeys[0] ?? "title"),
-              ],
-            })
-          }
-        >
-          + Add condition
-        </Button>
-      </div>
+      <ContextConditionList
+        conditions={group.conditions}
+        propertyKeys={propertyKeys}
+        addLabel="+ Add filter rule"
+        addTestId="add-filter-condition"
+        onChange={(conditions) => onChange({ ...group, conditions })}
+        createCondition={() => createFilterCondition(propertyKeys[0] ?? "title")}
+      />
     </div>
   );
 }

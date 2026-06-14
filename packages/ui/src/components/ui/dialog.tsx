@@ -25,11 +25,13 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
 
 function DialogOverlay({
   className,
+  forceRender,
   ...props
 }: DialogPrimitive.Backdrop.Props) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
+      forceRender={forceRender}
       className={cn("cn-dialog-overlay fixed inset-0 isolate z-[60]", className)}
       {...props}
     />
@@ -40,13 +42,16 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  forceBackdrop = false,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  /** Render dim overlay even when nested inside another dialog (e.g. Sheet). */
+  forceBackdrop?: boolean
 }) {
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay forceRender={forceBackdrop} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(

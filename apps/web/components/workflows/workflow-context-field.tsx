@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   CheckCircleIcon,
   FlowArrowIcon,
@@ -8,20 +8,16 @@ import {
 } from "@phosphor-icons/react";
 import type { ContextSpec } from "@ssota/contracts";
 import { Label } from "@ssota/ui/components/ui/label";
-import { AddContextFilterGroupDialog } from "@/components/workflows/add-context-filter-group-dialog";
-import { AddContextAssertionDialog } from "@/components/workflows/add-context-traversal-dialog";
-import { ContextAssertionEditDialog } from "@/components/workflows/context-assertion-edit-dialog";
-import { ContextFilterGroupEditDialog } from "@/components/workflows/context-filter-group-edit-dialog";
-import {
-  ContextListRow,
-  ContextListSection,
-} from "@/components/workflows/context-list-section";
-import { ContextTraversalEditDialog } from "@/components/workflows/context-traversal-edit-dialog";
+import { ContextAssertionForm } from "@/components/workflows/context-assertion-form";
+import { ContextExpandableBlock } from "@/components/workflows/context-expandable-block";
+import { ContextFilterGroupForm } from "@/components/workflows/context-filter-group-form";
+import { ContextListSection } from "@/components/workflows/context-list-section";
+import { ContextTraversalForm } from "@/components/workflows/context-traversal-form";
 import {
   assertionSummary,
-  createAssertionFromKind,
-  createFilterGroupFromNodeType,
-  createTraversalFromFilterGroup,
+  createAssertionDraft,
+  createFilterGroupDraft,
+  createTraversalDraft,
   filterGroupSummary,
   serializeWorkflowContext,
   traversalSummary,
@@ -36,40 +32,27 @@ type WorkflowContextFieldProps = {
   edgeCatalog: WorkflowEdgeCatalogOption[];
 };
 
+function defaultNodeType(catalog: WorkflowNodeCatalogOption[]): string {
+  return catalog[0]?.nodeType ?? "Node";
+}
+
 export function WorkflowContextField({
   context,
   onContextChange,
   nodeCatalog,
   edgeCatalog,
 }: WorkflowContextFieldProps) {
-  const [addFilterGroupOpen, setAddFilterGroupOpen] = useState(false);
-  const [addAssertionOpen, setAddAssertionOpen] = useState(false);
-  const [editFilterGroupId, setEditFilterGroupId] = useState<string | null>(null);
-  const [editTraversalId, setEditTraversalId] = useState<string | null>(null);
-  const [editAssertionId, setEditAssertionId] = useState<string | null>(null);
-
-  const filterGroupRefs = useMemo(
-    () =>
-      context.filterGroups.map((group) => ({
-        id: group.id,
-        label: group.label ?? group.nodeType,
-      })),
-    [context.filterGroups],
+  const [expandedFilterGroupId, setExpandedFilterGroupId] = useState<string | null>(
+    null,
   );
-
-  const editingFilterGroup =
-    context.filterGroups.find((group) => group.id === editFilterGroupId) ?? null;
-  const editingTraversal =
-    context.traversals.find((traversal) => traversal.id === editTraversalId) ?? null;
-  const editingAssertion =
-    context.assertions.find((assertion) => assertion.id === editAssertionId) ?? null;
+  const [expandedTraversalId, setExpandedTraversalId] = useState<string | null>(null);
+  const [expandedAssertionId, setExpandedAssertionId] = useState<string | null>(null);
 
   function patchContext(patch: Partial<ContextSpec>) {
     onContextChange({ ...context, ...patch });
   }
 
-  function updateFilterGroup(next: typeof editingFilterGroup) {
-    if (!next) return;
+  function updateFilterGroup(next: ContextSpec["filterGroups"][number]) {
     patchContext({
       filterGroups: context.filterGroups.map((group) =>
         group.id === next.id ? next : group,
@@ -77,8 +60,7 @@ export function WorkflowContextField({
     });
   }
 
-  function updateTraversal(next: typeof editingTraversal) {
-    if (!next) return;
+  function updateTraversal(next: ContextSpec["traversals"][number]) {
     patchContext({
       traversals: context.traversals.map((traversal) =>
         traversal.id === next.id ? next : traversal,
@@ -86,13 +68,36 @@ export function WorkflowContextField({
     });
   }
 
-  function updateAssertion(next: typeof editingAssertion) {
-    if (!next) return;
+  function updateAssertion(next: ContextSpec["assertions"][number]) {
     patchContext({
       assertions: context.assertions.map((assertion) =>
         assertion.id === next.id ? next : assertion,
       ),
     });
+  }
+
+  function addFilterGroup() {
+    const group = createFilterGroupDraft(defaultNodeType(nodeCatalog));
+    patchContext({ filterGroups: [...context.filterGroups, group] });
+    setExpandedFilterGroupId(group.id);
+    setExpandedTraversalId(null);
+    setExpandedAssertionId(null);
+  }
+
+  function addTraversal() {
+    const traversal = createTraversalDraft(defaultNodeType(nodeCatalog));
+    patchContext({ traversals: [...context.traversals, traversal] });
+    setExpandedTraversalId(traversal.id);
+    setExpandedFilterGroupId(null);
+    setExpandedAssertionId(null);
+  }
+
+  function addAssertion() {
+    const assertion = createAssertionDraft(defaultNodeType(nodeCatalog));
+    patchContext({ assertions: [...context.assertions, assertion] });
+    setExpandedAssertionId(assertion.id);
+    setExpandedFilterGroupId(null);
+    setExpandedTraversalId(null);
   }
 
   return (
@@ -112,105 +117,132 @@ export function WorkflowContextField({
           addLabel="Add filter group"
           addTestId="add-filter-group"
           hasItems={context.filterGroups.length > 0}
-          onAdd={() => setAddFilterGroupOpen(true)}
+          onAdd={addFilterGroup}
         >
           {context.filterGroups.map((group) => {
             const summary = filterGroupSummary(group, nodeCatalog);
+            const expanded = expandedFilterGroupId === group.id;
             return (
-              <ContextListRow
+              <ContextExpandableBlock
                 key={group.id}
                 icon={FunnelIcon}
                 title={summary.title}
                 description={summary.description}
                 testId={`filter-group-row-${group.id}`}
+                expandedTestId={`filter-group-expanded-${group.id}`}
+                expanded={expanded}
+                onExpandedChange={(next) =>
+                  setExpandedFilterGroupId(next ? group.id : null)
+                }
                 removeLabel="Remove filter group"
-                onEdit={() => setEditFilterGroupId(group.id)}
-                onRemove={() =>
+                onRemove={() => {
                   patchContext({
                     filterGroups: context.filterGroups.filter(
                       (item) => item.id !== group.id,
                     ),
-                  })
-                }
-              />
+                  });
+                  if (expandedFilterGroupId === group.id) {
+                    setExpandedFilterGroupId(null);
+                  }
+                }}
+              >
+                <ContextFilterGroupForm
+                  group={group}
+                  nodeCatalog={nodeCatalog}
+                  onChange={updateFilterGroup}
+                />
+              </ContextExpandableBlock>
             );
           })}
         </ContextListSection>
 
         <ContextListSection
           title="Traversals"
-          description="Hop through edges from a filter group ref."
+          description="Hop through edges from a node type anchor."
           addLabel="Add traversal"
           addTestId="add-context-traversal"
-          className="border-t border-border pt-6"
           hasItems={context.traversals.length > 0}
-          emptyMessage={
-            context.filterGroups.length === 0
-              ? "Add a filter group first."
-              : "None added yet."
-          }
-          onAdd={() => {
-            const firstGroup = context.filterGroups[0];
-            if (!firstGroup) return;
-            patchContext({
-              traversals: [
-                ...context.traversals,
-                createTraversalFromFilterGroup(firstGroup),
-              ],
-            });
-          }}
+          onAdd={addTraversal}
         >
           {context.traversals.map((traversal) => {
-            const summary = traversalSummary(traversal, filterGroupRefs);
+            const summary = traversalSummary(traversal, nodeCatalog);
+            const expanded = expandedTraversalId === traversal.id;
             return (
-              <ContextListRow
+              <ContextExpandableBlock
                 key={traversal.id}
                 icon={FlowArrowIcon}
                 title={summary.title}
                 description={summary.description}
                 testId={`traversal-row-${traversal.id}`}
+                expandedTestId={`traversal-expanded-${traversal.id}`}
+                expanded={expanded}
+                onExpandedChange={(next) =>
+                  setExpandedTraversalId(next ? traversal.id : null)
+                }
                 removeLabel="Remove traversal"
-                onEdit={() => setEditTraversalId(traversal.id)}
-                onRemove={() =>
+                onRemove={() => {
                   patchContext({
                     traversals: context.traversals.filter(
                       (item) => item.id !== traversal.id,
                     ),
-                  })
-                }
-              />
+                  });
+                  if (expandedTraversalId === traversal.id) {
+                    setExpandedTraversalId(null);
+                  }
+                }}
+              >
+                <ContextTraversalForm
+                  traversal={traversal}
+                  nodeCatalog={nodeCatalog}
+                  edgeCatalog={edgeCatalog}
+                  onChange={updateTraversal}
+                />
+              </ContextExpandableBlock>
             );
           })}
         </ContextListSection>
 
         <ContextListSection
           title="Assertions"
-          description="Soft checks agents should evaluate against assembled context."
+          description="Soft checks on node types with property conditions."
           addLabel="Add assertion"
           addTestId="add-context-assertion"
-          className="border-t border-border pt-6"
           hasItems={context.assertions.length > 0}
-          onAdd={() => setAddAssertionOpen(true)}
+          onAdd={addAssertion}
         >
           {context.assertions.map((assertion) => {
-            const summary = assertionSummary(assertion);
+            const summary = assertionSummary(assertion, nodeCatalog);
+            const expanded = expandedAssertionId === assertion.id;
             return (
-              <ContextListRow
+              <ContextExpandableBlock
                 key={assertion.id}
                 icon={CheckCircleIcon}
                 title={summary.title}
                 description={summary.description}
                 testId={`assertion-row-${assertion.id}`}
+                expandedTestId={`assertion-expanded-${assertion.id}`}
+                expanded={expanded}
+                onExpandedChange={(next) =>
+                  setExpandedAssertionId(next ? assertion.id : null)
+                }
                 removeLabel="Remove assertion"
-                onEdit={() => setEditAssertionId(assertion.id)}
-                onRemove={() =>
+                onRemove={() => {
                   patchContext({
                     assertions: context.assertions.filter(
                       (item) => item.id !== assertion.id,
                     ),
-                  })
-                }
-              />
+                  });
+                  if (expandedAssertionId === assertion.id) {
+                    setExpandedAssertionId(null);
+                  }
+                }}
+              >
+                <ContextAssertionForm
+                  assertion={assertion}
+                  nodeCatalog={nodeCatalog}
+                  onChange={updateAssertion}
+                />
+              </ContextExpandableBlock>
             );
           })}
         </ContextListSection>
@@ -220,63 +252,6 @@ export function WorkflowContextField({
         type="hidden"
         name="workflowContext"
         value={serializeWorkflowContext(context)}
-      />
-
-      <AddContextFilterGroupDialog
-        open={addFilterGroupOpen}
-        onOpenChange={setAddFilterGroupOpen}
-        nodeCatalog={nodeCatalog}
-        existingNodeTypes={context.filterGroups.map((group) => group.nodeType)}
-        onAddGroup={(nodeType) =>
-          patchContext({
-            filterGroups: [
-              ...context.filterGroups,
-              createFilterGroupFromNodeType(nodeType),
-            ],
-          })
-        }
-      />
-
-      <ContextFilterGroupEditDialog
-        open={editFilterGroupId !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditFilterGroupId(null);
-        }}
-        group={editingFilterGroup}
-        nodeCatalog={nodeCatalog}
-        onSave={updateFilterGroup}
-      />
-
-      <ContextTraversalEditDialog
-        open={editTraversalId !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditTraversalId(null);
-        }}
-        traversal={editingTraversal}
-        filterGroupRefs={filterGroupRefs}
-        nodeCatalog={nodeCatalog}
-        edgeCatalog={edgeCatalog}
-        onSave={updateTraversal}
-      />
-
-      <AddContextAssertionDialog
-        open={addAssertionOpen}
-        onOpenChange={setAddAssertionOpen}
-        onAddAssertion={(kind) =>
-          patchContext({
-            assertions: [...context.assertions, createAssertionFromKind(kind)],
-          })
-        }
-      />
-
-      <ContextAssertionEditDialog
-        open={editAssertionId !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditAssertionId(null);
-        }}
-        assertion={editingAssertion}
-        nodeCatalog={nodeCatalog}
-        onSave={updateAssertion}
       />
     </>
   );

@@ -280,7 +280,7 @@ describe("adapter-supabase integration", () => {
                 {
                   id: "gather_context",
                   label: "Gather context",
-                  startNodeRef: "fg_document",
+                  startNodeType: "Document",
                   direction: "outgoing",
                   maxHops: 1,
                 },
@@ -288,10 +288,18 @@ describe("adapter-supabase integration", () => {
               assertions: [
                 {
                   id: "assert_draft",
-                  kind: "status_equals",
+                  nodeType: "Document",
+                  combinator: "and",
+                  conditions: [
+                    {
+                      id: "check_status",
+                      propertyKey: "lifecycle_status",
+                      operator: "equals",
+                      value: "Draft",
+                    },
+                  ],
                   mode: "agentic",
                   enforcement: "soft",
-                  params: { status: "Draft" },
                 },
               ],
             },

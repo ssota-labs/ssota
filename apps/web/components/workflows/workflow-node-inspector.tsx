@@ -113,10 +113,12 @@ function ContextInspector({ workflow }: { workflow: Workflow }) {
       <ReadonlyArea
         label="Assertions"
         value={workflow.context.assertions
-          .map(
-            (assertion) =>
-              `${assertion.label ?? assertion.id} · ${assertion.kind} · ${assertion.enforcement}`,
-          )
+          .map((assertion) => {
+            const checkCount = assertion.conditions.length
+              ? ` · ${assertion.conditions.length} check(s)`
+              : "";
+            return `${assertion.nodeType}${checkCount} · ${assertion.enforcement}`;
+          })
           .join("\n")}
       />
       <ReadonlyArea label="Notes" value={workflow.context.notes ?? ""} />

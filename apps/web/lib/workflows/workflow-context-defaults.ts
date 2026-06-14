@@ -1,6 +1,5 @@
 import type {
   ContextAssertion,
-  ContextAssertionKind,
   ContextFilterCondition,
   ContextFilterGroup,
   ContextFilterOperator,
@@ -28,38 +27,6 @@ export const CONTEXT_FILTER_OPERATOR_LABELS: Record<ContextFilterOperator, strin
   is_not_empty: "is not empty",
 };
 
-export const CONTEXT_ASSERTION_CATALOG: Array<{
-  kind: ContextAssertionKind;
-  label: string;
-  description: string;
-}> = [
-  {
-    kind: "node_exists",
-    label: "Node exists",
-    description: "Expect at least one node of a type to exist.",
-  },
-  {
-    kind: "property_present",
-    label: "Property present",
-    description: "Expect a property key to be set on context nodes.",
-  },
-  {
-    kind: "property_equals",
-    label: "Property equals",
-    description: "Expect a property to match a value.",
-  },
-  {
-    kind: "status_equals",
-    label: "Status equals",
-    description: "Expect lifecycle status to match.",
-  },
-  {
-    kind: "count_at_least",
-    label: "Count at least",
-    description: "Expect a minimum number of matching nodes.",
-  },
-];
-
 export function defaultContextSpec(): ContextSpec {
   return {
     filterGroups: [],
@@ -72,14 +39,19 @@ export function serializeWorkflowContext(context: ContextSpec): string {
   return JSON.stringify(context);
 }
 
-export function createFilterGroupFromNodeType(nodeType: string): ContextFilterGroup {
-  const slug = nodeType.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+export function createFilterGroupDraft(nodeType: string): ContextFilterGroup {
+  const slug = nodeType.toLowerCase().replace(/[^a-z0-9]+/g, "_") || "group";
   return {
     id: `fg_${slug}_${crypto.randomUUID().slice(0, 8)}`,
     nodeType,
     combinator: "and",
     conditions: [],
   };
+}
+
+/** @deprecated Use createFilterGroupDraft */
+export function createFilterGroupFromNodeType(nodeType: string): ContextFilterGroup {
+  return createFilterGroupDraft(nodeType);
 }
 
 export function createFilterCondition(propertyKey = "title"): ContextFilterCondition {
@@ -91,46 +63,26 @@ export function createFilterCondition(propertyKey = "title"): ContextFilterCondi
   };
 }
 
-export function createTraversalFromFilterGroup(
-  filterGroup: ContextFilterGroup,
-): ContextTraversalPlan {
+export function createTraversalDraft(startNodeType: string): ContextTraversalPlan {
+  const slug = startNodeType.toLowerCase().replace(/[^a-z0-9]+/g, "_") || "hop";
   return {
-    id: `tr_${crypto.randomUUID().slice(0, 8)}`,
-    label: `From ${filterGroup.label ?? filterGroup.nodeType}`,
-    startNodeRef: filterGroup.id,
+    id: `tr_${slug}_${crypto.randomUUID().slice(0, 8)}`,
+    startNodeType,
     direction: "both",
     maxHops: 2,
   };
 }
 
-export function createAssertionFromKind(kind: ContextAssertionKind): ContextAssertion {
-  const base = {
-    id: `as_${crypto.randomUUID().slice(0, 8)}`,
-    kind,
-    mode: "agentic" as const,
-    enforcement: "soft" as const,
-    params: {},
+export function createAssertionDraft(nodeType: string): ContextAssertion {
+  const slug = nodeType.toLowerCase().replace(/[^a-z0-9]+/g, "_") || "check";
+  return {
+    id: `as_${slug}_${crypto.randomUUID().slice(0, 8)}`,
+    nodeType,
+    combinator: "and",
+    conditions: [createFilterCondition("lifecycle_status")],
+    mode: "agentic",
+    enforcement: "soft",
   };
-
-  switch (kind) {
-    case "property_equals":
-      return { ...base, params: { propertyKey: "title", value: "" } };
-    case "property_present":
-      return { ...base, params: { propertyKey: "title" } };
-    case "status_equals":
-      return { ...base, params: { status: "Draft" } };
-    case "count_at_least":
-      return { ...base, params: { nodeType: "", count: 1 } };
-    case "node_exists":
-    default:
-      return { ...base, params: { nodeType: "" } };
-  }
-}
-
-export function getAssertionKindLabel(kind: ContextAssertionKind): string {
-  return (
-    CONTEXT_ASSERTION_CATALOG.find((entry) => entry.kind === kind)?.label ?? kind
-  );
 }
 
 export function operatorNeedsValue(operator: ContextFilterOperator): boolean {
@@ -146,53 +98,57 @@ export function nodeCatalogLabel(
   );
 }
 
+function conditionCountLabel(count: number, noun: string): string {
+  if (count === 0) return `No ${noun}`;
+  if (count === 1) return `1 ${noun}`;
+  return `${count} ${noun}s`;
+}
+
 export function filterGroupSummary(
   group: ContextFilterGroup,
   nodeCatalog: WorkflowNodeCatalogOption[],
 ): { title: string; description: string } {
   const nodeLabel = nodeCatalogLabel(nodeCatalog, group.nodeType);
   const matchLabel = group.combinator === "or" ? "Any condition" : "All conditions";
-  const conditionLabel =
-    group.conditions.length === 0
-      ? "No property filters"
-      : group.conditions.length === 1
-        ? "1 condition"
-        : `${group.conditions.length} conditions`;
 
   return {
     title: group.label ?? nodeLabel,
-    description: `${nodeLabel} · ${matchLabel} · ${conditionLabel}`,
+    description: `${nodeLabel} · ${matchLabel} · ${conditionCountLabel(group.conditions.length, "condition")}`,
   };
 }
 
 export function traversalSummary(
   traversal: ContextTraversalPlan,
-  filterGroupRefs: Array<{ id: string; label: string }>,
+  nodeCatalog: WorkflowNodeCatalogOption[],
 ): { title: string; description: string } {
-  const startLabel =
-    filterGroupRefs.find((ref) => ref.id === traversal.startNodeRef)?.label ??
-    traversal.startNodeRef;
+  const startLabel = nodeCatalogLabel(nodeCatalog, traversal.startNodeType);
+  const directionLabel =
+    traversal.direction === "both"
+      ? "Both directions"
+      : traversal.direction === "outgoing"
+        ? "Outgoing"
+        : "Incoming";
 
   return {
-    title: traversal.label ?? "Graph traversal",
-    description: `From ${startLabel} · ${traversal.direction} · ${traversal.maxHops} hop(s)`,
+    title: traversal.label ?? `From ${startLabel}`,
+    description: `${startLabel} · ${directionLabel} · ${traversal.maxHops} hop(s)`,
   };
 }
 
-export function assertionSummary(assertion: ContextAssertion): {
-  title: string;
-  description: string;
-} {
-  const kindLabel = getAssertionKindLabel(assertion.kind);
-  const paramHint =
-    assertion.kind === "status_equals" && assertion.params.status
-      ? ` · ${String(assertion.params.status)}`
-      : assertion.kind === "property_equals" && assertion.params.value
-        ? ` · ${String(assertion.params.value)}`
-        : "";
+export function assertionSummary(
+  assertion: ContextAssertion,
+  nodeCatalog: WorkflowNodeCatalogOption[],
+): { title: string; description: string } {
+  const nodeLabel = nodeCatalogLabel(nodeCatalog, assertion.nodeType);
+  const matchLabel = assertion.combinator === "or" ? "Any check" : "All checks";
+  const firstCondition = assertion.conditions[0];
+  const checkHint =
+    firstCondition?.value && firstCondition.value.length > 0
+      ? ` · ${firstCondition.propertyKey} ${firstCondition.operator} ${firstCondition.value}`
+      : "";
 
   return {
-    title: assertion.label ?? kindLabel,
-    description: `${kindLabel} · ${assertion.mode} · ${assertion.enforcement}${paramHint}`,
+    title: nodeLabel,
+    description: `${matchLabel} · ${conditionCountLabel(assertion.conditions.length, "check")} · ${assertion.enforcement}${checkHint}`,
   };
 }

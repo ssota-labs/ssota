@@ -35,7 +35,10 @@ export function ContextFilterConditionRow({
   const keys = propertyKeys.length ? propertyKeys : ["title"];
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto] items-center gap-2">
+    <div
+      className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)_auto]"
+      data-testid={`condition-row-${condition.id}`}
+    >
       <Select
         value={condition.propertyKey}
         onValueChange={(value) =>
@@ -89,7 +92,10 @@ export function ContextFilterConditionRow({
           }
         />
       ) : (
-        <div className="h-8 rounded-md border border-dashed bg-muted/20" />
+        <div
+          className="h-8 rounded-md border border-dashed bg-muted/20"
+          aria-hidden
+        />
       )}
 
       <Button
@@ -98,7 +104,8 @@ export function ContextFilterConditionRow({
         size="icon-sm"
         className="shrink-0 text-muted-foreground"
         onClick={onRemove}
-        aria-label="Remove condition"
+        aria-label="Remove check"
+        data-testid={`remove-condition-${condition.id}`}
       >
         <XIcon className="size-3.5" />
       </Button>

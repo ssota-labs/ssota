@@ -23,6 +23,7 @@ import {
   createManualWorkflowTrigger,
   normalizeWorkflowDefinition,
   deriveApplicableNodeTypes,
+  normalizeWorkflowContext,
   type ExecuteActionResult,
   type WorkflowTriggerEvent,
 } from "@ssota/contracts";
@@ -717,7 +718,7 @@ function parseWorkflowContext(raw: FormDataEntryValue | null) {
     return ContextSpecSchema.parse(empty);
   }
   try {
-    return ContextSpecSchema.parse(JSON.parse(raw));
+    return normalizeWorkflowContext(JSON.parse(raw), []);
   } catch {
     return ContextSpecSchema.parse(empty);
   }

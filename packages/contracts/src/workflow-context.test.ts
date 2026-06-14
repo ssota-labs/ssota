@@ -3,7 +3,7 @@ import {
   ContextSpecSchema,
   deriveApplicableNodeTypes,
   normalizeWorkflowContext,
-} from "./workflow-context.js";
+} from "@ssota/contracts";
 
 describe("workflow context", () => {
   it("parses filter groups with conditions", () => {
@@ -83,8 +83,8 @@ describe("workflow context", () => {
     expect(types).toEqual(["Document", "Task"]);
   });
 
-  it("round-trips structured context without queries key", () => {
-    const input = {
+  it("migrates legacy startNodeRef traversals to startNodeType", () => {
+    const migrated = normalizeWorkflowContext({
       filterGroups: [
         {
           id: "fg1",
@@ -101,13 +101,75 @@ describe("workflow context", () => {
           maxHops: 2,
         },
       ],
+      assertions: [],
+    });
+
+    expect(migrated.traversals[0]?.startNodeType).toBe("HomepageProject");
+    expect(migrated.traversals[0]?.startNodeRef).toBeUndefined();
+  });
+
+  it("migrates legacy kind-based assertions to nodeType + checks", () => {
+    const migrated = normalizeWorkflowContext({
+      filterGroups: [
+        {
+          id: "fg1",
+          nodeType: "Document",
+          combinator: "and",
+          conditions: [],
+        },
+      ],
+      traversals: [],
+      assertions: [
+        {
+          id: "assert_draft",
+          kind: "status_equals",
+          mode: "agentic",
+          enforcement: "soft",
+          params: { status: "Draft" },
+        },
+      ],
+    });
+
+    expect(migrated.assertions[0]?.nodeType).toBe("Document");
+    expect(migrated.assertions[0]?.conditions[0]).toMatchObject({
+      propertyKey: "lifecycle_status",
+      operator: "equals",
+      value: "Draft",
+    });
+  });
+
+  it("round-trips structured context without queries key", () => {
+    const input = {
+      filterGroups: [
+        {
+          id: "fg1",
+          nodeType: "HomepageProject",
+          combinator: "and",
+          conditions: [],
+        },
+      ],
+      traversals: [
+        {
+          id: "t1",
+          startNodeType: "HomepageProject",
+          direction: "outgoing",
+          maxHops: 2,
+        },
+      ],
       assertions: [
         {
           id: "a1",
-          kind: "node_exists",
+          nodeType: "DesignBrief",
+          combinator: "and",
+          conditions: [
+            {
+              id: "c1",
+              propertyKey: "title",
+              operator: "is_not_empty",
+            },
+          ],
           mode: "agentic",
           enforcement: "soft",
-          params: { nodeType: "DesignBrief" },
         },
       ],
     };
