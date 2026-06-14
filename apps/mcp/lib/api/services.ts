@@ -101,6 +101,55 @@ export async function listArchetypes(projectId: string) {
   return entries.map(serializeArchetype);
 }
 
+export async function listProperties(projectId: string) {
+  const ports = getActionPorts(projectId);
+  const nodeTypes = await ports.catalog.listNodeCatalogEntries();
+  const byKey = new Map<
+    string,
+    {
+      propertyKey: string;
+      valueType: string;
+      constraints: Record<string, unknown>;
+      required: boolean;
+      default?: unknown;
+      system: boolean;
+      options?: string[];
+      nodeTypes: string[];
+    }
+  >();
+
+  for (const entry of nodeTypes) {
+    for (const [propertyKey, field] of Object.entries(entry.propertySchema)) {
+      const existing = byKey.get(propertyKey);
+      if (existing) {
+        if (!existing.nodeTypes.includes(entry.nodeType)) {
+          existing.nodeTypes.push(entry.nodeType);
+        }
+        continue;
+      }
+      byKey.set(propertyKey, {
+        propertyKey,
+        valueType: field.valueType,
+        constraints: field.constraints ?? {},
+        required: field.required ?? false,
+        default: field.default,
+        system: field.system ?? false,
+        options: field.options,
+        nodeTypes: [entry.nodeType],
+      });
+    }
+  }
+
+  return [...byKey.values()].sort((a, b) =>
+    a.propertyKey.localeCompare(b.propertyKey),
+  );
+}
+
+export async function getProperty(projectId: string, propertyKey: string) {
+  const properties = await listProperties(projectId);
+  return properties.find((entry) => entry.propertyKey === propertyKey) ?? null;
+}
+
 export async function queryNodes(
   projectId: string,
   params: ReturnType<typeof QueryNodesInputSchema.parse>,

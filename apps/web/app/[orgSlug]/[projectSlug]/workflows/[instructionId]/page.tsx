@@ -32,9 +32,10 @@ export default async function WorkflowDetailPage({
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
-  const instruction =
-    (await ports.catalog.getInstruction(instructionId)) ??
-    (await ports.catalog.getInstructionBySlug(instructionId));
+  const instruction = isUuid(instructionId)
+    ? ((await ports.catalog.getInstruction(instructionId)) ??
+      (await ports.catalog.getInstructionBySlug(instructionId)))
+    : await ports.catalog.getInstructionBySlug(instructionId);
   if (!instruction) notFound();
 
   const logs = await ports.commit.getActionLog({ limit: 100 });
@@ -204,6 +205,12 @@ function getRunbookUrl(outputContract: Record<string, unknown>, body: string) {
 
 function stringValue(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
 }
 
 function MetaCard({

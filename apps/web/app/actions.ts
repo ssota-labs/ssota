@@ -82,10 +82,16 @@ export async function approveGateAction(
 export async function approveGateFormAction(formData: FormData) {
   const gateId = formData.get("gateId");
   const approved = formData.get("approved") === "true";
+  const note = formData.get("decisionNote");
   if (typeof gateId !== "string") throw new Error("gateId required");
 
   const projectId = await requireProjectId(formData);
-  await approveGateAction(gateId, approved, undefined, projectId);
+  await approveGateAction(
+    gateId,
+    approved,
+    typeof note === "string" && note.trim() ? note.trim() : undefined,
+    projectId,
+  );
 }
 
 export async function signInWithGoogleAction(formData: FormData) {
