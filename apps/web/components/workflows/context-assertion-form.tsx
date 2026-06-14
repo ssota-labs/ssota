@@ -1,7 +1,6 @@
 "use client";
 
 import type { ContextAssertion } from "@ssota/contracts";
-import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
 import {
   Select,
@@ -10,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ssota/ui/components/ui/select";
-import { ContextFilterConditionRow } from "@/components/workflows/context-filter-condition-row";
+import { ContextConditionList } from "@/components/workflows/context-condition-list";
 import {
   createFilterCondition,
   type WorkflowNodeCatalogOption,
@@ -90,51 +89,17 @@ export function ContextAssertionForm({
         </div>
       </div>
 
-      <div className="space-y-2">
-        {assertion.conditions.map((condition, index) => (
-          <ContextFilterConditionRow
-            key={condition.id}
-            condition={condition}
-            propertyKeys={propertyKeys}
-            showWhereLabel={index === 0}
-            onChange={(next) =>
-              onChange({
-                ...assertion,
-                conditions: assertion.conditions.map((item) =>
-                  item.id === condition.id ? next : item,
-                ),
-              })
-            }
-            onRemove={() =>
-              onChange({
-                ...assertion,
-                conditions: assertion.conditions.filter(
-                  (item) => item.id !== condition.id,
-                ),
-              })
-            }
-          />
-        ))}
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-muted-foreground"
-          data-testid="add-assertion-check"
-          onClick={() =>
-            onChange({
-              ...assertion,
-              conditions: [
-                ...assertion.conditions,
-                createFilterCondition(propertyKeys[0] ?? "lifecycle_status"),
-              ],
-            })
-          }
-        >
-          + Add check
-        </Button>
-      </div>
+      <ContextConditionList
+        conditions={assertion.conditions}
+        propertyKeys={propertyKeys}
+        itemLabel="Check"
+        addLabel="+ Add check"
+        addTestId="add-assertion-check"
+        onChange={(conditions) => onChange({ ...assertion, conditions })}
+        createCondition={() =>
+          createFilterCondition(propertyKeys[0] ?? "lifecycle_status")
+        }
+      />
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="space-y-1.5">

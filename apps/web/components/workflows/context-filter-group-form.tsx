@@ -1,7 +1,6 @@
 "use client";
 
 import type { ContextFilterGroup } from "@ssota/contracts";
-import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
 import {
   Select,
@@ -10,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ssota/ui/components/ui/select";
-import { ContextFilterConditionRow } from "@/components/workflows/context-filter-condition-row";
+import { ContextConditionList } from "@/components/workflows/context-condition-list";
 import {
   createFilterCondition,
   type WorkflowNodeCatalogOption,
@@ -87,49 +86,15 @@ export function ContextFilterGroupForm({
         </div>
       </div>
 
-      <div className="space-y-2">
-        {group.conditions.map((condition, index) => (
-          <ContextFilterConditionRow
-            key={condition.id}
-            condition={condition}
-            propertyKeys={propertyKeys}
-            showWhereLabel={index === 0}
-            onChange={(next) =>
-              onChange({
-                ...group,
-                conditions: group.conditions.map((item) =>
-                  item.id === condition.id ? next : item,
-                ),
-              })
-            }
-            onRemove={() =>
-              onChange({
-                ...group,
-                conditions: group.conditions.filter((item) => item.id !== condition.id),
-              })
-            }
-          />
-        ))}
-
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 px-2 text-muted-foreground"
-          data-testid="add-filter-condition"
-          onClick={() =>
-            onChange({
-              ...group,
-              conditions: [
-                ...group.conditions,
-                createFilterCondition(propertyKeys[0] ?? "title"),
-              ],
-            })
-          }
-        >
-          + Add filter rule
-        </Button>
-      </div>
+      <ContextConditionList
+        conditions={group.conditions}
+        propertyKeys={propertyKeys}
+        itemLabel="Rule"
+        addLabel="+ Add filter rule"
+        addTestId="add-filter-condition"
+        onChange={(conditions) => onChange({ ...group, conditions })}
+        createCondition={() => createFilterCondition(propertyKeys[0] ?? "title")}
+      />
     </div>
   );
 }
