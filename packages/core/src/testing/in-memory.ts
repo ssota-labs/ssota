@@ -246,13 +246,15 @@ function applyEffect(
         id: effect.entry.instructionId,
         projectId,
         slug: toCatalogSlug(effect.entry.title),
+        instructionKey: effect.entry.instructionKey ?? null,
         title: effect.entry.title,
         triggerPatterns: effect.entry.triggerPatterns,
         applicableNodeTypes: effect.entry.applicableNodeTypes,
         requiredActions: effect.entry.requiredActions,
         optionalActions: effect.entry.optionalActions,
         lifecycle: effect.entry.lifecycle,
-        body: effect.entry.body,
+        body: effect.entry.body ?? null,
+        contentUrl: effect.entry.contentUrl ?? null,
         scope: effect.entry.scope,
         triggers: effect.entry.triggers,
         workflowSteps: effect.entry.workflowSteps,
@@ -271,13 +273,15 @@ function applyEffect(
         id: randomUUID(),
         projectId,
         slug: toCatalogSlug(effect.entry.title),
+        instructionKey: effect.entry.instructionKey ?? null,
         title: effect.entry.title,
         triggerPatterns: effect.entry.triggerPatterns,
         applicableNodeTypes: effect.entry.applicableNodeTypes,
         requiredActions: effect.entry.requiredActions,
         optionalActions: effect.entry.optionalActions,
         lifecycle: effect.entry.lifecycle,
-        body: effect.entry.body,
+        body: effect.entry.body ?? null,
+        contentUrl: effect.entry.contentUrl ?? null,
         scope: effect.entry.scope,
         triggers: effect.entry.triggers,
         workflowSteps: effect.entry.workflowSteps,
@@ -354,7 +358,8 @@ export function createInMemoryPorts(
         .filter(
           (i) =>
             (i.title.toLowerCase().includes(q) ||
-              i.body.toLowerCase().includes(q)) &&
+              (i.body?.toLowerCase().includes(q) ?? false) ||
+              (i.instructionKey?.toLowerCase().includes(q) ?? false)) &&
             (!nodeType || i.applicableNodeTypes.includes(nodeType)),
         )
         .slice(0, limit);
@@ -373,6 +378,13 @@ export function createInMemoryPorts(
       return (
         state.instructions.find((instruction) => instruction.slug === slug) ??
         null
+      );
+    },
+    async getInstructionByKey(instructionKey) {
+      return (
+        state.instructions.find(
+          (instruction) => instruction.instructionKey === instructionKey,
+        ) ?? null
       );
     },
   };

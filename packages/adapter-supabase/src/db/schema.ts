@@ -302,13 +302,15 @@ export const instructions = pgTable(
       .notNull()
       .references(() => projects.id),
     slug: text("slug").notNull(),
+    instructionKey: text("instruction_key"),
     title: text("title").notNull(),
     triggerPatterns: jsonb("trigger_patterns").notNull().$type<string[]>(),
     applicableNodeTypes: jsonb("applicable_node_types").notNull().$type<string[]>(),
     requiredActions: jsonb("required_actions").notNull().$type<string[]>(),
     optionalActions: jsonb("optional_actions").notNull().$type<string[]>(),
     lifecycle: lifecycleStatusEnum("lifecycle").notNull(),
-    body: text("body").notNull(),
+    body: text("body"),
+    contentUrl: text("content_url"),
     scope: jsonb("scope")
       .notNull()
       .default({ kind: "global" })

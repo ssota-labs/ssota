@@ -53,7 +53,7 @@ export default async function WorkflowDetailPage({
     outcome: log.outcome,
     executorType: log.executorType,
   }));
-  const runbookUrl = getRunbookUrl(instruction.outputContract, instruction.body);
+  const runbookUrl = getRunbookUrl(instruction);
 
   return (
     <div className="space-y-6">
@@ -139,9 +139,21 @@ export default async function WorkflowDetailPage({
               <CardTitle className="text-base">Natural language instruction</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="whitespace-pre-wrap text-sm leading-6">
-                {instruction.body}
-              </p>
+              {instruction.body ? (
+                <p className="whitespace-pre-wrap text-sm leading-6">
+                  {instruction.body}
+                </p>
+              ) : instruction.contentUrl ? (
+                <p className="text-sm text-muted-foreground">
+                  Runbook content lives at the external URL above. Agents should
+                  fetch <code className="text-xs">contentUrl</code> after{" "}
+                  <code className="text-xs">get_instruction</code>.
+                </p>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  No inline instruction body.
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -194,13 +206,18 @@ export default async function WorkflowDetailPage({
   );
 }
 
-function getRunbookUrl(outputContract: Record<string, unknown>, body: string) {
+function getRunbookUrl(instruction: {
+  contentUrl: string | null;
+  outputContract: Record<string, unknown>;
+  body: string | null;
+}) {
+  if (instruction.contentUrl) return instruction.contentUrl;
   const fromContract =
-    stringValue(outputContract.notion_instruction_url) ||
-    stringValue(outputContract.notion_url) ||
-    stringValue(outputContract.canonical_url);
+    stringValue(instruction.outputContract.notion_instruction_url) ||
+    stringValue(instruction.outputContract.notion_url) ||
+    stringValue(instruction.outputContract.canonical_url);
   if (fromContract) return fromContract;
-  return body.match(/https?:\/\/\S+/)?.[0] ?? "";
+  return instruction.body?.match(/https?:\/\/\S+/)?.[0] ?? "";
 }
 
 function stringValue(value: unknown): string {

@@ -326,14 +326,30 @@ export type InstructionWorkflowStep = z.infer<
   typeof InstructionWorkflowStepSchema
 >;
 
-export const InstructionDefinitionSchema = z.object({
+const InstructionKeySchema = z
+  .string()
+  .regex(/^[a-z][a-z0-9_]*$/, "instructionKey must be snake_case");
+
+function hasInstructionContent(data: {
+  body?: string | null;
+  contentUrl?: string | null;
+}): boolean {
+  return (
+    (data.body?.trim().length ?? 0) > 0 ||
+    (data.contentUrl?.trim().length ?? 0) > 0
+  );
+}
+
+const InstructionDefinitionBaseSchema = z.object({
   title: z.string().min(1),
+  instructionKey: InstructionKeySchema.optional(),
   triggerPatterns: z.array(z.string()).min(1),
   applicableNodeTypes: z.array(z.string()).default([]),
   requiredActions: z.array(z.string()).default([]),
   optionalActions: z.array(z.string()).default([]),
   lifecycle: LifecycleStatusSchema.default("Active"),
-  body: z.string().min(1),
+  body: z.string().nullable().optional(),
+  contentUrl: z.string().url().nullable().optional(),
   scope: InstructionScopeSchema.default({ kind: "global" }),
   triggers: z.array(z.string()).default([]),
   workflowSteps: z.array(InstructionWorkflowStepSchema).default([]),
@@ -343,6 +359,14 @@ export const InstructionDefinitionSchema = z.object({
   completionCriteria: z.string().nullable().optional(),
 });
 
+export const InstructionDefinitionSchema = InstructionDefinitionBaseSchema.refine(
+  hasInstructionContent,
+  {
+    message: "At least one of body or contentUrl is required",
+    path: ["body"],
+  },
+);
+
 export type InstructionDefinition = z.infer<typeof InstructionDefinitionSchema>;
 
 export const DefineInstructionInputSchema = z.object({
@@ -351,9 +375,13 @@ export const DefineInstructionInputSchema = z.object({
 
 export type DefineInstructionInput = z.infer<typeof DefineInstructionInputSchema>;
 
-export const InstructionCatalogUpsertSchema = InstructionDefinitionSchema.extend({
-  instructionId: z.string().uuid().optional(),
-});
+export const InstructionCatalogUpsertSchema =
+  InstructionDefinitionBaseSchema.extend({
+    instructionId: z.string().uuid().optional(),
+  }).refine(hasInstructionContent, {
+    message: "At least one of body or contentUrl is required",
+    path: ["body"],
+  });
 
 export type InstructionCatalogUpsert = z.infer<
   typeof InstructionCatalogUpsertSchema
@@ -361,7 +389,7 @@ export type InstructionCatalogUpsert = z.infer<
 
 export const UpdateInstructionInputSchema = z.object({
   instructionId: z.string().uuid(),
-  patch: InstructionDefinitionSchema.partial(),
+  patch: InstructionDefinitionBaseSchema.partial(),
 });
 
 export type UpdateInstructionInput = z.infer<typeof UpdateInstructionInputSchema>;
@@ -562,9 +590,14 @@ export const GetNodeInputSchema = z.object({
 
 export type GetNodeInput = z.infer<typeof GetNodeInputSchema>;
 
-export const GetInstructionInputSchema = z.object({
-  instructionId: z.string().uuid(),
-});
+export const GetInstructionInputSchema = z
+  .object({
+    instructionId: z.string().uuid().optional(),
+    instructionKey: InstructionKeySchema.optional(),
+  })
+  .refine((value) => value.instructionId || value.instructionKey, {
+    message: "instructionId or instructionKey is required",
+  });
 
 export type GetInstructionInput = z.infer<typeof GetInstructionInputSchema>;
 

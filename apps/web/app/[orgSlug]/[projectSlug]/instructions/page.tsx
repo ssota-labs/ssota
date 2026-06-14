@@ -213,7 +213,10 @@ export default async function ProjectInstructionsPage({
                         Natural language instruction
                       </div>
                       <p className="whitespace-pre-wrap text-sm leading-6">
-                        {selected.body}
+                        {selected.body ??
+                          (selected.contentUrl
+                            ? `External runbook: ${selected.contentUrl}`
+                            : "No instruction body.")}
                       </p>
                     </article>
                     <aside className="space-y-3">
@@ -358,8 +361,26 @@ function NewInstructionSheet({ projectId }: { projectId: string }) {
             <Textarea id="gatePolicy" name="gatePolicy" defaultValue="{}" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="body">Body</Label>
-            <Textarea id="body" name="body" required />
+            <Label htmlFor="instructionKey">Instruction key (optional)</Label>
+            <Input
+              id="instructionKey"
+              name="instructionKey"
+              placeholder="main_product_ops_entry"
+              pattern="[a-z][a-z0-9_]*"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="contentUrl">External runbook URL (optional)</Label>
+            <Input
+              id="contentUrl"
+              name="contentUrl"
+              type="url"
+              placeholder="https://notion.so/…"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="body">Inline body (optional if URL set)</Label>
+            <Textarea id="body" name="body" />
           </div>
           <Button type="submit">Submit workflow</Button>
         </form>

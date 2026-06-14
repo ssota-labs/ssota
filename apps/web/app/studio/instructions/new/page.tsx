@@ -21,7 +21,7 @@ export default async function NewInstructionPage() {
   async function createAction(formData: FormData) {
     "use server";
     await defineInstructionAction({
-      definition: {
+        definition: {
         title: String(formData.get("title") ?? ""),
         triggerPatterns: String(formData.get("triggerPatterns") ?? "")
           .split(",")
@@ -37,7 +37,9 @@ export default async function NewInstructionPage() {
           .filter(Boolean),
         optionalActions: [],
         lifecycle: "Active",
-        body: String(formData.get("body") ?? ""),
+        body: String(formData.get("body") ?? "").trim() || undefined,
+        contentUrl: String(formData.get("contentUrl") ?? "").trim() || undefined,
+        instructionKey: String(formData.get("instructionKey") ?? "").trim() || undefined,
       },
     });
     redirect("/studio/instructions");
@@ -69,8 +71,16 @@ export default async function NewInstructionPage() {
               <Input id="requiredActions" name="requiredActions" placeholder="create_document" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="body">Body</Label>
-              <Textarea id="body" name="body" required />
+              <Label htmlFor="instructionKey">Instruction key</Label>
+              <Input id="instructionKey" name="instructionKey" placeholder="discovery_steward" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contentUrl">External runbook URL</Label>
+              <Input id="contentUrl" name="contentUrl" type="url" placeholder="https://notion.so/…" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="body">Inline body</Label>
+              <Textarea id="body" name="body" />
             </div>
             <Button type="submit">define_instruction 실행</Button>
           </form>

@@ -83,9 +83,16 @@ export async function getNode(projectId: string, nodeId: string) {
   return node ? serializeNode(node) : null;
 }
 
-export async function getInstruction(projectId: string, instructionId: string) {
+export async function getInstruction(
+  projectId: string,
+  input: ReturnType<typeof GetInstructionInputSchema.parse>,
+) {
   const ports = getActionPorts(projectId);
-  const instruction = await ports.catalog.getInstruction(instructionId);
+  const instruction = input.instructionId
+    ? await ports.catalog.getInstruction(input.instructionId)
+    : input.instructionKey
+      ? await ports.catalog.getInstructionByKey(input.instructionKey)
+      : null;
   return instruction ? serializeInstruction(instruction) : null;
 }
 

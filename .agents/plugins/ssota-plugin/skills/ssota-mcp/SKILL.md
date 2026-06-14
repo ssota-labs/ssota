@@ -55,9 +55,10 @@ Use `list_*` only as catalog **index**. Fetch details with `get_*`.
 SSOTA instructions are **domain recipes**, not this root protocol.
 
 1. `find_instruction` with terms from `references/routing.md`
-2. `get_instruction(instructionId)` for the full recipe
+2. `get_instruction(instructionId)` or `get_instruction(instructionKey)` for the full recipe
 3. Follow `workflowSteps`, `requiredActions`, `allowedActions`, `gatePolicy`
-4. If no suitable instruction exists, **do not improvise** — propose defining one
+4. If `contentUrl` is set, fetch the external runbook (Notion page) for progressive disclosure — the graph stores the contract; the URL carries the editable steward playbook
+5. If no suitable instruction exists, **do not improvise** — propose defining one
 
 ## 4. Action contract
 
