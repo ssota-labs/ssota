@@ -86,7 +86,7 @@ export default async function DeveloperSetupPage({
               {[
                 "Authorize the MCP client with your SSOTA account.",
                 "List projects and confirm this project appears.",
-                "Fetch workflow instructions before executing a Task.",
+                "Fetch workflow packages before executing a Task.",
                 "Use execute_action for every graph write.",
                 "Review Gates and inspect Runs after execution.",
               ].map((item, index) => (

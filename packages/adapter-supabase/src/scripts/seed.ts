@@ -268,18 +268,18 @@ async function seedCatalog(
   await db
     .insert(schema.workflows)
     .values(
-      DOMAIN_INSTRUCTIONS.map((row) => legacyInstructionSeedToWorkflowRow(projectId, row)),
+      DOMAIN_WORKFLOWS.map((row) => workflowSeedRow(projectId, row)),
     )
     .onConflictDoNothing();
 
   await seedHomepageAgentCatalog(db, projectId);
 }
 
-type LegacyInstructionSeed = (typeof DOMAIN_INSTRUCTIONS)[number];
+type LegacyWorkflowSeed = (typeof DOMAIN_WORKFLOWS)[number];
 
-function legacyInstructionSeedToWorkflowRow(
+function workflowSeedRow(
   projectId: string,
-  legacy: LegacyInstructionSeed,
+  legacy: LegacyWorkflowSeed,
 ): typeof schema.workflows.$inferInsert {
   const workflowKey = toCatalogSlug(legacy.title);
   const steps =
@@ -356,7 +356,7 @@ function legacyInstructionSeedToWorkflowRow(
 }
 
 /** Domain workflows only — Root Runtime Protocol lives in ssota-mcp skill. */
-const DOMAIN_INSTRUCTIONS = [
+const DOMAIN_WORKFLOWS = [
   {
     title: "Document creation",
     triggerPatterns: [

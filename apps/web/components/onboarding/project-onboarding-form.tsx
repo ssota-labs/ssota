@@ -25,7 +25,7 @@ export function ProjectOnboardingForm({
       step={2}
       stepLabel="First project"
       title="Create your first project"
-      description="Projects organize your context graph, instructions, and gates."
+      description="Projects organize your context graph, workflows, and gates."
       backHref="/onboarding/profile"
       backLabel="Back to organization"
       banner={
