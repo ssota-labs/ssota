@@ -92,9 +92,11 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
             render={
               <button
                 type="button"
-                className="absolute top-1/2 -right-3 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:text-foreground"
+                className="nodrag nopan absolute top-1/2 -right-3 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:text-foreground"
                 aria-label={`Add next block after ${data.label}`}
                 data-testid={`add-node-${data.kind}`}
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
               />
             }
           >
