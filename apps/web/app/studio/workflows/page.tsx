@@ -40,7 +40,11 @@ export default async function WorkflowsPage() {
                   <Badge variant="secondary">{entry.lifecycle}</Badge>
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  triggers: {entry.spec.trigger.patterns.join(", ") || "manual"}
+                  triggers:{" "}
+                  {entry.spec.trigger.events
+                    .filter((event) => event.enabled)
+                    .map((event) => event.kind)
+                    .join(", ") || "manual"}
                 </p>
               </CardHeader>
               <CardContent className="pt-0 text-sm">

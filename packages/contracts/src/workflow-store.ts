@@ -2,6 +2,7 @@ import {
   WorkflowCatalogUpsertSchema,
   WorkflowDefinitionSchema,
   WorkflowSchema,
+  normalizeWorkflowTriggerSpec,
   type Workflow,
   type WorkflowCatalogUpsert,
   type WorkflowDefinition,
@@ -19,7 +20,16 @@ export type WorkflowRow = {
 };
 
 export function parseWorkflowSpec(input: unknown): WorkflowDefinition {
-  return WorkflowDefinitionSchema.parse(input);
+  const normalized =
+    input && typeof input === "object"
+      ? {
+          ...(input as Record<string, unknown>),
+          trigger: normalizeWorkflowTriggerSpec(
+            (input as Record<string, unknown>).trigger,
+          ),
+        }
+      : input;
+  return WorkflowDefinitionSchema.parse(normalized);
 }
 
 export function workflowRowToWire(row: WorkflowRow): Workflow {

@@ -326,7 +326,17 @@ function workflowSeedRow(
       workflowKey,
       lifecycle: legacy.lifecycle,
       scope: { kind: "global" },
-      trigger: { patterns: legacy.triggerPatterns, events: [] },
+      trigger: {
+        events:
+          legacy.triggerPatterns.length > 0
+            ? legacy.triggerPatterns.map((kind, index) => ({
+                id: kind === "manual" ? "manual" : `legacy_${index}_${kind}`,
+                kind,
+                enabled: true,
+                config: {},
+              }))
+            : [{ id: "manual", kind: "manual", enabled: true, config: {} }],
+      },
       context: { queries: [], traversals: [], assertions: [] },
       conditions: [],
       steps,

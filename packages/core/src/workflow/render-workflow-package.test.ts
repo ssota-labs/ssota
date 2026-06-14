@@ -19,7 +19,23 @@ const sampleWorkflow: Workflow = {
     workflowKey: "document_creation",
     lifecycle: "Active",
     scope: { kind: "node_type", nodeType: "Document" },
-    trigger: { patterns: ["create document"], events: ["task_assigned"] },
+    trigger: {
+      events: [
+        { id: "manual", kind: "manual", enabled: true, config: {} },
+        {
+          id: "create_document",
+          kind: "create_document",
+          enabled: true,
+          config: {},
+        },
+        {
+          id: "task_assigned",
+          kind: "task_assigned",
+          enabled: true,
+          config: {},
+        },
+      ],
+    },
     context: { queries: [], traversals: [], assertions: [] },
     conditions: [],
     steps: [
@@ -58,7 +74,7 @@ describe("renderWorkflowText", () => {
     expect(text).toContain("## Steps");
     expect(text).toContain("### 1. Create draft");
     expect(text).toContain("## Output");
-    expect(text).toContain("create document");
+    expect(text).toContain("create_document");
     expect(text).toContain("Document node exists in Draft");
   });
 

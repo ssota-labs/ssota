@@ -261,7 +261,12 @@ describe("adapter-supabase integration", () => {
             title,
             lifecycle: "Active",
             scope: { kind: "node_type", nodeType: "Document" },
-            trigger: { patterns: ["manual"], events: ["task_assigned"] },
+            trigger: {
+              events: [
+                { id: "manual", kind: "manual", enabled: true, config: {} },
+                { id: "task_assigned", kind: "task_assigned", enabled: true, config: {} },
+              ],
+            },
             applicableNodeTypes: ["Document"],
             requiredActions: ["create_node"],
             optionalActions: ["promote_document"],
@@ -308,7 +313,9 @@ describe("adapter-supabase integration", () => {
             workflowKey,
             lifecycle: "Active",
             scope: { kind: "global" },
-            trigger: { patterns: ["manual"], events: [] },
+            trigger: {
+              events: [{ id: "manual", kind: "manual", enabled: true, config: {} }],
+            },
             applicableNodeTypes: [],
             requiredActions: ["create_node"],
             optionalActions: [],

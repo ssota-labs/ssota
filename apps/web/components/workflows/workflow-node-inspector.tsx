@@ -6,6 +6,7 @@ import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import type { WorkflowFlowNode } from "@/lib/workflows/workflow-flow-model";
+import { getWorkflowTriggerMeta } from "@/lib/workflows/workflow-trigger-catalog";
 
 type WorkflowNodeInspectorProps = {
   workflow: Workflow;
@@ -66,10 +67,22 @@ export function WorkflowNodeInspector({
 }
 
 function TriggerInspector({ workflow }: { workflow: Workflow }) {
+  const activeEvents = workflow.trigger.events.filter((event) => event.enabled);
   return (
     <>
-      <ReadonlyText label="Patterns" value={workflow.trigger.patterns.join(", ")} />
-      <ReadonlyText label="Events" value={workflow.trigger.events.join(", ")} />
+      <ReadonlyArea
+        label="Events"
+        value={
+          activeEvents.length
+            ? activeEvents
+                .map((event) => {
+                  const meta = getWorkflowTriggerMeta(event.kind);
+                  return `${meta.label} (${event.kind})`;
+                })
+                .join("\n")
+            : "No active triggers"
+        }
+      />
     </>
   );
 }

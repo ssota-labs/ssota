@@ -6,10 +6,24 @@ import {
 } from "./workflow-store.js";
 import { WorkflowDefinitionSchema } from "./workflow.js";
 
+const manualTrigger = {
+  id: "manual",
+  kind: "manual",
+  enabled: true,
+  config: {},
+} as const;
+
+const taskAssignedTrigger = {
+  id: "task_assigned",
+  kind: "task_assigned",
+  enabled: true,
+  config: {},
+} as const;
+
 const sampleDefinition = WorkflowDefinitionSchema.parse({
   title: "Document creation",
   workflowKey: "document_creation",
-  trigger: { patterns: ["create document", "new document"], events: ["task_assigned"] },
+  trigger: { events: [manualTrigger, taskAssignedTrigger] },
   context: {
     queries: [{ id: "docs", nodeType: "Document" }],
     traversals: [],
@@ -42,9 +56,10 @@ const sampleDefinition = WorkflowDefinitionSchema.parse({
 });
 
 describe("workflow v0 schemas", () => {
-  it("parses a workflow definition with structured sections", () => {
+  it("parses a workflow definition with structured trigger events", () => {
     expect(sampleDefinition.steps).toHaveLength(1);
     expect(sampleDefinition.context.queries[0]?.nodeType).toBe("Document");
+    expect(sampleDefinition.trigger.events[0]?.kind).toBe("manual");
   });
 });
 
@@ -79,11 +94,20 @@ describe("workflow store helpers", () => {
   it("merges partial workflow definition patches", () => {
     const merged = mergeWorkflowDefinition(sampleDefinition, {
       title: "Updated document creation",
-      trigger: { patterns: ["edit document"], events: [] },
+      trigger: {
+        events: [
+          {
+            id: "manual",
+            kind: "manual",
+            enabled: true,
+            config: {},
+          },
+        ],
+      },
     });
 
     expect(merged.title).toBe("Updated document creation");
-    expect(merged.trigger.patterns).toEqual(["edit document"]);
+    expect(merged.trigger.events).toHaveLength(1);
     expect(merged.steps).toEqual(sampleDefinition.steps);
   });
 });

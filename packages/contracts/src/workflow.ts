@@ -1,5 +1,19 @@
 import { z } from "zod";
 import { LifecycleStatusSchema } from "./definitions.js";
+import {
+  WorkflowTriggerSpecSchema,
+  createManualWorkflowTrigger,
+} from "./workflow-trigger-event.js";
+
+export {
+  WorkflowTriggerEventSchema,
+  WorkflowTriggerSpecSchema,
+  createManualWorkflowTrigger,
+  normalizeWorkflowTriggerEvents,
+  normalizeWorkflowTriggerSpec,
+  type WorkflowTriggerEvent,
+  type WorkflowTriggerSpec,
+} from "./workflow-trigger-event.js";
 
 export const WorkflowScopeSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("global") }),
@@ -21,16 +35,6 @@ export const WorkflowKeySchema = z
   .regex(/^[a-z][a-z0-9_]*$/, "workflowKey must be snake_case");
 
 export type WorkflowKey = z.infer<typeof WorkflowKeySchema>;
-
-/** When and why a workflow may start. */
-export const WorkflowTriggerSpecSchema = z.object({
-  /** Intent patterns matched by find_workflow / agent routing. */
-  patterns: z.array(z.string()).default([]),
-  /** Event or automation hook identifiers. */
-  events: z.array(z.string()).default([]),
-});
-
-export type WorkflowTriggerSpec = z.infer<typeof WorkflowTriggerSpecSchema>;
 
 /** Node query plan agents execute before acting. */
 export const ContextQueryPlanSchema = z.object({
@@ -194,7 +198,9 @@ const WorkflowDefinitionBaseSchema = z.object({
   workflowKey: WorkflowKeySchema.optional(),
   lifecycle: LifecycleStatusSchema.default("Active"),
   scope: WorkflowScopeSchema.default({ kind: "global" }),
-  trigger: WorkflowTriggerSpecSchema,
+  trigger: WorkflowTriggerSpecSchema.default({
+    events: [createManualWorkflowTrigger()],
+  }),
   context: ContextSpecSchema.default({
     queries: [],
     traversals: [],

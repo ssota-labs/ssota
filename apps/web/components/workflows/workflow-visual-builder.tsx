@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import type { Workflow } from "@ssota/contracts";
 import {
   Background,
@@ -198,6 +198,9 @@ function WorkflowVisualBuilderInner({
   const edgesRef = useRef<Edge[]>(initial.edges);
   const { fitView } = useReactFlow();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const onAddNodeRef = useRef<
+    (sourceNodeId: string, kind: WorkflowFlowNodeKind) => void
+  >(() => {});
 
   useEffect(() => {
     nodesRef.current = nodes;
@@ -263,7 +266,7 @@ function WorkflowVisualBuilderInner({
         [...currentNodes, nextNode],
         [...retainedEdges, newEdge, ...rewiredEdges],
       );
-      setNodes(decorateWorkflowNodes(layouted.nodes, readOnly, addNodeAfter));
+      setNodes(decorateWorkflowNodes(layouted.nodes, readOnly, onAddNodeRef.current));
       setEdges(layouted.edges);
       setSelectedNodeId(nextNode.id);
       requestAnimationFrame(() => fitView({ padding: 0.12, duration: 250 }));
@@ -272,11 +275,17 @@ function WorkflowVisualBuilderInner({
   );
 
   useEffect(() => {
+    onAddNodeRef.current = addNodeAfter;
+  }, [addNodeAfter]);
+
+  useEffect(() => {
     const next = workflowToFlowGraph(workflow);
-    setNodes(decorateWorkflowNodes(next.nodes, readOnly, addNodeAfter));
-    setEdges(next.edges);
+    startTransition(() => {
+      setNodes(decorateWorkflowNodes(next.nodes, readOnly, onAddNodeRef.current));
+      setEdges(next.edges);
+    });
     requestAnimationFrame(() => fitView({ padding: 0.12, duration: 200 }));
-  }, [workflow, setNodes, setEdges, fitView, readOnly, addNodeAfter]);
+  }, [workflow, setNodes, setEdges, fitView, readOnly]);
 
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
 

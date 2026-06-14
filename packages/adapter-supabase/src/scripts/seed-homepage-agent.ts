@@ -225,12 +225,27 @@ export async function seedHomepageAgentCatalog(
           lifecycle: "Active",
           scope: { kind: "global" },
           trigger: {
-            patterns: [
-              "create homepage",
-              "new homepage project",
-              "homepage design",
+            events: [
+              { id: "manual", kind: "manual", enabled: true, config: {} },
+              {
+                id: "create_homepage",
+                kind: "create_homepage",
+                enabled: true,
+                config: {},
+              },
+              {
+                id: "new_homepage_project",
+                kind: "new_homepage_project",
+                enabled: true,
+                config: {},
+              },
+              {
+                id: "homepage_design",
+                kind: "homepage_design",
+                enabled: true,
+                config: {},
+              },
             ],
-            events: [],
           },
           context: { queries: [], traversals: [], assertions: [] },
           conditions: [],

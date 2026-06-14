@@ -21,15 +21,23 @@ export default async function NewWorkflowPage() {
   async function createAction(formData: FormData) {
     "use server";
     const title = String(formData.get("title") ?? "");
+    const triggerKinds = String(formData.get("triggerPatterns") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     await defineWorkflowAction({
       definition: {
         title,
         trigger: {
-          patterns: String(formData.get("triggerPatterns") ?? "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean),
-          events: [],
+          events:
+            triggerKinds.length > 0
+              ? triggerKinds.map((kind, index) => ({
+                  id: kind === "manual" ? "manual" : `trigger_${index}_${kind}`,
+                  kind,
+                  enabled: true,
+                  config: {},
+                }))
+              : [{ id: "manual", kind: "manual", enabled: true, config: {} }],
         },
         applicableNodeTypes: String(formData.get("applicableNodeTypes") ?? "")
           .split(",")

@@ -18,8 +18,12 @@ import {
   UpdateNodePropertiesInputSchema,
   UpdateNodePropertySchemaInputSchema,
   UpdatePropertyPermissionInputSchema,
+  WorkflowTriggerEventSchema,
+  createManualWorkflowTrigger,
+  type ExecuteActionResult,
+  type WorkflowTriggerEvent,
 } from "@ssota/contracts";
-import type { ExecuteActionResult } from "@ssota/contracts";
+import { deriveWorkflowKeyFromTitle } from "@ssota/core";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
@@ -246,6 +250,22 @@ function parseJsonArray(value: FormDataEntryValue | null): Record<string, unknow
     throw new Error("Expected JSON array");
   }
   return parsed as Record<string, unknown>[];
+}
+
+function parseWorkflowTriggerEvents(
+  value: FormDataEntryValue | null,
+): WorkflowTriggerEvent[] {
+  const raw = String(value ?? "").trim();
+  if (!raw) return [createManualWorkflowTrigger()];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return [createManualWorkflowTrigger()];
+    }
+    return parsed.map((entry) => WorkflowTriggerEventSchema.parse(entry));
+  } catch {
+    return [createManualWorkflowTrigger()];
+  }
 }
 
 function parseJsonValue(value: FormDataEntryValue | null): unknown {
@@ -689,7 +709,7 @@ export async function defineScopedActionFormAction(formData: FormData): Promise<
 
 export async function defineWorkflowFormAction(formData: FormData): Promise<void> {
   const projectId = await requireProjectId(formData);
-  const triggerPatterns = parseCsv(formData.get("triggerPatterns"));
+  const triggerEvents = parseWorkflowTriggerEvents(formData.get("workflowTriggers"));
   const scopeKind = String(formData.get("scopeKind") ?? "global");
   const scopedNodeType = String(formData.get("nodeType") ?? "");
   const scope =
@@ -699,7 +719,15 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
   const applicableNodeTypes = parseCsv(formData.get("applicableNodeTypes"));
   const body = String(formData.get("body") ?? "").trim();
   const contentUrl = String(formData.get("contentUrl") ?? "").trim();
-  const workflowKey = String(formData.get("workflowKey") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const ports = getActionPorts(projectId);
+  const existingWorkflows = await ports.catalog.listWorkflows();
+  const takenKeys = new Set(
+    existingWorkflows
+      .map((workflow) => workflow.workflowKey)
+      .filter((key): key is string => Boolean(key)),
+  );
+  const workflowKey = deriveWorkflowKeyFromTitle(title, (key) => takenKeys.has(key));
   const rawSteps = parseJsonArray(formData.get("workflowSteps")) as Array<
     Record<string, unknown>
   >;
@@ -716,7 +744,7 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
             }),
           ),
         }))
-      : [{ id: "execute", title: String(formData.get("title") ?? "Workflow"), mode: "agentic" as const, actions: [] }];
+      : [{ id: "execute", title: title || "Workflow", mode: "agentic" as const, actions: [] }];
   const references = [
     ...(body
       ? [{ id: "agent_body", title: "Body", kind: "inline" as const, body }]
@@ -727,14 +755,11 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
   ];
   await defineWorkflowAction({
     definition: {
-      title: String(formData.get("title") ?? ""),
-      ...(workflowKey ? { workflowKey } : {}),
+      title,
+      workflowKey,
       lifecycle: "Active",
       scope,
-      trigger: {
-        patterns: triggerPatterns.length ? triggerPatterns : ["manual"],
-        events: parseCsv(formData.get("triggers")),
-      },
+      trigger: { events: triggerEvents },
       applicableNodeTypes:
         applicableNodeTypes.length || !scopedNodeType
           ? applicableNodeTypes

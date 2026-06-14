@@ -142,7 +142,9 @@ const BUILTIN_META_ACTION_ROWS: BuiltinMetaActionRow[] = [
           scope: { kind: "global" },
           spec: {
             title: "",
-            trigger: { patterns: [], events: [] },
+            trigger: {
+              events: [{ id: "manual", kind: "manual", enabled: true, config: {} }],
+            },
             steps: [{ id: "execute", title: "", mode: "agentic", actions: [] }],
           },
         },
@@ -255,7 +257,9 @@ const BUILTIN_META_ACTION_ROWS: BuiltinMetaActionRow[] = [
           scope: { kind: "global" },
           spec: {
             title: "",
-            trigger: { patterns: [], events: [] },
+            trigger: {
+              events: [{ id: "manual", kind: "manual", enabled: true, config: {} }],
+            },
             steps: [{ id: "execute", title: "", mode: "agentic", actions: [] }],
           },
         },

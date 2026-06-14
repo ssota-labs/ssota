@@ -608,7 +608,9 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
             scope: { kind: "global" },
             spec: {
               title: "",
-              trigger: { patterns: [], events: [] },
+              trigger: {
+                events: [{ id: "manual", kind: "manual", enabled: true, config: {} }],
+              },
               steps: [{ id: "execute", title: "", mode: "agentic", actions: [] }],
             },
           },
@@ -627,7 +629,9 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
       input: {
         definition: {
           title: "Broken workflow",
-          trigger: { patterns: ["manual"], events: [] },
+          trigger: {
+            events: [{ id: "manual", kind: "manual", enabled: true, config: {} }],
+          },
           steps: [
             {
               id: "step1",
