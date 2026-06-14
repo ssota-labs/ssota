@@ -46,6 +46,14 @@ function objectNodeData(meta: SchemaNodeTypeMeta): GraphFlowNodeData {
   };
 }
 
+function incomingNodeId(type: string) {
+  return `incoming:${type}`;
+}
+
+function outgoingNodeId(type: string) {
+  return `outgoing:${type}`;
+}
+
 export function NodeSchemaView({
   nodeType,
   label,
@@ -105,7 +113,7 @@ export function NodeSchemaView({
       data: objectNodeData(centerMeta),
     },
     ...incomingList.map(([type, meta]) => ({
-      id: type,
+      id: incomingNodeId(type),
       type: "graphNode" as const,
       position: { x: 0, y: 0 },
       data: {
@@ -114,7 +122,7 @@ export function NodeSchemaView({
       },
     })),
     ...outgoingList.map(([type, meta]) => ({
-      id: type,
+      id: outgoingNodeId(type),
       type: "graphNode" as const,
       position: { x: 0, y: 0 },
       data: objectNodeData(meta),
@@ -129,7 +137,7 @@ export function NodeSchemaView({
         if (connectedType === nodeType) continue;
         edges.push({
           id: `incoming-${connectedType}-${relation.edgeType}`,
-          source: connectedType,
+          source: incomingNodeId(connectedType),
           target: nodeType,
           label: relation.label,
         });
@@ -141,7 +149,7 @@ export function NodeSchemaView({
         edges.push({
           id: `outgoing-${connectedType}-${relation.edgeType}`,
           source: nodeType,
-          target: connectedType,
+          target: outgoingNodeId(connectedType),
           label: relation.label,
         });
       }
