@@ -295,9 +295,7 @@ describe("adapter-supabase integration", () => {
                 },
               ],
             },
-            applicableNodeTypes: ["Document"],
-            requiredActions: ["create_node"],
-            optionalActions: ["promote_document"],
+            applicableNodeTypes: [{ nodeType: "Document", disabledActions: [] }],
             allowedActions: ["create_node", "promote_document"],
             steps: [
               {
@@ -326,7 +324,9 @@ describe("adapter-supabase integration", () => {
       expect(created?.spec.context.filterGroups).toHaveLength(1);
       expect(created?.spec.context.traversals).toHaveLength(1);
       expect(created?.spec.context.assertions).toHaveLength(1);
-      expect(created?.spec.applicableNodeTypes).toEqual(["Document"]);
+      expect(created?.spec.applicableNodeTypes).toEqual([
+        { nodeType: "Document", disabledActions: [] },
+      ]);
       expect(created?.spec.steps[0]?.id).toBe("gather_context");
       expect(created?.spec.allowedActions).toContain("create_node");
     },
@@ -349,8 +349,6 @@ describe("adapter-supabase integration", () => {
               events: [{ id: "manual", kind: "manual", enabled: true, config: {} }],
             },
             applicableNodeTypes: [],
-            requiredActions: ["create_node"],
-            optionalActions: [],
             allowedActions: ["create_node"],
             steps: [{ id: "execute", title: "Execute", mode: "agentic", actions: [] }],
             output: { contract: {} },

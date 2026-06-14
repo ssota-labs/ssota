@@ -146,11 +146,7 @@ export function WorkflowsWorkspace({
         <aside className="space-y-3">
           <WorkflowMetaCard
             title="Allowed actions"
-            items={[
-              ...selected.spec.requiredActions,
-              ...selected.spec.optionalActions,
-              ...selected.spec.allowedActions,
-            ]}
+            items={selected.spec.allowedActions}
             empty="No actions declared."
           />
           <WorkflowMetaCard

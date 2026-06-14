@@ -42,12 +42,9 @@ export default async function NewWorkflowPage() {
         applicableNodeTypes: String(formData.get("applicableNodeTypes") ?? "")
           .split(",")
           .map((s) => s.trim())
-          .filter(Boolean),
-        requiredActions: String(formData.get("requiredActions") ?? "")
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean),
-        optionalActions: [],
+          .filter(Boolean)
+          .map((nodeType) => ({ nodeType, disabledActions: [] as string[] })),
+        allowedActions: [],
         lifecycle: "Active",
         scope: { kind: "global" },
         steps: [{ id: "execute", title, mode: "agentic", actions: [] }],
@@ -94,10 +91,6 @@ export default async function NewWorkflowPage() {
             <div className="space-y-2">
               <Label htmlFor="applicableNodeTypes">Applicable Node Types</Label>
               <Input id="applicableNodeTypes" name="applicableNodeTypes" placeholder="Document" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="requiredActions">Required Actions</Label>
-              <Input id="requiredActions" name="requiredActions" placeholder="create_document" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="workflowKey">Workflow key</Label>

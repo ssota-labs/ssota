@@ -31,8 +31,6 @@ import { ActionRejectedError } from "./types.js";
 
 function collectWorkflowActionRefs(spec: WorkflowDefinition): string[] {
   const refs = new Set<string>();
-  for (const action of spec.requiredActions) refs.add(action);
-  for (const action of spec.optionalActions) refs.add(action);
   for (const action of spec.allowedActions) refs.add(action);
   for (const step of spec.steps) {
     for (const action of step.actions) refs.add(action.actionType);

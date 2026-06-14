@@ -9,7 +9,7 @@ import {
 import type {
   ActionCatalogEntry,
   NodeCatalogEntry,
-  WorkflowNodeBinding,
+  WorkflowApplicableNodeType,
 } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -23,31 +23,30 @@ import {
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import { resolveActionsForNodeType } from "@/lib/graph/resolve-node-actions";
-import { serializeWorkflowNodeBindings } from "@/lib/workflows/workflow-node-bindings";
+import { serializeApplicableNodeTypes } from "@/lib/workflows/workflow-applicable-node-types";
 
-export function WorkflowNodeBindingsField({
-  nodeBindings,
-  onNodeBindingsChange,
+export function WorkflowApplicableNodeTypesField({
+  applicableNodeTypes,
+  onApplicableNodeTypesChange,
   nodeCatalog,
   actionCatalog,
   onAddNodeClick,
   disabled,
 }: {
-  nodeBindings: WorkflowNodeBinding[];
-  onNodeBindingsChange: (bindings: WorkflowNodeBinding[]) => void;
+  applicableNodeTypes: WorkflowApplicableNodeType[];
+  onApplicableNodeTypesChange: (entries: WorkflowApplicableNodeType[]) => void;
   nodeCatalog: NodeCatalogEntry[];
   actionCatalog: ActionCatalogEntry[];
   onAddNodeClick: () => void;
   disabled?: boolean;
 }) {
-
-  function updateBinding(
+  function updateEntry(
     nodeType: string,
-    updater: (binding: WorkflowNodeBinding) => WorkflowNodeBinding,
+    updater: (entry: WorkflowApplicableNodeType) => WorkflowApplicableNodeType,
   ) {
-    onNodeBindingsChange(
-      nodeBindings.map((binding) =>
-        binding.nodeType === nodeType ? updater(binding) : binding,
+    onApplicableNodeTypesChange(
+      applicableNodeTypes.map((entry) =>
+        entry.nodeType === nodeType ? updater(entry) : entry,
       ),
     );
   }
@@ -57,23 +56,23 @@ export function WorkflowNodeBindingsField({
     actionType: string,
     enabled: boolean,
   ) {
-    updateBinding(nodeType, (binding) => {
-      const disabledActions = new Set(binding.disabledActions);
+    updateEntry(nodeType, (entry) => {
+      const disabledActions = new Set(entry.disabledActions);
       if (enabled) {
         disabledActions.delete(actionType);
       } else {
         disabledActions.add(actionType);
       }
       return {
-        ...binding,
+        ...entry,
         disabledActions: [...disabledActions],
       };
     });
   }
 
-  function removeBinding(nodeType: string) {
-    onNodeBindingsChange(
-      nodeBindings.filter((binding) => binding.nodeType !== nodeType),
+  function removeEntry(nodeType: string) {
+    onApplicableNodeTypesChange(
+      applicableNodeTypes.filter((entry) => entry.nodeType !== nodeType),
     );
   }
 
@@ -89,23 +88,23 @@ export function WorkflowNodeBindingsField({
         </div>
 
         <div className="overflow-hidden rounded-lg border bg-card">
-          {nodeBindings.length === 0 ? (
+          {applicableNodeTypes.length === 0 ? (
             <div className="px-3 py-6 text-center text-xs text-muted-foreground">
               No nodes registered yet.
             </div>
           ) : (
             <ul className="divide-y">
-              {nodeBindings.map((binding) => {
-                const entry = nodeCatalog.find(
-                  (node) => node.nodeType === binding.nodeType,
+              {applicableNodeTypes.map((entry) => {
+                const catalogEntry = nodeCatalog.find(
+                  (node) => node.nodeType === entry.nodeType,
                 );
-                const actions = entry
-                  ? resolveActionsForNodeType(entry, actionCatalog)
+                const actions = catalogEntry
+                  ? resolveActionsForNodeType(catalogEntry, actionCatalog)
                   : [];
 
                 return (
                   <li
-                    key={binding.nodeType}
+                    key={entry.nodeType}
                     className="flex items-center gap-3 px-3 py-3"
                   >
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-md border bg-muted/30">
@@ -113,10 +112,10 @@ export function WorkflowNodeBindingsField({
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium">
-                        {entry?.label ?? binding.nodeType}
+                        {catalogEntry?.label ?? entry.nodeType}
                       </span>
                       <span className="block text-xs text-muted-foreground">
-                        {binding.nodeType}
+                        {entry.nodeType}
                       </span>
                     </span>
                     <div className="flex shrink-0 items-center gap-0.5">
@@ -129,13 +128,13 @@ export function WorkflowNodeBindingsField({
                               size="icon-sm"
                               className="size-8 shrink-0"
                               disabled={disabled}
-                              data-testid={`edit-workflow-node-${binding.nodeType}`}
+                              data-testid={`edit-workflow-node-${entry.nodeType}`}
                             />
                           }
                         >
                           <PencilSimpleIcon className="size-4" />
                           <span className="sr-only">
-                            Edit actions for {binding.nodeType}
+                            Edit actions for {entry.nodeType}
                           </span>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-72">
@@ -147,7 +146,7 @@ export function WorkflowNodeBindingsField({
                               </DropdownMenuItem>
                             ) : (
                               actions.map((action) => {
-                                const enabled = !binding.disabledActions.includes(
+                                const enabled = !entry.disabledActions.includes(
                                   action.actionType,
                                 );
                                 return (
@@ -163,10 +162,10 @@ export function WorkflowNodeBindingsField({
                                       checked={enabled}
                                       disabled={disabled}
                                       aria-label={`${action.actionType} enabled`}
-                                      data-testid={`toggle-action-${binding.nodeType}-${action.actionType}`}
+                                      data-testid={`toggle-action-${entry.nodeType}-${action.actionType}`}
                                       onCheckedChange={(checked) =>
                                         setActionEnabled(
-                                          binding.nodeType,
+                                          entry.nodeType,
                                           action.actionType,
                                           checked,
                                         )
@@ -185,12 +184,12 @@ export function WorkflowNodeBindingsField({
                         size="icon-sm"
                         className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
                         disabled={disabled}
-                        data-testid={`delete-workflow-node-${binding.nodeType}`}
-                        onClick={() => removeBinding(binding.nodeType)}
+                        data-testid={`delete-workflow-node-${entry.nodeType}`}
+                        onClick={() => removeEntry(entry.nodeType)}
                       >
                         <TrashIcon className="size-4" />
                         <span className="sr-only">
-                          Remove {binding.nodeType}
+                          Remove {entry.nodeType}
                         </span>
                       </Button>
                     </div>
@@ -219,9 +218,12 @@ export function WorkflowNodeBindingsField({
 
       <input
         type="hidden"
-        name="workflowNodeBindings"
-        value={serializeWorkflowNodeBindings(nodeBindings)}
+        name="applicableNodeTypes"
+        value={serializeApplicableNodeTypes(applicableNodeTypes)}
       />
     </>
   );
 }
+
+/** @deprecated Use WorkflowApplicableNodeTypesField */
+export const WorkflowNodeBindingsField = WorkflowApplicableNodeTypesField;

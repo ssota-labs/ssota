@@ -1,38 +1,36 @@
 import {
-  WorkflowNodeBindingSchema,
+  WorkflowApplicableNodeTypeSchema,
   type ActionCatalogEntry,
   type NodeCatalogEntry,
-  type WorkflowNodeBinding,
+  type WorkflowApplicableNodeType,
 } from "@ssota/contracts";
 import {
   enabledActionTypesForBinding,
   resolveActionsForNodeType,
 } from "@/lib/graph/resolve-node-actions";
 
-export function normalizeNodeBindingsFromWorkflow(
-  nodeBindings: WorkflowNodeBinding[],
-  applicableNodeTypes: string[],
-): WorkflowNodeBinding[] {
-  if (nodeBindings.length > 0) return nodeBindings;
-  return applicableNodeTypes.map((nodeType) => ({
+export function normalizeApplicableNodeTypesFromWorkflow(
+  applicableNodeTypes: WorkflowApplicableNodeType[],
+  legacyApplicableNodeTypeNames: string[],
+): WorkflowApplicableNodeType[] {
+  if (applicableNodeTypes.length > 0) return applicableNodeTypes;
+  return legacyApplicableNodeTypeNames.map((nodeType) => ({
     nodeType,
     disabledActions: [],
   }));
 }
 
 export function syncWorkflowNodeCatalogFields(
-  nodeBindings: WorkflowNodeBinding[],
+  applicableNodeTypes: WorkflowApplicableNodeType[],
   nodeCatalog: NodeCatalogEntry[],
   actionCatalog: ActionCatalogEntry[],
 ): {
-  nodeBindings: WorkflowNodeBinding[];
-  applicableNodeTypes: string[];
+  applicableNodeTypes: WorkflowApplicableNodeType[];
   allowedActions: string[];
 } {
-  const applicableNodeTypes = nodeBindings.map((binding) => binding.nodeType);
   const enabledActions = new Set<string>();
 
-  for (const binding of nodeBindings) {
+  for (const binding of applicableNodeTypes) {
     const entry = nodeCatalog.find((node) => node.nodeType === binding.nodeType);
     if (!entry) continue;
     for (const actionType of enabledActionTypesForBinding(
@@ -45,7 +43,6 @@ export function syncWorkflowNodeCatalogFields(
   }
 
   return {
-    nodeBindings,
     applicableNodeTypes,
     allowedActions: [...enabledActions],
   };
@@ -58,21 +55,21 @@ export function countActionsForNodeType(
   return resolveActionsForNodeType(nodeEntry, actionCatalog).length;
 }
 
-export function serializeWorkflowNodeBindings(
-  nodeBindings: WorkflowNodeBinding[],
+export function serializeApplicableNodeTypes(
+  applicableNodeTypes: WorkflowApplicableNodeType[],
 ): string {
-  return JSON.stringify(nodeBindings);
+  return JSON.stringify(applicableNodeTypes);
 }
 
-export function parseWorkflowNodeBindings(
+export function parseApplicableNodeTypes(
   value: FormDataEntryValue | null,
-): WorkflowNodeBinding[] {
+): WorkflowApplicableNodeType[] {
   const raw = String(value ?? "").trim();
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed.map((entry) => WorkflowNodeBindingSchema.parse(entry));
+    return parsed.map((entry) => WorkflowApplicableNodeTypeSchema.parse(entry));
   } catch {
     return [];
   }

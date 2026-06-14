@@ -83,7 +83,7 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
           !workflow.context.assertions.length ? (
             <p className="text-muted-foreground">
               {workflow.applicableNodeTypes.length
-                ? `Applicable types: ${workflow.applicableNodeTypes.join(", ")}`
+                ? `Applicable types: ${workflow.applicableNodeTypes.map((entry) => entry.nodeType).join(", ")}`
                 : "No structured context yet."}
             </p>
           ) : null}
