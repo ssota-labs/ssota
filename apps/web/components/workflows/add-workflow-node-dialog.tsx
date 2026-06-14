@@ -1,24 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { MagnifyingGlassIcon, TableIcon, XIcon } from "@phosphor-icons/react";
+import { TableIcon } from "@phosphor-icons/react";
 import type { ActionCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogTitle,
 } from "@ssota/ui/components/ui/dialog";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@ssota/ui/components/ui/input-group";
 import { cn } from "@ssota/ui/lib/utils";
 import { countActionsForNodeType } from "@/lib/workflows/workflow-node-bindings";
 import {
   WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS,
   WORKFLOW_CATALOG_DIALOG_GRID_CLASS,
+  WorkflowCatalogDialogFooter,
+  WorkflowCatalogDialogHeader,
 } from "@/components/workflows/workflow-catalog-dialog-shell";
 
 type AddWorkflowNodeDialogProps = {
@@ -159,29 +155,12 @@ export function AddWorkflowNodeDialog({
         showCloseButton={false}
         className={WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS}
       >
-        <div className="flex items-center gap-2 border-b px-3 py-2.5">
-          <DialogTitle className="text-sm font-medium">Add node</DialogTitle>
-          <InputGroup className="ml-auto h-7 max-w-[11rem]">
-            <InputGroupAddon>
-              <MagnifyingGlassIcon className="size-3 shrink-0 opacity-50" />
-            </InputGroupAddon>
-            <InputGroupInput
-              value={query}
-              onChange={(event) => setQuery(event.currentTarget.value)}
-              placeholder="Search"
-            />
-          </InputGroup>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="size-7 shrink-0"
-            onClick={() => handleOpenChange(false)}
-          >
-            <XIcon className="size-3.5" />
-            <span className="sr-only">Close</span>
-          </Button>
-        </div>
+        <WorkflowCatalogDialogHeader
+          title="Add node"
+          query={query}
+          onQueryChange={setQuery}
+          onClose={() => handleOpenChange(false)}
+        />
 
         <div className={WORKFLOW_CATALOG_DIALOG_GRID_CLASS}>
           <nav className="overflow-y-auto border-r bg-muted/10 p-1.5">
@@ -238,7 +217,7 @@ export function AddWorkflowNodeDialog({
           </div>
         </div>
 
-        <div className="flex justify-end border-t px-3 py-2.5">
+        <WorkflowCatalogDialogFooter>
           <Button
             type="button"
             size="sm"
@@ -248,7 +227,7 @@ export function AddWorkflowNodeDialog({
           >
             Add node
           </Button>
-        </div>
+        </WorkflowCatalogDialogFooter>
       </DialogContent>
     </Dialog>
   );
