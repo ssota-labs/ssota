@@ -96,5 +96,6 @@ export function serializeArchetype(archetype: Archetype): WireArchetype {
 export function serializeInstruction(
   instruction: Instruction,
 ): WireInstruction {
-  return { ...instruction };
+  const { projectId: _projectId, ...wire } = instruction;
+  return wire;
 }

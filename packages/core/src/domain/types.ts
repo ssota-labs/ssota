@@ -101,13 +101,15 @@ export interface Instruction {
   id: string;
   projectId: string;
   slug: string;
+  instructionKey: string | null;
   title: string;
   triggerPatterns: string[];
   applicableNodeTypes: string[];
   requiredActions: string[];
   optionalActions: string[];
   lifecycle: LifecycleStatus;
-  body: string;
+  body: string | null;
+  contentUrl: string | null;
   scope: InstructionScope;
   triggers: string[];
   workflowSteps: InstructionWorkflowStep[];
@@ -283,6 +285,7 @@ export interface CatalogPort {
   listInstructions(input?: InstructionListInput): Promise<Instruction[]>;
   getInstruction(instructionId: string): Promise<Instruction | null>;
   getInstructionBySlug(slug: string): Promise<Instruction | null>;
+  getInstructionByKey(instructionKey: string): Promise<Instruction | null>;
 }
 
 export interface ConsolePort {

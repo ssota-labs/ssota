@@ -119,6 +119,7 @@ function mapInstruction(row: typeof schema.instructions.$inferSelect): Instructi
     id: row.id,
     projectId: row.projectId,
     slug: row.slug,
+    instructionKey: row.instructionKey,
     title: row.title,
     triggerPatterns: row.triggerPatterns,
     applicableNodeTypes: row.applicableNodeTypes,
@@ -126,6 +127,7 @@ function mapInstruction(row: typeof schema.instructions.$inferSelect): Instructi
     optionalActions: row.optionalActions,
     lifecycle: row.lifecycle as LifecycleStatus,
     body: row.body,
+    contentUrl: row.contentUrl,
     scope: row.scope as InstructionScope,
     triggers: row.triggers,
     workflowSteps: row.workflowSteps as InstructionWorkflowStep[],
@@ -332,6 +334,7 @@ export function createCatalogPort(db: Db, scope: ActionPortsScope): CatalogPort 
             or(
               sql`lower(${schema.instructions.title}) like ${pattern}`,
               sql`lower(${schema.instructions.body}) like ${pattern}`,
+              sql`lower(${schema.instructions.instructionKey}) like ${pattern}`,
             ),
             nodeType
               ? sql`${schema.instructions.applicableNodeTypes} @> ${JSON.stringify([nodeType])}::jsonb`
@@ -376,6 +379,22 @@ export function createCatalogPort(db: Db, scope: ActionPortsScope): CatalogPort 
           and(
             eq(schema.instructions.projectId, projectId),
             eq(schema.instructions.slug, slug),
+          ),
+        )
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return mapInstruction(row);
+    },
+
+    async getInstructionByKey(instructionKey) {
+      const rows = await db
+        .select()
+        .from(schema.instructions)
+        .where(
+          and(
+            eq(schema.instructions.projectId, projectId),
+            eq(schema.instructions.instructionKey, instructionKey),
           ),
         )
         .limit(1);
@@ -874,12 +893,14 @@ async function applyEffect(
         .update(schema.instructions)
         .set({
           title: effect.entry.title,
+          instructionKey: effect.entry.instructionKey ?? null,
           triggerPatterns: effect.entry.triggerPatterns,
           applicableNodeTypes: effect.entry.applicableNodeTypes,
           requiredActions: effect.entry.requiredActions,
           optionalActions: effect.entry.optionalActions,
           lifecycle: effect.entry.lifecycle,
-          body: effect.entry.body,
+          body: effect.entry.body ?? null,
+          contentUrl: effect.entry.contentUrl ?? null,
           scope: effect.entry.scope,
           triggers: effect.entry.triggers,
           workflowSteps: effect.entry.workflowSteps,
@@ -899,13 +920,15 @@ async function applyEffect(
       await tx.insert(schema.instructions).values({
         projectId,
         slug,
+        instructionKey: effect.entry.instructionKey ?? null,
         title: effect.entry.title,
         triggerPatterns: effect.entry.triggerPatterns,
         applicableNodeTypes: effect.entry.applicableNodeTypes,
         requiredActions: effect.entry.requiredActions,
         optionalActions: effect.entry.optionalActions,
         lifecycle: effect.entry.lifecycle,
-        body: effect.entry.body,
+        body: effect.entry.body ?? null,
+        contentUrl: effect.entry.contentUrl ?? null,
         scope: effect.entry.scope,
         triggers: effect.entry.triggers,
         workflowSteps: effect.entry.workflowSteps,

@@ -154,6 +154,10 @@ export function mergeUpdateInstructionInput(
   return {
     definition: {
       instructionId,
+      instructionKey:
+        patch.instructionKey !== undefined
+          ? (patch.instructionKey as string | null)
+          : existing.instructionKey,
       title: (patch.title as string | undefined) ?? existing.title,
       triggerPatterns:
         (patch.triggerPatterns as string[] | undefined) ??
@@ -170,7 +174,14 @@ export function mergeUpdateInstructionInput(
       lifecycle:
         (patch.lifecycle as Instruction["lifecycle"] | undefined) ??
         existing.lifecycle,
-      body: (patch.body as string | undefined) ?? existing.body,
+      body:
+        patch.body !== undefined
+          ? (patch.body as string | null)
+          : existing.body,
+      contentUrl:
+        patch.contentUrl !== undefined
+          ? (patch.contentUrl as string | null)
+          : existing.contentUrl,
       scope:
         (patch.scope as Instruction["scope"] | undefined) ?? existing.scope,
       triggers:

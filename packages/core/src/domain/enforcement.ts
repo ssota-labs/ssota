@@ -308,13 +308,15 @@ export function resolveEffects(
     } else if (template.kind === "upsert_instruction_catalog_entry") {
       const definition = input.definition as {
         instructionId?: string;
+        instructionKey?: string;
         title: string;
         triggerPatterns: string[];
         applicableNodeTypes: string[];
         requiredActions: string[];
         optionalActions: string[];
         lifecycle: LifecycleStatus;
-        body: string;
+        body?: string | null;
+        contentUrl?: string | null;
         scope?: import("@ssota/contracts").InstructionScope;
         triggers?: string[];
         workflowSteps?: import("@ssota/contracts").InstructionWorkflowStep[];
@@ -323,10 +325,20 @@ export function resolveEffects(
         gatePolicy?: Record<string, unknown>;
         completionCriteria?: string | null;
       };
+      const hasBody = (definition.body?.trim().length ?? 0) > 0;
+      const hasContentUrl = (definition.contentUrl?.trim().length ?? 0) > 0;
+      if (!hasBody && !hasContentUrl) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          "Instruction requires at least one of body or contentUrl",
+        );
+      }
       effects.push({
         kind: "upsert_instruction_catalog_entry",
         entry: {
           ...definition,
+          body: hasBody ? definition.body!.trim() : null,
+          contentUrl: hasContentUrl ? definition.contentUrl!.trim() : null,
           scope: definition.scope ?? { kind: "global" },
           triggers: definition.triggers ?? [],
           workflowSteps: definition.workflowSteps ?? [],
@@ -695,6 +707,9 @@ export async function enforceCatalogMutationIntegrity(
       edgeType: string,
     ) => Promise<import("./types.js").EdgeCatalogEntry | null>;
     getInstruction?: (instructionId: string) => Promise<import("./types.js").Instruction | null>;
+    getInstructionByKey?: (
+      instructionKey: string,
+    ) => Promise<import("./types.js").Instruction | null>;
     hasNodesOfType?: (nodeType: string) => Promise<boolean>;
     hasEdgesOfType?: (edgeType: string) => Promise<boolean>;
   },
@@ -907,6 +922,25 @@ export async function enforceCatalogMutationIntegrity(
     }
 
     if (effect.kind === "upsert_instruction_catalog_entry") {
+      const hasBody = (effect.entry.body?.trim().length ?? 0) > 0;
+      const hasContentUrl = (effect.entry.contentUrl?.trim().length ?? 0) > 0;
+      if (!hasBody && !hasContentUrl) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          "Instruction requires at least one of body or contentUrl",
+        );
+      }
+      if (effect.entry.instructionKey) {
+        const byKey = await catalog.getInstructionByKey?.(
+          effect.entry.instructionKey,
+        );
+        if (byKey && byKey.id !== effect.entry.instructionId) {
+          throw new ActionRejectedError(
+            "DUPLICATE_INSTRUCTION_KEY",
+            `Instruction key '${effect.entry.instructionKey}' already exists`,
+          );
+        }
+      }
       if (effect.entry.instructionId) {
         const existing = await catalog.getInstruction?.(effect.entry.instructionId);
         if (actionType === "update_instruction" && !existing) {

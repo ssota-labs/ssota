@@ -43,7 +43,10 @@ export default async function InstructionsPage() {
                   triggers: {entry.triggerPatterns.join(", ")}
                 </p>
               </CardHeader>
-              <CardContent className="pt-0 text-sm">{entry.body}</CardContent>
+              <CardContent className="pt-0 text-sm">
+                {entry.body ??
+                  (entry.contentUrl ? `External: ${entry.contentUrl}` : "—")}
+              </CardContent>
             </Card>
           ))}
         </div>

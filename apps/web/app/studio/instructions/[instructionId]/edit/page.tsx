@@ -38,7 +38,18 @@ export default async function EditInstructionPage({
       instructionId,
       patch: {
         title: String(formData.get("title") ?? entry!.title),
-        body: String(formData.get("body") ?? entry!.body),
+        body:
+          formData.has("body")
+            ? String(formData.get("body") ?? "").trim() || null
+            : entry!.body,
+        contentUrl:
+          formData.has("contentUrl")
+            ? String(formData.get("contentUrl") ?? "").trim() || null
+            : entry!.contentUrl,
+        instructionKey:
+          formData.has("instructionKey")
+            ? String(formData.get("instructionKey") ?? "").trim() || null
+            : entry!.instructionKey,
       },
     });
   }
@@ -63,8 +74,30 @@ export default async function EditInstructionPage({
               <Input id="title" name="title" defaultValue={entry.title} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="body">Body</Label>
-              <Textarea id="body" name="body" defaultValue={entry.body} rows={6} />
+              <Label htmlFor="instructionKey">Instruction key</Label>
+              <Input
+                id="instructionKey"
+                name="instructionKey"
+                defaultValue={entry.instructionKey ?? ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contentUrl">External runbook URL</Label>
+              <Input
+                id="contentUrl"
+                name="contentUrl"
+                type="url"
+                defaultValue={entry.contentUrl ?? ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="body">Inline body</Label>
+              <Textarea
+                id="body"
+                name="body"
+                defaultValue={entry.body ?? ""}
+                rows={6}
+              />
             </div>
             <Button type="submit">update_instruction 실행</Button>
           </form>

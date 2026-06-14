@@ -295,6 +295,44 @@ describe("adapter-supabase integration", () => {
   );
 
   it(
+    "define_instruction contentUrl + instructionKey round-trip",
+    async () => {
+      const instructionKey = `ext_runbook_${Date.now()}`;
+      const contentUrl = "https://example.com/runbooks/test";
+      const result = await executeAction(ports, {
+        actionType: "define_instruction",
+        input: {
+          definition: {
+            title: `External workflow ${Date.now()}`,
+            instructionKey,
+            triggerPatterns: ["manual"],
+            applicableNodeTypes: [],
+            requiredActions: ["create_node"],
+            optionalActions: [],
+            lifecycle: "Active",
+            contentUrl,
+            scope: { kind: "global" },
+            triggers: [],
+            workflowSteps: [],
+            allowedActions: ["create_node"],
+            outputContract: {},
+            gatePolicy: {},
+            completionCriteria: null,
+          },
+        },
+        executorId: smokeUserId,
+        executorType: "Human",
+        projectId,
+      });
+
+      expect(result.status).toBe("committed");
+      const byKey = await ports.catalog.getInstructionByKey(instructionKey);
+      expect(byKey?.contentUrl).toBe(contentUrl);
+      expect(byKey?.body).toBeNull();
+    },
+  );
+
+  it(
     "define_node_type Agent 커밋 + catalog 반영",
     async () => {
       const nodeType = `AgentType_${Date.now()}`;

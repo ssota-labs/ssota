@@ -474,9 +474,7 @@ export async function attachInstructionRunbookFormAction(formData: FormData) {
     projectId,
     instructionId,
     patch: {
-      outputContract: {
-        notion_instruction_url: runbookUrl,
-      },
+      contentUrl: runbookUrl,
     },
   });
 }
@@ -701,9 +699,13 @@ export async function defineWorkflowInstructionFormAction(formData: FormData): P
       ? { kind: "node_type" as const, nodeType: scopedNodeType }
       : { kind: "global" as const };
   const applicableNodeTypes = parseCsv(formData.get("applicableNodeTypes"));
+  const body = String(formData.get("body") ?? "").trim();
+  const contentUrl = String(formData.get("contentUrl") ?? "").trim();
+  const instructionKey = String(formData.get("instructionKey") ?? "").trim();
   await defineInstructionAction({
     definition: {
       title: String(formData.get("title") ?? ""),
+      ...(instructionKey ? { instructionKey } : {}),
       triggerPatterns: triggerPatterns.length ? triggerPatterns : ["manual"],
       applicableNodeTypes:
         applicableNodeTypes.length || !scopedNodeType
@@ -712,7 +714,8 @@ export async function defineWorkflowInstructionFormAction(formData: FormData): P
       requiredActions: parseCsv(formData.get("requiredActions")),
       optionalActions: parseCsv(formData.get("optionalActions")),
       lifecycle: "Active",
-      body: String(formData.get("body") ?? ""),
+      ...(body ? { body } : {}),
+      ...(contentUrl ? { contentUrl } : {}),
       scope,
       triggers: parseCsv(formData.get("triggers")),
       workflowSteps: parseJsonArray(formData.get("workflowSteps")),

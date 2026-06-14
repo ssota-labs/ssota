@@ -177,14 +177,19 @@ export function registerProjectTools(server: McpToolServer) {
     "get_instruction",
     {
       title: "Get Instruction",
-      description: "Fetch one domain instruction by instructionId",
-      inputSchema: { instructionId: z.string().uuid() },
+      description:
+        "Fetch one domain instruction by instructionId or stable instructionKey",
+      inputSchema: {
+        instructionId: z.string().uuid().optional(),
+        instructionKey: z
+          .string()
+          .regex(/^[a-z][a-z0-9_]*$/)
+          .optional(),
+      },
     },
     async ({ projectId, args }) => {
       const parsed = GetInstructionInputSchema.parse(args);
-      return jsonContent(
-        await getInstruction(projectId, parsed.instructionId),
-      );
+      return jsonContent(await getInstruction(projectId, parsed));
     },
   );
 
