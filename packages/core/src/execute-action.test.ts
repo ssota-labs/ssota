@@ -591,33 +591,26 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
     }
   });
 
-  it("거부: instruction workflow가 없는 action을 참조", async () => {
+  it("거부: workflow가 없는 action을 참조", async () => {
     const state = createInMemoryState();
     seedTestCatalog(state);
-    state.actionCatalog.set("define_instruction", {
-      actionType: "define_instruction",
-      slug: "define_instruction",
-      label: "Define Instruction",
+    state.actionCatalog.set("define_workflow", {
+      actionType: "define_workflow",
+      slug: "define_workflow",
+      label: "Define Workflow",
       scope: { kind: "global" },
       preconditions: { requiredFields: ["definition"] },
       effects: [
         {
-          kind: "upsert_instruction_catalog_entry",
+          kind: "upsert_workflow_catalog_entry",
           entry: {
-            title: "",
-            triggerPatterns: ["manual"],
-            applicableNodeTypes: [],
-            requiredActions: [],
-            optionalActions: [],
             lifecycle: "Active",
-            body: "",
             scope: { kind: "global" },
-            triggers: [],
-            workflowSteps: [],
-            allowedActions: [],
-            outputContract: {},
-            gatePolicy: {},
-            completionCriteria: null,
+            spec: {
+              title: "",
+              trigger: { patterns: [], events: [] },
+              steps: [{ id: "execute", title: "", mode: "agentic", actions: [] }],
+            },
           },
         },
       ],
@@ -630,20 +623,20 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
     const ports = createInMemoryPorts(state);
 
     const result = await executeAction(ports, {
-      actionType: "define_instruction",
+      actionType: "define_workflow",
       input: {
         definition: {
           title: "Broken workflow",
-          triggerPatterns: ["manual"],
-          applicableNodeTypes: [],
-          requiredActions: [],
-          optionalActions: [],
-          lifecycle: "Active",
-          body: "This references a missing action.",
-          scope: { kind: "global" },
-          workflowSteps: [
-            { id: "step1", title: "Step 1", actionRefs: ["missing_action"] },
+          trigger: { patterns: ["manual"], events: [] },
+          steps: [
+            {
+              id: "step1",
+              title: "Step 1",
+              mode: "agentic",
+              actions: [{ actionType: "missing_action", required: false }],
+            },
           ],
+          agentNotes: "This references a missing action.",
         },
       },
       executorId: "human-1",

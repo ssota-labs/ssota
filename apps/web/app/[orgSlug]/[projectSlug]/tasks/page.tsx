@@ -43,7 +43,7 @@ export default async function TasksPage({
       status: stringValue(properties.status) || node.lifecycleStatus,
       assignee: stringValue(properties.assignee) || "Unassigned",
       workflowType: stringValue(properties.workflow_type),
-      instructionKey: stringValue(properties.instruction_key),
+      workflowKey: stringValue(properties.workflow_key),
       targetNodeId: stringValue(properties.target_node_id),
       acceptanceCriteria: arrayValue(properties.acceptance_criteria),
       notionUrl:

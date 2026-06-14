@@ -18,14 +18,14 @@ export default async function WorkflowDetailRedirect({
   const { tab } = await searchParams;
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
-  const instruction = isUuid(workflowId)
-    ? ((await ports.catalog.getInstruction(workflowId)) ??
-      (await ports.catalog.getInstructionBySlug(workflowId)))
-    : await ports.catalog.getInstructionBySlug(workflowId);
+  const workflow = isUuid(workflowId)
+    ? ((await ports.catalog.getWorkflow(workflowId)) ??
+      (await ports.catalog.getWorkflowBySlug(workflowId)))
+    : await ports.catalog.getWorkflowBySlug(workflowId);
 
   const query = new URLSearchParams();
-  if (instruction) {
-    query.set("workflow", instruction.slug);
+  if (workflow) {
+    query.set("workflow", workflow.slug);
   } else {
     query.set("workflow", workflowId);
   }

@@ -4,7 +4,7 @@ import { createCatalogApi } from "./namespaces/catalog.js";
 import { createEdgesApi } from "./namespaces/edges.js";
 import { createGatesApi } from "./namespaces/gates.js";
 import { createGraphApi } from "./namespaces/graph.js";
-import { createInstructionsApi } from "./namespaces/instructions.js";
+import { createWorkflowsApi } from "./namespaces/workflows.js";
 import { createLogApi } from "./namespaces/log.js";
 import { createNodesApi } from "./namespaces/nodes.js";
 
@@ -27,7 +27,7 @@ export interface SsotaClient {
   nodes: ReturnType<typeof createNodesApi>;
   edges: ReturnType<typeof createEdgesApi>;
   graph: ReturnType<typeof createGraphApi>;
-  instructions: ReturnType<typeof createInstructionsApi>;
+  workflows: ReturnType<typeof createWorkflowsApi>;
   actions: ReturnType<typeof createActionsApi>;
   gates: ReturnType<typeof createGatesApi>;
   log: ReturnType<typeof createLogApi>;
@@ -57,7 +57,7 @@ export function createClient(options: SsotaClientOptions): SsotaClient {
     nodes: createNodesApi(http),
     edges: createEdgesApi(http),
     graph: createGraphApi(http),
-    instructions: createInstructionsApi(http),
+    workflows: createWorkflowsApi(http),
     actions: createActionsApi(http),
     gates: createGatesApi(http),
     log: createLogApi(http),

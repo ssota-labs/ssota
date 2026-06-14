@@ -251,73 +251,34 @@ describe("adapter-supabase integration", () => {
   );
 
   it(
-    "define_instruction workflow fields round-trip",
+    "define_workflow workflow fields round-trip",
     async () => {
       const title = `Workflow ${Date.now()}`;
       const result = await executeAction(ports, {
-        actionType: "define_instruction",
+        actionType: "define_workflow",
         input: {
           definition: {
             title,
-            triggerPatterns: ["manual"],
+            lifecycle: "Active",
+            scope: { kind: "node_type", nodeType: "Document" },
+            trigger: { patterns: ["manual"], events: ["task_assigned"] },
             applicableNodeTypes: ["Document"],
             requiredActions: ["create_node"],
             optionalActions: ["promote_document"],
-            lifecycle: "Active",
-            body: "Gather context, create a document, and report the result.",
-            scope: { kind: "node_type", nodeType: "Document" },
-            triggers: ["task_assigned"],
-            workflowSteps: [
+            allowedActions: ["create_node", "promote_document"],
+            steps: [
               {
                 id: "gather_context",
                 title: "Gather context",
-                actionRefs: ["create_node"],
+                mode: "agentic",
+                actions: [{ actionType: "create_node", required: false }],
               },
             ],
-            allowedActions: ["create_node", "promote_document"],
-            outputContract: { format: "markdown" },
-            gatePolicy: { catalogChanges: "always" },
-            completionCriteria: "Document draft exists",
-          },
-        },
-        executorId: smokeUserId,
-      executorType: "Human",
-      projectId,
-    });
-
-      expect(result.status).toBe("committed");
-      const instructions = await ports.catalog.listInstructions({ limit: 100 });
-      const created = instructions.find((instruction) => instruction.title === title);
-      expect(created?.scope).toEqual({ kind: "node_type", nodeType: "Document" });
-      expect(created?.workflowSteps[0]?.id).toBe("gather_context");
-      expect(created?.allowedActions).toContain("create_node");
-    },
-  );
-
-  it(
-    "define_instruction contentUrl + instructionKey round-trip",
-    async () => {
-      const instructionKey = `ext_runbook_${Date.now()}`;
-      const contentUrl = "https://example.com/runbooks/test";
-      const result = await executeAction(ports, {
-        actionType: "define_instruction",
-        input: {
-          definition: {
-            title: `External workflow ${Date.now()}`,
-            instructionKey,
-            triggerPatterns: ["manual"],
-            applicableNodeTypes: [],
-            requiredActions: ["create_node"],
-            optionalActions: [],
-            lifecycle: "Active",
-            contentUrl,
-            scope: { kind: "global" },
-            triggers: [],
-            workflowSteps: [],
-            allowedActions: ["create_node"],
-            outputContract: {},
-            gatePolicy: {},
-            completionCriteria: null,
+            output: {
+              contract: { format: "markdown" },
+              completionCriteria: "Document draft exists",
+            },
+            agentNotes: "Gather context, create a document, and report the result.",
           },
         },
         executorId: smokeUserId,
@@ -326,9 +287,50 @@ describe("adapter-supabase integration", () => {
       });
 
       expect(result.status).toBe("committed");
-      const byKey = await ports.catalog.getInstructionByKey(instructionKey);
-      expect(byKey?.contentUrl).toBe(contentUrl);
-      expect(byKey?.body).toBeNull();
+      const workflows = await ports.catalog.listWorkflows({ limit: 100 });
+      const created = workflows.find((entry) => entry.spec.title === title);
+      expect(created?.scope).toEqual({ kind: "node_type", nodeType: "Document" });
+      expect(created?.spec.steps[0]?.id).toBe("gather_context");
+      expect(created?.spec.allowedActions).toContain("create_node");
+    },
+  );
+
+  it(
+    "define_workflow contentUrl + workflowKey round-trip",
+    async () => {
+      const workflowKey = `ext_runbook_${Date.now()}`;
+      const contentUrl = "https://example.com/runbooks/test";
+      const result = await executeAction(ports, {
+        actionType: "define_workflow",
+        input: {
+          definition: {
+            title: `External workflow ${Date.now()}`,
+            workflowKey,
+            lifecycle: "Active",
+            scope: { kind: "global" },
+            trigger: { patterns: ["manual"], events: [] },
+            applicableNodeTypes: [],
+            requiredActions: ["create_node"],
+            optionalActions: [],
+            allowedActions: ["create_node"],
+            steps: [{ id: "execute", title: "Execute", mode: "agentic", actions: [] }],
+            output: { contract: {} },
+            references: [
+              { id: "runbook", title: "Runbook", kind: "url", url: contentUrl },
+            ],
+          },
+        },
+        executorId: smokeUserId,
+        executorType: "Human",
+        projectId,
+      });
+
+      expect(result.status).toBe("committed");
+      const byKey = await ports.catalog.getWorkflowByKey(workflowKey);
+      expect(
+        byKey?.spec.references.find((ref) => ref.kind === "url")?.url,
+      ).toBe(contentUrl);
+      expect(byKey?.spec.agentNotes ?? null).toBeNull();
     },
   );
 
@@ -427,9 +429,9 @@ describe("adapter-supabase integration", () => {
     });
     expect(link.status).toBe("committed");
 
-    const instructions = await ports.catalog.findInstructions("homepage", undefined, 5);
+    const workflows = await ports.catalog.findWorkflows("homepage", undefined, 5);
     expect(
-      instructions.some((i) => i.title === "Homepage creation workflow"),
+      workflows.some((entry) => entry.spec.title === "Homepage creation workflow"),
     ).toBe(true);
   });
 });

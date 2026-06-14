@@ -36,11 +36,11 @@ export default async function ProjectHomePage({
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
 
-  const [nodes, edges, actions, instructions, gates, logs] = await Promise.all([
+  const [nodes, edges, actions, workflows, gates, logs] = await Promise.all([
     getCachedNodeCatalog(project.id),
     getCachedEdgeCatalog(project.id),
     getCachedActionCatalog(project.id),
-    ports.catalog.listInstructions({ limit: 100 }),
+    ports.catalog.listWorkflows({ limit: 100 }),
     ports.gate.listPendingGates(),
     ports.commit.getActionLog({ limit: 8 }),
   ]);
@@ -48,7 +48,7 @@ export default async function ProjectHomePage({
   const workflowHref = projectPath(ctx, "workflow");
   const reviewsHref = `${workflowHref}?tab=reviews`;
   const runsHref = `${workflowHref}?tab=runs`;
-  const hasWorkflow = instructions.length > 0;
+  const hasWorkflow = workflows.length > 0;
   const hasGraphShape = nodes.length > 0 && actions.length > 0;
   const hasRunHistory = logs.length > 0;
   const startSteps: StartStep[] = [
@@ -97,9 +97,9 @@ export default async function ProjectHomePage({
   const cards = [
     {
       title: "Workflows",
-      description: "Structured workflow builder and agent instruction renderer",
+      description: "Structured workflow builder and agent package renderer",
       href: workflowHref,
-      count: instructions.length,
+      count: workflows.length,
     },
     {
       title: "Graph",

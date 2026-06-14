@@ -1,13 +1,13 @@
 import {
   ExecuteActionClientInputSchema,
   ExecuteActionInputSchema,
-  FindInstructionInputSchema,
+  FindWorkflowInputSchema,
   GetActionLogEntryInputSchema,
   GetActionLogInputSchema,
   GetArchetypeInputSchema,
   GetEdgeTypeInputSchema,
   GetGateInputSchema,
-  GetInstructionInputSchema,
+  GetWorkflowInputSchema,
   GetNodeInputSchema,
   GetNodeTypeInputSchema,
   QueryGatesInputSchema,
@@ -27,8 +27,8 @@ import {
   serializeEdge,
   serializeEdgeCatalogEntry,
   serializeGate,
-  serializeInstruction,
-  serializeInstructionPackage,
+  serializeWorkflow,
+  serializeWorkflowPackage,
   serializeNode,
   serializeNodeCatalogEntry,
 } from "@ssota/core";
@@ -84,17 +84,17 @@ export async function getNode(projectId: string, nodeId: string) {
   return node ? serializeNode(node) : null;
 }
 
-export async function getInstruction(
+export async function getWorkflow(
   projectId: string,
-  input: ReturnType<typeof GetInstructionInputSchema.parse>,
+  input: ReturnType<typeof GetWorkflowInputSchema.parse>,
 ) {
   const ports = getActionPorts(projectId);
-  const instruction = input.instructionId
-    ? await ports.catalog.getInstruction(input.instructionId)
-    : input.instructionKey
-      ? await ports.catalog.getInstructionByKey(input.instructionKey)
+  const workflow = input.workflowId
+    ? await ports.catalog.getWorkflow(input.workflowId)
+    : input.workflowKey
+      ? await ports.catalog.getWorkflowByKey(input.workflowKey)
       : null;
-  return instruction ? serializeInstructionPackage(instruction) : null;
+  return workflow ? serializeWorkflowPackage(workflow) : null;
 }
 
 export async function getGate(projectId: string, gateId: string) {
@@ -202,17 +202,17 @@ export async function traverseGraphService(
   };
 }
 
-export async function findInstructions(
+export async function findWorkflows(
   projectId: string,
-  params: ReturnType<typeof FindInstructionInputSchema.parse>,
+  params: ReturnType<typeof FindWorkflowInputSchema.parse>,
 ) {
   const ports = getActionPorts(projectId);
-  const instructions = await ports.catalog.findInstructions(
+  const workflows = await ports.catalog.findWorkflows(
     params.query,
     params.nodeType,
     params.limit,
   );
-  return instructions.map(serializeInstruction);
+  return workflows.map(serializeWorkflow);
 }
 
 export function toExecuteActionInput(

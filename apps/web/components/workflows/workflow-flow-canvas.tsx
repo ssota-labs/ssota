@@ -1,7 +1,7 @@
 "use client";
 
-import { buildWorkflowInstructionPackage } from "@ssota/core";
-import type { Instruction } from "@ssota/core";
+import { buildWorkflowPackage } from "@ssota/core";
+import type { Workflow as DomainWorkflow } from "@ssota/core";
 import type { Workflow } from "@ssota/contracts";
 import {
   GraphFlowCanvas,
@@ -22,17 +22,17 @@ export type WorkflowStepView = {
 /** Read-only linear diagram — prefer WorkflowVisualBuilder for interactive editing. */
 export function WorkflowFlowCanvas({
   steps,
-  instruction,
-  workflow,
+  workflow: domainWorkflow,
+  wireWorkflow,
 }: {
   steps?: WorkflowStepView[];
-  instruction?: Instruction;
-  workflow?: Workflow;
+  workflow?: DomainWorkflow;
+  wireWorkflow?: Workflow;
 }) {
-  if (workflow || instruction) {
-    const pkg = workflow
-      ? { workflow, renderedText: "" }
-      : buildWorkflowInstructionPackage(instruction!);
+  if (wireWorkflow || domainWorkflow) {
+    const pkg = wireWorkflow
+      ? { workflow: wireWorkflow, renderedText: "" }
+      : buildWorkflowPackage(domainWorkflow!);
     const { nodes, edges } = workflowToFlowGraph(pkg.workflow);
     const graphNodes: GraphFlowNode[] = nodes.map((node) => ({
       ...node,
@@ -54,8 +54,8 @@ export function WorkflowFlowCanvas({
                   : node.data.kind === "route"
                     ? "workflow"
                     : node.data.kind === "trigger" || node.data.kind === "context"
-                  ? "workflow"
-                  : node.data.kind,
+                      ? "workflow"
+                      : node.data.kind,
         layoutWidth: node.data.layoutWidth,
       },
     }));
@@ -73,8 +73,8 @@ export function WorkflowFlowCanvas({
       ? steps
       : [
           {
-            id: "instruction",
-            title: "Natural language instruction",
+            id: "workflow_text",
+            title: "Natural language workflow",
             description: "This workflow is defined as guidance only.",
             actionRefs: [],
             gate: false,

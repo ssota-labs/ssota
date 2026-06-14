@@ -4,7 +4,7 @@ import { getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
 test.describe("MCP read tools", () => {
-  test("discover, fetch, and query domain instructions", async ({ request }) => {
+  test("discover, fetch, and query domain workflows", async ({ request }) => {
     const token = await getSmokeAccessToken();
 
     const contracts = (await mcpToolCall(
@@ -31,20 +31,20 @@ test.describe("MCP read tools", () => {
     expect(nodeType?.nodeType).toBe("Document");
     expect(nodeType?.propertySchema?.title).toBeTruthy();
 
-    const found = (await mcpToolCall(request, mcpUrl, token, "find_instruction", {
+    const found = (await mcpToolCall(request, mcpUrl, token, "find_workflow", {
       query: "document creation",
       limit: 3,
     })) as Array<{ id: string; title: string }>;
     expect(found.length).toBeGreaterThan(0);
 
-    const instruction = (await mcpToolCall(
+    const workflow = (await mcpToolCall(
       request,
       mcpUrl,
       token,
-      "get_instruction",
-      { instructionId: found[0]!.id },
+      "get_workflow",
+      { workflowId: found[0]!.id },
     )) as { id: string; title: string } | null;
-    expect(instruction?.id).toBe(found[0]!.id);
-    expect(instruction?.title).toBeTruthy();
+    expect(workflow?.id).toBe(found[0]!.id);
+    expect(workflow?.title).toBeTruthy();
   });
 });

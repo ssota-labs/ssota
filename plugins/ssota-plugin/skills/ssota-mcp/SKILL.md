@@ -15,7 +15,7 @@ Before any SSOTA write:
 
 1. Classify the user request (see §1).
 2. Gather graph context if needed (`query_nodes`, `get_node`, `query_neighbors`, `traverse_graph`).
-3. Find and **fetch** the domain instruction (`find_instruction` → `get_instruction`).
+3. Find and **fetch** the domain instruction (`find_workflow` → `get_workflow`).
 4. Fetch the action contract (`get_action_contract`).
 5. Confirm `preconditions`, `executor`, and `effects`.
 6. Execute only through `execute_action`.
@@ -36,7 +36,7 @@ Classify every request into one primary intent before searching instructions:
 | **verify** | Check gates, lifecycle, archetype compliance |
 | **audit** | Trace provenance, action log, who changed what |
 
-Use `references/routing.md` to map intent → `find_instruction` search terms.
+Use `references/routing.md` to map intent → `find_workflow` search terms.
 
 ## 2. Context assembly
 
@@ -54,8 +54,8 @@ Use `list_*` only as catalog **index**. Fetch details with `get_*`.
 
 SSOTA instructions are **domain recipes**, not this root protocol.
 
-1. `find_instruction` with terms from `references/routing.md`
-2. `get_instruction(instructionId)` or `get_instruction(instructionKey)` for the full recipe
+1. `find_workflow` with terms from `references/routing.md`
+2. `get_workflow(workflowId)` or `get_workflow(workflowKey)` for the full recipe
 3. Follow `workflowSteps`, `requiredActions`, `allowedActions`, `gatePolicy`
 4. If `contentUrl` is set, fetch the external runbook (Notion page) for progressive disclosure — the graph stores the contract; the URL carries the editable steward playbook
 5. If no suitable instruction exists, **do not improvise** — propose defining one
@@ -87,7 +87,7 @@ See `references/result-handling.md`.
 Before responding:
 
 - [ ] Classified intent?
-- [ ] Loaded domain instruction via `get_instruction`?
+- [ ] Loaded domain instruction via `get_workflow`?
 - [ ] Loaded action contract via `get_action_contract`?
 - [ ] Checked preconditions and executor?
 - [ ] Verified `committed` / `gated` / `rejected` — not assumed?

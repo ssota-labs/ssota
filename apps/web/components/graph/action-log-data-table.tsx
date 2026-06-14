@@ -10,7 +10,7 @@ export type ActionLogRow = {
   createdAt: string;
   actionType: string;
   scope: string;
-  instruction: string;
+  workflow: string;
   outcome: string;
   executorType: string;
 };
@@ -47,12 +47,12 @@ export function ActionLogDataTable({
       ),
     },
     {
-      accessorKey: "instruction",
+      accessorKey: "workflow",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="workflow" />
       ),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">{row.original.instruction}</span>
+        <span className="text-muted-foreground">{row.original.workflow}</span>
       ),
     },
     {

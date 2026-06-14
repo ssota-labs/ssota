@@ -12,7 +12,7 @@ export const HOMEPAGE_AGENT = {
     "create_page_section",
     "link_homepage_contains",
   ] as const,
-  instructionTitle: "Homepage creation workflow",
+  workflowTitle: "Homepage creation workflow",
 } as const;
 
 export type HomepageAgentNodeType = (typeof HOMEPAGE_AGENT.nodeTypes)[number];

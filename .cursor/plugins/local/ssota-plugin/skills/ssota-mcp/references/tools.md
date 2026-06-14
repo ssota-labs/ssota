@@ -36,7 +36,7 @@ Catalog or queue **index only**. Requires `orgSlug` + `projectSlug`.
 Single entity by primary key. Requires `orgSlug` + `projectSlug`.
 
 - `get_node` — `nodeId`
-- `get_instruction` — `instructionId`
+- `get_workflow` — `workflowId`
 - `get_gate` — `gateId`
 - `get_node_type` — `nodeType` (property fields live in `propertySchema`)
 - `get_edge_type` — `edgeType`
@@ -52,7 +52,7 @@ Requires `orgSlug` + `projectSlug`.
 - `query_neighbors` — 1-hop edges + neighbor nodes
 - `traverse_graph` — multi-hop from `startNodeId`
 - `traverse_edges` — raw 1-hop edges only
-- `find_instruction` — text search for domain instructions
+- `find_workflow` — text search for domain instructions
 - `get_action_log` — filtered log list
 - `query_gates` — optional `status` filter
 
@@ -89,8 +89,8 @@ Verify important writes through the action log.
 
 ```txt
 list_projects
-find_instruction          { orgSlug, projectSlug, query }
-get_instruction           { orgSlug, projectSlug, instructionId }
+find_workflow          { orgSlug, projectSlug, query }
+get_workflow           { orgSlug, projectSlug, workflowId }
 get_action_contract       { orgSlug, projectSlug, actionType }
 query_nodes / get_node    { orgSlug, projectSlug, ... }
 execute_action            { orgSlug, projectSlug, actionType, input }

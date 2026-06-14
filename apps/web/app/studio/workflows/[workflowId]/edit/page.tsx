@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  deprecateInstructionAction,
-  updateInstructionAction,
+  deprecateWorkflowAction,
+  updateWorkflowAction,
 } from "@/app/actions";
 import { PageHeader } from "@/components/studio/page-header";
 import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
@@ -18,51 +18,56 @@ import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 
-export default async function EditInstructionPage({
+export default async function EditWorkflowPage({
   params,
 }: {
-  params: Promise<{ instructionId: string }>;
+  params: Promise<{ workflowId: string }>;
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const { instructionId } = await params;
+  const { workflowId } = await params;
   const projectId = await resolveDefaultProjectId();
   const ports = getActionPorts(projectId);
-  const entry = await ports.catalog.getInstruction(instructionId);
-  if (!entry) redirect("/studio/instructions");
+  const entry = await ports.catalog.getWorkflow(workflowId);
+  if (!entry) redirect("/studio/workflows");
+
+  const runbookUrl =
+    entry.spec.references.find((ref) => ref.kind === "url")?.url ?? "";
 
   async function updateAction(formData: FormData) {
     "use server";
-    await updateInstructionAction({
-      instructionId,
+    const title = String(formData.get("title") ?? entry!.spec.title);
+    const body = String(formData.get("body") ?? "").trim();
+    const contentUrl = String(formData.get("contentUrl") ?? "").trim();
+    const workflowKey = String(formData.get("workflowKey") ?? "").trim();
+    await updateWorkflowAction({
+      workflowId,
       patch: {
-        title: String(formData.get("title") ?? entry!.title),
-        body:
-          formData.has("body")
-            ? String(formData.get("body") ?? "").trim() || null
-            : entry!.body,
-        contentUrl:
-          formData.has("contentUrl")
-            ? String(formData.get("contentUrl") ?? "").trim() || null
-            : entry!.contentUrl,
-        instructionKey:
-          formData.has("instructionKey")
-            ? String(formData.get("instructionKey") ?? "").trim() || null
-            : entry!.instructionKey,
+        title,
+        ...(workflowKey ? { workflowKey } : {}),
+        ...(body ? { agentNotes: body } : {}),
+        references: [
+          ...(body
+            ? [{ id: "agent_body", title: "Body", kind: "inline" as const, body }]
+            : []),
+          ...(contentUrl
+            ? [{ id: "runbook", title: "Runbook", kind: "url" as const, url: contentUrl }]
+            : []),
+        ],
       },
     });
   }
 
   async function deprecateAction() {
     "use server";
-    await deprecateInstructionAction({ instructionId });
-    redirect("/studio/instructions");
+    await deprecateWorkflowAction({ workflowId });
+    redirect("/studio/workflows");
   }
 
   return (
     <div className="space-y-6">
-      <PageHeader title={`Edit: ${entry.title}`} description="update / deprecate workflow" />
+      <PageHeader title={`Edit: ${entry.spec.title}`} description="update / deprecate workflow" />
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Update Workflow</CardTitle>
@@ -71,14 +76,14 @@ export default async function EditInstructionPage({
           <form action={updateAction} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
-              <Input id="title" name="title" defaultValue={entry.title} />
+              <Input id="title" name="title" defaultValue={entry.spec.title} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="instructionKey">Instruction key</Label>
+              <Label htmlFor="workflowKey">Workflow key</Label>
               <Input
-                id="instructionKey"
-                name="instructionKey"
-                defaultValue={entry.instructionKey ?? ""}
+                id="workflowKey"
+                name="workflowKey"
+                defaultValue={entry.workflowKey ?? ""}
               />
             </div>
             <div className="space-y-2">
@@ -87,7 +92,7 @@ export default async function EditInstructionPage({
                 id="contentUrl"
                 name="contentUrl"
                 type="url"
-                defaultValue={entry.contentUrl ?? ""}
+                defaultValue={runbookUrl}
               />
             </div>
             <div className="space-y-2">
@@ -95,20 +100,20 @@ export default async function EditInstructionPage({
               <Textarea
                 id="body"
                 name="body"
-                defaultValue={entry.body ?? ""}
+                defaultValue={entry.spec.agentNotes ?? ""}
                 rows={6}
               />
             </div>
-            <Button type="submit">update_instruction 실행</Button>
+            <Button type="submit">update_workflow 실행</Button>
           </form>
         </CardContent>
       </Card>
       <form action={deprecateAction}>
         <Button type="submit" variant="destructive">
-          deprecate_instruction 실행
+          deprecate_workflow 실행
         </Button>
       </form>
-      <Button render={<Link href="/studio/instructions" />} variant="ghost" nativeButton={false}>
+      <Button render={<Link href="/studio/workflows" />} variant="ghost" nativeButton={false}>
         ← Workflows
       </Button>
     </div>

@@ -3,7 +3,7 @@
  *
  * Policy:
  * - Skip Notion instructions with intent_class = Root (Runtime Protocol → ssota-mcp skill).
- * - Migrate domain instructions only via define_instruction / upsert paths.
+ * - Migrate domain instructions only via define_workflow / upsert paths.
  * - Migrate representative documents as create_node(Document) actions.
  */
 import { executeAction } from "@ssota/core";
@@ -86,7 +86,7 @@ async function main() {
 
   for (const instruction of NOTION_DOMAIN_INSTRUCTIONS) {
     console.log(
-      `Domain instruction queued (use define_instruction via Human/Agent): ${instruction.title}`,
+      `Domain instruction queued (use define_workflow via Human/Agent): ${instruction.title}`,
       instruction.provenance,
     );
   }

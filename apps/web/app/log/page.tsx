@@ -45,7 +45,7 @@ export default async function LogPage() {
                   {formatScope(entry.metadata.scope ?? entry.input.scope)}
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {String(entry.metadata.instructionRunId ?? entry.metadata.instructionId ?? "-")}
+                  {String(entry.metadata.workflowRunId ?? entry.metadata.workflowId ?? "-")}
                 </TableCell>
                 <TableCell>
                   <OutcomeBadge outcome={entry.outcome} />
@@ -70,8 +70,8 @@ function formatScope(scope: unknown) {
   if (value.kind === "property") {
     return `property:${String(value.nodeType)}.${String(value.propertyKey)}`;
   }
-  if (value.kind === "instruction") {
-    return `instruction:${String(value.title ?? value.instructionId ?? "*")}`;
+  if (value.kind === "workflow") {
+    return `workflow:${String(value.title ?? value.workflowId ?? "*")}`;
   }
   if (value.kind === "global") return "global";
   return "-";

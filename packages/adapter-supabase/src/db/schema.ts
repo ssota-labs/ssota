@@ -294,43 +294,26 @@ export const actionPropertyPermissions = pgTable("action_property_permissions", 
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const instructions = pgTable(
-  "instructions",
+export const workflows = pgTable(
+  "workflows",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id),
     slug: text("slug").notNull(),
-    instructionKey: text("instruction_key"),
-    title: text("title").notNull(),
-    triggerPatterns: jsonb("trigger_patterns").notNull().$type<string[]>(),
-    applicableNodeTypes: jsonb("applicable_node_types").notNull().$type<string[]>(),
-    requiredActions: jsonb("required_actions").notNull().$type<string[]>(),
-    optionalActions: jsonb("optional_actions").notNull().$type<string[]>(),
+    workflowKey: text("workflow_key"),
     lifecycle: lifecycleStatusEnum("lifecycle").notNull(),
-    body: text("body"),
-    contentUrl: text("content_url"),
     scope: jsonb("scope")
       .notNull()
       .default({ kind: "global" })
       .$type<Record<string, unknown>>(),
-    triggers: jsonb("triggers").notNull().default([]).$type<string[]>(),
-    workflowSteps: jsonb("workflow_steps").notNull().default([]).$type<unknown[]>(),
-    allowedActions: jsonb("allowed_actions").notNull().default([]).$type<string[]>(),
-    outputContract: jsonb("output_contract")
-      .notNull()
-      .default({})
-      .$type<Record<string, unknown>>(),
-    gatePolicy: jsonb("gate_policy")
-      .notNull()
-      .default({})
-      .$type<Record<string, unknown>>(),
-    completionCriteria: text("completion_criteria"),
+    spec: jsonb("spec").notNull().$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    projectSlugUnique: uniqueIndex("instructions_project_slug_unique").on(
+    projectSlugUnique: uniqueIndex("workflows_project_slug_unique").on(
       table.projectId,
       table.slug,
     ),
@@ -396,7 +379,7 @@ export const impactQueue = pgTable(
     targetNodeId: uuid("target_node_id").references(() => nodes.id),
     dependencyEdgeId: uuid("dependency_edge_id").references(() => edges.id),
     workflowKey: text("workflow_key").notNull(),
-    instructionId: uuid("instruction_id").references(() => instructions.id),
+    workflowId: uuid("workflow_id").references(() => workflows.id),
     status: impactQueueStatusEnum("status").notNull().default("pending"),
     priority: integer("priority").notNull().default(0),
     runAt: timestamp("run_at", { withTimezone: true }).defaultNow().notNull(),

@@ -10,17 +10,17 @@ import {
   CardTitle,
 } from "@ssota/ui/components/ui/card";
 
-export default async function InstructionsPage() {
+export default async function WorkflowsPage() {
   const projectId = await resolveDefaultProjectId();
   const ports = getActionPorts(projectId);
-  const entries = await ports.catalog.listInstructions();
+  const entries = await ports.catalog.listWorkflows();
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Workflows"
         description="에이전트 워크플로우 카탈로그"
-        action={{ label: "새 Workflow", href: "/studio/instructions/new" }}
+        action={{ label: "새 Workflow", href: "/studio/workflows/new" }}
       />
 
       {entries.length === 0 ? (
@@ -32,20 +32,21 @@ export default async function InstructionsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Link
-                    href={`/studio/instructions/${entry.id}/edit`}
+                    href={`/studio/workflows/${entry.id}/edit`}
                     className="hover:underline"
                   >
-                    {entry.title}
+                    {entry.spec.title}
                   </Link>
                   <Badge variant="secondary">{entry.lifecycle}</Badge>
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  triggers: {entry.triggerPatterns.join(", ")}
+                  triggers: {entry.spec.trigger.patterns.join(", ") || "manual"}
                 </p>
               </CardHeader>
               <CardContent className="pt-0 text-sm">
-                {entry.body ??
-                  (entry.contentUrl ? `External: ${entry.contentUrl}` : "—")}
+                {entry.spec.agentNotes ??
+                  entry.spec.references.find((ref) => ref.kind === "url")?.url ??
+                  "—"}
               </CardContent>
             </Card>
           ))}

@@ -19,7 +19,7 @@ import { enforceProjectScope } from "./domain/project-scope.js";
 import {
   mergeUpdateActionContractInput,
   mergeUpdateEdgeTypeInput,
-  mergeUpdateInstructionInput,
+  mergeUpdateWorkflowInput,
   mergeUpdateNodeTypeInput,
   mergeUpdateNodePropertySchemaInput,
 } from "./meta-action-input.js";
@@ -180,28 +180,28 @@ async function prepareAction(
     resolvedInput = mergeUpdateActionContractInput(input, existing);
   }
 
-  if (actionType === "update_instruction") {
-    const instructionId = input.instructionId as string | undefined;
-    if (!instructionId || !input.patch) {
+  if (actionType === "update_workflow") {
+    const workflowId = input.workflowId as string | undefined;
+    if (!workflowId || !input.patch) {
       return {
         rejected: {
           status: "rejected",
-          reason: "update_instruction requires instructionId and patch",
+          reason: "update_workflow requires workflowId and patch",
           code: "PRECONDITION_FAILED",
         },
       };
     }
-    const existing = await ports.catalog.getInstruction(instructionId);
+    const existing = await ports.catalog.getWorkflow(workflowId);
     if (!existing) {
       return {
         rejected: {
           status: "rejected",
-          reason: `Instruction '${instructionId}' does not exist`,
+          reason: `Workflow '${workflowId}' does not exist`,
           code: "CATALOG_NOT_FOUND",
         },
       };
     }
-    resolvedInput = mergeUpdateInstructionInput(input, existing);
+    resolvedInput = mergeUpdateWorkflowInput(input, existing);
   }
 
   let effects: Effect[];
@@ -318,8 +318,8 @@ async function prepareAction(
       getActionCatalogEntry: (at) => ports.catalog.getActionCatalogEntry(at),
       getEdgeCatalogEntry: (edgeType) =>
         ports.catalog.getEdgeCatalogEntry(edgeType),
-      getInstruction: (instructionId) =>
-        ports.catalog.getInstruction(instructionId),
+      getWorkflow: (workflowId) =>
+        ports.catalog.getWorkflow(workflowId),
       hasNodesOfType: async (nodeType) => {
         const nodes = await ports.graph.queryNodes({ nodeType, limit: 1 });
         return nodes.length > 0;
@@ -565,4 +565,4 @@ export * from "./catalog-slug.js";
 export * from "./catalog/builtin-meta-actions.js";
 export * from "./catalog/merge-action-catalog.js";
 export * from "./console-slug.js";
-export * from "./workflow/render-instruction-package.js";
+export * from "./workflow/render-workflow-package.js";

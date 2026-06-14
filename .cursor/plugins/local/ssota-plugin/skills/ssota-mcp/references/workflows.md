@@ -1,19 +1,19 @@
 # Domain Workflow Examples
 
-These are **domain instruction** patterns after the root skill routes intent. Always `get_instruction` before following a recipe.
+These are **domain instruction** patterns after the root skill routes intent. Always `get_workflow` before following a recipe.
 
 ## Create a work note
 
-1. `find_instruction` — `work note`, `create note`
-2. `get_instruction(id)`
+1. `find_workflow` — `work note`, `create note`
+2. `get_workflow(id)`
 3. `get_action_contract` — `create_note`
 4. `execute_action` with idempotency key
 5. Verify: `get_action_log_entry` or `get_node`
 
 ## Create a document draft
 
-1. `find_instruction` — `document creation`
-2. `get_instruction(id)`
+1. `find_workflow` — `document creation`
+2. `get_workflow(id)`
 3. `query_nodes` if instruction requires existing context
 4. `get_action_contract` — `create_document`
 5. `execute_action`
@@ -28,12 +28,12 @@ These are **domain instruction** patterns after the root skill routes intent. Al
 
 ## Propose a meta change
 
-1. `find_instruction` — `catalog governance`, `instruction governance`
-2. `get_instruction(id)`
+1. `find_workflow` — `catalog governance`, `instruction governance`
+2. `get_workflow(id)`
 3. `get_action_contract` for the meta action
 4. Payload: target, change, rationale, risk, workflow impact
 5. `execute_action` — expect `committed` or `gated`
-6. Verify with catalog `get_*` or `get_instruction`
+6. Verify with catalog `get_*` or `get_workflow`
 
 ## Recover from rejection
 

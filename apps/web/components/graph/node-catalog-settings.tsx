@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import {
   AddActionSheet,
-  AddInstructionSheet,
+  AddWorkflowSheet,
   AddPropertySheet,
 } from "@/components/graph/node-table-actions";
 import { getActionPorts } from "@/lib/ports";
@@ -27,7 +27,7 @@ export async function NodeCatalogSettings({ projectId, slug }: NodeCatalogSettin
     <div className="flex flex-wrap gap-2 border-b px-4 py-3">
       <AddPropertySheet nodeType={entry.nodeType} projectId={projectId} />
       <AddActionSheet nodeType={entry.nodeType} projectId={projectId} />
-      <AddInstructionSheet nodeType={entry.nodeType} projectId={projectId} />
+      <AddWorkflowSheet nodeType={entry.nodeType} projectId={projectId} />
     </div>
   );
 

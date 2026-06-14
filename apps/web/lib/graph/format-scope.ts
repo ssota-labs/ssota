@@ -6,8 +6,8 @@ export function formatActionScope(scope: unknown) {
   if (value.kind === "property") {
     return `property:${String(value.nodeType)}.${String(value.propertyKey)}`;
   }
-  if (value.kind === "instruction") {
-    return `instruction:${String(value.title ?? value.instructionId ?? "*")}`;
+  if (value.kind === "workflow") {
+    return `workflow:${String(value.title ?? value.workflowId ?? "*")}`;
   }
   if (value.kind === "global") return "global";
   return "-";

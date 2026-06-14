@@ -6,11 +6,12 @@ import type {
   EdgeCatalogEntry as WireEdgeCatalogEntry,
   Gate as WireGate,
   ImpactQueueItem as WireImpactQueueItem,
-  Instruction as WireInstruction,
   Node as WireNode,
   NodeCatalogEntry as WireNodeCatalogEntry,
+  WorkflowWire,
 } from "@ssota/contracts";
-import { buildWorkflowInstructionPackage } from "../workflow/render-instruction-package.js";
+import { workflowRowToWire } from "@ssota/contracts";
+import { buildWorkflowPackage } from "../workflow/render-workflow-package.js";
 import type {
   ActionCatalogEntry,
   ActionLogRecord,
@@ -19,7 +20,7 @@ import type {
   EdgeCatalogEntry,
   Gate,
   ImpactQueueItem,
-  Instruction,
+  Workflow,
   Node,
   NodeCatalogEntry,
 } from "./types.js";
@@ -94,24 +95,28 @@ export function serializeArchetype(archetype: Archetype): WireArchetype {
   return { ...archetype };
 }
 
-export function serializeInstruction(
-  instruction: Instruction,
-): WireInstruction {
-  const { projectId: _projectId, ...wire } = instruction;
-  return wire;
+export function serializeWorkflow(workflow: Workflow): WorkflowWire {
+  return workflowRowToWire({
+    id: workflow.id,
+    slug: workflow.slug,
+    workflowKey: workflow.workflowKey,
+    lifecycle: workflow.lifecycle,
+    scope: workflow.scope,
+    spec: workflow.spec,
+    createdAt: toIso(workflow.createdAt),
+    updatedAt: toIso(workflow.updatedAt),
+  });
 }
 
-export function serializeInstructionPackage(
-  instruction: Instruction,
-): WireInstruction & {
-  workflow: ReturnType<typeof buildWorkflowInstructionPackage>["workflow"];
+export function serializeWorkflowPackage(
+  workflow: Workflow,
+): WorkflowWire & {
   renderedText: string;
 } {
-  const wire = serializeInstruction(instruction);
-  const pkg = buildWorkflowInstructionPackage(instruction);
+  const wire = serializeWorkflow(workflow);
+  const pkg = buildWorkflowPackage(workflow);
   return {
     ...wire,
-    workflow: pkg.workflow,
     renderedText: pkg.renderedText,
   };
 }

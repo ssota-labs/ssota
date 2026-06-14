@@ -12,7 +12,7 @@ import {
   SheetTrigger,
 } from "@ssota/ui/components/ui/sheet";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
-import { defineWorkflowInstructionFormAction } from "@/app/actions";
+import { defineWorkflowFormAction } from "@/app/actions";
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
 
 export function NewWorkflowSheet({ projectId }: { projectId: string }) {
@@ -32,13 +32,12 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
           </SheetDescription>
         </SheetHeader>
         <form
-          action={defineWorkflowInstructionFormAction}
+          action={defineWorkflowFormAction}
           className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
           <input type="hidden" name="projectId" value={projectId} />
           <input type="hidden" name="workflowSteps" value="[]" />
           <input type="hidden" name="outputContract" value="{}" />
-          <input type="hidden" name="gatePolicy" value="{}" />
 
           <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
             <div className="space-y-2">
@@ -66,7 +65,7 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
               <Label htmlFor="workflow-key">Key</Label>
               <Input
                 id="workflow-key"
-                name="instructionKey"
+                name="workflowKey"
                 placeholder="homepage_creation"
                 pattern="[a-z][a-z0-9_]*"
               />

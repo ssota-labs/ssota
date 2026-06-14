@@ -211,50 +211,69 @@ export async function seedHomepageAgentCatalog(
   }
 
   await db
-    .insert(schema.instructions)
+    .insert(schema.workflows)
     .values([
       {
         projectId,
-        title: "Homepage creation workflow",
         slug: toCatalogSlug("Homepage creation workflow"),
-        triggerPatterns: [
-          "create homepage",
-          "new homepage project",
-          "homepage design",
-        ],
-        applicableNodeTypes: [
-          "HomepageProject",
-          "DesignBrief",
-          "PageSection",
-        ],
-        requiredActions: ["create_node", "link_homepage_contains"],
-        optionalActions: ["create_node"],
+        workflowKey: "homepage_creation",
         lifecycle: "Active",
-        body: [
-          "1. create_node with nodeType HomepageProject and a title.",
-          "2. create_node with nodeType DesignBrief, title + content (goals, audience, tone).",
-          "3. link_homepage_contains from the HomepageProject to the DesignBrief.",
-          "4. Optionally create_node PageSection nodes and link them to the project.",
-          "All instance nodes are scoped by subject_id from the embedder context.",
-        ].join("\n"),
-        workflowSteps: [
-          {
-            id: "open_project",
-            title: "Open homepage project",
-            actionRefs: ["create_node"],
+        scope: { kind: "global" },
+        spec: {
+          title: "Homepage creation workflow",
+          workflowKey: "homepage_creation",
+          lifecycle: "Active",
+          scope: { kind: "global" },
+          trigger: {
+            patterns: [
+              "create homepage",
+              "new homepage project",
+              "homepage design",
+            ],
+            events: [],
           },
-          {
-            id: "capture_brief",
-            title: "Capture design brief",
-            actionRefs: ["create_node"],
-          },
-          {
-            id: "link_brief",
-            title: "Link brief to project",
-            actionRefs: ["link_homepage_contains"],
-          },
-        ],
-        allowedActions: ["create_node", "link_homepage_contains"],
+          context: { queries: [], traversals: [], assertions: [] },
+          conditions: [],
+          steps: [
+            {
+              id: "open_project",
+              title: "Open homepage project",
+              mode: "agentic",
+              actions: [{ actionType: "create_node", required: false }],
+            },
+            {
+              id: "capture_brief",
+              title: "Capture design brief",
+              mode: "agentic",
+              actions: [{ actionType: "create_node", required: false }],
+            },
+            {
+              id: "link_brief",
+              title: "Link brief to project",
+              mode: "agentic",
+              actions: [{ actionType: "link_homepage_contains", required: false }],
+            },
+          ],
+          gates: [],
+          routes: [],
+          references: [],
+          output: { contract: {} },
+          agentNotes: [
+            "1. create_node with nodeType HomepageProject and a title.",
+            "2. create_node with nodeType DesignBrief, title + content (goals, audience, tone).",
+            "3. link_homepage_contains from the HomepageProject to the DesignBrief.",
+            "4. Optionally create_node PageSection nodes and link them to the project.",
+            "All instance nodes are scoped by subject_id from the embedder context.",
+          ].join("\n"),
+          applicableNodeTypes: [
+            "HomepageProject",
+            "DesignBrief",
+            "PageSection",
+          ],
+          allowedActions: ["create_node", "link_homepage_contains"],
+          requiredActions: ["create_node", "link_homepage_contains"],
+          optionalActions: ["create_node"],
+        },
       },
     ])
     .onConflictDoNothing();

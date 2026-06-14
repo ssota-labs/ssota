@@ -36,7 +36,7 @@ export type TaskWorkspaceRow = {
   status: string;
   assignee: string;
   workflowType: string;
-  instructionKey: string;
+  workflowKey: string;
   targetNodeId: string;
   acceptanceCriteria: string[];
   notionUrl: string;
@@ -197,7 +197,7 @@ export function TasksWorkspace({
                     ["status", selected.status],
                     ["assignee", selected.assignee],
                     ["workflow_type", selected.workflowType],
-                    ["instruction_key", selected.instructionKey],
+                    ["workflow_key", selected.workflowKey],
                     ["target_node_id", selected.targetNodeId],
                   ]}
                 />

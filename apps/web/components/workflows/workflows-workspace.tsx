@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { buildWorkflowInstructionPackage } from "@ssota/core";
-import type { ActionLogRecord, Gate, Instruction } from "@ssota/core";
+import { buildWorkflowPackage } from "@ssota/core";
+import type { ActionLogRecord, Gate, Workflow } from "@ssota/core";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
@@ -19,7 +19,7 @@ type LogRow = {
   createdAt: string;
   actionType: string;
   scope: string;
-  instruction: string;
+  workflow: string;
   outcome: string;
   executorType: string;
 };
@@ -28,7 +28,7 @@ export function WorkflowsWorkspace({
   orgSlug,
   projectSlug,
   projectId,
-  instructions,
+  workflows,
   logs,
   pendingGates,
   selected,
@@ -37,11 +37,11 @@ export function WorkflowsWorkspace({
   orgSlug: string;
   projectSlug: string;
   projectId: string;
-  instructions: Instruction[];
+  workflows: Workflow[];
   logs: ActionLogRecord[];
   pendingGates: Gate[];
-  selected: Instruction | null;
-  activeTab: "builder" | "instruction" | "flow" | "runs" | "reviews";
+  selected: Workflow | null;
+  activeTab: "builder" | "agent" | "flow" | "runs" | "reviews";
 }) {
   const ctx = { orgSlug, projectSlug };
   const baseHref = projectPath(ctx, "workflow");
@@ -49,17 +49,17 @@ export function WorkflowsWorkspace({
     ? `${baseHref}?workflow=${encodeURIComponent(selected.slug)}`
     : baseHref;
 
-  const catalogItems = instructions.map((instruction) => ({
-    slug: instruction.slug,
-    label: instruction.title,
-    stepCount: instruction.workflowSteps.length,
+  const catalogItems = workflows.map((workflow) => ({
+    slug: workflow.slug,
+    label: workflow.spec.title,
+    stepCount: workflow.spec.steps.length,
   }));
 
   const selectedRuns = selected
     ? logs.filter(
         (log) =>
-          log.metadata.instructionId === selected.id ||
-          log.input.instructionId === selected.id,
+          log.metadata.workflowId === selected.id ||
+          log.input.workflowId === selected.id,
       )
     : [];
   const runRows: LogRow[] = selectedRuns.map((log) => ({
@@ -67,16 +67,16 @@ export function WorkflowsWorkspace({
     createdAt: log.createdAt.toISOString(),
     actionType: log.actionType,
     scope: formatActionScope(log.metadata.scope ?? log.input.scope),
-    instruction: selected?.title ?? "-",
+    workflow: selected?.spec.title ?? "-",
     outcome: log.outcome,
     executorType: log.executorType,
   }));
   const workflowGates = selected
     ? pendingGates.filter((gate) =>
-        gateMatchesWorkflow(gate, selected.id, selected.allowedActions),
+        gateMatchesWorkflow(gate, selected.id, selected.spec.allowedActions),
       )
     : pendingGates;
-  const package_ = selected ? buildWorkflowInstructionPackage(selected) : null;
+  const package_ = selected ? buildWorkflowPackage(selected) : null;
 
   const tabBar = selected ? (
     <>
@@ -84,10 +84,10 @@ export function WorkflowsWorkspace({
         Builder
       </WorkflowTabLink>
       <WorkflowTabLink
-        href={`${selectedHref}&tab=instruction`}
-        active={activeTab === "instruction"}
+        href={`${selectedHref}&tab=agent`}
+        active={activeTab === "agent"}
       >
-        Instruction
+        Rendered text
       </WorkflowTabLink>
       <WorkflowTabLink href={`${selectedHref}&tab=flow`} active={activeTab === "flow"}>
         Flow
@@ -118,19 +118,19 @@ export function WorkflowsWorkspace({
       <ActionLogDataTable
         rows={runRows}
         filterColumn="actionType"
-        emptyMessage={`No runs recorded for ${selected.title} yet.`}
+        emptyMessage={`No runs recorded for ${selected.spec.title} yet.`}
       />
     ) : activeTab === "reviews" ? (
       <WorkflowReviewsPanel
         gates={workflowGates}
         projectId={projectId}
-        emptyMessage={`No pending reviews for ${selected.title}.`}
+        emptyMessage={`No pending reviews for ${selected.spec.title}.`}
       />
     ) : (
       <div className="grid h-full gap-4 overflow-auto p-4 lg:grid-cols-[1fr_18rem]">
         <article className="rounded-lg border bg-muted/20 p-4">
           <div className="mb-2 text-xs font-medium text-muted-foreground">
-            Rendered instruction (from workflow spec)
+            Rendered workflow text (from spec)
           </div>
           <pre className="whitespace-pre-wrap text-sm leading-6">
             {package_.renderedText}
@@ -140,15 +140,15 @@ export function WorkflowsWorkspace({
           <WorkflowMetaCard
             title="Allowed actions"
             items={[
-              ...selected.requiredActions,
-              ...selected.optionalActions,
-              ...selected.allowedActions,
+              ...selected.spec.requiredActions,
+              ...selected.spec.optionalActions,
+              ...selected.spec.allowedActions,
             ]}
             empty="No actions declared."
           />
           <WorkflowMetaCard
             title="Output contract"
-            items={Object.keys(selected.outputContract)}
+            items={Object.keys(selected.spec.output.contract)}
             empty="No output contract fields."
           />
         </aside>
@@ -163,8 +163,8 @@ export function WorkflowsWorkspace({
       mainHeader={
         selected && package_
           ? {
-              title: selected.title,
-              description: formatInstructionScope(selected.scope),
+              title: selected.spec.title,
+              description: formatWorkflowScope(selected.scope),
             }
           : null
       }
@@ -174,7 +174,7 @@ export function WorkflowsWorkspace({
   );
 }
 
-function formatInstructionScope(
+function formatWorkflowScope(
   scope: { kind: string } & Record<string, unknown>,
 ) {
   if (scope.kind === "node_type") return `node:${scope.nodeType}`;

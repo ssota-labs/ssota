@@ -1,13 +1,13 @@
 import { z } from "zod";
 import {
   ExecuteActionClientInputSchema,
-  FindInstructionInputSchema,
+  FindWorkflowInputSchema,
   GetActionLogEntryInputSchema,
   GetActionLogInputSchema,
   GetArchetypeInputSchema,
   GetEdgeTypeInputSchema,
   GetGateInputSchema,
-  GetInstructionInputSchema,
+  GetWorkflowInputSchema,
   GetNodeInputSchema,
   GetNodeTypeInputSchema,
   QueryGatesInputSchema,
@@ -19,14 +19,14 @@ import {
 } from "@ssota/contracts";
 import {
   executeActionForClient,
-  findInstructions,
+  findWorkflows,
   getActionContract,
   getActionLog,
   getActionLogEntry,
   getArchetype,
   getEdgeType,
   getGate,
-  getInstruction,
+  getWorkflow,
   getNode,
   getNodeType,
   listActionContracts,
@@ -174,22 +174,22 @@ export function registerProjectTools(server: McpToolServer) {
 
   registerScopedProjectTool(
     server,
-    "get_instruction",
+    "get_workflow",
     {
-      title: "Get Instruction",
+      title: "Get Workflow",
       description:
-        "Fetch one domain instruction by instructionId or stable instructionKey",
+        "Fetch one domain workflow by workflowId or stable workflowKey",
       inputSchema: {
-        instructionId: z.string().uuid().optional(),
-        instructionKey: z
+        workflowId: z.string().uuid().optional(),
+        workflowKey: z
           .string()
           .regex(/^[a-z][a-z0-9_]*$/)
           .optional(),
       },
     },
     async ({ projectId, args }) => {
-      const parsed = GetInstructionInputSchema.parse(args);
-      return jsonContent(await getInstruction(projectId, parsed));
+      const parsed = GetWorkflowInputSchema.parse(args);
+      return jsonContent(await getWorkflow(projectId, parsed));
     },
   );
 
@@ -290,10 +290,10 @@ export function registerProjectTools(server: McpToolServer) {
 
   registerScopedProjectTool(
     server,
-    "find_instruction",
+    "find_workflow",
     {
-      title: "Find Instruction",
-      description: "Search instructions by query",
+      title: "Find Workflow",
+      description: "Search workflows by query",
       inputSchema: {
         query: z.string().min(1),
         nodeType: z.string().optional(),
@@ -301,8 +301,8 @@ export function registerProjectTools(server: McpToolServer) {
       },
     },
     async ({ projectId, args }) => {
-      const parsed = FindInstructionInputSchema.parse(args);
-      return jsonContent(await findInstructions(projectId, parsed));
+      const parsed = FindWorkflowInputSchema.parse(args);
+      return jsonContent(await findWorkflows(projectId, parsed));
     },
   );
 
