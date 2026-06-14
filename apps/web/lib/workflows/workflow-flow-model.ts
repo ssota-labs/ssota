@@ -48,8 +48,8 @@ const DEFAULT_STEP: WorkflowStepSpec = {
 
 function contextSummary(workflow: Workflow): string | undefined {
   const parts: string[] = [];
-  if (workflow.context.queries.length) {
-    parts.push(`${workflow.context.queries.length} queries`);
+  if (workflow.context.filterGroups.length) {
+    parts.push(`${workflow.context.filterGroups.length} filter groups`);
   }
   if (workflow.context.traversals.length) {
     parts.push(`${workflow.context.traversals.length} traversals`);

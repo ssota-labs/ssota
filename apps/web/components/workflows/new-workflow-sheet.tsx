@@ -18,7 +18,13 @@ import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineWorkflowFormAction } from "@/app/actions";
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
+import { WorkflowContextField } from "@/components/workflows/workflow-context-field";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
+import {
+  defaultContextSpec,
+  type WorkflowEdgeCatalogOption,
+  type WorkflowNodeCatalogOption,
+} from "@/lib/workflows/workflow-context-defaults";
 import {
   createWorkflowTriggerEventFromKind,
   defaultWorkflowTriggerEvents,
@@ -46,9 +52,18 @@ function FormRow({
   );
 }
 
-export function NewWorkflowSheet({ projectId }: { projectId: string }) {
+export function NewWorkflowSheet({
+  projectId,
+  nodeCatalog,
+  edgeCatalog,
+}: {
+  projectId: string;
+  nodeCatalog: WorkflowNodeCatalogOption[];
+  edgeCatalog: WorkflowEdgeCatalogOption[];
+}) {
   const [addTriggerOpen, setAddTriggerOpen] = useState(false);
   const [triggers, setTriggers] = useState(defaultWorkflowTriggerEvents);
+  const [context, setContext] = useState(defaultContextSpec);
 
   return (
     <>
@@ -62,8 +77,8 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
           <SheetHeader className="sticky top-0 z-10 shrink-0 border-b border-border bg-popover px-6 py-5">
             <SheetTitle>Create a new workflow</SheetTitle>
             <SheetDescription>
-              이름과 설명만 입력하세요. 단계·게이트·액션은 Builder에서 React Flow로
-              구성합니다.
+              Metadata, triggers, and context를 설정하세요. 단계·게이트·액션은 Builder에서
+              React Flow로 구성합니다.
             </SheetDescription>
           </SheetHeader>
           <form
@@ -99,11 +114,20 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
                 </div>
               </section>
 
-              <section className="pt-6">
+              <section className="border-b border-border pb-6 pt-6">
                 <WorkflowTriggersField
                   triggers={triggers}
                   onTriggersChange={setTriggers}
                   onAddTrigger={() => setAddTriggerOpen(true)}
+                />
+              </section>
+
+              <section className="pt-2">
+                <WorkflowContextField
+                  context={context}
+                  onContextChange={setContext}
+                  nodeCatalog={nodeCatalog}
+                  edgeCatalog={edgeCatalog}
                 />
               </section>
             </div>

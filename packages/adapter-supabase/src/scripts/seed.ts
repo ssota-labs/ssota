@@ -337,7 +337,16 @@ function workflowSeedRow(
               }))
             : [{ id: "manual", kind: "manual", enabled: true, config: {} }],
       },
-      context: { queries: [], traversals: [], assertions: [] },
+      context: {
+        filterGroups: legacy.applicableNodeTypes.map((nodeType, index) => ({
+          id: `fg_${nodeType.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_${index}`,
+          nodeType,
+          combinator: "and" as const,
+          conditions: [],
+        })),
+        traversals: [],
+        assertions: [],
+      },
       conditions: [],
       steps,
       gates: [],
