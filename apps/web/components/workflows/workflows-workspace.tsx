@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useMemo } from "react";
 import { buildWorkflowInstructionPackage } from "@ssota/core";
 import type { ActionLogRecord, Gate, Instruction } from "@ssota/core";
 import { Badge } from "@ssota/ui/components/ui/badge";
@@ -65,15 +62,11 @@ export function WorkflowsWorkspace({
     ? `${baseHref}?workflow=${encodeURIComponent(selected.slug)}`
     : baseHref;
 
-  const catalogItems = useMemo(
-    () =>
-      instructions.map((instruction) => ({
-        slug: instruction.slug,
-        label: instruction.title,
-        stepCount: instruction.workflowSteps.length,
-      })),
-    [instructions],
-  );
+  const catalogItems = instructions.map((instruction) => ({
+    slug: instruction.slug,
+    label: instruction.title,
+    stepCount: instruction.workflowSteps.length,
+  }));
 
   const selectedRuns = selected
     ? logs.filter(
