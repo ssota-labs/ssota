@@ -70,9 +70,9 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
             <input type="hidden" name="outputContract" value="{}" />
             <input type="hidden" name="gatePolicy" value="{}" />
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            <div className="min-h-0 flex-1 overflow-y-auto py-5">
               <section className="border-b border-border pb-6">
-                <div className={formRowClassName}>
+                <div className={`${formRowClassName} px-6`}>
                   <FormRow label="Name" htmlFor="workflow-title">
                     <Input
                       id="workflow-title"
@@ -95,7 +95,7 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
               </section>
 
               <section className="pt-6">
-                <div className={formRowClassName}>
+                <div className={`${formRowClassName} px-6`}>
                   <FormRow label="Key" htmlFor="workflow-key">
                     <Input
                       id="workflow-key"
