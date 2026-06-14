@@ -2,27 +2,31 @@
 
 import { useMemo, useState } from "react";
 import { TableIcon } from "@phosphor-icons/react";
-import type { ActionCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
+import type { EdgeCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
 } from "@ssota/ui/components/ui/dialog";
 import { cn } from "@ssota/ui/lib/utils";
-import { countActionsForNodeType } from "@/lib/workflows/workflow-node-bindings";
+import { NodeSchemaView } from "@/components/graph/node-schema-view";
 import {
   WORKFLOW_CATALOG_DIALOG_CONTENT_CLASS,
   WORKFLOW_CATALOG_DIALOG_GRID_CLASS,
   WorkflowCatalogDialogFooter,
   WorkflowCatalogDialogHeader,
 } from "@/components/workflows/workflow-catalog-dialog-shell";
+import {
+  buildNodeTypeCatalog,
+  buildSchemaRelations,
+} from "@/lib/graph/node-schema-view-props";
 
 type AddWorkflowNodeDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   existingNodeTypes: string[];
   nodeCatalog: NodeCatalogEntry[];
-  actionCatalog: ActionCatalogEntry[];
+  edgeCatalog: EdgeCatalogEntry[];
   onAddNode: (nodeType: string) => void;
 };
 
@@ -51,48 +55,50 @@ function groupNodeCatalog(entries: NodeCatalogEntry[]) {
 
 function NodeCatalogPanel({
   entry,
-  actionCount,
+  relations,
+  nodeTypeCatalog,
   alreadyAdded,
 }: {
   entry: NodeCatalogEntry;
-  actionCount: number;
+  relations: ReturnType<typeof buildSchemaRelations>;
+  nodeTypeCatalog: ReturnType<typeof buildNodeTypeCatalog>;
   alreadyAdded: boolean;
 }) {
   return (
-    <div className="flex min-h-[240px] flex-col px-5 py-4">
-      <div className="flex items-start gap-2.5">
-        <div className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-muted/40">
-          <TableIcon className="size-3.5 text-muted-foreground" />
-        </div>
-        <div className="space-y-0.5">
-          <p className="text-xs font-medium">{entry.label}</p>
-          <p className="text-[11px] text-muted-foreground">{entry.nodeType}</p>
-          {entry.contentGuide ? (
-            <p className="text-[11px] leading-relaxed text-muted-foreground">
-              {entry.contentGuide}
-            </p>
-          ) : null}
-        </div>
+    <div className="flex min-h-0 flex-col">
+      <div className="h-72 shrink-0 overflow-hidden border-b bg-muted/10">
+        <NodeSchemaView
+          nodeType={entry.nodeType}
+          label={entry.label}
+          family={entry.family}
+          archetypeId={entry.archetypeId ?? null}
+          contentGuide={entry.contentGuide ?? null}
+          propertySchema={entry.propertySchema}
+          relations={relations}
+          nodeTypeCatalog={nodeTypeCatalog}
+          className="h-full p-2"
+          canvasClassName="h-full min-h-0 rounded-md"
+          fitViewPadding={0.2}
+        />
+      </div>
+
+      <div className="space-y-1 px-5 py-4">
+        <p className="text-sm font-medium">{entry.label}</p>
+        {entry.contentGuide ? (
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            {entry.contentGuide}
+          </p>
+        ) : null}
       </div>
 
       {alreadyAdded ? (
-        <div className="mt-auto rounded-md border bg-muted/20 px-4 py-8 text-center">
+        <div className="mx-5 mb-4 mt-auto rounded-md border bg-muted/20 px-4 py-6 text-center">
           <p className="text-xs font-medium">Already added</p>
           <p className="mt-1 max-w-sm text-[11px] leading-relaxed text-muted-foreground">
             This node type is already registered for this workflow.
           </p>
         </div>
-      ) : (
-        <div className="mt-auto space-y-3">
-          <div className="rounded-md border bg-muted/20 px-4 py-3">
-            <p className="text-[11px] text-muted-foreground">
-              {actionCount} associated action{actionCount === 1 ? "" : "s"}{" "}
-              available. All actions start enabled; disable per action from the
-              row menu.
-            </p>
-          </div>
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -102,7 +108,7 @@ export function AddWorkflowNodeDialog({
   onOpenChange,
   existingNodeTypes,
   nodeCatalog,
-  actionCatalog,
+  edgeCatalog,
   onAddNode,
 }: AddWorkflowNodeDialogProps) {
   const [query, setQuery] = useState("");
@@ -137,8 +143,20 @@ export function AddWorkflowNodeDialog({
       .filter((group) => group.items.length > 0);
   }, [groupedCatalog, query]);
 
+  const nodeTypeCatalog = useMemo(
+    () => buildNodeTypeCatalog(nodeCatalog),
+    [nodeCatalog],
+  );
+
   const selectedEntry =
     nodeCatalog.find((entry) => entry.nodeType === selectedNodeType) ?? null;
+  const selectedRelations = useMemo(
+    () =>
+      selectedEntry
+        ? buildSchemaRelations(selectedEntry.nodeType, edgeCatalog)
+        : [],
+    [edgeCatalog, selectedEntry],
+  );
   const alreadyAdded = selectedEntry
     ? existingNodeTypes.includes(selectedEntry.nodeType)
     : false;
@@ -206,7 +224,8 @@ export function AddWorkflowNodeDialog({
             {selectedEntry ? (
               <NodeCatalogPanel
                 entry={selectedEntry}
-                actionCount={countActionsForNodeType(selectedEntry, actionCatalog)}
+                relations={selectedRelations}
+                nodeTypeCatalog={nodeTypeCatalog}
                 alreadyAdded={alreadyAdded}
               />
             ) : (

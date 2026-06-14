@@ -63,10 +63,7 @@ export default async function WorkflowListPage({
       activeTab={activeTab}
       nodeCatalog={nodeCatalog}
       actionCatalog={actionCatalog}
-      edgeCatalog={edgeCatalog.map((entry) => ({
-        edgeType: entry.edgeType,
-        label: entry.label,
-      }))}
+      edgeCatalog={edgeCatalog}
     />
   );
 }

@@ -91,11 +91,13 @@ export function GraphFlowCanvas({
   edges,
   emptyMessage = "No graph relationships yet.",
   fitViewPadding = 0.15,
+  containerClassName,
 }: {
   nodes: GraphFlowNode[];
   edges: GraphFlowEdge[];
   emptyMessage?: string;
   fitViewPadding?: number;
+  containerClassName?: string;
 }) {
   if (nodes.length === 0) {
     return (
@@ -106,7 +108,12 @@ export function GraphFlowCanvas({
   }
 
   return (
-    <div className="h-full min-h-96 overflow-hidden rounded-lg border bg-background">
+    <div
+      className={cn(
+        "h-full min-h-96 overflow-hidden rounded-lg border bg-background",
+        containerClassName,
+      )}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges.map((edge) => ({
