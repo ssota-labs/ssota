@@ -1,7 +1,8 @@
-import type {
-  ActionCatalogEntry,
-  NodeCatalogEntry,
-  WorkflowNodeBinding,
+import {
+  WorkflowNodeBindingSchema,
+  type ActionCatalogEntry,
+  type NodeCatalogEntry,
+  type WorkflowNodeBinding,
 } from "@ssota/contracts";
 import {
   enabledActionTypesForBinding,
@@ -55,4 +56,24 @@ export function countActionsForNodeType(
   actionCatalog: ActionCatalogEntry[],
 ): number {
   return resolveActionsForNodeType(nodeEntry, actionCatalog).length;
+}
+
+export function serializeWorkflowNodeBindings(
+  nodeBindings: WorkflowNodeBinding[],
+): string {
+  return JSON.stringify(nodeBindings);
+}
+
+export function parseWorkflowNodeBindings(
+  value: FormDataEntryValue | null,
+): WorkflowNodeBinding[] {
+  const raw = String(value ?? "").trim();
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((entry) => WorkflowNodeBindingSchema.parse(entry));
+  } catch {
+    return [];
+  }
 }

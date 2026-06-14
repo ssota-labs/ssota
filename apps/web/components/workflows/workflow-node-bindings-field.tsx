@@ -25,6 +25,7 @@ import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import { resolveActionsForNodeType } from "@/lib/graph/resolve-node-actions";
 import { AddWorkflowNodeDialog } from "@/components/workflows/add-workflow-node-dialog";
+import { serializeWorkflowNodeBindings } from "@/lib/workflows/workflow-node-bindings";
 
 export function WorkflowNodeBindingsField({
   nodeBindings,
@@ -87,7 +88,7 @@ export function WorkflowNodeBindingsField({
 
   return (
     <>
-      <div className="space-y-3">
+      <div className="space-y-3 px-6">
         <div className="space-y-1">
           <Label className="text-sm font-medium">Applicable nodes</Label>
           <p className="text-xs text-muted-foreground">
@@ -222,6 +223,12 @@ export function WorkflowNodeBindingsField({
         nodeCatalog={nodeCatalog}
         actionCatalog={actionCatalog}
         onAddNode={addBinding}
+      />
+
+      <input
+        type="hidden"
+        name="workflowNodeBindings"
+        value={serializeWorkflowNodeBindings(nodeBindings)}
       />
     </>
   );

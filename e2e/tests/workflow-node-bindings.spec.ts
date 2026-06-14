@@ -2,73 +2,69 @@ import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
 
-async function openDocumentCreationBuilder(page: import("@playwright/test").Page) {
-  await gotoProject(page, "workflow?workflow=document_creation");
-  await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
-  await expect(page.getByText("Document creation", { exact: true }).first()).toBeVisible();
+async function openNewWorkflowSheet(page: import("@playwright/test").Page) {
+  await gotoProject(page, "workflow");
+  await page.getByRole("button", { name: "New workflow" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Create a new workflow" }),
+  ).toBeVisible();
 }
 
-async function selectContextBlock(page: import("@playwright/test").Page) {
-  await page
-    .locator(".react-flow__node")
-    .filter({ hasText: "Context" })
-    .first()
-    .click();
-  await expect(page.getByText("Configure the selected workflow block.")).toBeVisible();
-  await expect(page.getByText("Applicable nodes", { exact: true })).toBeVisible();
-}
-
-async function openDocumentActionsMenu(page: import("@playwright/test").Page) {
-  await page.getByTestId("edit-workflow-node-Document").click();
-  return page.getByTestId("toggle-action-Document-create_node");
+async function openNoteActionsMenu(page: import("@playwright/test").Page) {
+  await page.getByTestId("edit-workflow-node-Note").click();
+  return page.getByTestId("toggle-action-Note-create_node");
 }
 
 test.describe("Workflow node bindings", () => {
-  test("Context inspector: add node, toggle action, persist after reload", async ({
+  test("Create sheet: add node, toggle action, persist after save", async ({
     page,
   }) => {
     test.setTimeout(60_000);
+    const workflowTitle = `E2E bindings ${Date.now()}`;
+
     await loginAsSmoke(page);
-    await openDocumentCreationBuilder(page);
-    await selectContextBlock(page);
+    await openNewWorkflowSheet(page);
 
-    await expect(
-      page.getByTestId("edit-workflow-node-Document"),
-    ).toBeVisible();
+    await page.getByLabel("Name").fill(workflowTitle);
+    await page.getByLabel("Description").fill("Node bindings create sheet test");
 
-    const projectRow = page.getByTestId("edit-workflow-node-Project");
-    if (!(await projectRow.isVisible())) {
-      const dialog = page.getByRole("dialog");
-      await page.getByTestId("add-workflow-node").click();
-      await expect(dialog).toBeVisible();
-      await dialog
-        .locator("nav")
-        .getByRole("button", { name: "Workflow", exact: true })
-        .click();
-      await expect(page.getByTestId("confirm-add-workflow-node")).toBeEnabled();
-      await page.getByTestId("confirm-add-workflow-node").click();
-      await expect(dialog).toBeHidden();
-      await expect(page.getByTestId("edit-workflow-node-Workflow")).toBeVisible();
-    } else {
-      await expect(projectRow).toBeVisible();
-    }
+    await expect(page.getByText("Applicable nodes", { exact: true })).toBeVisible();
 
-    let createNodeToggle = await openDocumentActionsMenu(page);
-    if ((await createNodeToggle.getAttribute("aria-checked")) === "false") {
-      await createNodeToggle.click();
-      createNodeToggle = await openDocumentActionsMenu(page);
-      await expect(createNodeToggle).toHaveAttribute("aria-checked", "true");
-    }
+    const dialog = page.getByRole("dialog");
+    await page.getByTestId("add-workflow-node").click();
+    await expect(dialog.getByRole("heading", { name: "Add node" })).toBeVisible();
+    await dialog
+      .locator("nav")
+      .getByRole("button", { name: "Note", exact: true })
+      .click();
+    await expect(page.getByTestId("confirm-add-workflow-node")).toBeEnabled();
+    await page.getByTestId("confirm-add-workflow-node").click();
+    await expect(page.getByTestId("edit-workflow-node-Note")).toBeVisible();
 
+    let createNodeToggle = await openNoteActionsMenu(page);
+    await expect(createNodeToggle).toHaveAttribute("aria-checked", "true");
     await createNodeToggle.click();
-    createNodeToggle = await openDocumentActionsMenu(page);
+    createNodeToggle = await openNoteActionsMenu(page);
     await expect(createNodeToggle).toHaveAttribute("aria-checked", "false");
+
+    await page.getByRole("button", { name: "Save" }).click();
+    await expect(page).toHaveURL(/workflow\?workflow=/, { timeout: 15_000 });
+    await expect(page.getByRole("heading", { name: workflowTitle })).toBeVisible();
+
+    const contextNode = page
+      .locator(".react-flow__node")
+      .filter({ hasText: "Context" })
+      .first();
+    await expect(contextNode.getByText("Note", { exact: true })).toBeVisible();
 
     await page.reload();
-    await openDocumentCreationBuilder(page);
-    await selectContextBlock(page);
-
-    createNodeToggle = await openDocumentActionsMenu(page);
-    await expect(createNodeToggle).toHaveAttribute("aria-checked", "false");
+    await expect(page.getByRole("heading", { name: workflowTitle })).toBeVisible();
+    await expect(
+      page
+        .locator(".react-flow__node")
+        .filter({ hasText: "Context" })
+        .first()
+        .getByText("Note", { exact: true }),
+    ).toBeVisible();
   });
 });

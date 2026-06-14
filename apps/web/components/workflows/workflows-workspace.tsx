@@ -116,22 +116,9 @@ export function WorkflowsWorkspace({
 
   const mainContent = selected && package_ ? (
     activeTab === "builder" ? (
-      <WorkflowVisualBuilder
-        workflow={package_.workflow}
-        workflowId={selected.id}
-        projectId={projectId}
-        nodeCatalog={nodeCatalog}
-        actionCatalog={actionCatalog}
-      />
+      <WorkflowVisualBuilder workflow={package_.workflow} />
     ) : activeTab === "flow" ? (
-      <WorkflowVisualBuilder
-        workflow={package_.workflow}
-        workflowId={selected.id}
-        projectId={projectId}
-        nodeCatalog={nodeCatalog}
-        actionCatalog={actionCatalog}
-        readOnly
-      />
+      <WorkflowVisualBuilder workflow={package_.workflow} readOnly />
     ) : activeTab === "runs" ? (
       <ActionLogDataTable
         rows={runRows}
@@ -177,7 +164,15 @@ export function WorkflowsWorkspace({
   return (
     <WorkflowCatalogExplorer
       items={catalogItems}
-      newWorkflowTrigger={<NewWorkflowSheet projectId={projectId} />}
+      newWorkflowTrigger={
+        <NewWorkflowSheet
+          projectId={projectId}
+          orgSlug={orgSlug}
+          projectSlug={projectSlug}
+          nodeCatalog={nodeCatalog}
+          actionCatalog={actionCatalog}
+        />
+      }
       mainHeader={
         selected && package_
           ? {

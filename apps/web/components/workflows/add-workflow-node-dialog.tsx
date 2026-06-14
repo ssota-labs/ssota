@@ -152,7 +152,7 @@ export function AddWorkflowNodeDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="flex h-[min(640px,calc(100vh-3rem))] w-[min(760px,calc(100vw-2rem))] max-w-[760px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[760px]"
+        className="flex h-[min(720px,calc(100vh-3rem))] w-[min(960px,calc(100vw-2rem))] max-w-[960px] flex-col gap-0 overflow-hidden p-0 sm:max-w-[960px]"
       >
         <div className="flex items-center gap-2 border-b px-3 py-2.5">
           <DialogTitle className="text-sm font-medium">Add node</DialogTitle>
@@ -178,7 +178,7 @@ export function AddWorkflowNodeDialog({
           </Button>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-[200px_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 grid-cols-[280px_minmax(0,1fr)]">
           <nav className="overflow-y-auto border-r bg-muted/10 p-1.5">
             {filteredCatalog.map((group) => (
               <div key={group.id} className="mb-2 last:mb-0">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { ActionCatalogEntry, NodeCatalogEntry, WorkflowNodeBinding } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -18,7 +19,9 @@ import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { defineWorkflowFormAction } from "@/app/actions";
 import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
+import { WorkflowNodeBindingsField } from "@/components/workflows/workflow-node-bindings-field";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
+import { syncWorkflowNodeCatalogFields } from "@/lib/workflows/workflow-node-bindings";
 import {
   createWorkflowTriggerEventFromKind,
   defaultWorkflowTriggerEvents,
@@ -46,9 +49,27 @@ function FormRow({
   );
 }
 
-export function NewWorkflowSheet({ projectId }: { projectId: string }) {
+export function NewWorkflowSheet({
+  projectId,
+  orgSlug,
+  projectSlug,
+  nodeCatalog,
+  actionCatalog,
+}: {
+  projectId: string;
+  orgSlug: string;
+  projectSlug: string;
+  nodeCatalog: NodeCatalogEntry[];
+  actionCatalog: ActionCatalogEntry[];
+}) {
   const [addTriggerOpen, setAddTriggerOpen] = useState(false);
   const [triggers, setTriggers] = useState(defaultWorkflowTriggerEvents);
+  const [nodeBindings, setNodeBindings] = useState<WorkflowNodeBinding[]>([]);
+
+  const syncedCatalogFields = useMemo(
+    () => syncWorkflowNodeCatalogFields(nodeBindings, nodeCatalog, actionCatalog),
+    [actionCatalog, nodeBindings, nodeCatalog],
+  );
 
   return (
     <>
@@ -71,9 +92,16 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
             className="flex min-h-0 flex-1 flex-col overflow-hidden"
           >
             <input type="hidden" name="projectId" value={projectId} />
+            <input type="hidden" name="orgSlug" value={orgSlug} />
+            <input type="hidden" name="projectSlug" value={projectSlug} />
             <input type="hidden" name="workflowSteps" value="[]" />
             <input type="hidden" name="outputContract" value="{}" />
             <input type="hidden" name="gatePolicy" value="{}" />
+            <input
+              type="hidden"
+              name="allowedActions"
+              value={syncedCatalogFields.allowedActions.join(",")}
+            />
 
             <div className="min-h-0 flex-1 overflow-y-auto py-5">
               <section className="border-b border-border pb-6">
@@ -99,11 +127,20 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
                 </div>
               </section>
 
-              <section className="pt-6">
+              <section className="border-b border-border py-6">
                 <WorkflowTriggersField
                   triggers={triggers}
                   onTriggersChange={setTriggers}
                   onAddTrigger={() => setAddTriggerOpen(true)}
+                />
+              </section>
+
+              <section className="pt-6">
+                <WorkflowNodeBindingsField
+                  nodeBindings={nodeBindings}
+                  onNodeBindingsChange={setNodeBindings}
+                  nodeCatalog={nodeCatalog}
+                  actionCatalog={actionCatalog}
                 />
               </section>
             </div>
