@@ -4,6 +4,7 @@ import { PlusIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import { XIcon } from "@phosphor-icons/react";
+import { cn } from "@ssota/ui/lib/utils";
 
 export function ContextListSection({
   title,
@@ -13,6 +14,7 @@ export function ContextListSection({
   onAdd,
   hasItems,
   emptyMessage = "None added yet.",
+  className,
   children,
 }: {
   title: string;
@@ -22,11 +24,12 @@ export function ContextListSection({
   onAdd: () => void;
   hasItems: boolean;
   emptyMessage?: string;
+  className?: string;
   children: React.ReactNode;
 }) {
 
   return (
-    <section className="space-y-3">
+    <section className={cn("space-y-3", className)}>
       <div className="space-y-1">
         <p className="text-sm font-medium">{title}</p>
         <p className="text-xs text-muted-foreground">{description}</p>

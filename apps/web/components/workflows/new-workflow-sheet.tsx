@@ -122,7 +122,7 @@ export function NewWorkflowSheet({
                 />
               </section>
 
-              <section className="pt-2">
+              <section className="pt-6">
                 <WorkflowContextField
                   context={context}
                   onContextChange={setContext}

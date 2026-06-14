@@ -142,6 +142,7 @@ export function WorkflowContextField({
           description="Hop through edges from a filter group ref."
           addLabel="Add traversal"
           addTestId="add-context-traversal"
+          className="border-t border-border pt-6"
           hasItems={context.traversals.length > 0}
           emptyMessage={
             context.filterGroups.length === 0
@@ -187,6 +188,7 @@ export function WorkflowContextField({
           description="Soft checks agents should evaluate against assembled context."
           addLabel="Add assertion"
           addTestId="add-context-assertion"
+          className="border-t border-border pt-6"
           hasItems={context.assertions.length > 0}
           onAdd={() => setAddAssertionOpen(true)}
         >
