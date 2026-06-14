@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import type {
   ActionCatalogEntry,
+  EdgeCatalogEntry,
   NodeCatalogEntry,
-  WorkflowNodeBinding,
+  WorkflowApplicableNodeType,
 } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
@@ -25,12 +26,11 @@ import { NewTableButton } from "@/components/graph/table-catalog-panel";
 import { AddWorkflowNodeDialog } from "@/components/workflows/add-workflow-node-dialog";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
 import { WorkflowContextField } from "@/components/workflows/workflow-context-field";
-import { WorkflowNodeBindingsField } from "@/components/workflows/workflow-node-bindings-field";
+import { WorkflowApplicableNodeTypesField } from "@/components/workflows/workflow-applicable-node-types-field";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
-import { syncWorkflowNodeCatalogFields } from "@/lib/workflows/workflow-node-bindings";
+import { syncWorkflowNodeCatalogFields } from "@/lib/workflows/workflow-applicable-node-types";
 import {
   defaultContextSpec,
-  type WorkflowEdgeCatalogOption,
 } from "@/lib/workflows/workflow-context-defaults";
 import {
   createWorkflowTriggerEventFromKind,
@@ -72,17 +72,24 @@ export function NewWorkflowSheet({
   projectSlug: string;
   nodeCatalog: NodeCatalogEntry[];
   actionCatalog: ActionCatalogEntry[];
-  edgeCatalog: WorkflowEdgeCatalogOption[];
+  edgeCatalog: EdgeCatalogEntry[];
 }) {
   const [addTriggerOpen, setAddTriggerOpen] = useState(false);
   const [addNodeOpen, setAddNodeOpen] = useState(false);
   const [triggers, setTriggers] = useState(defaultWorkflowTriggerEvents);
-  const [nodeBindings, setNodeBindings] = useState<WorkflowNodeBinding[]>([]);
+  const [applicableNodeTypes, setApplicableNodeTypes] = useState<
+    WorkflowApplicableNodeType[]
+  >([]);
   const [context, setContext] = useState(defaultContextSpec);
 
   const syncedCatalogFields = useMemo(
-    () => syncWorkflowNodeCatalogFields(nodeBindings, nodeCatalog, actionCatalog),
-    [actionCatalog, nodeBindings, nodeCatalog],
+    () =>
+      syncWorkflowNodeCatalogFields(
+        applicableNodeTypes,
+        nodeCatalog,
+        actionCatalog,
+      ),
+    [actionCatalog, applicableNodeTypes, nodeCatalog],
   );
 
   const nodeCatalogOptions = useMemo(
@@ -93,6 +100,15 @@ export function NewWorkflowSheet({
         propertyKeys: Object.keys(entry.propertySchema ?? {}),
       })),
     [nodeCatalog],
+  );
+
+  const edgeCatalogOptions = useMemo(
+    () =>
+      edgeCatalog.map((entry) => ({
+        edgeType: entry.edgeType,
+        label: entry.label,
+      })),
+    [edgeCatalog],
   );
 
   return (
@@ -160,9 +176,9 @@ export function NewWorkflowSheet({
               </section>
 
               <section className="border-b border-border py-6">
-                <WorkflowNodeBindingsField
-                  nodeBindings={nodeBindings}
-                  onNodeBindingsChange={setNodeBindings}
+                <WorkflowApplicableNodeTypesField
+                  applicableNodeTypes={applicableNodeTypes}
+                  onApplicableNodeTypesChange={setApplicableNodeTypes}
                   nodeCatalog={nodeCatalog}
                   actionCatalog={actionCatalog}
                   onAddNodeClick={() => setAddNodeOpen(true)}
@@ -174,8 +190,7 @@ export function NewWorkflowSheet({
                   context={context}
                   onContextChange={setContext}
                   nodeCatalog={nodeCatalogOptions}
-                  nodeCatalogEntries={nodeCatalog}
-                  edgeCatalog={edgeCatalog}
+                  edgeCatalog={edgeCatalogOptions}
                 />
               </section>
             </div>
@@ -205,14 +220,14 @@ export function NewWorkflowSheet({
       <AddWorkflowNodeDialog
         open={addNodeOpen}
         onOpenChange={setAddNodeOpen}
-        existingNodeTypes={nodeBindings.map((binding) => binding.nodeType)}
+        existingNodeTypes={applicableNodeTypes.map((entry) => entry.nodeType)}
         nodeCatalog={nodeCatalog}
-        actionCatalog={actionCatalog}
+        edgeCatalog={edgeCatalog}
         onAddNode={(nodeType) => {
-          if (nodeBindings.some((binding) => binding.nodeType === nodeType)) {
+          if (applicableNodeTypes.some((entry) => entry.nodeType === nodeType)) {
             return;
           }
-          setNodeBindings((current) => [
+          setApplicableNodeTypes((current) => [
             ...current,
             { nodeType, disabledActions: [] },
           ]);

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { buildWorkflowPackage } from "@ssota/core";
 import type { ActionLogRecord, Gate, Workflow } from "@ssota/core";
-import type { ActionCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
+import type { ActionCatalogEntry, EdgeCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
@@ -48,7 +48,7 @@ export function WorkflowsWorkspace({
   activeTab: "builder" | "agent" | "flow" | "runs" | "reviews";
   nodeCatalog: NodeCatalogEntry[];
   actionCatalog: ActionCatalogEntry[];
-  edgeCatalog: Array<{ edgeType: string; label: string }>;
+  edgeCatalog: EdgeCatalogEntry[];
 }) {
   const ctx = { orgSlug, projectSlug };
   const baseHref = projectPath(ctx, "workflow");
@@ -146,11 +146,7 @@ export function WorkflowsWorkspace({
         <aside className="space-y-3">
           <WorkflowMetaCard
             title="Allowed actions"
-            items={[
-              ...selected.spec.requiredActions,
-              ...selected.spec.optionalActions,
-              ...selected.spec.allowedActions,
-            ]}
+            items={selected.spec.allowedActions}
             empty="No actions declared."
           />
           <WorkflowMetaCard

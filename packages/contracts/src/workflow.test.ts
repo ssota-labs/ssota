@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   mergeWorkflowDefinition,
+  migrateApplicableNodeTypes,
   parseWorkflowSpec,
   workflowDefinitionToCatalogUpsert,
   workflowRowToWire,
@@ -58,11 +59,8 @@ const sampleDefinition = WorkflowDefinitionSchema.parse({
     completionCriteria: "Document node exists in Draft",
   },
   agentNotes: "Create documents as Draft.",
-  applicableNodeTypes: ["Document"],
-  nodeBindings: [{ nodeType: "Document", disabledActions: [] }],
+  applicableNodeTypes: [{ nodeType: "Document", disabledActions: [] }],
   allowedActions: ["create_node", "promote_document"],
-  requiredActions: ["create_node"],
-  optionalActions: ["promote_document"],
 });
 
 describe("workflow v0 schemas", () => {
@@ -101,7 +99,7 @@ describe("workflow store helpers", () => {
     expect(upsert.lifecycle).toBe("Active");
   });
 
-  it("migrates legacy queries when parsing stored specs", () => {
+  it("migrates legacy string applicableNodeTypes when parsing stored specs", () => {
     const parsed = parseWorkflowSpec({
       title: "Legacy",
       trigger: { events: [manualTrigger] },
@@ -115,7 +113,9 @@ describe("workflow store helpers", () => {
     });
 
     expect(parsed.context.filterGroups[0]?.nodeType).toBe("Document");
-    expect(parsed.applicableNodeTypes).toEqual(["Document"]);
+    expect(parsed.applicableNodeTypes).toEqual([
+      { nodeType: "Document", disabledActions: [] },
+    ]);
   });
 
   it("merges partial workflow definition patches", () => {
@@ -131,37 +131,54 @@ describe("workflow store helpers", () => {
     expect(merged.steps).toEqual(sampleDefinition.steps);
   });
 
-  it("backfills nodeBindings from applicableNodeTypes when missing", () => {
-    const legacy = WorkflowDefinitionSchema.parse({
-      ...sampleDefinition,
-      nodeBindings: [],
-      applicableNodeTypes: ["Document", "Note"],
-    });
-    const wire = workflowRowToWire({
-      id: "550e8400-e29b-41d4-a716-446655440010",
-      slug: "document-creation",
-      workflowKey: "document_creation",
-      lifecycle: "Active",
-      scope: { kind: "global" },
-      spec: legacy,
+  it("migrates legacy nodeBindings into applicableNodeTypes", () => {
+    const migrated = migrateApplicableNodeTypes({
+      nodeBindings: [
+        { nodeType: "Document", disabledActions: [] },
+        { nodeType: "Note", disabledActions: ["promote_document"] },
+      ],
     });
 
-    expect(wire.nodeBindings).toEqual([
+    expect(migrated).toEqual([
       { nodeType: "Document", disabledActions: [] },
-      { nodeType: "Note", disabledActions: [] },
+      { nodeType: "Note", disabledActions: ["promote_document"] },
     ]);
-    expect(wire.applicableNodeTypes).toEqual(["Document", "Note"]);
   });
 
-  it("syncs applicableNodeTypes from nodeBindings on merge", () => {
+  it("prefers nodeBindings over legacy string applicableNodeTypes during migration", () => {
+    const migrated = migrateApplicableNodeTypes({
+      applicableNodeTypes: ["Workflow"],
+      nodeBindings: [{ nodeType: "Task", disabledActions: ["delete_node"] }],
+    });
+
+    expect(migrated).toEqual([
+      { nodeType: "Task", disabledActions: ["delete_node"] },
+    ]);
+  });
+
+  it("preserves disabledActions on merge", () => {
     const merged = mergeWorkflowDefinition(sampleDefinition, {
-      nodeBindings: [
+      applicableNodeTypes: [
         { nodeType: "Task", disabledActions: ["delete_node"] },
         { nodeType: "Note", disabledActions: [] },
       ],
     });
 
-    expect(merged.applicableNodeTypes).toEqual(["Task", "Note"]);
-    expect(merged.nodeBindings[0]?.disabledActions).toEqual(["delete_node"]);
+    expect(merged.applicableNodeTypes).toEqual([
+      { nodeType: "Task", disabledActions: ["delete_node"] },
+      { nodeType: "Note", disabledActions: [] },
+    ]);
+  });
+
+  it("strips legacy requiredActions and optionalActions on parse", () => {
+    const parsed = parseWorkflowSpec({
+      ...sampleDefinition,
+      requiredActions: ["create_node"],
+      optionalActions: ["promote_document"],
+    });
+
+    expect(parsed).not.toHaveProperty("requiredActions");
+    expect(parsed).not.toHaveProperty("optionalActions");
+    expect(parsed).not.toHaveProperty("nodeBindings");
   });
 });

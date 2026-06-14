@@ -9,6 +9,7 @@ import {
   GRAPH_NODE_LAYOUT_SIZE,
   layoutGraphWithDagre,
 } from "@/lib/graph/dagre-layout";
+import { cn } from "@ssota/ui/lib/utils";
 
 export type SchemaRelation = {
   edgeType: string;
@@ -35,6 +36,9 @@ type NodeSchemaViewProps = {
   propertySchema: Record<string, { valueType?: string; system?: boolean }>;
   relations: SchemaRelation[];
   nodeTypeCatalog: Record<string, SchemaNodeTypeMeta>;
+  className?: string;
+  canvasClassName?: string;
+  fitViewPadding?: number;
 };
 
 function objectNodeData(meta: SchemaNodeTypeMeta): GraphFlowNodeData {
@@ -71,6 +75,9 @@ export function NodeSchemaView({
   propertySchema,
   relations,
   nodeTypeCatalog,
+  className,
+  canvasClassName,
+  fitViewPadding = 0.25,
 }: NodeSchemaViewProps) {
   const propertyEntries = Object.entries(propertySchema);
 
@@ -191,11 +198,12 @@ export function NodeSchemaView({
   );
 
   return (
-    <div className="min-h-0 flex-1 p-4">
+    <div className={cn("min-h-0 flex-1 p-4", className)}>
       <GraphFlowCanvas
         nodes={layoutedNodes as GraphFlowNode[]}
         edges={layoutedEdges}
-        fitViewPadding={0.25}
+        fitViewPadding={fitViewPadding}
+        containerClassName={canvasClassName}
       />
     </div>
   );

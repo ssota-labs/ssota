@@ -344,7 +344,10 @@ export function createInMemoryPorts(
             (workflow.spec.title.toLowerCase().includes(q) ||
               (workflow.spec.agentNotes?.toLowerCase().includes(q) ?? false) ||
               (workflow.workflowKey?.toLowerCase().includes(q) ?? false)) &&
-            (!nodeType || workflow.spec.applicableNodeTypes.includes(nodeType)),
+            (!nodeType ||
+              workflow.spec.applicableNodeTypes.some(
+                (entry) => entry.nodeType === nodeType,
+              )),
         )
         .slice(0, limit);
     },

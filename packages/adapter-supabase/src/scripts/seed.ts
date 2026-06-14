@@ -1,6 +1,6 @@
 import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
 import { createClient } from "@supabase/supabase-js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
@@ -85,7 +85,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Free-form note content",
         propertySchema: titlePropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node"],
       },
       {
         projectId,
@@ -98,7 +98,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Structured document with title and body",
         propertySchema: titlePropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node", "update_node_properties", "promote_document"],
       },
       {
         projectId,
@@ -124,7 +124,7 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational project node",
         propertySchema: titleSubjectPropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node"],
       },
       {
         projectId,
@@ -137,10 +137,15 @@ async function seedCatalog(
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Operational task node",
         propertySchema: titleSubjectPropertySchema,
-        allowedActionRefs: [],
+        allowedActionRefs: ["create_node"],
       },
     ])
-    .onConflictDoNothing();
+    .onConflictDoUpdate({
+      target: [schema.nodeCatalog.projectId, schema.nodeCatalog.nodeType],
+      set: {
+        allowedActionRefs: sql`excluded.allowed_action_refs`,
+      },
+    });
 
   await db
     .insert(schema.edgeCatalog)
@@ -366,10 +371,11 @@ function workflowSeedRow(
         completionCriteria: legacy.completionCriteria,
       },
       agentNotes: legacy.body,
-      applicableNodeTypes: legacy.applicableNodeTypes,
+      applicableNodeTypes: legacy.applicableNodeTypes.map((nodeType) => ({
+        nodeType,
+        disabledActions: [],
+      })),
       allowedActions: legacy.allowedActions,
-      requiredActions: legacy.requiredActions,
-      optionalActions: legacy.optionalActions,
     },
   };
 }
@@ -384,8 +390,6 @@ const DOMAIN_WORKFLOWS = [
       "document creation",
     ],
     applicableNodeTypes: ["Document"],
-    requiredActions: ["create_node"],
-    optionalActions: ["promote_document"],
     lifecycle: "Active" as const,
     body: "Create documents as Draft. Include title, content, and provenance. Promote only through Human Gate.",
     workflowSteps: [
@@ -412,8 +416,6 @@ const DOMAIN_WORKFLOWS = [
       "update document",
     ],
     applicableNodeTypes: ["Document"],
-    requiredActions: [],
-    optionalActions: ["create_node", "update_node_properties"],
     lifecycle: "Active" as const,
     body: "Confirm document mutability and authority before updating. Gate if authority or document kind is unclear. Load target via get_node first.",
     workflowSteps: [],
@@ -430,8 +432,6 @@ const DOMAIN_WORKFLOWS = [
       "summarize",
     ],
     applicableNodeTypes: ["Document", "Note", "Project", "Task"],
-    requiredActions: [],
-    optionalActions: [],
     lifecycle: "Active" as const,
     body: "Read-only intent. Use query_nodes, get_node, query_neighbors, traverse_graph. Prefer Active authoritative sources.",
     workflowSteps: [],
@@ -447,8 +447,6 @@ const DOMAIN_WORKFLOWS = [
       "meeting notes",
     ],
     applicableNodeTypes: ["Meeting", "Task", "Note"],
-    requiredActions: ["create_node"],
-    optionalActions: ["create_node"],
     lifecycle: "Active" as const,
     body: "Extract candidates from meetings. Do not finalize tasks without source provenance. Default new work items to Draft.",
     workflowSteps: [],
@@ -465,8 +463,6 @@ const DOMAIN_WORKFLOWS = [
       "cleanup",
     ],
     applicableNodeTypes: ["Document", "Task", "Project", "Edge"],
-    requiredActions: [],
-    optionalActions: [],
     lifecycle: "Active" as const,
     body: "Identify duplicates and stale items. Auto merge or delete requires Human Gate.",
     workflowSteps: [],
@@ -478,8 +474,6 @@ const DOMAIN_WORKFLOWS = [
     title: "Replay and audit",
     triggerPatterns: ["replay", "audit", "provenance", "action log"],
     applicableNodeTypes: ["Document", "Task", "Project"],
-    requiredActions: [],
-    optionalActions: [],
     lifecycle: "Active" as const,
     body: "Use get_action_log and get_action_log_entry. Prefer log and provenance over inference.",
     workflowSteps: [],

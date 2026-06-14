@@ -6,7 +6,7 @@ import {
   FlowArrowIcon,
   FunnelIcon,
 } from "@phosphor-icons/react";
-import type { ContextSpec, NodeCatalogEntry } from "@ssota/contracts";
+import type { ContextSpec } from "@ssota/contracts";
 import { Label } from "@ssota/ui/components/ui/label";
 import { ContextAssertionForm } from "@/components/workflows/context-assertion-form";
 import { ContextExpandableBlock } from "@/components/workflows/context-expandable-block";
@@ -29,7 +29,6 @@ type WorkflowContextFieldProps = {
   context: ContextSpec;
   onContextChange: (context: ContextSpec) => void;
   nodeCatalog: WorkflowNodeCatalogOption[];
-  nodeCatalogEntries: NodeCatalogEntry[];
   edgeCatalog: WorkflowEdgeCatalogOption[];
 };
 

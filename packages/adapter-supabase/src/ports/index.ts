@@ -327,7 +327,7 @@ export function createCatalogPort(db: Db, scope: ActionPortsScope): CatalogPort 
               sql`lower(coalesce(${schema.workflows.workflowKey}, '')) like ${pattern}`,
             ),
             nodeType
-              ? sql`${schema.workflows.spec}->'applicableNodeTypes' @> ${JSON.stringify([nodeType])}::jsonb`
+              ? sql`${schema.workflows.spec}->'applicableNodeTypes' @> ${JSON.stringify([{ nodeType }])}::jsonb`
               : undefined,
           ),
         )

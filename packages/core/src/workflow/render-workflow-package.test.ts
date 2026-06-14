@@ -74,11 +74,8 @@ const sampleWorkflow: Workflow = {
       completionCriteria: "Document node exists in Draft",
     },
     agentNotes: "Create documents as Draft.",
-    applicableNodeTypes: ["Document"],
-    nodeBindings: [{ nodeType: "Document", disabledActions: [] }],
+    applicableNodeTypes: [{ nodeType: "Document", disabledActions: [] }],
     allowedActions: ["create_node"],
-    requiredActions: ["create_node"],
-    optionalActions: ["promote_document"],
   },
 };
 

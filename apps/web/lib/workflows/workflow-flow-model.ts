@@ -170,11 +170,9 @@ export function workflowToFlowGraph(workflow: Workflow): {
       label: "Context",
       description: contextSummary(workflow) ?? "Assemble graph context",
       badges:
-        (workflow.nodeBindings.length
-          ? workflow.nodeBindings.map((binding) => binding.nodeType)
-          : workflow.applicableNodeTypes.length
-            ? workflow.applicableNodeTypes
-            : undefined),
+        workflow.applicableNodeTypes.length > 0
+          ? workflow.applicableNodeTypes.map((entry) => entry.nodeType)
+          : undefined,
     }),
     ...workflow.conditions.map((condition) =>
       buildNode({
