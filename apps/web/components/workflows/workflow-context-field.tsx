@@ -15,7 +15,7 @@ import { ContextListSection } from "@/components/workflows/context-list-section"
 import { ContextTraversalForm } from "@/components/workflows/context-traversal-form";
 import {
   assertionSummary,
-  createAssertionFromKind,
+  createAssertionDraft,
   createFilterGroupDraft,
   createTraversalDraft,
   filterGroupSummary,
@@ -94,7 +94,7 @@ export function WorkflowContextField({
   }
 
   function addAssertion() {
-    const assertion = createAssertionFromKind("status_equals");
+    const assertion = createAssertionDraft(defaultNodeType(nodeCatalog));
     patchContext({ assertions: [...context.assertions, assertion] });
     setExpandedAssertionId(assertion.id);
     setExpandedFilterGroupId(null);
@@ -205,14 +205,14 @@ export function WorkflowContextField({
 
         <ContextListSection
           title="Assertions"
-          description="Soft checks agents should evaluate against assembled context."
+          description="Soft checks on node types with property conditions."
           addLabel="Add assertion"
           addTestId="add-context-assertion"
           hasItems={context.assertions.length > 0}
           onAdd={addAssertion}
         >
           {context.assertions.map((assertion) => {
-            const summary = assertionSummary(assertion);
+            const summary = assertionSummary(assertion, nodeCatalog);
             const expanded = expandedAssertionId === assertion.id;
             return (
               <ContextExpandableBlock

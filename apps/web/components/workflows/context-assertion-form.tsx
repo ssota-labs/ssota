@@ -1,7 +1,7 @@
 "use client";
 
-import type { ContextAssertion, ContextAssertionKind } from "@ssota/contracts";
-import { Input } from "@ssota/ui/components/ui/input";
+import type { ContextAssertion } from "@ssota/contracts";
+import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
 import {
   Select,
@@ -10,7 +10,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ssota/ui/components/ui/select";
-import type { WorkflowNodeCatalogOption } from "@/lib/workflows/workflow-context-defaults";
+import { ContextFilterConditionRow } from "@/components/workflows/context-filter-condition-row";
+import {
+  createFilterCondition,
+  type WorkflowNodeCatalogOption,
+} from "@/lib/workflows/workflow-context-defaults";
 
 type ContextAssertionFormProps = {
   assertion: ContextAssertion;
@@ -23,23 +27,122 @@ export function ContextAssertionForm({
   nodeCatalog,
   onChange,
 }: ContextAssertionFormProps) {
-  function patch(patch: Partial<ContextAssertion>) {
-    onChange({ ...assertion, ...patch } as ContextAssertion);
-  }
-
-  function updateParams(params: Record<string, unknown>) {
-    onChange({ ...assertion, params } as ContextAssertion);
-  }
+  const selectedEntry = nodeCatalog.find(
+    (entry) => entry.nodeType === assertion.nodeType,
+  );
+  const propertyKeys = selectedEntry?.propertyKeys ?? [];
 
   return (
     <div className="space-y-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">On node type</Label>
+          <Select
+            value={assertion.nodeType}
+            onValueChange={(value) => {
+              if (!value) return;
+              const nextKeys =
+                nodeCatalog.find((entry) => entry.nodeType === value)
+                  ?.propertyKeys ?? [];
+              onChange({
+                ...assertion,
+                nodeType: value,
+                conditions: assertion.conditions.map((condition) => ({
+                  ...condition,
+                  propertyKey: nextKeys[0] ?? condition.propertyKey,
+                })),
+              });
+            }}
+          >
+            <SelectTrigger className="h-8 w-full" data-testid="assertion-node-type">
+              <SelectValue placeholder="Select node type" />
+            </SelectTrigger>
+            <SelectContent>
+              {nodeCatalog.map((entry) => (
+                <SelectItem key={entry.nodeType} value={entry.nodeType}>
+                  {entry.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Match</Label>
+          <Select
+            value={assertion.combinator}
+            onValueChange={(value) =>
+              value &&
+              onChange({
+                ...assertion,
+                combinator: value as ContextAssertion["combinator"],
+              })
+            }
+          >
+            <SelectTrigger className="h-8 w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="and">All checks</SelectItem>
+              <SelectItem value="or">Any check</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {assertion.conditions.map((condition, index) => (
+          <ContextFilterConditionRow
+            key={condition.id}
+            condition={condition}
+            propertyKeys={propertyKeys}
+            showWhereLabel={index === 0}
+            onChange={(next) =>
+              onChange({
+                ...assertion,
+                conditions: assertion.conditions.map((item) =>
+                  item.id === condition.id ? next : item,
+                ),
+              })
+            }
+            onRemove={() =>
+              onChange({
+                ...assertion,
+                conditions: assertion.conditions.filter(
+                  (item) => item.id !== condition.id,
+                ),
+              })
+            }
+          />
+        ))}
+
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-muted-foreground"
+          data-testid="add-assertion-check"
+          onClick={() =>
+            onChange({
+              ...assertion,
+              conditions: [
+                ...assertion.conditions,
+                createFilterCondition(propertyKeys[0] ?? "lifecycle_status"),
+              ],
+            })
+          }
+        >
+          + Add check
+        </Button>
+      </div>
+
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Mode</Label>
           <Select
             value={assertion.mode}
             onValueChange={(value) =>
-              value && patch({ mode: value as ContextAssertion["mode"] })
+              value && onChange({ ...assertion, mode: value as ContextAssertion["mode"] })
             }
           >
             <SelectTrigger className="h-8 w-full">
@@ -58,7 +161,10 @@ export function ContextAssertionForm({
             value={assertion.enforcement}
             onValueChange={(value) =>
               value &&
-              patch({ enforcement: value as ContextAssertion["enforcement"] })
+              onChange({
+                ...assertion,
+                enforcement: value as ContextAssertion["enforcement"],
+              })
             }
           >
             <SelectTrigger className="h-8 w-full">
@@ -71,109 +177,6 @@ export function ContextAssertionForm({
           </Select>
         </div>
       </div>
-
-      <AssertionParamsEditor
-        kind={assertion.kind}
-        params={assertion.params}
-        nodeCatalog={nodeCatalog}
-        onChange={updateParams}
-      />
     </div>
   );
-}
-
-function AssertionParamsEditor({
-  kind,
-  params,
-  nodeCatalog,
-  onChange,
-}: {
-  kind: ContextAssertionKind;
-  params: Record<string, unknown>;
-  nodeCatalog: WorkflowNodeCatalogOption[];
-  onChange: (params: Record<string, unknown>) => void;
-}) {
-  if (kind === "node_exists" || kind === "count_at_least") {
-    return (
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Node type</Label>
-          <Select
-            value={String(params.nodeType ?? "")}
-            onValueChange={(value) => onChange({ ...params, nodeType: value ?? "" })}
-          >
-            <SelectTrigger className="h-8 w-full">
-              <SelectValue placeholder="Select node type" />
-            </SelectTrigger>
-            <SelectContent>
-              {nodeCatalog.map((entry) => (
-                <SelectItem key={entry.nodeType} value={entry.nodeType}>
-                  {entry.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {kind === "count_at_least" ? (
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Minimum count</Label>
-            <Input
-              className="h-8"
-              type="number"
-              min={1}
-              value={String(params.count ?? 1)}
-              onChange={(event) =>
-                onChange({ ...params, count: Number(event.target.value) || 1 })
-              }
-            />
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
-  if (kind === "property_present" || kind === "property_equals") {
-    return (
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Property key</Label>
-          <Input
-            className="h-8"
-            value={String(params.propertyKey ?? "")}
-            onChange={(event) =>
-              onChange({ ...params, propertyKey: event.target.value })
-            }
-          />
-        </div>
-        {kind === "property_equals" ? (
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Expected value</Label>
-            <Input
-              className="h-8"
-              value={String(params.value ?? "")}
-              onChange={(event) => onChange({ ...params, value: event.target.value })}
-            />
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
-  if (kind === "status_equals") {
-    return (
-      <div className="space-y-1.5">
-        <Label htmlFor="assertion-status" className="text-xs text-muted-foreground">
-          Status
-        </Label>
-        <Input
-          id="assertion-status"
-          className="h-8"
-          value={String(params.status ?? "")}
-          onChange={(event) => onChange({ ...params, status: event.target.value })}
-        />
-      </div>
-    );
-  }
-
-  return null;
 }

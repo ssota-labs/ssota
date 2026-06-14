@@ -72,8 +72,11 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
               <ul className="space-y-1 text-muted-foreground">
                 {workflow.context.assertions.map((assertion) => (
                   <li key={assertion.id}>
-                    {assertion.label ?? assertion.id} · {assertion.kind} (
-                    {assertion.mode})
+                    {assertion.nodeType}
+                    {assertion.conditions.length
+                      ? ` · ${assertion.conditions.length} check(s)`
+                      : ""}{" "}
+                    · {assertion.enforcement}
                   </li>
                 ))}
               </ul>

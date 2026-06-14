@@ -50,9 +50,14 @@ test.describe("Workflow context create sheet", () => {
     const assertionRow = page.getByTestId(/assertion-row-/).first();
     await expect(assertionRow).toBeVisible();
     await expect(page.getByTestId(/assertion-expanded-/).first()).toBeVisible();
-    await expect(assertionRow).toContainText("Status equals");
 
-    await page.getByLabel("Status").fill("Approved");
+    const assertionExpanded = page.getByTestId(/assertion-expanded-/).first();
+    await assertionExpanded.getByTestId("assertion-node-type").click();
+    await page.getByRole("option", { name: "Document", exact: true }).click();
+    await expect(assertionRow).toContainText("Document");
+
+    const valueInput = assertionExpanded.locator('input[placeholder="Value"]').first();
+    await valueInput.fill("Approved");
     await expect(assertionRow).toContainText(/Approved/);
 
     await page.getByRole("button", { name: "Save" }).click();

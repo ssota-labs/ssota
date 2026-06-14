@@ -138,13 +138,25 @@ function appendContextSection(lines: string[], workflow: WireWorkflow) {
   }
 
   for (const assertion of context.assertions) {
-    const label = assertion.label ?? assertion.id;
+    const label = assertion.nodeType;
+    const matchLabel = assertion.combinator === "or" ? "any" : "all";
     lines.push(`### Assertion: ${label}`);
-    lines.push(
-      `- kind: ${assertion.kind} (${assertion.mode}, ${assertion.enforcement})`,
-    );
-    if (Object.keys(assertion.params).length) {
-      lines.push(`- params: ${JSON.stringify(assertion.params)}`);
+    lines.push(`- nodeType: ${assertion.nodeType}`);
+    lines.push(`- match: ${matchLabel}`);
+    lines.push(`- mode: ${assertion.mode} (${assertion.enforcement})`);
+    if (assertion.conditions.length) {
+      lines.push("- checks:");
+      for (const condition of assertion.conditions) {
+        const value =
+          condition.value !== undefined && condition.value !== ""
+            ? ` "${condition.value}"`
+            : "";
+        lines.push(
+          `  - ${condition.propertyKey} ${condition.operator}${value}`,
+        );
+      }
+    } else {
+      lines.push("- checks: (node type presence only)");
     }
     lines.push("");
   }
