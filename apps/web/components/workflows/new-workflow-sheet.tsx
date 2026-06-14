@@ -22,9 +22,9 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
       <SheetContent
         side="right"
         size="half"
-        className="flex h-full flex-col gap-0 p-0"
+        className="flex h-full flex-col gap-0 overflow-hidden p-0"
       >
-        <SheetHeader className="shrink-0 border-b px-6 py-5">
+        <SheetHeader className="sticky top-0 z-10 shrink-0 border-b border-border bg-popover px-6 py-5">
           <SheetTitle>Create a new workflow</SheetTitle>
           <SheetDescription>
             이름과 설명만 입력하세요. 단계·게이트·액션은 Builder에서 React Flow로
@@ -33,14 +33,14 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
         </SheetHeader>
         <form
           action={defineWorkflowInstructionFormAction}
-          className="flex min-h-0 flex-1 flex-col"
+          className="flex min-h-0 flex-1 flex-col overflow-hidden"
         >
           <input type="hidden" name="projectId" value={projectId} />
           <input type="hidden" name="workflowSteps" value="[]" />
           <input type="hidden" name="outputContract" value="{}" />
           <input type="hidden" name="gatePolicy" value="{}" />
 
-          <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
             <div className="space-y-2">
               <Label htmlFor="workflow-title">Name</Label>
               <Input
@@ -90,11 +90,11 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
             </div>
           </div>
 
-          <SheetFooter className="shrink-0 flex-row justify-end gap-2 border-t px-6 py-4">
+          <SheetFooter className="sticky bottom-0 z-10 shrink-0 flex-row justify-end gap-2 border-t border-border bg-popover px-6 py-4">
             <SheetClose render={<Button type="button" variant="outline" />}>
               Cancel
             </SheetClose>
-            <Button type="submit">Create workflow</Button>
+            <Button type="submit">Save</Button>
           </SheetFooter>
         </form>
       </SheetContent>
