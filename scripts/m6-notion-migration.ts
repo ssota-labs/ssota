@@ -33,9 +33,7 @@ const NOTION_DOMAIN_INSTRUCTIONS = [
   {
     title: "Document mutation (Notion prototype)",
     triggerPatterns: ["document mutation", "edit document"],
-    applicableNodeTypes: ["Document"],
-    requiredActions: [],
-    optionalActions: [],
+    applicableNodeTypes: [{ nodeType: "Document", disabledActions: [] }],
     lifecycle: "Active" as const,
     body: "Migrated domain instruction placeholder. Confirm mutability before update.",
     provenance: { source: "notion-prototype", intent_class: "Domain" },

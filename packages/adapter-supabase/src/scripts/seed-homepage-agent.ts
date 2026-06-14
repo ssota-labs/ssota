@@ -292,13 +292,11 @@ export async function seedHomepageAgentCatalog(
             "All instance nodes are scoped by subject_id from the embedder context.",
           ].join("\n"),
           applicableNodeTypes: [
-            "HomepageProject",
-            "DesignBrief",
-            "PageSection",
+            { nodeType: "HomepageProject", disabledActions: [] },
+            { nodeType: "DesignBrief", disabledActions: [] },
+            { nodeType: "PageSection", disabledActions: [] },
           ],
           allowedActions: ["create_node", "link_homepage_contains"],
-          requiredActions: ["create_node", "link_homepage_contains"],
-          optionalActions: ["create_node"],
         },
       },
     ])

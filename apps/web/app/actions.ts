@@ -21,7 +21,7 @@ import {
   UpdatePropertyPermissionInputSchema,
   WorkflowTriggerEventSchema,
   createManualWorkflowTrigger,
-  applyWorkflowNodeBindingSync,
+  normalizeWorkflowDefinition,
   deriveApplicableNodeTypes,
   type ExecuteActionResult,
   type WorkflowTriggerEvent,
@@ -36,7 +36,7 @@ import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
-import { parseWorkflowNodeBindings } from "@/lib/workflows/workflow-node-bindings";
+import { parseApplicableNodeTypes } from "@/lib/workflows/workflow-applicable-node-types";
 
 function loginRedirect(error: string, next?: string | null): never {
   const params = new URLSearchParams({ error });
@@ -726,7 +726,9 @@ function parseWorkflowContext(raw: FormDataEntryValue | null) {
 export async function defineWorkflowFormAction(formData: FormData): Promise<void> {
   const projectId = await requireProjectId(formData);
   const triggerEvents = parseWorkflowTriggerEvents(formData.get("workflowTriggers"));
-  const nodeBindings = parseWorkflowNodeBindings(formData.get("workflowNodeBindings"));
+  const applicableNodeTypes = parseApplicableNodeTypes(
+    formData.get("applicableNodeTypes"),
+  );
   const context = parseWorkflowContext(formData.get("workflowContext"));
   const applicableNodeTypesFromContext = deriveApplicableNodeTypes(context);
   const allowedActionsFromBindings = parseCsv(formData.get("allowedActions"));
@@ -783,8 +785,19 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
       ? [{ id: "runbook", title: "Runbook", kind: "url" as const, url: contentUrl }]
       : []),
   ];
+  const nextApplicableNodeTypes =
+    applicableNodeTypes.length > 0
+      ? applicableNodeTypes
+      : applicableNodeTypesFromContext.length || !scopedNodeType
+        ? applicableNodeTypesFromContext.map((nodeType) => ({
+            nodeType,
+            disabledActions: [] as string[],
+          }))
+        : scopedNodeType
+          ? [{ nodeType: scopedNodeType, disabledActions: [] as string[] }]
+          : [];
   const result = await defineWorkflowAction({
-    definition: applyWorkflowNodeBindingSync({
+    definition: normalizeWorkflowDefinition({
       title,
       workflowKey,
       lifecycle: "Active",
@@ -794,17 +807,7 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
       conditions: [],
       gates: [],
       routes: [],
-      nodeBindings,
-      applicableNodeTypes:
-        nodeBindings.length > 0
-          ? nodeBindings.map((binding) => binding.nodeType)
-          : applicableNodeTypesFromContext.length || !scopedNodeType
-            ? applicableNodeTypesFromContext
-            : scopedNodeType
-              ? [scopedNodeType]
-              : [],
-      requiredActions: parseCsv(formData.get("requiredActions")),
-      optionalActions: parseCsv(formData.get("optionalActions")),
+      applicableNodeTypes: nextApplicableNodeTypes,
       allowedActions: allowedActionsFromBindings,
       steps,
       output: {
