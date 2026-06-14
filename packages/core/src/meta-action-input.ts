@@ -185,7 +185,8 @@ export function mergeUpdateInstructionInput(
       scope:
         (patch.scope as Instruction["scope"] | undefined) ?? existing.scope,
       triggers:
-        (patch.triggers as string[] | undefined) ?? existing.triggers,
+        (patch.triggers as Instruction["triggers"] | undefined) ??
+        existing.triggers,
       workflowSteps:
         (patch.workflowSteps as Instruction["workflowSteps"] | undefined) ??
         existing.workflowSteps,

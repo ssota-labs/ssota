@@ -18,8 +18,12 @@ import {
   UpdateNodePropertiesInputSchema,
   UpdateNodePropertySchemaInputSchema,
   UpdatePropertyPermissionInputSchema,
+  WorkflowTriggerEventSchema,
+  createManualWorkflowTrigger,
+  type ExecuteActionResult,
+  type WorkflowTriggerEvent,
 } from "@ssota/contracts";
-import type { ExecuteActionResult } from "@ssota/contracts";
+import { deriveInstructionKeyFromTitle } from "@ssota/core";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
@@ -248,32 +252,20 @@ function parseJsonArray(value: FormDataEntryValue | null): Record<string, unknow
   return parsed as Record<string, unknown>[];
 }
 
-function parseStructuredWorkflowTriggers(
+function parseWorkflowTriggerEvents(
   value: FormDataEntryValue | null,
-): Array<{ kind: string }> {
+): WorkflowTriggerEvent[] {
   const raw = String(value ?? "").trim();
-  if (!raw) return [{ kind: "manual" }];
+  if (!raw) return [createManualWorkflowTrigger()];
   try {
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [{ kind: "manual" }];
-    return parsed.filter(
-      (entry): entry is { kind: string } =>
-        Boolean(entry) &&
-        typeof entry === "object" &&
-        typeof (entry as { kind?: unknown }).kind === "string",
-    );
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return [createManualWorkflowTrigger()];
+    }
+    return parsed.map((entry) => WorkflowTriggerEventSchema.parse(entry));
   } catch {
-    return [{ kind: "manual" }];
+    return [createManualWorkflowTrigger()];
   }
-}
-
-function triggerPatternsFromStructuredTriggers(
-  triggers: Array<{ kind: string }>,
-): string[] {
-  const patterns = triggers
-    .map((trigger) => trigger.kind)
-    .filter((kind) => kind.length > 0);
-  return patterns.length > 0 ? patterns : ["manual"];
 }
 
 function parseJsonValue(value: FormDataEntryValue | null): unknown {
@@ -719,9 +711,7 @@ export async function defineScopedActionFormAction(formData: FormData): Promise<
 
 export async function defineWorkflowInstructionFormAction(formData: FormData): Promise<void> {
   const projectId = await requireProjectId(formData);
-  const structuredTriggers = parseStructuredWorkflowTriggers(
-    formData.get("workflowTriggers"),
-  );
+  const triggerEvents = parseWorkflowTriggerEvents(formData.get("workflowTriggers"));
   const scopeKind = String(formData.get("scopeKind") ?? "global");
   const scopedNodeType = String(formData.get("nodeType") ?? "");
   const scope =
@@ -731,12 +721,23 @@ export async function defineWorkflowInstructionFormAction(formData: FormData): P
   const applicableNodeTypes = parseCsv(formData.get("applicableNodeTypes"));
   const body = String(formData.get("body") ?? "").trim();
   const contentUrl = String(formData.get("contentUrl") ?? "").trim();
-  const instructionKey = String(formData.get("instructionKey") ?? "").trim();
+  const title = String(formData.get("title") ?? "").trim();
+  const ports = getActionPorts(projectId);
+  const existingInstructions = await ports.catalog.listInstructions();
+  const takenKeys = new Set(
+    existingInstructions
+      .map((instruction) => instruction.instructionKey)
+      .filter((key): key is string => Boolean(key)),
+  );
+  const instructionKey = deriveInstructionKeyFromTitle(title, (key) =>
+    takenKeys.has(key),
+  );
   await defineInstructionAction({
     definition: {
-      title: String(formData.get("title") ?? ""),
-      ...(instructionKey ? { instructionKey } : {}),
-      triggerPatterns: triggerPatternsFromStructuredTriggers(structuredTriggers),
+      title,
+      instructionKey,
+      triggerPatterns: [],
+      triggers: triggerEvents,
       applicableNodeTypes:
         applicableNodeTypes.length || !scopedNodeType
           ? applicableNodeTypes
@@ -747,7 +748,6 @@ export async function defineWorkflowInstructionFormAction(formData: FormData): P
       ...(body ? { body } : {}),
       ...(contentUrl ? { contentUrl } : {}),
       scope,
-      triggers: parseCsv(formData.get("triggers")),
       workflowSteps: parseJsonArray(formData.get("workflowSteps")),
       allowedActions: parseCsv(formData.get("allowedActions")),
       outputContract: parseJsonObject(formData.get("outputContract")),

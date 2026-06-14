@@ -315,7 +315,7 @@ export const instructions = pgTable(
       .notNull()
       .default({ kind: "global" })
       .$type<Record<string, unknown>>(),
-    triggers: jsonb("triggers").notNull().default([]).$type<string[]>(),
+    triggers: jsonb("triggers").notNull().default([]).$type<import("@ssota/contracts").WorkflowTriggerEvent[]>(),
     workflowSteps: jsonb("workflow_steps").notNull().default([]).$type<unknown[]>(),
     allowedActions: jsonb("allowed_actions").notNull().default([]).$type<string[]>(),
     outputContract: jsonb("output_contract")

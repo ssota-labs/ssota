@@ -21,7 +21,7 @@ import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-tr
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 
 const formRowClassName =
-  "grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] items-start gap-x-8 gap-y-5";
+  "grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] items-start gap-x-8 gap-y-5 px-6";
 
 function FormRow({
   label,
@@ -72,7 +72,7 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
 
             <div className="min-h-0 flex-1 overflow-y-auto py-5">
               <section className="border-b border-border pb-6">
-                <div className={`${formRowClassName} px-6`}>
+                <div className={formRowClassName}>
                   <FormRow label="Name" htmlFor="workflow-title">
                     <Input
                       id="workflow-title"
@@ -95,23 +95,9 @@ export function NewWorkflowSheet({ projectId }: { projectId: string }) {
               </section>
 
               <section className="pt-6">
-                <div className={`${formRowClassName} px-6`}>
-                  <FormRow label="Key" htmlFor="workflow-key">
-                    <Input
-                      id="workflow-key"
-                      name="instructionKey"
-                      placeholder="homepage_creation"
-                      pattern="[a-z][a-z0-9_]*"
-                    />
-                    <p className="mt-1.5 text-xs text-muted-foreground">
-                      선택. MCP·로그에서 쓰는 snake_case 식별자입니다.
-                    </p>
-                  </FormRow>
-
-                  <WorkflowTriggersField
-                    onAddTrigger={() => setAddTriggerOpen(true)}
-                  />
-                </div>
+                <WorkflowTriggersField
+                  onAddTrigger={() => setAddTriggerOpen(true)}
+                />
               </section>
             </div>
 

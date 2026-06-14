@@ -11,7 +11,7 @@ const sampleInstruction: Instruction = {
   slug: "document-creation",
   instructionKey: "document_creation",
   title: "Document creation",
-  triggerPatterns: ["create document"],
+  triggerPatterns: [],
   applicableNodeTypes: ["Document"],
   requiredActions: ["create_node"],
   optionalActions: ["promote_document"],
@@ -19,7 +19,10 @@ const sampleInstruction: Instruction = {
   body: "Create documents as Draft.",
   contentUrl: null,
   scope: { kind: "node_type", nodeType: "Document" },
-  triggers: ["task_assigned"],
+  triggers: [
+    { id: "manual", kind: "manual", enabled: true, config: {} },
+    { id: "task_assigned", kind: "task_assigned", enabled: true, config: {} },
+  ],
   workflowSteps: [
     {
       id: "execute",
@@ -45,7 +48,7 @@ describe("renderWorkflowInstructionText", () => {
     expect(text).toContain("## Steps");
     expect(text).toContain("### 1. Create draft");
     expect(text).toContain("## Output");
-    expect(text).toContain("create document");
+    expect(text).toContain("- manual");
     expect(text).toContain("Document node exists in Draft");
   });
 

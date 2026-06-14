@@ -612,7 +612,7 @@ describe("executeAction — Phase 3 scoped graph enforcement", () => {
             lifecycle: "Active",
             body: "",
             scope: { kind: "global" },
-            triggers: [],
+            triggers: [{ id: "manual", kind: "manual", enabled: true, config: {} }],
             workflowSteps: [],
             allowedActions: [],
             outputContract: {},

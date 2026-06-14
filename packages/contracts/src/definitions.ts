@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { WorkflowTriggerEventSchema } from "./workflow-trigger-event.js";
 
 /** SSOTA project scope — one catalog/graph space per agent domain. */
 export const PROJECT_ID_HEADER = "X-SSOTA-Project-Id" as const;
@@ -343,7 +344,7 @@ function hasInstructionContent(data: {
 const InstructionDefinitionBaseSchema = z.object({
   title: z.string().min(1),
   instructionKey: InstructionKeySchema.optional(),
-  triggerPatterns: z.array(z.string()).min(1),
+  triggerPatterns: z.array(z.string()).default([]),
   applicableNodeTypes: z.array(z.string()).default([]),
   requiredActions: z.array(z.string()).default([]),
   optionalActions: z.array(z.string()).default([]),
@@ -351,7 +352,7 @@ const InstructionDefinitionBaseSchema = z.object({
   body: z.string().nullable().optional(),
   contentUrl: z.string().url().nullable().optional(),
   scope: InstructionScopeSchema.default({ kind: "global" }),
-  triggers: z.array(z.string()).default([]),
+  triggers: z.array(WorkflowTriggerEventSchema).default([]),
   workflowSteps: z.array(InstructionWorkflowStepSchema).default([]),
   allowedActions: z.array(z.string()).default([]),
   outputContract: z.record(z.unknown()).default({}),
@@ -364,6 +365,12 @@ export const InstructionDefinitionSchema = InstructionDefinitionBaseSchema.refin
   {
     message: "At least one of body or contentUrl is required",
     path: ["body"],
+  },
+).refine(
+  (data) => data.triggers.length > 0 || data.triggerPatterns.length > 0,
+  {
+    message: "At least one trigger event is required",
+    path: ["triggers"],
   },
 );
 

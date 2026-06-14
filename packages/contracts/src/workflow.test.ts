@@ -7,12 +7,26 @@ import {
 } from "./workflow-compat.js";
 import { WorkflowDefinitionSchema } from "./workflow.js";
 
+const manualTrigger = {
+  id: "manual",
+  kind: "manual",
+  enabled: true,
+  config: {},
+} as const;
+
+const taskAssignedTrigger = {
+  id: "task_assigned",
+  kind: "task_assigned",
+  enabled: true,
+  config: {},
+} as const;
+
 const sampleInstruction = InstructionSchema.parse({
   id: "550e8400-e29b-41d4-a716-446655440010",
   slug: "document-creation",
   instructionKey: "document_creation",
   title: "Document creation",
-  triggerPatterns: ["create document", "new document"],
+  triggerPatterns: [],
   applicableNodeTypes: ["Document"],
   requiredActions: ["create_node"],
   optionalActions: ["promote_document"],
@@ -20,7 +34,7 @@ const sampleInstruction = InstructionSchema.parse({
   body: "Create documents as Draft. Include title, content, and provenance.",
   contentUrl: "https://example.com/runbooks/document-creation",
   scope: { kind: "node_type", nodeType: "Document" },
-  triggers: ["task_assigned"],
+  triggers: [manualTrigger, taskAssignedTrigger],
   workflowSteps: [
     {
       id: "contract",
@@ -44,11 +58,11 @@ const sampleInstruction = InstructionSchema.parse({
 });
 
 describe("workflow v0 schemas", () => {
-  it("parses a workflow definition with structured sections", () => {
+  it("parses a workflow definition with structured trigger events", () => {
     const parsed = WorkflowDefinitionSchema.parse({
       title: "Document creation",
       workflowKey: "document_creation",
-      trigger: { patterns: ["create document"], events: [] },
+      trigger: { events: [manualTrigger] },
       context: {
         queries: [{ id: "docs", nodeType: "Document" }],
         traversals: [],
@@ -69,6 +83,7 @@ describe("workflow v0 schemas", () => {
 
     expect(parsed.steps).toHaveLength(1);
     expect(parsed.context.queries[0]?.nodeType).toBe("Document");
+    expect(parsed.trigger.events[0]?.kind).toBe("manual");
   });
 });
 
@@ -78,11 +93,10 @@ describe("instruction ↔ workflow compatibility", () => {
 
     expect(workflow.instructionId).toBe(sampleInstruction.id);
     expect(workflow.workflowKey).toBe("document_creation");
-    expect(workflow.trigger.patterns).toEqual([
-      "create document",
-      "new document",
+    expect(workflow.trigger.events).toEqual([
+      manualTrigger,
+      taskAssignedTrigger,
     ]);
-    expect(workflow.trigger.events).toEqual(["task_assigned"]);
     expect(workflow.context.queries).toEqual([
       {
         id: "applicable_document",
@@ -117,9 +131,7 @@ describe("instruction ↔ workflow compatibility", () => {
 
     expect(definition.title).toBe(sampleInstruction.title);
     expect(definition.instructionKey).toBe(sampleInstruction.instructionKey);
-    expect(definition.triggerPatterns).toEqual(
-      sampleInstruction.triggerPatterns,
-    );
+    expect(definition.triggerPatterns).toEqual([]);
     expect(definition.triggers).toEqual(sampleInstruction.triggers);
     expect(definition.workflowSteps.map((step) => step.id)).toEqual([
       "contract",
@@ -136,9 +148,7 @@ describe("instruction ↔ workflow compatibility", () => {
     const roundTripped = roundTripInstructionDefinition(sampleInstruction);
 
     expect(roundTripped.title).toBe(sampleInstruction.title);
-    expect(roundTripped.triggerPatterns).toEqual(
-      sampleInstruction.triggerPatterns,
-    );
+    expect(roundTripped.triggers).toEqual(sampleInstruction.triggers);
     expect(roundTripped.workflowSteps).toEqual(sampleInstruction.workflowSteps);
     expect(roundTripped.allowedActions).toEqual(sampleInstruction.allowedActions);
     expect(roundTripped.gatePolicy).toEqual(sampleInstruction.gatePolicy);

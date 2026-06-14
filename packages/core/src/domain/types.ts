@@ -12,6 +12,7 @@ import type {
   PermissionType,
   PropertySchema,
   PropertySchemaField,
+  WorkflowTriggerEvent,
 } from "@ssota/contracts";
 
 export interface Archetype {
@@ -111,7 +112,7 @@ export interface Instruction {
   body: string | null;
   contentUrl: string | null;
   scope: InstructionScope;
-  triggers: string[];
+  triggers: WorkflowTriggerEvent[];
   workflowSteps: InstructionWorkflowStep[];
   allowedActions: string[];
   outputContract: Record<string, unknown>;

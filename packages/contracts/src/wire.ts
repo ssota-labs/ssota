@@ -17,7 +17,7 @@ import {
   ExecuteActionResultSchema,
   ActionPreviewResultSchema,
 } from "./definitions.js";
-import { WorkflowSchema } from "./workflow.js";
+import { WorkflowSchema, WorkflowTriggerEventSchema, normalizeInstructionTriggerEvents } from "./workflow.js";
 
 /** ISO-8601 timestamp string on the wire (JSON-serialized Date). */
 export const IsoDateTimeSchema = z.string().min(1);
@@ -104,7 +104,7 @@ export const InstructionSchema = z.object({
   slug: z.string().min(1),
   instructionKey: z.string().nullable(),
   title: z.string(),
-  triggerPatterns: z.array(z.string()),
+  triggerPatterns: z.array(z.string()).default([]),
   applicableNodeTypes: z.array(z.string()),
   requiredActions: z.array(z.string()),
   optionalActions: z.array(z.string()),
@@ -112,7 +112,10 @@ export const InstructionSchema = z.object({
   body: z.string().nullable(),
   contentUrl: z.string().nullable(),
   scope: InstructionScopeSchema,
-  triggers: z.array(z.string()),
+  triggers: z.preprocess(
+    normalizeInstructionTriggerEvents,
+    z.array(WorkflowTriggerEventSchema),
+  ),
   workflowSteps: z.array(InstructionWorkflowStepSchema),
   allowedActions: z.array(z.string()),
   outputContract: z.record(z.unknown()),

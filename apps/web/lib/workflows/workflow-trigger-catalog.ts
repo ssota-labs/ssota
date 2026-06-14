@@ -5,10 +5,12 @@ import {
   ClockIcon,
   GitBranchIcon,
   LightningIcon,
+  PlayIcon,
   PlugsIcon,
   ShieldCheckIcon,
   TableIcon,
 } from "@phosphor-icons/react";
+import type { WorkflowTriggerEvent } from "@ssota/contracts";
 
 export type WorkflowTriggerCatalogItem = {
   id: string;
@@ -118,12 +120,73 @@ export const DEFAULT_WORKFLOW_TRIGGER_SELECTION = {
   itemId: WORKFLOW_TRIGGER_CATALOG[0]?.items[0]?.id ?? "schedule",
 } as const;
 
-export type StructuredWorkflowTrigger = {
-  kind: "manual";
+export const WORKFLOW_TRIGGER_EVENT_META: Record<
+  string,
+  { label: string; description: string; icon: Icon }
+> = {
+  manual: {
+    label: "Run manually",
+    description: "Console 또는 MCP에서 직접 실행합니다.",
+    icon: PlayIcon,
+  },
+  schedule: {
+    label: "On a schedule",
+    description: "Run on a recurring calendar schedule.",
+    icon: CalendarBlankIcon,
+  },
+  node_created: {
+    label: "Node created",
+    description: "When a node is created in the graph.",
+    icon: TableIcon,
+  },
+  property_updated: {
+    label: "Property updated",
+    description: "When a property changes on a node.",
+    icon: TableIcon,
+  },
+  lifecycle_changed: {
+    label: "Lifecycle changed",
+    description: "When a node lifecycle status transitions.",
+    icon: ArrowRightIcon,
+  },
+  action_committed: {
+    label: "Action committed",
+    description: "When an action is committed to the action log.",
+    icon: LightningIcon,
+  },
+  gate_pending: {
+    label: "Gate pending",
+    description: "When a human gate is queued for approval.",
+    icon: ShieldCheckIcon,
+  },
+  impact_downstream: {
+    label: "Impact downstream",
+    description: "When an upstream graph change projects impact work.",
+    icon: GitBranchIcon,
+  },
+  webhook: {
+    label: "Webhook received",
+    description: "When an embedder BFF or external service calls a webhook.",
+    icon: PlugsIcon,
+  },
 };
 
+export function defaultWorkflowTriggerEvents(): WorkflowTriggerEvent[] {
+  return [{ id: "manual", kind: "manual", enabled: true, config: {} }];
+}
+
 export function serializeWorkflowTriggers(
-  triggers: StructuredWorkflowTrigger[],
+  triggers: WorkflowTriggerEvent[],
 ): string {
   return JSON.stringify(triggers);
+}
+
+export function getWorkflowTriggerMeta(kind: string) {
+  return (
+    WORKFLOW_TRIGGER_EVENT_META[kind] ?? {
+      label: kind.replace(/_/g, " "),
+      description: "Custom trigger event.",
+      icon: LightningIcon,
+    }
+  );
 }

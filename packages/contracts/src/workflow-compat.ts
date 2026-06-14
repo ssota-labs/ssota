@@ -4,6 +4,7 @@ import type { Instruction } from "./wire.js";
 import {
   WorkflowDefinitionSchema,
   WorkflowSchema,
+  normalizeInstructionTriggerEvents,
   type Workflow,
   type WorkflowDefinition,
   type WorkflowGateSpec,
@@ -156,8 +157,7 @@ export function instructionToWorkflow(instruction: Instruction): Workflow {
     lifecycle: instruction.lifecycle,
     scope: instruction.scope,
     trigger: {
-      patterns: [...instruction.triggerPatterns],
-      events: [...instruction.triggers],
+      events: normalizeInstructionTriggerEvents(instruction.triggers),
     },
     context: contextFromApplicableNodeTypes(instruction.applicableNodeTypes),
     conditions: [],
@@ -242,10 +242,7 @@ export function workflowToInstructionDefinition(
   const definition = {
     title: workflow.title,
     instructionKey: workflow.workflowKey,
-    triggerPatterns:
-      workflow.trigger.patterns.length > 0
-        ? workflow.trigger.patterns
-        : ["manual"],
+    triggerPatterns: [],
     applicableNodeTypes:
       workflow.applicableNodeTypes.length > 0
         ? workflow.applicableNodeTypes
