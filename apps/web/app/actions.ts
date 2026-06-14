@@ -444,8 +444,28 @@ export async function updateInstructionAction(input: Record<string, unknown>) {
       : await resolveDefaultProjectId();
   return runMetaAction("update_instruction", parsed, [
     "/studio/instructions",
+    "/instructions",
+    "/workflows",
     "/log",
   ], projectId);
+}
+
+export async function attachInstructionRunbookFormAction(formData: FormData) {
+  const projectId = await requireProjectId(formData);
+  const instructionId = String(formData.get("instructionId") ?? "");
+  const runbookUrl = String(formData.get("runbookUrl") ?? "").trim();
+  if (!instructionId) throw new Error("instructionId required");
+  if (!runbookUrl) throw new Error("runbookUrl required");
+
+  await updateInstructionAction({
+    projectId,
+    instructionId,
+    patch: {
+      outputContract: {
+        notion_instruction_url: runbookUrl,
+      },
+    },
+  });
 }
 
 export async function deprecateInstructionAction(input: Record<string, unknown>) {
