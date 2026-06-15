@@ -8,18 +8,18 @@ test.describe("Workflow map", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "workflow/map");
 
+    const main = page.getByRole("main");
     await expect(
-      page.getByRole("heading", { name: "Workflow Map", exact: true }),
+      main.getByRole("heading", { name: "Workflow Map", exact: true }),
     ).toBeVisible();
-    await expect(page.getByText("Execution", { exact: true })).toBeVisible();
-    await expect(page.getByText("Research", { exact: true })).toBeVisible();
+    await expect(main.getByText("Execution", { exact: true })).toBeVisible();
+    await expect(main.getByText("Research", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: /Initiatives|이니셔티브/i }).first().click();
+    await main.getByRole("button", { name: /Product initiatives|이니셔티브/i }).click();
 
-    const sheet = page.getByRole("dialog");
-    await expect(sheet.getByText("Smoke initiative")).toBeVisible({ timeout: 10_000 });
+    await expect(main.getByText("Smoke initiative")).toBeVisible({ timeout: 10_000 });
 
-    await sheet.getByRole("link", { name: "Open table" }).click();
+    await main.getByRole("link", { name: "Open table" }).click();
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives$`),
     );
@@ -30,8 +30,9 @@ test.describe("Workflow map", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "workflow/map");
 
-    await page.getByRole("button", { name: /Initiatives|이니셔티브/i }).first().click();
-    await page.getByRole("link", { name: "Open document" }).first().click();
+    const main = page.getByRole("main");
+    await main.getByRole("button", { name: /Product initiatives|이니셔티브/i }).click();
+    await main.getByRole("link", { name: "Open document" }).first().click();
 
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives/${initiativeId}$`),

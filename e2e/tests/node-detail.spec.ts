@@ -19,20 +19,26 @@ test.describe("Node detail", () => {
     await expect(page.getByText("Incoming edges", { exact: true })).toBeVisible();
     await expect(page.getByText("Outgoing edges", { exact: true })).toBeVisible();
 
-    await page.getByRole("link", { name: "Open in route" }).click();
+    await page.getByRole("button", { name: "Open in route" }).click();
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives/${initiativeId}$`),
     );
   });
 
   test("overview recent activity links to node detail", async ({ page }) => {
-    const initiativeId = await getSmokeInitiativeId();
     await loginAsSmoke(page);
     await gotoProject(page, "overview");
 
-    await page.getByRole("link", { name: "Smoke initiative" }).click();
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/nodes/${initiativeId}$`),
-    );
+    const activityLink = page
+      .getByRole("main")
+      .getByRole("list")
+      .getByRole("link")
+      .first();
+    const href = await activityLink.getAttribute("href");
+    expect(href).toMatch(/\/nodes\//);
+
+    await activityLink.click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}${href}$`));
+    await expect(page.getByRole("textbox", { name: "Title" })).toBeVisible();
   });
 });
