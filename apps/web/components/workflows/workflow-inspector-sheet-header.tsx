@@ -4,13 +4,15 @@ export function WorkflowInspectorSheetHeader({
   title,
   kind,
   description,
+  bordered = true,
 }: {
   title: string;
   kind: string;
   description: string;
+  bordered?: boolean;
 }) {
   return (
-    <div className="border-b px-4 py-3">
+    <div className={bordered ? "border-b px-4 py-3" : "px-4 py-3"}>
       <div className="flex items-center gap-2">
         <p className="min-w-0 flex-1 truncate text-sm font-semibold">{title}</p>
         <Badge variant="secondary">{kind}</Badge>

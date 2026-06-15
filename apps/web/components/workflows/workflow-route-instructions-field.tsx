@@ -71,6 +71,7 @@ export function WorkflowRouteInstructionsField({
           title="Instruction"
           kind="instruction"
           description="Runbooks and reference links the agent reads before choosing an outlet."
+          bordered={false}
         />
       ) : (
         <div className="space-y-1">

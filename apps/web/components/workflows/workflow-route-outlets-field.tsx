@@ -39,6 +39,7 @@ export function WorkflowRouteOutletsField({
           title="Outlets"
           kind="outlet"
           description="Branches agents can take from this route. Use + on the canvas to connect blocks."
+          bordered={false}
         />
       ) : (
         <div className="space-y-1">
