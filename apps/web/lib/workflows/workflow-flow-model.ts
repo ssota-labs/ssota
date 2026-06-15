@@ -353,7 +353,6 @@ export function workflowToFlowGraph(workflow: Workflow): {
       id: nextStep ? `edge-${step.id}-${nextStep.id}` : `edge-${step.id}-output`,
       source: step.id,
       target: nextStep?.id ?? "output",
-      label: step.gate ? "approved" : step.actions[0]?.actionType,
     });
   }
 

@@ -7,6 +7,7 @@ import { Button } from "@ssota/ui/components/ui/button";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
 import { NewWorkflowSheet } from "@/components/workflows/new-workflow-sheet";
 import { WorkflowCatalogExplorer } from "@/components/workflows/workflow-catalog-explorer";
+import { WorkflowSettingsSheet } from "@/components/workflows/workflow-settings-sheet";
 import { WorkflowVisualBuilder } from "@/components/workflows/workflow-visual-builder";
 import { projectPath } from "@/lib/console/paths";
 import { formatActionScope } from "@/lib/graph/format-scope";
@@ -170,6 +171,19 @@ export function WorkflowsWorkspace({
           ? {
               title: selected.spec.title,
               badge: formatWorkflowScope(selected.scope),
+              actions:
+                activeTab === "builder" ? (
+                  <WorkflowSettingsSheet
+                    workflow={package_.workflow}
+                    workflowId={selected.id}
+                    projectId={projectId}
+                    orgSlug={orgSlug}
+                    projectSlug={projectSlug}
+                    nodeCatalog={nodeCatalog}
+                    actionCatalog={actionCatalog}
+                    edgeCatalog={edgeCatalog}
+                  />
+                ) : null,
             }
           : null
       }
