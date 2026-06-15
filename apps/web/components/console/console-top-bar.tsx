@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { Organization, Project } from "@ssota/core";
+import type { Project } from "@ssota/core";
 import {
   Avatar,
   AvatarFallback,
@@ -19,13 +19,21 @@ import {
 } from "@ssota/ui/components/ui/dropdown-menu";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { projectPath, switchConsolePath } from "@/lib/console/paths";
+import { projectPath } from "@/lib/console/paths";
+import { ConsoleBreadcrumb } from "./console-breadcrumb";
+import { ConsoleProjectSwitcher } from "./console-workspace-switcher";
+import { InitiativeSwitcher } from "./initiative-switcher";
 import { useProjectContext } from "./project-context";
+
+type InitiativeOption = {
+  id: string;
+  title: string;
+};
 
 type ConsoleTopBarProps = {
   userEmail: string;
-  organizations: Organization[];
   projects: Project[];
+  initiatives?: InitiativeOption[];
   signOutAction: () => Promise<void>;
 };
 
@@ -36,88 +44,31 @@ function initialsFromEmail(email: string) {
 
 export function ConsoleTopBar({
   userEmail,
-  organizations,
   projects,
+  initiatives = [],
   signOutAction,
 }: ConsoleTopBarProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
   const { t } = useLocale();
 
+  const currentInitiative = initiatives.find((item) =>
+    pathname.includes(`/product/initiatives/${item.id}`),
+  );
+
   return (
-    <header className="flex h-12 shrink-0 items-center gap-3 border-b bg-background px-4">
-      <Link
-        href={projectPath(ctx)}
-        className="shrink-0 text-sm font-semibold tracking-tight"
-      >
-        SSOTA
-      </Link>
-
+    <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b bg-background px-4">
       <div className="flex min-w-0 items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="ghost" size="sm" className="h-8 gap-1 px-2" />}
-          >
-            <span className="max-w-[8rem] truncate">{ctx.org.name}</span>
-            <CaretDownIcon className="size-3.5 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>{t("nav.organization")}</DropdownMenuLabel>
-              {organizations.map((org) => (
-                <DropdownMenuItem
-                  key={org.id}
-                  render={
-                    <Link
-                      href={switchConsolePath(pathname, ctx, {
-                        orgSlug: org.slug,
-                        projectSlug: ctx.projectSlug,
-                      })}
-                      prefetch
-                    />
-                  }
-                >
-                  {org.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <span className="text-sm text-muted-foreground">/</span>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={<Button variant="ghost" size="sm" className="h-8 gap-1 px-2" />}
-          >
-            <span className="max-w-[8rem] truncate">{ctx.project.name}</span>
-            <CaretDownIcon className="size-3.5 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel>{t("nav.project")}</DropdownMenuLabel>
-              {projects.map((project) => (
-                <DropdownMenuItem
-                  key={project.id}
-                  render={
-                    <Link
-                      href={switchConsolePath(pathname, ctx, {
-                        orgSlug: ctx.org.slug,
-                        projectSlug: project.slug,
-                      })}
-                      prefetch
-                    />
-                  }
-                >
-                  {project.name}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ConsoleProjectSwitcher projects={projects} />
+        <InitiativeSwitcher
+          initiatives={initiatives}
+          currentInitiativeId={currentInitiative?.id}
+        />
       </div>
 
-      <div className="ml-auto">
+      <ConsoleBreadcrumb initiativeTitle={currentInitiative?.title} />
+
+      <div className="flex items-center justify-end gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={t("nav.signedInAs")}
@@ -138,6 +89,17 @@ export function ConsoleTopBar({
                 <div className="truncate text-sm">{userEmail}</div>
               </DropdownMenuLabel>
             </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              render={<Link href={projectPath(ctx, "developer/setup")} prefetch />}
+            >
+              {t("nav.developerSetup")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              render={<Link href={projectPath(ctx, "settings/general")} prefetch />}
+            >
+              {t("nav.settings")}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => void signOutAction()}>
               {t("common.signOut")}

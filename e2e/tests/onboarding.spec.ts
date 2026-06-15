@@ -8,14 +8,14 @@ import {
 } from "../helpers/onboarding";
 
 test.describe("Console onboarding", () => {
-  test("신규 로그인(자동 가입) → profile → project → Developer Start", async ({ page }) => {
+  test("신규 로그인(자동 가입) → profile → project → Overview", async ({ page }) => {
     const { orgSlug, projectSlug, organizationName, projectName } =
       await completeOnboardingFlow(page);
 
     expect(orgSlug).toMatch(/^e2e-organization-/);
     expect(projectSlug).toMatch(/^e2e-project-/);
-    await expect(page).toHaveURL(new RegExp(`/${orgSlug}/${projectSlug}$`));
-    await expect(page.getByRole("heading", { name: "Developer Start" })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/${orgSlug}/${projectSlug}/overview$`));
+    await expect(page.getByText("Nothing here yet")).toBeVisible();
     await expect(page.getByText(projectName).first()).toBeVisible();
   });
 

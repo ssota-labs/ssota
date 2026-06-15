@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 import type { StoryCatalogEntry } from "./story-catalog";
 
-export type CatalogGroupId = "tokens" | "components" | "typography";
+export type CatalogGroupId = "tokens" | "components" | "typography" | "page-patterns";
 
 export type CatalogGroup = {
   id: CatalogGroupId;
@@ -29,6 +29,16 @@ export const DEFAULT_SELECTION: CatalogSelection = {
   itemId: "button",
   variantId: null,
 };
+
+function pagePatternKeyFromTitle(title: string): string {
+  const name = title.replace(/^PagePatterns\//, "");
+  return name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+}
+
+function pagePatternLabelFromTitle(title: string): string {
+  const name = title.replace(/^PagePatterns\//, "");
+  return name.replace(/([a-z])([A-Z])/g, "$1 $2");
+}
 
 function componentKeyFromTitle(title: string): string {
   const name = title.replace(/^Components\//, "");
@@ -77,6 +87,28 @@ export function resolveVariant(
   return pickDefaultVariant(item.variants);
 }
 
+export function buildPagePatternItems(
+  stories: StoryCatalogEntry[],
+): CatalogItem[] {
+  const byTitle = new Map<string, StoryCatalogEntry[]>();
+
+  for (const story of stories) {
+    if (!story.title.startsWith("PagePatterns/")) continue;
+    const list = byTitle.get(story.title) ?? [];
+    list.push(story);
+    byTitle.set(story.title, list);
+  }
+
+  return [...byTitle.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([title, variants]) => ({
+      id: pagePatternKeyFromTitle(title),
+      groupId: "page-patterns" as const,
+      label: pagePatternLabelFromTitle(title),
+      variants: variants.sort((a, b) => a.storyName.localeCompare(b.storyName)),
+    }));
+}
+
 export function buildComponentItems(
   stories: StoryCatalogEntry[],
 ): CatalogItem[] {
@@ -116,6 +148,11 @@ export function buildCatalogGroups(
       id: "components",
       label: "Components",
       items: buildComponentItems(stories),
+    },
+    {
+      id: "page-patterns",
+      label: "Page patterns",
+      items: buildPagePatternItems(stories),
     },
     {
       id: "typography",

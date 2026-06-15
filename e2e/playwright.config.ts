@@ -9,6 +9,9 @@ const designLabUrl =
   process.env.DESIGN_LAB_URL ?? `http://127.0.0.1:${designLabPort}`;
 
 process.env.MCP_URL ??= mcpUrl;
+process.env.DATABASE_URL ??=
+  process.env.DATABASE_URL ??
+  "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
 const defaultSupabaseEnv = {
   NEXT_PUBLIC_SUPABASE_URL:

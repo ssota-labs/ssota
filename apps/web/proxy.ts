@@ -4,6 +4,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const defaultBase = `/${DEFAULT_ORG_SLUG}/${DEFAULT_PROJECT_SLUG}`;
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function legacyRedirect(request: NextRequest, targetPath: string) {
   const url = request.nextUrl.clone();
   url.pathname = targetPath;
@@ -11,12 +14,43 @@ function legacyRedirect(request: NextRequest, targetPath: string) {
   return NextResponse.redirect(url, 308);
 }
 
+function mapV27LegacyPath(pathname: string): string | null {
+  const devMatch = pathname.match(/^\/([^/]+)\/([^/]+)\/dev(?:\/(.*))?$/);
+  if (devMatch) {
+    const suffix = devMatch[3] ? `/${devMatch[3]}` : "";
+    return `/${devMatch[1]}/${devMatch[2]}/product/dev${suffix}`;
+  }
+
+  const designMatch = pathname.match(/^\/([^/]+)\/([^/]+)\/design(?:\/(.*))?$/);
+  if (designMatch) {
+    const suffix = designMatch[3] ? `/${designMatch[3]}` : "";
+    return `/${designMatch[1]}/${designMatch[2]}/product/design${suffix}`;
+  }
+
+  const productUuidMatch = pathname.match(
+    /^\/([^/]+)\/([^/]+)\/product\/([^/]+)(?:\/(.*))?$/,
+  );
+  if (productUuidMatch && UUID_RE.test(productUuidMatch[3]!)) {
+    const suffix = productUuidMatch[4] ? `/${productUuidMatch[4]}` : "";
+    return `/${productUuidMatch[1]}/${productUuidMatch[2]}/product/initiatives/${productUuidMatch[3]}${suffix}`;
+  }
+
+  return null;
+}
+
 function mapLegacyPath(pathname: string): string | null {
+  const v27 = mapV27LegacyPath(pathname);
+  if (v27) return v27;
+
   const projectScopedArchiveMatch = pathname.match(
-    /^\/([^/]+)\/([^/]+)\/(workflow|graph|gates|log|impact)(?:\/.*)?$/,
+    /^\/([^/]+)\/([^/]+)\/(workflow|graph|gates|log|impact)\/?$/,
   );
   if (projectScopedArchiveMatch) {
-    return `/${projectScopedArchiveMatch[1]}/${projectScopedArchiveMatch[2]}`;
+    const [, org, project, segment] = projectScopedArchiveMatch;
+    if (segment === "workflow") {
+      return `/${org}/${project}/workflow/map`;
+    }
+    return `/${org}/${project}/overview`;
   }
 
   if (
@@ -30,7 +64,7 @@ function mapLegacyPath(pathname: string): string | null {
     pathname.startsWith("/studio") ||
     pathname.startsWith("/graph/")
   ) {
-    return defaultBase;
+    return `${defaultBase}/overview`;
   }
 
   return null;

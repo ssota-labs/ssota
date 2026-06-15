@@ -1,0 +1,110 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { Organization, Project } from "@ssota/core";
+import { CaretDownIcon } from "@phosphor-icons/react";
+import { Button } from "@ssota/ui/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@ssota/ui/components/ui/dropdown-menu";
+import { useLocale } from "@/components/i18n/locale-provider";
+import { switchConsolePath } from "@/lib/console/paths";
+import { useProjectContext } from "./project-context";
+
+type ConsoleOrgSwitcherProps = {
+  organizations: Organization[];
+};
+
+export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
+  const ctx = useProjectContext();
+  const pathname = usePathname();
+  const { t } = useLocale();
+
+  return (
+    <div className="flex h-12 shrink-0 items-center border-b px-2">
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-full justify-between gap-1 px-2 font-normal"
+            />
+          }
+        >
+          <span className="truncate font-medium">{ctx.org.name}</span>
+          <CaretDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>{t("nav.organization")}</DropdownMenuLabel>
+            {organizations.map((org) => (
+              <DropdownMenuItem
+                key={org.id}
+                render={
+                  <Link
+                    href={switchConsolePath(pathname, ctx, {
+                      orgSlug: org.slug,
+                      projectSlug: ctx.projectSlug,
+                    })}
+                    prefetch
+                  />
+                }
+              >
+                {org.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+type ConsoleProjectSwitcherProps = {
+  projects: Project[];
+};
+
+export function ConsoleProjectSwitcher({ projects }: ConsoleProjectSwitcherProps) {
+  const ctx = useProjectContext();
+  const pathname = usePathname();
+  const { t } = useLocale();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="sm" className="h-8 gap-1 px-2" />}
+      >
+        <span className="max-w-[10rem] truncate">{ctx.project.name}</span>
+        <CaretDownIcon className="size-3.5 text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t("nav.project")}</DropdownMenuLabel>
+          {projects.map((project) => (
+            <DropdownMenuItem
+              key={project.id}
+              render={
+                <Link
+                  href={switchConsolePath(pathname, ctx, {
+                    orgSlug: ctx.org.slug,
+                    projectSlug: project.slug,
+                  })}
+                  prefetch
+                />
+              }
+            >
+              {project.name}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}

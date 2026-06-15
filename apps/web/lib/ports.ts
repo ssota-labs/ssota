@@ -1,5 +1,6 @@
 import {
   createConsolePort,
+  createGraphPorts,
   createDb,
   createOnboardingPort,
   createTaskPort,
@@ -26,6 +27,10 @@ export function getConsolePort() {
 
 export function getOnboardingPort() {
   return createOnboardingPort(getDb());
+}
+
+export function getGraphPorts(projectId: string) {
+  return createGraphPorts(getDb(), { projectId });
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {

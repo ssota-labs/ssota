@@ -9,7 +9,12 @@ export type DesignLabUrlState = {
   canvasView: CanvasView;
 };
 
-const GROUP_IDS: CatalogGroupId[] = ["tokens", "components", "typography"];
+const GROUP_IDS: CatalogGroupId[] = [
+  "tokens",
+  "components",
+  "page-patterns",
+  "typography",
+];
 
 function isCatalogGroupId(value: string): value is CatalogGroupId {
   return GROUP_IDS.includes(value as CatalogGroupId);

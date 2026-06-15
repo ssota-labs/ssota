@@ -33,7 +33,7 @@ test.describe("Console onboarding screenshots", () => {
     });
 
     await page.locator('button[type="submit"]').click();
-    await expect(page.getByRole("heading", { name: "Developer Start" })).toBeVisible({
+    await expect(page.getByText("Nothing here yet")).toBeVisible({
       timeout: 15_000,
     });
     await page.screenshot({
