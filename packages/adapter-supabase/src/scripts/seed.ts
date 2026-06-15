@@ -24,7 +24,6 @@ const documentArchetypes = [
 
 const operationalArchetypes = [
   { id: "op-project", name: "Project", typical: { stateMachine: "project" } },
-  { id: "op-task", name: "Task", typical: { stateMachine: "task" } },
   { id: "op-goal", name: "Goal", typical: { stateMachine: "goal" } },
   { id: "op-milestone", name: "Milestone", typical: { stateMachine: "milestone" } },
 ];
@@ -126,19 +125,6 @@ async function seedCatalog(
         propertySchema: titleSubjectPropertySchema,
         allowedActionRefs: ["create_node"],
       },
-      {
-        projectId,
-        nodeType: "Task",
-        slug: "task",
-        label: "Task",
-        family: "operational",
-        archetypeId: "op-task",
-        typicalValueOverrides: {},
-        lifecycleTransitions: defaultTransitions,
-        contentGuide: "Operational task node",
-        propertySchema: titleSubjectPropertySchema,
-        allowedActionRefs: ["create_node"],
-      },
     ])
     .onConflictDoUpdate({
       target: [schema.nodeCatalog.projectId, schema.nodeCatalog.nodeType],
@@ -166,7 +152,7 @@ async function seedCatalog(
         slug: "contains",
         label: "Contains",
         domain: ["Project"],
-        range: ["Task", "Document"],
+        range: ["Document"],
         cardinality: "one-to-many",
         representation: "directed",
       },
@@ -247,8 +233,6 @@ async function seedCatalog(
     ["create_node", "Document", "title"],
     ["create_node", "Project", "title"],
     ["create_node", "Project", "subject_id"],
-    ["create_node", "Task", "title"],
-    ["create_node", "Task", "subject_id"],
     ["update_node_properties", "Document", "title"],
   ] as const;
 
@@ -433,7 +417,7 @@ const DOMAIN_WORKFLOWS = [
       "answering",
       "summarize",
     ],
-    applicableNodeTypes: ["Document", "Note", "Project", "Task"],
+    applicableNodeTypes: ["Document", "Note", "Project"],
     lifecycle: "Active" as const,
     body: "Read-only intent. Use query_nodes, get_node, query_neighbors, traverse_graph. Prefer Active authoritative sources.",
     workflowSteps: [],
@@ -448,7 +432,7 @@ const DOMAIN_WORKFLOWS = [
       "task derivation",
       "meeting notes",
     ],
-    applicableNodeTypes: ["Meeting", "Task", "Note"],
+    applicableNodeTypes: ["Meeting", "Note"],
     lifecycle: "Active" as const,
     body: "Extract candidates from meetings. Spawn runtime tasks via spawn_task (not Task graph nodes). Each spawned task should set workflowKey to the domain workflow that will execute the work and target_node_id to the meeting node when applicable.",
     workflowSteps: [
@@ -470,7 +454,7 @@ const DOMAIN_WORKFLOWS = [
       "merge",
       "cleanup",
     ],
-    applicableNodeTypes: ["Document", "Task", "Project", "Edge"],
+    applicableNodeTypes: ["Document", "Project", "Edge"],
     lifecycle: "Active" as const,
     body: "Identify duplicates and stale items. Auto merge or delete requires Human Gate.",
     workflowSteps: [],
@@ -481,7 +465,7 @@ const DOMAIN_WORKFLOWS = [
   {
     title: "Replay and audit",
     triggerPatterns: ["replay", "audit", "provenance", "action log"],
-    applicableNodeTypes: ["Document", "Task", "Project"],
+    applicableNodeTypes: ["Document", "Project"],
     lifecycle: "Active" as const,
     body: "Use get_action_log and get_action_log_entry. Prefer log and provenance over inference.",
     workflowSteps: [],

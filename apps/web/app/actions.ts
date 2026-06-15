@@ -22,6 +22,8 @@ import {
   WorkflowTriggerEventSchema,
   WorkflowDefinitionSchema,
   WorkflowDefinitionFieldsSchema,
+  UpdateTaskInputSchema,
+  type TaskStatus,
   createManualWorkflowTrigger,
   normalizeWorkflowDefinition,
   deriveApplicableNodeTypes,
@@ -104,6 +106,30 @@ export async function approveGateFormAction(formData: FormData) {
     typeof note === "string" && note.trim() ? note.trim() : undefined,
     projectId,
   );
+}
+
+export async function updateTaskStatusAction(
+  projectId: string,
+  taskId: string,
+  status: TaskStatus,
+) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const parsed = UpdateTaskInputSchema.parse({ taskId, status });
+  const ports = getActionPorts(projectId);
+  const result = await executeAction(ports, {
+    actionType: "update_task",
+    input: parsed,
+    executorId: user.id,
+    executorType: "Human",
+    projectId,
+  });
+
+  for (const path of withConsolePaths(["/tasks"])) {
+    revalidatePath(path);
+  }
+  return result;
 }
 
 export async function signInWithGoogleAction(formData: FormData) {

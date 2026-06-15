@@ -415,6 +415,31 @@ export const EffectSchema = z.discriminatedUnion("kind", [
       acceptanceCriteria: z.array(z.unknown()).optional(),
     }),
   }),
+  z.object({
+    kind: z.literal("update_task"),
+    taskId: z.string().uuid(),
+    patch: z.object({
+      title: z.string().min(1).optional(),
+      status: z
+        .enum([
+          "pending",
+          "ready",
+          "running",
+          "blocked",
+          "done",
+          "cancelled",
+          "failed",
+        ])
+        .optional(),
+      executorType: ExecutorTypeSchema.optional(),
+      assignee: z.string().nullable().optional(),
+      subjectId: z.string().nullable().optional(),
+      targetNodeId: z.string().uuid().nullable().optional(),
+      context: z.record(z.unknown()).optional(),
+      acceptanceCriteria: z.array(z.unknown()).optional(),
+      result: z.record(z.unknown()).optional(),
+    }),
+  }),
 ]);
 
 export type Effect = z.infer<typeof EffectSchema>;

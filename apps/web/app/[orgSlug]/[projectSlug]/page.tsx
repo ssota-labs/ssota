@@ -36,13 +36,14 @@ export default async function ProjectHomePage({
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
 
-  const [nodes, edges, actions, workflows, gates, logs] = await Promise.all([
+  const [nodes, edges, actions, workflows, gates, logs, tasks] = await Promise.all([
     getCachedNodeCatalog(project.id),
     getCachedEdgeCatalog(project.id),
     getCachedActionCatalog(project.id),
     ports.catalog.listWorkflows({ limit: 100 }),
     ports.gate.listPendingGates(),
     ports.commit.getActionLog({ limit: 8 }),
+    ports.tasks.listTasks({ limit: 200 }),
   ]);
 
   const workflowHref = projectPath(ctx, "workflow");
@@ -71,10 +72,10 @@ export default async function ProjectHomePage({
     {
       title: "Create a first Task",
       description:
-        "Use Task rows as the shared work queue for humans and automation.",
+        "Use runtime tasks as the shared work queue for humans and automation.",
       href: projectPath(ctx, "tasks"),
       cta: "Open Tasks",
-      completed: hasGraphShape,
+      completed: tasks.length > 0,
     },
     {
       title: "Review a Gate",
@@ -111,7 +112,7 @@ export default async function ProjectHomePage({
       title: "Tasks",
       description: "Shared work queue for humans and automation",
       href: projectPath(ctx, "tasks"),
-      count: nodes.find((n) => n.nodeType === "Task") ? 1 : 0,
+      count: tasks.length,
     },
     {
       title: "Developer",

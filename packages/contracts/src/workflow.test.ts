@@ -148,24 +148,24 @@ describe("workflow store helpers", () => {
   it("prefers nodeBindings over legacy string applicableNodeTypes during migration", () => {
     const migrated = migrateApplicableNodeTypes({
       applicableNodeTypes: ["Workflow"],
-      nodeBindings: [{ nodeType: "Task", disabledActions: ["delete_node"] }],
+      nodeBindings: [{ nodeType: "Feature", disabledActions: ["delete_node"] }],
     });
 
     expect(migrated).toEqual([
-      { nodeType: "Task", disabledActions: ["delete_node"] },
+      { nodeType: "Feature", disabledActions: ["delete_node"] },
     ]);
   });
 
   it("preserves disabledActions on merge", () => {
     const merged = mergeWorkflowDefinition(sampleDefinition, {
       applicableNodeTypes: [
-        { nodeType: "Task", disabledActions: ["delete_node"] },
+        { nodeType: "Feature", disabledActions: ["delete_node"] },
         { nodeType: "Note", disabledActions: [] },
       ],
     });
 
     expect(merged.applicableNodeTypes).toEqual([
-      { nodeType: "Task", disabledActions: ["delete_node"] },
+      { nodeType: "Feature", disabledActions: ["delete_node"] },
       { nodeType: "Note", disabledActions: [] },
     ]);
   });

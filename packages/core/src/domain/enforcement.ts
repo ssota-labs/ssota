@@ -373,6 +373,39 @@ export function resolveEffects(
             template.task.acceptanceCriteria,
         },
       });
+    } else if (template.kind === "update_task") {
+      const patch: Extract<Effect, { kind: "update_task" }>["patch"] = {};
+      if (input.title !== undefined) patch.title = input.title as string;
+      if (input.status !== undefined) {
+        patch.status = input.status as TaskStatus;
+      }
+      if (input.assignee !== undefined) {
+        patch.assignee = input.assignee as string | null;
+      }
+      if (input.subjectId !== undefined) {
+        patch.subjectId = input.subjectId as string | null;
+      }
+      if (input.targetNodeId !== undefined) {
+        patch.targetNodeId = input.targetNodeId as string | null;
+      }
+      if (input.executorType !== undefined) {
+        patch.executorType = input.executorType as ExecutorType;
+      }
+      if (input.context !== undefined) {
+        patch.context = input.context as Record<string, unknown>;
+      }
+      if (input.acceptanceCriteria !== undefined) {
+        patch.acceptanceCriteria = input.acceptanceCriteria as unknown[];
+      }
+      if (input.result !== undefined) {
+        patch.result = input.result as Record<string, unknown>;
+      }
+
+      effects.push({
+        kind: "update_task",
+        taskId: input.taskId as string,
+        patch,
+      });
     }
   }
 
@@ -391,6 +424,45 @@ export async function enforceTaskSpawnIntegrity(
   const enriched: Effect[] = [];
 
   for (const effect of effects) {
+    if (effect.kind === "update_task") {
+      const task = await deps.getTask(effect.taskId);
+      if (!task) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          `Task '${effect.taskId}' does not exist`,
+        );
+      }
+      if (task.projectId !== projectId) {
+        throw new ActionRejectedError(
+          "PROJECT_MISMATCH",
+          `Task '${effect.taskId}' belongs to a different project`,
+        );
+      }
+      if (Object.keys(effect.patch).length === 0) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          "update_task requires at least one field to change",
+        );
+      }
+      if (effect.patch.targetNodeId) {
+        const node = await deps.getNode(effect.patch.targetNodeId);
+        if (!node) {
+          throw new ActionRejectedError(
+            "PRECONDITION_FAILED",
+            `Node '${effect.patch.targetNodeId}' does not exist`,
+          );
+        }
+        if (node.projectId !== projectId) {
+          throw new ActionRejectedError(
+            "PROJECT_MISMATCH",
+            `Node '${effect.patch.targetNodeId}' belongs to a different project`,
+          );
+        }
+      }
+      enriched.push(effect);
+      continue;
+    }
+
     if (effect.kind !== "create_task") {
       enriched.push(effect);
       continue;

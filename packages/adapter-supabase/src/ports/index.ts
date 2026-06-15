@@ -911,6 +911,58 @@ async function applyEffect(
         spec: effect.entry.spec,
       });
     }
+  } else if (effect.kind === "update_task") {
+    const existing = await tx
+      .select()
+      .from(schema.tasks)
+      .where(
+        and(
+          eq(schema.tasks.id, effect.taskId),
+          eq(schema.tasks.projectId, projectId),
+        ),
+      )
+      .limit(1);
+    const task = existing[0];
+    if (!task) return;
+
+    const nextStatus = effect.patch.status ?? task.status;
+    const patch: Partial<typeof schema.tasks.$inferInsert> = {
+      updatedAt: new Date(),
+    };
+    if (effect.patch.title !== undefined) patch.title = effect.patch.title;
+    if (effect.patch.status !== undefined) patch.status = effect.patch.status;
+    if (effect.patch.executorType !== undefined) {
+      patch.executorType = effect.patch.executorType;
+    }
+    if (effect.patch.assignee !== undefined) patch.assignee = effect.patch.assignee;
+    if (effect.patch.subjectId !== undefined) patch.subjectId = effect.patch.subjectId;
+    if (effect.patch.targetNodeId !== undefined) {
+      patch.targetNodeId = effect.patch.targetNodeId;
+    }
+    if (effect.patch.context !== undefined) {
+      patch.context = { ...task.context, ...effect.patch.context };
+    }
+    if (effect.patch.acceptanceCriteria !== undefined) {
+      patch.acceptanceCriteria = effect.patch.acceptanceCriteria;
+    }
+    if (effect.patch.result !== undefined) {
+      patch.result = { ...task.result, ...effect.patch.result };
+    }
+    if (nextStatus === "done") {
+      patch.completedAt = task.completedAt ?? new Date();
+    } else if (effect.patch.status !== undefined) {
+      patch.completedAt = null;
+    }
+
+    await tx
+      .update(schema.tasks)
+      .set(patch)
+      .where(
+        and(
+          eq(schema.tasks.id, effect.taskId),
+          eq(schema.tasks.projectId, projectId),
+        ),
+      );
   }
 }
 

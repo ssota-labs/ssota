@@ -521,4 +521,39 @@ describe("adapter-supabase integration", () => {
     expect(replay.status).toBe("committed");
     expect(replay.logId).toBe(result.logId);
   });
+
+  it("update_task: updates runtime task status and action log", async () => {
+    const spawn = await executeAction(ports, {
+      actionType: "spawn_task",
+      input: {
+        title: "Task to update",
+        workflowKey: "document_creation",
+      },
+      executorId: smokeUserId,
+      executorType: "Agent",
+      projectId,
+    });
+    expect(spawn.status).toBe("committed");
+    if (spawn.status !== "committed") return;
+
+    const [task] = await ports.tasks.queryTasks({ limit: 5 });
+    expect(task).toBeTruthy();
+
+    const update = await executeAction(ports, {
+      actionType: "update_task",
+      input: {
+        taskId: task!.id,
+        status: "blocked",
+        assignee: "human:smoke",
+      },
+      executorId: smokeUserId,
+      executorType: "Human",
+      projectId,
+    });
+    expect(update.status).toBe("committed");
+
+    const refreshed = await ports.tasks.getTask(task!.id);
+    expect(refreshed?.status).toBe("blocked");
+    expect(refreshed?.assignee).toBe("human:smoke");
+  });
 });

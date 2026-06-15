@@ -10,8 +10,8 @@ describe("workflow context", () => {
     const parsed = ContextSpecSchema.parse({
       filterGroups: [
         {
-          id: "fg_task",
-          nodeType: "Task",
+          id: "fg_feature",
+          nodeType: "Feature",
           combinator: "and",
           conditions: [
             {
@@ -27,7 +27,7 @@ describe("workflow context", () => {
       assertions: [],
     });
 
-    expect(parsed.filterGroups[0]?.nodeType).toBe("Task");
+    expect(parsed.filterGroups[0]?.nodeType).toBe("Feature");
     expect(parsed.filterGroups[0]?.conditions[0]?.operator).toBe("equals");
   });
 
@@ -56,11 +56,11 @@ describe("workflow context", () => {
   });
 
   it("migrates applicableNodeTypes-only rows into filter groups", () => {
-    const migrated = normalizeWorkflowContext(undefined, ["Document", "Task"]);
+    const migrated = normalizeWorkflowContext(undefined, ["Document", "Feature"]);
 
     expect(migrated.filterGroups.map((group) => group.nodeType)).toEqual([
       "Document",
-      "Task",
+      "Feature",
     ]);
     expect(migrated.filterGroups.every((group) => group.conditions.length === 0)).toBe(
       true,
@@ -72,7 +72,7 @@ describe("workflow context", () => {
       ContextSpecSchema.parse({
         filterGroups: [
           { id: "a", nodeType: "Document", combinator: "and", conditions: [] },
-          { id: "b", nodeType: "Task", combinator: "or", conditions: [] },
+          { id: "b", nodeType: "Feature", combinator: "or", conditions: [] },
           { id: "c", nodeType: "Document", combinator: "and", conditions: [] },
         ],
         traversals: [],
@@ -80,7 +80,7 @@ describe("workflow context", () => {
       }),
     );
 
-    expect(types).toEqual(["Document", "Task"]);
+    expect(types).toEqual(["Document", "Feature"]);
   });
 
   it("migrates legacy startNodeRef traversals to startNodeType", () => {

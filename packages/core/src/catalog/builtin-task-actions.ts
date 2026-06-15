@@ -36,6 +36,22 @@ const BUILTIN_TASK_ACTION_ROWS: BuiltinTaskActionRow[] = [
     idempotencyRule: "key",
     logPayloadSchema: {},
   },
+  {
+    actionType: "update_task",
+    preconditions: { requiredFields: ["taskId"] },
+    effects: [
+      {
+        kind: "update_task",
+        taskId: "",
+        patch: {},
+      },
+    ],
+    executor: "Agent",
+    allowedLifecycleTransitions: {},
+    failureMode: "reject",
+    idempotencyRule: null,
+    logPayloadSchema: {},
+  },
 ];
 
 function toBuiltinEntry(row: BuiltinTaskActionRow): ActionCatalogEntry {

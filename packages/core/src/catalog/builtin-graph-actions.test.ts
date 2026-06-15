@@ -26,16 +26,16 @@ describe("builtin graph actions", () => {
     );
   });
 
-  it("merges meta + graph + task builtins (20 total)", () => {
-    expect(BUILTIN_ACTION_TYPES.size).toBe(20);
-    expect(listBuiltinActionCatalogEntries()).toHaveLength(20);
+  it("merges meta + graph + task builtins (21 total)", () => {
+    expect(BUILTIN_ACTION_TYPES.size).toBe(21);
+    expect(listBuiltinActionCatalogEntries()).toHaveLength(21);
     expect(getBuiltinActionCatalogEntry("create_node")?.executor).toBe("Agent");
   });
 
   it("resolveDisplayAction maps create_node to create_<slug>", () => {
     expect(
-      resolveDisplayAction("create_node", { nodeType: "Task" }),
-    ).toBe("create_task");
+      resolveDisplayAction("create_node", { nodeType: "Feature" }),
+    ).toBe("create_feature");
     expect(
       resolveDisplayAction("create_node", { nodeType: "HomepageProject" }),
     ).toBe("create_homepage_project");

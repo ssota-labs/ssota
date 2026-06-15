@@ -1,92 +1,57 @@
-import { PageHeader } from "@/components/studio/page-header";
+import { TasksExplorer } from "@/components/tasks/tasks-explorer";
 import {
-  TasksWorkspace,
-  type TaskFilter,
+  type TaskTab,
   type TaskWorkspaceRow,
 } from "@/components/tasks/tasks-workspace";
-import { graphPath, projectPath } from "@/lib/console/paths";
+import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
-const taskFilters = new Set<TaskFilter>([
-  "all",
-  "human",
-  "agent",
-  "automation",
-  "blocked",
-  "review",
-]);
+const taskTabs = new Set<TaskTab>(["table", "board"]);
 
 export default async function TasksPage({
   params,
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const { view } = await searchParams;
+  const { tab } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
-  const taskNodes = await ports.graph.queryNodes({ nodeType: "Task", limit: 200 });
-  const activeFilter = taskFilters.has(view as TaskFilter)
-    ? (view as TaskFilter)
-    : "all";
+  const tasks = await ports.tasks.queryTasks({ limit: 200 });
+  const activeTab = taskTabs.has(tab as TaskTab) ? (tab as TaskTab) : "table";
 
-  const rows: TaskWorkspaceRow[] = taskNodes.map((node) => {
-    const properties = node.properties;
-    return {
-      id: node.id,
-      title: stringValue(properties.title) || "Untitled Task",
-      lifecycleStatus: node.lifecycleStatus,
-      status: stringValue(properties.status) || node.lifecycleStatus,
-      assignee: stringValue(properties.assignee) || "Unassigned",
-      workflowType: stringValue(properties.workflow_type),
-      workflowKey: stringValue(properties.workflow_key),
-      targetNodeId: stringValue(properties.target_node_id),
-      acceptanceCriteria: arrayValue(properties.acceptance_criteria),
-      notionUrl:
-        stringValue(properties.canonical_url) ||
-        stringValue(properties.notion_url) ||
-        stringValue(node.contentUrl),
-      lockOwner: stringValue(properties.lock_owner),
-      lockExpiresAt: stringValue(properties.lock_expires_at),
-      content: node.content ?? "",
-      updatedAt: node.updatedAt.toISOString(),
-      rawProperties: properties,
-    };
-  });
+  const rows: TaskWorkspaceRow[] = tasks.map((task) => ({
+    id: task.id,
+    title: task.title,
+    status: task.status,
+    executorType: task.executorType,
+    assignee: task.assignee ?? "Unassigned",
+    workflowKey: task.workflowKey,
+    targetNodeId: task.targetNodeId ?? "",
+    subjectId: task.subjectId ?? "",
+    acceptanceCriteria: task.acceptanceCriteria.flatMap((item) => {
+      if (typeof item === "string") return [item];
+      if (item === null || item === undefined) return [];
+      return [String(item)];
+    }),
+    context: task.context,
+    result: task.result,
+    sourceActionLogId: task.sourceActionLogId ?? "",
+    completedAt: task.completedAt?.toISOString() ?? "",
+    updatedAt: task.updatedAt.toISOString(),
+    createdAt: task.createdAt.toISOString(),
+  }));
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Tasks"
-        description="A shared work queue for humans, agents, and automation. Graph writes still go through execute_action."
-      />
-      <TasksWorkspace
-        rows={rows}
-        activeFilter={activeFilter}
-        baseHref={projectPath(ctx, "tasks")}
-        graphTaskHref={`${graphPath(ctx, "nodes")}?table=task`}
-      />
-    </div>
+    <TasksExplorer
+      rows={rows}
+      activeTab={activeTab}
+      baseHref={projectPath(ctx, "tasks")}
+      projectId={project.id}
+    />
   );
-}
-
-function stringValue(value: unknown): string {
-  if (typeof value === "string") return value;
-  if (typeof value === "number" || typeof value === "boolean") return String(value);
-  return "";
-}
-
-function arrayValue(value: unknown): string[] {
-  if (Array.isArray(value)) {
-    return value.flatMap((item) => {
-      const stringItem = stringValue(item);
-      return stringItem ? [stringItem] : [];
-    });
-  }
-  const stringItem = stringValue(value);
-  return stringItem ? [stringItem] : [];
 }
