@@ -17,32 +17,28 @@ import { useLocale } from "@/components/i18n/locale-provider";
 import { switchConsolePath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 
-type ConsoleWorkspaceSwitcherProps = {
+type ConsoleOrgSwitcherProps = {
   organizations: Organization[];
-  projects: Project[];
 };
 
-export function ConsoleWorkspaceSwitcher({
-  organizations,
-  projects,
-}: ConsoleWorkspaceSwitcherProps) {
+export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
   const { t } = useLocale();
 
   return (
-    <div className="space-y-1 border-b p-2">
+    <div className="border-b p-2">
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-full justify-between gap-1 px-2 font-normal"
+              className="h-9 w-full justify-between gap-1 px-2 font-normal"
             />
           }
         >
-          <span className="truncate">{ctx.org.name}</span>
+          <span className="truncate font-medium">{ctx.org.name}</span>
           <CaretDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56">
@@ -67,42 +63,48 @@ export function ConsoleWorkspaceSwitcher({
           </DropdownMenuGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 w-full justify-between gap-1 px-2 font-normal"
-            />
-          }
-        >
-          <span className="truncate">{ctx.project.name}</span>
-          <CaretDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          <DropdownMenuGroup>
-            <DropdownMenuLabel>{t("nav.project")}</DropdownMenuLabel>
-            {projects.map((project) => (
-              <DropdownMenuItem
-                key={project.id}
-                render={
-                  <Link
-                    href={switchConsolePath(pathname, ctx, {
-                      orgSlug: ctx.org.slug,
-                      projectSlug: project.slug,
-                    })}
-                    prefetch
-                  />
-                }
-              >
-                {project.name}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
+  );
+}
+
+type ConsoleProjectSwitcherProps = {
+  projects: Project[];
+};
+
+export function ConsoleProjectSwitcher({ projects }: ConsoleProjectSwitcherProps) {
+  const ctx = useProjectContext();
+  const pathname = usePathname();
+  const { t } = useLocale();
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant="ghost" size="sm" className="h-8 gap-1 px-2" />}
+      >
+        <span className="max-w-[10rem] truncate">{ctx.project.name}</span>
+        <CaretDownIcon className="size-3.5 text-muted-foreground" />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t("nav.project")}</DropdownMenuLabel>
+          {projects.map((project) => (
+            <DropdownMenuItem
+              key={project.id}
+              render={
+                <Link
+                  href={switchConsolePath(pathname, ctx, {
+                    orgSlug: ctx.org.slug,
+                    projectSlug: project.slug,
+                  })}
+                  prefetch
+                />
+              }
+            >
+              {project.name}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

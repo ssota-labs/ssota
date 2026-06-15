@@ -48,22 +48,23 @@ export function PagePatternList<TData, TValue>({
   pageSize = 50,
   className,
 }: PagePatternListProps<TData, TValue>) {
-  const actions = (
-    <>
-      {toolbar}
-      {onNew ? (
-        <Button type="button" size="sm" onClick={onNew}>
-          {newLabel}
-        </Button>
-      ) : null}
-    </>
-  );
+  const toolbarActions =
+    toolbar != null || onNew != null ? (
+      <>
+        {toolbar}
+        {onNew ? (
+          <Button type="button" size="sm" onClick={onNew}>
+            {newLabel}
+          </Button>
+        ) : null}
+      </>
+    ) : undefined;
 
   return (
-    <PageFrame filters={filters} actions={actions} className={className} bodyClassName="p-0">
+    <PageFrame filters={filters} actions={toolbarActions} className={className} bodyClassName="p-0">
       {data.length === 0 ? (
         <div className="p-6">
-          <Empty className="border">
+          <Empty>
             <EmptyHeader>
               <EmptyTitle>{emptyTitle}</EmptyTitle>
               <EmptyDescription>{emptyDescription}</EmptyDescription>

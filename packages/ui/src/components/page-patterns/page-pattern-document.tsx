@@ -36,18 +36,19 @@ export function PagePatternDocument({
   emptyState,
   className,
 }: PagePatternDocumentProps) {
-  const toolbarActions = (
-    <>
-      {actions}
-      {onEdit ? (
-        <Button type="button" size="sm" onClick={onEdit}>
-          {editLabel}
-        </Button>
-      ) : null}
-    </>
-  );
-
   const hasBody = body != null || (content != null && content.length > 0);
+
+  const toolbarActions =
+    actions != null || onEdit != null ? (
+      <>
+        {actions}
+        {onEdit ? (
+          <Button type="button" size="sm" onClick={onEdit}>
+            {editLabel}
+          </Button>
+        ) : null}
+      </>
+    ) : undefined;
 
   return (
     <PageFrame
@@ -56,15 +57,17 @@ export function PagePatternDocument({
       className={className}
       bodyClassName="space-y-6"
     >
-      <header className="space-y-3 border-b pb-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="space-y-2">
-            <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-            {meta}
+      {hasBody ? (
+        <header className="space-y-3 border-b pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-2">
+              <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+              {meta}
+            </div>
+            {status ? <Badge variant={statusVariant}>{status}</Badge> : null}
           </div>
-          {status ? <Badge variant={statusVariant}>{status}</Badge> : null}
-        </div>
-      </header>
+        </header>
+      ) : null}
 
       {!hasBody && emptyState ? (
         emptyState

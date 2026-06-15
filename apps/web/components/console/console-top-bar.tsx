@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Project } from "@ssota/core";
 import {
   Avatar,
   AvatarFallback,
@@ -20,6 +21,7 @@ import { CaretDownIcon } from "@phosphor-icons/react";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { projectPath } from "@/lib/console/paths";
 import { ConsoleBreadcrumb } from "./console-breadcrumb";
+import { ConsoleProjectSwitcher } from "./console-workspace-switcher";
 import { InitiativeSwitcher } from "./initiative-switcher";
 import { useProjectContext } from "./project-context";
 
@@ -30,6 +32,7 @@ type InitiativeOption = {
 
 type ConsoleTopBarProps = {
   userEmail: string;
+  projects: Project[];
   initiatives?: InitiativeOption[];
   signOutAction: () => Promise<void>;
 };
@@ -41,6 +44,7 @@ function initialsFromEmail(email: string) {
 
 export function ConsoleTopBar({
   userEmail,
+  projects,
   initiatives = [],
   signOutAction,
 }: ConsoleTopBarProps) {
@@ -54,7 +58,8 @@ export function ConsoleTopBar({
 
   return (
     <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b bg-background px-4">
-      <div className="flex min-w-0 items-center">
+      <div className="flex min-w-0 items-center gap-2">
+        <ConsoleProjectSwitcher projects={projects} />
         <InitiativeSwitcher
           initiatives={initiatives}
           currentInitiativeId={currentInitiative?.id}

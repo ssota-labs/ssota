@@ -35,7 +35,7 @@ function ScaffoldEmpty({
   nodeTypeLabel: string;
 }) {
   return (
-    <Empty className="border">
+    <Empty>
       <EmptyHeader>
         <EmptyTitle>{title}</EmptyTitle>
         <EmptyDescription>{description.replace("{type}", nodeTypeLabel)}</EmptyDescription>

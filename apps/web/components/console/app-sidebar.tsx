@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CaretRightIcon } from "@phosphor-icons/react";
+import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useEffect, useMemo, useState } from "react";
-import type { Organization, Project } from "@ssota/core";
+import type { Organization } from "@ssota/core";
 import { cn } from "@ssota/ui/lib/utils";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { useLocale } from "@/components/i18n/locale-provider";
@@ -28,7 +28,7 @@ import {
   type NavSection,
 } from "@/lib/console/navigation";
 import { projectPath } from "@/lib/console/paths";
-import { ConsoleWorkspaceSwitcher } from "./console-workspace-switcher";
+import { ConsoleOrgSwitcher } from "./console-workspace-switcher";
 import { useProjectContext } from "./project-context";
 
 type InitiativeOption = {
@@ -38,7 +38,6 @@ type InitiativeOption = {
 
 type AppSidebarProps = {
   organizations: Organization[];
-  projects: Project[];
   initiatives?: InitiativeOption[];
 };
 
@@ -60,7 +59,6 @@ function isLink(entry: NavEntry): entry is NavLink {
 
 export function AppSidebar({
   organizations,
-  projects,
   initiatives: _initiatives = [],
 }: AppSidebarProps) {
   const ctx = useProjectContext();
@@ -187,23 +185,17 @@ export function AppSidebar({
       <button
         type="button"
         onClick={handleBack}
-        className="mb-1 flex w-full items-center justify-center rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
       >
-        {"< "}
-        {backLabel}
+        <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
+        <span className="truncate">{backLabel}</span>
       </button>
     );
   }
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r bg-sidebar">
-      <div className="flex h-10 items-center border-b px-3">
-        <Link href={projectPath(ctx, "overview")} className="text-sm font-semibold">
-          SSOTA
-        </Link>
-      </div>
-
-      <ConsoleWorkspaceSwitcher organizations={organizations} projects={projects} />
+      <ConsoleOrgSwitcher organizations={organizations} />
 
       <ScrollArea className="min-h-0 flex-1">
         <nav aria-label={t("nav.primary")} className="space-y-1 p-2">
