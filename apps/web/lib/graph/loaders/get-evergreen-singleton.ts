@@ -1,0 +1,26 @@
+import type { NodeType } from "@ssota/contracts";
+import type { GraphNode } from "@ssota/core";
+import { getGraphDeps } from "../graph-deps";
+
+/** Returns the project evergreen node for a type (no outgoing for_initiative edge). */
+export async function getEvergreenSingleton(
+  projectId: string,
+  nodeType: NodeType,
+): Promise<GraphNode | null> {
+  const { graphRead } = getGraphDeps(projectId);
+  const candidates = await graphRead.queryNodes({ projectId, nodeType, limit: 100 });
+
+  for (const node of candidates) {
+    const scopedEdges = await graphRead.traverseEdges({
+      projectId,
+      nodeId: node.id,
+      direction: "outgoing",
+      edgeType: "for_initiative",
+    });
+    if (scopedEdges.length === 0) {
+      return node;
+    }
+  }
+
+  return null;
+}

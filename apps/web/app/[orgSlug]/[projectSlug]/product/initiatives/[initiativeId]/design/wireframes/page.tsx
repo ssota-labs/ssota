@@ -1,10 +1,14 @@
-import { ScaffoldedPage } from "@/components/console/scaffolded-page";
+import { createInitiativeListPage } from "@/lib/console/initiative-page-factory";
 
-export default async function InitiativePage({
-  params,
-}: {
-  params: Promise<{ initiativeId: string }>;
+export default function DesignWireframesPage(props: {
+  params: Promise<{ orgSlug: string; projectSlug: string; initiativeId: string }>;
 }) {
-  const { initiativeId } = await params;
-  return <ScaffoldedPage path="design/wireframes" initiativeId={initiativeId} />;
+  return createInitiativeListPage(props, {
+    nodeType: "page_wireframe",
+    pathSuffix: ["design", "wireframes"],
+    defaultTitle: "Wireframe",
+    newLabel: "New wireframe",
+    emptyTitle: "No wireframes yet",
+    emptyDescription: "Add wireframes for this initiative.",
+  });
 }

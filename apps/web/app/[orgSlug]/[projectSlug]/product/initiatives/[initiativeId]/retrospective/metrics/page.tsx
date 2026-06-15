@@ -1,10 +1,14 @@
-import { ScaffoldedPage } from "@/components/console/scaffolded-page";
+import { createInitiativeListPage } from "@/lib/console/initiative-page-factory";
 
-export default async function InitiativePage({
-  params,
-}: {
-  params: Promise<{ initiativeId: string }>;
+export default function RetroMetricsPage(props: {
+  params: Promise<{ orgSlug: string; projectSlug: string; initiativeId: string }>;
 }) {
-  const { initiativeId } = await params;
-  return <ScaffoldedPage path="retrospective/metrics" initiativeId={initiativeId} />;
+  return createInitiativeListPage(props, {
+    nodeType: "metric_snapshot",
+    pathSuffix: ["retrospective", "metrics"],
+    defaultTitle: "Metric snapshot",
+    newLabel: "New metric",
+    emptyTitle: "No metrics yet",
+    emptyDescription: "Capture metric snapshots for retrospective.",
+  });
 }

@@ -1,10 +1,12 @@
-import { ScaffoldedPage } from "@/components/console/scaffolded-page";
+import { createInitiativeDocumentPage } from "@/lib/console/initiative-page-factory";
 
-export default async function InitiativePage({
-  params,
-}: {
-  params: Promise<{ initiativeId: string }>;
+export default function PlanningPrdPage(props: {
+  params: Promise<{ orgSlug: string; projectSlug: string; initiativeId: string }>;
 }) {
-  const { initiativeId } = await params;
-  return <ScaffoldedPage path="planning/prd" initiativeId={initiativeId} />;
+  return createInitiativeDocumentPage(props, {
+    nodeType: "prd",
+    pathSuffix: ["planning", "prd"],
+    defaultTitle: "PRD",
+    emptyDescription: "Write the product requirements document.",
+  });
 }
