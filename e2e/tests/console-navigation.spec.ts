@@ -37,7 +37,7 @@ test.describe("Console v2.7 navigation", () => {
     await expect(nav.getByRole("link", { name: "Data model", exact: true })).toBeVisible();
     await nav.getByRole("link", { name: "Data model", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/product/dev/data-model$`));
-    await expect(page.getByText("Nothing here yet")).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Content" })).toBeVisible();
   });
 
   test("sidebar: L2 initiative drill-down and switcher", async ({ page }) => {
