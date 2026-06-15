@@ -35,11 +35,7 @@ test.describe("Workflow map", () => {
     await main.getByRole("button", { name: /Product initiatives|이니셔티브/i }).click();
 
     const sheet = page.getByRole("dialog");
-    await sheet
-      .locator("div")
-      .filter({ hasText: "Smoke initiative" })
-      .getByRole("button", { name: "Open document" })
-      .click();
+    await sheet.locator(`a[href*="${initiativeId}"]`).click();
 
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives/${initiativeId}$`),
