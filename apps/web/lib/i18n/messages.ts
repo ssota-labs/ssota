@@ -117,7 +117,6 @@ export const en = {
     planningSectionTitle: "Annual & quarter roadmaps",
     planningSectionDescription:
       "Translate the product roadmap into yearly and quarterly planning documents.",
-    planningYearCardTitle: "Planning",
     kindAll: "All",
     year: "Year",
     newRoadmap: "New roadmap",
@@ -129,7 +128,6 @@ export const en = {
     emptyProductDescription:
       "The product roadmap is empty. Start from the Notion template to align goals, scope, and success criteria.",
     emptyPlanningDescription: "This planning document has no content yet.",
-    noAnnualYet: "No annual roadmap for this year yet.",
     createQuarterChip: "Create",
     missingAnnualWarning:
       "Quarter roadmaps exist without an annual roadmap for this year. Consider creating the annual roadmap first.",
@@ -339,7 +337,6 @@ export const ko = {
     planningSectionTitle: "연간·분기 로드맵",
     planningSectionDescription:
       "프로덕트 로드맵을 연간·분기 실행 계획 문서로 전개합니다.",
-    planningYearCardTitle: "계획",
     kindAll: "전체",
     year: "연도",
     newRoadmap: "새 로드맵",
@@ -351,7 +348,6 @@ export const ko = {
     emptyProductDescription:
       "프로덕트 로드맵이 비어 있습니다. Notion 양식으로 목표·범위·성공 기준을 정리하세요.",
     emptyPlanningDescription: "이 계획 문서에 아직 내용이 없습니다.",
-    noAnnualYet: "이 연도의 연간 로드맵이 아직 없습니다.",
     createQuarterChip: "생성",
     missingAnnualWarning:
       "연간 로드맵 없이 분기 로드맵만 존재합니다. 연간 로드맵 작성을 권장합니다.",

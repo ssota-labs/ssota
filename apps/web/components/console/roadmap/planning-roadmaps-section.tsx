@@ -221,20 +221,18 @@ export function PlanningRoadmapsSection({
         ) : null}
 
         <article
-          className="rounded-md border bg-muted/20"
+          className="rounded-md border bg-muted/20 px-3 py-2"
           data-testid="planning-year-card"
         >
-          <header className="border-b px-4 py-3">
-            <h3 className="text-sm font-medium">
-              {year} {t("roadmap.planningYearCardTitle")}
-            </h3>
-          </header>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="shrink-0 text-xs font-medium text-muted-foreground">
+              {year}
+            </span>
 
-          <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
             <div
               className={cn(
-                "rounded-md border bg-card p-4 text-left transition-colors",
-                annualNode && "cursor-pointer hover:bg-muted/40",
+                "inline-flex min-h-8 max-w-full items-center gap-2 rounded-md border px-2.5 py-1 text-left text-sm transition-colors",
+                annualNode && "cursor-pointer bg-card hover:bg-muted/40",
                 annualNode && selectedNode?.id === annualNode.id && "ring-2 ring-primary",
                 !annualNode && "border-dashed bg-muted/10",
               )}
@@ -252,37 +250,30 @@ export function PlanningRoadmapsSection({
             >
               {annualNode ? (
                 <>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium">{planningLabel(annualNode)}</p>
-                    <Badge variant="secondary">
-                      {DOC_STATUS_LABELS[annualNode.docStatus ?? "draft"]}
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {annualNode.year} · annual
-                  </p>
+                  <span className="truncate font-medium">{planningLabel(annualNode)}</span>
+                  <Badge variant="secondary" className="shrink-0 text-[10px]">
+                    {DOC_STATUS_LABELS[annualNode.docStatus ?? "draft"]}
+                  </Badge>
                 </>
               ) : (
-                <div className="space-y-2">
-                  <p className="font-medium">
-                    {year} {t("roadmap.annualRoadmap")}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{t("roadmap.noAnnualYet")}</p>
+                <>
+                  <span className="text-muted-foreground">{t("roadmap.annualRoadmap")}</span>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
+                    className="h-6 px-2 text-xs"
                     disabled={pending}
                     onClick={handleCreateAnnual}
                   >
                     {t("roadmap.newAnnual")}
                   </Button>
-                </div>
+                </>
               )}
             </div>
 
             <div
-              className="flex flex-wrap gap-2 lg:min-w-[5.5rem] lg:flex-col"
+              className="flex flex-wrap items-center gap-1.5"
               data-testid="quarter-roadmap-chips"
             >
               {QUARTERS.map((quarter, index) => {
@@ -292,8 +283,13 @@ export function PlanningRoadmapsSection({
                     key={quarter}
                     type="button"
                     data-testid={`quarter-chip-q${quarter}`}
+                    title={
+                      node
+                        ? DOC_STATUS_LABELS[node.docStatus ?? "draft"]
+                        : t("roadmap.createQuarterChip")
+                    }
                     className={cn(
-                      "min-w-[4.5rem] rounded-md border px-3 py-2 text-left text-sm transition-colors hover:bg-muted/40",
+                      "inline-flex h-8 min-w-[2.75rem] items-center justify-center gap-1 rounded-md border px-2 text-xs transition-colors hover:bg-muted/40",
                       node ? "bg-card" : "border-dashed bg-muted/10",
                       node && selectedNode?.id === node.id && "ring-2 ring-primary",
                     )}
@@ -305,12 +301,10 @@ export function PlanningRoadmapsSection({
                       handleCreateQuarter(quarter);
                     }}
                   >
-                    <div className="font-medium">Q{quarter}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {node
-                        ? DOC_STATUS_LABELS[node.docStatus ?? "draft"]
-                        : t("roadmap.createQuarterChip")}
-                    </div>
+                    <span className="font-medium">Q{quarter}</span>
+                    {!node ? (
+                      <span className="text-[10px] text-muted-foreground">+</span>
+                    ) : null}
                   </button>
                 );
               })}

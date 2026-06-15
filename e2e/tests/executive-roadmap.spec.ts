@@ -65,9 +65,8 @@ test.describe("Executive roadmap", () => {
     await expect(page.getByTestId("planning-year-card")).toBeVisible();
 
     const quarterChip = page.getByTestId("quarter-chip-q3");
-    const createLabel = quarterChip.getByText(/Create|생성/);
 
-    if (!(await createLabel.isVisible())) {
+    if (!(await quarterChip.getByText("+").isVisible())) {
       test.skip(true, "Q3 roadmap already exists in seed data");
     }
 
@@ -78,7 +77,7 @@ test.describe("Executive roadmap", () => {
       timeout: 15_000,
     });
     await expect(page.getByTestId("planning-roadmap-detail")).toContainText(/Q3/);
-    await expect(quarterChip).not.toContainText(/Create|생성/);
+    await expect(quarterChip.getByText("+")).not.toBeVisible();
     await page.waitForTimeout(1200);
   });
 });
