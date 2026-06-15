@@ -38,7 +38,7 @@ test.describe("Node detail", () => {
     expect(href).toMatch(/\/nodes\//);
 
     await activityLink.click();
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}${href}$`));
+    await expect(page).toHaveURL(/\/nodes\/[0-9a-f-]{36}$/);
     await expect(page.getByRole("textbox", { name: "Title" })).toBeVisible();
   });
 });

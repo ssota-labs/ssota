@@ -17,9 +17,10 @@ test.describe("Workflow map", () => {
 
     await main.getByRole("button", { name: /Product initiatives|이니셔티브/i }).click();
 
-    await expect(main.getByText("Smoke initiative")).toBeVisible({ timeout: 10_000 });
+    const sheet = page.getByRole("dialog");
+    await expect(sheet.getByText("Smoke initiative")).toBeVisible({ timeout: 10_000 });
 
-    await main.getByRole("link", { name: "Open table" }).click();
+    await sheet.getByRole("button", { name: "Open table" }).click();
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives$`),
     );
@@ -32,7 +33,13 @@ test.describe("Workflow map", () => {
 
     const main = page.getByRole("main");
     await main.getByRole("button", { name: /Product initiatives|이니셔티브/i }).click();
-    await main.getByRole("link", { name: "Open document" }).first().click();
+
+    const sheet = page.getByRole("dialog");
+    await sheet
+      .locator("div")
+      .filter({ hasText: "Smoke initiative" })
+      .getByRole("button", { name: "Open document" })
+      .click();
 
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives/${initiativeId}$`),
