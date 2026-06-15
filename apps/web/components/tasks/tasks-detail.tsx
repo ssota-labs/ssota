@@ -5,6 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import type { TaskStatus } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { updateTaskStatusAction } from "@/app/actions";
+import { SpawnTaskDialog, type WorkflowOption } from "@/components/tasks/spawn-task-dialog";
 import { TasksDetailSheet } from "@/components/tasks/tasks-detail-sheet";
 import { TasksKanbanBoard } from "@/components/tasks/tasks-kanban-board";
 import { TasksTable } from "@/components/tasks/tasks-table";
@@ -15,6 +16,7 @@ type TasksDetailProps = {
   activeTab: TaskTab;
   baseHref: string;
   projectId: string;
+  workflowOptions: WorkflowOption[];
 };
 
 export function TasksDetail({
@@ -22,6 +24,7 @@ export function TasksDetail({
   activeTab,
   baseHref,
   projectId,
+  workflowOptions,
 }: TasksDetailProps) {
   const [selected, setSelected] = useState<TaskWorkspaceRow | null>(null);
   const [motionReduced, setMotionReduced] = useState(false);
@@ -56,11 +59,17 @@ export function TasksDetail({
       </div>
 
       {rows.length === 0 ? (
-        <div className="space-y-3 px-6 py-10 text-center">
+        <div className="space-y-4 px-6 py-10 text-center">
           <p className="text-sm text-muted-foreground">
-            No runtime tasks yet. Use spawn_task from MCP to add work items to this
-            queue.
+            No tasks yet. Create one here or use MCP spawn_task from your agent
+            environment.
           </p>
+          <div className="flex justify-center">
+            <SpawnTaskDialog
+              projectId={projectId}
+              workflowOptions={workflowOptions}
+            />
+          </div>
         </div>
       ) : activeTab === "board" ? (
         <div className="min-h-0 flex-1 overflow-auto p-4">

@@ -28,7 +28,7 @@ function mapTask(row: typeof schema.tasks.$inferSelect): Task {
     executorType: row.executorType,
     assignee: row.assignee,
     subjectId: row.subjectId,
-    targetNodeId: null,
+    targetNodeId: row.targetNodeId,
     parentTaskId: row.parentTaskId,
     sourceActionLogId: null,
     context: row.context,
@@ -54,6 +54,9 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
     if (params?.subjectId) conditions.push(eq(schema.tasks.subjectId, params.subjectId));
     if (params?.executorType) {
       conditions.push(eq(schema.tasks.executorType, params.executorType));
+    }
+    if (params?.targetNodeId) {
+      conditions.push(eq(schema.tasks.targetNodeId, params.targetNodeId));
     }
     return conditions;
   }
@@ -94,6 +97,20 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
       return rows[0] ? mapTask(rows[0]) : null;
     },
 
+    async getTaskByIdempotencyKey(idempotencyKey) {
+      const rows = await db
+        .select()
+        .from(schema.tasks)
+        .where(
+          and(
+            eq(schema.tasks.projectId, projectId),
+            eq(schema.tasks.idempotencyKey, idempotencyKey),
+          ),
+        )
+        .limit(1);
+      return rows[0] ? mapTask(rows[0]) : null;
+    },
+
     async createTask(input: TaskCreateInput) {
       const [row] = await db
         .insert(schema.tasks)
@@ -105,6 +122,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           executorType: input.executorType ?? "Agent",
           assignee: input.assignee ?? null,
           subjectId: input.subjectId ?? null,
+          targetNodeId: input.targetNodeId ?? null,
           parentTaskId: input.parentTaskId ?? null,
           context: input.context ?? {},
           acceptanceCriteria: input.acceptanceCriteria ?? [],
@@ -126,6 +144,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
       }
       if (patch.assignee !== undefined) set.assignee = patch.assignee;
       if (patch.subjectId !== undefined) set.subjectId = patch.subjectId;
+      if (patch.targetNodeId !== undefined) set.targetNodeId = patch.targetNodeId;
       if (patch.executorType !== undefined) set.executorType = patch.executorType;
       if (patch.context !== undefined) set.context = patch.context;
       if (patch.acceptanceCriteria !== undefined) {

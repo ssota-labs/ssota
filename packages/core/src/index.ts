@@ -591,3 +591,6 @@ export * from "./ports/graph-write-port.js";
 export * from "./domain/graph-errors.js";
 export * from "./domain/graph-types.js";
 export * from "./use-cases/graph/index.js";
+export * from "./domain/task-errors.js";
+export * from "./ports/workflow-read-port.js";
+export * from "./use-cases/task/index.js";

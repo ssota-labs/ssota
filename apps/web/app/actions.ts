@@ -1,6 +1,11 @@
 "use server";
 
-import { type TaskStatus, UpdateTaskInputSchema } from "@ssota/contracts";
+import {
+  type TaskStatus,
+  SpawnTaskInputSchema,
+  UpdateTaskInputSchema,
+} from "@ssota/contracts";
+import { spawnTask } from "@ssota/core";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
@@ -8,7 +13,7 @@ import { withConsolePaths } from "@/lib/console/revalidate";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
-import { getTaskPort } from "@/lib/ports";
+import { getGraphPorts, getTaskPort } from "@/lib/ports";
 
 function loginRedirect(error: string, next?: string | null): never {
   const params = new URLSearchParams({ error });
@@ -40,6 +45,31 @@ export async function updateTaskStatusAction(
     revalidatePath(path);
   }
   return result;
+}
+
+export async function spawnTaskAction(
+  projectId: string,
+  input: {
+    title: string;
+    workflowKey: string;
+    assignee?: string;
+    executorType?: "Agent" | "Human" | "System";
+  },
+) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const parsed = SpawnTaskInputSchema.parse(input);
+  const graphPorts = getGraphPorts(projectId);
+  await spawnTask(
+    { tasks: getTaskPort(projectId), graphRead: graphPorts.graphRead },
+    projectId,
+    parsed,
+  );
+
+  for (const path of withConsolePaths(["/tasks"])) {
+    revalidatePath(path);
+  }
 }
 
 export async function signInWithGoogleAction(formData: FormData) {

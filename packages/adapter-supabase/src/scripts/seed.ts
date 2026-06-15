@@ -118,17 +118,35 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .insert(schema.tasks)
       .values({
         projectId,
-        workflowKey: "development",
+        workflowKey: "work.implement_feature",
         title: "Archive generic runtime and focus active product on development workflow",
         status: "ready",
         executorType: "Agent",
         assignee: "automation",
         context: { source: "seed" },
         acceptanceCriteria: [
-          "Active Drizzle schema keeps only profiles, organizations, memberships, projects, and tasks.",
+          "Active Drizzle schema keeps only profiles, organizations, memberships, projects, tasks, nodes, and edges.",
           "Generic graph runtime files live under archive/generic-runtime.",
         ],
         idempotencyKey: "seed:archive-generic-runtime",
+      })
+      .onConflictDoNothing();
+
+    await db
+      .insert(schema.tasks)
+      .values({
+        projectId,
+        workflowKey: "orchestrator.bootstrap",
+        title: "Configure Cursor Automations for ssota-dev orchestrators",
+        status: "ready",
+        executorType: "Human",
+        assignee: "automation",
+        context: { source: "seed", dogfood: true },
+        acceptanceCriteria: [
+          "Daily, weekly, monthly, and watchdog automations documented.",
+          "ssota MCP connected in automation environment.",
+        ],
+        idempotencyKey: "seed:orchestrator-bootstrap",
       })
       .onConflictDoNothing();
 

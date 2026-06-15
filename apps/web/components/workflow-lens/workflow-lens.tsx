@@ -149,7 +149,7 @@ export function WorkflowLens({ phases }: WorkflowLensProps) {
                         <div className="mt-3 flex flex-wrap gap-2">
                           {row.canonicalUrl ? (
                             <Button
-                              render={<Link href={row.canonicalUrl} target="_blank" />}
+                              render={<Link href={row.canonicalUrl} />}
                               variant="outline"
                               size="sm"
                               nativeButton={false}

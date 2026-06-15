@@ -1,24 +1,8 @@
-import { ExecutiveGoalsWorkspace } from "@/components/console/executive-goals-workspace";
-import type { GraphListRow } from "@/components/console/graph-list-page";
+import { GoalsCommandCenter } from "@/components/console/goals/goals-command-center";
 import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
-import { createGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
-import { queryNodesByType } from "@/lib/graph/graph-deps";
-
-function toRows(
-  nodes: Awaited<ReturnType<typeof queryNodesByType>>,
-  statusKey: string,
-): GraphListRow[] {
-  return nodes.map((node) => ({
-    id: node.id,
-    title: node.title || "Untitled",
-    status:
-      typeof node.properties[statusKey] === "string" ||
-      typeof node.properties[statusKey] === "number"
-        ? String(node.properties[statusKey])
-        : undefined,
-  }));
-}
+import { createObjectiveBundleAction } from "@/lib/graph/actions/create-objective-bundle";
+import { loadGoalsDashboard } from "@/lib/graph/loaders/load-goals-dashboard";
 
 export default async function ExecutiveGoalsPage({
   params,
@@ -29,37 +13,31 @@ export default async function ExecutiveGoalsPage({
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const revalidatePath = projectPath(ctx, "executive", "goals");
+  const dashboard = await loadGoalsDashboard(project.id);
 
-  const [objectives, keyResults, kpis] = await Promise.all([
-    queryNodesByType(project.id, "objective"),
-    queryNodesByType(project.id, "key_result"),
-    queryNodesByType(project.id, "kpi"),
-  ]);
-
-  async function createGoal(tab: "objective" | "key_result" | "kpi") {
+  async function createObjective(input: {
+    title: string;
+    period?: string;
+    keyResultTitle?: string;
+  }) {
     "use server";
-    const labels = {
-      objective: "Objective",
-      key_result: "Key result",
-      kpi: "KPI",
-    } as const;
-    await createGraphNodeAction({
+    await createObjectiveBundleAction({
       projectId: project.id,
-      nodeType: tab,
-      title: `${labels[tab]} ${new Date().toISOString().slice(0, 10)}`,
+      title: input.title,
+      period: input.period,
+      keyResults: input.keyResultTitle
+        ? [{ title: input.keyResultTitle }]
+        : undefined,
       revalidatePaths: [revalidatePath],
     });
   }
 
   return (
-    <ExecutiveGoalsWorkspace
-      objectives={toRows(objectives, "period")}
-      keyResults={toRows(keyResults, "target")}
-      kpis={toRows(kpis, "target")}
-      newLabel="New"
-      emptyTitle="No goals yet"
-      emptyDescription="Create objectives, key results, or KPIs."
-      onCreate={createGoal}
+    <GoalsCommandCenter
+      dashboard={dashboard}
+      nodesBasePath={projectPath(ctx, "nodes")}
+      roadmapHref={projectPath(ctx, "executive", "roadmap")}
+      onCreateObjective={createObjective}
     />
   );
 }

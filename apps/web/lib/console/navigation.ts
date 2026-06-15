@@ -159,6 +159,30 @@ export const PRODUCT_L1: NavEntry[] = [
   },
 ];
 
+export type NavDomain = "executive" | "research" | "product";
+
+function findFirstLinkHref(entries: NavEntry[]): string | null {
+  for (const entry of entries) {
+    if (entry.type === "link") return entry.href;
+    if (entry.type === "group" || entry.type === "section") {
+      const nested = findFirstLinkHref(entry.children);
+      if (nested) return nested;
+    }
+  }
+  return null;
+}
+
+/** Default landing href when drilling into a domain from L0. */
+export const DOMAIN_DEFAULT_HREF: Record<NavDomain, string> = {
+  executive: findFirstLinkHref(EXECUTIVE_L1) ?? "executive/roadmap",
+  research: findFirstLinkHref(RESEARCH_L1) ?? "research/market",
+  product: findFirstLinkHref(PRODUCT_L1) ?? "product/initiatives",
+};
+
+export function getDomainDefaultHref(domain: NavDomain): string {
+  return DOMAIN_DEFAULT_HREF[domain];
+}
+
 export const INITIATIVE_L2_NAV: NavEntry[] = [
   {
     type: "link",

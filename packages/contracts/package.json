@@ -15,13 +15,17 @@
     "./graph": {
       "types": "./dist/graph/index.d.ts",
       "default": "./dist/graph/index.js"
+    },
+    "./workflows": {
+      "types": "./dist/workflows/index.d.ts",
+      "default": "./dist/workflows/index.js"
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsx scripts/embed-workflow-instructions.ts && tsc",
     "dev": "tsc --watch",
     "lint": "eslint src",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsx scripts/embed-workflow-instructions.ts && tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
@@ -32,6 +36,7 @@
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
     "eslint": "^9.28.0",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vitest": "^3.2.4"
   }
