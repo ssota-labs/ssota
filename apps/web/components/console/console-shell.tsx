@@ -1,13 +1,19 @@
 "use client";
 
+import { Fragment } from "react";
 import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
-import { ConsoleIconRail } from "./console-icon-rail";
+import { AppSidebar } from "./app-sidebar";
 import { ConsoleTopBar } from "./console-top-bar";
 import {
   ProjectProvider,
   type ConsoleContextValue,
 } from "./project-context";
+
+type InitiativeOption = {
+  id: string;
+  title: string;
+};
 
 type ConsoleShellProps = {
   ctx: ConsoleContextValue;
@@ -15,6 +21,7 @@ type ConsoleShellProps = {
   projects: Project[];
   userEmail: string;
   signOutAction: () => Promise<void>;
+  initiatives?: InitiativeOption[];
   children: React.ReactNode;
 };
 
@@ -24,6 +31,7 @@ export function ConsoleShell({
   projects,
   userEmail,
   signOutAction,
+  initiatives = [],
   children,
 }: ConsoleShellProps) {
   const pathname = usePathname();
@@ -32,19 +40,20 @@ export function ConsoleShell({
   return (
     <ProjectProvider value={ctx}>
       <div className="flex h-svh w-full overflow-hidden">
-        <ConsoleIconRail />
+        <AppSidebar initiatives={initiatives} />
         <div className="flex min-w-0 flex-1 flex-col">
           <ConsoleTopBar
             userEmail={userEmail}
             organizations={organizations}
             projects={projects}
+            initiatives={initiatives}
             signOutAction={signOutAction}
           />
           <main
             className={
               isTasksContext
                 ? "flex min-h-0 flex-1 flex-col overflow-hidden"
-                : "flex min-h-0 flex-1 flex-col gap-4 overflow-auto p-4 md:p-6"
+                : "flex min-h-0 flex-1 flex-col overflow-auto"
             }
           >
             {children}
