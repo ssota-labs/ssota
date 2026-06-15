@@ -129,4 +129,28 @@ describe("graph instances integration", () => {
       );
     expect(pairedEdges.length).toBeGreaterThanOrEqual(1);
   });
+
+  it("seed includes demo OKR with contributes_to edges", async () => {
+    const objectives = await db!
+      .select({ id: schema.nodes.id, title: schema.nodes.title })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.nodeType, "objective"),
+        ),
+      );
+    expect(objectives.length).toBeGreaterThanOrEqual(1);
+
+    const contributesEdges = await db!
+      .select({ id: schema.edges.id })
+      .from(schema.edges)
+      .where(
+        and(
+          eq(schema.edges.projectId, projectId),
+          eq(schema.edges.edgeType, "contributes_to"),
+        ),
+      );
+    expect(contributesEdges.length).toBeGreaterThanOrEqual(1);
+  });
 });
