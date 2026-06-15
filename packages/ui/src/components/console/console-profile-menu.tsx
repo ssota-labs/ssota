@@ -98,16 +98,17 @@ export function ConsoleProfileMenu({
       </PopoverTrigger>
       <PopoverContent
         side="top"
-        align="start"
-        className="cn-menu-translucent w-72 gap-0 p-0"
+        align="end"
+        sideOffset={6}
+        className="cn-menu-translucent w-64 gap-0 p-1.5"
       >
-        <div className="space-y-1 px-3 py-2.5">
+        <div className="px-1.5 py-1">
           <p className="text-xs text-muted-foreground">{signedInAsLabel}</p>
           <p className="truncate text-sm font-medium">{userEmail}</p>
         </div>
         <Separator />
-        <div className="space-y-3 px-3 py-2.5">
-          <div className="space-y-1.5">
+        <div className="space-y-2 px-1.5 py-1.5">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{themeLabel}</Label>
             <ToggleGroup
               value={[themeValue]}
@@ -119,17 +120,17 @@ export function ConsoleProfileMenu({
               }}
               className="w-full"
             >
-              <ToggleGroupItem value="light" aria-label="Light mode" className="flex-1 gap-1.5">
+              <ToggleGroupItem value="light" aria-label="Light mode" className="flex-1 gap-1">
                 <SunIcon className="size-3.5" />
                 Light
               </ToggleGroupItem>
-              <ToggleGroupItem value="dark" aria-label="Dark mode" className="flex-1 gap-1.5">
+              <ToggleGroupItem value="dark" aria-label="Dark mode" className="flex-1 gap-1">
                 <MoonIcon className="size-3.5" />
                 Dark
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="profile-locale" className="text-xs text-muted-foreground">
               {languageLabel}
             </Label>
@@ -158,33 +159,31 @@ export function ConsoleProfileMenu({
           </div>
         </div>
         <Separator />
-        <ItemGroup className="p-1">
+        <ItemGroup>
           <Item
             size="sm"
             render={developerSetupItem}
-            className="cursor-pointer rounded-sm px-2"
+            className="cursor-pointer rounded-sm px-1.5"
           >
             {developerSetupLabel}
           </Item>
           <Item
             size="sm"
             render={settingsItem}
-            className="cursor-pointer rounded-sm px-2"
+            className="cursor-pointer rounded-sm px-1.5"
           >
             {settingsLabel}
           </Item>
         </ItemGroup>
         <Separator />
-        <div className="p-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-full justify-start px-2 text-destructive hover:text-destructive"
-            onClick={onSignOut}
-          >
-            {signOutLabel}
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-full justify-start px-1.5 text-destructive hover:text-destructive"
+          onClick={onSignOut}
+        >
+          {signOutLabel}
+        </Button>
       </PopoverContent>
     </Popover>
   );
