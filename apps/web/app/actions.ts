@@ -21,6 +21,7 @@ import {
   UpdatePropertyPermissionInputSchema,
   WorkflowTriggerEventSchema,
   WorkflowDefinitionSchema,
+  WorkflowDefinitionFieldsSchema,
   UpdateTaskInputSchema,
   type TaskStatus,
   createManualWorkflowTrigger,
@@ -513,12 +514,11 @@ export async function updateWorkflowAction(input: Record<string, unknown>) {
   ], projectId);
 }
 
-const WorkflowBuilderPatchSchema = WorkflowDefinitionSchema.pick({
+const WorkflowBuilderPatchSchema = WorkflowDefinitionFieldsSchema.pick({
+  flowEntry: true,
   steps: true,
-  conditions: true,
-  references: true,
-  routes: true,
-  output: true,
+  routeBlocks: true,
+  workflowBlocks: true,
   gates: true,
   trigger: true,
   context: true,
@@ -565,6 +565,8 @@ export async function updateWorkflowSettingsFormAction(
 
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
+  const workflowRoleRaw = String(formData.get("workflowRole") ?? "").trim();
+  const workflowRole = workflowRoleRaw || undefined;
   const applicableNodeTypes = parseApplicableNodeTypes(
     formData.get("applicableNodeTypes"),
   );
@@ -574,16 +576,6 @@ export async function updateWorkflowSettingsFormAction(
   const existing = await ports.catalog.getWorkflow(workflowId);
   if (!existing) throw new Error("Workflow not found");
 
-  const preservedReferences = existing.spec.references.filter(
-    (ref) => ref.id !== "agent_body",
-  );
-  const references = [
-    ...preservedReferences,
-    ...(body
-      ? [{ id: "agent_body", title: "Body", kind: "inline" as const, body }]
-      : []),
-  ];
-
   const result = await updateWorkflowAction({
     projectId,
     workflowId,
@@ -591,7 +583,7 @@ export async function updateWorkflowSettingsFormAction(
       title,
       applicableNodeTypes,
       allowedActions: allowedActionsFromBindings,
-      references,
+      workflowRole,
       ...(body ? { agentNotes: body } : { agentNotes: null }),
     },
   });
@@ -619,7 +611,8 @@ export async function attachWorkflowRunbookFormAction(formData: FormData) {
     projectId,
     workflowId,
     patch: {
-      references: [{ id: "runbook", title: "Runbook", kind: "url", url: runbookUrl }],
+      steps: undefined,
+      agentNotes: `Runbook: ${runbookUrl}`,
     },
   });
 }
@@ -900,14 +893,6 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
             actions: [],
           },
         ];
-  const references = [
-    ...(body
-      ? [{ id: "agent_body", title: "Body", kind: "inline" as const, body }]
-      : []),
-    ...(contentUrl
-      ? [{ id: "runbook", title: "Runbook", kind: "url" as const, url: contentUrl }]
-      : []),
-  ];
   const nextApplicableNodeTypes =
     applicableNodeTypes.length > 0
       ? applicableNodeTypes
@@ -927,18 +912,25 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
       scope,
       trigger: { events: triggerEvents },
       context,
+      routeBlocks: [],
+      workflowBlocks: [],
       conditions: [],
       gates: [],
       routes: [],
+      references: [],
+      output: { contract: {} },
       applicableNodeTypes: nextApplicableNodeTypes,
       allowedActions: allowedActionsFromBindings,
       steps,
-      output: {
-        contract: parseJsonObject(formData.get("outputContract")),
-        completionCriteria: String(formData.get("completionCriteria") ?? "") || null,
-      },
-      references,
-      ...(body ? { agentNotes: body } : {}),
+      agentNotes:
+        [
+          body,
+          String(formData.get("completionCriteria") ?? "").trim()
+            ? `Completion: ${String(formData.get("completionCriteria") ?? "").trim()}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join("\n\n") || undefined,
     }),
     projectId,
   });

@@ -2,9 +2,40 @@ import { z } from "zod";
 import { LifecycleStatusSchema } from "./definitions.js";
 import { ContextSpecSchema } from "./workflow-context.js";
 import {
+  RouteBlockSchema,
+  WorkflowBlockRefSchema,
+  WorkflowExternalLinkSchema,
+  WorkflowExternalLinkSourceSchema,
+  WorkflowFlowEntrySchema,
+  RouteOutletSchema,
+  RouteOutletTargetSchema,
+  WorkflowKeySchema,
+} from "./workflow-graph.js";
+import {
   WorkflowTriggerSpecSchema,
   createManualWorkflowTrigger,
 } from "./workflow-trigger-event.js";
+
+export {
+  RouteBlockSchema,
+  RouteOutletSchema,
+  RouteOutletTargetSchema,
+  WorkflowBlockRefSchema,
+  WorkflowExternalLinkSchema,
+  WorkflowExternalLinkSourceSchema,
+  WorkflowFlowEntrySchema,
+  WorkflowKeySchema,
+  type RouteBlock,
+  type RouteOutlet,
+  type RouteOutletTarget,
+  type WorkflowBlockRef,
+  type WorkflowExternalLink,
+  type WorkflowExternalLinkSource,
+  type WorkflowFlowEntry,
+  type WorkflowKey,
+} from "./workflow-graph.js";
+
+export { migrateWorkflowGraph, resolveOutletTargetNodeId } from "./workflow-graph-migrate.js";
 
 export {
   ContextAssertionKindSchema,
@@ -49,13 +80,6 @@ export const WorkflowScopeSchema = z.discriminatedUnion("kind", [
 
 export type WorkflowScope = z.infer<typeof WorkflowScopeSchema>;
 
-/** Stable snake_case identifier for workflow routing and MCP lookup. */
-export const WorkflowKeySchema = z
-  .string()
-  .regex(/^[a-z][a-z0-9_]*$/, "workflowKey must be snake_case");
-
-export type WorkflowKey = z.infer<typeof WorkflowKeySchema>;
-
 export const WorkflowEvaluationModeSchema = z.enum([
   "deterministic",
   "agentic",
@@ -69,7 +93,9 @@ export const WorkflowEnforcementSchema = z.enum(["hard", "soft"]);
 
 export type WorkflowEnforcement = z.infer<typeof WorkflowEnforcementSchema>;
 
-/** Branching rule evaluated against assembled context. */
+/**
+ * @deprecated Use RouteBlock outlets — agentic routing lives in routingInstructionUrl.
+ */
 export const WorkflowConditionSpecSchema = z.object({
   id: z.string().min(1),
   label: z.string().optional(),
@@ -113,26 +139,35 @@ export const WorkflowStepSpecSchema = z.object({
   mode: WorkflowEvaluationModeSchema.default("agentic"),
   actions: z.array(WorkflowStepActionRefSchema).default([]),
   gate: WorkflowGateSpecSchema.nullable().optional(),
+  /** Notion runbook URL for how to execute this step. */
+  instructionUrl: z.string().url().nullable().optional(),
+  /** Next step in a linear chain (e.g. after a route outlet). */
+  nextStepId: z.string().optional(),
+  /** @deprecated Use instructionUrl */
   output: z.string().optional(),
+  /** @deprecated Removed — use RouteBlock */
   conditionId: z.string().optional(),
+  /** @deprecated Use instructionUrl */
   referenceIds: z.array(z.string()).default([]),
+  /** @deprecated Use RouteBlock outlet → WorkflowBlockRef */
   routeToWorkflowKey: WorkflowKeySchema.optional(),
 });
 
 export type WorkflowStepSpec = z.infer<typeof WorkflowStepSpecSchema>;
 
-/** Progressive disclosure — inline text, external URL, or nested workflow. */
-export const WorkflowReferenceSourceSchema = z.enum([
-  "notion",
-  "gdrive",
-  "gmail",
-  "generic",
-]);
+/**
+ * @deprecated Use WorkflowExternalLink on Route/Step.
+ */
+/**
+ * @deprecated Use WorkflowExternalLinkSourceSchema.
+ */
+export const WorkflowReferenceSourceSchema = WorkflowExternalLinkSourceSchema;
 
 export type WorkflowReferenceSource = z.infer<
   typeof WorkflowReferenceSourceSchema
 >;
 
+/** @deprecated Use WorkflowExternalLink + instructionUrl */
 export const WorkflowReferenceSpecSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
@@ -146,7 +181,7 @@ export const WorkflowReferenceSpecSchema = z.object({
 
 export type WorkflowReferenceSpec = z.infer<typeof WorkflowReferenceSpecSchema>;
 
-/** Hand execution to another workflow (progressive disclosure / routing). */
+/** @deprecated Use RouteBlock + WorkflowBlockRef */
 export const WorkflowRouteSpecSchema = z.object({
   id: z.string().min(1),
   targetWorkflowKey: WorkflowKeySchema,
@@ -156,7 +191,9 @@ export const WorkflowRouteSpecSchema = z.object({
 
 export type WorkflowRouteSpec = z.infer<typeof WorkflowRouteSpecSchema>;
 
-/** Expected artifacts and completion semantics. */
+/**
+ * @deprecated Completion lives on Task.acceptanceCriteria and Notion runbooks.
+ */
 export const WorkflowOutputSpecSchema = z.object({
   contract: z.record(z.unknown()).default({}),
   completionCriteria: z.string().nullable().optional(),
@@ -182,9 +219,12 @@ export const WorkflowNodeBindingSchema = WorkflowApplicableNodeTypeSchema;
 /** @deprecated Use WorkflowApplicableNodeType */
 export type WorkflowNodeBinding = WorkflowApplicableNodeType;
 
-const WorkflowDefinitionBaseSchema = z.object({
+/** Field-level workflow definition shape (no graph refine). */
+export const WorkflowDefinitionFieldsSchema = z.object({
   title: z.string().min(1),
   workflowKey: WorkflowKeySchema.optional(),
+  /** Optional UI/metadata tag — does not change runtime behavior. */
+  workflowRole: z.string().optional(),
   lifecycle: LifecycleStatusSchema.default("Active"),
   scope: WorkflowScopeSchema.default({ kind: "global" }),
   trigger: WorkflowTriggerSpecSchema.default({
@@ -195,27 +235,44 @@ const WorkflowDefinitionBaseSchema = z.object({
     traversals: [],
     assertions: [],
   }),
-  conditions: z.array(WorkflowConditionSpecSchema).default([]),
-  steps: z.array(WorkflowStepSpecSchema).min(1),
+  /** Node after Context on the main spine. */
+  flowEntry: WorkflowFlowEntrySchema.optional(),
+  routeBlocks: z.array(RouteBlockSchema).default([]),
+  workflowBlocks: z.array(WorkflowBlockRefSchema).default([]),
+  steps: z.array(WorkflowStepSpecSchema).default([]),
   gates: z.array(WorkflowGateSpecSchema).default([]),
-  output: WorkflowOutputSpecSchema.default({ contract: {} }),
-  references: z.array(WorkflowReferenceSpecSchema).default([]),
-  routes: z.array(WorkflowRouteSpecSchema).default([]),
   /** Freeform agent guidance rendered in the agent package. */
   agentNotes: z.string().nullable().optional(),
+  /** @deprecated Migrated to routeBlocks on parse */
+  conditions: z.array(WorkflowConditionSpecSchema).default([]),
+  /** @deprecated Migrated to routeBlocks + workflowBlocks on parse */
+  routes: z.array(WorkflowRouteSpecSchema).default([]),
+  /** @deprecated Migrated to instructionUrl / Route links on parse */
+  references: z.array(WorkflowReferenceSpecSchema).default([]),
+  /** @deprecated Migrated to agentNotes on parse */
+  output: WorkflowOutputSpecSchema.default({ contract: {} }),
   /** Registered node catalog entries with workflow-scoped action toggles. */
   applicableNodeTypes: z.array(WorkflowApplicableNodeTypeSchema).default([]),
   /** Workflow-level allowed actions. */
   allowedActions: z.array(z.string()).default([]),
 });
 
-/** Catalog upsert / define payload — at least one step required. */
-export const WorkflowDefinitionSchema = WorkflowDefinitionBaseSchema;
+const workflowGraphRefine = (
+  value: z.infer<typeof WorkflowDefinitionFieldsSchema>,
+) => value.steps.length > 0 || value.routeBlocks.length > 0;
+
+/** Catalog upsert / define payload. */
+export const WorkflowDefinitionSchema = WorkflowDefinitionFieldsSchema.refine(
+  workflowGraphRefine,
+  {
+    message: "Workflow must have at least one step or route block",
+  },
+);
 
 export type WorkflowDefinition = z.infer<typeof WorkflowDefinitionSchema>;
 
 /** Persisted workflow wire shape (workflows catalog row). */
-export const WorkflowSchema = WorkflowDefinitionBaseSchema.extend({
+export const WorkflowSchema = WorkflowDefinitionFieldsSchema.extend({
   id: z.string().uuid(),
   slug: z.string().min(1),
   createdAt: z.string().optional(),
@@ -243,7 +300,7 @@ export type DefineWorkflowInput = z.infer<typeof DefineWorkflowInputSchema>;
 
 export const UpdateWorkflowInputSchema = z.object({
   workflowId: z.string().uuid(),
-  patch: WorkflowDefinitionBaseSchema.partial().extend({
+  patch: WorkflowDefinitionFieldsSchema.partial().extend({
     lifecycle: LifecycleStatusSchema.optional(),
     scope: WorkflowScopeSchema.optional(),
   }),

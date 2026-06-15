@@ -35,26 +35,28 @@ test.describe("SSOTA Console", () => {
     await gotoProject(page, "workflow");
     await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
     await expect(page.getByPlaceholder("Search workflows...")).toBeVisible();
+
+    await page.getByTestId("catalog-workflow-document_creation").click();
     await expect(page.getByText("Trigger", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Context", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Output", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Auto layout", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("link", { name: "Detail" })).toHaveCount(0);
 
-    await page.getByText("Load contract", { exact: true }).click();
+    await page.getByText("Create draft", { exact: true }).click();
     await expect(page.getByText("Configure the selected workflow block.")).toBeVisible();
-    await expect(page.getByText("Action refs")).toBeVisible();
+    await expect(page.getByText("Actions", { exact: true })).toBeVisible();
 
-    await page.getByTestId("add-node-step").first().click();
-    await expect(page.getByTestId("add-node-option-reference")).toBeVisible();
+    await page.getByTestId("add-node-context").click();
+    await expect(page.getByTestId("add-node-option-step")).toBeVisible();
     await expect(page.getByTestId("add-node-option-route")).toBeVisible();
+    await expect(page.getByTestId("add-node-option-workflow")).toBeVisible();
   });
 
   test("smoke: legacy /workflows redirect", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "workflows");
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow`));
-    await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
   test("smoke: Developer Setup route", async ({ page }) => {

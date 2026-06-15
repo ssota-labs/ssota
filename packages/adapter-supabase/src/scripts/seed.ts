@@ -261,6 +261,11 @@ async function seedCatalog(
     )
     .onConflictDoNothing();
 
+  await db
+    .insert(schema.workflows)
+    .values(orchestratorWorkflowRows(projectId))
+    .onConflictDoNothing();
+
   await seedHomepageAgentCatalog(db, projectId);
 }
 
@@ -340,21 +345,18 @@ function workflowSeedRow(
       steps,
       gates: [],
       routes: [],
-      references: legacy.body
-        ? [
-            {
-              id: "agent_body",
-              title: "Agent notes",
-              kind: "inline" as const,
-              body: legacy.body,
-            },
-          ]
-        : [],
-      output: {
-        contract: {},
-        completionCriteria: legacy.completionCriteria,
-      },
-      agentNotes: legacy.body,
+      routeBlocks: [],
+      workflowBlocks: [],
+      references: [],
+      output: { contract: {} },
+      agentNotes: [
+        legacy.body,
+        legacy.completionCriteria
+          ? `Completion: ${legacy.completionCriteria}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join("\n\n"),
       applicableNodeTypes: legacy.applicableNodeTypes.map((nodeType) => ({
         nodeType,
         disabledActions: [],
@@ -472,6 +474,143 @@ const DOMAIN_WORKFLOWS = [
     completionCriteria: "Audit trail cited in response",
   },
 ];
+
+function orchestratorWorkflowRows(
+  projectId: string,
+): (typeof schema.workflows.$inferInsert)[] {
+  const documentStewardBlock = {
+    id: "wf_document_creation",
+    label: "Document steward",
+    workflowKey: "document_creation",
+  };
+  const meetingStewardBlock = {
+    id: "wf_meeting_processing",
+    label: "Meeting steward",
+    workflowKey: "meeting_processing_and_task_derivation",
+  };
+
+  return [
+    {
+      projectId,
+      slug: "ops_planner",
+      workflowKey: "ops_planner",
+      lifecycle: "Active",
+      scope: { kind: "global" },
+      spec: {
+        title: "Ops planner",
+        workflowKey: "ops_planner",
+        workflowRole: "planner",
+        lifecycle: "Active",
+        scope: { kind: "global" },
+        trigger: {
+          events: [
+            { id: "schedule", kind: "schedule", enabled: true, config: {} },
+          ],
+        },
+        context: {
+          filterGroups: [
+            {
+              id: "fg_task",
+              nodeType: "Task",
+              combinator: "and",
+              conditions: [],
+            },
+          ],
+          traversals: [],
+          assertions: [],
+        },
+        flowEntry: { kind: "step", stepId: "spawn_tasks" },
+        routeBlocks: [],
+        workflowBlocks: [],
+        steps: [
+          {
+            id: "spawn_tasks",
+            title: "Spawn steward tasks",
+            mode: "agentic",
+            actions: [{ actionType: "spawn_task", required: true }],
+            referenceIds: [],
+          },
+        ],
+        gates: [],
+        routes: [],
+        references: [],
+        output: { contract: {} },
+        agentNotes:
+          "Completion: Runtime tasks spawned with workflowKey set for downstream stewards.",
+        applicableNodeTypes: [{ nodeType: "Task", disabledActions: [] }],
+        allowedActions: ["spawn_task", "query_nodes"],
+      },
+    },
+    {
+      projectId,
+      slug: "main_product_ops_entry",
+      workflowKey: "main_product_ops_entry",
+      lifecycle: "Active",
+      scope: { kind: "global" },
+      spec: {
+        title: "Main product ops entry",
+        workflowKey: "main_product_ops_entry",
+        workflowRole: "dispatcher",
+        lifecycle: "Active",
+        scope: { kind: "global" },
+        trigger: {
+          events: [
+            { id: "task_ready", kind: "task_ready", enabled: true, config: {} },
+          ],
+        },
+        context: {
+          filterGroups: [
+            {
+              id: "fg_ready_tasks",
+              nodeType: "Task",
+              combinator: "and",
+              conditions: [],
+            },
+          ],
+          traversals: [],
+          assertions: [],
+        },
+        flowEntry: { kind: "route", routeId: "dispatch" },
+        routeBlocks: [
+          {
+            id: "dispatch",
+            label: "Dispatch to steward",
+            routingInstructionUrl: null,
+            links: [],
+            outlets: [
+              {
+                id: "out_document",
+                label: "document",
+                target: {
+                  kind: "workflow",
+                  workflowBlockId: documentStewardBlock.id,
+                },
+              },
+              {
+                id: "out_meeting",
+                label: "meeting",
+                target: {
+                  kind: "workflow",
+                  workflowBlockId: meetingStewardBlock.id,
+                },
+              },
+            ],
+          },
+        ],
+        workflowBlocks: [documentStewardBlock, meetingStewardBlock],
+        steps: [],
+        gates: [],
+        routes: [],
+        references: [],
+        output: { contract: {} },
+        agentNotes:
+          "Completion: Task routed to the correct steward workflow via dispatch outlets.",
+        applicableNodeTypes: [{ nodeType: "Task", disabledActions: [] }],
+        allowedActions: ["query_tasks", "get_task"],
+      },
+    },
+  ];
+}
 
 async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: string) {
   const [org] = await db
