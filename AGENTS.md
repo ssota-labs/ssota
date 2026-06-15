@@ -22,7 +22,7 @@ Active DB/runtime keep set은 `profiles`, `organizations`, `organization_members
 ```
 apps/
   web/                  # Next.js 16 — Console v2.7 UI + Supabase Auth
-  mcp/                  # Next.js 16 — account/project/task MCP (graph tools는 PR 11+)
+  mcp/                  # Next.js 16 — account/project/task + graph query MCP
 packages/
   core/                 # CatalogReadPort, GraphReadPort, GraphWritePort, graph use-cases (+ legacy executeAction in archive path)
   adapter-supabase/     # Drizzle 스키마·시드, createGraphPorts / createTaskPort
@@ -318,7 +318,7 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 ## MCP App Notes (apps/mcp)
 
 - 엔드포인트는 `/api/mcp` (Streamable HTTP, `mcp-handler` + `@modelcontextprotocol/sdk`).
-- Active MCP scope는 account/project discovery와 development workflow `tasks` 조회다. Generic graph/catalog/action/workflow tools는 archived runtime으로 이동했으며 active agent protocol이 아니다.
+- Active MCP scope는 account/project discovery, development workflow `tasks` 조회, **graph read-only query** (`list_node_types`, `get_node_type`, `list_edge_types`, `query_nodes`, `get_node`, `traverse_edges`)다. Generic action/workflow runtime tools와 MCP write는 archived/미도입.
 - 일반 구현 작업에서 `ssota-mcp`를 mount하지 않는다. 사용자가 명시적으로 `ssota-dev` project/task context를 조회하라고 할 때만 사용한다.
 - 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. `apps/mcp`는 Bearer JWT JWKS 검증 + `/.well-known/oauth-protected-resource` + `/api/mcp`를 유지한다.
 - 도구 핸들러에 비즈니스 로직을 넣지 않는다 — task/project 포트 호출 + IO 변환만.
