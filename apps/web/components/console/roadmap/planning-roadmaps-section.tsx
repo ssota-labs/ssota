@@ -23,7 +23,6 @@ import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { RoadmapDocumentSheet } from "@/components/console/roadmap/roadmap-document-sheet";
 import { RoadmapMarkdownPreview } from "@/components/console/roadmap/roadmap-markdown-preview";
-import { RoadmapSectionAccordion } from "@/components/console/roadmap/roadmap-section-accordion";
 import {
   DOC_STATUS_LABELS,
   DOC_STATUS_OPTIONS,
@@ -355,10 +354,7 @@ export function PlanningRoadmapsSection({
 
             <div className="space-y-4 p-4 md:p-6">
               {selectedNode.content.trim() ? (
-                <>
-                  <RoadmapMarkdownPreview content={selectedNode.content} />
-                  <RoadmapSectionAccordion content={selectedNode.content} />
-                </>
+                <RoadmapMarkdownPreview content={selectedNode.content} />
               ) : (
                 <p className="text-sm text-muted-foreground">
                   {t("roadmap.emptyPlanningDescription")}
