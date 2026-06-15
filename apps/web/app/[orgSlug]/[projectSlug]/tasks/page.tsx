@@ -1,23 +1,11 @@
+import { TasksExplorer } from "@/components/tasks/tasks-explorer";
 import {
-  TasksExplorer,
-} from "@/components/tasks/tasks-explorer";
-import {
-  type TaskFilter,
   type TaskTab,
   type TaskWorkspaceRow,
 } from "@/components/tasks/tasks-workspace";
 import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
-
-const taskFilters = new Set<TaskFilter>([
-  "all",
-  "human",
-  "agent",
-  "automation",
-  "blocked",
-  "review",
-]);
 
 const taskTabs = new Set<TaskTab>(["table", "board"]);
 
@@ -26,17 +14,14 @@ export default async function TasksPage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
-  searchParams: Promise<{ view?: string; tab?: string }>;
+  searchParams: Promise<{ tab?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const { view, tab } = await searchParams;
+  const { tab } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
   const tasks = await ports.tasks.queryTasks({ limit: 200 });
-  const activeFilter = taskFilters.has(view as TaskFilter)
-    ? (view as TaskFilter)
-    : "all";
   const activeTab = taskTabs.has(tab as TaskTab) ? (tab as TaskTab) : "table";
 
   const rows: TaskWorkspaceRow[] = tasks.map((task) => ({
@@ -64,7 +49,6 @@ export default async function TasksPage({
   return (
     <TasksExplorer
       rows={rows}
-      activeFilter={activeFilter}
       activeTab={activeTab}
       baseHref={projectPath(ctx, "tasks")}
       projectId={project.id}
