@@ -69,7 +69,7 @@ export function WorkspaceSwitcherItem({
       size="sm"
       variant={active ? "muted" : "default"}
       className={cn(
-        "cursor-pointer gap-2 rounded-sm px-2 py-1",
+        "cn-item-workspace-menu cursor-pointer rounded-sm",
         active && "bg-sidebar-accent font-medium",
         className,
       )}

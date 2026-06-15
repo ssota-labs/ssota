@@ -696,6 +696,11 @@
     @apply gap-2.5 px-3 py-2.5;
   }
 
+  /* Workspace switcher menu rows: tighter than default sm (utility py-* loses to @apply). */
+  .cn-item.cn-item-workspace-menu {
+    @apply gap-2 px-2 py-1;
+  }
+
   .cn-item-size-xs {
     @apply gap-2.5 px-2.5 py-2 in-data-[slot=dropdown-menu-content]:p-0;
   }
