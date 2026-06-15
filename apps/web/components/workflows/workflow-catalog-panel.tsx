@@ -49,7 +49,7 @@ export function WorkflowCatalogPanel({
         </div>
       </div>
       <ScrollArea className="min-h-0 flex-1">
-        <ul className="p-1.5">
+        <ul className="space-y-px p-1.5">
           {items.length === 0 ? (
             <li className="px-2 py-4 text-center text-xs text-muted-foreground">
               {emptyMessage}
