@@ -46,6 +46,8 @@ import {
   type WorkflowDraft,
 } from "@/lib/workflows/workflow-draft";
 import {
+  ROUTE_OUTLET_HANDLE_SPACING,
+  ROUTE_OUTLET_HANDLE_TOP_BASE,
   workflowToFlowGraph,
   type WorkflowFlowNode,
   type WorkflowFlowNodeData,
@@ -160,7 +162,7 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
       ) : null}
       {data.kind === "route"
         ? routeOutlets.map((outlet, index) => {
-            const top = 28 + index * 22;
+            const top = ROUTE_OUTLET_HANDLE_TOP_BASE + index * ROUTE_OUTLET_HANDLE_SPACING;
             return (
               <Handle
                 key={outlet.id}
