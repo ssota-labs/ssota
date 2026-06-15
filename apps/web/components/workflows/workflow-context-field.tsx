@@ -7,7 +7,6 @@ import {
   FunnelIcon,
 } from "@phosphor-icons/react";
 import type { ContextSpec } from "@ssota/contracts";
-import { Badge } from "@ssota/ui/components/ui/badge";
 import { Label } from "@ssota/ui/components/ui/label";
 import { cn } from "@ssota/ui/lib/utils";
 import {
@@ -28,6 +27,7 @@ import {
   type WorkflowEdgeCatalogOption,
   type WorkflowNodeCatalogOption,
 } from "@/lib/workflows/workflow-context-defaults";
+import { WorkflowInspectorSheetHeader } from "@/components/workflows/workflow-inspector-sheet-header";
 
 type WorkflowContextFieldProps = {
   context: ContextSpec;
@@ -113,20 +113,13 @@ export function WorkflowContextField({
 
   return (
     <>
-      <div className={cn("space-y-6 px-6 pb-6", className)}>
+      <div className={cn(inspectorHeader ? "pb-6" : "space-y-6 px-6 pb-6", className)}>
         {inspectorHeader ? (
-          <div>
-            <div className="flex items-center gap-2">
-              <p className="min-w-0 flex-1 truncate text-sm font-semibold">
-                Context
-              </p>
-              <Badge variant="secondary">context</Badge>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Filter groups, traversals, and assertions agents use to assemble
-              graph context.
-            </p>
-          </div>
+          <WorkflowInspectorSheetHeader
+            title="Context"
+            kind="context"
+            description="Filter groups, traversals, and assertions agents use to assemble graph context."
+          />
         ) : (
           <div className="space-y-1">
             <Label className="text-sm font-medium">Context</Label>
@@ -137,6 +130,11 @@ export function WorkflowContextField({
           </div>
         )}
 
+        <div
+          className={cn(
+            inspectorHeader ? "space-y-6 px-4 pt-4" : "contents",
+          )}
+        >
         <ExpandableListSection
           title="Filter groups"
           description="One node type per group with property conditions."
@@ -290,6 +288,7 @@ export function WorkflowContextField({
             );
           })}
         </ExpandableListSection>
+        </div>
       </div>
 
       {!readOnly ? (

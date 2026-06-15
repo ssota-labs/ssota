@@ -199,7 +199,6 @@ function TriggerInspector({
         }
         onAddTrigger={() => setAddTriggerOpen(true)}
         inspectorHeader
-        className="px-4 py-4"
       />
       <AddWorkflowTriggerDialog
         open={addTriggerOpen}
@@ -236,7 +235,6 @@ function ContextInspector({
       edgeCatalog={edgeCatalog}
       onContextChange={(context) => onDraftChange(updateContext(draft, context))}
       inspectorHeader
-      className="px-4 pt-4 pb-6"
     />
   );
 }

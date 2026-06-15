@@ -2,7 +2,6 @@
 
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { WorkflowTriggerEvent } from "@ssota/contracts";
-import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
@@ -11,6 +10,7 @@ import {
   getWorkflowTriggerMeta,
   serializeWorkflowTriggers,
 } from "@/lib/workflows/workflow-trigger-catalog";
+import { WorkflowInspectorSheetHeader } from "@/components/workflows/workflow-inspector-sheet-header";
 
 export function WorkflowTriggersField({
   triggers,
@@ -49,19 +49,13 @@ export function WorkflowTriggersField({
   }
 
   return (
-    <div className={cn("space-y-3 px-6", className)}>
+    <div className={cn(inspectorHeader ? undefined : "space-y-3 px-6", className)}>
       {inspectorHeader ? (
-        <div>
-          <div className="flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-semibold">
-              Triggers
-            </p>
-            <Badge variant="secondary">trigger</Badge>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            When should this workflow run?
-          </p>
-        </div>
+        <WorkflowInspectorSheetHeader
+          title="Triggers"
+          kind="trigger"
+          description="When should this workflow run?"
+        />
       ) : (
         <div className="space-y-1">
           <Label className="text-sm font-medium">Triggers</Label>
@@ -71,6 +65,7 @@ export function WorkflowTriggersField({
         </div>
       )}
 
+      <div className={cn("space-y-3", inspectorHeader && "px-4 py-4")}>
       <div className="overflow-hidden rounded-lg border bg-card">
         <ul className="divide-y">
           {triggers.map((trigger) => {
@@ -144,6 +139,7 @@ export function WorkflowTriggersField({
           value={serializeWorkflowTriggers(triggers)}
         />
       ) : null}
+      </div>
     </div>
   );
 }
