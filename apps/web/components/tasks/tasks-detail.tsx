@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import type { TaskStatus } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
+import { toast } from "sonner";
 import { updateTaskStatusAction } from "@/app/actions";
 import { SpawnTaskDialog, type WorkflowOption } from "@/components/tasks/spawn-task-dialog";
 import { TasksDetailSheet } from "@/components/tasks/tasks-detail-sheet";
@@ -40,7 +41,13 @@ export function TasksDetail({
 
   async function handleStatusChange(taskId: string, status: TaskStatus) {
     startTransition(async () => {
-      await updateTaskStatusAction(projectId, taskId, status);
+      try {
+        await updateTaskStatusAction(projectId, taskId, status);
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Could not update task status",
+        );
+      }
     });
   }
 
@@ -68,6 +75,7 @@ export function TasksDetail({
             <SpawnTaskDialog
               projectId={projectId}
               workflowOptions={workflowOptions}
+              taskOptions={rows}
             />
           </div>
         </div>
@@ -85,7 +93,12 @@ export function TasksDetail({
         <TasksTable rows={rows} onOpenDetail={setSelected} />
       )}
 
-      <TasksDetailSheet task={selected} onClose={() => setSelected(null)} />
+      <TasksDetailSheet
+        task={selected}
+        rows={rows}
+        onClose={() => setSelected(null)}
+        onSelectTask={setSelected}
+      />
     </div>
   );
 }

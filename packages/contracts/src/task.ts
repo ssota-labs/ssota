@@ -52,6 +52,13 @@ export const TaskIndexSchema = z.object({
 
 export type TaskIndex = z.infer<typeof TaskIndexSchema>;
 
+export const TaskDetailSchema = TaskSchema.extend({
+  blockedBy: z.array(TaskIndexSchema),
+  isRunnable: z.boolean(),
+});
+
+export type TaskDetail = z.infer<typeof TaskDetailSchema>;
+
 export const QueryTasksInputSchema = z.object({
   status: TaskStatusSchema.optional(),
   workflowKey: TaskWorkflowKeySchema.optional(),
@@ -59,6 +66,7 @@ export const QueryTasksInputSchema = z.object({
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
   executorType: ExecutorTypeSchema.optional(),
+  runnable: z.boolean().optional(),
   limit: z.number().int().positive().max(100).default(20),
   offset: z.number().int().nonnegative().default(0),
 });
@@ -78,6 +86,7 @@ export const SpawnTaskInputSchema = z.object({
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
   parentTaskId: z.string().uuid().optional(),
+  blockedByTaskIds: z.array(z.string().uuid()).optional(),
   executorType: ExecutorTypeSchema.optional(),
   context: z.record(z.unknown()).optional(),
   acceptanceCriteria: z.array(z.unknown()).optional(),

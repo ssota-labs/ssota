@@ -19,6 +19,7 @@ import {
   TASK_STATUSES,
   TASK_STATUS_LABELS,
 } from "@/components/tasks/task-status";
+import { countOpenBlockers } from "@/components/tasks/task-blockers";
 import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
 type TasksKanbanBoardProps = {
@@ -226,6 +227,11 @@ function TaskCard({
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
           <span className="font-mono">{task.workflowKey}</span>
           {task.assignee ? <span>{task.assignee}</span> : null}
+          {countOpenBlockers(task.blockedBy) > 0 ? (
+            <Badge variant="outline" className="text-[10px]">
+              Blocked by {countOpenBlockers(task.blockedBy)}
+            </Badge>
+          ) : null}
         </div>
         {motionReduced && onStatusChange ? (
           <select

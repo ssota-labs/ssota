@@ -17,10 +17,10 @@ Review project task backlog and spawn today's work items for agents or humans.
 ## Steps
 
 1. `query_tasks` — `status` in `ready`, `running`, `blocked`; note stale `running` (>24h `updatedAt`).
-2. `query_tasks` — `status=pending`, `executorType=Agent`, prioritize by `updatedAt`.
+2. `query_tasks` — `status=ready`, `runnable=true`, `executorType=Agent`, prioritize by `updatedAt`.
 3. For each planned work item, `spawn_task` with:
    - `workflowKey` from `work.*` or initiative steward keys
-   - `status=ready` for Agent work
+   - `blockedByTaskIds` when work must follow another task (spawn-time only)
    - `idempotencyKey=daily:{date}:{workflowKey}:{slug}`
 4. If stale running tasks found, `spawn_task` `orchestrator.watchdog` or `work.unblock` child with watchdog idempotency.
 5. `update_task` orchestrator run task with `result.summary` (counts spawned, skipped, stale).

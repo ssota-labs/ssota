@@ -97,6 +97,52 @@ describe("spawnTask", () => {
   });
 });
 
+describe("spawnTask dependencies", () => {
+  it("forces pending when blockers are open", async () => {
+    const state = createInMemoryState();
+    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
+    const blocker = await spawnTask({ tasks }, PROJECT_ID, {
+      title: "Blocker",
+      workflowKey: "orchestrator.daily",
+    });
+
+    const blocked = await spawnTask({ tasks }, PROJECT_ID, {
+      title: "Blocked work",
+      workflowKey: "orchestrator.daily",
+      blockedByTaskIds: [blocker.id],
+    });
+
+    expect(blocked.status).toBe("pending");
+  });
+
+  it("rejects cross-project blocker ids", async () => {
+    const graphStore = createInMemoryGraphStore();
+    const graphRead = createInMemoryGraphReadPort(graphStore);
+    const otherState = createInMemoryState();
+    const otherPorts = createInMemoryPorts(otherState, {
+      projectId: OTHER_PROJECT_ID,
+    });
+    const blocker = await spawnTask({ tasks: otherPorts.tasks }, OTHER_PROJECT_ID, {
+      title: "Other project blocker",
+      workflowKey: "work.implement_feature",
+    });
+
+    const state = createInMemoryState();
+    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
+
+    await expect(
+      spawnTask({ tasks, graphRead }, PROJECT_ID, {
+        title: "Blocked",
+        workflowKey: "work.implement_feature",
+        blockedByTaskIds: [blocker.id],
+      }),
+    ).rejects.toMatchObject({
+      name: "TaskError",
+      code: "INVALID_DEPENDENCY",
+    });
+  });
+});
+
 describe("updateTask", () => {
   it("updates task status and sets completedAt on done", async () => {
     const state = createInMemoryState();
@@ -146,5 +192,51 @@ describe("updateTask", () => {
       name: "TaskError",
       code: "NOT_FOUND",
     });
+  });
+
+  it("rejects ready when open blockers exist", async () => {
+    const state = createInMemoryState();
+    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
+    const blocker = await spawnTask({ tasks }, PROJECT_ID, {
+      title: "Blocker",
+      workflowKey: "work.implement_feature",
+    });
+    const blocked = await spawnTask({ tasks }, PROJECT_ID, {
+      title: "Blocked",
+      workflowKey: "work.implement_feature",
+      blockedByTaskIds: [blocker.id],
+    });
+
+    await expect(
+      updateTask({ tasks }, PROJECT_ID, {
+        taskId: blocked.id,
+        status: "ready",
+      }),
+    ).rejects.toMatchObject({
+      name: "TaskError",
+      code: "DEPENDENCY_BLOCKED",
+    });
+  });
+
+  it("promotes pending dependents when blocker completes", async () => {
+    const state = createInMemoryState();
+    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
+    const blocker = await spawnTask({ tasks }, PROJECT_ID, {
+      title: "Blocker",
+      workflowKey: "work.implement_feature",
+    });
+    const blocked = await spawnTask({ tasks }, PROJECT_ID, {
+      title: "Blocked",
+      workflowKey: "work.implement_feature",
+      blockedByTaskIds: [blocker.id],
+    });
+
+    await updateTask({ tasks }, PROJECT_ID, {
+      taskId: blocker.id,
+      status: "done",
+    });
+
+    const refreshed = await tasks.getTask(blocked.id);
+    expect(refreshed?.status).toBe("ready");
   });
 });

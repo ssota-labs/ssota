@@ -9,11 +9,13 @@ import type {
   Node as WireNode,
   NodeCatalogEntry as WireNodeCatalogEntry,
   Task as WireTask,
+  TaskDetail as WireTaskDetail,
   TaskIndex as WireTaskIndex,
   WorkflowWire,
 } from "@ssota/contracts";
 import { workflowRowToWire } from "@ssota/contracts";
 import { buildWorkflowPackage } from "../workflow/render-workflow-package.js";
+import { computeIsRunnable } from "./task-dependency.js";
 import type {
   ActionCatalogEntry,
   ActionLogRecord,
@@ -95,6 +97,17 @@ export function serializeTaskIndex(task: Task): WireTaskIndex {
     executorType: task.executorType,
     targetNodeId: task.targetNodeId,
     updatedAt: toIso(task.updatedAt),
+  };
+}
+
+export function serializeTaskDetail(
+  task: Task,
+  blockers: Task[],
+): WireTaskDetail {
+  return {
+    ...serializeTask(task),
+    blockedBy: blockers.map(serializeTaskIndex),
+    isRunnable: computeIsRunnable(task, blockers),
   };
 }
 

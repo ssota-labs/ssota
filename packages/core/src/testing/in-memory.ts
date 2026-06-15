@@ -28,6 +28,7 @@ import type {
   NodeCatalogEntry,
 } from "../domain/types.js";
 import { DEFAULT_TITLE_FIELD, ensureTitleInPropertySchema } from "../catalog/property-schema.js";
+import { isBlockerTerminal } from "../domain/task-dependency.js";
 import type { Effect, GateStatus, LifecycleStatus } from "@ssota/contracts";
 import { parseWorkflowSpec } from "@ssota/contracts";
 import {
@@ -45,6 +46,11 @@ export interface InMemoryState {
   gates: Map<string, Gate>;
   impactQueue: Map<string, ImpactQueueItem>;
   tasks: Map<string, Task>;
+  taskDependencies: Array<{
+    projectId: string;
+    blockerTaskId: string;
+    blockedTaskId: string;
+  }>;
   actionLog: ActionLogRecord[];
   nodeCatalog: Map<string, NodeCatalogEntry>;
   actionCatalog: Map<string, ActionCatalogEntry>;
@@ -71,6 +77,7 @@ export function createInMemoryState(
     gates: new Map(),
     impactQueue: new Map(),
     tasks: new Map(),
+    taskDependencies: [],
     actionLog: [],
     nodeCatalog: new Map(),
     actionCatalog: new Map(),
@@ -619,6 +626,16 @@ function createInMemoryTaskPort(
   state: InMemoryState,
   projectId: string,
 ): TaskPort {
+  function getBlockersForTask(taskId: string): Task[] {
+    return state.taskDependencies
+      .filter(
+        (dep) =>
+          dep.projectId === projectId && dep.blockedTaskId === taskId,
+      )
+      .map((dep) => state.tasks.get(dep.blockerTaskId))
+      .filter((task): task is Task => Boolean(task && task.projectId === projectId));
+  }
+
   function queryItems(params?: TaskQueryInput): Task[] {
     let items = [...state.tasks.values()].filter(
       (task) => task.projectId === projectId,
@@ -641,13 +658,22 @@ function createInMemoryTaskPort(
     if (params?.executorType) {
       items = items.filter((task) => task.executorType === params.executorType);
     }
+    if (params?.runnable) {
+      items = items.filter((task) => {
+        const blockers = getBlockersForTask(task.id);
+        return (
+          task.status === "ready" &&
+          !blockers.some((blocker) => !isBlockerTerminal(blocker.status))
+        );
+      });
+    }
     items.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
     const offset = params?.offset ?? 0;
     const limit = params?.limit ?? 20;
     return items.slice(offset, offset + limit);
   }
 
-  return {
+  const port: TaskPort = {
     async listTasks(params) {
       return queryItems({ limit: params?.limit ?? 20, offset: 0 });
     },
@@ -669,7 +695,7 @@ function createInMemoryTaskPort(
       }
       return null;
     },
-    async createTask(input) {
+    async createTask(input, blockedByTaskIds = []) {
       const createdAt = new Date();
       const task: Task = {
         id: randomUUID(),
@@ -693,6 +719,13 @@ function createInMemoryTaskPort(
         updatedAt: createdAt,
       };
       state.tasks.set(task.id, task);
+      for (const blockerTaskId of blockedByTaskIds) {
+        state.taskDependencies.push({
+          projectId,
+          blockerTaskId,
+          blockedTaskId: task.id,
+        });
+      }
       return task;
     },
     async updateTask(taskId, patch) {
@@ -712,7 +745,44 @@ function createInMemoryTaskPort(
       state.tasks.set(taskId, updated);
       return updated;
     },
+    async getBlockers(taskId) {
+      return getBlockersForTask(taskId);
+    },
+    async hasOpenBlockers(taskId) {
+      return getBlockersForTask(taskId).some(
+        (blocker) => !isBlockerTerminal(blocker.status),
+      );
+    },
+    async promoteRunnableDependents(blockerTaskId) {
+      const dependents = state.taskDependencies
+        .filter(
+          (dep) =>
+            dep.projectId === projectId && dep.blockerTaskId === blockerTaskId,
+        )
+        .map((dep) => state.tasks.get(dep.blockedTaskId))
+        .filter((task): task is Task => Boolean(task && task.projectId === projectId))
+        .filter((task) => task.status === "pending");
+
+      const promoted: Task[] = [];
+      for (const dependent of dependents) {
+        const open = await port.hasOpenBlockers(dependent.id);
+        if (!open) {
+          const updated = await port.updateTask(dependent.id, { status: "ready" });
+          if (updated) promoted.push(updated);
+        }
+      }
+      return promoted;
+    },
+    async listBlockersByBlockedTaskIds(blockedTaskIds) {
+      const map = new Map<string, Task[]>();
+      for (const blockedTaskId of blockedTaskIds) {
+        map.set(blockedTaskId, getBlockersForTask(blockedTaskId));
+      }
+      return map;
+    },
   };
+
+  return port;
 }
 
 function createInMemoryImpactQueuePort(

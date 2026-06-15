@@ -1,4 +1,5 @@
 import { listWorkflowKeys, getWorkflowByKey } from "@ssota/contracts/workflows";
+import { enrichTasks } from "@ssota/core";
 import { TasksExplorer } from "@/components/tasks/tasks-explorer";
 import {
   type TaskTab,
@@ -21,10 +22,12 @@ export default async function TasksPage({
   const { tab } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
-  const tasks = await getTaskPort(project.id).queryTasks({ limit: 200 });
+  const taskPort = getTaskPort(project.id);
+  const tasks = await taskPort.queryTasks({ limit: 200 });
+  const enriched = await enrichTasks(taskPort, tasks);
   const activeTab = taskTabs.has(tab as TaskTab) ? (tab as TaskTab) : "table";
 
-  const rows: TaskWorkspaceRow[] = tasks.map((task) => ({
+  const rows: TaskWorkspaceRow[] = enriched.map((task) => ({
     id: task.id,
     title: task.title,
     status: task.status,
@@ -39,9 +42,11 @@ export default async function TasksPage({
     }),
     context: task.context,
     result: task.result,
-    completedAt: task.completedAt?.toISOString() ?? "",
-    updatedAt: task.updatedAt.toISOString(),
-    createdAt: task.createdAt.toISOString(),
+    completedAt: task.completedAt?.slice(0, 10) ?? "",
+    updatedAt: task.updatedAt.slice(0, 10),
+    createdAt: task.createdAt.slice(0, 10),
+    blockedBy: task.blockedBy,
+    isRunnable: task.isRunnable,
   }));
 
   const workflowOptions = listWorkflowKeys().map((workflowKey) => {

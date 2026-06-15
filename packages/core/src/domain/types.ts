@@ -221,6 +221,7 @@ export interface TaskQueryInput {
   subjectId?: string;
   targetNodeId?: string;
   executorType?: ExecutorType;
+  runnable?: boolean;
   limit?: number;
   offset?: number;
 }
@@ -257,8 +258,14 @@ export interface TaskPort {
   queryTasks(params?: TaskQueryInput): Promise<Task[]>;
   getTask(taskId: string): Promise<Task | null>;
   getTaskByIdempotencyKey(idempotencyKey: string): Promise<Task | null>;
-  createTask(input: TaskCreateInput): Promise<Task>;
+  createTask(input: TaskCreateInput, blockedByTaskIds?: string[]): Promise<Task>;
   updateTask(taskId: string, patch: TaskUpdatePatch): Promise<Task | null>;
+  getBlockers(taskId: string): Promise<Task[]>;
+  hasOpenBlockers(taskId: string): Promise<boolean>;
+  promoteRunnableDependents(blockerTaskId: string): Promise<Task[]>;
+  listBlockersByBlockedTaskIds(
+    blockedTaskIds: string[],
+  ): Promise<Map<string, Task[]>>;
 }
 
 export interface CommitParams {

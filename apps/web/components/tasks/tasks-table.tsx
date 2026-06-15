@@ -5,6 +5,7 @@ import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { DataTable } from "@ssota/ui/components/ui/data-table";
 import { DataTableColumnHeader } from "@ssota/ui/components/ui/data-table-column-header";
+import { countOpenBlockers } from "@/components/tasks/task-blockers";
 import { TASK_STATUS_LABELS } from "@/components/tasks/task-status";
 import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
@@ -23,8 +24,15 @@ export function TasksTable({ rows, onOpenDetail }: TasksTableProps) {
       cell: ({ row }) => (
         <div>
           <div className="font-medium">{row.original.title}</div>
-          <div className="font-mono text-xs text-muted-foreground">
-            {row.original.id.slice(0, 8)}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-mono text-xs text-muted-foreground">
+              {row.original.id.slice(0, 8)}
+            </span>
+            {countOpenBlockers(row.original.blockedBy) > 0 ? (
+              <Badge variant="outline" className="text-[10px]">
+                Blocked by {countOpenBlockers(row.original.blockedBy)}
+              </Badge>
+            ) : null}
           </div>
         </div>
       ),

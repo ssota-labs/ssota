@@ -1,7 +1,8 @@
 import {
   GraphError,
   TaskError,
-  serializeTask,
+  enrichTask,
+  enrichTasks,
   spawnTask as spawnTaskUseCase,
   updateTask as updateTaskUseCase,
 } from "@ssota/core";
@@ -27,7 +28,9 @@ export function mapTaskError(error: unknown): Response | null {
       error.code === "NOT_FOUND"
         ? 404
         : error.code === "UNKNOWN_WORKFLOW_KEY" ||
-            error.code === "VALIDATION_FAILED"
+            error.code === "VALIDATION_FAILED" ||
+            error.code === "DEPENDENCY_BLOCKED" ||
+            error.code === "INVALID_DEPENDENCY"
           ? 422
           : error.code === "PROJECT_MISMATCH"
             ? 403
@@ -47,26 +50,31 @@ export function mapTaskError(error: unknown): Response | null {
 }
 
 export async function listTasks(projectId: string, limit?: number) {
-  const tasks = await getTaskPort(projectId).listTasks({ limit });
-  return tasks.map(serializeTask);
+  const port = getTaskPort(projectId);
+  const tasks = await port.listTasks({ limit });
+  return enrichTasks(port, tasks);
 }
 
 export async function getTask(projectId: string, input: GetTaskInput) {
-  const task = await getTaskPort(projectId).getTask(input.taskId);
-  return task ? serializeTask(task) : null;
+  const port = getTaskPort(projectId);
+  const task = await port.getTask(input.taskId);
+  return task ? enrichTask(port, task) : null;
 }
 
 export async function queryTasks(projectId: string, input: QueryTasksInput) {
-  const tasks = await getTaskPort(projectId).queryTasks(input);
-  return tasks.map(serializeTask);
+  const port = getTaskPort(projectId);
+  const tasks = await port.queryTasks(input);
+  return enrichTasks(port, tasks);
 }
 
 export async function spawnTask(projectId: string, input: SpawnTaskInput) {
+  const port = getTaskPort(projectId);
   const task = await spawnTaskUseCase(taskDeps(projectId), projectId, input);
-  return serializeTask(task);
+  return enrichTask(port, task);
 }
 
 export async function updateTask(projectId: string, input: UpdateTaskInput) {
+  const port = getTaskPort(projectId);
   const task = await updateTaskUseCase(taskDeps(projectId), projectId, input);
-  return serializeTask(task);
+  return enrichTask(port, task);
 }

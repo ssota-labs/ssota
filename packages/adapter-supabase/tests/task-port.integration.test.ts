@@ -161,4 +161,35 @@ describe("task port integration", () => {
     });
     expect(matches.some((task) => task.targetNodeId === node.id)).toBe(true);
   });
+
+  it("spawnTask with blockers stays pending until blocker completes", async () => {
+    const blocker = await spawnTask({ tasks: taskPort }, projectId, {
+      title: `Blocker ${randomUUID()}`,
+      workflowKey: "work.implement_feature",
+    });
+    const blocked = await spawnTask({ tasks: taskPort }, projectId, {
+      title: `Blocked ${randomUUID()}`,
+      workflowKey: "work.implement_feature",
+      blockedByTaskIds: [blocker.id],
+    });
+    expect(blocked.status).toBe("pending");
+
+    await expect(
+      updateTask({ tasks: taskPort }, projectId, {
+        taskId: blocked.id,
+        status: "ready",
+      }),
+    ).rejects.toMatchObject({ code: "DEPENDENCY_BLOCKED" });
+
+    await updateTask({ tasks: taskPort }, projectId, {
+      taskId: blocker.id,
+      status: "done",
+    });
+
+    const promoted = await taskPort.getTask(blocked.id);
+    expect(promoted?.status).toBe("ready");
+
+    const runnable = await taskPort.queryTasks({ runnable: true, limit: 50 });
+    expect(runnable.some((task) => task.id === blocked.id)).toBe(true);
+  });
 });

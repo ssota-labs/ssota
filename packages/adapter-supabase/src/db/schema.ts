@@ -150,6 +150,37 @@ export const tasks = pgTable(
   }),
 );
 
+export const taskDependencies = pgTable(
+  "task_dependencies",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    blockerTaskId: uuid("blocker_task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    blockedTaskId: uuid("blocked_task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull().default("blocks"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectBlockerBlockedUnique: uniqueIndex(
+      "task_dependencies_project_blocker_blocked_unique",
+    ).on(table.projectId, table.blockerTaskId, table.blockedTaskId),
+    blockedIdx: index("task_dependencies_blocked_idx").on(
+      table.projectId,
+      table.blockedTaskId,
+    ),
+    blockerIdx: index("task_dependencies_blocker_idx").on(
+      table.projectId,
+      table.blockerTaskId,
+    ),
+  }),
+);
+
 export const nodes = pgTable(
   "nodes",
   {

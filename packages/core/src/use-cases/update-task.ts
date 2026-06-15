@@ -1,5 +1,6 @@
 import type { UpdateTaskInput } from "@ssota/contracts";
 import { TaskError } from "../domain/task-errors.js";
+import { isBlockerTerminal } from "../domain/task-dependency.js";
 import { assertGraphNodeInProject } from "../domain/graph-scope.js";
 import type { GraphReadPort } from "../ports/graph-read-port.js";
 import type { Task, TaskPort } from "../domain/types.js";
@@ -45,9 +46,28 @@ export async function updateTask(
     assertGraphNodeInProject(projectId, node, "Target node");
   }
 
+  if (patch.status === "ready" || patch.status === "running") {
+    const openBlockers = await deps.tasks.hasOpenBlockers(taskId);
+    if (openBlockers) {
+      throw new TaskError(
+        "DEPENDENCY_BLOCKED",
+        `Task '${taskId}' has open blockers and cannot transition to '${patch.status}'`,
+      );
+    }
+  }
+
   const updated = await deps.tasks.updateTask(taskId, patch);
   if (!updated) {
     throw new TaskError("NOT_FOUND", `Task '${taskId}' not found`);
   }
+
+  if (
+    patch.status &&
+    isBlockerTerminal(patch.status) &&
+    patch.status !== existing.status
+  ) {
+    await deps.tasks.promoteRunnableDependents(taskId);
+  }
+
   return updated;
 }

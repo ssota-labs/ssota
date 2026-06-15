@@ -64,4 +64,57 @@ test.describe("MCP task tools", () => {
     expect(duplicate.id).toBe(spawned.id);
     expect(duplicate.title).toBe("E2E spawned task");
   });
+
+  test("spawn_task blockedByTaskIds enforces dependency rules", async ({
+    request,
+  }) => {
+    const token = await getSmokeAccessToken();
+    const suffix = Date.now();
+
+    const blocker = (await mcpToolCall(request, mcpUrl, token, "spawn_task", {
+      title: `E2E blocker ${suffix}`,
+      workflowKey: "work.implement_feature",
+      idempotencyKey: `e2e-blocker-${suffix}`,
+    })) as { id: string; status: string };
+
+    const blocked = (await mcpToolCall(request, mcpUrl, token, "spawn_task", {
+      title: `E2E blocked ${suffix}`,
+      workflowKey: "work.implement_feature",
+      blockedByTaskIds: [blocker.id],
+      idempotencyKey: `e2e-blocked-${suffix}`,
+    })) as {
+      id: string;
+      status: string;
+      blockedBy: Array<{ id: string }>;
+      isRunnable: boolean;
+    };
+
+    expect(blocked.status).toBe("pending");
+    expect(blocked.blockedBy.map((task) => task.id)).toContain(blocker.id);
+    expect(blocked.isRunnable).toBe(false);
+
+    await expect(
+      mcpToolCall(request, mcpUrl, token, "update_task", {
+        taskId: blocked.id,
+        status: "ready",
+      }),
+    ).rejects.toThrow(/DEPENDENCY_BLOCKED/);
+
+    await mcpToolCall(request, mcpUrl, token, "update_task", {
+      taskId: blocker.id,
+      status: "done",
+    });
+
+    const promoted = (await mcpToolCall(request, mcpUrl, token, "get_task", {
+      taskId: blocked.id,
+    })) as { status: string; isRunnable: boolean };
+    expect(promoted.status).toBe("ready");
+    expect(promoted.isRunnable).toBe(true);
+
+    const runnable = (await mcpToolCall(request, mcpUrl, token, "query_tasks", {
+      runnable: true,
+      limit: 50,
+    })) as Array<{ id: string }>;
+    expect(runnable.some((task) => task.id === blocked.id)).toBe(true);
+  });
 });

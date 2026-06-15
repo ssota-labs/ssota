@@ -27,7 +27,7 @@ export class HttpClient {
   async get<T extends z.ZodType>(
     path: string,
     schema: T,
-    searchParams?: Record<string, string | number | string[] | undefined>,
+    searchParams?: Record<string, string | number | boolean | string[] | undefined>,
   ): Promise<z.infer<T>> {
     const url = new URL(`${this.baseUrl}${path}`);
     if (searchParams) {

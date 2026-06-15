@@ -48,4 +48,40 @@ test.describe("Tasks page", () => {
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/tasks$`));
     await expect(page.getByRole("button", { name: "Board", exact: true })).toBeVisible();
   });
+
+  test("shows blocked-by badge and detail for dependent task", async ({
+    page,
+    request,
+  }) => {
+    const token = await getSmokeAccessToken();
+    const suffix = Date.now();
+
+    const blocker = (await mcpToolCall(request, mcpUrl, token, "spawn_task", {
+      title: `E2E UI blocker ${suffix}`,
+      workflowKey: "work.implement_feature",
+      idempotencyKey: `e2e-ui-blocker-${suffix}`,
+    })) as { id: string };
+
+    const blockedTitle = `E2E UI blocked ${suffix}`;
+    await mcpToolCall(request, mcpUrl, token, "spawn_task", {
+      title: blockedTitle,
+      workflowKey: "work.implement_feature",
+      blockedByTaskIds: [blocker.id],
+      idempotencyKey: `e2e-ui-blocked-${suffix}`,
+    });
+
+    await loginAsSmoke(page);
+    await gotoProject(page, "tasks");
+
+    const blockedRow = page.getByRole("row", { name: new RegExp(blockedTitle) });
+    await expect(blockedRow).toBeVisible();
+    await expect(blockedRow.getByText("Blocked by 1")).toBeVisible();
+
+    await blockedRow.getByRole("button", { name: "View" }).click();
+    const sheet = page.getByRole("dialog");
+    await expect(sheet.getByText("Blocked by", { exact: true })).toBeVisible();
+    await expect(
+      sheet.getByText(`E2E UI blocker ${suffix}`, { exact: false }),
+    ).toBeVisible();
+  });
 });

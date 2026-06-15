@@ -146,9 +146,19 @@ export async function mcpToolCall(
   }
 
   const body = parseJsonRpcResponse(await callRes.text()) as {
-    result?: { content?: Array<{ text?: string }> };
+    error?: { message?: string };
+    result?: { content?: Array<{ text?: string }>; isError?: boolean };
   };
+
+  if (body.error) {
+    throw new Error(body.error.message ?? "MCP JSON-RPC error");
+  }
+
   const text = body.result?.content?.[0]?.text;
+  if (body.result?.isError) {
+    throw new Error(text ?? "MCP tool error");
+  }
+
   return text ? JSON.parse(text) : body;
 }
 

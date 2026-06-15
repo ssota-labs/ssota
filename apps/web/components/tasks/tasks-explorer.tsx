@@ -30,7 +30,11 @@ export function TasksExplorer({
             through update_task.
           </p>
         </div>
-        <SpawnTaskDialog projectId={projectId} workflowOptions={workflowOptions} />
+        <SpawnTaskDialog
+          projectId={projectId}
+          workflowOptions={workflowOptions}
+          taskOptions={rows}
+        />
       </div>
       <TasksDetail
         rows={rows}

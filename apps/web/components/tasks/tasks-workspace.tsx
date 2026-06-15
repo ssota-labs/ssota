@@ -1,4 +1,4 @@
-import type { TaskStatus } from "@ssota/contracts";
+import type { TaskStatus, TaskIndex } from "@ssota/contracts";
 
 export type TaskTab = "table" | "board";
 
@@ -16,4 +16,6 @@ export type TaskWorkspaceRow = {
   completedAt: string;
   updatedAt: string;
   createdAt: string;
+  blockedBy: TaskIndex[];
+  isRunnable: boolean;
 };

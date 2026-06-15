@@ -5,7 +5,7 @@ import {
   SpawnTaskInputSchema,
   UpdateTaskInputSchema,
 } from "@ssota/contracts";
-import { spawnTask } from "@ssota/core";
+import { spawnTask, TaskError } from "@ssota/core";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
@@ -37,14 +37,21 @@ export async function updateTaskStatusAction(
   if (!user) throw new Error("Unauthorized");
 
   const parsed = UpdateTaskInputSchema.parse({ taskId, status });
-  const result = await getTaskPort(projectId).updateTask(parsed.taskId, {
-    status: parsed.status,
-  });
+  try {
+    const result = await getTaskPort(projectId).updateTask(parsed.taskId, {
+      status: parsed.status,
+    });
 
-  for (const path of withConsolePaths(["/tasks"])) {
-    revalidatePath(path);
+    for (const path of withConsolePaths(["/tasks"])) {
+      revalidatePath(path);
+    }
+    return result;
+  } catch (err) {
+    if (err instanceof TaskError && err.code === "DEPENDENCY_BLOCKED") {
+      throw new Error(err.message);
+    }
+    throw err;
   }
-  return result;
 }
 
 export async function spawnTaskAction(
@@ -54,6 +61,7 @@ export async function spawnTaskAction(
     workflowKey: string;
     assignee?: string;
     executorType?: "Agent" | "Human" | "System";
+    blockedByTaskIds?: string[];
   },
 ) {
   const user = await getCurrentUser();

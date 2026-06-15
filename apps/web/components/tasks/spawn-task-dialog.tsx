@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { spawnTaskAction } from "@/app/actions";
 import { Button } from "@ssota/ui/components/ui/button";
+import { Checkbox } from "@ssota/ui/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ssota/ui/components/ui/select";
+import { TASK_STATUS_LABELS } from "@/components/tasks/task-status";
+import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
 export type WorkflowOption = {
   workflowKey: string;
@@ -30,11 +33,13 @@ export type WorkflowOption = {
 type SpawnTaskDialogProps = {
   projectId: string;
   workflowOptions: WorkflowOption[];
+  taskOptions?: TaskWorkspaceRow[];
 };
 
 export function SpawnTaskDialog({
   projectId,
   workflowOptions,
+  taskOptions = [],
 }: SpawnTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -45,6 +50,7 @@ export function SpawnTaskDialog({
   const [executorType, setExecutorType] = useState<"Agent" | "Human" | "System">(
     "Human",
   );
+  const [blockedByTaskIds, setBlockedByTaskIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -53,7 +59,16 @@ export function SpawnTaskDialog({
     setAssignee("");
     setExecutorType("Human");
     setWorkflowKey(workflowOptions[0]?.workflowKey ?? "work.implement_feature");
+    setBlockedByTaskIds([]);
     setError(null);
+  }
+
+  function toggleBlocker(taskId: string, checked: boolean) {
+    setBlockedByTaskIds((current) =>
+      checked
+        ? [...current, taskId]
+        : current.filter((id) => id !== taskId),
+    );
   }
 
   function handleSubmit(event: React.FormEvent) {
@@ -66,6 +81,8 @@ export function SpawnTaskDialog({
           workflowKey,
           assignee: assignee.trim() || undefined,
           executorType,
+          blockedByTaskIds:
+            blockedByTaskIds.length > 0 ? blockedByTaskIds : undefined,
         });
         setOpen(false);
         resetForm();
@@ -93,7 +110,7 @@ export function SpawnTaskDialog({
               spawn_task.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid max-h-[70vh] gap-4 overflow-y-auto py-4">
             <div className="grid gap-2">
               <Label htmlFor="task-title">Title</Label>
               <Input
@@ -162,6 +179,38 @@ export function SpawnTaskDialog({
                 disabled={isPending}
               />
             </div>
+            {taskOptions.length > 0 ? (
+              <div className="grid gap-2">
+                <Label>Depends on (optional)</Label>
+                <p className="text-xs text-muted-foreground">
+                  Select tasks that must finish before this one can run. Completed
+                  tasks still count as valid predecessors.
+                </p>
+                <ul className="max-h-40 space-y-2 overflow-y-auto rounded-md border p-2">
+                  {taskOptions.map((task) => (
+                    <li key={task.id} className="flex items-start gap-2">
+                      <Checkbox
+                        id={`blocker-${task.id}`}
+                        checked={blockedByTaskIds.includes(task.id)}
+                        onCheckedChange={(checked) =>
+                          toggleBlocker(task.id, checked === true)
+                        }
+                        disabled={isPending}
+                      />
+                      <label
+                        htmlFor={`blocker-${task.id}`}
+                        className="min-w-0 flex-1 cursor-pointer text-sm leading-snug"
+                      >
+                        <span className="font-medium">{task.title}</span>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {TASK_STATUS_LABELS[task.status] ?? task.status}
+                        </span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
             {error ? (
               <p className="text-sm text-destructive" role="alert">
                 {error}

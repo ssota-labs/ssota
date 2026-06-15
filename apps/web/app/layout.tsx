@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TooltipProvider } from "@ssota/ui/components/ui/tooltip";
+import { Toaster } from "@ssota/ui/components/ui/sonner";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { getTranslations } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -55,6 +56,7 @@ export default async function RootLayout({
             )}
           </TooltipProvider>
         </LocaleProvider>
+        <Toaster />
         <VercelAnalytics />
         <VercelSpeedInsights />
       </body>

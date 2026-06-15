@@ -7,11 +7,12 @@ Implement a single scoped feature or fix linked to a task.
 ## When to run
 
 - Task `status=ready`, spawned by orchestrator or Human
-- Agent picks from `query_tasks(status=ready, workflowKey=work.implement_feature)`
+- Agent picks from `query_tasks(status=ready, runnable=true, workflowKey=work.implement_feature)`
 
 ## Preconditions
 
 - Task has clear `title` and `acceptanceCriteria`
+- `get_task.isRunnable` is true (no open `blockedBy` tasks)
 - Repo/automation context available in agent environment (not SSOTA responsibility)
 
 ## Steps
