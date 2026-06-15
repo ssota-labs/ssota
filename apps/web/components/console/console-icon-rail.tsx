@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  BookOpenIcon,
   GearIcon,
-  GraphIcon,
   HouseIcon,
   ListBulletsIcon,
 } from "@phosphor-icons/react";
@@ -16,13 +14,11 @@ import {
   TooltipTrigger,
 } from "@ssota/ui/components/ui/tooltip";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { graphPath, projectPath } from "@/lib/console/paths";
+import { projectPath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 
 const navItems = [
   { segment: "", labelKey: "nav.projectHome", icon: HouseIcon },
-  { segment: "workflow", labelKey: "nav.workflow", icon: BookOpenIcon },
-  { segment: "graph", labelKey: "nav.graph", icon: GraphIcon },
   { segment: "tasks", labelKey: "nav.tasks", icon: ListBulletsIcon },
   { segment: "developer/setup", labelKey: "nav.developer", icon: GearIcon },
   { segment: "settings/general", labelKey: "nav.settings", icon: GearIcon },
@@ -40,20 +36,11 @@ export function ConsoleIconRail() {
     >
       {navItems.map((item) => {
         const label = t(item.labelKey);
-        const href =
-          item.segment === "graph"
-            ? graphPath(ctx, "nodes")
-            : item.segment
-              ? projectPath(ctx, item.segment)
-              : projectPath(ctx);
+        const href = item.segment ? projectPath(ctx, item.segment) : projectPath(ctx);
         const active =
           item.segment === ""
             ? pathname === projectPath(ctx)
-            : item.segment === "graph"
-              ? pathname.includes(`/${ctx.projectSlug}/graph`)
-              : item.segment === "workflow"
-                ? pathname.includes(`/${ctx.projectSlug}/workflow`)
-                : pathname.startsWith(projectPath(ctx, item.segment));
+            : pathname.startsWith(projectPath(ctx, item.segment));
         const Icon = item.icon;
 
         return (

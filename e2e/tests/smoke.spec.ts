@@ -7,56 +7,7 @@ test.describe("SSOTA Console", () => {
     await loginAsSmoke(page);
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
     await expect(page.getByRole("heading", { name: "Developer Start" })).toBeVisible();
-  });
-
-  test("smoke: Graph → node table", async ({ page }) => {
-    await loginAsSmoke(page);
-    await gotoProject(page, "graph/nodes?table=document");
-    await expect(page.getByText("Choose a graph object", { exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Document" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Schema", exact: true })).toBeVisible();
-    await expect(page.getByPlaceholder(/Filter by id/)).toBeVisible();
-  });
-
-  test("smoke: Homepage Agent vertical catalog", async ({ page }) => {
-    await loginAsSmoke(page);
-    await gotoProject(page, "graph/verticals/homepage-agent");
-    await expect(page.getByRole("heading", { name: "Homepage Agent" })).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "HomepageProject" }),
-    ).toBeVisible();
-    await expect(page.getByText("create_node").first()).toBeVisible();
-    await expect(page.getByText("Homepage creation workflow")).toBeVisible();
-  });
-
-  test("smoke: Workflows route", async ({ page }) => {
-    await loginAsSmoke(page);
-    await gotoProject(page, "workflow");
-    await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
-    await expect(page.getByPlaceholder("Search workflows...")).toBeVisible();
-
-    await page.getByTestId("catalog-workflow-document_creation").click();
-    await expect(page.getByText("Trigger", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Context", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("Auto layout", { exact: true })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Detail" })).toHaveCount(0);
-
-    await page.getByText("Create draft", { exact: true }).click();
-    await expect(page.getByText("Configure the selected workflow block.")).toBeVisible();
-    await expect(page.getByText("Actions", { exact: true })).toBeVisible();
-
-    await page.getByTestId("add-node-context").click();
-    await expect(page.getByTestId("add-node-option-step")).toBeVisible();
-    await expect(page.getByTestId("add-node-option-route")).toBeVisible();
-    await expect(page.getByTestId("add-node-option-workflow")).toBeVisible();
-  });
-
-  test("smoke: legacy /workflows redirect", async ({ page }) => {
-    await loginAsSmoke(page);
-    await gotoProject(page, "workflows");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow`));
-    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByText("Generic context graph surfaces are archived")).toBeVisible();
   });
 
   test("smoke: Developer Setup route", async ({ page }) => {
@@ -73,47 +24,29 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Board", exact: true })).toBeVisible();
-    await expect(
-      page.getByText("Runtime work queue", { exact: false }),
-    ).toBeVisible();
+    await expect(page.getByText("Runtime work queue", { exact: false })).toBeVisible();
   });
 
-  test("smoke: workflow runs tab via legacy /log redirect", async ({ page }) => {
+  test("smoke: archived legacy routes redirect home", async ({ page }) => {
     await loginAsSmoke(page);
-    await gotoProject(page, "log");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow`));
-    await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
+    await page.goto("/context-graph/nodes/Document");
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
+
+    await page.goto("/studio/node-types");
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
+
+    await gotoProject(page, "workflow");
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
   });
 
-  test("smoke: project reviews via legacy /gates redirect", async ({ page }) => {
-    await loginAsSmoke(page);
-    await gotoProject(page, "gates");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/gates`));
-    await expect(page.getByRole("heading", { name: "Reviews" })).toBeVisible();
-  });
-
-  test("smoke: icon rail exposes primary nav", async ({ page }) => {
+  test("smoke: icon rail exposes active nav only", async ({ page }) => {
     await loginAsSmoke(page);
     await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Developer", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Workflows", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Graph", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
-  });
-
-  test("smoke: project selector preserves current route", async ({ page }) => {
-    await loginAsSmoke(page);
-    await gotoProject(page, "graph/nodes?table=document");
-    await expect(page.getByPlaceholder(/Filter by id/)).toBeVisible();
-
-    await page.getByRole("button", { name: "SSOTA Dev" }).click();
-    await page.getByRole("menuitem", { name: "SSOTA Dev" }).click();
-
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
-    );
-    await expect(page.getByPlaceholder(/Filter by id/)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Workflows", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Graph", exact: true })).toHaveCount(0);
   });
 
   test("smoke: profile menu opens", async ({ page }) => {
@@ -121,21 +54,6 @@ test.describe("SSOTA Console", () => {
     await page.getByRole("button", { name: "Signed in as" }).click();
     await expect(page.getByText("smoke@ssota.test").last()).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
-  });
-
-  test("smoke: legacy /context-graph redirect", async ({ page }) => {
-    await loginAsSmoke(page);
-    await page.goto("/context-graph/nodes/Document");
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes\\?table=document`),
-    );
-    await expect(page.getByPlaceholder(/Filter by id/)).toBeVisible();
-  });
-
-  test("smoke: /studio redirect", async ({ page }) => {
-    await loginAsSmoke(page);
-    await page.goto("/studio/node-types");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/graph/nodes`));
   });
 });
 

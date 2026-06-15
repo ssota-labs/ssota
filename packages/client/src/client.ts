@@ -1,12 +1,5 @@
 import { HttpClient, type FetchLike } from "./http.js";
-import { createActionsApi } from "./namespaces/actions.js";
-import { createCatalogApi } from "./namespaces/catalog.js";
-import { createEdgesApi } from "./namespaces/edges.js";
-import { createGatesApi } from "./namespaces/gates.js";
-import { createGraphApi } from "./namespaces/graph.js";
-import { createWorkflowsApi } from "./namespaces/workflows.js";
-import { createLogApi } from "./namespaces/log.js";
-import { createNodesApi } from "./namespaces/nodes.js";
+import { createTasksApi } from "./namespaces/tasks.js";
 
 export interface SsotaClientOptions {
   /** SSOTA HTTP API base URL including `/api/v1` (e.g. `http://localhost:3001/api/v1`). */
@@ -14,23 +7,13 @@ export interface SsotaClientOptions {
   auth: {
     accessToken: string | (() => string | Promise<string>);
   };
-  /**
-   * Project scope — one catalog/graph space per agent domain.
-   * Sent as `X-SSOTA-Project-Id`; required on all API requests.
-   */
+  /** Project scope sent as `X-SSOTA-Project-Id`; required for task APIs. */
   projectId?: string | (() => string | undefined | Promise<string | undefined>);
   fetch?: FetchLike;
 }
 
 export interface SsotaClient {
-  catalog: ReturnType<typeof createCatalogApi>;
-  nodes: ReturnType<typeof createNodesApi>;
-  edges: ReturnType<typeof createEdgesApi>;
-  graph: ReturnType<typeof createGraphApi>;
-  workflows: ReturnType<typeof createWorkflowsApi>;
-  actions: ReturnType<typeof createActionsApi>;
-  gates: ReturnType<typeof createGatesApi>;
-  log: ReturnType<typeof createLogApi>;
+  tasks: ReturnType<typeof createTasksApi>;
 }
 
 export function createClient(options: SsotaClientOptions): SsotaClient {
@@ -53,13 +36,6 @@ export function createClient(options: SsotaClientOptions): SsotaClient {
   });
 
   return {
-    catalog: createCatalogApi(http),
-    nodes: createNodesApi(http),
-    edges: createEdgesApi(http),
-    graph: createGraphApi(http),
-    workflows: createWorkflowsApi(http),
-    actions: createActionsApi(http),
-    gates: createGatesApi(http),
-    log: createLogApi(http),
+    tasks: createTasksApi(http),
   };
 }

@@ -5,7 +5,7 @@ import {
 } from "@/components/tasks/tasks-workspace";
 import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
-import { getActionPorts } from "@/lib/ports";
+import { getTaskPort } from "@/lib/ports";
 
 const taskTabs = new Set<TaskTab>(["table", "board"]);
 
@@ -20,8 +20,7 @@ export default async function TasksPage({
   const { tab } = await searchParams;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
-  const ports = getActionPorts(project.id);
-  const tasks = await ports.tasks.queryTasks({ limit: 200 });
+  const tasks = await getTaskPort(project.id).queryTasks({ limit: 200 });
   const activeTab = taskTabs.has(tab as TaskTab) ? (tab as TaskTab) : "table";
 
   const rows: TaskWorkspaceRow[] = tasks.map((task) => ({
@@ -31,7 +30,6 @@ export default async function TasksPage({
     executorType: task.executorType,
     assignee: task.assignee ?? "Unassigned",
     workflowKey: task.workflowKey,
-    targetNodeId: task.targetNodeId ?? "",
     subjectId: task.subjectId ?? "",
     acceptanceCriteria: task.acceptanceCriteria.flatMap((item) => {
       if (typeof item === "string") return [item];
@@ -40,7 +38,6 @@ export default async function TasksPage({
     }),
     context: task.context,
     result: task.result,
-    sourceActionLogId: task.sourceActionLogId ?? "",
     completedAt: task.completedAt?.toISOString() ?? "",
     updatedAt: task.updatedAt.toISOString(),
     createdAt: task.createdAt.toISOString(),

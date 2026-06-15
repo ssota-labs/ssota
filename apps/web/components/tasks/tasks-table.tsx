@@ -58,17 +58,6 @@ export function TasksTable({ rows, onOpenDetail }: TasksTableProps) {
       ),
     },
     {
-      accessorKey: "targetNodeId",
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title="Target" />
-      ),
-      cell: ({ row }) => (
-        <span className="font-mono text-xs text-muted-foreground">
-          {row.original.targetNodeId || "-"}
-        </span>
-      ),
-    },
-    {
       accessorKey: "updatedAt",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Updated" />
@@ -101,7 +90,7 @@ export function TasksTable({ rows, onOpenDetail }: TasksTableProps) {
       data={rows}
       filterColumn="title"
       filterPlaceholder="Filter tasks…"
-      emptyMessage="No runtime tasks match this view yet. Spawn tasks via spawn_task from MCP."
+      emptyMessage="No runtime tasks match this view yet. Create tasks from the active development workflow."
     />
   );
 }

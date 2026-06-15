@@ -6,56 +6,31 @@ const defaultBase = `/${DEFAULT_ORG_SLUG}/${DEFAULT_PROJECT_SLUG}`;
 
 function legacyRedirect(request: NextRequest, targetPath: string) {
   const url = request.nextUrl.clone();
-  const queryIndex = targetPath.indexOf("?");
-  url.pathname = queryIndex === -1 ? targetPath : targetPath.slice(0, queryIndex);
-  url.search = queryIndex === -1 ? "" : targetPath.slice(queryIndex);
+  url.pathname = targetPath;
+  url.search = "";
   return NextResponse.redirect(url, 308);
 }
 
 function mapLegacyPath(pathname: string): string | null {
-  if (pathname === "/context-graph" || pathname === "/context-graph/") {
-    return `${defaultBase}/graph`;
-  }
-  if (pathname.startsWith("/context-graph/")) {
-    const rest = pathname.slice("/context-graph/".length);
-    if (rest === "instructions") {
-      return `${defaultBase}/workflow`;
-    }
-    const segments = rest.split("/");
-    if (segments[0] === "nodes" && segments[1]) {
-      const slug = segments[1].toLowerCase();
-      return `${defaultBase}/graph/nodes?table=${encodeURIComponent(slug)}`;
-    }
-    if (segments[0] === "edges" && segments[1]) {
-      const slug = segments[1].toLowerCase();
-      return `${defaultBase}/graph/edges?table=${encodeURIComponent(slug)}`;
-    }
-    if (segments[0] === "actions" && segments[1]) {
-      segments[1] = segments[1].toLowerCase();
-    }
-    return `${defaultBase}/graph/${segments.join("/")}`;
-  }
-  if (pathname === "/gates") return `${defaultBase}/gates`;
-  if (pathname === "/log") return `${defaultBase}/workflow?tab=runs`;
-  if (pathname === "/workflows") return `${defaultBase}/workflow`;
-  if (pathname === "/impact") return defaultBase;
-  if (pathname === "/catalog") return `${defaultBase}/graph`;
-  if (pathname.startsWith("/studio")) {
-    return `${defaultBase}/graph/nodes`;
+  const projectScopedArchiveMatch = pathname.match(
+    /^\/([^/]+)\/([^/]+)\/(workflow|graph|gates|log|impact)(?:\/.*)?$/,
+  );
+  if (projectScopedArchiveMatch) {
+    return `/${projectScopedArchiveMatch[1]}/${projectScopedArchiveMatch[2]}`;
   }
 
-  const labelNodeMatch = pathname.match(
-    /^\/graph\/nodes\/([A-Za-z][a-zA-Z0-9_-]*)$/,
-  );
-  if (labelNodeMatch) {
-    return `${defaultBase}/graph/nodes?table=${encodeURIComponent(labelNodeMatch[1]!.toLowerCase())}`;
-  }
-
-  const labelEdgeMatch = pathname.match(
-    /^\/graph\/edges\/([A-Za-z][a-zA-Z0-9_-]*)$/,
-  );
-  if (labelEdgeMatch) {
-    return `${defaultBase}/graph/edges?table=${encodeURIComponent(labelEdgeMatch[1]!.toLowerCase())}`;
+  if (
+    pathname === "/context-graph" ||
+    pathname.startsWith("/context-graph/") ||
+    pathname === "/gates" ||
+    pathname === "/log" ||
+    pathname === "/workflows" ||
+    pathname === "/impact" ||
+    pathname === "/catalog" ||
+    pathname.startsWith("/studio") ||
+    pathname.startsWith("/graph/")
+  ) {
+    return defaultBase;
   }
 
   return null;
