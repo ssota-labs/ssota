@@ -21,6 +21,7 @@ import {
   UpdatePropertyPermissionInputSchema,
   WorkflowTriggerEventSchema,
   WorkflowDefinitionSchema,
+  WorkflowDefinitionFieldsSchema,
   createManualWorkflowTrigger,
   normalizeWorkflowDefinition,
   deriveApplicableNodeTypes,
@@ -487,15 +488,16 @@ export async function updateWorkflowAction(input: Record<string, unknown>) {
   ], projectId);
 }
 
-const WorkflowBuilderPatchSchema = WorkflowDefinitionSchema.pick({
+const WorkflowBuilderPatchSchema = WorkflowDefinitionFieldsSchema.pick({
+  workflowRole: true,
+  flowEntry: true,
   steps: true,
-  conditions: true,
-  references: true,
-  routes: true,
-  output: true,
+  routeBlocks: true,
+  workflowBlocks: true,
   gates: true,
   trigger: true,
   context: true,
+  agentNotes: true,
 });
 
 export async function saveWorkflowBuilderFormAction(formData: FormData): Promise<void> {
@@ -538,7 +540,8 @@ export async function attachWorkflowRunbookFormAction(formData: FormData) {
     projectId,
     workflowId,
     patch: {
-      references: [{ id: "runbook", title: "Runbook", kind: "url", url: runbookUrl }],
+      steps: undefined,
+      agentNotes: `Runbook: ${runbookUrl}`,
     },
   });
 }
@@ -819,14 +822,6 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
             actions: [],
           },
         ];
-  const references = [
-    ...(body
-      ? [{ id: "agent_body", title: "Body", kind: "inline" as const, body }]
-      : []),
-    ...(contentUrl
-      ? [{ id: "runbook", title: "Runbook", kind: "url" as const, url: contentUrl }]
-      : []),
-  ];
   const nextApplicableNodeTypes =
     applicableNodeTypes.length > 0
       ? applicableNodeTypes
@@ -846,18 +841,25 @@ export async function defineWorkflowFormAction(formData: FormData): Promise<void
       scope,
       trigger: { events: triggerEvents },
       context,
+      routeBlocks: [],
+      workflowBlocks: [],
       conditions: [],
       gates: [],
       routes: [],
+      references: [],
+      output: { contract: {} },
       applicableNodeTypes: nextApplicableNodeTypes,
       allowedActions: allowedActionsFromBindings,
       steps,
-      output: {
-        contract: parseJsonObject(formData.get("outputContract")),
-        completionCriteria: String(formData.get("completionCriteria") ?? "") || null,
-      },
-      references,
-      ...(body ? { agentNotes: body } : {}),
+      agentNotes:
+        [
+          body,
+          String(formData.get("completionCriteria") ?? "").trim()
+            ? `Completion: ${String(formData.get("completionCriteria") ?? "").trim()}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join("\n\n") || undefined,
     }),
     projectId,
   });

@@ -143,9 +143,9 @@ export function WorkflowsWorkspace({
             empty="No actions declared."
           />
           <WorkflowMetaCard
-            title="Output contract"
-            items={Object.keys(selected.spec.output.contract)}
-            empty="No output contract fields."
+            title="Workflow role"
+            items={selected.spec.workflowRole ? [selected.spec.workflowRole] : []}
+            empty="No role tag."
           />
         </aside>
       </div>

@@ -4,6 +4,7 @@ import {
   WorkflowDefinitionSchema,
   WorkflowSchema,
   deriveApplicableNodeTypes,
+  migrateWorkflowGraph,
   normalizeWorkflowContext,
   normalizeWorkflowTriggerSpec,
   type Workflow,
@@ -112,7 +113,7 @@ function normalizeWorkflowSpecInput(input: unknown): unknown {
 
 export function parseWorkflowSpec(input: unknown): WorkflowDefinition {
   const parsed = WorkflowDefinitionSchema.parse(normalizeWorkflowSpecInput(input));
-  return normalizeWorkflowDefinition(parsed);
+  return normalizeWorkflowDefinition(migrateWorkflowGraph(parsed));
 }
 
 /** @deprecated Use normalizeWorkflowDefinition */
@@ -191,6 +192,10 @@ export function mergeWorkflowDefinition(
       ? { ...existing.output, ...patch.output }
       : existing.output,
     steps: patch.steps ?? existing.steps,
+    routeBlocks: patch.routeBlocks ?? existing.routeBlocks,
+    workflowBlocks: patch.workflowBlocks ?? existing.workflowBlocks,
+    flowEntry: patch.flowEntry ?? existing.flowEntry,
+    workflowRole: patch.workflowRole ?? existing.workflowRole,
     conditions: patch.conditions ?? existing.conditions,
     gates: patch.gates ?? existing.gates,
     references: patch.references ?? existing.references,

@@ -54,22 +54,64 @@ const nodeStyles: Record<WorkflowFlowNodeKind, string> = {
   context: "border-border bg-muted/50 text-foreground",
   step: "border-border bg-card text-card-foreground shadow-sm",
   gate: "border-amber-500/40 bg-amber-500/10 text-foreground",
-  condition: "border-violet-500/40 bg-violet-500/10 text-foreground",
-  output: "border-emerald-500/40 bg-emerald-500/10 text-foreground",
-  reference: "border-sky-500/40 bg-sky-500/10 text-foreground",
-  route: "border-rose-500/40 bg-rose-500/10 text-foreground",
+  route: "border-violet-500/40 bg-violet-500/10 text-foreground",
+  workflow: "border-rose-500/40 bg-rose-500/10 text-foreground",
 };
+
+const ADDABLE_KINDS: WorkflowFlowNodeKind[] = ["step", "route", "workflow"];
 
 function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
   const showTarget = data.kind !== "trigger";
-  const showSource = data.kind !== "output" && data.kind !== "reference";
+  const showLinearSource =
+    data.kind !== "workflow" && data.kind !== "route";
   const AddIcon = data.AddIcon;
+  const routeOutlets = data.routeOutlets ?? [];
+
+  const renderAddMenu = (sourceNodeId: string, outletId?: string) => {
+    if (!data.addOptions?.length || !data.onAddNode || !AddIcon) return null;
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              className="nodrag nopan flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:text-foreground"
+              aria-label={`Add block from ${data.label}`}
+              data-testid={
+                outletId
+                  ? `add-node-route-outlet-${outletId}`
+                  : `add-node-${data.kind}`
+              }
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
+            />
+          }
+        >
+          <AddIcon className="size-3.5" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-40" align="start">
+          {data.addOptions.map((kind) => (
+            <DropdownMenuItem
+              key={kind}
+              onClick={(event) => {
+                event.stopPropagation();
+                data.onAddNode?.(sourceNodeId, kind, outletId);
+              }}
+              data-testid={`add-node-option-${kind}`}
+            >
+              {NODE_LABELS[kind]}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
 
   return (
     <div
       style={data.layoutWidth ? { width: data.layoutWidth } : undefined}
       className={cn(
-        "relative min-w-44 max-w-[240px] rounded-xl border px-3 py-2 text-left transition-shadow",
+        "relative min-w-44 max-w-[260px] rounded-xl border px-3 py-2 text-left transition-shadow",
         !data.layoutWidth && "w-max",
         nodeStyles[data.kind],
         selected && "ring-2 ring-primary/40",
@@ -83,7 +125,7 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
           style={{ top: 18 }}
         />
       ) : null}
-      {showSource ? (
+      {showLinearSource ? (
         <Handle
           type="source"
           position={Position.Right}
@@ -91,6 +133,21 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
           style={{ top: 18 }}
         />
       ) : null}
+      {data.kind === "route"
+        ? routeOutlets.map((outlet, index) => {
+            const top = 28 + index * 22;
+            return (
+              <Handle
+                key={outlet.id}
+                id={outlet.id}
+                type="source"
+                position={Position.Right}
+                className="!size-2"
+                style={{ top }}
+              />
+            );
+          })
+        : null}
       {data.eyebrow ? (
         <div className="mb-1 text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
           {data.eyebrow}
@@ -111,38 +168,28 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
           ))}
         </div>
       ) : null}
-      {data.addOptions?.length && data.onAddNode && AddIcon ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button
-                type="button"
-                className="nodrag nopan absolute top-1/2 -right-3 flex size-6 -translate-y-1/2 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:text-foreground"
-                aria-label={`Add next block after ${data.label}`}
-                data-testid={`add-node-${data.kind}`}
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => event.stopPropagation()}
-              />
-            }
-          >
-            <AddIcon className="size-3.5" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-40" align="start">
-            {data.addOptions.map((kind) => (
-              <DropdownMenuItem
-                key={kind}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (data.nodeId) data.onAddNode?.(data.nodeId, kind);
-                }}
-                data-testid={`add-node-option-${kind}`}
-              >
-                {NODE_LABELS[kind]}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {data.kind === "route" ? (
+        <div className="mt-3 space-y-2 border-t pt-2">
+          {routeOutlets.map((outlet) => (
+            <div
+              key={outlet.id}
+              className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground"
+            >
+              <span className="truncate">{outlet.label}</span>
+              {data.nodeId
+                ? renderAddMenu(data.nodeId, outlet.id)
+                : null}
+            </div>
+          ))}
+        </div>
       ) : null}
+      {data.kind !== "route" && data.nodeId
+        ? (
+            <div className="absolute top-1/2 -right-3 -translate-y-1/2">
+              {renderAddMenu(data.nodeId)}
+            </div>
+          )
+        : null}
     </div>
   );
 }
@@ -152,12 +199,10 @@ const nodeTypes = { workflowNode: WorkflowFlowNodeCard };
 const NODE_LABELS: Record<WorkflowFlowNodeKind, string> = {
   trigger: "Trigger",
   context: "Context",
-  condition: "Condition",
   step: "Step",
   gate: "Gate",
-  output: "Output",
-  reference: "Reference",
   route: "Route",
+  workflow: "Workflow",
 };
 
 type WorkflowVisualBuilderProps = {
@@ -175,28 +220,22 @@ type WorkflowVisualBuilderProps = {
 
 function addOptionsForKind(kind: WorkflowFlowNodeKind, readOnly: boolean) {
   if (readOnly) return [];
-  if (kind === "context") return ["condition", "step", "route"] satisfies WorkflowFlowNodeKind[];
-  if (kind === "condition") {
-    return ["step", "gate", "route", "output"] satisfies WorkflowFlowNodeKind[];
+  if (kind === "context") return ADDABLE_KINDS;
+  if (kind === "route") return ADDABLE_KINDS;
+  if (kind === "step" || kind === "gate") {
+    return ["step", "gate", "route"] satisfies WorkflowFlowNodeKind[];
   }
-  if (kind === "step") {
-    return [
-      "condition",
-      "step",
-      "gate",
-      "output",
-      "reference",
-      "route",
-    ] satisfies WorkflowFlowNodeKind[];
-  }
-  if (kind === "gate") return ["step", "output"] satisfies WorkflowFlowNodeKind[];
   return [];
 }
 
 function decorateWorkflowNodes(
   nodes: WorkflowFlowNode[],
   readOnly: boolean,
-  onAddNode: (sourceNodeId: string, kind: WorkflowFlowNodeKind) => void,
+  onAddNode: (
+    sourceNodeId: string,
+    kind: WorkflowFlowNodeKind,
+    outletId?: string,
+  ) => void,
 ) {
   return nodes.map((node) => ({
     ...node,
@@ -229,7 +268,11 @@ function WorkflowVisualBuilderInner({
   const { fitView } = useReactFlow();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const onAddNodeRef = useRef<
-    (sourceNodeId: string, kind: WorkflowFlowNodeKind) => void
+  (
+    sourceNodeId: string,
+    kind: WorkflowFlowNodeKind,
+    outletId?: string,
+  ) => void
   >(() => {});
 
   const dirty = useMemo(
@@ -258,12 +301,13 @@ function WorkflowVisualBuilderInner({
   );
 
   const addNodeAfter = useCallback(
-    (sourceNodeId: string, kind: WorkflowFlowNodeKind) => {
+    (sourceNodeId: string, kind: WorkflowFlowNodeKind, outletId?: string) => {
       if (readOnly) return;
       const { draft: nextDraft, focusNodeId } = insertBlockAfter(
         draft,
         sourceNodeId,
         kind,
+        outletId,
       );
       syncCanvas(nextDraft, focusNodeId);
     },
@@ -342,10 +386,11 @@ function WorkflowVisualBuilderInner({
             />
           </ReactFlow>
         </div>
-        {!readOnly && selectedNode ? (
+        {!readOnly ? (
           <WorkflowNodeInspector
             draft={draft}
             selectedNode={selectedNode}
+            currentWorkflowKey={workflow.workflowKey}
             onDraftChange={syncCanvas}
             workflowOptions={workflowOptions}
             allowedActions={draft.allowedActions}

@@ -47,15 +47,11 @@ export function WorkflowFlowCanvas({
             ? "review"
             : node.data.kind === "step"
               ? "action"
-              : node.data.kind === "condition"
-                ? "decision"
-                : node.data.kind === "reference"
-                  ? "instance"
-                  : node.data.kind === "route"
-                    ? "workflow"
-                    : node.data.kind === "trigger" || node.data.kind === "context"
-                      ? "workflow"
-                      : node.data.kind,
+              : node.data.kind === "route" || node.data.kind === "workflow"
+                ? "workflow"
+                : node.data.kind === "trigger" || node.data.kind === "context"
+                  ? "workflow"
+                  : node.data.kind,
         layoutWidth: node.data.layoutWidth,
       },
     }));
