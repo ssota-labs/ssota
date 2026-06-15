@@ -51,7 +51,7 @@ export type WorkflowPickerOption = {
 
 type WorkflowNodeInspectorProps = {
   draft: WorkflowDraft;
-  selectedNode: WorkflowFlowNode | null;
+  selectedNode: WorkflowFlowNode;
   currentWorkflowKey?: string;
   onDraftChange: (draft: WorkflowDraft) => void;
   workflowOptions: WorkflowPickerOption[];
@@ -70,22 +70,6 @@ export function WorkflowNodeInspector({
   contextNodeCatalog,
   contextEdgeCatalog,
 }: WorkflowNodeInspectorProps) {
-  if (!selectedNode) {
-    return (
-      <aside
-        data-testid="workflow-inspector"
-        className="flex w-96 shrink-0 flex-col border-l bg-background"
-      >
-        <div className="border-b px-4 py-3">
-          <p className="text-sm font-semibold">Inspector</p>
-          <p className="text-xs text-muted-foreground">
-            Select a workflow block to configure it.
-          </p>
-        </div>
-      </aside>
-    );
-  }
-
   const { data } = selectedNode;
   const canDelete = !["trigger", "context"].includes(data.kind);
   const isSheetStyleInspector =
