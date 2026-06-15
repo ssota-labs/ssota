@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -9,6 +10,13 @@ import {
   uniqueIndex,
   index,
 } from "drizzle-orm/pg-core";
+
+export const lifecycleStatusEnum = pgEnum("lifecycle_status", [
+  "Draft",
+  "Active",
+  "Archived",
+  "Deleted",
+]);
 
 export const executorTypeEnum = pgEnum("executor_type", [
   "Agent",
@@ -131,6 +139,71 @@ export const tasks = pgTable(
     projectSubjectIdIdx: index("tasks_project_subject_id_idx").on(
       table.projectId,
       table.subjectId,
+    ),
+  }),
+);
+
+export const nodes = pgTable(
+  "nodes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    nodeType: text("node_type").notNull(),
+    title: text("title").notNull().default(""),
+    properties: jsonb("properties")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
+    content: text("content"),
+    lifecycleStatus: lifecycleStatusEnum("lifecycle_status")
+      .notNull()
+      .default("Draft"),
+    schemaVersion: integer("schema_version").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectNodeTypeIdx: index("nodes_project_node_type_idx").on(
+      table.projectId,
+      table.nodeType,
+    ),
+    projectLifecycleIdx: index("nodes_project_lifecycle_status_idx").on(
+      table.projectId,
+      table.lifecycleStatus,
+    ),
+  }),
+);
+
+export const edges = pgTable(
+  "edges",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    edgeType: text("edge_type").notNull(),
+    sourceNodeId: uuid("source_node_id")
+      .notNull()
+      .references(() => nodes.id, { onDelete: "cascade" }),
+    targetNodeId: uuid("target_node_id")
+      .notNull()
+      .references(() => nodes.id, { onDelete: "cascade" }),
+    properties: jsonb("properties")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectSourceIdx: index("edges_project_source_node_id_idx").on(
+      table.projectId,
+      table.sourceNodeId,
+    ),
+    projectTargetIdx: index("edges_project_target_node_id_idx").on(
+      table.projectId,
+      table.targetNodeId,
     ),
   }),
 );
