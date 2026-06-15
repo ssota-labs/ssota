@@ -85,6 +85,17 @@ export function WorkflowsWorkspace({
     : pendingGates;
   const package_ = selected ? buildWorkflowPackage(selected) : null;
 
+  const contextNodeCatalog = nodeCatalog.map((entry) => ({
+    nodeType: entry.nodeType,
+    label: entry.label,
+    propertyKeys: Object.keys(entry.propertySchema ?? {}),
+  }));
+
+  const contextEdgeCatalog = edgeCatalog.map((entry) => ({
+    edgeType: entry.edgeType,
+    label: entry.label,
+  }));
+
   const tabBar = selected ? (
     <>
       <WorkflowTabLink href={selectedHref} active={activeTab === "builder"}>
@@ -131,6 +142,8 @@ export function WorkflowsWorkspace({
             title: entry.spec.title,
           }))}
         actionCatalog={actionCatalog}
+        contextNodeCatalog={contextNodeCatalog}
+        contextEdgeCatalog={contextEdgeCatalog}
       />
     ) : activeTab === "flow" ? (
       <WorkflowVisualBuilder
@@ -146,6 +159,8 @@ export function WorkflowsWorkspace({
             title: entry.spec.title,
           }))}
         actionCatalog={actionCatalog}
+        contextNodeCatalog={contextNodeCatalog}
+        contextEdgeCatalog={contextEdgeCatalog}
         readOnly
       />
     ) : activeTab === "runs" ? (

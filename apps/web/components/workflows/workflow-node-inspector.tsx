@@ -29,6 +29,11 @@ import {
   type WorkflowDraft,
 } from "@/lib/workflows/workflow-draft";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
+import { WorkflowContextField } from "@/components/workflows/workflow-context-field";
+import type {
+  WorkflowEdgeCatalogOption,
+  WorkflowNodeCatalogOption,
+} from "@/lib/workflows/workflow-context-defaults";
 
 export type WorkflowPickerOption = {
   workflowKey: string;
@@ -41,6 +46,8 @@ type WorkflowNodeInspectorProps = {
   onDraftChange: (draft: WorkflowDraft) => void;
   workflowOptions: WorkflowPickerOption[];
   allowedActions: string[];
+  contextNodeCatalog: WorkflowNodeCatalogOption[];
+  contextEdgeCatalog: WorkflowEdgeCatalogOption[];
 };
 
 export function WorkflowNodeInspector({
@@ -49,6 +56,8 @@ export function WorkflowNodeInspector({
   onDraftChange,
   workflowOptions,
   allowedActions,
+  contextNodeCatalog,
+  contextEdgeCatalog,
 }: WorkflowNodeInspectorProps) {
   if (!selectedNode) {
     return (
@@ -87,7 +96,13 @@ export function WorkflowNodeInspector({
       </div>
       <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4">
         {data.kind === "trigger" ? <TriggerInspector draft={draft} /> : null}
-        {data.kind === "context" ? <ContextInspector draft={draft} /> : null}
+        {data.kind === "context" ? (
+          <ContextInspector
+            draft={draft}
+            nodeCatalog={contextNodeCatalog}
+            edgeCatalog={contextEdgeCatalog}
+          />
+        ) : null}
         {data.kind === "condition" ? (
           <ConditionInspector
             draft={draft}
@@ -158,43 +173,23 @@ function TriggerInspector({ draft }: { draft: WorkflowDraft }) {
   );
 }
 
-function ContextInspector({ draft }: { draft: WorkflowDraft }) {
+function ContextInspector({
+  draft,
+  nodeCatalog,
+  edgeCatalog,
+}: {
+  draft: WorkflowDraft;
+  nodeCatalog: WorkflowNodeCatalogOption[];
+  edgeCatalog: WorkflowEdgeCatalogOption[];
+}) {
   return (
-    <>
-      <ReadonlyHint>Edit context in the Create Sheet.</ReadonlyHint>
-      <ReadonlyArea
-        label="Filter groups"
-        value={draft.context.filterGroups
-          .map((group) => {
-            const conditionCount = group.conditions.length
-              ? ` · ${group.conditions.length} condition(s)`
-              : "";
-            return `${group.label ?? group.id}${group.nodeType ? ` · ${group.nodeType}` : ""}${conditionCount}`;
-          })
-          .join("\n")}
-      />
-      <ReadonlyArea
-        label="Traversals"
-        value={draft.context.traversals
-          .map(
-            (traversal) =>
-              `${traversal.label ?? traversal.id} · ${traversal.direction} · ${traversal.maxHops} hop(s)`,
-          )
-          .join("\n")}
-      />
-      <ReadonlyArea
-        label="Assertions"
-        value={draft.context.assertions
-          .map((assertion) => {
-            const checkCount = assertion.conditions.length
-              ? ` · ${assertion.conditions.length} check(s)`
-              : "";
-            return `${assertion.nodeType}${checkCount} · ${assertion.enforcement}`;
-          })
-          .join("\n")}
-      />
-      <ReadonlyArea label="Notes" value={draft.context.notes ?? ""} />
-    </>
+    <WorkflowContextField
+      context={draft.context}
+      nodeCatalog={nodeCatalog}
+      edgeCatalog={edgeCatalog}
+      readOnly
+      className="px-0 pb-0"
+    />
   );
 }
 

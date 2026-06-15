@@ -44,6 +44,10 @@ import {
   type WorkflowFlowNodeData,
   type WorkflowFlowNodeKind,
 } from "@/lib/workflows/workflow-flow-model";
+import type {
+  WorkflowEdgeCatalogOption,
+  WorkflowNodeCatalogOption,
+} from "@/lib/workflows/workflow-context-defaults";
 
 const nodeStyles: Record<WorkflowFlowNodeKind, string> = {
   trigger: "border-primary/50 bg-primary/5 text-foreground shadow-sm",
@@ -164,6 +168,8 @@ type WorkflowVisualBuilderProps = {
   projectSlug: string;
   workflowOptions: WorkflowPickerOption[];
   actionCatalog: ActionCatalogEntry[];
+  contextNodeCatalog: WorkflowNodeCatalogOption[];
+  contextEdgeCatalog: WorkflowEdgeCatalogOption[];
   readOnly?: boolean;
 };
 
@@ -211,6 +217,8 @@ function WorkflowVisualBuilderInner({
   orgSlug,
   projectSlug,
   workflowOptions,
+  contextNodeCatalog,
+  contextEdgeCatalog,
   readOnly = false,
 }: WorkflowVisualBuilderProps) {
   const [draft, setDraft] = useState<WorkflowDraft>(() => createWorkflowDraft(workflow));
@@ -341,6 +349,8 @@ function WorkflowVisualBuilderInner({
             onDraftChange={syncCanvas}
             workflowOptions={workflowOptions}
             allowedActions={draft.allowedActions}
+            contextNodeCatalog={contextNodeCatalog}
+            contextEdgeCatalog={contextEdgeCatalog}
           />
         ) : null}
       </div>

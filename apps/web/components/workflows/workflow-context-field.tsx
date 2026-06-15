@@ -8,6 +8,7 @@ import {
 } from "@phosphor-icons/react";
 import type { ContextSpec } from "@ssota/contracts";
 import { Label } from "@ssota/ui/components/ui/label";
+import { cn } from "@ssota/ui/lib/utils";
 import { ContextAssertionForm } from "@/components/workflows/context-assertion-form";
 import { ContextExpandableBlock } from "@/components/workflows/context-expandable-block";
 import { ContextFilterGroupForm } from "@/components/workflows/context-filter-group-form";
@@ -27,9 +28,11 @@ import {
 
 type WorkflowContextFieldProps = {
   context: ContextSpec;
-  onContextChange: (context: ContextSpec) => void;
+  onContextChange?: (context: ContextSpec) => void;
   nodeCatalog: WorkflowNodeCatalogOption[];
   edgeCatalog: WorkflowEdgeCatalogOption[];
+  readOnly?: boolean;
+  className?: string;
 };
 
 function defaultNodeType(catalog: WorkflowNodeCatalogOption[]): string {
@@ -41,6 +44,8 @@ export function WorkflowContextField({
   onContextChange,
   nodeCatalog,
   edgeCatalog,
+  readOnly = false,
+  className,
 }: WorkflowContextFieldProps) {
   const [expandedFilterGroupId, setExpandedFilterGroupId] = useState<string | null>(
     null,
@@ -49,6 +54,7 @@ export function WorkflowContextField({
   const [expandedAssertionId, setExpandedAssertionId] = useState<string | null>(null);
 
   function patchContext(patch: Partial<ContextSpec>) {
+    if (readOnly || !onContextChange) return;
     onContextChange({ ...context, ...patch });
   }
 
@@ -102,7 +108,7 @@ export function WorkflowContextField({
 
   return (
     <>
-      <div className="space-y-6 px-6 pb-6">
+      <div className={cn("space-y-6 px-6 pb-6", className)}>
         <div className="space-y-1">
           <Label className="text-sm font-medium">Context</Label>
           <p className="text-sm text-muted-foreground">
@@ -117,7 +123,7 @@ export function WorkflowContextField({
           addLabel="Add filter group"
           addTestId="add-filter-group"
           hasItems={context.filterGroups.length > 0}
-          onAdd={addFilterGroup}
+          onAdd={readOnly ? undefined : addFilterGroup}
         >
           {context.filterGroups.map((group) => {
             const summary = filterGroupSummary(group, nodeCatalog);
@@ -135,22 +141,28 @@ export function WorkflowContextField({
                   setExpandedFilterGroupId(next ? group.id : null)
                 }
                 removeLabel="Remove filter group"
-                onRemove={() => {
-                  patchContext({
-                    filterGroups: context.filterGroups.filter(
-                      (item) => item.id !== group.id,
-                    ),
-                  });
-                  if (expandedFilterGroupId === group.id) {
-                    setExpandedFilterGroupId(null);
-                  }
-                }}
+                onRemove={
+                  readOnly
+                    ? undefined
+                    : () => {
+                        patchContext({
+                          filterGroups: context.filterGroups.filter(
+                            (item) => item.id !== group.id,
+                          ),
+                        });
+                        if (expandedFilterGroupId === group.id) {
+                          setExpandedFilterGroupId(null);
+                        }
+                      }
+                }
               >
-                <ContextFilterGroupForm
-                  group={group}
-                  nodeCatalog={nodeCatalog}
-                  onChange={updateFilterGroup}
-                />
+                <fieldset disabled={readOnly} className="min-w-0 border-0 p-0">
+                  <ContextFilterGroupForm
+                    group={group}
+                    nodeCatalog={nodeCatalog}
+                    onChange={updateFilterGroup}
+                  />
+                </fieldset>
               </ContextExpandableBlock>
             );
           })}
@@ -162,7 +174,7 @@ export function WorkflowContextField({
           addLabel="Add traversal"
           addTestId="add-context-traversal"
           hasItems={context.traversals.length > 0}
-          onAdd={addTraversal}
+          onAdd={readOnly ? undefined : addTraversal}
         >
           {context.traversals.map((traversal) => {
             const summary = traversalSummary(traversal, nodeCatalog);
@@ -180,23 +192,29 @@ export function WorkflowContextField({
                   setExpandedTraversalId(next ? traversal.id : null)
                 }
                 removeLabel="Remove traversal"
-                onRemove={() => {
-                  patchContext({
-                    traversals: context.traversals.filter(
-                      (item) => item.id !== traversal.id,
-                    ),
-                  });
-                  if (expandedTraversalId === traversal.id) {
-                    setExpandedTraversalId(null);
-                  }
-                }}
+                onRemove={
+                  readOnly
+                    ? undefined
+                    : () => {
+                        patchContext({
+                          traversals: context.traversals.filter(
+                            (item) => item.id !== traversal.id,
+                          ),
+                        });
+                        if (expandedTraversalId === traversal.id) {
+                          setExpandedTraversalId(null);
+                        }
+                      }
+                }
               >
-                <ContextTraversalForm
-                  traversal={traversal}
-                  nodeCatalog={nodeCatalog}
-                  edgeCatalog={edgeCatalog}
-                  onChange={updateTraversal}
-                />
+                <fieldset disabled={readOnly} className="min-w-0 border-0 p-0">
+                  <ContextTraversalForm
+                    traversal={traversal}
+                    nodeCatalog={nodeCatalog}
+                    edgeCatalog={edgeCatalog}
+                    onChange={updateTraversal}
+                  />
+                </fieldset>
               </ContextExpandableBlock>
             );
           })}
@@ -208,7 +226,7 @@ export function WorkflowContextField({
           addLabel="Add assertion"
           addTestId="add-context-assertion"
           hasItems={context.assertions.length > 0}
-          onAdd={addAssertion}
+          onAdd={readOnly ? undefined : addAssertion}
         >
           {context.assertions.map((assertion) => {
             const summary = assertionSummary(assertion, nodeCatalog);
@@ -226,33 +244,41 @@ export function WorkflowContextField({
                   setExpandedAssertionId(next ? assertion.id : null)
                 }
                 removeLabel="Remove assertion"
-                onRemove={() => {
-                  patchContext({
-                    assertions: context.assertions.filter(
-                      (item) => item.id !== assertion.id,
-                    ),
-                  });
-                  if (expandedAssertionId === assertion.id) {
-                    setExpandedAssertionId(null);
-                  }
-                }}
+                onRemove={
+                  readOnly
+                    ? undefined
+                    : () => {
+                        patchContext({
+                          assertions: context.assertions.filter(
+                            (item) => item.id !== assertion.id,
+                          ),
+                        });
+                        if (expandedAssertionId === assertion.id) {
+                          setExpandedAssertionId(null);
+                        }
+                      }
+                }
               >
-                <ContextAssertionForm
-                  assertion={assertion}
-                  nodeCatalog={nodeCatalog}
-                  onChange={updateAssertion}
-                />
+                <fieldset disabled={readOnly} className="min-w-0 border-0 p-0">
+                  <ContextAssertionForm
+                    assertion={assertion}
+                    nodeCatalog={nodeCatalog}
+                    onChange={updateAssertion}
+                  />
+                </fieldset>
               </ContextExpandableBlock>
             );
           })}
         </ContextListSection>
       </div>
 
-      <input
-        type="hidden"
-        name="workflowContext"
-        value={serializeWorkflowContext(context)}
-      />
+      {!readOnly ? (
+        <input
+          type="hidden"
+          name="workflowContext"
+          value={serializeWorkflowContext(context)}
+        />
+      ) : null}
     </>
   );
 }

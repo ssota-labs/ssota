@@ -13,7 +13,7 @@ type ContextExpandableBlockProps = {
   expandedTestId?: string;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
-  onRemove: () => void;
+  onRemove?: () => void;
   removeLabel: string;
   children: React.ReactNode;
 };
@@ -53,16 +53,18 @@ export function ContextExpandableBlock({
           </span>
           <span className="block text-xs text-muted-foreground">{description}</span>
         </button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="shrink-0 text-muted-foreground"
-          onClick={onRemove}
-          aria-label={removeLabel}
-        >
-          <XIcon className="size-3.5" />
-        </Button>
+        {onRemove ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="shrink-0 text-muted-foreground"
+            onClick={onRemove}
+            aria-label={removeLabel}
+          >
+            <XIcon className="size-3.5" />
+          </Button>
+        ) : null}
       </div>
 
       {expanded ? (
