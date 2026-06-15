@@ -72,7 +72,7 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Board", exact: true })).toBeVisible();
     await expect(
-      page.getByText("Runtime tasks from the tasks table", { exact: false }),
+      page.getByText("Runtime work queue", { exact: false }),
     ).toBeVisible();
   });
 

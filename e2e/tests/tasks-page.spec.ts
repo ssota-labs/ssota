@@ -25,11 +25,11 @@ test.describe("Tasks page", () => {
 
     await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible();
     await expect(
-      page.getByText("Runtime tasks from the tasks table", { exact: false }),
+      page.getByText("Runtime work queue", { exact: false }),
     ).toBeVisible();
     await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Board", exact: true })).toBeVisible();
-    await expect(page.getByText("E2E tasks page fixture")).toBeVisible();
+    await expect(page.getByText("E2E tasks page fixture").first()).toBeVisible();
   });
 
   test("board tab shows kanban columns", async ({ page }) => {
@@ -40,7 +40,7 @@ test.describe("Tasks page", () => {
       new RegExp(`${DEFAULT_CONSOLE_BASE}/tasks\\?tab=board`),
     );
     await expect(page.getByText("Pending", { exact: true }).first()).toBeVisible();
-    await expect(page.getByText("E2E tasks page fixture")).toBeVisible();
+    await expect(page.getByText("E2E tasks page fixture").first()).toBeVisible();
   });
 
   test("filter chips preserve tab in URL", async ({ page }) => {

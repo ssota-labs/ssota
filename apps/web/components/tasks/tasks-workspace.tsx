@@ -5,18 +5,10 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import type { TaskStatus } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@ssota/ui/components/ui/card";
 import { updateTaskStatusAction } from "@/app/actions";
 import { TasksDetailSheet } from "@/components/tasks/tasks-detail-sheet";
 import { TasksKanbanBoard } from "@/components/tasks/tasks-kanban-board";
 import { TasksTable } from "@/components/tasks/tasks-table";
-import { cn } from "@ssota/ui/lib/utils";
 
 export type TaskFilter = "all" | "human" | "agent" | "automation" | "blocked" | "review";
 export type TaskTab = "table" | "board";
@@ -54,11 +46,6 @@ const filterLabels: Record<TaskFilter, string> = {
   automation: "Automation",
   blocked: "Blocked",
   review: "Ready",
-};
-
-const tabLabels: Record<TaskTab, string> = {
-  table: "Table",
-  board: "Board",
 };
 
 export function TasksWorkspace({
@@ -100,79 +87,95 @@ export function TasksWorkspace({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {(Object.keys(filterLabels) as TaskFilter[]).map((filter) => (
-          <Button
-            key={filter}
-            render={
-              <Link
-                href={buildHref(filter, activeTab)}
-                scroll={false}
-              />
-            }
-            variant={activeFilter === filter ? "default" : "outline"}
-            size="sm"
-            nativeButton={false}
-          >
-            {filterLabels[filter]}{" "}
-            <Badge variant="secondary">
-              {rows.filter((row) => matchesFilter(row, filter)).length}
-            </Badge>
-          </Button>
-        ))}
+    <div className="flex min-h-0 flex-1 flex-col rounded-md border bg-background">
+      <div className="shrink-0 border-b">
+        <div className="flex items-center justify-between gap-3 px-4 py-2">
+          <div className="flex items-center gap-1">
+            <TabLink href={tabHref(baseHref, activeFilter, "table")} active={activeTab === "table"}>
+              Table
+            </TabLink>
+            <TabLink href={tabHref(baseHref, activeFilter, "board")} active={activeTab === "board"}>
+              Board
+            </TabLink>
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {filtered.length} tasks
+            {activeFilter !== "all" ? ` · ${filterLabels[activeFilter]} view` : ""}
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1 overflow-x-auto px-4 pb-2">
+          {(Object.keys(filterLabels) as TaskFilter[]).map((filter) => (
+            <Button
+              key={filter}
+              render={<Link href={buildHref(filter, activeTab)} scroll={false} />}
+              variant={activeFilter === filter ? "secondary" : "ghost"}
+              size="sm"
+              nativeButton={false}
+              className="h-7"
+            >
+              {filterLabels[filter]}{" "}
+              <Badge variant="secondary" className="ml-1">
+                {rows.filter((row) => matchesFilter(row, filter)).length}
+              </Badge>
+            </Button>
+          ))}
+        </div>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0">
-          <div>
-            <CardTitle className="text-base">Work queue</CardTitle>
-            <CardDescription>
-              Runtime tasks from the tasks table — spawn via spawn_task, move on
-              the board to update status.
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2">
-            {(Object.keys(tabLabels) as TaskTab[]).map((tab) => (
-              <Button
-                key={tab}
-                render={
-                  <Link href={buildHref(activeFilter, tab)} scroll={false} />
-                }
-                variant={activeTab === tab ? "default" : "outline"}
-                size="sm"
-                nativeButton={false}
-              >
-                {tabLabels[tab]}
-              </Button>
-            ))}
-          </div>
-        </CardHeader>
-        <CardContent className={cn(activeTab === "table" ? "p-0" : "p-4")}>
-          {filtered.length === 0 ? (
-            <div className="space-y-3 px-6 py-10 text-center">
-              <p className="text-sm text-muted-foreground">
-                No runtime tasks match this view yet. Use spawn_task from MCP to
-                add work items to this queue.
-              </p>
-            </div>
-          ) : activeTab === "board" ? (
-            <TasksKanbanBoard
-              rows={filtered}
-              projectId={projectId}
-              onOpenDetail={setSelected}
-              onStatusChange={handleStatusChange}
-              motionReduced={motionReduced || isPending}
-            />
-          ) : (
-            <TasksTable rows={filtered} onOpenDetail={setSelected} />
-          )}
-        </CardContent>
-      </Card>
+      {filtered.length === 0 ? (
+        <div className="space-y-3 px-6 py-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            No runtime tasks match this view yet. Use spawn_task from MCP to add work
+            items to this queue.
+          </p>
+        </div>
+      ) : activeTab === "board" ? (
+        <div className="min-h-0 flex-1 overflow-auto p-4">
+          <TasksKanbanBoard
+            rows={filtered}
+            projectId={projectId}
+            onOpenDetail={setSelected}
+            onStatusChange={handleStatusChange}
+            motionReduced={motionReduced || isPending}
+          />
+        </div>
+      ) : (
+        <TasksTable rows={filtered} onOpenDetail={setSelected} />
+      )}
 
       <TasksDetailSheet task={selected} onClose={() => setSelected(null)} />
     </div>
   );
+}
+
+function TabLink({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Button
+      render={<Link href={href} scroll={false} />}
+      variant={active ? "secondary" : "ghost"}
+      size="sm"
+      nativeButton={false}
+      className="h-7"
+    >
+      {children}
+    </Button>
+  );
+}
+
+function tabHref(baseHref: string, filter: TaskFilter, tab: TaskTab) {
+  const params = new URLSearchParams();
+  if (filter !== "all") params.set("view", filter);
+  if (tab === "board") params.set("tab", "board");
+  const query = params.toString();
+  return query ? `${baseHref}?${query}` : baseHref;
 }
 
 function matchesFilter(row: TaskWorkspaceRow, filter: TaskFilter) {
@@ -187,9 +190,7 @@ function matchesFilter(row: TaskWorkspaceRow, filter: TaskFilter) {
     return row.executorType === "Agent" || assignee.includes("agent");
   }
   if (filter === "automation") {
-    return (
-      row.executorType === "System" || assignee.includes("automation")
-    );
+    return row.executorType === "System" || assignee.includes("automation");
   }
   return true;
 }
