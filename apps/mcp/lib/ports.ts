@@ -1,6 +1,7 @@
 import {
   createConsolePort,
   createDb,
+  createGraphPorts,
   createTaskPort,
 } from "@ssota/adapter-supabase";
 
@@ -17,6 +18,10 @@ export function getDb(): Db {
 
 export function getTaskPort(projectId: string) {
   return createTaskPort(getDb(), { projectId });
+}
+
+export function getGraphReadPort(projectId: string) {
+  return createGraphPorts(getDb(), { projectId }).graphRead;
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {

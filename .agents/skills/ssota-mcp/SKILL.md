@@ -15,7 +15,7 @@ Use this skill only when the task explicitly needs SSOTA MCP project/task contex
 
 - list accessible organizations or projects
 - fetch the active `ssota-labs/ssota-dev` project
-- list, query, or fetch development workflow tasks
+- list, query, fetch, spawn, or update development workflow tasks
 - verify MCP auth or project scoping
 
 For normal repository coding work, follow `AGENTS.md` development workflow commands instead of MCP.
@@ -28,6 +28,8 @@ For normal repository coding work, follow `AGENTS.md` development workflow comma
 - `list_tasks`
 - `query_tasks`
 - `get_task`
+- `spawn_task`
+- `update_task`
 
 Always scope project tools to:
 

@@ -1,0 +1,180 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { spawnTaskAction } from "@/app/actions";
+import { Button } from "@ssota/ui/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@ssota/ui/components/ui/dialog";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@ssota/ui/components/ui/select";
+
+export type WorkflowOption = {
+  workflowKey: string;
+  title: string;
+};
+
+type SpawnTaskDialogProps = {
+  projectId: string;
+  workflowOptions: WorkflowOption[];
+};
+
+export function SpawnTaskDialog({
+  projectId,
+  workflowOptions,
+}: SpawnTaskDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [workflowKey, setWorkflowKey] = useState(
+    workflowOptions[0]?.workflowKey ?? "work.implement_feature",
+  );
+  const [assignee, setAssignee] = useState("");
+  const [executorType, setExecutorType] = useState<"Agent" | "Human" | "System">(
+    "Human",
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function resetForm() {
+    setTitle("");
+    setAssignee("");
+    setExecutorType("Human");
+    setWorkflowKey(workflowOptions[0]?.workflowKey ?? "work.implement_feature");
+    setError(null);
+  }
+
+  function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    setError(null);
+    startTransition(async () => {
+      try {
+        await spawnTaskAction(projectId, {
+          title: title.trim(),
+          workflowKey,
+          assignee: assignee.trim() || undefined,
+          executorType,
+        });
+        setOpen(false);
+        resetForm();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to create task");
+      }
+    });
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) resetForm();
+      }}
+    >
+      <DialogTrigger render={<Button size="sm" />}>New task</DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <form onSubmit={handleSubmit}>
+          <DialogHeader>
+            <DialogTitle>Create task</DialogTitle>
+            <DialogDescription>
+              Add a work item to this project queue. Agents can also use MCP
+              spawn_task.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="task-title">Title</Label>
+              <Input
+                id="task-title"
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="What needs to be done?"
+                required
+                disabled={isPending}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="task-workflow">Workflow</Label>
+              <Select
+                value={workflowKey}
+                onValueChange={(value) => value && setWorkflowKey(value)}
+                disabled={isPending}
+                items={workflowOptions.map((option) => ({
+                  value: option.workflowKey,
+                  label: option.title,
+                }))}
+              >
+                <SelectTrigger id="task-workflow" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {workflowOptions.map((option) => (
+                    <SelectItem key={option.workflowKey} value={option.workflowKey}>
+                      {option.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="task-executor">Executor</Label>
+              <Select
+                value={executorType}
+                onValueChange={(value) =>
+                  value && setExecutorType(value as "Agent" | "Human" | "System")
+                }
+                disabled={isPending}
+                items={[
+                  { value: "Human", label: "Human" },
+                  { value: "Agent", label: "Agent" },
+                  { value: "System", label: "System" },
+                ]}
+              >
+                <SelectTrigger id="task-executor" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Human">Human</SelectItem>
+                  <SelectItem value="Agent">Agent</SelectItem>
+                  <SelectItem value="System">System</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="task-assignee">Assignee (optional)</Label>
+              <Input
+                id="task-assignee"
+                value={assignee}
+                onChange={(event) => setAssignee(event.target.value)}
+                placeholder="email or agent id"
+                disabled={isPending}
+              />
+            </div>
+            {error ? (
+              <p className="text-sm text-destructive" role="alert">
+                {error}
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={isPending || !title.trim()}>
+              {isPending ? "Creating…" : "Create task"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
