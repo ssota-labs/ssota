@@ -7,12 +7,6 @@ import type { DocStatus } from "@/lib/roadmap/doc-status";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@ssota/ui/components/ui/dropdown-menu";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -106,16 +100,35 @@ export function PlanningRoadmapsSection({
     quarterNodes.some(Boolean) && !annualNode && year === currentYear;
 
   const handleCreateAnnual = () => {
+    if (annualNode) {
+      setSelectedId(annualNode.id);
+      return;
+    }
+    if (pending) return;
+
     startTransition(async () => {
-      await onCreateAnnual(year);
-      router.refresh();
+      try {
+        await onCreateAnnual(year);
+      } finally {
+        router.refresh();
+      }
     });
   };
 
   const handleCreateQuarter = (quarter: RoadmapQuarter) => {
+    const existing = quarterNodes[QUARTERS.indexOf(quarter)];
+    if (existing) {
+      setSelectedId(existing.id);
+      return;
+    }
+    if (pending) return;
+
     startTransition(async () => {
-      await onCreateQuarter(year, quarter);
-      router.refresh();
+      try {
+        await onCreateQuarter(year, quarter);
+      } finally {
+        router.refresh();
+      }
     });
   };
 
@@ -179,34 +192,6 @@ export function PlanningRoadmapsSection({
               ))}
             </SelectContent>
           </Select>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={<Button type="button" size="sm" disabled={pending} />}
-            >
-              {t("roadmap.newRoadmap")}
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                disabled={Boolean(annualNode) || pending}
-                onClick={handleCreateAnnual}
-              >
-                {t("roadmap.newAnnual")}
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={pending} onClick={() => handleCreateQuarter(1)}>
-                {t("roadmap.newQuarter")} Q1
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={pending} onClick={() => handleCreateQuarter(2)}>
-                {t("roadmap.newQuarter")} Q2
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={pending} onClick={() => handleCreateQuarter(3)}>
-                {t("roadmap.newQuarter")} Q3
-              </DropdownMenuItem>
-              <DropdownMenuItem disabled={pending} onClick={() => handleCreateQuarter(4)}>
-                {t("roadmap.newQuarter")} Q4
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
 

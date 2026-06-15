@@ -155,4 +155,32 @@ describe("v2.7 graph use cases", () => {
       ),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
   });
+
+  it("rejects duplicate quarter roadmap for the same year", async () => {
+    const store = createInMemoryGraphStore();
+    const graphRead = createInMemoryGraphReadPort(store);
+    const graphWrite = createInMemoryGraphWritePort(store);
+    const projectId = "00000000-0000-4000-8000-000000000012";
+    const base = {
+      projectId,
+      nodeType: "roadmap" as const,
+      title: "2026 Q1 분기 로드맵",
+      properties: {
+        kind: "quarter" as const,
+        year: 2026,
+        quarter: 1 as const,
+        doc_status: "draft" as const,
+      },
+      content: "# Q1",
+    };
+
+    await createNode({ catalog, graphRead, graphWrite }, base);
+
+    await expect(
+      createNode(
+        { catalog, graphRead, graphWrite },
+        { ...base, title: "Duplicate Q1" },
+      ),
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+  });
 });

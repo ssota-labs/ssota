@@ -3,11 +3,31 @@ import type { RoadmapKind, RoadmapQuarter } from "@ssota/contracts";
 import { GraphError } from "../../domain/graph-errors.js";
 import type { GraphReadPort } from "../../ports/graph-read-port.js";
 
+function asRoadmapYear(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function asRoadmapQuarter(value: unknown): RoadmapQuarter | undefined {
+  const parsed = asRoadmapYear(value);
+  if (parsed === 1 || parsed === 2 || parsed === 3 || parsed === 4) {
+    return parsed;
+  }
+  return undefined;
+}
+
 function roadmapIdentity(properties: Record<string, unknown>) {
   return {
-    kind: properties.kind as RoadmapKind | undefined,
-    year: properties.year as number | undefined,
-    quarter: properties.quarter as RoadmapQuarter | undefined,
+    kind:
+      typeof properties.kind === "string"
+        ? (properties.kind as RoadmapKind)
+        : undefined,
+    year: asRoadmapYear(properties.year),
+    quarter: asRoadmapQuarter(properties.quarter),
   };
 }
 

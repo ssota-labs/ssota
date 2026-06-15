@@ -1,6 +1,10 @@
 import type { GraphNode } from "@ssota/core";
-import type { RoadmapKind, RoadmapQuarter } from "@ssota/contracts";
 import { parseDocStatus } from "@/lib/roadmap/doc-status";
+import {
+  parseRoadmapKind,
+  parseRoadmapQuarter,
+  parseRoadmapYear,
+} from "@/lib/roadmap/parse-roadmap-properties";
 import type { RoadmapNodeView } from "@/lib/roadmap/types";
 
 export function toRoadmapNodeView(node: GraphNode): RoadmapNodeView {
@@ -10,12 +14,9 @@ export function toRoadmapNodeView(node: GraphNode): RoadmapNodeView {
     title: node.title || "",
     content: node.content ?? "",
     docStatus: parseDocStatus(properties.doc_status),
-    kind: typeof properties.kind === "string" ? (properties.kind as RoadmapKind) : undefined,
-    year: typeof properties.year === "number" ? properties.year : undefined,
-    quarter:
-      typeof properties.quarter === "number"
-        ? (properties.quarter as RoadmapQuarter)
-        : undefined,
+    kind: parseRoadmapKind(properties.kind),
+    year: parseRoadmapYear(properties.year),
+    quarter: parseRoadmapQuarter(properties.quarter),
     parentRoadmapId:
       typeof properties.parent_roadmap_id === "string"
         ? properties.parent_roadmap_id
