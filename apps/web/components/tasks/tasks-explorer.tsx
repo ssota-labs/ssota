@@ -1,8 +1,8 @@
 import { TasksDetail } from "@/components/tasks/tasks-detail";
 import {
-  SpawnTaskDialog,
+  SpawnTaskSheet,
   type WorkflowOption,
-} from "@/components/tasks/spawn-task-dialog";
+} from "@/components/tasks/spawn-task-sheet";
 import type { TaskTab, TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
 type TasksExplorerProps = {
@@ -30,7 +30,7 @@ export function TasksExplorer({
             through update_task.
           </p>
         </div>
-        <SpawnTaskDialog
+        <SpawnTaskSheet
           projectId={projectId}
           workflowOptions={workflowOptions}
           taskOptions={rows}

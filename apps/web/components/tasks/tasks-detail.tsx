@@ -6,7 +6,7 @@ import type { TaskStatus } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { toast } from "sonner";
 import { updateTaskStatusAction } from "@/app/actions";
-import { SpawnTaskDialog, type WorkflowOption } from "@/components/tasks/spawn-task-dialog";
+import { SpawnTaskSheet, type WorkflowOption } from "@/components/tasks/spawn-task-sheet";
 import { TasksDetailSheet } from "@/components/tasks/tasks-detail-sheet";
 import { TasksKanbanBoard } from "@/components/tasks/tasks-kanban-board";
 import { TasksTable } from "@/components/tasks/tasks-table";
@@ -72,7 +72,7 @@ export function TasksDetail({
             environment.
           </p>
           <div className="flex justify-center">
-            <SpawnTaskDialog
+            <SpawnTaskSheet
               projectId={projectId}
               workflowOptions={workflowOptions}
               taskOptions={rows}
