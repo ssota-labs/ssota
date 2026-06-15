@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { PagePatternHub } from "@ssota/ui/components/page-patterns";
 import type { HubQuickLink, HubStatCard } from "@ssota/ui/components/page-patterns/page-pattern-hub";
+import { useLocale } from "@/components/i18n/locale-provider";
+import { formatLocaleDate } from "@/lib/i18n/format";
 
 type OverviewHubProps = {
   stats: HubStatCard[];
@@ -17,6 +19,8 @@ export function OverviewHub({
   recentActivity,
   nodesBasePath,
 }: OverviewHubProps) {
+  const { locale } = useLocale();
+
   return (
     <PagePatternHub
       stats={stats}
@@ -40,7 +44,7 @@ export function OverviewHub({
                     {item.title}
                   </Link>
                   <span className="text-muted-foreground">
-                    {item.nodeType} · {new Date(item.updatedAt).toLocaleDateString()}
+                    {item.nodeType} · {formatLocaleDate(item.updatedAt, locale)}
                   </span>
                 </li>
               ))}
