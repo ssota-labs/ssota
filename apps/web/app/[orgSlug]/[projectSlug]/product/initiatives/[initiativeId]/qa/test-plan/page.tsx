@@ -1,0 +1,10 @@
+import { ScaffoldedPage } from "@/components/console/scaffolded-page";
+
+export default async function InitiativePage({
+  params,
+}: {
+  params: Promise<{ initiativeId: string }>;
+}) {
+  const { initiativeId } = await params;
+  return <ScaffoldedPage path="qa/test-plan" initiativeId={initiativeId} />;
+}

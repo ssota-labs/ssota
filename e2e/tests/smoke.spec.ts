@@ -3,11 +3,10 @@ import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
 test.describe("SSOTA Console", () => {
-  test("smoke: 로그인 → 프로젝트 홈", async ({ page }) => {
+  test("smoke: 로그인 → 프로젝트 Overview", async ({ page }) => {
     await loginAsSmoke(page);
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
-    await expect(page.getByRole("heading", { name: "Developer Start" })).toBeVisible();
-    await expect(page.getByText("Generic context graph surfaces are archived")).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
+    await expect(page.getByText("Nothing here yet")).toBeVisible();
   });
 
   test("smoke: Developer Setup route", async ({ page }) => {
@@ -27,26 +26,30 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByText("Runtime work queue", { exact: false })).toBeVisible();
   });
 
-  test("smoke: archived legacy routes redirect home", async ({ page }) => {
+  test("smoke: legacy routes redirect to v2.7 surfaces", async ({ page }) => {
     await loginAsSmoke(page);
     await page.goto("/context-graph/nodes/Document");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
 
     await page.goto("/studio/node-types");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
 
     await gotoProject(page, "workflow");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}$`));
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow/map$`));
   });
 
-  test("smoke: icon rail exposes active nav only", async ({ page }) => {
+  test("smoke: AppSidebar exposes v2.7 primary nav", async ({ page }) => {
     await loginAsSmoke(page);
-    await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Developer", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Workflows", exact: true })).toHaveCount(0);
-    await expect(page.getByRole("link", { name: "Graph", exact: true })).toHaveCount(0);
+    await gotoProject(page, "overview");
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    const sidebar = page.locator("aside");
+    await expect(nav).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Developer setup", exact: true })).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Workflows", exact: true })).toHaveCount(0);
+    await expect(nav.getByRole("link", { name: "Graph", exact: true })).toHaveCount(0);
   });
 
   test("smoke: profile menu opens", async ({ page }) => {

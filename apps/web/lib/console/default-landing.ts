@@ -18,5 +18,5 @@ export async function getDefaultProjectPath(userId: string): Promise<string> {
   return projectPath({
     orgSlug: org.slug,
     projectSlug: projects[0]!.slug,
-  });
+  }, "overview");
 }
