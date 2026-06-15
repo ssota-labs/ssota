@@ -12,4 +12,4 @@ export type RoadmapNodeView = {
   parentRoadmapId?: string;
 };
 
-export type PlanningKindFilter = "all" | RoadmapKind;
+export type PlanningPeriod = "annual" | RoadmapQuarter;

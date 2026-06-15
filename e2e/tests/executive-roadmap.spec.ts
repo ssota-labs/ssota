@@ -8,33 +8,32 @@ test.describe("Executive roadmap", () => {
     await gotoProject(page, "executive/roadmap");
   });
 
-  test("shows product roadmap card and creates annual roadmap with Q1 chip", async ({
+  test("shows product roadmap and creates planning roadmaps from preview", async ({
     page,
   }) => {
     await expect(page.getByTestId("product-roadmap-card")).toBeVisible();
     await expect(page.getByTestId("planning-roadmaps-section")).toBeVisible();
-    await expect(page.getByTestId("planning-year-card")).toBeVisible();
+    await expect(page.getByTestId("planning-roadmap-detail")).toBeVisible();
 
     const year = new Date().getFullYear();
-    const yearCard = page.getByTestId("planning-year-card");
-    const annualCard = yearCard.getByTestId("annual-roadmap-card");
-    const createAnnualInCard = annualCard.getByRole("button", {
-      name: /Annual roadmap|연간 로드맵/,
-    });
+    await expect(page.getByTestId("planning-year-select")).toContainText(String(year));
 
-    if (await createAnnualInCard.isVisible()) {
-      await createAnnualInCard.click();
-      await expect(annualCard).toContainText(String(year), { timeout: 10_000 });
-    } else {
-      await expect(annualCard).toContainText(String(year));
+    const createAnnual = page.getByTestId("planning-roadmap-create");
+
+    if (await createAnnual.isVisible()) {
+      await createAnnual.click();
+      await expect(createAnnual).not.toBeVisible({ timeout: 10_000 });
     }
 
-    const q1Chip = page.getByTestId("quarter-chip-q1");
-    await q1Chip.click();
+    await page.getByTestId("planning-period-select").click();
+    await page.getByRole("option", { name: "Q1" }).click();
 
-    await expect(page.getByTestId("planning-roadmap-detail")).toBeVisible({
-      timeout: 10_000,
-    });
+    const createQuarter = page.getByTestId("planning-roadmap-create");
+    if (await createQuarter.isVisible()) {
+      await createQuarter.click();
+      await expect(createQuarter).not.toBeVisible({ timeout: 10_000 });
+    }
+
     await expect(page.getByTestId("planning-roadmap-detail")).toContainText(/Q1/);
   });
 
@@ -57,27 +56,20 @@ test.describe("Executive roadmap", () => {
     await expect(page.getByRole("dialog")).toContainText(/문서 정보/);
   });
 
-  test("quarter create chip creates roadmap and opens detail panel", async ({
-    page,
-  }) => {
+  test("creates quarter roadmap from empty preview", async ({ page }) => {
     test.slow();
 
-    await expect(page.getByTestId("planning-year-card")).toBeVisible();
+    await page.getByTestId("planning-period-select").click();
+    await page.getByRole("option", { name: "Q3" }).click();
 
-    const quarterChip = page.getByTestId("quarter-chip-q3");
-
-    if (!(await quarterChip.getByText("+").isVisible())) {
+    const createButton = page.getByTestId("planning-roadmap-create");
+    if (!(await createButton.isVisible())) {
       test.skip(true, "Q3 roadmap already exists in seed data");
     }
 
-    await page.waitForTimeout(800);
-    await quarterChip.click();
+    await createButton.click();
 
-    await expect(page.getByTestId("planning-roadmap-detail")).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(createButton).not.toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("planning-roadmap-detail")).toContainText(/Q3/);
-    await expect(quarterChip.getByText("+")).not.toBeVisible();
-    await page.waitForTimeout(1200);
   });
 });

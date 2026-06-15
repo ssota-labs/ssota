@@ -4,7 +4,6 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { RoadmapQuarter } from "@ssota/contracts";
 import type { DocStatus } from "@/lib/roadmap/doc-status";
-import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Select,
@@ -13,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ssota/ui/components/ui/select";
-import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { RoadmapDocumentSheet } from "@/components/console/roadmap/roadmap-document-sheet";
 import { RoadmapMarkdownPreview } from "@/components/console/roadmap/roadmap-markdown-preview";
@@ -21,7 +19,7 @@ import {
   DOC_STATUS_LABELS,
   DOC_STATUS_OPTIONS,
 } from "@/lib/roadmap/doc-status";
-import type { PlanningKindFilter, RoadmapNodeView } from "@/lib/roadmap/types";
+import type { PlanningPeriod, RoadmapNodeView } from "@/lib/roadmap/types";
 
 type PlanningRoadmapsSectionProps = {
   productRoadmapTitle: string;
@@ -47,6 +45,27 @@ function planningLabel(node: RoadmapNodeView) {
   return node.title || "로드맵";
 }
 
+function targetTitle(year: number, period: PlanningPeriod) {
+  if (period === "annual") return `${year} 연간 로드맵`;
+  return `${year} Q${period} 분기 로드맵`;
+}
+
+function findPlanningNode(
+  nodes: RoadmapNodeView[],
+  year: number,
+  period: PlanningPeriod,
+): RoadmapNodeView | undefined {
+  if (period === "annual") {
+    return nodes.find((node) => node.kind === "annual" && node.year === year);
+  }
+  return nodes.find(
+    (node) =>
+      node.kind === "quarter" &&
+      node.year === year &&
+      node.quarter === period,
+  );
+}
+
 export function PlanningRoadmapsSection({
   productRoadmapTitle,
   nodes,
@@ -57,9 +76,8 @@ export function PlanningRoadmapsSection({
 }: PlanningRoadmapsSectionProps) {
   const { t } = useLocale();
   const router = useRouter();
-  const [kindFilter, setKindFilter] = useState<PlanningKindFilter>("all");
   const [year, setYear] = useState(currentYear);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [period, setPeriod] = useState<PlanningPeriod>("annual");
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -71,61 +89,32 @@ export function PlanningRoadmapsSection({
     return Array.from(new Set([currentYear, ...fromNodes])).sort((a, b) => b - a);
   }, [nodes, currentYear]);
 
-  const filteredNodes = useMemo(() => {
-    return nodes.filter((node) => {
-      if (node.year !== year) return false;
-      if (kindFilter === "all") return true;
-      return node.kind === kindFilter;
-    });
-  }, [nodes, year, kindFilter]);
-
   const annualNode = nodes.find(
     (node) => node.kind === "annual" && node.year === year,
   );
 
   const quarterNodes = QUARTERS.map((quarter) =>
-    nodes.find(
-      (node) =>
-        node.kind === "quarter" && node.year === year && node.quarter === quarter,
-    ),
+    findPlanningNode(nodes, year, quarter),
   );
 
-  const selectedNode =
-    filteredNodes.find((node) => node.id === selectedId) ??
-    annualNode ??
-    quarterNodes.find(Boolean) ??
-    null;
+  const activeNode = findPlanningNode(nodes, year, period);
 
   const showMissingAnnualWarning =
     quarterNodes.some(Boolean) && !annualNode && year === currentYear;
 
-  const handleCreateAnnual = () => {
-    if (annualNode) {
-      setSelectedId(annualNode.id);
-      return;
-    }
-    if (pending) return;
+  const breadcrumbSuffix =
+    period === "annual" ? ` › ${year} 연간` : ` › Q${period}`;
+
+  const handleCreate = () => {
+    if (activeNode || pending) return;
 
     startTransition(async () => {
       try {
-        await onCreateAnnual(year);
-      } finally {
-        router.refresh();
-      }
-    });
-  };
-
-  const handleCreateQuarter = (quarter: RoadmapQuarter) => {
-    const existing = quarterNodes[QUARTERS.indexOf(quarter)];
-    if (existing) {
-      setSelectedId(existing.id);
-      return;
-    }
-    if (pending) return;
-
-    startTransition(async () => {
-      try {
-        await onCreateQuarter(year, quarter);
+        if (period === "annual") {
+          await onCreateAnnual(year);
+        } else {
+          await onCreateQuarter(year, period);
+        }
       } finally {
         router.refresh();
       }
@@ -133,12 +122,12 @@ export function PlanningRoadmapsSection({
   };
 
   const handleDocStatusChange = (value: DocStatus | null) => {
-    if (!selectedNode || !value) return;
+    if (!activeNode || !value) return;
     startTransition(async () => {
       await onSave({
-        nodeId: selectedNode.id,
-        title: selectedNode.title,
-        content: selectedNode.content,
+        nodeId: activeNode.id,
+        title: activeNode.title,
+        content: activeNode.content,
         docStatus: value,
       });
       router.refresh();
@@ -150,38 +139,20 @@ export function PlanningRoadmapsSection({
       className="rounded-lg border bg-card"
       data-testid="planning-roadmaps-section"
     >
-      <header className="border-b px-4 py-3 md:px-6">
-        <h2 className="text-lg font-semibold tracking-tight">
-          {t("roadmap.planningSectionTitle")}
-        </h2>
-        <p className="text-sm text-muted-foreground">
-          {t("roadmap.planningSectionDescription")}
-        </p>
-      </header>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3 md:px-6">
-        <div className="flex flex-wrap items-center gap-2">
-          {(["all", "annual", "quarter"] as const).map((kind) => (
-            <Button
-              key={kind}
-              type="button"
-              size="sm"
-              variant={kindFilter === kind ? "secondary" : "ghost"}
-              onClick={() => setKindFilter(kind)}
-            >
-              {kind === "all"
-                ? t("roadmap.kindAll")
-                : kind === "annual"
-                  ? t("roadmap.annualRoadmap")
-                  : t("roadmap.quarterRoadmap")}
-            </Button>
-          ))}
+      <header className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 md:px-6">
+        <div className="min-w-0 space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight">
+            {t("roadmap.planningSectionTitle")}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {t("roadmap.planningSectionDescription")}
+          </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm text-muted-foreground">{t("roadmap.year")}</span>
           <Select value={String(year)} onValueChange={(value) => setYear(Number(value))}>
-            <SelectTrigger size="sm" aria-label="Year">
+            <SelectTrigger size="sm" aria-label="Year" data-testid="planning-year-select">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -192,8 +163,28 @@ export function PlanningRoadmapsSection({
               ))}
             </SelectContent>
           </Select>
+
+          <span className="text-sm text-muted-foreground">{t("roadmap.planningPeriod")}</span>
+          <Select
+            value={period === "annual" ? "annual" : String(period)}
+            onValueChange={(value) =>
+              setPeriod(value === "annual" ? "annual" : (Number(value) as RoadmapQuarter))
+            }
+          >
+            <SelectTrigger size="sm" aria-label="Planning period" data-testid="planning-period-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="annual">{t("roadmap.annualRoadmap")}</SelectItem>
+              {QUARTERS.map((quarter) => (
+                <SelectItem key={quarter} value={String(quarter)}>
+                  Q{quarter}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-      </div>
+      </header>
 
       <div className="space-y-4 p-4 md:p-6">
         {showMissingAnnualWarning ? (
@@ -206,114 +197,21 @@ export function PlanningRoadmapsSection({
         ) : null}
 
         <article
-          className="rounded-md border bg-muted/20 px-3 py-2"
-          data-testid="planning-year-card"
+          className="rounded-md border bg-muted/20"
+          data-testid="planning-roadmap-detail"
         >
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="shrink-0 text-xs font-medium text-muted-foreground">
-              {year}
-            </span>
-
-            <div
-              className={cn(
-                "inline-flex min-h-8 max-w-full items-center gap-2 rounded-md border px-2.5 py-1 text-left text-sm transition-colors",
-                annualNode && "cursor-pointer bg-card hover:bg-muted/40",
-                annualNode && selectedNode?.id === annualNode.id && "ring-2 ring-primary",
-                !annualNode && "border-dashed bg-muted/10",
-              )}
-              data-testid="annual-roadmap-card"
-              role={annualNode ? "button" : undefined}
-              tabIndex={annualNode ? 0 : undefined}
-              onClick={() => annualNode && setSelectedId(annualNode.id)}
-              onKeyDown={(event) => {
-                if (!annualNode) return;
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  setSelectedId(annualNode.id);
-                }
-              }}
-            >
-              {annualNode ? (
-                <>
-                  <span className="truncate font-medium">{planningLabel(annualNode)}</span>
-                  <Badge variant="secondary" className="shrink-0 text-[10px]">
-                    {DOC_STATUS_LABELS[annualNode.docStatus ?? "draft"]}
-                  </Badge>
-                </>
-              ) : (
-                <>
-                  <span className="text-muted-foreground">{t("roadmap.annualRoadmap")}</span>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-6 px-2 text-xs"
-                    disabled={pending}
-                    onClick={handleCreateAnnual}
-                  >
-                    {t("roadmap.newAnnual")}
-                  </Button>
-                </>
-              )}
-            </div>
-
-            <div
-              className="flex flex-wrap items-center gap-1.5"
-              data-testid="quarter-roadmap-chips"
-            >
-              {QUARTERS.map((quarter, index) => {
-                const node = quarterNodes[index];
-                return (
-                  <button
-                    key={quarter}
-                    type="button"
-                    data-testid={`quarter-chip-q${quarter}`}
-                    title={
-                      node
-                        ? DOC_STATUS_LABELS[node.docStatus ?? "draft"]
-                        : t("roadmap.createQuarterChip")
-                    }
-                    className={cn(
-                      "inline-flex h-8 min-w-[2.75rem] items-center justify-center gap-1 rounded-md border px-2 text-xs transition-colors hover:bg-muted/40",
-                      node ? "bg-card" : "border-dashed bg-muted/10",
-                      node && selectedNode?.id === node.id && "ring-2 ring-primary",
-                    )}
-                    onClick={() => {
-                      if (node) {
-                        setSelectedId(node.id);
-                        return;
-                      }
-                      handleCreateQuarter(quarter);
-                    }}
-                  >
-                    <span className="font-medium">Q{quarter}</span>
-                    {!node ? (
-                      <span className="text-[10px] text-muted-foreground">+</span>
-                    ) : null}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </article>
-
-        {selectedNode ? (
-          <article
-            className="rounded-md border bg-muted/20"
-            data-testid="planning-roadmap-detail"
-          >
-            <header className="space-y-2 border-b px-4 py-3">
-              <p className="text-xs text-muted-foreground">
-                {productRoadmapTitle}
-                {annualNode ? ` › ${annualNode.year} 연간` : ""}
-                {selectedNode.kind === "quarter" && selectedNode.quarter
-                  ? ` › Q${selectedNode.quarter}`
-                  : ""}
-              </p>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-base font-semibold">{planningLabel(selectedNode)}</h3>
+          <header className="space-y-2 border-b px-4 py-3">
+            <p className="text-xs text-muted-foreground">
+              {productRoadmapTitle}
+              {breadcrumbSuffix}
+            </p>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h3 className="text-base font-semibold">
+                {activeNode ? planningLabel(activeNode) : targetTitle(year, period)}
+              </h3>
+              {activeNode ? (
                 <Select
-                  value={selectedNode.docStatus ?? "draft"}
+                  value={activeNode.docStatus ?? "draft"}
                   onValueChange={handleDocStatusChange}
                   disabled={pending}
                 >
@@ -328,24 +226,47 @@ export function PlanningRoadmapsSection({
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-            </header>
+              ) : null}
+            </div>
+          </header>
 
-            <div className="space-y-4 p-4 md:p-6">
-              {selectedNode.content.trim() ? (
-                <RoadmapMarkdownPreview content={selectedNode.content} />
-              ) : (
+          <div className="space-y-4 p-4 md:p-6">
+            {!activeNode ? (
+              <div
+                className="rounded-md border border-dashed bg-muted/10 p-6 text-center"
+                data-testid="planning-roadmap-empty"
+              >
                 <p className="text-sm text-muted-foreground">
-                  {t("roadmap.emptyPlanningDescription")}
+                  {t("roadmap.emptyPlanningNotCreated")}
                 </p>
-              )}
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-4"
+                  disabled={pending}
+                  data-testid="planning-roadmap-create"
+                  onClick={handleCreate}
+                >
+                  {period === "annual"
+                    ? t("roadmap.createAnnual")
+                    : t("roadmap.createQuarter", { quarter: period })}
+                </Button>
+              </div>
+            ) : activeNode.content.trim() ? (
+              <RoadmapMarkdownPreview content={activeNode.content} />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {t("roadmap.emptyPlanningDescription")}
+              </p>
+            )}
 
+            {activeNode ? (
               <div className="flex flex-wrap justify-end gap-2">
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={!selectedNode.content.trim()}
+                  disabled={!activeNode.content.trim()}
                   onClick={() => setViewOpen(true)}
                 >
                   {t("roadmap.viewFull")}
@@ -354,35 +275,39 @@ export function PlanningRoadmapsSection({
                   {t("roadmap.edit")}
                 </Button>
               </div>
-            </div>
+            ) : null}
+          </div>
 
-            <RoadmapDocumentSheet
-              open={viewOpen}
-              mode="view"
-              title={selectedNode.title}
-              content={selectedNode.content}
-              description={planningLabel(selectedNode)}
-              saveLabel={t("common.save")}
-              onOpenChange={setViewOpen}
-            />
-            <RoadmapDocumentSheet
-              open={editOpen}
-              mode="edit"
-              title={selectedNode.title}
-              content={selectedNode.content}
-              description={planningLabel(selectedNode)}
-              saveLabel={t("common.save")}
-              onOpenChange={setEditOpen}
-              onSave={async (input) => {
-                await onSave({
-                  nodeId: selectedNode.id,
-                  ...input,
-                  docStatus: selectedNode.docStatus,
-                });
-              }}
-            />
-          </article>
-        ) : null}
+          {activeNode ? (
+            <>
+              <RoadmapDocumentSheet
+                open={viewOpen}
+                mode="view"
+                title={activeNode.title}
+                content={activeNode.content}
+                description={planningLabel(activeNode)}
+                saveLabel={t("common.save")}
+                onOpenChange={setViewOpen}
+              />
+              <RoadmapDocumentSheet
+                open={editOpen}
+                mode="edit"
+                title={activeNode.title}
+                content={activeNode.content}
+                description={planningLabel(activeNode)}
+                saveLabel={t("common.save")}
+                onOpenChange={setEditOpen}
+                onSave={async (input) => {
+                  await onSave({
+                    nodeId: activeNode.id,
+                    ...input,
+                    docStatus: activeNode.docStatus,
+                  });
+                }}
+              />
+            </>
+          ) : null}
+        </article>
       </div>
     </section>
   );
