@@ -25,6 +25,8 @@ import {
 import { cn } from "@/lib/utils";
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 
+const profileSectionClass = "px-2.5 py-2";
+
 export type ConsoleProfileLanguageOption = {
   value: string;
   label: string;
@@ -92,88 +94,88 @@ export function ConsoleProfileMenu({
         alignOffset={0}
         className="cn-menu-translucent w-60 gap-0 overflow-hidden p-0"
       >
-        <div className="px-2.5 pt-2 pb-1">
+        <section className={profileSectionClass}>
           <p className="text-xs text-muted-foreground">{signedInAsLabel}</p>
           <p className="truncate text-sm font-medium">{userEmail}</p>
-        </div>
+        </section>
 
-        <div className="border-t border-border">
-          <div className="space-y-3 px-2.5 py-2">
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">{themeLabel}</Label>
-              <ToggleGroup
-                variant="outline"
-                spacing={0}
-                value={[themeValue]}
-                onValueChange={(value) => {
-                  const next = value[0];
-                  if (next === "light" || next === "dark") {
-                    onThemeChange(next);
-                  }
-                }}
-                className="w-full"
-              >
-                <ToggleGroupItem
-                  value="light"
-                  aria-label="Light mode"
-                  className="h-7 flex-1 gap-1 border-border/50 text-xs"
-                >
-                  <SunIcon className="size-3.5" />
-                  Light
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="dark"
-                  aria-label="Dark mode"
-                  className="h-7 flex-1 gap-1 border-border/50 text-xs"
-                >
-                  <MoonIcon className="size-3.5" />
-                  Dark
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+        <div className="border-t border-border" />
 
-            <div className="space-y-1">
-              <Label htmlFor="profile-locale" className="text-xs text-muted-foreground">
-                {languageLabel}
-              </Label>
-              <Select
-                value={languageValue}
-                onValueChange={(value) => {
-                  if (value) onLanguageChange(value);
-                }}
-                disabled={languagePending}
-                items={languageOptions.map((option) => ({
-                  value: option.value,
-                  label: option.label,
-                }))}
-              >
-                <SelectTrigger id="profile-locale" className="h-7 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {languageOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-border">
-          <div className="p-0.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 w-full justify-start px-2 text-destructive hover:text-destructive"
-              onClick={onSignOut}
+        <section className={cn(profileSectionClass, "space-y-px")}>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">{themeLabel}</Label>
+            <ToggleGroup
+              variant="outline"
+              spacing={0}
+              value={[themeValue]}
+              onValueChange={(value) => {
+                const next = value[0];
+                if (next === "light" || next === "dark") {
+                  onThemeChange(next);
+                }
+              }}
+              className="w-full"
             >
-              {signOutLabel}
-            </Button>
+              <ToggleGroupItem
+                value="light"
+                aria-label="Light mode"
+                className="h-7 flex-1 gap-1 border-border/50 text-xs"
+              >
+                <SunIcon className="size-3.5" />
+                Light
+              </ToggleGroupItem>
+              <ToggleGroupItem
+                value="dark"
+                aria-label="Dark mode"
+                className="h-7 flex-1 gap-1 border-border/50 text-xs"
+              >
+                <MoonIcon className="size-3.5" />
+                Dark
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
-        </div>
+
+          <div className="space-y-1">
+            <Label htmlFor="profile-locale" className="text-xs text-muted-foreground">
+              {languageLabel}
+            </Label>
+            <Select
+              value={languageValue}
+              onValueChange={(value) => {
+                if (value) onLanguageChange(value);
+              }}
+              disabled={languagePending}
+              items={languageOptions.map((option) => ({
+                value: option.value,
+                label: option.label,
+              }))}
+            >
+              <SelectTrigger id="profile-locale" className="h-7 w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {languageOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </section>
+
+        <div className="border-t border-border" />
+
+        <section className={profileSectionClass}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-full justify-start px-0 text-destructive hover:text-destructive"
+            onClick={onSignOut}
+          >
+            {signOutLabel}
+          </Button>
+        </section>
       </PopoverContent>
     </Popover>
   );
