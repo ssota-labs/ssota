@@ -9,10 +9,12 @@ import {
 import type { ContextSpec } from "@ssota/contracts";
 import { Label } from "@ssota/ui/components/ui/label";
 import { cn } from "@ssota/ui/lib/utils";
+import {
+  ExpandableListItem,
+  ExpandableListSection,
+} from "@ssota/ui/components/ui/expandable-list-section";
 import { ContextAssertionForm } from "@/components/workflows/context-assertion-form";
-import { ContextExpandableBlock } from "@/components/workflows/context-expandable-block";
 import { ContextFilterGroupForm } from "@/components/workflows/context-filter-group-form";
-import { ContextListSection } from "@/components/workflows/context-list-section";
 import { ContextTraversalForm } from "@/components/workflows/context-traversal-form";
 import {
   assertionSummary,
@@ -117,7 +119,7 @@ export function WorkflowContextField({
           </p>
         </div>
 
-        <ContextListSection
+        <ExpandableListSection
           title="Filter groups"
           description="One node type per group with property conditions."
           addLabel="Add filter group"
@@ -129,7 +131,7 @@ export function WorkflowContextField({
             const summary = filterGroupSummary(group, nodeCatalog);
             const expanded = expandedFilterGroupId === group.id;
             return (
-              <ContextExpandableBlock
+              <ExpandableListItem
                 key={group.id}
                 icon={FunnelIcon}
                 title={summary.title}
@@ -163,12 +165,12 @@ export function WorkflowContextField({
                     onChange={updateFilterGroup}
                   />
                 </fieldset>
-              </ContextExpandableBlock>
+              </ExpandableListItem>
             );
           })}
-        </ContextListSection>
+        </ExpandableListSection>
 
-        <ContextListSection
+        <ExpandableListSection
           title="Traversals"
           description="Hop through edges from a node type anchor."
           addLabel="Add traversal"
@@ -180,7 +182,7 @@ export function WorkflowContextField({
             const summary = traversalSummary(traversal, nodeCatalog);
             const expanded = expandedTraversalId === traversal.id;
             return (
-              <ContextExpandableBlock
+              <ExpandableListItem
                 key={traversal.id}
                 icon={FlowArrowIcon}
                 title={summary.title}
@@ -215,12 +217,12 @@ export function WorkflowContextField({
                     onChange={updateTraversal}
                   />
                 </fieldset>
-              </ContextExpandableBlock>
+              </ExpandableListItem>
             );
           })}
-        </ContextListSection>
+        </ExpandableListSection>
 
-        <ContextListSection
+        <ExpandableListSection
           title="Assertions"
           description="Soft checks on node types with property conditions."
           addLabel="Add assertion"
@@ -232,7 +234,7 @@ export function WorkflowContextField({
             const summary = assertionSummary(assertion, nodeCatalog);
             const expanded = expandedAssertionId === assertion.id;
             return (
-              <ContextExpandableBlock
+              <ExpandableListItem
                 key={assertion.id}
                 icon={CheckCircleIcon}
                 title={summary.title}
@@ -266,10 +268,10 @@ export function WorkflowContextField({
                     onChange={updateAssertion}
                   />
                 </fieldset>
-              </ContextExpandableBlock>
+              </ExpandableListItem>
             );
           })}
-        </ContextListSection>
+        </ExpandableListSection>
       </div>
 
       {!readOnly ? (

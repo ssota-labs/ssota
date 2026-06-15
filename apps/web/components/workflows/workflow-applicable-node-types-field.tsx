@@ -114,9 +114,6 @@ export function WorkflowApplicableNodeTypesField({
                       <span className="block text-sm font-medium">
                         {catalogEntry?.label ?? entry.nodeType}
                       </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {entry.nodeType}
-                      </span>
                     </span>
                     <div className="flex shrink-0 items-center gap-0.5">
                       <DropdownMenu>
@@ -137,7 +134,7 @@ export function WorkflowApplicableNodeTypesField({
                             Edit actions for {entry.nodeType}
                           </span>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-72">
+                        <DropdownMenuContent align="end" className="w-64">
                           <DropdownMenuGroup>
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             {actions.length === 0 ? (
@@ -153,7 +150,7 @@ export function WorkflowApplicableNodeTypesField({
                                   <DropdownMenuItem
                                     key={action.actionType}
                                     className="flex items-center justify-between gap-3"
-                                    onSelect={(event) => event.preventDefault()}
+                                    closeOnClick={false}
                                   >
                                     <span className="min-w-0 truncate text-sm">
                                       {action.label || action.actionType}
@@ -182,7 +179,7 @@ export function WorkflowApplicableNodeTypesField({
                         type="button"
                         variant="ghost"
                         size="icon-sm"
-                        className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                        className="size-8 shrink-0 text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
                         disabled={disabled}
                         data-testid={`delete-workflow-node-${entry.nodeType}`}
                         onClick={() => removeEntry(entry.nodeType)}

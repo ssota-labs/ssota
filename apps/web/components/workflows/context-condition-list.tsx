@@ -22,13 +22,13 @@ export function ContextConditionList({
   createCondition,
 }: ContextConditionListProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <span className="text-xs text-muted-foreground">Where</span>
 
       {conditions.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No checks yet.</p>
+        <p className="text-xs leading-snug text-muted-foreground">No checks yet.</p>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           {conditions.map((condition) => (
             <ContextFilterConditionRow
               key={condition.id}
