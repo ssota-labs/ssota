@@ -48,7 +48,7 @@ export function createGraphWritePort(
         })
         .returning();
 
-      return {
+      const node = {
         id: row!.id,
         projectId: row!.projectId,
         nodeType: row!.nodeType,
@@ -60,6 +60,31 @@ export function createGraphWritePort(
         createdAt: row!.createdAt,
         updatedAt: row!.updatedAt,
       };
+
+      if (input.initiativeId) {
+        const [initiative] = await db
+          .select({ id: schema.nodes.id })
+          .from(schema.nodes)
+          .where(
+            and(
+              eq(schema.nodes.projectId, projectId),
+              eq(schema.nodes.id, input.initiativeId),
+            ),
+          )
+          .limit(1);
+        if (!initiative) {
+          throw new GraphError("NOT_FOUND", "Initiative not found");
+        }
+        await db.insert(schema.edges).values({
+          projectId,
+          edgeType: "for_initiative",
+          sourceNodeId: node.id,
+          targetNodeId: input.initiativeId,
+          properties: {},
+        });
+      }
+
+      return node;
     },
 
     async updateNode(input: UpdateNodeInput) {

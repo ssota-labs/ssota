@@ -12,7 +12,7 @@ export async function loginAsSmoke(page: Page): Promise<void> {
   await form.getByLabel("Password").fill(SMOKE_PASSWORD);
   await form.locator('button[type="submit"]').click();
 
-  await expect(page.getByText("Nothing here yet")).toBeVisible({
+  await expect(page.getByText("Open tasks")).toBeVisible({
     timeout: 15_000,
   });
 }

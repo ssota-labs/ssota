@@ -21,23 +21,32 @@ test.describe("Console v2.7 navigation", () => {
   test("sidebar: drill into research L1 and back", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
     await nav.getByRole("button", { name: "Research", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/research/market$`));
     await expect(nav.getByRole("link", { name: "Market research", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Hypotheses", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toHaveCount(0);
+    await expect(nav.getByRole("button", { name: /Research/i }).first()).toBeVisible();
 
-    await nav.getByRole("button", { name: /Research/i }).first().click();
+    await nav.locator("[data-sidebar-back]").click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
+  });
+
+  test("sidebar: executive drill navigates to default child", async ({ page }) => {
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await nav.getByRole("button", { name: "Executive", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/executive/roadmap$`));
+    await expect(nav.getByRole("link", { name: "Roadmap", exact: true })).toBeVisible();
   });
 
   test("sidebar: product L1 expands development group", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
     await nav.getByRole("button", { name: "Product", exact: true }).click();
-    await expect(nav.getByRole("link", { name: "Initiatives", exact: true })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives$`));
     await nav.getByRole("button", { name: "Development", exact: true }).click();
     await expect(nav.getByRole("link", { name: "Data model", exact: true })).toBeVisible();
     await nav.getByRole("link", { name: "Data model", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/product/dev/data-model$`));
-    await expect(page.getByText("Nothing here yet")).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Content" })).toBeVisible();
   });
 
   test("sidebar: L2 initiative drill-down and switcher", async ({ page }) => {

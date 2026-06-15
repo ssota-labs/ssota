@@ -22,7 +22,7 @@ Active DB/runtime keep set은 `profiles`, `organizations`, `organization_members
 ```
 apps/
   web/                  # Next.js 16 — Console v2.7 UI + Supabase Auth
-  mcp/                  # Next.js 16 — account/project/task MCP (graph tools는 PR 11+)
+  mcp/                  # Next.js 16 — account/project/task + graph query MCP
 packages/
   core/                 # CatalogReadPort, GraphReadPort, GraphWritePort, graph use-cases (+ legacy executeAction in archive path)
   adapter-supabase/     # Drizzle 스키마·시드, createGraphPorts / createTaskPort
@@ -222,6 +222,16 @@ Notion [Console v2.7 구현 계획](https://app.notion.com/p/380346dac456810c8a7
 | PR2 | `nodes`/`edges` migration + instance seed | `pnpm test --filter @ssota/adapter-supabase` |
 | PR3 | `GraphReadPort`/`GraphWritePort` + `createGraphPorts` + AGENTS.md | 위 전부 |
 
+**Console UI (PR 4+)** — Notion §7.2의 **PR 번호 하나 = GitHub PR 하나**. 여러 마일스톤·기능 묶음을 한 PR에 넣지 않는다.
+
+| PR (예) | 범위 (요약) | base |
+|---|---|---|
+| PR7 | graph loaders/actions + execution·research·executive 화면 | `main` (PR6 머지 후) |
+| PR8 | product L1 + initiative CRUD + evergreen | `main` (PR7 머지 후) |
+| PR9 | initiative L2 18화면 + scoped loader | `main` (PR8 머지 후) |
+
+공통 인프라(`lib/graph/`, 공용 컴포넌트)는 **해당 시퀀스의 첫 PR**(예: PR7)에만 넣고, 이후 PR은 그 위에 화면·E2E만 추가한다.
+
 **Historical:** Phase 1 MVP 마일스톤 M0–M6(generic runtime)은 `archive/generic-runtime/`로 archive됨.
 
 ## MVP 마일스톤 (historical — generic runtime)
@@ -308,16 +318,46 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 ## MCP App Notes (apps/mcp)
 
 - 엔드포인트는 `/api/mcp` (Streamable HTTP, `mcp-handler` + `@modelcontextprotocol/sdk`).
-- Active MCP scope는 account/project discovery와 development workflow `tasks` 조회다. Generic graph/catalog/action/workflow tools는 archived runtime으로 이동했으며 active agent protocol이 아니다.
+- Active MCP scope는 account/project discovery, development workflow `tasks` 조회, **graph read-only query** (`list_node_types`, `get_node_type`, `list_edge_types`, `query_nodes`, `get_node`, `traverse_edges`)다. Generic action/workflow runtime tools와 MCP write는 archived/미도입.
 - 일반 구현 작업에서 `ssota-mcp`를 mount하지 않는다. 사용자가 명시적으로 `ssota-dev` project/task context를 조회하라고 할 때만 사용한다.
 - 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. `apps/mcp`는 Bearer JWT JWKS 검증 + `/.well-known/oauth-protected-resource` + `/api/mcp`를 유지한다.
 - 도구 핸들러에 비즈니스 로직을 넣지 않는다 — task/project 포트 호출 + IO 변환만.
 
 ## PR Guidelines
 
-- 제목: `[core|adapter|mcp|web|e2e|infra] 요약`
+- 제목: `[core|adapter|mcp|web|e2e|infra] 요약` — Console UI는 `[web] Console v2.7 PR N — …` 형식 권장.
 - 머지 전 필수: `pnpm lint`, `pnpm typecheck`, `pnpm test` 그린.
 - 도메인 불변식(Console v2.7 Graph Invariants)을 건드리는 변경은 PR 설명에 근거를 명시한다.
+
+### 기능별 PR 분리 (에이전트 필수)
+
+**한 PR = 구현 계획·Notion §7.2의 기능 슬라이스 하나.** 리뷰 가능한 크기로 쪼개고, 여러 PR 번호를 한 브랜치·한 draft에 몰아넣지 않는다.
+
+| 해야 할 것 | 하지 말 것 |
+|---|---|
+| PR7 완료 → `main` 머지 → `main`에서 PR8 브랜치 | PR7+8+9를 한 커밋/한 PR로 제출 |
+| 해당 PR 범위의 파일·E2E만 스테이징 | “나중에 쓸” 다음 PR 화면까지 미리 포함 |
+| 선행 PR에서 공통 인프라 머지 후 다음 PR 시작 | 장기 feature 브랜치에 후속 PR을 계속 쌓기 |
+
+**브랜치·머지 순서**
+
+1. `main`에서 `cursor/<기능-요약>-f06d` 브랜치 생성.
+2. 그 PR 범위만 구현·검증·푸시·**PR 하나** 생성.
+3. `main`에 머지된 뒤에만 다음 PR 브랜치를 `main`에서 다시 분기.
+
+**에이전트 작업 절차 (다중 PR 계획일 때)**
+
+1. 계획의 PR 목록(예: 7 → 8 → 9)을 그대로 따른다.
+2. **현재 턴에서는 활성 PR 하나만** — 커밋·푸시·GitHub PR도 그 하나만.
+3. 다음 PR 코드가 필요해도 **같은 브랜치에 섞지 않는다**. 머지 후 새 세션/브랜치에서 이어간다.
+4. PR 본문에 범위·비범위·통과한 E2E `--grep`을 명시한다.
+
+**예외 (한 PR에 묶어도 되는 경우)**
+
+- 동일 버그의 원인·수정·회귀 테스트 한 세트
+- 사용자가 명시적으로 “한 PR로” 요청한 경우
+
+이 정책은 MVP 마일스톤(M0–M6)의 “한 마일스톤 = 한 커밋 단위”와 같고, Console v2.7 UI는 **Notion PR 번호 단위**로 적용한다.
 
 ## Additional Notes
 
