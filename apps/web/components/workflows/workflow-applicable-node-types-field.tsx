@@ -114,9 +114,6 @@ export function WorkflowApplicableNodeTypesField({
                       <span className="block text-sm font-medium">
                         {catalogEntry?.label ?? entry.nodeType}
                       </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {entry.nodeType}
-                      </span>
                     </span>
                     <div className="flex shrink-0 items-center gap-0.5">
                       <DropdownMenu>
