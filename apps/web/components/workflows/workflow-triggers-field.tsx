@@ -2,6 +2,7 @@
 
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { WorkflowTriggerEvent } from "@ssota/contracts";
+import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
@@ -16,12 +17,14 @@ export function WorkflowTriggersField({
   onTriggersChange,
   onAddTrigger,
   readOnly = false,
+  inspectorHeader = false,
   className,
 }: {
   triggers: WorkflowTriggerEvent[];
   onTriggersChange?: (triggers: WorkflowTriggerEvent[]) => void;
   onAddTrigger?: () => void;
   readOnly?: boolean;
+  inspectorHeader?: boolean;
   className?: string;
 }) {
   function setTriggerEnabled(id: string, enabled: boolean) {
@@ -47,12 +50,26 @@ export function WorkflowTriggersField({
 
   return (
     <div className={cn("space-y-3 px-6", className)}>
-      <div className="space-y-1">
-        <Label className="text-sm font-medium">Triggers</Label>
-        <p className="text-sm text-muted-foreground">
-          When should this workflow run?
-        </p>
-      </div>
+      {inspectorHeader ? (
+        <div>
+          <div className="flex items-center gap-2">
+            <p className="min-w-0 flex-1 truncate text-sm font-semibold">
+              Triggers
+            </p>
+            <Badge variant="secondary">trigger</Badge>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            When should this workflow run?
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-1">
+          <Label className="text-sm font-medium">Triggers</Label>
+          <p className="text-xs text-muted-foreground">
+            When should this workflow run?
+          </p>
+        </div>
+      )}
 
       <div className="overflow-hidden rounded-lg border bg-card">
         <ul className="divide-y">

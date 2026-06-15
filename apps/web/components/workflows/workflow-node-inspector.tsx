@@ -198,6 +198,7 @@ function TriggerInspector({
           onDraftChange(updateTriggerEvents(draft, events))
         }
         onAddTrigger={() => setAddTriggerOpen(true)}
+        inspectorHeader
         className="px-4 py-4"
       />
       <AddWorkflowTriggerDialog
