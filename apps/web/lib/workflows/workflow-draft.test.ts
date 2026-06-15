@@ -8,6 +8,7 @@ import {
   removeBlock,
   updateCondition,
   updateStep,
+  updateTriggerEvents,
 } from "./workflow-draft";
 
 const baseWorkflow: Workflow = {
@@ -113,5 +114,15 @@ describe("workflow-draft", () => {
       { label: "Changed" },
     );
     expect(isWorkflowDraftDirty(next, baseWorkflow)).toBe(true);
+  });
+
+  it("updates trigger events", () => {
+    const draft = createWorkflowDraft(baseWorkflow);
+    const next = updateTriggerEvents(draft, [
+      { id: "manual", kind: "manual", enabled: false, config: {} },
+      { id: "t2", kind: "schedule", enabled: true, config: {} },
+    ]);
+    expect(next.trigger.events).toHaveLength(2);
+    expect(next.trigger.events[1]?.kind).toBe("schedule");
   });
 });

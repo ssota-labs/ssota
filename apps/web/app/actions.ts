@@ -494,6 +494,7 @@ const WorkflowBuilderPatchSchema = WorkflowDefinitionSchema.pick({
   routes: true,
   output: true,
   gates: true,
+  trigger: true,
 });
 
 export async function saveWorkflowBuilderFormAction(formData: FormData): Promise<void> {

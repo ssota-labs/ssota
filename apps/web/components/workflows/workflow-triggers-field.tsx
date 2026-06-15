@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon, XIcon } from "@phosphor-icons/react";
 import type { WorkflowTriggerEvent } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -31,6 +31,17 @@ export function WorkflowTriggersField({
     );
     const enabledCount = next.filter((trigger) => trigger.enabled).length;
     if (enabledCount === 0) return;
+    onTriggersChange(next);
+  }
+
+  function removeTrigger(id: string) {
+    if (readOnly || !onTriggersChange || triggers.length <= 1) return;
+    let next = triggers.filter((trigger) => trigger.id !== id);
+    if (!next.some((trigger) => trigger.enabled)) {
+      next = next.map((trigger, index) =>
+        index === 0 ? { ...trigger, enabled: true } : trigger,
+      );
+    }
     onTriggersChange(next);
   }
 
@@ -71,6 +82,20 @@ export function WorkflowTriggersField({
                   }
                   aria-label={`${meta.label} enabled`}
                 />
+                {!readOnly && onTriggersChange ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 text-muted-foreground"
+                    disabled={triggers.length <= 1}
+                    onClick={() => removeTrigger(trigger.id)}
+                    aria-label={`Remove ${meta.label}`}
+                    data-testid={`remove-workflow-trigger-${trigger.id}`}
+                  >
+                    <XIcon className="size-3.5" />
+                  </Button>
+                ) : null}
               </li>
             );
           })}

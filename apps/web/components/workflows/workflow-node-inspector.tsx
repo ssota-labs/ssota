@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type {
   WorkflowConditionSpec,
   WorkflowReferenceSpec,
@@ -26,14 +27,18 @@ import {
   updateReference,
   updateRoute,
   updateStep,
+  updateTriggerEvents,
   type WorkflowDraft,
 } from "@/lib/workflows/workflow-draft";
+import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 import { WorkflowContextField } from "@/components/workflows/workflow-context-field";
+import { createWorkflowTriggerEventFromKind } from "@/lib/workflows/workflow-trigger-catalog";
 import type {
   WorkflowEdgeCatalogOption,
   WorkflowNodeCatalogOption,
 } from "@/lib/workflows/workflow-context-defaults";
+import { cn } from "@ssota/ui/lib/utils";
 
 export type WorkflowPickerOption = {
   workflowKey: string;
@@ -77,25 +82,35 @@ export function WorkflowNodeInspector({
 
   const { data } = selectedNode;
   const canDelete = !["trigger", "context", "output"].includes(data.kind);
+  const isTriggerInspector = data.kind === "trigger";
 
   return (
     <aside
       data-testid="workflow-inspector"
       className="flex w-96 shrink-0 flex-col border-l bg-background"
     >
-      <div className="border-b px-4 py-3">
-        <div className="flex items-center gap-2">
-          <p className="min-w-0 flex-1 truncate text-sm font-semibold">
-            {data.label}
+      {!isTriggerInspector ? (
+        <div className="border-b px-4 py-3">
+          <div className="flex items-center gap-2">
+            <p className="min-w-0 flex-1 truncate text-sm font-semibold">
+              {data.label}
+            </p>
+            <Badge variant="secondary">{data.kind}</Badge>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Configure the selected workflow block.
           </p>
-          <Badge variant="secondary">{data.kind}</Badge>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Configure the selected workflow block.
-        </p>
-      </div>
-      <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4">
-        {data.kind === "trigger" ? <TriggerInspector draft={draft} /> : null}
+      ) : null}
+      <div
+        className={cn(
+          "min-h-0 flex-1 overflow-auto",
+          isTriggerInspector ? "" : "space-y-4 p-4",
+        )}
+      >
+        {isTriggerInspector ? (
+          <TriggerInspector draft={draft} onDraftChange={onDraftChange} />
+        ) : null}
         {data.kind === "context" ? (
           <ContextInspector
             draft={draft}
@@ -163,13 +178,39 @@ function ReadonlyHint({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TriggerInspector({ draft }: { draft: WorkflowDraft }) {
+function TriggerInspector({
+  draft,
+  onDraftChange,
+}: {
+  draft: WorkflowDraft;
+  onDraftChange: (draft: WorkflowDraft) => void;
+}) {
+  const [addTriggerOpen, setAddTriggerOpen] = useState(false);
+
   return (
-    <WorkflowTriggersField
-      triggers={draft.trigger.events}
-      readOnly
-      className="px-0"
-    />
+    <>
+      <WorkflowTriggersField
+        triggers={draft.trigger.events}
+        onTriggersChange={(events) =>
+          onDraftChange(updateTriggerEvents(draft, events))
+        }
+        onAddTrigger={() => setAddTriggerOpen(true)}
+        className="px-4 py-4"
+      />
+      <AddWorkflowTriggerDialog
+        open={addTriggerOpen}
+        onOpenChange={setAddTriggerOpen}
+        existingKinds={draft.trigger.events.map((trigger) => trigger.kind)}
+        onAddTrigger={(kind) => {
+          onDraftChange(
+            updateTriggerEvents(draft, [
+              ...draft.trigger.events,
+              createWorkflowTriggerEventFromKind(kind),
+            ]),
+          );
+        }}
+      />
+    </>
   );
 }
 
