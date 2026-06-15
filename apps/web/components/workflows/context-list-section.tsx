@@ -21,7 +21,7 @@ export function ContextListSection({
   description: string;
   addLabel: string;
   addTestId: string;
-  onAdd: () => void;
+  onAdd?: () => void;
   hasItems: boolean;
   emptyMessage?: string;
   className?: string;
@@ -42,19 +42,21 @@ export function ContextListSection({
           <p className="px-3 py-4 text-xs text-muted-foreground">{emptyMessage}</p>
         )}
 
-        <div className="border-t px-3 py-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-muted-foreground"
-            data-testid={addTestId}
-            onClick={onAdd}
-          >
-            <PlusIcon className="size-3.5" />
-            {addLabel}
-          </Button>
-        </div>
+        {onAdd ? (
+          <div className="border-t px-3 py-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-muted-foreground"
+              data-testid={addTestId}
+              onClick={onAdd}
+            >
+              <PlusIcon className="size-3.5" />
+              {addLabel}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </section>
   );

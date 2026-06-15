@@ -122,6 +122,17 @@ export const WorkflowStepSpecSchema = z.object({
 export type WorkflowStepSpec = z.infer<typeof WorkflowStepSpecSchema>;
 
 /** Progressive disclosure — inline text, external URL, or nested workflow. */
+export const WorkflowReferenceSourceSchema = z.enum([
+  "notion",
+  "gdrive",
+  "gmail",
+  "generic",
+]);
+
+export type WorkflowReferenceSource = z.infer<
+  typeof WorkflowReferenceSourceSchema
+>;
+
 export const WorkflowReferenceSpecSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
@@ -129,6 +140,8 @@ export const WorkflowReferenceSpecSchema = z.object({
   body: z.string().nullable().optional(),
   url: z.string().url().nullable().optional(),
   workflowKey: WorkflowKeySchema.optional(),
+  /** Hint for which MCP/integration to use when fetching url references. */
+  source: WorkflowReferenceSourceSchema.optional(),
 });
 
 export type WorkflowReferenceSpec = z.infer<typeof WorkflowReferenceSpecSchema>;

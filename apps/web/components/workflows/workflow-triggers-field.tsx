@@ -1,10 +1,11 @@
 "use client";
 
-import { PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon, XIcon } from "@phosphor-icons/react";
 import type { WorkflowTriggerEvent } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import { cn } from "@ssota/ui/lib/utils";
 import {
   getWorkflowTriggerMeta,
   serializeWorkflowTriggers,
@@ -14,12 +15,17 @@ export function WorkflowTriggersField({
   triggers,
   onTriggersChange,
   onAddTrigger,
+  readOnly = false,
+  className,
 }: {
   triggers: WorkflowTriggerEvent[];
-  onTriggersChange: (triggers: WorkflowTriggerEvent[]) => void;
-  onAddTrigger: () => void;
+  onTriggersChange?: (triggers: WorkflowTriggerEvent[]) => void;
+  onAddTrigger?: () => void;
+  readOnly?: boolean;
+  className?: string;
 }) {
   function setTriggerEnabled(id: string, enabled: boolean) {
+    if (readOnly || !onTriggersChange) return;
     const next = triggers.map((trigger) =>
       trigger.id === id ? { ...trigger, enabled } : trigger,
     );
@@ -28,8 +34,19 @@ export function WorkflowTriggersField({
     onTriggersChange(next);
   }
 
+  function removeTrigger(id: string) {
+    if (readOnly || !onTriggersChange || triggers.length <= 1) return;
+    let next = triggers.filter((trigger) => trigger.id !== id);
+    if (!next.some((trigger) => trigger.enabled)) {
+      next = next.map((trigger, index) =>
+        index === 0 ? { ...trigger, enabled: true } : trigger,
+      );
+    }
+    onTriggersChange(next);
+  }
+
   return (
-    <div className="space-y-3 px-6">
+    <div className={cn("space-y-3 px-6", className)}>
       <div className="space-y-1">
         <Label className="text-sm font-medium">Triggers</Label>
         <p className="text-sm text-muted-foreground">
@@ -59,36 +76,55 @@ export function WorkflowTriggersField({
                 </span>
                 <Switch
                   checked={trigger.enabled}
+                  disabled={readOnly}
                   onCheckedChange={(checked) =>
                     setTriggerEnabled(trigger.id, checked)
                   }
                   aria-label={`${meta.label} enabled`}
                 />
+                {!readOnly && onTriggersChange ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="shrink-0 text-muted-foreground"
+                    disabled={triggers.length <= 1}
+                    onClick={() => removeTrigger(trigger.id)}
+                    aria-label={`Remove ${meta.label}`}
+                    data-testid={`remove-workflow-trigger-${trigger.id}`}
+                  >
+                    <XIcon className="size-3.5" />
+                  </Button>
+                ) : null}
               </li>
             );
           })}
         </ul>
 
-        <div className="border-t px-3 py-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-muted-foreground"
-            data-testid="add-workflow-trigger"
-            onClick={onAddTrigger}
-          >
-            <PlusIcon className="size-3.5" />
-            Add trigger
-          </Button>
-        </div>
+        {!readOnly && onAddTrigger ? (
+          <div className="border-t px-3 py-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-muted-foreground"
+              data-testid="add-workflow-trigger"
+              onClick={onAddTrigger}
+            >
+              <PlusIcon className="size-3.5" />
+              Add trigger
+            </Button>
+          </div>
+        ) : null}
       </div>
 
-      <input
-        type="hidden"
-        name="workflowTriggers"
-        value={serializeWorkflowTriggers(triggers)}
-      />
+      {!readOnly ? (
+        <input
+          type="hidden"
+          name="workflowTriggers"
+          value={serializeWorkflowTriggers(triggers)}
+        />
+      ) : null}
     </div>
   );
 }

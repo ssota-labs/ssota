@@ -187,12 +187,17 @@ function appendStepsSection(lines: string[], workflow: WireWorkflow) {
         );
       }
     }
+    if (step.referenceIds.length) {
+      lines.push(`- references: ${step.referenceIds.join(", ")} (fetch when needed)`);
+    }
     if (step.gate?.required) {
       lines.push("- human gate required before continuing");
     }
     if (step.output) lines.push(`- output: ${step.output}`);
     if (step.routeToWorkflowKey) {
-      lines.push(`- route to workflow: ${step.routeToWorkflowKey}`);
+      lines.push(
+        `- route to workflow (progressive): ${step.routeToWorkflowKey} — call get_workflow when needed`,
+      );
     }
     lines.push("");
   });
@@ -228,9 +233,16 @@ function appendReferencesSection(lines: string[], workflow: WireWorkflow) {
     if (reference.kind === "inline" && reference.body) {
       lines.push(reference.body);
     } else if (reference.kind === "url" && reference.url) {
-      lines.push(`Fetch: ${reference.url}`);
+      const sourceHint = reference.source
+        ? ` via ${reference.source} MCP`
+        : "";
+      lines.push(`Fetch when needed${sourceHint}: ${reference.url}`);
+    } else if (reference.kind === "url") {
+      lines.push("Fetch when needed: (URL not set)");
     } else if (reference.kind === "workflow" && reference.workflowKey) {
-      lines.push(`Follow workflow: ${reference.workflowKey}`);
+      lines.push(
+        `Follow workflow (progressive): ${reference.workflowKey} — call get_workflow when needed`,
+      );
     }
     lines.push("");
   }
@@ -242,7 +254,7 @@ function appendRoutesSection(lines: string[], workflow: WireWorkflow) {
   for (const route of workflow.routes) {
     const label = route.label ?? route.id;
     lines.push(
-      `- ${label} → ${route.targetWorkflowKey}${route.conditionId ? ` (when ${route.conditionId})` : ""}`,
+      `- ${label} → ${route.targetWorkflowKey} (progressive — call get_workflow when needed)${route.conditionId ? ` when ${route.conditionId}` : ""}`,
     );
   }
   lines.push("");

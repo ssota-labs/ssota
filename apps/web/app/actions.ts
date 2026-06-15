@@ -20,6 +20,7 @@ import {
   UpdateNodePropertySchemaInputSchema,
   UpdatePropertyPermissionInputSchema,
   WorkflowTriggerEventSchema,
+  WorkflowDefinitionSchema,
   createManualWorkflowTrigger,
   normalizeWorkflowDefinition,
   deriveApplicableNodeTypes,
@@ -484,6 +485,46 @@ export async function updateWorkflowAction(input: Record<string, unknown>) {
     "/studio/workflows",
     "/workflow",
   ], projectId);
+}
+
+const WorkflowBuilderPatchSchema = WorkflowDefinitionSchema.pick({
+  steps: true,
+  conditions: true,
+  references: true,
+  routes: true,
+  output: true,
+  gates: true,
+  trigger: true,
+  context: true,
+});
+
+export async function saveWorkflowBuilderFormAction(formData: FormData): Promise<void> {
+  const projectId = await requireProjectId(formData);
+  const workflowId = String(formData.get("workflowId") ?? "").trim();
+  const orgSlug = String(formData.get("orgSlug") ?? "").trim();
+  const projectSlug = String(formData.get("projectSlug") ?? "").trim();
+  const workflowSlug = String(formData.get("workflowSlug") ?? "").trim();
+  if (!workflowId) throw new Error("workflowId required");
+
+  const rawPatch = parseJsonValue(formData.get("workflowSpec"));
+  const patch = WorkflowBuilderPatchSchema.parse(rawPatch);
+
+  const result = await updateWorkflowAction({
+    projectId,
+    workflowId,
+    patch,
+  });
+
+  if (result.status === "committed") {
+    const params = new URLSearchParams({
+      workflow: workflowSlug || workflowId,
+    });
+    redirect(
+      orgSlug && projectSlug
+        ? projectPath({ orgSlug, projectSlug }, `workflow?${params.toString()}`)
+        : `${projectPath(DEFAULT_PROJECT, "workflow")}?${params.toString()}`,
+    );
+  }
 }
 
 export async function attachWorkflowRunbookFormAction(formData: FormData) {

@@ -103,4 +103,53 @@ describe("renderWorkflowText", () => {
     expect(pkg.workflow.steps[0]?.actions[0]?.actionType).toBe("create_node");
     expect(pkg.renderedText).toContain("## Steps");
   });
+
+  it("renders progressive disclosure hints for references and routes", () => {
+    const workflowWithDisclosure: Workflow = {
+      ...sampleWorkflow,
+      spec: {
+        ...sampleWorkflow.spec,
+        steps: [
+          {
+            id: "execute",
+            title: "Run",
+            mode: "agentic",
+            actions: [],
+            referenceIds: ["brand_guide"],
+          },
+        ],
+        references: [
+          {
+            id: "brand_guide",
+            title: "Brand guide",
+            kind: "url",
+            url: "https://notion.so/guide",
+            source: "notion",
+          },
+          {
+            id: "sub_flow",
+            title: "Sub workflow",
+            kind: "workflow",
+            workflowKey: "sub_workflow",
+          },
+        ],
+        routes: [
+          {
+            id: "handoff",
+            label: "Escalate",
+            targetWorkflowKey: "escalation_flow",
+            conditionId: "needs_review",
+          },
+        ],
+      },
+    };
+
+    const { workflow } = buildWorkflowPackage(workflowWithDisclosure);
+    const text = renderWorkflowText(workflow);
+
+    expect(text).toContain("Fetch when needed via notion MCP");
+    expect(text).toContain("Follow workflow (progressive): sub_workflow");
+    expect(text).toContain("references: brand_guide (fetch when needed)");
+    expect(text).toContain("progressive — call get_workflow when needed");
+  });
 });
