@@ -115,6 +115,7 @@ export function PlanningRoadmapCard({
     >
       <article data-testid="planning-roadmap-detail">
         <CollapsibleTrigger
+          nativeButton={false}
           render={
             <header className="flex w-full cursor-pointer items-start justify-between gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-muted/30" />
           }
