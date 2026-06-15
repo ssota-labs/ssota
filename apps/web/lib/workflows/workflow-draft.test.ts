@@ -185,4 +185,67 @@ describe("workflow-draft", () => {
     expect(next.context.filterGroups).toHaveLength(1);
     expect(next.context.filterGroups[0]?.label).toBe("Documents");
   });
+
+  it("splices a new step into an existing nextStepId chain", () => {
+    const draft = createWorkflowDraft({
+      ...baseWorkflow,
+      steps: [
+        {
+          id: "step_a",
+          title: "Step A",
+          mode: "agentic",
+          actions: [],
+          referenceIds: [],
+          nextStepId: "step_b",
+        },
+        {
+          id: "step_b",
+          title: "Step B",
+          mode: "agentic",
+          actions: [],
+          referenceIds: [],
+        },
+      ],
+      flowEntry: { kind: "step", stepId: "step_a" },
+    });
+
+    const { draft: next } = insertBlockAfter(draft, "step_a", "step");
+    const inserted = next.steps.find(
+      (step) => step.id !== "step_a" && step.id !== "step_b",
+    );
+
+    expect(next.steps.find((step) => step.id === "step_a")?.nextStepId).toBe(
+      inserted?.id,
+    );
+    expect(inserted?.nextStepId).toBe("step_b");
+  });
+
+  it("adds a new route outlet when connecting another branch", () => {
+    const draft = createWorkflowDraft({
+      ...baseWorkflow,
+      routeBlocks: [
+        {
+          id: "route_1",
+          label: "Dispatch",
+          links: [],
+          outlets: [
+            {
+              id: "out_1",
+              label: "default",
+              target: { kind: "step", stepId: "execute" },
+            },
+          ],
+        },
+      ],
+      flowEntry: { kind: "route", routeId: "route_1" },
+    });
+
+    const { draft: next } = insertBlockAfter(draft, "route:route_1", "step");
+    const route = next.routeBlocks[0];
+
+    expect(route?.outlets).toHaveLength(2);
+    expect(route?.outlets[0]?.target?.kind).toBe("step");
+    expect(route?.outlets[1]?.target?.kind).toBe("step");
+    expect(route?.outlets[0]?.target).not.toEqual(route?.outlets[1]?.target);
+  });
 });
