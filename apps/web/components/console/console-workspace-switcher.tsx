@@ -27,14 +27,14 @@ export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
   const { t } = useLocale();
 
   return (
-    <div className="border-b p-2">
+    <div className="flex h-12 shrink-0 items-center border-b px-2">
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 w-full justify-between gap-1 px-2 font-normal"
+              className="h-8 w-full justify-between gap-1 px-2 font-normal"
             />
           }
         >
