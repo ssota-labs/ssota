@@ -8,6 +8,7 @@ import type {
   WorkflowRouteSpec,
   WorkflowStepSpec,
   WorkflowTriggerEvent,
+  ContextSpec,
 } from "@ssota/contracts";
 import type { WorkflowFlowNodeKind } from "@/lib/workflows/workflow-flow-model";
 
@@ -21,6 +22,7 @@ export type WorkflowDraftPatch = {
   output?: WorkflowOutputSpec;
   gates?: WorkflowGateSpec[];
   trigger?: WorkflowDefinition["trigger"];
+  context?: ContextSpec;
 };
 
 function newId(prefix: string): string {
@@ -57,6 +59,7 @@ export function extractBuilderPatch(draft: WorkflowDraft): WorkflowDraftPatch {
     output: draft.output,
     gates: draft.gates,
     trigger: draft.trigger,
+    context: draft.context,
   };
 }
 
@@ -67,6 +70,13 @@ export function updateTriggerEvents(
   return {
     ...draft,
     trigger: { ...draft.trigger, events },
+  };
+}
+
+export function updateContext(draft: WorkflowDraft, context: ContextSpec): WorkflowDraft {
+  return {
+    ...draft,
+    context,
   };
 }
 

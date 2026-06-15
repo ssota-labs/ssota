@@ -9,6 +9,7 @@ import {
   updateCondition,
   updateStep,
   updateTriggerEvents,
+  updateContext,
 } from "./workflow-draft";
 
 const baseWorkflow: Workflow = {
@@ -124,5 +125,23 @@ describe("workflow-draft", () => {
     ]);
     expect(next.trigger.events).toHaveLength(2);
     expect(next.trigger.events[1]?.kind).toBe("schedule");
+  });
+
+  it("updates context spec", () => {
+    const draft = createWorkflowDraft(baseWorkflow);
+    const next = updateContext(draft, {
+      ...draft.context,
+      filterGroups: [
+        {
+          id: "fg1",
+          label: "Documents",
+          nodeType: "Document",
+          combinator: "and",
+          conditions: [],
+        },
+      ],
+    });
+    expect(next.context.filterGroups).toHaveLength(1);
+    expect(next.context.filterGroups[0]?.label).toBe("Documents");
   });
 });

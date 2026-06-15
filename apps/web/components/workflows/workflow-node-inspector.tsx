@@ -28,6 +28,7 @@ import {
   updateRoute,
   updateStep,
   updateTriggerEvents,
+  updateContext,
   type WorkflowDraft,
 } from "@/lib/workflows/workflow-draft";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
@@ -82,14 +83,15 @@ export function WorkflowNodeInspector({
 
   const { data } = selectedNode;
   const canDelete = !["trigger", "context", "output"].includes(data.kind);
-  const isTriggerInspector = data.kind === "trigger";
+  const isSheetStyleInspector =
+    data.kind === "trigger" || data.kind === "context";
 
   return (
     <aside
       data-testid="workflow-inspector"
       className="flex w-96 shrink-0 flex-col border-l bg-background"
     >
-      {!isTriggerInspector ? (
+      {!isSheetStyleInspector ? (
         <div className="border-b px-4 py-3">
           <div className="flex items-center gap-2">
             <p className="min-w-0 flex-1 truncate text-sm font-semibold">
@@ -105,10 +107,10 @@ export function WorkflowNodeInspector({
       <div
         className={cn(
           "min-h-0 flex-1 overflow-auto",
-          isTriggerInspector ? "" : "space-y-4 p-4",
+          isSheetStyleInspector ? "" : "space-y-4 p-4",
         )}
       >
-        {isTriggerInspector ? (
+        {data.kind === "trigger" ? (
           <TriggerInspector draft={draft} onDraftChange={onDraftChange} />
         ) : null}
         {data.kind === "context" ? (
@@ -116,6 +118,7 @@ export function WorkflowNodeInspector({
             draft={draft}
             nodeCatalog={contextNodeCatalog}
             edgeCatalog={contextEdgeCatalog}
+            onDraftChange={onDraftChange}
           />
         ) : null}
         {data.kind === "condition" ? (
@@ -218,18 +221,20 @@ function ContextInspector({
   draft,
   nodeCatalog,
   edgeCatalog,
+  onDraftChange,
 }: {
   draft: WorkflowDraft;
   nodeCatalog: WorkflowNodeCatalogOption[];
   edgeCatalog: WorkflowEdgeCatalogOption[];
+  onDraftChange: (draft: WorkflowDraft) => void;
 }) {
   return (
     <WorkflowContextField
       context={draft.context}
       nodeCatalog={nodeCatalog}
       edgeCatalog={edgeCatalog}
-      readOnly
-      className="px-0 pb-0"
+      onContextChange={(context) => onDraftChange(updateContext(draft, context))}
+      className="px-4 pt-4 pb-6"
     />
   );
 }
