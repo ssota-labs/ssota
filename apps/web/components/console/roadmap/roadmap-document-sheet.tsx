@@ -57,7 +57,7 @@ export function RoadmapDocumentSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto sm:max-w-2xl">
+      <SheetContent size="half" className="overflow-y-auto">
         <SheetHeader>
           {mode === "edit" ? (
             <Input
