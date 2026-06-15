@@ -29,6 +29,7 @@ import {
 } from "@/lib/console/navigation";
 import { projectPath } from "@/lib/console/paths";
 import { ConsoleOrgSwitcher } from "./console-workspace-switcher";
+import { SidebarProfileMenu } from "./sidebar-profile-menu";
 import { useProjectContext } from "./project-context";
 
 type InitiativeOption = {
@@ -39,6 +40,8 @@ type InitiativeOption = {
 type AppSidebarProps = {
   organizations: Organization[];
   initiatives?: InitiativeOption[];
+  userEmail: string;
+  signOutAction: () => Promise<void>;
 };
 
 function isDrilldown(entry: NavEntry): entry is NavDrilldown {
@@ -60,6 +63,8 @@ function isLink(entry: NavEntry): entry is NavLink {
 export function AppSidebar({
   organizations,
   initiatives: _initiatives = [],
+  userEmail,
+  signOutAction,
 }: AppSidebarProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
@@ -246,21 +251,8 @@ export function AppSidebar({
         </nav>
       </ScrollArea>
 
-      <div className="space-y-0.5 border-t p-2">
-        <Link
-          href={projectPath(ctx, "developer/setup")}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        >
-          <NavItemIcon iconKey="developer_setup" className="size-4 shrink-0" />
-          {t("nav.developerSetup")}
-        </Link>
-        <Link
-          href={projectPath(ctx, "settings/general")}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        >
-          <NavItemIcon iconKey="settings" className="size-4 shrink-0" />
-          {t("nav.settings")}
-        </Link>
+      <div className="border-t p-2">
+        <SidebarProfileMenu userEmail={userEmail} signOutAction={signOutAction} />
       </div>
     </aside>
   );

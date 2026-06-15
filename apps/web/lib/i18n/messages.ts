@@ -190,6 +190,7 @@ export const en = {
     languageTitle: "Language",
     languageDescription: "Choose the display language for the console UI.",
     languageSaved: "Language preference saved.",
+    appearanceTitle: "Appearance",
     comingSoon:
       "MCP connection details now live in Developer Setup. Member management will be added in a later milestone.",
     english: "English",
@@ -388,6 +389,7 @@ export const ko = {
     languageTitle: "언어",
     languageDescription: "콘솔 UI에 표시할 언어를 선택합니다.",
     languageSaved: "언어 설정이 저장되었습니다.",
+    appearanceTitle: "화면 모드",
     comingSoon:
       "MCP 연결 정보는 Developer Setup에서 확인합니다. 멤버 관리는 후속 마일스톤에서 추가됩니다.",
     english: "English",
