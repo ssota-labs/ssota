@@ -13,7 +13,7 @@ import { projectPath } from "@/lib/console/paths";
 type WorkflowCatalogExplorerProps = {
   items: WorkflowCatalogItem[];
   newWorkflowTrigger: React.ReactNode;
-  mainHeader?: { title: string; badge?: string } | null;
+  mainHeader?: { title: string; badge?: string; actions?: React.ReactNode } | null;
   mainContent: React.ReactNode | null;
   tabBar?: React.ReactNode;
   emptyHint?: string;
@@ -79,9 +79,14 @@ export function WorkflowCatalogExplorer({
                     {mainHeader.badge}
                   </Badge>
                 ) : null}
-                <h1 className="min-w-0 truncate text-sm font-semibold">
+                <h1 className="min-w-0 flex-1 truncate text-sm font-semibold">
                   {mainHeader?.title ?? selectedItem?.label}
                 </h1>
+                {mainHeader?.actions ? (
+                  <div className="flex shrink-0 items-center gap-1">
+                    {mainHeader.actions}
+                  </div>
+                ) : null}
               </div>
               {tabBar ? (
                 <div className="flex flex-wrap items-center gap-1">{tabBar}</div>
