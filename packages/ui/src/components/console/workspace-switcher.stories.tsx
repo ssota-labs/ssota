@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { Item } from "@/components/ui/item";
+import { CubeIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import {
   WorkspaceSwitcher,
+  WorkspaceSwitcherItem,
   type WorkspaceSwitcherOption,
 } from "@/components/console/workspace-switcher";
 
@@ -33,6 +34,7 @@ export const OrganizationSidebar: Story = {
       <WorkspaceSwitcher
         currentLabel="SSOTA"
         sectionLabel="Organization"
+        icon={<UsersThreeIcon />}
         options={organizations}
         activeOptionId="ssota"
         fullWidth
@@ -47,6 +49,7 @@ export const ProjectTopBar: Story = {
     <WorkspaceSwitcher
       currentLabel="ssota-dev"
       sectionLabel="Project"
+      icon={<CubeIcon />}
       options={projects}
       activeOptionId="ssota-dev"
       side="bottom"
@@ -59,17 +62,15 @@ export const WithCustomItems: Story = {
     <WorkspaceSwitcher
       currentLabel="homepage-agent"
       sectionLabel="Project"
+      icon={<CubeIcon />}
       options={projects}
       activeOptionId="homepage-agent"
       renderOption={(option, { active }) => (
-        <Item
+        <WorkspaceSwitcherItem
           key={option.id}
-          size="sm"
-          variant={active ? "muted" : "default"}
-          className="cursor-pointer rounded-sm px-2"
-        >
-          {option.label}
-        </Item>
+          option={option}
+          active={active}
+        />
       )}
     />
   ),

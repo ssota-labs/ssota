@@ -1,7 +1,10 @@
 export {
   WorkspaceSwitcher,
+  WorkspaceSwitcherItem,
+  initialsFromWorkspaceLabel,
   type WorkspaceSwitcherOption,
   type WorkspaceSwitcherProps,
+  type WorkspaceSwitcherItemProps,
 } from "./workspace-switcher";
 export {
   ConsoleProfileMenu,

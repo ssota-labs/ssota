@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
-import { Item } from "@ssota/ui/components/ui/item";
+import { CubeIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import {
   WorkspaceSwitcher,
+  WorkspaceSwitcherItem,
   type WorkspaceSwitcherOption,
 } from "@ssota/ui/components/console";
-import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { switchConsolePath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
@@ -32,6 +32,7 @@ export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
       <WorkspaceSwitcher
         currentLabel={ctx.org.name}
         sectionLabel={t("nav.organization")}
+        icon={<UsersThreeIcon />}
         options={options}
         activeOptionId={ctx.org.id}
         fullWidth
@@ -41,14 +42,11 @@ export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
           const org = organizations.find((item) => item.id === option.id);
           if (!org) return <></>;
           return (
-            <Item
+            <WorkspaceSwitcherItem
               key={option.id}
-              size="sm"
-              variant={active ? "muted" : "default"}
-              className={cn(
-                "cursor-pointer rounded-sm px-2",
-                active && "bg-sidebar-accent font-medium",
-              )}
+              option={option}
+              active={active}
+              className={active ? "bg-sidebar-accent" : undefined}
               render={
                 <Link
                   href={switchConsolePath(pathname, ctx, {
@@ -58,9 +56,7 @@ export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
                   prefetch
                 />
               }
-            >
-              {option.label}
-            </Item>
+            />
           );
         }}
       />
@@ -86,6 +82,7 @@ export function ConsoleProjectSwitcher({ projects }: ConsoleProjectSwitcherProps
     <WorkspaceSwitcher
       currentLabel={ctx.project.name}
       sectionLabel={t("nav.project")}
+      icon={<CubeIcon />}
       options={options}
       activeOptionId={ctx.project.id}
       side="bottom"
@@ -94,14 +91,10 @@ export function ConsoleProjectSwitcher({ projects }: ConsoleProjectSwitcherProps
         const project = projects.find((item) => item.id === option.id);
         if (!project) return <></>;
         return (
-          <Item
+          <WorkspaceSwitcherItem
             key={option.id}
-            size="sm"
-            variant={active ? "muted" : "default"}
-            className={cn(
-              "cursor-pointer rounded-sm px-2",
-              active && "font-medium",
-            )}
+            option={option}
+            active={active}
             render={
               <Link
                 href={switchConsolePath(pathname, ctx, {
@@ -111,9 +104,7 @@ export function ConsoleProjectSwitcher({ projects }: ConsoleProjectSwitcherProps
                 prefetch
               />
             }
-          >
-            {option.label}
-          </Item>
+          />
         );
       }}
     />
