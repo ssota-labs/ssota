@@ -80,13 +80,11 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
   });
 
-  test("smoke: workflow reviews tab via legacy /gates redirect", async ({ page }) => {
+  test("smoke: project reviews via legacy /gates redirect", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "gates");
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow\\?tab=reviews`),
-    );
-    await expect(page.getByText("Choose a workflow", { exact: true })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/gates`));
+    await expect(page.getByRole("heading", { name: "Reviews" })).toBeVisible();
   });
 
   test("smoke: icon rail exposes primary nav", async ({ page }) => {
