@@ -111,7 +111,7 @@ export function WorkspaceSwitcher({
             variant="ghost"
             size="sm"
             className={cn(
-              "h-8 gap-2 px-2 font-normal",
+              "h-9 gap-2 px-2.5 font-normal",
               fullWidth && "w-full justify-between",
               triggerClassName,
             )}
