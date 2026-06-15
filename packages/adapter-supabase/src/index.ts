@@ -3,6 +3,7 @@ export {
   createConsolePort,
   createOnboardingPort,
   createTaskPort,
+  createGraphPorts,
 } from "./ports/index.js";
 export {
   SMOKE_EMAIL,

@@ -373,7 +373,7 @@ export interface OnboardingPort {
   }): Promise<{ organization: Organization; project: Project }>;
 }
 
-export interface GraphReadPort {
+export interface LegacyGraphReadPort {
   getNode(nodeId: string): Promise<Node | null>;
   queryNodes(params: {
     nodeType?: string;
@@ -433,7 +433,7 @@ export interface ImpactQueuePort {
 
 export interface ActionPorts {
   catalog: CatalogPort;
-  graph: GraphReadPort;
+  graph: LegacyGraphReadPort;
   gate: GatePort;
   commit: ActionCommitPort;
   impactQueue: ImpactQueuePort;

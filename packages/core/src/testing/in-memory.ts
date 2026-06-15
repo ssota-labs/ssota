@@ -14,7 +14,7 @@ import type {
   EdgeCatalogEntry,
   Gate,
   GatePort,
-  GraphReadPort,
+  LegacyGraphReadPort,
   ImpactQueueClaimInput,
   ImpactQueueCreateInput,
   ImpactQueueItem,
@@ -438,7 +438,7 @@ export function createInMemoryPorts(
     },
   };
 
-  const graph: GraphReadPort = {
+  const graph: LegacyGraphReadPort = {
     async getNode(nodeId) {
       const node = state.nodes.get(nodeId);
       return node?.projectId === projectId ? node : null;

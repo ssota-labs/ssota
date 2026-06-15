@@ -586,3 +586,8 @@ export * from "./console-slug.js";
 export * from "./workflow/render-workflow-package.js";
 export * from "./ports/catalog-read-port.js";
 export { createContractsCatalogReadPort } from "./adapters/contracts-catalog-read-port.js";
+export * from "./ports/graph-read-port.js";
+export * from "./ports/graph-write-port.js";
+export * from "./domain/graph-errors.js";
+export * from "./domain/graph-types.js";
+export * from "./use-cases/graph/index.js";

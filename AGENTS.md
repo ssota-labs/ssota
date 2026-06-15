@@ -17,34 +17,38 @@ Active DB/runtime keep set은 `profiles`, `organizations`, `organization_members
 
 ## Architecture — Hexagonal (불변)
 
+이 저장소는 **이중 트랙**이다. Active product는 Console v2.7 그래프 + tasks 워크플로우이고, `archive/generic-runtime/`의 `executeAction`·Gate·Action Log 런타임은 reference-only다.
+
 ```
 apps/
-  web/                  # Next.js 16 — 콘솔 UI (Human Gate·Action Log·카탈로그) + Supabase Auth + MCP OAuth consent
-  mcp/                  # Next.js 16 — 독립 MCP 앱: /api/mcp + OAuth PRM 메타데이터 (Bearer JWT 검증)
+  web/                  # Next.js 16 — Console v2.7 UI + Supabase Auth
+  mcp/                  # Next.js 16 — account/project/task MCP (graph tools는 PR 11+)
 packages/
-  core/                 # 도메인 헥사곤 — 엔티티, 포트(인터페이스), executeAction 유스케이스, 4대 강제
-  adapter-supabase/     # 드리븐 어댑터 — Drizzle 스키마·시드, core 포트 구현
-  contracts/            # Zod 스키마 공유 — 액션 입력, MCP 도구 IO, log_payload
-  config/               # tsconfig/eslint/vitest 공유 설정
-supabase/               # supabase CLI 설정 (config.toml, migrations/)
-e2e/                    # Playwright — 콘솔 + MCP HTTP 플로우
+  core/                 # CatalogReadPort, GraphReadPort, GraphWritePort, graph use-cases (+ legacy executeAction in archive path)
+  adapter-supabase/     # Drizzle 스키마·시드, createGraphPorts / createTaskPort
+  contracts/            # catalog/* (34 node + 16 edge types SSOT), graph/* DTO
+  config/
+supabase/
+e2e/
 ```
 
-### 의존 방향 규칙 (위반 금지)
+**의존 방향:** `apps/* → core ← adapter-supabase`. `packages/core`는 IO 의존 0.
 
-- `packages/core`는 IO 의존이 0이다. Drizzle, supabase-js, next 등을 **절대 import하지 않는다**. 포트 인터페이스만 정의한다.
-- `packages/adapter-supabase`가 core의 포트를 구현한다. apps는 core 유스케이스를 호출하는 드라이빙 어댑터일 뿐 — 비즈니스 로직을 apps에 두지 않는다.
-- 의존 방향: `apps/* → core ← adapter-supabase`. 역방향 import가 보이면 그것은 버그다.
+**Adapter 진입점 (active):** `createGraphPorts(db, { projectId })` → `{ catalog, graphRead, graphWrite }`. Catalog는 contracts in-memory — DB round-trip 0.
 
-## Domain Invariants — 협상 불가
+## Console v2.7 Graph Invariants — 협상 불가 (active)
 
-이 저장소에서 코드를 쓸 때 아래 불변식을 깨는 변경은 어떤 이유로도 금지된다.
+1. **카탈로그 SSOT는 `packages/contracts`다.** `node_type` / `edge_type` 정의를 DB 테이블·Admin UI로 런타임 편집하지 않는다 (v1).
+2. **그래프 쓰기는 `GraphWritePort` (또는 core graph use-case)로만 한다.** apps/MCP에서 Drizzle·`nodes`/`edges` 직접 CRUD export 금지.
+3. **인스턴스는 `project_id`로 격리한다.** edge·update가 다른 project 노드를 참조하면 `PROJECT_MISMATCH`로 거부.
+4. **타입·properties 검증은 API 동작이다.** catalog에 없는 `node_type`·Zod 위반 properties는 커밋 전 reject.
+5. **노드 = 정형 봉투 + 비정형 content** — 런타임이 참조하는 것만 필드로 구조화하고, 의미는 `content`·`properties`가 담당한다.
 
-1. **쓰기는 `executeAction()` 하나로 수렴한다.** 노드/엣지 직접 CRUD 함수를 export하거나 MCP·UI에 노출하지 않는다. 모든 변경은 액션 컨트랙트를 통과한다.
-2. **커밋과 로그는 단일 트랜잭션이다.** core의 `ActionCommitPort.commit({ effects, logEntry, gateDecision? })` 시그니처가 이를 타입 레벨에서 강제한다 — logEntry 없이 effects만 커밋하는 경로를 만들지 않는다. generic UnitOfWork로 트랜잭션 핸들을 core에 노출하지 않는다.
-3. **4대 런타임 강제는 API 동작이다** (프롬프트 규범이 아니다): 카탈로그에 없는 타입 거부 / preconditions 미충족·effects 선언 밖 변경 거부 / executor=Human 계열은 Draft까지만, 승격은 사람의 승인 액션으로만 / 모든 커밋은 Action Log 자동 기록.
-4. **게이트 승인도 액션이다.** `approve_gate` 역시 Action Log에 남는다. 전형 이탈(아키타입 typical values 위반)은 자동으로 gates 큐로 보낸다.
-5. **노드 = 정형 봉투 + 비정형 content.** 런타임(게이트·권한·전이)이 참조하는 것만 필드로 구조화한다. 의미는 content(내장 text 또는 외부 링크)가 담당한다 — 결정 입력을 필드로 깎아내지 않는다.
+**명시적 비범위 (v1):** `executeAction`, Action Catalog DB, Human Gate, `action_log`, MCP `execute_action` — `archive/generic-runtime/` 참고만.
+
+## Legacy Runtime (archived) — reference only
+
+`archive/generic-runtime/`에 보존된 generic runtime의 불변식(`executeAction` 단일 쓰기, ActionCommitPort+log 단일 트랜잭션, 4대 강제, Gate)은 **active product에 적용하지 않는다**. 해당 코드를 복원·의존하지 말 것.
 
 ## Tenancy & Security — `project_id` + 서버사이드 격리
 
@@ -62,17 +66,17 @@ Organization (고객사 A)
 | 레이어 | 담당 | 식별자 |
 |---|---|---|
 | 고객사 A 앱 (자체 Supabase) | 최종 사용자 인증·앱 데이터 RLS | A의 `users.id` (또는 동등한 PK) |
-| SSOTA 그래프 DB | Project별 카탈로그·그래프 인스턴스 저장 | `project_id` (FK → `projects.id`) |
-| SSOTA Console / MCP 서버 | 카탈로그·`executeAction`·쿼리 스코핑 | 요청 context의 `projectId` |
+| SSOTA 그래프 DB | Project별 그래프 인스턴스 (`nodes`, `edges`, `tasks`) | `project_id` |
+| SSOTA Console / MCP | graph read/write·task 조회 스코핑 | 요청 context의 `projectId` |
 
 Console URL `[orgSlug]/[projectSlug]`와 MCP/API 헤더 `X-SSOTA-Project-Id`가 **project 격리의 SSOT**다. Embedder BFF는 org/project slug 또는 project UUID를 MCP에 전달한다.
 
 ### `project_id` 규칙
 
-- **project-scoped** — Node/Edge/Action Catalog, Instruction, Property Catalog, `nodes`, `edges`, `action_log`, `gates`, `action_property_permissions` — 는 **`project_id` 필수**. adapter 포트는 `createActionPorts(db, { projectId })`로 생성하며 모든 쿼리·커밋을 project로 필터한다.
-- **global** — `archetypes` 등 스키마 메타는 org/project와 무관하게 공유한다.
-- **쓰기**: `executeAction` input에 `projectId`가 **필수**다. effect가 참조하는 기존 노드·엣지가 다른 project에 속하면 `PROJECT_MISMATCH`로 거부한다.
-- **조회**: MCP/Console read API는 auth context의 `projectId`로 카탈로그·그래프·로그·게이트를 스코핑한다. 다른 project의 UUID를 header에 넣어도 해당 project 데이터만 반환한다(멤버십 검증은 Console auth 경로).
+- **project-scoped** — `nodes`, `edges`, `tasks`는 **`project_id` 필수**. adapter는 `createGraphPorts(db, { projectId })` / `createTaskPort(db, { projectId })`로 생성하며 모든 쿼리·커밋을 project로 필터한다.
+- **platform-global (code)** — `node_type` / `edge_type` catalog는 **`packages/contracts`** — DB 테이블 없음.
+- **쓰기**: core graph use-case + `GraphWritePort`. cross-project node 참조는 `PROJECT_MISMATCH`.
+- **조회**: `queryNodes` / `traverseEdges`는 auth context의 `projectId`로 스코핑.
 
 ### Tenant property (고객 정의, 플랫폼 미강제)
 
@@ -95,9 +99,9 @@ query_nodes({ nodeType: "HomepageProject" }) + context.projectId → project 내
 
 ### Postgres RLS — 전 테이블 deny-all (의도적)
 
-SSOTA 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그, org/project 등) **전부 RLS를 켠다**. 각 테이블에 `deny_all` 정책(`USING (false)`, `WITH CHECK (false)`)을 둬 **anon/authenticated PostgREST 접근을 차단**한다.
+SSOTA 테이블(`profiles`, `organizations`, `projects`, `organization_memberships`, `tasks`, `nodes`, `edges`) **전부 RLS deny-all**. `action_log`·`gates`·catalog DB 테이블은 active schema에 **없음**.
 
-1. **격리의 SSOT는 `executeAction` + 서버 `projectId` context**다. Property Permission 튜플은 액션 계약 강제(4대 강제 중 계약·권한)이지, Postgres row policy가 아니다.
+1. **격리의 SSOT는 core graph use-case + 서버 `projectId` context**다.
 2. **서버만 DB 접근**: adapter는 `createDb` / `createAdminDb`로 `DATABASE_URL`(postgres superuser 또는 service role 직접 연결)만 사용한다. 이 경로는 RLS를 bypass한다.
 3. **고객사 A의 최종 사용자 RLS**는 A의 자체 Supabase에서 처리한다. SSOTA 그래프 DB는 A의 백엔드·SSOTA 서버만 접근하는 **서버사이드 데이터 플레인**이다.
 
@@ -108,7 +112,7 @@ SSOTA 그래프 테이블(`nodes`, `edges`, `action_log`, 카탈로그, org/proj
                       ↓ (선택) tenant property in action input
               [SSOTA apps/web | apps/mcp — JWT·projectId 검증]
                       ↓
-              [executeAction / queryNodes — core 4대 강제 + project 스코핑]
+              [GraphWritePort / queryNodes — catalog Zod + project 스코핑]
                       ↓
               [adapter-supabase — createAdminDb / DATABASE_URL, RLS bypass]
 ```
@@ -127,7 +131,7 @@ nvm use                      # .nvmrc 기준 Node 버전
 pnpm install                 # 전체 워크스페이스 의존성
 supabase start               # 로컬 Supabase docker 기동
 pnpm db:migrate              # Supabase 마이그레이션 적용 (supabase migration up --local)
-pnpm db:seed                 # 아키타입 2계열 + 코어 카탈로그 + smoke 계정 시드
+pnpm db:seed                 # smoke 계정 + console org/project + graph 인스턴스 시드 (catalog DB 시드 없음)
 ```
 
 - 환경변수는 각 앱의 `.env.example`을 복사해 `.env.local` 작성. 로컬 Supabase 기동 후 `pnpm sync:env`로 `supabase status` 키를 자동 반영한다 (`cloud:prepare`가 세션마다 실행). 시크릿은 절대 커밋하지 않는다.
@@ -208,7 +212,19 @@ agent-browser close
 - [ ] agent-browser 데스크탑 스크린샷으로 사용자/PR에 시각 보고
 - [ ] 커밋·푸시·PR 업데이트 (테스트 전·후 변경 반영)
 
-## MVP 마일스톤 커밋 (에이전트·개발자 공통)
+## Console v2.7 PR 순서 (graph foundation)
+
+Notion [Console v2.7 구현 계획](https://app.notion.com/p/380346dac456810c8a7ef9f7b4cf86de) §7.2 기준. PR 1–3(graph foundation) 완료 후 PR 4+(Console UI) 진행.
+
+| PR | 범위 | 검증 |
+|---|---|---|
+| PR1 | `packages/contracts` catalog + `CatalogReadPort` | `pnpm test --filter @ssota/contracts` `pnpm test --filter @ssota/core` |
+| PR2 | `nodes`/`edges` migration + instance seed | `pnpm test --filter @ssota/adapter-supabase` |
+| PR3 | `GraphReadPort`/`GraphWritePort` + `createGraphPorts` + AGENTS.md | 위 전부 |
+
+**Historical:** Phase 1 MVP 마일스톤 M0–M6(generic runtime)은 `archive/generic-runtime/`로 archive됨.
+
+## MVP 마일스톤 (historical — generic runtime)
 
 Phase 1 구현 계획(`ssota_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0–M6) 하나가 끝날 때마다** git 커밋을 남긴다. 한 PR에 여러 마일스톤을 섞지 않는다.
 
@@ -243,9 +259,9 @@ Phase 1 구현 계획(`ssota_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0�
 
 | 층 | 명령 | 인증 | 대상 |
 |---|---|---|---|
-| Unit | `pnpm test --filter core` | 없음 (in-memory 포트) | 4대 강제의 통과/거부 케이스 전수 |
-| Integration | `pnpm test --filter adapter-supabase` | **smoke 계정** | 트랜잭션 원자성(실패 시 로그도 롤백), permission 튜플 매칭, 시드 무결성 |
-| E2E | `pnpm e2e` | **smoke 계정** | 콘솔(로그인→게이트 승인→로그) + MCP HTTP(Bearer→initialize→execute_action→거부 케이스) |
+| Unit | `pnpm test --filter @ssota/core` | 없음 | catalog Zod, `PROJECT_MISMATCH`, graph use-case 거부 |
+| Integration | `pnpm test --filter @ssota/adapter-supabase` | **smoke 계정** | graph CRUD, RLS deny-all, initiative bundle, seed 무결성 |
+| E2E | `pnpm e2e` | **smoke 계정** | Console onboarding·tasks (graph UI E2E는 PR 4+) |
 
 - **Smoke 계정**: `smoke@ssota.test` — 시드 단계에서 Auth Admin API로 생성되는 전용 테스트 사용자. integration·e2e는 반드시 이 계정으로만 인증한다. 실제 사용자 계정이나 service key 우회로 테스트하지 않는다.
 - Integration·e2e 실행 전 `supabase start`가 떠 있어야 한다. **로컬**에서는 `pnpm e2e:prepare` (= supabase start + migrate + seed). **Cursor Cloud**에서는 세션마다 `pnpm cloud:prepare`로 Docker·Supabase·시드를 한 번에 부트스트랩한다 (`scripts/cloud-bootstrap.sh`). `pnpm e2e` global setup은 smoke 로그인 실패 시 migrate+seed만 자동 재시도한다 (`e2e/global-setup.ts`) — Cloud에서 Docker가 안 떠 있으면 `cloud:prepare`가 필요하다.
@@ -285,7 +301,7 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 
 - TypeScript strict 모드. `any` 금지, 외부 입력은 Zod(`packages/contracts`)로 파싱.
 - Zod 스키마는 `packages/contracts`에 정의하고 core/apps가 공유한다 — 스키마를 앱에 중복 정의하지 않는다.
-- 도메인 용어는 코어 스펙의 명칭을 그대로 쓴다: `executeAction`, `ActionCommitPort`, `gate`, `archetype`, `lifecycle_status` 등. 임의로 동의어를 만들지 않는다.
+- 도메인 용어 (Console v2.7): `CatalogReadPort`, `GraphReadPort`, `GraphWritePort`, `node_type`, `edge_type`, `lifecycle_status`. Legacy: `executeAction`·`gate`는 archive 맥락에서만.
 - 파일 코멘트·문서는 한국어, 식별자는 영어.
 - UI는 `@ssota/ui` (`packages/ui`) shadcn Base UI 컴포넌트 우선. `pnpm dlx shadcn@latest add <component> -y -c apps/web`로 추가. 디자인 규칙은 루트 [DESIGN.md](DESIGN.md) 및 `.cursor/rules/design.mdc` 참조.
 
@@ -301,7 +317,7 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 
 - 제목: `[core|adapter|mcp|web|e2e|infra] 요약`
 - 머지 전 필수: `pnpm lint`, `pnpm typecheck`, `pnpm test` 그린.
-- 도메인 불변식(위 5개)을 건드리는 변경은 PR 설명에 근거를 명시하고 코어 스펙 문서와의 정합성을 확인한다.
+- 도메인 불변식(Console v2.7 Graph Invariants)을 건드리는 변경은 PR 설명에 근거를 명시한다.
 
 ## Additional Notes
 
