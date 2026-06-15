@@ -1,6 +1,7 @@
 import { OverviewHub } from "@/components/console/overview-hub";
 import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
+import { buildWorkflowLensSummary } from "@/lib/graph/loaders/build-workflow-lens";
 import { getRecentGraphActivity } from "@/lib/graph/loaders/get-recent-activity";
 import { queryNodesByType } from "@/lib/graph/graph-deps";
 import { getTaskPort } from "@/lib/ports";
@@ -14,10 +15,11 @@ export default async function OverviewPage({
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
 
-  const [tasks, initiatives, recentActivity] = await Promise.all([
+  const [tasks, initiatives, recentActivity, workflowSummary] = await Promise.all([
     getTaskPort(project.id).queryTasks({ limit: 200 }),
     queryNodesByType(project.id, "initiative"),
     getRecentGraphActivity(project.id),
+    buildWorkflowLensSummary(ctx, project.id),
   ]);
 
   const openTasks = tasks.filter(
@@ -67,6 +69,8 @@ export default async function OverviewPage({
       ]}
       recentActivity={recentActivity}
       nodesBasePath={projectPath(ctx, "nodes")}
+      workflowMapPath={projectPath(ctx, "workflow", "map")}
+      workflowSummary={workflowSummary}
     />
   );
 }

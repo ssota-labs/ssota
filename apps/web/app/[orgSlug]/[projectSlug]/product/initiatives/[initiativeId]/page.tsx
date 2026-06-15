@@ -2,6 +2,7 @@ import { OverviewHub } from "@/components/console/overview-hub";
 import { initiativePath, projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
+import { buildWorkflowLensSummary } from "@/lib/graph/loaders/build-workflow-lens";
 import { getRecentGraphActivity } from "@/lib/graph/loaders/get-recent-activity";
 import { queryInitiativeScopedNodes } from "@/lib/graph/loaders/query-initiative-scoped";
 import { getTaskPort } from "@/lib/ports";
@@ -36,9 +37,12 @@ export default async function InitiativeOverviewPage({
     releaseTitle = release?.title ?? "—";
   }
 
-  const scopedNodes = await queryInitiativeScopedNodes(project.id, initiativeId);
-  const tasks = await getTaskPort(project.id).queryTasks({ limit: 200 });
-  const recentActivity = await getRecentGraphActivity(project.id, 5);
+  const [scopedNodes, tasks, recentActivity, workflowSummary] = await Promise.all([
+    queryInitiativeScopedNodes(project.id, initiativeId),
+    getTaskPort(project.id).queryTasks({ limit: 200 }),
+    getRecentGraphActivity(project.id, 5),
+    buildWorkflowLensSummary(ctx, project.id),
+  ]);
 
   return (
     <OverviewHub
@@ -87,6 +91,8 @@ export default async function InitiativeOverviewPage({
       ]}
       recentActivity={recentActivity}
       nodesBasePath={projectPath(ctx, "nodes")}
+      workflowMapPath={projectPath(ctx, "workflow", "map")}
+      workflowSummary={workflowSummary}
     />
   );
 }

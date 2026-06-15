@@ -658,6 +658,17 @@ function createInMemoryTaskPort(
       const task = state.tasks.get(taskId);
       return task?.projectId === projectId ? task : null;
     },
+    async getTaskByIdempotencyKey(idempotencyKey) {
+      for (const task of state.tasks.values()) {
+        if (
+          task.projectId === projectId &&
+          task.idempotencyKey === idempotencyKey
+        ) {
+          return task;
+        }
+      }
+      return null;
+    },
     async createTask(input) {
       const createdAt = new Date();
       const task: Task = {

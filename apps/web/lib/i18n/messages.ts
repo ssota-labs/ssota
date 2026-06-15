@@ -4,6 +4,7 @@ export const en = {
     signOut: "Sign out",
     or: "or",
     save: "Save",
+    cancel: "Cancel",
     language: "Language",
   },
   auth: {
@@ -211,12 +212,89 @@ export const en = {
     languageTitle: "Language",
     languageDescription: "Choose the display language for the console UI.",
     languageSaved: "Language preference saved.",
+    appearanceTitle: "Appearance",
     comingSoon:
       "MCP connection details now live in Developer Setup. Member management will be added in a later milestone.",
     english: "English",
     korean: "Korean",
   },
+  goals: {
+    emptyTitle: "Set your first objective",
+    emptyDescription:
+      "Connect roadmap context to objectives, key results, and KPIs in one command center.",
+    createFirst: "Create first objective",
+    newObjective: "New objective",
+    defaultObjectiveTitle: "New objective",
+    viewRoadmap: "View roadmap",
+    roadmapContext: "Roadmap",
+    fromRoadmap: "From roadmap",
+    overallProgress: "Overall progress",
+    keyResults: "Key results",
+    noKeyResults: "No key results linked yet.",
+    unlinkedKeyResults: "Unlinked key results",
+    kpiPulse: "KPI pulse",
+    toggleKpiTable: "Toggle table",
+    stats: {
+      objectives: "Objectives",
+      keyResults: "Key results",
+      kpis: "KPIs",
+      atRisk: "At risk",
+      needsAttention: "Needs attention",
+    },
+    hero: {
+      okrHealth: "OKR health",
+      objectivesAchieved: "objectives achieved",
+      periodProgress: "Period progress",
+      keyResultsOnTrack: "key results on track",
+    },
+    filters: {
+      allPeriods: "All periods",
+      search: "Search objectives and key results…",
+    },
+    views: {
+      tree: "OKR tree",
+      kpi: "KPI table",
+    },
+    table: {
+      kpi: "KPI",
+      current: "Current",
+      baseline: "Baseline",
+      healthyTarget: "Healthy target",
+      delta: "Δ",
+      cadence: "Cadence",
+    },
+    wizard: {
+      title: "Create objective",
+      objectiveTitle: "Objective title",
+      period: "Period",
+      firstKeyResult: "First key result (optional)",
+      keyResultPlaceholder: "e.g. Ship v1 to 5 pilot teams",
+      step1: "Define an objective tied to your roadmap period.",
+      step2: "Add measurable key results with baseline and target.",
+      step3: "Link KPIs for live metrics and snapshots.",
+      step4: "Track health and progress from this dashboard.",
+    },
+    health: {
+      draft: "Draft",
+      on_track: "On track",
+      at_risk: "At risk",
+      achieved: "Achieved",
+      partial: "Partial",
+      missed: "Missed",
+      baseline_pending: "Baseline pending",
+    },
+  },
 } as const;
+
+type DeepStringify<T> = {
+  [K in keyof T]: T[K] extends string
+    ? string
+    : T[K] extends object
+      ? DeepStringify<T[K]>
+      : never;
+};
+
+export type Messages = DeepStringify<typeof en>;
 
 export const ko = {
   common: {
@@ -224,6 +302,7 @@ export const ko = {
     signOut: "로그아웃",
     or: "또는",
     save: "저장",
+    cancel: "취소",
     language: "언어",
   },
   auth: {
@@ -430,21 +509,76 @@ export const ko = {
     languageTitle: "언어",
     languageDescription: "콘솔 UI에 표시할 언어를 선택합니다.",
     languageSaved: "언어 설정이 저장되었습니다.",
+    appearanceTitle: "화면 모드",
     comingSoon:
       "MCP 연결 정보는 Developer Setup에서 확인합니다. 멤버 관리는 후속 마일스톤에서 추가됩니다.",
     english: "English",
     korean: "한국어",
   },
-} satisfies {
-  [K in keyof typeof en]: {
-    [P in keyof (typeof en)[K]]: string;
-  };
-};
-
-type Stringify<T> = {
-  [K in keyof T]: T[K] extends string ? string : never;
-};
-
-export type Messages = {
-  [K in keyof typeof en]: Stringify<(typeof en)[K]>;
-};
+  goals: {
+    emptyTitle: "첫 목표를 설정하세요",
+    emptyDescription:
+      "로드맵 맥락과 목표·핵심 결과·KPI를 한 화면에서 연결합니다.",
+    createFirst: "첫 목표 만들기",
+    newObjective: "새 목표",
+    defaultObjectiveTitle: "새 목표",
+    viewRoadmap: "로드맵 보기",
+    roadmapContext: "로드맵",
+    fromRoadmap: "로드맵",
+    overallProgress: "전체 진행률",
+    keyResults: "핵심 결과",
+    noKeyResults: "연결된 핵심 결과가 없습니다.",
+    unlinkedKeyResults: "연결되지 않은 핵심 결과",
+    kpiPulse: "KPI 현황",
+    toggleKpiTable: "표 접기/펼치기",
+    stats: {
+      objectives: "목표",
+      keyResults: "핵심 결과",
+      kpis: "KPI",
+      atRisk: "위험",
+      needsAttention: "주의 필요",
+    },
+    hero: {
+      okrHealth: "OKR 건강도",
+      objectivesAchieved: "목표 달성",
+      periodProgress: "기간 진행률",
+      keyResultsOnTrack: "핵심 결과 순항",
+    },
+    filters: {
+      allPeriods: "전체 기간",
+      search: "목표·핵심 결과 검색…",
+    },
+    views: {
+      tree: "OKR 트리",
+      kpi: "KPI 표",
+    },
+    table: {
+      kpi: "KPI",
+      current: "현재",
+      baseline: "기준선",
+      healthyTarget: "건강 목표",
+      delta: "Δ",
+      cadence: "주기",
+    },
+    wizard: {
+      title: "목표 만들기",
+      objectiveTitle: "목표 제목",
+      period: "기간",
+      firstKeyResult: "첫 핵심 결과 (선택)",
+      keyResultPlaceholder: "예: 파일럿 5팀에 v1 배포",
+      step1: "로드맵 기간에 맞는 목표를 정의합니다.",
+      step2: "기준선과 목표가 있는 핵심 결과를 추가합니다.",
+      step3: "실시간 지표와 스냅샷을 위해 KPI를 연결합니다.",
+      step4: "이 대시보드에서 건강도와 진행률을 추적합니다.",
+    },
+    health: {
+      draft: "초안",
+      on_track: "순항",
+      at_risk: "위험",
+      achieved: "달성",
+      partial: "부분 달성",
+      missed: "미달",
+      baseline_pending: "기준선 대기",
+    },
+  },
+} satisfies Messages;

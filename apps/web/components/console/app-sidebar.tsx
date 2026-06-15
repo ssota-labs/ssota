@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
-import { useEffect, useMemo, useState } from "react";
+import { startTransition, useMemo, useState } from "react";
 import type { Organization } from "@ssota/core";
 import { cn } from "@ssota/ui/lib/utils";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
@@ -12,6 +12,7 @@ import { NavItemIcon } from "@/lib/console/nav-icons";
 import {
   EXECUTIVE_L1,
   getActiveDomain,
+  getDomainDefaultHref,
   getSidebarMode,
   INITIATIVE_L2_NAV,
   initiativePath,
@@ -22,6 +23,7 @@ import {
   RESEARCH_L1,
   resolveNavHref,
   type NavDrilldown,
+  type NavDomain,
   type NavEntry,
   type NavGroup,
   type NavLink,
@@ -29,6 +31,7 @@ import {
 } from "@/lib/console/navigation";
 import { projectPath } from "@/lib/console/paths";
 import { ConsoleOrgSwitcher } from "./console-workspace-switcher";
+import { SidebarProfileMenu } from "./sidebar-profile-menu";
 import { useProjectContext } from "./project-context";
 
 type InitiativeOption = {
@@ -39,6 +42,8 @@ type InitiativeOption = {
 type AppSidebarProps = {
   organizations: Organization[];
   initiatives?: InitiativeOption[];
+  userEmail: string;
+  signOutAction: () => Promise<void>;
 };
 
 function isDrilldown(entry: NavEntry): entry is NavDrilldown {
@@ -60,32 +65,23 @@ function isLink(entry: NavEntry): entry is NavLink {
 export function AppSidebar({
   organizations,
   initiatives: _initiatives = [],
+  userEmail,
+  signOutAction,
 }: AppSidebarProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = useLocale();
   const projectBase = projectPath(ctx);
 
-  const [manualDrill, setManualDrill] = useState<
-    "executive" | "research" | "product" | null
-  >(null);
   const [expandedGroups, setExpandedGroups] = useState({
     product_dev: false,
     product_design: false,
   });
 
-  const urlMode = getSidebarMode(pathname, projectBase);
-  const urlDomain = getActiveDomain(pathname, projectBase);
+  const mode = getSidebarMode(pathname, projectBase);
+  const activeDomain = getActiveDomain(pathname, projectBase);
   const initiativeRoute = parseInitiativeRoute(pathname, projectBase);
-
-  const mode = urlMode !== "l0" ? urlMode : manualDrill ? "l1" : "l0";
-  const activeDomain = urlDomain ?? manualDrill;
-
-  useEffect(() => {
-    if (urlMode !== "l0") {
-      setManualDrill(null);
-    }
-  }, [urlMode, pathname]);
 
   const l1Children = useMemo(() => {
     if (activeDomain === "executive") return EXECUTIVE_L1;
@@ -102,12 +98,25 @@ export function AppSidebar({
     return t("nav.backToDomain");
   }, [activeDomain, mode, t]);
 
+  function handleDrilldown(domain: NavDomain) {
+    if (activeDomain === domain) return;
+    const href = resolveNavHref(ctx, getDomainDefaultHref(domain));
+    startTransition(() => {
+      router.push(href);
+    });
+  }
+
   function handleBack() {
     if (mode === "l2") {
       window.location.href = resolveNavHref(ctx, "product/initiatives");
       return;
     }
-    setManualDrill(null);
+    if (mode === "l1") {
+      startTransition(() => {
+        router.push(resolveNavHref(ctx, "overview"));
+      });
+      return;
+    }
   }
 
   function renderNavLink(item: NavLink, initiativeId?: string) {
@@ -185,6 +194,7 @@ export function AppSidebar({
       <button
         type="button"
         onClick={handleBack}
+        data-sidebar-back=""
         className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
       >
         <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
@@ -193,74 +203,115 @@ export function AppSidebar({
     );
   }
 
+  function renderL0Nav() {
+    return L0_NAV.map((entry, index) => {
+      if (entry.type === "separator") {
+        return <div key={`l0-sep-${index}`} className="my-2 border-t" />;
+      }
+      if (isLink(entry)) {
+        return renderNavLink(entry);
+      }
+      if (isDrilldown(entry)) {
+        return (
+          <button
+            key={entry.key}
+            type="button"
+            onClick={() => handleDrilldown(entry.domain)}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-sidebar-accent"
+          >
+            <NavItemIcon
+              iconKey={entry.key}
+              className="size-4 shrink-0 text-muted-foreground"
+            />
+            <span className="min-w-0 flex-1">{t(entry.labelKey)}</span>
+            <CaretRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
+          </button>
+        );
+      }
+      return null;
+    });
+  }
+
+  function renderL1Nav() {
+    return (
+      <>
+        {renderBackButton()}
+        {l1Children.map((entry) => renderL1Entry(entry))}
+      </>
+    );
+  }
+
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r bg-sidebar">
       <ConsoleOrgSwitcher organizations={organizations} />
 
       <ScrollArea className="min-h-0 flex-1">
-        <nav aria-label={t("nav.primary")} className="space-y-1 p-2">
-          {mode === "l0"
-            ? L0_NAV.map((entry, index) => {
-                if (entry.type === "separator") {
-                  return <div key={`l0-sep-${index}`} className="my-2 border-t" />;
-                }
-                if (isLink(entry)) {
-                  return renderNavLink(entry);
-                }
-                if (isDrilldown(entry)) {
-                  return (
-                    <button
-                      key={entry.key}
-                      type="button"
-                      onClick={() => setManualDrill(entry.domain)}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-sidebar-accent"
-                    >
-                      <NavItemIcon
-                        iconKey={entry.key}
-                        className="size-4 shrink-0 text-muted-foreground"
-                      />
-                      <span className="min-w-0 flex-1">{t(entry.labelKey)}</span>
-                      <CaretRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                    </button>
-                  );
-                }
-                return null;
-              })
-            : null}
-
-          {mode === "l1" ? (
-            <>
-              {renderBackButton()}
-              {l1Children.map((entry) => renderL1Entry(entry))}
-            </>
-          ) : null}
-
+        <nav aria-label={t("nav.primary")} className="p-2">
           {mode === "l2" && initiativeRoute ? (
-            <>
+            <div className="space-y-1">
               {renderBackButton()}
               {INITIATIVE_L2_NAV.map((entry) =>
                 renderL2Entry(entry, initiativeRoute.initiativeId),
               )}
-            </>
-          ) : null}
+            </div>
+          ) : (
+            <div className="sidebar-nav-slider overflow-hidden">
+              <div
+                className={cn(
+                  "sidebar-nav-slider-track flex w-[200%] transition-transform duration-200 ease-out",
+                  mode === "l1" && "-translate-x-1/2",
+                )}
+              >
+                <div
+                  className={cn(
+                    "w-1/2 shrink-0 space-y-1",
+                    mode === "l1" && "pointer-events-none",
+                  )}
+                  aria-hidden={mode === "l1"}
+                >
+                  {renderL0Nav()}
+                </div>
+                <div
+                  className={cn(
+                    "w-1/2 shrink-0 space-y-1",
+                    mode === "l0" && "pointer-events-none",
+                  )}
+                  aria-hidden={mode === "l0"}
+                >
+                  {renderL1Nav()}
+                </div>
+              </div>
+            </div>
+          )}
         </nav>
       </ScrollArea>
 
       <div className="space-y-0.5 border-t p-2">
         <Link
           href={projectPath(ctx, "developer/setup")}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          prefetch
+          className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            pathname.includes("/developer/") &&
+              "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+          )}
         >
           <NavItemIcon iconKey="developer_setup" className="size-4 shrink-0" />
           {t("nav.developerSetup")}
         </Link>
         <Link
           href={projectPath(ctx, "settings/general")}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+          prefetch
+          className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            pathname.includes("/settings/") &&
+              "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+          )}
         >
           <NavItemIcon iconKey="settings" className="size-4 shrink-0" />
           {t("nav.settings")}
         </Link>
+        <SidebarProfileMenu userEmail={userEmail} signOutAction={signOutAction} />
       </div>
     </aside>
   );

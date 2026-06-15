@@ -20,13 +20,12 @@ export const EVERGREEN_DESIGN_SINGLETON_TYPES = [
   "page_wireframe",
 ] as const satisfies readonly NodeType[];
 
-/** Executive planning singletons. */
-export const EXECUTIVE_SINGLETON_TYPES = [
-  "objective",
-  "kpi",
-] as const satisfies readonly NodeType[];
+/** @deprecated OKR nodes are multi-instance; use seedDemoOkr instead. */
+export const EXECUTIVE_SINGLETON_TYPES = [] as const satisfies readonly NodeType[];
 
 const GRAPH_SEED_IDEMPOTENCY_PREFIX = "seed:graph:";
+const DEMO_OKR_SEED_TITLE = "Demo: First Release completion loop";
+const DEMO_OKR_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}demo_okr`;
 
 export async function seedGraphInstances(
   db: ReturnType<typeof createDb>["db"],
@@ -147,6 +146,8 @@ export async function seedGraphInstances(
     await seedInitiativeScopedNodes(db, projectId, bundleExisting[0].id);
   }
 
+  await seedDemoOkr(db, projectId);
+
   return { hypothesisId };
 }
 
@@ -174,6 +175,179 @@ async function migrateLegacyRoadmapSingletons(
       continue;
     }
     await db.delete(schema.nodes).where(eq(schema.nodes.id, row.id));
+  }
+}
+
+async function seedDemoOkr(
+  db: ReturnType<typeof createDb>["db"],
+  projectId: string,
+) {
+  const existingObjective = await db
+    .select({ id: schema.nodes.id })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.nodeType, "objective"),
+        eq(schema.nodes.title, DEMO_OKR_SEED_TITLE),
+      ),
+    )
+    .limit(1);
+
+  if (existingObjective.length > 0) return;
+
+  const [roadmap] = await db
+    .select({ id: schema.nodes.id })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.nodeType, "roadmap"),
+      ),
+    )
+    .limit(1);
+
+  const [objective] = await db
+    .insert(schema.nodes)
+    .values({
+      projectId,
+      nodeType: "objective",
+      title: DEMO_OKR_SEED_TITLE,
+      properties: {
+        period: "Q2 2026",
+        priority: "high",
+        status: "on_track",
+        seed: DEMO_OKR_SEED_KEY,
+      },
+      lifecycleStatus: "Active",
+    })
+    .returning({ id: schema.nodes.id });
+
+  if (!objective?.id) return;
+
+  if (roadmap?.id) {
+    await db.insert(schema.edges).values({
+      projectId,
+      edgeType: "informs",
+      sourceNodeId: roadmap.id,
+      targetNodeId: objective.id,
+      properties: { seed: `${DEMO_OKR_SEED_KEY}:informs` },
+    });
+  }
+
+  const [kr1] = await db
+    .insert(schema.nodes)
+    .values({
+      projectId,
+      nodeType: "key_result",
+      title: "Pilot workspaces complete first Release with retrospective",
+      properties: {
+        baseline: 0,
+        target: 8,
+        current_value: 6,
+        unit: "workspaces",
+        direction: "increase",
+        status: "on_track",
+        seed: `${DEMO_OKR_SEED_KEY}:kr1`,
+      },
+      lifecycleStatus: "Active",
+    })
+    .returning({ id: schema.nodes.id });
+
+  const [kr2] = await db
+    .insert(schema.nodes)
+    .values({
+      projectId,
+      nodeType: "key_result",
+      title: "Onboarding completion rate improvement",
+      properties: {
+        baseline: 40,
+        target: 70,
+        current_value: 52,
+        unit: "%",
+        direction: "increase",
+        status: "on_track",
+        seed: `${DEMO_OKR_SEED_KEY}:kr2`,
+      },
+      lifecycleStatus: "Active",
+    })
+    .returning({ id: schema.nodes.id });
+
+  const [kpi] = await db
+    .insert(schema.nodes)
+    .values({
+      projectId,
+      nodeType: "kpi",
+      title: "Workspace creation rate",
+      properties: {
+        baseline: 10,
+        target: 25,
+        unit: "%",
+        cadence: "weekly",
+        direction: "increase",
+        status: "active",
+        seed: `${DEMO_OKR_SEED_KEY}:kpi`,
+      },
+      lifecycleStatus: "Active",
+    })
+    .returning({ id: schema.nodes.id });
+
+  for (const kr of [kr1, kr2]) {
+    if (!kr?.id) continue;
+    await db.insert(schema.edges).values({
+      projectId,
+      edgeType: "contributes_to",
+      sourceNodeId: kr.id,
+      targetNodeId: objective.id,
+      properties: { seed: `${DEMO_OKR_SEED_KEY}:contributes_to` },
+    });
+  }
+
+  if (kr1?.id && kpi?.id) {
+    await db.insert(schema.edges).values({
+      projectId,
+      edgeType: "measured_by",
+      sourceNodeId: kr1.id,
+      targetNodeId: kpi.id,
+      properties: { seed: `${DEMO_OKR_SEED_KEY}:measured_by` },
+    });
+  }
+
+  if (kpi?.id) {
+    await db.insert(schema.edges).values({
+      projectId,
+      edgeType: "tracked_by",
+      sourceNodeId: objective.id,
+      targetNodeId: kpi.id,
+      properties: { seed: `${DEMO_OKR_SEED_KEY}:tracked_by` },
+    });
+
+    const [snapshot] = await db
+      .insert(schema.nodes)
+      .values({
+        projectId,
+        nodeType: "metric_snapshot",
+        title: "Workspace creation rate baseline",
+        properties: {
+          value: 12,
+          captured_at: new Date().toISOString(),
+          snapshot_kind: "baseline",
+          source: "manual",
+          seed: `${DEMO_OKR_SEED_KEY}:snapshot`,
+        },
+        lifecycleStatus: "Active",
+      })
+      .returning({ id: schema.nodes.id });
+
+    if (snapshot?.id) {
+      await db.insert(schema.edges).values({
+        projectId,
+        edgeType: "snapshotted_from",
+        sourceNodeId: snapshot.id,
+        targetNodeId: kpi.id,
+        properties: { seed: `${DEMO_OKR_SEED_KEY}:snapshotted_from` },
+      });
+    }
   }
 }
 

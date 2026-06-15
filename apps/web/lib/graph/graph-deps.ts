@@ -1,4 +1,4 @@
-import { createNode, createInitiativeBundle, updateNode } from "@ssota/core";
+import { createNode, createInitiativeBundle, updateNode, createEdge } from "@ssota/core";
 import type { NodeType } from "@ssota/contracts";
 import { getGraphPorts } from "@/lib/ports";
 
@@ -12,4 +12,4 @@ export async function queryNodesByType(projectId: string, nodeType: NodeType) {
   return graphRead.queryNodes({ projectId, nodeType, limit: 200 });
 }
 
-export { createNode, createInitiativeBundle, updateNode };
+export { createNode, createInitiativeBundle, updateNode, createEdge };

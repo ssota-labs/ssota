@@ -108,6 +108,9 @@ export const tasks = pgTable(
     executorType: executorTypeEnum("executor_type").notNull().default("Agent"),
     assignee: text("assignee"),
     subjectId: text("subject_id"),
+    targetNodeId: uuid("target_node_id").references(() => nodes.id, {
+      onDelete: "set null",
+    }),
     parentTaskId: uuid("parent_task_id"),
     context: jsonb("context").notNull().default({}).$type<Record<string, unknown>>(),
     acceptanceCriteria: jsonb("acceptance_criteria")
@@ -139,6 +142,10 @@ export const tasks = pgTable(
     projectSubjectIdIdx: index("tasks_project_subject_id_idx").on(
       table.projectId,
       table.subjectId,
+    ),
+    projectTargetNodeIdx: index("tasks_project_target_node_idx").on(
+      table.projectId,
+      table.targetNodeId,
     ),
   }),
 );
