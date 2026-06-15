@@ -86,9 +86,10 @@ export function ConsoleProfileMenu({
         </span>
       </PopoverTrigger>
       <PopoverContent
-        side="top"
+        side="right"
         align="end"
-        sideOffset={6}
+        sideOffset={8}
+        alignOffset={0}
         className="cn-menu-translucent w-60 gap-0 overflow-hidden p-0"
       >
         <div className="px-2.5 py-2">
