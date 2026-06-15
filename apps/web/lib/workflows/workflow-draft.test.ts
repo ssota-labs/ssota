@@ -158,6 +158,87 @@ describe("workflow-draft", () => {
     expect(next.routeBlocks).toHaveLength(0);
   });
 
+  it("removes the outlet when a route-connected workflow block is deleted", () => {
+    const draft = createWorkflowDraft({
+      ...baseWorkflow,
+      routeBlocks: [
+        {
+          id: "route_1",
+          label: "Dispatch",
+          links: [],
+          outlets: [
+            {
+              id: "out_1",
+              label: "default",
+              target: { kind: "workflow", workflowBlockId: "wf_1" },
+            },
+          ],
+        },
+      ],
+      workflowBlocks: [
+        { id: "wf_1", label: "Handoff", workflowKey: "target_workflow" },
+      ],
+      flowEntry: { kind: "route", routeId: "route_1" },
+    });
+
+    const next = removeBlock(draft, "workflow:wf_1");
+
+    expect(next.workflowBlocks).toHaveLength(0);
+    expect(next.routeBlocks[0]?.outlets).toHaveLength(0);
+  });
+
+  it("removes only the outlet targeting a deleted step", () => {
+    const draft = createWorkflowDraft({
+      ...baseWorkflow,
+      steps: [
+        {
+          id: "step_a",
+          title: "Branch A",
+          mode: "agentic",
+          actions: [],
+          referenceIds: [],
+        },
+        {
+          id: "step_b",
+          title: "Branch B",
+          mode: "agentic",
+          actions: [],
+          referenceIds: [],
+        },
+      ],
+      routeBlocks: [
+        {
+          id: "route_1",
+          label: "Dispatch",
+          links: [],
+          outlets: [
+            {
+              id: "out_1",
+              label: "A",
+              target: { kind: "step", stepId: "step_a" },
+            },
+            {
+              id: "out_2",
+              label: "B",
+              target: { kind: "step", stepId: "step_b" },
+            },
+          ],
+        },
+      ],
+      flowEntry: { kind: "route", routeId: "route_1" },
+    });
+
+    const next = removeBlock(draft, "step_a");
+
+    expect(next.steps.map((step) => step.id)).toEqual(["step_b"]);
+    expect(next.routeBlocks[0]?.outlets).toHaveLength(1);
+    expect(next.routeBlocks[0]?.outlets[0]?.label).toBe("B");
+    expect(next.routeBlocks[0]?.outlets[0]?.target).toEqual({
+      kind: "step",
+      stepId: "step_b",
+    });
+  });
+
   it("detects dirty state from workflowRole", () => {
     const draft = createWorkflowDraft(baseWorkflow);
     expect(isWorkflowDraftDirty(draft, baseWorkflow)).toBe(false);

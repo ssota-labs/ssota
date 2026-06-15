@@ -486,7 +486,7 @@ export function insertBlockAfter(
 
 const PROTECTED_STEP_IDS = new Set(["execute"]);
 
-function clearOutletTargets(
+function removeOutletsWithTarget(
   draft: WorkflowDraft,
   predicate: (target: RouteOutletTarget) => boolean,
 ): WorkflowDraft {
@@ -494,10 +494,9 @@ function clearOutletTargets(
     ...draft,
     routeBlocks: draft.routeBlocks.map((route) => ({
       ...route,
-      outlets: route.outlets.map((outlet) => ({
-        ...outlet,
-        target: outlet.target && predicate(outlet.target) ? null : outlet.target,
-      })),
+      outlets: route.outlets.filter(
+        (outlet) => !(outlet.target && predicate(outlet.target)),
+      ),
     })),
   };
 }
@@ -511,7 +510,7 @@ export function removeBlock(draft: WorkflowDraft, nodeId: string): WorkflowDraft
   if (routeId) {
     const nextBlocks = draft.routeBlocks.filter((route) => route.id !== routeId);
     return {
-      ...clearOutletTargets(draft, (target) =>
+      ...removeOutletsWithTarget(draft, (target) =>
         target.kind === "route" && target.routeId === routeId,
       ),
       routeBlocks: nextBlocks,
@@ -529,7 +528,7 @@ export function removeBlock(draft: WorkflowDraft, nodeId: string): WorkflowDraft
   const workflowBlockId = parseWorkflowBlockNodeId(nodeId);
   if (workflowBlockId) {
     return {
-      ...clearOutletTargets(draft, (target) =>
+      ...removeOutletsWithTarget(draft, (target) =>
         target.kind === "workflow" && target.workflowBlockId === workflowBlockId,
       ),
       workflowBlocks: draft.workflowBlocks.filter(
@@ -543,7 +542,7 @@ export function removeBlock(draft: WorkflowDraft, nodeId: string): WorkflowDraft
   }
 
   const remainingSteps = draft.steps.filter((step) => step.id !== nodeId);
-  const nextDraft = clearOutletTargets(draft, (target) =>
+  const nextDraft = removeOutletsWithTarget(draft, (target) =>
     target.kind === "step" && target.stepId === nodeId,
   );
 
