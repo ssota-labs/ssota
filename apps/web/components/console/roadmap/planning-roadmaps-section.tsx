@@ -217,89 +217,106 @@ export function PlanningRoadmapsSection({
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-        <div
-          className={cn(
-            "rounded-lg border bg-card p-4 text-left transition-colors",
-            annualNode && "cursor-pointer hover:bg-muted/40",
-            annualNode && selectedNode?.id === annualNode.id && "ring-2 ring-primary",
-            !annualNode && "border-dashed",
-          )}
-          data-testid="annual-roadmap-card"
-          role={annualNode ? "button" : undefined}
-          tabIndex={annualNode ? 0 : undefined}
-          onClick={() => annualNode && setSelectedId(annualNode.id)}
-          onKeyDown={(event) => {
-            if (!annualNode) return;
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              setSelectedId(annualNode.id);
-            }
-          }}
-        >
-          {annualNode ? (
-            <>
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-medium">{planningLabel(annualNode)}</p>
-                <Badge variant="secondary">
-                  {DOC_STATUS_LABELS[annualNode.docStatus ?? "draft"]}
-                </Badge>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {annualNode.year} · annual
-              </p>
-            </>
-          ) : (
-            <div className="space-y-2">
-              <p className="font-medium">
-                {year} {t("roadmap.annualRoadmap")}
-              </p>
-              <p className="text-sm text-muted-foreground">{t("roadmap.noAnnualYet")}</p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={pending}
-                onClick={handleCreateAnnual}
-              >
-                {t("roadmap.newAnnual")}
-              </Button>
-            </div>
-          )}
-        </div>
+      <article
+        className="rounded-lg border bg-card"
+        data-testid="planning-year-card"
+      >
+        <header className="border-b px-4 py-3 md:px-6">
+          <h3 className="text-base font-semibold">
+            {year} {t("roadmap.planningYearCardTitle")}
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {t("roadmap.planningYearCardDescription")}
+          </p>
+        </header>
 
-        <div className="flex flex-wrap gap-2 lg:flex-col">
-          {QUARTERS.map((quarter, index) => {
-            const node = quarterNodes[index];
-            return (
-              <button
-                key={quarter}
-                type="button"
-                data-testid={`quarter-chip-q${quarter}`}
-                className={cn(
-                  "min-w-[4.5rem] rounded-lg border px-3 py-2 text-left text-sm transition-colors hover:bg-muted/40",
-                  node ? "bg-card" : "border-dashed bg-muted/10",
-                  node && selectedNode?.id === node.id && "ring-2 ring-primary",
-                )}
-                onClick={() => {
-                  if (node) {
-                    setSelectedId(node.id);
-                    return;
-                  }
-                  handleCreateQuarter(quarter);
-                }}
-              >
-                <div className="font-medium">Q{quarter}</div>
-                <div className="text-xs text-muted-foreground">
-                  {node
-                    ? DOC_STATUS_LABELS[node.docStatus ?? "draft"]
-                    : t("roadmap.createQuarterChip")}
+        <div className="grid gap-4 p-4 md:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+          <div
+            className={cn(
+              "rounded-md border p-4 text-left transition-colors",
+              annualNode && "cursor-pointer hover:bg-muted/40",
+              annualNode && selectedNode?.id === annualNode.id && "ring-2 ring-primary",
+              !annualNode && "border-dashed bg-muted/10",
+            )}
+            data-testid="annual-roadmap-card"
+            role={annualNode ? "button" : undefined}
+            tabIndex={annualNode ? 0 : undefined}
+            onClick={() => annualNode && setSelectedId(annualNode.id)}
+            onKeyDown={(event) => {
+              if (!annualNode) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setSelectedId(annualNode.id);
+              }
+            }}
+          >
+            {annualNode ? (
+              <>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="font-medium">{planningLabel(annualNode)}</p>
+                  <Badge variant="secondary">
+                    {DOC_STATUS_LABELS[annualNode.docStatus ?? "draft"]}
+                  </Badge>
                 </div>
-              </button>
-            );
-          })}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {annualNode.year} · annual
+                </p>
+              </>
+            ) : (
+              <div className="space-y-2">
+                <p className="font-medium">
+                  {year} {t("roadmap.annualRoadmap")}
+                </p>
+                <p className="text-sm text-muted-foreground">{t("roadmap.noAnnualYet")}</p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={pending}
+                  onClick={handleCreateAnnual}
+                >
+                  {t("roadmap.newAnnual")}
+                </Button>
+              </div>
+            )}
+          </div>
+
+          <div
+            className="flex flex-wrap gap-2 lg:min-w-[5.5rem] lg:flex-col"
+            data-testid="quarter-roadmap-chips"
+          >
+            {QUARTERS.map((quarter, index) => {
+              const node = quarterNodes[index];
+              return (
+                <button
+                  key={quarter}
+                  type="button"
+                  data-testid={`quarter-chip-q${quarter}`}
+                  className={cn(
+                    "min-w-[4.5rem] rounded-md border px-3 py-2 text-left text-sm transition-colors hover:bg-muted/40",
+                    node ? "bg-background" : "border-dashed bg-muted/10",
+                    node && selectedNode?.id === node.id && "ring-2 ring-primary",
+                  )}
+                  onClick={() => {
+                    if (node) {
+                      setSelectedId(node.id);
+                      return;
+                    }
+                    handleCreateQuarter(quarter);
+                  }}
+                >
+                  <div className="font-medium">Q{quarter}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {node
+                      ? DOC_STATUS_LABELS[node.docStatus ?? "draft"]
+                      : t("roadmap.createQuarterChip")}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      </article>
 
       {selectedNode ? (
         <article

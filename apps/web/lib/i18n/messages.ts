@@ -117,6 +117,9 @@ export const en = {
     planningSectionTitle: "Annual & quarter roadmaps",
     planningSectionDescription:
       "Translate the product roadmap into yearly and quarterly planning documents.",
+    planningYearCardTitle: "Planning",
+    planningYearCardDescription:
+      "Annual roadmap and quarter chips for the selected year live in one card.",
     kindAll: "All",
     year: "Year",
     newRoadmap: "New roadmap",
@@ -338,6 +341,9 @@ export const ko = {
     planningSectionTitle: "연간·분기 로드맵",
     planningSectionDescription:
       "프로덕트 로드맵을 연간·분기 실행 계획 문서로 전개합니다.",
+    planningYearCardTitle: "계획",
+    planningYearCardDescription:
+      "선택한 연도의 연간 로드맵과 분기 칩을 한 카드에서 관리합니다.",
     kindAll: "전체",
     year: "연도",
     newRoadmap: "새 로드맵",
