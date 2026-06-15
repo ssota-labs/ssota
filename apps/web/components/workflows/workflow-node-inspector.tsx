@@ -235,6 +235,7 @@ function ContextInspector({
       nodeCatalog={nodeCatalog}
       edgeCatalog={edgeCatalog}
       onContextChange={(context) => onDraftChange(updateContext(draft, context))}
+      inspectorHeader
       className="px-4 pt-4 pb-6"
     />
   );

@@ -7,6 +7,7 @@ import {
   FunnelIcon,
 } from "@phosphor-icons/react";
 import type { ContextSpec } from "@ssota/contracts";
+import { Badge } from "@ssota/ui/components/ui/badge";
 import { Label } from "@ssota/ui/components/ui/label";
 import { cn } from "@ssota/ui/lib/utils";
 import {
@@ -34,6 +35,7 @@ type WorkflowContextFieldProps = {
   nodeCatalog: WorkflowNodeCatalogOption[];
   edgeCatalog: WorkflowEdgeCatalogOption[];
   readOnly?: boolean;
+  inspectorHeader?: boolean;
   className?: string;
 };
 
@@ -47,6 +49,7 @@ export function WorkflowContextField({
   nodeCatalog,
   edgeCatalog,
   readOnly = false,
+  inspectorHeader = false,
   className,
 }: WorkflowContextFieldProps) {
   const [expandedFilterGroupId, setExpandedFilterGroupId] = useState<string | null>(
@@ -111,13 +114,28 @@ export function WorkflowContextField({
   return (
     <>
       <div className={cn("space-y-6 px-6 pb-6", className)}>
-        <div className="space-y-1">
-          <Label className="text-sm font-medium">Context</Label>
-          <p className="text-sm text-muted-foreground">
-            Filter groups, traversals, and assertions agents use to assemble graph
-            context.
-          </p>
-        </div>
+        {inspectorHeader ? (
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="min-w-0 flex-1 truncate text-sm font-semibold">
+                Context
+              </p>
+              <Badge variant="secondary">context</Badge>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Filter groups, traversals, and assertions agents use to assemble
+              graph context.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <Label className="text-sm font-medium">Context</Label>
+            <p className="text-xs text-muted-foreground">
+              Filter groups, traversals, and assertions agents use to assemble
+              graph context.
+            </p>
+          </div>
+        )}
 
         <ExpandableListSection
           title="Filter groups"
