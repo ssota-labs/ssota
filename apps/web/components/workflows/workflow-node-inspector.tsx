@@ -78,9 +78,11 @@ export function WorkflowNodeInspector({
       {!isSheetStyleInspector ? (
         <div className="border-b px-4 py-3">
           <div className="flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-semibold">
-              {data.label}
-            </p>
+            <WorkflowInspectorBlockTitle
+              draft={draft}
+              node={selectedNode}
+              onDraftChange={onDraftChange}
+            />
             <Badge variant="secondary">{data.kind}</Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -228,13 +230,6 @@ function StepInspector({
 
   return (
     <>
-      <Field label="Title" htmlFor="step-title">
-        <Input
-          id="step-title"
-          value={step.title}
-          onChange={(event) => patch({ title: event.target.value })}
-        />
-      </Field>
       <Field label="Mode">
         <Select
           value={step.mode}
@@ -426,19 +421,6 @@ function WorkflowBlockInspector({
           This workflow references itself. Circular handoffs may loop at runtime.
         </p>
       ) : null}
-      <Field label="Label" htmlFor="workflow-block-label">
-        <Input
-          id="workflow-block-label"
-          value={block.label ?? ""}
-          onChange={(event) =>
-            onDraftChange(
-              updateWorkflowBlock(draft, workflowBlockId, {
-                label: event.target.value,
-              }),
-            )
-          }
-        />
-      </Field>
       <Field label="Target workflow">
         <Select
           value={block.workflowKey}
@@ -465,6 +447,79 @@ function WorkflowBlockInspector({
         </p>
       </Field>
     </>
+  );
+}
+
+function WorkflowInspectorBlockTitle({
+  draft,
+  node,
+  onDraftChange,
+}: {
+  draft: WorkflowDraft;
+  node: WorkflowFlowNode;
+  onDraftChange: (draft: WorkflowDraft) => void;
+}) {
+  const { data } = node;
+  const inputClassName = cn(
+    "h-auto min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm font-semibold shadow-none",
+    "focus-visible:border-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+    "placeholder:text-muted-foreground",
+  );
+
+  if ((data.kind === "step" || data.kind === "gate") && data.stepId) {
+    const step = draft.steps.find((item) => item.id === data.stepId);
+    if (!step) {
+      return (
+        <p className="min-w-0 flex-1 truncate text-sm font-semibold">{data.label}</p>
+      );
+    }
+
+    return (
+      <Input
+        value={step.title}
+        onChange={(event) =>
+          onDraftChange(
+            updateStep(draft, data.stepId!, { title: event.target.value }),
+          )
+        }
+        className={inputClassName}
+        aria-label="Title"
+        placeholder={data.kind === "gate" ? "Review gate" : "Step title"}
+        data-testid="inspector-block-title"
+      />
+    );
+  }
+
+  if (data.kind === "workflow" && data.workflowBlockId) {
+    const block = draft.workflowBlocks.find(
+      (item) => item.id === data.workflowBlockId,
+    );
+    if (!block) {
+      return (
+        <p className="min-w-0 flex-1 truncate text-sm font-semibold">{data.label}</p>
+      );
+    }
+
+    return (
+      <Input
+        value={block.label ?? ""}
+        onChange={(event) =>
+          onDraftChange(
+            updateWorkflowBlock(draft, data.workflowBlockId!, {
+              label: event.target.value,
+            }),
+          )
+        }
+        className={inputClassName}
+        aria-label="Label"
+        placeholder={block.workflowKey}
+        data-testid="inspector-block-title"
+      />
+    );
+  }
+
+  return (
+    <p className="min-w-0 flex-1 truncate text-sm font-semibold">{data.label}</p>
   );
 }
 
