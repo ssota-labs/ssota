@@ -3,6 +3,7 @@ import { createMcpHandler, withMcpAuth } from "mcp-handler";
 import { verifyBearerToken } from "@/lib/auth";
 import { resolveProjectAccess } from "@/lib/mcp/project-access";
 import { registerAccountTools } from "@/lib/mcp/register-account-tools";
+import { registerGraphTools } from "@/lib/mcp/register-graph-tools";
 import { registerProjectTools } from "@/lib/mcp/register-project-tools";
 import { parseMcpProjectScope } from "@/lib/mcp/resource-url";
 import { resolveProjectId } from "@/lib/project-context";
@@ -25,6 +26,7 @@ const unifiedMcpHandler = createMcpHandler(
   (server) => {
     registerAccountTools(server as never);
     registerProjectTools(server as never);
+    registerGraphTools(server as never);
   },
   mcpHandlerOptions,
   mcpTransportOptions,
