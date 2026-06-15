@@ -9,6 +9,7 @@ import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
 } from "../constants.js";
+import { seedGraphInstances } from "./seed/graph-instances.js";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -130,6 +131,8 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
         idempotencyKey: "seed:archive-generic-runtime",
       })
       .onConflictDoNothing();
+
+    await seedGraphInstances(db, projectId);
   }
 
   return { organizationId, projectId };
