@@ -4,13 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Project } from "@ssota/core";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@ssota/ui/components/ui/dropdown-menu";
-import { DotsThreeIcon } from "@phosphor-icons/react";
+import { GearIcon } from "@phosphor-icons/react";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { projectPath } from "@/lib/console/paths";
 import { ConsoleBreadcrumb } from "./console-breadcrumb";
@@ -52,29 +46,24 @@ export function ConsoleTopBar({
 
       <ConsoleBreadcrumb initiativeTitle={currentInitiative?.title} />
 
-      <div className="flex items-center justify-end">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-label={t("nav.settings")}
-            render={
-              <Button variant="ghost" size="sm" className="size-8 px-0" />
-            }
-          >
-            <DotsThreeIcon className="size-4" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem
-              render={<Link href={projectPath(ctx, "developer/setup")} prefetch />}
-            >
-              {t("nav.developerSetup")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              render={<Link href={projectPath(ctx, "settings/general")} prefetch />}
-            >
-              {t("nav.settings")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <div className="flex items-center justify-end gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 px-2 text-xs font-normal"
+          render={<Link href={projectPath(ctx, "developer/setup")} prefetch />}
+        >
+          {t("nav.developerSetup")}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 gap-1.5 px-2 text-xs font-normal"
+          render={<Link href={projectPath(ctx, "settings/general")} prefetch />}
+        >
+          <GearIcon className="size-3.5" />
+          {t("nav.settings")}
+        </Button>
       </div>
     </header>
   );

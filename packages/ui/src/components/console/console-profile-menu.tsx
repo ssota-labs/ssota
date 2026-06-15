@@ -89,15 +89,15 @@ export function ConsoleProfileMenu({
         side="top"
         align="end"
         sideOffset={6}
-        className="cn-menu-translucent w-64 gap-0 overflow-hidden p-0"
+        className="cn-menu-translucent w-60 gap-0 overflow-hidden p-0"
       >
-        <div className="px-3 py-2.5">
+        <div className="px-2.5 py-2">
           <p className="text-xs text-muted-foreground">{signedInAsLabel}</p>
           <p className="truncate text-sm font-medium">{userEmail}</p>
         </div>
 
-        <div className="space-y-4 border-t px-3 py-3">
-          <div className="space-y-2">
+        <div className="space-y-2.5 border-t px-2.5 py-2">
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">{themeLabel}</Label>
             <ToggleGroup
               variant="outline"
@@ -114,7 +114,7 @@ export function ConsoleProfileMenu({
               <ToggleGroupItem
                 value="light"
                 aria-label="Light mode"
-                className="flex-1 gap-1 border-border/50"
+                className="h-7 flex-1 gap-1 border-border/50 text-xs"
               >
                 <SunIcon className="size-3.5" />
                 Light
@@ -122,7 +122,7 @@ export function ConsoleProfileMenu({
               <ToggleGroupItem
                 value="dark"
                 aria-label="Dark mode"
-                className="flex-1 gap-1 border-border/50"
+                className="h-7 flex-1 gap-1 border-border/50 text-xs"
               >
                 <MoonIcon className="size-3.5" />
                 Dark
@@ -130,7 +130,7 @@ export function ConsoleProfileMenu({
             </ToggleGroup>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-1">
             <Label htmlFor="profile-locale" className="text-xs text-muted-foreground">
               {languageLabel}
             </Label>
@@ -145,7 +145,7 @@ export function ConsoleProfileMenu({
                 label: option.label,
               }))}
             >
-              <SelectTrigger id="profile-locale" className="h-8 w-full">
+              <SelectTrigger id="profile-locale" className="h-7 w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -159,11 +159,11 @@ export function ConsoleProfileMenu({
           </div>
         </div>
 
-        <div className="border-t p-1">
+        <div className="border-t p-0.5">
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-full justify-start px-2 text-destructive hover:text-destructive"
+            className="h-7 w-full justify-start px-2 text-destructive hover:text-destructive"
             onClick={onSignOut}
           >
             {signOutLabel}

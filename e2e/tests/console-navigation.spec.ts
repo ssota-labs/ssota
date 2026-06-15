@@ -75,8 +75,7 @@ test.describe("Console v2.7 navigation", () => {
     await expect(page.getByRole("link", { name: "Developer setup", exact: true })).not.toBeVisible();
   });
 
-  test("top bar menu: developer setup and settings", async ({ page }) => {
-    await page.getByRole("button", { name: "Settings", exact: true }).click();
+  test("top bar: developer setup and settings links", async ({ page }) => {
     await expect(page.getByRole("link", { name: "Developer setup", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
   });
