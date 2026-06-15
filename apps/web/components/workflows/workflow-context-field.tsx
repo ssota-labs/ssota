@@ -132,7 +132,7 @@ export function WorkflowContextField({
 
         <div
           className={cn(
-            inspectorHeader ? "space-y-6 px-4 pt-4" : "contents",
+            inspectorHeader ? "space-y-10 px-4 pt-4" : "space-y-10",
           )}
         >
         <ExpandableListSection
