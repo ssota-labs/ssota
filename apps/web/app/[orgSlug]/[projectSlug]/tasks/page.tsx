@@ -1,6 +1,7 @@
-import { PageHeader } from "@/components/studio/page-header";
 import {
-  TasksWorkspace,
+  TasksExplorer,
+} from "@/components/tasks/tasks-explorer";
+import {
   type TaskFilter,
   type TaskTab,
   type TaskWorkspaceRow,
@@ -61,18 +62,12 @@ export default async function TasksPage({
   }));
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="Tasks"
-        description="Runtime work queue for humans, agents, and automation. Status changes go through update_task."
-      />
-      <TasksWorkspace
-        rows={rows}
-        activeFilter={activeFilter}
-        activeTab={activeTab}
-        baseHref={projectPath(ctx, "tasks")}
-        projectId={project.id}
-      />
-    </div>
+    <TasksExplorer
+      rows={rows}
+      activeFilter={activeFilter}
+      activeTab={activeTab}
+      baseHref={projectPath(ctx, "tasks")}
+      projectId={project.id}
+    />
   );
 }

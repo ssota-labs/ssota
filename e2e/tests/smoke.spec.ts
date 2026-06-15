@@ -68,7 +68,8 @@ test.describe("SSOTA Console", () => {
   test("smoke: Tasks route", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "tasks");
-    await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "All" })).toBeVisible();
+    await expect(page.getByText("Choose a view", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Board", exact: true })).toBeVisible();
     await expect(

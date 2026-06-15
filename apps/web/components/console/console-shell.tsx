@@ -29,9 +29,11 @@ export function ConsoleShell({
   const pathname = usePathname();
   const isGraphContext = pathname.includes(`/${ctx.projectSlug}/graph`);
   const isWorkflowContext = pathname.includes(`/${ctx.projectSlug}/workflow`);
+  const isTasksContext = pathname.includes(`/${ctx.projectSlug}/tasks`);
   const isFullBleedTable =
     isGraphContext ||
     isWorkflowContext ||
+    isTasksContext ||
     pathname === `/${ctx.orgSlug}/${ctx.projectSlug}/log`;
 
   return (

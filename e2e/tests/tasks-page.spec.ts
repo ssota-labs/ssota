@@ -23,10 +23,8 @@ test.describe("Tasks page", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "tasks");
 
-    await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible();
-    await expect(
-      page.getByText("Runtime work queue", { exact: false }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "All" })).toBeVisible();
+    await expect(page.getByText("Choose a view", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Board", exact: true })).toBeVisible();
     await expect(page.getByText("E2E tasks page fixture").first()).toBeVisible();
@@ -47,7 +45,7 @@ test.describe("Tasks page", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "tasks?tab=board");
 
-    await page.getByRole("button", { name: /Agent/ }).click();
+    await page.getByTestId("tasks-view-agent").click();
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/tasks\\?view=agent&tab=board`),
     );
