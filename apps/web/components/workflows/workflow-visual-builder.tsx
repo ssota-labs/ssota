@@ -343,6 +343,12 @@ function WorkflowVisualBuilderInner({
     setEdges(graph.edges);
   }, [graph.edges, graph.nodes, readOnly, setNodes]);
 
+  useEffect(() => {
+    if (selectedNodeId && !graph.nodes.some((node) => node.id === selectedNodeId)) {
+      setSelectedNodeId(null);
+    }
+  }, [graph.nodes, selectedNodeId]);
+
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId) ?? null,
     [nodes, selectedNodeId],
@@ -406,7 +412,7 @@ function WorkflowVisualBuilderInner({
             />
           </ReactFlow>
         </div>
-        {!readOnly ? (
+        {!readOnly && selectedNode ? (
           <WorkflowNodeInspector
             draft={draft}
             selectedNode={selectedNode}
