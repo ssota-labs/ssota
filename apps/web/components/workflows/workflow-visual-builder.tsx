@@ -194,7 +194,14 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
         </div>
       ) : null}
       {data.nodeId ? (
-        <div className="absolute top-1/2 -right-3 -translate-y-1/2">
+        <div
+          className={cn(
+            "absolute -right-3",
+            data.kind === "route"
+              ? "top-2"
+              : "top-1/2 -translate-y-1/2",
+          )}
+        >
           {renderAddMenu(data.nodeId)}
         </div>
       ) : null}
