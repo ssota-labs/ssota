@@ -137,7 +137,7 @@ export function WorkflowApplicableNodeTypesField({
                             Edit actions for {entry.nodeType}
                           </span>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-72">
+                        <DropdownMenuContent align="end" className="w-64">
                           <DropdownMenuGroup>
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             {actions.length === 0 ? (
