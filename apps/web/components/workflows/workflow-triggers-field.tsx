@@ -88,7 +88,7 @@ export function WorkflowTriggersField({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      className="size-8 shrink-0 text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
                       disabled={triggers.length <= 1}
                       onClick={() => removeTrigger(trigger.id)}
                       aria-label={`Remove ${meta.label}`}
