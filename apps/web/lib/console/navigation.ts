@@ -32,7 +32,14 @@ export type NavGroup = {
   children: NavLink[];
 };
 
-export type NavEntry = NavSeparator | NavLink | NavDrilldown | NavGroup;
+export type NavSection = {
+  type: "section";
+  key: string;
+  labelKey: string;
+  children: NavLink[];
+};
+
+export type NavEntry = NavSeparator | NavLink | NavDrilldown | NavGroup | NavSection;
 
 export const EXECUTIVE_L1: NavLink[] = [
   {
@@ -152,7 +159,7 @@ export const PRODUCT_L1: NavEntry[] = [
   },
 ];
 
-export const INITIATIVE_L2: NavLink[] = [
+export const INITIATIVE_L2_NAV: NavEntry[] = [
   {
     type: "link",
     key: "initiative_overview",
@@ -161,125 +168,185 @@ export const INITIATIVE_L2: NavLink[] = [
     pattern: "H",
   },
   {
-    type: "link",
-    key: "planning_prd",
-    labelKey: "nav.planningPrd",
-    href: "planning/prd",
-    pattern: "D",
+    type: "section",
+    key: "initiative_planning",
+    labelKey: "nav.initiativePlanning",
+    children: [
+      {
+        type: "link",
+        key: "planning_prd",
+        labelKey: "nav.planningPrd",
+        href: "planning/prd",
+        pattern: "D",
+      },
+      {
+        type: "link",
+        key: "planning_features",
+        labelKey: "nav.planningFeatures",
+        href: "planning/features",
+        pattern: "L",
+      },
+      {
+        type: "link",
+        key: "planning_stories",
+        labelKey: "nav.planningStories",
+        href: "planning/stories",
+        pattern: "L",
+      },
+    ],
   },
   {
-    type: "link",
-    key: "planning_features",
-    labelKey: "nav.planningFeatures",
-    href: "planning/features",
-    pattern: "L",
+    type: "section",
+    key: "initiative_design",
+    labelKey: "nav.initiativeDesign",
+    children: [
+      {
+        type: "link",
+        key: "design_ia",
+        labelKey: "nav.initiativeDesignIa",
+        href: "design/ia",
+        pattern: "T",
+      },
+      {
+        type: "link",
+        key: "design_wireframes",
+        labelKey: "nav.designWireframes",
+        href: "design/wireframes",
+        pattern: "L",
+      },
+      {
+        type: "link",
+        key: "design_flows",
+        labelKey: "nav.designFlows",
+        href: "design/flows",
+        pattern: "D",
+      },
+    ],
   },
   {
-    type: "link",
-    key: "planning_stories",
-    labelKey: "nav.planningStories",
-    href: "planning/stories",
-    pattern: "L",
+    type: "section",
+    key: "initiative_architecture",
+    labelKey: "nav.initiativeArchitecture",
+    children: [
+      {
+        type: "link",
+        key: "architecture_spec",
+        labelKey: "nav.architectureSpec",
+        href: "architecture/spec",
+        pattern: "D",
+      },
+      {
+        type: "link",
+        key: "architecture_data",
+        labelKey: "nav.architectureData",
+        href: "architecture/data",
+        pattern: "D",
+      },
+      {
+        type: "link",
+        key: "architecture_integration",
+        labelKey: "nav.architectureIntegration",
+        href: "architecture/integration",
+        pattern: "D",
+      },
+    ],
   },
   {
-    type: "link",
-    key: "design_ia",
-    labelKey: "nav.initiativeDesignIa",
-    href: "design/ia",
-    pattern: "T",
+    type: "section",
+    key: "initiative_build",
+    labelKey: "nav.initiativeBuild",
+    children: [
+      {
+        type: "link",
+        key: "build_plan",
+        labelKey: "nav.buildPlan",
+        href: "build/plan",
+        pattern: "D",
+      },
+      {
+        type: "link",
+        key: "build_tasks",
+        labelKey: "nav.buildTasks",
+        href: "build/tasks",
+        pattern: "L",
+      },
+      {
+        type: "link",
+        key: "build_pull_requests",
+        labelKey: "nav.buildPullRequests",
+        href: "build/pull-requests",
+        pattern: "L",
+      },
+    ],
   },
   {
-    type: "link",
-    key: "design_wireframes",
-    labelKey: "nav.designWireframes",
-    href: "design/wireframes",
-    pattern: "L",
+    type: "section",
+    key: "initiative_qa",
+    labelKey: "nav.initiativeQa",
+    children: [
+      {
+        type: "link",
+        key: "qa_test_plan",
+        labelKey: "nav.qaTestPlan",
+        href: "qa/test-plan",
+        pattern: "D",
+      },
+    ],
   },
   {
-    type: "link",
-    key: "design_flows",
-    labelKey: "nav.designFlows",
-    href: "design/flows",
-    pattern: "D",
+    type: "section",
+    key: "initiative_launch",
+    labelKey: "nav.initiativeLaunch",
+    children: [
+      {
+        type: "link",
+        key: "launch_plan",
+        labelKey: "nav.launchPlan",
+        href: "launch/plan",
+        pattern: "D",
+      },
+      {
+        type: "link",
+        key: "launch_docs",
+        labelKey: "nav.launchDocs",
+        href: "launch/docs",
+        pattern: "L",
+      },
+    ],
   },
   {
-    type: "link",
-    key: "architecture_spec",
-    labelKey: "nav.architectureSpec",
-    href: "architecture/spec",
-    pattern: "D",
-  },
-  {
-    type: "link",
-    key: "architecture_data",
-    labelKey: "nav.architectureData",
-    href: "architecture/data",
-    pattern: "D",
-  },
-  {
-    type: "link",
-    key: "architecture_integration",
-    labelKey: "nav.architectureIntegration",
-    href: "architecture/integration",
-    pattern: "D",
-  },
-  {
-    type: "link",
-    key: "build_plan",
-    labelKey: "nav.buildPlan",
-    href: "build/plan",
-    pattern: "D",
-  },
-  {
-    type: "link",
-    key: "build_tasks",
-    labelKey: "nav.buildTasks",
-    href: "build/tasks",
-    pattern: "L",
-  },
-  {
-    type: "link",
-    key: "build_pull_requests",
-    labelKey: "nav.buildPullRequests",
-    href: "build/pull-requests",
-    pattern: "L",
-  },
-  {
-    type: "link",
-    key: "qa_test_plan",
-    labelKey: "nav.qaTestPlan",
-    href: "qa/test-plan",
-    pattern: "D",
-  },
-  {
-    type: "link",
-    key: "launch_plan",
-    labelKey: "nav.launchPlan",
-    href: "launch/plan",
-    pattern: "D",
-  },
-  {
-    type: "link",
-    key: "launch_docs",
-    labelKey: "nav.launchDocs",
-    href: "launch/docs",
-    pattern: "L",
-  },
-  {
-    type: "link",
-    key: "retro_metrics",
-    labelKey: "nav.retroMetrics",
-    href: "retrospective/metrics",
-    pattern: "L",
-  },
-  {
-    type: "link",
-    key: "retro_review",
-    labelKey: "nav.retroReview",
-    href: "retrospective/review",
-    pattern: "D",
+    type: "section",
+    key: "initiative_retrospective",
+    labelKey: "nav.initiativeRetrospective",
+    children: [
+      {
+        type: "link",
+        key: "retro_metrics",
+        labelKey: "nav.retroMetrics",
+        href: "retrospective/metrics",
+        pattern: "L",
+      },
+      {
+        type: "link",
+        key: "retro_review",
+        labelKey: "nav.retroReview",
+        href: "retrospective/review",
+        pattern: "D",
+      },
+    ],
   },
 ];
+
+function flattenInitiativeLinks(entries: NavEntry[]): NavLink[] {
+  return entries.flatMap((entry) => {
+    if (entry.type === "link") return [entry];
+    if (entry.type === "section" || entry.type === "group") return entry.children;
+    return [];
+  });
+}
+
+/** Flat initiative route list for breadcrumbs and route meta. */
+export const INITIATIVE_L2: NavLink[] = flattenInitiativeLinks(INITIATIVE_L2_NAV);
 
 export const L0_NAV: NavEntry[] = [
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },

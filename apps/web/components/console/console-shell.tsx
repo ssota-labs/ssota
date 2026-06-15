@@ -40,12 +40,14 @@ export function ConsoleShell({
   return (
     <ProjectProvider value={ctx}>
       <div className="flex h-svh w-full overflow-hidden">
-        <AppSidebar initiatives={initiatives} />
+        <AppSidebar
+          organizations={organizations}
+          projects={projects}
+          initiatives={initiatives}
+        />
         <div className="flex min-w-0 flex-1 flex-col">
           <ConsoleTopBar
             userEmail={userEmail}
-            organizations={organizations}
-            projects={projects}
             initiatives={initiatives}
             signOutAction={signOutAction}
           />
