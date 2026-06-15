@@ -489,7 +489,6 @@ export async function updateWorkflowAction(input: Record<string, unknown>) {
 }
 
 const WorkflowBuilderPatchSchema = WorkflowDefinitionFieldsSchema.pick({
-  workflowRole: true,
   flowEntry: true,
   steps: true,
   routeBlocks: true,
@@ -497,7 +496,6 @@ const WorkflowBuilderPatchSchema = WorkflowDefinitionFieldsSchema.pick({
   gates: true,
   trigger: true,
   context: true,
-  agentNotes: true,
 });
 
 export async function saveWorkflowBuilderFormAction(formData: FormData): Promise<void> {
@@ -541,6 +539,8 @@ export async function updateWorkflowSettingsFormAction(
 
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
+  const workflowRoleRaw = String(formData.get("workflowRole") ?? "").trim();
+  const workflowRole = workflowRoleRaw || undefined;
   const applicableNodeTypes = parseApplicableNodeTypes(
     formData.get("applicableNodeTypes"),
   );
@@ -557,6 +557,7 @@ export async function updateWorkflowSettingsFormAction(
       title,
       applicableNodeTypes,
       allowedActions: allowedActionsFromBindings,
+      workflowRole,
       ...(body ? { agentNotes: body } : { agentNotes: null }),
     },
   });

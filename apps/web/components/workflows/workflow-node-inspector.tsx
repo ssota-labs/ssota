@@ -26,27 +26,18 @@ import {
   removeBlock,
   removeRouteLink,
   removeRouteOutlet,
-  updateAgentNotes,
   updateContext,
   updateRouteBlock,
   updateRouteOutlet,
   updateStep,
   updateTriggerEvents,
   updateWorkflowBlock,
-  updateWorkflowRole,
   type WorkflowDraft,
 } from "@/lib/workflows/workflow-draft";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 import { WorkflowContextField } from "@/components/workflows/workflow-context-field";
 import { createWorkflowTriggerEventFromKind } from "@/lib/workflows/workflow-trigger-catalog";
-import {
-  WORKFLOW_ROLE_NONE,
-  WORKFLOW_ROLE_OPTIONS,
-  workflowRoleFromSelectValue,
-  workflowRoleOptionsForValue,
-  workflowRoleSelectValue,
-} from "@/lib/workflows/workflow-role-catalog";
 import type {
   WorkflowEdgeCatalogOption,
   WorkflowNodeCatalogOption,
@@ -86,13 +77,10 @@ export function WorkflowNodeInspector({
         className="flex w-96 shrink-0 flex-col border-l bg-background"
       >
         <div className="border-b px-4 py-3">
-          <p className="text-sm font-semibold">Workflow settings</p>
+          <p className="text-sm font-semibold">Inspector</p>
           <p className="text-xs text-muted-foreground">
-            Optional metadata and agent guidance for this workflow.
+            Select a workflow block to configure it.
           </p>
-        </div>
-        <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4">
-          <WorkflowSettingsFields draft={draft} onDraftChange={onDraftChange} />
         </div>
       </aside>
     );
@@ -177,65 +165,6 @@ export function WorkflowNodeInspector({
         ) : null}
       </div>
     </aside>
-  );
-}
-
-function WorkflowSettingsFields({
-  draft,
-  onDraftChange,
-}: {
-  draft: WorkflowDraft;
-  onDraftChange: (draft: WorkflowDraft) => void;
-}) {
-  return (
-    <>
-      <Field label="Workflow role" htmlFor="workflow-role">
-        <Select
-          value={workflowRoleSelectValue(draft.workflowRole)}
-          onValueChange={(value) =>
-            onDraftChange(
-              updateWorkflowRole(draft, workflowRoleFromSelectValue(value)),
-            )
-          }
-        >
-          <SelectTrigger
-            id="workflow-role"
-            className="w-full"
-            data-testid="workflow-role"
-          >
-            <SelectValue placeholder="Select role">
-              {draft.workflowRole
-                ? (WORKFLOW_ROLE_OPTIONS.find(
-                    (option) => option.value === draft.workflowRole,
-                  )?.label ?? draft.workflowRole)
-                : "None"}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={WORKFLOW_ROLE_NONE}>None</SelectItem>
-            {workflowRoleOptionsForValue(draft.workflowRole).map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground">
-          Optional label for docs and filtering. Does not change runtime behavior.
-        </p>
-      </Field>
-      <Field label="Agent notes" htmlFor="workflow-agent-notes">
-        <Textarea
-          id="workflow-agent-notes"
-          value={draft.agentNotes ?? ""}
-          onChange={(event) =>
-            onDraftChange(updateAgentNotes(draft, event.target.value))
-          }
-          className="min-h-24"
-          placeholder="Completion criteria and guidance for agents…"
-        />
-      </Field>
-    </>
   );
 }
 

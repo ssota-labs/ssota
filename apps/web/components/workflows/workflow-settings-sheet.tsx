@@ -23,6 +23,13 @@ import {
   SheetTrigger,
 } from "@ssota/ui/components/ui/sheet";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@ssota/ui/components/ui/select";
 import { updateWorkflowSettingsFormAction } from "@/app/actions";
 import { AddWorkflowNodeDialog } from "@/components/workflows/add-workflow-node-dialog";
 import { WorkflowApplicableNodeTypesField } from "@/components/workflows/workflow-applicable-node-types-field";
@@ -30,6 +37,13 @@ import {
   normalizeApplicableNodeTypesFromWorkflow,
   syncWorkflowNodeCatalogFields,
 } from "@/lib/workflows/workflow-applicable-node-types";
+import {
+  WORKFLOW_ROLE_NONE,
+  WORKFLOW_ROLE_OPTIONS,
+  workflowRoleFromSelectValue,
+  workflowRoleOptionsForValue,
+  workflowRoleSelectValue,
+} from "@/lib/workflows/workflow-role-catalog";
 
 const formRowClassName =
   "grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)] items-start gap-x-8 gap-y-5 px-6";
@@ -92,6 +106,9 @@ export function WorkflowSettingsSheet({
   >(() =>
     normalizeApplicableNodeTypesFromWorkflow(workflow.applicableNodeTypes, []),
   );
+  const [workflowRole, setWorkflowRole] = useState(() =>
+    workflowRoleSelectValue(workflow.workflowRole),
+  );
 
   const syncedCatalogFields = useMemo(
     () =>
@@ -110,6 +127,7 @@ export function WorkflowSettingsSheet({
     setApplicableNodeTypes(
       normalizeApplicableNodeTypesFromWorkflow(workflow.applicableNodeTypes, []),
     );
+    setWorkflowRole(workflowRoleSelectValue(workflow.workflowRole));
   }, [open, workflow]);
 
   return (
@@ -136,8 +154,8 @@ export function WorkflowSettingsSheet({
           <SheetHeader className="sticky top-0 z-10 shrink-0 border-b border-border bg-popover px-6 py-5">
             <SheetTitle>Workflow settings</SheetTitle>
             <SheetDescription>
-              이름·설명·Applicable nodes를 수정합니다. Trigger와 Context는 Builder
-              패널에서 편집하세요.
+              이름·역할·설명·Applicable nodes를 수정합니다. Trigger와 Context는
+              Builder 패널에서 편집하세요.
             </SheetDescription>
           </SheetHeader>
           <form
@@ -154,6 +172,11 @@ export function WorkflowSettingsSheet({
               name="allowedActions"
               value={syncedCatalogFields.allowedActions.join(",")}
             />
+            <input
+              type="hidden"
+              name="workflowRole"
+              value={workflowRoleFromSelectValue(workflowRole) ?? ""}
+            />
 
             <div className="min-h-0 flex-1 overflow-y-auto py-5">
               <section className="border-b border-border pb-6">
@@ -165,6 +188,43 @@ export function WorkflowSettingsSheet({
                       defaultValue={workflow.title}
                       required
                     />
+                  </FormRow>
+
+                  <FormRow label="Workflow role" htmlFor="workflow-role">
+                    <Select
+                      value={workflowRole}
+                      onValueChange={(value) =>
+                        setWorkflowRole(value ?? WORKFLOW_ROLE_NONE)
+                      }
+                    >
+                      <SelectTrigger
+                        id="workflow-role"
+                        className="w-full"
+                        data-testid="workflow-role"
+                      >
+                        <SelectValue placeholder="Select role">
+                          {workflowRole === WORKFLOW_ROLE_NONE
+                            ? "None"
+                            : (WORKFLOW_ROLE_OPTIONS.find(
+                                (option) => option.value === workflowRole,
+                              )?.label ?? workflowRole)}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={WORKFLOW_ROLE_NONE}>None</SelectItem>
+                        {workflowRoleOptionsForValue(
+                          workflowRoleFromSelectValue(workflowRole),
+                        ).map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      Optional label for docs and filtering. Does not change
+                      runtime behavior.
+                    </p>
                   </FormRow>
 
                   <FormRow label="Description" htmlFor="workflow-description">

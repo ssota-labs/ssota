@@ -20,7 +20,6 @@ import {
 export type WorkflowDraft = WorkflowDefinition;
 
 export type WorkflowDraftPatch = {
-  workflowRole?: string;
   flowEntry?: WorkflowDefinition["flowEntry"];
   steps?: WorkflowStepSpec[];
   routeBlocks?: RouteBlock[];
@@ -28,7 +27,6 @@ export type WorkflowDraftPatch = {
   gates?: WorkflowGateSpec[];
   trigger?: WorkflowDefinition["trigger"];
   context?: ContextSpec;
-  agentNotes?: string | null;
 };
 
 function newId(prefix: string): string {
@@ -58,7 +56,6 @@ export function isWorkflowDraftDirty(
 
 export function extractBuilderPatch(draft: WorkflowDraft): WorkflowDraftPatch {
   return {
-    workflowRole: draft.workflowRole,
     flowEntry: draft.flowEntry,
     steps: draft.steps,
     routeBlocks: draft.routeBlocks,
@@ -66,7 +63,6 @@ export function extractBuilderPatch(draft: WorkflowDraft): WorkflowDraftPatch {
     gates: draft.gates,
     trigger: draft.trigger,
     context: draft.context,
-    agentNotes: draft.agentNotes,
   };
 }
 
