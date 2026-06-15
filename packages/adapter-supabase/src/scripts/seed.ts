@@ -448,11 +448,17 @@ const DOMAIN_WORKFLOWS = [
     ],
     applicableNodeTypes: ["Meeting", "Task", "Note"],
     lifecycle: "Active" as const,
-    body: "Extract candidates from meetings. Do not finalize tasks without source provenance. Default new work items to Draft.",
-    workflowSteps: [],
-    allowedActions: ["create_node"],
+    body: "Extract candidates from meetings. Spawn runtime tasks via spawn_task (not Task graph nodes). Each spawned task should set workflowKey to the domain workflow that will execute the work and target_node_id to the meeting node when applicable.",
+    workflowSteps: [
+      {
+        id: "spawn_tasks",
+        title: "Spawn processing tasks",
+        actionRefs: ["spawn_task"],
+      },
+    ],
+    allowedActions: ["spawn_task", "query_nodes"],
     gatePolicy: { finalize_task: "human_required" },
-    completionCriteria: "Provenance links meeting to derived work",
+    completionCriteria: "Runtime tasks spawned with provenance to source meetings",
   },
   {
     title: "Graph hygiene",

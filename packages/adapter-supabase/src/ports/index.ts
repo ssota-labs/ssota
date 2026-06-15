@@ -35,6 +35,9 @@ import type {
   ImpactQueueItem,
   ImpactQueuePort,
   ImpactQueueQueryInput,
+  Task,
+  TaskPort,
+  TaskQueryInput,
   Workflow,
   Node,
   NodeCatalogEntry,
@@ -911,6 +914,33 @@ async function applyEffect(
   }
 }
 
+async function applyCreateTaskEffect(
+  tx: Db,
+  effect: Extract<Effect, { kind: "create_task" }>,
+  projectId: string,
+  idempotencyKey?: string | null,
+): Promise<string> {
+  const rows = await tx
+    .insert(schema.tasks)
+    .values({
+      projectId,
+      workflowKey: effect.task.workflowKey,
+      workflowId: effect.task.workflowId ?? null,
+      title: effect.task.title,
+      status: effect.task.status ?? "pending",
+      executorType: effect.task.executorType ?? "Agent",
+      assignee: effect.task.assignee ?? null,
+      subjectId: effect.task.subjectId ?? null,
+      targetNodeId: effect.task.targetNodeId ?? null,
+      parentTaskId: effect.task.parentTaskId ?? null,
+      context: effect.task.context ?? {},
+      acceptanceCriteria: effect.task.acceptanceCriteria ?? [],
+      idempotencyKey: idempotencyKey ?? null,
+    })
+    .returning({ id: schema.tasks.id });
+  return rows[0]!.id;
+}
+
 export function createActionCommitPort(
   db: Db,
   scope: ActionPortsScope,
@@ -920,6 +950,8 @@ export function createActionCommitPort(
   return {
     async commit(params: CommitParams): Promise<CommitResult> {
       return db.transaction(async (tx) => {
+        const createdTaskIds: string[] = [];
+
         if (params.gateDecision) {
           await applyEffect(
             tx as unknown as Db,
@@ -934,7 +966,17 @@ export function createActionCommitPort(
         }
 
         for (const effect of params.effects) {
-          await applyEffect(tx as unknown as Db, effect, projectId);
+          if (effect.kind === "create_task") {
+            const taskId = await applyCreateTaskEffect(
+              tx as unknown as Db,
+              effect,
+              projectId,
+              params.logEntry.idempotencyKey,
+            );
+            createdTaskIds.push(taskId);
+          } else {
+            await applyEffect(tx as unknown as Db, effect, projectId);
+          }
         }
 
         const logRows = await tx
@@ -953,6 +995,21 @@ export function createActionCommitPort(
             metadata: params.logEntry.metadata ?? {},
           })
           .returning();
+
+        if (createdTaskIds.length > 0) {
+          await tx
+            .update(schema.tasks)
+            .set({
+              sourceActionLogId: logRows[0]!.id,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(schema.tasks.projectId, projectId),
+                inArray(schema.tasks.id, createdTaskIds),
+              ),
+            );
+        }
 
         return {
           logId: logRows[0]!.id,
@@ -1306,6 +1363,94 @@ export function createImpactQueuePort(
   };
 }
 
+function mapTask(row: typeof schema.tasks.$inferSelect): Task {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    workflowKey: row.workflowKey,
+    workflowId: row.workflowId,
+    title: row.title,
+    status: row.status,
+    executorType: row.executorType,
+    assignee: row.assignee,
+    subjectId: row.subjectId,
+    targetNodeId: row.targetNodeId,
+    parentTaskId: row.parentTaskId,
+    sourceActionLogId: row.sourceActionLogId,
+    context: row.context,
+    acceptanceCriteria: row.acceptanceCriteria,
+    idempotencyKey: row.idempotencyKey,
+    result: row.result,
+    completedAt: row.completedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  };
+}
+
+export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
+  const { projectId } = scope;
+
+  function buildQuery(params?: TaskQueryInput) {
+    const conditions = [eq(schema.tasks.projectId, projectId)];
+    if (params?.status) {
+      conditions.push(eq(schema.tasks.status, params.status));
+    }
+    if (params?.workflowKey) {
+      conditions.push(eq(schema.tasks.workflowKey, params.workflowKey));
+    }
+    if (params?.assignee) {
+      conditions.push(eq(schema.tasks.assignee, params.assignee));
+    }
+    if (params?.subjectId) {
+      conditions.push(eq(schema.tasks.subjectId, params.subjectId));
+    }
+    if (params?.targetNodeId) {
+      conditions.push(eq(schema.tasks.targetNodeId, params.targetNodeId));
+    }
+    if (params?.executorType) {
+      conditions.push(eq(schema.tasks.executorType, params.executorType));
+    }
+    return conditions;
+  }
+
+  return {
+    async listTasks(params) {
+      const rows = await db
+        .select()
+        .from(schema.tasks)
+        .where(eq(schema.tasks.projectId, projectId))
+        .orderBy(desc(schema.tasks.updatedAt))
+        .limit(params?.limit ?? 20);
+      return rows.map(mapTask);
+    },
+
+    async queryTasks(params) {
+      const rows = await db
+        .select()
+        .from(schema.tasks)
+        .where(and(...buildQuery(params)))
+        .orderBy(desc(schema.tasks.updatedAt))
+        .limit(params?.limit ?? 20)
+        .offset(params?.offset ?? 0);
+      return rows.map(mapTask);
+    },
+
+    async getTask(taskId) {
+      const rows = await db
+        .select()
+        .from(schema.tasks)
+        .where(
+          and(
+            eq(schema.tasks.projectId, projectId),
+            eq(schema.tasks.id, taskId),
+          ),
+        )
+        .limit(1);
+      return rows[0] ? mapTask(rows[0]) : null;
+    },
+  };
+}
+
 export function createActionPorts(db: Db, scope: ActionPortsScope): ActionPorts {
   return {
     catalog: createCatalogPort(db, scope),
@@ -1313,5 +1458,6 @@ export function createActionPorts(db: Db, scope: ActionPortsScope): ActionPorts 
     gate: createGatePort(db, scope),
     commit: createActionCommitPort(db, scope),
     impactQueue: createImpactQueuePort(db, scope),
+    tasks: createTaskPort(db, scope),
   };
 }

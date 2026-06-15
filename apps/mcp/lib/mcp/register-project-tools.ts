@@ -7,12 +7,14 @@ import {
   GetArchetypeInputSchema,
   GetEdgeTypeInputSchema,
   GetGateInputSchema,
+  GetTaskInputSchema,
   GetWorkflowInputSchema,
   GetNodeInputSchema,
   GetNodeTypeInputSchema,
   QueryGatesInputSchema,
   QueryNeighborsInputSchema,
   QueryNodesInputSchema,
+  QueryTasksInputSchema,
   SubmitForApprovalInputSchema,
   TraverseEdgesInputSchema,
   TraverseGraphInputSchema,
@@ -26,6 +28,7 @@ import {
   getArchetype,
   getEdgeType,
   getGate,
+  getTask,
   getWorkflow,
   getNode,
   getNodeType,
@@ -34,7 +37,9 @@ import {
   listEdgeTypes,
   listNodeTypes,
   listPendingGates,
+  listTasks,
   queryGates,
+  queryTasks,
   queryNeighborsService,
   queryNodes,
   submitForApproval,
@@ -425,6 +430,66 @@ export function registerProjectTools(server: McpToolServer) {
     async ({ projectId, args }) => {
       const parsed = GetActionLogEntryInputSchema.parse(args);
       return jsonContent(await getActionLogEntry(projectId, parsed));
+    },
+  );
+
+  registerScopedProjectTool(
+    server,
+    "list_tasks",
+    {
+      title: "List Tasks",
+      description:
+        "Discover: list runtime task index. Fetch details with get_task or filter via query_tasks.",
+    },
+    async ({ projectId }) => jsonContent(await listTasks(projectId)),
+  );
+
+  registerScopedProjectTool(
+    server,
+    "get_task",
+    {
+      title: "Get Task",
+      description: "Fetch one runtime task by taskId",
+      inputSchema: {
+        taskId: z.string().uuid(),
+      },
+    },
+    async ({ projectId, args }) => {
+      const parsed = GetTaskInputSchema.parse(args);
+      return jsonContent(await getTask(projectId, parsed));
+    },
+  );
+
+  registerScopedProjectTool(
+    server,
+    "query_tasks",
+    {
+      title: "Query Tasks",
+      description: "Query runtime tasks with optional filters and pagination",
+      inputSchema: {
+        status: z
+          .enum([
+            "pending",
+            "ready",
+            "running",
+            "blocked",
+            "done",
+            "cancelled",
+            "failed",
+          ])
+          .optional(),
+        workflowKey: z.string().optional(),
+        assignee: z.string().optional(),
+        subjectId: z.string().optional(),
+        targetNodeId: z.string().uuid().optional(),
+        executorType: z.enum(["Agent", "Human", "System"]).optional(),
+        limit: z.number().int().positive().max(100).optional(),
+        offset: z.number().int().nonnegative().optional(),
+      },
+    },
+    async ({ projectId, args }) => {
+      const parsed = QueryTasksInputSchema.parse(args);
+      return jsonContent(await queryTasks(projectId, parsed));
     },
   );
 }

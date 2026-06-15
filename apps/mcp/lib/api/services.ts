@@ -7,12 +7,14 @@ import {
   GetArchetypeInputSchema,
   GetEdgeTypeInputSchema,
   GetGateInputSchema,
+  GetTaskInputSchema,
   GetWorkflowInputSchema,
   GetNodeInputSchema,
   GetNodeTypeInputSchema,
   QueryGatesInputSchema,
   QueryNeighborsInputSchema,
   QueryNodesInputSchema,
+  QueryTasksInputSchema,
   TraverseEdgesInputSchema,
   TraverseGraphInputSchema,
   type ExecuteActionClientInput,
@@ -31,6 +33,8 @@ import {
   serializeWorkflowPackage,
   serializeNode,
   serializeNodeCatalogEntry,
+  serializeTask,
+  serializeTaskIndex,
 } from "@ssota/core";
 import type { ExecutorType } from "@ssota/contracts";
 import { queryNeighbors, traverseGraph } from "@/lib/graph-query";
@@ -101,6 +105,30 @@ export async function getGate(projectId: string, gateId: string) {
   const ports = getActionPorts(projectId);
   const gate = await ports.gate.getGate(gateId);
   return gate ? serializeGate(gate) : null;
+}
+
+export async function listTasks(projectId: string, limit?: number) {
+  const ports = getActionPorts(projectId);
+  const tasks = await ports.tasks.listTasks({ limit });
+  return tasks.map(serializeTaskIndex);
+}
+
+export async function getTask(
+  projectId: string,
+  input: ReturnType<typeof GetTaskInputSchema.parse>,
+) {
+  const ports = getActionPorts(projectId);
+  const task = await ports.tasks.getTask(input.taskId);
+  return task ? serializeTask(task) : null;
+}
+
+export async function queryTasks(
+  projectId: string,
+  input: ReturnType<typeof QueryTasksInputSchema.parse>,
+) {
+  const ports = getActionPorts(projectId);
+  const tasks = await ports.tasks.queryTasks(input);
+  return tasks.map(serializeTask);
 }
 
 export async function listArchetypes(projectId: string) {

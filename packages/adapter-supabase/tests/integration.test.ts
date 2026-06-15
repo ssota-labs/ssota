@@ -479,4 +479,46 @@ describe("adapter-supabase integration", () => {
       workflows.some((entry) => entry.spec.title === "Homepage creation workflow"),
     ).toBe(true);
   });
+
+  it("spawn_task: creates runtime task row and action log in one commit", async () => {
+    const idempotencyKey = `spawn-task-integration-${Date.now()}`;
+
+    const result = await executeAction(ports, {
+      actionType: "spawn_task",
+      input: {
+        title: "Integration spawned task",
+        workflowKey: "document_creation",
+        assignee: "agent:integration",
+      },
+      executorId: smokeUserId,
+      executorType: "Agent",
+      projectId,
+      idempotencyKey,
+    });
+
+    expect(result.status).toBe("committed");
+
+    const tasks = await ports.tasks.queryTasks({
+      workflowKey: "document_creation",
+      limit: 5,
+    });
+    const task = tasks.find((row) => row.title === "Integration spawned task");
+    expect(task).toBeTruthy();
+    expect(task?.sourceActionLogId).toBe(result.logId);
+    expect(task?.idempotencyKey).toBe(idempotencyKey);
+
+    const replay = await executeAction(ports, {
+      actionType: "spawn_task",
+      input: {
+        title: "Integration spawned task",
+        workflowKey: "document_creation",
+      },
+      executorId: smokeUserId,
+      executorType: "Agent",
+      projectId,
+      idempotencyKey,
+    });
+    expect(replay.status).toBe("committed");
+    expect(replay.logId).toBe(result.logId);
+  });
 });

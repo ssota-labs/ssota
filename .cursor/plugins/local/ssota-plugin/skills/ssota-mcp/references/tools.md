@@ -30,6 +30,7 @@ Catalog or queue **index only**. Requires `orgSlug` + `projectSlug`.
 - `list_action_contracts` → use `get_action_contract`
 - `list_archetypes` → use `get_archetype`
 - `list_pending_gates` → use `get_gate` or `query_gates`
+- `list_tasks` → use `get_task` or `query_tasks`
 
 ## Fetch (`get_*`)
 
@@ -43,6 +44,7 @@ Single entity by primary key. Requires `orgSlug` + `projectSlug`.
 - `get_archetype` — `archetypeId`
 - `get_action_contract` — `actionType`
 - `get_action_log_entry` — `logId` or `idempotencyKey`
+- `get_task` — `taskId`
 
 ## Query (`query_*`, `find_*`)
 
@@ -55,12 +57,21 @@ Requires `orgSlug` + `projectSlug`.
 - `find_workflow` — text search for domain instructions
 - `get_action_log` — filtered log list
 - `query_gates` — optional `status` filter
+- `query_tasks` — `status`, `workflowKey`, `assignee`, `subjectId`, `targetNodeId`, pagination
 
 ## Write
 
 - `execute_action` — **only** mutation path (requires `orgSlug` + `projectSlug`)
 
 SSOTA MCP is the only mutation interface. Do not look for alternate write APIs outside MCP.
+
+### Runtime tasks (built-in)
+
+| Action | Purpose |
+|---|---|
+| `spawn_task` | Create a runtime task row (`tasks` table) bound to a domain `workflowKey` |
+
+Input: `{ title, workflowKey, targetNodeId?, assignee?, subjectId?, parentTaskId?, executorType?, context?, acceptanceCriteria? }`. Use `list_tasks` / `get_task` / `query_tasks` to read tasks. Do not create Task graph nodes for orchestration work items unless a domain workflow explicitly requires graph persistence.
 
 ### Graph instance lifecycle (built-in)
 
