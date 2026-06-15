@@ -100,7 +100,7 @@ function ExpandableListItem({
           onClick={() => onExpandedChange(!expanded)}
         >
           <span className="flex items-center gap-1.5">
-            <span className="block text-sm font-medium">{title}</span>
+            <span className="block text-xs font-medium">{title}</span>
             <CaretDownIcon
               className={cn(
                 "size-3.5 shrink-0 text-muted-foreground transition-transform",
