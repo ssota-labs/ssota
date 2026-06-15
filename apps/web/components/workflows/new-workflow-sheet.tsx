@@ -150,7 +150,7 @@ export function NewWorkflowSheet({
                     <Input
                       id="workflow-title"
                       name="title"
-                      placeholder="Homepage creation"
+                      placeholder="Document creation workflow"
                       required
                     />
                   </FormRow>
