@@ -11,7 +11,7 @@ export const listNodesByTypeInputSchema = z.object({
   offset: z.number().int().nonnegative().default(0),
 });
 
-export type ListNodesByTypeInput = z.infer<typeof listNodesByTypeInputSchema>;
+export type ListNodesByTypeInput = z.input<typeof listNodesByTypeInputSchema>;
 
 export const traverseEdgesInputSchema = z.object({
   projectId: z.string().uuid(),
@@ -20,7 +20,7 @@ export const traverseEdgesInputSchema = z.object({
   edgeType: edgeTypeSchema.optional(),
 });
 
-export type TraverseEdgesInput = z.infer<typeof traverseEdgesInputSchema>;
+export type TraverseEdgesInput = z.input<typeof traverseEdgesInputSchema>;
 
 export const getNodeInputSchema = z.object({
   projectId: z.string().uuid(),

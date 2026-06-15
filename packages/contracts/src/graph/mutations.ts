@@ -16,7 +16,7 @@ export const createNodeInputSchema = z.object({
   releaseId: z.string().uuid().optional(),
 });
 
-export type CreateNodeInput = z.infer<typeof createNodeInputSchema>;
+export type CreateNodeInput = z.input<typeof createNodeInputSchema>;
 
 export const updateNodeInputSchema = z.object({
   projectId: z.string().uuid(),
@@ -37,7 +37,7 @@ export const createEdgeInputSchema = z.object({
   properties: z.record(z.unknown()).default({}),
 });
 
-export type CreateEdgeInput = z.infer<typeof createEdgeInputSchema>;
+export type CreateEdgeInput = z.input<typeof createEdgeInputSchema>;
 
 export const deleteEdgeInputSchema = z.object({
   projectId: z.string().uuid(),
@@ -54,7 +54,7 @@ export const createInitiativeBundleInputSchema = z.object({
   releaseProperties: z.record(z.unknown()).default({}),
 });
 
-export type CreateInitiativeBundleInput = z.infer<
+export type CreateInitiativeBundleInput = z.input<
   typeof createInitiativeBundleInputSchema
 >;
 

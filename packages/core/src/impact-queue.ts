@@ -1,7 +1,7 @@
 import type {
   ActionLogRecord,
   Edge,
-  GraphReadPort,
+  LegacyGraphReadPort,
   ImpactQueueCreateInput,
   Node,
 } from "./domain/types.js";
@@ -19,7 +19,7 @@ export interface ImpactProjectionRule {
 
 export interface ProjectImpactQueueInput {
   actionLog: ActionLogRecord;
-  graph: Pick<GraphReadPort, "traverseEdges" | "getNode">;
+  graph: Pick<LegacyGraphReadPort, "traverseEdges" | "getNode">;
   rules: ImpactProjectionRule[];
   runAt?: Date;
 }
@@ -65,7 +65,7 @@ function neighborIdForEdge(
 }
 
 async function matchesTargetNodeTypes(
-  graph: Pick<GraphReadPort, "getNode">,
+  graph: Pick<LegacyGraphReadPort, "getNode">,
   targetNodeId: string,
   targetNodeTypes: string[] | undefined,
 ): Promise<{ matches: boolean; node: Node | null }> {

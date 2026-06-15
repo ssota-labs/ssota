@@ -13,6 +13,9 @@ import * as schema from "../db/schema.js";
 export type { ActionPortsScope };
 export { createConsolePort } from "./console.js";
 export { createOnboardingPort } from "./onboarding.js";
+export { createGraphPorts } from "./create-graph-ports.js";
+export { createGraphReadPort } from "./graph-read-port.js";
+export { createGraphWritePort } from "./graph-write-port.js";
 
 function mapTask(row: typeof schema.tasks.$inferSelect): Task {
   return {
