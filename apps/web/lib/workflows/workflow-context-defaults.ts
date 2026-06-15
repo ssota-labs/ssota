@@ -149,6 +149,6 @@ export function assertionSummary(
 
   return {
     title: nodeLabel,
-    description: `${matchLabel} · ${conditionCountLabel(assertion.conditions.length, "check")} · ${assertion.enforcement}${checkHint}`,
+    description: `${matchLabel} · ${conditionCountLabel(assertion.conditions.length, "check")}${checkHint}`,
   };
 }

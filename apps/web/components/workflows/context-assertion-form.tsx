@@ -32,7 +32,7 @@ export function ContextAssertionForm({
   const propertyKeys = selectedEntry?.propertyKeys ?? [];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 pt-2">
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">On node type</Label>
@@ -100,6 +100,8 @@ export function ContextAssertionForm({
         }
       />
 
+      {/*
+        Mode / enforcement — ContextAssertion 스키마 필드이나 런타임은 아직 항상 agentic + soft로 처리한다.
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Mode</Label>
@@ -141,6 +143,7 @@ export function ContextAssertionForm({
           </Select>
         </div>
       </div>
+      */}
     </div>
   );
 }
