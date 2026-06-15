@@ -13,7 +13,12 @@ type DesignCatalogProps = {
   onSelect: (selection: CatalogSelection) => void;
 };
 
-const GROUP_ORDER: CatalogGroupId[] = ["tokens", "components", "typography"];
+const GROUP_ORDER: CatalogGroupId[] = [
+  "tokens",
+  "components",
+  "page-patterns",
+  "typography",
+];
 
 export function DesignCatalog({
   groups,
@@ -24,6 +29,7 @@ export function DesignCatalog({
   const [expanded, setExpanded] = useState<Record<CatalogGroupId, boolean>>({
     tokens: true,
     components: true,
+    "page-patterns": true,
     typography: true,
   });
 
