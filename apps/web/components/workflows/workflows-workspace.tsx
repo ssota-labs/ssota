@@ -169,7 +169,7 @@ export function WorkflowsWorkspace({
         selected && package_
           ? {
               title: selected.spec.title,
-              description: formatWorkflowScope(selected.scope),
+              badge: formatWorkflowScope(selected.scope),
             }
           : null
       }
