@@ -118,9 +118,36 @@ export function WorkflowsWorkspace({
 
   const mainContent = selected && package_ ? (
     activeTab === "builder" ? (
-      <WorkflowVisualBuilder workflow={package_.workflow} />
+      <WorkflowVisualBuilder
+        workflow={package_.workflow}
+        workflowId={selected.id}
+        projectId={projectId}
+        orgSlug={orgSlug}
+        projectSlug={projectSlug}
+        workflowOptions={workflows
+          .filter((entry) => entry.workflowKey)
+          .map((entry) => ({
+            workflowKey: entry.workflowKey!,
+            title: entry.spec.title,
+          }))}
+        actionCatalog={actionCatalog}
+      />
     ) : activeTab === "flow" ? (
-      <WorkflowVisualBuilder workflow={package_.workflow} readOnly />
+      <WorkflowVisualBuilder
+        workflow={package_.workflow}
+        workflowId={selected.id}
+        projectId={projectId}
+        orgSlug={orgSlug}
+        projectSlug={projectSlug}
+        workflowOptions={workflows
+          .filter((entry) => entry.workflowKey)
+          .map((entry) => ({
+            workflowKey: entry.workflowKey!,
+            title: entry.spec.title,
+          }))}
+        actionCatalog={actionCatalog}
+        readOnly
+      />
     ) : activeTab === "runs" ? (
       <ActionLogDataTable
         rows={runRows}

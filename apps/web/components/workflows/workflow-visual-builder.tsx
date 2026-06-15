@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
-import type { Workflow } from "@ssota/contracts";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { ActionCatalogEntry, Workflow } from "@ssota/contracts";
 import {
   Background,
   Controls,
@@ -17,6 +17,7 @@ import {
 } from "@xyflow/react";
 import { PlusIcon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,10 +25,20 @@ import {
   DropdownMenuTrigger,
 } from "@ssota/ui/components/ui/dropdown-menu";
 import { cn } from "@ssota/ui/lib/utils";
-import { WorkflowNodeInspector } from "@/components/workflows/workflow-node-inspector";
+import { saveWorkflowBuilderFormAction } from "@/app/actions";
 import {
-  createWorkflowFlowNode,
-  layoutWorkflowGraph,
+  WorkflowNodeInspector,
+  type WorkflowPickerOption,
+} from "@/components/workflows/workflow-node-inspector";
+import {
+  createWorkflowDraft,
+  draftToWorkflowWire,
+  extractBuilderPatch,
+  insertBlockAfter,
+  isWorkflowDraftDirty,
+  type WorkflowDraft,
+} from "@/lib/workflows/workflow-draft";
+import {
   workflowToFlowGraph,
   type WorkflowFlowNode,
   type WorkflowFlowNodeData,
@@ -145,8 +156,14 @@ const NODE_LABELS: Record<WorkflowFlowNodeKind, string> = {
   route: "Route",
 };
 
-type WorkflowVisualBuilderInnerProps = {
+type WorkflowVisualBuilderProps = {
   workflow: Workflow;
+  workflowId: string;
+  projectId: string;
+  orgSlug: string;
+  projectSlug: string;
+  workflowOptions: WorkflowPickerOption[];
+  actionCatalog: ActionCatalogEntry[];
   readOnly?: boolean;
 };
 
@@ -189,89 +206,60 @@ function decorateWorkflowNodes(
 
 function WorkflowVisualBuilderInner({
   workflow,
+  workflowId,
+  projectId,
+  orgSlug,
+  projectSlug,
+  workflowOptions,
   readOnly = false,
-}: WorkflowVisualBuilderInnerProps) {
-  const initial = useMemo(() => workflowToFlowGraph(workflow), [workflow]);
-  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowFlowNode>(initial.nodes);
-  const [edges, setEdges] = useState<Edge[]>(initial.edges);
-  const nodesRef = useRef<WorkflowFlowNode[]>(initial.nodes);
-  const edgesRef = useRef<Edge[]>(initial.edges);
+}: WorkflowVisualBuilderProps) {
+  const [draft, setDraft] = useState<WorkflowDraft>(() => createWorkflowDraft(workflow));
+  const draftWire = useMemo(() => draftToWorkflowWire(draft, workflow), [draft, workflow]);
+  const graph = useMemo(() => workflowToFlowGraph(draftWire), [draftWire]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<WorkflowFlowNode>(graph.nodes);
+  const [edges, setEdges] = useState<Edge[]>(graph.edges);
   const { fitView } = useReactFlow();
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const onAddNodeRef = useRef<
     (sourceNodeId: string, kind: WorkflowFlowNodeKind) => void
   >(() => {});
 
-  useEffect(() => {
-    nodesRef.current = nodes;
-  }, [nodes]);
+  const dirty = useMemo(
+    () => !readOnly && isWorkflowDraftDirty(draft, workflow),
+    [draft, workflow, readOnly],
+  );
 
   useEffect(() => {
-    edgesRef.current = edges;
-  }, [edges]);
+    setDraft(createWorkflowDraft(workflow));
+    setSelectedNodeId(null);
+  }, [workflow.id, workflow.updatedAt]);
+
+  const syncCanvas = useCallback(
+    (nextDraft: WorkflowDraft, focusNodeId?: string | null) => {
+      const wire = draftToWorkflowWire(nextDraft, workflow);
+      const nextGraph = workflowToFlowGraph(wire);
+      setDraft(nextDraft);
+      setNodes(
+        decorateWorkflowNodes(nextGraph.nodes, readOnly, onAddNodeRef.current),
+      );
+      setEdges(nextGraph.edges);
+      if (focusNodeId) setSelectedNodeId(focusNodeId);
+      requestAnimationFrame(() => fitView({ padding: 0.12, duration: 250 }));
+    },
+    [fitView, readOnly, setNodes, workflow],
+  );
 
   const addNodeAfter = useCallback(
     (sourceNodeId: string, kind: WorkflowFlowNodeKind) => {
       if (readOnly) return;
-
-      const nextNode = createWorkflowFlowNode(kind);
-      const currentEdges = edgesRef.current;
-      const currentNodes = nodesRef.current;
-      const executionOutgoing = currentEdges.filter(
-        (edge) =>
-          edge.source === sourceNodeId &&
-          (edge.data as { kind?: string } | undefined)?.kind !== "reference",
+      const { draft: nextDraft, focusNodeId } = insertBlockAfter(
+        draft,
+        sourceNodeId,
+        kind,
       );
-      const retainedEdges =
-        kind === "reference"
-          ? currentEdges
-          : currentEdges.filter(
-              (edge) =>
-                !(
-                  edge.source === sourceNodeId &&
-                  (edge.data as { kind?: string } | undefined)?.kind !== "reference"
-                ),
-            );
-      const newEdge: Edge = {
-        id: `edge-${sourceNodeId}-${nextNode.id}`,
-        source: sourceNodeId,
-        target: nextNode.id,
-        type: "smoothstep",
-        label:
-          kind === "reference"
-            ? "uses"
-            : sourceNodeId.startsWith("condition:") && kind === "route"
-              ? "no"
-              : sourceNodeId.startsWith("condition:")
-                ? "yes"
-                : kind === "route"
-                  ? "handoff"
-                  : undefined,
-        data: kind === "reference" ? { kind: "reference" } : undefined,
-        style: kind === "reference" ? { strokeDasharray: "5 5" } : undefined,
-      };
-      const rewiredEdges =
-        kind === "reference"
-          ? []
-          : executionOutgoing.map((edge) => ({
-              ...edge,
-              id: `edge-${nextNode.id}-${edge.target}`,
-              source: nextNode.id,
-              label:
-                nextNode.data.kind === "condition"
-                  ? "yes"
-                  : edge.label,
-            }));
-      const layouted = layoutWorkflowGraph(
-        [...currentNodes, nextNode],
-        [...retainedEdges, newEdge, ...rewiredEdges],
-      );
-      setNodes(decorateWorkflowNodes(layouted.nodes, readOnly, onAddNodeRef.current));
-      setEdges(layouted.edges);
-      setSelectedNodeId(nextNode.id);
-      requestAnimationFrame(() => fitView({ padding: 0.12, duration: 250 }));
+      syncCanvas(nextDraft, focusNodeId);
     },
-    [fitView, readOnly, setNodes],
+    [draft, readOnly, syncCanvas],
   );
 
   useEffect(() => {
@@ -279,53 +267,88 @@ function WorkflowVisualBuilderInner({
   }, [addNodeAfter]);
 
   useEffect(() => {
-    const next = workflowToFlowGraph(workflow);
-    startTransition(() => {
-      setNodes(decorateWorkflowNodes(next.nodes, readOnly, onAddNodeRef.current));
-      setEdges(next.edges);
-    });
-    requestAnimationFrame(() => fitView({ padding: 0.12, duration: 200 }));
-  }, [workflow, setNodes, setEdges, fitView, readOnly]);
+    setNodes(decorateWorkflowNodes(graph.nodes, readOnly, onAddNodeRef.current));
+    setEdges(graph.edges);
+  }, [graph.edges, graph.nodes, readOnly, setNodes]);
 
-  const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
+  const selectedNode = useMemo(
+    () => nodes.find((node) => node.id === selectedNodeId) ?? null,
+    [nodes, selectedNodeId],
+  );
+  const builderPatch = useMemo(() => extractBuilderPatch(draft), [draft]);
 
   return (
-    <div className="flex h-full min-h-0">
-      <div className="relative min-h-0 flex-1">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={readOnly ? undefined : onNodesChange}
-          nodeTypes={nodeTypes}
-          onNodeClick={(_, node) => setSelectedNodeId(node.id)}
-          onPaneClick={() => setSelectedNodeId(null)}
-          fitView
-          fitViewOptions={{ padding: 0.12 }}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={!readOnly}
-          deleteKeyCode={null}
-          proOptions={{ hideAttribution: true }}
-          className="bg-background"
-        >
-          <Background gap={20} size={1} />
-          <Controls showInteractive={!readOnly} />
-          <MiniMap
-            nodeStrokeWidth={3}
-            zoomable
-            pannable
-            className="!bottom-3 !right-3"
-          />
-        </ReactFlow>
-      </div>
-      {!readOnly && selectedNode ? (
-        <WorkflowNodeInspector workflow={workflow} selectedNode={selectedNode} />
+    <div className="flex h-full min-h-0 flex-col">
+      {!readOnly ? (
+        <div className="flex shrink-0 items-center justify-between border-b px-4 py-2">
+          <p className="text-sm text-muted-foreground">
+            {dirty ? "Unsaved changes" : "All changes saved"}
+          </p>
+          <form action={saveWorkflowBuilderFormAction}>
+            <input type="hidden" name="projectId" value={projectId} />
+            <input type="hidden" name="workflowId" value={workflowId} />
+            <input type="hidden" name="orgSlug" value={orgSlug} />
+            <input type="hidden" name="projectSlug" value={projectSlug} />
+            <input type="hidden" name="workflowSlug" value={workflow.slug} />
+            <input
+              type="hidden"
+              name="workflowSpec"
+              value={JSON.stringify(builderPatch)}
+            />
+            <Button
+              type="submit"
+              size="sm"
+              disabled={!dirty}
+              data-testid="save-workflow-builder"
+            >
+              Save
+            </Button>
+          </form>
+        </div>
       ) : null}
+      <div className="flex min-h-0 flex-1">
+        <div className="relative min-h-0 flex-1">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={readOnly ? undefined : onNodesChange}
+            nodeTypes={nodeTypes}
+            onNodeClick={(_, node) => setSelectedNodeId(node.id)}
+            onPaneClick={() => setSelectedNodeId(null)}
+            fitView
+            fitViewOptions={{ padding: 0.12 }}
+            nodesDraggable={false}
+            nodesConnectable={false}
+            elementsSelectable={!readOnly}
+            deleteKeyCode={null}
+            proOptions={{ hideAttribution: true }}
+            className="bg-background"
+          >
+            <Background gap={20} size={1} />
+            <Controls showInteractive={!readOnly} />
+            <MiniMap
+              nodeStrokeWidth={3}
+              zoomable
+              pannable
+              className="!bottom-3 !right-3"
+            />
+          </ReactFlow>
+        </div>
+        {!readOnly && selectedNode ? (
+          <WorkflowNodeInspector
+            draft={draft}
+            selectedNode={selectedNode}
+            onDraftChange={syncCanvas}
+            workflowOptions={workflowOptions}
+            allowedActions={draft.allowedActions}
+          />
+        ) : null}
+      </div>
     </div>
   );
 }
 
-export function WorkflowVisualBuilder(props: WorkflowVisualBuilderInnerProps) {
+export function WorkflowVisualBuilder(props: WorkflowVisualBuilderProps) {
   return (
     <ReactFlowProvider>
       <WorkflowVisualBuilderInner {...props} />
