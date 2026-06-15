@@ -40,6 +40,12 @@ import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-tr
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 import { WorkflowContextField } from "@/components/workflows/workflow-context-field";
 import { createWorkflowTriggerEventFromKind } from "@/lib/workflows/workflow-trigger-catalog";
+import {
+  WORKFLOW_ROLE_NONE,
+  workflowRoleFromSelectValue,
+  workflowRoleOptionsForValue,
+  workflowRoleSelectValue,
+} from "@/lib/workflows/workflow-role-catalog";
 import type {
   WorkflowEdgeCatalogOption,
   WorkflowNodeCatalogOption,
@@ -183,17 +189,30 @@ function WorkflowSettingsFields({
   return (
     <>
       <Field label="Workflow role" htmlFor="workflow-role">
-        <Input
-          id="workflow-role"
-          value={draft.workflowRole ?? ""}
-          onChange={(event) =>
+        <Select
+          value={workflowRoleSelectValue(draft.workflowRole)}
+          onValueChange={(value) =>
             onDraftChange(
-              updateWorkflowRole(draft, event.target.value || undefined),
+              updateWorkflowRole(draft, workflowRoleFromSelectValue(value)),
             )
           }
-          placeholder="planner, dispatcher, steward…"
-          data-testid="workflow-role"
-        />
+        >
+          <SelectTrigger
+            id="workflow-role"
+            className="w-full"
+            data-testid="workflow-role"
+          >
+            <SelectValue placeholder="Select role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={WORKFLOW_ROLE_NONE}>None</SelectItem>
+            {workflowRoleOptionsForValue(draft.workflowRole).map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <p className="text-xs text-muted-foreground">
           Optional label for docs and filtering. Does not change runtime behavior.
         </p>
