@@ -1,3 +1,4 @@
+import { listWorkflowKeys, getWorkflowByKey } from "@ssota/contracts/workflows";
 import { TasksExplorer } from "@/components/tasks/tasks-explorer";
 import {
   type TaskTab,
@@ -43,12 +44,21 @@ export default async function TasksPage({
     createdAt: task.createdAt.toISOString(),
   }));
 
+  const workflowOptions = listWorkflowKeys().map((workflowKey) => {
+    const workflow = getWorkflowByKey(workflowKey);
+    return {
+      workflowKey,
+      title: workflow?.title ?? workflowKey,
+    };
+  });
+
   return (
     <TasksExplorer
       rows={rows}
       activeTab={activeTab}
       baseHref={projectPath(ctx, "tasks")}
       projectId={project.id}
+      workflowOptions={workflowOptions}
     />
   );
 }

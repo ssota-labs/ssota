@@ -24,6 +24,10 @@ export function getGraphPorts(projectId: string) {
   return createGraphPorts(getDb(), { projectId });
 }
 
+export function getGraphReadPort(projectId: string) {
+  return getGraphPorts(projectId).graphRead;
+}
+
 export async function resolveDefaultProjectId(): Promise<string> {
   const consolePort = createConsolePort(getDb());
   const org = await consolePort.getOrganizationBySlug("ssota-labs");

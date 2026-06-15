@@ -256,6 +256,7 @@ export interface TaskPort {
   listTasks(params?: { limit?: number }): Promise<Task[]>;
   queryTasks(params?: TaskQueryInput): Promise<Task[]>;
   getTask(taskId: string): Promise<Task | null>;
+  getTaskByIdempotencyKey(idempotencyKey: string): Promise<Task | null>;
   createTask(input: TaskCreateInput): Promise<Task>;
   updateTask(taskId: string, patch: TaskUpdatePatch): Promise<Task | null>;
 }
