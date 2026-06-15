@@ -27,14 +27,14 @@ test.describe("Workflow builder save", () => {
     await page.getByTestId("add-node-context").click();
     await page.getByTestId("add-node-option-route").click();
     await expect(inspector).toBeVisible({ timeout: 10_000 });
-    await inspector.getByLabel("Label").fill("Dispatch");
+    await inspector.locator("#route-label").fill("Dispatch");
 
     const routeNode = page.locator(".react-flow__node").filter({
       hasText: "Dispatch",
     });
     await expect(routeNode).toBeVisible();
 
-    const defaultOutletAdd = page.getByTestId(/^add-node-route-outlet-/).first();
+    const defaultOutletAdd = page.getByTestId("add-node-route");
     await defaultOutletAdd.click();
     await page.getByTestId("add-node-option-workflow").click();
     await expect(inspector.getByTestId("workflow-block-picker")).toBeVisible({

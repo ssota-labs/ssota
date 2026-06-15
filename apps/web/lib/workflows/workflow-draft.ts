@@ -33,10 +33,32 @@ function newId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
 
+export function normalizeRouteInstructions(route: RouteBlock): RouteBlock {
+  const routingUrl = route.routingInstructionUrl?.trim();
+  if (!routingUrl) {
+    return { ...route, routingInstructionUrl: null };
+  }
+  if (route.links.some((link) => link.url === routingUrl)) {
+    return { ...route, routingInstructionUrl: null };
+  }
+  return {
+    ...route,
+    links: [
+      { id: newId("link"), label: "Instruction", url: routingUrl },
+      ...route.links,
+    ],
+    routingInstructionUrl: null,
+  };
+}
+
 export function createWorkflowDraft(workflow: Workflow): WorkflowDraft {
   const { id: _id, slug: _slug, createdAt: _c, updatedAt: _u, ...definition } =
     workflow;
-  return structuredClone(definition);
+  const cloned = structuredClone(definition);
+  return {
+    ...cloned,
+    routeBlocks: cloned.routeBlocks.map(normalizeRouteInstructions),
+  };
 }
 
 export function draftToWorkflowWire(
@@ -253,21 +275,66 @@ function insertStepAt(draft: WorkflowDraft, index: number, step: WorkflowStepSpe
   return { ...draft, steps };
 }
 
+function spliceStepAfter(
+  draft: WorkflowDraft,
+  stepIndex: number,
+  newStep: WorkflowStepSpec,
+): WorkflowDraft {
+  const prior = draft.steps[stepIndex];
+  const oldNextId = prior?.nextStepId;
+  let nextDraft = insertStepAt(draft, stepIndex + 1, newStep);
+  if (prior) {
+    nextDraft = updateStep(nextDraft, prior.id, { nextStepId: newStep.id });
+    if (oldNextId) {
+      nextDraft = updateStep(nextDraft, newStep.id, { nextStepId: oldNextId });
+    }
+  }
+  return nextDraft;
+}
+
+function resolveOutletForConnection(
+  draft: WorkflowDraft,
+  routeId: string,
+  outletId?: string,
+): { draft: WorkflowDraft; outletId: string | null } {
+  const route = draft.routeBlocks.find((item) => item.id === routeId);
+  if (!route) return { draft, outletId: null };
+
+  if (outletId) {
+    const outlet = route.outlets.find((item) => item.id === outletId);
+    if (outlet && !outlet.target) {
+      return { draft, outletId };
+    }
+    const withOutlet = addRouteOutlet(draft, routeId);
+    const nextRoute = withOutlet.routeBlocks.find((item) => item.id === routeId);
+    return { draft: withOutlet, outletId: nextRoute?.outlets.at(-1)?.id ?? null };
+  }
+
+  const emptyOutlet = route.outlets.find((item) => !item.target);
+  if (emptyOutlet) {
+    return { draft, outletId: emptyOutlet.id };
+  }
+
+  const withOutlet = addRouteOutlet(draft, routeId);
+  const nextRoute = withOutlet.routeBlocks.find((item) => item.id === routeId);
+  return { draft: withOutlet, outletId: nextRoute?.outlets.at(-1)?.id ?? null };
+}
+
 function connectOutletToNewBlock(
   draft: WorkflowDraft,
   routeId: string,
   outletId: string | undefined,
   target: RouteOutletTarget,
 ): WorkflowDraft {
-  const route = draft.routeBlocks.find((item) => item.id === routeId);
-  if (!route) return draft;
-
-  const resolvedOutletId =
-    outletId ?? route.outlets[0]?.id ?? addRouteOutlet(draft, routeId).routeBlocks.find((r) => r.id === routeId)?.outlets[0]?.id;
+  const { draft: withOutlet, outletId: resolvedOutletId } = resolveOutletForConnection(
+    draft,
+    routeId,
+    outletId,
+  );
 
   if (!resolvedOutletId) return draft;
 
-  return setOutletTarget(draft, routeId, resolvedOutletId, target);
+  return setOutletTarget(withOutlet, routeId, resolvedOutletId, target);
 }
 
 export type InsertBlockResult = {
@@ -378,14 +445,7 @@ export function insertBlockAfter(
 
     if (kind === "step") {
       const step = defaultStep();
-      const prior = draft.steps[stepIndex];
-      const nextDraft = insertStepAt(draft, stepIndex + 1, step);
-      if (prior) {
-        return {
-          draft: updateStep(nextDraft, prior.id, { nextStepId: step.id }),
-          focusNodeId: step.id,
-        };
-      }
+      const nextDraft = spliceStepAfter(draft, stepIndex, step);
       return { draft: nextDraft, focusNodeId: step.id };
     }
 
@@ -394,14 +454,7 @@ export function insertBlockAfter(
         ...defaultStep("Review gate"),
         gate: { id: newId("gate"), policy: {}, required: true, reason: "" },
       };
-      const prior = draft.steps[stepIndex];
-      const nextDraft = insertStepAt(draft, stepIndex + 1, step);
-      if (prior) {
-        return {
-          draft: updateStep(nextDraft, prior.id, { nextStepId: step.id }),
-          focusNodeId: step.id,
-        };
-      }
+      const nextDraft = spliceStepAfter(draft, stepIndex, step);
       return { draft: nextDraft, focusNodeId: step.id };
     }
 
@@ -433,7 +486,7 @@ export function insertBlockAfter(
 
 const PROTECTED_STEP_IDS = new Set(["execute"]);
 
-function clearOutletTargets(
+function removeOutletsWithTarget(
   draft: WorkflowDraft,
   predicate: (target: RouteOutletTarget) => boolean,
 ): WorkflowDraft {
@@ -441,10 +494,9 @@ function clearOutletTargets(
     ...draft,
     routeBlocks: draft.routeBlocks.map((route) => ({
       ...route,
-      outlets: route.outlets.map((outlet) => ({
-        ...outlet,
-        target: outlet.target && predicate(outlet.target) ? null : outlet.target,
-      })),
+      outlets: route.outlets.filter(
+        (outlet) => !(outlet.target && predicate(outlet.target)),
+      ),
     })),
   };
 }
@@ -458,7 +510,7 @@ export function removeBlock(draft: WorkflowDraft, nodeId: string): WorkflowDraft
   if (routeId) {
     const nextBlocks = draft.routeBlocks.filter((route) => route.id !== routeId);
     return {
-      ...clearOutletTargets(draft, (target) =>
+      ...removeOutletsWithTarget(draft, (target) =>
         target.kind === "route" && target.routeId === routeId,
       ),
       routeBlocks: nextBlocks,
@@ -476,7 +528,7 @@ export function removeBlock(draft: WorkflowDraft, nodeId: string): WorkflowDraft
   const workflowBlockId = parseWorkflowBlockNodeId(nodeId);
   if (workflowBlockId) {
     return {
-      ...clearOutletTargets(draft, (target) =>
+      ...removeOutletsWithTarget(draft, (target) =>
         target.kind === "workflow" && target.workflowBlockId === workflowBlockId,
       ),
       workflowBlocks: draft.workflowBlocks.filter(
@@ -490,7 +542,7 @@ export function removeBlock(draft: WorkflowDraft, nodeId: string): WorkflowDraft
   }
 
   const remainingSteps = draft.steps.filter((step) => step.id !== nodeId);
-  const nextDraft = clearOutletTargets(draft, (target) =>
+  const nextDraft = removeOutletsWithTarget(draft, (target) =>
     target.kind === "step" && target.stepId === nodeId,
   );
 

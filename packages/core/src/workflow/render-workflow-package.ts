@@ -239,13 +239,13 @@ function appendRoutesSection(lines: string[], workflow: WireWorkflow) {
     lines.push(`### ${route.label}`);
     if (route.routingInstructionUrl) {
       lines.push(
-        `- routing instruction: ${route.routingInstructionUrl} (fetch when needed)`,
+        `- instruction: ${route.routingInstructionUrl} (fetch when needed)`,
       );
     }
     for (const link of route.links) {
       const sourceHint = link.source ? ` via ${link.source}` : "";
       const label = link.label ? `${link.label}: ` : "";
-      lines.push(`- link${sourceHint}: ${label}${link.url}`);
+      lines.push(`- instruction${sourceHint}: ${label}${link.url} (fetch when needed)`);
     }
     if (route.outlets.length) {
       lines.push("- outlets:");

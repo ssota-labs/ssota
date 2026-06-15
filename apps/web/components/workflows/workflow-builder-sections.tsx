@@ -110,10 +110,15 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
             {workflow.routeBlocks.map((route) => (
               <div key={route.id} className="rounded-lg border bg-muted/20 p-3">
                 <div className="font-medium">{route.label}</div>
-                {route.routingInstructionUrl ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {route.routingInstructionUrl}
-                  </p>
+                {route.links.length ? (
+                  <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    {route.links.map((link) => (
+                      <li key={link.id}>
+                        {link.label ? `${link.label}: ` : ""}
+                        {link.url}
+                      </li>
+                    ))}
+                  </ul>
                 ) : null}
                 {route.outlets.length ? (
                   <ul className="mt-2 space-y-1 text-sm text-muted-foreground">

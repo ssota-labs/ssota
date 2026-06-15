@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import type {
-  RouteOutletTarget,
-  WorkflowExternalLink,
   WorkflowStepSpec,
 } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
@@ -21,14 +19,9 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import type { WorkflowFlowNode } from "@/lib/workflows/workflow-flow-model";
 import {
-  addRouteLink,
-  addRouteOutlet,
   removeBlock,
-  removeRouteLink,
-  removeRouteOutlet,
   updateContext,
   updateRouteBlock,
-  updateRouteOutlet,
   updateStep,
   updateTriggerEvents,
   updateWorkflowBlock,
@@ -37,6 +30,8 @@ import {
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 import { WorkflowContextField } from "@/components/workflows/workflow-context-field";
+import { WorkflowRouteInstructionsField } from "@/components/workflows/workflow-route-instructions-field";
+import { WorkflowRouteOutletsField } from "@/components/workflows/workflow-route-outlets-field";
 import { createWorkflowTriggerEventFromKind } from "@/lib/workflows/workflow-trigger-catalog";
 import type {
   WorkflowEdgeCatalogOption,
@@ -73,7 +68,7 @@ export function WorkflowNodeInspector({
   const { data } = selectedNode;
   const canDelete = !["trigger", "context"].includes(data.kind);
   const isSheetStyleInspector =
-    data.kind === "trigger" || data.kind === "context";
+    data.kind === "trigger" || data.kind === "context" || data.kind === "route";
 
   return (
     <aside
@@ -83,9 +78,11 @@ export function WorkflowNodeInspector({
       {!isSheetStyleInspector ? (
         <div className="border-b px-4 py-3">
           <div className="flex items-center gap-2">
-            <p className="min-w-0 flex-1 truncate text-sm font-semibold">
-              {data.label}
-            </p>
+            <WorkflowInspectorBlockTitle
+              draft={draft}
+              node={selectedNode}
+              onDraftChange={onDraftChange}
+            />
             <Badge variant="secondary">{data.kind}</Badge>
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -136,7 +133,8 @@ export function WorkflowNodeInspector({
         ) : null}
 
         {canDelete ? (
-          <Button
+          <div className={isSheetStyleInspector ? "px-4 pb-4" : undefined}>
+            <Button
             type="button"
             variant="outline"
             size="sm"
@@ -146,6 +144,7 @@ export function WorkflowNodeInspector({
           >
             Delete block
           </Button>
+          </div>
         ) : null}
       </div>
     </aside>
@@ -231,13 +230,6 @@ function StepInspector({
 
   return (
     <>
-      <Field label="Title" htmlFor="step-title">
-        <Input
-          id="step-title"
-          value={step.title}
-          onChange={(event) => patch({ title: event.target.value })}
-        />
-      </Field>
       <Field label="Mode">
         <Select
           value={step.mode}
@@ -368,162 +360,37 @@ function RouteBlockInspector({
   const route = draft.routeBlocks.find((item) => item.id === routeId);
   if (!route || !routeId) return null;
 
-  const patch = (next: Parameters<typeof updateRouteBlock>[2]) =>
-    onDraftChange(updateRouteBlock(draft, routeId, next));
-
-  const addLink = () => {
-    const link: WorkflowExternalLink = {
-      id: `link_${crypto.randomUUID().slice(0, 8)}`,
-      label: "Link",
-      url: "https://",
-    };
-    onDraftChange(addRouteLink(draft, routeId, link));
-  };
-
   return (
     <>
-      <Field label="Label" htmlFor="route-label">
-        <Input
-          id="route-label"
-          value={route.label}
-          onChange={(event) => patch({ label: event.target.value })}
-        />
-      </Field>
-      <Field label="Routing instruction URL" htmlFor="route-routing-url">
-        <Input
-          id="route-routing-url"
-          value={route.routingInstructionUrl ?? ""}
-          onChange={(event) =>
-            patch({
-              routingInstructionUrl: event.target.value.trim()
-                ? event.target.value
-                : null,
-            })
-          }
-          placeholder="https://notion.so/…"
-        />
-        <p className="text-xs text-muted-foreground">
-          Agent reads this to decide which outlet to take.
-        </p>
-      </Field>
+      <div className="border-b px-4 py-3">
+        <Field label="Label" htmlFor="route-label">
+          <Input
+            id="route-label"
+            value={route.label}
+            onChange={(event) =>
+              onDraftChange(
+                updateRouteBlock(draft, routeId, { label: event.target.value }),
+              )
+            }
+          />
+        </Field>
+      </div>
 
-      <Field label="External links">
-        <div className="space-y-2">
-          {route.links.map((link) => (
-            <div key={link.id} className="space-y-2 rounded-md border p-3">
-              <Input
-                value={link.label ?? ""}
-                onChange={(event) => {
-                  const links = route.links.map((item) =>
-                    item.id === link.id
-                      ? { ...item, label: event.target.value }
-                      : item,
-                  );
-                  patch({ links });
-                }}
-                placeholder="Label"
-              />
-              <Input
-                value={link.url}
-                onChange={(event) => {
-                  const links = route.links.map((item) =>
-                    item.id === link.id
-                      ? { ...item, url: event.target.value }
-                      : item,
-                  );
-                  patch({ links });
-                }}
-                placeholder="https://…"
-              />
-              <Select
-                value={link.source ?? "generic"}
-                onValueChange={(value) => {
-                  if (!value) return;
-                  const links = route.links.map((item) =>
-                    item.id === link.id
-                      ? {
-                          ...item,
-                          source: value as NonNullable<
-                            WorkflowExternalLink["source"]
-                          >,
-                        }
-                      : item,
-                  );
-                  patch({ links });
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="notion">notion</SelectItem>
-                  <SelectItem value="gdrive">gdrive</SelectItem>
-                  <SelectItem value="gmail">gmail</SelectItem>
-                  <SelectItem value="generic">generic</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="w-full text-destructive"
-                onClick={() =>
-                  onDraftChange(removeRouteLink(draft, routeId, link.id))
-                }
-              >
-                Remove link
-              </Button>
-            </div>
-          ))}
-          <Button type="button" variant="outline" size="sm" onClick={addLink}>
-            Add link
-          </Button>
-        </div>
-      </Field>
+      <WorkflowRouteInstructionsField
+        draft={draft}
+        routeId={routeId}
+        links={route.links}
+        onDraftChange={onDraftChange}
+        inspectorHeader
+      />
 
-      <Field label="Outlets">
-        <div className="space-y-2">
-          {route.outlets.map((outlet) => (
-            <div key={outlet.id} className="rounded-md border p-3 text-sm">
-              <Input
-                value={outlet.label}
-                onChange={(event) =>
-                  onDraftChange(
-                    updateRouteOutlet(draft, routeId, outlet.id, {
-                      label: event.target.value,
-                    }),
-                  )
-                }
-                className="mb-2"
-              />
-              <p className="text-xs text-muted-foreground">
-                Target: {describeOutletTarget(draft, outlet.target)}
-              </p>
-              {route.outlets.length > 1 ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 w-full text-destructive"
-                  onClick={() =>
-                    onDraftChange(removeRouteOutlet(draft, routeId, outlet.id))
-                  }
-                >
-                  Remove outlet
-                </Button>
-              ) : null}
-            </div>
-          ))}
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => onDraftChange(addRouteOutlet(draft, routeId))}
-          >
-            Add outlet
-          </Button>
-        </div>
-      </Field>
+      <WorkflowRouteOutletsField
+        draft={draft}
+        routeId={routeId}
+        outlets={route.outlets}
+        onDraftChange={onDraftChange}
+        inspectorHeader
+      />
     </>
   );
 }
@@ -554,19 +421,6 @@ function WorkflowBlockInspector({
           This workflow references itself. Circular handoffs may loop at runtime.
         </p>
       ) : null}
-      <Field label="Label" htmlFor="workflow-block-label">
-        <Input
-          id="workflow-block-label"
-          value={block.label ?? ""}
-          onChange={(event) =>
-            onDraftChange(
-              updateWorkflowBlock(draft, workflowBlockId, {
-                label: event.target.value,
-              }),
-            )
-          }
-        />
-      </Field>
       <Field label="Target workflow">
         <Select
           value={block.workflowKey}
@@ -596,29 +450,77 @@ function WorkflowBlockInspector({
   );
 }
 
-function describeOutletTarget(
-  draft: WorkflowDraft,
-  target: RouteOutletTarget | null | undefined,
-): string {
-  if (!target) return "Not connected";
-  switch (target.kind) {
-    case "step": {
-      const step = draft.steps.find((item) => item.id === target.stepId);
-      return step ? `Step: ${step.title}` : `Step: ${target.stepId}`;
-    }
-    case "route": {
-      const route = draft.routeBlocks.find((item) => item.id === target.routeId);
-      return route ? `Route: ${route.label}` : `Route: ${target.routeId}`;
-    }
-    case "workflow": {
-      const block = draft.workflowBlocks.find(
-        (item) => item.id === target.workflowBlockId,
+function WorkflowInspectorBlockTitle({
+  draft,
+  node,
+  onDraftChange,
+}: {
+  draft: WorkflowDraft;
+  node: WorkflowFlowNode;
+  onDraftChange: (draft: WorkflowDraft) => void;
+}) {
+  const { data } = node;
+  const inputClassName = cn(
+    "h-auto min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-sm font-semibold shadow-none",
+    "focus-visible:border-0 focus-visible:ring-0 focus-visible:ring-offset-0",
+    "placeholder:text-muted-foreground",
+  );
+
+  if ((data.kind === "step" || data.kind === "gate") && data.stepId) {
+    const step = draft.steps.find((item) => item.id === data.stepId);
+    if (!step) {
+      return (
+        <p className="min-w-0 flex-1 truncate text-sm font-semibold">{data.label}</p>
       );
-      return block
-        ? `Workflow: ${block.workflowKey}`
-        : `Workflow block: ${target.workflowBlockId}`;
     }
+
+    return (
+      <Input
+        value={step.title}
+        onChange={(event) =>
+          onDraftChange(
+            updateStep(draft, data.stepId!, { title: event.target.value }),
+          )
+        }
+        className={inputClassName}
+        aria-label="Title"
+        placeholder={data.kind === "gate" ? "Review gate" : "Step title"}
+        data-testid="inspector-block-title"
+      />
+    );
   }
+
+  if (data.kind === "workflow" && data.workflowBlockId) {
+    const block = draft.workflowBlocks.find(
+      (item) => item.id === data.workflowBlockId,
+    );
+    if (!block) {
+      return (
+        <p className="min-w-0 flex-1 truncate text-sm font-semibold">{data.label}</p>
+      );
+    }
+
+    return (
+      <Input
+        value={block.label ?? ""}
+        onChange={(event) =>
+          onDraftChange(
+            updateWorkflowBlock(draft, data.workflowBlockId!, {
+              label: event.target.value,
+            }),
+          )
+        }
+        className={inputClassName}
+        aria-label="Label"
+        placeholder={block.workflowKey}
+        data-testid="inspector-block-title"
+      />
+    );
+  }
+
+  return (
+    <p className="min-w-0 flex-1 truncate text-sm font-semibold">{data.label}</p>
+  );
 }
 
 function Field({

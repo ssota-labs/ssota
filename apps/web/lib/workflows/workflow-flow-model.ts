@@ -50,6 +50,11 @@ export type WorkflowFlowNodeData = {
 export type WorkflowFlowNode = Node<WorkflowFlowNodeData, "workflowNode">;
 export type WorkflowFlowEdge = Edge;
 
+/** Must match handle positions on `WorkflowFlowNodeCard` for route nodes. */
+export const ROUTE_OUTLET_HANDLE_TOP_BASE = 28;
+/** Vertical gap between route outlet handles — must clear stacked branch node height (~120px). */
+export const ROUTE_OUTLET_HANDLE_SPACING = 88;
+
 const DEFAULT_STEP: WorkflowStepSpec = {
   id: "step_1",
   title: "New step",
@@ -250,6 +255,80 @@ function appendRouteBlockEdges(
   }
 }
 
+function getNodeLayoutHeight(node: WorkflowFlowNode): number {
+  if (node.data.kind === "workflow") return 96;
+  if (node.data.kind === "route") {
+    const outletCount = node.data.routeOutlets?.length ?? 1;
+    return Math.max(
+      120,
+      ROUTE_OUTLET_HANDLE_TOP_BASE +
+        Math.max(0, outletCount - 1) * ROUTE_OUTLET_HANDLE_SPACING +
+        24,
+    );
+  }
+  return 120;
+}
+
+function outletHandleCenterY(routeNode: WorkflowFlowNode, outletIndex: number): number {
+  return (
+    routeNode.position.y +
+    ROUTE_OUTLET_HANDLE_TOP_BASE +
+    outletIndex * ROUTE_OUTLET_HANDLE_SPACING
+  );
+}
+
+/** Keep branch targets in the same vertical order as route outlet handles (insertion order). */
+function alignRouteOutletTargets(
+  nodes: WorkflowFlowNode[],
+  edges: WorkflowFlowEdge[],
+): WorkflowFlowNode[] {
+  const nodeById = new Map(nodes.map((node) => [node.id, { ...node }]));
+
+  for (const routeNode of nodes) {
+    if (routeNode.data.kind !== "route") continue;
+
+    const outlets = routeNode.data.routeOutlets ?? [];
+    if (outlets.length === 0) continue;
+
+    const layoutRoute = nodeById.get(routeNode.id);
+    if (!layoutRoute) continue;
+
+    const outletEdges = edges
+      .filter(
+        (edge) =>
+          edge.source === routeNode.id &&
+          edge.sourceHandle &&
+          outlets.some((outlet) => outlet.id === edge.sourceHandle),
+      )
+      .sort((left, right) => {
+        const leftIndex = outlets.findIndex((outlet) => outlet.id === left.sourceHandle);
+        const rightIndex = outlets.findIndex((outlet) => outlet.id === right.sourceHandle);
+        return leftIndex - rightIndex;
+      });
+
+    for (const edge of outletEdges) {
+      const outletIndex = outlets.findIndex((outlet) => outlet.id === edge.sourceHandle);
+      if (outletIndex < 0) continue;
+
+      const target = nodeById.get(edge.target);
+      if (!target) continue;
+
+      const targetHeight = getNodeLayoutHeight(target);
+      const handleCenterY = outletHandleCenterY(layoutRoute, outletIndex);
+
+      nodeById.set(edge.target, {
+        ...target,
+        position: {
+          ...target.position,
+          y: handleCenterY - targetHeight / 2,
+        },
+      });
+    }
+  }
+
+  return nodes.map((node) => nodeById.get(node.id) ?? node);
+}
+
 export function layoutWorkflowGraph(
   nodes: WorkflowFlowNode[],
   edges: WorkflowFlowEdge[],
@@ -257,14 +336,18 @@ export function layoutWorkflowGraph(
   nodes: WorkflowFlowNode[];
   edges: WorkflowFlowEdge[];
 } {
-  const laidOut = layoutGraphWithDagre(nodes, edges, "LR", {
+  const laidOut = layoutGraphWithDagre<WorkflowFlowNodeData>(nodes, edges, "LR", {
     getNodeSize: (node) => ({
       width: node.data.layoutWidth ?? 220,
-      height: node.data.kind === "workflow" ? 96 : 120,
+      height: getNodeLayoutHeight(node as WorkflowFlowNode),
     }),
   });
+  const alignedNodes = alignRouteOutletTargets(
+    laidOut.nodes as WorkflowFlowNode[],
+    laidOut.edges,
+  );
   return {
-    nodes: laidOut.nodes.map((node) => ({
+    nodes: alignedNodes.map((node) => ({
       ...node,
       type: "workflowNode" as const,
     })),
@@ -312,10 +395,9 @@ export function workflowToFlowGraph(workflow: Workflow): {
         eyebrow: "route",
         label: route.label,
         description:
-          route.routingInstructionUrl ??
-          (route.links.length
-            ? `${route.links.length} link(s) · ${route.outlets.length} outlet(s)`
-            : `${route.outlets.length} outlet(s)`),
+          route.links.length
+            ? `${route.links.length} instruction(s) · ${route.outlets.length} outlet(s)`
+            : `${route.outlets.length} outlet(s)`,
         badges: route.outlets.map((outlet) => outlet.label).slice(0, 3),
         routeId: route.id,
         routeOutlets: route.outlets.map((outlet) => ({

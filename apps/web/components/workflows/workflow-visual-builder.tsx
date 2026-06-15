@@ -46,6 +46,8 @@ import {
   type WorkflowDraft,
 } from "@/lib/workflows/workflow-draft";
 import {
+  ROUTE_OUTLET_HANDLE_SPACING,
+  ROUTE_OUTLET_HANDLE_TOP_BASE,
   workflowToFlowGraph,
   type WorkflowFlowNode,
   type WorkflowFlowNodeData,
@@ -92,7 +94,7 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
   const AddIcon = data.AddIcon;
   const routeOutlets = data.routeOutlets ?? [];
 
-  const renderAddMenu = (sourceNodeId: string, outletId?: string) => {
+  const renderAddMenu = (sourceNodeId: string) => {
     if (!data.addOptions?.length || !data.onAddNode || !AddIcon) return null;
     return (
       <DropdownMenu>
@@ -102,11 +104,7 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
               type="button"
               className="nodrag nopan flex size-6 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm hover:text-foreground"
               aria-label={`Add block from ${data.label}`}
-              data-testid={
-                outletId
-                  ? `add-node-route-outlet-${outletId}`
-                  : `add-node-${data.kind}`
-              }
+              data-testid={`add-node-${data.kind}`}
               onPointerDown={(event) => event.stopPropagation()}
               onClick={(event) => event.stopPropagation()}
             />
@@ -122,7 +120,7 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
                 key={kind}
                 onClick={(event) => {
                   event.stopPropagation();
-                  data.onAddNode?.(sourceNodeId, kind, outletId);
+                  data.onAddNode?.(sourceNodeId, kind);
                 }}
                 data-testid={`add-node-option-${kind}`}
               >
@@ -164,7 +162,7 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
       ) : null}
       {data.kind === "route"
         ? routeOutlets.map((outlet, index) => {
-            const top = 28 + index * 22;
+            const top = ROUTE_OUTLET_HANDLE_TOP_BASE + index * ROUTE_OUTLET_HANDLE_SPACING;
             return (
               <Handle
                 key={outlet.id}
@@ -197,28 +195,18 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
           ))}
         </div>
       ) : null}
-      {data.kind === "route" ? (
-        <div className="mt-3 space-y-2 border-t pt-2">
-          {routeOutlets.map((outlet) => (
-            <div
-              key={outlet.id}
-              className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground"
-            >
-              <span className="truncate">{outlet.label}</span>
-              {data.nodeId
-                ? renderAddMenu(data.nodeId, outlet.id)
-                : null}
-            </div>
-          ))}
+      {data.nodeId ? (
+        <div
+          className={cn(
+            "absolute -right-3",
+            data.kind === "route"
+              ? "top-2"
+              : "top-1/2 -translate-y-1/2",
+          )}
+        >
+          {renderAddMenu(data.nodeId)}
         </div>
       ) : null}
-      {data.kind !== "route" && data.nodeId
-        ? (
-            <div className="absolute top-1/2 -right-3 -translate-y-1/2">
-              {renderAddMenu(data.nodeId)}
-            </div>
-          )
-        : null}
     </div>
   );
 }
