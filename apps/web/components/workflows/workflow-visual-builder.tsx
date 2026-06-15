@@ -15,7 +15,14 @@ import {
   type Edge,
   type NodeProps,
 } from "@xyflow/react";
-import { PlusIcon } from "@phosphor-icons/react";
+import {
+  FlowArrowIcon,
+  GitBranchIcon,
+  ListChecksIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+} from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -60,6 +67,24 @@ const nodeStyles: Record<WorkflowFlowNodeKind, string> = {
 
 const ADDABLE_KINDS: WorkflowFlowNodeKind[] = ["step", "route", "workflow"];
 
+const NODE_LABELS: Record<WorkflowFlowNodeKind, string> = {
+  trigger: "Trigger",
+  context: "Context",
+  step: "Step",
+  gate: "Gate",
+  route: "Route",
+  workflow: "Workflow",
+};
+
+const NODE_ICONS: Record<WorkflowFlowNodeKind, Icon> = {
+  trigger: PlusIcon,
+  context: PlusIcon,
+  step: ListChecksIcon,
+  gate: ShieldCheckIcon,
+  route: GitBranchIcon,
+  workflow: FlowArrowIcon,
+};
+
 function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
   const showTarget = data.kind !== "trigger";
   const showLinearSource =
@@ -89,19 +114,23 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
         >
           <AddIcon className="size-3.5" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-40" align="start">
-          {data.addOptions.map((kind) => (
-            <DropdownMenuItem
-              key={kind}
-              onClick={(event) => {
-                event.stopPropagation();
-                data.onAddNode?.(sourceNodeId, kind, outletId);
-              }}
-              data-testid={`add-node-option-${kind}`}
-            >
-              {NODE_LABELS[kind]}
-            </DropdownMenuItem>
-          ))}
+        <DropdownMenuContent className="w-44" align="start">
+          {data.addOptions.map((kind) => {
+            const KindIcon = NODE_ICONS[kind];
+            return (
+              <DropdownMenuItem
+                key={kind}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  data.onAddNode?.(sourceNodeId, kind, outletId);
+                }}
+                data-testid={`add-node-option-${kind}`}
+              >
+                <KindIcon />
+                {NODE_LABELS[kind]}
+              </DropdownMenuItem>
+            );
+          })}
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -195,15 +224,6 @@ function WorkflowFlowNodeCard({ data, selected }: NodeProps<WorkflowFlowNode>) {
 }
 
 const nodeTypes = { workflowNode: WorkflowFlowNodeCard };
-
-const NODE_LABELS: Record<WorkflowFlowNodeKind, string> = {
-  trigger: "Trigger",
-  context: "Context",
-  step: "Step",
-  gate: "Gate",
-  route: "Route",
-  workflow: "Workflow",
-};
 
 type WorkflowVisualBuilderProps = {
   workflow: Workflow;
