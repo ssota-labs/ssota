@@ -5,6 +5,7 @@ import type { WorkflowTriggerEvent } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import { cn } from "@ssota/ui/lib/utils";
 import {
   getWorkflowTriggerMeta,
   serializeWorkflowTriggers,
@@ -14,12 +15,17 @@ export function WorkflowTriggersField({
   triggers,
   onTriggersChange,
   onAddTrigger,
+  readOnly = false,
+  className,
 }: {
   triggers: WorkflowTriggerEvent[];
-  onTriggersChange: (triggers: WorkflowTriggerEvent[]) => void;
-  onAddTrigger: () => void;
+  onTriggersChange?: (triggers: WorkflowTriggerEvent[]) => void;
+  onAddTrigger?: () => void;
+  readOnly?: boolean;
+  className?: string;
 }) {
   function setTriggerEnabled(id: string, enabled: boolean) {
+    if (readOnly || !onTriggersChange) return;
     const next = triggers.map((trigger) =>
       trigger.id === id ? { ...trigger, enabled } : trigger,
     );
@@ -29,7 +35,7 @@ export function WorkflowTriggersField({
   }
 
   return (
-    <div className="space-y-3 px-6">
+    <div className={cn("space-y-3 px-6", className)}>
       <div className="space-y-1">
         <Label className="text-sm font-medium">Triggers</Label>
         <p className="text-sm text-muted-foreground">
@@ -59,6 +65,7 @@ export function WorkflowTriggersField({
                 </span>
                 <Switch
                   checked={trigger.enabled}
+                  disabled={readOnly}
                   onCheckedChange={(checked) =>
                     setTriggerEnabled(trigger.id, checked)
                   }
@@ -69,26 +76,30 @@ export function WorkflowTriggersField({
           })}
         </ul>
 
-        <div className="border-t px-3 py-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 px-2 text-muted-foreground"
-            data-testid="add-workflow-trigger"
-            onClick={onAddTrigger}
-          >
-            <PlusIcon className="size-3.5" />
-            Add trigger
-          </Button>
-        </div>
+        {!readOnly && onAddTrigger ? (
+          <div className="border-t px-3 py-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2 text-muted-foreground"
+              data-testid="add-workflow-trigger"
+              onClick={onAddTrigger}
+            >
+              <PlusIcon className="size-3.5" />
+              Add trigger
+            </Button>
+          </div>
+        ) : null}
       </div>
 
-      <input
-        type="hidden"
-        name="workflowTriggers"
-        value={serializeWorkflowTriggers(triggers)}
-      />
+      {!readOnly ? (
+        <input
+          type="hidden"
+          name="workflowTriggers"
+          value={serializeWorkflowTriggers(triggers)}
+        />
+      ) : null}
     </div>
   );
 }

@@ -28,7 +28,7 @@ import {
   updateStep,
   type WorkflowDraft,
 } from "@/lib/workflows/workflow-draft";
-import { getWorkflowTriggerMeta } from "@/lib/workflows/workflow-trigger-catalog";
+import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 
 export type WorkflowPickerOption = {
   workflowKey: string;
@@ -149,24 +149,12 @@ function ReadonlyHint({ children }: { children: React.ReactNode }) {
 }
 
 function TriggerInspector({ draft }: { draft: WorkflowDraft }) {
-  const activeEvents = draft.trigger.events.filter((event) => event.enabled);
   return (
-    <>
-      <ReadonlyHint>Edit triggers in the Create Sheet.</ReadonlyHint>
-      <ReadonlyArea
-        label="Events"
-        value={
-          activeEvents.length
-            ? activeEvents
-                .map((event) => {
-                  const meta = getWorkflowTriggerMeta(event.kind);
-                  return `${meta.label} (${event.kind})`;
-                })
-                .join("\n")
-            : "No active triggers"
-        }
-      />
-    </>
+    <WorkflowTriggersField
+      triggers={draft.trigger.events}
+      readOnly
+      className="px-0"
+    />
   );
 }
 
