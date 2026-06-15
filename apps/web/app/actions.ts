@@ -529,6 +529,50 @@ export async function saveWorkflowBuilderFormAction(formData: FormData): Promise
   }
 }
 
+export async function updateWorkflowSettingsFormAction(
+  formData: FormData,
+): Promise<void> {
+  const projectId = await requireProjectId(formData);
+  const workflowId = String(formData.get("workflowId") ?? "").trim();
+  const orgSlug = String(formData.get("orgSlug") ?? "").trim();
+  const projectSlug = String(formData.get("projectSlug") ?? "").trim();
+  const workflowSlug = String(formData.get("workflowSlug") ?? "").trim();
+  if (!workflowId) throw new Error("workflowId required");
+
+  const title = String(formData.get("title") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  const applicableNodeTypes = parseApplicableNodeTypes(
+    formData.get("applicableNodeTypes"),
+  );
+  const allowedActionsFromBindings = parseCsv(formData.get("allowedActions"));
+
+  const ports = getActionPorts(projectId);
+  const existing = await ports.catalog.getWorkflow(workflowId);
+  if (!existing) throw new Error("Workflow not found");
+
+  const result = await updateWorkflowAction({
+    projectId,
+    workflowId,
+    patch: {
+      title,
+      applicableNodeTypes,
+      allowedActions: allowedActionsFromBindings,
+      ...(body ? { agentNotes: body } : { agentNotes: null }),
+    },
+  });
+
+  if (result.status === "committed") {
+    const params = new URLSearchParams({
+      workflow: workflowSlug || existing.slug,
+    });
+    redirect(
+      orgSlug && projectSlug
+        ? projectPath({ orgSlug, projectSlug }, `workflow?${params.toString()}`)
+        : `${projectPath(DEFAULT_PROJECT, "workflow")}?${params.toString()}`,
+    );
+  }
+}
+
 export async function attachWorkflowRunbookFormAction(formData: FormData) {
   const projectId = await requireProjectId(formData);
   const workflowId = String(formData.get("workflowId") ?? "");
