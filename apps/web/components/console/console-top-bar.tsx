@@ -1,29 +1,10 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Project } from "@ssota/core";
-import {
-  Avatar,
-  AvatarFallback,
-} from "@ssota/ui/components/ui/avatar";
-import { Button } from "@ssota/ui/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@ssota/ui/components/ui/dropdown-menu";
-import { CaretDownIcon } from "@phosphor-icons/react";
-import { useLocale } from "@/components/i18n/locale-provider";
-import { projectPath } from "@/lib/console/paths";
 import { ConsoleBreadcrumb } from "./console-breadcrumb";
 import { ConsoleProjectSwitcher } from "./console-workspace-switcher";
 import { InitiativeSwitcher } from "./initiative-switcher";
-import { useProjectContext } from "./project-context";
 
 type InitiativeOption = {
   id: string;
@@ -31,26 +12,15 @@ type InitiativeOption = {
 };
 
 type ConsoleTopBarProps = {
-  userEmail: string;
   projects: Project[];
   initiatives?: InitiativeOption[];
-  signOutAction: () => Promise<void>;
 };
 
-function initialsFromEmail(email: string) {
-  const local = email.split("@")[0] ?? "U";
-  return local.slice(0, 2).toUpperCase();
-}
-
 export function ConsoleTopBar({
-  userEmail,
   projects,
   initiatives = [],
-  signOutAction,
 }: ConsoleTopBarProps) {
-  const ctx = useProjectContext();
   const pathname = usePathname();
-  const { t } = useLocale();
 
   const currentInitiative = initiatives.find((item) =>
     pathname.includes(`/product/initiatives/${item.id}`),
@@ -68,45 +38,7 @@ export function ConsoleTopBar({
 
       <ConsoleBreadcrumb initiativeTitle={currentInitiative?.title} />
 
-      <div className="flex items-center justify-end gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            aria-label={t("nav.signedInAs")}
-            render={<Button variant="ghost" size="sm" className="h-8 gap-2 px-2" />}
-          >
-            <Avatar size="sm">
-              <AvatarFallback>{initialsFromEmail(userEmail)}</AvatarFallback>
-            </Avatar>
-            <span className="hidden max-w-[10rem] truncate text-xs md:inline">
-              {userEmail}
-            </span>
-            <CaretDownIcon className="size-3.5 text-muted-foreground" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuGroup>
-              <DropdownMenuLabel className="font-normal">
-                <div className="text-xs text-muted-foreground">{t("nav.signedInAs")}</div>
-                <div className="truncate text-sm">{userEmail}</div>
-              </DropdownMenuLabel>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              render={<Link href={projectPath(ctx, "developer/setup")} prefetch />}
-            >
-              {t("nav.developerSetup")}
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              render={<Link href={projectPath(ctx, "settings/general")} prefetch />}
-            >
-              {t("nav.settings")}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => void signOutAction()}>
-              {t("common.signOut")}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+      <div aria-hidden className="min-w-0" />
     </header>
   );
 }

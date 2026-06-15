@@ -5,6 +5,8 @@ import { PagePatternHub } from "@ssota/ui/components/page-patterns";
 import type { HubQuickLink, HubStatCard } from "@ssota/ui/components/page-patterns/page-pattern-hub";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
+import { useLocale } from "@/components/i18n/locale-provider";
+import { formatLocaleDate } from "@/lib/i18n/format";
 
 type WorkflowPhaseSummary = {
   key: string;
@@ -87,6 +89,8 @@ export function OverviewHub({
   workflowMapPath,
   workflowSummary,
 }: OverviewHubProps) {
+  const { locale } = useLocale();
+
   return (
     <PagePatternHub
       stats={stats}
@@ -108,7 +112,7 @@ export function OverviewHub({
                     {item.title}
                   </Link>
                   <span className="text-muted-foreground">
-                    {item.nodeType} · {new Date(item.updatedAt).toLocaleDateString()}
+                    {item.nodeType} · {formatLocaleDate(item.updatedAt, locale)}
                   </span>
                 </li>
               ))}

@@ -46,17 +46,19 @@ test.describe("SSOTA Console", () => {
     await expect(nav).toBeVisible();
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
-    await expect(sidebar.getByRole("link", { name: "Developer setup", exact: true })).toBeVisible();
-    await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
+    await expect(sidebar.getByRole("button", { name: "Signed in as" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Workflows", exact: true })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Graph", exact: true })).toHaveCount(0);
   });
 
-  test("smoke: profile menu opens", async ({ page }) => {
+  test("smoke: profile menu opens in sidebar footer", async ({ page }) => {
     await loginAsSmoke(page);
-    await page.getByRole("button", { name: "Signed in as" }).click();
+    const sidebar = page.locator("aside");
+    await sidebar.getByRole("button", { name: "Signed in as" }).click();
     await expect(page.getByText("smoke@ssota.test").last()).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: "Sign out" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(page.getByText("Appearance")).toBeVisible();
+    await expect(page.getByText("Language")).toBeVisible();
   });
 });
 
