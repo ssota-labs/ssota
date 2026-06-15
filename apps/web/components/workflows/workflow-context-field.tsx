@@ -27,6 +27,7 @@ import {
   type WorkflowEdgeCatalogOption,
   type WorkflowNodeCatalogOption,
 } from "@/lib/workflows/workflow-context-defaults";
+import { WorkflowInspectorSheetHeader } from "@/components/workflows/workflow-inspector-sheet-header";
 
 type WorkflowContextFieldProps = {
   context: ContextSpec;
@@ -34,6 +35,7 @@ type WorkflowContextFieldProps = {
   nodeCatalog: WorkflowNodeCatalogOption[];
   edgeCatalog: WorkflowEdgeCatalogOption[];
   readOnly?: boolean;
+  inspectorHeader?: boolean;
   className?: string;
 };
 
@@ -47,6 +49,7 @@ export function WorkflowContextField({
   nodeCatalog,
   edgeCatalog,
   readOnly = false,
+  inspectorHeader = false,
   className,
 }: WorkflowContextFieldProps) {
   const [expandedFilterGroupId, setExpandedFilterGroupId] = useState<string | null>(
@@ -110,15 +113,28 @@ export function WorkflowContextField({
 
   return (
     <>
-      <div className={cn("space-y-6 px-6 pb-6", className)}>
-        <div className="space-y-1">
-          <Label className="text-sm font-medium">Context</Label>
-          <p className="text-sm text-muted-foreground">
-            Filter groups, traversals, and assertions agents use to assemble graph
-            context.
-          </p>
-        </div>
+      <div className={cn(inspectorHeader ? "pb-6" : "space-y-6 px-6 pb-6", className)}>
+        {inspectorHeader ? (
+          <WorkflowInspectorSheetHeader
+            title="Context"
+            kind="context"
+            description="Filter groups, traversals, and assertions agents use to assemble graph context."
+          />
+        ) : (
+          <div className="space-y-1">
+            <Label className="text-sm font-medium">Context</Label>
+            <p className="text-xs text-muted-foreground">
+              Filter groups, traversals, and assertions agents use to assemble
+              graph context.
+            </p>
+          </div>
+        )}
 
+        <div
+          className={cn(
+            inspectorHeader ? "space-y-6 px-4 pt-4" : "contents",
+          )}
+        >
         <ExpandableListSection
           title="Filter groups"
           description="One node type per group with property conditions."
@@ -272,6 +288,7 @@ export function WorkflowContextField({
             );
           })}
         </ExpandableListSection>
+        </div>
       </div>
 
       {!readOnly ? (

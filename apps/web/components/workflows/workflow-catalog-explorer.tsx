@@ -1,5 +1,6 @@
 "use client";
 
+import { Badge } from "@ssota/ui/components/ui/badge";
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useProjectContext } from "@/components/console/project-context";
@@ -12,7 +13,7 @@ import { projectPath } from "@/lib/console/paths";
 type WorkflowCatalogExplorerProps = {
   items: WorkflowCatalogItem[];
   newWorkflowTrigger: React.ReactNode;
-  mainHeader?: { title: string; description?: string } | null;
+  mainHeader?: { title: string; badge?: string } | null;
   mainContent: React.ReactNode | null;
   tabBar?: React.ReactNode;
   emptyHint?: string;
@@ -72,17 +73,15 @@ export function WorkflowCatalogExplorer({
         {showMain ? (
           <>
             <div className="flex shrink-0 flex-col gap-2 border-b px-4 py-2">
-              <div className="flex min-w-0 items-start gap-2">
-                <div className="min-w-0 flex-1">
-                  <h1 className="text-sm font-semibold">
-                    {mainHeader?.title ?? selectedItem?.label}
-                  </h1>
-                  {mainHeader?.description ? (
-                    <p className="text-xs text-muted-foreground">
-                      {mainHeader.description}
-                    </p>
-                  ) : null}
-                </div>
+              <div className="flex min-w-0 items-center gap-2">
+                {mainHeader?.badge ? (
+                  <Badge variant="secondary" className="shrink-0 font-normal">
+                    {mainHeader.badge}
+                  </Badge>
+                ) : null}
+                <h1 className="min-w-0 truncate text-sm font-semibold">
+                  {mainHeader?.title ?? selectedItem?.label}
+                </h1>
               </div>
               {tabBar ? (
                 <div className="flex flex-wrap items-center gap-1">{tabBar}</div>

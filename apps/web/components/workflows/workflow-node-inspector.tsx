@@ -198,7 +198,7 @@ function TriggerInspector({
           onDraftChange(updateTriggerEvents(draft, events))
         }
         onAddTrigger={() => setAddTriggerOpen(true)}
-        className="px-4 py-4"
+        inspectorHeader
       />
       <AddWorkflowTriggerDialog
         open={addTriggerOpen}
@@ -234,7 +234,7 @@ function ContextInspector({
       nodeCatalog={nodeCatalog}
       edgeCatalog={edgeCatalog}
       onContextChange={(context) => onDraftChange(updateContext(draft, context))}
-      className="px-4 pt-4 pb-6"
+      inspectorHeader
     />
   );
 }

@@ -10,18 +10,21 @@ import {
   getWorkflowTriggerMeta,
   serializeWorkflowTriggers,
 } from "@/lib/workflows/workflow-trigger-catalog";
+import { WorkflowInspectorSheetHeader } from "@/components/workflows/workflow-inspector-sheet-header";
 
 export function WorkflowTriggersField({
   triggers,
   onTriggersChange,
   onAddTrigger,
   readOnly = false,
+  inspectorHeader = false,
   className,
 }: {
   triggers: WorkflowTriggerEvent[];
   onTriggersChange?: (triggers: WorkflowTriggerEvent[]) => void;
   onAddTrigger?: () => void;
   readOnly?: boolean;
+  inspectorHeader?: boolean;
   className?: string;
 }) {
   function setTriggerEnabled(id: string, enabled: boolean) {
@@ -46,14 +49,23 @@ export function WorkflowTriggersField({
   }
 
   return (
-    <div className={cn("space-y-3 px-6", className)}>
-      <div className="space-y-1">
-        <Label className="text-sm font-medium">Triggers</Label>
-        <p className="text-sm text-muted-foreground">
-          When should this workflow run?
-        </p>
-      </div>
+    <div className={cn(inspectorHeader ? undefined : "space-y-3 px-6", className)}>
+      {inspectorHeader ? (
+        <WorkflowInspectorSheetHeader
+          title="Triggers"
+          kind="trigger"
+          description="When should this workflow run?"
+        />
+      ) : (
+        <div className="space-y-1">
+          <Label className="text-sm font-medium">Triggers</Label>
+          <p className="text-xs text-muted-foreground">
+            When should this workflow run?
+          </p>
+        </div>
+      )}
 
+      <div className={cn("space-y-3", inspectorHeader && "px-4 py-4")}>
       <div className="overflow-hidden rounded-lg border bg-card">
         <ul className="divide-y">
           {triggers.map((trigger) => {
@@ -127,6 +139,7 @@ export function WorkflowTriggersField({
           value={serializeWorkflowTriggers(triggers)}
         />
       ) : null}
+      </div>
     </div>
   );
 }
