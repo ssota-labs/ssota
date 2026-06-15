@@ -105,7 +105,6 @@ export async function ScopedDocumentRoute({
       title={node.title || defaultTitle}
       status={node.lifecycleStatus}
       content={node.content ?? ""}
-      editLabel="Edit"
       emptyDescription={emptyDescription}
       onSave={saveDocument}
     />

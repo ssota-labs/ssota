@@ -21,6 +21,6 @@ test.describe("Research hypotheses", () => {
       new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives/[^/]+/planning/prd$`),
       { timeout: 15_000 },
     );
-    await expect(page.getByRole("button", { name: "Edit" })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Content" })).toBeVisible();
   });
 });

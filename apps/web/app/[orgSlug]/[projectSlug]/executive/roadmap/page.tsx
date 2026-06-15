@@ -53,7 +53,6 @@ export default async function ExecutiveRoadmapPage({
         title={productRoadmap.title || "Product roadmap"}
         status={productRoadmap.lifecycleStatus}
         content={productRoadmap.content ?? ""}
-        editLabel="Edit"
         emptyDescription="Add product roadmap content in markdown."
         onSave={saveProductRoadmap}
       />
@@ -61,7 +60,6 @@ export default async function ExecutiveRoadmapPage({
         title={roadmap.title || "Roadmap"}
         status={roadmap.lifecycleStatus}
         content={roadmap.content ?? ""}
-        editLabel="Edit"
         emptyDescription="Add engineering roadmap content in markdown."
         onSave={saveRoadmap}
       />

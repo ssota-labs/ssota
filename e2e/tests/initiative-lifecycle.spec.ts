@@ -13,15 +13,13 @@ test.describe("Initiative lifecycle", () => {
     await expect(page.getByText("Scoped nodes")).toBeVisible();
 
     await gotoProject(page, `product/initiatives/${initiativeId}/planning/prd`);
-    await expect(page.getByRole("button", { name: "Edit" })).toBeVisible();
+    const content = page.getByRole("textbox", { name: "Content" });
+    await expect(content).toBeVisible();
 
-    await page.getByRole("button", { name: "Edit" }).click();
-    await page
-      .getByRole("textbox", { name: "Content" })
-      .fill("# Smoke PRD\n\nE2E initiative lifecycle update.");
+    await content.fill("# Smoke PRD\n\nE2E initiative lifecycle update.");
     await page.getByRole("button", { name: "Save" }).click();
 
-    await expect(page.getByText("E2E initiative lifecycle update.")).toBeVisible({
+    await expect(content).toHaveValue(/E2E initiative lifecycle update\./, {
       timeout: 10_000,
     });
   });

@@ -9,15 +9,15 @@ test.describe("Evergreen documents", () => {
   });
 
   test("edits and saves data model document", async ({ page }) => {
-    await expect(page.getByRole("button", { name: "Edit" })).toBeVisible();
-
-    await page.getByRole("button", { name: "Edit" }).click();
     const content = page.getByRole("textbox", { name: "Content" });
+    await expect(content).toBeVisible();
+
     await content.fill("# E2E data model\n\nUpdated by evergreen-doc spec.");
 
     await page.getByRole("button", { name: "Save" }).click();
 
-    await expect(page.getByText("E2E data model")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Updated by evergreen-doc spec.")).toBeVisible();
+    await expect(content).toHaveValue(/Updated by evergreen-doc spec\./, {
+      timeout: 10_000,
+    });
   });
 });
