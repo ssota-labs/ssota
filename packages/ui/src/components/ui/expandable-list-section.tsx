@@ -1,6 +1,6 @@
 "use client";
 
-import { CaretDownIcon, PlusIcon, XIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -115,11 +115,11 @@ function ExpandableListItem({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="shrink-0 text-muted-foreground"
+            className="size-8 shrink-0 text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
             onClick={onRemove}
             aria-label={removeLabel}
           >
-            <XIcon className="size-3.5" />
+            <TrashIcon className="size-4" />
           </Button>
         ) : null}
       </div>
