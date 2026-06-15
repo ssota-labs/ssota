@@ -26,9 +26,9 @@ describe("builtin graph actions", () => {
     );
   });
 
-  it("merges meta + graph builtins (19 total)", () => {
-    expect(BUILTIN_ACTION_TYPES.size).toBe(19);
-    expect(listBuiltinActionCatalogEntries()).toHaveLength(19);
+  it("merges meta + graph + task builtins (20 total)", () => {
+    expect(BUILTIN_ACTION_TYPES.size).toBe(20);
+    expect(listBuiltinActionCatalogEntries()).toHaveLength(20);
     expect(getBuiltinActionCatalogEntry("create_node")?.executor).toBe("Agent");
   });
 

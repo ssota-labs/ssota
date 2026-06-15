@@ -388,6 +388,33 @@ export const EffectSchema = z.discriminatedUnion("kind", [
     kind: z.literal("deprecate_workflow_catalog_entry"),
     workflowId: z.string().uuid(),
   }),
+  z.object({
+    kind: z.literal("create_task"),
+    task: z.object({
+      id: z.string().uuid().optional(),
+      title: z.string().min(1),
+      workflowKey: z.string().min(1),
+      workflowId: z.string().uuid().nullable().optional(),
+      status: z
+        .enum([
+          "pending",
+          "ready",
+          "running",
+          "blocked",
+          "done",
+          "cancelled",
+          "failed",
+        ])
+        .optional(),
+      executorType: ExecutorTypeSchema.optional(),
+      assignee: z.string().nullable().optional(),
+      subjectId: z.string().nullable().optional(),
+      targetNodeId: z.string().uuid().nullable().optional(),
+      parentTaskId: z.string().uuid().nullable().optional(),
+      context: z.record(z.unknown()).optional(),
+      acceptanceCriteria: z.array(z.unknown()).optional(),
+    }),
+  }),
 ]);
 
 export type Effect = z.infer<typeof EffectSchema>;

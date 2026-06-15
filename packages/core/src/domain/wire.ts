@@ -8,6 +8,8 @@ import type {
   ImpactQueueItem as WireImpactQueueItem,
   Node as WireNode,
   NodeCatalogEntry as WireNodeCatalogEntry,
+  Task as WireTask,
+  TaskIndex as WireTaskIndex,
   WorkflowWire,
 } from "@ssota/contracts";
 import { workflowRowToWire } from "@ssota/contracts";
@@ -23,6 +25,7 @@ import type {
   Workflow,
   Node,
   NodeCatalogEntry,
+  Task,
 } from "./types.js";
 
 function toIso(date: Date): string {
@@ -70,6 +73,28 @@ export function serializeImpactQueueItem(
     createdAt: toIso(item.createdAt),
     updatedAt: toIso(item.updatedAt),
     completedAt: item.completedAt ? toIso(item.completedAt) : null,
+  };
+}
+
+export function serializeTask(task: Task): WireTask {
+  return {
+    ...task,
+    completedAt: task.completedAt ? toIso(task.completedAt) : null,
+    createdAt: toIso(task.createdAt),
+    updatedAt: toIso(task.updatedAt),
+  };
+}
+
+export function serializeTaskIndex(task: Task): WireTaskIndex {
+  return {
+    id: task.id,
+    title: task.title,
+    status: task.status,
+    workflowKey: task.workflowKey,
+    assignee: task.assignee,
+    executorType: task.executorType,
+    targetNodeId: task.targetNodeId,
+    updatedAt: toIso(task.updatedAt),
   };
 }
 

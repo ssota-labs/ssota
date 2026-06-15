@@ -13,6 +13,7 @@ import {
   enforceEffectsContract,
   enforceGateRules,
   enforcePermissions,
+  enforceTaskSpawnIntegrity,
   resolveEffects,
 } from "./domain/enforcement.js";
 import { enforceProjectScope } from "./domain/project-scope.js";
@@ -269,6 +270,22 @@ async function prepareAction(
     await enforceProjectScope(projectId, effects, (nodeId) =>
       ports.graph.getNode(nodeId),
     );
+  } catch (err) {
+    if (err instanceof ActionRejectedError) {
+      return {
+        rejected: { status: "rejected", reason: err.message, code: err.code },
+      };
+    }
+    throw err;
+  }
+
+  try {
+    effects = await enforceTaskSpawnIntegrity(projectId, effects, {
+      getNode: (nodeId) => ports.graph.getNode(nodeId),
+      getTask: (taskId) => ports.tasks.getTask(taskId),
+      getWorkflowByKey: (workflowKey) =>
+        ports.catalog.getWorkflowByKey(workflowKey),
+    });
   } catch (err) {
     if (err instanceof ActionRejectedError) {
       return {
