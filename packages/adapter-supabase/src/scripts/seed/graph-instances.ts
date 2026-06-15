@@ -6,7 +6,6 @@ import * as schema from "../../db/schema.js";
 /** One evergreen container per project — dev track (Console v2.7). */
 export const EVERGREEN_DEV_SINGLETON_TYPES = [
   "product_roadmap",
-  "roadmap",
   "data_spec",
   "architecture_spec",
   "api_reference",
@@ -61,6 +60,8 @@ export async function seedGraphInstances(
       schemaVersion: 1,
     });
   }
+
+  await migrateLegacyRoadmapSingletons(db, projectId);
 
   const hypothesisExisting = await db
     .select({ id: schema.nodes.id })
@@ -148,6 +149,33 @@ export async function seedGraphInstances(
   await seedDemoOkr(db, projectId);
 
   return { hypothesisId };
+}
+
+/** Legacy executive roadmap was a singleton without kind/year — remove on re-seed. */
+async function migrateLegacyRoadmapSingletons(
+  db: ReturnType<typeof createDb>["db"],
+  projectId: string,
+) {
+  const legacyRows = await db
+    .select({
+      id: schema.nodes.id,
+      properties: schema.nodes.properties,
+    })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.nodeType, "roadmap"),
+      ),
+    );
+
+  for (const row of legacyRows) {
+    const props = row.properties as Record<string, unknown>;
+    if (typeof props.kind === "string" && typeof props.year === "number") {
+      continue;
+    }
+    await db.delete(schema.nodes).where(eq(schema.nodes.id, row.id));
+  }
 }
 
 async function seedDemoOkr(

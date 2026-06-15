@@ -12,10 +12,11 @@ describe("v2.7 graph use cases", () => {
 
   it("rejects unknown node_type on create", async () => {
     const store = createInMemoryGraphStore();
+    const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
     await expect(
       createNode(
-        { catalog, graphWrite },
+        { catalog, graphRead, graphWrite },
         {
           projectId: "00000000-0000-4000-8000-000000000001",
           nodeType: "not_real" as "task",
@@ -27,10 +28,11 @@ describe("v2.7 graph use cases", () => {
 
   it("rejects invalid properties", async () => {
     const store = createInMemoryGraphStore();
+    const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
     await expect(
       createNode(
-        { catalog, graphWrite },
+        { catalog, graphRead, graphWrite },
         {
           projectId: "00000000-0000-4000-8000-000000000001",
           nodeType: "hypothesis",
@@ -106,5 +108,79 @@ describe("v2.7 graph use cases", () => {
     expect(release?.nodeType).toBe("release");
     expect(edges).toHaveLength(1);
     expect(edges[0]?.id).toBe(result.pairedWithEdgeId);
+  });
+
+  it("rejects duplicate annual roadmap for the same year", async () => {
+    const store = createInMemoryGraphStore();
+    const graphRead = createInMemoryGraphReadPort(store);
+    const graphWrite = createInMemoryGraphWritePort(store);
+    const projectId = "00000000-0000-4000-8000-000000000010";
+    const base = {
+      projectId,
+      nodeType: "roadmap" as const,
+      title: "2026 연간 로드맵",
+      properties: {
+        kind: "annual" as const,
+        year: 2026,
+        doc_status: "draft" as const,
+      },
+      content: "# Annual",
+    };
+
+    await createNode({ catalog, graphRead, graphWrite }, base);
+
+    await expect(
+      createNode(
+        { catalog, graphRead, graphWrite },
+        { ...base, title: "Duplicate annual" },
+      ),
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+  });
+
+  it("rejects quarter roadmap without quarter property", async () => {
+    const store = createInMemoryGraphStore();
+    const graphRead = createInMemoryGraphReadPort(store);
+    const graphWrite = createInMemoryGraphWritePort(store);
+
+    await expect(
+      createNode(
+        { catalog, graphRead, graphWrite },
+        {
+          projectId: "00000000-0000-4000-8000-000000000011",
+          nodeType: "roadmap",
+          title: "2026 Q1",
+          properties: { kind: "quarter", year: 2026 },
+          content: "# Quarter",
+        },
+      ),
+    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+  });
+
+  it("rejects duplicate quarter roadmap for the same year", async () => {
+    const store = createInMemoryGraphStore();
+    const graphRead = createInMemoryGraphReadPort(store);
+    const graphWrite = createInMemoryGraphWritePort(store);
+    const projectId = "00000000-0000-4000-8000-000000000012";
+    const base = {
+      projectId,
+      nodeType: "roadmap" as const,
+      title: "2026 Q1 분기 로드맵",
+      properties: {
+        kind: "quarter" as const,
+        year: 2026,
+        quarter: 1 as const,
+        doc_status: "draft" as const,
+      },
+      content: "# Q1",
+    };
+
+    await createNode({ catalog, graphRead, graphWrite }, base);
+
+    await expect(
+      createNode(
+        { catalog, graphRead, graphWrite },
+        { ...base, title: "Duplicate Q1" },
+      ),
+    ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
   });
 });
