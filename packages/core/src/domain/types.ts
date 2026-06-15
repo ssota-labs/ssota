@@ -4,6 +4,7 @@ import type {
   ExecutorType,
   GateStatus,
   ImpactQueueStatus,
+  TaskStatus,
   WorkflowDefinition,
   WorkflowScope,
   LifecycleStatus,
@@ -191,6 +192,45 @@ export interface ImpactQueueQueryInput {
   offset?: number;
 }
 
+export interface Task {
+  id: string;
+  projectId: string;
+  workflowKey: string;
+  workflowId: string | null;
+  title: string;
+  status: TaskStatus;
+  executorType: ExecutorType;
+  assignee: string | null;
+  subjectId: string | null;
+  targetNodeId: string | null;
+  parentTaskId: string | null;
+  sourceActionLogId: string | null;
+  context: Record<string, unknown>;
+  acceptanceCriteria: unknown[];
+  idempotencyKey: string | null;
+  result: Record<string, unknown>;
+  completedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface TaskQueryInput {
+  status?: TaskStatus;
+  workflowKey?: string;
+  assignee?: string;
+  subjectId?: string;
+  targetNodeId?: string;
+  executorType?: ExecutorType;
+  limit?: number;
+  offset?: number;
+}
+
+export interface TaskPort {
+  listTasks(params?: { limit?: number }): Promise<Task[]>;
+  queryTasks(params?: TaskQueryInput): Promise<Task[]>;
+  getTask(taskId: string): Promise<Task | null>;
+}
+
 export interface CommitParams {
   effects: Effect[];
   logEntry: {
@@ -376,6 +416,7 @@ export interface ActionPorts {
   gate: GatePort;
   commit: ActionCommitPort;
   impactQueue: ImpactQueuePort;
+  tasks: TaskPort;
 }
 
 /** Resolved once per request — scopes catalog/graph IO to one SSOTA project. */

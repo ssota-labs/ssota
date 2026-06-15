@@ -46,6 +46,7 @@ Use query/fetch tools before writes when the workflow depends on existing state:
 - `get_node` — one node by id
 - `query_neighbors` — 1-hop edges + neighbor nodes
 - `traverse_graph` — multi-hop context assembly
+- `list_tasks` / `query_tasks` / `get_task` — runtime work queue (not graph nodes)
 - `get_action_log` / `get_action_log_entry` — prior decisions
 
 Use `list_*` only as catalog **index**. Fetch details with `get_*`.

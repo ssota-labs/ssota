@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import {
   jsonb,
   pgEnum,
@@ -55,6 +56,16 @@ export const impactQueueStatusEnum = pgEnum("impact_queue_status", [
   "failed",
   "dead",
   "skipped",
+]);
+
+export const taskStatusEnum = pgEnum("task_status", [
+  "pending",
+  "ready",
+  "running",
+  "blocked",
+  "done",
+  "cancelled",
+  "failed",
 ]);
 
 export const profiles = pgTable("profiles", {
@@ -412,6 +423,63 @@ export const impactQueue = pgTable(
       table.sourceActionLogId,
     ),
     targetNodeIdx: index("impact_queue_project_target_node_idx").on(
+      table.projectId,
+      table.targetNodeId,
+    ),
+  }),
+);
+
+export const tasks = pgTable(
+  "tasks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id),
+    workflowKey: text("workflow_key").notNull(),
+    workflowId: uuid("workflow_id").references(() => workflows.id),
+    title: text("title").notNull(),
+    status: taskStatusEnum("status").notNull().default("pending"),
+    executorType: executorTypeEnum("executor_type").notNull().default("Agent"),
+    assignee: text("assignee"),
+    subjectId: text("subject_id"),
+    targetNodeId: uuid("target_node_id").references(() => nodes.id, {
+      onDelete: "set null",
+    }),
+    parentTaskId: uuid("parent_task_id"),
+    sourceActionLogId: uuid("source_action_log_id").references(() => actionLog.id),
+    context: jsonb("context").notNull().default({}).$type<Record<string, unknown>>(),
+    acceptanceCriteria: jsonb("acceptance_criteria")
+      .notNull()
+      .default([])
+      .$type<unknown[]>(),
+    idempotencyKey: text("idempotency_key"),
+    result: jsonb("result").notNull().default({}).$type<Record<string, unknown>>(),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    idempotencyUnique: uniqueIndex("tasks_project_idempotency_unique")
+      .on(table.projectId, table.idempotencyKey)
+      .where(sql`${table.idempotencyKey} IS NOT NULL`),
+    projectStatusIdx: index("tasks_project_status_idx").on(
+      table.projectId,
+      table.status,
+    ),
+    projectWorkflowKeyIdx: index("tasks_project_workflow_key_idx").on(
+      table.projectId,
+      table.workflowKey,
+    ),
+    projectAssigneeIdx: index("tasks_project_assignee_idx").on(
+      table.projectId,
+      table.assignee,
+    ),
+    projectSubjectIdIdx: index("tasks_project_subject_id_idx").on(
+      table.projectId,
+      table.subjectId,
+    ),
+    projectTargetNodeIdx: index("tasks_project_target_node_idx").on(
       table.projectId,
       table.targetNodeId,
     ),

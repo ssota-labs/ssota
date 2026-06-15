@@ -10,6 +10,8 @@ import type {
   Archetype,
   Node,
   NodeCatalogEntry,
+  Task,
+  Workflow,
 } from "./types.js";
 import type {
   ActionScope,
@@ -18,6 +20,7 @@ import type {
   LifecycleStatus,
   NodeTypeDefinition,
   PermissionOperation,
+  TaskStatus,
   WorkflowDefinition,
 } from "@ssota/contracts";
 import {
@@ -335,10 +338,120 @@ export function resolveEffects(
           entry: workflowDefinitionToCatalogUpsert(spec),
         });
       }
+    } else if (template.kind === "create_task") {
+      effects.push({
+        kind: "create_task",
+        task: {
+          title: (input.title as string) ?? template.task.title,
+          workflowKey:
+            (input.workflowKey as string) ?? template.task.workflowKey,
+          workflowId:
+            (input.workflowId as string | null | undefined) ??
+            template.task.workflowId,
+          status:
+            (input.status as TaskStatus | undefined) ?? template.task.status,
+          executorType:
+            (input.executorType as ExecutorType | undefined) ??
+            template.task.executorType,
+          assignee:
+            (input.assignee as string | null | undefined) ??
+            template.task.assignee,
+          subjectId:
+            (input.subjectId as string | null | undefined) ??
+            template.task.subjectId,
+          targetNodeId:
+            (input.targetNodeId as string | null | undefined) ??
+            template.task.targetNodeId,
+          parentTaskId:
+            (input.parentTaskId as string | null | undefined) ??
+            template.task.parentTaskId,
+          context:
+            (input.context as Record<string, unknown> | undefined) ??
+            template.task.context,
+          acceptanceCriteria:
+            (input.acceptanceCriteria as unknown[] | undefined) ??
+            template.task.acceptanceCriteria,
+        },
+      });
     }
   }
 
   return effects;
+}
+
+export async function enforceTaskSpawnIntegrity(
+  projectId: string,
+  effects: Effect[],
+  deps: {
+    getNode: (nodeId: string) => Promise<Node | null>;
+    getTask: (taskId: string) => Promise<Task | null>;
+    getWorkflowByKey: (workflowKey: string) => Promise<Workflow | null>;
+  },
+): Promise<Effect[]> {
+  const enriched: Effect[] = [];
+
+  for (const effect of effects) {
+    if (effect.kind !== "create_task") {
+      enriched.push(effect);
+      continue;
+    }
+
+    const workflow = await deps.getWorkflowByKey(effect.task.workflowKey);
+    if (!workflow) {
+      throw new ActionRejectedError(
+        "CATALOG_NOT_FOUND",
+        `Workflow key '${effect.task.workflowKey}' is not in the workflow catalog`,
+      );
+    }
+    if (workflow.lifecycle !== "Active") {
+      throw new ActionRejectedError(
+        "CATALOG_NOT_FOUND",
+        `Workflow '${effect.task.workflowKey}' is not Active`,
+      );
+    }
+
+    if (effect.task.targetNodeId) {
+      const node = await deps.getNode(effect.task.targetNodeId);
+      if (!node) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          `Node '${effect.task.targetNodeId}' does not exist`,
+        );
+      }
+      if (node.projectId !== projectId) {
+        throw new ActionRejectedError(
+          "PROJECT_MISMATCH",
+          `Node '${effect.task.targetNodeId}' belongs to a different project`,
+        );
+      }
+    }
+
+    if (effect.task.parentTaskId) {
+      const parent = await deps.getTask(effect.task.parentTaskId);
+      if (!parent) {
+        throw new ActionRejectedError(
+          "PRECONDITION_FAILED",
+          `Parent task '${effect.task.parentTaskId}' does not exist`,
+        );
+      }
+      if (parent.projectId !== projectId) {
+        throw new ActionRejectedError(
+          "PROJECT_MISMATCH",
+          `Parent task '${effect.task.parentTaskId}' belongs to a different project`,
+        );
+      }
+    }
+
+    enriched.push({
+      kind: "create_task",
+      task: {
+        ...effect.task,
+        workflowId: effect.task.workflowId ?? workflow.id,
+      },
+    });
+  }
+
+  return enriched;
 }
 
 export async function enforcePermissions(

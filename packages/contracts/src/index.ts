@@ -4,3 +4,4 @@ export * from "./workflow-context.js";
 export * from "./workflow-trigger-event.js";
 export * from "./workflow.js";
 export * from "./workflow-store.js";
+export * from "./task.js";

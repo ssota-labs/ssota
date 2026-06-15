@@ -20,6 +20,9 @@ import type {
   ImpactQueueItem,
   ImpactQueuePort,
   ImpactQueueQueryInput,
+  Task,
+  TaskPort,
+  TaskQueryInput,
   Workflow,
   Node,
   NodeCatalogEntry,
@@ -41,6 +44,7 @@ export interface InMemoryState {
   edges: Map<string, Edge>;
   gates: Map<string, Gate>;
   impactQueue: Map<string, ImpactQueueItem>;
+  tasks: Map<string, Task>;
   actionLog: ActionLogRecord[];
   nodeCatalog: Map<string, NodeCatalogEntry>;
   actionCatalog: Map<string, ActionCatalogEntry>;
@@ -66,6 +70,7 @@ export function createInMemoryState(
     edges: new Map(),
     gates: new Map(),
     impactQueue: new Map(),
+    tasks: new Map(),
     actionLog: [],
     nodeCatalog: new Map(),
     actionCatalog: new Map(),
@@ -275,6 +280,29 @@ function applyEffect(
         updatedAt: now,
       });
     }
+  } else if (effect.kind === "create_task") {
+    const id = effect.task.id ?? randomUUID();
+    state.tasks.set(id, {
+      id,
+      projectId,
+      workflowKey: effect.task.workflowKey,
+      workflowId: effect.task.workflowId ?? null,
+      title: effect.task.title,
+      status: effect.task.status ?? "pending",
+      executorType: effect.task.executorType ?? "Agent",
+      assignee: effect.task.assignee ?? null,
+      subjectId: effect.task.subjectId ?? null,
+      targetNodeId: effect.task.targetNodeId ?? null,
+      parentTaskId: effect.task.parentTaskId ?? null,
+      sourceActionLogId: null,
+      context: effect.task.context ?? {},
+      acceptanceCriteria: effect.task.acceptanceCriteria ?? [],
+      idempotencyKey: null,
+      result: {},
+      completedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    });
   }
 }
 
@@ -455,6 +483,7 @@ export function createInMemoryPorts(
   const commit: ActionCommitPort = {
     async commit(params: CommitParams): Promise<CommitResult> {
       const logId = randomUUID();
+      const createdTaskIds: string[] = [];
 
       if (params.gateDecision) {
         applyEffect(
@@ -470,7 +499,20 @@ export function createInMemoryPorts(
       }
 
       for (const effect of params.effects) {
-        applyEffect(state, effect, projectId);
+        if (effect.kind === "create_task") {
+          const taskId = effect.task.id ?? randomUUID();
+          createdTaskIds.push(taskId);
+          applyEffect(
+            state,
+            {
+              kind: "create_task",
+              task: { ...effect.task, id: taskId },
+            },
+            projectId,
+          );
+        } else {
+          applyEffect(state, effect, projectId);
+        }
       }
 
       state.actionLog.push({
@@ -488,6 +530,18 @@ export function createInMemoryPorts(
         metadata: params.logEntry.metadata ?? {},
         createdAt: new Date(),
       });
+
+      for (const taskId of createdTaskIds) {
+        const task = state.tasks.get(taskId);
+        if (task) {
+          state.tasks.set(taskId, {
+            ...task,
+            sourceActionLogId: logId,
+            idempotencyKey: params.logEntry.idempotencyKey ?? null,
+            updatedAt: new Date(),
+          });
+        }
+      }
 
       return { logId, appliedEffects: params.effects };
     },
@@ -517,8 +571,55 @@ export function createInMemoryPorts(
   };
 
   const impactQueue = createInMemoryImpactQueuePort(state, projectId);
+  const tasks = createInMemoryTaskPort(state, projectId);
 
-  return { catalog, graph, gate, commit, impactQueue };
+  return { catalog, graph, gate, commit, impactQueue, tasks };
+}
+
+function createInMemoryTaskPort(
+  state: InMemoryState,
+  projectId: string,
+): TaskPort {
+  function queryItems(params?: TaskQueryInput): Task[] {
+    let items = [...state.tasks.values()].filter(
+      (task) => task.projectId === projectId,
+    );
+    if (params?.status) {
+      items = items.filter((task) => task.status === params.status);
+    }
+    if (params?.workflowKey) {
+      items = items.filter((task) => task.workflowKey === params.workflowKey);
+    }
+    if (params?.assignee) {
+      items = items.filter((task) => task.assignee === params.assignee);
+    }
+    if (params?.subjectId) {
+      items = items.filter((task) => task.subjectId === params.subjectId);
+    }
+    if (params?.targetNodeId) {
+      items = items.filter((task) => task.targetNodeId === params.targetNodeId);
+    }
+    if (params?.executorType) {
+      items = items.filter((task) => task.executorType === params.executorType);
+    }
+    items.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+    const offset = params?.offset ?? 0;
+    const limit = params?.limit ?? 20;
+    return items.slice(offset, offset + limit);
+  }
+
+  return {
+    async listTasks(params) {
+      return queryItems({ limit: params?.limit ?? 20, offset: 0 });
+    },
+    async queryTasks(params) {
+      return queryItems(params);
+    },
+    async getTask(taskId) {
+      const task = state.tasks.get(taskId);
+      return task?.projectId === projectId ? task : null;
+    },
+  };
 }
 
 function createInMemoryImpactQueuePort(
