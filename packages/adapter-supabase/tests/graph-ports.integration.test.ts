@@ -68,7 +68,7 @@ describe("graph ports integration", () => {
 
   it("creates node with catalog validation", async () => {
     const node = await createNode(
-      { catalog: ports.catalog, graphWrite: ports.graphWrite },
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
       {
         projectId,
         nodeType: "feature",
@@ -83,7 +83,7 @@ describe("graph ports integration", () => {
   it("rejects unknown node_type", async () => {
     await expect(
       createNode(
-        { catalog: ports.catalog, graphWrite: ports.graphWrite },
+        { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
         {
           projectId,
           nodeType: "not_real" as "task",

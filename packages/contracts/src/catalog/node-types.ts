@@ -28,6 +28,18 @@ export const graphTaskStatusSchema = z.enum([
   "cancelled",
 ]);
 
+export const roadmapKindSchema = z.enum(["annual", "quarter"]);
+
+export const roadmapQuarterSchema = z.union([
+  z.literal(1),
+  z.literal(2),
+  z.literal(3),
+  z.literal(4),
+]);
+
+export type RoadmapKind = z.infer<typeof roadmapKindSchema>;
+export type RoadmapQuarter = z.infer<typeof roadmapQuarterSchema>;
+
 export const NODE_TYPES = [
   "product_roadmap",
   "roadmap",
@@ -77,7 +89,26 @@ const NODE_PROPERTY_SCHEMAS: Record<
     doc_status: docStatusSchema.optional(),
   }),
   roadmap: propertiesWithKnownKeys({
-    period: z.string().optional(),
+    kind: roadmapKindSchema,
+    year: z.number().int(),
+    quarter: roadmapQuarterSchema.optional(),
+    doc_status: docStatusSchema.optional(),
+    parent_roadmap_id: z.string().uuid().optional(),
+  }).superRefine((value, ctx) => {
+    if (value.kind === "quarter" && value.quarter == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "quarter is required when kind is quarter",
+        path: ["quarter"],
+      });
+    }
+    if (value.kind === "annual" && value.quarter != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "quarter must not be set when kind is annual",
+        path: ["quarter"],
+      });
+    }
   }),
   objective: propertiesWithKnownKeys({
     period: z.string().optional(),
