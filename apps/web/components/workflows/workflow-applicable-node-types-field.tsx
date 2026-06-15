@@ -111,7 +111,7 @@ export function WorkflowApplicableNodeTypesField({
                       <TableIcon className="size-4 text-muted-foreground" />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-xs font-medium">
+                      <span className="block text-sm font-medium">
                         {catalogEntry?.label ?? entry.nodeType}
                       </span>
                     </span>
