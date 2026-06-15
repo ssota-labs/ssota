@@ -251,7 +251,31 @@ export function AppSidebar({
         </nav>
       </ScrollArea>
 
-      <div className="border-t p-2">
+      <div className="space-y-0.5 border-t p-2">
+        <Link
+          href={projectPath(ctx, "developer/setup")}
+          prefetch
+          className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            pathname.includes("/developer/") &&
+              "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+          )}
+        >
+          <NavItemIcon iconKey="developer_setup" className="size-4 shrink-0" />
+          {t("nav.developerSetup")}
+        </Link>
+        <Link
+          href={projectPath(ctx, "settings/general")}
+          prefetch
+          className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            pathname.includes("/settings/") &&
+              "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+          )}
+        >
+          <NavItemIcon iconKey="settings" className="size-4 shrink-0" />
+          {t("nav.settings")}
+        </Link>
         <SidebarProfileMenu userEmail={userEmail} signOutAction={signOutAction} />
       </div>
     </aside>
