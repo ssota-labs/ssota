@@ -42,6 +42,7 @@ import { WorkflowContextField } from "@/components/workflows/workflow-context-fi
 import { createWorkflowTriggerEventFromKind } from "@/lib/workflows/workflow-trigger-catalog";
 import {
   WORKFLOW_ROLE_NONE,
+  WORKFLOW_ROLE_OPTIONS,
   workflowRoleFromSelectValue,
   workflowRoleOptionsForValue,
   workflowRoleSelectValue,
@@ -202,7 +203,13 @@ function WorkflowSettingsFields({
             className="w-full"
             data-testid="workflow-role"
           >
-            <SelectValue placeholder="Select role" />
+            <SelectValue placeholder="Select role">
+              {draft.workflowRole
+                ? (WORKFLOW_ROLE_OPTIONS.find(
+                    (option) => option.value === draft.workflowRole,
+                  )?.label ?? draft.workflowRole)
+                : "None"}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={WORKFLOW_ROLE_NONE}>None</SelectItem>
