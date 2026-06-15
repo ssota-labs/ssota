@@ -74,7 +74,7 @@ export function ConsoleProfileMenu({
             variant="ghost"
             size="sm"
             className={cn(
-              "h-9 w-full justify-start gap-2 px-2 font-normal",
+              "cn-button-console-trigger w-full justify-start gap-2 font-normal",
               className,
             )}
           />
