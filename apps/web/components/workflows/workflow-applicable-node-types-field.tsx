@@ -150,7 +150,7 @@ export function WorkflowApplicableNodeTypesField({
                                   <DropdownMenuItem
                                     key={action.actionType}
                                     className="flex items-center justify-between gap-3"
-                                    onSelect={(event) => event.preventDefault()}
+                                    closeOnClick={false}
                                   >
                                     <span className="min-w-0 truncate text-sm">
                                       {action.label || action.actionType}
