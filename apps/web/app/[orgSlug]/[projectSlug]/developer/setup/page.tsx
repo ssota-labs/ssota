@@ -142,7 +142,7 @@ export default async function DeveloperSetupPage({
           View workflows
         </Button>
         <Button
-          render={<Link href={`${projectPath(ctx, "workflow")}?tab=reviews`} />}
+          render={<Link href={projectPath(ctx, "gates")} />}
           variant="outline"
           nativeButton={false}
         >

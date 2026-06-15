@@ -1,16 +1,12 @@
 import Link from "next/link";
 import { buildWorkflowPackage } from "@ssota/core";
-import type { ActionLogRecord, Gate, Workflow } from "@ssota/core";
+import type { ActionLogRecord, Workflow } from "@ssota/core";
 import type { ActionCatalogEntry, EdgeCatalogEntry, NodeCatalogEntry } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { ActionLogDataTable } from "@/components/graph/action-log-data-table";
 import { NewWorkflowSheet } from "@/components/workflows/new-workflow-sheet";
 import { WorkflowCatalogExplorer } from "@/components/workflows/workflow-catalog-explorer";
-import {
-  WorkflowReviewsPanel,
-  gateMatchesWorkflow,
-} from "@/components/workflows/workflow-reviews-panel";
 import { WorkflowVisualBuilder } from "@/components/workflows/workflow-visual-builder";
 import { projectPath } from "@/lib/console/paths";
 import { formatActionScope } from "@/lib/graph/format-scope";
@@ -31,7 +27,6 @@ export function WorkflowsWorkspace({
   projectId,
   workflows,
   logs,
-  pendingGates,
   selected,
   activeTab,
   nodeCatalog,
@@ -43,9 +38,8 @@ export function WorkflowsWorkspace({
   projectId: string;
   workflows: Workflow[];
   logs: ActionLogRecord[];
-  pendingGates: Gate[];
   selected: Workflow | null;
-  activeTab: "builder" | "agent" | "flow" | "runs" | "reviews";
+  activeTab: "builder" | "agent" | "runs";
   nodeCatalog: NodeCatalogEntry[];
   actionCatalog: ActionCatalogEntry[];
   edgeCatalog: EdgeCatalogEntry[];
@@ -78,11 +72,6 @@ export function WorkflowsWorkspace({
     outcome: log.outcome,
     executorType: log.executorType,
   }));
-  const workflowGates = selected
-    ? pendingGates.filter((gate) =>
-        gateMatchesWorkflow(gate, selected.id, selected.spec.allowedActions),
-      )
-    : pendingGates;
   const package_ = selected ? buildWorkflowPackage(selected) : null;
 
   const contextNodeCatalog = nodeCatalog.map((entry) => ({
@@ -107,22 +96,8 @@ export function WorkflowsWorkspace({
       >
         Rendered text
       </WorkflowTabLink>
-      <WorkflowTabLink href={`${selectedHref}&tab=flow`} active={activeTab === "flow"}>
-        Flow
-      </WorkflowTabLink>
       <WorkflowTabLink href={`${selectedHref}&tab=runs`} active={activeTab === "runs"}>
         Runs
-      </WorkflowTabLink>
-      <WorkflowTabLink
-        href={`${selectedHref}&tab=reviews`}
-        active={activeTab === "reviews"}
-      >
-        Reviews
-        {workflowGates.length ? (
-          <Badge variant="secondary" className="ml-1">
-            {workflowGates.length}
-          </Badge>
-        ) : null}
       </WorkflowTabLink>
     </>
   ) : null;
@@ -145,35 +120,11 @@ export function WorkflowsWorkspace({
         contextNodeCatalog={contextNodeCatalog}
         contextEdgeCatalog={contextEdgeCatalog}
       />
-    ) : activeTab === "flow" ? (
-      <WorkflowVisualBuilder
-        workflow={package_.workflow}
-        workflowId={selected.id}
-        projectId={projectId}
-        orgSlug={orgSlug}
-        projectSlug={projectSlug}
-        workflowOptions={workflows
-          .filter((entry) => entry.workflowKey)
-          .map((entry) => ({
-            workflowKey: entry.workflowKey!,
-            title: entry.spec.title,
-          }))}
-        actionCatalog={actionCatalog}
-        contextNodeCatalog={contextNodeCatalog}
-        contextEdgeCatalog={contextEdgeCatalog}
-        readOnly
-      />
     ) : activeTab === "runs" ? (
       <ActionLogDataTable
         rows={runRows}
         filterColumn="actionType"
         emptyMessage={`No runs recorded for ${selected.spec.title} yet.`}
-      />
-    ) : activeTab === "reviews" ? (
-      <WorkflowReviewsPanel
-        gates={workflowGates}
-        projectId={projectId}
-        emptyMessage={`No pending reviews for ${selected.spec.title}.`}
       />
     ) : (
       <div className="grid h-full gap-4 overflow-auto p-4 lg:grid-cols-[1fr_18rem]">

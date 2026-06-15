@@ -9,7 +9,7 @@ import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getActionPorts } from "@/lib/ports";
 
-const tabs = ["builder", "agent", "flow", "runs", "reviews"] as const;
+const tabs = ["builder", "agent", "runs"] as const;
 
 export default async function WorkflowListPage({
   params,
@@ -22,11 +22,10 @@ export default async function WorkflowListPage({
   const { workflow: workflowParam, tab } = await searchParams;
   const { project } = await resolveProject(orgSlug, projectSlug);
   const ports = getActionPorts(project.id);
-  const [workflows, logs, pendingGates, nodeCatalog, actionCatalog, edgeCatalog] =
+  const [workflows, logs, nodeCatalog, actionCatalog, edgeCatalog] =
     await Promise.all([
       ports.catalog.listWorkflows({ limit: 100 }),
       ports.commit.getActionLog({ limit: 100 }),
-      ports.gate.listPendingGates(),
       getCachedNodeCatalog(project.id),
       getCachedActionCatalog(project.id),
       getCachedEdgeCatalog(project.id),
@@ -58,7 +57,6 @@ export default async function WorkflowListPage({
       projectId={project.id}
       workflows={workflows}
       logs={logs}
-      pendingGates={pendingGates}
       selected={selected}
       activeTab={activeTab}
       nodeCatalog={nodeCatalog}

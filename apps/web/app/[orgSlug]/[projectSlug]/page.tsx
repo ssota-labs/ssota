@@ -46,7 +46,7 @@ export default async function ProjectHomePage({
   ]);
 
   const workflowHref = projectPath(ctx, "workflow");
-  const reviewsHref = `${workflowHref}?tab=reviews`;
+  const reviewsHref = projectPath(ctx, "gates");
   const runsHref = `${workflowHref}?tab=runs`;
   const hasWorkflow = workflows.length > 0;
   const hasGraphShape = nodes.length > 0 && actions.length > 0;

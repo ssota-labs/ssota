@@ -35,7 +35,7 @@ function mapLegacyPath(pathname: string): string | null {
     }
     return `${defaultBase}/graph/${segments.join("/")}`;
   }
-  if (pathname === "/gates") return `${defaultBase}/workflow?tab=reviews`;
+  if (pathname === "/gates") return `${defaultBase}/gates`;
   if (pathname === "/log") return `${defaultBase}/workflow?tab=runs`;
   if (pathname === "/workflows") return `${defaultBase}/workflow`;
   if (pathname === "/impact") return defaultBase;
