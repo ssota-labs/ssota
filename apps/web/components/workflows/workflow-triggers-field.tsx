@@ -1,6 +1,6 @@
 "use client";
 
-import { PlusIcon, XIcon } from "@phosphor-icons/react";
+import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { WorkflowTriggerEvent } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -74,28 +74,30 @@ export function WorkflowTriggersField({
                     {meta.description}
                   </span>
                 </span>
-                <Switch
-                  checked={trigger.enabled}
-                  disabled={readOnly}
-                  onCheckedChange={(checked) =>
-                    setTriggerEnabled(trigger.id, checked)
-                  }
-                  aria-label={`${meta.label} enabled`}
-                />
-                {!readOnly && onTriggersChange ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="shrink-0 text-muted-foreground"
-                    disabled={triggers.length <= 1}
-                    onClick={() => removeTrigger(trigger.id)}
-                    aria-label={`Remove ${meta.label}`}
-                    data-testid={`remove-workflow-trigger-${trigger.id}`}
-                  >
-                    <XIcon className="size-3.5" />
-                  </Button>
-                ) : null}
+                <div className="flex shrink-0 items-center gap-0.5">
+                  <Switch
+                    checked={trigger.enabled}
+                    disabled={readOnly}
+                    onCheckedChange={(checked) =>
+                      setTriggerEnabled(trigger.id, checked)
+                    }
+                    aria-label={`${meta.label} enabled`}
+                  />
+                  {!readOnly && onTriggersChange ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                      disabled={triggers.length <= 1}
+                      onClick={() => removeTrigger(trigger.id)}
+                      aria-label={`Remove ${meta.label}`}
+                      data-testid={`remove-workflow-trigger-${trigger.id}`}
+                    >
+                      <TrashIcon className="size-4" />
+                    </Button>
+                  ) : null}
+                </div>
               </li>
             );
           })}
