@@ -69,7 +69,7 @@ export function WorkspaceSwitcherItem({
       size="sm"
       variant={active ? "muted" : "default"}
       className={cn(
-        "cursor-pointer rounded-sm px-2",
+        "cursor-pointer rounded-sm px-2 py-1.5",
         active && "bg-sidebar-accent font-medium",
         className,
       )}
@@ -131,15 +131,15 @@ export function WorkspaceSwitcher({
       <PopoverContent
         align={align}
         side={side}
-        className="cn-menu-translucent w-56 gap-0 p-1"
+        className="cn-menu-translucent w-56 gap-1 p-1"
       >
-        <div className="flex items-center gap-2 px-2 py-1.5 text-xs font-medium text-muted-foreground">
+        <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-muted-foreground">
           <span className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-3.5">
             {icon}
           </span>
           <span>{sectionLabel}</span>
         </div>
-        <ItemGroup>
+        <ItemGroup className="gap-0.5">
           {options.map((option) => {
             const active = option.id === activeOptionId;
             if (renderOption) {
