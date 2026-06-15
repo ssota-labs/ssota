@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { Workflow } from "@ssota/contracts";
 import {
+  addRouteOutlet,
   createWorkflowDraft,
   insertBlockAfter,
   isWorkflowDraftDirty,
-  linkReferenceToStep,
   removeBlock,
-  updateCondition,
+  updateRouteBlock,
   updateStep,
   updateTriggerEvents,
   updateContext,
+  updateWorkflowRole,
 } from "./workflow-draft";
 
 const baseWorkflow: Workflow = {
@@ -23,6 +24,8 @@ const baseWorkflow: Workflow = {
     events: [{ id: "manual", kind: "manual", enabled: true, config: {} }],
   },
   context: { filterGroups: [], traversals: [], assertions: [] },
+  routeBlocks: [],
+  workflowBlocks: [],
   conditions: [],
   steps: [
     {
@@ -48,11 +51,12 @@ describe("workflow-draft", () => {
     expect(draft.steps[0]?.id).toBe("execute");
   });
 
-  it("inserts condition after context", () => {
+  it("inserts route after context", () => {
     const draft = createWorkflowDraft(baseWorkflow);
-    const { draft: next, focusNodeId } = insertBlockAfter(draft, "context", "condition");
-    expect(next.conditions).toHaveLength(1);
-    expect(focusNodeId).toMatch(/^condition:/);
+    const { draft: next, focusNodeId } = insertBlockAfter(draft, "context", "route");
+    expect(next.routeBlocks).toHaveLength(1);
+    expect(next.flowEntry?.kind).toBe("route");
+    expect(focusNodeId).toMatch(/^route:/);
   });
 
   it("inserts step after context replacing placeholder", () => {
@@ -61,60 +65,97 @@ describe("workflow-draft", () => {
     expect(next.steps).toHaveLength(1);
     expect(next.steps[0]?.id).not.toBe("execute");
     expect(next.steps[0]?.title).toBe("New step");
+    expect(next.flowEntry?.kind).toBe("step");
   });
 
-  it("inserts reference linked to step", () => {
-    const draft = createWorkflowDraft(baseWorkflow);
-    const { draft: next, focusNodeId } = insertBlockAfter(draft, "execute", "reference");
-    expect(next.references).toHaveLength(1);
-    expect(next.steps[0]?.referenceIds).toContain(next.references[0]?.id);
-    expect(focusNodeId).toMatch(/^reference:/);
+  it("inserts workflow block from route outlet", () => {
+    const draft = createWorkflowDraft({
+      ...baseWorkflow,
+      routeBlocks: [
+        {
+          id: "route_1",
+          label: "Dispatch",
+          links: [],
+          outlets: [{ id: "out_1", label: "default", target: null }],
+        },
+      ],
+      flowEntry: { kind: "route", routeId: "route_1" },
+    });
+    const { draft: next, focusNodeId } = insertBlockAfter(
+      draft,
+      "route:route_1",
+      "workflow",
+      "out_1",
+    );
+    expect(next.workflowBlocks).toHaveLength(1);
+    expect(next.routeBlocks[0]?.outlets[0]?.target?.kind).toBe("workflow");
+    expect(focusNodeId).toMatch(/^workflow:/);
   });
 
-  it("updates step fields", () => {
+  it("updates step fields including instructionUrl", () => {
     const draft = createWorkflowDraft(baseWorkflow);
     const next = updateStep(draft, "execute", {
       title: "Draft content",
       description: "Write the draft",
+      instructionUrl: "https://notion.so/runbook",
     });
     expect(next.steps[0]?.title).toBe("Draft content");
-    expect(next.steps[0]?.description).toBe("Write the draft");
+    expect(next.steps[0]?.instructionUrl).toBe("https://notion.so/runbook");
   });
 
-  it("links reference to step", () => {
+  it("removes route block and clears outlet targets", () => {
     const draft = createWorkflowDraft({
       ...baseWorkflow,
-      references: [{ id: "ref_1", title: "Guide", kind: "url", url: "https://example.com" }],
-    });
-    const next = linkReferenceToStep(draft, "execute", "ref_1");
-    expect(next.steps[0]?.referenceIds).toContain("ref_1");
-  });
-
-  it("removes condition block", () => {
-    const draft = createWorkflowDraft({
-      ...baseWorkflow,
-      conditions: [
+      routeBlocks: [
         {
-          id: "cond_1",
-          label: "Check",
-          mode: "agentic",
-          enforcement: "soft",
+          id: "route_1",
+          label: "Dispatch",
+          links: [],
+          outlets: [{ id: "out_1", label: "default", target: null }],
         },
       ],
     });
-    const next = removeBlock(draft, "condition:cond_1");
-    expect(next.conditions).toHaveLength(0);
+    const next = removeBlock(draft, "route:route_1");
+    expect(next.routeBlocks).toHaveLength(0);
   });
 
-  it("detects dirty state", () => {
+  it("detects dirty state from workflowRole", () => {
     const draft = createWorkflowDraft(baseWorkflow);
     expect(isWorkflowDraftDirty(draft, baseWorkflow)).toBe(false);
-    const next = updateCondition(
-      { ...draft, conditions: [{ id: "c1", label: "X", mode: "agentic", enforcement: "soft" }] },
-      "c1",
-      { label: "Changed" },
-    );
+    const next = updateWorkflowRole(draft, "dispatcher");
     expect(isWorkflowDraftDirty(next, baseWorkflow)).toBe(true);
+  });
+
+  it("adds route outlets", () => {
+    const draft = createWorkflowDraft({
+      ...baseWorkflow,
+      routeBlocks: [
+        {
+          id: "route_1",
+          label: "Dispatch",
+          links: [],
+          outlets: [{ id: "out_1", label: "default", target: null }],
+        },
+      ],
+    });
+    const next = addRouteOutlet(draft, "route_1", "skip");
+    expect(next.routeBlocks[0]?.outlets).toHaveLength(2);
+  });
+
+  it("updates route block label", () => {
+    const draft = createWorkflowDraft({
+      ...baseWorkflow,
+      routeBlocks: [
+        {
+          id: "route_1",
+          label: "Dispatch",
+          links: [],
+          outlets: [],
+        },
+      ],
+    });
+    const next = updateRouteBlock(draft, "route_1", { label: "Main dispatch" });
+    expect(next.routeBlocks[0]?.label).toBe("Main dispatch");
   });
 
   it("updates trigger events", () => {

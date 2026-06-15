@@ -12,6 +12,12 @@ import {
 export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      {workflow.workflowRole ? (
+        <SectionCard title="Role" description="Optional workflow metadata tag">
+          <Badge variant="secondary">{workflow.workflowRole}</Badge>
+        </SectionCard>
+      ) : null}
+
       <SectionCard title="Trigger" description="When this workflow may start">
         <div className="flex flex-wrap gap-1.5">
           {workflow.trigger.events.filter((event) => event.enabled).length ? (
@@ -94,6 +100,37 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
         </div>
       </SectionCard>
 
+      {workflow.routeBlocks.length ? (
+        <SectionCard
+          title="Routes"
+          description="Multi-outlet dispatcher graph"
+          className="lg:col-span-2"
+        >
+          <div className="space-y-3">
+            {workflow.routeBlocks.map((route) => (
+              <div key={route.id} className="rounded-lg border bg-muted/20 p-3">
+                <div className="font-medium">{route.label}</div>
+                {route.routingInstructionUrl ? (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {route.routingInstructionUrl}
+                  </p>
+                ) : null}
+                {route.outlets.length ? (
+                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    {route.outlets.map((outlet) => (
+                      <li key={outlet.id}>
+                        {outlet.label}
+                        {outlet.target ? ` → ${outlet.target.kind}` : " (open)"}
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      ) : null}
+
       <SectionCard
         title="Steps"
         description="Semantic work units with action contracts"
@@ -117,6 +154,11 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
                   {step.description}
                 </p>
               ) : null}
+              {step.instructionUrl ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {step.instructionUrl}
+                </p>
+              ) : null}
               {step.actions.length ? (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {step.actions.map((action) => (
@@ -132,6 +174,19 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
         </div>
       </SectionCard>
 
+      {workflow.workflowBlocks.length ? (
+        <SectionCard title="Workflow handoffs" description="Branch terminators">
+          <ul className="space-y-1 text-sm text-muted-foreground">
+            {workflow.workflowBlocks.map((block) => (
+              <li key={block.id}>
+                {block.label ? `${block.label} → ` : ""}
+                {block.workflowKey}
+              </li>
+            ))}
+          </ul>
+        </SectionCard>
+      ) : null}
+
       {workflow.gates.length ? (
         <SectionCard title="Gates" description="Human approval policy">
           <pre className="overflow-auto rounded-md bg-muted p-2 text-xs">
@@ -140,47 +195,9 @@ export function WorkflowBuilderSections({ workflow }: { workflow: Workflow }) {
         </SectionCard>
       ) : null}
 
-      <SectionCard title="Output" description="Expected artifacts">
-        <div className="space-y-2 text-sm">
-          {workflow.output.completionCriteria ? (
-            <p>{workflow.output.completionCriteria}</p>
-          ) : (
-            <p className="text-muted-foreground">No completion criteria.</p>
-          )}
-          {Object.keys(workflow.output.contract).length ? (
-            <pre className="overflow-auto rounded-md bg-muted p-2 text-xs">
-              {JSON.stringify(workflow.output.contract, null, 2)}
-            </pre>
-          ) : null}
-        </div>
-      </SectionCard>
-
-      {workflow.references.length ? (
-        <SectionCard
-          title="References"
-          description="Progressive disclosure links"
-          className="lg:col-span-2"
-        >
-          <ul className="space-y-2 text-sm">
-            {workflow.references.map((reference) => (
-              <li key={reference.id} className="rounded-md border p-3">
-                <div className="font-medium">{reference.title}</div>
-                <div className="text-muted-foreground">{reference.kind}</div>
-              </li>
-            ))}
-          </ul>
-        </SectionCard>
-      ) : null}
-
-      {workflow.routes.length ? (
-        <SectionCard title="Routes" description="Hand-off to other workflows">
-          <ul className="space-y-1 text-sm text-muted-foreground">
-            {workflow.routes.map((route) => (
-              <li key={route.id}>
-                {route.label ?? route.id} → {route.targetWorkflowKey}
-              </li>
-            ))}
-          </ul>
+      {workflow.agentNotes?.trim() ? (
+        <SectionCard title="Agent notes" description="Completion and guidance">
+          <p className="whitespace-pre-wrap text-sm">{workflow.agentNotes}</p>
         </SectionCard>
       ) : null}
     </div>

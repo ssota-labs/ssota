@@ -28,12 +28,6 @@ const sampleWorkflow: Workflow = {
           enabled: true,
           config: {},
         },
-        {
-          id: "task_assigned",
-          kind: "task_assigned",
-          enabled: true,
-          config: {},
-        },
       ],
     },
     context: {
@@ -55,6 +49,8 @@ const sampleWorkflow: Workflow = {
       traversals: [],
       assertions: [],
     },
+    routeBlocks: [],
+    workflowBlocks: [],
     conditions: [],
     steps: [
       {
@@ -69,11 +65,8 @@ const sampleWorkflow: Workflow = {
     gates: [],
     routes: [],
     references: [],
-    output: {
-      contract: { format: "markdown" },
-      completionCriteria: "Document node exists in Draft",
-    },
-    agentNotes: "Create documents as Draft.",
+    output: { contract: {} },
+    agentNotes: "Completion: Document node exists in Draft\n\nCreate documents as Draft.",
     applicableNodeTypes: [{ nodeType: "Document", disabledActions: [] }],
     allowedActions: ["create_node"],
   },
@@ -91,10 +84,10 @@ describe("renderWorkflowText", () => {
     expect(text).toContain("- Document");
     expect(text).toContain("## Steps");
     expect(text).toContain("### 1. Create draft");
-    expect(text).toContain("## Output");
-    expect(text).toContain("Filter group");
-    expect(text).toContain("Document");
+    expect(text).not.toContain("## Output");
+    expect(text).toContain("## Agent notes");
     expect(text).toContain("Document node exists in Draft");
+    expect(text).toContain("Filter group");
   });
 
   it("builds a package with structured workflow and rendered text", () => {
@@ -104,52 +97,66 @@ describe("renderWorkflowText", () => {
     expect(pkg.renderedText).toContain("## Steps");
   });
 
-  it("renders progressive disclosure hints for references and routes", () => {
-    const workflowWithDisclosure: Workflow = {
+  it("renders route blocks with outlets and workflow handoffs", () => {
+    const workflowWithRoutes: Workflow = {
       ...sampleWorkflow,
       spec: {
         ...sampleWorkflow.spec,
+        workflowRole: "dispatcher",
+        routeBlocks: [
+          {
+            id: "dispatch",
+            label: "Dispatch",
+            routingInstructionUrl: "https://notion.so/routing",
+            links: [
+              {
+                id: "guide",
+                label: "Routing guide",
+                url: "https://notion.so/guide",
+                source: "notion",
+              },
+            ],
+            outlets: [
+              {
+                id: "out_discovery",
+                label: "discovery",
+                target: {
+                  kind: "workflow",
+                  workflowBlockId: "wf_discovery",
+                },
+              },
+            ],
+          },
+        ],
+        workflowBlocks: [
+          {
+            id: "wf_discovery",
+            label: "Discovery steward",
+            workflowKey: "discovery_steward",
+          },
+        ],
         steps: [
           {
             id: "execute",
             title: "Run",
             mode: "agentic",
             actions: [],
-            referenceIds: ["brand_guide"],
-          },
-        ],
-        references: [
-          {
-            id: "brand_guide",
-            title: "Brand guide",
-            kind: "url",
-            url: "https://notion.so/guide",
-            source: "notion",
-          },
-          {
-            id: "sub_flow",
-            title: "Sub workflow",
-            kind: "workflow",
-            workflowKey: "sub_workflow",
-          },
-        ],
-        routes: [
-          {
-            id: "handoff",
-            label: "Escalate",
-            targetWorkflowKey: "escalation_flow",
-            conditionId: "needs_review",
+            referenceIds: [],
+            instructionUrl: "https://notion.so/runbook",
           },
         ],
       },
     };
 
-    const { workflow } = buildWorkflowPackage(workflowWithDisclosure);
+    const { workflow } = buildWorkflowPackage(workflowWithRoutes);
     const text = renderWorkflowText(workflow);
 
-    expect(text).toContain("Fetch when needed via notion MCP");
-    expect(text).toContain("Follow workflow (progressive): sub_workflow");
-    expect(text).toContain("references: brand_guide (fetch when needed)");
-    expect(text).toContain("progressive — call get_workflow when needed");
+    expect(text).toContain("Role: dispatcher");
+    expect(text).toContain("## Routes");
+    expect(text).toContain("discovery → workflow discovery_steward");
+    expect(text).toContain("routing instruction: https://notion.so/routing");
+    expect(text).toContain("link via notion");
+    expect(text).toContain("instruction: https://notion.so/runbook");
+    expect(text).toContain("## Workflow handoffs");
   });
 });

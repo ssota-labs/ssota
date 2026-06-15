@@ -1,25 +1,29 @@
 import type {
+  RouteBlock,
+  RouteOutlet,
+  RouteOutletTarget,
   Workflow,
-  WorkflowConditionSpec,
+  WorkflowBlockRef,
   WorkflowDefinition,
+  WorkflowExternalLink,
   WorkflowGateSpec,
-  WorkflowOutputSpec,
-  WorkflowReferenceSpec,
-  WorkflowRouteSpec,
   WorkflowStepSpec,
   WorkflowTriggerEvent,
   ContextSpec,
 } from "@ssota/contracts";
 import type { WorkflowFlowNodeKind } from "@/lib/workflows/workflow-flow-model";
+import {
+  parseRouteNodeId,
+  parseWorkflowBlockNodeId,
+} from "@/lib/workflows/workflow-flow-model";
 
 export type WorkflowDraft = WorkflowDefinition;
 
 export type WorkflowDraftPatch = {
+  flowEntry?: WorkflowDefinition["flowEntry"];
   steps?: WorkflowStepSpec[];
-  conditions?: WorkflowConditionSpec[];
-  references?: WorkflowReferenceSpec[];
-  routes?: WorkflowRouteSpec[];
-  output?: WorkflowOutputSpec;
+  routeBlocks?: RouteBlock[];
+  workflowBlocks?: WorkflowBlockRef[];
   gates?: WorkflowGateSpec[];
   trigger?: WorkflowDefinition["trigger"];
   context?: ContextSpec;
@@ -52,15 +56,21 @@ export function isWorkflowDraftDirty(
 
 export function extractBuilderPatch(draft: WorkflowDraft): WorkflowDraftPatch {
   return {
+    flowEntry: draft.flowEntry,
     steps: draft.steps,
-    conditions: draft.conditions,
-    references: draft.references,
-    routes: draft.routes,
-    output: draft.output,
+    routeBlocks: draft.routeBlocks,
+    workflowBlocks: draft.workflowBlocks,
     gates: draft.gates,
     trigger: draft.trigger,
     context: draft.context,
   };
+}
+
+export function updateWorkflowRole(
+  draft: WorkflowDraft,
+  workflowRole: string | undefined,
+): WorkflowDraft {
+  return { ...draft, workflowRole: workflowRole?.trim() || undefined };
 }
 
 export function updateTriggerEvents(
@@ -80,6 +90,13 @@ export function updateContext(draft: WorkflowDraft, context: ContextSpec): Workf
   };
 }
 
+export function updateAgentNotes(
+  draft: WorkflowDraft,
+  agentNotes: string | null | undefined,
+): WorkflowDraft {
+  return { ...draft, agentNotes: agentNotes?.trim() || null };
+}
+
 export function updateStep(
   draft: WorkflowDraft,
   stepId: string,
@@ -93,68 +110,95 @@ export function updateStep(
   };
 }
 
-export function updateCondition(
-  draft: WorkflowDraft,
-  conditionId: string,
-  patch: Partial<WorkflowConditionSpec>,
-): WorkflowDraft {
-  return {
-    ...draft,
-    conditions: draft.conditions.map((condition) =>
-      condition.id === conditionId ? { ...condition, ...patch } : condition,
-    ),
-  };
-}
-
-export function updateReference(
-  draft: WorkflowDraft,
-  referenceId: string,
-  patch: Partial<WorkflowReferenceSpec>,
-): WorkflowDraft {
-  return {
-    ...draft,
-    references: draft.references.map((reference) =>
-      reference.id === referenceId ? { ...reference, ...patch } : reference,
-    ),
-  };
-}
-
-export function updateRoute(
+export function updateRouteBlock(
   draft: WorkflowDraft,
   routeId: string,
-  patch: Partial<WorkflowRouteSpec>,
+  patch: Partial<RouteBlock>,
 ): WorkflowDraft {
   return {
     ...draft,
-    routes: draft.routes.map((route) =>
+    routeBlocks: draft.routeBlocks.map((route) =>
       route.id === routeId ? { ...route, ...patch } : route,
     ),
   };
 }
 
-export function updateOutput(
+export function updateRouteOutlet(
   draft: WorkflowDraft,
-  patch: Partial<WorkflowOutputSpec>,
+  routeId: string,
+  outletId: string,
+  patch: Partial<RouteOutlet>,
+): WorkflowDraft {
+  return updateRouteBlock(draft, routeId, {
+    outlets: draft.routeBlocks
+      .find((route) => route.id === routeId)
+      ?.outlets.map((outlet) =>
+        outlet.id === outletId ? { ...outlet, ...patch } : outlet,
+      ),
+  });
+}
+
+export function addRouteOutlet(
+  draft: WorkflowDraft,
+  routeId: string,
+  label = "Outlet",
+): WorkflowDraft {
+  const outlet: RouteOutlet = { id: newId("outlet"), label, target: null };
+  return updateRouteBlock(draft, routeId, {
+    outlets: [
+      ...(draft.routeBlocks.find((route) => route.id === routeId)?.outlets ?? []),
+      outlet,
+    ],
+  });
+}
+
+export function removeRouteOutlet(
+  draft: WorkflowDraft,
+  routeId: string,
+  outletId: string,
+): WorkflowDraft {
+  return updateRouteBlock(draft, routeId, {
+    outlets: draft.routeBlocks
+      .find((route) => route.id === routeId)
+      ?.outlets.filter((outlet) => outlet.id !== outletId),
+  });
+}
+
+export function addRouteLink(
+  draft: WorkflowDraft,
+  routeId: string,
+  link: WorkflowExternalLink,
+): WorkflowDraft {
+  const route = draft.routeBlocks.find((item) => item.id === routeId);
+  if (!route) return draft;
+  return updateRouteBlock(draft, routeId, {
+    links: [...route.links, link],
+  });
+}
+
+export function removeRouteLink(
+  draft: WorkflowDraft,
+  routeId: string,
+  linkId: string,
+): WorkflowDraft {
+  const route = draft.routeBlocks.find((item) => item.id === routeId);
+  if (!route) return draft;
+  return updateRouteBlock(draft, routeId, {
+    links: route.links.filter((link) => link.id !== linkId),
+  });
+}
+
+export function updateWorkflowBlock(
+  draft: WorkflowDraft,
+  workflowBlockId: string,
+  patch: Partial<WorkflowBlockRef>,
 ): WorkflowDraft {
   return {
     ...draft,
-    output: { ...draft.output, ...patch },
-  };
-}
-
-export function linkReferenceToStep(
-  draft: WorkflowDraft,
-  stepId: string,
-  referenceId: string,
-): WorkflowDraft {
-  return updateStep(draft, stepId, {
-    referenceIds: Array.from(
-      new Set([
-        ...(draft.steps.find((step) => step.id === stepId)?.referenceIds ?? []),
-        referenceId,
-      ]),
+    workflowBlocks: draft.workflowBlocks.map((block) =>
+      block.id === workflowBlockId ? { ...block, ...patch } : block,
     ),
-  });
+  };
 }
 
 function defaultStep(title = "New step"): WorkflowStepSpec {
@@ -167,34 +211,37 @@ function defaultStep(title = "New step"): WorkflowStepSpec {
   };
 }
 
-function defaultCondition(): WorkflowConditionSpec {
-  return {
-    id: newId("condition"),
-    label: "Condition",
-    mode: "agentic",
-    enforcement: "soft",
-    description: "",
-  };
-}
-
-function defaultReference(kind: WorkflowReferenceSpec["kind"] = "url"): WorkflowReferenceSpec {
-  return {
-    id: newId("ref"),
-    title: "Reference",
-    kind,
-    body: kind === "inline" ? "" : undefined,
-    url: undefined,
-    workflowKey: kind === "workflow" ? "target_workflow" : undefined,
-  };
-}
-
-function defaultRoute(conditionId?: string): WorkflowRouteSpec {
+function defaultRouteBlock(label = "Route"): RouteBlock {
   return {
     id: newId("route"),
-    targetWorkflowKey: "target_workflow",
-    conditionId,
-    label: "Handoff",
+    label,
+    routingInstructionUrl: undefined,
+    links: [],
+    outlets: [{ id: newId("outlet"), label: "default", target: null }],
   };
+}
+
+function defaultWorkflowBlock(workflowKey = "target_workflow"): WorkflowBlockRef {
+  return {
+    id: newId("wf"),
+    label: workflowKey,
+    workflowKey,
+  };
+}
+
+function setOutletTarget(
+  draft: WorkflowDraft,
+  routeId: string,
+  outletId: string,
+  target: RouteOutletTarget,
+): WorkflowDraft {
+  return updateRouteBlock(draft, routeId, {
+    outlets: draft.routeBlocks
+      .find((route) => route.id === routeId)
+      ?.outlets.map((outlet) =>
+        outlet.id === outletId ? { ...outlet, target } : outlet,
+      ),
+  });
 }
 
 function insertStepAt(draft: WorkflowDraft, index: number, step: WorkflowStepSpec): WorkflowDraft {
@@ -206,12 +253,21 @@ function insertStepAt(draft: WorkflowDraft, index: number, step: WorkflowStepSpe
   return { ...draft, steps };
 }
 
-function resolveStepId(sourceNodeId: string): string | null {
-  if (sourceNodeId.startsWith("condition:")) return null;
-  if (sourceNodeId.startsWith("reference:")) return null;
-  if (sourceNodeId.startsWith("route:")) return null;
-  if (["trigger", "context", "output"].includes(sourceNodeId)) return null;
-  return sourceNodeId;
+function connectOutletToNewBlock(
+  draft: WorkflowDraft,
+  routeId: string,
+  outletId: string | undefined,
+  target: RouteOutletTarget,
+): WorkflowDraft {
+  const route = draft.routeBlocks.find((item) => item.id === routeId);
+  if (!route) return draft;
+
+  const resolvedOutletId =
+    outletId ?? route.outlets[0]?.id ?? addRouteOutlet(draft, routeId).routeBlocks.find((r) => r.id === routeId)?.outlets[0]?.id;
+
+  if (!resolvedOutletId) return draft;
+
+  return setOutletTarget(draft, routeId, resolvedOutletId, target);
 }
 
 export type InsertBlockResult = {
@@ -223,71 +279,114 @@ export function insertBlockAfter(
   draft: WorkflowDraft,
   sourceNodeId: string,
   kind: WorkflowFlowNodeKind,
+  outletId?: string,
 ): InsertBlockResult {
-  if (kind === "trigger" || kind === "context" || kind === "output") {
+  if (kind === "trigger" || kind === "context") {
     return { draft, focusNodeId: sourceNodeId };
   }
 
   if (sourceNodeId === "context") {
-    if (kind === "condition") {
-      const condition = defaultCondition();
-      return {
-        draft: { ...draft, conditions: [...draft.conditions, condition] },
-        focusNodeId: `condition:${condition.id}`,
-      };
-    }
     if (kind === "route") {
-      const route = defaultRoute();
-      return {
-        draft: { ...draft, routes: [...draft.routes, route] },
-        focusNodeId: `route:${route.id}`,
+      const route = defaultRouteBlock();
+      const nextDraft: WorkflowDraft = {
+        ...draft,
+        routeBlocks: [...draft.routeBlocks, route],
+        flowEntry: { kind: "route", routeId: route.id },
       };
+      return { draft: nextDraft, focusNodeId: `route:${route.id}` };
     }
     if (kind === "step") {
       const step = defaultStep();
-      return {
-        draft: insertStepAt(draft, 0, step),
-        focusNodeId: step.id,
+      const nextDraft = {
+        ...insertStepAt(draft, 0, step),
+        flowEntry: { kind: "step" as const, stepId: step.id },
       };
-    }
-  }
-
-  if (sourceNodeId.startsWith("condition:")) {
-    const conditionId = sourceNodeId.slice("condition:".length);
-    if (kind === "step") {
-      const step = defaultStep();
-      const nextDraft = insertStepAt(draft, 0, step);
       return { draft: nextDraft, focusNodeId: step.id };
     }
-    if (kind === "route") {
-      const route = defaultRoute(conditionId);
-      return {
-        draft: { ...draft, routes: [...draft.routes, route] },
-        focusNodeId: `route:${route.id}`,
+    if (kind === "workflow") {
+      const block = defaultWorkflowBlock();
+      const route = defaultRouteBlock("Dispatch");
+      const routeWithTarget = {
+        ...route,
+        outlets: [
+          {
+            id: newId("outlet"),
+            label: block.workflowKey,
+            target: { kind: "workflow" as const, workflowBlockId: block.id },
+          },
+        ],
       };
-    }
-    if (kind === "gate") {
-      const step = { ...defaultStep("Review gate"), gate: { id: newId("gate"), policy: {}, required: true } };
-      return {
-        draft: insertStepAt(draft, 0, step),
-        focusNodeId: step.id,
+      const nextDraft: WorkflowDraft = {
+        ...draft,
+        workflowBlocks: [...draft.workflowBlocks, block],
+        routeBlocks: [...draft.routeBlocks, routeWithTarget],
+        flowEntry: { kind: "route", routeId: routeWithTarget.id },
       };
+      return { draft: nextDraft, focusNodeId: `workflow:${block.id}` };
     }
   }
 
-  const stepId = resolveStepId(sourceNodeId);
-  if (stepId) {
-    const stepIndex = draft.steps.findIndex((step) => step.id === stepId);
-    if (stepIndex === -1) {
-      return { draft, focusNodeId: sourceNodeId };
+  const routeIdFromNode = parseRouteNodeId(sourceNodeId);
+  if (routeIdFromNode) {
+    if (kind === "step") {
+      const step = defaultStep();
+      const withStep = insertStepAt(draft, draft.steps.length, step);
+      const connected = connectOutletToNewBlock(
+        withStep,
+        routeIdFromNode,
+        outletId,
+        { kind: "step", stepId: step.id },
+      );
+      return { draft: connected, focusNodeId: step.id };
     }
+    if (kind === "route") {
+      const route = defaultRouteBlock();
+      const withRoute = {
+        ...draft,
+        routeBlocks: [...draft.routeBlocks, route],
+      };
+      const connected = connectOutletToNewBlock(
+        withRoute,
+        routeIdFromNode,
+        outletId,
+        { kind: "route", routeId: route.id },
+      );
+      return { draft: connected, focusNodeId: `route:${route.id}` };
+    }
+    if (kind === "workflow") {
+      const block = defaultWorkflowBlock();
+      const withBlock = {
+        ...draft,
+        workflowBlocks: [...draft.workflowBlocks, block],
+      };
+      const connected = connectOutletToNewBlock(
+        withBlock,
+        routeIdFromNode,
+        outletId,
+        { kind: "workflow", workflowBlockId: block.id },
+      );
+      return { draft: connected, focusNodeId: `workflow:${block.id}` };
+    }
+  }
+
+  const stepId = !sourceNodeId.includes(":")
+    ? sourceNodeId
+  : null;
+
+  if (stepId && draft.steps.some((step) => step.id === stepId)) {
+    const stepIndex = draft.steps.findIndex((step) => step.id === stepId);
 
     if (kind === "step") {
       const step = defaultStep();
-      return {
-        draft: insertStepAt(draft, stepIndex + 1, step),
-        focusNodeId: step.id,
-      };
+      const prior = draft.steps[stepIndex];
+      const nextDraft = insertStepAt(draft, stepIndex + 1, step);
+      if (prior) {
+        return {
+          draft: updateStep(nextDraft, prior.id, { nextStepId: step.id }),
+          focusNodeId: step.id,
+        };
+      }
+      return { draft: nextDraft, focusNodeId: step.id };
     }
 
     if (kind === "gate") {
@@ -295,45 +394,35 @@ export function insertBlockAfter(
         ...defaultStep("Review gate"),
         gate: { id: newId("gate"), policy: {}, required: true, reason: "" },
       };
-      return {
-        draft: insertStepAt(draft, stepIndex + 1, step),
-        focusNodeId: step.id,
-      };
-    }
-
-    if (kind === "condition") {
-      const condition = defaultCondition();
-      return {
-        draft: { ...draft, conditions: [...draft.conditions, condition] },
-        focusNodeId: `condition:${condition.id}`,
-      };
-    }
-
-    if (kind === "reference") {
-      const reference = defaultReference("url");
-      const nextDraft = {
-        ...draft,
-        references: [...draft.references, reference],
-      };
-      return {
-        draft: linkReferenceToStep(nextDraft, stepId, reference.id),
-        focusNodeId: `reference:${reference.id}`,
-      };
+      const prior = draft.steps[stepIndex];
+      const nextDraft = insertStepAt(draft, stepIndex + 1, step);
+      if (prior) {
+        return {
+          draft: updateStep(nextDraft, prior.id, { nextStepId: step.id }),
+          focusNodeId: step.id,
+        };
+      }
+      return { draft: nextDraft, focusNodeId: step.id };
     }
 
     if (kind === "route") {
-      const route = defaultRoute();
+      const route = defaultRouteBlock();
+      const prior = draft.steps[stepIndex];
       const nextDraft = {
         ...draft,
-        routes: [...draft.routes, route],
-        steps: draft.steps.map((step) =>
-          step.id === stepId
-            ? { ...step, routeToWorkflowKey: route.targetWorkflowKey }
-            : step,
-        ),
+        routeBlocks: [...draft.routeBlocks, route],
       };
+      if (prior) {
+        return {
+          draft: updateStep(nextDraft, prior.id, { nextStepId: undefined }),
+          focusNodeId: `route:${route.id}`,
+        };
+      }
       return {
-        draft: nextDraft,
+        draft: {
+          ...nextDraft,
+          flowEntry: { kind: "route", routeId: route.id },
+        },
         focusNodeId: `route:${route.id}`,
       };
     }
@@ -344,44 +433,54 @@ export function insertBlockAfter(
 
 const PROTECTED_STEP_IDS = new Set(["execute"]);
 
+function clearOutletTargets(
+  draft: WorkflowDraft,
+  predicate: (target: RouteOutletTarget) => boolean,
+): WorkflowDraft {
+  return {
+    ...draft,
+    routeBlocks: draft.routeBlocks.map((route) => ({
+      ...route,
+      outlets: route.outlets.map((outlet) => ({
+        ...outlet,
+        target: outlet.target && predicate(outlet.target) ? null : outlet.target,
+      })),
+    })),
+  };
+}
+
 export function removeBlock(draft: WorkflowDraft, nodeId: string): WorkflowDraft {
-  if (["trigger", "context", "output"].includes(nodeId)) {
+  if (["trigger", "context"].includes(nodeId)) {
     return draft;
   }
 
-  if (nodeId.startsWith("condition:")) {
-    const conditionId = nodeId.slice("condition:".length);
+  const routeId = parseRouteNodeId(nodeId);
+  if (routeId) {
+    const nextBlocks = draft.routeBlocks.filter((route) => route.id !== routeId);
     return {
-      ...draft,
-      conditions: draft.conditions.filter((condition) => condition.id !== conditionId),
-      routes: draft.routes.map((route) =>
-        route.conditionId === conditionId ? { ...route, conditionId: undefined } : route,
+      ...clearOutletTargets(draft, (target) =>
+        target.kind === "route" && target.routeId === routeId,
       ),
+      routeBlocks: nextBlocks,
+      flowEntry:
+        draft.flowEntry?.kind === "route" && draft.flowEntry.routeId === routeId
+          ? nextBlocks[0]
+            ? { kind: "route", routeId: nextBlocks[0].id }
+            : draft.steps[0]
+              ? { kind: "step", stepId: draft.steps[0].id }
+              : undefined
+          : draft.flowEntry,
     };
   }
 
-  if (nodeId.startsWith("reference:")) {
-    const referenceId = nodeId.slice("reference:".length);
+  const workflowBlockId = parseWorkflowBlockNodeId(nodeId);
+  if (workflowBlockId) {
     return {
-      ...draft,
-      references: draft.references.filter((reference) => reference.id !== referenceId),
-      steps: draft.steps.map((step) => ({
-        ...step,
-        referenceIds: step.referenceIds.filter((id) => id !== referenceId),
-      })),
-    };
-  }
-
-  if (nodeId.startsWith("route:")) {
-    const routeId = nodeId.slice("route:".length);
-    const removed = draft.routes.find((route) => route.id === routeId);
-    return {
-      ...draft,
-      routes: draft.routes.filter((route) => route.id !== routeId),
-      steps: draft.steps.map((step) =>
-        removed && step.routeToWorkflowKey === removed.targetWorkflowKey
-          ? { ...step, routeToWorkflowKey: undefined }
-          : step,
+      ...clearOutletTargets(draft, (target) =>
+        target.kind === "workflow" && target.workflowBlockId === workflowBlockId,
+      ),
+      workflowBlocks: draft.workflowBlocks.filter(
+        (block) => block.id !== workflowBlockId,
       ),
     };
   }
@@ -391,12 +490,33 @@ export function removeBlock(draft: WorkflowDraft, nodeId: string): WorkflowDraft
   }
 
   const remainingSteps = draft.steps.filter((step) => step.id !== nodeId);
-  if (remainingSteps.length === 0) {
+  const nextDraft = clearOutletTargets(draft, (target) =>
+    target.kind === "step" && target.stepId === nodeId,
+  );
+
+  if (remainingSteps.length === 0 && nextDraft.routeBlocks.length === 0) {
     return {
-      ...draft,
-      steps: [defaultStep(draft.title || "Workflow")],
+      ...nextDraft,
+      steps: [defaultStep(nextDraft.title || "Workflow")],
     };
   }
 
-  return { ...draft, steps: remainingSteps };
+  const stepsWithNext = nextDraft.steps
+    .filter((step) => step.id !== nodeId)
+    .map((step) =>
+      step.nextStepId === nodeId ? { ...step, nextStepId: undefined } : step,
+    );
+
+  return {
+    ...nextDraft,
+    steps: stepsWithNext,
+    flowEntry:
+      nextDraft.flowEntry?.kind === "step" && nextDraft.flowEntry.stepId === nodeId
+        ? remainingSteps[0]
+          ? { kind: "step", stepId: remainingSteps[0].id }
+          : nextDraft.routeBlocks[0]
+            ? { kind: "route", routeId: nextDraft.routeBlocks[0].id }
+            : undefined
+        : nextDraft.flowEntry,
+  };
 }

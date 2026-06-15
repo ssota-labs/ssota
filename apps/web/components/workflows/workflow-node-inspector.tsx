@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import type {
-  WorkflowConditionSpec,
-  WorkflowReferenceSpec,
+  RouteOutletTarget,
+  WorkflowExternalLink,
   WorkflowStepSpec,
 } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
@@ -21,14 +21,17 @@ import {
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import type { WorkflowFlowNode } from "@/lib/workflows/workflow-flow-model";
 import {
+  addRouteLink,
+  addRouteOutlet,
   removeBlock,
-  updateCondition,
-  updateOutput,
-  updateReference,
-  updateRoute,
+  removeRouteLink,
+  removeRouteOutlet,
+  updateContext,
+  updateRouteBlock,
+  updateRouteOutlet,
   updateStep,
   updateTriggerEvents,
-  updateContext,
+  updateWorkflowBlock,
   type WorkflowDraft,
 } from "@/lib/workflows/workflow-draft";
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
@@ -49,6 +52,7 @@ export type WorkflowPickerOption = {
 type WorkflowNodeInspectorProps = {
   draft: WorkflowDraft;
   selectedNode: WorkflowFlowNode | null;
+  currentWorkflowKey?: string;
   onDraftChange: (draft: WorkflowDraft) => void;
   workflowOptions: WorkflowPickerOption[];
   allowedActions: string[];
@@ -59,6 +63,7 @@ type WorkflowNodeInspectorProps = {
 export function WorkflowNodeInspector({
   draft,
   selectedNode,
+  currentWorkflowKey,
   onDraftChange,
   workflowOptions,
   allowedActions,
@@ -82,7 +87,7 @@ export function WorkflowNodeInspector({
   }
 
   const { data } = selectedNode;
-  const canDelete = !["trigger", "context", "output"].includes(data.kind);
+  const canDelete = !["trigger", "context"].includes(data.kind);
   const isSheetStyleInspector =
     data.kind === "trigger" || data.kind === "context";
 
@@ -121,13 +126,6 @@ export function WorkflowNodeInspector({
             onDraftChange={onDraftChange}
           />
         ) : null}
-        {data.kind === "condition" ? (
-          <ConditionInspector
-            draft={draft}
-            conditionId={data.conditionId}
-            onDraftChange={onDraftChange}
-          />
-        ) : null}
         {data.kind === "step" || data.kind === "gate" ? (
           <StepInspector
             draft={draft}
@@ -136,21 +134,18 @@ export function WorkflowNodeInspector({
             onDraftChange={onDraftChange}
           />
         ) : null}
-        {data.kind === "output" ? (
-          <OutputInspector draft={draft} onDraftChange={onDraftChange} />
-        ) : null}
-        {data.kind === "reference" ? (
-          <ReferenceInspector
+        {data.kind === "route" ? (
+          <RouteBlockInspector
             draft={draft}
-            referenceId={data.referenceId}
-            workflowOptions={workflowOptions}
+            routeId={data.routeId}
             onDraftChange={onDraftChange}
           />
         ) : null}
-        {data.kind === "route" ? (
-          <RouteInspector
+        {data.kind === "workflow" ? (
+          <WorkflowBlockInspector
             draft={draft}
-            routeId={data.routeId}
+            workflowBlockId={data.workflowBlockId}
+            currentWorkflowKey={currentWorkflowKey}
             workflowOptions={workflowOptions}
             onDraftChange={onDraftChange}
           />
@@ -170,14 +165,6 @@ export function WorkflowNodeInspector({
         ) : null}
       </div>
     </aside>
-  );
-}
-
-function ReadonlyHint({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-      {children}
-    </p>
   );
 }
 
@@ -239,83 +226,6 @@ function ContextInspector({
   );
 }
 
-function ConditionInspector({
-  draft,
-  conditionId,
-  onDraftChange,
-}: {
-  draft: WorkflowDraft;
-  conditionId?: string;
-  onDraftChange: (draft: WorkflowDraft) => void;
-}) {
-  const condition = draft.conditions.find((item) => item.id === conditionId);
-  if (!condition || !conditionId) return null;
-
-  const patch = (next: Partial<WorkflowConditionSpec>) =>
-    onDraftChange(updateCondition(draft, conditionId, next));
-
-  return (
-    <>
-      <Field label="Label" htmlFor="condition-label">
-        <Input
-          id="condition-label"
-          value={condition.label ?? ""}
-          onChange={(event) => patch({ label: event.target.value })}
-        />
-      </Field>
-      <Field label="Description" htmlFor="condition-description">
-        <Textarea
-          id="condition-description"
-          value={condition.description ?? ""}
-          onChange={(event) => patch({ description: event.target.value })}
-          className="min-h-20"
-        />
-      </Field>
-      <Field label="Mode">
-        <Select
-          value={condition.mode}
-          onValueChange={(value) =>
-            value && patch({ mode: value as WorkflowConditionSpec["mode"] })
-          }
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="agentic">agentic</SelectItem>
-            <SelectItem value="deterministic">deterministic</SelectItem>
-          </SelectContent>
-        </Select>
-      </Field>
-      <Field label="Enforcement">
-        <Select
-          value={condition.enforcement}
-          onValueChange={(value) =>
-            value &&
-            patch({ enforcement: value as WorkflowConditionSpec["enforcement"] })
-          }
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="soft">soft</SelectItem>
-            <SelectItem value="hard">hard</SelectItem>
-          </SelectContent>
-        </Select>
-      </Field>
-      <Field label="Expression" htmlFor="condition-expression">
-        <Textarea
-          id="condition-expression"
-          value={condition.expression ?? ""}
-          onChange={(event) => patch({ expression: event.target.value })}
-          className="min-h-16 font-mono text-xs"
-        />
-      </Field>
-    </>
-  );
-}
-
 function StepInspector({
   draft,
   stepId,
@@ -368,6 +278,23 @@ function StepInspector({
           className="min-h-20"
         />
       </Field>
+      <Field label="Instruction URL" htmlFor="step-instruction-url">
+        <Input
+          id="step-instruction-url"
+          value={step.instructionUrl ?? ""}
+          onChange={(event) =>
+            patch({
+              instructionUrl: event.target.value.trim()
+                ? event.target.value
+                : null,
+            })
+          }
+          placeholder="https://notion.so/…"
+        />
+        <p className="text-xs text-muted-foreground">
+          Notion runbook or external guide for executing this step.
+        </p>
+      </Field>
       <Field label="Actions">
         <div className="space-y-2 rounded-md border p-3">
           {allowedActions.length ? (
@@ -377,10 +304,7 @@ function StepInspector({
                   checked={selectedActions.has(actionType)}
                   onCheckedChange={(checked) => {
                     const nextActions = checked
-                      ? [
-                          ...step.actions,
-                          { actionType, required: false },
-                        ]
+                      ? [...step.actions, { actionType, required: false }]
                       : step.actions.filter(
                           (action) => action.actionType !== actionType,
                         );
@@ -396,36 +320,6 @@ function StepInspector({
             </p>
           )}
         </div>
-      </Field>
-      <Field label="Linked references">
-        <div className="space-y-2 rounded-md border p-3">
-          {draft.references.length ? (
-            draft.references.map((reference) => (
-              <label key={reference.id} className="flex items-center gap-2 text-sm">
-                <Checkbox
-                  checked={step.referenceIds.includes(reference.id)}
-                  onCheckedChange={(checked) => {
-                    const nextIds = checked
-                      ? [...step.referenceIds, reference.id]
-                      : step.referenceIds.filter((id) => id !== reference.id);
-                    patch({ referenceIds: nextIds });
-                  }}
-                />
-                {reference.title}
-              </label>
-            ))
-          ) : (
-            <p className="text-xs text-muted-foreground">No references yet.</p>
-          )}
-        </div>
-      </Field>
-      <Field label="Step output" htmlFor="step-output">
-        <Textarea
-          id="step-output"
-          value={step.output ?? ""}
-          onChange={(event) => patch({ output: event.target.value })}
-          className="min-h-16"
-        />
       </Field>
       {step.gate ? (
         <>
@@ -478,194 +372,228 @@ function StepInspector({
   );
 }
 
-function OutputInspector({
-  draft,
-  onDraftChange,
-}: {
-  draft: WorkflowDraft;
-  onDraftChange: (draft: WorkflowDraft) => void;
-}) {
-  return (
-    <>
-      <Field label="Format">
-        <Input
-          value={draft.output.format ?? ""}
-          onChange={(event) =>
-            onDraftChange(updateOutput(draft, { format: event.target.value }))
-          }
-        />
-      </Field>
-      <Field label="Completion criteria">
-        <Textarea
-          value={draft.output.completionCriteria ?? ""}
-          onChange={(event) =>
-            onDraftChange(
-              updateOutput(draft, { completionCriteria: event.target.value }),
-            )
-          }
-          className="min-h-20"
-        />
-      </Field>
-    </>
-  );
-}
-
-function ReferenceInspector({
-  draft,
-  referenceId,
-  workflowOptions,
-  onDraftChange,
-}: {
-  draft: WorkflowDraft;
-  referenceId?: string;
-  workflowOptions: WorkflowPickerOption[];
-  onDraftChange: (draft: WorkflowDraft) => void;
-}) {
-  const reference = draft.references.find((item) => item.id === referenceId);
-  if (!reference || !referenceId) return null;
-
-  const patch = (next: Partial<WorkflowReferenceSpec>) =>
-    onDraftChange(updateReference(draft, referenceId, next));
-
-  return (
-    <>
-      <Field label="Title" htmlFor={`ref-title-${referenceId}`}>
-        <Input
-          id={`ref-title-${referenceId}`}
-          value={reference.title}
-          onChange={(event) => patch({ title: event.target.value })}
-        />
-      </Field>
-      <Field label="Kind" htmlFor={`ref-kind-${referenceId}`}>
-        <Select
-          value={reference.kind}
-          onValueChange={(value) => {
-            if (!value) return;
-            patch({
-              kind: value as WorkflowReferenceSpec["kind"],
-              body: value === "inline" ? reference.body ?? "" : undefined,
-              url: value === "url" ? reference.url : undefined,
-              workflowKey:
-                value === "workflow"
-                  ? reference.workflowKey ?? workflowOptions[0]?.workflowKey
-                  : undefined,
-            });
-          }}
-        >
-          <SelectTrigger
-            id={`ref-kind-${referenceId}`}
-            className="w-full"
-            data-testid="reference-kind"
-          >
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="inline">inline</SelectItem>
-            <SelectItem value="url">url</SelectItem>
-            <SelectItem value="workflow">workflow</SelectItem>
-          </SelectContent>
-        </Select>
-      </Field>
-      {reference.kind === "inline" ? (
-        <Field label="Body">
-          <Textarea
-            value={reference.body ?? ""}
-            onChange={(event) => patch({ body: event.target.value })}
-            className="min-h-24"
-          />
-        </Field>
-      ) : null}
-      {reference.kind === "url" ? (
-        <>
-          <Field label="URL" htmlFor={`ref-url-${referenceId}`}>
-            <Input
-              id={`ref-url-${referenceId}`}
-              value={reference.url ?? ""}
-              onChange={(event) =>
-                patch({
-                  url: event.target.value.trim() ? event.target.value : undefined,
-                })
-              }
-              placeholder="https://notion.so/..."
-            />
-          </Field>
-          <Field label="Source (MCP hint)">
-            <Select
-              value={reference.source ?? "generic"}
-              onValueChange={(value) =>
-                value &&
-                patch({
-                  source: value as NonNullable<WorkflowReferenceSpec["source"]>,
-                })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="notion">notion</SelectItem>
-                <SelectItem value="gdrive">gdrive</SelectItem>
-                <SelectItem value="gmail">gmail</SelectItem>
-                <SelectItem value="generic">generic</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
-        </>
-      ) : null}
-      {reference.kind === "workflow" ? (
-        <Field label="Workflow key">
-          <Select
-            value={reference.workflowKey ?? ""}
-            onValueChange={(value) => value && patch({ workflowKey: value })}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select workflow" />
-            </SelectTrigger>
-            <SelectContent>
-              {workflowOptions.map((option) => (
-                <SelectItem key={option.workflowKey} value={option.workflowKey}>
-                  {option.title} ({option.workflowKey})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
-      ) : null}
-    </>
-  );
-}
-
-function RouteInspector({
+function RouteBlockInspector({
   draft,
   routeId,
-  workflowOptions,
   onDraftChange,
 }: {
   draft: WorkflowDraft;
   routeId?: string;
-  workflowOptions: WorkflowPickerOption[];
   onDraftChange: (draft: WorkflowDraft) => void;
 }) {
-  const route = draft.routes.find((item) => item.id === routeId);
+  const route = draft.routeBlocks.find((item) => item.id === routeId);
   if (!route || !routeId) return null;
 
-  const patch = (next: Partial<typeof route>) =>
-    onDraftChange(updateRoute(draft, routeId, next));
+  const patch = (next: Parameters<typeof updateRouteBlock>[2]) =>
+    onDraftChange(updateRouteBlock(draft, routeId, next));
+
+  const addLink = () => {
+    const link: WorkflowExternalLink = {
+      id: `link_${crypto.randomUUID().slice(0, 8)}`,
+      label: "Link",
+      url: "https://",
+    };
+    onDraftChange(addRouteLink(draft, routeId, link));
+  };
 
   return (
     <>
-      <Field label="Label">
+      <Field label="Label" htmlFor="route-label">
         <Input
-          value={route.label ?? ""}
+          id="route-label"
+          value={route.label}
           onChange={(event) => patch({ label: event.target.value })}
+        />
+      </Field>
+      <Field label="Routing instruction URL" htmlFor="route-routing-url">
+        <Input
+          id="route-routing-url"
+          value={route.routingInstructionUrl ?? ""}
+          onChange={(event) =>
+            patch({
+              routingInstructionUrl: event.target.value.trim()
+                ? event.target.value
+                : null,
+            })
+          }
+          placeholder="https://notion.so/…"
+        />
+        <p className="text-xs text-muted-foreground">
+          Agent reads this to decide which outlet to take.
+        </p>
+      </Field>
+
+      <Field label="External links">
+        <div className="space-y-2">
+          {route.links.map((link) => (
+            <div key={link.id} className="space-y-2 rounded-md border p-3">
+              <Input
+                value={link.label ?? ""}
+                onChange={(event) => {
+                  const links = route.links.map((item) =>
+                    item.id === link.id
+                      ? { ...item, label: event.target.value }
+                      : item,
+                  );
+                  patch({ links });
+                }}
+                placeholder="Label"
+              />
+              <Input
+                value={link.url}
+                onChange={(event) => {
+                  const links = route.links.map((item) =>
+                    item.id === link.id
+                      ? { ...item, url: event.target.value }
+                      : item,
+                  );
+                  patch({ links });
+                }}
+                placeholder="https://…"
+              />
+              <Select
+                value={link.source ?? "generic"}
+                onValueChange={(value) => {
+                  if (!value) return;
+                  const links = route.links.map((item) =>
+                    item.id === link.id
+                      ? {
+                          ...item,
+                          source: value as NonNullable<
+                            WorkflowExternalLink["source"]
+                          >,
+                        }
+                      : item,
+                  );
+                  patch({ links });
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="notion">notion</SelectItem>
+                  <SelectItem value="gdrive">gdrive</SelectItem>
+                  <SelectItem value="gmail">gmail</SelectItem>
+                  <SelectItem value="generic">generic</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full text-destructive"
+                onClick={() =>
+                  onDraftChange(removeRouteLink(draft, routeId, link.id))
+                }
+              >
+                Remove link
+              </Button>
+            </div>
+          ))}
+          <Button type="button" variant="outline" size="sm" onClick={addLink}>
+            Add link
+          </Button>
+        </div>
+      </Field>
+
+      <Field label="Outlets">
+        <div className="space-y-2">
+          {route.outlets.map((outlet) => (
+            <div key={outlet.id} className="rounded-md border p-3 text-sm">
+              <Input
+                value={outlet.label}
+                onChange={(event) =>
+                  onDraftChange(
+                    updateRouteOutlet(draft, routeId, outlet.id, {
+                      label: event.target.value,
+                    }),
+                  )
+                }
+                className="mb-2"
+              />
+              <p className="text-xs text-muted-foreground">
+                Target: {describeOutletTarget(draft, outlet.target)}
+              </p>
+              {route.outlets.length > 1 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 w-full text-destructive"
+                  onClick={() =>
+                    onDraftChange(removeRouteOutlet(draft, routeId, outlet.id))
+                  }
+                >
+                  Remove outlet
+                </Button>
+              ) : null}
+            </div>
+          ))}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onDraftChange(addRouteOutlet(draft, routeId))}
+          >
+            Add outlet
+          </Button>
+        </div>
+      </Field>
+    </>
+  );
+}
+
+function WorkflowBlockInspector({
+  draft,
+  workflowBlockId,
+  currentWorkflowKey,
+  workflowOptions,
+  onDraftChange,
+}: {
+  draft: WorkflowDraft;
+  workflowBlockId?: string;
+  currentWorkflowKey?: string;
+  workflowOptions: WorkflowPickerOption[];
+  onDraftChange: (draft: WorkflowDraft) => void;
+}) {
+  const block = draft.workflowBlocks.find((item) => item.id === workflowBlockId);
+  if (!block || !workflowBlockId) return null;
+
+  const selfHandoff =
+    currentWorkflowKey && block.workflowKey === currentWorkflowKey;
+
+  return (
+    <>
+      {selfHandoff ? (
+        <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100">
+          This workflow references itself. Circular handoffs may loop at runtime.
+        </p>
+      ) : null}
+      <Field label="Label" htmlFor="workflow-block-label">
+        <Input
+          id="workflow-block-label"
+          value={block.label ?? ""}
+          onChange={(event) =>
+            onDraftChange(
+              updateWorkflowBlock(draft, workflowBlockId, {
+                label: event.target.value,
+              }),
+            )
+          }
         />
       </Field>
       <Field label="Target workflow">
         <Select
-          value={route.targetWorkflowKey}
-          onValueChange={(value) => value && patch({ targetWorkflowKey: value })}
+          value={block.workflowKey}
+          onValueChange={(value) =>
+            value &&
+            onDraftChange(
+              updateWorkflowBlock(draft, workflowBlockId, { workflowKey: value }),
+            )
+          }
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full" data-testid="workflow-block-picker">
             <SelectValue placeholder="Select workflow" />
           </SelectTrigger>
           <SelectContent>
@@ -676,30 +604,37 @@ function RouteInspector({
             ))}
           </SelectContent>
         </Select>
-      </Field>
-      <Field label="Condition id">
-        <Select
-          value={route.conditionId ?? "__none__"}
-          onValueChange={(value) => {
-            if (!value) return;
-            patch({ conditionId: value === "__none__" ? undefined : value });
-          }}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Optional condition" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none__">None</SelectItem>
-            {draft.conditions.map((condition) => (
-              <SelectItem key={condition.id} value={condition.id}>
-                {condition.label ?? condition.id}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <p className="text-xs text-muted-foreground">
+          Hand off execution to another workflow. This branch ends here.
+        </p>
       </Field>
     </>
   );
+}
+
+function describeOutletTarget(
+  draft: WorkflowDraft,
+  target: RouteOutletTarget | null | undefined,
+): string {
+  if (!target) return "Not connected";
+  switch (target.kind) {
+    case "step": {
+      const step = draft.steps.find((item) => item.id === target.stepId);
+      return step ? `Step: ${step.title}` : `Step: ${target.stepId}`;
+    }
+    case "route": {
+      const route = draft.routeBlocks.find((item) => item.id === target.routeId);
+      return route ? `Route: ${route.label}` : `Route: ${target.routeId}`;
+    }
+    case "workflow": {
+      const block = draft.workflowBlocks.find(
+        (item) => item.id === target.workflowBlockId,
+      );
+      return block
+        ? `Workflow: ${block.workflowKey}`
+        : `Workflow block: ${target.workflowBlockId}`;
+    }
+  }
 }
 
 function Field({
@@ -715,15 +650,6 @@ function Field({
     <div className="space-y-2">
       <Label htmlFor={htmlFor}>{label}</Label>
       {children}
-    </div>
-  );
-}
-
-function ReadonlyArea({ label, value }: { label: string; value?: string }) {
-  return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
-      <Textarea value={value || "-"} readOnly className="min-h-24 font-mono text-xs" />
     </div>
   );
 }

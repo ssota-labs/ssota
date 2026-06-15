@@ -1,4 +1,11 @@
-import type { Workflow, WorkflowStepSpec } from "@ssota/contracts";
+import type {
+  RouteBlock,
+  RouteOutletTarget,
+  Workflow,
+  WorkflowBlockRef,
+  WorkflowStepSpec,
+} from "@ssota/contracts";
+import { resolveOutletTargetNodeId } from "@ssota/contracts";
 import type { ComponentType } from "react";
 import type { Edge, Node } from "@xyflow/react";
 import { getWorkflowTriggerMeta } from "@/lib/workflows/workflow-trigger-catalog";
@@ -12,10 +19,8 @@ export type WorkflowFlowNodeKind =
   | "context"
   | "step"
   | "gate"
-  | "condition"
-  | "output"
-  | "reference"
-  | "route";
+  | "route"
+  | "workflow";
 
 export type WorkflowFlowNodeData = {
   nodeId?: string;
@@ -25,13 +30,20 @@ export type WorkflowFlowNodeData = {
   badges?: string[];
   kind: WorkflowFlowNodeKind;
   stepId?: string;
-  conditionId?: string;
   gateId?: string;
-  referenceId?: string;
   routeId?: string;
+  workflowBlockId?: string;
+  /** Route outlets for multi-handle rendering */
+  routeOutlets?: Array<{ id: string; label: string }>;
+  /** Route outlet id when this node's + button adds to a specific outlet */
+  outletId?: string;
   layoutWidth?: number;
   addOptions?: WorkflowFlowNodeKind[];
-  onAddNode?: (sourceNodeId: string, kind: WorkflowFlowNodeKind) => void;
+  onAddNode?: (
+    sourceNodeId: string,
+    kind: WorkflowFlowNodeKind,
+    outletId?: string,
+  ) => void;
   AddIcon?: ComponentType<{ className?: string }>;
 };
 
@@ -62,7 +74,9 @@ function contextSummary(workflow: Workflow): string | undefined {
 
 function stepBadges(step: WorkflowStepSpec): string[] | undefined {
   const actions = step.actions.map((ref) => ref.actionType);
-  return actions.length ? actions : undefined;
+  const badges = [...actions];
+  if (step.instructionUrl) badges.push("instruction");
+  return badges.length ? badges : undefined;
 }
 
 type DraftNodeInput = {
@@ -73,10 +87,11 @@ type DraftNodeInput = {
   description?: string;
   badges?: string[];
   stepId?: string;
-  conditionId?: string;
   gateId?: string;
-  referenceId?: string;
   routeId?: string;
+  workflowBlockId?: string;
+  outletId?: string;
+  routeOutlets?: Array<{ id: string; label: string }>;
 };
 
 function buildNode(input: DraftNodeInput): WorkflowFlowNode {
@@ -85,16 +100,18 @@ function buildNode(input: DraftNodeInput): WorkflowFlowNode {
     type: "workflowNode",
     position: { x: 0, y: 0 },
     data: {
+      nodeId: input.id,
       kind: input.kind,
       eyebrow: input.eyebrow ?? input.kind,
       label: input.label,
       description: input.description,
       badges: input.badges,
       stepId: input.stepId,
-      conditionId: input.conditionId,
       gateId: input.gateId,
-      referenceId: input.referenceId,
       routeId: input.routeId,
+      workflowBlockId: input.workflowBlockId,
+      outletId: input.outletId,
+      routeOutlets: input.routeOutlets,
       layoutWidth: estimateGraphNodeWidth({
         label: input.label,
         description: input.description,
@@ -104,6 +121,135 @@ function buildNode(input: DraftNodeInput): WorkflowFlowNode {
   };
 }
 
+function workflowBlockById(
+  blocks: WorkflowBlockRef[],
+  id: string,
+): WorkflowBlockRef | undefined {
+  return blocks.find((block) => block.id === id);
+}
+
+function stepById(
+  steps: WorkflowStepSpec[],
+  id: string,
+): WorkflowStepSpec | undefined {
+  return steps.find((step) => step.id === id);
+}
+
+function routeBlockById(
+  routeBlocks: RouteBlock[],
+  id: string,
+): RouteBlock | undefined {
+  return routeBlocks.find((route) => route.id === id);
+}
+
+function appendStepChainEdges(
+  workflow: Workflow,
+  steps: WorkflowStepSpec[],
+  startStepId: string,
+  edges: WorkflowFlowEdge[],
+  sourcePrefix: string,
+): void {
+  let cursor: string | undefined = startStepId;
+  const visited = new Set<string>();
+
+  while (cursor && !visited.has(cursor)) {
+    visited.add(cursor);
+    const step = stepById(steps, cursor);
+    if (!step) break;
+
+    const nextId = step.nextStepId;
+    if (nextId && stepById(steps, nextId)) {
+      edges.push({
+        id: `edge-${sourcePrefix}-${cursor}-${nextId}`,
+        source: cursor,
+        target: nextId,
+        label: step.gate ? "approved" : step.actions[0]?.actionType,
+      });
+      cursor = nextId;
+      continue;
+    }
+    break;
+  }
+}
+
+function describeOutletTarget(
+  workflow: Workflow,
+  target: RouteOutletTarget,
+): string {
+  switch (target.kind) {
+    case "step": {
+      const step = stepById(workflow.steps, target.stepId);
+      return step?.title ?? target.stepId;
+    }
+    case "route": {
+      const route = routeBlockById(workflow.routeBlocks, target.routeId);
+      return route?.label ?? target.routeId;
+    }
+    case "workflow": {
+      const block = workflowBlockById(workflow.workflowBlocks, target.workflowBlockId);
+      return block?.workflowKey ?? target.workflowBlockId;
+    }
+  }
+}
+
+function appendOutletTargetEdges(
+  workflow: Workflow,
+  target: RouteOutletTarget,
+  edges: WorkflowFlowEdge[],
+  sourceId: string,
+  outletId: string,
+  nodes: WorkflowFlowNode[],
+): void {
+  const targetNodeId = resolveOutletTargetNodeId(target);
+  edges.push({
+    id: `edge-${sourceId}-outlet-${outletId}-${targetNodeId}`,
+    source: sourceId,
+    target: targetNodeId,
+    sourceHandle: outletId,
+    label: describeOutletTarget(workflow, target),
+  });
+
+  if (target.kind === "step") {
+    appendStepChainEdges(
+      workflow,
+      workflow.steps,
+      target.stepId,
+      edges,
+      `chain-${outletId}`,
+    );
+    return;
+  }
+
+  if (target.kind === "route") {
+    const route = routeBlockById(workflow.routeBlocks, target.routeId);
+    if (route) {
+      appendRouteBlockEdges(workflow, route, edges, nodes);
+    }
+  }
+}
+
+function appendRouteBlockEdges(
+  workflow: Workflow,
+  route: RouteBlock,
+  edges: WorkflowFlowEdge[],
+  nodes: WorkflowFlowNode[],
+): void {
+  const routeNodeId = `route:${route.id}`;
+  if (!nodes.some((node) => node.id === routeNodeId)) return;
+
+  for (const outlet of route.outlets) {
+    if (!outlet.target) continue;
+    appendOutletTargetEdges(
+      workflow,
+      outlet.target,
+      edges,
+      routeNodeId,
+      outlet.id,
+      nodes,
+    );
+  }
+}
+
 export function layoutWorkflowGraph(
   nodes: WorkflowFlowNode[],
   edges: WorkflowFlowEdge[],
@@ -111,45 +257,30 @@ export function layoutWorkflowGraph(
   nodes: WorkflowFlowNode[];
   edges: WorkflowFlowEdge[];
 } {
-  const layouted = layoutGraphWithDagre(nodes, edges, "LR", {
+  const laidOut = layoutGraphWithDagre(nodes, edges, "LR", {
     getNodeSize: (node) => ({
       width: node.data.layoutWidth ?? 220,
-      height: node.data.kind === "reference" ? 96 : 120,
+      height: node.data.kind === "workflow" ? 96 : 120,
     }),
   });
-
-  const stepByReference = new Map<string, WorkflowFlowNode>();
-  for (const edge of edges) {
-    if ((edge.data as { kind?: string } | undefined)?.kind !== "reference") {
-      continue;
-    }
-    const source = layouted.nodes.find((node) => node.id === edge.source);
-    if (source) stepByReference.set(edge.target, source as WorkflowFlowNode);
-  }
-
   return {
-    nodes: (layouted.nodes as WorkflowFlowNode[]).map((node) => {
-      const source = stepByReference.get(node.id);
-      if (!source) return node;
-      return {
-        ...node,
-        position: {
-          x: source.position.x,
-          y: source.position.y + 150,
-        },
-      };
-    }),
-    edges: layouted.edges,
+    nodes: laidOut.nodes.map((node) => ({
+      ...node,
+      type: "workflowNode" as const,
+    })),
+    edges: laidOut.edges,
   };
 }
 
-/** Build React Flow nodes/edges from Workflow SSOT with condition, route, and reference branches. */
+/** Build React Flow nodes/edges from Workflow SSOT (routeBlocks + workflowBlocks). */
 export function workflowToFlowGraph(workflow: Workflow): {
   nodes: WorkflowFlowNode[];
   edges: WorkflowFlowEdge[];
 } {
   const steps =
-    workflow.steps.length > 0 ? workflow.steps : [{ ...DEFAULT_STEP, title: workflow.title }];
+    workflow.steps.length > 0
+      ? workflow.steps
+      : [{ ...DEFAULT_STEP, title: workflow.title }];
 
   const nodes: WorkflowFlowNode[] = [
     buildNode({
@@ -174,15 +305,23 @@ export function workflowToFlowGraph(workflow: Workflow): {
           ? workflow.applicableNodeTypes.map((entry) => entry.nodeType)
           : undefined,
     }),
-    ...workflow.conditions.map((condition) =>
+    ...workflow.routeBlocks.map((route) =>
       buildNode({
-        id: `condition:${condition.id}`,
-        kind: "condition",
-        eyebrow: "condition",
-        label: condition.label ?? condition.id,
-        description: condition.description ?? condition.expression,
-        badges: [condition.mode, condition.enforcement],
-        conditionId: condition.id,
+        id: `route:${route.id}`,
+        kind: "route",
+        eyebrow: "route",
+        label: route.label,
+        description:
+          route.routingInstructionUrl ??
+          (route.links.length
+            ? `${route.links.length} link(s) · ${route.outlets.length} outlet(s)`
+            : `${route.outlets.length} outlet(s)`),
+        badges: route.outlets.map((outlet) => outlet.label).slice(0, 3),
+        routeId: route.id,
+        routeOutlets: route.outlets.map((outlet) => ({
+          id: outlet.id,
+          label: outlet.label,
+        })),
       }),
     ),
     ...steps.map((step) =>
@@ -191,180 +330,73 @@ export function workflowToFlowGraph(workflow: Workflow): {
         kind: step.gate ? "gate" : "step",
         eyebrow: step.gate ? "review" : "step",
         label: step.title,
-        description: step.description ?? step.output,
+        description: step.description ?? step.instructionUrl ?? undefined,
         badges: stepBadges(step),
         stepId: step.id,
         gateId: step.gate?.id,
       }),
     ),
-    ...workflow.references.map((reference) =>
+    ...workflow.workflowBlocks.map((block) =>
       buildNode({
-        id: `reference:${reference.id}`,
-        kind: "reference",
-        eyebrow: "reference",
-        label: reference.title,
-        description:
-          reference.kind === "url"
-            ? (reference.url ?? undefined)
-            : reference.kind === "workflow"
-              ? reference.workflowKey
-              : reference.body ?? undefined,
-        badges: [reference.kind],
-        referenceId: reference.id,
+        id: `workflow:${block.id}`,
+        kind: "workflow",
+        eyebrow: "workflow",
+        label: block.label ?? block.workflowKey,
+        description: `Handoff → ${block.workflowKey}`,
+        badges: [block.workflowKey],
+        workflowBlockId: block.id,
       }),
     ),
-    ...workflow.routes.map((route) =>
-      buildNode({
-        id: `route:${route.id}`,
-        kind: "route",
-        eyebrow: "route",
-        label: route.label ?? route.targetWorkflowKey,
-        description: route.conditionId
-          ? `When ${route.conditionId}`
-          : "Handoff workflow",
-        badges: [route.targetWorkflowKey],
-        routeId: route.id,
-        conditionId: route.conditionId,
-      }),
-    ),
-    buildNode({
-      id: "output",
-      kind: "output",
-      eyebrow: "output",
-      label: "Output",
-      description:
-        workflow.output.completionCriteria ??
-        (Object.keys(workflow.output.contract).length
-          ? `${Object.keys(workflow.output.contract).length} contract fields`
-          : "Completion criteria"),
-    }),
   ];
 
-  const edges: WorkflowFlowEdge[] = [];
-  edges.push({
-    id: "edge-trigger-context",
-    source: "trigger",
-    target: "context",
-  });
+  const edges: WorkflowFlowEdge[] = [
+    { id: "edge-trigger-context", source: "trigger", target: "context" },
+  ];
 
-  const firstStep = steps[0];
-  const workflowCondition = workflow.conditions[0];
-  const firstRoute = workflow.routes[0];
+  const flowEntry =
+    workflow.flowEntry ??
+    (workflow.routeBlocks[0]
+      ? { kind: "route" as const, routeId: workflow.routeBlocks[0].id }
+      : steps[0]
+        ? { kind: "step" as const, stepId: steps[0].id }
+        : undefined);
 
-  if (workflowCondition) {
+  if (flowEntry?.kind === "route") {
+    const route = routeBlockById(workflow.routeBlocks, flowEntry.routeId);
+    if (route) {
+      edges.push({
+        id: `edge-context-route-${route.id}`,
+        source: "context",
+        target: `route:${route.id}`,
+      });
+      appendRouteBlockEdges(workflow, route, edges, nodes);
+    }
+  } else if (flowEntry?.kind === "step") {
     edges.push({
-      id: `edge-context-condition-${workflowCondition.id}`,
+      id: `edge-context-${flowEntry.stepId}`,
       source: "context",
-      target: `condition:${workflowCondition.id}`,
+      target: flowEntry.stepId,
     });
-    if (firstStep) {
-      edges.push({
-        id: `edge-condition-${workflowCondition.id}-yes`,
-        source: `condition:${workflowCondition.id}`,
-        target: firstStep.id,
-        label: "yes",
-      });
-    }
-    if (firstRoute) {
-      edges.push({
-        id: `edge-condition-${workflowCondition.id}-route-${firstRoute.id}`,
-        source: `condition:${workflowCondition.id}`,
-        target: `route:${firstRoute.id}`,
-        label: "no",
-      });
-    }
-  } else if (firstStep) {
-    edges.push({
-      id: `edge-context-${firstStep.id}`,
-      source: "context",
-      target: firstStep.id,
-    });
-  } else {
-    edges.push({
-      id: "edge-context-output",
-      source: "context",
-      target: "output",
-    });
-  }
-
-  for (let index = 0; index < steps.length; index += 1) {
-    const step = steps[index]!;
-    const nextStep = steps[index + 1];
-    const stepCondition = step.conditionId
-      ? workflow.conditions.find((condition) => condition.id === step.conditionId)
-      : null;
-
-    for (const referenceId of step.referenceIds) {
-      if (!workflow.references.some((reference) => reference.id === referenceId)) {
-        continue;
-      }
-      edges.push({
-        id: `edge-${step.id}-reference-${referenceId}`,
-        source: step.id,
-        target: `reference:${referenceId}`,
-        label: "uses",
-        type: "smoothstep",
-        animated: false,
-        data: { kind: "reference" },
-        style: { strokeDasharray: "5 5" },
-      });
-    }
-
-    if (step.routeToWorkflowKey) {
-      const route = workflow.routes.find(
-        (candidate) => candidate.targetWorkflowKey === step.routeToWorkflowKey,
-      );
-      if (route) {
-        edges.push({
-          id: `edge-${step.id}-route-${route.id}`,
-          source: step.id,
-          target: `route:${route.id}`,
-          label: "handoff",
-        });
-      }
-    }
-
-    if (stepCondition) {
-      edges.push({
-        id: `edge-${step.id}-condition-${stepCondition.id}`,
-        source: step.id,
-        target: `condition:${stepCondition.id}`,
-      });
-      if (nextStep) {
-        edges.push({
-          id: `edge-condition-${stepCondition.id}-next-${nextStep.id}`,
-          source: `condition:${stepCondition.id}`,
-          target: nextStep.id,
-          label: "yes",
-        });
-      }
-      if (firstRoute) {
-        edges.push({
-          id: `edge-condition-${stepCondition.id}-route-${firstRoute.id}`,
-          source: `condition:${stepCondition.id}`,
-          target: `route:${firstRoute.id}`,
-          label: "no",
-        });
-      }
-      continue;
-    }
-
-    edges.push({
-      id: nextStep ? `edge-${step.id}-${nextStep.id}` : `edge-${step.id}-output`,
-      source: step.id,
-      target: nextStep?.id ?? "output",
-    });
+    appendStepChainEdges(
+      workflow,
+      steps,
+      flowEntry.stepId,
+      edges,
+      "main",
+    );
   }
 
   return layoutWorkflowGraph(nodes, edges);
 }
 
-/** Ordered step ids from canvas (trigger → context → steps → output path). */
+/** Ordered step ids from canvas main spine. */
 export function extractStepOrderFromGraph(
   nodes: WorkflowFlowNode[],
   edges: WorkflowFlowEdge[],
 ): string[] {
-  const stepNodes = nodes.filter((n) => n.data.kind === "step" || n.data.kind === "gate");
+  const stepNodes = nodes.filter(
+    (n) => n.data.kind === "step" || n.data.kind === "gate",
+  );
   const stepIds = new Set(stepNodes.map((n) => n.id));
 
   const outgoing = new Map<string, string[]>();
@@ -406,10 +438,8 @@ export function createWorkflowFlowNode(
     context: "Context",
     step: "New step",
     gate: "Review gate",
-    condition: "Condition",
-    output: "Output",
-    reference: "Reference",
     route: "Route",
+    workflow: "Workflow",
   };
 
   return buildNode({
@@ -420,9 +450,19 @@ export function createWorkflowFlowNode(
       kind === "step"
         ? "Agent work unit"
         : kind === "route"
-          ? "Handoff workflow"
-          : kind === "reference"
-            ? "Progressive disclosure"
+          ? "Dispatch branches"
+          : kind === "workflow"
+            ? "Handoff workflow"
             : undefined,
   });
+}
+
+export function parseRouteNodeId(nodeId: string): string | null {
+  if (!nodeId.startsWith("route:")) return null;
+  return nodeId.slice("route:".length);
+}
+
+export function parseWorkflowBlockNodeId(nodeId: string): string | null {
+  if (!nodeId.startsWith("workflow:")) return null;
+  return nodeId.slice("workflow:".length);
 }
