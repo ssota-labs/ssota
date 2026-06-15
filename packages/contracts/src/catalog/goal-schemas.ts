@@ -39,5 +39,7 @@ export const krJudgmentSchema = z.enum(["achieved", "partial", "missed"]);
 
 export const kpiStatusSchema = z.enum(["active", "archived"]);
 
+export type GoalHealthStatus = z.infer<typeof goalHealthStatusSchema>;
+
 /** Numeric or string metric values (e.g. "10%", "42"). */
 export const metricValueSchema = z.union([z.string(), z.number()]);
