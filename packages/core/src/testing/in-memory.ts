@@ -303,6 +303,45 @@ function applyEffect(
       createdAt: now,
       updatedAt: now,
     });
+  } else if (effect.kind === "update_task") {
+    const existing = state.tasks.get(effect.taskId);
+    if (!existing) return;
+    const nextStatus = effect.patch.status ?? existing.status;
+    state.tasks.set(effect.taskId, {
+      ...existing,
+      title: effect.patch.title ?? existing.title,
+      status: nextStatus,
+      executorType: effect.patch.executorType ?? existing.executorType,
+      assignee:
+        effect.patch.assignee !== undefined
+          ? effect.patch.assignee
+          : existing.assignee,
+      subjectId:
+        effect.patch.subjectId !== undefined
+          ? effect.patch.subjectId
+          : existing.subjectId,
+      targetNodeId:
+        effect.patch.targetNodeId !== undefined
+          ? effect.patch.targetNodeId
+          : existing.targetNodeId,
+      context:
+        effect.patch.context !== undefined
+          ? { ...existing.context, ...effect.patch.context }
+          : existing.context,
+      acceptanceCriteria:
+        effect.patch.acceptanceCriteria ?? existing.acceptanceCriteria,
+      result:
+        effect.patch.result !== undefined
+          ? { ...existing.result, ...effect.patch.result }
+          : existing.result,
+      completedAt:
+        nextStatus === "done"
+          ? existing.completedAt ?? now
+          : nextStatus === existing.status
+            ? existing.completedAt
+            : null,
+      updatedAt: now,
+    });
   }
 }
 

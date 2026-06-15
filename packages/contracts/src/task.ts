@@ -84,6 +84,35 @@ export const SpawnTaskInputSchema = z.object({
 
 export type SpawnTaskInput = z.infer<typeof SpawnTaskInputSchema>;
 
+export const UpdateTaskPatchSchema = z.object({
+  title: z.string().min(1).optional(),
+  status: TaskStatusSchema.optional(),
+  assignee: z.string().nullable().optional(),
+  subjectId: z.string().nullable().optional(),
+  targetNodeId: z.string().uuid().nullable().optional(),
+  executorType: ExecutorTypeSchema.optional(),
+  context: z.record(z.unknown()).optional(),
+  acceptanceCriteria: z.array(z.unknown()).optional(),
+  result: z.record(z.unknown()).optional(),
+});
+
+export type UpdateTaskPatch = z.infer<typeof UpdateTaskPatchSchema>;
+
+export const UpdateTaskInputSchema = z
+  .object({
+    taskId: z.string().uuid(),
+  })
+  .merge(UpdateTaskPatchSchema)
+  .refine(
+    (value) =>
+      Object.keys(value).some(
+        (key) => key !== "taskId" && value[key as keyof typeof value] !== undefined,
+      ),
+    { message: "At least one field to update is required" },
+  );
+
+export type UpdateTaskInput = z.infer<typeof UpdateTaskInputSchema>;
+
 export const CreateTaskEffectPayloadSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().min(1),
