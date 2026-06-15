@@ -33,10 +33,32 @@ function newId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID().slice(0, 8)}`;
 }
 
+export function normalizeRouteInstructions(route: RouteBlock): RouteBlock {
+  const routingUrl = route.routingInstructionUrl?.trim();
+  if (!routingUrl) {
+    return { ...route, routingInstructionUrl: null };
+  }
+  if (route.links.some((link) => link.url === routingUrl)) {
+    return { ...route, routingInstructionUrl: null };
+  }
+  return {
+    ...route,
+    links: [
+      { id: newId("link"), label: "Instruction", url: routingUrl },
+      ...route.links,
+    ],
+    routingInstructionUrl: null,
+  };
+}
+
 export function createWorkflowDraft(workflow: Workflow): WorkflowDraft {
   const { id: _id, slug: _slug, createdAt: _c, updatedAt: _u, ...definition } =
     workflow;
-  return structuredClone(definition);
+  const cloned = structuredClone(definition);
+  return {
+    ...cloned,
+    routeBlocks: cloned.routeBlocks.map(normalizeRouteInstructions),
+  };
 }
 
 export function draftToWorkflowWire(

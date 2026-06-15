@@ -154,8 +154,8 @@ describe("renderWorkflowText", () => {
     expect(text).toContain("Role: dispatcher");
     expect(text).toContain("## Routes");
     expect(text).toContain("discovery → workflow discovery_steward");
-    expect(text).toContain("routing instruction: https://notion.so/routing");
-    expect(text).toContain("link via notion");
+    expect(text).toContain("instruction: https://notion.so/routing");
+    expect(text).toContain("instruction via notion");
     expect(text).toContain("instruction: https://notion.so/runbook");
     expect(text).toContain("## Workflow handoffs");
   });

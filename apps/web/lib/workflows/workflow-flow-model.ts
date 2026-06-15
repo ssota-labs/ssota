@@ -312,10 +312,9 @@ export function workflowToFlowGraph(workflow: Workflow): {
         eyebrow: "route",
         label: route.label,
         description:
-          route.routingInstructionUrl ??
-          (route.links.length
-            ? `${route.links.length} link(s) · ${route.outlets.length} outlet(s)`
-            : `${route.outlets.length} outlet(s)`),
+          route.links.length
+            ? `${route.links.length} instruction(s) · ${route.outlets.length} outlet(s)`
+            : `${route.outlets.length} outlet(s)`,
         badges: route.outlets.map((outlet) => outlet.label).slice(0, 3),
         routeId: route.id,
         routeOutlets: route.outlets.map((outlet) => ({

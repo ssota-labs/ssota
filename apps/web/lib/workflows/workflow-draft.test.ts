@@ -5,6 +5,7 @@ import {
   createWorkflowDraft,
   insertBlockAfter,
   isWorkflowDraftDirty,
+  normalizeRouteInstructions,
   removeBlock,
   updateRouteBlock,
   updateStep,
@@ -49,6 +50,44 @@ describe("workflow-draft", () => {
     const draft = createWorkflowDraft(baseWorkflow);
     expect(draft.title).toBe("Test workflow");
     expect(draft.steps[0]?.id).toBe("execute");
+  });
+
+  it("migrates routingInstructionUrl into instruction links on draft load", () => {
+    const draft = createWorkflowDraft({
+      ...baseWorkflow,
+      routeBlocks: [
+        {
+          id: "route_1",
+          label: "Dispatch",
+          routingInstructionUrl: "https://notion.so/routing",
+          links: [],
+          outlets: [{ id: "out_1", label: "default", target: null }],
+        },
+      ],
+    });
+
+    expect(draft.routeBlocks[0]?.routingInstructionUrl).toBeNull();
+    expect(draft.routeBlocks[0]?.links).toHaveLength(1);
+    expect(draft.routeBlocks[0]?.links[0]?.url).toBe("https://notion.so/routing");
+  });
+
+  it("deduplicates routingInstructionUrl already present in links", () => {
+    const normalized = normalizeRouteInstructions({
+      id: "route_1",
+      label: "Dispatch",
+      routingInstructionUrl: "https://notion.so/routing",
+      links: [
+        {
+          id: "link_1",
+          label: "Instruction",
+          url: "https://notion.so/routing",
+        },
+      ],
+      outlets: [],
+    });
+
+    expect(normalized.routingInstructionUrl).toBeNull();
+    expect(normalized.links).toHaveLength(1);
   });
 
   it("inserts route after context", () => {

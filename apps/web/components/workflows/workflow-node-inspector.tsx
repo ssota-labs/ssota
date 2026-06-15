@@ -30,7 +30,7 @@ import {
 import { AddWorkflowTriggerDialog } from "@/components/workflows/add-workflow-trigger-dialog";
 import { WorkflowTriggersField } from "@/components/workflows/workflow-triggers-field";
 import { WorkflowContextField } from "@/components/workflows/workflow-context-field";
-import { WorkflowRouteGuidanceField } from "@/components/workflows/workflow-route-guidance-field";
+import { WorkflowRouteInstructionsField } from "@/components/workflows/workflow-route-instructions-field";
 import { WorkflowRouteOutletsField } from "@/components/workflows/workflow-route-outlets-field";
 import { createWorkflowTriggerEventFromKind } from "@/lib/workflows/workflow-trigger-catalog";
 import type {
@@ -381,10 +381,9 @@ function RouteBlockInspector({
         </Field>
       </div>
 
-      <WorkflowRouteGuidanceField
+      <WorkflowRouteInstructionsField
         draft={draft}
         routeId={routeId}
-        routingInstructionUrl={route.routingInstructionUrl}
         links={route.links}
         onDraftChange={onDraftChange}
         inspectorHeader
