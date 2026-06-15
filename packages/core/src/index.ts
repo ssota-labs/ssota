@@ -584,3 +584,5 @@ export * from "./catalog/builtin-meta-actions.js";
 export * from "./catalog/merge-action-catalog.js";
 export * from "./console-slug.js";
 export * from "./workflow/render-workflow-package.js";
+export * from "./ports/catalog-read-port.js";
+export { createContractsCatalogReadPort } from "./adapters/contracts-catalog-read-port.js";
