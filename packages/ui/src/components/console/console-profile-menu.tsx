@@ -5,7 +5,6 @@ import {
   AvatarFallback,
 } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Item, ItemGroup } from "@/components/ui/item";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
@@ -19,14 +18,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
-import type { ReactElement } from "react";
 
 export type ConsoleProfileLanguageOption = {
   value: string;
@@ -45,10 +42,6 @@ export type ConsoleProfileMenuProps = {
   languageOptions: ConsoleProfileLanguageOption[];
   onLanguageChange: (value: string) => void;
   languagePending?: boolean;
-  developerSetupLabel: string;
-  developerSetupItem: ReactElement;
-  settingsLabel: string;
-  settingsItem: ReactElement;
   signOutLabel: string;
   onSignOut: () => void;
   className?: string;
@@ -66,10 +59,6 @@ export function ConsoleProfileMenu({
   languageOptions,
   onLanguageChange,
   languagePending = false,
-  developerSetupLabel,
-  developerSetupItem,
-  settingsLabel,
-  settingsItem,
   signOutLabel,
   onSignOut,
   className,
@@ -100,17 +89,19 @@ export function ConsoleProfileMenu({
         side="top"
         align="end"
         sideOffset={6}
-        className="cn-menu-translucent w-64 gap-0 p-1.5"
+        className="cn-menu-translucent w-64 gap-0 overflow-hidden p-0"
       >
-        <div className="px-1.5 py-1">
+        <div className="px-3 py-2.5">
           <p className="text-xs text-muted-foreground">{signedInAsLabel}</p>
           <p className="truncate text-sm font-medium">{userEmail}</p>
         </div>
-        <Separator />
-        <div className="space-y-2 px-1.5 py-1.5">
-          <div className="space-y-1">
+
+        <div className="space-y-4 border-t px-3 py-3">
+          <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">{themeLabel}</Label>
             <ToggleGroup
+              variant="outline"
+              spacing={0}
               value={[themeValue]}
               onValueChange={(value) => {
                 const next = value[0];
@@ -120,17 +111,26 @@ export function ConsoleProfileMenu({
               }}
               className="w-full"
             >
-              <ToggleGroupItem value="light" aria-label="Light mode" className="flex-1 gap-1">
+              <ToggleGroupItem
+                value="light"
+                aria-label="Light mode"
+                className="flex-1 gap-1 border-border/50"
+              >
                 <SunIcon className="size-3.5" />
                 Light
               </ToggleGroupItem>
-              <ToggleGroupItem value="dark" aria-label="Dark mode" className="flex-1 gap-1">
+              <ToggleGroupItem
+                value="dark"
+                aria-label="Dark mode"
+                className="flex-1 gap-1 border-border/50"
+              >
                 <MoonIcon className="size-3.5" />
                 Dark
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
-          <div className="space-y-1">
+
+          <div className="space-y-2">
             <Label htmlFor="profile-locale" className="text-xs text-muted-foreground">
               {languageLabel}
             </Label>
@@ -158,32 +158,17 @@ export function ConsoleProfileMenu({
             </Select>
           </div>
         </div>
-        <Separator />
-        <ItemGroup>
-          <Item
+
+        <div className="border-t p-1">
+          <Button
+            variant="ghost"
             size="sm"
-            render={developerSetupItem}
-            className="cursor-pointer rounded-sm px-1.5"
+            className="h-8 w-full justify-start px-2 text-destructive hover:text-destructive"
+            onClick={onSignOut}
           >
-            {developerSetupLabel}
-          </Item>
-          <Item
-            size="sm"
-            render={settingsItem}
-            className="cursor-pointer rounded-sm px-1.5"
-          >
-            {settingsLabel}
-          </Item>
-        </ItemGroup>
-        <Separator />
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-full justify-start px-1.5 text-destructive hover:text-destructive"
-          onClick={onSignOut}
-        >
-          {signOutLabel}
-        </Button>
+            {signOutLabel}
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );

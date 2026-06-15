@@ -67,9 +67,16 @@ test.describe("Console v2.7 navigation", () => {
     );
   });
 
-  test("footer profile menu: developer setup and settings", async ({ page }) => {
+  test("footer profile menu: appearance and sign out", async ({ page }) => {
     const sidebar = page.locator("aside");
     await sidebar.getByRole("button", { name: "Signed in as" }).click();
+    await expect(page.getByText("Appearance", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Developer setup", exact: true })).not.toBeVisible();
+  });
+
+  test("top bar menu: developer setup and settings", async ({ page }) => {
+    await page.getByRole("button", { name: "Settings", exact: true }).click();
     await expect(page.getByRole("link", { name: "Developer setup", exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
   });

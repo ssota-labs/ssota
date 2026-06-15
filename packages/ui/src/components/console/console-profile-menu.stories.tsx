@@ -28,10 +28,6 @@ export const SidebarFooter: Story = {
           { value: "ko", label: "한국어" },
         ]}
         onLanguageChange={() => undefined}
-        developerSetupLabel="Developer setup"
-        developerSetupItem={<a href="#developer-setup" />}
-        settingsLabel="Settings"
-        settingsItem={<a href="#settings" />}
         signOutLabel="Sign out"
         onSignOut={() => undefined}
       />
