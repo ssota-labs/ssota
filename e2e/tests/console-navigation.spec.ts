@@ -24,9 +24,9 @@ test.describe("Console v2.7 navigation", () => {
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/research/market$`));
     await expect(nav.getByRole("link", { name: "Market research", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Hypotheses", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toHaveCount(0);
+    await expect(nav.getByRole("button", { name: /Research/i }).first()).toBeVisible();
 
-    await nav.getByRole("button", { name: /Research/i }).first().click();
+    await nav.locator("[data-sidebar-back]").click();
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
   });

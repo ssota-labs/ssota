@@ -189,6 +189,7 @@ export function AppSidebar({
       <button
         type="button"
         onClick={handleBack}
+        data-sidebar-back=""
         className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
       >
         <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
@@ -256,8 +257,24 @@ export function AppSidebar({
                   mode === "l1" && "-translate-x-1/2",
                 )}
               >
-                <div className="w-1/2 shrink-0 space-y-1">{renderL0Nav()}</div>
-                <div className="w-1/2 shrink-0 space-y-1">{renderL1Nav()}</div>
+                <div
+                  className={cn(
+                    "w-1/2 shrink-0 space-y-1",
+                    mode === "l1" && "pointer-events-none",
+                  )}
+                  aria-hidden={mode === "l1"}
+                >
+                  {renderL0Nav()}
+                </div>
+                <div
+                  className={cn(
+                    "w-1/2 shrink-0 space-y-1",
+                    mode === "l0" && "pointer-events-none",
+                  )}
+                  aria-hidden={mode === "l0"}
+                >
+                  {renderL1Nav()}
+                </div>
               </div>
             </div>
           )}
