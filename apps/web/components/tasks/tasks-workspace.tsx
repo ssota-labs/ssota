@@ -9,12 +9,10 @@ export type TaskWorkspaceRow = {
   executorType: string;
   assignee: string;
   workflowKey: string;
-  targetNodeId: string;
   subjectId: string;
   acceptanceCriteria: string[];
   context: Record<string, unknown>;
   result: Record<string, unknown>;
-  sourceActionLogId: string;
   completedAt: string;
   updatedAt: string;
   createdAt: string;

@@ -227,11 +227,6 @@ function TaskCard({
           <span className="font-mono">{task.workflowKey}</span>
           {task.assignee ? <span>{task.assignee}</span> : null}
         </div>
-        {task.targetNodeId ? (
-          <div className="font-mono text-[10px] text-muted-foreground">
-            → {task.targetNodeId.slice(0, 8)}
-          </div>
-        ) : null}
         {motionReduced && onStatusChange ? (
           <select
             className="w-full rounded-md border bg-background px-2 py-1 text-xs"

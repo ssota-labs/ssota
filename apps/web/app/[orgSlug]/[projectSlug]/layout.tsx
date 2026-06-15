@@ -1,4 +1,3 @@
-import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { signOutAction } from "@/app/actions";
@@ -48,9 +47,6 @@ export default async function ProjectLayout({
     redirect(await getDefaultProjectPath(user.id));
   }
 
-  after(async () => {
-    await consolePort.setUserProjectPreference(user.id, orgSlug, projectSlug);
-  });
 
   return (
     <ConsoleShell

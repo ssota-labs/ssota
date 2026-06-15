@@ -217,22 +217,6 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         const now = new Date();
 
         await tx
-          .insert(schema.userProjectPreferences)
-          .values({
-            userId,
-            orgSlug: organization.slug,
-            projectSlug: project.slug,
-          })
-          .onConflictDoUpdate({
-            target: schema.userProjectPreferences.userId,
-            set: {
-              orgSlug: organization.slug,
-              projectSlug: project.slug,
-              updatedAt: now,
-            },
-          });
-
-        await tx
           .update(schema.profiles)
           .set({
             onboardingStep: "completed",

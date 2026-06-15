@@ -25,7 +25,7 @@ export function TasksDetailSheet({ task, onClose }: TasksDetailSheetProps) {
             <SheetHeader>
               <SheetTitle>{task.title}</SheetTitle>
               <SheetDescription>
-                Runtime task detail — workflow routing, context, and audit links.
+                Development workflow task detail — routing, context, and result.
               </SheetDescription>
             </SheetHeader>
             <div className="space-y-4 px-4 pb-4">
@@ -36,7 +36,6 @@ export function TasksDetailSheet({ task, onClose }: TasksDetailSheetProps) {
                   ["executor", task.executorType],
                   ["assignee", task.assignee],
                   ["workflow_key", task.workflowKey],
-                  ["target_node_id", task.targetNodeId],
                   ["subject_id", task.subjectId],
                 ]}
               />
@@ -67,7 +66,6 @@ export function TasksDetailSheet({ task, onClose }: TasksDetailSheetProps) {
                 </pre>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Badge variant="outline">log {task.sourceActionLogId.slice(0, 8)}</Badge>
                 {task.completedAt ? (
                   <Badge variant="secondary">completed {task.completedAt.slice(0, 10)}</Badge>
                 ) : null}

@@ -44,7 +44,7 @@ export default async function DeveloperSetupPage({
     <div className="space-y-6">
       <PageHeader
         title="Developer Setup"
-        description="Mount this project in your agent, pass the project id, and keep every write inside execute_action."
+        description="Mount this project only when an agent needs project or task context."
       />
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
@@ -78,7 +78,7 @@ export default async function DeveloperSetupPage({
           <CardHeader>
             <CardTitle className="text-base">First run checklist</CardTitle>
             <CardDescription>
-              A healthy setup can discover, fetch, execute, and audit.
+              A healthy setup can discover projects and read development workflow tasks.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -86,9 +86,9 @@ export default async function DeveloperSetupPage({
               {[
                 "Authorize the MCP client with your SSOTA account.",
                 "List projects and confirm this project appears.",
-                "Fetch workflow packages before executing a Task.",
-                "Use execute_action for every graph write.",
-                "Review Gates and inspect Runs after execution.",
+                "Use list_tasks, query_tasks, or get_task for task context.",
+                "Keep normal coding work in the repository workflow, not MCP.",
+                "Treat archived graph/catalog tools as reference-only.",
               ].map((item, index) => (
                 <li key={item} className="flex gap-3">
                   <Badge variant="secondary" className="h-fit">
@@ -120,14 +120,14 @@ export default async function DeveloperSetupPage({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">What SSOTA will enforce</CardTitle>
+          <CardTitle className="text-base">Active MCP scope</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 text-sm md:grid-cols-4">
           {[
-            ["Catalog", "Only known node, edge, and action types can run."],
-            ["Contracts", "Inputs and effects must match action contracts."],
-            ["Gates", "Human-gated changes wait for review."],
-            ["Audit", "Every committed graph change lands in Runs."],
+            ["Projects", "Discover organizations and project scope."],
+            ["Tasks", "Read task queues for development workflow context."],
+            ["Auth", "OAuth/JWT still scopes every request."],
+            ["Archive", "Generic graph runtime tools are hidden from active UX."],
           ].map(([title, description]) => (
             <div key={title} className="rounded-lg border p-3">
               <div className="font-medium">{title}</div>
@@ -138,22 +138,8 @@ export default async function DeveloperSetupPage({
       </Card>
 
       <div className="flex flex-wrap gap-2">
-        <Button render={<Link href={projectPath(ctx, "workflow")} />} nativeButton={false}>
-          View workflows
-        </Button>
-        <Button
-          render={<Link href={projectPath(ctx, "gates")} />}
-          variant="outline"
-          nativeButton={false}
-        >
-          Open reviews
-        </Button>
-        <Button
-          render={<Link href={`${projectPath(ctx, "workflow")}?tab=runs`} />}
-          variant="outline"
-          nativeButton={false}
-        >
-          Open runs
+        <Button render={<Link href={projectPath(ctx, "tasks")} />} nativeButton={false}>
+          Open Tasks
         </Button>
       </div>
     </div>

@@ -2,9 +2,11 @@
 
 ## Project Overview
 
-SSOTA — 에이전트에게 결정을 위임하기 위한 컨텍스트 그래프 런타임. "결정 공간 하네스의 Supabase"가 포지셔닝이다. 8개 프리미티브(Node, Node Catalog, Edge, Edge Catalog, Action, Action Catalog, Property Catalog, Instruction)를 저장하고, 4대 런타임 강제(카탈로그·계약·게이트·감사)를 API 동작으로 보장하며, MCP로 에이전트에게 마운트된다.
+SSOTA는 더 이상 범용 컨텍스트 그래프 런타임을 active product로 구현하지 않는다. Active product는 개발 에이전트를 찾는 일반 사용자와 개발자를 위한 **개발 워크플로우 작업 공간**이다.
 
-기획·스펙의 SSOT는 Notion에 있다 (SSOTA 기획 시리즈 1–5, 특히 "SSOTA 코어 스펙 — 프리미티브·런타임 강제·MCP"). 구현 계획은 Cursor plan `ssota_mvp_구현_c63c2b4a.plan.md`를 따른다.
+Active DB/runtime keep set은 `profiles`, `organizations`, `organization_memberships`, `projects`, `tasks`다. 과거 generic graph/catalog/action/workflow runtime 코드는 `archive/generic-runtime/`에 reference-only로 보존하며, 배포 경로와 active Drizzle schema에서는 제외한다.
+
+기획·스펙의 SSOT는 Notion의 SSOTA-on-SSOTA 개발 Playbook이다. 일반 코딩 작업은 MCP가 아니라 이 저장소의 개발 워크플로우 명령으로 수행한다.
 
 ### Stack
 
@@ -290,11 +292,10 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 ## MCP App Notes (apps/mcp)
 
 - 엔드포인트는 `/api/mcp` (Streamable HTTP, `mcp-handler` + `@modelcontextprotocol/sdk`).
-- **Root Runtime Protocol**은 `ssota-mcp` 스킬이 담당한다. 배포 번들 SSOT는 `plugins/ssota-plugin/`이며, 설치 복제본은 `.cursor/plugins/local/ssota-plugin/`·`.agents/plugins/ssota-plugin/`(전체 번들), `.agents/skills/ssota-mcp`·`.cursor/skills/ssota-mcp`·`.cursor/mcp.json`(설치 시 풀리는 스킬·MCP)에 있다. 플러그인 수정 시 같은 PR에서 복제본도 함께 갱신한다. 그래프의 Instructions는 **도메인 레시피**만 저장한다.
-- MCP 읽기 3층: **Discover** (`list_*` 인덱스) / **Fetch** (`get_*` 단건) / **Query** (`query_*`, `find_*`, `traverse_graph`, `query_neighbors`).
-- **`execute_action`이 유일한 쓰기.** 게이트: `query_gates`, `list_pending_gates`, `submit_for_approval`. 로그: `get_action_log`, `get_action_log_entry`.
-- 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. **OAuth consent**(`/oauth/consent`)는 `apps/web`이 담당한다. `apps/mcp`는 Bearer JWT JWKS 검증 + `/.well-known/oauth-protected-resource` + `/api/mcp`만 구현한다.
-- 도구 핸들러에 비즈니스 로직을 넣지 않는다 — core 유스케이스 호출 + IO 변환만.
+- Active MCP scope는 account/project discovery와 development workflow `tasks` 조회다. Generic graph/catalog/action/workflow tools는 archived runtime으로 이동했으며 active agent protocol이 아니다.
+- 일반 구현 작업에서 `ssota-mcp`를 mount하지 않는다. 사용자가 명시적으로 `ssota-dev` project/task context를 조회하라고 할 때만 사용한다.
+- 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. `apps/mcp`는 Bearer JWT JWKS 검증 + `/.well-known/oauth-protected-resource` + `/api/mcp`를 유지한다.
+- 도구 핸들러에 비즈니스 로직을 넣지 않는다 — task/project 포트 호출 + IO 변환만.
 
 ## PR Guidelines
 

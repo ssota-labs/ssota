@@ -4,11 +4,8 @@ import { ContextSpecSchema } from "./workflow-context.js";
 import {
   RouteBlockSchema,
   WorkflowBlockRefSchema,
-  WorkflowExternalLinkSchema,
   WorkflowExternalLinkSourceSchema,
   WorkflowFlowEntrySchema,
-  RouteOutletSchema,
-  RouteOutletTargetSchema,
   WorkflowKeySchema,
 } from "./workflow-graph.js";
 import {
