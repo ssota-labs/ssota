@@ -16,7 +16,7 @@ export default async function DevDataModelPage({
       ctx={ctx}
       nodeType="data_spec"
       defaultTitle="Data model"
-      revalidateSegments={["product", "dev", "data-model"]}
+      revalidateSegments={["development", "data-model"]}
       emptyDescription="Document the canonical data model in markdown."
     />
   );

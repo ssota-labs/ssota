@@ -93,7 +93,7 @@ export function InitiativesWorkspace({
         onNew={open || pending ? undefined : () => setOpen(true)}
         newLabel="New initiative"
         emptyTitle="No initiatives yet"
-        emptyDescription="Create an initiative to start L2 planning."
+        emptyDescription="Create an initiative to start initiative planning."
         onRowClick={(row) => router.push(`${initiativeBasePath}/${row.id}`)}
         getRowId={(row) => row.id}
       />

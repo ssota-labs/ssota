@@ -7,12 +7,12 @@ test.describe("Initiative lifecycle", () => {
   test("smoke initiative hub and PRD editing", async ({ page }) => {
     const initiativeId = await getSmokeInitiativeId();
     await loginAsSmoke(page);
-    await gotoProject(page, `product/initiatives/${initiativeId}`);
+    await gotoProject(page, `initiatives/${initiativeId}`);
 
     await expect(page.getByRole("main").getByText("Smoke initiative")).toBeVisible();
     await expect(page.getByText("Scoped nodes")).toBeVisible();
 
-    await gotoProject(page, `product/initiatives/${initiativeId}/planning/prd`);
+    await gotoProject(page, `initiatives/${initiativeId}/planning/prd`);
     const content = page.getByRole("textbox", { name: "Content" });
     await expect(content).toBeVisible();
 
@@ -27,7 +27,7 @@ test.describe("Initiative lifecycle", () => {
   test("planning features lists seeded feature", async ({ page }) => {
     const initiativeId = await getSmokeInitiativeId();
     await loginAsSmoke(page);
-    await gotoProject(page, `product/initiatives/${initiativeId}/planning/features`);
+    await gotoProject(page, `initiatives/${initiativeId}/planning/features`);
 
     await expect(page.getByRole("cell", { name: "Smoke feature" })).toBeVisible();
   });

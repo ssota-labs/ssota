@@ -47,7 +47,7 @@ export default async function ProductInitiativesPage({
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const rows = await buildInitiativeRows(project.id);
-  const basePath = projectPath(ctx, "product", "initiatives");
+  const basePath = projectPath(ctx, "initiatives");
 
   async function createInitiative(input: { title: string; releaseVersion: string }) {
     "use server";

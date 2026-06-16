@@ -1,7 +1,7 @@
 import { EvergreenDocumentRoute } from "@/components/console/evergreen-document-route";
 import { resolveProject } from "@/lib/console/resolve-project";
 
-export default async function DesignUiComponentsPage({
+export default async function DevApiReferencePage({
   params,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
@@ -14,10 +14,10 @@ export default async function DesignUiComponentsPage({
     <EvergreenDocumentRoute
       projectId={project.id}
       ctx={ctx}
-      nodeType="ui_component_catalog"
-      defaultTitle="UI components"
-      revalidateSegments={["product", "design", "ui-components"]}
-      emptyDescription="Document the UI component catalog."
+      nodeType="api_reference"
+      defaultTitle="API reference"
+      revalidateSegments={["development", "api-reference"]}
+      emptyDescription="Document the living API reference."
     />
   );
 }

@@ -52,7 +52,7 @@ export default async function DesignIaPage({
   const { orgSlug, projectSlug } = await params;
   const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
-  const revalidatePath = projectPath(ctx, "product", "design", "ia");
+  const revalidatePath = projectPath(ctx, "design", "ia");
   const nodes = await buildIaTree(project.id);
   const iaRoot = await ensureEvergreenSingleton(
     project.id,

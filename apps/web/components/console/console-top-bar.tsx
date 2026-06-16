@@ -23,7 +23,7 @@ export function ConsoleTopBar({
   const pathname = usePathname();
 
   const currentInitiative = initiatives.find((item) =>
-    pathname.includes(`/product/initiatives/${item.id}`),
+    pathname.includes(`/initiatives/${item.id}`),
   );
 
   return (

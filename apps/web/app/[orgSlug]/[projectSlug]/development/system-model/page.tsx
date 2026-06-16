@@ -1,7 +1,7 @@
 import { EvergreenDocumentRoute } from "@/components/console/evergreen-document-route";
 import { resolveProject } from "@/lib/console/resolve-project";
 
-export default async function DevApiReferencePage({
+export default async function DevSystemModelPage({
   params,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
@@ -14,10 +14,10 @@ export default async function DevApiReferencePage({
     <EvergreenDocumentRoute
       projectId={project.id}
       ctx={ctx}
-      nodeType="api_reference"
-      defaultTitle="API reference"
-      revalidateSegments={["product", "dev", "api-reference"]}
-      emptyDescription="Document the living API reference."
+      nodeType="architecture_spec"
+      defaultTitle="System model"
+      revalidateSegments={["development", "system-model"]}
+      emptyDescription="Document the platform system architecture."
     />
   );
 }

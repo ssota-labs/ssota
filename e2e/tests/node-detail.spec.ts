@@ -21,7 +21,7 @@ test.describe("Node detail", () => {
 
     await page.getByRole("button", { name: "Open in route" }).click();
     await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives/${initiativeId}$`),
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/initiatives/${initiativeId}$`),
     );
   });
 

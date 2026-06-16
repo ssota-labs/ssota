@@ -18,7 +18,7 @@ test.describe("Research hypotheses", () => {
     await row.getByRole("button", { name: "Create initiative" }).click();
 
     await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives/[^/]+/planning/prd$`),
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/initiatives/[^/]+/planning/prd$`),
       { timeout: 15_000 },
     );
     await expect(page.getByRole("textbox", { name: "Content" })).toBeVisible();

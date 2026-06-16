@@ -15,7 +15,7 @@ import { getRouteMeta } from "@/lib/console/route-node-map";
 type ScaffoldedPageProps = {
   /** Project-relative path, e.g. `executive/roadmap` or `planning/prd` for initiative pages. */
   path: string;
-  /** When set, builds full path as product/initiatives/:id/... */
+  /** When set, builds full path as initiatives/:id/... */
   initiativeId?: string;
 };
 
@@ -49,8 +49,8 @@ export function ScaffoldedPage({ path, initiativeId }: ScaffoldedPageProps) {
 
   const fullPath = initiativeId
     ? path
-      ? `product/initiatives/${initiativeId}/${path}`
-      : `product/initiatives/${initiativeId}`
+      ? `initiatives/${initiativeId}/${path}`
+      : `initiatives/${initiativeId}`
     : path;
 
   const meta = getRouteMeta(fullPath);
