@@ -339,25 +339,18 @@ function flattenInitiativeLinks(entries: NavEntry[]): NavLink[] {
 export const INITIATIVE_L1: NavLink[] = flattenInitiativeLinks(INITIATIVE_L1_NAV);
 
 export const L0_NAV: NavEntry[] = [
+  { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
   {
-    type: "section",
-    key: "l0_workspace",
-    labelKey: "nav.sectionWorkspace",
-    children: [
-      { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
-      {
-        type: "link",
-        key: "overview",
-        labelKey: "nav.overview",
-        href: "overview",
-        pattern: "H",
-      },
-    ],
+    type: "link",
+    key: "overview",
+    labelKey: "nav.overview",
+    href: "overview",
+    pattern: "H",
   },
   {
     type: "section",
-    key: "l0_product",
-    labelKey: "nav.sectionProduct",
+    key: "l0_workflow",
+    labelKey: "nav.sectionWorkflow",
     children: [
       {
         type: "group",
@@ -393,8 +386,8 @@ export const L0_NAV: NavEntry[] = [
   },
   {
     type: "section",
-    key: "l0_tools",
-    labelKey: "nav.sectionTools",
+    key: "l0_explore",
+    labelKey: "nav.sectionExplore",
     children: [
       {
         type: "link",
