@@ -131,15 +131,36 @@ export function AppSidebar({
     );
   }
 
+  function NavSectionLabel({ labelKey }: { labelKey: string }) {
+    return (
+      <div className="px-2 py-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+        {t(labelKey)}
+      </div>
+    );
+  }
+
+  function renderL0Section(entry: NavSection) {
+    return (
+      <div key={entry.key} className="space-y-0.5 pt-2 first:pt-0">
+        <NavSectionLabel labelKey={entry.labelKey} />
+        {entry.children.map((child) => {
+          if (isLink(child)) return renderNavLink(child);
+          if (isGroup(child)) return renderL0Group(child);
+          return null;
+        })}
+      </div>
+    );
+  }
+
   function renderL1Entry(entry: NavEntry, initiativeId: string) {
     if (isLink(entry)) return renderNavLink(entry, initiativeId);
     if (isSection(entry)) {
       return (
         <div key={entry.key} className="space-y-0.5 pt-2 first:pt-0">
-          <div className="px-2 py-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            {t(entry.labelKey)}
-          </div>
-          {entry.children.map((child) => renderNavLink(child, initiativeId))}
+          <NavSectionLabel labelKey={entry.labelKey} />
+          {entry.children.map((child) =>
+            isLink(child) ? renderNavLink(child, initiativeId) : null,
+          )}
         </div>
       );
     }
@@ -161,16 +182,10 @@ export function AppSidebar({
   }
 
   function renderL0Nav() {
-    return L0_NAV.map((entry, index) => {
-      if (entry.type === "separator") {
-        return <div key={`l0-sep-${index}`} className="my-2 border-t" />;
-      }
-      if (isLink(entry)) {
-        return renderNavLink(entry);
-      }
-      if (isGroup(entry)) {
-        return renderL0Group(entry);
-      }
+    return L0_NAV.map((entry) => {
+      if (isSection(entry)) return renderL0Section(entry);
+      if (isLink(entry)) return renderNavLink(entry);
+      if (isGroup(entry)) return renderL0Group(entry);
       return null;
     });
   }

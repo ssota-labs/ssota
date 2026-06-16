@@ -24,11 +24,13 @@ export type NavGroup = {
   children: NavLink[];
 };
 
+export type NavSectionChild = NavLink | NavGroup;
+
 export type NavSection = {
   type: "section";
   key: string;
   labelKey: string;
-  children: NavLink[];
+  children: NavSectionChild[];
 };
 
 export type NavEntry = NavSeparator | NavLink | NavGroup | NavSection;
@@ -323,7 +325,12 @@ export const INITIATIVE_L1_NAV: NavEntry[] = [
 function flattenInitiativeLinks(entries: NavEntry[]): NavLink[] {
   return entries.flatMap((entry) => {
     if (entry.type === "link") return [entry];
-    if (entry.type === "section" || entry.type === "group") return entry.children;
+    if (entry.type === "group") return entry.children;
+    if (entry.type === "section") {
+      return entry.children.flatMap((child) =>
+        child.type === "link" ? [child] : child.children,
+      );
+    }
     return [];
   });
 }
@@ -332,52 +339,71 @@ function flattenInitiativeLinks(entries: NavEntry[]): NavLink[] {
 export const INITIATIVE_L1: NavLink[] = flattenInitiativeLinks(INITIATIVE_L1_NAV);
 
 export const L0_NAV: NavEntry[] = [
-  { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
   {
-    type: "link",
-    key: "overview",
-    labelKey: "nav.overview",
-    href: "overview",
-    pattern: "H",
-  },
-  { type: "separator" },
-  {
-    type: "group",
-    key: "executive",
-    labelKey: "nav.executive",
-    children: EXECUTIVE_L1,
-  },
-  {
-    type: "group",
-    key: "research",
-    labelKey: "nav.research",
-    children: RESEARCH_L1,
+    type: "section",
+    key: "l0_workspace",
+    labelKey: "nav.sectionWorkspace",
+    children: [
+      { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
+      {
+        type: "link",
+        key: "overview",
+        labelKey: "nav.overview",
+        href: "overview",
+        pattern: "H",
+      },
+    ],
   },
   {
-    type: "group",
-    key: "manager",
-    labelKey: "nav.manager",
-    children: MANAGER_L1,
+    type: "section",
+    key: "l0_product",
+    labelKey: "nav.sectionProduct",
+    children: [
+      {
+        type: "group",
+        key: "executive",
+        labelKey: "nav.executive",
+        children: EXECUTIVE_L1,
+      },
+      {
+        type: "group",
+        key: "research",
+        labelKey: "nav.research",
+        children: RESEARCH_L1,
+      },
+      {
+        type: "group",
+        key: "manager",
+        labelKey: "nav.manager",
+        children: MANAGER_L1,
+      },
+      {
+        type: "group",
+        key: "development",
+        labelKey: "nav.productDev",
+        children: DEVELOPMENT_L1,
+      },
+      {
+        type: "group",
+        key: "design",
+        labelKey: "nav.productDesign",
+        children: DESIGN_L1,
+      },
+    ],
   },
   {
-    type: "group",
-    key: "development",
-    labelKey: "nav.productDev",
-    children: DEVELOPMENT_L1,
-  },
-  {
-    type: "group",
-    key: "design",
-    labelKey: "nav.productDesign",
-    children: DESIGN_L1,
-  },
-  { type: "separator" },
-  {
-    type: "link",
-    key: "workflow_map",
-    labelKey: "nav.workflowMap",
-    href: "workflow/map",
-    pattern: "canvas",
+    type: "section",
+    key: "l0_tools",
+    labelKey: "nav.sectionTools",
+    children: [
+      {
+        type: "link",
+        key: "workflow_map",
+        labelKey: "nav.workflowMap",
+        href: "workflow/map",
+        pattern: "canvas",
+      },
+    ],
   },
 ];
 
