@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import type { RoadmapQuarter } from "@ssota/contracts";
 import type { DocStatus } from "@/lib/roadmap/doc-status";
-import { Accordion } from "@ssota/ui/components/ui/accordion";
 import {
   Select,
   SelectContent,
@@ -16,6 +15,7 @@ import { PlanningRoadmapAccordionItem } from "@/components/console/roadmap/plann
 import type { PlanningPeriod, RoadmapNodeView } from "@/lib/roadmap/types";
 
 type PlanningRoadmapsSectionProps = {
+  productRoadmapTitle: string;
   nodes: RoadmapNodeView[];
   currentYear: number;
   onCreateAnnual: (year: number) => Promise<void>;
@@ -48,6 +48,7 @@ function findPlanningNode(
 }
 
 export function PlanningRoadmapsSection({
+  productRoadmapTitle,
   nodes,
   currentYear,
   onCreateAnnual,
@@ -116,22 +117,22 @@ export function PlanningRoadmapsSection({
         </div>
       ) : null}
 
-      <Accordion multiple defaultValue={["annual"]} className="w-full">
-        {PERIODS.map((period) => (
-          <PlanningRoadmapAccordionItem
-            key={period === "annual" ? "annual" : `q${period}`}
-            period={period}
-            year={year}
-            node={findPlanningNode(nodes, year, period)}
-            onCreate={() =>
-              period === "annual"
-                ? onCreateAnnual(year)
-                : onCreateQuarter(year, period)
-            }
-            onSave={onSave}
-          />
-        ))}
-      </Accordion>
+      {PERIODS.map((period) => (
+        <PlanningRoadmapAccordionItem
+          key={period === "annual" ? "annual" : `q${period}`}
+          period={period}
+          year={year}
+          node={findPlanningNode(nodes, year, period)}
+          productRoadmapTitle={productRoadmapTitle}
+          defaultOpen={period === "annual"}
+          onCreate={() =>
+            period === "annual"
+              ? onCreateAnnual(year)
+              : onCreateQuarter(year, period)
+          }
+          onSave={onSave}
+        />
+      ))}
     </section>
   );
 }

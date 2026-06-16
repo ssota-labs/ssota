@@ -75,16 +75,20 @@ test.describe("Executive roadmap", () => {
   test("collapses and expands planning roadmap accordions from header", async ({
     page,
   }) => {
-    const q1Trigger = page.getByRole("button", {
-      name: /2026 Q1 분기 로드맵|Q1 quarter roadmap/i,
-    });
+    const q1Card = page.getByTestId("planning-roadmap-card-q1");
+    await expect(q1Card).toBeVisible();
 
-    await expect(q1Trigger).toHaveAttribute("aria-expanded", "false");
+    const q1Header = q1Card.locator("header");
+    const q1Body = q1Card
+      .getByTestId("planning-roadmap-empty-q1")
+      .or(q1Card.getByRole("button", { name: /View full|전체 보기/ }));
 
-    await q1Trigger.click();
-    await expect(q1Trigger).toHaveAttribute("aria-expanded", "true");
+    await expect(q1Body.first()).not.toBeVisible();
 
-    await q1Trigger.click();
-    await expect(q1Trigger).toHaveAttribute("aria-expanded", "false");
+    await q1Header.click();
+    await expect(q1Body.first()).toBeVisible();
+
+    await q1Header.click();
+    await expect(q1Body.first()).not.toBeVisible();
   });
 });
