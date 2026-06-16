@@ -2,15 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CaretDownIcon } from "@phosphor-icons/react";
-import type { RoadmapQuarter } from "@ssota/contracts";
 import type { DocStatus } from "@/lib/roadmap/doc-status";
-import { Button } from "@ssota/ui/components/ui/button";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@ssota/ui/components/ui/collapsible";
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@ssota/ui/components/ui/accordion";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -27,12 +25,10 @@ import {
 } from "@/lib/roadmap/doc-status";
 import type { PlanningPeriod, RoadmapNodeView } from "@/lib/roadmap/types";
 
-type PlanningRoadmapCardProps = {
+type PlanningRoadmapAccordionItemProps = {
   period: PlanningPeriod;
   year: number;
   node?: RoadmapNodeView;
-  productRoadmapTitle: string;
-  defaultOpen?: boolean;
   onCreate: () => Promise<void>;
   onSave: (input: {
     nodeId: string;
@@ -59,27 +55,25 @@ function periodTestId(period: PlanningPeriod) {
   return period === "annual" ? "annual" : `q${period}`;
 }
 
-function breadcrumbSuffix(year: number, period: PlanningPeriod) {
-  return period === "annual" ? ` › ${year} 연간` : ` › Q${period}`;
+function periodAccordionValue(period: PlanningPeriod) {
+  return period === "annual" ? "annual" : `q${period}`;
 }
 
-export function PlanningRoadmapCard({
+export function PlanningRoadmapAccordionItem({
   period,
   year,
   node,
-  productRoadmapTitle,
-  defaultOpen = false,
   onCreate,
   onSave,
-}: PlanningRoadmapCardProps) {
+}: PlanningRoadmapAccordionItemProps) {
   const { t } = useLocale();
   const router = useRouter();
-  const [open, setOpen] = useState(defaultOpen);
   const [viewOpen, setViewOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const cardTestId = periodTestId(period);
+  const title = node ? planningLabel(node) : targetTitle(year, period);
 
   const handleCreate = () => {
     if (node || pending) return;
@@ -107,61 +101,45 @@ export function PlanningRoadmapCard({
   };
 
   return (
-    <Collapsible
-      open={open}
-      onOpenChange={setOpen}
-      className="rounded-md border bg-muted/20"
+    <AccordionItem
+      value={periodAccordionValue(period)}
       data-testid={`planning-roadmap-card-${cardTestId}`}
     >
-      <article data-testid="planning-roadmap-detail">
-        <CollapsibleTrigger
-          nativeButton={false}
-          render={
-            <header className="flex w-full cursor-pointer items-start justify-between gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-muted/30" />
-          }
-        >
-          <div className="min-w-0 flex-1 space-y-2">
-            <p className="text-xs text-muted-foreground">
-              {productRoadmapTitle}
-              {breadcrumbSuffix(year, period)}
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold">
-                {node ? planningLabel(node) : targetTitle(year, period)}
-              </h3>
-              {node ? (
-                <div
-                  className="inline-flex"
-                  onClick={(event) => event.stopPropagation()}
-                  onKeyDown={(event) => event.stopPropagation()}
-                >
-                  <Select
-                    value={node.docStatus ?? "draft"}
-                    onValueChange={handleDocStatusChange}
-                    disabled={pending}
-                  >
-                  <SelectTrigger size="sm" aria-label="Document status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DOC_STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {DOC_STATUS_LABELS[status]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                </div>
-              ) : null}
+      <AccordionTrigger className="px-1 py-3 text-left hover:no-underline">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pr-2">
+          <span className="text-sm font-semibold">{title}</span>
+          {node ? (
+            <div
+              className="inline-flex"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => event.stopPropagation()}
+            >
+              <Select
+                value={node.docStatus ?? "draft"}
+                onValueChange={handleDocStatusChange}
+                disabled={pending}
+              >
+                <SelectTrigger size="sm" aria-label="Document status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {DOC_STATUS_OPTIONS.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      {DOC_STATUS_LABELS[status]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-          <CaretDownIcon
-            className={`mt-1 size-4 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
-            aria-hidden
-          />
-        </CollapsibleTrigger>
+          ) : null}
+        </div>
+      </AccordionTrigger>
 
-        <CollapsibleContent className="space-y-4 p-4 md:p-6">
+      <AccordionContent
+        className="pb-4"
+        data-testid="planning-roadmap-detail"
+      >
+        <div className="space-y-4 pt-1">
           {!node ? (
             <div
               className="rounded-md border border-dashed bg-muted/10 p-6 text-center"
@@ -207,7 +185,7 @@ export function PlanningRoadmapCard({
               </Button>
             </div>
           ) : null}
-        </CollapsibleContent>
+        </div>
 
         {node ? (
           <>
@@ -238,7 +216,7 @@ export function PlanningRoadmapCard({
             />
           </>
         ) : null}
-      </article>
-    </Collapsible>
+      </AccordionContent>
+    </AccordionItem>
   );
 }

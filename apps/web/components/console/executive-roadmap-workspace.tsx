@@ -47,7 +47,6 @@ export function ExecutiveRoadmapWorkspace({
         onApplyTemplate={onApplyProductTemplate}
       />
       <PlanningRoadmapsSection
-        productRoadmapTitle={productRoadmap.title}
         nodes={planningRoadmaps}
         currentYear={currentYear}
         onCreateAnnual={onCreateAnnualRoadmap}

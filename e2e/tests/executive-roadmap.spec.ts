@@ -78,17 +78,17 @@ test.describe("Executive roadmap", () => {
     const q1Card = page.getByTestId("planning-roadmap-card-q1");
     await expect(q1Card).toBeVisible();
 
-    const q1Header = q1Card.locator("header");
+    const q1Trigger = q1Card.getByRole("button").first();
     const q1Body = q1Card
       .getByTestId("planning-roadmap-empty-q1")
       .or(q1Card.getByRole("button", { name: /View full|전체 보기/ }));
 
     await expect(q1Body.first()).not.toBeVisible();
 
-    await q1Header.click();
+    await q1Trigger.click();
     await expect(q1Body.first()).toBeVisible();
 
-    await q1Header.click();
+    await q1Trigger.click();
     await expect(q1Body.first()).not.toBeVisible();
   });
 });

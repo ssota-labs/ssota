@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { RoadmapQuarter } from "@ssota/contracts";
 import type { DocStatus } from "@/lib/roadmap/doc-status";
+import { Accordion } from "@ssota/ui/components/ui/accordion";
 import {
   Select,
   SelectContent,
@@ -11,7 +12,7 @@ import {
   SelectValue,
 } from "@ssota/ui/components/ui/select";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { PlanningRoadmapCard } from "@/components/console/roadmap/planning-roadmap-card";
+import { PlanningRoadmapAccordionItem } from "@/components/console/roadmap/planning-roadmap-accordion-item";
 import type { PlanningPeriod, RoadmapNodeView } from "@/lib/roadmap/types";
 
 type PlanningRoadmapsSectionProps = {
@@ -48,7 +49,6 @@ function findPlanningNode(
 }
 
 export function PlanningRoadmapsSection({
-  productRoadmapTitle,
   nodes,
   currentYear,
   onCreateAnnual,
@@ -118,22 +118,22 @@ export function PlanningRoadmapsSection({
           </div>
         ) : null}
 
-        {PERIODS.map((period) => (
-          <PlanningRoadmapCard
-            key={period === "annual" ? "annual" : `q${period}`}
-            period={period}
-            year={year}
-            node={findPlanningNode(nodes, year, period)}
-            productRoadmapTitle={productRoadmapTitle}
-            defaultOpen={period === "annual"}
-            onCreate={() =>
-              period === "annual"
-                ? onCreateAnnual(year)
-                : onCreateQuarter(year, period)
-            }
-            onSave={onSave}
-          />
-        ))}
+        <Accordion multiple defaultValue={["annual"]} className="w-full">
+          {PERIODS.map((period) => (
+            <PlanningRoadmapAccordionItem
+              key={period === "annual" ? "annual" : `q${period}`}
+              period={period}
+              year={year}
+              node={findPlanningNode(nodes, year, period)}
+              onCreate={() =>
+                period === "annual"
+                  ? onCreateAnnual(year)
+                  : onCreateQuarter(year, period)
+              }
+              onSave={onSave}
+            />
+          ))}
+        </Accordion>
       </div>
     </section>
   );
