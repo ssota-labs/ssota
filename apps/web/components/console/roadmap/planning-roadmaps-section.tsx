@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import type { RoadmapQuarter } from "@ssota/contracts";
 import type { DocStatus } from "@/lib/roadmap/doc-status";
+import { Accordion } from "@ssota/ui/components/ui/accordion";
 import {
   Select,
   SelectContent,
@@ -11,11 +12,10 @@ import {
   SelectValue,
 } from "@ssota/ui/components/ui/select";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { PlanningRoadmapCard } from "@/components/console/roadmap/planning-roadmap-card";
+import { PlanningRoadmapAccordionItem } from "@/components/console/roadmap/planning-roadmap-accordion-item";
 import type { PlanningPeriod, RoadmapNodeView } from "@/lib/roadmap/types";
 
 type PlanningRoadmapsSectionProps = {
-  productRoadmapTitle: string;
   nodes: RoadmapNodeView[];
   currentYear: number;
   onCreateAnnual: (year: number) => Promise<void>;
@@ -48,7 +48,6 @@ function findPlanningNode(
 }
 
 export function PlanningRoadmapsSection({
-  productRoadmapTitle,
   nodes,
   currentYear,
   onCreateAnnual,
@@ -108,24 +107,22 @@ export function PlanningRoadmapsSection({
         </div>
       </header>
 
-      <div className="space-y-4 p-4 md:p-6">
-        {showMissingAnnualWarning ? (
-          <div
-            className="rounded-md border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100"
-            data-testid="missing-annual-warning"
-          >
-            {t("roadmap.missingAnnualWarning")}
-          </div>
-        ) : null}
+      {showMissingAnnualWarning ? (
+        <div
+          className="border-b border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-950 dark:text-amber-100 md:px-6"
+          data-testid="missing-annual-warning"
+        >
+          {t("roadmap.missingAnnualWarning")}
+        </div>
+      ) : null}
 
+      <Accordion multiple defaultValue={["annual"]} className="w-full">
         {PERIODS.map((period) => (
-          <PlanningRoadmapCard
+          <PlanningRoadmapAccordionItem
             key={period === "annual" ? "annual" : `q${period}`}
             period={period}
             year={year}
             node={findPlanningNode(nodes, year, period)}
-            productRoadmapTitle={productRoadmapTitle}
-            defaultOpen={period === "annual"}
             onCreate={() =>
               period === "annual"
                 ? onCreateAnnual(year)
@@ -134,7 +131,7 @@ export function PlanningRoadmapsSection({
             onSave={onSave}
           />
         ))}
-      </div>
+      </Accordion>
     </section>
   );
 }
