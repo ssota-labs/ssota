@@ -158,7 +158,10 @@ export function PlanningRoadmapAccordionItem({
         />
       </CollapsibleTrigger>
 
-      <CollapsibleContent data-testid="planning-roadmap-detail">
+      <CollapsibleContent
+        className="border-b border-border"
+        data-testid="planning-roadmap-detail"
+      >
         <div className="space-y-4 px-4 py-4 md:px-6 md:py-6">
           {!node ? (
             <div
