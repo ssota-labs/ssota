@@ -106,14 +106,16 @@ export function PlanningRoadmapAccordionItem({
       data-testid={`planning-roadmap-card-${cardTestId}`}
     >
       <AccordionTrigger className="px-1 py-3 text-left hover:no-underline">
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 pr-2">
-          <span className="text-sm font-semibold">{title}</span>
+        <span className="text-sm font-semibold">{title}</span>
+      </AccordionTrigger>
+
+      <AccordionContent
+        className="pb-4"
+        data-testid="planning-roadmap-detail"
+      >
+        <div className="space-y-4 pt-1">
           {node ? (
-            <div
-              className="inline-flex"
-              onClick={(event) => event.stopPropagation()}
-              onKeyDown={(event) => event.stopPropagation()}
-            >
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <Select
                 value={node.docStatus ?? "draft"}
                 onValueChange={handleDocStatusChange}
@@ -132,14 +134,7 @@ export function PlanningRoadmapAccordionItem({
               </Select>
             </div>
           ) : null}
-        </div>
-      </AccordionTrigger>
 
-      <AccordionContent
-        className="pb-4"
-        data-testid="planning-roadmap-detail"
-      >
-        <div className="space-y-4 pt-1">
           {!node ? (
             <div
               className="rounded-md border border-dashed bg-muted/10 p-6 text-center"
