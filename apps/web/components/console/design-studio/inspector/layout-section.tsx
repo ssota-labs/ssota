@@ -60,15 +60,6 @@ const GAP_PRESETS: InspectorPresetOption[] = [
   { value: "32", label: "32" },
 ];
 
-const SPACING_PRESETS: InspectorPresetOption[] = [
-  { value: "0", label: "0" },
-  { value: "4", label: "4" },
-  { value: "8", label: "8" },
-  { value: "16", label: "16" },
-  { value: "24", label: "24" },
-  { value: "32", label: "32" },
-];
-
 type LayoutSectionProps = {
   parsed: ParsedClassName;
   onUpdate: (patch: Partial<ParsedClassName>) => void;
@@ -211,7 +202,8 @@ function SpacingQuadGroup({
             value={parseSpacingPx(top)}
             unit="px"
             placeholder="0"
-            presets={SPACING_PRESETS}
+            showPresets={false}
+            scrollAdjust
             onChange={(value) => onChange("top", value)}
           />
         </InspectorField>
@@ -221,7 +213,8 @@ function SpacingQuadGroup({
             value={parseSpacingPx(bottom)}
             unit="px"
             placeholder="0"
-            presets={SPACING_PRESETS}
+            showPresets={false}
+            scrollAdjust
             onChange={(value) => onChange("bottom", value)}
           />
         </InspectorField>
@@ -231,7 +224,8 @@ function SpacingQuadGroup({
             value={parseSpacingPx(left)}
             unit="px"
             placeholder="0"
-            presets={SPACING_PRESETS}
+            showPresets={false}
+            scrollAdjust
             onChange={(value) => onChange("left", value)}
           />
         </InspectorField>
@@ -241,7 +235,8 @@ function SpacingQuadGroup({
             value={parseSpacingPx(right)}
             unit="px"
             placeholder="0"
-            presets={SPACING_PRESETS}
+            showPresets={false}
+            scrollAdjust
             onChange={(value) => onChange("right", value)}
           />
         </InspectorField>

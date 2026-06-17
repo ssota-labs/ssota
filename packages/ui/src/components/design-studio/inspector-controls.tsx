@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, RefObject } from "react";
+import type { ReactNode, RefObject, WheelEvent } from "react";
 import { useRef, useState } from "react";
 import {
   CaretDownIcon,
@@ -458,9 +458,32 @@ type InspectorNumberInputProps = {
   presetsByUnit?: Partial<
     Record<InspectorNumberUnit, InspectorPresetOption[]>
   >;
+  showPresets?: boolean;
+  scrollAdjust?: boolean;
+  scrollStep?: number;
   onChange: (value: string) => void;
   "aria-label"?: string;
 };
+
+function adjustNumberByWheel(
+  event: WheelEvent,
+  value: string,
+  onChange: (value: string) => void,
+  step: number,
+) {
+  const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
+  const delta = horizontal ? event.deltaX : event.deltaY;
+  if (delta === 0) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const current = value.trim() === "" ? 0 : Number(value);
+  if (!Number.isFinite(current)) return;
+
+  const direction = horizontal ? (delta > 0 ? 1 : -1) : delta < 0 ? 1 : -1;
+  onChange(String(current + direction * step));
+}
 
 export function InspectorNumberInput({
   value,
@@ -470,6 +493,9 @@ export function InspectorNumberInput({
   placeholder,
   presets,
   presetsByUnit,
+  showPresets: showPresetsProp,
+  scrollAdjust = false,
+  scrollStep = 1,
   onChange,
   "aria-label": ariaLabel,
 }: InspectorNumberInputProps) {
@@ -480,6 +506,44 @@ export function InspectorNumberInput({
   const availableUnits = units ?? (onUnitChange ? [unit] : []);
   const activePresets =
     presetsByUnit?.[unit] ?? presets ?? [];
+  const showPresets = showPresetsProp ?? activePresets.length > 0;
+
+  const handleWheel = scrollAdjust
+    ? (event: WheelEvent) =>
+        adjustNumberByWheel(event, value, onChange, scrollStep)
+    : undefined;
+
+  const field = (
+    <InputGroup onWheel={handleWheel}>
+      {showPresets ? (
+        <InputGroupAddon align="inline-start">
+          <InspectorPresetTrigger aria-label={presetsLabel} />
+        </InputGroupAddon>
+      ) : null}
+      <InputGroupInput
+        aria-label={ariaLabel}
+        type="number"
+        inputMode="decimal"
+        step="any"
+        value={value}
+        placeholder={placeholder}
+        onChange={(event) => onChange(event.target.value)}
+        onWheel={handleWheel}
+      />
+      <InputGroupAddon align="inline-end">
+        <InspectorUnitSelector
+          unit={unit}
+          units={availableUnits.length > 0 ? availableUnits : [unit]}
+          onUnitChange={onUnitChange}
+          aria-label={unitLabel}
+        />
+      </InputGroupAddon>
+    </InputGroup>
+  );
+
+  if (!showPresets) {
+    return field;
+  }
 
   return (
     <InspectorAnchorPopover
@@ -498,28 +562,7 @@ export function InspectorNumberInput({
         />
       }
     >
-      <InputGroup>
-        <InputGroupAddon align="inline-start">
-          <InspectorPresetTrigger aria-label={presetsLabel} />
-        </InputGroupAddon>
-        <InputGroupInput
-          aria-label={ariaLabel}
-          type="number"
-          inputMode="decimal"
-          step="any"
-          value={value}
-          placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
-        />
-        <InputGroupAddon align="inline-end">
-          <InspectorUnitSelector
-            unit={unit}
-            units={availableUnits.length > 0 ? availableUnits : [unit]}
-            onUnitChange={onUnitChange}
-            aria-label={unitLabel}
-          />
-        </InputGroupAddon>
-      </InputGroup>
+      {field}
     </InspectorAnchorPopover>
   );
 }
