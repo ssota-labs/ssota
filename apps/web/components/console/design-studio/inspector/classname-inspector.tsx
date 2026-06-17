@@ -1,13 +1,6 @@
 "use client";
 
 import { Input } from "@ssota/ui/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ssota/ui/components/ui/select";
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
   parseClassName,
@@ -17,65 +10,13 @@ import {
   InspectorField,
   InspectorGrid,
   InspectorSection,
-} from "./inspector-section";
+  InspectorSectionList,
+} from "@ssota/ui/components/design-studio";
+import { AppearanceSection } from "./appearance-section";
+import { BorderSection } from "./border-section";
+import { LayoutSection } from "./layout-section";
 import { ShadowSection } from "./shadow-section";
-
-const FONT_SIZE_OPTIONS = [
-  "text-xs",
-  "text-sm",
-  "text-base",
-  "text-lg",
-  "text-xl",
-  "text-2xl",
-  "text-3xl",
-];
-
-const FONT_WEIGHT_OPTIONS = [
-  { value: "font-normal", label: "Regular" },
-  { value: "font-medium", label: "Medium" },
-  { value: "font-semibold", label: "Semibold" },
-  { value: "font-bold", label: "Bold" },
-];
-
-const FONT_FAMILY_OPTIONS = [
-  { value: "font-sans", label: "Sans" },
-  { value: "font-serif", label: "Serif" },
-  { value: "font-mono", label: "Mono" },
-];
-
-const TEXT_ALIGN_OPTIONS = [
-  { value: "text-left", label: "Left" },
-  { value: "text-center", label: "Center" },
-  { value: "text-right", label: "Right" },
-];
-
-const DISPLAY_OPTIONS = [
-  "block",
-  "inline-block",
-  "flex",
-  "inline-flex",
-  "grid",
-  "hidden",
-];
-
-const FLEX_DIRECTION_OPTIONS = [
-  { value: "flex-row", label: "Row" },
-  { value: "flex-col", label: "Column" },
-];
-
-const ALIGN_ITEMS_OPTIONS = [
-  { value: "items-start", label: "Start" },
-  { value: "items-center", label: "Center" },
-  { value: "items-end", label: "End" },
-  { value: "items-stretch", label: "Stretch" },
-];
-
-const JUSTIFY_CONTENT_OPTIONS = [
-  { value: "justify-start", label: "Start" },
-  { value: "justify-center", label: "Center" },
-  { value: "justify-end", label: "End" },
-  { value: "justify-between", label: "Between" },
-];
+import { TypographySection } from "./typography-section";
 
 type ClassnameInspectorProps = {
   className: string;
@@ -94,267 +35,10 @@ export function ClassnameInspector({
   };
 
   return (
-    <div className="space-y-6">
-      <InspectorSection title="Typography">
-        <InspectorGrid>
-          <InspectorField label="Font">
-            <Select
-              value={parsed.fontFamily ?? ""}
-              onValueChange={(value) =>
-                update({ fontFamily: value || undefined })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Default" />
-              </SelectTrigger>
-              <SelectContent>
-                {FONT_FAMILY_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </InspectorField>
-          <InspectorField label="Size">
-            <Select
-              value={parsed.fontSize ?? ""}
-              onValueChange={(value) =>
-                update({ fontSize: value || undefined })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Default" />
-              </SelectTrigger>
-              <SelectContent>
-                {FONT_SIZE_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option.replace("text-", "")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </InspectorField>
-          <InspectorField label="Weight">
-            <Select
-              value={parsed.fontWeight ?? ""}
-              onValueChange={(value) =>
-                update({ fontWeight: value || undefined })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Default" />
-              </SelectTrigger>
-              <SelectContent>
-                {FONT_WEIGHT_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </InspectorField>
-          <InspectorField label="Align">
-            <Select
-              value={parsed.textAlign ?? ""}
-              onValueChange={(value) =>
-                update({ textAlign: value || undefined })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Default" />
-              </SelectTrigger>
-              <SelectContent>
-                {TEXT_ALIGN_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </InspectorField>
-          <InspectorField label="Line height">
-            <Input
-              value={parsed.lineHeight?.replace(/^leading-/, "") ?? ""}
-              placeholder="normal"
-              onChange={(event) =>
-                update({
-                  lineHeight: event.target.value
-                    ? `leading-${event.target.value}`
-                    : undefined,
-                })
-              }
-            />
-          </InspectorField>
-          <InspectorField label="Letter spacing">
-            <Input
-              value={parsed.letterSpacing?.replace(/^tracking-/, "") ?? ""}
-              placeholder="normal"
-              onChange={(event) =>
-                update({
-                  letterSpacing: event.target.value
-                    ? `tracking-${event.target.value}`
-                    : undefined,
-                })
-              }
-            />
-          </InspectorField>
-        </InspectorGrid>
-        <InspectorField label="Color">
-          <Input
-            value={parsed.textColor?.replace(/^text-/, "") ?? ""}
-            placeholder="foreground"
-            onChange={(event) =>
-              update({
-                textColor: event.target.value
-                  ? `text-${event.target.value}`
-                  : undefined,
-              })
-            }
-          />
-        </InspectorField>
-      </InspectorSection>
+    <InspectorSectionList>
+      <TypographySection parsed={parsed} onUpdate={update} />
 
-      <InspectorSection title="Layout">
-        <InspectorGrid>
-          <InspectorField label="Display">
-            <Select
-              value={parsed.display ?? ""}
-              onValueChange={(value) =>
-                update({ display: value || undefined })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Default" />
-              </SelectTrigger>
-              <SelectContent>
-                {DISPLAY_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </InspectorField>
-          <InspectorField label="Direction">
-            <Select
-              value={parsed.flexDirection ?? ""}
-              onValueChange={(value) =>
-                update({ flexDirection: value || undefined })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Default" />
-              </SelectTrigger>
-              <SelectContent>
-                {FLEX_DIRECTION_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </InspectorField>
-          <InspectorField label="Align items">
-            <Select
-              value={parsed.alignItems ?? ""}
-              onValueChange={(value) =>
-                update({ alignItems: value || undefined })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Default" />
-              </SelectTrigger>
-              <SelectContent>
-                {ALIGN_ITEMS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </InspectorField>
-          <InspectorField label="Justify">
-            <Select
-              value={parsed.justifyContent ?? ""}
-              onValueChange={(value) =>
-                update({ justifyContent: value || undefined })
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Default" />
-              </SelectTrigger>
-              <SelectContent>
-                {JUSTIFY_CONTENT_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </InspectorField>
-          <InspectorField label="Gap">
-            <Input
-              value={parsed.gap?.replace(/^gap-/, "") ?? ""}
-              placeholder="0"
-              onChange={(event) =>
-                update({
-                  gap: event.target.value ? `gap-${event.target.value}` : undefined,
-                })
-              }
-            />
-          </InspectorField>
-        </InspectorGrid>
-      </InspectorSection>
-
-      <InspectorSection title="Spacing">
-        <InspectorGrid>
-          <InspectorField label="Padding X">
-            <Input
-              value={parsed.paddingX?.replace(/^px-/, "") ?? ""}
-              placeholder="0"
-              onChange={(event) =>
-                update({
-                  paddingX: event.target.value ? `px-${event.target.value}` : undefined,
-                })
-              }
-            />
-          </InspectorField>
-          <InspectorField label="Padding Y">
-            <Input
-              value={parsed.paddingY?.replace(/^py-/, "") ?? ""}
-              placeholder="0"
-              onChange={(event) =>
-                update({
-                  paddingY: event.target.value ? `py-${event.target.value}` : undefined,
-                })
-              }
-            />
-          </InspectorField>
-          <InspectorField label="Margin X">
-            <Input
-              value={parsed.marginX?.replace(/^mx-/, "") ?? ""}
-              placeholder="0"
-              onChange={(event) =>
-                update({
-                  marginX: event.target.value ? `mx-${event.target.value}` : undefined,
-                })
-              }
-            />
-          </InspectorField>
-          <InspectorField label="Margin Y">
-            <Input
-              value={parsed.marginY?.replace(/^my-/, "") ?? ""}
-              placeholder="0"
-              onChange={(event) =>
-                update({
-                  marginY: event.target.value ? `my-${event.target.value}` : undefined,
-                })
-              }
-            />
-          </InspectorField>
-        </InspectorGrid>
-      </InspectorSection>
+      <LayoutSection parsed={parsed} onUpdate={update} />
 
       <InspectorSection title="Size">
         <InspectorGrid>
@@ -399,53 +83,9 @@ export function ClassnameInspector({
         </InspectorField>
       </InspectorSection>
 
-      <InspectorSection title="Border">
-        <InspectorGrid>
-          <InspectorField label="Radius">
-            <Input
-              value={parsed.borderRadius?.replace(/^rounded-?/, "") ?? ""}
-              placeholder="none"
-              onChange={(event) =>
-                update({
-                  borderRadius: event.target.value
-                    ? event.target.value === "none"
-                      ? "rounded-none"
-                      : `rounded-${event.target.value}`
-                    : undefined,
-                })
-              }
-            />
-          </InspectorField>
-          <InspectorField label="Width">
-            <Input
-              value={parsed.borderWidth?.replace(/^border-?/, "") ?? ""}
-              placeholder="0"
-              onChange={(event) =>
-                update({
-                  borderWidth: event.target.value
-                    ? event.target.value === "1" || event.target.value === "default"
-                      ? "border"
-                      : `border-${event.target.value}`
-                    : undefined,
-                })
-              }
-            />
-          </InspectorField>
-        </InspectorGrid>
-        <InspectorField label="Color">
-          <Input
-            value={parsed.borderColor?.replace(/^border-/, "") ?? ""}
-            placeholder="default"
-            onChange={(event) =>
-              update({
-                borderColor: event.target.value
-                  ? `border-${event.target.value}`
-                  : undefined,
-              })
-            }
-          />
-        </InspectorField>
-      </InspectorSection>
+      <BorderSection parsed={parsed} onUpdate={update} />
+
+      <AppearanceSection parsed={parsed} onUpdate={update} />
 
       <ShadowSection
         shadow={parsed.shadow}
@@ -457,6 +97,6 @@ export function ClassnameInspector({
           <Input value={parsed.remainder.join(" ")} readOnly />
         </InspectorSection>
       ) : null}
-    </div>
+    </InspectorSectionList>
   );
 }

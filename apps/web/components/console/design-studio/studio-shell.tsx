@@ -215,29 +215,6 @@ export function StudioShell({
 
   return (
     <div className="flex h-full min-h-0 flex-col" data-testid="design-studio-shell">
-      <div className="flex items-center justify-between border-b px-4 py-3 md:px-6">
-        <div>
-          <h1 className="text-lg font-semibold">
-            {component?.title ?? "UI components"}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {component
-              ? `${props.slug} · ${props.tier ?? "primitive"}`
-              : "Select or create a component"}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            disabled={!component || pending}
-            onClick={handleDeploy}
-          >
-            Deploy
-          </Button>
-        </div>
-      </div>
-
       <ResizablePanelGroup
         id="design-studio-panels"
         orientation="horizontal"
@@ -264,6 +241,9 @@ export function StudioShell({
                 mode={interactionMode}
                 onModeChange={setInteractionMode}
                 disabled={!ready}
+                onDeploy={handleDeploy}
+                deployDisabled={!component}
+                deployPending={pending}
               />
               <iframe
                 ref={iframeRef}

@@ -18,7 +18,6 @@ test.describe("design studio", () => {
     await expect(page.getByRole("tab", { name: "Components" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Layers" })).toBeVisible();
     await expect(page.getByTestId("studio-component-demo-button")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible();
     await expect(page.getByLabel("Node ID")).toBeVisible();
     await expect(page.getByRole("button", { name: "Deploy" })).toBeVisible();
   });
@@ -36,7 +35,7 @@ test.describe("design studio", () => {
       /\/design\/ui-components\/[0-9a-f-]+$/,
       { timeout: 15_000 },
     );
-    await expect(page.getByRole("heading", { name: "Demo Card" })).toBeVisible({
+    await expect(page.getByTestId("studio-component-demo-card")).toBeVisible({
       timeout: 15_000,
     });
 
@@ -46,7 +45,7 @@ test.describe("design studio", () => {
 
   test("editor updates styles via inspector controls", async ({ page }) => {
     await gotoProject(page, "design/ui-components");
-    await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible({
+    await expect(page.getByTestId("design-studio-shell")).toBeVisible({
       timeout: 15_000,
     });
 
@@ -56,7 +55,7 @@ test.describe("design studio", () => {
     await expect(backgroundField).toHaveValue("blue-600");
 
     await page.reload();
-    await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible({
+    await expect(page.getByTestId("design-studio-shell")).toBeVisible({
       timeout: 15_000,
     });
     await expect(page.getByLabel("Background")).toHaveValue("blue-600");
