@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CaretDownIcon, CaretRightIcon, PlusIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
+import { Badge } from "@ssota/ui/components/ui/badge";
 import {
   Collapsible,
   CollapsibleContent,
@@ -79,7 +80,7 @@ export function ComponentsPanel({
                           type="button"
                           data-testid={`studio-component-${component.slug}`}
                           className={cn(
-                            "flex w-full flex-col rounded-md px-2 py-1.5 text-left hover:bg-muted",
+                            "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-muted",
                             active && "bg-muted",
                           )}
                           onClick={() => {
@@ -88,15 +89,18 @@ export function ComponentsPanel({
                         >
                           <span
                             className={cn(
-                              "truncate text-sm",
+                              "min-w-0 flex-1 truncate text-sm",
                               active && "font-medium text-foreground",
                             )}
                           >
                             {component.title}
                           </span>
-                          <span className="truncate text-[11px] text-muted-foreground">
-                            {component.slug} · {component.status}
-                          </span>
+                          <Badge
+                            variant="secondary"
+                            className="shrink-0 px-1.5 py-0 text-[10px] font-normal"
+                          >
+                            {component.status}
+                          </Badge>
                         </button>
                       );
                     })}
