@@ -9,6 +9,7 @@ import {
 import { NestedListItem } from "./extensions/NestedListItem";
 import {
   applyListType,
+  convertInnermostListType,
   getActiveListType,
   hasMixedListNesting,
 } from "./list-commands";
@@ -123,6 +124,33 @@ describe("applyListType", () => {
     const paragraphText =
       listItem?.content?.[0]?.content?.[0]?.content?.[0]?.text;
     expect(paragraphText).toBe("numbered line");
+  });
+
+  it("converts innermost ordered list to bullet", () => {
+    editor = createEditor({
+      type: "doc",
+      content: [
+        {
+          type: "orderedList",
+          content: [
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: "numbered" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    selectText(editor, "numbered");
+
+    expect(getActiveListType(editor)).toBe("orderedList");
+    expect(convertInnermostListType(editor, "bulletList")).toBe(true);
+    expect(getActiveListType(editor)).toBe("bulletList");
   });
 
   it("converts only the innermost list level", () => {

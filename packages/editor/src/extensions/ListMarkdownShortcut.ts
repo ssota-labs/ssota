@@ -1,11 +1,12 @@
 import { Extension } from "@tiptap/core";
 import { findWrapping } from "@tiptap/pm/transform";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
+import { findInnermostList } from "../list-commands";
 import { parseListMarkerBeforeSpace } from "../list-marker-utils";
 
 /**
- * IME·입력 타이밍에서 input rule이 놓칠 때 `- ` / `1. ` 등으로 리스트를 만든다.
- * QuoteShortcut과 동일한 handleTextInput 보완 패턴.
+ * `- ` / `* ` / `1. ` 입력으로 리스트를 만들거나, 이미 리스트 안이면
+ * 현재 들여쓰기 레벨의 타입만 bullet ↔ numbered로 전환한다.
  */
 export const ListMarkdownShortcut = Extension.create({
   name: "listMarkdownShortcut",
@@ -15,6 +16,7 @@ export const ListMarkdownShortcut = Extension.create({
     return [
       new Plugin({
         key: new PluginKey("ssotaListMarkdownShortcut"),
+        priority: 1000,
         props: {
           handleTextInput: (view, from, _to, text) => {
             if (text !== " " || view.composing) {
@@ -36,12 +38,51 @@ export const ListMarkdownShortcut = Extension.create({
               return false;
             }
 
-            const listType = state.schema.nodes[marker.listType];
-            if (!listType) {
+            const listTypeNode = state.schema.nodes[marker.listType];
+            if (!listTypeNode) {
               return false;
             }
 
-            let tr = state.tr.delete(blockStart, from + 1);
+            const innermost = findInnermostList($from);
+            // Space is not in the document yet; `from` is the insertion point after the marker.
+            const markerEnd = from;
+            let tr = state.tr.delete(blockStart, markerEnd);
+
+            if (innermost) {
+              if (innermost.type === marker.listType) {
+                tr.setSelection(
+                  TextSelection.near(
+                    tr.doc.resolve(Math.min(blockStart + 1, tr.doc.content.size - 1)),
+                  ),
+                );
+                view.dispatch(tr);
+                return true;
+              }
+
+              const mappedPos = tr.mapping.map(innermost.pos);
+              const currentNode = tr.doc.nodeAt(mappedPos);
+              if (!currentNode) {
+                return false;
+              }
+
+              const attrs =
+                marker.listType === "orderedList"
+                  ? {
+                      ...currentNode.attrs,
+                      start: marker.orderedStart ?? currentNode.attrs.start ?? 1,
+                    }
+                  : currentNode.attrs;
+
+              tr.setNodeMarkup(mappedPos, listTypeNode, attrs, currentNode.marks);
+              tr.setSelection(
+                TextSelection.near(
+                  tr.doc.resolve(Math.min(blockStart + 1, tr.doc.content.size - 1)),
+                ),
+              );
+              view.dispatch(tr);
+              return true;
+            }
+
             const $blockStart = tr.doc.resolve(blockStart);
             const blockRange = $blockStart.blockRange();
             if (!blockRange) {
@@ -52,7 +93,7 @@ export const ListMarkdownShortcut = Extension.create({
               marker.listType === "orderedList" && marker.orderedStart
                 ? { start: marker.orderedStart }
                 : undefined;
-            const wrapping = findWrapping(blockRange, listType, attrs);
+            const wrapping = findWrapping(blockRange, listTypeNode, attrs);
             if (!wrapping) {
               return false;
             }

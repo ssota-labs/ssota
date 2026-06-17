@@ -143,6 +143,48 @@ function nestOppositeListType(
     .run();
 }
 
+/** 가장 안쪽 list 노드 타입만 bullet ↔ numbered로 전환한다. */
+export function convertInnermostListType(
+  editor: Editor,
+  listType: EditorListType,
+  orderedStart?: number,
+): boolean {
+  const { state } = editor;
+  const innermost = findInnermostList(state.selection.$from);
+  if (!innermost) {
+    return false;
+  }
+
+  if (innermost.type === listType) {
+    return true;
+  }
+
+  const currentNode = state.doc.nodeAt(innermost.pos);
+  const targetType = state.schema.nodes[listType];
+  if (!currentNode || !targetType) {
+    return false;
+  }
+
+  const attrs =
+    listType === "orderedList"
+      ? {
+          ...currentNode.attrs,
+          start: orderedStart ?? currentNode.attrs.start ?? 1,
+        }
+      : currentNode.attrs;
+
+  return editor
+    .chain()
+    .focus()
+    .command(({ tr, dispatch }) => {
+      if (dispatch) {
+        tr.setNodeMarkup(innermost.pos, targetType, attrs, currentNode.marks);
+      }
+      return true;
+    })
+    .run();
+}
+
 /**
  * Notion처럼 현재 들여쓰기 레벨의 list 타입만 전환한다.
  * - 리스트 밖: 새 리스트 생성/해제

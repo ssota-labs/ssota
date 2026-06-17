@@ -6,8 +6,6 @@ import { BubbleMenu } from "@tiptap/react/menus";
 import {
   CodeIcon,
   HighlighterCircleIcon,
-  ListBulletsIcon,
-  ListNumbersIcon,
   MinusIcon,
   RowsIcon,
   TextAaIcon,
@@ -29,7 +27,6 @@ import {
   TEXT_COLOR_SWATCHES,
 } from "./color-palette";
 import { LinkPopover } from "./LinkPopover";
-import { applyListType, getActiveListType } from "./list-commands";
 
 export function BubbleToolbar({
   editor,
@@ -44,7 +41,6 @@ export function BubbleToolbar({
     useState(false);
 
   const colorPopoverOpen = textColorPopoverOpen || backgroundColorPopoverOpen;
-  const activeListType = getActiveListType(editor);
 
   return (
     <BubbleMenu
@@ -57,11 +53,7 @@ export function BubbleToolbar({
         }
         return (
           currentEditor.isEditable &&
-          (linkPopoverOpen ||
-            colorPopoverOpen ||
-            !empty ||
-            currentEditor.isActive("table") ||
-            currentEditor.isActive("listItem"))
+          (linkPopoverOpen || colorPopoverOpen || !empty)
         );
       }}
       className="ssota-bubble-toolbar"
@@ -95,21 +87,6 @@ export function BubbleToolbar({
         onClick={() => editor.chain().focus().toggleCode().run()}
       >
         <CodeIcon className="size-4" />
-      </ToolbarButton>
-      <ToolbarDivider />
-      <ToolbarButton
-        label="Bullet list"
-        active={activeListType === "bulletList"}
-        onClick={() => applyListType(editor, "bulletList")}
-      >
-        <ListBulletsIcon className="size-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Numbered list"
-        active={activeListType === "orderedList"}
-        onClick={() => applyListType(editor, "orderedList")}
-      >
-        <ListNumbersIcon className="size-4" />
       </ToolbarButton>
       <ToolbarDivider />
       <LinkPopover editor={editor} open={linkPopoverOpen} onOpenChange={setLinkPopoverOpen} />
@@ -146,7 +123,7 @@ export function BubbleToolbar({
             label="Add column"
             onClick={() => editor.chain().focus().addColumnAfter().run()}
           >
-            <ListBulletsIcon className="size-4 rotate-90" />
+            <MinusIcon className="size-4 rotate-90" />
           </ToolbarButton>
           <ToolbarButton
             label="Delete table"

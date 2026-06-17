@@ -72,6 +72,68 @@ async function selectEditorText(page: Page, text: string) {
   }, text);
 }
 
+async function selectParagraphStart(page: Page, text: string) {
+  await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
+  await page.evaluate((value) => {
+    const editor = window.__ssotaEditorLab;
+    if (!editor) return;
+
+    editor.state.doc.descendants((node, pos) => {
+      if (!node.isTextblock || node.textContent !== value) return;
+      editor.chain().focus().setTextSelection(pos + 1).run();
+      return false;
+    });
+  }, text);
+}
+
+async function insertListItemAtEnd(
+  page: Page,
+  listType: "bulletList" | "orderedList",
+  text: string,
+) {
+  await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
+  await page.evaluate(
+    ({ type, value }) => {
+      window.__ssotaEditorLab
+        ?.chain()
+        .focus("end")
+        .insertContent({
+          type,
+          content: [
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: value }],
+                },
+              ],
+            },
+          ],
+        })
+        .run();
+    },
+    { type: listType, value: text },
+  );
+}
+
+async function typeAtBlockStart(page: Page, blockText: string, keys: string) {
+  await selectParagraphStart(page, blockText);
+  await page.waitForFunction(
+    ({ value }) => {
+      const editor = window.__ssotaEditorLab;
+      if (!editor) return false;
+      const { $from } = editor.state.selection;
+      if (!$from.parent.isTextblock || $from.parent.textContent !== value) {
+        return false;
+      }
+      return $from.parentOffset === 0;
+    },
+    { value: blockText },
+  );
+  await page.keyboard.type(keys, { delay: 40 });
+}
+
 async function openSlashMenu(page: Page, query = "") {
   await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
   await page.evaluate((filter) => {
@@ -358,32 +420,71 @@ test.describe("Editor Lab", () => {
       await expect(ordered).not.toContainText("1.");
     });
 
-    test("toolbar list toggle strips existing markdown marker text", async ({
+    test("creates bullet list when typing asterisk + space at line start", async ({
       page,
     }) => {
       const surface = await focusEditorEnd(page);
 
-      await page.evaluate(() => {
-        window.__ssotaEditorLab
-          ?.chain()
-          .focus("end")
-          .insertContent({
-            type: "paragraph",
-            content: [{ type: "text", text: "1. keep marker stripped" }],
-          })
-          .focus("end")
-          .run();
+      await page.keyboard.type("* ", { delay: 40 });
+      const bullet = surface.locator("ul li").last();
+      await expect(bullet).toBeVisible();
+      await expect(bullet).not.toContainText("*");
+    });
+
+    test("converts numbered list to bullet with asterisk + space at line start", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await insertListItemAtEnd(page, "orderedList", "numbered item");
+      await typeAtBlockStart(page, "numbered item", "* ");
+
+      await expect(
+        surface.locator("ul li", { hasText: "numbered item" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ol li", { hasText: "numbered item" }),
+      ).toHaveCount(0);
+      await page.waitForFunction(() => {
+        const json = window.__ssotaEditorLab?.getJSON();
+        const list = json?.content?.find(
+          (node) =>
+            node.type === "bulletList" &&
+            node.content?.some((item) =>
+              item.content?.some((child) =>
+                child.content?.some((text) => text.text === "numbered item"),
+              ),
+            ),
+        );
+        return Boolean(list);
       });
-      await selectEditorText(page, "keep marker stripped");
+    });
 
-      const toolbar = page.getByTestId("ssota-bubble-toolbar");
-      await expect(toolbar).toBeVisible();
-      await toolbar.getByRole("button", { name: "Numbered list" }).click();
+    test("converts bullet list to numbered with 1. + space at line start", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await insertListItemAtEnd(page, "bulletList", "bullet item");
+      await typeAtBlockStart(page, "bullet item", "1. ");
 
-      const ordered = surface.locator("ol li").last();
-      await expect(ordered).toBeVisible();
-      await expect(ordered).toContainText("keep marker stripped");
-      await expect(ordered).not.toContainText("1.");
+      await expect(
+        surface.locator("ol li", { hasText: "bullet item" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ul li", { hasText: "bullet item" }),
+      ).toHaveCount(0);
+      await page.waitForFunction(() => {
+        const json = window.__ssotaEditorLab?.getJSON();
+        const list = json?.content?.find(
+          (node) =>
+            node.type === "orderedList" &&
+            node.content?.some((item) =>
+              item.content?.some((child) =>
+                child.content?.some((text) => text.text === "bullet item"),
+              ),
+            ),
+        );
+        return Boolean(list);
+      });
     });
   });
 
@@ -397,6 +498,22 @@ test.describe("Editor Lab", () => {
       await expect(toolbar.getByRole("button", { name: "Bold" })).toBeVisible();
       await expect(toolbar.getByRole("button", { name: "Italic" })).toBeVisible();
       await expect(toolbar.getByRole("button", { name: "Code" })).toBeVisible();
+    });
+
+    test("does not appear when only placing cursor in a list item", async ({
+      page,
+    }) => {
+      const surface = await typeAtDocumentEnd(page, "cursor in list");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus()
+          .toggleList("orderedList", "listItem")
+          .run();
+      });
+
+      await surface.getByText("cursor in list").click();
+      await expect(page.getByTestId("ssota-bubble-toolbar")).toBeHidden();
     });
 
     test("shows tooltips on toolbar buttons", async ({ page }) => {
@@ -750,48 +867,6 @@ test.describe("Editor Lab", () => {
 
       await expect(surface).toBeFocused();
       await expect(surface.locator("ul ul")).toHaveCount(0);
-    });
-
-    test("bubble toolbar nests bullet under numbered item", async ({ page }) => {
-      const surface = await typeAtDocumentEnd(page, "parent");
-      await page.evaluate(() => {
-        window.__ssotaEditorLab?.chain()
-          .focus()
-          .toggleList("orderedList", "listItem")
-          .run();
-      });
-
-      await page.keyboard.press("Enter");
-      await page.keyboard.type("child");
-      await surface.getByText("child").click();
-
-      const toolbar = page.getByTestId("ssota-bubble-toolbar");
-      await expect(toolbar).toBeVisible();
-      await toolbar.getByRole("button", { name: "Bullet list" }).click();
-
-      await expect(surface.locator("ol li ul")).toBeVisible();
-      expect(await hasMixedListNesting(page)).toBe(true);
-    });
-
-    test("bubble toolbar nests numbered under bullet item", async ({ page }) => {
-      const surface = await typeAtDocumentEnd(page, "parent");
-      await page.evaluate(() => {
-        window.__ssotaEditorLab?.chain()
-          .focus()
-          .toggleList("bulletList", "listItem")
-          .run();
-      });
-
-      await page.keyboard.press("Enter");
-      await page.keyboard.type("child");
-      await surface.getByText("child").click();
-
-      const toolbar = page.getByTestId("ssota-bubble-toolbar");
-      await expect(toolbar).toBeVisible();
-      await toolbar.getByRole("button", { name: "Numbered list" }).click();
-
-      await expect(surface.locator("ul li ol")).toBeVisible();
-      expect(await hasMixedListNesting(page)).toBe(true);
     });
   });
 

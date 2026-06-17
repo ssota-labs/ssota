@@ -3,6 +3,10 @@ import { applyListType } from "../list-commands";
 
 /** Notion-style: 현재 들여쓰기 레벨만 bullet ↔ numbered 전환 */
 export const MixedBulletList = BulletList.extend({
+  addInputRules() {
+    return [];
+  },
+
   addCommands() {
     return {
       ...this.parent?.(),
@@ -15,6 +19,10 @@ export const MixedBulletList = BulletList.extend({
 });
 
 export const MixedOrderedList = OrderedList.extend({
+  addInputRules() {
+    return [];
+  },
+
   addCommands() {
     return {
       ...this.parent?.(),
