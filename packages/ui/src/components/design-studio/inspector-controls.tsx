@@ -259,26 +259,21 @@ function InspectorColorList({
   );
 }
 
-function InspectorPresetToggle({
-  open,
-  onToggle,
+function InspectorPresetTrigger({
   "aria-label": ariaLabel,
 }: {
-  open: boolean;
-  onToggle: () => void;
   "aria-label": string;
 }) {
   return (
-    <InputGroupButton
-      type="button"
-      size="icon-xs"
-      variant="ghost"
+    <PopoverTrigger
+      nativeButton={false}
       aria-label={ariaLabel}
-      aria-expanded={open}
-      onClick={onToggle}
+      render={
+        <InputGroupButton type="button" size="icon-xs" variant="ghost" />
+      }
     >
       <CaretDownIcon className="size-3.5 text-muted-foreground" />
-    </InputGroupButton>
+    </PopoverTrigger>
   );
 }
 
@@ -353,6 +348,9 @@ export function InspectorNumberInput({
       }
     >
       <InputGroup>
+        <InputGroupAddon align="inline-start">
+          <InspectorPresetTrigger aria-label={presetsLabel} />
+        </InputGroupAddon>
         <InputGroupInput
           aria-label={ariaLabel}
           type="number"
@@ -362,18 +360,13 @@ export function InspectorNumberInput({
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
         />
-        <InputGroupAddon align="inline-end" className="gap-0.5">
-          {unit ? (
+        {unit ? (
+          <InputGroupAddon align="inline-end">
             <InputGroupText className="text-xs text-muted-foreground">
               {unit}
             </InputGroupText>
-          ) : null}
-          <InspectorPresetToggle
-            open={open}
-            aria-label={presetsLabel}
-            onToggle={() => setOpen((current) => !current)}
-          />
-        </InputGroupAddon>
+          </InputGroupAddon>
+        ) : null}
       </InputGroup>
     </InspectorAnchorPopover>
   );
@@ -416,7 +409,8 @@ export function InspectorColorInput({
       }
     >
       <InputGroup>
-        <InputGroupAddon align="inline-start">
+        <InputGroupAddon align="inline-start" className="gap-1.5">
+          <InspectorPresetTrigger aria-label={presetsLabel} />
           <ColorSwatch
             cssVar={selected?.cssVar}
             swatchClass={selected?.swatchClass}
@@ -428,13 +422,6 @@ export function InspectorColorInput({
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
         />
-        <InputGroupAddon align="inline-end">
-          <InspectorPresetToggle
-            open={open}
-            aria-label={presetsLabel}
-            onToggle={() => setOpen((current) => !current)}
-          />
-        </InputGroupAddon>
       </InputGroup>
     </InspectorAnchorPopover>
   );
