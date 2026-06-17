@@ -23,6 +23,7 @@
     "@ssota/contracts": "workspace:*",
     "@ssota/core": "workspace:*",
     "@ssota/studio-build": "workspace:*",
+    "@ssota/studio-preview-runtime": "workspace:*",
     "@ssota/studio-renderer": "workspace:*",
     "@ssota/ui": "workspace:*",
     "@supabase/ssr": "^0.12.0",

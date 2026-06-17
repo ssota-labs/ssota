@@ -1,10 +1,10 @@
 import path from "node:path";
 import * as esbuild from "esbuild";
 import { assertAllowedDependencies, isAllowedImport } from "./allowlist.js";
-import { STUDIO_BOOTSTRAP_MODULE, STUDIO_BOOTSTRAP_SOURCE } from "./bootstrap-shim.js";
 import type { StudioBuildArtifacts, StudioBuildInput } from "./types.js";
 
 const VIRTUAL_NAMESPACE = "studio-vfs";
+const BOOTSTRAP_MODULE = "@ssota/studio-preview-runtime/bootstrap";
 
 function normalizeVirtualPath(filePath: string): string {
   const normalized = filePath.replace(/\\/g, "/");
@@ -49,14 +49,6 @@ function createVirtualFilesPlugin(
   return {
     name: "studio-virtual-files",
     setup(build: esbuild.PluginBuild) {
-      build.onResolve(
-        { filter: /^@ssota\/studio-preview-runtime\/bootstrap$/ },
-        () => ({
-          path: "studio-bootstrap",
-          namespace: VIRTUAL_NAMESPACE,
-        }),
-      );
-
       build.onResolve({ filter: /^\./ }, (args) => {
         const isVirtualImporter =
           args.namespace === VIRTUAL_NAMESPACE ||
@@ -79,9 +71,6 @@ function createVirtualFilesPlugin(
       });
 
       build.onResolve({ filter: /.*/, namespace: VIRTUAL_NAMESPACE }, async (args) => {
-        if (args.path === "studio-bootstrap") {
-          return { path: "studio-bootstrap", namespace: VIRTUAL_NAMESPACE };
-        }
         if (args.path.startsWith(".")) {
           return undefined;
         }
@@ -96,9 +85,6 @@ function createVirtualFilesPlugin(
       });
 
       build.onLoad({ filter: /.*/, namespace: VIRTUAL_NAMESPACE }, (args) => {
-        if (args.path === "studio-bootstrap") {
-          return { contents: STUDIO_BOOTSTRAP_SOURCE, loader: "tsx" };
-        }
         const contents = fileMap.get(args.path);
         if (contents === undefined) {
           return { errors: [{ text: `Virtual file not found: ${args.path}` }] };
@@ -113,7 +99,7 @@ function createEntryWrapper(entry: string, studioRuntimeInject: boolean): string
   const entryPath = normalizeVirtualPath(entry);
   if (studioRuntimeInject) {
     return `
-import { mountStudioPreview } from "${STUDIO_BOOTSTRAP_MODULE}";
+import { mountStudioPreview } from "${BOOTSTRAP_MODULE}";
 import Entry from "./${entryPath}";
 
 const Component = (Entry as { default?: React.ComponentType }).default ?? Entry;

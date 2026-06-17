@@ -1,5 +1,5 @@
 {
-  "name": "@ssota/studio-renderer",
+  "name": "@ssota/studio-preview-runtime",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./bootstrap": {
+      "types": "./dist/bootstrap.d.ts",
+      "default": "./dist/bootstrap.js"
     }
   },
   "scripts": {
@@ -18,7 +22,6 @@
   },
   "dependencies": {
     "@ssota/contracts": "workspace:*",
-    "@ssota/studio-preview-runtime": "workspace:*",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "zod": "^3.25.67"

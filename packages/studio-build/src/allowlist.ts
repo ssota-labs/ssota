@@ -5,6 +5,7 @@ const BUILTIN_ALLOWED_DEPENDENCIES = new Set([
   "react/jsx-runtime",
   "react/jsx-dev-runtime",
   "@ssota/ui",
+  "@ssota/studio-preview-runtime/bootstrap",
 ]);
 
 export function assertAllowedDependencies(

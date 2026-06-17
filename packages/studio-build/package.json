@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@ssota/contracts": "workspace:*",
+    "@ssota/studio-preview-runtime": "workspace:*",
     "esbuild": "^0.25.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
