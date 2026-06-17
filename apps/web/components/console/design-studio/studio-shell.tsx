@@ -28,7 +28,7 @@ import {
   createEmptyUiComponentContentV2,
   createEmptyUiComponentDocument,
 } from "@/lib/design-studio/empty-document";
-import { updateStudioNode } from "@/lib/design-studio/tree-utils";
+import { updateStudioNode, findStudioNode } from "@/lib/design-studio/tree-utils";
 import { buildSourceLayerIndex } from "@/lib/design-studio/source-layers";
 import {
   patchSourceClassName,
@@ -41,7 +41,7 @@ import { InspectorPanel } from "./inspector-panel";
 import { SourceInspectorPanel } from "./source-inspector-panel";
 import { PreviewToolbar } from "./preview-toolbar";
 import { StudioLeftPanel } from "./studio-left-panel";
-import { usePreviewBridge } from "./preview-bridge";
+import { usePreviewBridge, useStudioNodeMeasure } from "./preview-bridge";
 
 type StudioShellProps = {
   ctx: ProjectRouteContext;
@@ -155,6 +155,21 @@ export function StudioShell({
     if (!selectedSourceRef) return "";
     return readClassNameFromSource(contentV2.files, selectedSourceRef) ?? "";
   }, [contentV2.files, selectedSourceRef]);
+
+  const selectedNode = selectedId
+    ? findStudioNode(document.root, selectedId)
+    : null;
+  const measureKey =
+    selectedNode &&
+    (selectedNode.kind === "element" || selectedNode.kind === "component")
+      ? (selectedNode.className ?? "")
+      : "";
+  const domReferencePx = useStudioNodeMeasure(
+    iframeRef,
+    selectedId,
+    ready,
+    measureKey,
+  );
 
   useEffect(() => {
     if (!component || !storageKey) return;
@@ -423,6 +438,7 @@ export function StudioShell({
               <InspectorPanel
                 root={document.root}
                 selectedId={selectedId}
+                domReferencePx={domReferencePx}
                 onPatch={handlePatch}
               />
             )

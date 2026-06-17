@@ -7,7 +7,6 @@ function row(
 ): UiComponentListRow {
   return {
     tier: "primitive",
-    status: "Draft",
     updatedAt: "2026-01-01T00:00:00.000Z",
     ...partial,
   };

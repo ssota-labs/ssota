@@ -15,13 +15,16 @@ import {
   TextUnderlineIcon,
 } from "@phosphor-icons/react";
 import {
+  InspectorColorField,
   InspectorColorInput,
   InspectorField,
   InspectorFontFamilyRow,
-  InspectorNumberInput,
+  InspectorPresetNumberInput,
   InspectorPopoverPicker,
+  InspectorScrubberNumberInput,
   InspectorSection,
   InspectorToggleRow,
+  BACKGROUND_THEME_COLOR_OPTIONS,
   TEXT_THEME_COLOR_OPTIONS,
 } from "@/components/design-studio";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -74,6 +77,137 @@ export const PopoverPicker: Story = {
   },
 };
 
+export const ScrubberNumberInputWithUnitSelector: Story = {
+  name: "Scrubber number input (unit selector)",
+  render: () => {
+    const [value, setValue] = useState("8");
+    const [unit, setUnit] = useState<"px" | "%">("px");
+
+    return (
+      <div className="w-56">
+        <InspectorField label="All corners">
+          <InspectorScrubberNumberInput
+            aria-label="All corners radius"
+            value={value}
+            unit={unit}
+            units={["px", "%"]}
+            onUnitChange={(nextUnit) => {
+              if (nextUnit === "px" || nextUnit === "%") setUnit(nextUnit);
+            }}
+            min={unit === "%" ? 0 : undefined}
+            max={unit === "%" ? 100 : undefined}
+            placeholder="0"
+            onChange={setValue}
+          />
+        </InspectorField>
+      </div>
+    );
+  },
+};
+
+export const ScrubberNumberInput: Story = {
+  name: "Scrubber number input",
+  render: () => {
+    const [gap, setGap] = useState("8");
+    const [opacity, setOpacity] = useState("100");
+
+    return (
+      <div className="w-56 space-y-3">
+        <InspectorField label="Gap">
+          <InspectorScrubberNumberInput
+            aria-label="Gap"
+            value={gap}
+            unit="px"
+            placeholder="0"
+            onChange={setGap}
+          />
+        </InspectorField>
+        <InspectorField label="Opacity">
+          <InspectorScrubberNumberInput
+            aria-label="Opacity"
+            value={opacity}
+            unit="%"
+            placeholder="100"
+            onChange={setOpacity}
+          />
+        </InspectorField>
+      </div>
+    );
+  },
+};
+
+export const PresetNumberInputWithUnitSelector: Story = {
+  name: "Preset number input (unit selector)",
+  render: () => {
+    const [value, setValue] = useState("14");
+    const [unit, setUnit] = useState<"px" | "%" | "em">("px");
+    const presetsByUnit: Partial<
+      Record<"px" | "%" | "em", { value: string; label: string }[]>
+    > = {
+      px: [
+        { value: "12", label: "12" },
+        { value: "14", label: "14" },
+        { value: "16", label: "16" },
+        { value: "18", label: "18" },
+      ],
+      "%": [
+        { value: "100", label: "100" },
+        { value: "125", label: "125" },
+        { value: "150", label: "150" },
+      ],
+      em: [
+        { value: "0.875", label: "0.875" },
+        { value: "1", label: "1" },
+        { value: "1.25", label: "1.25" },
+      ],
+    };
+
+    return (
+      <div className="w-56">
+        <InspectorField label="Size">
+          <InspectorPresetNumberInput
+            aria-label="Size"
+            value={value}
+            unit={unit}
+            units={["px", "%", "em"]}
+            onUnitChange={setUnit}
+            presetsByUnit={presetsByUnit}
+            placeholder="Default"
+            onChange={setValue}
+          />
+        </InspectorField>
+      </div>
+    );
+  },
+};
+
+export const PresetNumberInputFixedUnit: Story = {
+  name: "Preset number input (fixed unit)",
+  render: () => {
+    const [value, setValue] = useState("1");
+    return (
+      <div className="w-56">
+        <InspectorField label="Border width">
+          <InspectorPresetNumberInput
+            aria-label="Border width"
+            value={value}
+            unit="px"
+            placeholder="0"
+            presets={[
+              { value: "0", label: "0" },
+              { value: "1", label: "1" },
+              { value: "2", label: "2" },
+              { value: "4", label: "4" },
+            ]}
+            onChange={setValue}
+          />
+        </InspectorField>
+      </div>
+    );
+  },
+};
+
+/** @deprecated Use PresetNumberInputWithUnitSelector */
 export const NumberInputSize: Story = {
   render: () => {
     const [value, setValue] = useState("14");
@@ -102,7 +236,7 @@ export const NumberInputSize: Story = {
     return (
       <div className="w-56">
         <InspectorField label="Size">
-          <InspectorNumberInput
+          <InspectorPresetNumberInput
             aria-label="Size"
             value={value}
             unit={unit}
@@ -124,7 +258,7 @@ export const NumberInputLineHeight: Story = {
     return (
       <div className="w-56">
         <InspectorField label="Line height">
-          <InspectorNumberInput
+          <InspectorPresetNumberInput
             aria-label="Line height"
             value={value}
             unit="em"
@@ -149,7 +283,7 @@ export const NumberInputLetterSpacing: Story = {
     return (
       <div className="w-56">
         <InspectorField label="Letter spacing">
-          <InspectorNumberInput
+          <InspectorPresetNumberInput
             aria-label="Letter spacing"
             value={value}
             unit="em"
@@ -179,6 +313,25 @@ export const ColorInput: Story = {
             value={value}
             placeholder="foreground"
             presets={TEXT_THEME_COLOR_OPTIONS}
+            onChange={setValue}
+          />
+        </InspectorField>
+      </div>
+    );
+  },
+};
+
+export const ColorField: Story = {
+  render: () => {
+    const [value, setValue] = useState("rgba(37, 99, 235, 0.72)");
+    return (
+      <div className="w-56">
+        <InspectorField label="Fill">
+          <InspectorColorField
+            aria-label="Fill color"
+            value={value}
+            placeholder="Default"
+            presets={BACKGROUND_THEME_COLOR_OPTIONS}
             onChange={setValue}
           />
         </InspectorField>
@@ -267,7 +420,7 @@ export const TypographyPanel: Story = {
             />
 
             <InspectorField label="Size">
-              <InspectorNumberInput
+              <InspectorPresetNumberInput
                 aria-label="Size"
                 value={size}
                 unit="px"
@@ -321,7 +474,7 @@ export const TypographyPanel: Story = {
             </InspectorField>
 
             <InspectorField label="Line height">
-              <InspectorNumberInput
+              <InspectorPresetNumberInput
                 aria-label="Line height"
                 value={lineHeight}
                 unit="em"
@@ -334,7 +487,7 @@ export const TypographyPanel: Story = {
             </InspectorField>
 
             <InspectorField label="Letter spacing">
-              <InspectorNumberInput
+              <InspectorPresetNumberInput
                 aria-label="Letter spacing"
                 value={letterSpacing}
                 unit="em"

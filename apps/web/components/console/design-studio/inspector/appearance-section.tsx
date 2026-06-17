@@ -1,59 +1,97 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SquaresFourIcon } from "@phosphor-icons/react";
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
   formatOpacityPercent,
-  formatRadiusPx,
+  formatRadiusClass,
+  formatRadiusOnUnitChange,
   parseOpacityPercent,
-  parseRadiusPx,
+  parseRadiusValue,
+  resolveRadiusReferencePx,
+  resolveRadiusReferencePxWithDom,
+  type RadiusUnit,
 } from "@/lib/design-studio/tailwind-classname";
 import {
   InspectorField,
   InspectorGrid,
-  InspectorNumberInput,
+  InspectorScrubberNumberInput,
   InspectorSection,
-  type InspectorPresetOption,
+  type InspectorNumberUnit,
 } from "@ssota/ui/components/design-studio";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
 
-const OPACITY_PRESETS: InspectorPresetOption[] = [
-  { value: "0", label: "0" },
-  { value: "25", label: "25" },
-  { value: "50", label: "50" },
-  { value: "75", label: "75" },
-  { value: "100", label: "100" },
-];
-
-const RADIUS_PRESETS: InspectorPresetOption[] = [
-  { value: "0", label: "0" },
-  { value: "2", label: "2" },
-  { value: "4", label: "4" },
-  { value: "8", label: "8" },
-  { value: "12", label: "12" },
-  { value: "16", label: "16" },
-  { value: "24", label: "24" },
-];
+const RADIUS_UNITS = ["px", "%"] as const satisfies readonly InspectorNumberUnit[];
 
 type AppearanceSectionProps = {
   parsed: ParsedClassName;
   onUpdate: (patch: Partial<ParsedClassName>) => void;
+  /** 선택 노드가 바뀔 때 로컬 UI 상태를 리셋합니다. */
+  selectionKey?: string;
+  /** 프리뷰 DOM 실측 — className에 w/h가 없을 때 % 변환 기준 */
+  domReferencePx?: number | null;
 };
 
 export function AppearanceSection({
   parsed,
   onUpdate,
+  selectionKey,
+  domReferencePx,
 }: AppearanceSectionProps) {
   const hasPerCorner = hasPerCornerRadius(parsed);
   const [perCornerMode, setPerCornerMode] = useState(hasPerCorner);
+  const hasRadiusClass = Boolean(
+    parsed.borderRadius || hasPerCornerRadius(parsed),
+  );
+  const [preferredRadiusUnit, setPreferredRadiusUnit] = useState<RadiusUnit>(
+    () => getRadiusUnit(parsed),
+  );
 
+  useEffect(() => {
+    setPerCornerMode(hasPerCornerRadius(parsed));
+    setPreferredRadiusUnit(getRadiusUnit(parsed));
+  }, [selectionKey]);
+
+  useEffect(() => {
+    if (hasRadiusClass) {
+      setPreferredRadiusUnit(getRadiusUnit(parsed));
+    }
+  }, [
+    hasRadiusClass,
+    parsed.borderRadius,
+    parsed.borderRadiusTopLeft,
+    parsed.borderRadiusTopRight,
+    parsed.borderRadiusBottomLeft,
+    parsed.borderRadiusBottomRight,
+  ]);
+
+  const usePerCornerRadius = perCornerMode && hasPerCornerRadius(parsed);
+  const radiusUnit = hasRadiusClass
+    ? getRadiusUnit(parsed)
+    : preferredRadiusUnit;
   const unifiedRadius = getUnifiedRadiusValue(parsed);
+  const radiusMax = radiusUnit === "%" ? 100 : undefined;
+  const radiusReferencePx = resolveRadiusReferencePxWithDom(
+    parsed,
+    domReferencePx,
+  );
 
   const setUnifiedRadius = (value: string) => {
+    if (usePerCornerRadius) {
+      onUpdate({
+        borderRadius: undefined,
+        borderRadiusTopLeft: formatRadiusClass("rounded-tl", value, radiusUnit),
+        borderRadiusTopRight: formatRadiusClass("rounded-tr", value, radiusUnit),
+        borderRadiusBottomLeft: formatRadiusClass("rounded-bl", value, radiusUnit),
+        borderRadiusBottomRight: formatRadiusClass("rounded-br", value, radiusUnit),
+      });
+      return;
+    }
+
     onUpdate({
-      borderRadius: formatRadiusPx("rounded", value),
+      borderRadius: formatRadiusClass("rounded", value, radiusUnit),
       borderRadiusTopLeft: undefined,
       borderRadiusTopRight: undefined,
       borderRadiusBottomLeft: undefined,
@@ -65,7 +103,7 @@ export function AppearanceSection({
     corner: "tl" | "tr" | "bl" | "br",
     value: string,
   ) => {
-    const formatted = formatRadiusPx(`rounded-${corner}`, value);
+    const formatted = formatRadiusClass(`rounded-${corner}`, value, radiusUnit);
     const patch: Partial<ParsedClassName> = { borderRadius: undefined };
     if (corner === "tl") patch.borderRadiusTopLeft = formatted;
     if (corner === "tr") patch.borderRadiusTopRight = formatted;
@@ -74,6 +112,85 @@ export function AppearanceSection({
     onUpdate(patch);
   };
 
+  const setRadiusUnit = (nextUnit: RadiusUnit) => {
+    if (nextUnit === radiusUnit && hasRadiusClass) return;
+
+    setPreferredRadiusUnit(nextUnit);
+
+    const sourceValue = getRadiusValueForUnitChange(parsed, unifiedRadius);
+
+    if (usePerCornerRadius) {
+      const convertCorner = (
+        prefix: "rounded-tl" | "rounded-tr" | "rounded-bl" | "rounded-br",
+        className?: string,
+      ) => {
+        const cornerValue = parseRadiusValue(className).value.trim();
+        const value = cornerValue || sourceValue;
+        if (!value) return className;
+        return formatRadiusOnUnitChange(
+          prefix,
+          value,
+          radiusUnit,
+          nextUnit,
+          radiusReferencePx,
+        );
+      };
+
+      onUpdate({
+        borderRadius: undefined,
+        borderRadiusTopLeft: convertCorner(
+          "rounded-tl",
+          parsed.borderRadiusTopLeft,
+        ),
+        borderRadiusTopRight: convertCorner(
+          "rounded-tr",
+          parsed.borderRadiusTopRight,
+        ),
+        borderRadiusBottomLeft: convertCorner(
+          "rounded-bl",
+          parsed.borderRadiusBottomLeft,
+        ),
+        borderRadiusBottomRight: convertCorner(
+          "rounded-br",
+          parsed.borderRadiusBottomRight,
+        ),
+      });
+      return;
+    }
+
+    if (!sourceValue && !hasRadiusClass) {
+      return;
+    }
+
+    onUpdate({
+      borderRadius: formatRadiusOnUnitChange(
+        "rounded",
+        sourceValue,
+        radiusUnit,
+        nextUnit,
+        radiusReferencePx,
+      ),
+      borderRadiusTopLeft: undefined,
+      borderRadiusTopRight: undefined,
+      borderRadiusBottomLeft: undefined,
+      borderRadiusBottomRight: undefined,
+    });
+  };
+
+  const handleRadiusUnitChange = (nextUnit: InspectorNumberUnit) => {
+    if (nextUnit === "px" || nextUnit === "%") {
+      setRadiusUnit(nextUnit);
+    }
+  };
+
+  const radiusInputProps = {
+    unit: radiusUnit,
+    units: RADIUS_UNITS,
+    onUnitChange: handleRadiusUnitChange,
+    min: radiusUnit === "%" ? 0 : undefined,
+    max: radiusMax,
+  } as const;
+
   const togglePerCorner = () => {
     const next = !perCornerMode;
     setPerCornerMode(next);
@@ -81,16 +198,16 @@ export function AppearanceSection({
       const value = unifiedRadius || "0";
       onUpdate({
         borderRadius: undefined,
-        borderRadiusTopLeft: formatRadiusPx("rounded-tl", value),
-        borderRadiusTopRight: formatRadiusPx("rounded-tr", value),
-        borderRadiusBottomLeft: formatRadiusPx("rounded-bl", value),
-        borderRadiusBottomRight: formatRadiusPx("rounded-br", value),
+        borderRadiusTopLeft: formatRadiusClass("rounded-tl", value, radiusUnit),
+        borderRadiusTopRight: formatRadiusClass("rounded-tr", value, radiusUnit),
+        borderRadiusBottomLeft: formatRadiusClass("rounded-bl", value, radiusUnit),
+        borderRadiusBottomRight: formatRadiusClass("rounded-br", value, radiusUnit),
       });
       return;
     }
 
     onUpdate({
-      borderRadius: formatRadiusPx("rounded", unifiedRadius || "0"),
+      borderRadius: formatRadiusClass("rounded", unifiedRadius || "0", radiusUnit),
       borderRadiusTopLeft: undefined,
       borderRadiusTopRight: undefined,
       borderRadiusBottomLeft: undefined,
@@ -102,12 +219,13 @@ export function AppearanceSection({
     <InspectorSection title="Appearance">
       <div className="space-y-3">
         <InspectorField label="Opacity">
-          <InspectorNumberInput
+          <InspectorScrubberNumberInput
             aria-label="Opacity"
             value={parseOpacityPercent(parsed.opacity)}
             unit="%"
+            min={0}
+            max={100}
             placeholder="100"
-            presets={OPACITY_PRESETS}
             onChange={(input) =>
               onUpdate({ opacity: formatOpacityPercent(input) })
             }
@@ -119,13 +237,12 @@ export function AppearanceSection({
             All corners
           </span>
           <div className="flex items-center gap-1.5">
-            <InspectorNumberInput
+            <InspectorScrubberNumberInput
               aria-label="All corners radius"
-              value={perCornerMode ? "" : unifiedRadius}
-              unit="px"
-              placeholder={perCornerMode ? "Mixed" : "0"}
-              presets={RADIUS_PRESETS}
+              value={unifiedRadius}
+              placeholder={perCornerMode && !unifiedRadius ? "Mixed" : "0"}
               onChange={setUnifiedRadius}
+              {...radiusInputProps}
             />
             <Button
               type="button"
@@ -148,43 +265,39 @@ export function AppearanceSection({
         {perCornerMode ? (
           <InspectorGrid>
             <InspectorField label="Top Left">
-              <InspectorNumberInput
+              <InspectorScrubberNumberInput
                 aria-label="Top left radius"
-                value={parseRadiusPx(parsed.borderRadiusTopLeft)}
-                unit="px"
+                value={parseRadiusValue(parsed.borderRadiusTopLeft).value}
                 placeholder="0"
-                presets={RADIUS_PRESETS}
                 onChange={(value) => setCornerRadius("tl", value)}
+                {...radiusInputProps}
               />
             </InspectorField>
             <InspectorField label="Top Right">
-              <InspectorNumberInput
+              <InspectorScrubberNumberInput
                 aria-label="Top right radius"
-                value={parseRadiusPx(parsed.borderRadiusTopRight)}
-                unit="px"
+                value={parseRadiusValue(parsed.borderRadiusTopRight).value}
                 placeholder="0"
-                presets={RADIUS_PRESETS}
                 onChange={(value) => setCornerRadius("tr", value)}
+                {...radiusInputProps}
               />
             </InspectorField>
             <InspectorField label="Bottom Left">
-              <InspectorNumberInput
+              <InspectorScrubberNumberInput
                 aria-label="Bottom left radius"
-                value={parseRadiusPx(parsed.borderRadiusBottomLeft)}
-                unit="px"
+                value={parseRadiusValue(parsed.borderRadiusBottomLeft).value}
                 placeholder="0"
-                presets={RADIUS_PRESETS}
                 onChange={(value) => setCornerRadius("bl", value)}
+                {...radiusInputProps}
               />
             </InspectorField>
             <InspectorField label="Bottom Right">
-              <InspectorNumberInput
+              <InspectorScrubberNumberInput
                 aria-label="Bottom right radius"
-                value={parseRadiusPx(parsed.borderRadiusBottomRight)}
-                unit="px"
+                value={parseRadiusValue(parsed.borderRadiusBottomRight).value}
                 placeholder="0"
-                presets={RADIUS_PRESETS}
                 onChange={(value) => setCornerRadius("br", value)}
+                {...radiusInputProps}
               />
             </InspectorField>
           </InspectorGrid>
@@ -203,18 +316,49 @@ function hasPerCornerRadius(parsed: ParsedClassName): boolean {
   );
 }
 
+function getRadiusUnit(parsed: ParsedClassName): RadiusUnit {
+  if (parsed.borderRadius) {
+    return parseRadiusValue(parsed.borderRadius).unit;
+  }
+
+  for (const corner of [
+    parsed.borderRadiusTopLeft,
+    parsed.borderRadiusTopRight,
+    parsed.borderRadiusBottomLeft,
+    parsed.borderRadiusBottomRight,
+  ]) {
+    if (corner) return parseRadiusValue(corner).unit;
+  }
+
+  return "px";
+}
+
 function getUnifiedRadiusValue(parsed: ParsedClassName): string {
-  if (parsed.borderRadius) return parseRadiusPx(parsed.borderRadius);
+  if (parsed.borderRadius) return parseRadiusValue(parsed.borderRadius).value;
 
   const corners = [
-    parseRadiusPx(parsed.borderRadiusTopLeft),
-    parseRadiusPx(parsed.borderRadiusTopRight),
-    parseRadiusPx(parsed.borderRadiusBottomLeft),
-    parseRadiusPx(parsed.borderRadiusBottomRight),
+    parseRadiusValue(parsed.borderRadiusTopLeft).value,
+    parseRadiusValue(parsed.borderRadiusTopRight).value,
+    parseRadiusValue(parsed.borderRadiusBottomLeft).value,
+    parseRadiusValue(parsed.borderRadiusBottomRight).value,
   ].filter((value, index, array) => array[index] !== undefined);
 
   if (corners.length > 0 && corners.every((value) => value === corners[0])) {
     return corners[0]!;
+  }
+
+  return "";
+}
+
+function getRadiusValueForUnitChange(
+  parsed: ParsedClassName,
+  unifiedRadius: string,
+): string {
+  const unified = unifiedRadius.trim();
+  if (unified) return unified;
+
+  if (parsed.borderRadius) {
+    return parseRadiusValue(parsed.borderRadius).value.trim();
   }
 
   return "";
