@@ -14,15 +14,16 @@ import {
   TextTIcon,
   TextUnderlineIcon,
 } from "@phosphor-icons/react";
-import { Input } from "@ssota/ui/components/ui/input";
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
+  InspectorColorInput,
   InspectorField,
   InspectorFontFamilyRow,
   InspectorNumberInput,
   InspectorPopoverPicker,
   InspectorSection,
   InspectorToggleRow,
+  TEXT_THEME_COLOR_OPTIONS,
   type InspectorPopoverOption,
   type InspectorPresetOption,
 } from "@ssota/ui/components/design-studio";
@@ -302,15 +303,14 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         </InspectorField>
 
         <InspectorField label="Color">
-          <Input
+          <InspectorColorInput
             aria-label="Color"
             value={parsed.textColor?.replace(/^text-/, "") ?? ""}
             placeholder="foreground"
-            onChange={(event) =>
+            presets={TEXT_THEME_COLOR_OPTIONS}
+            onChange={(input) =>
               onUpdate({
-                textColor: event.target.value
-                  ? `text-${event.target.value}`
-                  : undefined,
+                textColor: input ? `text-${input}` : undefined,
               })
             }
           />

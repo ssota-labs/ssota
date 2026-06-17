@@ -25,6 +25,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import type { InspectorColorOption } from "./tailwind-theme-colors";
+
+export type { InspectorColorOption } from "./tailwind-theme-colors";
 
 export type InspectorPopoverOption = {
   value: string;
@@ -178,6 +181,83 @@ function InspectorPresetList({
   );
 }
 
+function ColorSwatch({
+  cssVar,
+  swatchClass,
+}: Pick<InspectorColorOption, "cssVar" | "swatchClass">) {
+  if (cssVar) {
+    return (
+      <span
+        className="size-4 shrink-0 rounded-sm border border-border"
+        style={{ backgroundColor: `var(${cssVar})` }}
+      />
+    );
+  }
+
+  return (
+    <span
+      className={cn(
+        "size-4 shrink-0 rounded-sm border border-border",
+        swatchClass ?? "bg-muted",
+      )}
+    />
+  );
+}
+
+function resolveColorOption(
+  value: string,
+  options: InspectorColorOption[],
+): InspectorColorOption | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return options.find((option) => option.value === trimmed);
+}
+
+type InspectorColorListProps = {
+  options: InspectorColorOption[];
+  value?: string;
+  onSelect: (value: string) => void;
+};
+
+function InspectorColorList({
+  options,
+  value,
+  onSelect,
+}: InspectorColorListProps) {
+  return (
+    <div className="flex max-h-72 flex-col gap-0.5 overflow-y-auto">
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            className={cn(
+              "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted",
+              active && "bg-muted",
+            )}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => onSelect(option.value)}
+          >
+            <ColorSwatch
+              cssVar={option.cssVar}
+              swatchClass={option.swatchClass}
+            />
+            <span className="min-w-0 flex-1 truncate text-left">
+              {option.label}
+            </span>
+            {active ? (
+              <CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
+            ) : (
+              <span className="size-3.5 shrink-0" />
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 type InspectorNumberInputProps = {
   value: string;
   unit?: "px" | "em";
@@ -230,6 +310,65 @@ export function InspectorNumberInput({
         className="w-[var(--anchor-width)] p-1"
       >
         <InspectorPresetList
+          options={presets}
+          value={value}
+          onSelect={(nextValue) => {
+            onChange(nextValue);
+            setOpen(false);
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+type InspectorColorInputProps = {
+  value: string;
+  placeholder?: string;
+  presets: InspectorColorOption[];
+  onChange: (value: string) => void;
+  "aria-label"?: string;
+};
+
+export function InspectorColorInput({
+  value,
+  placeholder,
+  presets,
+  onChange,
+  "aria-label": ariaLabel,
+}: InspectorColorInputProps) {
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const selected = resolveColorOption(value, presets);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <div ref={anchorRef} className="w-full">
+        <InputGroup>
+          <InputGroupAddon align="inline-start">
+            <ColorSwatch
+              cssVar={selected?.cssVar}
+              swatchClass={selected?.swatchClass}
+            />
+          </InputGroupAddon>
+          <InputGroupInput
+            aria-label={ariaLabel}
+            value={value}
+            placeholder={placeholder}
+            onChange={(event) => onChange(event.target.value)}
+            onFocus={() => setOpen(true)}
+            onBlur={() => {
+              window.setTimeout(() => setOpen(false), 0);
+            }}
+          />
+        </InputGroup>
+      </div>
+      <PopoverContent
+        anchor={anchorRef}
+        align="start"
+        className="w-[var(--anchor-width)] p-1"
+      >
+        <InspectorColorList
           options={presets}
           value={value}
           onSelect={(nextValue) => {

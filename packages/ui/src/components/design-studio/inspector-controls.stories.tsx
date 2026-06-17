@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
+import { useState, type JSX } from "react";
 import {
   CodeIcon,
   MinusIcon,
@@ -15,12 +15,14 @@ import {
   TextUnderlineIcon,
 } from "@phosphor-icons/react";
 import {
+  InspectorColorInput,
   InspectorField,
   InspectorFontFamilyRow,
   InspectorNumberInput,
   InspectorPopoverPicker,
   InspectorSection,
   InspectorToggleRow,
+  TEXT_THEME_COLOR_OPTIONS,
 } from "@/components/design-studio";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -28,13 +30,13 @@ const meta = {
   title: "Design Studio/Inspector Controls",
   tags: ["autodocs"],
   decorators: [
-    (Story) => (
+    (Story: () => JSX.Element) => (
       <TooltipProvider>
         <Story />
       </TooltipProvider>
     ),
   ],
-} satisfies Meta;
+} as Meta;
 
 export default meta;
 type Story = StoryObj;
@@ -147,6 +149,25 @@ export const NumberInputLetterSpacing: Story = {
   },
 };
 
+export const ColorInput: Story = {
+  render: () => {
+    const [value, setValue] = useState("foreground");
+    return (
+      <div className="w-56">
+        <InspectorField label="Color">
+          <InspectorColorInput
+            aria-label="Color"
+            value={value}
+            placeholder="foreground"
+            presets={TEXT_THEME_COLOR_OPTIONS}
+            onChange={setValue}
+          />
+        </InspectorField>
+      </div>
+    );
+  },
+};
+
 export const ToggleRowAlignment: Story = {
   render: () => {
     const [value, setValue] = useState<string | undefined>("center");
@@ -198,6 +219,7 @@ export const TypographyPanel: Story = {
     const [style, setStyle] = useState<string | undefined>("normal");
     const [lineHeight, setLineHeight] = useState("1.43");
     const [letterSpacing, setLetterSpacing] = useState("0");
+    const [color, setColor] = useState("foreground");
 
     return (
       <div className="w-56 rounded-md border bg-card">
@@ -375,6 +397,16 @@ export const TypographyPanel: Story = {
                   },
                 ]}
                 onChange={() => undefined}
+              />
+            </InspectorField>
+
+            <InspectorField label="Color">
+              <InspectorColorInput
+                aria-label="Color"
+                value={color}
+                placeholder="foreground"
+                presets={TEXT_THEME_COLOR_OPTIONS}
+                onChange={setColor}
               />
             </InspectorField>
           </div>
