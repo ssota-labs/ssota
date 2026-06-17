@@ -391,6 +391,8 @@ export function InspectorColorField({
           <InputGroupAddon align="inline-start">
             <InspectorPresetTrigger
               aria-label={ariaLabel ? `${ariaLabel} presets` : "Color presets"}
+              expanded={presetOpen}
+              onPress={() => setPresetOpen((current) => !current)}
             />
           </InputGroupAddon>
           <InputGroupInput

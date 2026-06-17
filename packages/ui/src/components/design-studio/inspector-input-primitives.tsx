@@ -74,19 +74,24 @@ export function InspectorPresetList({
 
 export function InspectorPresetTrigger({
   "aria-label": ariaLabel,
+  expanded,
+  onPress,
 }: {
   "aria-label": string;
+  expanded?: boolean;
+  onPress?: () => void;
 }) {
   return (
-    <PopoverTrigger
-      nativeButton
+    <InputGroupButton
+      type="button"
+      size="icon-xs"
+      variant="ghost"
       aria-label={ariaLabel}
-      render={
-        <InputGroupButton type="button" size="icon-xs" variant="ghost" />
-      }
+      aria-expanded={expanded}
+      onClick={onPress}
     >
       <CaretDownIcon className="size-3.5 text-muted-foreground" />
-    </PopoverTrigger>
+    </InputGroupButton>
   );
 }
 

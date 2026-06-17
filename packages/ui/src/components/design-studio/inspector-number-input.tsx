@@ -175,7 +175,11 @@ export function InspectorPresetNumberInput({
         }
       >
         <InputGroupAddon align="inline-start">
-          <InspectorPresetTrigger aria-label={presetsLabel} />
+          <InspectorPresetTrigger
+            aria-label={presetsLabel}
+            expanded={open}
+            onPress={() => setOpen((current) => !current)}
+          />
         </InputGroupAddon>
         <InputGroupInput
           id={id}
@@ -193,9 +197,6 @@ export function InspectorPresetNumberInput({
             if (clamped !== event.target.value) onChange(clamped);
           }}
           onWheel={handleWheel}
-          onPointerDown={() => {
-            setOpen(true);
-          }}
         />
       </InspectorAnchorPopover>
       <InputGroupAddon align="inline-end">
