@@ -1,6 +1,7 @@
 import path from "node:path";
 import * as esbuild from "esbuild";
 import { assertAllowedDependencies, isAllowedImport } from "./allowlist.js";
+import { maybeTransformStudioJsx } from "./studio-jsx-plugin.js";
 import type { StudioBuildArtifacts, StudioBuildInput } from "./types.js";
 
 const VIRTUAL_NAMESPACE = "studio-vfs";
@@ -85,10 +86,11 @@ function createVirtualFilesPlugin(
       });
 
       build.onLoad({ filter: /.*/, namespace: VIRTUAL_NAMESPACE }, (args) => {
-        const contents = fileMap.get(args.path);
-        if (contents === undefined) {
+        const raw = fileMap.get(args.path);
+        if (raw === undefined) {
           return { errors: [{ text: `Virtual file not found: ${args.path}` }] };
         }
+        const contents = maybeTransformStudioJsx(args.path, raw);
         return { contents, loader: loaderForPath(args.path) };
       });
     },

@@ -5,8 +5,8 @@ export type {
   StudioPatch,
   StudioRenderMode,
   StudioSourceRef,
-} from "@ssota/studio-preview-runtime";
+} from "@ssota/studio-preview-runtime/protocol";
 export {
   parseStudioMessage,
   isStudioMessageFromOrigin,
-} from "@ssota/studio-preview-runtime";
+} from "@ssota/studio-preview-runtime/protocol";

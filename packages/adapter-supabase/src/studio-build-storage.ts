@@ -73,7 +73,6 @@ export class SupabaseStudioBuildStorage implements StudioBuildStorage {
   constructor(private readonly client: SupabaseClient) {}
 
   async exists(projectId: string, buildHash: string): Promise<boolean> {
-    const paths = artifactPaths(projectId, buildHash);
     const { data, error } = await this.client.storage
       .from(this.bucket)
       .list(`${projectId}/studio-builds/${buildHash}`, {

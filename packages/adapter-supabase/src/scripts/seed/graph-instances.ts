@@ -356,8 +356,39 @@ async function seedDemoUiComponents(
   db: ReturnType<typeof createDb>["db"],
   projectId: string,
 ) {
-  const existing = await db
-    .select({ id: schema.nodes.id })
+  const buttonSource = `import { Button } from "@ssota/ui/components/ui/button";
+
+export default function Component() {
+  return (
+    <Button className="rounded-md bg-primary px-4 py-2 text-primary-foreground">
+      Button
+    </Button>
+  );
+}
+`;
+
+  const buttonContentV2 = {
+    schemaVersion: 2 as const,
+    files: {
+      "Component.tsx": buttonSource,
+    },
+  };
+
+  const buttonProperties = {
+    slug: "demo-button",
+    tier: "primitive" as const,
+    representation: "source" as const,
+    contentSchemaVersion: 2 as const,
+    entry: "Component.tsx",
+    fileKeys: ["Component.tsx"],
+    dependencies: {
+      "@ssota/ui": "workspace:*",
+    },
+    seed: `${DEMO_UI_COMPONENT_SEED_KEY}:button`,
+  };
+
+  const existingButton = await db
+    .select({ id: schema.nodes.id, properties: schema.nodes.properties })
     .from(schema.nodes)
     .where(
       and(
@@ -368,84 +399,135 @@ async function seedDemoUiComponents(
     )
     .limit(1);
 
-  if (existing.length > 0) return;
+  let buttonId = existingButton[0]?.id;
 
-  const buttonDocument = {
-    schemaVersion: 1,
-    root: {
-      kind: "element",
-      id: "root",
-      tag: "button",
-      className: "rounded-md bg-primary px-4 py-2 text-primary-foreground",
-      children: [{ kind: "text", id: "label", text: "Button" }],
+  if (!buttonId) {
+    const [button] = await db
+      .insert(schema.nodes)
+      .values({
+        projectId,
+        nodeType: "ui_component",
+        title: "Demo Button",
+        properties: buttonProperties,
+        content: JSON.stringify(buttonContentV2),
+        lifecycleStatus: "Active",
+      })
+      .returning({ id: schema.nodes.id });
+    buttonId = button?.id;
+  } else {
+    const representation = (existingButton[0]?.properties as { representation?: string })
+      ?.representation;
+    if (representation !== "source") {
+      await db
+        .update(schema.nodes)
+        .set({
+          properties: buttonProperties,
+          content: JSON.stringify(buttonContentV2),
+        })
+        .where(eq(schema.nodes.id, buttonId));
+    }
+  }
+
+  if (!buttonId) return;
+
+  const cardSource = `import { Button } from "@ssota/ui/components/ui/button";
+
+export default function Component() {
+  return (
+    <div className="rounded-lg border p-4 shadow-sm">
+      <Button className="rounded-md bg-primary px-4 py-2 text-primary-foreground">
+        Button
+      </Button>
+    </div>
+  );
+}
+`;
+
+  const cardContentV2 = {
+    schemaVersion: 2 as const,
+    files: {
+      "Component.tsx": cardSource,
     },
   };
 
-  const [button] = await db
-    .insert(schema.nodes)
-    .values({
-      projectId,
-      nodeType: "ui_component",
-      title: "Demo Button",
-      properties: {
-        slug: "demo-button",
-        tier: "primitive",
-        seed: `${DEMO_UI_COMPONENT_SEED_KEY}:button`,
-      },
-      content: JSON.stringify(buttonDocument),
-      lifecycleStatus: "Active",
-    })
-    .returning({ id: schema.nodes.id });
-
-  if (!button?.id) return;
-
-  const cardDocument = {
-    schemaVersion: 1,
-    root: {
-      kind: "element",
-      id: "root",
-      tag: "div",
-      className: "rounded-lg border p-4 shadow-sm",
-      children: [
-        {
-          kind: "component",
-          id: "cta",
-          ref: {
-            type: "project",
-            nodeId: button.id,
-            slug: "demo-button",
-          },
-          children: [],
-        },
-      ],
+  const cardProperties = {
+    slug: "demo-card",
+    tier: "composite" as const,
+    representation: "source" as const,
+    contentSchemaVersion: 2 as const,
+    entry: "Component.tsx",
+    fileKeys: ["Component.tsx"],
+    dependencies: {
+      "@ssota/ui": "workspace:*",
     },
+    seed: `${DEMO_UI_COMPONENT_SEED_KEY}:card`,
   };
 
-  const [card] = await db
-    .insert(schema.nodes)
-    .values({
+  const existingCard = await db
+    .select({ id: schema.nodes.id, properties: schema.nodes.properties })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.nodeType, "ui_component"),
+        eq(schema.nodes.title, "Demo Card"),
+      ),
+    )
+    .limit(1);
+
+  let cardId = existingCard[0]?.id;
+
+  if (!cardId) {
+    const [card] = await db
+      .insert(schema.nodes)
+      .values({
+        projectId,
+        nodeType: "ui_component",
+        title: "Demo Card",
+        properties: cardProperties,
+        content: JSON.stringify(cardContentV2),
+        lifecycleStatus: "Active",
+      })
+      .returning({ id: schema.nodes.id });
+    cardId = card?.id;
+  } else {
+    const representation = (existingCard[0]?.properties as { representation?: string })
+      ?.representation;
+    if (representation !== "source") {
+      await db
+        .update(schema.nodes)
+        .set({
+          properties: cardProperties,
+          content: JSON.stringify(cardContentV2),
+        })
+        .where(eq(schema.nodes.id, cardId));
+    }
+  }
+
+  if (!cardId) return;
+
+  const existingEdge = await db
+    .select({ id: schema.edges.id })
+    .from(schema.edges)
+    .where(
+      and(
+        eq(schema.edges.projectId, projectId),
+        eq(schema.edges.edgeType, "composed_of"),
+        eq(schema.edges.sourceNodeId, cardId),
+        eq(schema.edges.targetNodeId, buttonId),
+      ),
+    )
+    .limit(1);
+
+  if (existingEdge.length === 0) {
+    await db.insert(schema.edges).values({
       projectId,
-      nodeType: "ui_component",
-      title: "Demo Card",
-      properties: {
-        slug: "demo-card",
-        tier: "composite",
-        seed: `${DEMO_UI_COMPONENT_SEED_KEY}:card`,
-      },
-      content: JSON.stringify(cardDocument),
-      lifecycleStatus: "Active",
-    })
-    .returning({ id: schema.nodes.id });
-
-  if (!card?.id) return;
-
-  await db.insert(schema.edges).values({
-    projectId,
-    edgeType: "composed_of",
-    sourceNodeId: card.id,
-    targetNodeId: button.id,
-    properties: { seed: `${DEMO_UI_COMPONENT_SEED_KEY}:composed_of` },
-  });
+      edgeType: "composed_of",
+      sourceNodeId: cardId,
+      targetNodeId: buttonId,
+      properties: { seed: `${DEMO_UI_COMPONENT_SEED_KEY}:composed_of` },
+    });
+  }
 }
 
 async function seedInitiativeScopedNodes(

@@ -81,18 +81,10 @@ export function clearSessionDraft(key: string): void {
 
 export function resolveInitialDraft(input: {
   sessionDraft: UiComponentDocument | null;
-  propertiesDraft: string | null | undefined;
   publishedContent: string | null | undefined;
   fallback: UiComponentDocument;
 }): UiComponentDocument {
   if (input.sessionDraft) return input.sessionDraft;
-  if (input.propertiesDraft) {
-    try {
-      return uiComponentDocumentSchema.parse(JSON.parse(input.propertiesDraft));
-    } catch {
-      // fall through
-    }
-  }
   if (input.publishedContent) {
     const published = parseUiComponentDocumentSafe(input.publishedContent);
     if (published) return published;

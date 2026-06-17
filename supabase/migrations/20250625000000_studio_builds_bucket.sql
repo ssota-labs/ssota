@@ -9,28 +9,31 @@ values (
 )
 on conflict (id) do nothing;
 
-alter table storage.objects enable row level security;
-
+-- storage.objects already has RLS in Supabase; scope deny policies to this bucket only.
 drop policy if exists "studio_builds_deny_all_select" on storage.objects;
 create policy "studio_builds_deny_all_select"
   on storage.objects
   for select
-  using (false);
+  to anon, authenticated
+  using (bucket_id <> 'studio-builds');
 
 drop policy if exists "studio_builds_deny_all_insert" on storage.objects;
 create policy "studio_builds_deny_all_insert"
   on storage.objects
   for insert
-  with check (false);
+  to anon, authenticated
+  with check (bucket_id <> 'studio-builds');
 
 drop policy if exists "studio_builds_deny_all_update" on storage.objects;
 create policy "studio_builds_deny_all_update"
   on storage.objects
   for update
-  using (false);
+  to anon, authenticated
+  using (bucket_id <> 'studio-builds');
 
 drop policy if exists "studio_builds_deny_all_delete" on storage.objects;
 create policy "studio_builds_deny_all_delete"
   on storage.objects
   for delete
-  using (false);
+  to anon, authenticated
+  using (bucket_id <> 'studio-builds');

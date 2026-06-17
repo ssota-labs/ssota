@@ -11,6 +11,18 @@
     "./bootstrap": {
       "types": "./dist/bootstrap.d.ts",
       "default": "./dist/bootstrap.js"
+    },
+    "./inspect-styles": {
+      "types": "./dist/inspect-styles.d.ts",
+      "default": "./dist/inspect-styles.js"
+    },
+    "./bundle-host": {
+      "types": "./dist/bundle-host.d.ts",
+      "default": "./dist/bundle-host.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "default": "./dist/protocol.js"
     }
   },
   "scripts": {

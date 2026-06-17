@@ -1,3 +1,5 @@
+"use client";
+
 export function StudioInspectStyle() {
   return (
     <style id="studio-inspect-overrides">{`

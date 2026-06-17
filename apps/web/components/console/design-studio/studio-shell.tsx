@@ -29,9 +29,16 @@ import {
   createEmptyUiComponentDocument,
 } from "@/lib/design-studio/empty-document";
 import { updateStudioNode } from "@/lib/design-studio/tree-utils";
+import { buildSourceLayerIndex } from "@/lib/design-studio/source-layers";
+import {
+  patchSourceClassName,
+  readClassNameFromSource,
+  type SourceRef,
+} from "@/lib/design-studio/source-patch";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
 import type { ResolvedComponentMap, StudioInteractionMode } from "@ssota/studio-renderer";
 import { InspectorPanel } from "./inspector-panel";
+import { SourceInspectorPanel } from "./source-inspector-panel";
 import { PreviewToolbar } from "./preview-toolbar";
 import { StudioLeftPanel } from "./studio-left-panel";
 import { usePreviewBridge } from "./preview-bridge";
@@ -72,6 +79,7 @@ export function StudioShell({
     tier?: string;
     draft?: string;
     representation?: string;
+    entry?: string;
   };
   const representation = component
     ? getUiComponentRepresentation(component.properties)
@@ -93,21 +101,20 @@ export function StudioShell({
     component && !isSource
       ? resolveInitialDraft({
           sessionDraft: null,
-          propertiesDraft: props.draft,
           publishedContent: component.content,
           fallback: createEmptyUiComponentDocument(),
         })
       : createEmptyUiComponentDocument(),
   );
-  const [contentV2, setContentV2] = useState<UiComponentContentV2>(() =>
-    component && isSource
-      ? resolveInitialContentV2({
-          sessionContent: null,
-          publishedContent: component.content,
-          fallback: createEmptyUiComponentContentV2(),
-        })
-      : createEmptyUiComponentContentV2(),
-  );
+  const [contentV2, setContentV2] = useState<UiComponentContentV2>(() => {
+    if (!component || !isSource) return createEmptyUiComponentContentV2();
+    const key = draftStorageKey(projectId, component.id);
+    return resolveInitialContentV2({
+      sessionContent: readSessionContentV2(key),
+      publishedContent: component.content,
+      fallback: createEmptyUiComponentContentV2(),
+    });
+  });
   const [buildPreview, setBuildPreview] = useState<{
     jsUrl: string;
     cssUrl?: string;
@@ -128,16 +135,29 @@ export function StudioShell({
     syncTheme,
     syncInteractionMode,
     syncBundle,
+    patchNode,
     highlightNode,
   } = usePreviewBridge(previewUrl);
 
+  const [selectedSourceRef, setSelectedSourceRef] = useState<SourceRef | null>(
+    null,
+  );
+
+  const sourceLayers = useMemo(() => {
+    if (!isSource) return null;
+    if (contentV2.layerIndex) return [contentV2.layerIndex];
+    const entry =
+      typeof props.entry === "string" ? props.entry : "Component.tsx";
+    return buildSourceLayerIndex(contentV2.files, entry);
+  }, [contentV2, isSource, props.entry]);
+
+  const selectedSourceClassName = useMemo(() => {
+    if (!selectedSourceRef) return "";
+    return readClassNameFromSource(contentV2.files, selectedSourceRef) ?? "";
+  }, [contentV2.files, selectedSourceRef]);
+
   useEffect(() => {
     if (!component || !storageKey) return;
-    const nextProps = component.properties as {
-      slug?: string;
-      tier?: string;
-      draft?: string;
-    };
     const nextRepresentation = getUiComponentRepresentation(component.properties);
     if (nextRepresentation === "source") {
       setContentV2(
@@ -154,7 +174,6 @@ export function StudioShell({
     setDocument(
       resolveInitialDraft({
         sessionDraft: readSessionDraft(storageKey),
-        propertiesDraft: nextProps.draft,
         publishedContent: component.content,
         fallback: createEmptyUiComponentDocument(),
       }),
@@ -245,14 +264,32 @@ export function StudioShell({
 
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{ nodeId: string }>).detail;
+      const detail = (
+        event as CustomEvent<{ nodeId: string; sourceRef?: SourceRef }>
+      ).detail;
       setSelectedId(detail.nodeId);
+      setSelectedSourceRef(detail.sourceRef ?? null);
     };
     window.addEventListener("studio-select", handler);
     return () => window.removeEventListener("studio-select", handler);
   }, []);
 
-  const handlePatch = useCallback((nodeId: string, patch: Record<string, unknown>) => {
+  const handleSourceClassNameChange = useCallback(
+    (nextClassName: string) => {
+      if (!selectedId || !selectedSourceRef) return;
+      const nextFiles = patchSourceClassName(
+        contentV2.files,
+        selectedSourceRef,
+        nextClassName,
+      );
+      setContentV2((current) => ({ ...current, files: nextFiles }));
+      patchNode(selectedId, { className: nextClassName });
+    },
+    [contentV2.files, patchNode, selectedId, selectedSourceRef],
+  );
+
+  const handlePatch = useCallback(
+    (nodeId: string, patch: Record<string, unknown>) => {
     if (isSource) return;
     setDocument((current) => ({
       ...current,
@@ -347,6 +384,7 @@ export function StudioShell({
             activeComponentId={component?.id ?? null}
             studioBasePath={studioBasePath}
             root={component && !isSource ? document.root : null}
+            sourceLayers={component && isSource ? sourceLayers : null}
             selectedLayerId={selectedId}
             onSelectLayer={setSelectedId}
             pending={pending}
@@ -394,16 +432,13 @@ export function StudioShell({
         >
           {component ? (
             isSource ? (
-              <div className="flex h-full flex-col gap-3 border-l p-4 text-sm text-muted-foreground">
-                <p className="font-medium text-foreground">Source component</p>
-                <p>
-                  Bundle preview is active. Inspector source sync lands in the next
-                  milestone — select nodes in the preview to verify selection.
-                </p>
-                {selectedId ? (
-                  <p data-testid="studio-source-selected-id">Selected: {selectedId}</p>
-                ) : null}
-              </div>
+              <SourceInspectorPanel
+                selectedId={selectedId}
+                selectedSourceRef={selectedSourceRef}
+                className={selectedSourceClassName}
+                onClassNameChange={handleSourceClassNameChange}
+                readOnly={Boolean(selectedId && !selectedSourceRef)}
+              />
             ) : (
               <InspectorPanel
                 root={document.root}

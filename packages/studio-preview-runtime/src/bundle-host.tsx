@@ -28,16 +28,30 @@ async function loadBundle(jsUrl: string, cssUrl?: string) {
     document.head.appendChild(link);
   }
 
-  await import(/* @vite-ignore */ jsUrl);
+  await new Promise<void>((resolve, reject) => {
+    const script = document.createElement("script");
+    script.type = "module";
+    script.src = jsUrl;
+    script.setAttribute(BUNDLE_ATTR, "true");
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error(`Failed to load studio bundle: ${jsUrl}`));
+    document.head.appendChild(script);
+  });
 }
 
 function readSourceRef(element: HTMLElement): StudioSourceRef | undefined {
   const file = element.dataset.studioFile;
-  if (!file) return undefined;
-  return {
-    file,
-    loc: element.dataset.studioLoc,
-  };
+  const loc = element.dataset.studioLoc;
+  if (file) {
+    return { file, loc };
+  }
+  if (loc) {
+    const fileFromLoc = loc.split(":")[0];
+    if (fileFromLoc) {
+      return { file: fileFromLoc, loc };
+    }
+  }
+  return undefined;
 }
 
 export type BundlePreviewHostProps = {

@@ -1,9 +1,18 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 import { getSmokeInitiativeId } from "../helpers/graph-seed";
 
+async function waitForBundlePreview(page: Page) {
+  const preview = page.frameLocator('iframe[title="Design preview"]');
+  await expect(preview.locator("[data-studio-id]").first()).toBeVisible({
+    timeout: 45_000,
+  });
+  return preview;
+}
+
 test.describe("design studio", () => {
+  test.describe.configure({ timeout: 60_000 });
   test.beforeEach(async ({ page }) => {
     await loginAsSmoke(page);
   });
@@ -19,7 +28,7 @@ test.describe("design studio", () => {
     await expect(page.getByRole("tab", { name: "Layers" })).toBeVisible();
     await expect(page.getByTestId("studio-component-demo-button")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible();
-    await expect(page.getByLabel("Node ID")).toBeVisible();
+    await expect(page.getByText("Select a layer in the preview")).toBeVisible();
     await expect(page.getByRole("button", { name: "Deploy" })).toBeVisible();
   });
 
@@ -41,7 +50,9 @@ test.describe("design studio", () => {
     });
 
     await page.getByRole("tab", { name: "Layers" }).click();
-    await expect(page.getByText("<div>")).toBeVisible();
+    await expect(page.getByText("Component.tsx")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("<div>")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("<Button>")).toBeVisible();
   });
 
   test("editor updates styles via inspector controls", async ({ page }) => {
@@ -50,16 +61,27 @@ test.describe("design studio", () => {
       timeout: 15_000,
     });
 
+    const preview = await waitForBundlePreview(page);
+    await preview.locator("button").first().click();
+
     const backgroundField = page.getByLabel("Background");
+    await expect(backgroundField).toBeVisible({ timeout: 10_000 });
     await backgroundField.clear();
     await backgroundField.fill("blue-600");
     await expect(backgroundField).toHaveValue("blue-600");
+    await page.waitForTimeout(500);
 
     await page.reload();
     await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByLabel("Background")).toHaveValue("blue-600");
+    await expect(preview.locator("[data-studio-id]").first()).toBeVisible({
+      timeout: 45_000,
+    });
+    await preview.locator("[data-studio-id]").first().click();
+    await expect(page.getByLabel("Background")).toHaveValue("blue-600", {
+      timeout: 20_000,
+    });
   });
 
   test("wireframes page lists only published components", async ({ page }) => {
@@ -77,14 +99,13 @@ test.describe("design studio", () => {
     });
     await expect(page.getByTestId("studio-mode-inspect")).toBeVisible();
 
-    const preview = page.frameLocator('iframe[title="Design preview"]');
-    await expect(preview.locator('[data-studio-id="root"]')).toBeVisible({
-      timeout: 15_000,
-    });
+    const preview = await waitForBundlePreview(page);
 
-    await preview.locator('[data-studio-id="label"]').click();
-    await expect(page.getByLabel("Text")).toHaveValue("Button");
-    await expect(page.getByLabel("Node ID")).toHaveValue("label");
+    await preview.locator("button").first().click();
+    await expect(page.getByLabel("Node ID")).not.toHaveValue("", {
+      timeout: 10_000,
+    });
+    await expect(page.getByLabel("Background")).toBeVisible();
   });
 
   test("preview toolbar switches interaction mode", async ({ page }) => {
@@ -92,6 +113,7 @@ test.describe("design studio", () => {
     await expect(page.getByTestId("studio-mode-preview")).toBeVisible({
       timeout: 15_000,
     });
+    const preview = await waitForBundlePreview(page);
     await page.getByTestId("studio-mode-preview").click();
     await expect(
       page.getByText("Live preview — selection disabled"),
