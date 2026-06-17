@@ -176,13 +176,62 @@ function ColorSwatch({
   );
 }
 
+function rgbComponentsToHex(r: number, g: number, b: number): string {
+  const channel = (value: number) =>
+    Math.max(0, Math.min(255, value)).toString(16).padStart(2, "0");
+  return `#${channel(r)}${channel(g)}${channel(b)}`;
+}
+
 function rgbStringToHex(color: string): string | null {
-  const rgba = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!rgba) return null;
-  const r = Number(rgba[1]).toString(16).padStart(2, "0");
-  const g = Number(rgba[2]).toString(16).padStart(2, "0");
-  const b = Number(rgba[3]).toString(16).padStart(2, "0");
-  return `#${r}${g}${b}`;
+  const trimmed = color.trim();
+  if (!trimmed || trimmed === "transparent") return null;
+
+  const commaSeparated = trimmed.match(
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i,
+  );
+  if (commaSeparated) {
+    return rgbComponentsToHex(
+      Number(commaSeparated[1]),
+      Number(commaSeparated[2]),
+      Number(commaSeparated[3]),
+    );
+  }
+
+  const spaceSeparated = trimmed.match(
+    /^rgba?\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/i,
+  );
+  if (spaceSeparated) {
+    return rgbComponentsToHex(
+      Number(spaceSeparated[1]),
+      Number(spaceSeparated[2]),
+      Number(spaceSeparated[3]),
+    );
+  }
+
+  return null;
+}
+
+function isTransparentComputedColor(color: string): boolean {
+  const trimmed = color.trim();
+  if (!trimmed || trimmed === "transparent") return true;
+
+  const alphaMatch = trimmed.match(
+    /^(?:rgba?|hsla?|oklch|lab|lch)\([^)]*?[/,]\s*([\d.]+%?)\s*\)$/i,
+  );
+  if (alphaMatch) {
+    const alpha = alphaMatch[1]!;
+    if (alpha.endsWith("%")) {
+      return Number(alpha.slice(0, -1)) <= 0;
+    }
+    return Number(alpha) <= 0;
+  }
+
+  return trimmed === "rgba(0, 0, 0, 0)" || trimmed === "rgba(0 0 0 / 0)";
+}
+
+function computedBackgroundColorToHex(color: string): string | null {
+  if (isTransparentComputedColor(color)) return null;
+  return rgbStringToHex(color) ?? cssColorToHex(color);
 }
 
 function toHexColor(color: string): string {
@@ -219,6 +268,31 @@ function cssColorToHex(color: string): string {
   }
 }
 
+function cssColorToHexViaDom(color: string): string | null {
+  const trimmed = color.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("#")) return toHexColor(trimmed);
+
+  const fromRgb = rgbStringToHex(trimmed);
+  if (fromRgb) return fromRgb;
+
+  if (typeof document === "undefined") return cssColorToHex(trimmed);
+
+  const probe = document.createElement("div");
+  probe.style.position = "fixed";
+  probe.style.visibility = "hidden";
+  probe.style.pointerEvents = "none";
+  probe.style.backgroundColor = trimmed;
+  document.documentElement.appendChild(probe);
+
+  try {
+    const computed = getComputedStyle(probe).backgroundColor;
+    return computedBackgroundColorToHex(computed);
+  } finally {
+    document.documentElement.removeChild(probe);
+  }
+}
+
 function resolveColorPickerHex(
   value: string,
   presets: InspectorColorOption[],
@@ -236,52 +310,22 @@ function resolveColorPickerHex(
 
   if (option.cssVar) {
     const fromVar = cssColorToHexViaDom(`var(${option.cssVar})`);
-    if (fromVar !== "#000000") return fromVar;
+    if (fromVar) return fromVar;
 
     const raw = getComputedStyle(document.documentElement)
       .getPropertyValue(option.cssVar)
       .trim();
     if (raw) {
       const fromRaw = cssColorToHexViaDom(raw);
-      if (fromRaw !== "#000000") return fromRaw;
+      if (fromRaw) return fromRaw;
     }
-
-    return fromVar;
   }
 
   if (option.swatchClass) {
-    return cssColorToHexViaDom(resolveSwatchClassColor(option.swatchClass));
-  }
-
-  return cssColorToHex(trimmed);
-}
-
-function cssColorToHexViaDom(color: string): string {
-  const trimmed = color.trim();
-  if (!trimmed) return "#000000";
-  if (trimmed.startsWith("#")) return toHexColor(trimmed);
-
-  const fromRgb = rgbStringToHex(trimmed);
-  if (fromRgb) return fromRgb;
-
-  if (typeof document === "undefined") return cssColorToHex(trimmed);
-
-  const probe = document.createElement("div");
-  probe.style.position = "fixed";
-  probe.style.visibility = "hidden";
-  probe.style.pointerEvents = "none";
-  probe.style.backgroundColor = trimmed;
-  document.documentElement.appendChild(probe);
-
-  try {
-    const computed = getComputedStyle(probe).backgroundColor;
-    if (computed && computed !== "rgba(0, 0, 0, 0)" && computed !== "rgb(0, 0, 0)") {
-      const hex = rgbStringToHex(computed);
-      if (hex) return hex;
-      return cssColorToHex(computed);
-    }
-  } finally {
-    document.documentElement.removeChild(probe);
+    const fromSwatch = computedBackgroundColorToHex(
+      resolveSwatchClassColor(option.swatchClass),
+    );
+    if (fromSwatch) return fromSwatch;
   }
 
   return cssColorToHex(trimmed);
@@ -308,11 +352,15 @@ function readElementBackgroundHex(element: HTMLElement | null): string | null {
   if (!element || typeof document === "undefined") return null;
 
   const computed = getComputedStyle(element).backgroundColor;
-  if (!computed || computed === "rgba(0, 0, 0, 0)" || computed === "rgb(0, 0, 0)") {
-    return null;
-  }
+  return computedBackgroundColorToHex(computed);
+}
 
-  return rgbStringToHex(computed);
+function syncNativeColorInputValue(
+  input: HTMLInputElement | null,
+  hexValue: string,
+) {
+  if (!input || input.value === hexValue) return;
+  input.value = hexValue;
 }
 
 function useColorPickerHex(
@@ -557,10 +605,14 @@ export function InspectorColorField({
   );
 
   useLayoutEffect(() => {
-    if (colorInputRef.current && colorInputRef.current.value !== hexValue) {
-      colorInputRef.current.value = hexValue;
-    }
+    const input = colorInputRef.current;
+    if (!input || document.activeElement === input) return;
+    syncNativeColorInputValue(input, hexValue);
   }, [hexValue]);
+
+  const handleColorInputOpen = () => {
+    syncNativeColorInputValue(colorInputRef.current, hexValue);
+  };
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
@@ -588,7 +640,9 @@ export function InspectorColorField({
             inspectorNativeColorPickerClass,
             tokenSwatch && "relative z-10 opacity-0",
           )}
-          value={hexValue}
+          defaultValue={hexValue}
+          onPointerDown={handleColorInputOpen}
+          onFocus={handleColorInputOpen}
           onChange={(event) =>
             handleNativeColorChange(value, event.target.value, onChange)
           }
