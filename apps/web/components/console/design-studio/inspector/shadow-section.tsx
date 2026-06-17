@@ -2,7 +2,6 @@
 
 import { MinusIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
-import { Input } from "@ssota/ui/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -13,11 +12,16 @@ import {
 import { Switch } from "@ssota/ui/components/ui/switch";
 import type { ShadowPreset, ShadowValue } from "@/lib/design-studio/tailwind-classname";
 import {
+  formatShadowLengthPx,
+  parseShadowLengthPx,
+} from "@/lib/design-studio/tailwind-classname";
+import {
   BACKGROUND_THEME_COLOR_OPTIONS,
   formatInspectorColorAsRgba,
   InspectorColorField,
   InspectorField,
   InspectorGrid,
+  InspectorScrubberNumberInput,
   InspectorSection,
 } from "@ssota/ui/components/design-studio";
 
@@ -90,41 +94,62 @@ export function ShadowSection({ shadow, onChange }: ShadowSectionProps) {
         <>
           <InspectorGrid>
             <InspectorField label="X Offset">
-              <Input
-                value={shadow.x}
-                onChange={(event) =>
-                  onChange({ ...shadow, preset: "custom", x: event.target.value })
+              <InspectorScrubberNumberInput
+                aria-label="Shadow X offset"
+                value={parseShadowLengthPx(shadow.x)}
+                unit="px"
+                placeholder="0"
+                onChange={(input) =>
+                  onChange({
+                    ...shadow,
+                    preset: "custom",
+                    x: formatShadowLengthPx(input),
+                  })
                 }
               />
             </InspectorField>
             <InspectorField label="Y Offset">
-              <Input
-                value={shadow.y}
-                onChange={(event) =>
-                  onChange({ ...shadow, preset: "custom", y: event.target.value })
+              <InspectorScrubberNumberInput
+                aria-label="Shadow Y offset"
+                value={parseShadowLengthPx(shadow.y)}
+                unit="px"
+                placeholder="0"
+                onChange={(input) =>
+                  onChange({
+                    ...shadow,
+                    preset: "custom",
+                    y: formatShadowLengthPx(input),
+                  })
                 }
               />
             </InspectorField>
             <InspectorField label="Blur">
-              <Input
-                value={shadow.blur}
-                onChange={(event) =>
+              <InspectorScrubberNumberInput
+                aria-label="Shadow blur"
+                value={parseShadowLengthPx(shadow.blur)}
+                unit="px"
+                placeholder="0"
+                min={0}
+                onChange={(input) =>
                   onChange({
                     ...shadow,
                     preset: "custom",
-                    blur: event.target.value,
+                    blur: formatShadowLengthPx(input),
                   })
                 }
               />
             </InspectorField>
             <InspectorField label="Spread">
-              <Input
-                value={shadow.spread}
-                onChange={(event) =>
+              <InspectorScrubberNumberInput
+                aria-label="Shadow spread"
+                value={parseShadowLengthPx(shadow.spread)}
+                unit="px"
+                placeholder="0"
+                onChange={(input) =>
                   onChange({
                     ...shadow,
                     preset: "custom",
-                    spread: event.target.value,
+                    spread: formatShadowLengthPx(input),
                   })
                 }
               />

@@ -367,6 +367,18 @@ export function formatBorderWidthPx(value: string): string | undefined {
   return `border-[${trimmed}px]`;
 }
 
+export function parseShadowLengthPx(value?: string): string {
+  if (!value) return "";
+  const match = value.trim().match(/^(-?[\d.]+)px$/);
+  return match ? match[1]! : "";
+}
+
+export function formatShadowLengthPx(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "0px";
+  return `${trimmed}px`;
+}
+
 export function parseBorderWidthPx(className?: string): string {
   if (!className) return "";
   if (className === "border") return "1";
