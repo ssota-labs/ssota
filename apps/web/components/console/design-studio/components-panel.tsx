@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";
-import { Badge } from "@ssota/ui/components/ui/badge";
 import {
   Collapsible,
   CollapsibleContent,
@@ -106,12 +105,6 @@ export function ComponentsPanel({
                         >
                           {component.title}
                         </span>
-                        <Badge
-                          variant="secondary"
-                          className="shrink-0 px-1.5 py-0 text-[10px] font-normal"
-                        >
-                          {component.status}
-                        </Badge>
                       </button>
                     );
                   })}

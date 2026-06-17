@@ -5,7 +5,6 @@ export type UiComponentListRow = {
   title: string;
   slug: string;
   tier: string;
-  status: string;
   updatedAt: string;
 };
 
@@ -30,7 +29,6 @@ export async function queryUiComponents(
         title: node.title || "Untitled",
         slug: props.slug ?? node.id.slice(0, 8),
         tier: props.tier ?? "primitive",
-        status: node.content ? "Published" : "Draft",
         updatedAt: node.updatedAt.toISOString(),
       };
     })
