@@ -6,7 +6,6 @@ import NodeRange from "@tiptap/extension-node-range";
 import { BulletList, ListKeymap, OrderedList } from "@tiptap/extension-list";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TableKit } from "@tiptap/extension-table";
-import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
@@ -18,6 +17,7 @@ import { Callout } from "./extensions/Callout";
 import { CalloutTitle } from "./extensions/CalloutTitle";
 import { EmojiExtension } from "./extensions/EmojiExtension";
 import { createMentionExtension } from "./extensions/MentionExtension";
+import { GuardedTaskItem } from "./extensions/GuardedTaskItem";
 import { NestedListItem } from "./extensions/NestedListItem";
 import { QuoteShortcut } from "./extensions/QuoteShortcut";
 import { Toggle } from "./extensions/Toggle";
@@ -51,7 +51,7 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
     NestedListItem,
     ListKeymap,
     TaskList,
-    TaskItem.configure({ nested: true }),
+    GuardedTaskItem.configure({ nested: true }),
     TableKit.configure({
       table: {
         resizable: true,

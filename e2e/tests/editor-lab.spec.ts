@@ -670,6 +670,27 @@ test.describe("Editor Lab", () => {
       await expect(surface).toBeFocused();
       await expect(surface.locator("ol ol")).toHaveCount(0);
     });
+
+    test("repeated Shift+Tab keeps editor focus after full outdent", async ({
+      page,
+    }) => {
+      const surface = await typeAtDocumentEnd(page, "one");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain().focus().toggleList("bulletList", "listItem").run();
+      });
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("two");
+      await page.keyboard.press("Tab");
+      await expect(surface.locator("ul ul")).toBeVisible();
+
+      for (let i = 0; i < 4; i += 1) {
+        await page.keyboard.press("Shift+Tab");
+      }
+
+      await expect(surface).toBeFocused();
+      await expect(surface.locator("ul ul")).toHaveCount(0);
+    });
   });
 
   test.describe("emoji menu", () => {
