@@ -447,6 +447,75 @@ export function formatRadiusPx(prefix: string, value: string): string | undefine
   return formatRadiusClass(prefix, value, "px");
 }
 
+const DEFAULT_RADIUS_REFERENCE_PX = 100;
+
+const RADIUS_UNIT_DEFAULTS: Record<RadiusUnit, string> = {
+  px: "0",
+  "%": "0",
+};
+
+function parseLayoutDimensionPx(className?: string): number | null {
+  if (!className) return null;
+  const arbitrary = className.match(/-\[(.+)\]$/);
+  if (!arbitrary) return null;
+  const match = arbitrary[1]!.match(/^([\d.]+)px$/);
+  if (!match) return null;
+  const px = Number(match[1]);
+  return Number.isFinite(px) ? px : null;
+}
+
+/** border-radius % 변환 기준 — width/height arbitrary px가 있으면 사용합니다. */
+export function resolveRadiusReferencePx(
+  parsed?: Pick<ParsedClassName, "width" | "height">,
+): number {
+  const widthPx = parseLayoutDimensionPx(parsed?.width);
+  const heightPx = parseLayoutDimensionPx(parsed?.height);
+  if (widthPx !== null && heightPx !== null) {
+    return Math.min(widthPx, heightPx);
+  }
+  if (widthPx !== null) return widthPx;
+  if (heightPx !== null) return heightPx;
+  return DEFAULT_RADIUS_REFERENCE_PX;
+}
+
+function toAbsoluteRadiusPx(
+  value: string,
+  unit: RadiusUnit,
+  referencePx: number,
+): number | null {
+  const num = Number(value.trim());
+  if (!Number.isFinite(num)) return null;
+  if (referencePx <= 0) return null;
+
+  if (unit === "px") return num;
+  return (referencePx * num) / 100;
+}
+
+function fromAbsoluteRadiusPx(
+  px: number,
+  unit: RadiusUnit,
+  referencePx: number,
+): string {
+  if (unit === "px") return formatTypographyNumber(px);
+  const percent = (px / referencePx) * 100;
+  return formatTypographyNumber(Math.min(100, Math.max(0, percent)));
+}
+
+export function formatRadiusValueOnUnitChange(
+  value: string,
+  currentUnit: RadiusUnit,
+  nextUnit: RadiusUnit,
+  referencePx = DEFAULT_RADIUS_REFERENCE_PX,
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) return RADIUS_UNIT_DEFAULTS[nextUnit];
+
+  const px = toAbsoluteRadiusPx(trimmed, currentUnit, referencePx);
+  if (px === null) return trimmed;
+
+  return fromAbsoluteRadiusPx(px, nextUnit, referencePx);
+}
+
 export function parseOpacityPercent(className?: string): string {
   if (!className) return "";
 

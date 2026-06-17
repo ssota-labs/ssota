@@ -6,8 +6,10 @@ import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
   formatOpacityPercent,
   formatRadiusClass,
+  formatRadiusValueOnUnitChange,
   parseOpacityPercent,
   parseRadiusValue,
+  resolveRadiusReferencePx,
   type RadiusUnit,
 } from "@/lib/design-studio/tailwind-classname";
 import {
@@ -37,6 +39,22 @@ export function AppearanceSection({
   const radiusUnit = getRadiusUnit(parsed);
   const unifiedRadius = getUnifiedRadiusValue(parsed);
   const radiusMax = radiusUnit === "%" ? 100 : undefined;
+  const radiusReferencePx = resolveRadiusReferencePx(parsed);
+
+  const convertRadiusForUnit = (
+    value: string,
+    currentUnit: RadiusUnit,
+    nextUnit: RadiusUnit,
+  ) =>
+    clampRadiusValue(
+      formatRadiusValueOnUnitChange(
+        value,
+        currentUnit,
+        nextUnit,
+        radiusReferencePx,
+      ) || "0",
+      nextUnit,
+    );
 
   const setUnifiedRadius = (value: string) => {
     if (perCornerMode) {
@@ -73,29 +91,43 @@ export function AppearanceSection({
   };
 
   const setRadiusUnit = (nextUnit: RadiusUnit) => {
-    const clampForUnit = (value: string) => clampRadiusValue(value || "0", nextUnit);
-
     if (perCornerMode) {
       onUpdate({
         borderRadius: undefined,
         borderRadiusTopLeft: formatRadiusClass(
           "rounded-tl",
-          clampForUnit(parseRadiusValue(parsed.borderRadiusTopLeft).value),
+          convertRadiusForUnit(
+            parseRadiusValue(parsed.borderRadiusTopLeft).value,
+            radiusUnit,
+            nextUnit,
+          ),
           nextUnit,
         ),
         borderRadiusTopRight: formatRadiusClass(
           "rounded-tr",
-          clampForUnit(parseRadiusValue(parsed.borderRadiusTopRight).value),
+          convertRadiusForUnit(
+            parseRadiusValue(parsed.borderRadiusTopRight).value,
+            radiusUnit,
+            nextUnit,
+          ),
           nextUnit,
         ),
         borderRadiusBottomLeft: formatRadiusClass(
           "rounded-bl",
-          clampForUnit(parseRadiusValue(parsed.borderRadiusBottomLeft).value),
+          convertRadiusForUnit(
+            parseRadiusValue(parsed.borderRadiusBottomLeft).value,
+            radiusUnit,
+            nextUnit,
+          ),
           nextUnit,
         ),
         borderRadiusBottomRight: formatRadiusClass(
           "rounded-br",
-          clampForUnit(parseRadiusValue(parsed.borderRadiusBottomRight).value),
+          convertRadiusForUnit(
+            parseRadiusValue(parsed.borderRadiusBottomRight).value,
+            radiusUnit,
+            nextUnit,
+          ),
           nextUnit,
         ),
       });
@@ -105,7 +137,7 @@ export function AppearanceSection({
     onUpdate({
       borderRadius: formatRadiusClass(
         "rounded",
-        clampForUnit(unifiedRadius || "0"),
+        convertRadiusForUnit(unifiedRadius || "0", radiusUnit, nextUnit),
         nextUnit,
       ),
       borderRadiusTopLeft: undefined,
