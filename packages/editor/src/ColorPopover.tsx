@@ -94,7 +94,7 @@ export function ColorPopover({
       <PopoverContent
         className="ssota-color-popover w-auto p-2"
         align="center"
-        side="bottom"
+        side="top"
         data-testid={`ssota-${kind}-color-popover`}
       >
         <div
