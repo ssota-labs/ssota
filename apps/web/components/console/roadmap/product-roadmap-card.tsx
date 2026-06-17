@@ -44,6 +44,11 @@ export function ProductRoadmapCard({
 
   const isEmpty = !node.content.trim();
   const docStatus = node.docStatus ?? "draft";
+  const subtitle = node.title.trim();
+  const showDescriptionPlaceholder =
+    !subtitle ||
+    subtitle === t("roadmap.productRoadmap") ||
+    subtitle === "프로덕트 로드맵";
 
   const handleDocStatusChange = (value: DocStatus | null) => {
     if (!value) return;
@@ -75,7 +80,7 @@ export function ProductRoadmapCard({
             {t("roadmap.productRoadmap")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {node.title.trim() ? node.title : t("roadmap.description")}
+            {showDescriptionPlaceholder ? t("roadmap.description") : subtitle}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
