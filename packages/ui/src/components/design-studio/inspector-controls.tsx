@@ -5,30 +5,35 @@ import { useState } from "react";
 import {
   CaretDownIcon,
   CheckIcon,
-  DotsSixVerticalIcon,
   SlidersHorizontalIcon,
 } from "@phosphor-icons/react";
-import { Button } from "@ssota/ui/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupInput,
-} from "@ssota/ui/components/ui/input-group";
+  InputGroupText,
+} from "@/components/ui/input-group";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@ssota/ui/components/ui/popover";
+} from "@/components/ui/popover";
 import {
   ToggleGroup,
   ToggleGroupItem,
-} from "@ssota/ui/components/ui/toggle-group";
+} from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
 
 export type InspectorPopoverOption = {
   value: string;
   label: string;
-  icon: ReactNode;
+  icon?: ReactNode;
+};
+
+export type InspectorPresetOption = {
+  value: string;
+  label: string;
 };
 
 type InspectorPopoverPickerProps = {
@@ -62,7 +67,9 @@ export function InspectorPopoverPicker({
       >
         {selected ? (
           <>
-            <span className="shrink-0 text-muted-foreground">{selected.icon}</span>
+            {selected.icon ? (
+              <span className="shrink-0 text-muted-foreground">{selected.icon}</span>
+            ) : null}
             <span className="min-w-0 flex-1 truncate text-left">
               {selected.label}
             </span>
@@ -113,9 +120,11 @@ function InspectorPopoverList({
             )}
             onClick={() => onSelect(option.value)}
           >
-            <span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
-              {option.icon}
-            </span>
+            {option.icon ? (
+              <span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground">
+                {option.icon}
+              </span>
+            ) : null}
             <span className="min-w-0 flex-1 truncate text-left">
               {option.label}
             </span>
@@ -131,21 +140,59 @@ function InspectorPopoverList({
   );
 }
 
-type InspectorTokenInputProps = {
+type InspectorPresetListProps = {
+  options: InspectorPresetOption[];
+  value?: string;
+  onSelect: (value: string) => void;
+};
+
+function InspectorPresetList({
+  options,
+  value,
+  onSelect,
+}: InspectorPresetListProps) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            className={cn(
+              "flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-muted",
+              active && "bg-muted",
+            )}
+            onClick={() => onSelect(option.value)}
+          >
+            <span className="truncate">{option.label}</span>
+            {active ? (
+              <CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
+            ) : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+type InspectorNumberInputProps = {
   value: string;
+  unit?: "px" | "em";
   placeholder?: string;
-  options: InspectorPopoverOption[];
+  presets: InspectorPresetOption[];
   onChange: (value: string) => void;
   "aria-label"?: string;
 };
 
-export function InspectorTokenInput({
+export function InspectorNumberInput({
   value,
+  unit,
   placeholder,
-  options,
+  presets,
   onChange,
   "aria-label": ariaLabel,
-}: InspectorTokenInputProps) {
+}: InspectorNumberInputProps) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -156,23 +203,30 @@ export function InspectorTokenInput({
         render={
           <div className="w-full">
             <InputGroup>
-              <InputGroupAddon>
-                <DotsSixVerticalIcon className="size-3.5 text-muted-foreground" />
-              </InputGroupAddon>
               <InputGroupInput
                 aria-label={ariaLabel}
+                type="number"
+                inputMode="decimal"
+                step="any"
                 value={value}
                 placeholder={placeholder}
                 onChange={(event) => onChange(event.target.value)}
                 onFocus={() => setOpen(true)}
               />
+              {unit ? (
+                <InputGroupAddon align="inline-end">
+                  <InputGroupText className="text-xs text-muted-foreground">
+                    {unit}
+                  </InputGroupText>
+                </InputGroupAddon>
+              ) : null}
             </InputGroup>
           </div>
         }
       />
       <PopoverContent align="start" className="w-[var(--anchor-width)] p-1">
-        <InspectorPopoverList
-          options={options}
+        <InspectorPresetList
+          options={presets}
           value={value}
           onSelect={(nextValue) => {
             onChange(nextValue);

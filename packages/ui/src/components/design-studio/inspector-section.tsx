@@ -1,7 +1,15 @@
 "use client";
 
-import { Children, Fragment, cloneElement, isValidElement, type ReactElement, type ReactNode, useId } from "react";
-import { Separator } from "@ssota/ui/components/ui/separator";
+import {
+  Children,
+  Fragment,
+  cloneElement,
+  isValidElement,
+  type ReactElement,
+  type ReactNode,
+  useId,
+} from "react";
+import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 type InspectorSectionProps = {

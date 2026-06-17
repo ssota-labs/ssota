@@ -1,12 +1,8 @@
 "use client";
 
 import {
-  ArrowsHorizontalIcon,
-  ArrowsVerticalIcon,
   CodeIcon,
-  HashIcon,
   MinusIcon,
-  SlidersHorizontalIcon,
   TextAaIcon,
   TextAlignCenterIcon,
   TextAlignJustifyIcon,
@@ -22,15 +18,14 @@ import { Input } from "@ssota/ui/components/ui/input";
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
   InspectorField,
-  InspectorSection,
-} from "./inspector-section";
-import {
   InspectorFontFamilyRow,
+  InspectorNumberInput,
   InspectorPopoverPicker,
+  InspectorSection,
   InspectorToggleRow,
-  InspectorTokenInput,
   type InspectorPopoverOption,
-} from "./inspector-controls";
+  type InspectorPresetOption,
+} from "@ssota/ui/components/design-studio";
 
 const FONT_FAMILY_OPTIONS: InspectorPopoverOption[] = [
   { value: "font-sans", label: "Inter", icon: <TextTIcon className="size-3.5" /> },
@@ -46,13 +41,14 @@ const FONT_FAMILY_OPTIONS: InspectorPopoverOption[] = [
   },
 ];
 
-const FONT_SIZE_OPTIONS: InspectorPopoverOption[] = [
-  { value: "12px", label: "12px", icon: <HashIcon className="size-3.5" /> },
-  { value: "14px", label: "14px", icon: <HashIcon className="size-3.5" /> },
-  { value: "16px", label: "16px", icon: <HashIcon className="size-3.5" /> },
-  { value: "18px", label: "18px", icon: <HashIcon className="size-3.5" /> },
-  { value: "20px", label: "20px", icon: <HashIcon className="size-3.5" /> },
-  { value: "24px", label: "24px", icon: <HashIcon className="size-3.5" /> },
+const FONT_SIZE_PRESETS: InspectorPresetOption[] = [
+  { value: "10", label: "10px" },
+  { value: "12", label: "12px" },
+  { value: "14", label: "14px" },
+  { value: "16", label: "16px" },
+  { value: "18", label: "18px" },
+  { value: "20", label: "20px" },
+  { value: "24", label: "24px" },
 ];
 
 const FONT_WEIGHT_OPTIONS: InspectorPopoverOption[] = [
@@ -78,53 +74,21 @@ const FONT_WEIGHT_OPTIONS: InspectorPopoverOption[] = [
   },
 ];
 
-const LINE_HEIGHT_OPTIONS: InspectorPopoverOption[] = [
-  {
-    value: "normal",
-    label: "normal",
-    icon: <ArrowsVerticalIcon className="size-3.5" />,
-  },
-  { value: "1", label: "1", icon: <ArrowsVerticalIcon className="size-3.5" /> },
-  {
-    value: "1.25",
-    label: "1.25",
-    icon: <ArrowsVerticalIcon className="size-3.5" />,
-  },
-  {
-    value: "1.43",
-    label: "1.43",
-    icon: <ArrowsVerticalIcon className="size-3.5" />,
-  },
-  {
-    value: "1.5",
-    label: "1.5",
-    icon: <ArrowsVerticalIcon className="size-3.5" />,
-  },
-  { value: "2", label: "2", icon: <ArrowsVerticalIcon className="size-3.5" /> },
+const LINE_HEIGHT_PRESETS: InspectorPresetOption[] = [
+  { value: "", label: "normal" },
+  { value: "1", label: "1" },
+  { value: "1.25", label: "1.25" },
+  { value: "1.43", label: "1.43" },
+  { value: "1.5", label: "1.5" },
+  { value: "2", label: "2" },
 ];
 
-const LETTER_SPACING_OPTIONS: InspectorPopoverOption[] = [
-  {
-    value: "normal",
-    label: "normal",
-    icon: <ArrowsHorizontalIcon className="size-3.5" />,
-  },
-  { value: "0", label: "0em", icon: <ArrowsHorizontalIcon className="size-3.5" /> },
-  {
-    value: "0.025",
-    label: "0.025em",
-    icon: <ArrowsHorizontalIcon className="size-3.5" />,
-  },
-  {
-    value: "0.05",
-    label: "0.05em",
-    icon: <ArrowsHorizontalIcon className="size-3.5" />,
-  },
-  {
-    value: "0.1",
-    label: "0.1em",
-    icon: <ArrowsHorizontalIcon className="size-3.5" />,
-  },
+const LETTER_SPACING_PRESETS: InspectorPresetOption[] = [
+  { value: "", label: "normal" },
+  { value: "0", label: "0" },
+  { value: "0.025", label: "0.025" },
+  { value: "0.05", label: "0.05" },
+  { value: "0.1", label: "0.1" },
 ];
 
 type TypographySectionProps = {
@@ -143,13 +107,14 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         />
 
         <InspectorField label="Size">
-          <InspectorTokenInput
+          <InspectorNumberInput
             aria-label="Size"
-            value={formatFontSizeDisplay(parsed.fontSize)}
+            value={formatFontSizeNumber(parsed.fontSize)}
+            unit="px"
             placeholder="Default"
-            options={FONT_SIZE_OPTIONS}
+            presets={FONT_SIZE_PRESETS}
             onChange={(input) =>
-              onUpdate({ fontSize: parseFontSizeInput(input) })
+              onUpdate({ fontSize: parseFontSizeNumber(input) })
             }
           />
         </InspectorField>
@@ -189,25 +154,27 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         </InspectorField>
 
         <InspectorField label="Line height">
-          <InspectorTokenInput
+          <InspectorNumberInput
             aria-label="Line height"
-            value={formatLineHeightDisplay(parsed.lineHeight)}
+            value={formatLineHeightNumber(parsed.lineHeight)}
+            unit="em"
             placeholder="normal"
-            options={LINE_HEIGHT_OPTIONS}
+            presets={LINE_HEIGHT_PRESETS}
             onChange={(input) =>
-              onUpdate({ lineHeight: parseLineHeightInput(input) })
+              onUpdate({ lineHeight: parseLineHeightNumber(input) })
             }
           />
         </InspectorField>
 
         <InspectorField label="Letter spacing">
-          <InspectorTokenInput
+          <InspectorNumberInput
             aria-label="Letter spacing"
-            value={formatLetterSpacingDisplay(parsed.letterSpacing)}
+            value={formatLetterSpacingNumber(parsed.letterSpacing)}
+            unit="em"
             placeholder="normal"
-            options={LETTER_SPACING_OPTIONS}
+            presets={LETTER_SPACING_PRESETS}
             onChange={(input) =>
-              onUpdate({ letterSpacing: parseLetterSpacingInput(input) })
+              onUpdate({ letterSpacing: parseLetterSpacingNumber(input) })
             }
           />
         </InspectorField>
@@ -350,95 +317,97 @@ function OverlineIcon() {
   );
 }
 
-function formatFontSizeDisplay(className?: string): string {
+function formatFontSizeNumber(className?: string): string {
   if (!className) return "";
   if (className.startsWith("text-[") && className.endsWith("]")) {
-    return className.slice(6, -1);
+    const inner = className.slice(6, -1);
+    const pxMatch = inner.match(/^([\d.]+)px$/);
+    if (pxMatch) return pxMatch[1]!;
+    const numMatch = inner.match(/^([\d.]+)/);
+    return numMatch?.[1] ?? "";
   }
   const map: Record<string, string> = {
-    "text-xs": "12px",
-    "text-sm": "14px",
-    "text-base": "16px",
-    "text-lg": "18px",
-    "text-xl": "20px",
-    "text-2xl": "24px",
-    "text-3xl": "30px",
+    "text-xs": "12",
+    "text-sm": "14",
+    "text-base": "16",
+    "text-lg": "18",
+    "text-xl": "20",
+    "text-2xl": "24",
+    "text-3xl": "30",
   };
-  return map[className] ?? className.replace(/^text-/, "");
+  return map[className] ?? "";
 }
 
-function parseFontSizeInput(input: string): string | undefined {
+function parseFontSizeNumber(input: string): string | undefined {
   const trimmed = input.trim();
   if (!trimmed) return undefined;
 
-  const presetByLabel = Object.fromEntries(
-    FONT_SIZE_OPTIONS.map((option) => {
-      const tailwindMap: Record<string, string> = {
-        "12px": "text-xs",
-        "14px": "text-sm",
-        "16px": "text-base",
-        "18px": "text-lg",
-        "20px": "text-xl",
-        "24px": "text-2xl",
-      };
-      return [option.label, tailwindMap[option.label] ?? `text-[${option.label}]`];
-    }),
-  );
+  const presetMap: Record<string, string> = {
+    "10": "text-[10px]",
+    "12": "text-xs",
+    "14": "text-sm",
+    "16": "text-base",
+    "18": "text-lg",
+    "20": "text-xl",
+    "24": "text-2xl",
+  };
 
-  if (presetByLabel[trimmed]) return presetByLabel[trimmed];
-  if (trimmed.startsWith("text-")) return trimmed;
-  if (/^\d+(\.\d+)?$/.test(trimmed)) return `text-[${trimmed}px]`;
-  if (trimmed.includes("px") || trimmed.includes("rem") || trimmed.includes("em")) {
-    return `text-[${trimmed}]`;
-  }
-  return `text-${trimmed}`;
+  if (presetMap[trimmed]) return presetMap[trimmed];
+  return `text-[${trimmed}px]`;
 }
 
-function formatLineHeightDisplay(className?: string): string {
-  if (!className) return "";
+function formatLineHeightNumber(className?: string): string {
+  if (!className || className === "leading-normal") return "";
   if (className.startsWith("leading-[") && className.endsWith("]")) {
-    return className.slice(9, -1);
+    const inner = className.slice(9, -1);
+    const emMatch = inner.match(/^([\d.]+)em$/);
+    if (emMatch) return emMatch[1]!;
+    return inner;
   }
+  const named: Record<string, string> = {
+    "leading-none": "1",
+    "leading-tight": "1.25",
+    "leading-snug": "1.375",
+    "leading-normal": "",
+    "leading-relaxed": "1.625",
+    "leading-loose": "2",
+  };
+  if (named[className] !== undefined) return named[className]!;
   return className.replace(/^leading-/, "");
 }
 
-function parseLineHeightInput(input: string): string | undefined {
+function parseLineHeightNumber(input: string): string | undefined {
   const trimmed = input.trim();
   if (!trimmed) return undefined;
-  if (trimmed.startsWith("leading-")) return trimmed;
   if (trimmed === "normal") return "leading-normal";
-  if (/^\d+(\.\d+)?$/.test(trimmed)) return `leading-[${trimmed}]`;
+  if (/^\d+(\.\d+)?$/.test(trimmed)) return `leading-[${trimmed}em]`;
   return `leading-${trimmed}`;
 }
 
-function formatLetterSpacingDisplay(className?: string): string {
-  if (!className) return "";
+function formatLetterSpacingNumber(className?: string): string {
+  if (!className || className === "tracking-normal") return "";
   if (className.startsWith("tracking-[") && className.endsWith("]")) {
     const inner = className.slice(10, -1);
-    return inner.endsWith("em") ? inner : `${inner}em`;
+    const emMatch = inner.match(/^([\d.]+)em$/);
+    if (emMatch) return emMatch[1]!;
+    return inner;
   }
   const map: Record<string, string> = {
     "tracking-tighter": "0",
-    "tracking-tight": "0.025em",
-    "tracking-normal": "normal",
-    "tracking-wide": "0.025em",
-    "tracking-wider": "0.05em",
-    "tracking-widest": "0.1em",
+    "tracking-tight": "0.025",
+    "tracking-normal": "",
+    "tracking-wide": "0.025",
+    "tracking-wider": "0.05",
+    "tracking-widest": "0.1",
   };
-  if (map[className]) return map[className];
-  return className.replace(/^tracking-/, "");
+  return map[className] ?? className.replace(/^tracking-/, "");
 }
 
-function parseLetterSpacingInput(input: string): string | undefined {
+function parseLetterSpacingNumber(input: string): string | undefined {
   const trimmed = input.trim();
   if (!trimmed) return undefined;
-  if (trimmed.startsWith("tracking-")) return trimmed;
   if (trimmed === "normal") return "tracking-normal";
-  if (trimmed === "0" || trimmed === "0em") return "tracking-tighter";
-  if (trimmed.endsWith("em")) {
-    const numeric = trimmed.slice(0, -2);
-    return `tracking-[${numeric}em]`;
-  }
+  if (/^\d+(\.\d+)?$/.test(trimmed)) return `tracking-[${trimmed}em]`;
   return `tracking-${trimmed}`;
 }
 

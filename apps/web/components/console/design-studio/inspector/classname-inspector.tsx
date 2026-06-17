@@ -18,7 +18,7 @@ import {
   InspectorGrid,
   InspectorSection,
   InspectorSectionList,
-} from "./inspector-section";
+} from "@ssota/ui/components/design-studio";
 import { ShadowSection } from "./shadow-section";
 import { TypographySection } from "./typography-section";
 
