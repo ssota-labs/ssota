@@ -49,6 +49,11 @@ export default async function ProjectLayout({
     redirect(await getDefaultProjectPath(user.id));
   }
 
+  const isPreviewEmbed = returnTo.includes("/design/preview");
+
+  if (isPreviewEmbed) {
+    return <>{children}</>;
+  }
 
   return (
     <ConsoleShell
