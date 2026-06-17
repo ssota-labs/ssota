@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode, RefObject, WheelEvent } from "react";
+import type { PointerEvent, ReactNode, RefObject, WheelEvent } from "react";
 import { useRef, useState } from "react";
 import {
   CaretDownIcon,
@@ -485,6 +485,63 @@ function adjustNumberByWheel(
   onChange(String(current + direction * step));
 }
 
+type InspectorScrubberHandleProps = {
+  value: string;
+  step: number;
+  onChange: (value: string) => void;
+  "aria-label"?: string;
+};
+
+function InspectorScrubberHandle({
+  value,
+  step,
+  onChange,
+  "aria-label": ariaLabel,
+}: InspectorScrubberHandleProps) {
+  const dragRef = useRef<{ originX: number; originValue: number } | null>(null);
+
+  const endDrag = (event: PointerEvent<HTMLButtonElement>) => {
+    dragRef.current = null;
+    event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+
+  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    const current = value.trim() === "" ? 0 : Number(value);
+    if (!Number.isFinite(current)) return;
+    dragRef.current = { originX: event.clientX, originValue: current };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
+    if (!dragRef.current) return;
+    const deltaX = event.clientX - dragRef.current.originX;
+    const stepSize = event.shiftKey ? step * 10 : step;
+    const next =
+      dragRef.current.originValue + Math.round(deltaX / 4) * stepSize;
+    onChange(String(next));
+  };
+
+  return (
+    <InputGroupButton
+      type="button"
+      size="icon-xs"
+      variant="ghost"
+      className="cursor-ew-resize touch-none px-1"
+      aria-label={ariaLabel ? `${ariaLabel} scrub` : "Adjust value"}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+    >
+      <span className="flex items-center gap-px" aria-hidden>
+        <span className="h-3 w-px rounded-full bg-muted-foreground/70" />
+        <span className="h-3 w-px rounded-full bg-muted-foreground/70" />
+      </span>
+    </InputGroupButton>
+  );
+}
+
 export function InspectorNumberInput({
   value,
   unit = "px",
@@ -515,6 +572,16 @@ export function InspectorNumberInput({
 
   const field = (
     <InputGroup onWheel={handleWheel}>
+      {scrollAdjust ? (
+        <InputGroupAddon align="inline-start">
+          <InspectorScrubberHandle
+            value={value}
+            step={scrollStep}
+            onChange={onChange}
+            aria-label={ariaLabel}
+          />
+        </InputGroupAddon>
+      ) : null}
       {showPresets ? (
         <InputGroupAddon align="inline-start">
           <InspectorPresetTrigger aria-label={presetsLabel} />
