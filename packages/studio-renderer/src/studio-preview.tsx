@@ -3,18 +3,25 @@
 import { useCallback, useEffect, useState } from "react";
 import type { StudioNode } from "@ssota/contracts/catalog";
 import { postToParent } from "./bridge.js";
-import type { StudioMessage } from "./protocol.js";
+import type {
+  StudioInteractionMode,
+  StudioMessage,
+} from "./protocol.js";
 import { createParentMessageListener } from "./bridge.js";
 import { renderStudioTree } from "./render-studio-tree.js";
+import { StudioInspectStyle } from "./studio-inspect-styles.js";
 import { StudioThemeStyle, STUDIO_PREVIEW_CLASS } from "./theme-inject.js";
+import { StudioUtilityStyle } from "./utility-styles.js";
 import type { ResolvedComponentMap } from "./resolve-project-ref.js";
 import { inlineProjectRefs } from "./resolve-project-ref.js";
 import type { StudioRenderMode } from "./protocol.js";
+import { hasComponentRefs } from "./collect-utility-classes.js";
 
 export type StudioPreviewProps = {
   initialTree?: StudioNode | null;
   initialMode?: StudioRenderMode;
   initialThemeCss?: string;
+  initialInteractionMode?: StudioInteractionMode;
   resolvedComponents?: ResolvedComponentMap;
   targetOrigin?: string;
 };
@@ -23,12 +30,18 @@ export function StudioPreview({
   initialTree = null,
   initialMode = "draft",
   initialThemeCss = "",
-  resolvedComponents = {},
+  initialInteractionMode = "inspect",
+  resolvedComponents: initialResolved = {},
   targetOrigin = typeof window !== "undefined" ? window.location.origin : "",
 }: StudioPreviewProps) {
   const [tree, setTree] = useState<StudioNode | null>(initialTree);
   const [mode, setMode] = useState<StudioRenderMode>(initialMode);
   const [themeCss, setThemeCss] = useState(initialThemeCss);
+  const [utilityCss, setUtilityCss] = useState("");
+  const [interactionMode, setInteractionMode] =
+    useState<StudioInteractionMode>(initialInteractionMode);
+  const [resolvedComponents, setResolvedComponents] =
+    useState<ResolvedComponentMap>(initialResolved);
   const [highlightedNodeId, setHighlightedNodeId] = useState<string | null>(
     null,
   );
@@ -53,8 +66,17 @@ export function StudioPreview({
             setTree(message.tree);
             setMode(message.mode);
             break;
+          case "STUDIO_SET_RESOLVED_COMPONENTS":
+            setResolvedComponents(message.resolvedComponents);
+            break;
           case "STUDIO_SET_THEME":
             setThemeCss(message.cssText);
+            break;
+          case "STUDIO_SET_UTILITY_CSS":
+            setUtilityCss(message.cssText);
+            break;
+          case "STUDIO_SET_INTERACTION_MODE":
+            setInteractionMode(message.mode);
             break;
           case "STUDIO_HIGHLIGHT":
             setHighlightedNodeId(message.nodeId);
@@ -74,18 +96,29 @@ export function StudioPreview({
     return () => window.removeEventListener("message", listener);
   }, [targetOrigin]);
 
-  const displayTree =
-    tree && mode === "published"
-      ? inlineProjectRefs(tree, resolvedComponents)
-      : tree;
+  const shouldInlineRefs =
+    tree &&
+    (mode === "published" ||
+      (Object.keys(resolvedComponents).length > 0 && hasComponentRefs(tree)));
+
+  const displayTree = shouldInlineRefs
+    ? inlineProjectRefs(tree, resolvedComponents)
+    : tree;
 
   return (
-    <div className={`${STUDIO_PREVIEW_CLASS} min-h-full bg-background p-8`}>
+    <div
+      className={`${STUDIO_PREVIEW_CLASS} min-h-full bg-background p-8 ${
+        interactionMode === "inspect" ? "studio-inspect-mode" : ""
+      }`}
+    >
       <StudioThemeStyle cssText={themeCss} />
+      <StudioUtilityStyle cssText={utilityCss} />
+      {interactionMode === "inspect" ? <StudioInspectStyle /> : null}
       {displayTree ? (
         renderStudioTree(displayTree, {
           onSelect: handleSelect,
           highlightedNodeId,
+          interactionMode,
         })
       ) : (
         <div className="text-muted-foreground text-sm">No preview tree</div>

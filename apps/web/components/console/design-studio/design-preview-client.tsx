@@ -10,7 +10,7 @@ export function DesignPreviewClient({
 }) {
   return (
     <div className="min-h-screen bg-background">
-      <StudioPreview initialMode={mode} />
+      <StudioPreview initialMode={mode} initialInteractionMode="inspect" />
     </div>
   );
 }

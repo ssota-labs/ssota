@@ -3,10 +3,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StudioNode } from "@ssota/contracts/catalog";
 import {
+  collectStudioUtilityClassesFromBundle,
   createParentMessageListener,
   postToIframe,
+  type ResolvedComponentMap,
+  type StudioInteractionMode,
   type StudioMessage,
 } from "@ssota/studio-renderer";
+
+async function fetchPreviewUtilityCss(classes: string[]): Promise<string> {
+  if (classes.length === 0) return "";
+  const response = await fetch("/api/studio/preview-utilities", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ classes }),
+  });
+  if (!response.ok) return "";
+  return response.text();
+}
 
 export function usePreviewBridge(previewUrl: string) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -25,6 +39,11 @@ export function usePreviewBridge(previewUrl: string) {
             detail: { nodeId: message.nodeId },
           }),
         );
+        window.dispatchEvent(
+          new CustomEvent("studio-layer-select", {
+            detail: { nodeId: message.nodeId },
+          }),
+        );
       }
     });
     window.addEventListener("message", listener);
@@ -40,7 +59,33 @@ export function usePreviewBridge(previewUrl: string) {
 
   const syncTree = useCallback(
     (tree: StudioNode) => {
-      post({ type: "STUDIO_SET_TREE", tree, mode: "draft" });
+      post({
+        type: "STUDIO_SET_TREE",
+        tree,
+        mode: "draft",
+      });
+    },
+    [post],
+  );
+
+  const syncResolvedComponents = useCallback(
+    (resolvedComponents: ResolvedComponentMap) => {
+      post({
+        type: "STUDIO_SET_RESOLVED_COMPONENTS",
+        resolvedComponents,
+      });
+    },
+    [post],
+  );
+
+  const syncUtilityCss = useCallback(
+    async (tree: StudioNode, resolvedComponents: ResolvedComponentMap) => {
+      const classes = collectStudioUtilityClassesFromBundle(
+        tree,
+        resolvedComponents,
+      );
+      const cssText = await fetchPreviewUtilityCss(classes);
+      post({ type: "STUDIO_SET_UTILITY_CSS", cssText });
     },
     [post],
   );
@@ -48,6 +93,13 @@ export function usePreviewBridge(previewUrl: string) {
   const syncTheme = useCallback(
     (cssText: string) => {
       post({ type: "STUDIO_SET_THEME", cssText });
+    },
+    [post],
+  );
+
+  const syncInteractionMode = useCallback(
+    (mode: StudioInteractionMode) => {
+      post({ type: "STUDIO_SET_INTERACTION_MODE", mode });
     },
     [post],
   );
@@ -74,7 +126,10 @@ export function usePreviewBridge(previewUrl: string) {
     ready,
     previewUrl,
     syncTree,
+    syncResolvedComponents,
+    syncUtilityCss,
     syncTheme,
+    syncInteractionMode,
     highlightNode,
   };
 }

@@ -64,4 +64,32 @@ test.describe("design studio", () => {
     await expect(page.getByText("Demo Button")).toBeVisible();
     await expect(page.getByText("Demo Card")).toBeVisible();
   });
+
+  test("inspect mode selects nodes from preview iframe", async ({ page }) => {
+    await gotoProject(page, "design/ui-components");
+    await expect(page.getByTestId("design-studio-shell")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByTestId("studio-mode-inspect")).toBeVisible();
+
+    const preview = page.frameLocator('iframe[title="Design preview"]');
+    await expect(preview.locator('[data-studio-id="root"]')).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await preview.locator('[data-studio-id="label"]').click();
+    await expect(page.getByLabel("Text")).toHaveValue("Button");
+    await expect(page.getByLabel("Node ID")).toHaveValue("label");
+  });
+
+  test("preview toolbar switches interaction mode", async ({ page }) => {
+    await gotoProject(page, "design/ui-components");
+    await expect(page.getByTestId("studio-mode-preview")).toBeVisible({
+      timeout: 15_000,
+    });
+    await page.getByTestId("studio-mode-preview").click();
+    await expect(
+      page.getByText("Live preview — selection disabled"),
+    ).toBeVisible();
+  });
 });

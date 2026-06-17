@@ -1,49 +1,50 @@
-import type { CSSProperties, MouseEvent, ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { createElement } from "react";
 import type { StudioNode } from "@ssota/contracts/catalog";
 
 export type RenderStudioTreeOptions = {
   onSelect?: (nodeId: string) => void;
   highlightedNodeId?: string | null;
+  interactionMode?: "inspect" | "preview";
 };
 
 export function renderStudioTree(
   node: StudioNode,
   options: RenderStudioTreeOptions = {},
 ): ReactNode {
-  const { onSelect, highlightedNodeId } = options;
+  const {
+    onSelect,
+    highlightedNodeId,
+    interactionMode = "inspect",
+  } = options;
+  const inspect = interactionMode === "inspect";
 
   const handleClick = (nodeId: string) => (event: MouseEvent) => {
+    if (!inspect) return;
     event.stopPropagation();
     onSelect?.(nodeId);
   };
 
-  const highlightStyle = (nodeId: string): CSSProperties | undefined =>
-    highlightedNodeId === nodeId
-      ? { outline: "2px solid hsl(var(--primary))", outlineOffset: "2px" }
-      : undefined;
+  const bindNode = (nodeId: string, props: Record<string, unknown>) => ({
+    ...props,
+    "data-studio-id": nodeId,
+    "data-studio-selected":
+      inspect && highlightedNodeId === nodeId ? "true" : undefined,
+    onClick: handleClick(nodeId),
+  });
 
   switch (node.kind) {
     case "text":
       return createElement(
         "span",
-        {
-          "data-studio-id": node.id,
-          style: highlightStyle(node.id),
-          onClick: handleClick(node.id),
-        },
+        bindNode(node.id, {}),
         node.text,
       );
 
     case "fragment":
       return createElement(
         "div",
-        {
-          "data-studio-id": node.id,
-          "data-studio-fragment": "true",
-          style: highlightStyle(node.id),
-          onClick: handleClick(node.id),
-        },
+        bindNode(node.id, { "data-studio-fragment": "true" }),
         node.children.map((child) =>
           createElement(
             "div",
@@ -57,13 +58,10 @@ export function renderStudioTree(
       const { tag, className, attributes, children, id } = node;
       return createElement(
         tag,
-        {
+        bindNode(id, {
           ...attributes,
-          "data-studio-id": id,
           className,
-          style: highlightStyle(id),
-          onClick: handleClick(id),
-        },
+        }),
         children.map((child) =>
           createElement(
             "div",
@@ -77,13 +75,10 @@ export function renderStudioTree(
     case "component":
       return createElement(
         "div",
-        {
-          "data-studio-id": node.id,
+        bindNode(node.id, {
           "data-studio-component-ref": node.ref.slug,
           className: node.className,
-          style: highlightStyle(node.id),
-          onClick: handleClick(node.id),
-        },
+        }),
         node.children.map((child) =>
           createElement(
             "div",

@@ -8,6 +8,7 @@ import { updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { deployUiComponentAction } from "@/lib/graph/actions/deploy-ui-component";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { ensureEvergreenSingleton } from "@/lib/graph/loaders/ensure-evergreen-singleton";
+import { loadResolvedUiComponents } from "@/lib/design-studio/load-resolved-components";
 import { queryUiComponents } from "@/lib/graph/loaders/query-ui-components";
 
 type DesignStudioPageProps = {
@@ -24,6 +25,7 @@ export async function DesignStudioPage({
   const ctx: ProjectRouteContext = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const components = await queryUiComponents(project.id);
+  const resolvedComponents = await loadResolvedUiComponents(project.id);
   const studioBasePath = projectPath(ctx, "design", "ui-components");
   const previewPath = `${projectPath(ctx, "design", "preview")}?mode=draft`;
 
@@ -117,6 +119,7 @@ export async function DesignStudioPage({
       studioBasePath={studioBasePath}
       themeContent={theme.content ?? ""}
       previewPath={previewPath}
+      resolvedComponents={resolvedComponents}
       onSaveDraft={saveDraft}
       onDeploy={deployComponent}
       onCreateComponent={createComponent}

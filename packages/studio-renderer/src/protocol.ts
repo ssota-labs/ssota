@@ -1,8 +1,14 @@
 import { z } from "zod";
-import { studioNodeSchema } from "@ssota/contracts/catalog";
+import {
+  studioNodeSchema,
+  uiComponentDocumentSchema,
+} from "@ssota/contracts/catalog";
 
 export const studioRenderModeSchema = z.enum(["draft", "published"]);
 export type StudioRenderMode = z.infer<typeof studioRenderModeSchema>;
+
+export const studioInteractionModeSchema = z.enum(["inspect", "preview"]);
+export type StudioInteractionMode = z.infer<typeof studioInteractionModeSchema>;
 
 const studioPatchSchema = z.object({
   className: z.string().optional(),
@@ -20,7 +26,19 @@ export const studioMessageSchema = z.discriminatedUnion("type", [
     mode: studioRenderModeSchema,
   }),
   z.object({
+    type: z.literal("STUDIO_SET_RESOLVED_COMPONENTS"),
+    resolvedComponents: z.record(z.string(), uiComponentDocumentSchema.nullable()),
+  }),
+  z.object({
+    type: z.literal("STUDIO_SET_INTERACTION_MODE"),
+    mode: studioInteractionModeSchema,
+  }),
+  z.object({
     type: z.literal("STUDIO_SET_THEME"),
+    cssText: z.string(),
+  }),
+  z.object({
+    type: z.literal("STUDIO_SET_UTILITY_CSS"),
     cssText: z.string(),
   }),
   z.object({
@@ -35,6 +53,10 @@ export const studioMessageSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("STUDIO_HIGHLIGHT"),
     nodeId: z.string(),
+  }),
+  z.object({
+    type: z.literal("STUDIO_HOVER"),
+    nodeId: z.string().nullable(),
   }),
 ]);
 

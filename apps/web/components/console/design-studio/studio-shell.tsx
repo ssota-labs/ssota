@@ -21,7 +21,9 @@ import { createEmptyUiComponentDocument } from "@/lib/design-studio/empty-docume
 import { exportUiComponentDocumentToJsx } from "@/lib/design-studio/export-jsx";
 import { updateStudioNode } from "@/lib/design-studio/tree-utils";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
+import type { ResolvedComponentMap, StudioInteractionMode } from "@ssota/studio-renderer";
 import { InspectorPanel } from "./inspector-panel";
+import { PreviewToolbar } from "./preview-toolbar";
 import { StudioLeftPanel } from "./studio-left-panel";
 import { usePreviewBridge } from "./preview-bridge";
 
@@ -33,6 +35,7 @@ type StudioShellProps = {
   studioBasePath: string;
   themeContent: string;
   previewPath: string;
+  resolvedComponents: ResolvedComponentMap;
   onSaveDraft: (input: {
     projectId: string;
     nodeId: string;
@@ -55,6 +58,7 @@ export function StudioShell({
   studioBasePath,
   themeContent,
   previewPath,
+  resolvedComponents,
   onSaveDraft,
   onDeploy,
   onCreateComponent,
@@ -81,9 +85,20 @@ export function StudioShell({
   const [selectedId, setSelectedId] = useState<string | null>(
     component ? "root" : null,
   );
+  const [interactionMode, setInteractionMode] =
+    useState<StudioInteractionMode>("inspect");
   const [pending, startTransition] = useTransition();
-  const { iframeRef, ready, previewUrl, syncTree, syncTheme } =
-    usePreviewBridge(previewPath);
+  const {
+    iframeRef,
+    ready,
+    previewUrl,
+    syncTree,
+    syncResolvedComponents,
+    syncUtilityCss,
+    syncTheme,
+    syncInteractionMode,
+    highlightNode,
+  } = usePreviewBridge(previewPath);
 
   useEffect(() => {
     if (!component || !storageKey) return;
@@ -119,8 +134,28 @@ export function StudioShell({
 
   useEffect(() => {
     if (!component || !ready) return;
+    syncResolvedComponents(resolvedComponents);
+  }, [component, ready, resolvedComponents, syncResolvedComponents]);
+
+  useEffect(() => {
+    if (!component || !ready) return;
+    void syncUtilityCss(document.root, resolvedComponents);
+  }, [component, ready, document.root, resolvedComponents, syncUtilityCss]);
+
+  useEffect(() => {
+    if (!component || !ready) return;
     syncTheme(themeContent);
   }, [component, ready, themeContent, syncTheme]);
+
+  useEffect(() => {
+    if (!component || !ready) return;
+    syncInteractionMode(interactionMode);
+  }, [component, ready, interactionMode, syncInteractionMode]);
+
+  useEffect(() => {
+    if (!ready || !selectedId) return;
+    highlightNode(selectedId);
+  }, [ready, selectedId, highlightNode]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -285,12 +320,17 @@ export function StudioShell({
         <ResizableHandle withHandle />
         <ResizablePanel id="preview" defaultSize="53%" minSize="35%">
           {component ? (
-            <div className="h-full min-h-0 bg-muted/30">
+            <div className="flex h-full min-h-0 flex-col bg-muted/30">
+              <PreviewToolbar
+                mode={interactionMode}
+                onModeChange={setInteractionMode}
+                disabled={!ready}
+              />
               <iframe
                 ref={iframeRef}
                 title="Design preview"
                 src={previewUrl}
-                className="h-full w-full border-0 bg-background"
+                className="min-h-0 flex-1 w-full border-0 bg-background"
               />
             </div>
           ) : (
