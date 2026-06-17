@@ -5,7 +5,7 @@ import { gotoProject } from "../helpers/console";
 test.describe("Evergreen documents", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsSmoke(page);
-    await gotoProject(page, "product/dev/data-model");
+    await gotoProject(page, "development/data-model");
   });
 
   test("edits and saves data model document", async ({ page }) => {

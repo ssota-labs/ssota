@@ -10,48 +10,53 @@ test.describe("Console v2.7 navigation", () => {
     await gotoProject(page, "tasks");
   });
 
-  test("sidebar: L0 shows execution and domain drill-downs", async ({ page }) => {
+  test("sidebar: L0 shows tasks, overview, and collapsible groups", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
+    await expect(nav.getByRole("button", { name: "Executive", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Research", exact: true })).toBeVisible();
+    await expect(nav.getByRole("button", { name: "Manager", exact: true })).toBeVisible();
+    await expect(nav.getByRole("button", { name: "Development", exact: true })).toBeVisible();
+    await expect(nav.getByRole("button", { name: "Design", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Workflow Map", exact: true })).toBeVisible();
   });
 
-  test("sidebar: drill into research L1 and back", async ({ page }) => {
+  test("sidebar: research group expands and navigates without L1 slide", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
     await nav.getByRole("button", { name: "Research", exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/research/market$`));
     await expect(nav.getByRole("link", { name: "Market research", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Hypotheses", exact: true })).toBeVisible();
-    await expect(nav.getByRole("button", { name: /Research/i }).first()).toBeVisible();
-
-    await nav.locator("[data-sidebar-back]").click();
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
+    await nav.getByRole("link", { name: "Market research", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/research/market$`));
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
+    await expect(nav.locator("[data-sidebar-back]")).toHaveCount(0);
   });
 
-  test("sidebar: executive drill navigates to default child", async ({ page }) => {
+  test("sidebar: executive group expands to roadmap link", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
     await nav.getByRole("button", { name: "Executive", exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/executive/roadmap$`));
     await expect(nav.getByRole("link", { name: "Roadmap", exact: true })).toBeVisible();
+    await nav.getByRole("link", { name: "Roadmap", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/executive/roadmap$`));
   });
 
-  test("sidebar: product L1 expands development group", async ({ page }) => {
+  test("sidebar: manager group expands to initiatives and development navigates", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
-    await nav.getByRole("button", { name: "Product", exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives$`));
+    await nav.getByRole("button", { name: "Manager", exact: true }).click();
+    await expect(nav.getByRole("link", { name: "Initiatives", exact: true })).toBeVisible();
+    await nav.getByRole("link", { name: "Initiatives", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/initiatives$`));
+
     await nav.getByRole("button", { name: "Development", exact: true }).click();
     await expect(nav.getByRole("link", { name: "Data model", exact: true })).toBeVisible();
     await nav.getByRole("link", { name: "Data model", exact: true }).click();
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/product/dev/data-model$`));
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/development/data-model$`));
     await expect(page.getByRole("textbox", { name: "Content" })).toBeVisible();
   });
 
-  test("sidebar: L2 initiative drill-down and switcher", async ({ page }) => {
+  test("sidebar: L1 initiative slide and switcher", async ({ page }) => {
     const initiativeId = await getSmokeInitiativeId();
-    await gotoProject(page, `product/initiatives/${initiativeId}/planning/prd`);
+    await gotoProject(page, `initiatives/${initiativeId}/planning/prd`);
 
     const nav = page.getByRole("navigation", { name: "Primary" });
     await expect(nav.getByRole("link", { name: "PRD", exact: true })).toBeVisible();
@@ -60,10 +65,8 @@ test.describe("Console v2.7 navigation", () => {
       "Smoke initiative",
     );
 
-    await nav.getByRole("button", { name: /Initiatives/ }).first().click();
-    await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/product/initiatives$`),
-    );
+    await nav.locator("[data-sidebar-back]").click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/initiatives$`));
   });
 
   test("top bar: centered breadcrumb on research route", async ({ page }) => {

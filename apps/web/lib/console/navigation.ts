@@ -5,7 +5,7 @@ export type PagePatternCode = "H" | "D" | "L" | "T" | "canvas";
 
 export type NavScope = "project" | "evergreen" | "initiative";
 
-export type SidebarMode = "l0" | "l1" | "l2";
+export type SidebarMode = "l0" | "l1";
 
 export type NavSeparator = { type: "separator" };
 
@@ -17,14 +17,6 @@ export type NavLink = {
   pattern?: PagePatternCode;
 };
 
-export type NavDrilldown = {
-  type: "drilldown";
-  key: string;
-  labelKey: string;
-  domain: "executive" | "research" | "product";
-  children: NavEntry[];
-};
-
 export type NavGroup = {
   type: "group";
   key: string;
@@ -32,14 +24,16 @@ export type NavGroup = {
   children: NavLink[];
 };
 
+export type NavSectionChild = NavLink | NavGroup;
+
 export type NavSection = {
   type: "section";
   key: string;
   labelKey: string;
-  children: NavLink[];
+  children: NavSectionChild[];
 };
 
-export type NavEntry = NavSeparator | NavLink | NavDrilldown | NavGroup | NavSection;
+export type NavEntry = NavSeparator | NavLink | NavGroup | NavSection;
 
 export const EXECUTIVE_L1: NavLink[] = [
   {
@@ -82,108 +76,75 @@ export const RESEARCH_L1: NavLink[] = [
   },
 ];
 
-export const PRODUCT_DEV_L1: NavLink[] = [
+export const MANAGER_L1: NavLink[] = [
+  {
+    type: "link",
+    key: "manager_initiatives",
+    labelKey: "nav.productInitiatives",
+    href: "initiatives",
+    pattern: "L",
+  },
+];
+
+/** Route prefixes that auto-expand the Manager L0 group. */
+export const MANAGER_ROUTE_PREFIXES = ["initiatives"] as const;
+
+export const DEVELOPMENT_L1: NavLink[] = [
   {
     type: "link",
     key: "dev_data_model",
     labelKey: "nav.devDataModel",
-    href: "product/dev/data-model",
+    href: "development/data-model",
     pattern: "D",
   },
   {
     type: "link",
     key: "dev_system_model",
     labelKey: "nav.devSystemModel",
-    href: "product/dev/system-model",
+    href: "development/system-model",
     pattern: "D",
   },
   {
     type: "link",
     key: "dev_api_reference",
     labelKey: "nav.devApiReference",
-    href: "product/dev/api-reference",
+    href: "development/api-reference",
     pattern: "D",
   },
   {
     type: "link",
     key: "dev_integration",
     labelKey: "nav.devIntegration",
-    href: "product/dev/integration",
+    href: "development/integration",
     pattern: "D",
   },
 ];
 
-export const PRODUCT_DESIGN_L1: NavLink[] = [
+export const DESIGN_L1: NavLink[] = [
   {
     type: "link",
     key: "design_ia",
     labelKey: "nav.designIa",
-    href: "product/design/ia",
+    href: "design/ia",
     pattern: "T",
   },
   {
     type: "link",
     key: "design_ui_components",
     labelKey: "nav.designUiComponents",
-    href: "product/design/ui-components",
+    href: "design/ui-components",
     pattern: "D",
   },
   {
     type: "link",
     key: "design_theme",
     labelKey: "nav.designTheme",
-    href: "product/design/design-theme",
+    href: "design/design-theme",
     pattern: "D",
   },
 ];
 
-export const PRODUCT_L1: NavEntry[] = [
-  {
-    type: "link",
-    key: "product_initiatives",
-    labelKey: "nav.productInitiatives",
-    href: "product/initiatives",
-    pattern: "L",
-  },
-  {
-    type: "group",
-    key: "product_dev",
-    labelKey: "nav.productDev",
-    children: PRODUCT_DEV_L1,
-  },
-  {
-    type: "group",
-    key: "product_design",
-    labelKey: "nav.productDesign",
-    children: PRODUCT_DESIGN_L1,
-  },
-];
-
-export type NavDomain = "executive" | "research" | "product";
-
-function findFirstLinkHref(entries: NavEntry[]): string | null {
-  for (const entry of entries) {
-    if (entry.type === "link") return entry.href;
-    if (entry.type === "group" || entry.type === "section") {
-      const nested = findFirstLinkHref(entry.children);
-      if (nested) return nested;
-    }
-  }
-  return null;
-}
-
-/** Default landing href when drilling into a domain from L0. */
-export const DOMAIN_DEFAULT_HREF: Record<NavDomain, string> = {
-  executive: findFirstLinkHref(EXECUTIVE_L1) ?? "executive/roadmap",
-  research: findFirstLinkHref(RESEARCH_L1) ?? "research/market",
-  product: findFirstLinkHref(PRODUCT_L1) ?? "product/initiatives",
-};
-
-export function getDomainDefaultHref(domain: NavDomain): string {
-  return DOMAIN_DEFAULT_HREF[domain];
-}
-
-export const INITIATIVE_L2_NAV: NavEntry[] = [
+export const INITIATIVE_L1_NAV: NavEntry[] = [
   {
     type: "link",
     key: "initiative_overview",
@@ -226,7 +187,7 @@ export const INITIATIVE_L2_NAV: NavEntry[] = [
     children: [
       {
         type: "link",
-        key: "design_ia",
+        key: "initiative_design_ia",
         labelKey: "nav.initiativeDesignIa",
         href: "design/ia",
         pattern: "T",
@@ -364,13 +325,18 @@ export const INITIATIVE_L2_NAV: NavEntry[] = [
 function flattenInitiativeLinks(entries: NavEntry[]): NavLink[] {
   return entries.flatMap((entry) => {
     if (entry.type === "link") return [entry];
-    if (entry.type === "section" || entry.type === "group") return entry.children;
+    if (entry.type === "group") return entry.children;
+    if (entry.type === "section") {
+      return entry.children.flatMap((child) =>
+        child.type === "link" ? [child] : child.children,
+      );
+    }
     return [];
   });
 }
 
 /** Flat initiative route list for breadcrumbs and route meta. */
-export const INITIATIVE_L2: NavLink[] = flattenInitiativeLinks(INITIATIVE_L2_NAV);
+export const INITIATIVE_L1: NavLink[] = flattenInitiativeLinks(INITIATIVE_L1_NAV);
 
 export const L0_NAV: NavEntry[] = [
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
@@ -381,43 +347,103 @@ export const L0_NAV: NavEntry[] = [
     href: "overview",
     pattern: "H",
   },
-  { type: "separator" },
   {
-    type: "drilldown",
-    key: "executive",
-    labelKey: "nav.executive",
-    domain: "executive",
-    children: EXECUTIVE_L1,
+    type: "section",
+    key: "l0_workflow",
+    labelKey: "nav.sectionWorkflow",
+    children: [
+      {
+        type: "group",
+        key: "executive",
+        labelKey: "nav.executive",
+        children: EXECUTIVE_L1,
+      },
+      {
+        type: "group",
+        key: "research",
+        labelKey: "nav.research",
+        children: RESEARCH_L1,
+      },
+      {
+        type: "group",
+        key: "manager",
+        labelKey: "nav.manager",
+        children: MANAGER_L1,
+      },
+      {
+        type: "group",
+        key: "development",
+        labelKey: "nav.productDev",
+        children: DEVELOPMENT_L1,
+      },
+      {
+        type: "group",
+        key: "design",
+        labelKey: "nav.productDesign",
+        children: DESIGN_L1,
+      },
+    ],
   },
   {
-    type: "drilldown",
-    key: "research",
-    labelKey: "nav.research",
-    domain: "research",
-    children: RESEARCH_L1,
-  },
-  {
-    type: "drilldown",
-    key: "product",
-    labelKey: "nav.product",
-    domain: "product",
-    children: PRODUCT_L1,
-  },
-  { type: "separator" },
-  {
-    type: "link",
-    key: "workflow_map",
-    labelKey: "nav.workflowMap",
-    href: "workflow/map",
-    pattern: "canvas",
+    type: "section",
+    key: "l0_explore",
+    labelKey: "nav.sectionExplore",
+    children: [
+      {
+        type: "link",
+        key: "workflow_map",
+        labelKey: "nav.workflowMap",
+        href: "workflow/map",
+        pattern: "canvas",
+      },
+    ],
   },
 ];
 
-const INITIATIVE_PATH_RE =
-  /^product\/initiatives\/([^/]+)(?:\/(.*))?$/;
+const INITIATIVE_PATH_RE = /^initiatives\/([^/]+)(?:\/(.*))?$/;
+
+export type L0GroupKey = "executive" | "research" | "manager" | "development" | "design";
+
+export function getRelativeProjectPath(pathname: string, projectBase: string): string {
+  return pathname.startsWith(projectBase)
+    ? pathname.slice(projectBase.length).replace(/^\//, "")
+    : pathname.replace(/^\//, "");
+}
+
+export function getExpandedGroupsFromPath(relativePath: string): Record<L0GroupKey, boolean> {
+  const expanded = {
+    executive: false,
+    research: false,
+    manager: false,
+    development: false,
+    design: false,
+  };
+
+  if (relativePath.startsWith("executive/") || relativePath === "executive") {
+    expanded.executive = true;
+  }
+  if (relativePath.startsWith("research/") || relativePath === "research") {
+    expanded.research = true;
+  }
+  if (
+    MANAGER_ROUTE_PREFIXES.some(
+      (prefix) => relativePath === prefix || relativePath.startsWith(`${prefix}/`),
+    )
+  ) {
+    expanded.manager = true;
+  }
+  if (relativePath.startsWith("development/") || relativePath === "development") {
+    expanded.development = true;
+  }
+  if (relativePath.startsWith("design/") || relativePath === "design") {
+    expanded.design = true;
+  }
+
+  return expanded;
+}
 
 export function initiativePath(ctx: ProjectRouteContext, initiativeId: string, suffix = "") {
-  const base = projectPath(ctx, "product", "initiatives", initiativeId);
+  const base = projectPath(ctx, "initiatives", initiativeId);
   return suffix ? `${base}/${suffix}` : base;
 }
 
@@ -430,10 +456,7 @@ export function parseInitiativeRoute(
   pathname: string,
   projectBase: string,
 ): { initiativeId: string; suffix: string } | null {
-  const relative = pathname.startsWith(projectBase)
-    ? pathname.slice(projectBase.length).replace(/^\//, "")
-    : pathname.replace(/^\//, "");
-
+  const relative = getRelativeProjectPath(pathname, projectBase);
   const match = relative.match(INITIATIVE_PATH_RE);
   if (!match) return null;
 
@@ -444,33 +467,7 @@ export function parseInitiativeRoute(
 }
 
 export function getSidebarMode(pathname: string, projectBase: string): SidebarMode {
-  const initiative = parseInitiativeRoute(pathname, projectBase);
-  if (initiative) return "l2";
-
-  const relative = pathname.startsWith(projectBase)
-    ? pathname.slice(projectBase.length)
-    : pathname;
-
-  if (
-    relative.startsWith("/executive") ||
-    relative.startsWith("/research") ||
-    relative.startsWith("/product")
-  ) {
-    return "l1";
-  }
-
-  return "l0";
-}
-
-export function getActiveDomain(pathname: string, projectBase: string) {
-  const relative = pathname.startsWith(projectBase)
-    ? pathname.slice(projectBase.length)
-    : pathname;
-
-  if (relative.startsWith("/executive")) return "executive" as const;
-  if (relative.startsWith("/research")) return "research" as const;
-  if (relative.startsWith("/product")) return "product" as const;
-  return null;
+  return parseInitiativeRoute(pathname, projectBase) ? "l1" : "l0";
 }
 
 export function isNavLinkActive(
@@ -481,8 +478,8 @@ export function isNavLinkActive(
 ): boolean {
   if (initiativeId !== undefined) {
     const full = href
-      ? `${projectBase}/product/initiatives/${initiativeId}/${href}`
-      : `${projectBase}/product/initiatives/${initiativeId}`;
+      ? `${projectBase}/initiatives/${initiativeId}/${href}`
+      : `${projectBase}/initiatives/${initiativeId}`;
     if (href === "") {
       return pathname === full || pathname === `${full}/`;
     }
@@ -490,6 +487,9 @@ export function isNavLinkActive(
   }
 
   const fullPath = href ? `${projectBase}/${href}` : projectBase;
+  if (href === "initiatives") {
+    return pathname === fullPath || pathname === `${fullPath}/`;
+  }
   return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
 }
 
@@ -503,9 +503,7 @@ export function buildBreadcrumbSegments(
   projectBase: string,
   initiativeTitle?: string,
 ): BreadcrumbSegment[] {
-  const relative = pathname.startsWith(projectBase)
-    ? pathname.slice(projectBase.length).replace(/^\//, "")
-    : pathname.replace(/^\//, "");
+  const relative = getRelativeProjectPath(pathname, projectBase);
 
   if (!relative) {
     return [{ labelKey: "nav.overview" }];
@@ -540,34 +538,37 @@ export function buildBreadcrumbSegments(
   const initiative = relative.match(INITIATIVE_PATH_RE);
   if (initiative) {
     const suffix = initiative[2] ?? "";
-    const l2 = INITIATIVE_L2.find((item) => item.href === suffix);
+    const l1 = INITIATIVE_L1.find((item) => item.href === suffix);
     return [
-      { labelKey: "nav.product" },
+      { labelKey: "nav.manager" },
       { labelKey: initiativeTitle ? "nav.initiativeTitle" : "nav.productInitiatives" },
-      ...(l2 ? [{ labelKey: l2.labelKey }] : []),
+      ...(l1 ? [{ labelKey: l1.labelKey }] : []),
     ];
   }
 
-  if (relative.startsWith("product/")) {
-    const allProductLinks = [
-      ...PRODUCT_L1.filter((e): e is NavLink => e.type === "link"),
-      ...PRODUCT_DEV_L1,
-      ...PRODUCT_DESIGN_L1,
+  if (relative === "initiatives") {
+    return [{ labelKey: "nav.manager" }, { labelKey: "nav.productInitiatives" }];
+  }
+
+  if (relative.startsWith("development/")) {
+    const child = DEVELOPMENT_L1.find((item) => relative === item.href);
+    return [
+      { labelKey: "nav.productDev" },
+      { labelKey: child?.labelKey ?? "nav.productDev" },
     ];
-    const child = allProductLinks.find((item) => relative === item.href);
-    if (child) {
-      const isDev = PRODUCT_DEV_L1.some((d) => d.href === relative);
-      const isDesign = PRODUCT_DESIGN_L1.some((d) => d.href === relative);
-      return [
-        { labelKey: "nav.product" },
-        ...(isDev ? [{ labelKey: "nav.productDev" }] : []),
-        ...(isDesign ? [{ labelKey: "nav.productDesign" }] : []),
-        { labelKey: child.labelKey },
-      ];
-    }
-    if (relative === "product/initiatives") {
-      return [{ labelKey: "nav.product" }, { labelKey: "nav.productInitiatives" }];
-    }
+  }
+
+  if (relative.startsWith("design/")) {
+    const child = DESIGN_L1.find((item) => relative === item.href);
+    return [
+      { labelKey: "nav.productDesign" },
+      { labelKey: child?.labelKey ?? "nav.productDesign" },
+    ];
+  }
+
+  const managerChild = MANAGER_L1.find((item) => relative === item.href);
+  if (managerChild) {
+    return [{ labelKey: "nav.manager" }, { labelKey: managerChild.labelKey }];
   }
 
   if (relative.startsWith("developer/")) {

@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import { getDomainDefaultHref } from "@/lib/console/navigation";
 import { projectPath } from "@/lib/console/paths";
 
 export default async function ExecutiveIndexPage({
@@ -8,5 +7,5 @@ export default async function ExecutiveIndexPage({
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  redirect(projectPath({ orgSlug, projectSlug }, ...getDomainDefaultHref("executive").split("/")));
+  redirect(projectPath({ orgSlug, projectSlug }, "executive", "roadmap"));
 }

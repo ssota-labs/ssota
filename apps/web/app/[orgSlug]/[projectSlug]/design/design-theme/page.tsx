@@ -1,7 +1,7 @@
 import { EvergreenDocumentRoute } from "@/components/console/evergreen-document-route";
 import { resolveProject } from "@/lib/console/resolve-project";
 
-export default async function DevIntegrationPage({
+export default async function DesignThemePage({
   params,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
@@ -14,10 +14,10 @@ export default async function DevIntegrationPage({
     <EvergreenDocumentRoute
       projectId={project.id}
       ctx={ctx}
-      nodeType="integration_spec"
-      defaultTitle="Integration"
-      revalidateSegments={["product", "dev", "integration"]}
-      emptyDescription="Document integration contracts and flows."
+      nodeType="design_theme"
+      defaultTitle="Design theme"
+      revalidateSegments={["design", "design-theme"]}
+      emptyDescription="Document design tokens and theme guidelines."
     />
   );
 }

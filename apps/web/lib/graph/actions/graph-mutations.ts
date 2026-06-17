@@ -98,7 +98,7 @@ export async function createInitiativeBundleAction(input: {
 
   const result = await createInitiativeBundle(deps, parsed);
   revalidateConsole([
-    projectPath(input.ctx, "product", "initiatives"),
+    projectPath(input.ctx, "initiatives"),
     projectPath(input.ctx, "overview"),
     projectPath(input.ctx, "research", "hypotheses"),
   ]);
@@ -107,7 +107,6 @@ export async function createInitiativeBundleAction(input: {
     redirect(
       projectPath(
         input.ctx,
-        "product",
         "initiatives",
         result.initiativeId,
         "planning",
@@ -154,7 +153,7 @@ export async function createInitiativeFromHypothesisAction(input: {
 
   const result = await createInitiativeBundle(deps, parsed);
   revalidateConsole([
-    projectPath(input.ctx, "product", "initiatives"),
+    projectPath(input.ctx, "initiatives"),
     projectPath(input.ctx, "overview"),
     projectPath(input.ctx, "research", "hypotheses"),
   ]);
@@ -162,7 +161,6 @@ export async function createInitiativeFromHypothesisAction(input: {
   redirect(
     projectPath(
       input.ctx,
-      "product",
       "initiatives",
       result.initiativeId,
       "planning",
