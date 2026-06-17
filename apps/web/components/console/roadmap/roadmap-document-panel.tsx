@@ -82,11 +82,9 @@ export function RoadmapDocumentPanel({
       data-testid="roadmap-document-panel"
     >
       {!expanded ? (
-        <div className="relative max-h-64 overflow-hidden rounded-md border bg-background">
-          <div className="px-4 py-4">
-            <MarkdownContent content={content} />
-          </div>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-20 items-end justify-center bg-gradient-to-t from-background via-background/95 to-transparent pb-2">
+        <div className="relative max-h-64 overflow-hidden">
+          <MarkdownContent content={content} />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-20 items-end justify-center bg-gradient-to-t from-card via-card/95 to-transparent pb-2">
             <button
               type="button"
               data-testid={expandTestId}
