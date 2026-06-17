@@ -495,6 +495,9 @@ importers:
       '@tiptap/extension-text-style':
         specifier: 3.26.1
         version: 3.26.1(@tiptap/core@3.26.1(@tiptap/pm@3.26.1))
+      '@tiptap/markdown':
+        specifier: 3.26.1
+        version: 3.26.1(@tiptap/core@3.26.1(@tiptap/pm@3.26.1))(@tiptap/pm@3.26.1)
       '@tiptap/pm':
         specifier: ^3.26.1
         version: 3.26.1
@@ -2896,6 +2899,12 @@ packages:
 
   '@tiptap/extensions@3.26.1':
     resolution: {integrity: sha512-PmRaoe6bebTgz/ZQrjmzwZMST1d9js9ZTiKnUXeXl3Fm+V5U/c3TbbKDfqmL63qPQdjtShDMHi9tYuv+c77OFQ==}
+    peerDependencies:
+      '@tiptap/core': 3.26.1
+      '@tiptap/pm': 3.26.1
+
+  '@tiptap/markdown@3.26.1':
+    resolution: {integrity: sha512-PpAi3hZqZnb7IsCiRnD6rZfauj8O19fvSzRRdx99Uwx14VnhznbO3WKpUMyleuLz5KjClidqqtKMQWDM6Wt0dA==}
     peerDependencies:
       '@tiptap/core': 3.26.1
       '@tiptap/pm': 3.26.1
@@ -8574,6 +8583,12 @@ snapshots:
     dependencies:
       '@tiptap/core': 3.26.1(@tiptap/pm@3.26.1)
       '@tiptap/pm': 3.26.1
+
+  '@tiptap/markdown@3.26.1(@tiptap/core@3.26.1(@tiptap/pm@3.26.1))(@tiptap/pm@3.26.1)':
+    dependencies:
+      '@tiptap/core': 3.26.1(@tiptap/pm@3.26.1)
+      '@tiptap/pm': 3.26.1
+      marked: 17.0.6
 
   '@tiptap/pm@3.26.1':
     dependencies:

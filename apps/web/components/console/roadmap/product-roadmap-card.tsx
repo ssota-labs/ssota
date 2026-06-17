@@ -1,34 +1,35 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { DocStatus } from "@/lib/roadmap/doc-status";
 import { Button } from "@ssota/ui/components/ui/button";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { RoadmapDocStatusControl } from "@/components/console/roadmap/roadmap-doc-status-control";
-import { RoadmapDocumentSheet } from "@/components/console/roadmap/roadmap-document-sheet";
-import { RoadmapMarkdownPreview } from "@/components/console/roadmap/roadmap-markdown-preview";
+import { RoadmapDocumentPanel } from "@/components/console/roadmap/roadmap-document-panel";
 import type { RoadmapNodeView } from "@/lib/roadmap/types";
 
 type ProductRoadmapCardProps = {
   node: RoadmapNodeView;
+  projectId: string;
   onSave: (input: {
     title: string;
     content: string;
     docStatus?: DocStatus;
   }) => Promise<void>;
+  onSaveContent: (input: { content: string }) => Promise<void>;
   onApplyTemplate: () => Promise<void>;
 };
 
 export function ProductRoadmapCard({
   node,
+  projectId,
   onSave,
+  onSaveContent,
   onApplyTemplate,
 }: ProductRoadmapCardProps) {
   const { t } = useLocale();
   const router = useRouter();
-  const [viewOpen, setViewOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const isEmpty = !node.content.trim();
@@ -57,7 +58,7 @@ export function ProductRoadmapCard({
       className="rounded-lg border bg-card"
       data-testid="product-roadmap-card"
     >
-      <header className="border-b px-4 py-3 md:px-6">
+      <header className="rounded-t-lg border-b px-4 py-3 md:px-6">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-semibold tracking-tight">
             {t("roadmap.productRoadmap")}
@@ -90,52 +91,14 @@ export function ProductRoadmapCard({
             </Button>
           </div>
         ) : (
-          <RoadmapMarkdownPreview content={node.content} />
+          <RoadmapDocumentPanel
+            content={node.content}
+            projectId={projectId}
+            expandTestId="product-roadmap-expand"
+            onSave={onSaveContent}
+          />
         )}
-
-        <div className="flex flex-wrap justify-end gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={isEmpty}
-            data-testid="product-roadmap-view-full"
-            onClick={() => setViewOpen(true)}
-          >
-            {t("roadmap.viewFull")}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            disabled={isEmpty && pending}
-            onClick={() => setEditOpen(true)}
-          >
-            {t("roadmap.edit")}
-          </Button>
-        </div>
       </div>
-
-      <RoadmapDocumentSheet
-        open={viewOpen}
-        mode="view"
-        title={node.title}
-        content={node.content}
-        docStatus={docStatus}
-        description={t("roadmap.productRoadmapDescription")}
-        saveLabel={t("common.save")}
-        onOpenChange={setViewOpen}
-      />
-      <RoadmapDocumentSheet
-        open={editOpen}
-        mode="edit"
-        title={node.title}
-        content={node.content}
-        docStatus={docStatus}
-        description={t("roadmap.productRoadmapDescription")}
-        saveLabel={t("common.save")}
-        onOpenChange={setEditOpen}
-        onSave={onSave}
-      />
     </section>
   );
 }
