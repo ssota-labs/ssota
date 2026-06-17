@@ -8,6 +8,8 @@ type LayersPanelProps = {
   root: StudioNode;
   selectedId: string | null;
   onSelect: (nodeId: string) => void;
+  /** When nested inside studio-left-panel, skip outer chrome. */
+  embedded?: boolean;
 };
 
 function nodeLabel(node: StudioNode): string {
@@ -23,15 +25,28 @@ function nodeLabel(node: StudioNode): string {
   }
 }
 
-export function LayersPanel({ root, selectedId, onSelect }: LayersPanelProps) {
+export function LayersPanel({
+  root,
+  selectedId,
+  onSelect,
+  embedded = false,
+}: LayersPanelProps) {
   const items: Array<{ id: string; label: string; depth: number }> = [];
   walkStudioNodes(root, (node, depth) => {
     items.push({ id: node.id, label: nodeLabel(node), depth });
   });
 
   return (
-    <div className="flex h-full min-h-0 flex-col border-r bg-card">
-      <div className="border-b px-3 py-2 text-sm font-medium">Layers</div>
+    <div
+      className={
+        embedded
+          ? "flex h-full min-h-0 flex-col"
+          : "flex h-full min-h-0 flex-col border-r bg-card"
+      }
+    >
+      {!embedded ? (
+        <div className="border-b px-3 py-2 text-sm font-medium">Layers</div>
+      ) : null}
       <div className="min-h-0 flex-1 overflow-auto p-2">
         {items.map((item) => (
           <button

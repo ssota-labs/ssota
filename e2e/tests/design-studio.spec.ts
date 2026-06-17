@@ -8,40 +8,49 @@ test.describe("design studio", () => {
     await loginAsSmoke(page);
   });
 
-  test("ui-components list shows demo components and opens editor", async ({
-    page,
-  }) => {
+  test("ui-components opens studio with component browser", async ({ page }) => {
     await gotoProject(page, "design/ui-components");
-    await expect(page.getByText("Demo Button (demo-button)")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByRole("button", { name: "New component" })).toBeVisible();
-
-    await page
-      .getByRole("row", { name: /Demo Button \(demo-button\)/ })
-      .click();
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/design/ui-components/[0-9a-f-]+$`),
       { timeout: 15_000 },
     );
+    await expect(page.getByTestId("design-studio-shell")).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Components" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Layers" })).toBeVisible();
+    await expect(page.getByTestId("studio-component-demo-button")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible();
-    await expect(page.getByText("Layers")).toBeVisible();
     await expect(page.getByText("Inspector")).toBeVisible();
     await expect(page.getByRole("button", { name: "Deploy" })).toBeVisible();
   });
 
-  test("editor updates className and saves draft", async ({ page }) => {
+  test("component browser switches components and layers tab works", async ({
+    page,
+  }) => {
     await gotoProject(page, "design/ui-components");
-    await page
-      .getByRole("row", { name: /Demo Button \(demo-button\)/ })
-      .click();
+    await expect(page.getByTestId("design-studio-shell")).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.getByTestId("studio-component-demo-card").click();
     await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/design/ui-components/[0-9a-f-]+$`),
+      /\/design\/ui-components\/[0-9a-f-]+$/,
       { timeout: 15_000 },
     );
+    await expect(page.getByRole("heading", { name: "Demo Card" })).toBeVisible();
+
+    await page.getByRole("tab", { name: "Layers" }).click();
+    await expect(page.getByText("<div>")).toBeVisible();
+  });
+
+  test("editor updates className and saves draft", async ({ page }) => {
+    await gotoProject(page, "design/ui-components");
+    await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByText("Inspector")).toBeVisible();
 
     const classField = page.getByLabel("className");
+    await classField.clear();
     await classField.fill("rounded-full px-6 py-3 bg-blue-600 text-white");
     await page.getByRole("button", { name: "Save draft" }).click();
     await page.reload();

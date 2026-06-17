@@ -20,14 +20,17 @@ import {
 import { createEmptyUiComponentDocument } from "@/lib/design-studio/empty-document";
 import { exportUiComponentDocumentToJsx } from "@/lib/design-studio/export-jsx";
 import { updateStudioNode } from "@/lib/design-studio/tree-utils";
-import { LayersPanel } from "./layers-panel";
+import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
 import { InspectorPanel } from "./inspector-panel";
+import { StudioLeftPanel } from "./studio-left-panel";
 import { usePreviewBridge } from "./preview-bridge";
 
 type StudioShellProps = {
   ctx: ProjectRouteContext;
   projectId: string;
-  component: GraphNode;
+  component: GraphNode | null;
+  components: UiComponentListRow[];
+  studioBasePath: string;
   themeContent: string;
   previewPath: string;
   onSaveDraft: (input: {
@@ -42,49 +45,67 @@ type StudioShellProps = {
     document: UiComponentDocument;
     revalidatePath: string;
   }) => Promise<void>;
+  onCreateComponent: () => Promise<void> | void;
 };
 
 export function StudioShell({
   projectId,
   component,
+  components,
+  studioBasePath,
   themeContent,
   previewPath,
   onSaveDraft,
   onDeploy,
+  onCreateComponent,
 }: StudioShellProps) {
-  const storageKey = draftStorageKey(projectId, component.id);
-  const props = component.properties as {
+  const props = (component?.properties ?? {}) as {
     slug?: string;
     tier?: string;
     draft?: string;
   };
+  const storageKey = component
+    ? draftStorageKey(projectId, component.id)
+    : null;
 
   const [document, setDocument] = useState<UiComponentDocument>(() =>
-    resolveInitialDraft({
-      sessionDraft: null,
-      propertiesDraft: props.draft,
-      publishedContent: component.content,
-      fallback: createEmptyUiComponentDocument(),
-    }),
+    component
+      ? resolveInitialDraft({
+          sessionDraft: null,
+          propertiesDraft: props.draft,
+          publishedContent: component.content,
+          fallback: createEmptyUiComponentDocument(),
+        })
+      : createEmptyUiComponentDocument(),
   );
-  const [selectedId, setSelectedId] = useState<string | null>("root");
+  const [selectedId, setSelectedId] = useState<string | null>(
+    component ? "root" : null,
+  );
   const [pending, startTransition] = useTransition();
   const { iframeRef, ready, previewUrl, syncTree, syncTheme } =
     usePreviewBridge(previewPath);
 
   useEffect(() => {
+    if (!component || !storageKey) return;
     const sessionDraft = readSessionDraft(storageKey);
+    const nextProps = component.properties as {
+      slug?: string;
+      tier?: string;
+      draft?: string;
+    };
     setDocument(
       resolveInitialDraft({
         sessionDraft,
-        propertiesDraft: props.draft,
+        propertiesDraft: nextProps.draft,
         publishedContent: component.content,
         fallback: createEmptyUiComponentDocument(),
       }),
     );
-  }, [storageKey, props.draft, component.content]);
+    setSelectedId("root");
+  }, [component, storageKey]);
 
   useEffect(() => {
+    if (!storageKey) return;
     const timer = window.setTimeout(() => {
       writeSessionDraft(storageKey, document);
     }, 300);
@@ -92,14 +113,14 @@ export function StudioShell({
   }, [document, storageKey]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!component || !ready) return;
     syncTree(document.root);
-  }, [ready, document.root, syncTree]);
+  }, [component, ready, document.root, syncTree]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!component || !ready) return;
     syncTheme(themeContent);
-  }, [ready, themeContent, syncTheme]);
+  }, [component, ready, themeContent, syncTheme]);
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -145,6 +166,7 @@ export function StudioShell({
   }, []);
 
   const handleSaveDraft = () => {
+    if (!component) return;
     startTransition(async () => {
       await onSaveDraft({
         projectId,
@@ -152,15 +174,20 @@ export function StudioShell({
         draft: JSON.stringify(document),
         revalidatePath: previewPath.replace(/\?.*$/, "").replace(/^\//, ""),
       });
-      writeSessionDraft(storageKey, document);
+      if (storageKey) {
+        writeSessionDraft(storageKey, document);
+      }
     });
   };
 
   const handleClearSessionDraft = () => {
-    clearSessionDraft(storageKey);
+    if (storageKey) {
+      clearSessionDraft(storageKey);
+    }
   };
 
   const handleDeploy = () => {
+    if (!component) return;
     startTransition(async () => {
       await onDeploy({
         projectId,
@@ -168,7 +195,9 @@ export function StudioShell({
         document,
         revalidatePath: previewPath.replace(/\?.*$/, "").replace(/^\//, ""),
       });
-      clearSessionDraft(storageKey);
+      if (storageKey) {
+        clearSessionDraft(storageKey);
+      }
     });
   };
 
@@ -177,13 +206,23 @@ export function StudioShell({
     await navigator.clipboard.writeText(jsx);
   };
 
+  const handleCreateComponent = () => {
+    startTransition(() => {
+      void onCreateComponent();
+    });
+  };
+
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex h-full min-h-0 flex-col" data-testid="design-studio-shell">
       <div className="flex items-center justify-between border-b px-4 py-3 md:px-6">
         <div>
-          <h1 className="text-lg font-semibold">{component.title}</h1>
+          <h1 className="text-lg font-semibold">
+            {component?.title ?? "UI components"}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            {props.slug} · {props.tier ?? "primitive"}
+            {component
+              ? `${props.slug} · ${props.tier ?? "primitive"}`
+              : "Select or create a component"}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -191,6 +230,7 @@ export function StudioShell({
             type="button"
             variant="outline"
             size="sm"
+            disabled={!component}
             onClick={() => void handleCopyJsx()}
           >
             Copy JSX
@@ -199,6 +239,7 @@ export function StudioShell({
             type="button"
             variant="outline"
             size="sm"
+            disabled={!component}
             onClick={handleClearSessionDraft}
           >
             Clear session
@@ -207,7 +248,7 @@ export function StudioShell({
             type="button"
             variant="secondary"
             size="sm"
-            disabled={pending}
+            disabled={!component || pending}
             onClick={handleSaveDraft}
           >
             Save draft
@@ -215,7 +256,7 @@ export function StudioShell({
           <Button
             type="button"
             size="sm"
-            disabled={pending}
+            disabled={!component || pending}
             onClick={handleDeploy}
           >
             Deploy
@@ -224,28 +265,49 @@ export function StudioShell({
       </div>
 
       <ResizablePanelGroup
-        id="design-studio-shell"
+        id="design-studio-panels"
         orientation="horizontal"
         className="min-h-0 flex-1"
-        defaultLayout={{ layers: 20, preview: 55, inspector: 25 }}
+        defaultLayout={{ left: 22, preview: 53, inspector: 25 }}
       >
-        <ResizablePanel id="layers" defaultSize="20%" minSize="14%" maxSize="30%">
-          <LayersPanel
-            root={document.root}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
+        <ResizablePanel id="left" defaultSize="22%" minSize="16%" maxSize="32%">
+          <StudioLeftPanel
+            components={components}
+            activeComponentId={component?.id ?? null}
+            studioBasePath={studioBasePath}
+            root={component ? document.root : null}
+            selectedLayerId={selectedId}
+            onSelectLayer={setSelectedId}
+            pending={pending}
+            onCreateComponent={handleCreateComponent}
           />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel id="preview" defaultSize="55%" minSize="35%">
-          <div className="h-full min-h-0 bg-muted/30">
-            <iframe
-              ref={iframeRef}
-              title="Design preview"
-              src={previewUrl}
-              className="h-full w-full border-0 bg-background"
-            />
-          </div>
+        <ResizablePanel id="preview" defaultSize="53%" minSize="35%">
+          {component ? (
+            <div className="h-full min-h-0 bg-muted/30">
+              <iframe
+                ref={iframeRef}
+                title="Design preview"
+                src={previewUrl}
+                className="h-full w-full border-0 bg-background"
+              />
+            </div>
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">
+              <p className="text-sm text-muted-foreground">
+                Create a component or pick one from the Components tab.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                disabled={pending}
+                onClick={handleCreateComponent}
+              >
+                {pending ? "Creating…" : "New component"}
+              </Button>
+            </div>
+          )}
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel
@@ -254,11 +316,17 @@ export function StudioShell({
           minSize="18%"
           maxSize="35%"
         >
-          <InspectorPanel
-            root={document.root}
-            selectedId={selectedId}
-            onPatch={handlePatch}
-          />
+          {component ? (
+            <InspectorPanel
+              root={document.root}
+              selectedId={selectedId}
+              onPatch={handlePatch}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
+              Inspector appears when a component is open.
+            </div>
+          )}
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
