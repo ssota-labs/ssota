@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  type ReactNode,
-} from "react";
+import { useCallback, useMemo, type ReactNode } from "react";
 import {
   Command,
   CommandEmpty,
@@ -37,7 +31,6 @@ export function SuggestionMenu({
   onSelect: (item: SuggestionMenuItem) => void;
 } & SuggestionPortalInjectedProps) {
   const visibleItems = useMemo(() => items, [items]);
-  const listRef = useRef<HTMLDivElement>(null);
   const selectedIndex = suggestionSelectedIndex;
 
   const selectItem = useCallback(
@@ -48,11 +41,6 @@ export function SuggestionMenu({
     [onSelect, visibleItems],
   );
 
-  useEffect(() => {
-    const selected = listRef.current?.querySelector('[data-selected="true"]');
-    selected?.scrollIntoView({ block: "nearest" });
-  }, [selectedIndex]);
-
   return (
     <Command
       shouldFilter={false}
@@ -62,7 +50,7 @@ export function SuggestionMenu({
       aria-label={ariaLabel}
       data-testid="ssota-suggestion-menu"
     >
-      <CommandList ref={listRef}>
+      <CommandList>
         <CommandEmpty>{emptyLabel}</CommandEmpty>
         <CommandGroup>
           {visibleItems.map((item, index) => (

@@ -172,6 +172,44 @@ test.describe("Editor Lab", () => {
       await page.keyboard.press("ArrowUp");
       await expect(menu.locator('[data-selected="true"]')).toContainText("Toggle");
     });
+
+    test("filters items when typing after slash", async ({ page }) => {
+      await openSlashMenu(page);
+      const menu = page.getByTestId("ssota-slash-menu");
+
+      await expect(menu.getByRole("option", { name: /Paragraph/i })).toBeVisible();
+      await expect(menu.getByRole("option", { name: /Heading 1/i })).toBeVisible();
+
+      await page.keyboard.type("head");
+
+      await expect(menu.getByRole("option", { name: /Heading 1/i })).toBeVisible();
+      await expect(menu.getByRole("option", { name: /Paragraph/i })).toBeHidden();
+      await expect(menu.locator('[data-selected="true"]')).toContainText("Heading 1");
+    });
+
+    test("keeps keyboard selection scrolled into view", async ({ page }) => {
+      await openSlashMenu(page);
+      const menu = page.getByTestId("ssota-slash-menu");
+
+      for (let i = 0; i < 12; i++) {
+        await page.keyboard.press("ArrowDown");
+      }
+
+      const isVisible = await menu.evaluate((el) => {
+        const list = el.querySelector('[data-slot="command-list"]');
+        const selected = el.querySelector(
+          '[data-slot="command-item"][data-selected="true"]',
+        );
+        if (!(list instanceof HTMLElement) || !(selected instanceof HTMLElement)) {
+          return false;
+        }
+        const listRect = list.getBoundingClientRect();
+        const itemRect = selected.getBoundingClientRect();
+        return itemRect.top >= listRect.top && itemRect.bottom <= listRect.bottom;
+      });
+
+      expect(isVisible).toBe(true);
+    });
   });
 
   test.describe("callout", () => {

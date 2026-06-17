@@ -32,9 +32,7 @@ import {
   type ComponentType,
   type ReactNode,
   useCallback,
-  useEffect,
   useMemo,
-  useRef,
 } from "react";
 import {
   Command,
@@ -223,10 +221,8 @@ type SlashCommandListProps = SuggestionProps<SlashCommandItem> &
   SuggestionPortalInjectedProps;
 
 function SlashCommandList(props: SlashCommandListProps) {
-  const { command, editor, suggestionSelectedIndex, onSuggestionSelectIndex } =
-    props;
+  const { command, suggestionSelectedIndex, onSuggestionSelectIndex } = props;
   const items = useMemo(() => props.items, [props.items]);
-  const listRef = useRef<HTMLDivElement>(null);
   const selectedIndex = suggestionSelectedIndex;
 
   const selectItem = useCallback(
@@ -237,15 +233,6 @@ function SlashCommandList(props: SlashCommandListProps) {
     [command, items],
   );
 
-  useEffect(() => {
-    const selected = listRef.current?.querySelector('[data-selected="true"]');
-    selected?.scrollIntoView({ block: "nearest" });
-  }, [selectedIndex]);
-
-  useEffect(() => {
-    editor.commands.focus();
-  }, [editor, items]);
-
   return (
     <Command
       shouldFilter={false}
@@ -255,7 +242,7 @@ function SlashCommandList(props: SlashCommandListProps) {
       aria-label="Insert block"
       data-testid="ssota-slash-menu"
     >
-      <CommandList ref={listRef}>
+      <CommandList>
         <CommandEmpty>No blocks found.</CommandEmpty>
         <CommandGroup>
           {items.map((item, index) => (

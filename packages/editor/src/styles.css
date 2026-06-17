@@ -257,12 +257,16 @@
 
 .ssota-slash-menu {
   width: 18rem;
-  max-height: 22rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--popover);
   color: var(--popover-foreground);
   box-shadow: var(--shadow-lg);
+}
+
+.ssota-slash-menu [data-slot="command-list"] {
+  max-height: min(22rem, 50vh);
+  overflow-y: auto;
 }
 
 .ssota-slash-menu-item {
@@ -318,12 +322,16 @@
 
 .ssota-suggestion-menu {
   width: 18rem;
-  max-height: 22rem;
   border: 1px solid var(--border);
   border-radius: 0.5rem;
   background: var(--popover);
   color: var(--popover-foreground);
   box-shadow: var(--shadow-lg);
+}
+
+.ssota-suggestion-menu [data-slot="command-list"] {
+  max-height: min(22rem, 50vh);
+  overflow-y: auto;
 }
 
 .ssota-suggestion-menu-item {

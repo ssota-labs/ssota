@@ -72,6 +72,27 @@ export function createSuggestionPortal<
     });
   }
 
+  function scrollActiveSuggestionItem() {
+    if (!bundle?.root) return;
+    const list = bundle.root.querySelector('[data-slot="command-list"]');
+    const selected = bundle.root.querySelector(
+      '[data-slot="command-item"][data-selected="true"]',
+    );
+    if (!(list instanceof HTMLElement) || !(selected instanceof HTMLElement)) {
+      return;
+    }
+
+    const listRect = list.getBoundingClientRect();
+    const itemRect = selected.getBoundingClientRect();
+    const padding = 4;
+
+    if (itemRect.top < listRect.top + padding) {
+      list.scrollTop -= listRect.top - itemRect.top + padding;
+    } else if (itemRect.bottom > listRect.bottom - padding) {
+      list.scrollTop += itemRect.bottom - listRect.bottom + padding;
+    }
+  }
+
   function updateMenu() {
     if (!bundle || !lastSuggestionProps) return;
     const nextProps = mappedProps(lastSuggestionProps);
@@ -79,6 +100,7 @@ export function createSuggestionPortal<
       bundle?.component.updateProps(nextProps);
     });
     syncSelectedDom();
+    scrollActiveSuggestionItem();
   }
 
   function selectIndex(index: number) {
@@ -153,11 +175,12 @@ export function createSuggestionPortal<
       });
     },
     onUpdate: (props: SuggestionProps<TItem>) => {
+      const queryChanged = lastSuggestionProps?.query !== props.query;
       lastSuggestionProps = props;
-      if (selectedIndex >= props.items.length) {
+      if (queryChanged || selectedIndex >= props.items.length) {
         selectedIndex = 0;
       }
-      bundle?.component.updateProps(mappedProps(props));
+      updateMenu();
       if (bundle?.root) {
         positionSuggestionMenu(bundle.root, props.clientRect);
       }
