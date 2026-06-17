@@ -11,7 +11,7 @@ import {
   BORDER_THEME_COLOR_OPTIONS,
   InspectorColorField,
   InspectorField,
-  InspectorNumberInput,
+  InspectorPresetNumberInput,
   InspectorPopoverPicker,
   InspectorSection,
   type InspectorPopoverOption,
@@ -68,7 +68,7 @@ export function BorderSection({ parsed, onUpdate }: BorderSectionProps) {
         </InspectorField>
 
         <InspectorField label="Width">
-          <InspectorNumberInput
+          <InspectorPresetNumberInput
             aria-label="Border width"
             value={parseBorderWidthPx(parsed.borderWidth)}
             unit="px"

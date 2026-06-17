@@ -8,15 +8,22 @@ export {
   InspectorColorField,
   InspectorColorInput,
   InspectorFontFamilyRow,
-  InspectorNumberInput,
   InspectorPopoverPicker,
   InspectorToggleRow,
   type InspectorColorOption,
-  type InspectorNumberUnit,
   type InspectorPopoverOption,
-  type InspectorPresetOption,
   type InspectorToggleOption,
 } from "./inspector-controls";
+export {
+  InspectorNumberInput,
+  InspectorPresetNumberInput,
+  InspectorScrubberNumberInput,
+  type InspectorNumberInputProps,
+  type InspectorNumberUnit,
+  type InspectorPresetNumberInputProps,
+  type InspectorPresetOption,
+  type InspectorScrubberNumberInputProps,
+} from "./inspector-number-input";
 export {
   BORDER_THEME_COLOR_OPTIONS,
   TEXT_THEME_COLOR_OPTIONS,

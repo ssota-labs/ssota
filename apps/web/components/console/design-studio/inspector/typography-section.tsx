@@ -17,8 +17,11 @@ import {
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
   formatFontSizeClass,
+  formatFontSizeOnUnitChange,
   formatLetterSpacingClass,
+  formatLetterSpacingOnUnitChange,
   formatLineHeightClass,
+  formatLineHeightOnUnitChange,
   parseFontSizeValue,
   parseLetterSpacingValue,
   parseLineHeightValue,
@@ -27,7 +30,7 @@ import {
   InspectorColorInput,
   InspectorField,
   InspectorFontFamilyRow,
-  InspectorNumberInput,
+  InspectorPresetNumberInput,
   InspectorPopoverPicker,
   InspectorSection,
   InspectorToggleRow,
@@ -189,7 +192,7 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         />
 
         <InspectorField label="Size">
-          <InspectorNumberInput
+          <InspectorPresetNumberInput
             aria-label="Size"
             value={fontSize.value}
             unit={fontSize.unit}
@@ -198,7 +201,7 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
             placeholder="Default"
             onUnitChange={(nextUnit) =>
               onUpdate({
-                fontSize: formatFontSizeClass(fontSize.value, nextUnit),
+                fontSize: formatFontSizeOnUnitChange(fontSize.value, nextUnit),
               })
             }
             onChange={(input) =>
@@ -244,7 +247,7 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         </InspectorField>
 
         <InspectorField label="Line height">
-          <InspectorNumberInput
+          <InspectorPresetNumberInput
             aria-label="Line height"
             value={lineHeight.value}
             unit={lineHeight.unit}
@@ -253,7 +256,10 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
             placeholder="normal"
             onUnitChange={(nextUnit) =>
               onUpdate({
-                lineHeight: formatLineHeightClass(lineHeight.value, nextUnit),
+                lineHeight: formatLineHeightOnUnitChange(
+                  lineHeight.value,
+                  nextUnit,
+                ),
               })
             }
             onChange={(input) =>
@@ -265,7 +271,7 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         </InspectorField>
 
         <InspectorField label="Letter spacing">
-          <InspectorNumberInput
+          <InspectorPresetNumberInput
             aria-label="Letter spacing"
             value={letterSpacing.value}
             unit={letterSpacing.unit}
@@ -274,7 +280,7 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
             placeholder="normal"
             onUnitChange={(nextUnit) =>
               onUpdate({
-                letterSpacing: formatLetterSpacingClass(
+                letterSpacing: formatLetterSpacingOnUnitChange(
                   letterSpacing.value,
                   nextUnit,
                 ),

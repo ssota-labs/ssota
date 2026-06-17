@@ -1,6 +1,6 @@
 "use client";
 
-import type { PointerEvent, ReactNode, RefObject, WheelEvent } from "react";
+import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 import {
   CaretDownIcon,
@@ -11,9 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
-  InputGroupButton,
   InputGroupInput,
-  InputGroupText,
 } from "@/components/ui/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -27,6 +25,10 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { InspectorColorOption } from "./tailwind-theme-colors";
+import {
+  InspectorAnchorPopover,
+  InspectorPresetTrigger,
+} from "./inspector-input-primitives";
 
 export type { InspectorColorOption } from "./tailwind-theme-colors";
 
@@ -35,23 +37,6 @@ export type InspectorPopoverOption = {
   label: string;
   icon?: ReactNode;
 };
-
-export type InspectorPresetOption = {
-  value: string;
-  label: string;
-};
-
-export type InspectorNumberUnit = "px" | "%" | "em";
-
-function formatPresetLabel(
-  label: string,
-  unit?: InspectorNumberUnit,
-): string {
-  if (!unit) return label;
-  if (/^(normal|inherit|auto)$/i.test(label)) return label;
-  if (label.endsWith(unit)) return label;
-  return `${label}${unit}`;
-}
 
 const inspectorPopoverContentClass =
   "cn-popover-menu w-[var(--anchor-width)]";
@@ -165,47 +150,6 @@ function InspectorPopoverList({
   );
 }
 
-type InspectorPresetListProps = {
-  options: InspectorPresetOption[];
-  value?: string;
-  unit?: InspectorNumberUnit;
-  onSelect: (value: string) => void;
-};
-
-function InspectorPresetList({
-  options,
-  value,
-  unit,
-  onSelect,
-}: InspectorPresetListProps) {
-  return (
-    <div className="flex flex-col gap-1 p-1">
-      {options.map((option) => {
-        const active = option.value === value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            className={cn(
-              "flex w-full items-center justify-between rounded-sm px-1.5 py-1 text-xs hover:bg-muted",
-              active && "bg-muted",
-            )}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => onSelect(option.value)}
-          >
-            <span className="truncate text-muted-foreground">
-              {formatPresetLabel(option.label, unit)}
-            </span>
-            {active ? (
-              <CheckIcon className="size-3 shrink-0 text-muted-foreground" />
-            ) : null}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function ColorSwatch({
   cssVar,
   swatchClass,
@@ -261,19 +205,6 @@ function resolveColorOption(
   return options.find((option) => option.value === trimmed);
 }
 
-function swatchStyleForValue(
-  value: string,
-  presets: InspectorColorOption[],
-): { cssVar?: string; swatchClass?: string; backgroundColor?: string } {
-  const preset = resolveColorOption(value, presets);
-  if (preset?.cssVar) return { cssVar: preset.cssVar };
-  if (preset?.swatchClass) return { swatchClass: preset.swatchClass };
-  if (value.startsWith("#") || value.startsWith("rgb") || value.startsWith("lab")) {
-    return { backgroundColor: value.startsWith("lab") ? undefined : value };
-  }
-  return { swatchClass: "bg-muted" };
-}
-
 type InspectorColorListProps = {
   options: InspectorColorOption[];
   value?: string;
@@ -316,321 +247,6 @@ function InspectorColorList({
         );
       })}
     </div>
-  );
-}
-
-function InspectorPresetTrigger({
-  "aria-label": ariaLabel,
-}: {
-  "aria-label": string;
-}) {
-  return (
-    <PopoverTrigger
-      nativeButton
-      aria-label={ariaLabel}
-      render={
-        <InputGroupButton type="button" size="icon-xs" variant="ghost" />
-      }
-    >
-      <CaretDownIcon className="size-3.5 text-muted-foreground" />
-    </PopoverTrigger>
-  );
-}
-
-function InspectorAnchorPopover({
-  open,
-  onOpenChange,
-  anchorRef,
-  children,
-  content,
-  side = "bottom",
-}: InspectorAnchorPopoverProps) {
-  return (
-    <Popover open={open} onOpenChange={onOpenChange} modal={false}>
-      <div ref={anchorRef} className="w-full">
-        {children}
-      </div>
-      <PopoverContent
-        anchor={anchorRef}
-        align="start"
-        side={side}
-        className={inspectorPopoverContentClass}
-        initialFocus={false}
-        finalFocus={false}
-      >
-        {content}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-type InspectorAnchorPopoverProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  anchorRef: RefObject<HTMLDivElement | null>;
-  children: ReactNode;
-  content: ReactNode;
-  side?: "top" | "bottom" | "left" | "right";
-};
-
-type InspectorUnitSelectorProps = {
-  unit: InspectorNumberUnit;
-  units: readonly InspectorNumberUnit[];
-  onUnitChange?: (unit: InspectorNumberUnit) => void;
-  "aria-label"?: string;
-};
-
-function InspectorUnitSelector({
-  unit,
-  units,
-  onUnitChange,
-  "aria-label": ariaLabel,
-}: InspectorUnitSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const selectable = units.length > 1 && onUnitChange;
-
-  if (!selectable) {
-    return (
-      <InputGroupText className="text-xs text-muted-foreground">
-        {unit}
-      </InputGroupText>
-    );
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
-      <PopoverTrigger
-        nativeButton
-        aria-label={ariaLabel ?? "Unit"}
-        render={
-          <button
-            type="button"
-            className="cn-input-group-text flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground"
-          />
-        }
-      >
-        {unit}
-        <CaretDownIcon className="size-2.5 shrink-0" />
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="cn-popover-menu w-auto min-w-16 p-0.5"
-        initialFocus={false}
-        finalFocus={false}
-      >
-        {units.map((option) => {
-          const active = option === unit;
-          return (
-            <button
-              key={option}
-              type="button"
-              className={cn(
-                "flex w-full items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-muted",
-                active && "bg-muted",
-              )}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                onUnitChange(option);
-                setOpen(false);
-              }}
-            >
-              <span>{option}</span>
-              {active ? (
-                <CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
-              ) : (
-                <span className="size-3.5 shrink-0" />
-              )}
-            </button>
-          );
-        })}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-type InspectorNumberInputProps = {
-  value: string;
-  unit?: InspectorNumberUnit;
-  units?: readonly InspectorNumberUnit[];
-  onUnitChange?: (unit: InspectorNumberUnit) => void;
-  placeholder?: string;
-  presets?: InspectorPresetOption[];
-  presetsByUnit?: Partial<
-    Record<InspectorNumberUnit, InspectorPresetOption[]>
-  >;
-  showPresets?: boolean;
-  scrollAdjust?: boolean;
-  scrollStep?: number;
-  onChange: (value: string) => void;
-  "aria-label"?: string;
-};
-
-function adjustNumberByWheel(
-  event: WheelEvent,
-  value: string,
-  onChange: (value: string) => void,
-  step: number,
-) {
-  const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
-  const delta = horizontal ? event.deltaX : event.deltaY;
-  if (delta === 0) return;
-
-  event.preventDefault();
-  event.stopPropagation();
-
-  const current = value.trim() === "" ? 0 : Number(value);
-  if (!Number.isFinite(current)) return;
-
-  const direction = horizontal ? (delta > 0 ? 1 : -1) : delta < 0 ? 1 : -1;
-  onChange(String(current + direction * step));
-}
-
-type InspectorScrubberHandleProps = {
-  value: string;
-  step: number;
-  onChange: (value: string) => void;
-  "aria-label"?: string;
-};
-
-function InspectorScrubberHandle({
-  value,
-  step,
-  onChange,
-  "aria-label": ariaLabel,
-}: InspectorScrubberHandleProps) {
-  const dragRef = useRef<{ originX: number; originValue: number } | null>(null);
-
-  const endDrag = (event: PointerEvent<HTMLButtonElement>) => {
-    dragRef.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  };
-
-  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    const current = value.trim() === "" ? 0 : Number(value);
-    if (!Number.isFinite(current)) return;
-    dragRef.current = { originX: event.clientX, originValue: current };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!dragRef.current) return;
-    const deltaX = event.clientX - dragRef.current.originX;
-    const stepSize = event.shiftKey ? step * 10 : step;
-    const next =
-      dragRef.current.originValue + Math.round(deltaX / 4) * stepSize;
-    onChange(String(next));
-  };
-
-  return (
-    <InputGroupButton
-      type="button"
-      size="icon-xs"
-      variant="ghost"
-      className="cursor-ew-resize touch-none px-1"
-      aria-label={ariaLabel ? `${ariaLabel} scrub` : "Adjust value"}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-    >
-      <span className="flex items-center gap-px" aria-hidden>
-        <span className="h-3 w-px rounded-full bg-muted-foreground/70" />
-        <span className="h-3 w-px rounded-full bg-muted-foreground/70" />
-      </span>
-    </InputGroupButton>
-  );
-}
-
-export function InspectorNumberInput({
-  value,
-  unit = "px",
-  units,
-  onUnitChange,
-  placeholder,
-  presets,
-  presetsByUnit,
-  showPresets: showPresetsProp,
-  scrollAdjust = false,
-  scrollStep = 1,
-  onChange,
-  "aria-label": ariaLabel,
-}: InspectorNumberInputProps) {
-  const [open, setOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
-  const presetsLabel = ariaLabel ? `${ariaLabel} presets` : "Presets";
-  const unitLabel = ariaLabel ? `${ariaLabel} unit` : "Unit";
-  const availableUnits = units ?? (onUnitChange ? [unit] : []);
-  const activePresets =
-    presetsByUnit?.[unit] ?? presets ?? [];
-  const showPresets = showPresetsProp ?? activePresets.length > 0;
-
-  const handleWheel = scrollAdjust
-    ? (event: WheelEvent) =>
-        adjustNumberByWheel(event, value, onChange, scrollStep)
-    : undefined;
-
-  const field = (
-    <InputGroup onWheel={handleWheel}>
-      {scrollAdjust ? (
-        <InputGroupAddon align="inline-start">
-          <InspectorScrubberHandle
-            value={value}
-            step={scrollStep}
-            onChange={onChange}
-            aria-label={ariaLabel}
-          />
-        </InputGroupAddon>
-      ) : null}
-      {showPresets ? (
-        <InputGroupAddon align="inline-start">
-          <InspectorPresetTrigger aria-label={presetsLabel} />
-        </InputGroupAddon>
-      ) : null}
-      <InputGroupInput
-        aria-label={ariaLabel}
-        type="number"
-        inputMode="decimal"
-        step="any"
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        onWheel={handleWheel}
-      />
-      <InputGroupAddon align="inline-end">
-        <InspectorUnitSelector
-          unit={unit}
-          units={availableUnits.length > 0 ? availableUnits : [unit]}
-          onUnitChange={onUnitChange}
-          aria-label={unitLabel}
-        />
-      </InputGroupAddon>
-    </InputGroup>
-  );
-
-  if (!showPresets) {
-    return field;
-  }
-
-  return (
-    <InspectorAnchorPopover
-      open={open}
-      onOpenChange={setOpen}
-      anchorRef={anchorRef}
-      content={
-        <InspectorPresetList
-          options={activePresets}
-          value={value}
-          unit={unit}
-          onSelect={(nextValue) => {
-            onChange(nextValue);
-            setOpen(false);
-          }}
-        />
-      }
-    >
-      {field}
-    </InspectorAnchorPopover>
   );
 }
 
@@ -709,6 +325,18 @@ export function InspectorColorInput({
   );
 }
 
+function handleNativeColorChange(
+  value: string,
+  hex: string,
+  onChange: (value: string) => void,
+) {
+  const alphaMatch = value.match(
+    /rgba?\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)/,
+  );
+  const alpha = alphaMatch ? alphaMatch[1]! : "1";
+  onChange(alpha === "1" ? hex : hexToRgba(hex, alpha));
+}
+
 type InspectorColorFieldProps = {
   value: string;
   placeholder?: string;
@@ -728,79 +356,21 @@ export function InspectorColorField({
   id,
   "aria-label": ariaLabel,
 }: InspectorColorFieldProps) {
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
-  const pickerAnchorRef = useRef<HTMLDivElement>(null);
   const presetAnchorRef = useRef<HTMLDivElement>(null);
-  const swatch = swatchStyleForValue(value, presets);
   const hexValue = toHexColor(value);
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
-      <div className="shrink-0">
-        <InspectorAnchorPopover
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        anchorRef={pickerAnchorRef}
-        side="top"
-        content={
-          <div className="flex flex-col gap-2 p-2">
-            <input
-              type="color"
-              aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
-              className="h-8 w-full cursor-pointer rounded-md border bg-transparent"
-              value={hexValue}
-              onChange={(event) => {
-                const alphaMatch = value.match(
-                  /rgba?\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)/,
-                );
-                const alpha = alphaMatch ? alphaMatch[1]! : "1";
-                onChange(
-                  alpha === "1"
-                    ? event.target.value
-                    : hexToRgba(event.target.value, alpha),
-                );
-              }}
-            />
-            <InspectorColorList
-              options={presets}
-              value={value}
-              onSelect={(nextValue) => {
-                onChange(nextValue);
-                setPickerOpen(false);
-              }}
-            />
-          </div>
+      <input
+        type="color"
+        aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
+        className="cn-input size-9 shrink-0 cursor-pointer overflow-hidden rounded-full border border-input bg-transparent p-0 shadow-xs [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none"
+        value={hexValue}
+        onChange={(event) =>
+          handleNativeColorChange(value, event.target.value, onChange)
         }
-      >
-        <button
-          type="button"
-          aria-label={ariaLabel ? `${ariaLabel} swatch` : "Color swatch"}
-          aria-expanded={pickerOpen}
-          className="cn-input flex size-9 shrink-0 items-center justify-center rounded-md border border-input bg-transparent shadow-xs outline-none hover:bg-muted/40"
-          onClick={() => setPickerOpen((current) => !current)}
-        >
-          {swatch.cssVar ? (
-            <span
-              className="size-5 rounded-full border border-border"
-              style={{ backgroundColor: `var(${swatch.cssVar})` }}
-            />
-          ) : (
-            <span
-              className={cn(
-                "size-5 rounded-full border border-border",
-                swatch.swatchClass,
-              )}
-              style={
-                swatch.backgroundColor
-                  ? { backgroundColor: swatch.backgroundColor }
-                  : undefined
-              }
-            />
-          )}
-        </button>
-      </InspectorAnchorPopover>
-      </div>
+      />
 
       <InspectorAnchorPopover
         open={presetOpen}

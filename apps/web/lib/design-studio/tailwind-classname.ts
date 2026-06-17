@@ -63,6 +63,22 @@ export function formatFontSizeClass(
   return `text-[${trimmed}${unit}]`;
 }
 
+const FONT_SIZE_UNIT_DEFAULTS: Record<FontSizeUnit, string> = {
+  px: "16",
+  "%": "100",
+  em: "1",
+};
+
+/** 값이 비어 있을 때도 단위 전환이 classname에 반영되도록 기본값을 채웁니다. */
+export function formatFontSizeOnUnitChange(
+  value: string,
+  nextUnit: FontSizeUnit,
+): string | undefined {
+  const trimmed = value.trim();
+  const resolved = trimmed || FONT_SIZE_UNIT_DEFAULTS[nextUnit];
+  return formatFontSizeClass(resolved, nextUnit);
+}
+
 const NAMED_LINE_HEIGHT_TO_EM: Record<string, string> = {
   "leading-none": "1",
   "leading-tight": "1.25",
@@ -119,6 +135,21 @@ export function formatLineHeightClass(
   }
 
   return `leading-[${trimmed}${unit}]`;
+}
+
+const LINE_HEIGHT_UNIT_DEFAULTS: Record<FontSizeUnit, string> = {
+  px: "24",
+  "%": "150",
+  em: "1.5",
+};
+
+export function formatLineHeightOnUnitChange(
+  value: string,
+  nextUnit: FontSizeUnit,
+): string | undefined {
+  const trimmed = value.trim();
+  const resolved = trimmed || LINE_HEIGHT_UNIT_DEFAULTS[nextUnit];
+  return formatLineHeightClass(resolved, nextUnit);
 }
 
 const NAMED_LETTER_SPACING_TO_EM: Record<string, string> = {
@@ -179,6 +210,21 @@ export function formatLetterSpacingClass(
   return `tracking-[${trimmed}${unit}]`;
 }
 
+const LETTER_SPACING_UNIT_DEFAULTS: Record<FontSizeUnit, string> = {
+  px: "0",
+  "%": "0",
+  em: "0",
+};
+
+export function formatLetterSpacingOnUnitChange(
+  value: string,
+  nextUnit: FontSizeUnit,
+): string | undefined {
+  const trimmed = value.trim();
+  const resolved = trimmed || LETTER_SPACING_UNIT_DEFAULTS[nextUnit];
+  return formatLetterSpacingClass(resolved, nextUnit);
+}
+
 export function formatSpacingPx(
   prefix: string,
   value: string,
@@ -230,28 +276,53 @@ const NAMED_RADIUS_TO_PX: Record<string, string> = {
   "rounded-full": "9999",
 };
 
-export function parseRadiusPx(className?: string): string {
-  if (!className) return "";
+export type RadiusUnit = "px" | "%";
+
+export function parseRadiusValue(className?: string): {
+  value: string;
+  unit: RadiusUnit;
+} {
+  if (!className) return { value: "", unit: "px" };
 
   if (NAMED_RADIUS_TO_PX[className]) {
-    return NAMED_RADIUS_TO_PX[className]!;
+    return { value: NAMED_RADIUS_TO_PX[className]!, unit: "px" };
   }
 
   const arbitrary = className.match(/-\[(.+)\]$/);
   if (arbitrary) {
+    const match = arbitrary[1]!.match(/^([\d.]+)(px|%)$/);
+    if (match) {
+      return {
+        value: match[1]!,
+        unit: match[2] as RadiusUnit,
+      };
+    }
     const pxMatch = arbitrary[1]!.match(/^([\d.]+)px$/);
-    if (pxMatch) return pxMatch[1]!;
-    return "";
+    if (pxMatch) return { value: pxMatch[1]!, unit: "px" };
   }
 
-  return "";
+  return { value: "", unit: "px" };
+}
+
+export function parseRadiusPx(className?: string): string {
+  return parseRadiusValue(className).value;
+}
+
+export function formatRadiusClass(
+  prefix: string,
+  value: string,
+  unit: RadiusUnit = "px",
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (unit === "px" && prefix === "rounded" && trimmed === "9999") {
+    return "rounded-full";
+  }
+  return `${prefix}-[${trimmed}${unit}]`;
 }
 
 export function formatRadiusPx(prefix: string, value: string): string | undefined {
-  const trimmed = value.trim();
-  if (!trimmed) return undefined;
-  if (prefix === "rounded" && trimmed === "9999") return "rounded-full";
-  return `${prefix}-[${trimmed}px]`;
+  return formatRadiusClass(prefix, value, "px");
 }
 
 export function parseOpacityPercent(className?: string): string {
@@ -260,18 +331,26 @@ export function parseOpacityPercent(className?: string): string {
   const arbitrary = className.match(/^opacity-\[(.+)\]$/);
   if (arbitrary) {
     const percentMatch = arbitrary[1]!.match(/^([\d.]+)%$/);
-    if (percentMatch) return percentMatch[1]!;
+    if (percentMatch) return clampOpacityPercent(percentMatch[1]!);
     const decimalMatch = arbitrary[1]!.match(/^0?\.([\d]+)$/);
     if (decimalMatch) {
-      return String(Number(`0.${decimalMatch[1]}`) * 100);
+      return clampOpacityPercent(String(Number(`0.${decimalMatch[1]}`) * 100));
     }
     return "";
   }
 
   const scaleMatch = className.match(/^opacity-(\d+)$/);
-  if (scaleMatch) return scaleMatch[1]!;
+  if (scaleMatch) {
+    return clampOpacityPercent(scaleMatch[1]!);
+  }
 
   return "";
+}
+
+function clampOpacityPercent(value: string): string {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "";
+  return String(Math.min(100, Math.max(0, numeric)));
 }
 
 export function formatOpacityPercent(value: string): string | undefined {
@@ -279,10 +358,11 @@ export function formatOpacityPercent(value: string): string | undefined {
   if (!trimmed) return undefined;
   const numeric = Number(trimmed);
   if (!Number.isFinite(numeric)) return undefined;
-  if (numeric >= 0 && numeric <= 100 && Number.isInteger(numeric) && numeric % 5 === 0) {
-    return `opacity-${numeric}`;
+  const clamped = Math.min(100, Math.max(0, numeric));
+  if (clamped >= 0 && clamped <= 100 && Number.isInteger(clamped) && clamped % 5 === 0) {
+    return `opacity-${clamped}`;
   }
-  return `opacity-[${trimmed}%]`;
+  return `opacity-[${clamped}%]`;
 }
 
 export function stripColorToken(className?: string, prefix?: string): string {
