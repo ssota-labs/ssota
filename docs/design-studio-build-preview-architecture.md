@@ -2,6 +2,7 @@
 
 > **상태:** Draft (설계 합의)  
 > **작성:** 2026-06-16  
+> **갱신:** 2026-06-17 — `properties` / `content` / Storage 3분할 명시  
 > **관련:** Console v2.7 Design Studio, `ui_component`, `design_theme`
 
 ---
@@ -10,10 +11,11 @@
 
 Design Studio preview는 **항상 빌드된 실제 React 컴포넌트**를 iframe에 렌더한다. 편집(Inspector, Layers 선택)도 **그 빌드 결과 DOM 위에서** 수행한다. draft/published를 서로 다른 렌더러(JSON `createElement` vs 빌드)로 나누지 않는다.
 
-- **SSOT (편집·Deploy):** `ui_component` 노드의 `content` — 멀티파일 source bundle (TSX + entry + dependencies)
+- **SSOT (편집·Deploy):** `ui_component` 노드 — **`properties`**(봉투·메타) + **`content`**(source 본문 JSON)
 - **Preview:** 서버 esbuild 번들 → iframe 로드
-- **Inspector:** iframe 내 DOM 즉시 패치 + source 역동기화
-- **모든 preview 번들:** `@ssota/studio-preview-runtime` 기본 탑재 (postMessage, 선택, inspect CSS)
+- **Inspector:** iframe 내 DOM 즉시 패치 + `content` source 역동기화
+- **Build artifact:** Supabase Storage (content-hash); 포인터는 `properties`
+- **모든 preview 번들:** `@ssota/studio-preview-runtime` 기본 탑재
 
 ---
 
@@ -23,7 +25,8 @@ Design Studio preview는 **항상 빌드된 실제 React 컴포넌트**를 ifram
 
 | 항목 | 구현 |
 |------|------|
-| `ui_component.content` | `StudioNode` JSON tree (`schemaVersion: 1`) |
+| `ui_component.properties` | `slug`, `tier`, `draft` (전체 document JSON 문자열 — **역할 혼재**) |
+| `ui_component.content` | Deploy된 `StudioNode` tree (`schemaVersion: 1`) |
 | Preview | `render-studio-tree` — `createElement(tag)` + Tailwind className |
 | Inspector | tree JSON의 `className` 직접 수정 |
 | 한계 | shadcn/Base UI 실제 동작 없음, 복합 컴포넌트·npm deps 미지원 |
@@ -36,11 +39,12 @@ v0에 가깝게 **실제 React + shadcn** preview를 제공하되, SSOTA 그래�
 
 ## 3. 핵심 원칙
 
-1. **단일 preview 경로** — draft/published 모두 빌드 artifact를 iframe에 로드 (모드는 source revision·캐시 키만 다를 수 있음).
-2. **편집은 iframe 위에서** — Inspector 클릭·스타일 변경은 빌드된 DOM 대상; 별도 JSON DOM 렌더러는 wireframe 전용 또는 제거.
-3. **번들 런타임 필수** — 모든 preview build에 studio bridge·inspect overlay·selection이 포함된다.
-4. **이중 패치** — (1) DOM 즉시 반영 (UX), (2) source 파일 persist (SSOT).
-5. **그래프 격리** — `project_id` 스코핑, catalog는 `packages/contracts` SSOT (기존 불변식 유지).
+1. **단일 preview 경로** — draft/published 모두 빌드 artifact를 iframe에 로드.
+2. **편집은 iframe 위에서** — Inspector는 빌드된 DOM 대상; JSON DOM 렌더러는 wireframe 전용 또는 제거.
+3. **번들 런타임 필수** — 모든 preview build에 studio bridge·inspect overlay·selection 포함.
+4. **이중 패치** — (1) DOM 즉시 반영 (UX), (2) `content` source persist (SSOT).
+5. **그래프 격리** — `project_id` 스코핑; catalog는 `packages/contracts` SSOT.
+6. **properties / content 분리** — 카탈로그 Zod ≠ 전부 `properties`. 런타임이 쿼리·참조하는 **봉투**는 `properties`, **본문 페이로드**는 `content` (AGENTS.md 불변식).
 
 ---
 
@@ -54,62 +58,49 @@ v0에 가깝게 **실제 React + shadcn** preview를 제공하되, SSOTA 그래�
                 │ postMessage                  │
                 ▼                              ▼
 ┌───────────────────────────┐    ┌──────────────────────────────┐
-│ @ssota/studio-preview-    │    │ nodes.content (Postgres)      │
-│ runtime (in every bundle) │◄──►│  files[], entry, dependencies │
-│  STUDIO_READY / SELECT    │    │  + design_theme tokens        │
-│  STUDIO_PATCH → DOM       │    └──────────────────────────────┘
-│  inspect CSS              │              │
-└───────────────────────────┘              │ debounced source patch
+│ @ssota/studio-preview-    │    │ Postgres nodes                │
+│ runtime (in every bundle) │◄──►│  properties: slug, entry, deps│
+│  STUDIO_READY / SELECT    │    │              buildHash, ...   │
+│  STUDIO_PATCH → DOM       │    │  content: { files, layerIndex }│
+└───────────────────────────┘    └──────────────────────────────┘
                 ▲                          │
+                │                          │ debounced patch → content.files
                 │                          ▼
         ┌───────┴────────┐       ┌─────────────────────┐
-        │ Build service   │       │ Supabase Storage     │
-        │ esbuild + cache │──────►│ preview artifacts    │
-        │ content-hash    │       │ (JS/CSS, source maps)│
+        │ Build service   │──────►│ Supabase Storage     │
+        │ esbuild + cache │       │ bundle.js/css/.map   │
         └────────────────┘       └─────────────────────┘
 ```
 
 ### 4.1 Preview 루프
 
-```
-1. Shell: ui_component source + design_theme 로드
-2. Build API: hash(source + theme + deps) → 캐시 hit/miss
-3. iframe: STUDIO_LOAD_BUNDLE { url, buildId }
-4. User click → STUDIO_SELECT { nodeId, sourceRef? }
-5. Inspector 변경 → STUDIO_PATCH { nodeId, patch }
-   → iframe: DOM className 즉시 적용
-   → parent: source 파일 해당 위치 patch (debounce)
-6. (선택) 누적 변경 후 incremental rebuild → soft refresh
-7. Deploy: GraphWritePort로 content 커밋 + published build 고정
-```
+1. Shell: `properties` + `content` + `design_theme` 로드
+2. Build API: `hash(content + theme + properties.deps)` → 캐시 hit/miss
+3. iframe: `STUDIO_LOAD_BUNDLE { url, buildId }`
+4. User click → `STUDIO_SELECT { nodeId, sourceRef? }`
+5. Inspector 변경 → `STUDIO_PATCH` → DOM 즉시 + `content.files` patch (debounce)
+6. (선택) incremental rebuild → soft refresh
+7. Deploy: `GraphWritePort` — `content` + 필요 시 `properties.buildHash` 갱신
 
 ### 4.2 `@ssota/studio-preview-runtime` (번들 공통)
 
 | 모듈 | 역할 |
 |------|------|
-| `bridge` | `postMessage` — 기존 `packages/studio-renderer/protocol.ts` 확장 |
-| `inspect-styles` | hover/selected outline (`studio-inspect-mode`) |
-| `selection` | click → `STUDIO_SELECT` (이벤트는 capture, React와 충돌 최소화) |
-| `patch-applier` | `STUDIO_PATCH` 수신 시 DOM 속성 즉시 반영 |
-| `bootstrap` | `STUDIO_READY` 발송, interaction mode 수신 |
-
-**빌드 주입:** entry 첫 줄 `import "@ssota/studio-preview-runtime/bootstrap"` 또는 esbuild `banner`/`inject`.
+| `bridge` | `postMessage` — `packages/studio-renderer/protocol.ts` 확장 |
+| `inspect-styles` | hover/selected outline |
+| `selection` | click → `STUDIO_SELECT` |
+| `patch-applier` | `STUDIO_PATCH` → DOM 즉시 반영 |
+| `bootstrap` | `STUDIO_READY`, interaction mode |
 
 ### 4.3 DOM ↔ Source 매핑
 
-Inspector가 source를 고치려면 클릭한 DOM이 **어느 파일·어느 JSX**인지 알아야 한다.
-
 | 방식 | 설명 |
 |------|------|
-| **A. Compile plugin (권장)** | swc/babel: JSX에 `data-studio-id` + `data-studio-loc="path:line:col"` 주입 |
-| **B. Source map 역참조** | 클릭 요소 → generated offset → original TSX |
-| **C. Layer index** | `content.layerIndex`에 id→{file, path} 사전 계산 (에이전트가 유지) |
-
-초기 구현: **A + className patch만** → Typography/Layout/Spacing/Shadow inspector 재사용.
+| **A. Compile plugin (권장)** | JSX에 `data-studio-id` + `data-studio-loc` 주입 |
+| **B. Source map 역참조** | generated offset → original TSX |
+| **C. Layer index** | `content.layerIndex` (선택 캐시) |
 
 ### 4.4 Protocol 확장 (안)
-
-기존 메시지 유지 + 추가:
 
 ```ts
 // Parent → iframe
@@ -118,100 +109,136 @@ Inspector가 source를 고치려면 클릭한 DOM이 **어느 파일·어느 JSX
 
 // iframe → Parent
 { type: "STUDIO_SELECT", nodeId: string, sourceRef?: SourceRef }
-{ type: "STUDIO_LAYER_TREE", nodes: LayerTreeNode[] }  // optional, 마운트 후 1회
+{ type: "STUDIO_LAYER_TREE", nodes: LayerTreeNode[] }
 ```
-
-`STUDIO_SET_TREE` / `render-studio-tree`는 **wireframe·레거시** 또는 제거 대상.
 
 ---
 
-## 5. 데이터 모델
+## 5. 데이터 모델 — `properties` vs `content` vs Storage
 
-### 5.1 `ui_component` content v2 (안)
+### 5.0 SSOTA 노드 불변식 (복습)
+
+| 레이어 | 카탈로그 | DB | 역할 |
+|--------|----------|-----|------|
+| **봉투** | `propertiesSchema` | `properties` JSONB | 쿼리·리스트·빌드 키·포인터 |
+| **본문** | content 파서 (별도 Zod) | `content` TEXT | 문서/소스 **페이로드** (JSON 직렬화) |
+| **바이너리** | — | Supabase Storage | esbuild 산출물 |
+
+**카탈로그에 스키마가 있다고 전부 `properties`에 넣지 않는다.** `uiComponentContentSchema`처럼 content 형태도 contracts에서 정의하고, commit 시 parse한다.
+
+### 5.1 `ui_component` — `properties` (v2, 카탈로그 `propertiesSchema`)
+
+런타임·UI·빌드가 **참조·필터**하는 작은 필드만.
+
+```ts
+{
+  slug: string;                    // 기존
+  tier: "primitive" | "composite";   // 기존
+  representation: "source";        // v2 기본; v1 tree는 "tree" (wireframe)
+  contentSchemaVersion: 2;
+  entry: string;                   // 예: "Component.tsx"
+  dependencies: Record<string, string>;
+  fileKeys: string[];              // 본문 파일명 목록 (본문 없음)
+  buildHash?: string;              // 최신 published preview 빌드
+  previewArtifactPath?: string;    // Storage 경로 (서명 URL 생성용)
+  builtAt?: string;                // ISO-8601
+}
+```
+
+- **`properties.draft` (v1):** v2에서 **제거**. draft는 `content` patch + `sessionStorage`만 (또는 unpublished `content` 그대로).
+- Deploy 시 `properties`와 `content`를 함께 커밋; MCP `update_node`는 필드별 patch 가능.
+
+### 5.2 `ui_component` — `content` (v2, `uiComponentContentSchema`)
+
+**본문만.** `query_nodes` 목록 응답에 기본 포함하지 않거나 truncate (상세는 `get_node`).
 
 ```ts
 {
   schemaVersion: 2,
-  entry: "Component.tsx",
   files: {
-    "Component.tsx": "export function ...",
-    "utils.ts": "..."
+    "Component.tsx": "export function PrimaryButton() { ... }",
+    "utils.ts": "export function cn(...) { ... }"
   },
-  dependencies: {
-  "@ssota/ui": "workspace:*"
-  },
-  layerIndex?: Record<string, { file: string; name: string; kind: string }>
+  layerIndex?: Record<string, {
+    file: string;
+    name: string;
+    kind: string;
+  }>
 }
 ```
 
-- **v1 `StudioNode` tree:** wireframe/initiative 스케치용으로만 유지하거나, `representation: "tree" | "source"` 공존.
-- **Deploy:** `GraphWritePort` → `nodes.content` (기존 패턴).
+- `entry`, `dependencies`는 **properties에도** 있음 (빌드·리스트용 denormalize). SSOT 우선순위: **properties가 메타 SSOT**, `content`는 파일 본문 SSOT. 불일치 시 build 전 validate.
+- v1 `StudioNode` tree: `representation: "tree"` + `content.schemaVersion: 1`로 wireframe만 유지.
 
-### 5.2 `design_theme` (안)
+### 5.3 대용량 source (선택 확장)
 
-Zod JSON tokens → 빌드 시 CSS variables + Tailwind theme entry 생성. iframe 하드코딩 `@ssota/ui` globals 대신 **프로젝트 theme entry** 사용.
+`files`가 커지면:
+
+| 데이터 | 위치 |
+|--------|------|
+| manifest (`fileKeys`, hash per file) | `properties` + `content` 일부 |
+| TSX 본문 | Storage `{projectId}/studio-sources/{nodeId}/{file}` |
+| 포인터 | `properties.sourceStoragePrefix` |
+
+초기 v2는 **전체 `files` in `content`**로 시작; 임계치 넘으면 Storage 분리.
+
+### 5.4 `design_theme` (안)
+
+- **`content`:** theme token JSON (본문, `contentRequired: true` 유지)
+- **`properties`:** (선택) `tokenVersion`, `buildHash` — theme rebuild 포인터
 
 ---
 
-## 6. 저장소 전략 (DB vs Storage)
+## 6. 저장소 전략 (3분할)
 
-| 데이터 | 저장 위치 | 이유 |
-|--------|-----------|------|
-| **Source bundle** (`files`, `entry`, `deps`) | **Postgres `nodes.content`** | 그래프 SSOT, MCP `update_node`, 버전·lifecycle |
-| **Draft session** | `sessionStorage` + `properties.draft` (기존) | 편집 중 낙관적 UI |
-| **Build artifact** (JS, CSS, source map) | **Supabase Storage** (content-addressed) | 대용량, CDN, DB bloat 방지 |
-| **Build 메타** | `nodes.properties` 또는 `content.build` | `buildHash`, `storagePath`, `builtAt`, `previewUrl` |
+| 데이터 | 저장 위치 | 카탈로그 검증 |
+|--------|-----------|----------------|
+| slug, tier, entry, deps, build 포인터 | **`nodes.properties`** | `propertiesSchema` |
+| source `files`, `layerIndex` | **`nodes.content`** | `uiComponentContentSchema` |
+| 편집 중 낙관적 UI | **`sessionStorage`** | — |
+| esbuild 산출물 (JS/CSS/map) | **Supabase Storage** | — (서버만 쓰기) |
 
-**경로 예:** `{projectId}/studio-builds/{contentHash}/bundle.js`
+**경로 예**
 
-- Preview 요청: hash 계산 → Storage hit → signed URL → iframe
-- Miss: esbuild → Storage upload → 메타 갱신
-- TTL: draft preview는 LRU/7일, published는 lifecycle까지 유지
+- Source (선택 분리): `{projectId}/studio-sources/{nodeId}/...`
+- Build: `{projectId}/studio-builds/{buildHash}/bundle.js`
 
-**DB에 번들 본문을 넣지 않는다** (content text는 source만).
+**흐름**
+
+1. Inspector/MCP → `content.files` 갱신
+2. Build → hash → Storage upload → `properties.buildHash`, `previewArtifactPath` 갱신
+3. Preview iframe → Storage signed URL
+
+**DB에 esbuild 번들 본문을 넣지 않는다.**
 
 ---
 
 ## 7. 좌측 Layers (Tree) 패널
 
-**가능하다.** Preview가 빌드 DOM이어도 Layers는 유지한다.
-
-| 소스 | Layers 데이터 |
-|------|----------------|
-| **권장** | Source AST 파싱 → `data-studio-id`와 동일 id 트리 (`layerIndex` 또는 실시간 parse) |
-| **대안** | iframe 마운트 후 `STUDIO_LAYER_TREE` postMessage로 보고 |
-| **동기화** | Layers 클릭 → `STUDIO_HIGHLIGHT` / iframe scroll-into-view; iframe 선택 → Layers highlight |
-
-현재 `LayersPanel` + `walkStudioNodes(StudioNode)`는 v1용. v2에서는 **`walkLayerIndex(source)`** 또는 AST walker로 교체. UX(아이콘, depth, mono label)는 동일.
+**가능하다.** `content.layerIndex` 또는 source AST → `data-studio-id`와 동일 id 트리.
 
 ---
 
 ## 8. Build pipeline (서버)
 
-1. **입력:** `files` + `design_theme` CSS entry + `packages/contracts`에서 허용된 deps
-2. **도구:** esbuild (초기), 필요 시 Tailwind PostCSS 플러그인
-3. **출력:** `bundle.js`, `bundle.css`, `bundle.js.map`
-4. **캐시 키:** `sha256(source + themeVersion + lockfileSlice + studioRuntimeVersion)`
-5. **API:** `POST /api/studio/build` → `{ url, buildId, cacheHit }`
-6. **Preview page:** `GET .../design/preview?componentId=...` → shell iframe + bundle URL
-
-Sandbox: Vercel Fluid / 로컬 worker; v0급 per-chat Next sandbox는 비용상 **esbuild 단일 번들** 우선.
+1. **입력:** `content.files` + `properties.entry` + `properties.dependencies` + `design_theme`
+2. **캐시 키:** `sha256(content + theme + deps + studioRuntimeVersion)`
+3. **출력:** Storage + `properties.buildHash` 업데이트
 
 ---
 
 ## 9. Inspector 연동
 
-- 기존 v0-style `tailwind-classname` parse/serialize **재사용**
-- 패치 흐름: Inspector UI → `updateSourceClassName(sourceRef, next)` + `STUDIO_PATCH` → iframe
-- `design_theme` 토큰 변경은 theme rebuild 트리거 (별도 패널)
+Inspector 패치 → `content.files[sourceRef.file]` className 갱신 + `STUDIO_PATCH` DOM 반영.
 
 ---
 
 ## 10. MCP · 에이전트
 
-- `create_node` / `update_node`로 `content.files` 멀티파일 작성
-- 그래프 `composed_of`로 composite 참조 (기존과 동일)
-- Inspector human edit ↔ source 동일 SSOT — 충돌 시 last-write + optional revision
+- `create_node` / `update_node`:
+  - `properties`: `slug`, `tier`, `entry`, `dependencies`, `fileKeys`
+  - `content`: JSON.stringify(`{ schemaVersion: 2, files: { ... } }`)
+- `get_node`로 전체 source 로드; `query_nodes`는 properties만 반환 권장
 
 ---
 
@@ -219,39 +246,38 @@ Sandbox: Vercel Fluid / 로컬 worker; v0급 per-chat Next sandbox는 비용상 
 
 | 단계 | 내용 |
 |------|------|
-| **P0** | `studio-preview-runtime` 패키지 + protocol 확장 |
-| **P1** | esbuild POC + Storage 업로드 + iframe `STUDIO_LOAD_BUNDLE` |
-| **P2** | JSX `data-studio-id` 플러그인 + `STUDIO_PATCH` className → source |
-| **P3** | Layers AST/layerIndex + theme entry |
-| **P4** | v1 tree deprecate / wireframe only |
+| **P0** | contracts: `propertiesSchema` v2 + `uiComponentContentSchema` v2 |
+| **P1** | `properties.draft` 제거; draft → `content` + sessionStorage |
+| **P2** | esbuild + Storage + `STUDIO_LOAD_BUNDLE` |
+| **P3** | Inspector → `content.files` patch |
+| **P4** | v1 tree → `representation: "tree"` wireframe only |
 
 ---
 
 ## 12. 비범위 (v1)
 
-- 브라우저 Web Worker 빌드 (draft 전용)
-- iframe 내 React state 로직 편집 (props/event handler inspector)
-- npm 임의 registry (허용 목록만)
-- `executeAction` / generic runtime 복원
+- 브라우저 Web Worker 빌드
+- props/event handler inspector
+- npm 임의 registry
 
 ---
 
 ## 13. 결정 사항 체크리스트
 
-- [x] Preview = 빌드된 React만 (JSON DOM 렌더러는 편집 경로 아님)
+- [x] Preview = 빌드된 React만
 - [x] 모든 번들에 studio-preview-runtime 포함
-- [x] Source SSOT = `nodes.content` (DB)
-- [x] Build artifact = Supabase Storage (content-hash)
-- [x] Layers 패널 = source/AST 기반 트리 유지
-- [ ] contracts v2 스키마 PR
-- [ ] Storage bucket + RLS (서버 전용 업로드)
+- [x] **메타/포인터 = `properties`, source 본문 = `content`, 빌드 = Storage**
+- [x] 카탈로그: `propertiesSchema` + `contentSchema` 이중 정의
+- [x] `properties.draft` v2에서 제거
+- [x] Layers = source/AST 기반
+- [ ] contracts v2 PR
+- [ ] Storage bucket + RLS
 - [ ] esbuild POC
 
 ---
 
 ## 14. 참고 코드 (현재)
 
-- Protocol: `packages/studio-renderer/src/protocol.ts`
-- Preview bridge: `apps/web/components/console/design-studio/preview-bridge.ts`
-- Layers: `apps/web/components/console/design-studio/layers-panel.tsx`
+- Catalog: `packages/contracts/src/catalog/node-types.ts`
 - Content v1: `packages/contracts/src/catalog/ui-component-schemas.ts`
+- Draft (v1 hack): `properties.draft` — `apps/web/lib/design-studio/draft-storage.ts`
