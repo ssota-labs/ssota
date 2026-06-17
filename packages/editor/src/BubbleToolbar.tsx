@@ -5,7 +5,6 @@ import { BubbleMenu } from "@tiptap/react/menus";
 import {
   CodeIcon,
   HighlighterCircleIcon,
-  LinkIcon,
   ListBulletsIcon,
   MinusIcon,
   RowsIcon,
@@ -13,6 +12,7 @@ import {
   TextItalicIcon,
   TextStrikethroughIcon,
 } from "@phosphor-icons/react";
+import { useState } from "react";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Tooltip,
@@ -20,15 +20,21 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@ssota/ui/components/ui/tooltip";
+import { LinkPopover } from "./LinkPopover";
 
 export function BubbleToolbar({ editor }: { editor: Editor }) {
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
+
   return (
     <BubbleMenu
       editor={editor}
       pluginKey="ssota-bubble-toolbar"
       shouldShow={({ editor: currentEditor, state }) => {
         const { empty } = state.selection;
-        return currentEditor.isEditable && (!empty || currentEditor.isActive("table"));
+        return (
+          currentEditor.isEditable &&
+          (linkPopoverOpen || !empty || currentEditor.isActive("table"))
+        );
       }}
       className="ssota-bubble-toolbar"
       data-testid="ssota-bubble-toolbar"
@@ -63,22 +69,7 @@ export function BubbleToolbar({ editor }: { editor: Editor }) {
         <CodeIcon className="size-4" />
       </ToolbarButton>
       <ToolbarDivider />
-      <ToolbarButton
-        label="Link"
-        active={editor.isActive("link")}
-        onClick={() => {
-          const previous = editor.getAttributes("link").href as string | undefined;
-          const href = window.prompt("Link URL", previous ?? "");
-          if (href === null) return;
-          if (!href) {
-            editor.chain().focus().unsetLink().run();
-            return;
-          }
-          editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
-        }}
-      >
-        <LinkIcon className="size-4" />
-      </ToolbarButton>
+      <LinkPopover editor={editor} open={linkPopoverOpen} onOpenChange={setLinkPopoverOpen} />
       <ToolbarButton
         label="Highlight"
         active={editor.isActive("highlight")}

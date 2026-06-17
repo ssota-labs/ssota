@@ -229,6 +229,85 @@ test.describe("Editor Lab", () => {
       await code.click();
       await expect(surface.locator("code", { hasText: "codemark" })).toHaveCount(0);
     });
+
+    test("opens link popover to set url and title", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "link me");
+      await surface.getByText("link me").click({ clickCount: 3 });
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+      await toolbar.getByRole("button", { name: "Link" }).click();
+
+      const popover = page.getByTestId("ssota-link-popover");
+      await expect(popover).toBeVisible();
+      await expect(popover.getByLabel("제목")).toHaveValue("link me");
+
+      await popover.getByLabel("제목").fill("SSOTA");
+      await popover.getByLabel("링크").fill("https://ssota.dev");
+      await popover.getByRole("button", { name: "적용" }).click();
+
+      await expect(popover).toHaveCount(0);
+      await expect(
+        surface.locator('a[href="https://ssota.dev"]', { hasText: "SSOTA" }),
+      ).toBeVisible();
+    });
+
+    test("edits existing link via popover", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "edit link");
+      await surface.getByText("edit link").click({ clickCount: 3 });
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+      await toolbar.getByRole("button", { name: "Link" }).click();
+
+      const popover = page.getByTestId("ssota-link-popover");
+      await popover.getByLabel("링크").fill("https://example.com");
+      await popover.getByRole("button", { name: "적용" }).click();
+
+      const link = surface.locator('a[href="https://example.com"]', {
+        hasText: "edit link",
+      });
+      await expect(link).toBeVisible();
+
+      await link.click({ clickCount: 3 });
+      await expect(toolbar).toBeVisible();
+      await toolbar.getByRole("button", { name: "Link" }).click();
+      const editPopover = page.getByTestId("ssota-link-popover");
+      await expect(editPopover).toBeVisible();
+
+      await editPopover.getByLabel("제목").fill("Updated label");
+      await editPopover.getByLabel("링크").fill("https://updated.dev");
+      await editPopover.getByRole("button", { name: "적용" }).click();
+
+      await expect(
+        surface.locator('a[href="https://updated.dev"]', { hasText: "Updated label" }),
+      ).toBeVisible();
+    });
+
+    test("removes link via popover", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "remove link");
+      await surface.getByText("remove link").click({ clickCount: 3 });
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+      await toolbar.getByRole("button", { name: "Link" }).click();
+
+      const popover = page.getByTestId("ssota-link-popover");
+      await popover.getByLabel("링크").fill("https://remove.dev");
+      await popover.getByRole("button", { name: "적용" }).click();
+
+      const link = surface.locator('a[href="https://remove.dev"]', {
+        hasText: "remove link",
+      });
+      await expect(link).toBeVisible();
+
+      await link.click({ clickCount: 3 });
+      await expect(toolbar).toBeVisible();
+      await toolbar.getByRole("button", { name: "Link" }).click();
+      const removePopover = page.getByTestId("ssota-link-popover");
+      await expect(removePopover).toBeVisible();
+      await removePopover.getByRole("button", { name: "링크 제거" }).click();
+
+      await expect(surface.locator('a[href="https://remove.dev"]')).toHaveCount(0);
+      await expect(surface.getByText("remove link")).toBeVisible();
+    });
   });
 
   test.describe("emoji menu", () => {
