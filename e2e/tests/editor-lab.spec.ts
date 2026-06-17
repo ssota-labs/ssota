@@ -645,6 +645,31 @@ test.describe("Editor Lab", () => {
 
       await expect(surface.locator("ul ul")).toBeVisible();
     });
+
+    test("indents nested ordered list with Tab", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "one");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain().focus().toggleList("orderedList", "listItem").run();
+      });
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("two");
+      await page.keyboard.press("Tab");
+
+      await expect(surface.locator("ol ol")).toBeVisible();
+    });
+
+    test("Tab on first list item keeps editor focus", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "only");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain().focus().toggleList("orderedList", "listItem").run();
+      });
+
+      await page.keyboard.press("Tab");
+
+      await expect(surface).toBeFocused();
+      await expect(surface.locator("ol ol")).toHaveCount(0);
+    });
   });
 
   test.describe("emoji menu", () => {
