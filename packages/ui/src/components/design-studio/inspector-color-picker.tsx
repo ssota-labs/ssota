@@ -4,7 +4,7 @@ import type { PointerEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EyedropperIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { InputGroupInput } from "@/components/ui/input-group";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import {
   clampChannel,
@@ -79,14 +79,14 @@ function InspectorColorChannelInput({
 }: InspectorColorChannelInputProps) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-      <InputGroupInput
+      <Input
         aria-label={label}
         type="number"
         inputMode="numeric"
         min={min}
         max={max}
         value={value}
-        className="h-7 px-1.5 text-center text-xs tabular-nums"
+        className="h-7 border-border px-1.5 text-center text-xs tabular-nums shadow-none"
         onChange={(event) => onChange(event.target.value)}
         onBlur={(event) => {
           const numeric = Number(event.target.value);
