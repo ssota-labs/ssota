@@ -13,11 +13,24 @@ async function editorSurface(page: Page): Promise<Locator> {
 
 async function focusEditorEnd(page: Page) {
   await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
+  const surface = await editorSurface(page);
+  await surface.click();
   await page.evaluate(() => {
     const editor = window.__ssotaEditorLab;
-    editor?.chain().focus("end").insertContent({ type: "paragraph" }).focus("end").run();
+    if (!editor) return;
+    editor.chain().focus("end").insertContent({ type: "paragraph" }).focus("end").run();
   });
-  return editorSurface(page);
+  await page.waitForFunction(() => {
+    const editor = window.__ssotaEditorLab;
+    if (!editor) return false;
+    const { $from } = editor.state.selection;
+    return $from.parent.isTextblock;
+  });
+  return surface;
+}
+
+async function typeQuoteShortcut(page: Page) {
+  await page.keyboard.type('""', { delay: 40 });
 }
 
 async function typeAtDocumentEnd(page: Page, text: string) {
@@ -268,7 +281,7 @@ test.describe("Editor Lab", () => {
     test('creates blockquote when typing "" at line start', async ({ page }) => {
       const surface = await focusEditorEnd(page);
 
-      await page.keyboard.type('""');
+      await typeQuoteShortcut(page);
       const quote = surface.locator("blockquote").last();
       await expect(quote).toBeVisible();
       await expect(quote).not.toContainText('""');
@@ -277,7 +290,7 @@ test.describe("Editor Lab", () => {
     test("typed quote content stays inside blockquote", async ({ page }) => {
       const surface = await focusEditorEnd(page);
 
-      await page.keyboard.type('""');
+      await typeQuoteShortcut(page);
       const quote = surface.locator("blockquote").last();
       await expect(quote).toBeVisible();
 
