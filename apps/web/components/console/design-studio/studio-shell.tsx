@@ -19,6 +19,7 @@ import {
 } from "@/lib/design-studio/draft-storage";
 import { createEmptyUiComponentDocument } from "@/lib/design-studio/empty-document";
 import { exportUiComponentDocumentToJsx } from "@/lib/design-studio/export-jsx";
+import { updateStudioNode } from "@/lib/design-studio/tree-utils";
 import { LayersPanel } from "./layers-panel";
 import { InspectorPanel } from "./inspector-panel";
 import { usePreviewBridge } from "./preview-bridge";
@@ -171,6 +172,11 @@ export function StudioShell({
     });
   };
 
+  const handleCopyJsx = async () => {
+    const jsx = exportUiComponentDocumentToJsx(document.root);
+    await navigator.clipboard.writeText(jsx);
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col">
       <div className="flex items-center justify-between border-b px-4 py-3">
@@ -181,6 +187,14 @@ export function StudioShell({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void handleCopyJsx()}
+          >
+            Copy JSX
+          </Button>
           <Button
             type="button"
             variant="outline"
