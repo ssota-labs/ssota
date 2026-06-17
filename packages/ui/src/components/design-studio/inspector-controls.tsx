@@ -357,7 +357,7 @@ function InspectorColorList({
   onSelect,
 }: InspectorColorListProps) {
   return (
-    <div className="flex max-h-72 flex-col gap-0 overflow-y-auto p-0.5">
+    <div className="flex max-h-72 flex-col gap-1 overflow-y-auto p-1">
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -365,7 +365,7 @@ function InspectorColorList({
             key={option.value}
             type="button"
             className={cn(
-              "flex w-full items-center gap-2 rounded-sm px-1.5 py-0.5 text-xs hover:bg-muted",
+              "flex w-full items-center gap-2 rounded-sm px-1.5 py-1 text-xs hover:bg-muted",
               active && "bg-muted",
             )}
             onMouseDown={(event) => event.preventDefault()}
