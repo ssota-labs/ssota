@@ -41,6 +41,7 @@
 .ssota-editor ul,
 .ssota-editor ol {
   padding-left: 1.5rem;
+  margin: 0.25rem 0;
 }
 
 .ssota-editor ul {
@@ -49,6 +50,37 @@
 
 .ssota-editor ol {
   list-style: decimal;
+}
+
+/* Notion-style mixed nesting: bullet ↔ numbered at each depth */
+.ssota-editor ul ul {
+  list-style: circle;
+}
+
+.ssota-editor ul ul ul {
+  list-style: square;
+}
+
+.ssota-editor ol ol {
+  list-style: lower-alpha;
+}
+
+.ssota-editor ol ol ol {
+  list-style: lower-roman;
+}
+
+.ssota-editor ol ul,
+.ssota-editor ul ol {
+  margin-top: 0.125rem;
+}
+
+.ssota-editor li > ul,
+.ssota-editor li > ol {
+  margin-top: 0.125rem;
+}
+
+.ssota-editor li > p {
+  margin: 0;
 }
 
 .ssota-editor blockquote {

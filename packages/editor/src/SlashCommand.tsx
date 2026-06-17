@@ -27,6 +27,7 @@ import {
   TextHTwoIcon,
 } from "@phosphor-icons/react";
 import { pickImageFile, insertUploadedImage } from "./extensions/MentionExtension";
+import { applyListType } from "./list-commands";
 import {
   type ComponentType,
   type ReactNode,
@@ -99,16 +100,20 @@ function buildSlashItems(
     description: "Unordered list",
     icon: ListBulletsIcon,
     search: "bullet unordered list",
-    command: ({ editor, range }) =>
-      deleteTrigger(editor, range).toggleBulletList().run(),
+    command: ({ editor, range }) => {
+      deleteTrigger(editor, range).run();
+      applyListType(editor, "bulletList");
+    },
   },
   {
     title: "Numbered list",
     description: "Ordered list",
     icon: ListNumbersIcon,
     search: "number ordered list",
-    command: ({ editor, range }) =>
-      deleteTrigger(editor, range).toggleOrderedList().run(),
+    command: ({ editor, range }) => {
+      deleteTrigger(editor, range).run();
+      applyListType(editor, "orderedList");
+    },
   },
   {
     title: "Task list",

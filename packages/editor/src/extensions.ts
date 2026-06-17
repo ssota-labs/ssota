@@ -2,6 +2,7 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
+import { BulletList, ListKeymap, OrderedList } from "@tiptap/extension-list";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TableKit } from "@tiptap/extension-table";
 import TaskItem from "@tiptap/extension-task-item";
@@ -15,6 +16,7 @@ import type { SsotaExtensionOptions } from "./types";
 import { Callout } from "./extensions/Callout";
 import { EmojiExtension } from "./extensions/EmojiExtension";
 import { createMentionExtension } from "./extensions/MentionExtension";
+import { NestedListItem } from "./extensions/NestedListItem";
 import { Toggle } from "./extensions/Toggle";
 
 export type { SsotaExtensionOptions } from "./types";
@@ -23,7 +25,19 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
   const extensions: Extensions = [
     StarterKit.configure({
       link: false,
+      bulletList: false,
+      orderedList: false,
+      listItem: false,
+      listKeymap: false,
     }),
+    BulletList.configure({
+      HTMLAttributes: { class: "ssota-bullet-list" },
+    }),
+    OrderedList.configure({
+      HTMLAttributes: { class: "ssota-ordered-list" },
+    }),
+    NestedListItem,
+    ListKeymap,
     TaskList,
     TaskItem.configure({ nested: true }),
     TableKit.configure({

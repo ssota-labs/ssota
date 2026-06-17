@@ -79,6 +79,29 @@ async function openSlashMenu(page: Page, query = "") {
   return editorSurface(page);
 }
 
+/** 현재 블록 내용을 `/query`로 바꿔 슬래시 메뉴를 연다 (중첩 리스트 등 커서 위치 유지) */
+async function openSlashMenuInCurrentBlock(page: Page, query: string) {
+  await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
+  await page.evaluate((filter) => {
+    const editor = window.__ssotaEditorLab;
+    if (!editor) return;
+
+    const { $from } = editor.state.selection;
+    const blockStart = $from.start();
+    const blockEnd = $from.end();
+
+    editor
+      .chain()
+      .focus()
+      .setTextSelection({ from: blockStart, to: blockEnd })
+      .insertContent(`/${filter}`)
+      .run();
+  }, query);
+  await expect(page.getByTestId("ssota-slash-menu")).toBeVisible({
+    timeout: 10_000,
+  });
+}
+
 async function openEmojiMenu(page: Page, query = "") {
   await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
   await page.evaluate((filter) => {
@@ -398,6 +421,101 @@ test.describe("Editor Lab", () => {
 
       await expect(surface.locator('a[href="https://remove.dev"]')).toHaveCount(0);
       await expect(surface.getByText("remove link")).toBeVisible();
+    });
+  });
+
+  test.describe("mixed list nesting", () => {
+    async function hasMixedListNesting(page: Page): Promise<boolean> {
+      return page.evaluate(() => {
+        const doc = window.__ssotaEditorLab?.getJSON();
+        if (!doc) return false;
+
+        let mixed = false;
+        const isList = (type?: string) =>
+          type === "bulletList" || type === "orderedList";
+
+        const visit = (
+          node: { type?: string; content?: unknown[] },
+          enclosingList?: string,
+        ) => {
+          if (mixed || !node) return;
+
+          if (isList(node.type)) {
+            if (enclosingList && enclosingList !== node.type) {
+              mixed = true;
+              return;
+            }
+
+            const listType = node.type;
+            for (const listItem of node.content ?? []) {
+              for (const child of (listItem as { content?: unknown[] }).content ??
+                []) {
+                visit(
+                  child as { type?: string; content?: unknown[] },
+                  listType,
+                );
+              }
+            }
+            return;
+          }
+
+          for (const child of node.content ?? []) {
+            visit(child as { type?: string; content?: unknown[] }, enclosingList);
+          }
+        };
+
+        visit(doc);
+        return mixed;
+      });
+    }
+
+    test("nests bullet list inside numbered list", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "parent");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain().focus().toggleList("orderedList", "listItem").run();
+      });
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("child");
+      await page.keyboard.press("Tab");
+      await surface.getByText("child").click();
+
+      await openSlashMenuInCurrentBlock(page, "bullet");
+      await page.getByRole("option", { name: "Bullet list" }).click();
+
+      await expect(surface.locator("ol li ul")).toBeVisible();
+      expect(await hasMixedListNesting(page)).toBe(true);
+    });
+
+    test("nests numbered list inside bullet list", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "parent");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain().focus().toggleList("bulletList", "listItem").run();
+      });
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("child");
+      await page.keyboard.press("Tab");
+      await surface.getByText("child").click();
+
+      await openSlashMenuInCurrentBlock(page, "number");
+      await page.getByRole("option", { name: "Numbered list" }).click();
+
+      await expect(surface.locator("ul li ol")).toBeVisible();
+      expect(await hasMixedListNesting(page)).toBe(true);
+    });
+
+    test("indents nested list with Tab", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "one");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain().focus().toggleList("bulletList", "listItem").run();
+      });
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("two");
+      await page.keyboard.press("Tab");
+
+      await expect(surface.locator("ul ul")).toBeVisible();
     });
   });
 
