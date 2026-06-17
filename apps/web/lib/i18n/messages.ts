@@ -131,6 +131,7 @@ export const en = {
     viewFull: "View full",
     edit: "Edit",
     startFromTemplate: "Start from template",
+    docStatusLabel: "Document status",
     emptyProductDescription:
       "The product roadmap is empty. Start from the template to align goals, scope, and success criteria.",
     emptyPlanningDescription: "This planning document has no content yet.",
@@ -434,6 +435,7 @@ export const ko = {
     viewFull: "전체 보기",
     edit: "편집",
     startFromTemplate: "양식으로 시작",
+    docStatusLabel: "문서 상태",
     emptyProductDescription:
       "프로덕트 로드맵이 비어 있습니다. 양식으로 목표·범위·성공 기준을 정리하세요.",
     emptyPlanningDescription: "이 계획 문서에 아직 내용이 없습니다.",

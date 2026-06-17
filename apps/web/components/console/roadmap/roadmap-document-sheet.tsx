@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import { MarkdownContent } from "@ssota/ui/components/page-patterns/markdown-content";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@ssota/ui/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -13,6 +21,12 @@ import {
   SheetTitle,
 } from "@ssota/ui/components/ui/sheet";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
+import { useLocale } from "@/components/i18n/locale-provider";
+import {
+  DOC_STATUS_LABELS,
+  DOC_STATUS_OPTIONS,
+  type DocStatus,
+} from "@/lib/roadmap/doc-status";
 
 type RoadmapDocumentSheetProps = {
   open: boolean;
@@ -20,9 +34,14 @@ type RoadmapDocumentSheetProps = {
   title: string;
   content: string;
   description?: string;
+  docStatus?: DocStatus;
   saveLabel: string;
   onOpenChange: (open: boolean) => void;
-  onSave?: (input: { title: string; content: string }) => Promise<void>;
+  onSave?: (input: {
+    title: string;
+    content: string;
+    docStatus?: DocStatus;
+  }) => Promise<void>;
 };
 
 export function RoadmapDocumentSheet({
@@ -31,25 +50,33 @@ export function RoadmapDocumentSheet({
   title,
   content,
   description,
+  docStatus = "draft",
   saveLabel,
   onOpenChange,
   onSave,
 }: RoadmapDocumentSheetProps) {
+  const { t } = useLocale();
   const router = useRouter();
   const [draftTitle, setDraftTitle] = useState(title);
   const [draftContent, setDraftContent] = useState(content);
+  const [draftDocStatus, setDraftDocStatus] = useState<DocStatus>(docStatus);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
     setDraftTitle(title);
     setDraftContent(content);
-  }, [open, title, content]);
+    setDraftDocStatus(docStatus);
+  }, [open, title, content, docStatus]);
 
   const handleSave = () => {
     if (!onSave) return;
     startTransition(async () => {
-      await onSave({ title: draftTitle, content: draftContent });
+      await onSave({
+        title: draftTitle,
+        content: draftContent,
+        docStatus: draftDocStatus,
+      });
       router.refresh();
       onOpenChange(false);
     });
@@ -77,6 +104,27 @@ export function RoadmapDocumentSheet({
             <MarkdownContent content={content} />
           ) : (
             <>
+              <div className="space-y-2">
+                <Label htmlFor="roadmap-doc-status">{t("roadmap.docStatusLabel")}</Label>
+                <Select
+                  value={draftDocStatus}
+                  onValueChange={(value) => {
+                    if (value) setDraftDocStatus(value as DocStatus);
+                  }}
+                  disabled={pending}
+                >
+                  <SelectTrigger id="roadmap-doc-status" size="sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DOC_STATUS_OPTIONS.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {DOC_STATUS_LABELS[status]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Textarea
                 value={draftContent}
                 onChange={(event) => setDraftContent(event.target.value)}
