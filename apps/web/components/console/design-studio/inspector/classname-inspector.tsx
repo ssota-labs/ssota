@@ -33,11 +33,13 @@ const SIZE_UNITS = ["px", "%"] as const satisfies readonly InspectorNumberUnit[]
 type ClassnameInspectorProps = {
   className: string;
   onChange: (className: string) => void;
+  selectionKey?: string;
 };
 
 export function ClassnameInspector({
   className,
   onChange,
+  selectionKey,
 }: ClassnameInspectorProps) {
   const parsed = parseClassName(className);
   const sizeReferencePx = resolveRadiusReferencePx(parsed);
@@ -134,7 +136,11 @@ export function ClassnameInspector({
 
       <BorderSection parsed={parsed} onUpdate={update} />
 
-      <AppearanceSection parsed={parsed} onUpdate={update} />
+      <AppearanceSection
+        parsed={parsed}
+        onUpdate={update}
+        selectionKey={selectionKey}
+      />
 
       <ShadowSection
         shadow={parsed.shadow}

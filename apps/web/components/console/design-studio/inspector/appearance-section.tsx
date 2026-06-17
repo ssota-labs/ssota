@@ -7,7 +7,6 @@ import {
   formatOpacityPercent,
   formatRadiusClass,
   formatRadiusOnUnitChange,
-  formatRadiusValueOnUnitChange,
   parseOpacityPercent,
   parseRadiusValue,
   resolveRadiusReferencePx,
@@ -28,11 +27,14 @@ const RADIUS_UNITS = ["px", "%"] as const satisfies readonly InspectorNumberUnit
 type AppearanceSectionProps = {
   parsed: ParsedClassName;
   onUpdate: (patch: Partial<ParsedClassName>) => void;
+  /** 선택 노드가 바뀔 때 로컬 UI 상태를 리셋합니다. */
+  selectionKey?: string;
 };
 
 export function AppearanceSection({
   parsed,
   onUpdate,
+  selectionKey,
 }: AppearanceSectionProps) {
   const hasPerCorner = hasPerCornerRadius(parsed);
   const [perCornerMode, setPerCornerMode] = useState(hasPerCorner);
@@ -42,6 +44,11 @@ export function AppearanceSection({
   const [preferredRadiusUnit, setPreferredRadiusUnit] = useState<RadiusUnit>(
     () => getRadiusUnit(parsed),
   );
+
+  useEffect(() => {
+    setPerCornerMode(hasPerCornerRadius(parsed));
+    setPreferredRadiusUnit(getRadiusUnit(parsed));
+  }, [selectionKey]);
 
   useEffect(() => {
     if (hasRadiusClass) {
@@ -56,6 +63,7 @@ export function AppearanceSection({
     parsed.borderRadiusBottomRight,
   ]);
 
+  const usePerCornerRadius = perCornerMode && hasPerCornerRadius(parsed);
   const radiusUnit = hasRadiusClass
     ? getRadiusUnit(parsed)
     : preferredRadiusUnit;
@@ -63,23 +71,8 @@ export function AppearanceSection({
   const radiusMax = radiusUnit === "%" ? 100 : undefined;
   const radiusReferencePx = resolveRadiusReferencePx(parsed);
 
-  const convertRadiusForUnit = (
-    value: string,
-    currentUnit: RadiusUnit,
-    nextUnit: RadiusUnit,
-  ) =>
-    clampRadiusValue(
-      formatRadiusValueOnUnitChange(
-        value,
-        currentUnit,
-        nextUnit,
-        radiusReferencePx,
-      ) || "0",
-      nextUnit,
-    );
-
   const setUnifiedRadius = (value: string) => {
-    if (perCornerMode) {
+    if (usePerCornerRadius) {
       onUpdate({
         borderRadius: undefined,
         borderRadiusTopLeft: formatRadiusClass("rounded-tl", value, radiusUnit),
@@ -113,15 +106,20 @@ export function AppearanceSection({
   };
 
   const setRadiusUnit = (nextUnit: RadiusUnit) => {
+    if (nextUnit === radiusUnit && hasRadiusClass) return;
+
     setPreferredRadiusUnit(nextUnit);
 
-    if (perCornerMode) {
+    const sourceValue = getRadiusValueForUnitChange(parsed, unifiedRadius);
+
+    if (usePerCornerRadius) {
       const convertCorner = (
         prefix: "rounded-tl" | "rounded-tr" | "rounded-bl" | "rounded-br",
         className?: string,
       ) => {
-        const { value } = parseRadiusValue(className);
-        if (!value.trim()) return className;
+        const cornerValue = parseRadiusValue(className).value.trim();
+        const value = cornerValue || sourceValue;
+        if (!value) return className;
         return formatRadiusOnUnitChange(
           prefix,
           value,
@@ -153,15 +151,14 @@ export function AppearanceSection({
       return;
     }
 
-    const radiusValue = unifiedRadius.trim();
-    if (!radiusValue && !hasRadiusClass) {
+    if (!sourceValue && !hasRadiusClass) {
       return;
     }
 
     onUpdate({
       borderRadius: formatRadiusOnUnitChange(
         "rounded",
-        radiusValue || "0",
+        sourceValue,
         radiusUnit,
         nextUnit,
         radiusReferencePx,
@@ -346,9 +343,16 @@ function getUnifiedRadiusValue(parsed: ParsedClassName): string {
   return "";
 }
 
-function clampRadiusValue(value: string, unit: RadiusUnit): string {
-  if (unit !== "%") return value;
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return value;
-  return String(Math.min(100, Math.max(0, numeric)));
+function getRadiusValueForUnitChange(
+  parsed: ParsedClassName,
+  unifiedRadius: string,
+): string {
+  const unified = unifiedRadius.trim();
+  if (unified) return unified;
+
+  if (parsed.borderRadius) {
+    return parseRadiusValue(parsed.borderRadius).value.trim();
+  }
+
+  return "";
 }

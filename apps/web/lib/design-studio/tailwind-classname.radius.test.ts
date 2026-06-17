@@ -43,4 +43,10 @@ describe("radius unit change helpers", () => {
       "rounded-[8%]",
     );
   });
+
+  it("converts 40px to 20% when reference width is 200px", () => {
+    expect(formatRadiusOnUnitChange("rounded", "40", "px", "%", 200)).toBe(
+      "rounded-[20%]",
+    );
+  });
 });

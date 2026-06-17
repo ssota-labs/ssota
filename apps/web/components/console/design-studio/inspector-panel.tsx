@@ -104,6 +104,7 @@ export function InspectorPanel({
             <Separator />
             <ClassnameInspector
               className={className}
+              selectionKey={selected.id}
               onChange={(nextClassName) =>
                 onPatch(selected.id, { className: nextClassName })
               }
