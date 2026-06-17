@@ -2,13 +2,13 @@
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { StudioNode } from "@ssota/contracts/catalog";
+import type { StudioPatch, StudioMessage } from "@ssota/studio-preview-runtime";
 import {
   collectStudioUtilityClassesFromBundle,
   createParentMessageListener,
   postToIframe,
   type ResolvedComponentMap,
   type StudioInteractionMode,
-  type StudioMessage,
 } from "@ssota/studio-renderer";
 
 async function fetchPreviewUtilityCss(classes: string[]): Promise<string> {
@@ -36,7 +36,10 @@ export function usePreviewBridge(previewUrl: string) {
       if (message.type === "STUDIO_SELECT") {
         window.dispatchEvent(
           new CustomEvent("studio-select", {
-            detail: { nodeId: message.nodeId },
+            detail: {
+              nodeId: message.nodeId,
+              sourceRef: message.sourceRef,
+            },
           }),
         );
         window.dispatchEvent(
@@ -104,6 +107,25 @@ export function usePreviewBridge(previewUrl: string) {
     [post],
   );
 
+  const syncBundle = useCallback(
+    (input: { jsUrl: string; cssUrl?: string; buildId: string }) => {
+      post({
+        type: "STUDIO_LOAD_BUNDLE",
+        jsUrl: input.jsUrl,
+        cssUrl: input.cssUrl,
+        buildId: input.buildId,
+      });
+    },
+    [post],
+  );
+
+  const patchNode = useCallback(
+    (nodeId: string, patch: StudioPatch) => {
+      post({ type: "STUDIO_PATCH", nodeId, patch });
+    },
+    [post],
+  );
+
   const highlightNode = useCallback(
     (nodeId: string) => {
       post({ type: "STUDIO_HIGHLIGHT", nodeId });
@@ -130,6 +152,8 @@ export function usePreviewBridge(previewUrl: string) {
     syncUtilityCss,
     syncTheme,
     syncInteractionMode,
+    syncBundle,
+    patchNode,
     highlightNode,
   };
 }

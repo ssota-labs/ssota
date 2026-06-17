@@ -1,0 +1,16 @@
+{
+  "extends": "@ssota/config/typescript/base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "noEmit": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@ssota/ui/*": ["../ui/src/*"],
+      "@/lib/utils": ["../ui/src/lib/utils.ts"],
+      "@/components/ui/*": ["../ui/src/components/ui/*"],
+      "@/hooks/*": ["../ui/src/hooks/*"]
+    }
+  },
+  "include": ["src", "../ui/src"]
+}

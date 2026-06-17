@@ -32,4 +32,21 @@ describe("createContractsCatalogReadPort", () => {
       catalog.validateNodeProperties("unknown_type", { foo: "bar" }),
     ).toThrow(/UNKNOWN_NODE_TYPE/);
   });
+
+  it("validates ui_component v2 content", () => {
+    const parsed = catalog.validateNodeContent(
+      "ui_component",
+      JSON.stringify({
+        schemaVersion: 2,
+        files: { "Component.tsx": "export default function C() {}" },
+      }),
+      {
+        slug: "btn",
+        tier: "primitive",
+        representation: "source",
+        entry: "Component.tsx",
+      },
+    ) as { schemaVersion: number };
+    expect(parsed.schemaVersion).toBe(2);
+  });
 });

@@ -11,3 +11,11 @@ export {
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
 } from "./constants.js";
+export {
+  createStudioBuildStorage,
+  LocalStudioBuildStorage,
+  SupabaseStudioBuildStorage,
+  studioBuildArtifactPaths,
+  type StudioBuildStorage,
+  type StudioBuildStorageArtifact,
+} from "./studio-build-storage.js";

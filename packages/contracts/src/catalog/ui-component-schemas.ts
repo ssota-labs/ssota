@@ -77,11 +77,44 @@ export const studioNodeSchema: z.ZodType<StudioNode> = z.lazy(() =>
   ]),
 );
 
+export const uiComponentRepresentationSchema = z.enum(["source", "tree"]);
+export type UiComponentRepresentation = z.infer<
+  typeof uiComponentRepresentationSchema
+>;
+
 export const uiComponentDocumentSchema = z.object({
   schemaVersion: z.literal(1),
   root: studioNodeSchema,
 });
 export type UiComponentDocument = z.infer<typeof uiComponentDocumentSchema>;
+
+export type UiComponentLayerIndexNode = {
+  id: string;
+  label: string;
+  children?: UiComponentLayerIndexNode[];
+};
+
+export const uiComponentLayerIndexSchema: z.ZodType<UiComponentLayerIndexNode> =
+  z.lazy(() =>
+    z.object({
+      id: z.string().min(1),
+      label: z.string().min(1),
+      children: z.array(uiComponentLayerIndexSchema).optional(),
+    }),
+  );
+
+export const uiComponentContentSchemaV2 = z.object({
+  schemaVersion: z.literal(2),
+  files: z.record(z.string().min(1)),
+  layerIndex: uiComponentLayerIndexSchema.optional(),
+});
+export type UiComponentContentV2 = z.infer<typeof uiComponentContentSchemaV2>;
+
+export const uiComponentContentSchema = z.discriminatedUnion("schemaVersion", [
+  uiComponentDocumentSchema,
+  uiComponentContentSchemaV2,
+]);
+export type UiComponentContent = z.infer<typeof uiComponentContentSchema>;
 
 export function parseUiComponentDocument(content: string): UiComponentDocument {
   return uiComponentDocumentSchema.parse(JSON.parse(content));
@@ -95,4 +128,25 @@ export function parseUiComponentDocumentSafe(
   } catch {
     return null;
   }
+}
+
+export function parseUiComponentContent(
+  content: string | null,
+  representation: UiComponentRepresentation = "tree",
+): UiComponentContent {
+  if (content === null || content.trim() === "") {
+    throw new Error("UI component content is required");
+  }
+  const parsed = uiComponentContentSchema.parse(JSON.parse(content));
+  if (representation === "source" && parsed.schemaVersion !== 2) {
+    throw new Error(
+      "UI component with representation=source requires content schemaVersion 2",
+    );
+  }
+  if (representation === "tree" && parsed.schemaVersion !== 1) {
+    throw new Error(
+      "UI component with representation=tree requires content schemaVersion 1",
+    );
+  }
+  return parsed;
 }

@@ -1,4 +1,5 @@
 import type { UpdateNodeInput } from "@ssota/contracts/graph";
+import { requiresNodeContent, type NodeType } from "@ssota/contracts";
 import { GraphError } from "../../domain/graph-errors.js";
 import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
 import type { GraphReadPort } from "../../ports/graph-read-port.js";
@@ -19,11 +20,44 @@ export async function updateNode(
   });
   assertGraphNodeInProject(input.projectId, existing);
 
-  if (input.properties !== undefined) {
+  const validatedProperties: Record<string, unknown> =
+    input.properties !== undefined
+      ? (() => {
+          try {
+            return deps.catalog.validateNodeProperties(
+              existing.nodeType,
+              input.properties,
+            );
+          } catch (err) {
+            const message =
+              err instanceof Error ? err.message : "Invalid properties";
+            throw new GraphError("VALIDATION_FAILED", message);
+          }
+        })()
+      : existing.properties;
+
+  const nextContent =
+    input.content !== undefined ? input.content : existing.content;
+
+  if (
+    requiresNodeContent(existing.nodeType as NodeType, validatedProperties) &&
+    (nextContent === null || nextContent.trim() === "")
+  ) {
+    throw new GraphError(
+      "VALIDATION_FAILED",
+      `Node type '${existing.nodeType}' requires content`,
+    );
+  }
+
+  if (input.content !== undefined) {
     try {
-      deps.catalog.validateNodeProperties(existing.nodeType, input.properties);
+      deps.catalog.validateNodeContent(
+        existing.nodeType,
+        input.content,
+        validatedProperties,
+      );
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Invalid properties";
+      const message = err instanceof Error ? err.message : "Invalid content";
       throw new GraphError("VALIDATION_FAILED", message);
     }
   }

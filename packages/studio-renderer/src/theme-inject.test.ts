@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildStudioThemeCss } from "./theme-inject.js";
+import { buildStudioThemeCss } from "./theme-inject";
 
 describe("theme-inject", () => {
   it("scopes theme css to studio-preview", () => {

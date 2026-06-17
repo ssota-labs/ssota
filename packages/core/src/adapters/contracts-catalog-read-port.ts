@@ -1,8 +1,10 @@
 import {
   getEdgeTypeEntry,
   getNodeTypeEntry,
+  isKnownNodeType,
   listEdgeTypes,
   listNodeTypes,
+  parseNodeContent,
   parseNodeProperties,
 } from "@ssota/contracts";
 import type { CatalogReadPort } from "../ports/catalog-read-port.js";
@@ -27,6 +29,12 @@ export function createContractsCatalogReadPort(): CatalogReadPort {
     getEdgeTypeEntry,
     validateNodeProperties(nodeType, properties) {
       return parseNodeProperties(nodeType, properties);
+    },
+    validateNodeContent(nodeType, content, properties) {
+      if (!isKnownNodeType(nodeType)) {
+        throw new Error(`UNKNOWN_NODE_TYPE:${nodeType}`);
+      }
+      return parseNodeContent(nodeType, content, properties);
     },
   };
 }
