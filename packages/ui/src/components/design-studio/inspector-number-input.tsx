@@ -12,6 +12,7 @@ import {
   InspectorPresetList,
   InspectorScrubberHandle,
   InspectorUnitSelector,
+  useInspectorPresetPopoverToggle,
   usePreventNumberInputWheelChange,
   type InspectorNumberUnit,
   type InspectorPresetOption,
@@ -141,9 +142,11 @@ export function InspectorPresetNumberInput({
     onChange(applyNumericBounds(next, min, max));
   };
 
-  const togglePresets = () => {
-    if (hasPresets) setOpen((current) => !current);
-  };
+  const presetPopoverToggle = useInspectorPresetPopoverToggle(
+    hasPresets,
+    open,
+    setOpen,
+  );
 
   return (
     <InputGroup>
@@ -189,7 +192,8 @@ export function InspectorPresetNumberInput({
             const clamped = applyNumericBounds(event.target.value, min, max);
             if (clamped !== event.target.value) onChange(clamped);
           }}
-          onClick={togglePresets}
+          onPointerDown={presetPopoverToggle.onInputPointerDown}
+          onClick={presetPopoverToggle.onInputClick}
         />
       </InspectorAnchorPopover>
       <InputGroupAddon align="inline-end">

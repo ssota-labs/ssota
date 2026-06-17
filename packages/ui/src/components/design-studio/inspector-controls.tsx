@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import type { InspectorColorOption } from "./tailwind-theme-colors";
 import {
   InspectorAnchorPopover,
+  useInspectorPresetPopoverToggle,
 } from "./inspector-input-primitives";
 
 export type { InspectorColorOption } from "./tailwind-theme-colors";
@@ -530,6 +531,11 @@ export function InspectorColorField({
   );
   const tokenSwatch = usesTokenColorSwatch(value, presets);
   const hexValue = useColorPickerHex(value, presets, tokenSwatchNode);
+  const presetPopoverToggle = useInspectorPresetPopoverToggle(
+    presets.length > 0,
+    presetOpen,
+    setPresetOpen,
+  );
 
   useLayoutEffect(() => {
     if (colorInputRef.current && colorInputRef.current.value !== hexValue) {
@@ -594,9 +600,8 @@ export function InspectorColorField({
             aria-expanded={presets.length > 0 ? presetOpen : undefined}
             aria-haspopup={presets.length > 0 ? "dialog" : undefined}
             onChange={(event) => onChange(event.target.value)}
-            onClick={() => {
-              if (presets.length > 0) setPresetOpen((current) => !current);
-            }}
+            onPointerDown={presetPopoverToggle.onInputPointerDown}
+            onClick={presetPopoverToggle.onInputClick}
           />
         </InputGroup>
       </InspectorAnchorPopover>

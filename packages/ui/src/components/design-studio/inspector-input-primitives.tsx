@@ -1,6 +1,6 @@
 "use client";
 
-import type { PointerEvent, ReactNode, RefObject } from "react";
+import type { MouseEvent, PointerEvent, ReactNode, RefObject } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CaretDownIcon, CheckIcon } from "@phosphor-icons/react";
 import {
@@ -203,6 +203,37 @@ export function applyNumericBounds(
   if (min !== undefined) next = Math.max(min, next);
   if (max !== undefined) next = Math.min(max, next);
   return String(next);
+}
+
+export function useInspectorPresetPopoverToggle(
+  enabled: boolean,
+  open: boolean,
+  setOpen: (open: boolean) => void,
+) {
+  const onInputPointerDown = useCallback(
+    (event: PointerEvent<HTMLInputElement>) => {
+      if (!enabled || !open) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setOpen(false);
+    },
+    [enabled, open, setOpen],
+  );
+
+  const onInputClick = useCallback(
+    (event: MouseEvent<HTMLInputElement>) => {
+      if (!enabled) return;
+      if (open) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      setOpen(true);
+    },
+    [enabled, open, setOpen],
+  );
+
+  return { onInputPointerDown, onInputClick };
 }
 
 /** type=number 기본 휠 증감을 막습니다 (포커스 여부 무관). */
