@@ -72,29 +72,6 @@ export function InspectorPresetList({
   );
 }
 
-export function InspectorPresetTrigger({
-  "aria-label": ariaLabel,
-  expanded,
-  onPress,
-}: {
-  "aria-label": string;
-  expanded?: boolean;
-  onPress?: () => void;
-}) {
-  return (
-    <InputGroupButton
-      type="button"
-      size="icon-xs"
-      variant="ghost"
-      aria-label={ariaLabel}
-      aria-expanded={expanded}
-      onClick={onPress}
-    >
-      <CaretDownIcon className="size-3.5 text-muted-foreground" />
-    </InputGroupButton>
-  );
-}
-
 type InspectorAnchorPopoverProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;

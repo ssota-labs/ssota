@@ -10,7 +10,6 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
-  InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -27,7 +26,6 @@ import { cn } from "@/lib/utils";
 import type { InspectorColorOption } from "./tailwind-theme-colors";
 import {
   InspectorAnchorPopover,
-  InspectorPresetTrigger,
 } from "./inspector-input-primitives";
 
 export type { InspectorColorOption } from "./tailwind-theme-colors";
@@ -392,19 +390,17 @@ export function InspectorColorField({
         }
       >
         <InputGroup className="min-w-0 flex-1">
-          <InputGroupAddon align="inline-start">
-            <InspectorPresetTrigger
-              aria-label={ariaLabel ? `${ariaLabel} presets` : "Color presets"}
-              expanded={presetOpen}
-              onPress={() => setPresetOpen((current) => !current)}
-            />
-          </InputGroupAddon>
           <InputGroupInput
             id={id}
             aria-label={ariaLabel}
             value={value}
             placeholder={placeholder}
+            aria-expanded={presets.length > 0 ? presetOpen : undefined}
+            aria-haspopup={presets.length > 0 ? "dialog" : undefined}
             onChange={(event) => onChange(event.target.value)}
+            onClick={() => {
+              if (presets.length > 0) setPresetOpen(true);
+            }}
           />
         </InputGroup>
       </InspectorAnchorPopover>

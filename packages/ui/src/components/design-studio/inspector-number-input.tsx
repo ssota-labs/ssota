@@ -12,7 +12,6 @@ import {
   applyNumericBounds,
   InspectorAnchorPopover,
   InspectorPresetList,
-  InspectorPresetTrigger,
   InspectorScrubberHandle,
   InspectorUnitSelector,
   type InspectorNumberUnit,
@@ -135,10 +134,10 @@ export function InspectorPresetNumberInput({
 }: InspectorPresetNumberInputProps) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
-  const presetsLabel = ariaLabel ? `${ariaLabel} presets` : "Presets";
   const unitLabel = ariaLabel ? `${ariaLabel} unit` : "Unit";
   const availableUnits = units ?? (onUnitChange ? [unit] : [unit]);
   const activePresets = presetsByUnit?.[unit] ?? presets ?? [];
+  const hasPresets = activePresets.length > 0;
 
   const emitBoundedChange = (next: string) => {
     onChange(applyNumericBounds(next, min, max));
@@ -146,6 +145,10 @@ export function InspectorPresetNumberInput({
 
   const handleWheel = (event: WheelEvent) =>
     adjustNumberByWheel(event, value, emitBoundedChange, scrollStep, min, max);
+
+  const openPresets = () => {
+    if (hasPresets) setOpen(true);
+  };
 
   return (
     <InputGroup onWheel={handleWheel}>
@@ -161,7 +164,7 @@ export function InspectorPresetNumberInput({
         open={open}
         onOpenChange={setOpen}
         anchorRef={anchorRef}
-        anchorClassName="flex"
+        anchorClassName="flex min-w-0 flex-1"
         content={
           <InspectorPresetList
             options={activePresets}
@@ -174,13 +177,6 @@ export function InspectorPresetNumberInput({
           />
         }
       >
-        <InputGroupAddon align="inline-start">
-          <InspectorPresetTrigger
-            aria-label={presetsLabel}
-            expanded={open}
-            onPress={() => setOpen((current) => !current)}
-          />
-        </InputGroupAddon>
         <InputGroupInput
           id={id}
           aria-label={ariaLabel}
@@ -191,12 +187,15 @@ export function InspectorPresetNumberInput({
           max={max}
           value={value}
           placeholder={placeholder}
+          aria-expanded={hasPresets ? open : undefined}
+          aria-haspopup={hasPresets ? "dialog" : undefined}
           onChange={(event) => onChange(event.target.value)}
           onBlur={(event) => {
             const clamped = applyNumericBounds(event.target.value, min, max);
             if (clamped !== event.target.value) onChange(clamped);
           }}
           onWheel={handleWheel}
+          onClick={openPresets}
         />
       </InspectorAnchorPopover>
       <InputGroupAddon align="inline-end">
