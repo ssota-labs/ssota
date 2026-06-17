@@ -69,7 +69,6 @@ export default async function ExecutiveRoadmapPage({
     await updateGraphNodeAction({
       projectId: project.id,
       nodeId: productRoadmap.id,
-      title: "프로덕트 로드맵",
       content: loadRoadmapTemplate("product"),
       properties: { doc_status: "draft" },
       revalidatePaths: [revalidatePath],

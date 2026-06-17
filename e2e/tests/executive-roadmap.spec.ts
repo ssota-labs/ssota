@@ -41,13 +41,13 @@ test.describe("Executive roadmap", () => {
 
   test("opens product roadmap full view sheet", async ({ page }) => {
     const startTemplate = page.getByRole("button", {
-      name: /Notion template|Notion 양식/,
+      name: /Start from template|양식으로 시작/,
     });
 
     if (await startTemplate.isVisible()) {
       await startTemplate.click();
       await expect(page.getByTestId("product-roadmap-card")).not.toContainText(
-        /Notion template|Notion 양식/,
+        /Start from template|양식으로 시작/,
         { timeout: 10_000 },
       );
     }
