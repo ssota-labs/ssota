@@ -10,16 +10,24 @@ import { NestedListItem } from "./extensions/NestedListItem";
 import {
   applyListType,
   convertInnermostListType,
+  convertListItemToSiblingListType,
   getActiveListType,
   hasMixedListNesting,
 } from "./list-commands";
 
+type JsonNode = {
+  type?: string;
+  content?: JsonNode[];
+  text?: string;
+};
+
 function selectText(editor: Editor, text: string) {
   let found = false;
   editor.state.doc.descendants((node, pos) => {
-    if (found || !node.isText || node.text !== text) return;
+    if (found || !node.isTextblock || node.textContent !== text) return;
     editor.commands.setTextSelection(pos + 1);
     found = true;
+    return false;
   });
   expect(found).toBe(true);
 }
@@ -119,7 +127,7 @@ describe("applyListType", () => {
 
     expect(applyListType(editor, "orderedList")).toBe(true);
     expect(getActiveListType(editor)).toBe("orderedList");
-    const listItem = editor.getJSON().content?.[0];
+    const listItem = editor.getJSON().content?.[0] as JsonNode | undefined;
     expect(listItem?.type).toBe("orderedList");
     const paragraphText =
       listItem?.content?.[0]?.content?.[0]?.content?.[0]?.text;
@@ -150,6 +158,70 @@ describe("applyListType", () => {
 
     expect(getActiveListType(editor)).toBe("orderedList");
     expect(convertInnermostListType(editor, "bulletList")).toBe(true);
+    expect(getActiveListType(editor)).toBe("bulletList");
+  });
+
+  it("splits only the current list item when nested under listItem", () => {
+    editor = createEditor({
+      type: "doc",
+      content: [
+        {
+          type: "orderedList",
+          content: [
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: "parent" }],
+                },
+                {
+                  type: "orderedList",
+                  content: [
+                    {
+                      type: "listItem",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [{ type: "text", text: "first" }],
+                        },
+                      ],
+                    },
+                    {
+                      type: "listItem",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [{ type: "text", text: "second" }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    selectText(editor, "second");
+
+    expect(convertListItemToSiblingListType(editor, "bulletList")).toBe(true);
+
+    const parentItem = editor.getJSON().content?.[0]?.content?.[0] as
+      | JsonNode
+      | undefined;
+    expect(parentItem?.content?.map((child) => child.type)).toEqual([
+      "paragraph",
+      "orderedList",
+      "bulletList",
+    ]);
+    expect(
+      parentItem?.content?.[1]?.content?.[0]?.content?.[0]?.content?.[0]?.text,
+    ).toBe("first");
+    expect(
+      parentItem?.content?.[2]?.content?.[0]?.content?.[0]?.content?.[0]?.text,
+    ).toBe("second");
     expect(getActiveListType(editor)).toBe("bulletList");
   });
 
@@ -192,6 +264,6 @@ describe("applyListType", () => {
     expect(getActiveListType(editor)).toBe("bulletList");
     expect(applyListType(editor, "orderedList")).toBe(true);
     expect(getActiveListType(editor)).toBe("orderedList");
-    expect(hasMixedListNesting(editor.state.doc)).toBe(true);
+    expect(hasMixedListNesting(editor.state.doc)).toBe(false);
   });
 });

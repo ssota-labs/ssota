@@ -1,7 +1,7 @@
 import { Extension } from "@tiptap/core";
 import { findWrapping } from "@tiptap/pm/transform";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
-import { findInnermostList } from "../list-commands";
+import { applyListItemTypeConversion, findInnermostList } from "../list-commands";
 import { parseListMarkerBeforeSpace } from "../list-marker-utils";
 
 /**
@@ -59,25 +59,12 @@ export const ListMarkdownShortcut = Extension.create({
                 return true;
               }
 
-              const mappedPos = tr.mapping.map(innermost.pos);
-              const currentNode = tr.doc.nodeAt(mappedPos);
-              if (!currentNode) {
-                return false;
-              }
-
-              const attrs =
-                marker.listType === "orderedList"
-                  ? {
-                      ...currentNode.attrs,
-                      start: marker.orderedStart ?? currentNode.attrs.start ?? 1,
-                    }
-                  : currentNode.attrs;
-
-              tr.setNodeMarkup(mappedPos, listTypeNode, attrs, currentNode.marks);
-              tr.setSelection(
-                TextSelection.near(
-                  tr.doc.resolve(Math.min(blockStart + 1, tr.doc.content.size - 1)),
-                ),
+              const $afterDelete = tr.doc.resolve(blockStart);
+              applyListItemTypeConversion(
+                tr,
+                $afterDelete,
+                marker.listType,
+                marker.orderedStart,
               );
               view.dispatch(tr);
               return true;

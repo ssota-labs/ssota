@@ -486,6 +486,64 @@ test.describe("Editor Lab", () => {
         return Boolean(list);
       });
     });
+
+    test("converts only the current nested list item with asterisk shortcut", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "orderedList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "parent" }],
+                  },
+                  {
+                    type: "orderedList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "first" }],
+                          },
+                        ],
+                      },
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "second" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      await typeAtBlockStart(page, "second", "* ");
+
+      await expect(
+        surface.locator("ol li ol li", { hasText: "first" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ol li ul li", { hasText: "second" }),
+      ).toBeVisible();
+    });
   });
 
   test.describe("bubble toolbar", () => {
