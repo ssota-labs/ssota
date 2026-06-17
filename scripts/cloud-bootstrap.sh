@@ -83,8 +83,8 @@ ensure_build() {
   # 워크스페이스 라이브러리(contracts·core·adapter·client)를 빌드한다.
   # dist/는 git에 없고 세션 간 유지되지 않으므로, seed·통합 테스트·앱이
   # @ssota/core/dist 등을 import하기 전에 반드시 빌드되어 있어야 한다.
-  log "Building workspace libraries (contracts/core/adapter/client)…"
-  pnpm build --filter @ssota/adapter-supabase --filter @ssota/client
+  log "Building workspace libraries (contracts/core/adapter/client/studio)…"
+  pnpm build --filter @ssota/adapter-supabase --filter @ssota/client --filter @ssota/studio-preview-runtime --filter @ssota/studio-renderer --filter @ssota/studio-build
 }
 
 ensure_env_files() {
