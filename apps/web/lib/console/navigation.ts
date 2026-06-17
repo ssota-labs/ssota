@@ -559,6 +559,15 @@ export function buildBreadcrumbSegments(
   }
 
   if (relative.startsWith("design/")) {
+    if (
+      relative === "design/ui-components" ||
+      relative.startsWith("design/ui-components/")
+    ) {
+      return [
+        { labelKey: "nav.productDesign" },
+        { labelKey: "nav.designUiComponents" },
+      ];
+    }
     const child = DESIGN_L1.find((item) => relative === item.href);
     return [
       { labelKey: "nav.productDesign" },
