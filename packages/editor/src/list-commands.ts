@@ -402,10 +402,10 @@ export function applyListType(
   const listItemDepth = findListItemDepth($from);
   if (listItemDepth !== null) {
     const listItem = $from.node(listItemDepth);
-    if (!listItemHasNestedList(listItem)) {
-      const parentList = $from.node(listItemDepth - 1);
-      const listItemIndex = $from.index(listItemDepth - 1);
+    const parentList = $from.node(listItemDepth - 1);
+    const listItemIndex = $from.index(listItemDepth - 1);
 
+    if (!listItemHasNestedList(listItem)) {
       if (parentList.childCount === 1) {
         return convertInnermostListType(editor, listType, orderedStart);
       }
@@ -416,6 +416,29 @@ export function applyListType(
           return applyListType(editor, listType, orderedStart);
         }
       }
+
+      return nestOppositeListType(editor, listType, $from, listItemDepth);
+    }
+
+    if (listItemIndex === 0 && parentList.childCount > 1) {
+      return nestOppositeListType(editor, listType, $from, listItemDepth);
+    }
+  }
+
+  const topLevelItemIndex = findListItemIndexInList($from, innermost.depth);
+  const topLevelList = $from.node(innermost.depth);
+  if (
+    !isListNestedInListItem($from, innermost) &&
+    topLevelList.childCount > 1 &&
+    topLevelItemIndex !== null &&
+    topLevelItemIndex > 0
+  ) {
+    const sunk = editor.chain().focus().sinkListItem("listItem").run();
+    if (sunk) {
+      return applyListType(editor, listType, orderedStart);
+    }
+
+    if (listItemDepth !== null) {
       return nestOppositeListType(editor, listType, $from, listItemDepth);
     }
   }

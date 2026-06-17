@@ -594,6 +594,83 @@ test.describe("Editor Lab", () => {
       ).toHaveCount(0);
     });
 
+    test("converts sibling level-2 bullet to ordered when typing a. + space", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "orderedList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "parent" }],
+                  },
+                  {
+                    type: "bulletList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "bullet two" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    type: "orderedList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "ordered one" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    type: "bulletList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "bullet three" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      await typeAtBlockStart(page, "bullet three", "a. ");
+
+      await expect(
+        surface.locator("ol li ol li", { hasText: "bullet three" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ol li ul li", { hasText: "bullet three" }),
+      ).toHaveCount(0);
+    });
+
     test("keeps first top-level ordered item when second converts to bullet", async ({
       page,
     }) => {
@@ -629,6 +706,21 @@ test.describe("Editor Lab", () => {
       });
 
       await typeAtBlockStart(page, "two", "* ");
+
+      await expect(surface.locator("ol > li", { hasText: "one" })).toBeVisible();
+      await expect(surface.locator("ol ul li", { hasText: "two" })).toBeVisible();
+      await expect(surface.locator("ul > li", { hasText: "one" })).toHaveCount(0);
+    });
+
+    test("keeps first item when typing 1. one Enter two then asterisk shortcut", async ({
+      page,
+    }) => {
+      const surface = await focusEditorEnd(page);
+      await page.keyboard.type("1. one", { delay: 30 });
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("two", { delay: 30 });
+      await page.keyboard.press("Home");
+      await page.keyboard.type("* ", { delay: 40 });
 
       await expect(surface.locator("ol > li", { hasText: "one" })).toBeVisible();
       await expect(surface.locator("ol ul li", { hasText: "two" })).toBeVisible();

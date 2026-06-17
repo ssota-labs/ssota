@@ -289,6 +289,61 @@ describe("applyListType", () => {
     expect(getActiveListType(editor)).toBe("bulletList");
   });
 
+  it("keeps the first top-level ordered item when it already has nested children", () => {
+    editor = createEditor({
+      type: "doc",
+      content: [
+        {
+          type: "orderedList",
+          content: [
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: "one" }],
+                },
+                {
+                  type: "bulletList",
+                  content: [
+                    {
+                      type: "listItem",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [{ type: "text", text: "nested" }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: "two" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+    selectText(editor, "two");
+
+    expect(applyListType(editor, "bulletList")).toBe(true);
+    expect(editor.getJSON().content?.[0]?.type).toBe("orderedList");
+    expect(
+      editor.getJSON().content?.[0]?.content?.[0]?.content?.[0]?.content?.[0]
+        ?.text,
+    ).toBe("one");
+    expect(hasMixedListNesting(editor.state.doc)).toBe(true);
+    expect(getActiveListType(editor)).toBe("bulletList");
+  });
+
   it("converts only the innermost list level", () => {
     editor = createEditor({
       type: "doc",
