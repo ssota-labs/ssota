@@ -146,8 +146,8 @@ export function InspectorPresetNumberInput({
   const handleWheel = (event: WheelEvent) =>
     adjustNumberByWheel(event, value, emitBoundedChange, scrollStep, min, max);
 
-  const openPresets = () => {
-    if (hasPresets) setOpen(true);
+  const togglePresets = () => {
+    if (hasPresets) setOpen((current) => !current);
   };
 
   return (
@@ -169,7 +169,6 @@ export function InspectorPresetNumberInput({
           <InspectorPresetList
             options={activePresets}
             value={value}
-            unit={unit}
             onSelect={(nextValue) => {
               emitBoundedChange(nextValue);
               setOpen(false);
@@ -195,7 +194,7 @@ export function InspectorPresetNumberInput({
             if (clamped !== event.target.value) onChange(clamped);
           }}
           onWheel={handleWheel}
-          onClick={openPresets}
+          onClick={togglePresets}
         />
       </InspectorAnchorPopover>
       <InputGroupAddon align="inline-end">

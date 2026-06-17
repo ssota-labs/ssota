@@ -21,51 +21,60 @@ export type InspectorPresetOption = {
 const inspectorPopoverContentClass =
   "cn-popover-menu w-[var(--anchor-width)]";
 
-export function formatPresetLabel(
-  label: string,
-  unit?: InspectorNumberUnit,
-): string {
-  if (!unit) return label;
-  if (/^(normal|inherit|auto)$/i.test(label)) return label;
-  if (label.endsWith(unit)) return label;
-  return `${label}${unit}`;
+const inspectorPopoverMenuClass = "flex flex-col gap-1 p-1";
+
+const inspectorPopoverMenuItemClass =
+  "flex w-full items-center justify-between rounded-sm px-1.5 py-1 text-xs hover:bg-muted";
+
+type InspectorPopoverMenuItemProps = {
+  active: boolean;
+  onSelect: () => void;
+  children: ReactNode;
+};
+
+function InspectorPopoverMenuItem({
+  active,
+  onSelect,
+  children,
+}: InspectorPopoverMenuItemProps) {
+  return (
+    <button
+      type="button"
+      className={cn(inspectorPopoverMenuItemClass, active && "bg-muted")}
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onSelect}
+    >
+      <span className="truncate text-muted-foreground">{children}</span>
+      {active ? (
+        <CheckIcon className="size-3 shrink-0 text-muted-foreground" />
+      ) : null}
+    </button>
+  );
 }
 
 type InspectorPresetListProps = {
   options: InspectorPresetOption[];
   value?: string;
-  unit?: InspectorNumberUnit;
   onSelect: (value: string) => void;
 };
 
 export function InspectorPresetList({
   options,
   value,
-  unit,
   onSelect,
 }: InspectorPresetListProps) {
   return (
-    <div className="flex flex-col gap-1 p-1">
+    <div className={inspectorPopoverMenuClass}>
       {options.map((option) => {
         const active = option.value === value;
         return (
-          <button
+          <InspectorPopoverMenuItem
             key={option.value}
-            type="button"
-            className={cn(
-              "flex w-full items-center justify-between rounded-sm px-1.5 py-1 text-xs hover:bg-muted",
-              active && "bg-muted",
-            )}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => onSelect(option.value)}
+            active={active}
+            onSelect={() => onSelect(option.value)}
           >
-            <span className="truncate text-muted-foreground">
-              {formatPresetLabel(option.label, unit)}
-            </span>
-            {active ? (
-              <CheckIcon className="size-3 shrink-0 text-muted-foreground" />
-            ) : null}
-          </button>
+            {option.label}
+          </InspectorPopoverMenuItem>
         );
       })}
     </div>
@@ -155,35 +164,27 @@ export function InspectorUnitSelector({
       </PopoverTrigger>
       <PopoverContent
         align="end"
-        className="cn-popover-menu w-auto min-w-16 p-0.5"
+        className={cn(inspectorPopoverContentClass, "w-auto min-w-16")}
         initialFocus={false}
         finalFocus={false}
       >
-        {units.map((option) => {
-          const active = option === unit;
-          return (
-            <button
-              key={option}
-              type="button"
-              className={cn(
-                "flex w-full items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-muted",
-                active && "bg-muted",
-              )}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                onUnitChange(option);
-                setOpen(false);
-              }}
-            >
-              <span>{option}</span>
-              {active ? (
-                <CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
-              ) : (
-                <span className="size-3.5 shrink-0" />
-              )}
-            </button>
-          );
-        })}
+        <div className={inspectorPopoverMenuClass}>
+          {units.map((option) => {
+            const active = option === unit;
+            return (
+              <InspectorPopoverMenuItem
+                key={option}
+                active={active}
+                onSelect={() => {
+                  onUnitChange(option);
+                  setOpen(false);
+                }}
+              >
+                {option}
+              </InspectorPopoverMenuItem>
+            );
+          })}
+        </div>
       </PopoverContent>
     </Popover>
   );

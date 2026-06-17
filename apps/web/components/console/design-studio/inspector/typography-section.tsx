@@ -117,7 +117,6 @@ const LETTER_SPACING_PRESETS_BY_UNIT: Record<
 > = {
   px: [
     { value: "", label: "normal" },
-    { value: "-2", label: "-2" },
     { value: "0", label: "0" },
     { value: "1", label: "1" },
     { value: "2", label: "2" },
@@ -125,7 +124,6 @@ const LETTER_SPACING_PRESETS_BY_UNIT: Record<
   ],
   "%": [
     { value: "", label: "normal" },
-    { value: "-5", label: "-5" },
     { value: "0", label: "0" },
     { value: "2.5", label: "2.5" },
     { value: "5", label: "5" },
@@ -133,7 +131,6 @@ const LETTER_SPACING_PRESETS_BY_UNIT: Record<
   ],
   em: [
     { value: "", label: "normal" },
-    { value: "-0.05", label: "-0.05" },
     { value: "0", label: "0" },
     { value: "0.025", label: "0.025" },
     { value: "0.05", label: "0.05" },

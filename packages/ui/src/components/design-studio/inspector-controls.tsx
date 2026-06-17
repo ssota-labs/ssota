@@ -399,7 +399,7 @@ export function InspectorColorField({
             aria-haspopup={presets.length > 0 ? "dialog" : undefined}
             onChange={(event) => onChange(event.target.value)}
             onClick={() => {
-              if (presets.length > 0) setPresetOpen(true);
+              if (presets.length > 0) setPresetOpen((current) => !current);
             }}
           />
         </InputGroup>
