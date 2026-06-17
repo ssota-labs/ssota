@@ -4,6 +4,9 @@ import {
   NODE_TYPES,
   getNodeTypeEntry,
   parseNodeProperties,
+  requiresNodeContent,
+  parseUiComponentContent,
+  uiComponentContentSchemaV2,
   uiComponentDocumentSchema,
 } from "./index.js";
 
@@ -121,9 +124,76 @@ describe("v2.7 catalog SSOT", () => {
     ).toThrow();
   });
 
-  it("exposes ui_component catalog entry without contentRequired", () => {
-    expect(getNodeTypeEntry("ui_component")?.contentRequired).toBe(false);
+  it("exposes ui_component catalog entry with tree-aware contentRequired", () => {
+    expect(getNodeTypeEntry("ui_component")?.contentRequired).toBe(true);
     expect(getNodeTypeEntry("ui_component")?.mutability).toBe("living");
+  });
+
+  it("requires content only for ui_component source representation", () => {
+    expect(
+      requiresNodeContent("ui_component", {
+        slug: "btn",
+        tier: "primitive",
+      }),
+    ).toBe(false);
+    expect(
+      requiresNodeContent("ui_component", {
+        slug: "btn",
+        tier: "primitive",
+        representation: "source",
+        entry: "Component.tsx",
+      }),
+    ).toBe(true);
+  });
+
+  it("parses ui_component v2 properties with entry", () => {
+    const parsed = parseNodeProperties("ui_component", {
+      slug: "primary-button",
+      tier: "primitive",
+      representation: "source",
+      contentSchemaVersion: 2,
+      entry: "Component.tsx",
+      fileKeys: ["Component.tsx"],
+    });
+    expect(parsed.representation).toBe("source");
+    expect(parsed.entry).toBe("Component.tsx");
+  });
+
+  it("rejects ui_component source without entry", () => {
+    expect(() =>
+      parseNodeProperties("ui_component", {
+        slug: "btn",
+        tier: "primitive",
+        representation: "source",
+      }),
+    ).toThrow();
+  });
+
+  it("parses ui_component content v2", () => {
+    const parsed = uiComponentContentSchemaV2.parse({
+      schemaVersion: 2,
+      files: {
+        "Component.tsx": "export default function Component() { return null; }",
+      },
+    });
+    expect(parsed.files["Component.tsx"]).toContain("export default");
+  });
+
+  it("rejects ui_component source content with schemaVersion 1", () => {
+    expect(() =>
+      parseUiComponentContent(
+        JSON.stringify({
+          schemaVersion: 1,
+          root: {
+            kind: "element",
+            id: "root",
+            tag: "div",
+            children: [],
+          },
+        }),
+        "source",
+      ),
+    ).toThrow();
   });
 
   it("parses UiComponentDocument with element tree", () => {
