@@ -77,20 +77,39 @@ export const PopoverPicker: Story = {
 export const NumberInputSize: Story = {
   render: () => {
     const [value, setValue] = useState("14");
+    const [unit, setUnit] = useState<"px" | "%" | "em">("px");
+    const presetsByUnit: Partial<
+      Record<"px" | "%" | "em", { value: string; label: string }[]>
+    > = {
+      px: [
+        { value: "12", label: "12px" },
+        { value: "14", label: "14px" },
+        { value: "16", label: "16px" },
+        { value: "18", label: "18px" },
+      ],
+      "%": [
+        { value: "100", label: "100%" },
+        { value: "125", label: "125%" },
+        { value: "150", label: "150%" },
+      ],
+      em: [
+        { value: "0.875", label: "0.875em" },
+        { value: "1", label: "1em" },
+        { value: "1.25", label: "1.25em" },
+      ],
+    };
+
     return (
       <div className="w-56">
         <InspectorField label="Size">
           <InspectorNumberInput
             aria-label="Size"
             value={value}
-            unit="px"
+            unit={unit}
+            units={["px", "%", "em"]}
+            onUnitChange={setUnit}
+            presetsByUnit={presetsByUnit}
             placeholder="Default"
-            presets={[
-              { value: "12", label: "12px" },
-              { value: "14", label: "14px" },
-              { value: "16", label: "16px" },
-              { value: "18", label: "18px" },
-            ]}
             onChange={setValue}
           />
         </InspectorField>

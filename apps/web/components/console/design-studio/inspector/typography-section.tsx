@@ -16,6 +16,10 @@ import {
 } from "@phosphor-icons/react";
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
+  formatFontSizeClass,
+  parseFontSizeValue,
+} from "@/lib/design-studio/tailwind-classname";
+import {
   InspectorColorInput,
   InspectorField,
   InspectorFontFamilyRow,
@@ -24,6 +28,7 @@ import {
   InspectorSection,
   InspectorToggleRow,
   TEXT_THEME_COLOR_OPTIONS,
+  type InspectorNumberUnit,
   type InspectorPopoverOption,
   type InspectorPresetOption,
 } from "@ssota/ui/components/design-studio";
@@ -42,15 +47,39 @@ const FONT_FAMILY_OPTIONS: InspectorPopoverOption[] = [
   },
 ];
 
-const FONT_SIZE_PRESETS: InspectorPresetOption[] = [
-  { value: "10", label: "10px" },
-  { value: "12", label: "12px" },
-  { value: "14", label: "14px" },
-  { value: "16", label: "16px" },
-  { value: "18", label: "18px" },
-  { value: "20", label: "20px" },
-  { value: "24", label: "24px" },
-];
+const FONT_SIZE_UNITS = ["px", "%", "em"] as const satisfies readonly InspectorNumberUnit[];
+
+const FONT_SIZE_PRESETS_BY_UNIT: Record<
+  InspectorNumberUnit,
+  InspectorPresetOption[]
+> = {
+  px: [
+    { value: "10", label: "10px" },
+    { value: "12", label: "12px" },
+    { value: "14", label: "14px" },
+    { value: "16", label: "16px" },
+    { value: "18", label: "18px" },
+    { value: "20", label: "20px" },
+    { value: "24", label: "24px" },
+  ],
+  "%": [
+    { value: "75", label: "75%" },
+    { value: "87.5", label: "87.5%" },
+    { value: "100", label: "100%" },
+    { value: "112.5", label: "112.5%" },
+    { value: "125", label: "125%" },
+    { value: "150", label: "150%" },
+  ],
+  em: [
+    { value: "0.75", label: "0.75em" },
+    { value: "0.875", label: "0.875em" },
+    { value: "1", label: "1em" },
+    { value: "1.125", label: "1.125em" },
+    { value: "1.25", label: "1.25em" },
+    { value: "1.5", label: "1.5em" },
+    { value: "2", label: "2em" },
+  ],
+};
 
 const FONT_WEIGHT_OPTIONS: InspectorPopoverOption[] = [
   {
@@ -98,6 +127,8 @@ type TypographySectionProps = {
 };
 
 export function TypographySection({ parsed, onUpdate }: TypographySectionProps) {
+  const fontSize = parseFontSizeValue(parsed.fontSize);
+
   return (
     <InspectorSection title="Typography">
       <div className="space-y-3">
@@ -110,12 +141,20 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         <InspectorField label="Size">
           <InspectorNumberInput
             aria-label="Size"
-            value={formatFontSizeNumber(parsed.fontSize)}
-            unit="px"
+            value={fontSize.value}
+            unit={fontSize.unit}
+            units={FONT_SIZE_UNITS}
+            presetsByUnit={FONT_SIZE_PRESETS_BY_UNIT}
             placeholder="Default"
-            presets={FONT_SIZE_PRESETS}
+            onUnitChange={(nextUnit) =>
+              onUpdate({
+                fontSize: formatFontSizeClass(fontSize.value, nextUnit),
+              })
+            }
             onChange={(input) =>
-              onUpdate({ fontSize: parseFontSizeNumber(input) })
+              onUpdate({
+                fontSize: formatFontSizeClass(input, fontSize.unit),
+              })
             }
           />
         </InspectorField>
@@ -327,45 +366,6 @@ function OverlineIcon() {
       <span className="absolute top-0 left-0 h-px w-full bg-current" />
     </span>
   );
-}
-
-function formatFontSizeNumber(className?: string): string {
-  if (!className) return "";
-  if (className.startsWith("text-[") && className.endsWith("]")) {
-    const inner = className.slice(6, -1);
-    const pxMatch = inner.match(/^([\d.]+)px$/);
-    if (pxMatch) return pxMatch[1]!;
-    const numMatch = inner.match(/^([\d.]+)/);
-    return numMatch?.[1] ?? "";
-  }
-  const map: Record<string, string> = {
-    "text-xs": "12",
-    "text-sm": "14",
-    "text-base": "16",
-    "text-lg": "18",
-    "text-xl": "20",
-    "text-2xl": "24",
-    "text-3xl": "30",
-  };
-  return map[className] ?? "";
-}
-
-function parseFontSizeNumber(input: string): string | undefined {
-  const trimmed = input.trim();
-  if (!trimmed) return undefined;
-
-  const presetMap: Record<string, string> = {
-    "10": "text-[10px]",
-    "12": "text-xs",
-    "14": "text-sm",
-    "16": "text-base",
-    "18": "text-lg",
-    "20": "text-xl",
-    "24": "text-2xl",
-  };
-
-  if (presetMap[trimmed]) return presetMap[trimmed];
-  return `text-[${trimmed}px]`;
 }
 
 function formatLineHeightNumber(className?: string): string {

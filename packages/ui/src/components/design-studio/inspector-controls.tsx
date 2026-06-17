@@ -41,6 +41,8 @@ export type InspectorPresetOption = {
   label: string;
 };
 
+export type InspectorNumberUnit = "px" | "%" | "em";
+
 const inspectorPopoverContentClass =
   "cn-popover-menu w-[var(--anchor-width)]";
 
@@ -313,26 +315,113 @@ type InspectorAnchorPopoverProps = {
   content: ReactNode;
 };
 
+type InspectorUnitSelectorProps = {
+  unit: InspectorNumberUnit;
+  units: readonly InspectorNumberUnit[];
+  onUnitChange?: (unit: InspectorNumberUnit) => void;
+  "aria-label"?: string;
+};
+
+function InspectorUnitSelector({
+  unit,
+  units,
+  onUnitChange,
+  "aria-label": ariaLabel,
+}: InspectorUnitSelectorProps) {
+  const [open, setOpen] = useState(false);
+  const selectable = units.length > 1 && onUnitChange;
+
+  if (!selectable) {
+    return (
+      <InputGroupText className="text-xs text-muted-foreground">
+        {unit}
+      </InputGroupText>
+    );
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        nativeButton={false}
+        aria-label={ariaLabel ?? "Unit"}
+        render={
+          <button
+            type="button"
+            className="cn-input-group-text flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground"
+          />
+        }
+      >
+        {unit}
+        <CaretDownIcon className="size-2.5 shrink-0" />
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="cn-popover-menu w-auto min-w-16 p-0.5"
+        initialFocus={false}
+        finalFocus={false}
+      >
+        {units.map((option) => {
+          const active = option === unit;
+          return (
+            <button
+              key={option}
+              type="button"
+              className={cn(
+                "flex w-full items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-muted",
+                active && "bg-muted",
+              )}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                onUnitChange(option);
+                setOpen(false);
+              }}
+            >
+              <span>{option}</span>
+              {active ? (
+                <CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
+              ) : (
+                <span className="size-3.5 shrink-0" />
+              )}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 type InspectorNumberInputProps = {
   value: string;
-  unit?: "px" | "em";
+  unit?: InspectorNumberUnit;
+  units?: readonly InspectorNumberUnit[];
+  onUnitChange?: (unit: InspectorNumberUnit) => void;
   placeholder?: string;
-  presets: InspectorPresetOption[];
+  presets?: InspectorPresetOption[];
+  presetsByUnit?: Partial<
+    Record<InspectorNumberUnit, InspectorPresetOption[]>
+  >;
   onChange: (value: string) => void;
   "aria-label"?: string;
 };
 
 export function InspectorNumberInput({
   value,
-  unit,
+  unit = "px",
+  units,
+  onUnitChange,
   placeholder,
   presets,
+  presetsByUnit,
   onChange,
   "aria-label": ariaLabel,
 }: InspectorNumberInputProps) {
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const presetsLabel = ariaLabel ? `${ariaLabel} presets` : "Presets";
+  const unitLabel = ariaLabel ? `${ariaLabel} unit` : "Unit";
+  const availableUnits = units ?? (onUnitChange ? [unit] : []);
+  const activePresets =
+    presetsByUnit?.[unit] ?? presets ?? [];
 
   return (
     <InspectorAnchorPopover
@@ -341,7 +430,7 @@ export function InspectorNumberInput({
       anchorRef={anchorRef}
       content={
         <InspectorPresetList
-          options={presets}
+          options={activePresets}
           value={value}
           onSelect={(nextValue) => {
             onChange(nextValue);
@@ -363,13 +452,14 @@ export function InspectorNumberInput({
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
         />
-        {unit ? (
-          <InputGroupAddon align="inline-end">
-            <InputGroupText className="text-xs text-muted-foreground">
-              {unit}
-            </InputGroupText>
-          </InputGroupAddon>
-        ) : null}
+        <InputGroupAddon align="inline-end">
+          <InspectorUnitSelector
+            unit={unit}
+            units={availableUnits.length > 0 ? availableUnits : [unit]}
+            onUnitChange={onUnitChange}
+            aria-label={unitLabel}
+          />
+        </InputGroupAddon>
       </InputGroup>
     </InspectorAnchorPopover>
   );

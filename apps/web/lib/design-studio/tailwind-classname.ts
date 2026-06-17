@@ -1,3 +1,68 @@
+export type FontSizeUnit = "px" | "%" | "em";
+
+const NAMED_FONT_SIZE_TO_PX: Record<string, string> = {
+  "text-xs": "12",
+  "text-sm": "14",
+  "text-base": "16",
+  "text-lg": "18",
+  "text-xl": "20",
+  "text-2xl": "24",
+  "text-3xl": "30",
+};
+
+const PX_FONT_SIZE_PRESETS: Record<string, string> = {
+  "10": "text-[10px]",
+  "12": "text-xs",
+  "14": "text-sm",
+  "16": "text-base",
+  "18": "text-lg",
+  "20": "text-xl",
+  "24": "text-2xl",
+};
+
+export function parseFontSizeValue(className?: string): {
+  value: string;
+  unit: FontSizeUnit;
+} {
+  if (!className) return { value: "", unit: "px" };
+
+  if (className.startsWith("text-[") && className.endsWith("]")) {
+    const inner = className.slice(6, -1);
+    const match = inner.match(/^([\d.]+)(px|%|em)$/);
+    if (match) {
+      return {
+        value: match[1]!,
+        unit: match[2] as FontSizeUnit,
+      };
+    }
+    const pxMatch = inner.match(/^([\d.]+)px$/);
+    if (pxMatch) return { value: pxMatch[1]!, unit: "px" };
+    const numMatch = inner.match(/^([\d.]+)/);
+    return { value: numMatch?.[1] ?? "", unit: "px" };
+  }
+
+  if (NAMED_FONT_SIZE_TO_PX[className]) {
+    return { value: NAMED_FONT_SIZE_TO_PX[className]!, unit: "px" };
+  }
+
+  return { value: "", unit: "px" };
+}
+
+export function formatFontSizeClass(
+  value: string,
+  unit: FontSizeUnit,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  if (unit === "px") {
+    if (PX_FONT_SIZE_PRESETS[trimmed]) return PX_FONT_SIZE_PRESETS[trimmed];
+    return `text-[${trimmed}px]`;
+  }
+
+  return `text-[${trimmed}${unit}]`;
+}
+
 export type ShadowPreset =
   | "none"
   | "sm"
