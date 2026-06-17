@@ -7,11 +7,18 @@ import {
   ReactNodeViewRenderer,
   type NodeViewProps,
 } from "@tiptap/react";
+import { Button } from "@ssota/ui/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@ssota/ui/components/ui/popover";
 import {
   InfoIcon,
   LightbulbIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
+import { useState } from "react";
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
@@ -23,15 +30,21 @@ declare module "@tiptap/core" {
 
 export type CalloutVariant = "info" | "warning" | "tip";
 
-const variantIcon: Record<CalloutVariant, typeof InfoIcon> = {
-  info: InfoIcon,
-  warning: WarningIcon,
-  tip: LightbulbIcon,
-};
+const CALLOUT_VARIANTS: {
+  value: CalloutVariant;
+  label: string;
+  icon: typeof InfoIcon;
+}[] = [
+  { value: "info", label: "Info", icon: InfoIcon },
+  { value: "warning", label: "Warning", icon: WarningIcon },
+  { value: "tip", label: "Tip", icon: LightbulbIcon },
+];
 
 function CalloutView({ node, updateAttributes }: NodeViewProps) {
+  const [open, setOpen] = useState(false);
   const variant = (node.attrs.variant as CalloutVariant) ?? "info";
-  const Icon = variantIcon[variant] ?? InfoIcon;
+  const current = CALLOUT_VARIANTS.find((item) => item.value === variant);
+  const Icon = current?.icon ?? InfoIcon;
 
   return (
     <NodeViewWrapper
@@ -40,20 +53,58 @@ function CalloutView({ node, updateAttributes }: NodeViewProps) {
       data-variant={variant}
     >
       <div className="ssota-callout-header">
-        <Icon className="size-4 shrink-0" aria-hidden />
-        <select
-          className="ssota-callout-variant"
-          value={variant}
-          aria-label="Callout type"
-          contentEditable={false}
-          onChange={(event) =>
-            updateAttributes({ variant: event.target.value as CalloutVariant })
-          }
-        >
-          <option value="info">Info</option>
-          <option value="warning">Warning</option>
-          <option value="tip">Tip</option>
-        </select>
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger
+            aria-label="Change callout icon"
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-xs"
+                className="ssota-callout-icon-trigger"
+                contentEditable={false}
+                data-testid="ssota-callout-icon-trigger"
+              />
+            }
+          >
+            <Icon className="size-4" aria-hidden />
+          </PopoverTrigger>
+          <PopoverContent
+            className="ssota-callout-icon-popover w-auto p-1"
+            align="start"
+            side="bottom"
+          >
+            <div
+              className="flex items-center gap-0.5"
+              role="listbox"
+              aria-label="Callout icon"
+            >
+              {CALLOUT_VARIANTS.map((item) => {
+                const ItemIcon = item.icon;
+                const selected = item.value === variant;
+                return (
+                  <Button
+                    key={item.value}
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    variant={selected ? "secondary" : "ghost"}
+                    size="icon-xs"
+                    title={item.label}
+                    aria-label={item.label}
+                    className="ssota-callout-icon-option"
+                    onClick={() => {
+                      updateAttributes({ variant: item.value });
+                      setOpen(false);
+                    }}
+                  >
+                    <ItemIcon className="size-4" />
+                  </Button>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
       <NodeViewContent className="ssota-callout-content" />
     </NodeViewWrapper>

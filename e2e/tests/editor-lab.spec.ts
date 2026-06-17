@@ -71,7 +71,12 @@ test.describe("Editor Lab", () => {
   test("slash menu inserts callout block", async ({ page }) => {
     await openSlashMenu(page);
     await page.getByRole("option", { name: /Callout/i }).click();
-    await expect(page.locator(".ssota-callout").first()).toBeVisible();
+    const callout = page.locator(".ssota-callout").first();
+    await expect(callout).toBeVisible();
+
+    await callout.getByTestId("ssota-callout-icon-trigger").click();
+    await page.getByRole("option", { name: "Warning" }).click();
+    await expect(callout).toHaveAttribute("data-variant", "warning");
   });
 
   test("bubble toolbar appears on text selection", async ({ page }) => {
