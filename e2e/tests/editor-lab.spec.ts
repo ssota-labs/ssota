@@ -30,7 +30,7 @@ async function focusEditorEnd(page: Page) {
 }
 
 async function typeQuoteShortcut(page: Page) {
-  await page.keyboard.type('""', { delay: 40 });
+  await page.keyboard.type('"', { delay: 40 });
 }
 
 async function typeAtDocumentEnd(page: Page, text: string) {

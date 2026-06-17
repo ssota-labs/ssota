@@ -1,13 +1,15 @@
 import { Extension, wrappingInputRule } from "@tiptap/core";
 
-/** 빈 줄에서 `""` 입력 시 Notion-style 인용 블록 생성 */
+/** 빈 줄에서 `"` 입력 시 Notion-style 인용 블록 생성 */
 const QUOTE_PATTERNS = [
-  /^""$/,
-  /^""\s$/,
-  /^\u201c\u201d$/,
-  /^\u201c\u201d\s$/,
-  /^[\u0022\uff02]{2}$/,
-  /^[\u0022\uff02]{2}\s$/,
+  /^"$/,
+  /^"\s$/,
+  /^\u201c$/,
+  /^\u201c\s$/,
+  /^\u201d$/,
+  /^\u201d\s$/,
+  /^\uff02$/,
+  /^\uff02\s$/,
 ] as const;
 
 export const QuoteShortcut = Extension.create({
