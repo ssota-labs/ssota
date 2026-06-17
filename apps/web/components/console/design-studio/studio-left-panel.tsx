@@ -1,12 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import type { StudioNode } from "@ssota/contracts/catalog";
+import { PlusIcon } from "@phosphor-icons/react";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@ssota/ui/components/ui/tabs";
+import { Button } from "@ssota/ui/components/ui/button";
+import { Input } from "@ssota/ui/components/ui/input";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
 import { ComponentsPanel } from "./components-panel";
 import { LayersPanel } from "./layers-panel";
@@ -32,6 +36,8 @@ export function StudioLeftPanel({
   pending = false,
   onCreateComponent,
 }: StudioLeftPanelProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+
   return (
     <div className="flex h-full min-h-0 flex-col border-r bg-card">
       <Tabs defaultValue="components" className="flex h-full min-h-0 flex-col">
@@ -52,14 +58,33 @@ export function StudioLeftPanel({
         </TabsList>
         <TabsContent
           value="components"
-          className="mt-0 min-h-0 flex-1 overflow-hidden"
+          className="mt-0 flex min-h-0 flex-1 flex-col overflow-hidden"
         >
+          <div className="shrink-0 space-y-2 border-b p-2">
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.currentTarget.value)}
+              placeholder="Search components..."
+              className="h-8"
+              aria-label="Search components"
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="w-full"
+              disabled={pending}
+              onClick={() => void onCreateComponent()}
+            >
+              <PlusIcon className="size-3.5" />
+              {pending ? "Creating…" : "New component"}
+            </Button>
+          </div>
           <ComponentsPanel
             components={components}
             activeComponentId={activeComponentId}
             studioBasePath={studioBasePath}
-            pending={pending}
-            onCreate={onCreateComponent}
+            searchQuery={searchQuery}
           />
         </TabsContent>
         <TabsContent
