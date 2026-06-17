@@ -229,6 +229,19 @@ export function adjustNumberByWheel(
   );
 }
 
+/** 포커스된 number input에서만 휠로 값을 조정합니다. */
+export function adjustNumberByWheelWhenFocused(
+  event: WheelEvent<HTMLInputElement>,
+  value: string,
+  onChange: (value: string) => void,
+  step: number,
+  min?: number,
+  max?: number,
+) {
+  if (document.activeElement !== event.currentTarget) return;
+  adjustNumberByWheel(event, value, onChange, step, min, max);
+}
+
 type InspectorScrubberHandleProps = {
   value: string;
   step: number;

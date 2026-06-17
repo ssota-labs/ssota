@@ -8,7 +8,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import {
-  adjustNumberByWheel,
+  adjustNumberByWheelWhenFocused,
   applyNumericBounds,
   InspectorAnchorPopover,
   InspectorPresetList,
@@ -63,11 +63,18 @@ export function InspectorScrubberNumberInput({
     onChange(applyNumericBounds(next, min, max));
   };
 
-  const handleWheel = (event: WheelEvent) =>
-    adjustNumberByWheel(event, value, emitBoundedChange, scrollStep, min, max);
+  const handleWheel = (event: WheelEvent<HTMLInputElement>) =>
+    adjustNumberByWheelWhenFocused(
+      event,
+      value,
+      emitBoundedChange,
+      scrollStep,
+      min,
+      max,
+    );
 
   return (
-    <InputGroup onWheel={handleWheel}>
+    <InputGroup>
       <InspectorScrubberHandle
         value={value}
         step={scrollStep}
@@ -143,15 +150,22 @@ export function InspectorPresetNumberInput({
     onChange(applyNumericBounds(next, min, max));
   };
 
-  const handleWheel = (event: WheelEvent) =>
-    adjustNumberByWheel(event, value, emitBoundedChange, scrollStep, min, max);
+  const handleWheel = (event: WheelEvent<HTMLInputElement>) =>
+    adjustNumberByWheelWhenFocused(
+      event,
+      value,
+      emitBoundedChange,
+      scrollStep,
+      min,
+      max,
+    );
 
   const togglePresets = () => {
     if (hasPresets) setOpen((current) => !current);
   };
 
   return (
-    <InputGroup onWheel={handleWheel}>
+    <InputGroup>
       <InspectorScrubberHandle
         value={value}
         step={scrollStep}
