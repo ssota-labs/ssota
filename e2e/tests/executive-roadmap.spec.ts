@@ -52,15 +52,19 @@ test.describe("Executive roadmap", () => {
       );
     }
 
-    await page.getByTestId("product-roadmap-expand").click();
     const productCard = page.getByTestId("product-roadmap-card");
-    await expect(productCard.getByTestId("roadmap-document-editor")).toBeVisible();
-    await expect(
-      productCard.getByTestId("roadmap-document-editor").getByTestId("ssota-editor-surface"),
-    ).toBeVisible();
+    const editor = productCard.getByTestId("roadmap-document-editor");
+    await expect(editor.getByTestId("ssota-editor-surface")).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.getByTestId("product-roadmap-expand").click();
+    await expect(page.getByTestId("product-roadmap-expand-collapse")).toBeVisible();
+    await expect(page.getByTestId("product-roadmap-expand")).not.toBeVisible();
 
     await page.getByTestId("product-roadmap-expand-collapse").click();
-    await expect(page.getByTestId("roadmap-document-editor")).not.toBeVisible();
+    await expect(page.getByTestId("product-roadmap-expand")).toBeVisible();
+    await expect(page.getByTestId("product-roadmap-expand-collapse")).not.toBeVisible();
   });
 
   test("creates quarter roadmap from empty preview", async ({ page }) => {

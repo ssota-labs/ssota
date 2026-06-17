@@ -10,7 +10,6 @@ import {
   type JSONContent,
 } from "@ssota/editor";
 import "@ssota/editor/styles.css";
-import { MarkdownContent } from "@ssota/ui/components/page-patterns/markdown-content";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
@@ -81,9 +80,35 @@ export function RoadmapDocumentPanel({
       className={cn("space-y-4", className)}
       data-testid="roadmap-document-panel"
     >
-      {!expanded ? (
-        <div className="relative max-h-64 overflow-hidden">
-          <MarkdownContent content={content} />
+      <div
+        className={cn(!expanded && "relative max-h-64 overflow-hidden")}
+        data-testid="roadmap-document-editor"
+      >
+        {expanded ? (
+          <div className="mb-3 flex justify-center">
+            <button
+              type="button"
+              data-testid={`${expandTestId}-collapse`}
+              aria-expanded
+              aria-label={t("roadmap.collapseContent")}
+              className="inline-flex size-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+              onClick={handleToggleExpand}
+            >
+              <CaretDownIcon className="size-4 rotate-180" aria-hidden />
+            </button>
+          </div>
+        ) : null}
+
+        <SsotaEditor
+          key={editing ? "editing" : "readonly"}
+          content={draftDoc}
+          editable={editing}
+          onChange={editing ? setDraftDoc : undefined}
+          className="roadmap-readonly-editor"
+          {...editorHostProps}
+        />
+
+        {!expanded ? (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-20 items-end justify-center bg-gradient-to-t from-card via-card/95 to-transparent pb-2">
             <button
               type="button"
@@ -96,31 +121,8 @@ export function RoadmapDocumentPanel({
               <CaretDownIcon className="size-4" aria-hidden />
             </button>
           </div>
-        </div>
-      ) : (
-        <div className="space-y-3" data-testid="roadmap-document-editor">
-          <div className="flex justify-center">
-            <button
-              type="button"
-              data-testid={`${expandTestId}-collapse`}
-              aria-expanded
-              aria-label={t("roadmap.collapseContent")}
-              className="inline-flex size-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
-              onClick={handleToggleExpand}
-            >
-              <CaretDownIcon className="size-4 rotate-180" aria-hidden />
-            </button>
-          </div>
-          <SsotaEditor
-            key={editing ? "editing" : `readonly-${content.length}`}
-            content={draftDoc}
-            editable={editing}
-            onChange={editing ? setDraftDoc : undefined}
-            className="roadmap-readonly-editor"
-            {...editorHostProps}
-          />
-        </div>
-      )}
+        ) : null}
+      </div>
 
       <div className="flex flex-wrap justify-end gap-2">
         {editing ? (
