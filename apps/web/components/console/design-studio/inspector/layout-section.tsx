@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
   formatSpacingPx,
@@ -15,8 +14,6 @@ import {
   type InspectorPopoverOption,
   type InspectorPresetOption,
 } from "@ssota/ui/components/design-studio";
-import { Checkbox } from "@ssota/ui/components/ui/checkbox";
-import { Label } from "@ssota/ui/components/ui/label";
 
 const DISPLAY_OPTIONS: InspectorPopoverOption[] = [
   { value: "block", label: "block" },
@@ -78,29 +75,11 @@ type LayoutSectionProps = {
 };
 
 export function LayoutSection({ parsed, onUpdate }: LayoutSectionProps) {
-  const [showSpacing, setShowSpacing] = useState(true);
   const isFlex =
     parsed.display === "flex" || parsed.display === "inline-flex";
 
   return (
-    <InspectorSection
-      title="Layout"
-      headerAction={
-        <div className="flex items-center gap-1.5">
-          <Checkbox
-            id="layout-show-spacing"
-            checked={showSpacing}
-            onCheckedChange={(checked) => setShowSpacing(checked === true)}
-          />
-          <Label
-            htmlFor="layout-show-spacing"
-            className="cursor-pointer text-[11px] font-normal text-muted-foreground"
-          >
-            Show paddings and margins
-          </Label>
-        </div>
-      }
-    >
+    <InspectorSection title="Layout">
       <div className="space-y-3">
         <InspectorField label="Display">
           <InspectorPopoverPicker
@@ -159,49 +138,45 @@ export function LayoutSection({ parsed, onUpdate }: LayoutSectionProps) {
           />
         </InspectorField>
 
-        {showSpacing ? (
-          <>
-            <SpacingQuadGroup
-              label="Margin"
-              top={parsed.marginTop}
-              right={parsed.marginRight}
-              bottom={parsed.marginBottom}
-              left={parsed.marginLeft}
-              onChange={(side, value) => {
-                const patch: Partial<ParsedClassName> = {};
-                if (side === "top") patch.marginTop = formatSpacingPx("mt", value);
-                if (side === "right") {
-                  patch.marginRight = formatSpacingPx("mr", value);
-                }
-                if (side === "bottom") {
-                  patch.marginBottom = formatSpacingPx("mb", value);
-                }
-                if (side === "left") patch.marginLeft = formatSpacingPx("ml", value);
-                onUpdate(patch);
-              }}
-            />
+        <SpacingQuadGroup
+          label="Margin"
+          top={parsed.marginTop}
+          right={parsed.marginRight}
+          bottom={parsed.marginBottom}
+          left={parsed.marginLeft}
+          onChange={(side, value) => {
+            const patch: Partial<ParsedClassName> = {};
+            if (side === "top") patch.marginTop = formatSpacingPx("mt", value);
+            if (side === "right") {
+              patch.marginRight = formatSpacingPx("mr", value);
+            }
+            if (side === "bottom") {
+              patch.marginBottom = formatSpacingPx("mb", value);
+            }
+            if (side === "left") patch.marginLeft = formatSpacingPx("ml", value);
+            onUpdate(patch);
+          }}
+        />
 
-            <SpacingQuadGroup
-              label="Padding"
-              top={parsed.paddingTop}
-              right={parsed.paddingRight}
-              bottom={parsed.paddingBottom}
-              left={parsed.paddingLeft}
-              onChange={(side, value) => {
-                const patch: Partial<ParsedClassName> = {};
-                if (side === "top") patch.paddingTop = formatSpacingPx("pt", value);
-                if (side === "right") {
-                  patch.paddingRight = formatSpacingPx("pr", value);
-                }
-                if (side === "bottom") {
-                  patch.paddingBottom = formatSpacingPx("pb", value);
-                }
-                if (side === "left") patch.paddingLeft = formatSpacingPx("pl", value);
-                onUpdate(patch);
-              }}
-            />
-          </>
-        ) : null}
+        <SpacingQuadGroup
+          label="Padding"
+          top={parsed.paddingTop}
+          right={parsed.paddingRight}
+          bottom={parsed.paddingBottom}
+          left={parsed.paddingLeft}
+          onChange={(side, value) => {
+            const patch: Partial<ParsedClassName> = {};
+            if (side === "top") patch.paddingTop = formatSpacingPx("pt", value);
+            if (side === "right") {
+              patch.paddingRight = formatSpacingPx("pr", value);
+            }
+            if (side === "bottom") {
+              patch.paddingBottom = formatSpacingPx("pb", value);
+            }
+            if (side === "left") patch.paddingLeft = formatSpacingPx("pl", value);
+            onUpdate(patch);
+          }}
+        />
       </div>
     </InspectorSection>
   );
