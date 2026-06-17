@@ -89,10 +89,8 @@ test.describe("design studio", () => {
     await expect(page.getByTestId("design-studio-shell")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(preview.locator("[data-studio-id]").first()).toBeVisible({
-      timeout: 45_000,
-    });
-    await preview.locator("[data-studio-id]").first().click();
+    const reloadedPreview = await waitForBundlePreview(page);
+    await reloadedPreview.locator("[data-studio-id]").first().click();
     await expect(page.getByLabel("Background")).toHaveValue("blue-600", {
       timeout: 20_000,
     });
@@ -127,7 +125,9 @@ test.describe("design studio", () => {
     await expect(page.getByTestId("design-studio-shell")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByTestId("studio-mode-preview")).toBeVisible();
+    await expect(page.getByTestId("studio-mode-inspect")).toBeEnabled({
+      timeout: 45_000,
+    });
     await page.getByTestId("studio-mode-preview").click();
     await expect(
       page.getByText("Live preview — selection disabled"),

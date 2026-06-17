@@ -79,10 +79,6 @@ export function BundlePreviewHost({
   );
 
   useEffect(() => {
-    postToParent({ type: "STUDIO_READY" }, targetOrigin);
-  }, [targetOrigin]);
-
-  useEffect(() => {
     const listener = createParentMessageListener(
       targetOrigin,
       async (message: StudioMessage) => {
@@ -113,6 +109,7 @@ export function BundlePreviewHost({
       },
     );
     window.addEventListener("message", listener);
+    postToParent({ type: "STUDIO_READY" }, targetOrigin);
     return () => window.removeEventListener("message", listener);
   }, [targetOrigin]);
 
