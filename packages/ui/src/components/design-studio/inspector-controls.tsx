@@ -244,6 +244,52 @@ function toHexColor(color: string): string {
   return `#${r}${g}${b}`;
 }
 
+function cssColorStringToHex(color: string): string {
+  if (color.startsWith("#")) return toHexColor(color);
+  if (typeof document === "undefined") return "#000000";
+
+  const probe = document.createElement("div");
+  probe.style.color = color;
+  document.body.appendChild(probe);
+  const rgb = getComputedStyle(probe).color;
+  document.body.removeChild(probe);
+  return toHexColor(rgb);
+}
+
+function resolvePickerHex(
+  value: string,
+  presets: InspectorColorOption[],
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "#000000";
+
+  if (trimmed.startsWith("#") || trimmed.startsWith("rgb")) {
+    return toHexColor(trimmed);
+  }
+
+  const preset = resolveColorOption(trimmed, presets);
+  if (preset?.cssVar && typeof document !== "undefined") {
+    const token = getComputedStyle(document.documentElement)
+      .getPropertyValue(preset.cssVar)
+      .trim();
+    if (token) return cssColorStringToHex(token);
+  }
+
+  if (preset?.swatchClass && typeof document !== "undefined") {
+    const probe = document.createElement("span");
+    probe.className = preset.swatchClass;
+    probe.style.display = "none";
+    document.body.appendChild(probe);
+    const rgb = getComputedStyle(probe).backgroundColor;
+    document.body.removeChild(probe);
+    if (rgb && rgb !== "rgba(0, 0, 0, 0)") {
+      return toHexColor(rgb);
+    }
+  }
+
+  return "#000000";
+}
+
 function hexToRgba(hex: string, alpha = "1"): string {
   const normalized = hex.replace("#", "");
   const r = Number.parseInt(normalized.slice(0, 2), 16);
@@ -733,7 +779,7 @@ export function InspectorColorField({
   const pickerAnchorRef = useRef<HTMLDivElement>(null);
   const presetAnchorRef = useRef<HTMLDivElement>(null);
   const swatch = swatchStyleForValue(value, presets);
-  const hexValue = toHexColor(value);
+  const pickerHex = resolvePickerHex(value, presets);
   const selected = resolveColorOption(value, presets);
   const displayLabel = selected?.label ?? (value.trim() || placeholder);
 
@@ -746,12 +792,12 @@ export function InspectorColorField({
         anchorRef={pickerAnchorRef}
         side="top"
         content={
-          <div className="flex flex-col gap-2 p-2">
+          <div className="p-2">
             <input
               type="color"
               aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
-              className="h-8 w-full cursor-pointer rounded-md border bg-transparent"
-              value={hexValue}
+              className="h-32 w-48 max-w-[calc(100vw-2rem)] cursor-pointer rounded-md border border-border bg-transparent p-1"
+              value={pickerHex}
               onChange={(event) => {
                 const alphaMatch = value.match(
                   /rgba?\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)/,
@@ -762,14 +808,6 @@ export function InspectorColorField({
                     ? event.target.value
                     : hexToRgba(event.target.value, alpha),
                 );
-              }}
-            />
-            <InspectorColorList
-              options={presets}
-              value={value}
-              onSelect={(nextValue) => {
-                onChange(nextValue);
-                setPickerOpen(false);
               }}
             />
           </div>
