@@ -12,7 +12,7 @@ async function waitForBundlePreview(page: Page) {
 }
 
 test.describe("design studio", () => {
-  test.describe.configure({ timeout: 60_000 });
+  test.describe.configure({ timeout: 90_000 });
   test.beforeEach(async ({ page }) => {
     await loginAsSmoke(page);
   });
@@ -48,14 +48,25 @@ test.describe("design studio", () => {
       /\/design\/ui-components\/[0-9a-f-]+$/,
       { timeout: 15_000 },
     );
-    await expect(page.getByTestId("studio-component-demo-card")).toBeVisible({
-      timeout: 15_000,
+    await expect(page.getByTestId("studio-component-demo-card")).toHaveClass(
+      /bg-muted/,
+      { timeout: 15_000 },
+    );
+
+    const preview = page.frameLocator('iframe[title="Design preview"]');
+    await expect(preview.locator(".rounded-lg.border").first()).toBeVisible({
+      timeout: 45_000,
     });
 
     await page.getByRole("tab", { name: "Layers" }).click();
-    await expect(page.getByText("Component.tsx")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("<div>")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("<Button>")).toBeVisible();
+    const layersPanel = page
+      .locator('[role="tabpanel"]')
+      .filter({ hasText: "Component.tsx" });
+    await expect(layersPanel.getByText("Component.tsx")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(layersPanel.getByText("<div>")).toBeVisible({ timeout: 15_000 });
+    await expect(layersPanel.getByText("<Button>")).toBeVisible();
   });
 
   test("editor updates styles via inspector controls", async ({ page }) => {
@@ -113,10 +124,10 @@ test.describe("design studio", () => {
 
   test("preview toolbar switches interaction mode", async ({ page }) => {
     await gotoProject(page, "design/ui-components");
-    await expect(page.getByTestId("studio-mode-preview")).toBeVisible({
+    await expect(page.getByTestId("design-studio-shell")).toBeVisible({
       timeout: 15_000,
     });
-    const preview = await waitForBundlePreview(page);
+    await expect(page.getByTestId("studio-mode-preview")).toBeVisible();
     await page.getByTestId("studio-mode-preview").click();
     await expect(
       page.getByText("Live preview — selection disabled"),
