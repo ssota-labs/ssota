@@ -6,13 +6,30 @@ import {
   parseSpacingPx,
 } from "@/lib/design-studio/tailwind-classname";
 import {
+  AlignItemsBaselineIcon,
+  AlignItemsCenterIcon,
+  AlignItemsEndIcon,
+  AlignItemsStartIcon,
+  AlignItemsStretchIcon,
+  FlexDirectionColIcon,
+  FlexDirectionColReverseIcon,
+  FlexDirectionRowIcon,
+  FlexDirectionRowReverseIcon,
   InspectorField,
   InspectorGrid,
   InspectorNumberInput,
   InspectorPopoverPicker,
   InspectorSection,
+  InspectorToggleRow,
+  JustifyAroundIcon,
+  JustifyBetweenIcon,
+  JustifyCenterIcon,
+  JustifyEndIcon,
+  JustifyEvenlyIcon,
+  JustifyStartIcon,
   type InspectorPopoverOption,
   type InspectorPresetOption,
+  type InspectorToggleOption,
 } from "@ssota/ui/components/design-studio";
 
 const DISPLAY_OPTIONS: InspectorPopoverOption[] = [
@@ -26,28 +43,103 @@ const DISPLAY_OPTIONS: InspectorPopoverOption[] = [
   { value: "hidden", label: "hidden" },
 ];
 
-const DIRECTION_OPTIONS: InspectorPopoverOption[] = [
-  { value: "flex-row", label: "row" },
-  { value: "flex-col", label: "column" },
-  { value: "flex-row-reverse", label: "row reverse" },
-  { value: "flex-col-reverse", label: "column reverse" },
+const DIRECTION_OPTIONS: InspectorToggleOption[] = [
+  {
+    value: "flex-row",
+    "aria-label": "Row",
+    tooltip: "Row",
+    icon: <FlexDirectionRowIcon />,
+  },
+  {
+    value: "flex-col",
+    "aria-label": "Column",
+    tooltip: "Column",
+    icon: <FlexDirectionColIcon />,
+  },
+  {
+    value: "flex-row-reverse",
+    "aria-label": "Row reverse",
+    tooltip: "Row reverse",
+    icon: <FlexDirectionRowReverseIcon />,
+  },
+  {
+    value: "flex-col-reverse",
+    "aria-label": "Column reverse",
+    tooltip: "Column reverse",
+    icon: <FlexDirectionColReverseIcon />,
+  },
 ];
 
-const ALIGN_OPTIONS: InspectorPopoverOption[] = [
-  { value: "items-start", label: "start" },
-  { value: "items-center", label: "center" },
-  { value: "items-end", label: "end" },
-  { value: "items-stretch", label: "stretch" },
-  { value: "items-baseline", label: "baseline" },
+const ALIGN_OPTIONS: InspectorToggleOption[] = [
+  {
+    value: "items-start",
+    "aria-label": "Align start",
+    tooltip: "Align start",
+    icon: <AlignItemsStartIcon />,
+  },
+  {
+    value: "items-center",
+    "aria-label": "Align center",
+    tooltip: "Align center",
+    icon: <AlignItemsCenterIcon />,
+  },
+  {
+    value: "items-end",
+    "aria-label": "Align end",
+    tooltip: "Align end",
+    icon: <AlignItemsEndIcon />,
+  },
+  {
+    value: "items-stretch",
+    "aria-label": "Align stretch",
+    tooltip: "Align stretch",
+    icon: <AlignItemsStretchIcon />,
+  },
+  {
+    value: "items-baseline",
+    "aria-label": "Align baseline",
+    tooltip: "Align baseline",
+    icon: <AlignItemsBaselineIcon />,
+  },
 ];
 
-const DISTRIBUTE_OPTIONS: InspectorPopoverOption[] = [
-  { value: "justify-start", label: "start" },
-  { value: "justify-center", label: "center" },
-  { value: "justify-end", label: "end" },
-  { value: "justify-between", label: "between" },
-  { value: "justify-around", label: "around" },
-  { value: "justify-evenly", label: "evenly" },
+const DISTRIBUTE_OPTIONS: InspectorToggleOption[] = [
+  {
+    value: "justify-start",
+    "aria-label": "Distribute start",
+    tooltip: "Distribute start",
+    icon: <JustifyStartIcon />,
+  },
+  {
+    value: "justify-center",
+    "aria-label": "Distribute center",
+    tooltip: "Distribute center",
+    icon: <JustifyCenterIcon />,
+  },
+  {
+    value: "justify-end",
+    "aria-label": "Distribute end",
+    tooltip: "Distribute end",
+    icon: <JustifyEndIcon />,
+  },
+  {
+    value: "justify-between",
+    "aria-label": "Distribute between",
+    tooltip: "Distribute between",
+    icon: <JustifyBetweenIcon />,
+  },
+  {
+    value: "justify-around",
+    "aria-label": "Distribute around",
+    tooltip: "Distribute around",
+    icon: <JustifyAroundIcon />,
+  },
+  {
+    value: "justify-evenly",
+    "aria-label": "Distribute evenly",
+    tooltip: "Distribute evenly",
+    icon: <JustifyEvenlyIcon />,
+  },
 ];
 
 const GAP_PRESETS: InspectorPresetOption[] = [
@@ -85,31 +177,28 @@ export function LayoutSection({ parsed, onUpdate }: LayoutSectionProps) {
         {isFlex ? (
           <>
             <InspectorField label="Direction">
-              <InspectorPopoverPicker
-                aria-label="Direction"
+              <InspectorToggleRow
                 value={parsed.flexDirection}
-                placeholder="Default"
                 options={DIRECTION_OPTIONS}
+                columns={4}
                 onChange={(value) => onUpdate({ flexDirection: value })}
               />
             </InspectorField>
 
             <InspectorField label="Align">
-              <InspectorPopoverPicker
-                aria-label="Align"
+              <InspectorToggleRow
                 value={parsed.alignItems}
-                placeholder="Default"
                 options={ALIGN_OPTIONS}
+                columns={5}
                 onChange={(value) => onUpdate({ alignItems: value })}
               />
             </InspectorField>
 
             <InspectorField label="Distribute">
-              <InspectorPopoverPicker
-                aria-label="Distribute"
+              <InspectorToggleRow
                 value={parsed.justifyContent}
-                placeholder="Default"
                 options={DISTRIBUTE_OPTIONS}
+                columns={3}
                 onChange={(value) => onUpdate({ justifyContent: value })}
               />
             </InspectorField>

@@ -21,3 +21,20 @@ export {
   BORDER_THEME_COLOR_OPTIONS,
   TEXT_THEME_COLOR_OPTIONS,
 } from "./tailwind-theme-colors";
+export {
+  AlignItemsBaselineIcon,
+  AlignItemsCenterIcon,
+  AlignItemsEndIcon,
+  AlignItemsStartIcon,
+  AlignItemsStretchIcon,
+  FlexDirectionColIcon,
+  FlexDirectionColReverseIcon,
+  FlexDirectionRowIcon,
+  FlexDirectionRowReverseIcon,
+  JustifyAroundIcon,
+  JustifyBetweenIcon,
+  JustifyCenterIcon,
+  JustifyEndIcon,
+  JustifyEvenlyIcon,
+  JustifyStartIcon,
+} from "./layout-toggle-icons";
