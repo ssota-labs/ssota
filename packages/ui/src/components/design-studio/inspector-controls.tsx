@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ReactNode, RefObject } from "react";
 import { useRef, useState } from "react";
 import {
   CaretDownIcon,
@@ -258,6 +258,73 @@ function InspectorColorList({
   );
 }
 
+function useInspectorAnchorPopover() {
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const suppressFocusOpenRef = useRef(false);
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      suppressFocusOpenRef.current = true;
+    }
+    setOpen(nextOpen);
+  };
+
+  const handleInputFocus = () => {
+    if (suppressFocusOpenRef.current) {
+      suppressFocusOpenRef.current = false;
+      return;
+    }
+    setOpen(true);
+  };
+
+  const close = () => {
+    suppressFocusOpenRef.current = true;
+    setOpen(false);
+  };
+
+  return {
+    open,
+    anchorRef,
+    handleOpenChange,
+    handleInputFocus,
+    close,
+  };
+}
+
+type InspectorAnchorPopoverProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  anchorRef: RefObject<HTMLDivElement | null>;
+  children: ReactNode;
+  content: ReactNode;
+};
+
+function InspectorAnchorPopover({
+  open,
+  onOpenChange,
+  anchorRef,
+  children,
+  content,
+}: InspectorAnchorPopoverProps) {
+  return (
+    <Popover open={open} onOpenChange={onOpenChange} modal={false}>
+      <div ref={anchorRef} className="w-full">
+        {children}
+      </div>
+      <PopoverContent
+        anchor={anchorRef}
+        align="start"
+        className="w-[var(--anchor-width)] p-1"
+        initialFocus={false}
+        finalFocus={false}
+      >
+        {content}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 type InspectorNumberInputProps = {
   value: string;
   unit?: "px" | "em";
@@ -275,50 +342,44 @@ export function InspectorNumberInput({
   onChange,
   "aria-label": ariaLabel,
 }: InspectorNumberInputProps) {
-  const [open, setOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
+  const popover = useInspectorAnchorPopover();
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
-      <div ref={anchorRef} className="w-full">
-        <InputGroup>
-          <InputGroupInput
-            aria-label={ariaLabel}
-            type="number"
-            inputMode="decimal"
-            step="any"
-            value={value}
-            placeholder={placeholder}
-            onChange={(event) => onChange(event.target.value)}
-            onFocus={() => setOpen(true)}
-            onBlur={() => {
-              window.setTimeout(() => setOpen(false), 0);
-            }}
-          />
-          {unit ? (
-            <InputGroupAddon align="inline-end">
-              <InputGroupText className="text-xs text-muted-foreground">
-                {unit}
-              </InputGroupText>
-            </InputGroupAddon>
-          ) : null}
-        </InputGroup>
-      </div>
-      <PopoverContent
-        anchor={anchorRef}
-        align="start"
-        className="w-[var(--anchor-width)] p-1"
-      >
+    <InspectorAnchorPopover
+      open={popover.open}
+      onOpenChange={popover.handleOpenChange}
+      anchorRef={popover.anchorRef}
+      content={
         <InspectorPresetList
           options={presets}
           value={value}
           onSelect={(nextValue) => {
             onChange(nextValue);
-            setOpen(false);
+            popover.close();
           }}
         />
-      </PopoverContent>
-    </Popover>
+      }
+    >
+      <InputGroup>
+        <InputGroupInput
+          aria-label={ariaLabel}
+          type="number"
+          inputMode="decimal"
+          step="any"
+          value={value}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          onFocus={popover.handleInputFocus}
+        />
+        {unit ? (
+          <InputGroupAddon align="inline-end">
+            <InputGroupText className="text-xs text-muted-foreground">
+              {unit}
+            </InputGroupText>
+          </InputGroupAddon>
+        ) : null}
+      </InputGroup>
+    </InspectorAnchorPopover>
   );
 }
 
@@ -337,47 +398,41 @@ export function InspectorColorInput({
   onChange,
   "aria-label": ariaLabel,
 }: InspectorColorInputProps) {
-  const [open, setOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
+  const popover = useInspectorAnchorPopover();
   const selected = resolveColorOption(value, presets);
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
-      <div ref={anchorRef} className="w-full">
-        <InputGroup>
-          <InputGroupAddon align="inline-start">
-            <ColorSwatch
-              cssVar={selected?.cssVar}
-              swatchClass={selected?.swatchClass}
-            />
-          </InputGroupAddon>
-          <InputGroupInput
-            aria-label={ariaLabel}
-            value={value}
-            placeholder={placeholder}
-            onChange={(event) => onChange(event.target.value)}
-            onFocus={() => setOpen(true)}
-            onBlur={() => {
-              window.setTimeout(() => setOpen(false), 0);
-            }}
-          />
-        </InputGroup>
-      </div>
-      <PopoverContent
-        anchor={anchorRef}
-        align="start"
-        className="w-[var(--anchor-width)] p-1"
-      >
+    <InspectorAnchorPopover
+      open={popover.open}
+      onOpenChange={popover.handleOpenChange}
+      anchorRef={popover.anchorRef}
+      content={
         <InspectorColorList
           options={presets}
           value={value}
           onSelect={(nextValue) => {
             onChange(nextValue);
-            setOpen(false);
+            popover.close();
           }}
         />
-      </PopoverContent>
-    </Popover>
+      }
+    >
+      <InputGroup>
+        <InputGroupAddon align="inline-start">
+          <ColorSwatch
+            cssVar={selected?.cssVar}
+            swatchClass={selected?.swatchClass}
+          />
+        </InputGroupAddon>
+        <InputGroupInput
+          aria-label={ariaLabel}
+          value={value}
+          placeholder={placeholder}
+          onChange={(event) => onChange(event.target.value)}
+          onFocus={popover.handleInputFocus}
+        />
+      </InputGroup>
+    </InspectorAnchorPopover>
   );
 }
 
