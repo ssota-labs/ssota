@@ -14,6 +14,12 @@ import {
   TextStrikethroughIcon,
 } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@ssota/ui/components/ui/tooltip";
 
 export function BubbleToolbar({ editor }: { editor: Editor }) {
   return (
@@ -27,6 +33,7 @@ export function BubbleToolbar({ editor }: { editor: Editor }) {
       className="ssota-bubble-toolbar"
       data-testid="ssota-bubble-toolbar"
     >
+      <TooltipProvider delay={0}>
       <ToolbarButton
         label="Bold"
         active={editor.isActive("bold")}
@@ -108,6 +115,7 @@ export function BubbleToolbar({ editor }: { editor: Editor }) {
           </ToolbarButton>
         </>
       ) : null}
+      </TooltipProvider>
     </BubbleMenu>
   );
 }
@@ -124,17 +132,23 @@ function ToolbarButton({
   onClick: () => void;
 }) {
   return (
-    <Button
-      type="button"
-      variant={active ? "secondary" : "ghost"}
-      size="icon-xs"
-      aria-label={label}
-      title={label}
-      onClick={onClick}
-      className="ssota-editor-toolbar-button"
-    >
-      {children}
-    </Button>
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            type="button"
+            variant={active ? "secondary" : "ghost"}
+            size="icon-xs"
+            aria-label={label}
+            onClick={onClick}
+            className="ssota-editor-toolbar-button"
+          />
+        }
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -164,6 +164,21 @@ test.describe("Editor Lab", () => {
       await expect(toolbar.getByRole("button", { name: "Code" })).toBeVisible();
     });
 
+    test("shows tooltips on toolbar buttons", async ({ page }) => {
+      const surface = await editorSurface(page);
+      await surface.getByText("inline code").click({ clickCount: 3 });
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+      await expect(toolbar).toBeVisible();
+
+      for (const label of ["Bold", "Italic", "Strike", "Code", "Link", "Highlight"]) {
+        await toolbar.getByRole("button", { name: label }).hover();
+        await expect(
+          page.locator('[data-slot="tooltip-content"]').filter({ hasText: label }),
+        ).toBeVisible();
+      }
+    });
+
     test("does not show text alignment controls", async ({ page }) => {
       const surface = await editorSurface(page);
       await surface.getByText("inline code").click({ clickCount: 3 });
