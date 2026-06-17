@@ -5,7 +5,7 @@ describe("createContractsCatalogReadPort", () => {
   const catalog = createContractsCatalogReadPort();
 
   it("lists all node and edge types from contracts SSOT", () => {
-    expect(catalog.listNodeTypes()).toHaveLength(35);
+    expect(catalog.listNodeTypes()).toHaveLength(34);
     expect(catalog.listEdgeTypes()).toHaveLength(17);
   });
 

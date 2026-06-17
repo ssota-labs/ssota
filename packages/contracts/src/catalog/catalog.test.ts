@@ -8,8 +8,8 @@ import {
 } from "./index.js";
 
 describe("v2.7 catalog SSOT", () => {
-  it("defines 35 node types and 17 edge types", () => {
-    expect(NODE_TYPES).toHaveLength(35);
+  it("defines 34 node types and 17 edge types", () => {
+    expect(NODE_TYPES).toHaveLength(34);
     expect(EDGE_TYPES).toHaveLength(17);
   });
 

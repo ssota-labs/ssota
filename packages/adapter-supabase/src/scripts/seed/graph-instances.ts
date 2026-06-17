@@ -15,7 +15,6 @@ export const EVERGREEN_DEV_SINGLETON_TYPES = [
 /** One evergreen container per project — design track (Console v2.7). */
 export const EVERGREEN_DESIGN_SINGLETON_TYPES = [
   "information_architecture",
-  "ui_component_catalog",
   "design_theme",
   "page_wireframe",
 ] as const satisfies readonly NodeType[];
