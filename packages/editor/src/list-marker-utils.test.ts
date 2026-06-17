@@ -15,6 +15,8 @@ describe("stripListMarkerText", () => {
   it("removes ordered markers", () => {
     expect(stripListMarkerText("1. hello")).toBe("hello");
     expect(stripListMarkerText("12. hello")).toBe("hello");
+    expect(stripListMarkerText("a. hello")).toBe("hello");
+    expect(stripListMarkerText("B. hello")).toBe("hello");
   });
 
   it("keeps plain text", () => {
@@ -40,6 +42,16 @@ describe("parseListMarkerBeforeSpace", () => {
       orderedStart: 1,
       listType: "orderedList",
     });
+    expect(parseListMarkerBeforeSpace("a.")).toEqual({
+      markerLength: 3,
+      orderedStart: 1,
+      listType: "orderedList",
+    });
+    expect(parseListMarkerBeforeSpace("b.")).toEqual({
+      markerLength: 3,
+      orderedStart: 2,
+      listType: "orderedList",
+    });
   });
 });
 
@@ -47,6 +59,10 @@ describe("parseListMarkerPrefix", () => {
   it("detects completed markdown prefixes", () => {
     expect(parseListMarkerPrefix("- ")).toEqual({ markerLength: 2 });
     expect(parseListMarkerPrefix("1. ")).toEqual({
+      markerLength: 3,
+      orderedStart: 1,
+    });
+    expect(parseListMarkerPrefix("a. ")).toEqual({
       markerLength: 3,
       orderedStart: 1,
     });

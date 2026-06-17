@@ -371,7 +371,11 @@ export function convertInnermostListType(
  * - listItem 아래 중첩 리스트: 현재 listItem만 반대 타입 형제 리스트로 분리
  * - 최상위 리스트: 두 번째 이후 항목은 이전 항목 아래 중첩, 첫 항목은 nest
  */
-export function applyListType(editor: Editor, listType: EditorListType): boolean {
+export function applyListType(
+  editor: Editor,
+  listType: EditorListType,
+  orderedStart?: number,
+): boolean {
   stripListMarkerFromCurrentBlock(editor);
 
   const { state } = editor;
@@ -387,7 +391,7 @@ export function applyListType(editor: Editor, listType: EditorListType): boolean
   }
 
   if (isListNestedInListItem($from, innermost)) {
-    return convertListItemToSiblingListType(editor, listType);
+    return convertListItemToSiblingListType(editor, listType, orderedStart);
   }
 
   const targetType = state.schema.nodes[listType];
@@ -399,18 +403,24 @@ export function applyListType(editor: Editor, listType: EditorListType): boolean
   if (listItemDepth !== null) {
     const listItem = $from.node(listItemDepth);
     if (!listItemHasNestedList(listItem)) {
+      const parentList = $from.node(listItemDepth - 1);
       const listItemIndex = $from.index(listItemDepth - 1);
+
+      if (parentList.childCount === 1) {
+        return convertInnermostListType(editor, listType, orderedStart);
+      }
+
       if (listItemIndex > 0) {
         const sunk = editor.chain().focus().sinkListItem("listItem").run();
         if (sunk) {
-          return applyListType(editor, listType);
+          return applyListType(editor, listType, orderedStart);
         }
       }
       return nestOppositeListType(editor, listType, $from, listItemDepth);
     }
   }
 
-  return convertInnermostListType(editor, listType);
+  return convertInnermostListType(editor, listType, orderedStart);
 }
 
 /** ordered 안에 bullet, bullet 안에 ordered 등 혼합 중첩이 있는지 검사 */

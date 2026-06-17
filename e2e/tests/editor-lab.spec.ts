@@ -544,6 +544,96 @@ test.describe("Editor Lab", () => {
         surface.locator("ol li ul li", { hasText: "second" }),
       ).toBeVisible();
     });
+
+    test("creates nested ordered list when typing a. + space at line start", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "orderedList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "parent" }],
+                  },
+                  {
+                    type: "bulletList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "child" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      await typeAtBlockStart(page, "child", "a. ");
+
+      await expect(
+        surface.locator("ol li ol li", { hasText: "child" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ol li ul li", { hasText: "child" }),
+      ).toHaveCount(0);
+    });
+
+    test("keeps first top-level ordered item when second converts to bullet", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "orderedList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "one" }],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "two" }],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      await typeAtBlockStart(page, "two", "* ");
+
+      await expect(surface.locator("ol > li", { hasText: "one" })).toBeVisible();
+      await expect(surface.locator("ol ul li", { hasText: "two" })).toBeVisible();
+      await expect(surface.locator("ul > li", { hasText: "one" })).toHaveCount(0);
+    });
   });
 
   test.describe("bubble toolbar", () => {

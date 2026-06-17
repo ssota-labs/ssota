@@ -1,11 +1,11 @@
 import { Extension } from "@tiptap/core";
 import { findWrapping } from "@tiptap/pm/transform";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
-import { applyListItemTypeConversion, findInnermostList } from "../list-commands";
+import { applyListType, findInnermostList } from "../list-commands";
 import { parseListMarkerBeforeSpace } from "../list-marker-utils";
 
 /**
- * `- ` / `* ` / `1. ` 입력으로 리스트를 만들거나, 이미 리스트 안이면
+ * `- ` / `* ` / `1. ` / `a. ` 입력으로 리스트를 만들거나, 이미 리스트 안이면
  * 현재 들여쓰기 레벨의 타입만 bullet ↔ numbered로 전환한다.
  */
 export const ListMarkdownShortcut = Extension.create({
@@ -13,6 +13,8 @@ export const ListMarkdownShortcut = Extension.create({
   priority: 1000,
 
   addProseMirrorPlugins() {
+    const getEditor = () => this.editor;
+
     return [
       new Plugin({
         key: new PluginKey("ssotaListMarkdownShortcut"),
@@ -49,24 +51,20 @@ export const ListMarkdownShortcut = Extension.create({
             let tr = state.tr.delete(blockStart, markerEnd);
 
             if (innermost) {
-              if (innermost.type === marker.listType) {
-                tr.setSelection(
-                  TextSelection.near(
-                    tr.doc.resolve(Math.min(blockStart + 1, tr.doc.content.size - 1)),
-                  ),
-                );
-                view.dispatch(tr);
-                return true;
-              }
-
-              const $afterDelete = tr.doc.resolve(blockStart);
-              applyListItemTypeConversion(
-                tr,
-                $afterDelete,
-                marker.listType,
-                marker.orderedStart,
+              tr.setSelection(
+                TextSelection.near(
+                  tr.doc.resolve(Math.min(blockStart + 1, tr.doc.content.size - 1)),
+                ),
               );
               view.dispatch(tr);
+
+              if (innermost.type !== marker.listType) {
+                const editor = getEditor();
+                if (editor) {
+                  applyListType(editor, marker.listType, marker.orderedStart);
+                }
+              }
+
               return true;
             }
 
