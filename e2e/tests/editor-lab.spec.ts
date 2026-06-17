@@ -30,7 +30,7 @@ async function focusEditorEnd(page: Page) {
 }
 
 async function typeQuoteShortcut(page: Page) {
-  await page.keyboard.type('"', { delay: 40 });
+  await page.keyboard.type('" ', { delay: 40 });
 }
 
 async function typeAtDocumentEnd(page: Page, text: string) {
@@ -287,13 +287,21 @@ test.describe("Editor Lab", () => {
   });
 
   test.describe("quote shortcut", () => {
-    test('creates blockquote when typing " at line start', async ({ page }) => {
+    test('creates blockquote when typing quote + space at line start', async ({ page }) => {
       const surface = await focusEditorEnd(page);
 
       await typeQuoteShortcut(page);
       const quote = surface.locator("blockquote").last();
       await expect(quote).toBeVisible();
       await expect(quote).not.toContainText('"');
+    });
+
+    test('does not create blockquote for quote alone without space', async ({ page }) => {
+      const surface = await focusEditorEnd(page);
+
+      await page.keyboard.type('"', { delay: 40 });
+      await expect(surface.locator("blockquote")).toHaveCount(0);
+      await expect(surface.getByText('"', { exact: true })).toBeVisible();
     });
 
     test("typed quote content stays inside blockquote", async ({ page }) => {

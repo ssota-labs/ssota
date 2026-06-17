@@ -79,7 +79,7 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
     Placeholder.configure({
       placeholder: ({ node }) => {
         if (node.type.name === "calloutTitle") return "제목";
-        return options.placeholder ?? "내용을 입력하거나 ‘/’ · ‘\"’ 로 블록을 추가…";
+        return options.placeholder ?? '내용을 입력하거나 ‘/’ · \'" \' 로 인용 블록…';
       },
       includeChildren: true,
     }),
