@@ -314,7 +314,7 @@ export const SlashCommand = Extension.create<SlashCommandOptions>({
         editor: this.editor,
         char: "/",
         pluginKey: new PluginKey("ssotaSlashCommand"),
-        startOfLine: false,
+        startOfLine: true,
         allowedPrefixes: null,
         items: ({ query }) => filterItems(query, slashItems),
         command: ({ editor, range, props }) => props.command({ editor, range }),

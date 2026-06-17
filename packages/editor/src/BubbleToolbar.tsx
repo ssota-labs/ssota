@@ -1,6 +1,7 @@
 "use client";
 
 import type { Editor } from "@tiptap/react";
+import { isNodeRangeSelection } from "@tiptap/extension-node-range";
 import { BubbleMenu } from "@tiptap/react/menus";
 import {
   CodeIcon,
@@ -28,7 +29,13 @@ import {
 } from "./color-palette";
 import { LinkPopover } from "./LinkPopover";
 
-export function BubbleToolbar({ editor }: { editor: Editor }) {
+export function BubbleToolbar({
+  editor,
+  blockDragActive = false,
+}: {
+  editor: Editor;
+  blockDragActive?: boolean;
+}) {
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
   const [textColorPopoverOpen, setTextColorPopoverOpen] = useState(false);
   const [backgroundColorPopoverOpen, setBackgroundColorPopoverOpen] =
@@ -42,6 +49,9 @@ export function BubbleToolbar({ editor }: { editor: Editor }) {
       pluginKey="ssota-bubble-toolbar"
       shouldShow={({ editor: currentEditor, state }) => {
         const { empty } = state.selection;
+        if (blockDragActive || isNodeRangeSelection(state.selection)) {
+          return false;
+        }
         return (
           currentEditor.isEditable &&
           (linkPopoverOpen ||

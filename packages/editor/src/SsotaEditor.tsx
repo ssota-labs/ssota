@@ -2,7 +2,7 @@
 
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import type { JSONContent } from "@tiptap/react";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BubbleToolbar } from "./BubbleToolbar";
 import { DragBlockHandle } from "./DragBlockHandle";
 import { insertUploadedImage } from "./extensions/MentionExtension";
@@ -34,6 +34,7 @@ export function SsotaEditor({
 }: SsotaEditorProps) {
   const editorRef = useRef<Editor | null>(null);
   const uploadImageRef = useRef(uploadImage);
+  const [blockDragActive, setBlockDragActive] = useState(false);
   uploadImageRef.current = uploadImage;
 
   const extensionOptions = useMemo(
@@ -101,8 +102,15 @@ export function SsotaEditor({
 
   return (
     <div className="ssota-editor-shell" data-testid="ssota-editor-shell">
-      {editable ? <BubbleToolbar editor={editor} /> : null}
-      {editable ? <DragBlockHandle editor={editor} /> : null}
+      {editable ? (
+        <BubbleToolbar editor={editor} blockDragActive={blockDragActive} />
+      ) : null}
+      {editable ? (
+        <DragBlockHandle
+          editor={editor}
+          onDragActiveChange={setBlockDragActive}
+        />
+      ) : null}
       <EditorContent editor={editor} />
     </div>
   );

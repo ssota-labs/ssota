@@ -2,6 +2,7 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
+import NodeRange from "@tiptap/extension-node-range";
 import { BulletList, ListKeymap, OrderedList } from "@tiptap/extension-list";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TableKit } from "@tiptap/extension-table";
@@ -31,7 +32,16 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
       orderedList: false,
       listItem: false,
       listKeymap: false,
+      blockquote: {
+        HTMLAttributes: { class: "ssota-blockquote" },
+      },
+      dropcursor: {
+        color: "var(--primary)",
+        width: 2,
+        class: "ssota-dropcursor",
+      },
     }),
+    NodeRange,
     BulletList.configure({
       HTMLAttributes: { class: "ssota-bullet-list" },
     }),

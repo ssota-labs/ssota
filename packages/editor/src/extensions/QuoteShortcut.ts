@@ -1,8 +1,14 @@
 import { Extension, wrappingInputRule } from "@tiptap/core";
 
 /** 빈 줄에서 `""` 입력 시 Notion-style 인용 블록 생성 */
-const STRAIGHT_DOUBLE_QUOTE = /^""$/;
-const CURLY_DOUBLE_QUOTE = /^\u201c\u201d$/;
+const QUOTE_PATTERNS = [
+  /^""$/,
+  /^""\s$/,
+  /^\u201c\u201d$/,
+  /^\u201c\u201d\s$/,
+  /^[\u0022\uff02]{2}$/,
+  /^[\u0022\uff02]{2}\s$/,
+] as const;
 
 export const QuoteShortcut = Extension.create({
   name: "quoteShortcut",
@@ -12,15 +18,11 @@ export const QuoteShortcut = Extension.create({
     const blockquote = this.editor.schema.nodes.blockquote;
     if (!blockquote) return [];
 
-    return [
+    return QUOTE_PATTERNS.map((find) =>
       wrappingInputRule({
-        find: STRAIGHT_DOUBLE_QUOTE,
+        find,
         type: blockquote,
       }),
-      wrappingInputRule({
-        find: CURLY_DOUBLE_QUOTE,
-        type: blockquote,
-      }),
-    ];
+    );
   },
 });

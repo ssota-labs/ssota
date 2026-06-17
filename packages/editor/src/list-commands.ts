@@ -1,6 +1,7 @@
 import type { Editor } from "@tiptap/react";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type { ResolvedPos } from "@tiptap/pm/model";
+import { TextSelection } from "@tiptap/pm/state";
 
 export type EditorListType = "bulletList" | "orderedList";
 
@@ -32,14 +33,74 @@ export function findInnermostList($from: ResolvedPos): ListNodeMatch | null {
   return match;
 }
 
+function findListItemDepth($from: ResolvedPos): number | null {
+  for (let depth = $from.depth; depth > 0; depth -= 1) {
+    if ($from.node(depth).type.name === "listItem") {
+      return depth;
+    }
+  }
+  return null;
+}
+
+function listItemHasNestedList(listItem: ProseMirrorNode): boolean {
+  return listItem.content.content.some((child) =>
+    isEditorListType(child.type.name),
+  );
+}
+
+function nestOppositeListType(
+  editor: Editor,
+  listType: EditorListType,
+  $from: ResolvedPos,
+  listItemDepth: number,
+): boolean {
+  const { state } = editor;
+  const targetType = state.schema.nodes[listType];
+  const listItemType = state.schema.nodes.listItem;
+  if (!targetType || !listItemType) {
+    return false;
+  }
+
+  const listItem = $from.node(listItemDepth);
+  const listItemPos = $from.before(listItemDepth);
+  const paragraph = listItem.firstChild;
+  if (!paragraph || paragraph.type.name !== "paragraph") {
+    return false;
+  }
+
+  return editor
+    .chain()
+    .focus()
+    .command(({ tr, dispatch }) => {
+      if (!dispatch) return true;
+
+      const currentListItem = tr.doc.nodeAt(listItemPos);
+      if (!currentListItem || currentListItem.type.name !== "listItem") {
+        return false;
+      }
+
+      const paragraphStart = listItemPos + 1;
+      const paragraphEnd = paragraphStart + paragraph.nodeSize;
+      const nestedListItem = listItemType.create(null, [paragraph]);
+      const nestedList = targetType.create(null, nestedListItem);
+
+      tr.replaceWith(paragraphStart, paragraphEnd, nestedList);
+      tr.setSelection(TextSelection.near(tr.doc.resolve(paragraphStart + 2)));
+      return true;
+    })
+    .run();
+}
+
 /**
  * Notion처럼 현재 들여쓰기 레벨의 list 타입만 전환한다.
  * - 리스트 밖: 새 리스트 생성/해제
- * - 리스트 안: 가장 안쪽 list 노드만 bullet ↔ numbered 전환
+ * - 리스트 안, 다른 타입: 가장 안쪽 list 노드만 bullet ↔ numbered 전환
+ * - 리스트 아이템 안에 하위 리스트가 없으면: 현재 줄을 반대 타입 하위 리스트로 중첩
  */
 export function applyListType(editor: Editor, listType: EditorListType): boolean {
   const { state } = editor;
-  const innermost = findInnermostList(state.selection.$from);
+  const $from = state.selection.$from;
+  const innermost = findInnermostList($from);
 
   if (!innermost) {
     return editor.chain().focus().toggleList(listType, "listItem").run();
@@ -50,8 +111,27 @@ export function applyListType(editor: Editor, listType: EditorListType): boolean
   }
 
   const targetType = state.schema.nodes[listType];
+  if (!targetType) {
+    return false;
+  }
+
+  const listItemDepth = findListItemDepth($from);
+  if (listItemDepth !== null) {
+    const listItem = $from.node(listItemDepth);
+    if (!listItemHasNestedList(listItem)) {
+      const listItemIndex = $from.index(listItemDepth - 1);
+      if (listItemIndex > 0) {
+        const sunk = editor.chain().focus().sinkListItem("listItem").run();
+        if (sunk) {
+          return applyListType(editor, listType);
+        }
+      }
+      return nestOppositeListType(editor, listType, $from, listItemDepth);
+    }
+  }
+
   const currentNode = state.doc.nodeAt(innermost.pos);
-  if (!currentNode || !targetType) {
+  if (!currentNode) {
     return false;
   }
 

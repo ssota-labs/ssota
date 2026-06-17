@@ -3,7 +3,10 @@
 import Emoji, { emojis, type EmojiItem } from "@tiptap/extension-emoji";
 import type { SuggestionProps } from "@tiptap/suggestion";
 import { SuggestionMenu } from "../ui/SuggestionMenu";
-import { createSuggestionPortal } from "../ui/suggestion-portal";
+import {
+  createSuggestionPortal,
+  type SuggestionPortalInjectedProps,
+} from "../ui/suggestion-portal";
 
 function filterEmojis(query: string): EmojiItem[] {
   const normalized = query.trim().toLowerCase();
@@ -43,7 +46,7 @@ function mapEmojiMenuProps(props: SuggestionProps<EmojiItem>) {
 
 const emojiSuggestionRenderer = createSuggestionPortal<
   EmojiItem,
-  ReturnType<typeof mapEmojiMenuProps>
+  ReturnType<typeof mapEmojiMenuProps> & SuggestionPortalInjectedProps
 >({
   component: SuggestionMenu,
   mapProps: (props, menu) => ({

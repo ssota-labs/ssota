@@ -5,7 +5,10 @@ import type { Editor } from "@tiptap/react";
 import { AtIcon } from "@phosphor-icons/react";
 import type { SsotaMentionItem } from "../types";
 import { SuggestionMenu } from "../ui/SuggestionMenu";
-import { createSuggestionPortal } from "../ui/suggestion-portal";
+import {
+  createSuggestionPortal,
+  type SuggestionPortalInjectedProps,
+} from "../ui/suggestion-portal";
 
 function mapMentionMenuProps(
   props: import("@tiptap/suggestion").SuggestionProps<SsotaMentionItem>,
@@ -28,7 +31,7 @@ function mapMentionMenuProps(
 
 const mentionSuggestionRenderer = createSuggestionPortal<
   SsotaMentionItem,
-  ReturnType<typeof mapMentionMenuProps>
+  ReturnType<typeof mapMentionMenuProps> & SuggestionPortalInjectedProps
 >({
   component: SuggestionMenu,
   mapProps: (props, menu) => ({

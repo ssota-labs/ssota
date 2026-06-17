@@ -20,9 +20,12 @@ export function readLinkForm(editor: Editor): LinkFormValues {
 
   if (hadLink) {
     const $pos = editor.state.doc.resolve(from);
-    const markRange = getMarkRange($pos, editor.schema.marks.link);
-    if (markRange) {
-      range = markRange;
+    const linkMark = editor.schema.marks.link;
+    if (linkMark) {
+      const markRange = getMarkRange($pos, linkMark);
+      if (markRange) {
+        range = markRange;
+      }
     }
   }
 

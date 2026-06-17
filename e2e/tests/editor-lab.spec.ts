@@ -159,6 +159,15 @@ test.describe("Editor Lab", () => {
       await expect(page.getByTestId("ssota-slash-menu")).toBeHidden();
     });
 
+    test("does not open when slash is typed mid-line", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "hello world");
+      await surface.getByText("hello world").click();
+      await page.keyboard.type(" /head", { delay: 20 });
+
+      await expect(page.getByTestId("ssota-slash-menu")).toBeHidden();
+      await expect(surface.getByText("hello world /head")).toBeVisible();
+    });
+
     test("navigates with arrow keys and Enter", async ({ page }) => {
       await openSlashMenu(page);
       const menu = page.getByTestId("ssota-slash-menu");
@@ -579,7 +588,6 @@ test.describe("Editor Lab", () => {
 
       await page.keyboard.press("Enter");
       await page.keyboard.type("child");
-      await page.keyboard.press("Tab");
       await surface.getByText("child").click();
 
       await openSlashMenuInCurrentBlock(page, "bullet");
@@ -597,7 +605,6 @@ test.describe("Editor Lab", () => {
 
       await page.keyboard.press("Enter");
       await page.keyboard.type("child");
-      await page.keyboard.press("Tab");
       await surface.getByText("child").click();
 
       await openSlashMenuInCurrentBlock(page, "number");
@@ -680,7 +687,7 @@ test.describe("Editor Lab", () => {
       await expect(secondBlock).toBeVisible();
 
       await secondBlock.hover();
-      const handle = page.locator(".ssota-drag-handle");
+      const handle = page.locator(".ssota-drag-grip");
       await expect(handle).toBeVisible();
 
       await handle.dragTo(firstBlock, {
@@ -697,6 +704,24 @@ test.describe("Editor Lab", () => {
       expect(secondIndex).toBeGreaterThanOrEqual(0);
       expect(firstIndex).toBeGreaterThanOrEqual(0);
       expect(secondIndex).toBeLessThan(firstIndex);
+    });
+
+    test("does not show bubble toolbar while dragging block handle", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "drag bubble guard");
+      await surface.getByText("drag bubble guard").hover();
+
+      const grip = page.locator(".ssota-drag-grip");
+      await expect(grip).toBeVisible();
+
+      const box = await grip.boundingBox();
+      if (!box) throw new Error("drag grip not positioned");
+
+      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+      await page.mouse.down();
+      await page.waitForTimeout(120);
+
+      await expect(page.getByTestId("ssota-bubble-toolbar")).toBeHidden();
+      await page.mouse.up();
     });
   });
 
