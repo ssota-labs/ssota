@@ -53,7 +53,80 @@ type StudioShellProps = {
   onCreateComponent: () => Promise<void> | void;
 };
 
-export function StudioShell({
+export function StudioShell(props: StudioShellProps) {
+  const { component } = props;
+  if (!component) {
+    return <StudioShellEmpty {...props} />;
+  }
+  return <StudioShellEditor key={component.id} {...props} component={component} />;
+}
+
+function StudioShellEmpty({
+  components,
+  studioBasePath,
+  onCreateComponent,
+}: StudioShellProps) {
+  const [pending, startTransition] = useTransition();
+
+  const handleCreateComponent = () => {
+    startTransition(() => {
+      void onCreateComponent();
+    });
+  };
+
+  return (
+    <div className="flex h-full min-h-0 flex-col" data-testid="design-studio-shell">
+      <ResizablePanelGroup
+        id="design-studio-panels"
+        orientation="horizontal"
+        className="min-h-0 flex-1"
+        defaultLayout={{ left: 22, preview: 53, inspector: 25 }}
+      >
+        <ResizablePanel id="left" defaultSize="22%" minSize="16%" maxSize="32%">
+          <StudioLeftPanel
+            components={components}
+            activeComponentId={null}
+            studioBasePath={studioBasePath}
+            sourceLayers={null}
+            selectedLayerId={null}
+            onSelectLayer={() => {}}
+            pending={pending}
+            onCreateComponent={handleCreateComponent}
+          />
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel id="preview" defaultSize="53%" minSize="35%">
+          <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Create a component or pick one from the Components tab.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              disabled={pending}
+              onClick={handleCreateComponent}
+            >
+              {pending ? "Creating…" : "New component"}
+            </Button>
+          </div>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel
+          id="inspector"
+          defaultSize="25%"
+          minSize="18%"
+          maxSize="35%"
+        >
+          <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
+            Inspector appears when a component is open.
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
+  );
+}
+
+function StudioShellEditor({
   projectId,
   component,
   components,
@@ -62,7 +135,7 @@ export function StudioShell({
   previewBasePath,
   onDeploy,
   onCreateComponent,
-}: StudioShellProps) {
+}: StudioShellProps & { component: GraphNode }) {
   const props = (component?.properties ?? {}) as {
     slug?: string;
     tier?: string;
@@ -113,7 +186,10 @@ export function StudioShell({
     [contentV2],
   );
   const contentV2Ref = useRef(contentV2);
-  contentV2Ref.current = contentV2;
+
+  useEffect(() => {
+    contentV2Ref.current = contentV2;
+  }, [contentV2]);
 
   const sourceLayers = useMemo(() => {
     if (!component) return null;
@@ -127,20 +203,6 @@ export function StudioShell({
     if (!selectedSourceRef) return "";
     return readClassNameFromSource(contentV2.files, selectedSourceRef) ?? "";
   }, [contentV2.files, selectedSourceRef]);
-
-  useEffect(() => {
-    if (!component || !storageKey) return;
-    setContentV2(
-      resolveInitialContentV2({
-        sessionContent: readSessionContentV2(storageKey),
-        publishedContent: component.content,
-        fallback: createEmptyUiComponentContentV2(),
-      }),
-    );
-    setSelectedId(null);
-    setSelectedSourceRef(null);
-    setBuildPreview(null);
-  }, [component, storageKey]);
 
   useEffect(() => {
     if (!storageKey) return;
@@ -271,9 +333,9 @@ export function StudioShell({
         <ResizablePanel id="left" defaultSize="22%" minSize="16%" maxSize="32%">
           <StudioLeftPanel
             components={components}
-            activeComponentId={component?.id ?? null}
+            activeComponentId={component.id}
             studioBasePath={studioBasePath}
-            sourceLayers={component ? sourceLayers : null}
+            sourceLayers={sourceLayers}
             selectedLayerId={selectedId}
             onSelectLayer={setSelectedId}
             pending={pending}
@@ -282,38 +344,22 @@ export function StudioShell({
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel id="preview" defaultSize="53%" minSize="35%">
-          {component ? (
-            <div className="flex h-full min-h-0 flex-col bg-muted/30">
-              <PreviewToolbar
-                mode={interactionMode}
-                onModeChange={setInteractionMode}
-                disabled={!ready}
-                onDeploy={handleDeploy}
-                deployDisabled={!component}
-                deployPending={pending}
-              />
-              <iframe
-                ref={iframeRef}
-                title="Design preview"
-                src={previewUrl}
-                className="min-h-0 flex-1 w-full border-0 bg-background"
-              />
-            </div>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Create a component or pick one from the Components tab.
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                disabled={pending}
-                onClick={handleCreateComponent}
-              >
-                {pending ? "Creating…" : "New component"}
-              </Button>
-            </div>
-          )}
+          <div className="flex h-full min-h-0 flex-col bg-muted/30">
+            <PreviewToolbar
+              mode={interactionMode}
+              onModeChange={setInteractionMode}
+              disabled={!ready}
+              onDeploy={handleDeploy}
+              deployDisabled={false}
+              deployPending={pending}
+            />
+            <iframe
+              ref={iframeRef}
+              title="Design preview"
+              src={previewUrl}
+              className="min-h-0 flex-1 w-full border-0 bg-background"
+            />
+          </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel
@@ -322,19 +368,13 @@ export function StudioShell({
           minSize="18%"
           maxSize="35%"
         >
-          {component ? (
-            <SourceInspectorPanel
-              selectedId={selectedId}
-              selectedSourceRef={selectedSourceRef}
-              className={selectedSourceClassName}
-              onClassNameChange={handleSourceClassNameChange}
-              readOnly={Boolean(selectedId && !selectedSourceRef)}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
-              Inspector appears when a component is open.
-            </div>
-          )}
+          <SourceInspectorPanel
+            selectedId={selectedId}
+            selectedSourceRef={selectedSourceRef}
+            className={selectedSourceClassName}
+            onClassNameChange={handleSourceClassNameChange}
+            readOnly={Boolean(selectedId && !selectedSourceRef)}
+          />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>
