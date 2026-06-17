@@ -277,8 +277,7 @@ test.describe("Editor Lab", () => {
     test("typed quote content stays inside blockquote", async ({ page }) => {
       const surface = await focusEditorEnd(page);
 
-      await page.keyboard.press('"');
-      await page.keyboard.press('"');
+      await page.keyboard.type('""');
       const quote = surface.locator("blockquote").last();
       await expect(quote).toBeVisible();
 
