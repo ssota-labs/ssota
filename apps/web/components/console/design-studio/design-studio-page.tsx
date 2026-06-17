@@ -9,6 +9,10 @@ import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { ensureEvergreenSingleton } from "@/lib/graph/loaders/ensure-evergreen-singleton";
 import { loadResolvedUiComponents } from "@/lib/design-studio/load-resolved-components";
 import { queryUiComponents } from "@/lib/graph/loaders/query-ui-components";
+import {
+  createEmptyUiComponentContentV2,
+  defaultSourceComponentProperties,
+} from "@/lib/design-studio/empty-document";
 
 type DesignStudioPageProps = {
   orgSlug: string;
@@ -26,7 +30,7 @@ export async function DesignStudioPage({
   const components = await queryUiComponents(project.id);
   const resolvedComponents = await loadResolvedUiComponents(project.id);
   const studioBasePath = projectPath(ctx, "design", "ui-components");
-  const previewPath = `${projectPath(ctx, "design", "preview")}?mode=draft`;
+  const previewBasePath = projectPath(ctx, "design", "preview");
 
   const theme = await ensureEvergreenSingleton(
     project.id,
@@ -54,14 +58,13 @@ export async function DesignStudioPage({
     "use server";
     const title = `Component ${new Date().toISOString().slice(0, 10)}`;
     const slug = `${slugifyComponentTitle(title)}-${Date.now().toString(36).slice(-4)}`;
+    const contentV2 = createEmptyUiComponentContentV2();
     const node = await createGraphNodeAction({
       projectId: project.id,
       nodeType: "ui_component",
       title,
-      properties: {
-        slug,
-        tier: "primitive",
-      },
+      properties: defaultSourceComponentProperties(slug),
+      content: JSON.stringify(contentV2),
       revalidatePaths: [studioBasePath],
     });
     redirect(projectPath(ctx, "design", "ui-components", node.id));
@@ -70,7 +73,9 @@ export async function DesignStudioPage({
   async function deployComponent(input: {
     projectId: string;
     nodeId: string;
-    document: import("@ssota/contracts/catalog").UiComponentDocument;
+    document?: import("@ssota/contracts/catalog").UiComponentDocument;
+    contentV2?: import("@ssota/contracts/catalog").UiComponentContentV2;
+    themeCss?: string;
     revalidatePath: string;
   }) {
     "use server";
@@ -78,6 +83,8 @@ export async function DesignStudioPage({
       projectId: input.projectId,
       nodeId: input.nodeId,
       document: input.document,
+      contentV2: input.contentV2,
+      themeCss: input.themeCss,
       revalidatePaths: [editorPath],
     });
   }
@@ -90,7 +97,7 @@ export async function DesignStudioPage({
       components={components}
       studioBasePath={studioBasePath}
       themeContent={theme.content ?? ""}
-      previewPath={previewPath}
+      previewBasePath={previewBasePath}
       resolvedComponents={resolvedComponents}
       onDeploy={deployComponent}
       onCreateComponent={createComponent}

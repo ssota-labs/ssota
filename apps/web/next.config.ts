@@ -7,8 +7,15 @@ const nextConfig: NextConfig = {
     "@ssota/adapter-supabase",
     "@ssota/editor",
     "@ssota/ui",
+    "@ssota/studio-preview-runtime",
+    "@ssota/studio-renderer",
   ],
-  serverExternalPackages: ["@tailwindcss/node", "lightningcss"],
+  serverExternalPackages: [
+    "@tailwindcss/node",
+    "lightningcss",
+    "esbuild",
+    "@ssota/studio-build",
+  ],
   allowedDevOrigins: ["127.0.0.1"],
 };
 

@@ -237,7 +237,24 @@ const NODE_PROPERTY_SCHEMAS: Record<
   ui_component: propertiesWithKnownKeys({
     slug: z.string().min(1),
     tier: uiComponentTierSchema,
+    representation: z.enum(["source", "tree"]).optional(),
+    contentSchemaVersion: z.union([z.literal(1), z.literal(2)]).optional(),
+    entry: z.string().min(1).optional(),
+    dependencies: z.record(z.string()).optional(),
+    fileKeys: z.array(z.string()).optional(),
+    buildHash: z.string().optional(),
+    previewArtifactPath: z.string().optional(),
+    builtAt: z.string().datetime().optional(),
     draft: z.string().optional(),
+  }).superRefine((properties, ctx) => {
+    const representation = properties.representation ?? "tree";
+    if (representation === "source" && !properties.entry) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "entry is required when representation is source",
+        path: ["entry"],
+      });
+    }
   }),
   design_theme: loosePropertiesSchema,
 };
@@ -373,7 +390,7 @@ const NODE_CATALOG_META: Record<
   ui_component: {
     label: "UI 컴포넌트",
     mutability: "living",
-    contentRequired: false,
+    contentRequired: true,
   },
   design_theme: {
     label: "디자인 테마",

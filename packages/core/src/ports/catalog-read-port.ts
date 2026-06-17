@@ -13,6 +13,11 @@ export interface CatalogReadPort {
     nodeType: string,
     properties: unknown,
   ): Record<string, unknown>;
+  validateNodeContent(
+    nodeType: string,
+    content: string | null,
+    properties: Record<string, unknown>,
+  ): unknown;
 }
 
 export type { NodeTypeCatalogEntry, EdgeTypeCatalogEntry, Mutability };

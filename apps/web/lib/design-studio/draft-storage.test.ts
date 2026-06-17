@@ -9,10 +9,6 @@ describe("resolveInitialDraft", () => {
     schemaVersion: 1,
     root: { kind: "text", id: "s", text: "session" },
   };
-  const propertiesDoc: UiComponentDocument = {
-    schemaVersion: 1,
-    root: { kind: "text", id: "p", text: "properties" },
-  };
   const publishedDoc: UiComponentDocument = {
     schemaVersion: 1,
     root: { kind: "text", id: "c", text: "published" },
@@ -22,29 +18,16 @@ describe("resolveInitialDraft", () => {
     expect(
       resolveInitialDraft({
         sessionDraft: sessionDoc,
-        propertiesDraft: JSON.stringify(propertiesDoc),
         publishedContent: JSON.stringify(publishedDoc),
         fallback,
       }).root,
     ).toEqual(sessionDoc.root);
   });
 
-  it("falls back to properties draft", () => {
-    expect(
-      resolveInitialDraft({
-        sessionDraft: null,
-        propertiesDraft: JSON.stringify(propertiesDoc),
-        publishedContent: JSON.stringify(publishedDoc),
-        fallback,
-      }).root,
-    ).toEqual(propertiesDoc.root);
-  });
-
   it("falls back to published content", () => {
     expect(
       resolveInitialDraft({
         sessionDraft: null,
-        propertiesDraft: null,
         publishedContent: JSON.stringify(publishedDoc),
         fallback,
       }).root,
@@ -55,7 +38,6 @@ describe("resolveInitialDraft", () => {
     expect(
       resolveInitialDraft({
         sessionDraft: null,
-        propertiesDraft: null,
         publishedContent: null,
         fallback,
       }),

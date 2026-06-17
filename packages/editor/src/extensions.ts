@@ -18,6 +18,7 @@ import { CalloutTitle } from "./extensions/CalloutTitle";
 import { EmojiExtension } from "./extensions/EmojiExtension";
 import { createMentionExtension } from "./extensions/MentionExtension";
 import { GuardedTaskItem } from "./extensions/GuardedTaskItem";
+import { ListBackspaceFix } from "./extensions/ListBackspaceFix";
 import {
   MixedBulletList,
   MixedOrderedList,
@@ -55,6 +56,7 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
     }),
     NestedListItem,
     ListKeymap,
+    ListBackspaceFix,
     TaskList,
     GuardedTaskItem.configure({ nested: true }),
     TableKit.configure({
