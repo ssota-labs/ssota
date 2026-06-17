@@ -251,7 +251,7 @@ export function InspectorColorPickerPanel({
   };
 
   return (
-    <div className={cn("flex w-60 flex-col gap-3 p-3", className)}>
+    <div className={cn("flex w-60 flex-col gap-2 p-2", className)}>
       <div
         ref={satRef}
         role="slider"

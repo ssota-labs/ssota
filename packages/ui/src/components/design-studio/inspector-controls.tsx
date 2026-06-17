@@ -597,7 +597,7 @@ export function InspectorColorField({
           anchor={swatchAnchorRef}
           side="left"
           align="start"
-          className="w-auto p-0"
+          className="cn-popover-menu w-auto"
           initialFocus={false}
           finalFocus={false}
         >
