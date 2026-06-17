@@ -9,21 +9,51 @@ import {
 } from "@/lib/design-studio/tailwind-classname";
 import {
   BORDER_THEME_COLOR_OPTIONS,
+  BorderStyleDashedIcon,
+  BorderStyleDottedIcon,
+  BorderStyleDoubleIcon,
+  BorderStyleNoneIcon,
+  BorderStyleSolidIcon,
   InspectorColorField,
   InspectorField,
   InspectorNumberInput,
-  InspectorPopoverPicker,
   InspectorSection,
-  type InspectorPopoverOption,
+  InspectorToggleRow,
   type InspectorPresetOption,
+  type InspectorToggleOption,
 } from "@ssota/ui/components/design-studio";
 
-const BORDER_STYLE_OPTIONS: InspectorPopoverOption[] = [
-  { value: "border-solid", label: "solid" },
-  { value: "border-dashed", label: "dashed" },
-  { value: "border-dotted", label: "dotted" },
-  { value: "border-double", label: "double" },
-  { value: "border-none", label: "none" },
+const BORDER_STYLE_OPTIONS: InspectorToggleOption[] = [
+  {
+    value: "border-solid",
+    "aria-label": "Solid",
+    tooltip: "Solid",
+    icon: <BorderStyleSolidIcon />,
+  },
+  {
+    value: "border-dashed",
+    "aria-label": "Dashed",
+    tooltip: "Dashed",
+    icon: <BorderStyleDashedIcon />,
+  },
+  {
+    value: "border-dotted",
+    "aria-label": "Dotted",
+    tooltip: "Dotted",
+    icon: <BorderStyleDottedIcon />,
+  },
+  {
+    value: "border-double",
+    "aria-label": "Double",
+    tooltip: "Double",
+    icon: <BorderStyleDoubleIcon />,
+  },
+  {
+    value: "border-none",
+    "aria-label": "None",
+    tooltip: "None",
+    icon: <BorderStyleNoneIcon />,
+  },
 ];
 
 const BORDER_WIDTH_PRESETS: InspectorPresetOption[] = [
@@ -58,11 +88,10 @@ export function BorderSection({ parsed, onUpdate }: BorderSectionProps) {
         </InspectorField>
 
         <InspectorField label="Style">
-          <InspectorPopoverPicker
-            aria-label="Border style"
+          <InspectorToggleRow
             value={parsed.borderStyle}
-            placeholder="Default"
             options={BORDER_STYLE_OPTIONS}
+            columns={5}
             onChange={(value) => onUpdate({ borderStyle: value })}
           />
         </InspectorField>

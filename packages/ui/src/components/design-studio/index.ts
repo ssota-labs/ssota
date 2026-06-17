@@ -22,6 +22,13 @@ export {
   TEXT_THEME_COLOR_OPTIONS,
 } from "./tailwind-theme-colors";
 export {
+  BorderStyleDashedIcon,
+  BorderStyleDottedIcon,
+  BorderStyleDoubleIcon,
+  BorderStyleNoneIcon,
+  BorderStyleSolidIcon,
+} from "./border-style-icons";
+export {
   AlignItemsBaselineIcon,
   AlignItemsCenterIcon,
   AlignItemsEndIcon,
