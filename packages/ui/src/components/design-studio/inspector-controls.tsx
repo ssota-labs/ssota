@@ -194,6 +194,30 @@ function toHexColor(color: string): string {
   return rgbStringToHex(color) ?? "#000000";
 }
 
+/** rgb/oklch 등 브라우저가 이해하는 CSS color 문자열을 #rrggbb로 변환합니다. */
+function cssColorToHex(color: string): string {
+  const trimmed = color.trim();
+  if (!trimmed) return "#000000";
+  if (trimmed.startsWith("#")) return toHexColor(trimmed);
+
+  const fromRgb = rgbStringToHex(trimmed);
+  if (fromRgb) return fromRgb;
+
+  if (typeof document === "undefined") return "#000000";
+
+  try {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "#000000";
+    ctx.fillStyle = trimmed;
+    const normalized = ctx.fillStyle;
+    if (normalized.startsWith("#")) return toHexColor(normalized);
+    return rgbStringToHex(normalized) ?? "#000000";
+  } catch {
+    return "#000000";
+  }
+}
+
 function resolveColorPickerHex(
   value: string,
   presets: InspectorColorOption[],
@@ -201,12 +225,12 @@ function resolveColorPickerHex(
   const trimmed = value.trim();
   if (!trimmed) return "#000000";
   if (trimmed.startsWith("#") || /^rgba?\(/i.test(trimmed)) {
-    return toHexColor(trimmed);
+    return cssColorToHex(trimmed);
   }
 
   const option = resolveColorOption(trimmed, presets);
   if (!option || typeof document === "undefined") {
-    return toHexColor(trimmed);
+    return cssColorToHex(trimmed);
   }
 
   const probe = document.createElement("div");
@@ -217,22 +241,19 @@ function resolveColorPickerHex(
 
   try {
     if (option.cssVar) {
-      probe.style.color = `var(${option.cssVar})`;
-      const hex = rgbStringToHex(getComputedStyle(probe).color);
-      if (hex) return hex;
+      probe.style.backgroundColor = `var(${option.cssVar})`;
+      return cssColorToHex(getComputedStyle(probe).backgroundColor);
     }
 
     if (option.swatchClass) {
       probe.className = option.swatchClass;
-      probe.style.color = "";
-      const hex = rgbStringToHex(getComputedStyle(probe).backgroundColor);
-      if (hex) return hex;
+      return cssColorToHex(getComputedStyle(probe).backgroundColor);
     }
   } finally {
     document.body.removeChild(probe);
   }
 
-  return toHexColor(trimmed);
+  return cssColorToHex(trimmed);
 }
 
 function useColorPickerHex(
@@ -418,11 +439,19 @@ export function InspectorColorField({
 }: InspectorColorFieldProps) {
   const [presetOpen, setPresetOpen] = useState(false);
   const presetAnchorRef = useRef<HTMLDivElement>(null);
+  const colorInputRef = useRef<HTMLInputElement>(null);
   const hexValue = useColorPickerHex(value, presets);
+
+  useLayoutEffect(() => {
+    if (colorInputRef.current && colorInputRef.current.value !== hexValue) {
+      colorInputRef.current.value = hexValue;
+    }
+  }, [hexValue]);
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
       <input
+        ref={colorInputRef}
         type="color"
         aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
         className={inspectorNativeColorPickerClass}
