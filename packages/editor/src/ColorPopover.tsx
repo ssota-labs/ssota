@@ -79,7 +79,7 @@ export function ColorPopover({
                 <Button
                   type="button"
                   variant={active ? "secondary" : "ghost"}
-                  size="icon-xs"
+                  size="icon-sm"
                   aria-label={label}
                   className="ssota-editor-toolbar-button"
                 />

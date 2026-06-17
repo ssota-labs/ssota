@@ -150,7 +150,7 @@ function ToolbarButton({
           <Button
             type="button"
             variant={active ? "secondary" : "ghost"}
-            size="icon-xs"
+            size="icon-sm"
             aria-label={label}
             onClick={onClick}
             className="ssota-editor-toolbar-button"
@@ -165,5 +165,5 @@ function ToolbarButton({
 }
 
 function ToolbarDivider() {
-  return <span className="h-5 w-px bg-border" />;
+  return <span className="ssota-toolbar-divider" aria-hidden />;
 }

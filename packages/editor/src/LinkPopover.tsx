@@ -88,7 +88,7 @@ export function LinkPopover({
                 <Button
                   type="button"
                   variant={editor.isActive("link") ? "secondary" : "ghost"}
-                  size="icon-xs"
+                  size="icon-sm"
                   aria-label="Link"
                   className="ssota-editor-toolbar-button"
                 />
