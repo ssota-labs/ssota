@@ -56,7 +56,7 @@ export function ProductRoadmapCard({
       className="rounded-lg border bg-card"
       data-testid="product-roadmap-card"
     >
-      <header className="sticky top-0 z-10 border-b bg-card px-4 py-3 shadow-sm md:px-6">
+      <header className="sticky top-0 z-10 border-b bg-card px-4 py-3 md:px-6">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-semibold tracking-tight">
             {t("roadmap.productRoadmap")}

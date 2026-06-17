@@ -103,7 +103,7 @@ export function PlanningRoadmapAccordionItem({
       <CollapsibleTrigger
         nativeButton={false}
         render={
-          <header className="sticky top-0 z-10 flex w-full cursor-pointer items-start justify-between gap-3 border-b bg-card px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/30 md:px-6" />
+          <header className="sticky top-0 z-10 flex w-full cursor-pointer items-start justify-between gap-3 border-b bg-card px-4 py-3 text-left transition-colors hover:bg-muted/30 md:px-6" />
         }
       >
         <div className="min-w-0 flex-1 space-y-2">
