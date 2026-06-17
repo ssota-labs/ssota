@@ -1,7 +1,7 @@
 "use client";
 
-import type { PointerEvent, ReactNode, RefObject, WheelEvent } from "react";
-import { useRef, useState } from "react";
+import type { PointerEvent, ReactNode, RefObject } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { CaretDownIcon, CheckIcon } from "@phosphor-icons/react";
 import {
   InputGroupAddon,
@@ -206,10 +206,28 @@ export function applyNumericBounds(
 }
 
 /** type=number 기본 휠 증감을 막습니다 (포커스 여부 무관). */
-export function preventNumberInputWheelChange(
-  event: WheelEvent<HTMLInputElement>,
-) {
-  event.preventDefault();
+export function usePreventNumberInputWheelChange() {
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  const inputRef = useCallback((node: HTMLInputElement | null) => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+
+    if (!node) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+    };
+
+    node.addEventListener("wheel", handleWheel, { passive: false });
+    cleanupRef.current = () => node.removeEventListener("wheel", handleWheel);
+  }, []);
+
+  useEffect(() => {
+    return () => cleanupRef.current?.();
+  }, []);
+
+  return inputRef;
 }
 
 type InspectorScrubberHandleProps = {

@@ -12,7 +12,7 @@ import {
   InspectorPresetList,
   InspectorScrubberHandle,
   InspectorUnitSelector,
-  preventNumberInputWheelChange,
+  usePreventNumberInputWheelChange,
   type InspectorNumberUnit,
   type InspectorPresetOption,
 } from "./inspector-input-primitives";
@@ -55,6 +55,7 @@ export function InspectorScrubberNumberInput({
   id,
   "aria-label": ariaLabel,
 }: InspectorScrubberNumberInputProps) {
+  const blockWheelOnInput = usePreventNumberInputWheelChange();
   const unitLabel = ariaLabel ? `${ariaLabel} unit` : "Unit";
   const availableUnits = units ?? [unit];
 
@@ -73,6 +74,7 @@ export function InspectorScrubberNumberInput({
         aria-label={ariaLabel}
       />
       <InputGroupInput
+        ref={blockWheelOnInput}
         id={id}
         aria-label={ariaLabel}
         type="number"
@@ -87,7 +89,6 @@ export function InspectorScrubberNumberInput({
           const clamped = applyNumericBounds(event.target.value, min, max);
           if (clamped !== event.target.value) onChange(clamped);
         }}
-        onWheel={preventNumberInputWheelChange}
       />
       <InputGroupAddon align="inline-end">
         <InspectorUnitSelector
@@ -128,6 +129,7 @@ export function InspectorPresetNumberInput({
   id,
   "aria-label": ariaLabel,
 }: InspectorPresetNumberInputProps) {
+  const blockWheelOnInput = usePreventNumberInputWheelChange();
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
   const unitLabel = ariaLabel ? `${ariaLabel} unit` : "Unit";
@@ -170,6 +172,7 @@ export function InspectorPresetNumberInput({
         }
       >
         <InputGroupInput
+          ref={blockWheelOnInput}
           id={id}
           aria-label={ariaLabel}
           type="number"
@@ -186,7 +189,6 @@ export function InspectorPresetNumberInput({
             const clamped = applyNumericBounds(event.target.value, min, max);
             if (clamped !== event.target.value) onChange(clamped);
           }}
-          onWheel={preventNumberInputWheelChange}
           onClick={togglePresets}
         />
       </InspectorAnchorPopover>
