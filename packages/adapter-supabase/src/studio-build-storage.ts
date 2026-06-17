@@ -15,6 +15,7 @@ export type StudioBuildStorage = {
     buildHash: string,
     artifacts: StudioBuildStorageArtifact[],
   ): Promise<void>;
+  readArtifact(storagePath: string): Promise<Uint8Array | null>;
   getSignedPreviewUrl(storagePath: string, ttlSeconds: number): Promise<string>;
 };
 
@@ -55,6 +56,16 @@ export class LocalStudioBuildStorage implements StudioBuildStorage {
     for (const artifact of artifacts) {
       const fileName = path.basename(artifact.path);
       await writeFile(path.join(dir, fileName), artifact.body);
+    }
+  }
+
+  async readArtifact(storagePath: string): Promise<Uint8Array | null> {
+    try {
+      const absolute = path.join(this.rootDir, storagePath);
+      const data = await readFile(absolute);
+      return new Uint8Array(data);
+    } catch {
+      return null;
     }
   }
 
@@ -100,6 +111,17 @@ export class SupabaseStudioBuildStorage implements StudioBuildStorage {
         throw new Error(`Failed to upload ${artifact.path}: ${error.message}`);
       }
     }
+  }
+
+  async readArtifact(storagePath: string): Promise<Uint8Array | null> {
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .download(storagePath);
+    if (error || !data) {
+      return null;
+    }
+    const buffer = await data.arrayBuffer();
+    return new Uint8Array(buffer);
   }
 
   async getSignedPreviewUrl(

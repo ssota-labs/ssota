@@ -8,10 +8,21 @@ describe("studio preview runtime protocol", () => {
     });
   });
 
-  it("parses STUDIO_LOAD_BUNDLE", () => {
+  it("parses STUDIO_LOAD_BUNDLE with absolute URL", () => {
     const message = parseStudioMessage({
       type: "STUDIO_LOAD_BUNDLE",
       jsUrl: "https://example.com/bundle.js",
+      buildId: "abc123",
+    });
+    expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");
+  });
+
+  it("parses STUDIO_LOAD_BUNDLE with same-origin relative URL", () => {
+    const message = parseStudioMessage({
+      type: "STUDIO_LOAD_BUNDLE",
+      jsUrl:
+        "/api/studio/bundle/project/build/bundle.js?access=token",
+      cssUrl: "/api/studio/bundle/project/build/bundle.css?access=token",
       buildId: "abc123",
     });
     expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");

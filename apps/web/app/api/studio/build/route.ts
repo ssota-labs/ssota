@@ -9,6 +9,7 @@ import {
   uiComponentContentSchemaV2,
 } from "@ssota/contracts/catalog";
 import { buildStudioPreview } from "@ssota/studio-build";
+import { studioPreviewBundleUrl } from "@/lib/design-studio/preview-bundle-url";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -144,12 +145,18 @@ export async function POST(request: Request) {
         );
       }
 
-      const [jsUrl, cssUrl] = await Promise.all([
-        storage.getSignedPreviewUrl(paths.jsPath, 3600),
-        buildHashPreview.artifacts.css
-          ? storage.getSignedPreviewUrl(paths.cssPath, 3600)
-          : Promise.resolve(undefined),
-      ]);
+      const jsUrl = studioPreviewBundleUrl(
+        body.projectId,
+        buildHashPreview.buildHash,
+        "bundle.js",
+      );
+      const cssUrl = buildHashPreview.artifacts.css
+        ? studioPreviewBundleUrl(
+            body.projectId,
+            buildHashPreview.buildHash,
+            "bundle.css",
+          )
+        : undefined;
 
       return NextResponse.json({
         buildId: buildHashPreview.buildHash,
@@ -213,12 +220,14 @@ export async function POST(request: Request) {
       await storage.upload(body.projectId, buildResult.buildHash, artifacts);
     }
 
-    const [jsUrl, cssUrl] = await Promise.all([
-      storage.getSignedPreviewUrl(paths.jsPath, 3600),
-      buildResult.artifacts.css
-        ? storage.getSignedPreviewUrl(paths.cssPath, 3600)
-        : Promise.resolve(undefined),
-    ]);
+    const jsUrl = studioPreviewBundleUrl(
+      body.projectId,
+      buildResult.buildHash,
+      "bundle.js",
+    );
+    const cssUrl = buildResult.artifacts.css
+      ? studioPreviewBundleUrl(body.projectId, buildResult.buildHash, "bundle.css")
+      : undefined;
 
     return NextResponse.json({
       buildId: buildResult.buildHash,
