@@ -99,7 +99,7 @@ export function ComponentsPanel({
                       >
                         <span
                           className={cn(
-                            "min-w-0 flex-1 truncate text-sm",
+                            "min-w-0 flex-1 truncate text-xs",
                             active && "font-medium text-foreground",
                           )}
                         >
