@@ -16,6 +16,7 @@ import {
   snapshotKindSchema,
   snapshotSourceSchema,
 } from "./goal-schemas.js";
+import { uiComponentTierSchema } from "./ui-component-schemas.js";
 
 export const docStatusSchema = z.enum([
   "draft",
@@ -85,6 +86,7 @@ export const NODE_TYPES = [
   "api_reference",
   "api_snapshot",
   "ui_component_catalog",
+  "ui_component",
   "design_theme",
 ] as const;
 
@@ -234,6 +236,11 @@ const NODE_PROPERTY_SCHEMAS: Record<
     version: z.string().optional(),
   }),
   ui_component_catalog: loosePropertiesSchema,
+  ui_component: propertiesWithKnownKeys({
+    slug: z.string().min(1),
+    tier: uiComponentTierSchema,
+    draft: z.string().optional(),
+  }),
   design_theme: loosePropertiesSchema,
 };
 
@@ -369,6 +376,11 @@ const NODE_CATALOG_META: Record<
     label: "UI 컴포넌트",
     mutability: "living",
     contentRequired: true,
+  },
+  ui_component: {
+    label: "UI 컴포넌트 인스턴스",
+    mutability: "living",
+    contentRequired: false,
   },
   design_theme: {
     label: "디자인 테마",
