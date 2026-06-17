@@ -116,7 +116,8 @@ export const en = {
   },
   roadmap: {
     productRoadmap: "Product roadmap",
-    description: "Description",
+    productRoadmapDescription:
+      "Long-term direction and strategic criteria for the product — where are we going?",
     planningParent: "Roadmap",
     annualRoadmap: "Annual roadmap",
     quarterRoadmap: "Quarter roadmap",
@@ -418,7 +419,8 @@ export const ko = {
   },
   roadmap: {
     productRoadmap: "프로덕트 로드맵",
-    description: "설명",
+    productRoadmapDescription:
+      "제품·프로젝트의 장기 방향과 전략적 기준 — 우리는 어디로 가는가?",
     planningParent: "로드맵",
     annualRoadmap: "연간 로드맵",
     quarterRoadmap: "분기 로드맵",

@@ -44,11 +44,6 @@ export function ProductRoadmapCard({
 
   const isEmpty = !node.content.trim();
   const docStatus = node.docStatus ?? "draft";
-  const subtitle = node.title.trim();
-  const showDescriptionPlaceholder =
-    !subtitle ||
-    subtitle === t("roadmap.productRoadmap") ||
-    subtitle === "프로덕트 로드맵";
 
   const handleDocStatusChange = (value: DocStatus | null) => {
     if (!value) return;
@@ -80,7 +75,7 @@ export function ProductRoadmapCard({
             {t("roadmap.productRoadmap")}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {showDescriptionPlaceholder ? t("roadmap.description") : subtitle}
+            {t("roadmap.productRoadmapDescription")}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -151,7 +146,7 @@ export function ProductRoadmapCard({
         mode="view"
         title={node.title}
         content={node.content}
-        description={t("roadmap.productRoadmap")}
+        description={t("roadmap.productRoadmapDescription")}
         saveLabel={t("common.save")}
         onOpenChange={setViewOpen}
       />
@@ -160,7 +155,7 @@ export function ProductRoadmapCard({
         mode="edit"
         title={node.title}
         content={node.content}
-        description={t("roadmap.productRoadmap")}
+        description={t("roadmap.productRoadmapDescription")}
         saveLabel={t("common.save")}
         onOpenChange={setEditOpen}
         onSave={async (input) => {
