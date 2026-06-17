@@ -178,8 +178,8 @@ export function StudioShell({
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col">
-      <div className="flex items-center justify-between border-b px-4 py-3">
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="flex items-center justify-between border-b px-4 py-3 md:px-6">
         <div>
           <h1 className="text-lg font-semibold">{component.title}</h1>
           <p className="text-sm text-muted-foreground">

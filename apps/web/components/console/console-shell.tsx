@@ -36,6 +36,8 @@ export function ConsoleShell({
 }: ConsoleShellProps) {
   const pathname = usePathname();
   const isTasksContext = pathname.includes(`/${ctx.projectSlug}/tasks`);
+  const isDesignStudioEditor = /\/design\/ui-components\/[^/]+$/.test(pathname);
+  const isFullBleedContext = isTasksContext || isDesignStudioEditor;
 
   return (
     <ProjectProvider value={ctx}>
@@ -50,7 +52,7 @@ export function ConsoleShell({
           <ConsoleTopBar projects={projects} initiatives={initiatives} />
           <main
             className={
-              isTasksContext
+              isFullBleedContext
                 ? "flex min-h-0 flex-1 flex-col overflow-hidden"
                 : "flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-6"
             }
