@@ -11,6 +11,7 @@ export {
   InspectorPopoverPicker,
   InspectorToggleRow,
   formatInspectorColorAsRgba,
+  formatInspectorColorWithAlpha,
   type InspectorColorOption,
   type InspectorPopoverOption,
   type InspectorToggleOption,
