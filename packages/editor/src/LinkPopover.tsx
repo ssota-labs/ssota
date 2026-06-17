@@ -103,7 +103,7 @@ export function LinkPopover({
       <PopoverContent
         className="ssota-link-popover w-72 p-3"
         align="center"
-        side="bottom"
+        side="top"
         data-testid="ssota-link-popover"
       >
         <form
