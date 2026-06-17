@@ -3,7 +3,7 @@ import { parseUiComponentContent } from "./ui-component-schemas.js";
 
 export function requiresNodeContent(
   nodeType: NodeType,
-  properties: Record<string, unknown>,
+  _properties: Record<string, unknown>,
 ): boolean {
   const entry = NODE_CATALOG[nodeType];
   if (!entry?.contentRequired) {
@@ -18,7 +18,7 @@ export function requiresNodeContent(
 export function parseNodeContent(
   nodeType: NodeType,
   content: string | null,
-  properties: Record<string, unknown> = {},
+  _properties: Record<string, unknown> = {},
 ): unknown {
   switch (nodeType) {
     case "ui_component": {
