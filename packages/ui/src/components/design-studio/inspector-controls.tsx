@@ -28,7 +28,13 @@ import {
   InspectorAnchorPopover,
   useInspectorPresetPopoverToggle,
 } from "./inspector-input-primitives";
-import { InspectorScrubberNumberInput } from "./inspector-number-input";
+import { InspectorColorPickerPanel } from "./inspector-color-picker";
+import {
+  formatInspectorColorWithAlpha,
+  isDirectColorValue,
+  parseInspectorColorAlphaPercent,
+  rgbComponentsToHex,
+} from "./inspector-color-utils";
 
 export type { InspectorColorOption } from "./tailwind-theme-colors";
 
@@ -40,10 +46,6 @@ export type InspectorPopoverOption = {
 
 const inspectorPopoverContentClass =
   "cn-popover-menu w-[var(--anchor-width)]";
-
-/** Native color input — circle swatch only, no text-input chrome (cn-input border box). */
-const inspectorNativeColorPickerClass =
-  "absolute inset-0 size-full shrink-0 cursor-pointer appearance-none overflow-hidden rounded-full border-0 bg-transparent p-0 opacity-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:rounded-full [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:size-full [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none";
 
 const inspectorColorCheckerboardClass =
   "bg-[repeating-conic-gradient(var(--border)_0%_25%,transparent_0%_50%)] bg-size-[8px_8px]";
@@ -178,12 +180,6 @@ function ColorSwatch({
       )}
     />
   );
-}
-
-function rgbComponentsToHex(r: number, g: number, b: number): string {
-  const channel = (value: number) =>
-    Math.max(0, Math.min(255, value)).toString(16).padStart(2, "0");
-  return `#${channel(r)}${channel(g)}${channel(b)}`;
 }
 
 function rgbStringToHex(color: string): string | null {
@@ -359,14 +355,6 @@ function readElementBackgroundHex(element: HTMLElement | null): string | null {
   return computedBackgroundColorToHex(computed);
 }
 
-function syncNativeColorInputValue(
-  input: HTMLInputElement | null,
-  hexValue: string,
-) {
-  if (!input || input.value === hexValue) return;
-  input.value = hexValue;
-}
-
 function useColorPickerHex(
   value: string,
   presets: InspectorColorOption[],
@@ -388,64 +376,7 @@ function useColorPickerHex(
   return hex;
 }
 
-function formatAlphaDecimal(alpha: number): string {
-  const clamped = Math.max(0, Math.min(1, alpha));
-  const rounded = Math.round(clamped * 1000) / 1000;
-  return String(rounded);
-}
-
-function parseInspectorColorAlphaPercent(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed || !isDirectColorValue(trimmed)) return "100";
-
-  if (/^#[0-9a-fA-F]{8}$/.test(trimmed)) {
-    return String(
-      Math.round((Number.parseInt(trimmed.slice(7, 9), 16) / 255) * 100),
-    );
-  }
-
-  if (/^#[0-9a-fA-F]{4}$/.test(trimmed)) {
-    const channel = trimmed[4]!;
-    return String(
-      Math.round((Number.parseInt(channel + channel, 16) / 255) * 100),
-    );
-  }
-
-  const rgbaComma = trimmed.match(
-    /^rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/i,
-  );
-  if (rgbaComma) {
-    return String(Math.round(Number(rgbaComma[1]) * 100));
-  }
-
-  const rgbaSlash = trimmed.match(
-    /^rgba?\(\s*[\d.]+\s+[\d.]+\s+[\d.]+\s*\/\s*([\d.]+%?)\s*\)/i,
-  );
-  if (rgbaSlash) {
-    const raw = rgbaSlash[1]!;
-    if (raw.endsWith("%")) return raw.slice(0, -1);
-    return String(Math.round(Number(raw) * 100));
-  }
-
-  return "100";
-}
-
-export function formatInspectorColorWithAlpha(
-  hex: string,
-  alphaPercent: string,
-): string {
-  const percent = Number(alphaPercent);
-  const alpha = Number.isFinite(percent) ? percent / 100 : 1;
-  return hexToRgba(hex, formatAlphaDecimal(alpha));
-}
-
-function hexToRgba(hex: string, alpha = "1"): string {
-  const normalized = hex.replace("#", "");
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
+export { formatInspectorColorWithAlpha } from "./inspector-color-utils";
 
 export function formatInspectorColorAsRgba(
   value: string,
@@ -474,17 +405,6 @@ function resolveColorOption(
   const trimmed = value.trim();
   if (!trimmed) return undefined;
   return options.find((option) => option.value === trimmed);
-}
-
-function isDirectColorValue(value: string): boolean {
-  const trimmed = value.trim();
-  return (
-    trimmed.startsWith("#") ||
-    /^rgba?\(/i.test(trimmed) ||
-    /^hsla?\(/i.test(trimmed) ||
-    /^oklch\(/i.test(trimmed) ||
-    /^lab\(/i.test(trimmed)
-  );
 }
 
 type InspectorColorListProps = {
@@ -607,14 +527,6 @@ export function InspectorColorInput({
   );
 }
 
-function handleNativeColorChange(
-  hex: string,
-  alphaPercent: string,
-  onChange: (value: string) => void,
-) {
-  onChange(formatInspectorColorWithAlpha(hex, alphaPercent));
-}
-
 function resolveInspectorColorPreview(
   value: string,
   presets: InspectorColorOption[],
@@ -648,8 +560,9 @@ export function InspectorColorField({
   "aria-label": ariaLabel,
 }: InspectorColorFieldProps) {
   const [presetOpen, setPresetOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const presetAnchorRef = useRef<HTMLDivElement>(null);
-  const colorInputRef = useRef<HTMLInputElement>(null);
+  const swatchAnchorRef = useRef<HTMLButtonElement>(null);
   const hexValue = useColorPickerHex(value, presets, null);
   const alphaPercent = parseInspectorColorAlphaPercent(value);
   const previewColor = resolveInspectorColorPreview(value, presets);
@@ -659,53 +572,44 @@ export function InspectorColorField({
     setPresetOpen,
   );
 
-  useLayoutEffect(() => {
-    const input = colorInputRef.current;
-    if (!input || document.activeElement === input) return;
-    syncNativeColorInputValue(input, hexValue);
-  }, [hexValue]);
-
-  const handleColorInputOpen = () => {
-    syncNativeColorInputValue(colorInputRef.current, hexValue);
-  };
-
-  const handleOpacityChange = (nextPercent: string) => {
-    onChange(formatInspectorColorWithAlpha(hexValue, nextPercent));
-  };
-
   return (
-    <div className={cn("flex flex-col gap-1.5", className)}>
-      <div className="flex items-center gap-1.5">
-        <div
+    <div className={cn("flex items-center gap-1.5", className)}>
+      <Popover open={pickerOpen} onOpenChange={setPickerOpen} modal={false}>
+        <button
+          ref={swatchAnchorRef}
+          type="button"
+          aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
+          aria-expanded={pickerOpen}
+          aria-haspopup="dialog"
           className={cn(
             "relative size-9 shrink-0 overflow-hidden rounded-full border border-border",
             inspectorColorCheckerboardClass,
           )}
+          onClick={() => setPickerOpen((current) => !current)}
         >
           <span
             aria-hidden
             className="absolute inset-0"
             style={{ backgroundColor: previewColor }}
           />
-          <input
-            ref={colorInputRef}
-            type="color"
-            aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
-            className={inspectorNativeColorPickerClass}
-            defaultValue={hexValue}
-            onPointerDown={handleColorInputOpen}
-            onFocus={handleColorInputOpen}
-            onChange={(event) =>
-              handleNativeColorChange(
-                event.target.value,
-                alphaPercent,
-                onChange,
-              )
-            }
+        </button>
+        <PopoverContent
+          anchor={swatchAnchorRef}
+          side="left"
+          align="start"
+          className="w-auto p-0"
+          initialFocus={false}
+          finalFocus={false}
+        >
+          <InspectorColorPickerPanel
+            hex={hexValue}
+            alphaPercent={alphaPercent}
+            onChange={onChange}
           />
-        </div>
+        </PopoverContent>
+      </Popover>
 
-        <InspectorAnchorPopover
+      <InspectorAnchorPopover
           open={presetOpen}
           onOpenChange={setPresetOpen}
           anchorRef={presetAnchorRef}
@@ -734,17 +638,6 @@ export function InspectorColorField({
             />
           </InputGroup>
         </InspectorAnchorPopover>
-      </div>
-
-      <InspectorScrubberNumberInput
-        aria-label={ariaLabel ? `${ariaLabel} opacity` : "Color opacity"}
-        value={alphaPercent}
-        unit="%"
-        min={0}
-        max={100}
-        placeholder="100"
-        onChange={handleOpacityChange}
-      />
     </div>
   );
 }

@@ -15,6 +15,7 @@ import {
   TextUnderlineIcon,
 } from "@phosphor-icons/react";
 import {
+  InspectorColorField,
   InspectorColorInput,
   InspectorField,
   InspectorFontFamilyRow,
@@ -23,6 +24,7 @@ import {
   InspectorScrubberNumberInput,
   InspectorSection,
   InspectorToggleRow,
+  BACKGROUND_THEME_COLOR_OPTIONS,
   TEXT_THEME_COLOR_OPTIONS,
 } from "@/components/design-studio";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -311,6 +313,25 @@ export const ColorInput: Story = {
             value={value}
             placeholder="foreground"
             presets={TEXT_THEME_COLOR_OPTIONS}
+            onChange={setValue}
+          />
+        </InspectorField>
+      </div>
+    );
+  },
+};
+
+export const ColorField: Story = {
+  render: () => {
+    const [value, setValue] = useState("rgba(37, 99, 235, 0.72)");
+    return (
+      <div className="w-56">
+        <InspectorField label="Fill">
+          <InspectorColorField
+            aria-label="Fill color"
+            value={value}
+            placeholder="Default"
+            presets={BACKGROUND_THEME_COLOR_OPTIONS}
             onChange={setValue}
           />
         </InspectorField>
