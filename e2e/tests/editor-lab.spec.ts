@@ -164,6 +164,17 @@ test.describe("Editor Lab", () => {
       await expect(toolbar.getByRole("button", { name: "Code" })).toBeVisible();
     });
 
+    test("does not show text alignment controls", async ({ page }) => {
+      const surface = await editorSurface(page);
+      await surface.getByText("inline code").click({ clickCount: 3 });
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+      await expect(toolbar).toBeVisible();
+      await expect(toolbar.getByRole("button", { name: "Align left" })).toHaveCount(0);
+      await expect(toolbar.getByRole("button", { name: "Align center" })).toHaveCount(0);
+      await expect(toolbar.getByRole("button", { name: "Align right" })).toHaveCount(0);
+    });
+
     test("applies bold and italic together", async ({ page }) => {
       const surface = await typeAtDocumentEnd(page, "combo marks");
       await surface.getByText("combo marks").click({ clickCount: 3 });

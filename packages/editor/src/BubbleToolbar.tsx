@@ -9,9 +9,6 @@ import {
   ListBulletsIcon,
   MinusIcon,
   RowsIcon,
-  TextAlignCenterIcon,
-  TextAlignLeftIcon,
-  TextAlignRightIcon,
   TextBIcon,
   TextItalicIcon,
   TextStrikethroughIcon,
@@ -87,28 +84,6 @@ export function BubbleToolbar({ editor }: { editor: Editor }) {
         }
       >
         <HighlighterCircleIcon className="size-4" />
-      </ToolbarButton>
-      <ToolbarDivider />
-      <ToolbarButton
-        label="Align left"
-        active={editor.isActive({ textAlign: "left" })}
-        onClick={() => editor.chain().focus().setTextAlign("left").run()}
-      >
-        <TextAlignLeftIcon className="size-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Align center"
-        active={editor.isActive({ textAlign: "center" })}
-        onClick={() => editor.chain().focus().setTextAlign("center").run()}
-      >
-        <TextAlignCenterIcon className="size-4" />
-      </ToolbarButton>
-      <ToolbarButton
-        label="Align right"
-        active={editor.isActive({ textAlign: "right" })}
-        onClick={() => editor.chain().focus().setTextAlign("right").run()}
-      >
-        <TextAlignRightIcon className="size-4" />
       </ToolbarButton>
       {editor.isActive("table") ? (
         <>
