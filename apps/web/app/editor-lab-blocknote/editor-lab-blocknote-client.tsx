@@ -1,10 +1,26 @@
 "use client";
 
 import type { Block, PartialBlock } from "@blocknote/core";
+import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import { SsotaBlockNoteEditor } from "@/components/editor/blocknote-editor";
 import { createSsotaEditorHostProps } from "@/lib/editor/host-props";
 import "./blocknote-lab.css";
+
+const SsotaBlockNoteEditor = dynamic(
+  () =>
+    import("@/components/editor/blocknote-editor").then(
+      (module) => module.SsotaBlockNoteEditor,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="min-h-48 animate-pulse rounded-md bg-muted/40"
+        data-testid="blocknote-editor-shell"
+      />
+    ),
+  },
+);
 
 const SAMPLE: PartialBlock[] = [
   {
