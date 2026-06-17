@@ -16,6 +16,8 @@
     "./components/page-patterns/*": "./src/components/page-patterns/*",
     "./components/console": "./src/components/console/index.ts",
     "./components/console/*": "./src/components/console/*",
+    "./components/design-studio": "./src/components/design-studio/index.ts",
+    "./components/design-studio/*": "./src/components/design-studio/*",
     "./components/theme-provider": "./src/components/theme-provider.tsx"
   },
   "scripts": {

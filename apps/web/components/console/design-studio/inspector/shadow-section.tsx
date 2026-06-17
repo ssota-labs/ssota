@@ -16,7 +16,7 @@ import {
   InspectorField,
   InspectorGrid,
   InspectorSection,
-} from "./inspector-section";
+} from "@ssota/ui/components/design-studio";
 
 const SHADOW_PRESET_OPTIONS: Array<{ value: ShadowPreset; label: string }> = [
   { value: "none", label: "None" },

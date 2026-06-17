@@ -26,6 +26,7 @@
     "@ssota/adapter-supabase": "workspace:*",
     "@ssota/contracts": "workspace:*",
     "@ssota/core": "workspace:*",
+    "@ssota/editor": "workspace:*",
     "@ssota/studio-build": "workspace:*",
     "@ssota/studio-preview-runtime": "workspace:*",
     "@ssota/studio-renderer": "workspace:*",

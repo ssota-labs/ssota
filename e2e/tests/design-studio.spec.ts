@@ -27,8 +27,11 @@ test.describe("design studio", () => {
     await expect(page.getByRole("tab", { name: "Components" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Layers" })).toBeVisible();
     await expect(page.getByTestId("studio-component-demo-button")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible();
-    await expect(page.getByText("Select a layer in the preview")).toBeVisible();
+    await expect(
+      page.getByText(
+        "Select a layer in the preview or layers panel to edit styles.",
+      ),
+    ).toBeVisible();
     await expect(page.getByRole("button", { name: "Deploy" })).toBeVisible();
   });
 
@@ -45,7 +48,7 @@ test.describe("design studio", () => {
       /\/design\/ui-components\/[0-9a-f-]+$/,
       { timeout: 15_000 },
     );
-    await expect(page.getByRole("heading", { name: "Demo Card" })).toBeVisible({
+    await expect(page.getByTestId("studio-component-demo-card")).toBeVisible({
       timeout: 15_000,
     });
 
@@ -57,7 +60,7 @@ test.describe("design studio", () => {
 
   test("editor updates styles via inspector controls", async ({ page }) => {
     await gotoProject(page, "design/ui-components");
-    await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible({
+    await expect(page.getByTestId("design-studio-shell")).toBeVisible({
       timeout: 15_000,
     });
 
@@ -72,7 +75,7 @@ test.describe("design studio", () => {
     await page.waitForTimeout(500);
 
     await page.reload();
-    await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible({
+    await expect(page.getByTestId("design-studio-shell")).toBeVisible({
       timeout: 15_000,
     });
     await expect(preview.locator("[data-studio-id]").first()).toBeVisible({

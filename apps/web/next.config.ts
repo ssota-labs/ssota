@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
     "@ssota/core",
     "@ssota/contracts",
     "@ssota/adapter-supabase",
+    "@ssota/editor",
     "@ssota/ui",
     "@ssota/studio-preview-runtime",
     "@ssota/studio-renderer",
