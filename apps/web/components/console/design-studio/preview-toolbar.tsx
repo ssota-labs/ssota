@@ -9,12 +9,18 @@ type PreviewToolbarProps = {
   mode: StudioInteractionMode;
   onModeChange: (mode: StudioInteractionMode) => void;
   disabled?: boolean;
+  onDeploy?: () => void;
+  deployDisabled?: boolean;
+  deployPending?: boolean;
 };
 
 export function PreviewToolbar({
   mode,
   onModeChange,
   disabled = false,
+  onDeploy,
+  deployDisabled = false,
+  deployPending = false,
 }: PreviewToolbarProps) {
   return (
     <div className="flex shrink-0 items-center gap-1 border-b bg-muted/30 px-2 py-1.5">
@@ -46,7 +52,7 @@ export function PreviewToolbar({
       </Button>
       <span
         className={cn(
-          "ml-2 text-xs text-muted-foreground",
+          "min-w-0 flex-1 truncate text-xs text-muted-foreground",
           disabled && "opacity-50",
         )}
       >
@@ -54,6 +60,17 @@ export function PreviewToolbar({
           ? "Click elements in the preview to inspect"
           : "Live preview — selection disabled"}
       </span>
+      {onDeploy ? (
+        <Button
+          type="button"
+          size="sm"
+          className="shrink-0"
+          disabled={deployDisabled || deployPending}
+          onClick={onDeploy}
+        >
+          {deployPending ? "Deploying…" : "Deploy"}
+        </Button>
+      ) : null}
     </div>
   );
 }
