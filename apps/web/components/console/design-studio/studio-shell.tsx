@@ -5,7 +5,9 @@ import type { GraphNode } from "@ssota/core";
 import type {
   UiComponentContentV2,
   UiComponentDocument,
+  DesignThemeTokenMap,
 } from "@ssota/contracts/catalog";
+import { ThemeTokensProvider } from "@ssota/ui/components/design-studio";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -49,7 +51,8 @@ type StudioShellProps = {
   component: GraphNode | null;
   components: UiComponentListRow[];
   studioBasePath: string;
-  themeContent: string;
+  themeTokens: DesignThemeTokenMap;
+  themeCss: string;
   previewBasePath: string;
   resolvedComponents: ResolvedComponentMap;
   onDeploy: (input: {
@@ -68,7 +71,8 @@ export function StudioShell({
   component,
   components,
   studioBasePath,
-  themeContent,
+  themeTokens,
+  themeCss,
   previewBasePath,
   resolvedComponents,
   onDeploy,
@@ -210,8 +214,8 @@ export function StudioShell({
 
   useEffect(() => {
     if (!component || !ready) return;
-    syncTheme(themeContent);
-  }, [component, ready, themeContent, syncTheme]);
+    syncTheme(themeCss);
+  }, [component, ready, themeCss, syncTheme]);
 
   useEffect(() => {
     if (!component || !ready) return;
@@ -230,7 +234,7 @@ export function StudioShell({
               projectId,
               properties: component.properties,
               content: JSON.stringify(contentV2),
-              themeCss: themeContent,
+              themeCss: themeCss,
             }),
           });
           if (!response.ok) return;
@@ -250,7 +254,7 @@ export function StudioShell({
       })();
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [component, contentV2, isSource, projectId, themeContent]);
+  }, [component, contentV2, isSource, projectId, themeCss]);
 
   useEffect(() => {
     if (!component || !ready || !isSource || !buildPreview) return;
@@ -332,7 +336,7 @@ export function StudioShell({
         nodeId: component.id,
         document: isSource ? undefined : document,
         contentV2: isSource ? contentV2 : undefined,
-        themeCss: themeContent,
+        themeCss: themeCss,
         revalidatePath: previewBasePath.replace(/^\//, ""),
       });
       if (storageKey) {
@@ -410,27 +414,29 @@ export function StudioShell({
           minSize="18%"
           maxSize="35%"
         >
-          {component ? (
-            isSource ? (
-              <SourceInspectorPanel
-                selectedId={selectedId}
-                selectedSourceRef={selectedSourceRef}
-                className={selectedSourceClassName}
-                onClassNameChange={handleSourceClassNameChange}
-                readOnly={Boolean(selectedId && !selectedSourceRef)}
-              />
+          <ThemeTokensProvider tokens={themeTokens}>
+            {component ? (
+              isSource ? (
+                <SourceInspectorPanel
+                  selectedId={selectedId}
+                  selectedSourceRef={selectedSourceRef}
+                  className={selectedSourceClassName}
+                  onClassNameChange={handleSourceClassNameChange}
+                  readOnly={Boolean(selectedId && !selectedSourceRef)}
+                />
+              ) : (
+                <InspectorPanel
+                  root={document.root}
+                  selectedId={selectedId}
+                  onPatch={handlePatch}
+                />
+              )
             ) : (
-              <InspectorPanel
-                root={document.root}
-                selectedId={selectedId}
-                onPatch={handlePatch}
-              />
-            )
-          ) : (
-            <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
-              Inspector appears when a component is open.
-            </div>
-          )}
+              <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
+                Inspector appears when a component is open.
+              </div>
+            )}
+          </ThemeTokensProvider>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

@@ -27,6 +27,14 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { InspectorColorOption } from "./tailwind-theme-colors";
+import { resolveSemanticColorValue } from "@ssota/contracts/catalog";
+import {
+  colorValueToHex,
+  hexFromScopedCssVar,
+  hexToRgba,
+  normalizeHexColor,
+} from "./color-resolve";
+import { useThemeTokensContext } from "./theme-tokens-context";
 
 export type { InspectorColorOption } from "./tailwind-theme-colors";
 
@@ -229,27 +237,48 @@ function ColorSwatch({
   );
 }
 
-function toHexColor(color: string): string {
-  if (color.startsWith("#")) {
-    return color.length === 4
-      ? `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`
-      : color.slice(0, 7);
-  }
-
-  const rgba = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!rgba) return "#000000";
-  const r = Number(rgba[1]).toString(16).padStart(2, "0");
-  const g = Number(rgba[2]).toString(16).padStart(2, "0");
-  const b = Number(rgba[3]).toString(16).padStart(2, "0");
-  return `#${r}${g}${b}`;
+function toHexColor(color: string, scopeElement?: HTMLElement | null): string {
+  return colorValueToHex(color, scopeElement);
 }
 
-function hexToRgba(hex: string, alpha = "1"): string {
-  const normalized = hex.replace("#", "");
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+function resolveInspectorHexValue(
+  value: string,
+  presets: InspectorColorOption[],
+  scopeElement?: HTMLElement | null,
+  themeTokens?: Record<string, string> | null,
+): string {
+  const preset = resolveColorOption(value, presets);
+  if (preset?.cssVar && scopeElement) {
+    const scopedHex = hexFromScopedCssVar(preset.cssVar, scopeElement);
+    if (scopedHex) return scopedHex;
+  }
+
+  if (preset?.cssVar && themeTokens) {
+    const resolved = themeTokens[preset.cssVar];
+    if (resolved) {
+      return colorValueToHex(resolved, scopeElement);
+    }
+  }
+
+  if (preset?.cssVar) {
+    const resolved = resolveSemanticColorValue(
+      value,
+      themeTokens ?? {},
+    );
+    if (resolved) {
+      return colorValueToHex(resolved, scopeElement);
+    }
+  }
+
+  return toHexColor(value, scopeElement);
+}
+
+function isSemanticPresetValue(
+  value: string,
+  presets: InspectorColorOption[],
+): boolean {
+  const preset = resolveColorOption(value, presets);
+  return Boolean(preset?.cssVar);
 }
 
 function resolveColorOption(
@@ -732,8 +761,17 @@ export function InspectorColorField({
   const [presetOpen, setPresetOpen] = useState(false);
   const pickerAnchorRef = useRef<HTMLDivElement>(null);
   const presetAnchorRef = useRef<HTMLDivElement>(null);
+  const themeContext = useThemeTokensContext();
+  const scopeElement = themeContext?.scopeElement ?? null;
+  const themeTokens = themeContext?.tokens ?? null;
   const swatch = swatchStyleForValue(value, presets);
-  const hexValue = toHexColor(value);
+  const hexValue = resolveInspectorHexValue(
+    value,
+    presets,
+    scopeElement,
+    themeTokens,
+  );
+  const semanticPreset = isSemanticPresetValue(value, presets);
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
@@ -750,15 +788,17 @@ export function InspectorColorField({
               aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
               className="h-8 w-full cursor-pointer rounded-md border bg-transparent"
               value={hexValue}
+              readOnly={semanticPreset}
               onChange={(event) => {
+                if (semanticPreset) return;
                 const alphaMatch = value.match(
                   /rgba?\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)/,
                 );
                 const alpha = alphaMatch ? alphaMatch[1]! : "1";
                 onChange(
                   alpha === "1"
-                    ? event.target.value
-                    : hexToRgba(event.target.value, alpha),
+                    ? normalizeHexColor(event.target.value)
+                    : hexToRgba(normalizeHexColor(event.target.value), alpha),
                 );
               }}
             />
