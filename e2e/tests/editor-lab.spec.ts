@@ -218,6 +218,29 @@ test.describe("Editor Lab", () => {
     });
   });
 
+  test.describe("quote shortcut", () => {
+    test('creates blockquote when typing "" at line start', async ({ page }) => {
+      const surface = await focusEditorEnd(page);
+
+      await page.keyboard.type('""');
+      const quote = surface.locator("blockquote").last();
+      await expect(quote).toBeVisible();
+      await expect(quote).not.toContainText('""');
+    });
+
+    test("typed quote content stays inside blockquote", async ({ page }) => {
+      const surface = await focusEditorEnd(page);
+
+      await page.keyboard.press('"');
+      await page.keyboard.press('"');
+      const quote = surface.locator("blockquote").last();
+      await expect(quote).toBeVisible();
+
+      await page.keyboard.type("Quoted text");
+      await expect(quote).toContainText("Quoted text");
+    });
+  });
+
   test.describe("bubble toolbar", () => {
     test("appears on text selection", async ({ page }) => {
       const surface = await editorSurface(page);

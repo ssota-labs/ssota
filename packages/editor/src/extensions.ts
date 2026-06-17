@@ -18,6 +18,7 @@ import { CalloutTitle } from "./extensions/CalloutTitle";
 import { EmojiExtension } from "./extensions/EmojiExtension";
 import { createMentionExtension } from "./extensions/MentionExtension";
 import { NestedListItem } from "./extensions/NestedListItem";
+import { QuoteShortcut } from "./extensions/QuoteShortcut";
 import { Toggle } from "./extensions/Toggle";
 
 export type { SsotaExtensionOptions } from "./types";
@@ -63,6 +64,7 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
     Callout,
     CalloutTitle,
     Toggle,
+    QuoteShortcut,
     EmojiExtension,
     Placeholder.configure({
       placeholder: ({ node }) => {
