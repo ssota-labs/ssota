@@ -113,24 +113,28 @@ export function InspectorColorPickerPanel({
   className,
 }: InspectorColorPickerPanelProps) {
   const [state, setState] = useState(() => stateFromHex(hex, alphaPercent));
+  const stateRef = useRef(state);
   const satRef = useRef<HTMLDivElement>(null);
   const hueRef = useRef<HTMLDivElement>(null);
   const alphaRef = useRef<HTMLDivElement>(null);
   const dragTargetRef = useRef<"sat" | "hue" | "alpha" | null>(null);
 
+  stateRef.current = state;
+
   useEffect(() => {
-    setState(stateFromHex(hex, alphaPercent));
+    const next = stateFromHex(hex, alphaPercent);
+    stateRef.current = next;
+    setState(next);
   }, [hex, alphaPercent]);
 
   const emitChange = useCallback(
     (updater: (current: InspectorColorPickerState) => InspectorColorPickerState) => {
-      setState((current) => {
-        const next = updater(current);
-        onChange(
-          formatInspectorColorWithAlpha(hexFromState(next), next.alphaPercent),
-        );
-        return next;
-      });
+      const next = updater(stateRef.current);
+      stateRef.current = next;
+      setState(next);
+      onChange(
+        formatInspectorColorWithAlpha(hexFromState(next), next.alphaPercent),
+      );
     },
     [onChange],
   );
