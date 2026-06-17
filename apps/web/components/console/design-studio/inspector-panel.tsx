@@ -57,7 +57,7 @@ export function InspectorPanel({
         <LayerNodeIcon node={selected} className="text-foreground" />
         <span className="text-sm font-medium">{selectedTitle(selected)}</span>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div className="min-h-0 flex-1 overflow-auto [scrollbar-gutter:stable]">
         <div className="space-y-4 px-4 pt-4 pb-3">
           <div className="space-y-2">
             <Label htmlFor="studio-node-id">Node ID</Label>

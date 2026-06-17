@@ -77,7 +77,7 @@ export function InspectorPopoverPicker({
   const selected = options.find((option) => option.value === value);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger
         aria-label={ariaLabel}
         className={cn(
@@ -101,7 +101,12 @@ export function InspectorPopoverPicker({
         )}
         <CaretDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
       </PopoverTrigger>
-      <PopoverContent align="start" className={inspectorPopoverContentClass}>
+      <PopoverContent
+        align="start"
+        className={inspectorPopoverContentClass}
+        initialFocus={false}
+        finalFocus={false}
+      >
         <InspectorPopoverList
           options={options}
           value={value}
@@ -302,6 +307,7 @@ function InspectorAnchorPopover({
   anchorRef,
   children,
   content,
+  side = "bottom",
 }: InspectorAnchorPopoverProps) {
   return (
     <Popover open={open} onOpenChange={onOpenChange} modal={false}>
@@ -311,6 +317,7 @@ function InspectorAnchorPopover({
       <PopoverContent
         anchor={anchorRef}
         align="start"
+        side={side}
         className={inspectorPopoverContentClass}
         initialFocus={false}
         finalFocus={false}
@@ -327,6 +334,7 @@ type InspectorAnchorPopoverProps = {
   anchorRef: RefObject<HTMLDivElement | null>;
   children: ReactNode;
   content: ReactNode;
+  side?: "top" | "bottom" | "left" | "right";
 };
 
 type InspectorUnitSelectorProps = {
@@ -354,7 +362,7 @@ function InspectorUnitSelector({
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger
         nativeButton
         aria-label={ariaLabel ?? "Unit"}
@@ -486,6 +494,7 @@ type InspectorColorInputProps = {
   presets: InspectorColorOption[];
   onChange: (value: string) => void;
   className?: string;
+  id?: string;
   "aria-label"?: string;
 };
 
@@ -495,19 +504,40 @@ export function InspectorColorInput({
   presets,
   onChange,
   className,
+  id,
   "aria-label": ariaLabel,
 }: InspectorColorInputProps) {
   const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
   const selected = resolveColorOption(value, presets);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
+    <InspectorAnchorPopover
+      open={open}
+      onOpenChange={setOpen}
+      anchorRef={anchorRef}
+      side="top"
+      content={
+        <InspectorColorList
+          options={presets}
+          value={value}
+          onSelect={(nextValue) => {
+            onChange(nextValue);
+            setOpen(false);
+          }}
+        />
+      }
+    >
+      <button
+        id={id}
+        type="button"
         aria-label={ariaLabel}
+        aria-expanded={open}
         className={cn(
-          "cn-input flex h-9 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none hover:bg-muted/40",
+          "cn-input flex h-9 w-full min-w-0 shrink-0 items-center gap-2 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none hover:bg-muted/40",
           className,
         )}
+        onClick={() => setOpen((current) => !current)}
       >
         {selected ? (
           <>
@@ -528,18 +558,8 @@ export function InspectorColorInput({
           </>
         )}
         <CaretDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
-      </PopoverTrigger>
-      <PopoverContent align="start" className={inspectorPopoverContentClass}>
-        <InspectorColorList
-          options={presets}
-          value={value}
-          onSelect={(nextValue) => {
-            onChange(nextValue);
-            setOpen(false);
-          }}
-        />
-      </PopoverContent>
-    </Popover>
+      </button>
+    </InspectorAnchorPopover>
   );
 }
 
