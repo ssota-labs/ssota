@@ -734,6 +734,8 @@ export function InspectorColorField({
   const presetAnchorRef = useRef<HTMLDivElement>(null);
   const swatch = swatchStyleForValue(value, presets);
   const hexValue = toHexColor(value);
+  const selected = resolveColorOption(value, presets);
+  const displayLabel = selected?.label ?? (value.trim() || placeholder);
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
@@ -817,20 +819,26 @@ export function InspectorColorField({
           />
         }
       >
-        <InputGroup className="min-w-0 flex-1">
-          <InputGroupAddon align="inline-start">
-            <InspectorPresetTrigger
-              aria-label={ariaLabel ? `${ariaLabel} presets` : "Color presets"}
-            />
-          </InputGroupAddon>
-          <InputGroupInput
-            id={id}
-            aria-label={ariaLabel}
-            value={value}
-            placeholder={placeholder}
-            onChange={(event) => onChange(event.target.value)}
-          />
-        </InputGroup>
+        <button
+          id={id}
+          type="button"
+          aria-label={ariaLabel}
+          aria-expanded={presetOpen}
+          className="cn-input flex h-9 w-full min-w-0 flex-1 items-center gap-2 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none hover:bg-muted/40"
+          onClick={() => setPresetOpen((current) => !current)}
+        >
+          <CaretDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+          <span
+            className={cn(
+              "min-w-0 flex-1 truncate text-left text-xs",
+              selected || value.trim()
+                ? "text-foreground"
+                : "text-muted-foreground",
+            )}
+          >
+            {displayLabel}
+          </span>
+        </button>
       </InspectorAnchorPopover>
     </div>
   );
