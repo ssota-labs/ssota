@@ -3,10 +3,14 @@
 import { Input } from "@ssota/ui/components/ui/input";
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
+  formatColorToken,
   parseClassName,
   serializeClassName,
+  stripColorToken,
 } from "@/lib/design-studio/tailwind-classname";
 import {
+  BACKGROUND_THEME_COLOR_OPTIONS,
+  InspectorColorField,
   InspectorField,
   InspectorGrid,
   InspectorSection,
@@ -69,14 +73,14 @@ export function ClassnameInspector({
 
       <InspectorSection title="Fill">
         <InspectorField label="Background">
-          <Input
-            value={parsed.background?.replace(/^bg-/, "") ?? ""}
+          <InspectorColorField
+            aria-label="Background"
+            value={stripColorToken(parsed.background, "bg")}
             placeholder="transparent"
-            onChange={(event) =>
+            presets={BACKGROUND_THEME_COLOR_OPTIONS}
+            onChange={(input) =>
               update({
-                background: event.target.value
-                  ? `bg-${event.target.value}`
-                  : undefined,
+                background: formatColorToken("bg", input),
               })
             }
           />

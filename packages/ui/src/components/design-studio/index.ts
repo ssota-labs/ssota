@@ -25,6 +25,7 @@ export {
   type InspectorScrubberNumberInputProps,
 } from "./inspector-number-input";
 export {
+  BACKGROUND_THEME_COLOR_OPTIONS,
   BORDER_THEME_COLOR_OPTIONS,
   TEXT_THEME_COLOR_OPTIONS,
 } from "./tailwind-theme-colors";
