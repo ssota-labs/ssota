@@ -1,5 +1,5 @@
-import type { StudioMessage } from "./protocol.js";
-import { parseStudioMessage } from "./protocol.js";
+import type { StudioMessage } from "./protocol";
+import { parseStudioMessage } from "./protocol";
 
 export type StudioMessageHandler = (message: StudioMessage) => void;
 

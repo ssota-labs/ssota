@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseStudioMessage } from "./protocol.js";
+import { parseStudioMessage } from "./protocol";
 
 describe("studio protocol", () => {
   it("parses STUDIO_READY", () => {

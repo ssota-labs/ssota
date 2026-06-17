@@ -1,4 +1,4 @@
-import type { StudioPatch } from "./protocol.js";
+import type { StudioPatch } from "./protocol";
 
 export function applyStudioPatch(nodeId: string, patch: StudioPatch): boolean {
   const element = document.querySelector(`[data-studio-id="${nodeId}"]`);
