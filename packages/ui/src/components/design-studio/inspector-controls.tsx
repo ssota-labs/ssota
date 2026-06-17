@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   CaretDownIcon,
   CheckIcon,
@@ -175,6 +175,15 @@ function ColorSwatch({
   );
 }
 
+function rgbStringToHex(color: string): string | null {
+  const rgba = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!rgba) return null;
+  const r = Number(rgba[1]).toString(16).padStart(2, "0");
+  const g = Number(rgba[2]).toString(16).padStart(2, "0");
+  const b = Number(rgba[3]).toString(16).padStart(2, "0");
+  return `#${r}${g}${b}`;
+}
+
 function toHexColor(color: string): string {
   if (color.startsWith("#")) {
     return color.length === 4
@@ -182,12 +191,61 @@ function toHexColor(color: string): string {
       : color.slice(0, 7);
   }
 
-  const rgba = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!rgba) return "#000000";
-  const r = Number(rgba[1]).toString(16).padStart(2, "0");
-  const g = Number(rgba[2]).toString(16).padStart(2, "0");
-  const b = Number(rgba[3]).toString(16).padStart(2, "0");
-  return `#${r}${g}${b}`;
+  return rgbStringToHex(color) ?? "#000000";
+}
+
+function resolveColorPickerHex(
+  value: string,
+  presets: InspectorColorOption[],
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "#000000";
+  if (trimmed.startsWith("#") || /^rgba?\(/i.test(trimmed)) {
+    return toHexColor(trimmed);
+  }
+
+  const option = resolveColorOption(trimmed, presets);
+  if (!option || typeof document === "undefined") {
+    return toHexColor(trimmed);
+  }
+
+  const probe = document.createElement("div");
+  probe.style.position = "absolute";
+  probe.style.visibility = "hidden";
+  probe.style.pointerEvents = "none";
+  document.body.appendChild(probe);
+
+  try {
+    if (option.cssVar) {
+      probe.style.color = `var(${option.cssVar})`;
+      const hex = rgbStringToHex(getComputedStyle(probe).color);
+      if (hex) return hex;
+    }
+
+    if (option.swatchClass) {
+      probe.className = option.swatchClass;
+      probe.style.color = "";
+      const hex = rgbStringToHex(getComputedStyle(probe).backgroundColor);
+      if (hex) return hex;
+    }
+  } finally {
+    document.body.removeChild(probe);
+  }
+
+  return toHexColor(trimmed);
+}
+
+function useColorPickerHex(
+  value: string,
+  presets: InspectorColorOption[],
+): string {
+  const [hex, setHex] = useState(() => resolveColorPickerHex(value, presets));
+
+  useLayoutEffect(() => {
+    setHex(resolveColorPickerHex(value, presets));
+  }, [value, presets]);
+
+  return hex;
 }
 
 function hexToRgba(hex: string, alpha = "1"): string {
@@ -360,7 +418,7 @@ export function InspectorColorField({
 }: InspectorColorFieldProps) {
   const [presetOpen, setPresetOpen] = useState(false);
   const presetAnchorRef = useRef<HTMLDivElement>(null);
-  const hexValue = toHexColor(value);
+  const hexValue = useColorPickerHex(value, presets);
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
