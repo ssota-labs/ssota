@@ -101,7 +101,7 @@ export function formatAlphaDecimal(alpha: number): string {
 
 export function hexToRgba(hex: string, alpha = "1"): string {
   const { r, g, b } = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  return `rgba(${r},${g},${b},${alpha})`;
 }
 
 export function formatInspectorColorWithAlpha(
