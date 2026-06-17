@@ -17,6 +17,7 @@ type ProductRoadmapCardProps = {
     content: string;
     docStatus?: DocStatus;
   }) => Promise<void>;
+  onSaveContent: (input: { content: string }) => Promise<void>;
   onApplyTemplate: () => Promise<void>;
 };
 
@@ -24,6 +25,7 @@ export function ProductRoadmapCard({
   node,
   projectId,
   onSave,
+  onSaveContent,
   onApplyTemplate,
 }: ProductRoadmapCardProps) {
   const { t } = useLocale();
@@ -93,12 +95,7 @@ export function ProductRoadmapCard({
             content={node.content}
             projectId={projectId}
             expandTestId="product-roadmap-expand"
-            onSave={async (input) => {
-              await onSave({
-                title: node.title,
-                content: input.content,
-              });
-            }}
+            onSave={onSaveContent}
           />
         )}
       </div>

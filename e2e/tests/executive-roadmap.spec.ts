@@ -61,19 +61,12 @@ test.describe("Executive roadmap", () => {
     await page.getByTestId("product-roadmap-expand").click();
     await expect(page.getByTestId("product-roadmap-expand-collapse")).toBeVisible();
     await expect(page.getByTestId("product-roadmap-expand")).not.toBeVisible();
-    await expect(
-      page.getByTestId("product-roadmap-card").getByTestId("roadmap-edit-save"),
-    ).toBeVisible();
-    await expect(
-      page.getByTestId("product-roadmap-card").getByTestId("roadmap-edit-cancel"),
-    ).toBeVisible();
+    await expect(productCard.getByTestId("roadmap-edit-save")).toHaveCount(0);
+    await expect(productCard.getByTestId("roadmap-edit-cancel")).toHaveCount(0);
 
     await page.getByTestId("product-roadmap-expand-collapse").click();
     await expect(page.getByTestId("product-roadmap-expand")).toBeVisible();
     await expect(page.getByTestId("product-roadmap-expand-collapse")).not.toBeVisible();
-    await expect(
-      page.getByTestId("product-roadmap-card").getByTestId("roadmap-edit-save"),
-    ).not.toBeVisible();
   });
 
   test("creates quarter roadmap from empty preview", async ({ page }) => {
@@ -104,13 +97,15 @@ test.describe("Executive roadmap", () => {
     await expect(q1Body.first()).not.toBeVisible();
 
     await q1Header.click();
-    await expect(q1Body.first()).toBeVisible();
+    await expect(q1Body.first()).toBeVisible({ timeout: 10_000 });
 
     await q1Header.click();
     await expect(q1Body.first()).not.toBeVisible();
   });
 
-  test("enters inline edit mode when expanding product roadmap", async ({ page }) => {
+  test("autosaves product roadmap when expanded", async ({ page }) => {
+    test.slow();
+
     const startTemplate = page.getByRole("button", {
       name: /Start from template|양식으로 시작/,
     });
@@ -126,8 +121,35 @@ test.describe("Executive roadmap", () => {
     const productCard = page.getByTestId("product-roadmap-card");
     await productCard.getByTestId("product-roadmap-expand").click();
     await expect(productCard.getByTestId("roadmap-document-editor")).toBeVisible();
-    await expect(productCard.getByTestId("roadmap-edit-save")).toBeVisible();
-    await expect(productCard.getByTestId("roadmap-edit-cancel")).toBeVisible();
-    await expect(productCard.getByTestId("roadmap-edit")).toHaveCount(0);
+    await expect(productCard.getByTestId("roadmap-edit-save")).toHaveCount(0);
+
+    const editor = productCard
+      .getByTestId("roadmap-document-editor")
+      .locator(".ProseMirror");
+    await expect(editor).toBeVisible({ timeout: 15_000 });
+
+    const marker = `autosave-${Date.now()}`;
+    const saveResponse = page.waitForResponse(
+      (response) => response.request().method() === "POST" && response.ok(),
+      { timeout: 20_000 },
+    );
+    await editor.click();
+    await editor.press("End");
+    await editor.type(` ${marker}`);
+
+    await expect(productCard.getByTestId("roadmap-save-status")).toContainText(
+      /Saved|저장됨/,
+      { timeout: 20_000 },
+    );
+    await saveResponse;
+    await expect(editor).toContainText(marker);
+
+    await page.getByTestId("product-roadmap-expand-collapse").click();
+    await expect(page.getByTestId("product-roadmap-expand")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.reload();
+    await expect(productCard).toContainText(marker, { timeout: 15_000 });
   });
 });

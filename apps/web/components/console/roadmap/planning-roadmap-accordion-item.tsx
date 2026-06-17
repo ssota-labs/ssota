@@ -29,6 +29,10 @@ type PlanningRoadmapAccordionItemProps = {
     content: string;
     docStatus?: DocStatus;
   }) => Promise<void>;
+  onSaveContent: (input: {
+    nodeId: string;
+    content: string;
+  }) => Promise<void>;
 };
 
 function planningLabel(node: RoadmapNodeView) {
@@ -61,6 +65,7 @@ export function PlanningRoadmapAccordionItem({
   defaultOpen = false,
   onCreate,
   onSave,
+  onSaveContent,
 }: PlanningRoadmapAccordionItemProps) {
   const { t } = useLocale();
   const router = useRouter();
@@ -171,9 +176,8 @@ export function PlanningRoadmapAccordionItem({
                 projectId={projectId}
                 expandTestId={`planning-roadmap-expand-${cardTestId}`}
                 onSave={async (input) => {
-                  await onSave({
+                  await onSaveContent({
                     nodeId: node.id,
-                    title: node.title,
                     content: input.content,
                   });
                 }}

@@ -17,12 +17,19 @@ type ExecutiveRoadmapWorkspaceProps = {
     content: string;
     docStatus?: DocStatus;
   }) => Promise<void>;
+  onSaveProductRoadmapContent: (input: {
+    content: string;
+  }) => Promise<void>;
   onApplyProductTemplate: () => Promise<void>;
   onSavePlanningRoadmap: (input: {
     nodeId: string;
     title: string;
     content: string;
     docStatus?: DocStatus;
+  }) => Promise<void>;
+  onSavePlanningRoadmapContent: (input: {
+    nodeId: string;
+    content: string;
   }) => Promise<void>;
   onCreateAnnualRoadmap: (year: number) => Promise<void>;
   onCreateQuarterRoadmap: (
@@ -37,8 +44,10 @@ export function ExecutiveRoadmapWorkspace({
   planningRoadmaps,
   currentYear,
   onSaveProductRoadmap,
+  onSaveProductRoadmapContent,
   onApplyProductTemplate,
   onSavePlanningRoadmap,
+  onSavePlanningRoadmapContent,
   onCreateAnnualRoadmap,
   onCreateQuarterRoadmap,
 }: ExecutiveRoadmapWorkspaceProps) {
@@ -50,6 +59,7 @@ export function ExecutiveRoadmapWorkspace({
         node={productRoadmap}
         projectId={projectId}
         onSave={onSaveProductRoadmap}
+        onSaveContent={onSaveProductRoadmapContent}
         onApplyTemplate={onApplyProductTemplate}
       />
       <PlanningRoadmapsSection
@@ -60,6 +70,7 @@ export function ExecutiveRoadmapWorkspace({
         onCreateAnnual={onCreateAnnualRoadmap}
         onCreateQuarter={onCreateQuarterRoadmap}
         onSave={onSavePlanningRoadmap}
+        onSaveContent={onSavePlanningRoadmapContent}
       />
     </div>
   );

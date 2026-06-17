@@ -27,6 +27,10 @@ type PlanningRoadmapsSectionProps = {
     content: string;
     docStatus?: DocStatus;
   }) => Promise<void>;
+  onSaveContent: (input: {
+    nodeId: string;
+    content: string;
+  }) => Promise<void>;
 };
 
 const QUARTERS: RoadmapQuarter[] = [1, 2, 3, 4];
@@ -56,6 +60,7 @@ export function PlanningRoadmapsSection({
   onCreateAnnual,
   onCreateQuarter,
   onSave,
+  onSaveContent,
 }: PlanningRoadmapsSectionProps) {
   const { t } = useLocale();
   const [year, setYear] = useState(currentYear);
@@ -134,6 +139,7 @@ export function PlanningRoadmapsSection({
               : onCreateQuarter(year, period)
           }
           onSave={onSave}
+          onSaveContent={onSaveContent}
         />
       ))}
     </section>

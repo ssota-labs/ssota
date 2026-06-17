@@ -102,6 +102,49 @@ export default async function ExecutiveRoadmapPage({
     });
   }
 
+  async function saveProductRoadmapContent(input: { content: string }) {
+    "use server";
+    const deps = getGraphDeps(project.id);
+    const existing = await deps.graphRead.getNode({
+      projectId: project.id,
+      nodeId: productRoadmap.id,
+    });
+    const properties = {
+      ...(existing?.properties ?? {}),
+    };
+
+    await updateGraphNodeAction({
+      projectId: project.id,
+      nodeId: productRoadmap.id,
+      content: input.content,
+      properties,
+      revalidatePaths: [revalidatePath],
+    });
+  }
+
+  async function savePlanningRoadmapContent(input: {
+    nodeId: string;
+    content: string;
+  }) {
+    "use server";
+    const deps = getGraphDeps(project.id);
+    const existing = await deps.graphRead.getNode({
+      projectId: project.id,
+      nodeId: input.nodeId,
+    });
+    const properties = {
+      ...(existing?.properties ?? {}),
+    };
+
+    await updateGraphNodeAction({
+      projectId: project.id,
+      nodeId: input.nodeId,
+      content: input.content,
+      properties,
+      revalidatePaths: [revalidatePath],
+    });
+  }
+
   async function createAnnualRoadmap(year: number) {
     "use server";
     await createGraphNodeAction({
@@ -142,8 +185,10 @@ export default async function ExecutiveRoadmapPage({
       planningRoadmaps={planningRoadmaps}
       currentYear={currentYear}
       onSaveProductRoadmap={saveProductRoadmap}
+      onSaveProductRoadmapContent={saveProductRoadmapContent}
       onApplyProductTemplate={applyProductTemplate}
       onSavePlanningRoadmap={savePlanningRoadmap}
+      onSavePlanningRoadmapContent={savePlanningRoadmapContent}
       onCreateAnnualRoadmap={createAnnualRoadmap}
       onCreateQuarterRoadmap={createQuarterRoadmap}
     />
