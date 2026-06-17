@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import {
   InputGroup,
   InputGroupAddon,
+  InputGroupButton,
   InputGroupInput,
   InputGroupText,
 } from "@/components/ui/input-group";
@@ -258,47 +259,28 @@ function InspectorColorList({
   );
 }
 
-function useInspectorAnchorPopover() {
-  const [open, setOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
-  const suppressFocusOpenRef = useRef(false);
-
-  const handleOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) {
-      suppressFocusOpenRef.current = true;
-    }
-    setOpen(nextOpen);
-  };
-
-  const handleInputFocus = () => {
-    if (suppressFocusOpenRef.current) {
-      suppressFocusOpenRef.current = false;
-      return;
-    }
-    setOpen(true);
-  };
-
-  const close = () => {
-    suppressFocusOpenRef.current = true;
-    setOpen(false);
-  };
-
-  return {
-    open,
-    anchorRef,
-    handleOpenChange,
-    handleInputFocus,
-    close,
-  };
-}
-
-type InspectorAnchorPopoverProps = {
+function InspectorPresetToggle({
+  open,
+  onToggle,
+  "aria-label": ariaLabel,
+}: {
   open: boolean;
-  onOpenChange: (open: boolean) => void;
-  anchorRef: RefObject<HTMLDivElement | null>;
-  children: ReactNode;
-  content: ReactNode;
-};
+  onToggle: () => void;
+  "aria-label": string;
+}) {
+  return (
+    <InputGroupButton
+      type="button"
+      size="icon-xs"
+      variant="ghost"
+      aria-label={ariaLabel}
+      aria-expanded={open}
+      onClick={onToggle}
+    >
+      <CaretDownIcon className="size-3.5 text-muted-foreground" />
+    </InputGroupButton>
+  );
+}
 
 function InspectorAnchorPopover({
   open,
@@ -325,6 +307,14 @@ function InspectorAnchorPopover({
   );
 }
 
+type InspectorAnchorPopoverProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  anchorRef: RefObject<HTMLDivElement | null>;
+  children: ReactNode;
+  content: ReactNode;
+};
+
 type InspectorNumberInputProps = {
   value: string;
   unit?: "px" | "em";
@@ -342,20 +332,22 @@ export function InspectorNumberInput({
   onChange,
   "aria-label": ariaLabel,
 }: InspectorNumberInputProps) {
-  const popover = useInspectorAnchorPopover();
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const presetsLabel = ariaLabel ? `${ariaLabel} presets` : "Presets";
 
   return (
     <InspectorAnchorPopover
-      open={popover.open}
-      onOpenChange={popover.handleOpenChange}
-      anchorRef={popover.anchorRef}
+      open={open}
+      onOpenChange={setOpen}
+      anchorRef={anchorRef}
       content={
         <InspectorPresetList
           options={presets}
           value={value}
           onSelect={(nextValue) => {
             onChange(nextValue);
-            popover.close();
+            setOpen(false);
           }}
         />
       }
@@ -369,15 +361,19 @@ export function InspectorNumberInput({
           value={value}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
-          onFocus={popover.handleInputFocus}
         />
-        {unit ? (
-          <InputGroupAddon align="inline-end">
+        <InputGroupAddon align="inline-end" className="gap-0.5">
+          {unit ? (
             <InputGroupText className="text-xs text-muted-foreground">
               {unit}
             </InputGroupText>
-          </InputGroupAddon>
-        ) : null}
+          ) : null}
+          <InspectorPresetToggle
+            open={open}
+            aria-label={presetsLabel}
+            onToggle={() => setOpen((current) => !current)}
+          />
+        </InputGroupAddon>
       </InputGroup>
     </InspectorAnchorPopover>
   );
@@ -398,21 +394,23 @@ export function InspectorColorInput({
   onChange,
   "aria-label": ariaLabel,
 }: InspectorColorInputProps) {
-  const popover = useInspectorAnchorPopover();
+  const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
   const selected = resolveColorOption(value, presets);
+  const presetsLabel = ariaLabel ? `${ariaLabel} presets` : "Presets";
 
   return (
     <InspectorAnchorPopover
-      open={popover.open}
-      onOpenChange={popover.handleOpenChange}
-      anchorRef={popover.anchorRef}
+      open={open}
+      onOpenChange={setOpen}
+      anchorRef={anchorRef}
       content={
         <InspectorColorList
           options={presets}
           value={value}
           onSelect={(nextValue) => {
             onChange(nextValue);
-            popover.close();
+            setOpen(false);
           }}
         />
       }
@@ -429,8 +427,14 @@ export function InspectorColorInput({
           value={value}
           placeholder={placeholder}
           onChange={(event) => onChange(event.target.value)}
-          onFocus={popover.handleInputFocus}
         />
+        <InputGroupAddon align="inline-end">
+          <InspectorPresetToggle
+            open={open}
+            aria-label={presetsLabel}
+            onToggle={() => setOpen((current) => !current)}
+          />
+        </InputGroupAddon>
       </InputGroup>
     </InspectorAnchorPopover>
   );
