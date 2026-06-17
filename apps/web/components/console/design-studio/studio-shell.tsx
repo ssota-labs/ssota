@@ -18,13 +18,13 @@ import {
   writeSessionDraft,
 } from "@/lib/design-studio/draft-storage";
 import { createEmptyUiComponentDocument } from "@/lib/design-studio/empty-document";
-import { updateStudioNode } from "@/lib/design-studio/tree-utils";
+import { updateStudioNode, findStudioNode } from "@/lib/design-studio/tree-utils";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
 import type { ResolvedComponentMap, StudioInteractionMode } from "@ssota/studio-renderer";
 import { InspectorPanel } from "./inspector-panel";
 import { PreviewToolbar } from "./preview-toolbar";
 import { StudioLeftPanel } from "./studio-left-panel";
-import { usePreviewBridge } from "./preview-bridge";
+import { usePreviewBridge, useStudioNodeMeasure } from "./preview-bridge";
 
 type StudioShellProps = {
   ctx: ProjectRouteContext;
@@ -91,6 +91,21 @@ export function StudioShell({
     syncInteractionMode,
     highlightNode,
   } = usePreviewBridge(previewPath);
+
+  const selectedNode = selectedId
+    ? findStudioNode(document.root, selectedId)
+    : null;
+  const measureKey =
+    selectedNode &&
+    (selectedNode.kind === "element" || selectedNode.kind === "component")
+      ? (selectedNode.className ?? "")
+      : "";
+  const domReferencePx = useStudioNodeMeasure(
+    iframeRef,
+    selectedId,
+    ready,
+    measureKey,
+  );
 
   useEffect(() => {
     if (!component || !storageKey) return;
@@ -279,6 +294,7 @@ export function StudioShell({
             <InspectorPanel
               root={document.root}
               selectedId={selectedId}
+              domReferencePx={domReferencePx}
               onPatch={handlePatch}
             />
           ) : (

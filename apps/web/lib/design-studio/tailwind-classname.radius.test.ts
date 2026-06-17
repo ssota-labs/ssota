@@ -5,6 +5,7 @@ import {
   formatRadiusValueOnUnitChange,
   parseRadiusValue,
   resolveRadiusReferencePx,
+  resolveRadiusReferencePxWithDom,
 } from "./tailwind-classname";
 
 describe("radius unit change helpers", () => {
@@ -48,5 +49,12 @@ describe("radius unit change helpers", () => {
     expect(formatRadiusOnUnitChange("rounded", "40", "px", "%", 200)).toBe(
       "rounded-[20%]",
     );
+  });
+
+  it("prefers dom measure when className has no explicit size", () => {
+    expect(resolveRadiusReferencePxWithDom({}, 160)).toBe(160);
+    expect(
+      resolveRadiusReferencePxWithDom({ width: "w-[200px]" }, 160),
+    ).toBe(200);
   });
 });

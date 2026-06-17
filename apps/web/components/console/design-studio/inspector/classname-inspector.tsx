@@ -34,12 +34,14 @@ type ClassnameInspectorProps = {
   className: string;
   onChange: (className: string) => void;
   selectionKey?: string;
+  domReferencePx?: number | null;
 };
 
 export function ClassnameInspector({
   className,
   onChange,
   selectionKey,
+  domReferencePx,
 }: ClassnameInspectorProps) {
   const parsed = parseClassName(className);
   const sizeReferencePx = resolveRadiusReferencePx(parsed);
@@ -140,6 +142,7 @@ export function ClassnameInspector({
         parsed={parsed}
         onUpdate={update}
         selectionKey={selectionKey}
+        domReferencePx={domReferencePx}
       />
 
       <ShadowSection

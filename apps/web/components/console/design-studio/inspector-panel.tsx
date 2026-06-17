@@ -12,6 +12,7 @@ import { LayerNodeIcon } from "./layer-node-icon";
 type InspectorPanelProps = {
   root: StudioNode;
   selectedId: string | null;
+  domReferencePx?: number | null;
   onPatch: (nodeId: string, patch: Record<string, unknown>) => void;
 };
 
@@ -31,6 +32,7 @@ function selectedTitle(node: StudioNode): string {
 export function InspectorPanel({
   root,
   selectedId,
+  domReferencePx,
   onPatch,
 }: InspectorPanelProps) {
   const selected = selectedId ? findStudioNode(root, selectedId) : null;
@@ -105,6 +107,7 @@ export function InspectorPanel({
             <ClassnameInspector
               className={className}
               selectionKey={selected.id}
+              domReferencePx={domReferencePx}
               onChange={(nextClassName) =>
                 onPatch(selected.id, { className: nextClassName })
               }

@@ -10,6 +10,7 @@ import {
   parseOpacityPercent,
   parseRadiusValue,
   resolveRadiusReferencePx,
+  resolveRadiusReferencePxWithDom,
   type RadiusUnit,
 } from "@/lib/design-studio/tailwind-classname";
 import {
@@ -29,12 +30,15 @@ type AppearanceSectionProps = {
   onUpdate: (patch: Partial<ParsedClassName>) => void;
   /** 선택 노드가 바뀔 때 로컬 UI 상태를 리셋합니다. */
   selectionKey?: string;
+  /** 프리뷰 DOM 실측 — className에 w/h가 없을 때 % 변환 기준 */
+  domReferencePx?: number | null;
 };
 
 export function AppearanceSection({
   parsed,
   onUpdate,
   selectionKey,
+  domReferencePx,
 }: AppearanceSectionProps) {
   const hasPerCorner = hasPerCornerRadius(parsed);
   const [perCornerMode, setPerCornerMode] = useState(hasPerCorner);
@@ -69,7 +73,10 @@ export function AppearanceSection({
     : preferredRadiusUnit;
   const unifiedRadius = getUnifiedRadiusValue(parsed);
   const radiusMax = radiusUnit === "%" ? 100 : undefined;
-  const radiusReferencePx = resolveRadiusReferencePx(parsed);
+  const radiusReferencePx = resolveRadiusReferencePxWithDom(
+    parsed,
+    domReferencePx,
+  );
 
   const setUnifiedRadius = (value: string) => {
     if (usePerCornerRadius) {

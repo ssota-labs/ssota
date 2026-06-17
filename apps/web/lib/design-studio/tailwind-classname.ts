@@ -480,6 +480,26 @@ export function resolveRadiusReferencePx(
   return DEFAULT_RADIUS_REFERENCE_PX;
 }
 
+/** className에 명시 size가 없을 때 프리뷰 DOM 실측값을 % 변환 기준으로 씁니다. */
+export function resolveRadiusReferencePxWithDom(
+  parsed?: Pick<ParsedClassName, "width" | "height">,
+  domReferencePx?: number | null,
+): number {
+  const hasExplicitWidth = Boolean(
+    parseLayoutDimensionValue(parsed?.width).value.trim(),
+  );
+  const hasExplicitHeight = Boolean(
+    parseLayoutDimensionValue(parsed?.height).value.trim(),
+  );
+  if (hasExplicitWidth || hasExplicitHeight) {
+    return resolveRadiusReferencePx(parsed);
+  }
+  if (domReferencePx != null && domReferencePx > 0) {
+    return domReferencePx;
+  }
+  return resolveRadiusReferencePx(parsed);
+}
+
 function toAbsoluteRadiusPx(
   value: string,
   unit: RadiusUnit,
