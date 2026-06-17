@@ -31,7 +31,10 @@ const mentionSuggestionRenderer = createSuggestionPortal<
   ReturnType<typeof mapMentionMenuProps>
 >({
   component: SuggestionMenu,
-  mapProps: mapMentionMenuProps,
+  mapProps: (props, menu) => ({
+    ...mapMentionMenuProps(props),
+    ...menu,
+  }),
 });
 
 export function createMentionExtension(

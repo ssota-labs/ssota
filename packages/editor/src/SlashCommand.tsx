@@ -4,10 +4,12 @@ import { Extension, type Range } from "@tiptap/core";
 import { PluginKey } from "@tiptap/pm/state";
 import type { Editor } from "@tiptap/react";
 import Suggestion, {
-  type SuggestionKeyDownProps,
   type SuggestionProps,
 } from "@tiptap/suggestion";
-import { createSuggestionPortal } from "./ui/suggestion-portal";
+import {
+  createSuggestionPortal,
+  type SuggestionPortalInjectedProps,
+} from "./ui/suggestion-portal";
 import {
   CaretCircleDownIcon,
   CodeBlockIcon,
@@ -26,13 +28,12 @@ import {
 } from "@phosphor-icons/react";
 import { pickImageFile, insertUploadedImage } from "./extensions/MentionExtension";
 import {
-  forwardRef,
   type ComponentType,
   type ReactNode,
+  useCallback,
   useEffect,
-  useImperativeHandle,
   useMemo,
-  useState,
+  useRef,
 } from "react";
 import {
   Command,
@@ -203,10 +204,6 @@ function buildSlashItems(
 ];
 }
 
-type SlashCommandListHandle = {
-  onKeyDown: (props: SuggestionKeyDownProps) => boolean;
-};
-
 function filterItems(query: string, items: SlashCommandItem[]) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return items;
@@ -217,58 +214,50 @@ function filterItems(query: string, items: SlashCommandItem[]) {
   );
 }
 
-const SlashCommandList = forwardRef<
-  SlashCommandListHandle,
-  SuggestionProps<SlashCommandItem>
->(function SlashCommandList(props, ref) {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+type SlashCommandListProps = SuggestionProps<SlashCommandItem> &
+  SuggestionPortalInjectedProps;
+
+function SlashCommandList(props: SlashCommandListProps) {
+  const { command, editor, suggestionSelectedIndex, onSuggestionSelectIndex } =
+    props;
   const items = useMemo(() => props.items, [props.items]);
+  const listRef = useRef<HTMLDivElement>(null);
+  const selectedIndex = suggestionSelectedIndex;
+
+  const selectItem = useCallback(
+    (index: number) => {
+      const item = items[index];
+      if (item) command(item);
+    },
+    [command, items],
+  );
 
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [items]);
+    const selected = listRef.current?.querySelector('[data-selected="true"]');
+    selected?.scrollIntoView({ block: "nearest" });
+  }, [selectedIndex]);
 
-  function selectItem(index: number) {
-    const item = items[index];
-    if (item) props.command(item);
-  }
-
-  useImperativeHandle(ref, () => ({
-    onKeyDown({ event }) {
-      if (event.key === "ArrowUp") {
-        setSelectedIndex((selected) =>
-          selected <= 0 ? items.length - 1 : selected - 1,
-        );
-        return true;
-      }
-      if (event.key === "ArrowDown") {
-        setSelectedIndex((selected) =>
-          selected >= items.length - 1 ? 0 : selected + 1,
-        );
-        return true;
-      }
-      if (event.key === "Enter") {
-        selectItem(selectedIndex);
-        return true;
-      }
-      return false;
-    },
-  }));
+  useEffect(() => {
+    editor.commands.focus();
+  }, [editor, items]);
 
   return (
     <Command
+      shouldFilter={false}
+      tabIndex={-1}
+      onMouseDown={(event) => event.preventDefault()}
       className="ssota-slash-menu"
       aria-label="Insert block"
       data-testid="ssota-slash-menu"
     >
-      <CommandList>
+      <CommandList ref={listRef}>
         <CommandEmpty>No blocks found.</CommandEmpty>
         <CommandGroup>
           {items.map((item, index) => (
             <SlashItem
               key={item.title}
               active={index === selectedIndex}
-              onMouseEnter={() => setSelectedIndex(index)}
+              onMouseEnter={() => onSuggestionSelectIndex(index)}
               onSelect={() => selectItem(index)}
               icon={<item.icon className="size-4" />}
               title={item.title}
@@ -279,7 +268,7 @@ const SlashCommandList = forwardRef<
       </CommandList>
     </Command>
   );
-});
+}
 
 function SlashItem({
   active,
@@ -317,6 +306,7 @@ function SlashItem({
 
 export const SlashCommand = Extension.create<SlashCommandOptions>({
   name: "slashCommand",
+  priority: 10_000,
 
   addOptions() {
     return {
@@ -339,10 +329,13 @@ export const SlashCommand = Extension.create<SlashCommandOptions>({
         render: () =>
           createSuggestionPortal<
             SlashCommandItem,
-            SuggestionProps<SlashCommandItem>
+            SlashCommandListProps
           >({
             component: SlashCommandList,
-            mapProps: (props) => props,
+            mapProps: (props, menu) => ({
+              ...props,
+              ...menu,
+            }),
           }),
       }),
     ];

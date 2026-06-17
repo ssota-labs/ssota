@@ -68,6 +68,23 @@ test.describe("Editor Lab", () => {
     await expect(page.getByTestId("ssota-slash-menu")).toBeHidden();
   });
 
+  test("slash menu navigates with arrow keys and Enter", async ({ page }) => {
+    await openSlashMenu(page);
+    const menu = page.getByTestId("ssota-slash-menu");
+
+    await expect(menu.locator('[data-selected="true"]')).toContainText("Paragraph");
+
+    await page.keyboard.press("ArrowDown");
+    await expect(menu.locator('[data-selected="true"]')).toContainText("Heading 1");
+
+    await page.keyboard.press("ArrowDown");
+    await expect(menu.locator('[data-selected="true"]')).toContainText("Heading 2");
+
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".ssota-editor h2").last()).toBeVisible();
+    await expect(menu).toBeHidden();
+  });
+
   test("slash menu inserts callout block", async ({ page }) => {
     await openSlashMenu(page);
     await page.getByRole("option", { name: /Callout/i }).click();

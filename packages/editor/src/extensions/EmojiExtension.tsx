@@ -46,7 +46,10 @@ const emojiSuggestionRenderer = createSuggestionPortal<
   ReturnType<typeof mapEmojiMenuProps>
 >({
   component: SuggestionMenu,
-  mapProps: mapEmojiMenuProps,
+  mapProps: (props, menu) => ({
+    ...mapEmojiMenuProps(props),
+    ...menu,
+  }),
 });
 
 export const EmojiExtension = Emoji.configure({

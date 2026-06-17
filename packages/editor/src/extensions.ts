@@ -48,11 +48,11 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
     Callout,
     Toggle,
     EmojiExtension,
-    SlashCommand.configure({
-      uploadImage: options.uploadImage,
-    }),
     Placeholder.configure({
       placeholder: options.placeholder ?? "내용을 입력하거나 ‘/’ 를 눌러보세요…",
+    }),
+    SlashCommand.configure({
+      uploadImage: options.uploadImage,
     }),
   ];
 
