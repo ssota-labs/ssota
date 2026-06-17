@@ -344,6 +344,25 @@ function hexToRgba(hex: string, alpha = "1"): string {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+/** 테마 토큰을 rgba로 변환합니다. 직접 색상 문자열은 그대로 반환합니다. */
+export function formatInspectorColorAsRgba(
+  value: string,
+  presets: InspectorColorOption[],
+  previousColor?: string,
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return previousColor ?? "rgba(0, 0, 0, 0.1)";
+  }
+  if (isDirectColorValue(trimmed)) return trimmed;
+
+  const alphaMatch = (previousColor ?? "").match(
+    /rgba?\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)/,
+  );
+  const alpha = alphaMatch ? alphaMatch[1]! : "0.1";
+  return hexToRgba(resolveColorPickerHex(trimmed, presets), alpha);
+}
+
 function resolveColorOption(
   value: string,
   options: InspectorColorOption[],

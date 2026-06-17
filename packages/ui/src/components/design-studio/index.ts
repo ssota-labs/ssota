@@ -10,6 +10,7 @@ export {
   InspectorFontFamilyRow,
   InspectorPopoverPicker,
   InspectorToggleRow,
+  formatInspectorColorAsRgba,
   type InspectorColorOption,
   type InspectorPopoverOption,
   type InspectorToggleOption,

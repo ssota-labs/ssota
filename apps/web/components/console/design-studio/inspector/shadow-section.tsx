@@ -13,6 +13,9 @@ import {
 import { Switch } from "@ssota/ui/components/ui/switch";
 import type { ShadowPreset, ShadowValue } from "@/lib/design-studio/tailwind-classname";
 import {
+  BACKGROUND_THEME_COLOR_OPTIONS,
+  formatInspectorColorAsRgba,
+  InspectorColorField,
   InspectorField,
   InspectorGrid,
   InspectorSection,
@@ -125,31 +128,23 @@ export function ShadowSection({ shadow, onChange }: ShadowSectionProps) {
           </InspectorGrid>
 
           <InspectorField label="Color">
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                aria-label="Shadow color"
-                className="size-8 shrink-0 cursor-pointer rounded-md border bg-transparent p-0.5"
-                value={toHexColor(shadow.color)}
-                onChange={(event) =>
-                  onChange({
-                    ...shadow,
-                    preset: "custom",
-                    color: hexToRgba(event.target.value, shadow.color),
-                  })
-                }
-              />
-              <Input
-                value={shadow.color}
-                onChange={(event) =>
-                  onChange({
-                    ...shadow,
-                    preset: "custom",
-                    color: event.target.value,
-                  })
-                }
-              />
-            </div>
+            <InspectorColorField
+              aria-label="Shadow color"
+              value={shadow.color}
+              placeholder="rgba(0, 0, 0, 0.1)"
+              presets={BACKGROUND_THEME_COLOR_OPTIONS}
+              onChange={(color) =>
+                onChange({
+                  ...shadow,
+                  preset: "custom",
+                  color: formatInspectorColorAsRgba(
+                    color,
+                    BACKGROUND_THEME_COLOR_OPTIONS,
+                    shadow.color,
+                  ),
+                })
+              }
+            />
           </InspectorField>
 
           <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
@@ -172,29 +167,4 @@ export function ShadowSection({ shadow, onChange }: ShadowSectionProps) {
       ) : null}
     </InspectorSection>
   );
-}
-
-function toHexColor(color: string): string {
-  if (color.startsWith("#")) {
-    return color.length === 4
-      ? `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`
-      : color.slice(0, 7);
-  }
-
-  const rgba = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!rgba) return "#000000";
-  const r = Number(rgba[1]).toString(16).padStart(2, "0");
-  const g = Number(rgba[2]).toString(16).padStart(2, "0");
-  const b = Number(rgba[3]).toString(16).padStart(2, "0");
-  return `#${r}${g}${b}`;
-}
-
-function hexToRgba(hex: string, previous: string): string {
-  const alphaMatch = previous.match(/rgba?\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)/);
-  const alpha = alphaMatch ? alphaMatch[1] : "0.1";
-  const normalized = hex.replace("#", "");
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
