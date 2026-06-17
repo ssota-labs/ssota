@@ -82,20 +82,20 @@ export const NumberInputSize: Story = {
       Record<"px" | "%" | "em", { value: string; label: string }[]>
     > = {
       px: [
-        { value: "12", label: "12px" },
-        { value: "14", label: "14px" },
-        { value: "16", label: "16px" },
-        { value: "18", label: "18px" },
+        { value: "12", label: "12" },
+        { value: "14", label: "14" },
+        { value: "16", label: "16" },
+        { value: "18", label: "18" },
       ],
       "%": [
-        { value: "100", label: "100%" },
-        { value: "125", label: "125%" },
-        { value: "150", label: "150%" },
+        { value: "100", label: "100" },
+        { value: "125", label: "125" },
+        { value: "150", label: "150" },
       ],
       em: [
-        { value: "0.875", label: "0.875em" },
-        { value: "1", label: "1em" },
-        { value: "1.25", label: "1.25em" },
+        { value: "0.875", label: "0.875" },
+        { value: "1", label: "1" },
+        { value: "1.25", label: "1.25" },
       ],
     };
 

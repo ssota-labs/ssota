@@ -43,6 +43,16 @@ export type InspectorPresetOption = {
 
 export type InspectorNumberUnit = "px" | "%" | "em";
 
+function formatPresetLabel(
+  label: string,
+  unit?: InspectorNumberUnit,
+): string {
+  if (!unit) return label;
+  if (/^(normal|inherit|auto)$/i.test(label)) return label;
+  if (label.endsWith(unit)) return label;
+  return `${label}${unit}`;
+}
+
 const inspectorPopoverContentClass =
   "cn-popover-menu w-[var(--anchor-width)]";
 
@@ -153,12 +163,14 @@ function InspectorPopoverList({
 type InspectorPresetListProps = {
   options: InspectorPresetOption[];
   value?: string;
+  unit?: InspectorNumberUnit;
   onSelect: (value: string) => void;
 };
 
 function InspectorPresetList({
   options,
   value,
+  unit,
   onSelect,
 }: InspectorPresetListProps) {
   return (
@@ -170,15 +182,17 @@ function InspectorPresetList({
             key={option.value}
             type="button"
             className={cn(
-              "flex w-full items-center justify-between rounded-sm px-1.5 py-1 text-sm hover:bg-muted",
+              "flex w-full items-center justify-between rounded-sm px-1.5 py-0.5 text-xs hover:bg-muted",
               active && "bg-muted",
             )}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => onSelect(option.value)}
           >
-            <span className="truncate">{option.label}</span>
+            <span className="truncate text-muted-foreground">
+              {formatPresetLabel(option.label, unit)}
+            </span>
             {active ? (
-              <CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
+              <CheckIcon className="size-3 shrink-0 text-muted-foreground" />
             ) : null}
           </button>
         );
@@ -432,6 +446,7 @@ export function InspectorNumberInput({
         <InspectorPresetList
           options={activePresets}
           value={value}
+          unit={unit}
           onSelect={(nextValue) => {
             onChange(nextValue);
             setOpen(false);
