@@ -16,6 +16,7 @@ import {
   ActionPreviewResultSchema,
 } from "./definitions.js";
 import { WorkflowSchema } from "./workflow.js";
+import { TaskIndexSchema, TaskSchema } from "./task.js";
 
 /** ISO-8601 timestamp string on the wire (JSON-serialized Date). */
 export const IsoDateTimeSchema = z.string().min(1);
@@ -230,6 +231,8 @@ export const ActionLogListResponseSchema = ListResponseSchema(
 export const ImpactQueueListResponseSchema = ListResponseSchema(
   ImpactQueueItemSchema,
 );
+export const TaskListResponseSchema = ListResponseSchema(TaskSchema);
+export const TaskIndexListResponseSchema = ListResponseSchema(TaskIndexSchema);
 export const WorkflowListResponseSchema = ListResponseSchema(WorkflowWireSchema);
 export const NodeCatalogListResponseSchema = ListResponseSchema(
   NodeCatalogEntrySchema,
@@ -268,6 +271,7 @@ export const ActionLogEntryResponseSchema = SingleResponseSchema(
 export const ImpactQueueItemResponseSchema = SingleResponseSchema(
   ImpactQueueItemSchema,
 );
+export const TaskResponseSchema = SingleResponseSchema(TaskSchema);
 
 export const NeighborQueryResponseSchema = z.object({
   data: z.object({

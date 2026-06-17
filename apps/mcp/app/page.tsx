@@ -7,7 +7,7 @@ export default function Home() {
       </p>
       <p className="text-neutral-600">
         Project MCP: <code>/api/mcp?org=&#123;orgSlug&#125;&amp;project=&#123;projectSlug&#125;</code>{" "}
-        (graph, catalog, execute_action)
+        (list_tasks, query_tasks, get_task)
       </p>
       <p className="text-neutral-600">
         OAuth consent is hosted on the SSOTA Console (web app).

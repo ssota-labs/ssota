@@ -2,17 +2,16 @@ import { defineConfig, devices } from "@playwright/test";
 
 const webPort = process.env.WEB_PORT ?? "3100";
 const mcpPort = process.env.MCP_PORT ?? "3101";
-const bffPort = process.env.EMBEDDER_BFF_PORT ?? "3200";
 const designLabPort = process.env.DESIGN_LAB_PORT ?? "6107";
 const webUrl = process.env.WEB_URL ?? `http://127.0.0.1:${webPort}`;
 const mcpUrl = process.env.MCP_URL ?? `http://127.0.0.1:${mcpPort}`;
-const bffUrl = process.env.EMBEDDER_BFF_URL ?? `http://127.0.0.1:${bffPort}`;
 const designLabUrl =
   process.env.DESIGN_LAB_URL ?? `http://127.0.0.1:${designLabPort}`;
 
-process.env.EMBEDDER_BFF_URL ??= bffUrl;
-
 process.env.MCP_URL ??= mcpUrl;
+process.env.DATABASE_URL ??=
+  process.env.DATABASE_URL ??
+  "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
 const defaultSupabaseEnv = {
   NEXT_PUBLIC_SUPABASE_URL:
@@ -74,20 +73,6 @@ export default defineConfig({
         ...process.env,
         ...defaultSupabaseEnv,
         PORT: mcpPort,
-      },
-    },
-    {
-      command: "cd .. && pnpm exec tsx examples/embedder-bff/server.ts",
-      url: `${bffUrl}/health`,
-      reuseExistingServer: !!process.env.REUSE_SERVERS,
-      timeout: 120_000,
-      env: {
-        ...process.env,
-        ...defaultSupabaseEnv,
-        EMBEDDER_BFF_PORT: bffPort,
-        SSOTA_MCP_URL: mcpUrl,
-        SUPABASE_URL: defaultSupabaseEnv.NEXT_PUBLIC_SUPABASE_URL,
-        SUPABASE_ANON_KEY: defaultSupabaseEnv.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       },
     },
     {

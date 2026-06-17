@@ -1,9 +1,9 @@
-import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { signOutAction } from "@/app/actions";
 import { ConsoleShell } from "@/components/console/console-shell";
 import { getDefaultProjectPath } from "@/lib/console/default-landing";
+import { listInitiatives } from "@/lib/console/initiatives";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { loginRedirect } from "@/lib/auth/login-redirect";
 import { getConsolePort, getOnboardingPort } from "@/lib/ports";
@@ -39,18 +39,21 @@ export default async function ProjectLayout({
 
   const { org, project } = await resolveProject(orgSlug, projectSlug);
 
-  const [organizations, projects] = await Promise.all([
+  const [organizations, projects, initiatives] = await Promise.all([
     consolePort.listOrganizationsForUser(user.id),
     consolePort.listProjectsForOrganization(org.id),
+    listInitiatives(project.id),
   ]);
 
   if (!organizations.some((item) => item.id === org.id)) {
     redirect(await getDefaultProjectPath(user.id));
   }
 
-  after(async () => {
-    await consolePort.setUserProjectPreference(user.id, orgSlug, projectSlug);
-  });
+  const isPreviewEmbed = returnTo.includes("/design/preview");
+
+  if (isPreviewEmbed) {
+    return <>{children}</>;
+  }
 
   return (
     <ConsoleShell
@@ -66,6 +69,7 @@ export default async function ProjectLayout({
       projects={projects}
       userEmail={user.email ?? ""}
       signOutAction={signOutAction}
+      initiatives={initiatives}
     >
       {children}
     </ConsoleShell>

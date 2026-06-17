@@ -14,7 +14,7 @@ import type {
   EdgeCatalogEntry,
   Gate,
   GatePort,
-  GraphReadPort,
+  LegacyGraphReadPort,
   ImpactQueueClaimInput,
   ImpactQueueCreateInput,
   ImpactQueueItem,
@@ -438,7 +438,7 @@ export function createInMemoryPorts(
     },
   };
 
-  const graph: GraphReadPort = {
+  const graph: LegacyGraphReadPort = {
     async getNode(nodeId) {
       const node = state.nodes.get(nodeId);
       return node?.projectId === projectId ? node : null;
@@ -657,6 +657,60 @@ function createInMemoryTaskPort(
     async getTask(taskId) {
       const task = state.tasks.get(taskId);
       return task?.projectId === projectId ? task : null;
+    },
+    async getTaskByIdempotencyKey(idempotencyKey) {
+      for (const task of state.tasks.values()) {
+        if (
+          task.projectId === projectId &&
+          task.idempotencyKey === idempotencyKey
+        ) {
+          return task;
+        }
+      }
+      return null;
+    },
+    async createTask(input) {
+      const createdAt = new Date();
+      const task: Task = {
+        id: randomUUID(),
+        projectId,
+        workflowKey: input.workflowKey,
+        workflowId: input.workflowId ?? null,
+        title: input.title,
+        status: input.status ?? "pending",
+        executorType: input.executorType ?? "Agent",
+        assignee: input.assignee ?? null,
+        subjectId: input.subjectId ?? null,
+        targetNodeId: input.targetNodeId ?? null,
+        parentTaskId: input.parentTaskId ?? null,
+        sourceActionLogId: null,
+        context: input.context ?? {},
+        acceptanceCriteria: input.acceptanceCriteria ?? [],
+        idempotencyKey: input.idempotencyKey ?? null,
+        result: {},
+        completedAt: null,
+        createdAt,
+        updatedAt: createdAt,
+      };
+      state.tasks.set(task.id, task);
+      return task;
+    },
+    async updateTask(taskId, patch) {
+      const existing = state.tasks.get(taskId);
+      if (!existing || existing.projectId !== projectId) return null;
+      const updated: Task = {
+        ...existing,
+        ...patch,
+        completedAt:
+          patch.status === "done"
+            ? new Date()
+            : patch.status !== undefined
+              ? null
+              : existing.completedAt,
+        updatedAt: new Date(),
+      };
+      state.tasks.set(taskId, updated);
+      return updated;
     },
   };
 }

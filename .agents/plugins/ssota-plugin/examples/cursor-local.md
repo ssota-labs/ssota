@@ -12,13 +12,13 @@ Use this flow to dogfood SSOTA Plugin from the monorepo before marketplace publi
 
 ### Monorepo dogfood (project skills + MCP)
 
-The repo already contains marketplace-style copies:
+The repo already contains marketplace-style install copies:
 
-- `.agents/skills/ssota-mcp`
-- `.cursor/skills/ssota-mcp`
-- `.cursor/mcp.json`
+- `.cursor/plugins/local/ssota-plugin/` — full plugin bundle
+- `.agents/plugins/ssota-plugin/` — full plugin bundle
+- `.agents/skills/ssota-mcp`, `.cursor/skills/ssota-mcp`, `.cursor/mcp.json` — skill + MCP config
 
-When you change `plugins/ssota-plugin/`, update those copies in the same PR.
+When you change `plugins/ssota-plugin/`, update all of those copies in the same PR.
 
 ### Cursor user plugin directory (desktop IDE)
 

@@ -6,18 +6,18 @@ const defaultCtx = {
   projectSlug: DEFAULT_PROJECT_SLUG,
 };
 
-/** Legacy revalidate paths에 기본 프로젝트 콘솔 경로를 병합한다. */
+/** Console v2.7 revalidate paths에 기본 프로젝트 경로를 병합한다. */
 export function withConsolePaths(paths: string[]): string[] {
   const set = new Set(paths);
 
-  set.add(projectPath(defaultCtx));
-  set.add(projectPath(defaultCtx, "graph"));
-  set.add(projectPath(defaultCtx, "graph", "nodes"));
-  set.add(projectPath(defaultCtx, "graph", "edges"));
-  set.add(projectPath(defaultCtx, "graph", "actions"));
-  set.add(projectPath(defaultCtx, "workflow"));
+  set.add(projectPath(defaultCtx, "overview"));
   set.add(projectPath(defaultCtx, "tasks"));
+  set.add(projectPath(defaultCtx, "workflow", "map"));
+  set.add(projectPath(defaultCtx, "executive", "roadmap"));
+  set.add(projectPath(defaultCtx, "research", "hypotheses"));
+  set.add(projectPath(defaultCtx, "initiatives"));
   set.add(projectPath(defaultCtx, "settings", "general"));
+  set.add(projectPath(defaultCtx, "developer", "setup"));
 
   return [...set];
 }

@@ -1,109 +1,62 @@
-# SSOTA MCP Tools
+# Tools
 
-Single endpoint: **`/api/mcp`**. Configure one MCP server in Cursor — no per-project URLs.
+Active MCP tools: account/project discovery, development workflow tasks, workflow instructions, and graph read/write.
 
-## Project scope (required on project tools)
+Archived generic runtime tools (`execute_action`, gates, action log) are under `archive/generic-runtime`.
 
-Every project-scoped tool accepts:
+## Account
 
-| Param | Source |
-|---|---|
-| `orgSlug` | `list_projects` / `get_project` |
-| `projectSlug` | `list_projects` / `get_project` |
+| Tool | Description |
+|------|-------------|
+| `list_organizations` | List organizations the user can access |
+| `list_projects` | List projects in an organization |
+| `get_project` | Fetch one project by org/project slug |
 
-The server validates membership on **every** tool call. Do not trust client-supplied scope without server checks.
+## Tasks (project-scoped)
 
-Tenant rows (B2B2C embedders): not a platform header — embedder BFF sets customer-defined properties (e.g. `subject_id`) in `execute_action` / `create_node` input after auth.
+| Tool | Description |
+|------|-------------|
+| `list_tasks` | List tasks (optional `limit`) |
+| `query_tasks` | Filter by `status`, `workflowKey`, `assignee`, `subjectId`, `targetNodeId`, `executorType`, pagination |
+| `get_task` | Fetch one task by `taskId` |
+| `spawn_task` | Create task — `workflowKey` must exist in deployed registry |
+| `update_task` | Patch task fields (`status`, `result`, `context`, etc.) |
 
-## Account discover (no project scope)
+### spawn_task input
 
-- `list_organizations` — orgs the user belongs to
-- `list_projects` — accessible projects + `{ orgSlug, projectSlug }` scope (optional `orgSlug` filter)
-- `get_project` — one project by `orgSlug` + `projectSlug`
+- `title` (required)
+- `workflowKey` (required) — discover via `list_workflows` or `get_workflow`
+- `assignee`, `subjectId`, `targetNodeId`, `parentTaskId`, `executorType`
+- `context`, `acceptanceCriteria`
+- `idempotencyKey` — duplicate key returns existing task
 
-## Discover (`list_*`)
+## Workflows (project-scoped, global SSOT content)
 
-Catalog or queue **index only**. Requires `orgSlug` + `projectSlug`.
+| Tool | Description |
+|------|-------------|
+| `list_workflows` | List workflow metadata (no instruction body) |
+| `get_workflow` | Fetch metadata for one `workflowKey` |
+| `get_workflow_instruction` | Fetch full markdown instruction — start with `agent.main` |
 
-- `list_node_types` → use `get_node_type` (includes `propertySchema`)
-- `list_edge_types` → use `get_edge_type`
-- `list_action_contracts` → use `get_action_contract`
-- `list_archetypes` → use `get_archetype`
-- `list_pending_gates` → use `get_gate` or `query_gates`
-- `list_tasks` → use `get_task` or `query_tasks`
+## Graph (project-scoped)
 
-## Fetch (`get_*`)
+| Tool | Description |
+|------|-------------|
+| `list_node_types` | Catalog node types |
+| `get_node_type` | One node type entry |
+| `list_edge_types` | Catalog edge types |
+| `query_nodes` | Query nodes with filters |
+| `get_node` | Fetch one node |
+| `traverse_edges` | Traverse edges from a node |
+| `create_node` | Create node (catalog-validated) |
+| `update_node` | Patch node title/properties/content |
+| `create_edge` | Connect two nodes with typed edge |
 
-Single entity by primary key. Requires `orgSlug` + `projectSlug`.
+## REST (MCP app)
 
-- `get_node` — `nodeId`
-- `get_workflow` — `workflowId`
-- `get_gate` — `gateId`
-- `get_node_type` — `nodeType` (property fields live in `propertySchema`)
-- `get_edge_type` — `edgeType`
-- `get_archetype` — `archetypeId`
-- `get_action_contract` — `actionType`
-- `get_action_log_entry` — `logId` or `idempotencyKey`
-- `get_task` — `taskId`
+- `GET /api/v1/tasks` — list or query
+- `POST /api/v1/tasks` — spawn
+- `GET /api/v1/tasks/:taskId` — get
+- `PATCH /api/v1/tasks/:taskId` — update
 
-## Query (`query_*`, `find_*`)
-
-Requires `orgSlug` + `projectSlug`.
-
-- `query_nodes` — `nodeType`, `lifecycleStatus`, pagination
-- `query_neighbors` — 1-hop edges + neighbor nodes
-- `traverse_graph` — multi-hop from `startNodeId`
-- `traverse_edges` — raw 1-hop edges only
-- `find_workflow` — text search for domain instructions
-- `get_action_log` — filtered log list
-- `query_gates` — optional `status` filter
-- `query_tasks` — `status`, `workflowKey`, `assignee`, `subjectId`, `targetNodeId`, pagination
-
-## Write
-
-- `execute_action` — **only** mutation path (requires `orgSlug` + `projectSlug`)
-
-SSOTA MCP is the only mutation interface. Do not look for alternate write APIs outside MCP.
-
-### Runtime tasks (built-in)
-
-| Action | Purpose |
-|---|---|
-| `spawn_task` | Create a runtime task row (`tasks` table) bound to a domain `workflowKey` |
-
-Input: `{ title, workflowKey, targetNodeId?, assignee?, subjectId?, parentTaskId?, executorType?, context?, acceptanceCriteria? }`. Use `list_tasks` / `get_task` / `query_tasks` to read tasks. Do not create Task graph nodes for orchestration work items unless a domain workflow explicitly requires graph persistence.
-
-### Graph instance lifecycle (built-in)
-
-| Action | Purpose | Gate |
-|---|---|---|
-| `deprecate_node` | Soft-remove instance (`lifecycleStatus` → `Archived`) | None (Agent) |
-| `delete_node` | Hard delete node + connected edges + impact queue rows | **Human Gate** when called by Agent; Human executor may commit directly |
-
-Input: `{ nodeId }` for both. Prefer `deprecate_node` for reversible retirement; use `delete_node` only when permanent removal is required.
-
-## Gates (read + propose)
-
-- `query_gates` / `list_pending_gates` / `get_gate`
-- `submit_for_approval` — informational only; does not approve
-
-`approve_gate` is Human-only unless policy changes.
-
-## Audit
-
-- `get_action_log` — filtered log list
-- `get_action_log_entry` — single entry by `logId` or `idempotencyKey`
-
-Verify important writes through the action log.
-
-## Recommended sequence
-
-```txt
-list_projects
-find_workflow          { orgSlug, projectSlug, query }
-get_workflow           { orgSlug, projectSlug, workflowId }
-get_action_contract       { orgSlug, projectSlug, actionType }
-query_nodes / get_node    { orgSlug, projectSlug, ... }
-execute_action            { orgSlug, projectSlug, actionType, input }
-get_action_log_entry      { orgSlug, projectSlug, logId }
-```
+Auth: Bearer JWT. Project scope via tool args (`orgSlug`, `projectSlug`) or OAuth context.

@@ -1,43 +1,34 @@
-# Domain Workflow Examples
+# Workflows
 
-These are **domain instruction** patterns after the root skill routes intent. Always `get_workflow` before following a recipe.
+Workflow definitions are **deployed with the MCP server** (contracts SSOT). Agents must fetch instructions via MCP — not from local `packages/contracts/workflows`.
 
-## Create a work note
+## Session entry
 
-1. `find_workflow` — `work note`, `create note`
-2. `get_workflow(id)`
-3. `get_action_contract` — `create_note`
-4. `execute_action` with idempotency key
-5. Verify: `get_action_log_entry` or `get_node`
+| Step | Tool | workflowKey |
+|------|------|-------------|
+| 1 | `get_workflow_instruction` | `agent.main` |
 
-## Create a document draft
+`agent.main` describes task inbox, cadence routing (`orchestrator.*`), work routing (`work.*`), and graph tool usage.
 
-1. `find_workflow` — `document creation`
-2. `get_workflow(id)`
-3. `query_nodes` if instruction requires existing context
-4. `get_action_contract` — `create_document`
-5. `execute_action`
-6. Verify: `get_node`, `get_action_log_entry`
+## Per-task execution
 
-## Context assembly before answering
+1. `get_task` or `query_tasks` — find active task
+2. `get_workflow` — metadata for `task.workflowKey`
+3. `get_workflow_instruction` — full steps for `task.workflowKey`
+4. Execute steps; `update_task` when done
 
-1. `query_nodes` or `get_node` for anchors
-2. `query_neighbors` or `traverse_graph` for related entities
-3. `get_action_log` for recent changes if audit matters
-4. No write unless a domain instruction requires it
+## Registry keys (discover via `list_workflows`)
 
-## Propose a meta change
+| Key | Role |
+|-----|------|
+| `agent.main` | Agent session router |
+| `orchestrator.bootstrap` | One-time automation setup |
+| `orchestrator.daily` | Daily backlog + spawn |
+| `orchestrator.weekly` | Weekly planning |
+| `orchestrator.monthly` | Monthly retrospective |
+| `orchestrator.watchdog` | Stale task recovery |
+| `work.implement_feature` | Code implementation |
+| `work.write_document` | Graph document write |
+| `work.unblock` | Unblock stalled task |
 
-1. `find_workflow` — `catalog governance`, `instruction governance`
-2. `get_workflow(id)`
-3. `get_action_contract` for the meta action
-4. Payload: target, change, rationale, risk, workflow impact
-5. `execute_action` — expect `committed` or `gated`
-6. Verify with catalog `get_*` or `get_workflow`
-
-## Recover from rejection
-
-1. Preserve rejection code and message
-2. Compare input vs `get_action_contract`
-3. Re-read domain instruction
-4. Retry only contract/validation fixes — not permission/policy blocks
+New keys ship with MCP deployments; use `list_workflows` to see the current set.

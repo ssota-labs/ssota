@@ -8,13 +8,10 @@ const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 test.describe("Tasks page", () => {
   test.beforeAll(async ({ request }) => {
     const token = await getSmokeAccessToken();
-    await mcpToolCall(request, mcpUrl, token, "execute_action", {
-      actionType: "spawn_task",
-      input: {
-        title: "E2E tasks page fixture",
-        workflowKey: "document_creation",
-        assignee: "agent:e2e-tasks-page",
-      },
+    await mcpToolCall(request, mcpUrl, token, "spawn_task", {
+      title: "E2E tasks page fixture",
+      workflowKey: "work.implement_feature",
+      assignee: "agent:e2e-tasks-page",
       idempotencyKey: `e2e-tasks-page-fixture-${Date.now()}`,
     });
   });

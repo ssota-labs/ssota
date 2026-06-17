@@ -1,4 +1,8 @@
 import { TasksDetail } from "@/components/tasks/tasks-detail";
+import {
+  SpawnTaskDialog,
+  type WorkflowOption,
+} from "@/components/tasks/spawn-task-dialog";
 import type { TaskTab, TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
 type TasksExplorerProps = {
@@ -6,6 +10,7 @@ type TasksExplorerProps = {
   activeTab: TaskTab;
   baseHref: string;
   projectId: string;
+  workflowOptions: WorkflowOption[];
 };
 
 export function TasksExplorer({
@@ -13,6 +18,7 @@ export function TasksExplorer({
   activeTab,
   baseHref,
   projectId,
+  workflowOptions,
 }: TasksExplorerProps) {
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -24,12 +30,14 @@ export function TasksExplorer({
             through update_task.
           </p>
         </div>
+        <SpawnTaskDialog projectId={projectId} workflowOptions={workflowOptions} />
       </div>
       <TasksDetail
         rows={rows}
         activeTab={activeTab}
         baseHref={baseHref}
         projectId={projectId}
+        workflowOptions={workflowOptions}
       />
     </div>
   );

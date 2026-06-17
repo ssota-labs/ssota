@@ -1,116 +1,65 @@
 ---
 name: ssota-mcp
-description: SSOTA Root Protocol — classify intent, assemble context, route to domain instructions via MCP, execute only through action contracts. Mount before any SSOTA work.
+description: Development-workflow MCP guardrails for ssota-dev dogfood only. Use only when querying project/task state through SSOTA MCP; do not mount for general coding tasks.
 ---
 
-# SSOTA Root Protocol
+# SSOTA Development Workflow MCP Guardrails
 
-This skill is the **Runtime Protocol** for SSOTA-backed automation. It replaces a graph-stored root instruction: bootstrap, routing, and safety rules live here. **Domain instructions** live in SSOTA and are fetched through MCP after intent classification.
+This skill covers **how to connect to SSOTA MCP** only. Workflow instructions and routing rules live on the deployed MCP server — fetch them at runtime; do not read `packages/contracts/workflows` from the local repo.
 
-SSOTA MCP is your only interface. This skill is about operating SSOTA, not general coding.
+Do not use this skill as a generic context graph runtime. The old graph/catalog/action/workflow runtime is archived under `archive/generic-runtime` and is reference-only.
 
-## 0. Non-negotiable bootstrap
+## When to use
 
-Before any SSOTA write:
+Use this skill when the task needs SSOTA MCP for project/task/graph workflow context:
 
-1. Classify the user request (see §1).
-2. Gather graph context if needed (`query_nodes`, `get_node`, `query_neighbors`, `traverse_graph`).
-3. Find and **fetch** the domain instruction (`find_workflow` → `get_workflow`).
-4. Fetch the action contract (`get_action_contract`).
-5. Confirm `preconditions`, `executor`, and `effects`.
-6. Execute only through `execute_action`.
-7. Verify outcome and run self-check (§6).
+- authenticate and resolve `ssota-labs/ssota-dev`
+- load **`agent.main`** routing instruction from MCP at session start
+- list, query, spawn, or update development workflow tasks
+- fetch per-workflow instructions on demand
+- read or write graph nodes/edges via MCP
 
-**Failure policy:** If the domain instruction or action contract cannot be confirmed, **do not execute**. Ask for missing context, keep work as a proposal, or escalate to Human Gate.
+For normal repository coding work, follow `AGENTS.md` development workflow commands instead of MCP.
 
-## 1. Intent classification
+## Session bootstrap (required)
 
-Classify every request into one primary intent before searching instructions:
+1. `list_projects` / `get_project` — confirm project scope
+2. `get_workflow_instruction` with `workflowKey: "agent.main"` — routing SSOT (once per session)
+3. Follow `agent.main` to `query_tasks`, then `get_workflow` + `get_workflow_instruction` per active task
 
-| Intent | Meaning |
-|--------|---------|
-| **read** | Summarize, answer, inspect graph state |
-| **create** | New node, document, note, catalog entry |
-| **update** | Modify existing node or metadata |
-| **connect** | Create or traverse relationships (edges) |
-| **verify** | Check gates, lifecycle, archetype compliance |
-| **audit** | Trace provenance, action log, who changed what |
+Do **not** read workflow markdown from the local filesystem.
 
-Use `references/routing.md` to map intent → `find_workflow` search terms.
+## Active MCP tool surface
 
-## 2. Context assembly
+Account: `list_organizations`, `list_projects`, `get_project`
 
-Use query/fetch tools before writes when the workflow depends on existing state:
+Tasks: `list_tasks`, `query_tasks`, `get_task`, `spawn_task`, `update_task`
 
-- `query_nodes` — filter by `nodeType`, `lifecycleStatus`
-- `get_node` — one node by id
-- `query_neighbors` — 1-hop edges + neighbor nodes
-- `traverse_graph` — multi-hop context assembly
-- `list_tasks` / `query_tasks` / `get_task` — runtime work queue (not graph nodes)
-- `get_action_log` / `get_action_log_entry` — prior decisions
+Workflows: `list_workflows`, `get_workflow`, `get_workflow_instruction`
 
-Use `list_*` only as catalog **index**. Fetch details with `get_*`.
+Graph read: `list_node_types`, `get_node_type`, `list_edge_types`, `query_nodes`, `get_node`, `traverse_edges`
 
-## 3. Domain instruction routing
+Graph write: `create_node`, `update_node`, `create_edge`
 
-SSOTA instructions are **domain recipes**, not this root protocol.
+Always scope project tools to:
 
-1. `find_workflow` with terms from `references/routing.md`
-2. `get_workflow(workflowId)` or `get_workflow(workflowKey)` for the full recipe
-3. Follow `workflowSteps`, `allowedActions`, `gatePolicy`
-4. If `contentUrl` is set, fetch the external runbook (Notion page) for progressive disclosure — the graph stores the contract; the URL carries the editable steward playbook
-5. If no suitable instruction exists, **do not improvise** — propose defining one
+```txt
+orgSlug: ssota-labs
+projectSlug: ssota-dev
+```
 
-## 4. Action contract
+## Rules
 
-Before `execute_action`:
-
-- `get_action_contract(actionType)`
-- Shape input to the contract
-- Add rationale for meta/catalog changes
-- Use `idempotencyKey` for retryable operations
-- If `executor` is Human or Human+Agent, stop at Draft/proposal unless policy allows more
-
-## 5. Execute and verify
-
-All writes: `execute_action` only.
-
-| Outcome | Next step |
-|---------|-----------|
-| `committed` | `get_action_log_entry` or `get_node` to verify |
-| `gated` | Record `gateId`, summarize for Human review — do not self-approve |
-| `rejected` | Report reason; repair only contract/input issues |
-
-See `references/result-handling.md`.
-
-## 6. Response self-check
-
-Before responding:
-
-- [ ] Classified intent?
-- [ ] Loaded domain instruction via `get_workflow`?
-- [ ] Loaded action contract via `get_action_contract`?
-- [ ] Checked preconditions and executor?
-- [ ] Verified `committed` / `gated` / `rejected` — not assumed?
-- [ ] Left provenance/rationale where required?
-- [ ] Avoided duplicate creates (queried context first)?
-
-## Never do this
-
-- SSOTA MCP is your only interface. All mutations must go through `execute_action`.
-- Do not invent action inputs without checking the action contract.
-- Do not assume a write succeeded until you verify `committed`, `gated`, or `rejected`.
-- Do not treat `approve_gate` as an Agent action.
+- Fetch workflow instructions via MCP (`get_workflow_instruction`), not from local repo files.
+- Do not call archived tools: `execute_action`, `find_workflow`, gates, action log.
+- Do not invent task IDs, node IDs, or project slugs. Discover first, then fetch.
 - Do not commit access tokens, smoke credentials, OAuth secrets, or `.env` files.
 
-## Agent-led meta changes
+## Response self-check
 
-High-risk changes (action contract breaking updates, node/edge type mutation, destructive deprecation, gate approval) need strong rationale. Let SSOTA policy decide commit vs gate.
+Before responding after MCP use:
 
-## References
-
-- `references/routing.md` — intent → instruction search
-- `references/tools.md` — MCP tool tiers (discover / fetch / query / write)
-- `references/workflows.md` — domain workflow examples
-- `references/result-handling.md` — outcome handling
-- `references/auth.md` — smoke and OAuth
+- Did I load `agent.main` from MCP at session start?
+- Did I scope to the correct organization and project?
+- Did I fetch per-task workflow instructions from MCP before executing?
+- Did I avoid archived graph/catalog/action workflows?

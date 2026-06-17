@@ -143,7 +143,7 @@ function Calendar({
             />
           )
         },
-        Chevron: ({ className, orientation, ...props }) => {
+        Chevron: ({ orientation }) => {
           if (orientation === "left") {
             return (
               <CaretLeftIcon className="" />

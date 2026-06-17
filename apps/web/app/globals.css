@@ -1,6 +1,7 @@
 @import "@ssota/ui/styles/globals.css";
 @import "@xyflow/react/dist/style.css";
 @source "../**/*.{ts,tsx}";
+@source "../../../packages/studio-renderer/src/**/*.{ts,tsx}";
 
 /* Graph instance table — Supabase-like grid (light theme) */
 .instance-grid-table .instance-grid-table-inner .cn-table-head {
@@ -72,4 +73,11 @@
 
 .instance-field-value {
   min-width: 0;
+}
+
+/* Sidebar L0↔L1 drill-down slide */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-nav-slider-track {
+    transition: none !important;
+  }
 }

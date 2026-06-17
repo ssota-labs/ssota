@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ExecutorTypeSchema } from "./definitions.js";
-import { WorkflowKeySchema } from "./workflow.js";
+
+export const TaskWorkflowKeySchema = z.string().min(1);
 
 export const TaskStatusSchema = z.enum([
   "pending",
@@ -17,7 +18,7 @@ export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 export const TaskSchema = z.object({
   id: z.string().uuid(),
   projectId: z.string().uuid(),
-  workflowKey: WorkflowKeySchema,
+  workflowKey: TaskWorkflowKeySchema,
   workflowId: z.string().uuid().nullable(),
   title: z.string().min(1),
   status: TaskStatusSchema,
@@ -42,7 +43,7 @@ export const TaskIndexSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
   status: TaskStatusSchema,
-  workflowKey: WorkflowKeySchema,
+  workflowKey: TaskWorkflowKeySchema,
   assignee: z.string().nullable(),
   executorType: ExecutorTypeSchema,
   targetNodeId: z.string().uuid().nullable(),
@@ -53,7 +54,7 @@ export type TaskIndex = z.infer<typeof TaskIndexSchema>;
 
 export const QueryTasksInputSchema = z.object({
   status: TaskStatusSchema.optional(),
-  workflowKey: WorkflowKeySchema.optional(),
+  workflowKey: TaskWorkflowKeySchema.optional(),
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
@@ -72,14 +73,15 @@ export type GetTaskInput = z.infer<typeof GetTaskInputSchema>;
 
 export const SpawnTaskInputSchema = z.object({
   title: z.string().min(1),
-  workflowKey: WorkflowKeySchema,
-  targetNodeId: z.string().uuid().optional(),
+  workflowKey: TaskWorkflowKeySchema,
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
+  targetNodeId: z.string().uuid().optional(),
   parentTaskId: z.string().uuid().optional(),
   executorType: ExecutorTypeSchema.optional(),
   context: z.record(z.unknown()).optional(),
   acceptanceCriteria: z.array(z.unknown()).optional(),
+  idempotencyKey: z.string().optional(),
 });
 
 export type SpawnTaskInput = z.infer<typeof SpawnTaskInputSchema>;
@@ -113,19 +115,10 @@ export const UpdateTaskInputSchema = z
 
 export type UpdateTaskInput = z.infer<typeof UpdateTaskInputSchema>;
 
-export const CreateTaskEffectPayloadSchema = z.object({
+export const CreateTaskEffectPayloadSchema = SpawnTaskInputSchema.extend({
   id: z.string().uuid().optional(),
-  title: z.string().min(1),
-  workflowKey: WorkflowKeySchema,
   workflowId: z.string().uuid().nullable().optional(),
   status: TaskStatusSchema.optional(),
-  executorType: ExecutorTypeSchema.optional(),
-  assignee: z.string().nullable().optional(),
-  subjectId: z.string().nullable().optional(),
-  targetNodeId: z.string().uuid().nullable().optional(),
-  parentTaskId: z.string().uuid().nullable().optional(),
-  context: z.record(z.unknown()).optional(),
-  acceptanceCriteria: z.array(z.unknown()).optional(),
 });
 
 export type CreateTaskEffectPayload = z.infer<typeof CreateTaskEffectPayloadSchema>;

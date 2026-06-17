@@ -1,6 +1,6 @@
-import { toCatalogLabel, toCatalogSlug } from "@ssota/core";
+import { config as loadEnv } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { and, eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
@@ -9,650 +9,78 @@ import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
 } from "../constants.js";
-import { seedHomepageAgentCatalog } from "./seed-homepage-agent.js";
+import { seedGraphInstances } from "./seed/graph-instances.js";
 
-const documentArchetypes = [
-  { id: "doc-note", name: "Note", typical: { temporality: "ephemeral", authority: "personal" } },
-  { id: "doc-memo", name: "Memo", typical: { temporality: "persistent", authority: "team" } },
-  { id: "doc-spec", name: "Spec", typical: { temporality: "persistent", authority: "canonical" } },
-  { id: "doc-decision", name: "Decision", typical: { temporality: "persistent", authority: "binding" } },
-  { id: "doc-workflow", name: "Workflow", typical: { temporality: "persistent", authority: "canonical" } },
-  { id: "doc-reference", name: "Reference", typical: { temporality: "persistent", authority: "external" } },
-  { id: "doc-log", name: "Log", typical: { temporality: "append-only", authority: "system" } },
-  { id: "doc-template", name: "Template", typical: { temporality: "persistent", authority: "reusable" } },
-];
-
-const operationalArchetypes = [
-  { id: "op-project", name: "Project", typical: { stateMachine: "project" } },
-  { id: "op-goal", name: "Goal", typical: { stateMachine: "goal" } },
-  { id: "op-milestone", name: "Milestone", typical: { stateMachine: "milestone" } },
-];
-
-async function seedCatalog(
-  db: ReturnType<typeof createDb>["db"],
-  projectId: string,
-) {
-  for (const a of [...documentArchetypes, ...operationalArchetypes]) {
-    await db
-      .insert(schema.archetypes)
-      .values({
-        id: a.id,
-        name: a.name,
-        family: a.id.startsWith("doc-") ? "document" : "operational",
-        typicalValues: a.typical,
-        allowedMutations: ["update_content", "update_properties"],
-      })
-      .onConflictDoNothing();
-  }
-
-  const defaultTransitions = {
-    Draft: ["Active", "Archived"],
-    Active: ["Archived", "Draft"],
-    Archived: ["Active"],
-    Deleted: [],
-  };
-
-  const titlePropertySchema = {
-    title: {
-      valueType: "string",
-      constraints: { minLength: 1, maxLength: 500 },
-      required: true,
-      system: true,
-    },
-  };
-
-  const bodyPropertySchema = {
-    ...titlePropertySchema,
-    contentDoc: {
-      valueType: "json",
-      constraints: {},
-      required: false,
-      system: true,
-    },
-  };
-
-  const titleSubjectPropertySchema = {
-    ...bodyPropertySchema,
-    subject_id: {
-      valueType: "string",
-      constraints: { minLength: 1 },
-      required: true,
-    },
-  };
-
-  await db
-    .insert(schema.nodeCatalog)
-    .values([
-      {
-        projectId,
-        nodeType: "Note",
-        slug: "note",
-        label: "Note",
-        family: "document",
-        archetypeId: "doc-note",
-        typicalValueOverrides: {},
-        lifecycleTransitions: defaultTransitions,
-        contentGuide: "Free-form note content",
-        propertySchema: bodyPropertySchema,
-        allowedActionRefs: ["create_node"],
-      },
-      {
-        projectId,
-        nodeType: "Document",
-        slug: "document",
-        label: "Document",
-        family: "document",
-        archetypeId: "doc-spec",
-        typicalValueOverrides: {},
-        lifecycleTransitions: defaultTransitions,
-        contentGuide: "Structured document with title and body",
-        propertySchema: bodyPropertySchema,
-        allowedActionRefs: ["create_node", "update_node_properties", "promote_document"],
-      },
-      {
-        projectId,
-        nodeType: "Workflow",
-        slug: "workflow",
-        label: "Workflow",
-        family: "document",
-        archetypeId: "doc-workflow",
-        typicalValueOverrides: {},
-        lifecycleTransitions: defaultTransitions,
-        contentGuide: "Agent workflow with trigger patterns",
-        propertySchema: bodyPropertySchema,
-        allowedActionRefs: [],
-      },
-      {
-        projectId,
-        nodeType: "Project",
-        slug: "project",
-        label: "Project",
-        family: "operational",
-        archetypeId: "op-project",
-        typicalValueOverrides: {},
-        lifecycleTransitions: defaultTransitions,
-        contentGuide: "Operational project node",
-        propertySchema: titleSubjectPropertySchema,
-        allowedActionRefs: ["create_node"],
-      },
-    ])
-    .onConflictDoUpdate({
-      target: [schema.nodeCatalog.projectId, schema.nodeCatalog.nodeType],
-      set: {
-        allowedActionRefs: sql`excluded.allowed_action_refs`,
-        propertySchema: sql`excluded.property_schema`,
-      },
-    });
-
-  await db
-    .insert(schema.edgeCatalog)
-    .values([
-      {
-        projectId,
-        edgeType: "references",
-        slug: "references",
-        label: "References",
-        domain: ["Document", "Note", "Workflow"],
-        range: ["Document", "Note", "Workflow"],
-        cardinality: "many-to-many",
-        representation: "directed",
-      },
-      {
-        projectId,
-        edgeType: "contains",
-        slug: "contains",
-        label: "Contains",
-        domain: ["Project"],
-        range: ["Document"],
-        cardinality: "one-to-many",
-        representation: "directed",
-      },
-    ])
-    .onConflictDoNothing();
-
-  const actionCatalogRows = [
-      {
-        actionType: "create_node",
-        preconditions: { requiredFields: ["nodeType"] },
-        effects: [
-          {
-            kind: "create_node",
-            node: {
-              nodeType: "",
-              lifecycleStatus: "Draft",
-              properties: {},
-              content: null,
-              provenance: {},
-            },
-          },
-        ],
-        executor: "Agent",
-        allowedLifecycleTransitions: {},
-        failureMode: "reject",
-        idempotencyRule: null,
-        logPayloadSchema: {},
-      },
-      {
-        actionType: "update_node_properties",
-        preconditions: {
-          requiredFields: ["nodeId", "properties"],
-          requiresExistingNode: true,
-        },
-        effects: [
-          {
-            kind: "update_node",
-            nodeId: "",
-            patch: { properties: {} },
-          },
-        ],
-        executor: "Agent",
-        allowedLifecycleTransitions: {},
-        failureMode: "reject",
-        idempotencyRule: null,
-        logPayloadSchema: {},
-      },
-      {
-        actionType: "promote_document",
-        preconditions: { requiresExistingNode: true, requiredFields: ["nodeId"] },
-        effects: [
-          {
-            kind: "update_node",
-            nodeId: "",
-            patch: { lifecycleStatus: "Active" },
-          },
-        ],
-        executor: "Human",
-        allowedLifecycleTransitions: { Draft: ["Active"] },
-        failureMode: "reject",
-        idempotencyRule: null,
-        logPayloadSchema: {},
-      },
-    ];
-
-  const actionCatalogValues = actionCatalogRows.map((row) => ({
-    ...row,
-    projectId,
-    slug: toCatalogSlug(row.actionType),
-    label: toCatalogLabel(row.actionType),
-    executor: row.executor as "Agent" | "Human" | "System",
-  })) as (typeof schema.actionCatalog.$inferInsert)[];
-
-  await db.insert(schema.actionCatalog).values(actionCatalogValues).onConflictDoNothing();
-
-  const permissionRows = [
-    ["create_node", "Note", "title"],
-    ["create_node", "Document", "title"],
-    ["create_node", "Project", "title"],
-    ["create_node", "Project", "subject_id"],
-    ["update_node_properties", "Document", "title"],
-    ["update_node_properties", "Document", "contentDoc"],
-  ] as const;
-
-  await db
-    .insert(schema.actionPropertyPermissions)
-    .values(
-      permissionRows.map(([actionType, nodeType, propertyKey]) => ({
-        projectId,
-        actionType,
-        nodeType,
-        propertyKey,
-        operation: (actionType === "create_node" ? "create" : "write") as
-          | "create"
-          | "write",
-        permissionType: "allow" as const,
-        requiresHumanGate: false,
-        status: "active",
-      })),
-    )
-    .onConflictDoNothing();
-
-  await db
-    .insert(schema.workflows)
-    .values(
-      DOMAIN_WORKFLOWS.map((row) => workflowSeedRow(projectId, row)),
-    )
-    .onConflictDoNothing();
-
-  await db
-    .insert(schema.workflows)
-    .values(orchestratorWorkflowRows(projectId))
-    .onConflictDoNothing();
-
-  await seedHomepageAgentCatalog(db, projectId);
-}
-
-type LegacyWorkflowSeed = (typeof DOMAIN_WORKFLOWS)[number];
-
-function workflowSeedRow(
-  projectId: string,
-  legacy: LegacyWorkflowSeed,
-): typeof schema.workflows.$inferInsert {
-  const workflowKey = toCatalogSlug(legacy.title);
-  const steps =
-    legacy.workflowSteps.length > 0
-      ? legacy.workflowSteps.map((step) => ({
-          id: step.id,
-          title: step.title,
-          mode: "agentic" as const,
-          actions: step.actionRefs.map((actionType) => ({
-            actionType,
-            required: false,
-          })),
-          referenceIds: [] as string[],
-          ...("gate" in step && step.gate
-            ? {
-                gate: {
-                  id: `${step.id}_gate`,
-                  policy: legacy.gatePolicy,
-                  required: true,
-                },
-              }
-            : {}),
-        }))
-      : [
-          {
-            id: "execute",
-            title: legacy.title,
-            mode: "agentic" as const,
-            actions: legacy.allowedActions.map((actionType) => ({
-              actionType,
-              required: false,
-            })),
-          },
-        ];
-
-  return {
-    projectId,
-    slug: workflowKey,
-    workflowKey,
-    lifecycle: legacy.lifecycle,
-    scope: { kind: "global" },
-    spec: {
-      title: legacy.title,
-      workflowKey,
-      lifecycle: legacy.lifecycle,
-      scope: { kind: "global" },
-      trigger: {
-        events:
-          legacy.triggerPatterns.length > 0
-            ? legacy.triggerPatterns.map((kind, index) => ({
-                id: kind === "manual" ? "manual" : `legacy_${index}_${kind}`,
-                kind,
-                enabled: true,
-                config: {},
-              }))
-            : [{ id: "manual", kind: "manual", enabled: true, config: {} }],
-      },
-      context: {
-        filterGroups: legacy.applicableNodeTypes.map((nodeType, index) => ({
-          id: `fg_${nodeType.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_${index}`,
-          nodeType,
-          combinator: "and" as const,
-          conditions: [],
-        })),
-        traversals: [],
-        assertions: [],
-      },
-      conditions: [],
-      steps,
-      gates: [],
-      routes: [],
-      routeBlocks: [],
-      workflowBlocks: [],
-      references: [],
-      output: { contract: {} },
-      agentNotes: [
-        legacy.body,
-        legacy.completionCriteria
-          ? `Completion: ${legacy.completionCriteria}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join("\n\n"),
-      applicableNodeTypes: legacy.applicableNodeTypes.map((nodeType) => ({
-        nodeType,
-        disabledActions: [],
-      })),
-      allowedActions: legacy.allowedActions,
-    },
-  };
-}
-
-/** Domain workflows only — Root Runtime Protocol lives in ssota-mcp skill. */
-const DOMAIN_WORKFLOWS = [
-  {
-    title: "Document creation",
-    triggerPatterns: [
-      "create document",
-      "new document",
-      "document creation",
-    ],
-    applicableNodeTypes: ["Document"],
-    lifecycle: "Active" as const,
-    body: "Create documents as Draft. Include title, content, and provenance. Promote only through Human Gate.",
-    workflowSteps: [
-      {
-        id: "contract",
-        title: "Load contract",
-        actionRefs: ["create_node"],
-      },
-      {
-        id: "execute",
-        title: "Create draft",
-        actionRefs: ["create_node"],
-      },
-    ],
-    allowedActions: ["create_node"],
-    gatePolicy: { promote: "human_required" },
-    completionCriteria: "Document node exists in Draft",
-  },
-  {
-    title: "Document mutation",
-    triggerPatterns: [
-      "document mutation",
-      "edit document",
-      "update document",
-    ],
-    applicableNodeTypes: ["Document"],
-    lifecycle: "Active" as const,
-    body: "Confirm document mutability and authority before updating. Gate if authority or document kind is unclear. Load target via get_node first.",
-    workflowSteps: [],
-    allowedActions: ["create_node", "update_node_properties"],
-    gatePolicy: { unclear_mutability: "gate" },
-    completionCriteria: "Mutation plan recorded or gated",
-  },
-  {
-    title: "Context assembly and retrieval",
-    triggerPatterns: [
-      "context assembly",
-      "retrieval",
-      "answering",
-      "summarize",
-    ],
-    applicableNodeTypes: ["Document", "Note", "Project"],
-    lifecycle: "Active" as const,
-    body: "Read-only intent. Use query_nodes, get_node, query_neighbors, traverse_graph. Prefer Active authoritative sources.",
-    workflowSteps: [],
-    allowedActions: [],
-    gatePolicy: {},
-    completionCriteria: "Answer cites graph context or states gaps",
-  },
-  {
-    title: "Meeting processing and task derivation",
-    triggerPatterns: [
-      "meeting processing",
-      "task derivation",
-      "meeting notes",
-    ],
-    applicableNodeTypes: ["Meeting", "Note"],
-    lifecycle: "Active" as const,
-    body: "Extract candidates from meetings. Spawn runtime tasks via spawn_task (not Task graph nodes). Each spawned task should set workflowKey to the domain workflow that will execute the work and target_node_id to the meeting node when applicable.",
-    workflowSteps: [
-      {
-        id: "spawn_tasks",
-        title: "Spawn processing tasks",
-        actionRefs: ["spawn_task"],
-      },
-    ],
-    allowedActions: ["spawn_task", "query_nodes"],
-    gatePolicy: { finalize_task: "human_required" },
-    completionCriteria: "Runtime tasks spawned with provenance to source meetings",
-  },
-  {
-    title: "Graph hygiene",
-    triggerPatterns: [
-      "graph hygiene",
-      "deduplication",
-      "merge",
-      "cleanup",
-    ],
-    applicableNodeTypes: ["Document", "Project", "Edge"],
-    lifecycle: "Active" as const,
-    body: "Identify duplicates and stale items. Auto merge or delete requires Human Gate.",
-    workflowSteps: [],
-    allowedActions: [],
-    gatePolicy: { merge: "always", delete: "always" },
-    completionCriteria: "Hygiene proposal recorded or gated",
-  },
-  {
-    title: "Replay and audit",
-    triggerPatterns: ["replay", "audit", "provenance", "action log"],
-    applicableNodeTypes: ["Document", "Project"],
-    lifecycle: "Active" as const,
-    body: "Use get_action_log and get_action_log_entry. Prefer log and provenance over inference.",
-    workflowSteps: [],
-    allowedActions: [],
-    gatePolicy: {},
-    completionCriteria: "Audit trail cited in response",
-  },
-];
-
-function orchestratorWorkflowRows(
-  projectId: string,
-): (typeof schema.workflows.$inferInsert)[] {
-  const documentStewardBlock = {
-    id: "wf_document_creation",
-    label: "Document steward",
-    workflowKey: "document_creation",
-  };
-  const meetingStewardBlock = {
-    id: "wf_meeting_processing",
-    label: "Meeting steward",
-    workflowKey: "meeting_processing_and_task_derivation",
-  };
-
-  return [
-    {
-      projectId,
-      slug: "ops_planner",
-      workflowKey: "ops_planner",
-      lifecycle: "Active",
-      scope: { kind: "global" },
-      spec: {
-        title: "Ops planner",
-        workflowKey: "ops_planner",
-        workflowRole: "planner",
-        lifecycle: "Active",
-        scope: { kind: "global" },
-        trigger: {
-          events: [
-            { id: "schedule", kind: "schedule", enabled: true, config: {} },
-          ],
-        },
-        context: {
-          filterGroups: [
-            {
-              id: "fg_task",
-              nodeType: "Task",
-              combinator: "and",
-              conditions: [],
-            },
-          ],
-          traversals: [],
-          assertions: [],
-        },
-        flowEntry: { kind: "step", stepId: "spawn_tasks" },
-        routeBlocks: [],
-        workflowBlocks: [],
-        steps: [
-          {
-            id: "spawn_tasks",
-            title: "Spawn steward tasks",
-            mode: "agentic",
-            actions: [{ actionType: "spawn_task", required: true }],
-            referenceIds: [],
-          },
-        ],
-        gates: [],
-        routes: [],
-        references: [],
-        output: { contract: {} },
-        agentNotes:
-          "Completion: Runtime tasks spawned with workflowKey set for downstream stewards.",
-        applicableNodeTypes: [{ nodeType: "Task", disabledActions: [] }],
-        allowedActions: ["spawn_task", "query_nodes"],
-      },
-    },
-    {
-      projectId,
-      slug: "main_product_ops_entry",
-      workflowKey: "main_product_ops_entry",
-      lifecycle: "Active",
-      scope: { kind: "global" },
-      spec: {
-        title: "Main product ops entry",
-        workflowKey: "main_product_ops_entry",
-        workflowRole: "dispatcher",
-        lifecycle: "Active",
-        scope: { kind: "global" },
-        trigger: {
-          events: [
-            { id: "task_ready", kind: "task_ready", enabled: true, config: {} },
-          ],
-        },
-        context: {
-          filterGroups: [
-            {
-              id: "fg_ready_tasks",
-              nodeType: "Task",
-              combinator: "and",
-              conditions: [],
-            },
-          ],
-          traversals: [],
-          assertions: [],
-        },
-        flowEntry: { kind: "route", routeId: "dispatch" },
-        routeBlocks: [
-          {
-            id: "dispatch",
-            label: "Dispatch to steward",
-            routingInstructionUrl: null,
-            links: [],
-            outlets: [
-              {
-                id: "out_document",
-                label: "document",
-                target: {
-                  kind: "workflow",
-                  workflowBlockId: documentStewardBlock.id,
-                },
-              },
-              {
-                id: "out_meeting",
-                label: "meeting",
-                target: {
-                  kind: "workflow",
-                  workflowBlockId: meetingStewardBlock.id,
-                },
-              },
-            ],
-          },
-        ],
-        workflowBlocks: [documentStewardBlock, meetingStewardBlock],
-        steps: [],
-        gates: [],
-        routes: [],
-        references: [],
-        output: { contract: {} },
-        agentNotes:
-          "Completion: Task routed to the correct steward workflow via dispatch outlets.",
-        applicableNodeTypes: [{ nodeType: "Task", disabledActions: [] }],
-        allowedActions: ["query_tasks", "get_task"],
-      },
-    },
-  ];
-}
+loadEnv({ path: "../../.env.local" });
+loadEnv({ path: "../../apps/web/.env.local" });
+loadEnv();
 
 async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: string) {
+  if (smokeUserId) {
+    await db
+      .insert(schema.profiles)
+      .values({
+        id: smokeUserId,
+        email: SMOKE_EMAIL,
+        displayName: "Smoke Operator",
+        onboardingStep: "completed",
+        onboardingCompletedAt: new Date(),
+      })
+      .onConflictDoUpdate({
+        target: schema.profiles.id,
+        set: {
+          email: SMOKE_EMAIL,
+          displayName: "Smoke Operator",
+          onboardingStep: "completed",
+          onboardingCompletedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+  }
+
   const [org] = await db
     .insert(schema.organizations)
     .values({
       slug: DEFAULT_ORG_SLUG,
       name: "SSOTA Labs",
+      ownerUserId: smokeUserId,
     })
-    .onConflictDoNothing()
+    .onConflictDoUpdate({
+      target: schema.organizations.slug,
+      set: { name: "SSOTA Labs", ownerUserId: smokeUserId },
+    })
     .returning();
 
   let organizationId = org?.id;
   if (!organizationId) {
-    const existing = await db
-      .select()
+    const rows = await db
+      .select({ id: schema.organizations.id })
       .from(schema.organizations)
       .where(eq(schema.organizations.slug, DEFAULT_ORG_SLUG))
       .limit(1);
-    organizationId = existing[0]?.id;
+    organizationId = rows[0]?.id;
   }
-  if (!organizationId) return;
+  if (!organizationId) return null;
 
-  await db
+  const [project] = await db
     .insert(schema.projects)
     .values({
       organizationId,
       slug: DEFAULT_PROJECT_SLUG,
       name: "SSOTA Dev",
     })
-    .onConflictDoNothing();
+    .onConflictDoNothing()
+    .returning();
+
+  let projectId = project?.id;
+  if (!projectId) {
+    const rows = await db
+      .select({ id: schema.projects.id })
+      .from(schema.projects)
+      .where(eq(schema.projects.slug, DEFAULT_PROJECT_SLUG))
+      .limit(1);
+    projectId = rows[0]?.id;
+  }
 
   if (smokeUserId) {
     await db
@@ -676,103 +104,91 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       });
 
     await db
-      .update(schema.organizations)
-      .set({ ownerUserId: smokeUserId })
-      .where(eq(schema.organizations.id, organizationId));
-
-    await db
       .insert(schema.organizationMemberships)
       .values({
         organizationId,
         userId: smokeUserId,
-        role: "admin",
+        role: "owner",
+      })
+      .onConflictDoNothing();
+  }
+
+  if (projectId) {
+    await db
+      .insert(schema.tasks)
+      .values({
+        projectId,
+        workflowKey: "work.implement_feature",
+        title: "Archive generic runtime and focus active product on development workflow",
+        status: "ready",
+        executorType: "Agent",
+        assignee: "automation",
+        context: { source: "seed" },
+        acceptanceCriteria: [
+          "Active Drizzle schema keeps only profiles, organizations, memberships, projects, tasks, nodes, and edges.",
+          "Generic graph runtime files live under archive/generic-runtime.",
+        ],
+        idempotencyKey: "seed:archive-generic-runtime",
       })
       .onConflictDoNothing();
 
     await db
-      .insert(schema.userProjectPreferences)
+      .insert(schema.tasks)
       .values({
-        userId: smokeUserId,
-        orgSlug: DEFAULT_ORG_SLUG,
-        projectSlug: DEFAULT_PROJECT_SLUG,
+        projectId,
+        workflowKey: "orchestrator.bootstrap",
+        title: "Configure Cursor Automations for ssota-dev orchestrators",
+        status: "ready",
+        executorType: "Human",
+        assignee: "automation",
+        context: { source: "seed", dogfood: true },
+        acceptanceCriteria: [
+          "Daily, weekly, monthly, and watchdog automations documented.",
+          "ssota MCP connected in automation environment.",
+        ],
+        idempotencyKey: "seed:orchestrator-bootstrap",
       })
-      .onConflictDoUpdate({
-        target: schema.userProjectPreferences.userId,
-        set: {
-          orgSlug: DEFAULT_ORG_SLUG,
-          projectSlug: DEFAULT_PROJECT_SLUG,
-          updatedAt: new Date(),
-        },
-      });
+      .onConflictDoNothing();
+
+    await seedGraphInstances(db, projectId);
   }
+
+  return { organizationId, projectId };
 }
 
-async function seedSmokeUser() {
-  const url = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
-  const serviceKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+async function seedSmokeUser(): Promise<string | undefined> {
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.warn("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing; skipping smoke auth user");
+    return undefined;
+  }
 
-  const admin = createClient(url, serviceKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 
   const { data: existing } = await admin.auth.admin.listUsers();
-  const smokeUser = existing?.users?.find((u) => u.email === SMOKE_EMAIL);
+  const found = existing.users.find((user) => user.email === SMOKE_EMAIL);
+  if (found) return found.id;
 
-  if (!smokeUser) {
-    const { data, error } = await admin.auth.admin.createUser({
-      email: SMOKE_EMAIL,
-      password: SMOKE_PASSWORD,
-      email_confirm: true,
-    });
-    if (error) throw error;
-    console.log(`Created smoke user: ${SMOKE_EMAIL}`);
-    return data.user?.id;
-  }
-  console.log(`Smoke user already exists: ${SMOKE_EMAIL}`);
-  return smokeUser.id;
-}
+  const { data, error } = await admin.auth.admin.createUser({
+    email: SMOKE_EMAIL,
+    password: SMOKE_PASSWORD,
+    email_confirm: true,
+    user_metadata: { name: "Smoke Operator" },
+  });
 
-async function resolveDefaultProjectId(
-  db: ReturnType<typeof createDb>["db"],
-): Promise<string> {
-  const orgRows = await db
-    .select()
-    .from(schema.organizations)
-    .where(eq(schema.organizations.slug, DEFAULT_ORG_SLUG))
-    .limit(1);
-  const organizationId = orgRows[0]?.id;
-  if (!organizationId) {
-    throw new Error(`Organization not found: ${DEFAULT_ORG_SLUG}`);
-  }
-
-  const projectRows = await db
-    .select()
-    .from(schema.projects)
-    .where(
-      and(
-        eq(schema.projects.organizationId, organizationId),
-        eq(schema.projects.slug, DEFAULT_PROJECT_SLUG),
-      ),
-    )
-    .limit(1);
-  const projectId = projectRows[0]?.id;
-  if (!projectId) {
-    throw new Error(`Project not found: ${DEFAULT_PROJECT_SLUG}`);
-  }
-  return projectId;
+  if (error) throw error;
+  return data.user?.id;
 }
 
 async function main() {
   const { db, client } = createDb();
   console.log("Seeding smoke user...");
   const smokeUserId = await seedSmokeUser();
-  console.log("Seeding console org/project...");
+  console.log("Seeding active console runtime...");
   await seedConsole(db, smokeUserId);
-  const projectId = await resolveDefaultProjectId(db);
-  console.log("Seeding catalog...");
-  await seedCatalog(db, projectId);
   console.log("Seed complete.");
   await client.end();
 }

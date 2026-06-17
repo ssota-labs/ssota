@@ -225,10 +225,40 @@ export interface TaskQueryInput {
   offset?: number;
 }
 
+export interface TaskCreateInput {
+  title: string;
+  workflowKey: string;
+  status?: TaskStatus;
+  executorType?: ExecutorType;
+  assignee?: string | null;
+  subjectId?: string | null;
+  targetNodeId?: string | null;
+  parentTaskId?: string | null;
+  workflowId?: string | null;
+  context?: Record<string, unknown>;
+  acceptanceCriteria?: unknown[];
+  idempotencyKey?: string | null;
+}
+
+export interface TaskUpdatePatch {
+  title?: string;
+  status?: TaskStatus;
+  executorType?: ExecutorType;
+  assignee?: string | null;
+  subjectId?: string | null;
+  targetNodeId?: string | null;
+  context?: Record<string, unknown>;
+  acceptanceCriteria?: unknown[];
+  result?: Record<string, unknown>;
+}
+
 export interface TaskPort {
   listTasks(params?: { limit?: number }): Promise<Task[]>;
   queryTasks(params?: TaskQueryInput): Promise<Task[]>;
   getTask(taskId: string): Promise<Task | null>;
+  getTaskByIdempotencyKey(idempotencyKey: string): Promise<Task | null>;
+  createTask(input: TaskCreateInput): Promise<Task>;
+  updateTask(taskId: string, patch: TaskUpdatePatch): Promise<Task | null>;
 }
 
 export interface CommitParams {
@@ -327,14 +357,6 @@ export interface ConsolePort {
     projectSlug: string,
   ): Promise<Project | null>;
   listProjectsForOrganization(organizationId: string): Promise<Project[]>;
-  getUserProjectPreference(
-    userId: string,
-  ): Promise<{ orgSlug: string; projectSlug: string } | null>;
-  setUserProjectPreference(
-    userId: string,
-    orgSlug: string,
-    projectSlug: string,
-  ): Promise<void>;
 }
 
 export interface OnboardingPort {
@@ -352,7 +374,7 @@ export interface OnboardingPort {
   }): Promise<{ organization: Organization; project: Project }>;
 }
 
-export interface GraphReadPort {
+export interface LegacyGraphReadPort {
   getNode(nodeId: string): Promise<Node | null>;
   queryNodes(params: {
     nodeType?: string;
@@ -412,7 +434,7 @@ export interface ImpactQueuePort {
 
 export interface ActionPorts {
   catalog: CatalogPort;
-  graph: GraphReadPort;
+  graph: LegacyGraphReadPort;
   gate: GatePort;
   commit: ActionCommitPort;
   impactQueue: ImpactQueuePort;

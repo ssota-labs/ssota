@@ -6,6 +6,10 @@ node_modules/
 # Build / dist
 dist/
 build/
+!apps/web/
+!apps/web/app/
+!apps/web/app/**/build/
+!apps/web/app/**/build/**
 out/
 .next/
 .nuxt/

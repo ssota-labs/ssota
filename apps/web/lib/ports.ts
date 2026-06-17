@@ -1,8 +1,9 @@
 import {
-  createActionPorts,
   createConsolePort,
+  createGraphPorts,
   createDb,
   createOnboardingPort,
+  createTaskPort,
 } from "@ssota/adapter-supabase";
 
 type Db = ReturnType<typeof createDb>["db"];
@@ -16,8 +17,8 @@ export function getDb(): Db {
   return cachedDb;
 }
 
-export function getActionPorts(projectId: string) {
-  return createActionPorts(getDb(), { projectId });
+export function getTaskPort(projectId: string) {
+  return createTaskPort(getDb(), { projectId });
 }
 
 export function getConsolePort() {
@@ -26,6 +27,10 @@ export function getConsolePort() {
 
 export function getOnboardingPort() {
   return createOnboardingPort(getDb());
+}
+
+export function getGraphPorts(projectId: string) {
+  return createGraphPorts(getDb(), { projectId });
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {

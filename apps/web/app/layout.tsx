@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { TooltipProvider } from "@ssota/ui/components/ui/tooltip";
+import { ThemeProvider } from "@ssota/ui/components/theme-provider";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { getTranslations } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -27,10 +28,15 @@ export default async function RootLayout({
   const { locale, messages, t } = await getTranslations();
 
   return (
-    <html lang={locale} className={cn("style-ssota font-sans", geist.variable)}>
+    <html
+      lang={locale}
+      className={cn("style-ssota font-sans", geist.variable)}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen bg-background text-foreground">
-        <LocaleProvider locale={locale} messages={messages}>
-          <TooltipProvider>
+        <ThemeProvider>
+          <LocaleProvider locale={locale} messages={messages}>
+            <TooltipProvider>
             {!user ? (
               <header className="border-b bg-card">
                 <div className="flex items-center justify-between px-6 py-4">
@@ -53,8 +59,9 @@ export default async function RootLayout({
             ) : (
               <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
             )}
-          </TooltipProvider>
-        </LocaleProvider>
+            </TooltipProvider>
+          </LocaleProvider>
+        </ThemeProvider>
         <VercelAnalytics />
         <VercelSpeedInsights />
       </body>

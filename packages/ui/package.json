@@ -11,7 +11,12 @@
     "./design-lab/theme-manifest": "./src/design-lab/theme-manifest.ts",
     "./lib/utils": "./src/lib/utils.ts",
     "./hooks/*": "./src/hooks/*",
-    "./components/ui/*": "./src/components/ui/*"
+    "./components/ui/*": "./src/components/ui/*",
+    "./components/page-patterns": "./src/components/page-patterns/index.ts",
+    "./components/page-patterns/*": "./src/components/page-patterns/*",
+    "./components/console": "./src/components/console/index.ts",
+    "./components/console/*": "./src/components/console/*",
+    "./components/theme-provider": "./src/components/theme-provider.tsx"
   },
   "scripts": {
     "lint": "eslint src",
