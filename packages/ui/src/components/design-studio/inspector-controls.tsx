@@ -271,7 +271,7 @@ function InspectorPresetTrigger({
 }) {
   return (
     <PopoverTrigger
-      nativeButton={false}
+      nativeButton
       aria-label={ariaLabel}
       render={
         <InputGroupButton type="button" size="icon-xs" variant="ghost" />
