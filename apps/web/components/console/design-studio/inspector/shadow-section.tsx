@@ -42,44 +42,48 @@ export function ShadowSection({ shadow, onChange }: ShadowSectionProps) {
 
   return (
     <InspectorSection title="Shadow">
-      <div className="flex items-end gap-2">
-        <InspectorField label="Shadow" className="min-w-0 flex-1">
-          <Select
-            value={shadow.preset}
-            onValueChange={(value) =>
+      <div className="space-y-1.5">
+        <span className="block text-xs text-muted-foreground">Shadow</span>
+        <div className="flex items-center gap-1.5">
+          <div className="min-w-0 flex-1">
+            <Select
+              value={shadow.preset}
+              onValueChange={(value) =>
+                onChange({
+                  ...shadow,
+                  preset: value as ShadowPreset,
+                })
+              }
+            >
+              <SelectTrigger className="w-full" aria-label="Shadow">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SHADOW_PRESET_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            className="shrink-0"
+            aria-label="Remove shadow"
+            onClick={() =>
               onChange({
                 ...shadow,
-                preset: value as ShadowPreset,
+                preset: "none",
+                inset: false,
               })
             }
           >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SHADOW_PRESET_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </InspectorField>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          aria-label="Remove shadow"
-          onClick={() =>
-            onChange({
-              ...shadow,
-              preset: "none",
-              inset: false,
-            })
-          }
-        >
-          <MinusIcon className="size-3.5" />
-        </Button>
+            <MinusIcon className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
       {showDetails ? (
