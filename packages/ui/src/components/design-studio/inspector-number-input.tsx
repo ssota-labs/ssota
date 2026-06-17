@@ -1,6 +1,5 @@
 "use client";
 
-import type { WheelEvent } from "react";
 import { useRef, useState } from "react";
 import {
   InputGroup,
@@ -8,12 +7,12 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import {
-  adjustNumberByWheelWhenFocused,
   applyNumericBounds,
   InspectorAnchorPopover,
   InspectorPresetList,
   InspectorScrubberHandle,
   InspectorUnitSelector,
+  preventNumberInputWheelChange,
   type InspectorNumberUnit,
   type InspectorPresetOption,
 } from "./inspector-input-primitives";
@@ -63,16 +62,6 @@ export function InspectorScrubberNumberInput({
     onChange(applyNumericBounds(next, min, max));
   };
 
-  const handleWheel = (event: WheelEvent<HTMLInputElement>) =>
-    adjustNumberByWheelWhenFocused(
-      event,
-      value,
-      emitBoundedChange,
-      scrollStep,
-      min,
-      max,
-    );
-
   return (
     <InputGroup>
       <InspectorScrubberHandle
@@ -98,7 +87,7 @@ export function InspectorScrubberNumberInput({
           const clamped = applyNumericBounds(event.target.value, min, max);
           if (clamped !== event.target.value) onChange(clamped);
         }}
-        onWheel={handleWheel}
+        onWheel={preventNumberInputWheelChange}
       />
       <InputGroupAddon align="inline-end">
         <InspectorUnitSelector
@@ -150,16 +139,6 @@ export function InspectorPresetNumberInput({
     onChange(applyNumericBounds(next, min, max));
   };
 
-  const handleWheel = (event: WheelEvent<HTMLInputElement>) =>
-    adjustNumberByWheelWhenFocused(
-      event,
-      value,
-      emitBoundedChange,
-      scrollStep,
-      min,
-      max,
-    );
-
   const togglePresets = () => {
     if (hasPresets) setOpen((current) => !current);
   };
@@ -207,7 +186,7 @@ export function InspectorPresetNumberInput({
             const clamped = applyNumericBounds(event.target.value, min, max);
             if (clamped !== event.target.value) onChange(clamped);
           }}
-          onWheel={handleWheel}
+          onWheel={preventNumberInputWheelChange}
           onClick={togglePresets}
         />
       </InspectorAnchorPopover>

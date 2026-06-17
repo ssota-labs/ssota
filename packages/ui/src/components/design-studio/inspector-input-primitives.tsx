@@ -205,41 +205,11 @@ export function applyNumericBounds(
   return String(next);
 }
 
-export function adjustNumberByWheel(
-  event: WheelEvent,
-  value: string,
-  onChange: (value: string) => void,
-  step: number,
-  min?: number,
-  max?: number,
-) {
-  const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
-  const delta = horizontal ? event.deltaX : event.deltaY;
-  if (delta === 0) return;
-
-  event.preventDefault();
-  event.stopPropagation();
-
-  const current = value.trim() === "" ? 0 : Number(value);
-  if (!Number.isFinite(current)) return;
-
-  const direction = horizontal ? (delta > 0 ? 1 : -1) : delta < 0 ? 1 : -1;
-  onChange(
-    applyNumericBounds(String(current + direction * step), min, max),
-  );
-}
-
-/** 포커스된 number input에서만 휠로 값을 조정합니다. */
-export function adjustNumberByWheelWhenFocused(
+/** type=number 기본 휠 증감을 막습니다 (포커스 여부 무관). */
+export function preventNumberInputWheelChange(
   event: WheelEvent<HTMLInputElement>,
-  value: string,
-  onChange: (value: string) => void,
-  step: number,
-  min?: number,
-  max?: number,
 ) {
-  if (document.activeElement !== event.currentTarget) return;
-  adjustNumberByWheel(event, value, onChange, step, min, max);
+  event.preventDefault();
 }
 
 type InspectorScrubberHandleProps = {
