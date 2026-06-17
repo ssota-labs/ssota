@@ -287,13 +287,13 @@ test.describe("Editor Lab", () => {
   });
 
   test.describe("quote shortcut", () => {
-    test('creates blockquote when typing "" at line start', async ({ page }) => {
+    test('creates blockquote when typing " at line start', async ({ page }) => {
       const surface = await focusEditorEnd(page);
 
       await typeQuoteShortcut(page);
       const quote = surface.locator("blockquote").last();
       await expect(quote).toBeVisible();
-      await expect(quote).not.toContainText('""');
+      await expect(quote).not.toContainText('"');
     });
 
     test("typed quote content stays inside blockquote", async ({ page }) => {
@@ -305,6 +305,17 @@ test.describe("Editor Lab", () => {
 
       await page.keyboard.type("Quoted text");
       await expect(quote).toContainText("Quoted text");
+    });
+
+    test('creates blockquote after Enter on sample document', async ({ page }) => {
+      const surface = await editorSurface(page);
+      await surface.click();
+      await page.keyboard.press("End");
+      await page.keyboard.press("Enter");
+      await typeQuoteShortcut(page);
+
+      const quote = surface.locator("blockquote").last();
+      await expect(quote).toBeVisible();
     });
   });
 
