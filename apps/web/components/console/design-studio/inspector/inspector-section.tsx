@@ -1,6 +1,7 @@
 "use client";
 
-import { cloneElement, isValidElement, type ReactElement, type ReactNode, useId } from "react";
+import { Children, Fragment, cloneElement, isValidElement, type ReactElement, type ReactNode, useId } from "react";
+import { Separator } from "@ssota/ui/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 type InspectorSectionProps = {
@@ -15,12 +16,31 @@ export function InspectorSection({
   className,
 }: InspectorSectionProps) {
   return (
-    <section className={cn("space-y-3", className)}>
+    <section className={cn("space-y-3 px-4 py-3", className)}>
       <h3 className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
         {title}
       </h3>
       {children}
     </section>
+  );
+}
+
+type InspectorSectionListProps = {
+  children: ReactNode;
+};
+
+export function InspectorSectionList({ children }: InspectorSectionListProps) {
+  const items = Children.toArray(children).filter(Boolean);
+
+  return (
+    <>
+      {items.map((child, index) => (
+        <Fragment key={index}>
+          {index > 0 ? <Separator /> : null}
+          {child}
+        </Fragment>
+      ))}
+    </>
   );
 }
 

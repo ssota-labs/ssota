@@ -17,6 +17,7 @@ import {
   InspectorField,
   InspectorGrid,
   InspectorSection,
+  InspectorSectionList,
 } from "./inspector-section";
 import { ShadowSection } from "./shadow-section";
 
@@ -94,7 +95,7 @@ export function ClassnameInspector({
   };
 
   return (
-    <div className="space-y-6">
+    <InspectorSectionList>
       <InspectorSection title="Typography">
         <InspectorGrid>
           <InspectorField label="Font">
@@ -457,6 +458,6 @@ export function ClassnameInspector({
           <Input value={parsed.remainder.join(" ")} readOnly />
         </InspectorSection>
       ) : null}
-    </div>
+    </InspectorSectionList>
   );
 }
