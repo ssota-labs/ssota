@@ -916,6 +916,78 @@ const DEFAULT_SHADOW: ShadowValue = {
   inset: false,
 };
 
+/** Tailwind 기본 shadow 토큰의 대표(첫 번째) 레이어 근사값. 실제 CSS는 다층 shadow입니다. */
+const SHADOW_PRESET_DIMENSIONS: Record<
+  Exclude<ShadowPreset, "custom">,
+  Pick<ShadowValue, "x" | "y" | "blur" | "spread" | "color">
+> = {
+  none: {
+    x: "0px",
+    y: "0px",
+    blur: "0px",
+    spread: "0px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  sm: {
+    x: "0px",
+    y: "1px",
+    blur: "2px",
+    spread: "0px",
+    color: "rgba(0, 0, 0, 0.05)",
+  },
+  default: {
+    x: "0px",
+    y: "1px",
+    blur: "3px",
+    spread: "0px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  md: {
+    x: "0px",
+    y: "4px",
+    blur: "6px",
+    spread: "-1px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  lg: {
+    x: "0px",
+    y: "10px",
+    blur: "15px",
+    spread: "-3px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  xl: {
+    x: "0px",
+    y: "20px",
+    blur: "25px",
+    spread: "-5px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  "2xl": {
+    x: "0px",
+    y: "25px",
+    blur: "50px",
+    spread: "-12px",
+    color: "rgba(0, 0, 0, 0.25)",
+  },
+};
+
+export function applyShadowPreset(
+  preset: ShadowPreset,
+  shadow: ShadowValue = DEFAULT_SHADOW,
+): ShadowValue {
+  if (preset === "custom") {
+    return { ...shadow, preset: "custom" };
+  }
+
+  const dimensions = SHADOW_PRESET_DIMENSIONS[preset];
+  return {
+    preset,
+    ...dimensions,
+    inset: false,
+  };
+}
+
 function splitVariants(token: string): { variants: string[]; base: string } {
   const parts = token.split(":");
   if (parts.length === 1) {
@@ -1181,10 +1253,7 @@ export function parseClassName(className: string | undefined): ParsedClassName {
       continue;
     }
     if (SHADOW_PRESET_MAP[base]) {
-      parsed.shadow = {
-        ...DEFAULT_SHADOW,
-        preset: SHADOW_PRESET_MAP[base]!,
-      };
+      parsed.shadow = applyShadowPreset(SHADOW_PRESET_MAP[base]!);
       continue;
     }
     const customShadow = parseArbitraryShadow(base);

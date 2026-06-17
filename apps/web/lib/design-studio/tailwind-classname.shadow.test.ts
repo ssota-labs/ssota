@@ -1,8 +1,61 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyShadowPreset,
   formatShadowLengthPx,
+  parseClassName,
   parseShadowLengthPx,
 } from "./tailwind-classname";
+
+describe("applyShadowPreset", () => {
+  it("fills representative dimensions for built-in presets", () => {
+    expect(applyShadowPreset("sm")).toMatchObject({
+      preset: "sm",
+      x: "0px",
+      y: "1px",
+      blur: "2px",
+      spread: "0px",
+      inset: false,
+    });
+    expect(applyShadowPreset("md")).toMatchObject({
+      preset: "md",
+      y: "4px",
+      blur: "6px",
+      spread: "-1px",
+    });
+  });
+
+  it("keeps custom values when switching to custom", () => {
+    const custom = applyShadowPreset("custom", {
+      preset: "sm",
+      x: "2px",
+      y: "3px",
+      blur: "4px",
+      spread: "1px",
+      color: "rgba(0, 0, 0, 0.2)",
+      inset: true,
+    });
+
+    expect(custom).toMatchObject({
+      preset: "custom",
+      x: "2px",
+      y: "3px",
+      blur: "4px",
+      spread: "1px",
+      inset: true,
+    });
+  });
+});
+
+describe("parseClassName shadow presets", () => {
+  it("hydrates numeric fields from preset tokens", () => {
+    expect(parseClassName("shadow-md").shadow).toMatchObject({
+      preset: "md",
+      y: "4px",
+      blur: "6px",
+      spread: "-1px",
+    });
+  });
+});
 
 describe("parseShadowLengthPx", () => {
   it("extracts numeric value from px string", () => {

@@ -12,6 +12,7 @@ import {
 import { Switch } from "@ssota/ui/components/ui/switch";
 import type { ShadowPreset, ShadowValue } from "@/lib/design-studio/tailwind-classname";
 import {
+  applyShadowPreset,
   formatShadowLengthPx,
   parseShadowLengthPx,
 } from "@/lib/design-studio/tailwind-classname";
@@ -53,10 +54,7 @@ export function ShadowSection({ shadow, onChange }: ShadowSectionProps) {
             <Select
               value={shadow.preset}
               onValueChange={(value) =>
-                onChange({
-                  ...shadow,
-                  preset: value as ShadowPreset,
-                })
+                onChange(applyShadowPreset(value as ShadowPreset, shadow))
               }
             >
               <SelectTrigger className="w-full" aria-label="Shadow">
