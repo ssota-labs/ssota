@@ -51,29 +51,29 @@ export function ProductRoadmapCard({
     });
   };
 
-  if (isEmpty) {
-    return (
-      <section
-        className="rounded-lg border bg-card"
-        data-testid="product-roadmap-card"
-      >
-        <header className="sticky top-0 z-10 border-b bg-card px-4 py-3 shadow-sm md:px-6">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-lg font-semibold tracking-tight">
-              {t("roadmap.productRoadmap")}
-            </h2>
-            <RoadmapDocStatusControl
-              value={docStatus}
-              onChange={handleDocStatusChange}
-              disabled={pending}
-            />
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("roadmap.productRoadmapDescription")}
-          </p>
-        </header>
+  return (
+    <section
+      className="rounded-lg border bg-card"
+      data-testid="product-roadmap-card"
+    >
+      <header className="sticky top-0 z-10 border-b bg-card px-4 py-3 shadow-sm md:px-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg font-semibold tracking-tight">
+            {t("roadmap.productRoadmap")}
+          </h2>
+          <RoadmapDocStatusControl
+            value={docStatus}
+            onChange={handleDocStatusChange}
+            disabled={pending}
+          />
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("roadmap.productRoadmapDescription")}
+        </p>
+      </header>
 
-        <div className="space-y-4 p-4 md:p-6">
+      <div className="space-y-4 p-4 md:p-6">
+        {isEmpty ? (
           <div className="rounded-lg border border-dashed bg-muted/20 p-6 text-center">
             <p className="text-sm text-muted-foreground">
               {t("roadmap.emptyProductDescription")}
@@ -88,49 +88,20 @@ export function ProductRoadmapCard({
               {t("roadmap.startFromTemplate")}
             </Button>
           </div>
-        </div>
-      </section>
-    );
-  }
-
-  return (
-    <div className="space-y-4" data-testid="product-roadmap-card">
-      <RoadmapDocumentPanel
-        content={node.content}
-        projectId={projectId}
-        expandTestId="product-roadmap-expand"
-        onSave={async (input) => {
-          await onSave({
-            title: node.title,
-            content: input.content,
-          });
-        }}
-      >
-        {({ cardContent, expandedContent }) => (
-          <>
-            <section className="rounded-lg border bg-card">
-              <header className="sticky top-0 z-10 border-b bg-card px-4 py-3 shadow-sm md:px-6">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-lg font-semibold tracking-tight">
-                    {t("roadmap.productRoadmap")}
-                  </h2>
-                  <RoadmapDocStatusControl
-                    value={docStatus}
-                    onChange={handleDocStatusChange}
-                    disabled={pending}
-                  />
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {t("roadmap.productRoadmapDescription")}
-                </p>
-              </header>
-
-              <div className="p-4 md:p-6">{cardContent}</div>
-            </section>
-            {expandedContent}
-          </>
+        ) : (
+          <RoadmapDocumentPanel
+            content={node.content}
+            projectId={projectId}
+            expandTestId="product-roadmap-expand"
+            onSave={async (input) => {
+              await onSave({
+                title: node.title,
+                content: input.content,
+              });
+            }}
+          />
         )}
-      </RoadmapDocumentPanel>
-    </div>
+      </div>
+    </section>
   );
 }

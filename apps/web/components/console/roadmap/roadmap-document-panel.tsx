@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition, type ReactNode } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import {
@@ -16,18 +16,12 @@ import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { createSsotaEditorHostProps } from "@/lib/editor/host-props";
 
-type RoadmapDocumentPanelRenderProps = {
-  cardContent: ReactNode;
-  expandedContent: ReactNode | null;
-};
-
 type RoadmapDocumentPanelProps = {
   content: string;
   projectId: string;
   onSave: (input: { content: string }) => Promise<void>;
   expandTestId?: string;
   className?: string;
-  children: (parts: RoadmapDocumentPanelRenderProps) => ReactNode;
 };
 
 export function RoadmapDocumentPanel({
@@ -36,7 +30,6 @@ export function RoadmapDocumentPanel({
   onSave,
   expandTestId = "roadmap-expand",
   className,
-  children,
 }: RoadmapDocumentPanelProps) {
   const { t } = useLocale();
   const router = useRouter();
@@ -83,7 +76,7 @@ export function RoadmapDocumentPanel({
     });
   };
 
-  const cardContent = (
+  return (
     <div
       className={cn("space-y-4", className)}
       data-testid="roadmap-document-panel"
@@ -106,7 +99,30 @@ export function RoadmapDocumentPanel({
             </button>
           </div>
         </div>
-      ) : null}
+      ) : (
+        <div className="space-y-3" data-testid="roadmap-document-editor">
+          <div className="flex justify-center">
+            <button
+              type="button"
+              data-testid={`${expandTestId}-collapse`}
+              aria-expanded
+              aria-label={t("roadmap.collapseContent")}
+              className="inline-flex size-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+              onClick={handleToggleExpand}
+            >
+              <CaretDownIcon className="size-4 rotate-180" aria-hidden />
+            </button>
+          </div>
+          <SsotaEditor
+            key={editing ? "editing" : `readonly-${content.length}`}
+            content={draftDoc}
+            editable={editing}
+            onChange={editing ? setDraftDoc : undefined}
+            className="roadmap-readonly-editor"
+            {...editorHostProps}
+          />
+        </div>
+      )}
 
       <div className="flex flex-wrap justify-end gap-2">
         {editing ? (
@@ -144,34 +160,4 @@ export function RoadmapDocumentPanel({
       </div>
     </div>
   );
-
-  const expandedContent = expanded ? (
-    <div
-      className="space-y-3 px-4 md:px-6"
-      data-testid="roadmap-document-editor"
-    >
-      <div className="flex justify-center">
-        <button
-          type="button"
-          data-testid={`${expandTestId}-collapse`}
-          aria-expanded
-          aria-label={t("roadmap.collapseContent")}
-          className="inline-flex size-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
-          onClick={handleToggleExpand}
-        >
-          <CaretDownIcon className="size-4 rotate-180" aria-hidden />
-        </button>
-      </div>
-      <SsotaEditor
-        key={editing ? "editing" : `readonly-${content.length}`}
-        content={draftDoc}
-        editable={editing}
-        onChange={editing ? setDraftDoc : undefined}
-        className="roadmap-readonly-editor"
-        {...editorHostProps}
-      />
-    </div>
-  ) : null;
-
-  return children({ cardContent, expandedContent });
 }

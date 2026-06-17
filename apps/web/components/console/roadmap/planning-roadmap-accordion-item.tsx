@@ -165,25 +165,20 @@ export function PlanningRoadmapAccordionItem({
               </div>
             </div>
           ) : node.content.trim() ? (
-            <RoadmapDocumentPanel
-              content={node.content}
-              projectId={projectId}
-              expandTestId={`planning-roadmap-expand-${cardTestId}`}
-              onSave={async (input) => {
-                await onSave({
-                  nodeId: node.id,
-                  title: node.title,
-                  content: input.content,
-                });
-              }}
-            >
-              {({ cardContent, expandedContent }) => (
-                <>
-                  <div className="px-4 py-4 md:px-6 md:py-6">{cardContent}</div>
-                  {expandedContent}
-                </>
-              )}
-            </RoadmapDocumentPanel>
+            <div className="px-4 py-4 md:px-6 md:py-6">
+              <RoadmapDocumentPanel
+                content={node.content}
+                projectId={projectId}
+                expandTestId={`planning-roadmap-expand-${cardTestId}`}
+                onSave={async (input) => {
+                  await onSave({
+                    nodeId: node.id,
+                    title: node.title,
+                    content: input.content,
+                  });
+                }}
+              />
+            </div>
           ) : (
             <div className="px-4 py-4 md:px-6 md:py-6">
               <p className="text-sm text-muted-foreground">
