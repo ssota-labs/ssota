@@ -327,6 +327,66 @@ test.describe("Editor Lab", () => {
     });
   });
 
+  test.describe("list markdown shortcut", () => {
+    test("creates bullet list when typing dash + space at line start", async ({
+      page,
+    }) => {
+      const surface = await focusEditorEnd(page);
+
+      await page.keyboard.type("- ", { delay: 40 });
+      const bullet = surface.locator("ul li").last();
+      await expect(bullet).toBeVisible();
+      await expect(bullet).not.toContainText("-");
+
+      await page.keyboard.type("Bullet item");
+      await expect(bullet).toContainText("Bullet item");
+      await expect(bullet).not.toContainText("-");
+    });
+
+    test("creates ordered list when typing 1. + space at line start", async ({
+      page,
+    }) => {
+      const surface = await focusEditorEnd(page);
+
+      await page.keyboard.type("1. ", { delay: 40 });
+      const ordered = surface.locator("ol li").last();
+      await expect(ordered).toBeVisible();
+      await expect(ordered).not.toContainText("1.");
+
+      await page.keyboard.type("Numbered item");
+      await expect(ordered).toContainText("Numbered item");
+      await expect(ordered).not.toContainText("1.");
+    });
+
+    test("toolbar list toggle strips existing markdown marker text", async ({
+      page,
+    }) => {
+      const surface = await focusEditorEnd(page);
+
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "paragraph",
+            content: [{ type: "text", text: "1. keep marker stripped" }],
+          })
+          .focus("end")
+          .run();
+      });
+      await selectEditorText(page, "keep marker stripped");
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+      await expect(toolbar).toBeVisible();
+      await toolbar.getByRole("button", { name: "Numbered list" }).click();
+
+      const ordered = surface.locator("ol li").last();
+      await expect(ordered).toBeVisible();
+      await expect(ordered).toContainText("keep marker stripped");
+      await expect(ordered).not.toContainText("1.");
+    });
+  });
+
   test.describe("bubble toolbar", () => {
     test("appears on text selection", async ({ page }) => {
       const surface = await editorSurface(page);

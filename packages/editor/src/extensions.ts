@@ -24,6 +24,7 @@ import {
 } from "./extensions/mixed-list-extensions";
 import { NestedListItem } from "./extensions/NestedListItem";
 import { QuoteShortcut } from "./extensions/QuoteShortcut";
+import { ListMarkdownShortcut } from "./extensions/ListMarkdownShortcut";
 import { Toggle } from "./extensions/Toggle";
 
 export type { SsotaExtensionOptions } from "./types";
@@ -79,6 +80,7 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
     CalloutTitle,
     Toggle,
     QuoteShortcut,
+    ListMarkdownShortcut,
     EmojiExtension,
     Placeholder.configure({
       placeholder: ({ node }) => {

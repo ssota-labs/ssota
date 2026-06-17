@@ -2,6 +2,7 @@ import type { Editor } from "@tiptap/react";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
 import type { ResolvedPos } from "@tiptap/pm/model";
 import { TextSelection } from "@tiptap/pm/state";
+import { stripListMarkerText } from "./list-marker-utils";
 
 export type EditorListType = "bulletList" | "orderedList";
 
@@ -53,6 +54,44 @@ function listItemHasNestedList(listItem: ProseMirrorNode): boolean {
   );
 }
 
+/** 현재 텍스트 블록 맨 앞의 `- ` / `1. ` 마커를 제거한다. */
+function stripListMarkerFromCurrentBlock(editor: Editor): boolean {
+  const { state } = editor;
+  const $from = state.selection.$from;
+  const parent = $from.parent;
+
+  if (!parent.isTextblock || parent.type.spec.code) {
+    return false;
+  }
+
+  const text = parent.textContent;
+  const stripped = stripListMarkerText(text);
+  if (stripped === text) {
+    return false;
+  }
+
+  const blockStart = $from.start();
+  const prefixLength = text.length - stripped.length;
+
+  return editor
+    .chain()
+    .focus()
+    .command(({ tr, dispatch }) => {
+      if (!dispatch) {
+        return true;
+      }
+
+      tr.delete(blockStart, blockStart + prefixLength);
+      const nextPos = Math.max(
+        blockStart + 1,
+        Math.min(state.selection.from - prefixLength, tr.doc.content.size - 1),
+      );
+      tr.setSelection(TextSelection.near(tr.doc.resolve(nextPos)));
+      return true;
+    })
+    .run();
+}
+
 function nestOppositeListType(
   editor: Editor,
   listType: EditorListType,
@@ -67,11 +106,19 @@ function nestOppositeListType(
   }
 
   const listItem = $from.node(listItemDepth);
-  const listItemPos = $from.before(listItemDepth);
   const paragraph = listItem.firstChild;
   if (!paragraph || paragraph.type.name !== "paragraph") {
     return false;
   }
+
+  stripListMarkerFromCurrentBlock(editor);
+  const refreshedFrom = editor.state.selection.$from;
+  const refreshedListItem = refreshedFrom.node(listItemDepth);
+  const refreshedParagraph = refreshedListItem.firstChild;
+  if (!refreshedParagraph || refreshedParagraph.type.name !== "paragraph") {
+    return false;
+  }
+  const refreshedListItemPos = refreshedFrom.before(listItemDepth);
 
   return editor
     .chain()
@@ -79,14 +126,14 @@ function nestOppositeListType(
     .command(({ tr, dispatch }) => {
       if (!dispatch) return true;
 
-      const currentListItem = tr.doc.nodeAt(listItemPos);
+      const currentListItem = tr.doc.nodeAt(refreshedListItemPos);
       if (!currentListItem || currentListItem.type.name !== "listItem") {
         return false;
       }
 
-      const paragraphStart = listItemPos + 1;
-      const paragraphEnd = paragraphStart + paragraph.nodeSize;
-      const nestedListItem = listItemType.create(null, [paragraph]);
+      const paragraphStart = refreshedListItemPos + 1;
+      const paragraphEnd = paragraphStart + refreshedParagraph.nodeSize;
+      const nestedListItem = listItemType.create(null, [refreshedParagraph]);
       const nestedList = targetType.create(null, nestedListItem);
 
       tr.replaceWith(paragraphStart, paragraphEnd, nestedList);
@@ -103,6 +150,8 @@ function nestOppositeListType(
  * - 리스트 아이템 안에 하위 리스트가 없으면: 현재 줄을 반대 타입 하위 리스트로 중첩
  */
 export function applyListType(editor: Editor, listType: EditorListType): boolean {
+  stripListMarkerFromCurrentBlock(editor);
+
   const { state } = editor;
   const $from = state.selection.$from;
   const innermost = findInnermostList($from);

@@ -104,6 +104,27 @@ describe("applyListType", () => {
     expect(getActiveListType(editor)).toBe("bulletList");
   });
 
+  it("strips markdown marker when toggling list from paragraph text", () => {
+    editor = createEditor({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "1. numbered line" }],
+        },
+      ],
+    });
+    selectText(editor, "1. numbered line");
+
+    expect(applyListType(editor, "orderedList")).toBe(true);
+    expect(getActiveListType(editor)).toBe("orderedList");
+    const listItem = editor.getJSON().content?.[0];
+    expect(listItem?.type).toBe("orderedList");
+    const paragraphText =
+      listItem?.content?.[0]?.content?.[0]?.content?.[0]?.text;
+    expect(paragraphText).toBe("numbered line");
+  });
+
   it("converts only the innermost list level", () => {
     editor = createEditor({
       type: "doc",
