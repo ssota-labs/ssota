@@ -151,10 +151,10 @@ export function ShadowSection({ shadow, onChange }: ShadowSectionProps) {
             />
           </InspectorField>
 
-          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-            <div>
-              <p className="text-sm">Inset</p>
-              <p className="text-xs text-muted-foreground">Inner shadow</p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Inset</p>
+              <p className="text-[10px] text-muted-foreground">Inner shadow</p>
             </div>
             <Switch
               checked={shadow.inset}
