@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     "@ssota/contracts",
     "@ssota/adapter-supabase",
     "@ssota/editor",
+    "@ssota/studio-renderer",
     "@ssota/ui",
   ],
   serverExternalPackages: ["@tailwindcss/node", "lightningcss"],
