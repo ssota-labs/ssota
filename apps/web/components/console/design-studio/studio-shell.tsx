@@ -1,11 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { GraphNode } from "@ssota/core";
-import type {
-  UiComponentContentV2,
-  UiComponentDocument,
-} from "@ssota/contracts/catalog";
+import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -16,19 +13,15 @@ import type { ProjectRouteContext } from "@/lib/console/paths";
 import {
   clearSessionDraft,
   draftStorageKey,
-  getUiComponentRepresentation,
   readSessionContentV2,
-  readSessionDraft,
   resolveInitialContentV2,
-  resolveInitialDraft,
   writeSessionContentV2,
-  writeSessionDraft,
 } from "@/lib/design-studio/draft-storage";
+import { createEmptyUiComponentContentV2 } from "@/lib/design-studio/empty-document";
 import {
-  createEmptyUiComponentContentV2,
-  createEmptyUiComponentDocument,
-} from "@/lib/design-studio/empty-document";
-import { updateStudioNode } from "@/lib/design-studio/tree-utils";
+  collectClassNamesFromContentV2,
+  hashContentStructure,
+} from "@/lib/design-studio/content-structure-hash";
 import { buildSourceLayerIndex } from "@/lib/design-studio/source-layers";
 import {
   patchSourceClassName,
@@ -36,8 +29,7 @@ import {
   type SourceRef,
 } from "@/lib/design-studio/source-patch";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
-import type { ResolvedComponentMap, StudioInteractionMode } from "@ssota/studio-renderer";
-import { InspectorPanel } from "./inspector-panel";
+import type { StudioInteractionMode } from "@ssota/studio-renderer";
 import { SourceInspectorPanel } from "./source-inspector-panel";
 import { PreviewToolbar } from "./preview-toolbar";
 import { StudioLeftPanel } from "./studio-left-panel";
@@ -51,11 +43,9 @@ type StudioShellProps = {
   studioBasePath: string;
   themeContent: string;
   previewBasePath: string;
-  resolvedComponents: ResolvedComponentMap;
   onDeploy: (input: {
     projectId: string;
     nodeId: string;
-    document?: UiComponentDocument;
     contentV2?: UiComponentContentV2;
     themeCss?: string;
     revalidatePath: string;
@@ -70,44 +60,23 @@ export function StudioShell({
   studioBasePath,
   themeContent,
   previewBasePath,
-  resolvedComponents,
   onDeploy,
   onCreateComponent,
 }: StudioShellProps) {
   const props = (component?.properties ?? {}) as {
     slug?: string;
     tier?: string;
-    draft?: string;
-    representation?: string;
     entry?: string;
   };
-  const representation = component
-    ? getUiComponentRepresentation(component.properties)
-    : "tree";
-  const isSource = representation === "source";
 
   const storageKey = component
     ? draftStorageKey(projectId, component.id)
     : null;
 
-  const previewUrl = useMemo(() => {
-    if (!component) return `${previewBasePath}?mode=draft`;
-    return isSource
-      ? `${previewBasePath}?mode=bundle`
-      : `${previewBasePath}?mode=draft`;
-  }, [component, isSource, previewBasePath]);
+  const previewUrl = `${previewBasePath}?mode=bundle`;
 
-  const [document, setDocument] = useState<UiComponentDocument>(() =>
-    component && !isSource
-      ? resolveInitialDraft({
-          sessionDraft: null,
-          publishedContent: component.content,
-          fallback: createEmptyUiComponentDocument(),
-        })
-      : createEmptyUiComponentDocument(),
-  );
   const [contentV2, setContentV2] = useState<UiComponentContentV2>(() => {
-    if (!component || !isSource) return createEmptyUiComponentContentV2();
+    if (!component) return createEmptyUiComponentContentV2();
     const key = draftStorageKey(projectId, component.id);
     return resolveInitialContentV2({
       sessionContent: readSessionContentV2(key),
@@ -120,17 +89,13 @@ export function StudioShell({
     cssUrl?: string;
     buildId: string;
   } | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(
-    component ? (isSource ? null : "root") : null,
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [interactionMode, setInteractionMode] =
     useState<StudioInteractionMode>("inspect");
   const [pending, startTransition] = useTransition();
   const {
     iframeRef,
     ready,
-    syncTree,
-    syncResolvedComponents,
     syncUtilityCss,
     syncTheme,
     syncInteractionMode,
@@ -143,13 +108,20 @@ export function StudioShell({
     null,
   );
 
+  const structureHash = useMemo(
+    () => hashContentStructure(contentV2),
+    [contentV2],
+  );
+  const contentV2Ref = useRef(contentV2);
+  contentV2Ref.current = contentV2;
+
   const sourceLayers = useMemo(() => {
-    if (!isSource) return null;
+    if (!component) return null;
     if (contentV2.layerIndex) return [contentV2.layerIndex];
     const entry =
       typeof props.entry === "string" ? props.entry : "Component.tsx";
     return buildSourceLayerIndex(contentV2.files, entry);
-  }, [contentV2, isSource, props.entry]);
+  }, [component, contentV2, props.entry]);
 
   const selectedSourceClassName = useMemo(() => {
     if (!selectedSourceRef) return "";
@@ -158,55 +130,25 @@ export function StudioShell({
 
   useEffect(() => {
     if (!component || !storageKey) return;
-    const nextRepresentation = getUiComponentRepresentation(component.properties);
-    if (nextRepresentation === "source") {
-      setContentV2(
-        resolveInitialContentV2({
-          sessionContent: readSessionContentV2(storageKey),
-          publishedContent: component.content,
-          fallback: createEmptyUiComponentContentV2(),
-        }),
-      );
-      setSelectedId(null);
-      return;
-    }
-
-    setDocument(
-      resolveInitialDraft({
-        sessionDraft: readSessionDraft(storageKey),
+    setContentV2(
+      resolveInitialContentV2({
+        sessionContent: readSessionContentV2(storageKey),
         publishedContent: component.content,
-        fallback: createEmptyUiComponentDocument(),
+        fallback: createEmptyUiComponentContentV2(),
       }),
     );
-    setSelectedId("root");
+    setSelectedId(null);
+    setSelectedSourceRef(null);
+    setBuildPreview(null);
   }, [component, storageKey]);
 
   useEffect(() => {
     if (!storageKey) return;
     const timer = window.setTimeout(() => {
-      if (isSource) {
-        writeSessionContentV2(storageKey, contentV2);
-      } else {
-        writeSessionDraft(storageKey, document);
-      }
+      writeSessionContentV2(storageKey, contentV2);
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [document, contentV2, storageKey, isSource]);
-
-  useEffect(() => {
-    if (!component || !ready || isSource) return;
-    syncTree(document.root);
-  }, [component, ready, document.root, syncTree, isSource]);
-
-  useEffect(() => {
-    if (!component || !ready || isSource) return;
-    syncResolvedComponents(resolvedComponents);
-  }, [component, ready, resolvedComponents, syncResolvedComponents, isSource]);
-
-  useEffect(() => {
-    if (!component || !ready || isSource) return;
-    void syncUtilityCss(document.root, resolvedComponents);
-  }, [component, ready, document.root, resolvedComponents, syncUtilityCss, isSource]);
+  }, [contentV2, storageKey]);
 
   useEffect(() => {
     if (!component || !ready) return;
@@ -219,7 +161,15 @@ export function StudioShell({
   }, [component, ready, interactionMode, syncInteractionMode]);
 
   useEffect(() => {
-    if (!component || !isSource) return;
+    if (!component) return;
+    const timer = window.setTimeout(() => {
+      void syncUtilityCss(collectClassNamesFromContentV2(contentV2));
+    }, 150);
+    return () => window.clearTimeout(timer);
+  }, [component, contentV2, syncUtilityCss]);
+
+  useEffect(() => {
+    if (!component) return;
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
@@ -229,7 +179,7 @@ export function StudioShell({
             body: JSON.stringify({
               projectId,
               properties: component.properties,
-              content: JSON.stringify(contentV2),
+              content: JSON.stringify(contentV2Ref.current),
               themeCss: themeContent,
             }),
           });
@@ -250,12 +200,12 @@ export function StudioShell({
       })();
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [component, contentV2, isSource, projectId, themeContent]);
+  }, [component, structureHash, projectId, themeContent]);
 
   useEffect(() => {
-    if (!component || !ready || !isSource || !buildPreview) return;
+    if (!component || !ready || !buildPreview) return;
     syncBundle(buildPreview);
-  }, [component, ready, isSource, buildPreview, syncBundle]);
+  }, [component, ready, buildPreview, syncBundle]);
 
   useEffect(() => {
     if (!ready || !selectedId) return;
@@ -288,50 +238,13 @@ export function StudioShell({
     [contentV2.files, patchNode, selectedId, selectedSourceRef],
   );
 
-  const handlePatch = useCallback(
-    (nodeId: string, patch: Record<string, unknown>) => {
-    if (isSource) return;
-    setDocument((current) => ({
-      ...current,
-      root: updateStudioNode(current.root, nodeId, (node) => {
-        if (node.kind === "element") {
-          return {
-            ...node,
-            tag: typeof patch.tag === "string" ? patch.tag : node.tag,
-            className:
-              typeof patch.className === "string"
-                ? patch.className
-                : node.className,
-          };
-        }
-        if (node.kind === "text") {
-          return {
-            ...node,
-            text: typeof patch.text === "string" ? patch.text : node.text,
-          };
-        }
-        if (node.kind === "component") {
-          return {
-            ...node,
-            className:
-              typeof patch.className === "string"
-                ? patch.className
-                : node.className,
-          };
-        }
-        return node;
-      }),
-    }));
-  }, [isSource]);
-
   const handleDeploy = () => {
     if (!component) return;
     startTransition(async () => {
       await onDeploy({
         projectId,
         nodeId: component.id,
-        document: isSource ? undefined : document,
-        contentV2: isSource ? contentV2 : undefined,
+        contentV2,
         themeCss: themeContent,
         revalidatePath: previewBasePath.replace(/^\//, ""),
       });
@@ -360,8 +273,7 @@ export function StudioShell({
             components={components}
             activeComponentId={component?.id ?? null}
             studioBasePath={studioBasePath}
-            root={component && !isSource ? document.root : null}
-            sourceLayers={component && isSource ? sourceLayers : null}
+            sourceLayers={component ? sourceLayers : null}
             selectedLayerId={selectedId}
             onSelectLayer={setSelectedId}
             pending={pending}
@@ -411,21 +323,13 @@ export function StudioShell({
           maxSize="35%"
         >
           {component ? (
-            isSource ? (
-              <SourceInspectorPanel
-                selectedId={selectedId}
-                selectedSourceRef={selectedSourceRef}
-                className={selectedSourceClassName}
-                onClassNameChange={handleSourceClassNameChange}
-                readOnly={Boolean(selectedId && !selectedSourceRef)}
-              />
-            ) : (
-              <InspectorPanel
-                root={document.root}
-                selectedId={selectedId}
-                onPatch={handlePatch}
-              />
-            )
+            <SourceInspectorPanel
+              selectedId={selectedId}
+              selectedSourceRef={selectedSourceRef}
+              className={selectedSourceClassName}
+              onClassNameChange={handleSourceClassNameChange}
+              readOnly={Boolean(selectedId && !selectedSourceRef)}
+            />
           ) : (
             <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
               Inspector appears when a component is open.

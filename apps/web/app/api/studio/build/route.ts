@@ -68,8 +68,7 @@ export async function POST(request: Request) {
       }
 
       const representation =
-        (node.properties.representation as "source" | "tree" | undefined) ??
-        "tree";
+        (node.properties.representation as "source" | undefined) ?? "source";
       if (representation !== "source") {
         return NextResponse.json(
           { error: "Only source representation components can be built" },

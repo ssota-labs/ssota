@@ -110,9 +110,11 @@ describe("v2.7 catalog SSOT", () => {
     const parsed = parseNodeProperties("ui_component", {
       slug: "primary-button",
       tier: "primitive",
+      entry: "Component.tsx",
     });
     expect(parsed.slug).toBe("primary-button");
     expect(parsed.tier).toBe("primitive");
+    expect(parsed.entry).toBe("Component.tsx");
   });
 
   it("rejects invalid ui_component tier", () => {
@@ -129,18 +131,11 @@ describe("v2.7 catalog SSOT", () => {
     expect(getNodeTypeEntry("ui_component")?.mutability).toBe("living");
   });
 
-  it("requires content only for ui_component source representation", () => {
+  it("requires content for ui_component", () => {
     expect(
       requiresNodeContent("ui_component", {
         slug: "btn",
         tier: "primitive",
-      }),
-    ).toBe(false);
-    expect(
-      requiresNodeContent("ui_component", {
-        slug: "btn",
-        tier: "primitive",
-        representation: "source",
         entry: "Component.tsx",
       }),
     ).toBe(true);

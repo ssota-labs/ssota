@@ -247,11 +247,18 @@ const NODE_PROPERTY_SCHEMAS: Record<
     builtAt: z.string().datetime().optional(),
     draft: z.string().optional(),
   }).superRefine((properties, ctx) => {
-    const representation = properties.representation ?? "tree";
-    if (representation === "source" && !properties.entry) {
+    const representation = properties.representation ?? "source";
+    if (representation !== "source") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "entry is required when representation is source",
+        message: "Only source representation is supported",
+        path: ["representation"],
+      });
+    }
+    if (!properties.entry) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "entry is required for ui_component",
         path: ["entry"],
       });
     }
