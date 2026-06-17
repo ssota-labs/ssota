@@ -6,6 +6,7 @@ import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
   formatOpacityPercent,
   formatRadiusClass,
+  formatRadiusOnUnitChange,
   formatRadiusValueOnUnitChange,
   parseOpacityPercent,
   parseRadiusValue,
@@ -94,51 +95,45 @@ export function AppearanceSection({
     if (perCornerMode) {
       onUpdate({
         borderRadius: undefined,
-        borderRadiusTopLeft: formatRadiusClass(
+        borderRadiusTopLeft: formatRadiusOnUnitChange(
           "rounded-tl",
-          convertRadiusForUnit(
-            parseRadiusValue(parsed.borderRadiusTopLeft).value,
-            radiusUnit,
-            nextUnit,
-          ),
+          parseRadiusValue(parsed.borderRadiusTopLeft).value,
+          radiusUnit,
           nextUnit,
+          radiusReferencePx,
         ),
-        borderRadiusTopRight: formatRadiusClass(
+        borderRadiusTopRight: formatRadiusOnUnitChange(
           "rounded-tr",
-          convertRadiusForUnit(
-            parseRadiusValue(parsed.borderRadiusTopRight).value,
-            radiusUnit,
-            nextUnit,
-          ),
+          parseRadiusValue(parsed.borderRadiusTopRight).value,
+          radiusUnit,
           nextUnit,
+          radiusReferencePx,
         ),
-        borderRadiusBottomLeft: formatRadiusClass(
+        borderRadiusBottomLeft: formatRadiusOnUnitChange(
           "rounded-bl",
-          convertRadiusForUnit(
-            parseRadiusValue(parsed.borderRadiusBottomLeft).value,
-            radiusUnit,
-            nextUnit,
-          ),
+          parseRadiusValue(parsed.borderRadiusBottomLeft).value,
+          radiusUnit,
           nextUnit,
+          radiusReferencePx,
         ),
-        borderRadiusBottomRight: formatRadiusClass(
+        borderRadiusBottomRight: formatRadiusOnUnitChange(
           "rounded-br",
-          convertRadiusForUnit(
-            parseRadiusValue(parsed.borderRadiusBottomRight).value,
-            radiusUnit,
-            nextUnit,
-          ),
+          parseRadiusValue(parsed.borderRadiusBottomRight).value,
+          radiusUnit,
           nextUnit,
+          radiusReferencePx,
         ),
       });
       return;
     }
 
     onUpdate({
-      borderRadius: formatRadiusClass(
+      borderRadius: formatRadiusOnUnitChange(
         "rounded",
-        convertRadiusForUnit(unifiedRadius || "0", radiusUnit, nextUnit),
+        unifiedRadius,
+        radiusUnit,
         nextUnit,
+        radiusReferencePx,
       ),
       borderRadiusTopLeft: undefined,
       borderRadiusTopRight: undefined,
@@ -146,6 +141,20 @@ export function AppearanceSection({
       borderRadiusBottomRight: undefined,
     });
   };
+
+  const handleRadiusUnitChange = (nextUnit: InspectorNumberUnit) => {
+    if (nextUnit === "px" || nextUnit === "%") {
+      setRadiusUnit(nextUnit);
+    }
+  };
+
+  const radiusInputProps = {
+    unit: radiusUnit,
+    units: RADIUS_UNITS,
+    onUnitChange: handleRadiusUnitChange,
+    min: radiusUnit === "%" ? 0 : undefined,
+    max: radiusMax,
+  } as const;
 
   const togglePerCorner = () => {
     const next = !perCornerMode;
@@ -196,17 +205,9 @@ export function AppearanceSection({
             <InspectorScrubberNumberInput
               aria-label="All corners radius"
               value={unifiedRadius}
-              unit={radiusUnit}
-              units={RADIUS_UNITS}
-              onUnitChange={(nextUnit) => {
-                if (nextUnit === "px" || nextUnit === "%") {
-                  setRadiusUnit(nextUnit);
-                }
-              }}
-              min={radiusUnit === "%" ? 0 : undefined}
-              max={radiusMax}
               placeholder={perCornerMode && !unifiedRadius ? "Mixed" : "0"}
               onChange={setUnifiedRadius}
+              {...radiusInputProps}
             />
             <Button
               type="button"
@@ -232,44 +233,36 @@ export function AppearanceSection({
               <InspectorScrubberNumberInput
                 aria-label="Top left radius"
                 value={parseRadiusValue(parsed.borderRadiusTopLeft).value}
-                unit={radiusUnit}
-                min={radiusUnit === "%" ? 0 : undefined}
-                max={radiusMax}
                 placeholder="0"
                 onChange={(value) => setCornerRadius("tl", value)}
+                {...radiusInputProps}
               />
             </InspectorField>
             <InspectorField label="Top Right">
               <InspectorScrubberNumberInput
                 aria-label="Top right radius"
                 value={parseRadiusValue(parsed.borderRadiusTopRight).value}
-                unit={radiusUnit}
-                min={radiusUnit === "%" ? 0 : undefined}
-                max={radiusMax}
                 placeholder="0"
                 onChange={(value) => setCornerRadius("tr", value)}
+                {...radiusInputProps}
               />
             </InspectorField>
             <InspectorField label="Bottom Left">
               <InspectorScrubberNumberInput
                 aria-label="Bottom left radius"
                 value={parseRadiusValue(parsed.borderRadiusBottomLeft).value}
-                unit={radiusUnit}
-                min={radiusUnit === "%" ? 0 : undefined}
-                max={radiusMax}
                 placeholder="0"
                 onChange={(value) => setCornerRadius("bl", value)}
+                {...radiusInputProps}
               />
             </InspectorField>
             <InspectorField label="Bottom Right">
               <InspectorScrubberNumberInput
                 aria-label="Bottom right radius"
                 value={parseRadiusValue(parsed.borderRadiusBottomRight).value}
-                unit={radiusUnit}
-                min={radiusUnit === "%" ? 0 : undefined}
-                max={radiusMax}
                 placeholder="0"
                 onChange={(value) => setCornerRadius("br", value)}
+                {...radiusInputProps}
               />
             </InspectorField>
           </InspectorGrid>

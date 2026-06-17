@@ -454,16 +454,6 @@ const RADIUS_UNIT_DEFAULTS: Record<RadiusUnit, string> = {
   "%": "0",
 };
 
-function parseLayoutDimensionPx(className?: string): number | null {
-  if (!className) return null;
-  const arbitrary = className.match(/-\[(.+)\]$/);
-  if (!arbitrary) return null;
-  const match = arbitrary[1]!.match(/^([\d.]+)px$/);
-  if (!match) return null;
-  const px = Number(match[1]);
-  return Number.isFinite(px) ? px : null;
-}
-
 /** border-radius % 변환 기준 — width/height arbitrary px가 있으면 사용합니다. */
 export function resolveRadiusReferencePx(
   parsed?: Pick<ParsedClassName, "width" | "height">,
@@ -514,6 +504,105 @@ export function formatRadiusValueOnUnitChange(
   if (px === null) return trimmed;
 
   return fromAbsoluteRadiusPx(px, nextUnit, referencePx);
+}
+
+export type LayoutDimensionUnit = RadiusUnit;
+
+export function parseLayoutDimensionValue(className?: string): {
+  value: string;
+  unit: LayoutDimensionUnit;
+} {
+  if (!className) return { value: "", unit: "px" };
+
+  const arbitrary = className.match(/^[wh]-\[(.+)\]$/);
+  if (arbitrary) {
+    const match = arbitrary[1]!.match(/^([\d.]+)(px|%)$/);
+    if (match) {
+      return {
+        value: match[1]!,
+        unit: match[2] as LayoutDimensionUnit,
+      };
+    }
+    const pxMatch = arbitrary[1]!.match(/^([\d.]+)px$/);
+    if (pxMatch) return { value: pxMatch[1]!, unit: "px" };
+  }
+
+  const legacyPx = className.match(/^[wh]-([\d.]+)px$/);
+  if (legacyPx) return { value: legacyPx[1]!, unit: "px" };
+
+  return { value: "", unit: "px" };
+}
+
+function parseLayoutDimensionPx(className?: string): number | null {
+  const { value, unit } = parseLayoutDimensionValue(className);
+  if (!value.trim() || unit !== "px") return null;
+  const px = Number(value);
+  return Number.isFinite(px) ? px : null;
+}
+
+export function formatLayoutDimensionClass(
+  prefix: "w" | "h",
+  value: string,
+  unit: LayoutDimensionUnit = "px",
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return `${prefix}-[${trimmed}${unit}]`;
+}
+
+export function formatLayoutDimensionOnUnitChange(
+  prefix: "w" | "h",
+  value: string,
+  currentUnit: LayoutDimensionUnit,
+  nextUnit: LayoutDimensionUnit,
+  referencePx = DEFAULT_RADIUS_REFERENCE_PX,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const converted = formatRadiusValueOnUnitChange(
+    trimmed,
+    currentUnit,
+    nextUnit,
+    referencePx,
+  );
+  if (nextUnit === "%") {
+    const numeric = Number(converted);
+    if (!Number.isFinite(numeric)) return undefined;
+    return formatLayoutDimensionClass(
+      prefix,
+      String(Math.min(100, Math.max(0, numeric))),
+      "%",
+    );
+  }
+
+  return formatLayoutDimensionClass(prefix, converted, nextUnit);
+}
+
+export function formatRadiusOnUnitChange(
+  prefix: string,
+  value: string,
+  currentUnit: RadiusUnit,
+  nextUnit: RadiusUnit,
+  referencePx = DEFAULT_RADIUS_REFERENCE_PX,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const converted = formatRadiusValueOnUnitChange(
+    value,
+    currentUnit,
+    nextUnit,
+    referencePx,
+  );
+  const nextValue =
+    nextUnit === "%"
+      ? String(
+          Math.min(100, Math.max(0, Number(converted))),
+        )
+      : converted;
+
+  return formatRadiusClass(prefix, nextValue, nextUnit);
 }
 
 export function parseOpacityPercent(className?: string): string {
