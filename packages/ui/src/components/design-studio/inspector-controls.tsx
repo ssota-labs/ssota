@@ -41,6 +41,10 @@ export type InspectorPopoverOption = {
 const inspectorPopoverContentClass =
   "cn-popover-menu w-[var(--anchor-width)]";
 
+/** Native color input — circle swatch only, no text-input chrome (cn-input border box). */
+const inspectorNativeColorPickerClass =
+  "size-9 shrink-0 cursor-pointer appearance-none overflow-hidden rounded-full border-0 bg-transparent p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:rounded-full [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:size-full [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none";
+
 type InspectorPopoverPickerProps = {
   value: string | undefined;
   placeholder?: string;
@@ -365,7 +369,7 @@ export function InspectorColorField({
       <input
         type="color"
         aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
-        className="cn-input size-9 shrink-0 cursor-pointer overflow-hidden rounded-full border border-input bg-transparent p-0 shadow-xs [&::-moz-color-swatch]:rounded-full [&::-moz-color-swatch]:border-none [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-full [&::-webkit-color-swatch]:border-none"
+        className={inspectorNativeColorPickerClass}
         value={hexValue}
         onChange={(event) =>
           handleNativeColorChange(value, event.target.value, onChange)
