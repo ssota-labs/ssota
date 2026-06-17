@@ -28,6 +28,7 @@ export function BubbleToolbar({ editor }: { editor: Editor }) {
         return currentEditor.isEditable && (!empty || currentEditor.isActive("table"));
       }}
       className="ssota-bubble-toolbar"
+      data-testid="ssota-bubble-toolbar"
     >
       <ToolbarButton
         label="Bold"

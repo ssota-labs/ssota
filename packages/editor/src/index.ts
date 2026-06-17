@@ -1,5 +1,6 @@
 export { SsotaEditor } from "./SsotaEditor";
 export type { SsotaEditorProps } from "./SsotaEditor";
+export type { Editor } from "@tiptap/react";
 export { ssotaExtensions } from "./extensions";
 export type {
   SsotaExtensionOptions,

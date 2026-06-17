@@ -1,8 +1,15 @@
 "use client";
 
-import { SsotaEditor, type JSONContent } from "@ssota/editor";
+import { SsotaEditor, type Editor, type JSONContent } from "@ssota/editor";
 import "@ssota/editor/styles.css";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createSsotaEditorHostProps } from "@/lib/editor/host-props";
+
+declare global {
+  interface Window {
+    __ssotaEditorLab?: Editor;
+  }
+}
 
 const SAMPLE: JSONContent = {
   type: "doc",
@@ -15,7 +22,7 @@ const SAMPLE: JSONContent = {
     {
       type: "paragraph",
       content: [
-        { type: "text", text: "Tiptap 3 기반 Notion-like 에디터 Phase 0. " },
+        { type: "text", text: "Tiptap 3 기반 Notion-like 에디터. " },
         { type: "text", marks: [{ type: "bold" }], text: "굵게" },
         { type: "text", text: ", " },
         { type: "text", marks: [{ type: "italic" }], text: "기울임" },
@@ -52,19 +59,39 @@ const SAMPLE: JSONContent = {
   ],
 };
 
-export function EditorLabClient() {
+export function EditorLabClient({ projectId }: { projectId: string | null }) {
   const [doc, setDoc] = useState<JSONContent>(SAMPLE);
+  const hostProps = useMemo(
+    () => (projectId ? createSsotaEditorHostProps(projectId) : {}),
+    [projectId],
+  );
+
+  useEffect(() => {
+    return () => {
+      delete window.__ssotaEditorLab;
+    };
+  }, []);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
+    <div className="grid gap-6 lg:grid-cols-2" data-testid="editor-lab">
       <div className="rounded-lg border bg-background p-6">
-        <SsotaEditor content={SAMPLE} onChange={setDoc} />
+        <SsotaEditor
+          content={SAMPLE}
+          onChange={setDoc}
+          onEditorReady={(editor) => {
+            window.__ssotaEditorLab = editor;
+          }}
+          {...hostProps}
+        />
       </div>
       <div className="rounded-lg border bg-muted/30 p-4">
         <p className="mb-2 text-xs font-medium text-muted-foreground">
           editor.getJSON() — 영속화될 ProseMirror 문서
         </p>
-        <pre className="overflow-auto text-xs leading-relaxed">
+        <pre
+          className="overflow-auto text-xs leading-relaxed"
+          data-testid="editor-lab-json"
+        >
           {JSON.stringify(doc, null, 2)}
         </pre>
       </div>

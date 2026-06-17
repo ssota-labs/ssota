@@ -2,6 +2,7 @@
 
 import {
   forwardRef,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useState,
@@ -42,6 +43,10 @@ export const SuggestionMenu = forwardRef<
   const [selectedIndex, setSelectedIndex] = useState(0);
   const visibleItems = useMemo(() => items, [items]);
 
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [visibleItems]);
+
   function selectItem(index: number) {
     const item = visibleItems[index];
     if (item) onSelect(item);
@@ -70,7 +75,11 @@ export const SuggestionMenu = forwardRef<
   }));
 
   return (
-    <Command className="ssota-suggestion-menu" aria-label={ariaLabel}>
+    <Command
+      className="ssota-suggestion-menu"
+      aria-label={ariaLabel}
+      data-testid="ssota-suggestion-menu"
+    >
       <CommandList>
         <CommandEmpty>{emptyLabel}</CommandEmpty>
         <CommandGroup>

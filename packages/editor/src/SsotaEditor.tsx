@@ -18,6 +18,8 @@ export interface SsotaEditorProps extends SsotaExtensionOptions {
   onChange?: (doc: JSONContent) => void;
   /** Extra class names for the editor surface. */
   className?: string;
+  /** Called once when the editor instance is ready (e.g. E2E harness). */
+  onEditorReady?: (editor: Editor) => void;
 }
 
 export function SsotaEditor({
@@ -28,6 +30,7 @@ export function SsotaEditor({
   editable = true,
   onChange,
   className,
+  onEditorReady,
 }: SsotaEditorProps) {
   const editorRef = useRef<Editor | null>(null);
   const uploadImageRef = useRef(uploadImage);
@@ -47,6 +50,7 @@ export function SsotaEditor({
     editorProps: {
       attributes: {
         class: ["ssota-editor", className].filter(Boolean).join(" "),
+        "data-testid": "ssota-editor-surface",
       },
       handleDrop: (_view, event, _slice, moved) => {
         const upload = uploadImageRef.current;
@@ -87,12 +91,16 @@ export function SsotaEditor({
     editor?.setEditable(editable);
   }, [editor, editable]);
 
+  useEffect(() => {
+    if (editor) onEditorReady?.(editor);
+  }, [editor, onEditorReady]);
+
   if (!editor) {
     return null;
   }
 
   return (
-    <div className="ssota-editor-shell">
+    <div className="ssota-editor-shell" data-testid="ssota-editor-shell">
       {editable ? <BubbleToolbar editor={editor} /> : null}
       {editable ? <DragBlockHandle editor={editor} /> : null}
       <EditorContent editor={editor} />

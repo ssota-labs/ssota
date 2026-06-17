@@ -1,11 +1,13 @@
 "use client";
 
 import { Extension, type Range } from "@tiptap/core";
-import { ReactRenderer, type Editor } from "@tiptap/react";
+import { PluginKey } from "@tiptap/pm/state";
+import type { Editor } from "@tiptap/react";
 import Suggestion, {
   type SuggestionKeyDownProps,
   type SuggestionProps,
 } from "@tiptap/suggestion";
+import { createSuggestionPortal } from "./ui/suggestion-portal";
 import {
   CaretCircleDownIcon,
   CodeBlockIcon,
@@ -27,6 +29,7 @@ import {
   forwardRef,
   type ComponentType,
   type ReactNode,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useState,
@@ -221,6 +224,10 @@ const SlashCommandList = forwardRef<
   const [selectedIndex, setSelectedIndex] = useState(0);
   const items = useMemo(() => props.items, [props.items]);
 
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [items]);
+
   function selectItem(index: number) {
     const item = items[index];
     if (item) props.command(item);
@@ -249,7 +256,11 @@ const SlashCommandList = forwardRef<
   }));
 
   return (
-    <Command className="ssota-slash-menu" aria-label="Insert block">
+    <Command
+      className="ssota-slash-menu"
+      aria-label="Insert block"
+      data-testid="ssota-slash-menu"
+    >
       <CommandList>
         <CommandEmpty>No blocks found.</CommandEmpty>
         <CommandGroup>
@@ -304,15 +315,6 @@ function SlashItem({
   );
 }
 
-function positionMenu(element: HTMLElement, props: SuggestionProps<SlashCommandItem>) {
-  const rect = props.clientRect?.();
-  if (!rect) return;
-  element.style.position = "fixed";
-  element.style.left = `${rect.left}px`;
-  element.style.top = `${rect.bottom + 8}px`;
-  element.style.zIndex = "70";
-}
-
 export const SlashCommand = Extension.create<SlashCommandOptions>({
   name: "slashCommand",
 
@@ -329,46 +331,19 @@ export const SlashCommand = Extension.create<SlashCommandOptions>({
       Suggestion<SlashCommandItem>({
         editor: this.editor,
         char: "/",
+        pluginKey: new PluginKey("ssotaSlashCommand"),
         startOfLine: false,
+        allowedPrefixes: null,
         items: ({ query }) => filterItems(query, slashItems),
         command: ({ editor, range, props }) => props.command({ editor, range }),
-        render: () => {
-          let component: ReactRenderer<SlashCommandListHandle> | null = null;
-          let root: HTMLElement | null = null;
-
-          return {
-            onStart: (props) => {
-              component?.destroy();
-              root?.remove();
-              root = document.createElement("div");
-              if (!document.body) return;
-              document.body.appendChild(root);
-              component = new ReactRenderer(SlashCommandList, {
-                props,
-                editor: props.editor,
-              });
-              if (!component.element) return;
-              root.appendChild(component.element);
-              positionMenu(root, props);
-            },
-            onUpdate: (props) => {
-              component?.updateProps(props);
-              if (root) positionMenu(root, props);
-            },
-            onKeyDown: (props) => {
-              if (props.event.key === "Escape") {
-                return false;
-              }
-              return component?.ref?.onKeyDown(props) ?? false;
-            },
-            onExit: () => {
-              component?.destroy();
-              root?.remove();
-              component = null;
-              root = null;
-            },
-          };
-        },
+        render: () =>
+          createSuggestionPortal<
+            SlashCommandItem,
+            SuggestionProps<SlashCommandItem>
+          >({
+            component: SlashCommandList,
+            mapProps: (props) => props,
+          }),
       }),
     ];
   },

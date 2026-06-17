@@ -1,79 +1,38 @@
 "use client";
 
 import Mention from "@tiptap/extension-mention";
-import { ReactRenderer, type Editor } from "@tiptap/react";
-import type { SuggestionKeyDownProps, SuggestionProps } from "@tiptap/suggestion";
+import type { Editor } from "@tiptap/react";
 import { AtIcon } from "@phosphor-icons/react";
 import type { SsotaMentionItem } from "../types";
-import {
-  SuggestionMenu,
-  type SuggestionMenuHandle,
-} from "../ui/SuggestionMenu";
+import { SuggestionMenu } from "../ui/SuggestionMenu";
+import { createSuggestionPortal } from "../ui/suggestion-portal";
 
-function positionMenu(element: HTMLElement, props: SuggestionProps<SsotaMentionItem>) {
-  const rect = props.clientRect?.();
-  if (!rect) return;
-  element.style.position = "fixed";
-  element.style.left = `${rect.left}px`;
-  element.style.top = `${rect.bottom + 8}px`;
-  element.style.zIndex = "70";
-}
-
-function createSuggestionRenderer() {
-  let component: ReactRenderer<SuggestionMenuHandle> | null = null;
-  let root: HTMLElement | null = null;
-
+function mapMentionMenuProps(
+  props: import("@tiptap/suggestion").SuggestionProps<SsotaMentionItem>,
+) {
   return {
-    onStart: (props: SuggestionProps<SsotaMentionItem>) => {
-      root = document.createElement("div");
-      document.body.appendChild(root);
-      component = new ReactRenderer(SuggestionMenu, {
-        props: {
-          ariaLabel: "Mention node",
-          emptyLabel: "No nodes found",
-          items: props.items.map((item) => ({
-            id: item.id,
-            title: item.label,
-            description: item.nodeType,
-            icon: <AtIcon className="size-4" />,
-          })),
-          onSelect: (menuItem: { id: string }) => {
-            const match = props.items.find((item) => item.id === menuItem.id);
-            if (match) props.command(match);
-          },
-        },
-        editor: props.editor,
-      });
-      root.appendChild(component.element);
-      positionMenu(root, props);
-    },
-    onUpdate: (props: SuggestionProps<SsotaMentionItem>) => {
-      component?.updateProps({
-        items: props.items.map((item) => ({
-          id: item.id,
-          title: item.label,
-          description: item.nodeType,
-          icon: <AtIcon className="size-4" />,
-        })),
-        onSelect: (menuItem: { id: string }) => {
-          const match = props.items.find((item) => item.id === menuItem.id);
-          if (match) props.command(match);
-        },
-      });
-      if (root) positionMenu(root, props);
-    },
-    onKeyDown: (props: SuggestionKeyDownProps) => {
-      if (props.event.key === "Escape") return false;
-      return component?.ref?.onKeyDown(props) ?? false;
-    },
-    onExit: () => {
-      component?.destroy();
-      root?.remove();
-      component = null;
-      root = null;
+    ariaLabel: "Mention node",
+    emptyLabel: "No nodes found",
+    items: props.items.map((item) => ({
+      id: item.id,
+      title: item.label,
+      description: item.nodeType,
+      icon: <AtIcon className="size-4" />,
+    })),
+    onSelect: (menuItem: { id: string }) => {
+      const match = props.items.find((item) => item.id === menuItem.id);
+      if (match) props.command(match);
     },
   };
 }
+
+const mentionSuggestionRenderer = createSuggestionPortal<
+  SsotaMentionItem,
+  ReturnType<typeof mapMentionMenuProps>
+>({
+  component: SuggestionMenu,
+  mapProps: mapMentionMenuProps,
+});
 
 export function createMentionExtension(
   mentionSearch: (query: string) => Promise<SsotaMentionItem[]>,
@@ -115,7 +74,7 @@ export function createMentionExtension(
           ])
           .run();
       },
-      render: createSuggestionRenderer,
+      render: () => mentionSuggestionRenderer,
     },
   });
 }
