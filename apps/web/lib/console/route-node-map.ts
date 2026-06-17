@@ -42,7 +42,7 @@ export const STATIC_ROUTE_METAS: RouteMeta[] = [
   route("development/api-reference", "D", ["api_reference"], "evergreen", "nav.devApiReference", "cta.newDocument"),
   route("development/integration", "D", ["integration_spec"], "evergreen", "nav.devIntegration", "cta.newDocument"),
   route("design/ia", "T", ["information_architecture"], "evergreen", "nav.designIa", "cta.newIaNode"),
-  route("design/ui-components", "D", ["ui_component_catalog"], "evergreen", "nav.designUiComponents", "cta.newDocument"),
+  route("design/ui-components", "L", ["ui_component"], "evergreen", "nav.designUiComponents", "cta.newUiComponent"),
   route("design/design-theme", "D", ["design_theme"], "evergreen", "nav.designTheme", "cta.newDocument"),
 ];
 

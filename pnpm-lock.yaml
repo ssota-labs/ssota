@@ -163,6 +163,9 @@ importers:
       '@ssota/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@ssota/studio-renderer':
+        specifier: workspace:*
+        version: link:../../packages/studio-renderer
       '@ssota/ui':
         specifier: workspace:*
         version: link:../../packages/ui

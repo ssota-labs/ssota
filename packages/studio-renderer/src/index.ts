@@ -1,4 +1,4 @@
-export type { StudioRenderMode } from "./protocol.js";
+export type { StudioRenderMode, StudioMessage, StudioPatch } from "./protocol.js";
 export type { ResolvedComponentMap } from "./resolve-project-ref.js";
 export * from "./types.js";
 export * from "./bridge.js";

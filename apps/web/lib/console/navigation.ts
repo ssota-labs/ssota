@@ -133,7 +133,7 @@ export const DESIGN_L1: NavLink[] = [
     key: "design_ui_components",
     labelKey: "nav.designUiComponents",
     href: "design/ui-components",
-    pattern: "D",
+    pattern: "L",
   },
   {
     type: "link",
