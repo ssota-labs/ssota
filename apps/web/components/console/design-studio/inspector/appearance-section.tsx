@@ -27,16 +27,6 @@ const OPACITY_PRESETS: InspectorPresetOption[] = [
   { value: "100", label: "100" },
 ];
 
-const RADIUS_PRESETS: InspectorPresetOption[] = [
-  { value: "0", label: "0" },
-  { value: "2", label: "2" },
-  { value: "4", label: "4" },
-  { value: "8", label: "8" },
-  { value: "12", label: "12" },
-  { value: "16", label: "16" },
-  { value: "24", label: "24" },
-];
-
 type AppearanceSectionProps = {
   parsed: ParsedClassName;
   onUpdate: (patch: Partial<ParsedClassName>) => void;
@@ -124,7 +114,8 @@ export function AppearanceSection({
               value={perCornerMode ? "" : unifiedRadius}
               unit="px"
               placeholder={perCornerMode ? "Mixed" : "0"}
-              presets={RADIUS_PRESETS}
+              showPresets={false}
+              scrollAdjust
               onChange={setUnifiedRadius}
             />
             <Button
@@ -153,7 +144,8 @@ export function AppearanceSection({
                 value={parseRadiusPx(parsed.borderRadiusTopLeft)}
                 unit="px"
                 placeholder="0"
-                presets={RADIUS_PRESETS}
+                showPresets={false}
+                scrollAdjust
                 onChange={(value) => setCornerRadius("tl", value)}
               />
             </InspectorField>
@@ -163,7 +155,8 @@ export function AppearanceSection({
                 value={parseRadiusPx(parsed.borderRadiusTopRight)}
                 unit="px"
                 placeholder="0"
-                presets={RADIUS_PRESETS}
+                showPresets={false}
+                scrollAdjust
                 onChange={(value) => setCornerRadius("tr", value)}
               />
             </InspectorField>
@@ -173,7 +166,8 @@ export function AppearanceSection({
                 value={parseRadiusPx(parsed.borderRadiusBottomLeft)}
                 unit="px"
                 placeholder="0"
-                presets={RADIUS_PRESETS}
+                showPresets={false}
+                scrollAdjust
                 onChange={(value) => setCornerRadius("bl", value)}
               />
             </InspectorField>
@@ -183,7 +177,8 @@ export function AppearanceSection({
                 value={parseRadiusPx(parsed.borderRadiusBottomRight)}
                 unit="px"
                 placeholder="0"
-                presets={RADIUS_PRESETS}
+                showPresets={false}
+                scrollAdjust
                 onChange={(value) => setCornerRadius("br", value)}
               />
             </InspectorField>
