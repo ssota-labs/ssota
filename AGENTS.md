@@ -170,6 +170,7 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 ### 2. E2E
 
 - 변경한 화면·플로우에 맞는 Playwright 스펙을 실행한다. 신규 UX면 **테스트 추가**를 우선 검토한다.
+- **사용자 UI 피드백(버그·UX 개선)은 같은 PR에 E2E를 반드시 추가한다.** 피드백 항목과 테스트명(`pnpm e2e --grep '<키워드>'`)을 PR 설명에 1:1로 적는다. Editor Lab·`@ssota/editor`는 `e2e/tests/editor-lab.spec.ts`.
 - 실행 전: Cloud는 `pnpm cloud:prepare`, 로컬은 `pnpm e2e:prepare` 또는 `supabase start` + migrate + seed.
 - `pnpm e2e`는 **3100/3101**에서 자체 `next dev`를 띄운다. `pnpm dev` tmux 세션이 3000/3001을 쓰면 E2E 전에 `tmux kill-session -t ssota-dev`로 내린다.
 - 관련 테스트만 돌릴 때: `pnpm e2e --grep '<키워드>'` (예: `--grep onboarding`).

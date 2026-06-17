@@ -32,6 +32,7 @@ import {
 } from "@ssota/ui/components/ui/select";
 import { updateWorkflowSettingsFormAction } from "@/app/actions";
 import { AddWorkflowNodeDialog } from "@/components/workflows/add-workflow-node-dialog";
+import { WorkflowDescriptionEditor } from "@/components/workflows/workflow-description-editor";
 import { WorkflowApplicableNodeTypesField } from "@/components/workflows/workflow-applicable-node-types-field";
 import {
   normalizeApplicableNodeTypesFromWorkflow,
@@ -228,12 +229,10 @@ export function WorkflowSettingsSheet({
                   </FormRow>
 
                   <FormRow label="Description" htmlFor="workflow-description">
-                    <Textarea
-                      id="workflow-description"
-                      name="body"
-                      defaultValue={description}
-                      rows={4}
-                      required
+                    <WorkflowDescriptionEditor
+                      projectId={projectId}
+                      agentNotes={description}
+                      agentNotesDoc={workflow.agentNotesDoc}
                     />
                   </FormRow>
                 </div>
