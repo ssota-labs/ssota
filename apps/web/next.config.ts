@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
     "@ssota/ui",
     "@ssota/studio-preview-runtime",
     "@ssota/studio-renderer",
+    "@blocknote/core",
+    "@blocknote/react",
+    "@blocknote/shadcn",
   ],
   serverExternalPackages: [
     "@tailwindcss/node",
