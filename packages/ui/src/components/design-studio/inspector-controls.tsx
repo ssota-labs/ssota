@@ -253,7 +253,7 @@ function InspectorColorList({
             key={option.value}
             type="button"
             className={cn(
-              "flex w-full items-center gap-2 rounded-sm px-1.5 py-1 text-sm hover:bg-muted",
+              "flex w-full items-center gap-2 rounded-sm px-1.5 py-0.5 text-xs hover:bg-muted",
               active && "bg-muted",
             )}
             onMouseDown={(event) => event.preventDefault()}
@@ -263,13 +263,13 @@ function InspectorColorList({
               cssVar={option.cssVar}
               swatchClass={option.swatchClass}
             />
-            <span className="min-w-0 flex-1 truncate text-left">
+            <span className="min-w-0 flex-1 truncate text-left text-muted-foreground">
               {option.label}
             </span>
             {active ? (
-              <CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
+              <CheckIcon className="size-3 shrink-0 text-muted-foreground" />
             ) : (
-              <span className="size-3.5 shrink-0" />
+              <span className="size-3 shrink-0" />
             )}
           </button>
         );
@@ -485,27 +485,51 @@ type InspectorColorInputProps = {
   placeholder?: string;
   presets: InspectorColorOption[];
   onChange: (value: string) => void;
+  className?: string;
   "aria-label"?: string;
 };
 
 export function InspectorColorInput({
   value,
-  placeholder,
+  placeholder = "Default",
   presets,
   onChange,
+  className,
   "aria-label": ariaLabel,
 }: InspectorColorInputProps) {
   const [open, setOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
   const selected = resolveColorOption(value, presets);
-  const presetsLabel = ariaLabel ? `${ariaLabel} presets` : "Presets";
 
   return (
-    <InspectorAnchorPopover
-      open={open}
-      onOpenChange={setOpen}
-      anchorRef={anchorRef}
-      content={
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        aria-label={ariaLabel}
+        className={cn(
+          "cn-input flex h-9 w-full min-w-0 items-center gap-2 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none hover:bg-muted/40",
+          className,
+        )}
+      >
+        {selected ? (
+          <>
+            <ColorSwatch
+              cssVar={selected.cssVar}
+              swatchClass={selected.swatchClass}
+            />
+            <span className="min-w-0 flex-1 truncate text-left text-xs text-muted-foreground">
+              {selected.label}
+            </span>
+          </>
+        ) : (
+          <>
+            <ColorSwatch swatchClass="bg-muted" />
+            <span className="min-w-0 flex-1 truncate text-left text-xs text-muted-foreground">
+              {placeholder}
+            </span>
+          </>
+        )}
+        <CaretDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
+      </PopoverTrigger>
+      <PopoverContent align="start" className={inspectorPopoverContentClass}>
         <InspectorColorList
           options={presets}
           value={value}
@@ -514,24 +538,8 @@ export function InspectorColorInput({
             setOpen(false);
           }}
         />
-      }
-    >
-      <InputGroup>
-        <InputGroupAddon align="inline-start" className="gap-1.5">
-          <InspectorPresetTrigger aria-label={presetsLabel} />
-          <ColorSwatch
-            cssVar={selected?.cssVar}
-            swatchClass={selected?.swatchClass}
-          />
-        </InputGroupAddon>
-        <InputGroupInput
-          aria-label={ariaLabel}
-          value={value}
-          placeholder={placeholder}
-          onChange={(event) => onChange(event.target.value)}
-        />
-      </InputGroup>
-    </InspectorAnchorPopover>
+      </PopoverContent>
+    </Popover>
   );
 }
 
