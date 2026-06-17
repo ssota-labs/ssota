@@ -72,6 +72,132 @@ export function formatSpacingPx(
   return `${prefix}-[${trimmed}px]`;
 }
 
+export function formatBorderWidthPx(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (trimmed === "1") return "border";
+  if (trimmed === "0") return "border-0";
+  if (trimmed === "2") return "border-2";
+  if (trimmed === "4") return "border-4";
+  if (trimmed === "8") return "border-8";
+  return `border-[${trimmed}px]`;
+}
+
+export function parseBorderWidthPx(className?: string): string {
+  if (!className) return "";
+  if (className === "border") return "1";
+
+  const arbitrary = className.match(/^border-\[(.+)\]$/);
+  if (arbitrary) {
+    const pxMatch = arbitrary[1]!.match(/^([\d.]+)px$/);
+    if (pxMatch) return pxMatch[1]!;
+    return "";
+  }
+
+  const scaleMatch = className.match(/^border-(\d+)$/);
+  if (scaleMatch) {
+    return scaleMatch[1]!;
+  }
+
+  return "";
+}
+
+const NAMED_RADIUS_TO_PX: Record<string, string> = {
+  "rounded-none": "0",
+  rounded: "4",
+  "rounded-sm": "2",
+  "rounded-md": "6",
+  "rounded-lg": "8",
+  "rounded-xl": "12",
+  "rounded-2xl": "16",
+  "rounded-3xl": "24",
+  "rounded-full": "9999",
+};
+
+export function parseRadiusPx(className?: string): string {
+  if (!className) return "";
+
+  if (NAMED_RADIUS_TO_PX[className]) {
+    return NAMED_RADIUS_TO_PX[className]!;
+  }
+
+  const arbitrary = className.match(/-\[(.+)\]$/);
+  if (arbitrary) {
+    const pxMatch = arbitrary[1]!.match(/^([\d.]+)px$/);
+    if (pxMatch) return pxMatch[1]!;
+    return "";
+  }
+
+  return "";
+}
+
+export function formatRadiusPx(prefix: string, value: string): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (prefix === "rounded" && trimmed === "9999") return "rounded-full";
+  return `${prefix}-[${trimmed}px]`;
+}
+
+export function parseOpacityPercent(className?: string): string {
+  if (!className) return "";
+
+  const arbitrary = className.match(/^opacity-\[(.+)\]$/);
+  if (arbitrary) {
+    const percentMatch = arbitrary[1]!.match(/^([\d.]+)%$/);
+    if (percentMatch) return percentMatch[1]!;
+    const decimalMatch = arbitrary[1]!.match(/^0?\.([\d]+)$/);
+    if (decimalMatch) {
+      return String(Number(`0.${decimalMatch[1]}`) * 100);
+    }
+    return "";
+  }
+
+  const scaleMatch = className.match(/^opacity-(\d+)$/);
+  if (scaleMatch) return scaleMatch[1]!;
+
+  return "";
+}
+
+export function formatOpacityPercent(value: string): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  const numeric = Number(trimmed);
+  if (!Number.isFinite(numeric)) return undefined;
+  if (numeric >= 0 && numeric <= 100 && Number.isInteger(numeric) && numeric % 5 === 0) {
+    return `opacity-${numeric}`;
+  }
+  return `opacity-[${trimmed}%]`;
+}
+
+export function stripColorToken(className?: string, prefix?: string): string {
+  if (!className) return "";
+  if (prefix && className.startsWith(`${prefix}-`)) {
+    const rest = className.slice(prefix.length + 1);
+    if (rest.startsWith("[") && rest.endsWith("]")) {
+      return rest.slice(1, -1);
+    }
+    return rest;
+  }
+  return className;
+}
+
+export function formatColorToken(
+  prefix: string,
+  value: string,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (
+    trimmed.startsWith("#") ||
+    trimmed.startsWith("rgb") ||
+    trimmed.startsWith("hsl") ||
+    trimmed.startsWith("lab")
+  ) {
+    return `${prefix}-[${trimmed}]`;
+  }
+  return `${prefix}-${trimmed}`;
+}
+
 export function parseSpacingPx(className?: string): string {
   if (!className) return "";
 
@@ -162,9 +288,15 @@ export type ParsedClassName = {
   width?: string;
   height?: string;
   background?: string;
-  borderRadius?: string;
+  borderStyle?: string;
   borderWidth?: string;
   borderColor?: string;
+  borderRadius?: string;
+  borderRadiusTopLeft?: string;
+  borderRadiusTopRight?: string;
+  borderRadiusBottomLeft?: string;
+  borderRadiusBottomRight?: string;
+  opacity?: string;
   shadow: ShadowValue;
   remainder: string[];
 };
@@ -258,6 +390,22 @@ const JUSTIFY_CONTENT = new Set([
   "justify-between",
   "justify-around",
   "justify-evenly",
+]);
+
+const BORDER_STYLES = new Set([
+  "border-solid",
+  "border-dashed",
+  "border-dotted",
+  "border-double",
+  "border-hidden",
+  "border-none",
+]);
+
+const BORDER_WIDTH_SCALES = new Set([
+  "border-0",
+  "border-2",
+  "border-4",
+  "border-8",
 ]);
 
 const SHADOW_PRESET_MAP: Record<string, ShadowPreset> = {
@@ -499,19 +647,50 @@ export function parseClassName(className: string | undefined): ParsedClassName {
       parsed.background = base;
       continue;
     }
+    if (BORDER_STYLES.has(base)) {
+      parsed.borderStyle = base;
+      continue;
+    }
+    if (base.startsWith("rounded-tl")) {
+      parsed.borderRadiusTopLeft = base;
+      continue;
+    }
+    if (base.startsWith("rounded-tr")) {
+      parsed.borderRadiusTopRight = base;
+      continue;
+    }
+    if (base.startsWith("rounded-bl")) {
+      parsed.borderRadiusBottomLeft = base;
+      continue;
+    }
+    if (base.startsWith("rounded-br")) {
+      parsed.borderRadiusBottomRight = base;
+      continue;
+    }
     if (base.startsWith("rounded")) {
       parsed.borderRadius = base;
       continue;
     }
-    if (base === "border" || base.startsWith("border-")) {
-      if (base === "border" || /^border-\d+$/.test(base)) {
+    if (base === "border" || BORDER_WIDTH_SCALES.has(base)) {
+      parsed.borderWidth = base;
+      continue;
+    }
+    if (base.startsWith("border-[") && base.endsWith("]")) {
+      const inner = base.slice(8, -1);
+      if (/^[\d.]+px$/.test(inner)) {
         parsed.borderWidth = base;
         continue;
       }
-      if (base.startsWith("border-") && !base.startsWith("border-radius")) {
-        parsed.borderColor = base;
-        continue;
-      }
+      parsed.borderColor = base;
+      continue;
+    }
+    if (base.startsWith("border-")) {
+      parsed.borderColor = base;
+      continue;
+    }
+    if (base.startsWith("opacity-")) {
+      parsed.opacity = base;
+      continue;
     }
     if (SHADOW_PRESET_MAP[base]) {
       parsed.shadow = {
@@ -561,9 +740,15 @@ export function serializeClassName(parsed: ParsedClassName): string {
   if (parsed.width) tokens.push(parsed.width);
   if (parsed.height) tokens.push(parsed.height);
   if (parsed.background) tokens.push(parsed.background);
+  if (parsed.borderStyle) tokens.push(parsed.borderStyle);
   if (parsed.borderWidth) tokens.push(parsed.borderWidth);
   if (parsed.borderColor) tokens.push(parsed.borderColor);
   if (parsed.borderRadius) tokens.push(parsed.borderRadius);
+  if (parsed.borderRadiusTopLeft) tokens.push(parsed.borderRadiusTopLeft);
+  if (parsed.borderRadiusTopRight) tokens.push(parsed.borderRadiusTopRight);
+  if (parsed.borderRadiusBottomLeft) tokens.push(parsed.borderRadiusBottomLeft);
+  if (parsed.borderRadiusBottomRight) tokens.push(parsed.borderRadiusBottomRight);
+  if (parsed.opacity) tokens.push(parsed.opacity);
 
   const { shadow } = parsed;
   if (shadow.preset === "none") {

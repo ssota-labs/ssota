@@ -5,6 +5,7 @@ export {
   InspectorSectionList,
 } from "./inspector-section";
 export {
+  InspectorColorField,
   InspectorColorInput,
   InspectorFontFamilyRow,
   InspectorNumberInput,
@@ -16,4 +17,7 @@ export {
   type InspectorPresetOption,
   type InspectorToggleOption,
 } from "./inspector-controls";
-export { TEXT_THEME_COLOR_OPTIONS } from "./tailwind-theme-colors";
+export {
+  BORDER_THEME_COLOR_OPTIONS,
+  TEXT_THEME_COLOR_OPTIONS,
+} from "./tailwind-theme-colors";

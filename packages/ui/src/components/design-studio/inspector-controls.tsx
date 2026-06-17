@@ -229,6 +229,29 @@ function ColorSwatch({
   );
 }
 
+function toHexColor(color: string): string {
+  if (color.startsWith("#")) {
+    return color.length === 4
+      ? `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`
+      : color.slice(0, 7);
+  }
+
+  const rgba = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+  if (!rgba) return "#000000";
+  const r = Number(rgba[1]).toString(16).padStart(2, "0");
+  const g = Number(rgba[2]).toString(16).padStart(2, "0");
+  const b = Number(rgba[3]).toString(16).padStart(2, "0");
+  return `#${r}${g}${b}`;
+}
+
+function hexToRgba(hex: string, alpha = "1"): string {
+  const normalized = hex.replace("#", "");
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 function resolveColorOption(
   value: string,
   options: InspectorColorOption[],
@@ -236,6 +259,19 @@ function resolveColorOption(
   const trimmed = value.trim();
   if (!trimmed) return undefined;
   return options.find((option) => option.value === trimmed);
+}
+
+function swatchStyleForValue(
+  value: string,
+  presets: InspectorColorOption[],
+): { cssVar?: string; swatchClass?: string; backgroundColor?: string } {
+  const preset = resolveColorOption(value, presets);
+  if (preset?.cssVar) return { cssVar: preset.cssVar };
+  if (preset?.swatchClass) return { swatchClass: preset.swatchClass };
+  if (value.startsWith("#") || value.startsWith("rgb") || value.startsWith("lab")) {
+    return { backgroundColor: value.startsWith("lab") ? undefined : value };
+  }
+  return { swatchClass: "bg-muted" };
 }
 
 type InspectorColorListProps = {
@@ -560,6 +596,133 @@ export function InspectorColorInput({
         <CaretDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
       </button>
     </InspectorAnchorPopover>
+  );
+}
+
+type InspectorColorFieldProps = {
+  value: string;
+  placeholder?: string;
+  presets: InspectorColorOption[];
+  onChange: (value: string) => void;
+  className?: string;
+  id?: string;
+  "aria-label"?: string;
+};
+
+export function InspectorColorField({
+  value,
+  placeholder = "Default",
+  presets,
+  onChange,
+  className,
+  id,
+  "aria-label": ariaLabel,
+}: InspectorColorFieldProps) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [presetOpen, setPresetOpen] = useState(false);
+  const pickerAnchorRef = useRef<HTMLDivElement>(null);
+  const presetAnchorRef = useRef<HTMLDivElement>(null);
+  const swatch = swatchStyleForValue(value, presets);
+  const hexValue = toHexColor(value);
+
+  return (
+    <div className={cn("flex items-center gap-1.5", className)}>
+      <div className="shrink-0">
+        <InspectorAnchorPopover
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        anchorRef={pickerAnchorRef}
+        side="top"
+        content={
+          <div className="flex flex-col gap-2 p-2">
+            <input
+              type="color"
+              aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
+              className="h-8 w-full cursor-pointer rounded-md border bg-transparent"
+              value={hexValue}
+              onChange={(event) => {
+                const alphaMatch = value.match(
+                  /rgba?\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)/,
+                );
+                const alpha = alphaMatch ? alphaMatch[1]! : "1";
+                onChange(
+                  alpha === "1"
+                    ? event.target.value
+                    : hexToRgba(event.target.value, alpha),
+                );
+              }}
+            />
+            <InspectorColorList
+              options={presets}
+              value={value}
+              onSelect={(nextValue) => {
+                onChange(nextValue);
+                setPickerOpen(false);
+              }}
+            />
+          </div>
+        }
+      >
+        <button
+          type="button"
+          aria-label={ariaLabel ? `${ariaLabel} swatch` : "Color swatch"}
+          aria-expanded={pickerOpen}
+          className="cn-input flex size-9 shrink-0 items-center justify-center rounded-md border border-input bg-transparent shadow-xs outline-none hover:bg-muted/40"
+          onClick={() => setPickerOpen((current) => !current)}
+        >
+          {swatch.cssVar ? (
+            <span
+              className="size-5 rounded-full border border-border"
+              style={{ backgroundColor: `var(${swatch.cssVar})` }}
+            />
+          ) : (
+            <span
+              className={cn(
+                "size-5 rounded-full border border-border",
+                swatch.swatchClass,
+              )}
+              style={
+                swatch.backgroundColor
+                  ? { backgroundColor: swatch.backgroundColor }
+                  : undefined
+              }
+            />
+          )}
+        </button>
+      </InspectorAnchorPopover>
+      </div>
+
+      <InspectorAnchorPopover
+        open={presetOpen}
+        onOpenChange={setPresetOpen}
+        anchorRef={presetAnchorRef}
+        content={
+          <InspectorColorList
+            options={presets}
+            value={value}
+            onSelect={(nextValue) => {
+              onChange(nextValue);
+              setPresetOpen(false);
+            }}
+          />
+        }
+      >
+        <InputGroup className="min-w-0 flex-1">
+          <InputGroupAddon align="inline-start">
+            <InspectorPresetTrigger
+              aria-label={ariaLabel ? `${ariaLabel} presets` : "Color presets"}
+            />
+          </InputGroupAddon>
+          <InputGroupInput
+            id={id}
+            aria-label={ariaLabel}
+            value={value}
+            placeholder={placeholder}
+            onChange={(event) => onChange(event.target.value)}
+          />
+        </InputGroup>
+      </InspectorAnchorPopover>
+    </div>
   );
 }
 

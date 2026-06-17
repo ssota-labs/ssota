@@ -129,3 +129,29 @@ export const TEXT_THEME_COLOR_OPTIONS: InspectorColorOption[] = [
   ...semanticTextColors,
   ...paletteTextColors,
 ];
+
+const semanticBorderColors: InspectorColorOption[] = [
+  { value: "border", label: "border", cssVar: "--border" },
+  { value: "input", label: "input", cssVar: "--input" },
+  { value: "ring", label: "ring", cssVar: "--ring" },
+  { value: "primary", label: "primary", cssVar: "--primary" },
+  { value: "secondary", label: "secondary", cssVar: "--secondary" },
+  { value: "destructive", label: "destructive", cssVar: "--destructive" },
+  { value: "muted", label: "muted", cssVar: "--muted" },
+  { value: "accent", label: "accent", cssVar: "--accent" },
+  { value: "foreground", label: "foreground", cssVar: "--foreground" },
+  { value: "background", label: "background", cssVar: "--background" },
+];
+
+const paletteBorderColors: InspectorColorOption[] = paletteSwatches.map(
+  ([value, swatchClass]) => ({
+    value,
+    label: value,
+    swatchClass,
+  }),
+);
+
+export const BORDER_THEME_COLOR_OPTIONS: InspectorColorOption[] = [
+  ...semanticBorderColors,
+  ...paletteBorderColors,
+];

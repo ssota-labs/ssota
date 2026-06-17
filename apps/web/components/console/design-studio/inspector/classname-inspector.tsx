@@ -12,6 +12,8 @@ import {
   InspectorSection,
   InspectorSectionList,
 } from "@ssota/ui/components/design-studio";
+import { AppearanceSection } from "./appearance-section";
+import { BorderSection } from "./border-section";
 import { LayoutSection } from "./layout-section";
 import { ShadowSection } from "./shadow-section";
 import { TypographySection } from "./typography-section";
@@ -81,53 +83,9 @@ export function ClassnameInspector({
         </InspectorField>
       </InspectorSection>
 
-      <InspectorSection title="Border">
-        <InspectorGrid>
-          <InspectorField label="Radius">
-            <Input
-              value={parsed.borderRadius?.replace(/^rounded-?/, "") ?? ""}
-              placeholder="none"
-              onChange={(event) =>
-                update({
-                  borderRadius: event.target.value
-                    ? event.target.value === "none"
-                      ? "rounded-none"
-                      : `rounded-${event.target.value}`
-                    : undefined,
-                })
-              }
-            />
-          </InspectorField>
-          <InspectorField label="Width">
-            <Input
-              value={parsed.borderWidth?.replace(/^border-?/, "") ?? ""}
-              placeholder="0"
-              onChange={(event) =>
-                update({
-                  borderWidth: event.target.value
-                    ? event.target.value === "1" || event.target.value === "default"
-                      ? "border"
-                      : `border-${event.target.value}`
-                    : undefined,
-                })
-              }
-            />
-          </InspectorField>
-        </InspectorGrid>
-        <InspectorField label="Color">
-          <Input
-            value={parsed.borderColor?.replace(/^border-/, "") ?? ""}
-            placeholder="default"
-            onChange={(event) =>
-              update({
-                borderColor: event.target.value
-                  ? `border-${event.target.value}`
-                  : undefined,
-              })
-            }
-          />
-        </InspectorField>
-      </InspectorSection>
+      <BorderSection parsed={parsed} onUpdate={update} />
+
+      <AppearanceSection parsed={parsed} onUpdate={update} />
 
       <ShadowSection
         shadow={parsed.shadow}
