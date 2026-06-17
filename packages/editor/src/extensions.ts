@@ -2,7 +2,7 @@ import Color from "@tiptap/extension-color";
 import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
-import NodeRange from "@tiptap/extension-node-range";
+import { SsotaNodeRange } from "./extensions/SsotaNodeRange";
 import { BulletList, ListKeymap } from "@tiptap/extension-list";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TableKit } from "@tiptap/extension-table";
@@ -46,7 +46,7 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
         class: "ssota-dropcursor",
       },
     }),
-    NodeRange,
+    SsotaNodeRange,
     MixedBulletList.configure({
       HTMLAttributes: { class: "ssota-bullet-list" },
     }),
