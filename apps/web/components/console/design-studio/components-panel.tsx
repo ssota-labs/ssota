@@ -90,8 +90,8 @@ export function ComponentsPanel({
                         type="button"
                         data-testid={`studio-component-${component.slug}`}
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-muted",
-                          active && "bg-muted",
+                          "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-primary/8",
+                          active && "bg-primary/16",
                         )}
                         onClick={() => {
                           router.push(`${studioBasePath}/${component.id}`);
