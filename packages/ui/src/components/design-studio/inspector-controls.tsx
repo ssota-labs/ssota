@@ -234,11 +234,18 @@ function resolveColorPickerHex(
   }
 
   if (option.cssVar) {
+    const fromVar = cssColorToHexViaDom(`var(${option.cssVar})`);
+    if (fromVar !== "#000000") return fromVar;
+
     const raw = getComputedStyle(document.documentElement)
       .getPropertyValue(option.cssVar)
       .trim();
-    if (raw) return cssColorToHexViaDom(raw);
-    return cssColorToHexViaDom(`var(${option.cssVar})`);
+    if (raw) {
+      const fromRaw = cssColorToHexViaDom(raw);
+      if (fromRaw !== "#000000") return fromRaw;
+    }
+
+    return fromVar;
   }
 
   if (option.swatchClass) {
@@ -263,17 +270,17 @@ function cssColorToHexViaDom(color: string): string {
   probe.style.visibility = "hidden";
   probe.style.pointerEvents = "none";
   probe.style.backgroundColor = trimmed;
-  document.body.appendChild(probe);
+  document.documentElement.appendChild(probe);
 
   try {
     const computed = getComputedStyle(probe).backgroundColor;
-    if (computed && computed !== "rgba(0, 0, 0, 0)") {
+    if (computed && computed !== "rgba(0, 0, 0, 0)" && computed !== "rgb(0, 0, 0)") {
       const hex = rgbStringToHex(computed);
       if (hex) return hex;
       return cssColorToHex(computed);
     }
   } finally {
-    document.body.removeChild(probe);
+    document.documentElement.removeChild(probe);
   }
 
   return cssColorToHex(trimmed);
@@ -287,24 +294,43 @@ function resolveSwatchClassColor(swatchClass: string): string {
   probe.style.visibility = "hidden";
   probe.style.pointerEvents = "none";
   probe.className = swatchClass;
-  document.body.appendChild(probe);
+  document.documentElement.appendChild(probe);
 
   try {
     return getComputedStyle(probe).backgroundColor;
   } finally {
-    document.body.removeChild(probe);
+    document.documentElement.removeChild(probe);
   }
+}
+
+function readElementBackgroundHex(element: HTMLElement | null): string | null {
+  if (!element || typeof document === "undefined") return null;
+
+  const computed = getComputedStyle(element).backgroundColor;
+  if (!computed || computed === "rgba(0, 0, 0, 0)" || computed === "rgb(0, 0, 0)") {
+    return null;
+  }
+
+  return rgbStringToHex(computed);
 }
 
 function useColorPickerHex(
   value: string,
   presets: InspectorColorOption[],
+  swatchElement: HTMLElement | null,
 ): string {
   const [hex, setHex] = useState(() => resolveColorPickerHex(value, presets));
 
   useLayoutEffect(() => {
-    setHex(resolveColorPickerHex(value, presets));
-  }, [value, presets]);
+    const syncHex = () => {
+      const fromSwatch = readElementBackgroundHex(swatchElement);
+      setHex(fromSwatch ?? resolveColorPickerHex(value, presets));
+    };
+
+    syncHex();
+    const frame = requestAnimationFrame(syncHex);
+    return () => cancelAnimationFrame(frame);
+  }, [value, presets, swatchElement]);
 
   return hex;
 }
@@ -499,8 +525,11 @@ export function InspectorColorField({
   const [presetOpen, setPresetOpen] = useState(false);
   const presetAnchorRef = useRef<HTMLDivElement>(null);
   const colorInputRef = useRef<HTMLInputElement>(null);
-  const hexValue = useColorPickerHex(value, presets);
+  const [tokenSwatchNode, setTokenSwatchNode] = useState<HTMLSpanElement | null>(
+    null,
+  );
   const tokenSwatch = usesTokenColorSwatch(value, presets);
+  const hexValue = useColorPickerHex(value, presets, tokenSwatchNode);
 
   useLayoutEffect(() => {
     if (colorInputRef.current && colorInputRef.current.value !== hexValue) {
@@ -513,6 +542,7 @@ export function InspectorColorField({
       <div className="relative size-9 shrink-0">
         {tokenSwatch ? (
           <span
+            ref={setTokenSwatchNode}
             aria-hidden
             className={cn(
               "pointer-events-none absolute inset-0 overflow-hidden rounded-full",
