@@ -37,6 +37,28 @@ async function typeAtDocumentEnd(page: Page, text: string) {
   return editorSurface(page);
 }
 
+async function selectEditorText(page: Page, text: string) {
+  await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
+  await page.evaluate((value) => {
+    const editor = window.__ssotaEditorLab;
+    if (!editor) return;
+
+    let from = -1;
+    let to = -1;
+    editor.state.doc.descendants((node, pos) => {
+      if (!node.isText || !node.text?.includes(value)) return;
+      const index = node.text.indexOf(value);
+      from = pos + index;
+      to = from + value.length;
+      return false;
+    });
+
+    if (from >= 0) {
+      editor.chain().focus().setTextSelection({ from, to }).run();
+    }
+  }, text);
+}
+
 async function openSlashMenu(page: Page, query = "") {
   await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
   await page.evaluate((filter) => {
@@ -171,7 +193,15 @@ test.describe("Editor Lab", () => {
       const toolbar = page.getByTestId("ssota-bubble-toolbar");
       await expect(toolbar).toBeVisible();
 
-      for (const label of ["Bold", "Italic", "Strike", "Code", "Link", "Highlight"]) {
+      for (const label of [
+        "Bold",
+        "Italic",
+        "Strike",
+        "Code",
+        "Link",
+        "텍스트색",
+        "배경색",
+      ]) {
         await toolbar.getByRole("button", { name: label }).hover();
         await expect(
           page.locator('[data-slot="tooltip-content"]').filter({ hasText: label }),
@@ -228,6 +258,67 @@ test.describe("Editor Lab", () => {
       await expect(surface.locator("code", { hasText: "codemark" })).toBeVisible();
       await code.click();
       await expect(surface.locator("code", { hasText: "codemark" })).toHaveCount(0);
+    });
+
+    test("applies text and background colors from popovers", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "color sample");
+      await selectEditorText(page, "color sample");
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+      await toolbar.getByRole("button", { name: "텍스트색" }).click();
+      const textPopover = page.getByTestId("ssota-text-color-popover");
+      await expect(textPopover).toBeVisible();
+      await textPopover.getByRole("option", { name: "파랑" }).click();
+
+      await expect(
+        surface.locator('span[style*="color"]', { hasText: "color sample" }),
+      ).toBeVisible();
+
+      await selectEditorText(page, "color sample");
+      await toolbar.getByRole("button", { name: "배경색" }).click();
+      const backgroundPopover = page.getByTestId("ssota-background-color-popover");
+      await expect(backgroundPopover).toBeVisible();
+      await backgroundPopover.getByRole("option", { name: "노랑" }).click();
+
+      await expect(surface.locator("mark", { hasText: "color sample" })).toBeVisible();
+    });
+
+    test("removes text and background colors from popovers", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "clear colors");
+      await selectEditorText(page, "clear colors");
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+
+      await toolbar.getByRole("button", { name: "텍스트색" }).click();
+      await page
+        .getByTestId("ssota-text-color-popover")
+        .getByRole("option", { name: "빨강" })
+        .click();
+      await expect(surface.locator('span[style*="color"]')).toHaveCount(1);
+
+      await selectEditorText(page, "clear colors");
+      await toolbar.getByRole("button", { name: "텍스트색" }).click();
+      await page
+        .getByTestId("ssota-text-color-popover")
+        .getByRole("option", { name: "기본" })
+        .click();
+      await expect(surface.locator('span[style*="color"]')).toHaveCount(0);
+
+      await selectEditorText(page, "clear colors");
+      await toolbar.getByRole("button", { name: "배경색" }).click();
+      await page
+        .getByTestId("ssota-background-color-popover")
+        .getByRole("option", { name: "초록" })
+        .click();
+      await expect(surface.locator("mark")).toHaveCount(1);
+
+      await selectEditorText(page, "clear colors");
+      await toolbar.getByRole("button", { name: "배경색" }).click();
+      await page
+        .getByTestId("ssota-background-color-popover")
+        .getByRole("option", { name: "없음" })
+        .click();
+      await expect(surface.locator("mark")).toHaveCount(0);
     });
 
     test("opens link popover to set url and title", async ({ page }) => {

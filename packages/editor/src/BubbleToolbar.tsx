@@ -8,6 +8,7 @@ import {
   ListBulletsIcon,
   MinusIcon,
   RowsIcon,
+  TextAaIcon,
   TextBIcon,
   TextItalicIcon,
   TextStrikethroughIcon,
@@ -20,10 +21,20 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@ssota/ui/components/ui/tooltip";
+import { ColorPopover } from "./ColorPopover";
+import {
+  BACKGROUND_COLOR_SWATCHES,
+  TEXT_COLOR_SWATCHES,
+} from "./color-palette";
 import { LinkPopover } from "./LinkPopover";
 
 export function BubbleToolbar({ editor }: { editor: Editor }) {
   const [linkPopoverOpen, setLinkPopoverOpen] = useState(false);
+  const [textColorPopoverOpen, setTextColorPopoverOpen] = useState(false);
+  const [backgroundColorPopoverOpen, setBackgroundColorPopoverOpen] =
+    useState(false);
+
+  const colorPopoverOpen = textColorPopoverOpen || backgroundColorPopoverOpen;
 
   return (
     <BubbleMenu
@@ -33,7 +44,10 @@ export function BubbleToolbar({ editor }: { editor: Editor }) {
         const { empty } = state.selection;
         return (
           currentEditor.isEditable &&
-          (linkPopoverOpen || !empty || currentEditor.isActive("table"))
+          (linkPopoverOpen ||
+            colorPopoverOpen ||
+            !empty ||
+            currentEditor.isActive("table"))
         );
       }}
       className="ssota-bubble-toolbar"
@@ -70,19 +84,26 @@ export function BubbleToolbar({ editor }: { editor: Editor }) {
       </ToolbarButton>
       <ToolbarDivider />
       <LinkPopover editor={editor} open={linkPopoverOpen} onOpenChange={setLinkPopoverOpen} />
-      <ToolbarButton
-        label="Highlight"
-        active={editor.isActive("highlight")}
-        onClick={() =>
-          editor
-            .chain()
-            .focus()
-            .toggleHighlight({ color: "var(--accent)" })
-            .run()
-        }
+      <ColorPopover
+        editor={editor}
+        kind="text"
+        label="텍스트색"
+        swatches={TEXT_COLOR_SWATCHES}
+        open={textColorPopoverOpen}
+        onOpenChange={setTextColorPopoverOpen}
+      >
+        <TextAaIcon className="size-4" />
+      </ColorPopover>
+      <ColorPopover
+        editor={editor}
+        kind="background"
+        label="배경색"
+        swatches={BACKGROUND_COLOR_SWATCHES}
+        open={backgroundColorPopoverOpen}
+        onOpenChange={setBackgroundColorPopoverOpen}
       >
         <HighlighterCircleIcon className="size-4" />
-      </ToolbarButton>
+      </ColorPopover>
       {editor.isActive("table") ? (
         <>
           <ToolbarDivider />
