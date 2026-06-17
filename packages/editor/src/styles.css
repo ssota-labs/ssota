@@ -347,9 +347,9 @@
 
 .ssota-editor .ProseMirror-selectednode,
 .ssota-editor .ProseMirror-selectednoderange {
-  outline: none;
-  background-color: color-mix(in oklab, var(--primary) 12%, transparent);
-  border-radius: 0.375rem;
+  outline: 2px solid color-mix(in oklab, var(--primary) 35%, transparent);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
 }
 
 .ssota-editor .ssota-dropcursor,
