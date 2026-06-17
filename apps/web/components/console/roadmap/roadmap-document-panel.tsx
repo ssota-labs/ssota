@@ -81,27 +81,12 @@ export function RoadmapDocumentPanel({
         className={cn(!expanded && "relative max-h-64 overflow-hidden")}
         data-testid="roadmap-document-editor"
       >
-        {expanded ? (
-          <div className="mb-3 flex justify-center">
-            <button
-              type="button"
-              data-testid={`${expandTestId}-collapse`}
-              aria-expanded
-              aria-label={t("roadmap.collapseContent")}
-              className="inline-flex size-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
-              onClick={handleCollapse}
-            >
-              <CaretDownIcon className="size-4 rotate-180" aria-hidden />
-            </button>
-          </div>
-        ) : null}
-
         <SsotaEditor
           key={expanded ? "editing" : "readonly"}
           content={draftDoc}
           editable={expanded}
           onChange={expanded ? setDraftDoc : undefined}
-          className="roadmap-readonly-editor"
+          className={cn("roadmap-readonly-editor", expanded && "pb-20")}
           {...editorHostProps}
         />
 
@@ -118,7 +103,20 @@ export function RoadmapDocumentPanel({
               <CaretDownIcon className="size-4" aria-hidden />
             </button>
           </div>
-        ) : null}
+        ) : (
+          <div className="pointer-events-none sticky bottom-0 z-10 -mt-20 flex h-20 items-end justify-center bg-gradient-to-t from-card via-card/95 to-transparent pb-2">
+            <button
+              type="button"
+              data-testid={`${expandTestId}-collapse`}
+              aria-expanded
+              aria-label={t("roadmap.collapseContent")}
+              className="pointer-events-auto inline-flex size-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+              onClick={handleCollapse}
+            >
+              <CaretDownIcon className="size-4 rotate-180" aria-hidden />
+            </button>
+          </div>
+        )}
       </div>
 
       {expanded ? (
