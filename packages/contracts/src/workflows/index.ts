@@ -41,6 +41,15 @@ type WorkflowMeta = Omit<WorkflowInstructionDefinition, "instruction"> & {
 
 const WORKFLOW_META: WorkflowMeta[] = [
   {
+    workflowKey: "agent.main",
+    title: "Agent main router",
+    category: "orchestrator",
+    cadenceHint: "on_demand",
+    defaultExecutorType: "Agent",
+    defaultStatus: "ready",
+    instructionFile: "agent.main.md",
+  },
+  {
     workflowKey: "orchestrator.bootstrap",
     title: "Orchestrator bootstrap",
     category: "orchestrator",

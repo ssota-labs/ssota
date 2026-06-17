@@ -4,15 +4,21 @@ import {
   listEdgeTypes,
 } from "@ssota/contracts";
 import {
+  createEdgeInputSchema,
+  createNodeInputSchema,
   getNodeInputSchema,
   listNodesByTypeInputSchema,
   traverseEdgesInputSchema,
+  updateNodeInputSchema,
 } from "@ssota/contracts/graph";
 import type { GraphEdge, GraphNode } from "@ssota/core";
 import {
+  createEdge,
+  createNode,
   getNode,
   queryNodes,
   traverseEdges,
+  updateNode,
 } from "@ssota/core";
 import { createContractsCatalogReadPort } from "@ssota/core";
 import { getGraphPorts } from "@/lib/ports";
@@ -113,4 +119,45 @@ export async function traverseEdgesForMcp(
   const { graphRead } = getGraphPorts(projectId);
   const edges = await traverseEdges(graphRead, parsed);
   return edges.map(serializeEdge);
+}
+
+function graphDeps(projectId: string) {
+  return getGraphPorts(projectId);
+}
+
+export async function createNodeForMcp(
+  projectId: string,
+  input: Record<string, unknown>,
+) {
+  const parsed = createNodeInputSchema.parse({
+    projectId,
+    ...input,
+  });
+  const node = await createNode(graphDeps(projectId), parsed);
+  return serializeNode(node);
+}
+
+export async function updateNodeForMcp(
+  projectId: string,
+  input: Record<string, unknown>,
+) {
+  const parsed = updateNodeInputSchema.parse({
+    projectId,
+    ...input,
+  });
+  const node = await updateNode(graphDeps(projectId), parsed);
+  return serializeNode(node);
+}
+
+export async function createEdgeForMcp(
+  projectId: string,
+  input: Record<string, unknown>,
+) {
+  const parsed = createEdgeInputSchema.parse({
+    projectId,
+    ...input,
+  });
+  const { graphRead, graphWrite } = graphDeps(projectId);
+  const edge = await createEdge({ graphRead, graphWrite }, parsed);
+  return serializeEdge(edge);
 }
