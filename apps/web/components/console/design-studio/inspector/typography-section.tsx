@@ -28,7 +28,7 @@ import {
   resolveFontSizePxFromClass,
 } from "@/lib/design-studio/tailwind-classname";
 import {
-  InspectorColorInput,
+  InspectorColorField,
   InspectorField,
   InspectorFontFamilyRow,
   InspectorPresetNumberInput,
@@ -395,7 +395,7 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         </InspectorField>
 
         <InspectorField label="Color">
-          <InspectorColorInput
+          <InspectorColorField
             aria-label="Color"
             value={parsed.textColor?.replace(/^text-/, "") ?? ""}
             placeholder="foreground"
