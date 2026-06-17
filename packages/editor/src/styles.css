@@ -1,0 +1,234 @@
+/* SSOTA editor base styles. Import once where the editor renders.
+ * Uses @ssota/ui semantic tokens (see packages/ui/src/styles/globals.css). */
+
+.ssota-editor {
+  outline: none;
+  color: var(--foreground);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  min-height: 12rem;
+  padding: 0.25rem 0;
+}
+
+.ssota-editor-shell {
+  position: relative;
+}
+
+.ssota-editor > * + * {
+  margin-top: 0.5rem;
+}
+
+.ssota-editor h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-top: 1.5rem;
+}
+
+.ssota-editor h2 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.35;
+  margin-top: 1.25rem;
+}
+
+.ssota-editor h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.ssota-editor ul,
+.ssota-editor ol {
+  padding-left: 1.5rem;
+}
+
+.ssota-editor ul {
+  list-style: disc;
+}
+
+.ssota-editor ol {
+  list-style: decimal;
+}
+
+.ssota-editor blockquote {
+  border-left: 3px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+
+.ssota-editor code {
+  background: var(--muted);
+  border-radius: 0.25rem;
+  padding: 0.1em 0.35em;
+  font-size: 0.85em;
+}
+
+.ssota-editor pre {
+  background: var(--muted);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+}
+
+.ssota-editor pre code {
+  background: none;
+  padding: 0;
+}
+
+.ssota-editor hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 1.25rem 0;
+}
+
+.ssota-editor a {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.ssota-editor mark {
+  border-radius: 0.2rem;
+  padding: 0.05em 0.15em;
+}
+
+.ssota-editor img,
+.ssota-editor-image {
+  display: block;
+  max-width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  margin: 0.75rem 0;
+}
+
+.ssota-editor table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 0.75rem 0;
+  overflow: hidden;
+}
+
+.ssota-editor .tableWrapper {
+  overflow-x: auto;
+}
+
+.ssota-editor th,
+.ssota-editor td {
+  border: 1px solid var(--border);
+  min-width: 6rem;
+  padding: 0.35rem 0.5rem;
+  vertical-align: top;
+}
+
+.ssota-editor th {
+  background: var(--muted);
+  font-weight: 600;
+}
+
+.ssota-editor ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.ssota-editor li[data-type="taskItem"] {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ssota-editor li[data-type="taskItem"] > label {
+  flex: 0 0 auto;
+  padding-top: 0.1rem;
+}
+
+.ssota-editor li[data-type="taskItem"] > div {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Placeholder for an empty first line (extension-placeholder). */
+.ssota-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.ssota-bubble-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-md);
+  padding: 0.25rem;
+}
+
+.ssota-editor-toolbar-button {
+  border-radius: 0.375rem;
+}
+
+.ssota-slash-menu {
+  width: 18rem;
+  max-height: 22rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-lg);
+}
+
+.ssota-slash-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.ssota-slash-menu-item[data-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+.ssota-slash-menu-icon {
+  display: inline-flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 0.375rem;
+  background: var(--background);
+}
+
+.ssota-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--popover);
+  box-shadow: var(--shadow-sm);
+  padding: 0.125rem;
+}
+
+.ssota-drag-handle-button,
+.ssota-drag-handle-trigger {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.375rem;
+  color: var(--muted-foreground);
+}
+
+.ssota-drag-handle-trigger:hover,
+.ssota-drag-handle-button:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}

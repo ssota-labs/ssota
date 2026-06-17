@@ -73,3 +73,5 @@ venv/
 storybook-static/
 supabase/.branches/
 supabase/.temp/
+
+.reference/

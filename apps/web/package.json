@@ -22,6 +22,7 @@
     "@ssota/adapter-supabase": "workspace:*",
     "@ssota/contracts": "workspace:*",
     "@ssota/core": "workspace:*",
+    "@ssota/editor": "workspace:*",
     "@ssota/ui": "workspace:*",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",

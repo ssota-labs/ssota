@@ -61,8 +61,18 @@ async function seedCatalog(
     },
   };
 
-  const titleSubjectPropertySchema = {
+  const bodyPropertySchema = {
     ...titlePropertySchema,
+    contentDoc: {
+      valueType: "json",
+      constraints: {},
+      required: false,
+      system: true,
+    },
+  };
+
+  const titleSubjectPropertySchema = {
+    ...bodyPropertySchema,
     subject_id: {
       valueType: "string",
       constraints: { minLength: 1 },
@@ -83,7 +93,7 @@ async function seedCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Free-form note content",
-        propertySchema: titlePropertySchema,
+        propertySchema: bodyPropertySchema,
         allowedActionRefs: ["create_node"],
       },
       {
@@ -96,7 +106,7 @@ async function seedCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Structured document with title and body",
-        propertySchema: titlePropertySchema,
+        propertySchema: bodyPropertySchema,
         allowedActionRefs: ["create_node", "update_node_properties", "promote_document"],
       },
       {
@@ -109,7 +119,7 @@ async function seedCatalog(
         typicalValueOverrides: {},
         lifecycleTransitions: defaultTransitions,
         contentGuide: "Agent workflow with trigger patterns",
-        propertySchema: titlePropertySchema,
+        propertySchema: bodyPropertySchema,
         allowedActionRefs: [],
       },
       {
@@ -130,6 +140,7 @@ async function seedCatalog(
       target: [schema.nodeCatalog.projectId, schema.nodeCatalog.nodeType],
       set: {
         allowedActionRefs: sql`excluded.allowed_action_refs`,
+        propertySchema: sql`excluded.property_schema`,
       },
     });
 
@@ -234,6 +245,7 @@ async function seedCatalog(
     ["create_node", "Project", "title"],
     ["create_node", "Project", "subject_id"],
     ["update_node_properties", "Document", "title"],
+    ["update_node_properties", "Document", "contentDoc"],
   ] as const;
 
   await db

@@ -1,6 +1,7 @@
 "use server";
 
 import { executeAction, previewAction } from "@ssota/core";
+import { parseTiptapDoc } from "@ssota/editor/json";
 import {
   ActionScopeSchema,
   ContextSpecSchema,
@@ -768,6 +769,47 @@ export async function updateNodePropertiesBatchFormAction(
     "/workflow",
     "/workflow",
     graphPath(DEFAULT_PROJECT, "nodes", nodeSlug),
+  ])) {
+    revalidatePath(path);
+  }
+
+  return { ok: true };
+}
+
+export async function updateNodeContentDocAction(input: {
+  projectId: string;
+  nodeSlug: string;
+  nodeId: string;
+  doc: unknown;
+}): Promise<{ ok: boolean; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const doc = parseTiptapDoc(input.doc);
+  const parsed = UpdateNodePropertiesInputSchema.parse({
+    nodeId: input.nodeId,
+    properties: { contentDoc: doc },
+  });
+
+  const ports = getActionPorts(input.projectId);
+  const result = await executeAction(ports, {
+    actionType: "update_node_properties",
+    input: parsed,
+    executorId: user.id,
+    executorType: "Human",
+    projectId: input.projectId,
+  });
+
+  if (result.status === "rejected") {
+    return { ok: false, error: result.reason ?? "Action rejected" };
+  }
+  if (result.status === "gated") {
+    return { ok: false, error: "Change is pending human review" };
+  }
+
+  for (const path of withConsolePaths([
+    "/workflow",
+    graphPath(DEFAULT_PROJECT, "nodes", input.nodeSlug),
   ])) {
     revalidatePath(path);
   }
