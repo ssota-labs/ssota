@@ -11,17 +11,19 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import StarterKit from "@tiptap/starter-kit";
 import type { Extensions } from "@tiptap/react";
 import { SlashCommand } from "./SlashCommand";
+import type { SsotaExtensionOptions } from "./types";
+import { Callout } from "./extensions/Callout";
+import { EmojiExtension } from "./extensions/EmojiExtension";
+import { createMentionExtension } from "./extensions/MentionExtension";
+import { Toggle } from "./extensions/Toggle";
 
-export interface SsotaExtensionOptions {
-  /** Placeholder text shown in an empty document. */
-  placeholder?: string;
-}
+export type { SsotaExtensionOptions } from "./types";
 
-export function ssotaExtensions(
-  options: SsotaExtensionOptions = {},
-): Extensions {
-  return [
-    StarterKit,
+export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions {
+  const extensions: Extensions = [
+    StarterKit.configure({
+      link: false,
+    }),
     TaskList,
     TaskItem.configure({ nested: true }),
     TableKit.configure({
@@ -43,9 +45,20 @@ export function ssotaExtensions(
     Color,
     Highlight.configure({ multicolor: true }),
     TextAlign.configure({ types: ["heading", "paragraph"] }),
-    SlashCommand,
+    Callout,
+    Toggle,
+    EmojiExtension,
+    SlashCommand.configure({
+      uploadImage: options.uploadImage,
+    }),
     Placeholder.configure({
       placeholder: options.placeholder ?? "내용을 입력하거나 ‘/’ 를 눌러보세요…",
     }),
   ];
+
+  if (options.mentionSearch) {
+    extensions.push(createMentionExtension(options.mentionSearch));
+  }
+
+  return extensions;
 }

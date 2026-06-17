@@ -7,8 +7,10 @@ import Suggestion, {
   type SuggestionProps,
 } from "@tiptap/suggestion";
 import {
+  CaretCircleDownIcon,
   CodeBlockIcon,
   ImageIcon,
+  InfoIcon,
   ListBulletsIcon,
   ListChecksIcon,
   ListNumbersIcon,
@@ -20,6 +22,7 @@ import {
   TextHThreeIcon,
   TextHTwoIcon,
 } from "@phosphor-icons/react";
+import { pickImageFile, insertUploadedImage } from "./extensions/MentionExtension";
 import {
   forwardRef,
   type ComponentType,
@@ -36,6 +39,10 @@ import {
   CommandList,
 } from "@ssota/ui/components/ui/command";
 
+type SlashCommandOptions = {
+  uploadImage?: (file: File) => Promise<string>;
+};
+
 type SlashCommandItem = {
   title: string;
   description: string;
@@ -44,15 +51,14 @@ type SlashCommandItem = {
   command: (props: { editor: Editor; range: Range }) => void;
 };
 
-type SlashCommandListHandle = {
-  onKeyDown: (props: SuggestionKeyDownProps) => boolean;
-};
-
 function deleteTrigger(editor: Editor, range: Range) {
   return editor.chain().focus().deleteRange(range);
 }
 
-const slashItems: SlashCommandItem[] = [
+function buildSlashItems(
+  uploadImage?: (file: File) => Promise<string>,
+): SlashCommandItem[] {
+  return [
   {
     title: "Paragraph",
     description: "Plain text block",
@@ -153,12 +159,55 @@ const slashItems: SlashCommandItem[] = [
       deleteTrigger(editor, range).setImage({ src }).run();
     },
   },
+  ...(uploadImage
+    ? [
+        {
+          title: "Image upload",
+          description: "Upload to SSOTA storage",
+          icon: ImageIcon,
+          search: "image upload file storage",
+          command: ({ editor, range }) => {
+            void (async () => {
+              const file = await pickImageFile();
+              if (!file) return;
+              deleteTrigger(editor, range).run();
+              await insertUploadedImage(editor, file, uploadImage);
+            })();
+          },
+        } satisfies SlashCommandItem,
+      ]
+    : []),
+  {
+    title: "Callout",
+    description: "Highlighted info block",
+    icon: InfoIcon,
+    search: "callout info warning tip",
+    command: ({ editor, range }) =>
+      deleteTrigger(editor, range)
+        .setCallout("info")
+        .run(),
+  },
+  {
+    title: "Toggle",
+    description: "Collapsible block",
+    icon: CaretCircleDownIcon,
+    search: "toggle collapse accordion",
+    command: ({ editor, range }) =>
+      deleteTrigger(editor, range)
+        .setToggle()
+        .run(),
+  },
 ];
+}
 
-function filterItems(query: string) {
+type SlashCommandListHandle = {
+  onKeyDown: (props: SuggestionKeyDownProps) => boolean;
+};
+
+function filterItems(query: string, items: SlashCommandItem[]) {
   const normalized = query.trim().toLowerCase();
-  if (!normalized) return slashItems;
-  return slashItems.filter((item) =>
+  if (!normalized) return items;
+  return items.filter((item) =>
     `${item.title} ${item.description} ${item.search}`
       .toLowerCase()
       .includes(normalized),
@@ -264,16 +313,24 @@ function positionMenu(element: HTMLElement, props: SuggestionProps<SlashCommandI
   element.style.zIndex = "70";
 }
 
-export const SlashCommand = Extension.create({
+export const SlashCommand = Extension.create<SlashCommandOptions>({
   name: "slashCommand",
 
+  addOptions() {
+    return {
+      uploadImage: undefined,
+    };
+  },
+
   addProseMirrorPlugins() {
+    const slashItems = buildSlashItems(this.options.uploadImage);
+
     return [
       Suggestion<SlashCommandItem>({
         editor: this.editor,
         char: "/",
         startOfLine: false,
-        items: ({ query }) => filterItems(query),
+        items: ({ query }) => filterItems(query, slashItems),
         command: ({ editor, range, props }) => props.command({ editor, range }),
         render: () => {
           let component: ReactRenderer<SlashCommandListHandle> | null = null;
@@ -281,12 +338,16 @@ export const SlashCommand = Extension.create({
 
           return {
             onStart: (props) => {
+              component?.destroy();
+              root?.remove();
               root = document.createElement("div");
+              if (!document.body) return;
               document.body.appendChild(root);
               component = new ReactRenderer(SlashCommandList, {
                 props,
                 editor: props.editor,
               });
+              if (!component.element) return;
               root.appendChild(component.element);
               positionMenu(root, props);
             },

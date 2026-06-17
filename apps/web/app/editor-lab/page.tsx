@@ -10,7 +10,7 @@ export default function EditorLabPage() {
       <div className="mb-6 space-y-1">
         <h1 className="text-2xl font-semibold">Editor Lab</h1>
         <p className="text-sm text-muted-foreground">
-          Tiptap Notion-like 에디터 스파이크 (Phase 0). SSR·기본 블록·JSON 영속화 검증용.
+          Tiptap Notion-like 에디터 Phase 2 — 콜아웃·토글·멘션·이모지·이미지 업로드·워크플로 설명 에디터.
         </p>
       </div>
       <EditorLabClient />

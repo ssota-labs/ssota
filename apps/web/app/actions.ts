@@ -1,7 +1,7 @@
 "use server";
 
 import { executeAction, previewAction } from "@ssota/core";
-import { parseTiptapDoc } from "@ssota/editor/json";
+import { parseTiptapDoc, tiptapDocToPlainText } from "@ssota/editor/json";
 import {
   ActionScopeSchema,
   ContextSpecSchema,
@@ -42,6 +42,7 @@ import { getActionPorts, resolveDefaultProjectId } from "@/lib/ports";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
+import { uploadEditorAsset } from "@/lib/editor/storage";
 import { parseApplicableNodeTypes } from "@/lib/workflows/workflow-applicable-node-types";
 
 function loginRedirect(error: string, next?: string | null): never {
@@ -566,6 +567,20 @@ export async function updateWorkflowSettingsFormAction(
 
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
+  const bodyDocRaw = String(formData.get("bodyDoc") ?? "").trim();
+  let agentNotes = body || null;
+  let agentNotesDoc: unknown = null;
+
+  if (bodyDocRaw) {
+    try {
+      const parsedDoc = parseTiptapDoc(JSON.parse(bodyDocRaw));
+      agentNotesDoc = parsedDoc;
+      agentNotes = tiptapDocToPlainText(parsedDoc) || null;
+    } catch {
+      throw new Error("Invalid workflow description document");
+    }
+  }
+
   const workflowRoleRaw = String(formData.get("workflowRole") ?? "").trim();
   const workflowRole = workflowRoleRaw || undefined;
   const applicableNodeTypes = parseApplicableNodeTypes(
@@ -585,7 +600,8 @@ export async function updateWorkflowSettingsFormAction(
       applicableNodeTypes,
       allowedActions: allowedActionsFromBindings,
       workflowRole,
-      ...(body ? { agentNotes: body } : { agentNotes: null }),
+      agentNotes,
+      agentNotesDoc,
     },
   });
 
@@ -774,6 +790,75 @@ export async function updateNodePropertiesBatchFormAction(
   }
 
   return { ok: true };
+}
+
+export async function searchMentionNodesAction(input: {
+  projectId: string;
+  query: string;
+}): Promise<{
+  ok: boolean;
+  items: Array<{ id: string; label: string; nodeType: string }>;
+  error?: string;
+}> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, items: [], error: "Unauthorized" };
+
+  const query = input.query.trim().toLowerCase();
+  const ports = getActionPorts(input.projectId);
+  const nodes = await ports.graph.queryNodes({ limit: 80 });
+  const items = nodes
+    .map((node: { id: string; nodeType: string; properties: Record<string, unknown> }) => {
+      const title = String(
+        node.properties.title ??
+          node.properties.name ??
+          node.properties.label ??
+          node.id,
+      );
+      return {
+        id: node.id,
+        label: title,
+        nodeType: node.nodeType,
+      };
+    })
+    .filter((item) => {
+      if (!query) return true;
+      return (
+        item.label.toLowerCase().includes(query) ||
+        item.nodeType.toLowerCase().includes(query) ||
+        item.id.toLowerCase().includes(query)
+      );
+    })
+    .slice(0, 8);
+
+  return { ok: true, items };
+}
+
+export async function uploadEditorImageAction(
+  formData: FormData,
+): Promise<{ ok: boolean; url?: string; error?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false, error: "Unauthorized" };
+
+  const projectId = String(formData.get("projectId") ?? "").trim();
+  const file = formData.get("file");
+  if (!projectId) return { ok: false, error: "projectId required" };
+  if (!(file instanceof File)) return { ok: false, error: "file required" };
+  if (!file.type.startsWith("image/")) {
+    return { ok: false, error: "Only image uploads are supported" };
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    return { ok: false, error: "Image must be 5MB or smaller" };
+  }
+
+  try {
+    const url = await uploadEditorAsset(projectId, file);
+    return { ok: true, url };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Upload failed",
+    };
+  }
 }
 
 export async function updateNodeContentDocAction(input: {
@@ -1001,17 +1086,32 @@ export async function runActionJsonFormAction(formData: FormData): Promise<void>
   const actionType = String(formData.get("actionType") ?? "");
   const input = parseJsonObject(formData.get("input"));
   const ports = getActionPorts(projectId);
-  await executeAction(ports, {
+  const result = await executeAction(ports, {
     actionType,
     input,
     executorId: user.id,
     executorType: "Human",
     projectId,
   });
-  for (const path of withConsolePaths([
-    "/workflow",
-    "/workflow",
-  ])) {
+  if (result.status === "rejected") {
+    throw new Error(result.reason ?? "Action rejected");
+  }
+  if (result.status === "gated") {
+    throw new Error("Change is pending human review");
+  }
+
+  const paths = ["/workflow", "/graph/nodes", "/log"];
+  const nodeType =
+    typeof input.nodeType === "string" ? input.nodeType.trim() : "";
+  if (nodeType) {
+    const slug = nodeType
+      .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+      .replace(/[-\s]+/g, "_")
+      .toLowerCase();
+    paths.push(graphPath(DEFAULT_PROJECT, "nodes", slug));
+  }
+
+  for (const path of withConsolePaths(paths)) {
     revalidatePath(path);
   }
 }

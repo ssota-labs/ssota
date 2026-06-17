@@ -20,6 +20,55 @@ export function emptyTiptapDoc(): TiptapDoc {
   return { type: "doc", content: [{ type: "paragraph" }] };
 }
 
+export function tiptapDocToPlainText(doc: JSONContent | null | undefined): string {
+  if (!doc) return "";
+
+  const chunks: string[] = [];
+
+  function walk(node: JSONContent) {
+    if (node.type === "text" && typeof node.text === "string") {
+      chunks.push(node.text);
+      return;
+    }
+
+    if (node.type === "mention") {
+      const label = String(node.attrs?.label ?? node.attrs?.id ?? "");
+      chunks.push(`@${label}`);
+      return;
+    }
+
+    if (node.type === "emoji") {
+      chunks.push(String(node.attrs?.emoji ?? node.attrs?.name ?? ""));
+      return;
+    }
+
+    if (node.type === "hardBreak") {
+      chunks.push("\n");
+      return;
+    }
+
+    const children = node.content ?? [];
+    for (const child of children) {
+      walk(child);
+    }
+
+    if (
+      node.type === "paragraph" ||
+      node.type === "heading" ||
+      node.type === "listItem" ||
+      node.type === "taskItem" ||
+      node.type === "blockquote" ||
+      node.type === "callout" ||
+      node.type === "toggle"
+    ) {
+      chunks.push("\n");
+    }
+  }
+
+  walk(doc);
+  return chunks.join("").replace(/\n{3,}/g, "\n\n").trim();
+}
+
 export function plainTextToTiptapDoc(value: string | null | undefined): TiptapDoc {
   const text = value?.trim();
   if (!text) return emptyTiptapDoc();

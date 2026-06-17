@@ -34,6 +34,7 @@ import {
   type JSONContent,
 } from "@ssota/editor";
 import "@ssota/editor/styles.css";
+import { createSsotaEditorHostProps } from "@/lib/editor/host-props";
 
 type InstanceRowInspectorProps = {
   projectId: string;
@@ -80,6 +81,10 @@ export function InstanceRowInspector({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [tab, setTab] = useState<"fields" | "relations">("fields");
+  const editorHostProps = useMemo(
+    () => createSsotaEditorHostProps(projectId),
+    [projectId],
+  );
 
   const editableFields = useMemo(
     () => fields.filter((field) => field.key !== "contentDoc"),
@@ -210,6 +215,7 @@ export function InstanceRowInspector({
             error={bodySaveError}
             doc={bodyDoc}
             onChange={updateBodyDoc}
+            editorHostProps={editorHostProps}
           />
           {editableFields.map((field) => (
             <EditableFieldRow
@@ -270,11 +276,13 @@ function BodyEditorField({
   error,
   doc,
   onChange,
+  editorHostProps,
 }: {
   saveState: "saved" | "unsaved" | "saving" | "failed";
   error: string | null;
   doc: JSONContent;
   onChange: (doc: JSONContent) => void;
+  editorHostProps: ReturnType<typeof createSsotaEditorHostProps>;
 }) {
   const label =
     saveState === "saving"
@@ -297,6 +305,7 @@ function BodyEditorField({
             content={doc}
             onChange={onChange}
             placeholder="내용을 입력하거나 / 를 눌러 블록을 추가하세요"
+            {...editorHostProps}
           />
         </div>
         <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
