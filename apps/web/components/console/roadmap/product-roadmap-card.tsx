@@ -74,7 +74,9 @@ export function ProductRoadmapCard({
           <h2 className="text-lg font-semibold tracking-tight">
             {t("roadmap.productRoadmap")}
           </h2>
-          <p className="text-sm text-muted-foreground">{node.title}</p>
+          <p className="text-sm text-muted-foreground">
+            {node.title.trim() ? node.title : t("roadmap.description")}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select

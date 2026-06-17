@@ -29,7 +29,7 @@ export default async function ExecutiveRoadmapPage({
   const productRoadmapNode = await ensureEvergreenSingleton(
     project.id,
     "product_roadmap",
-    "프로덕트 로드맵",
+    "",
   );
   const planningNodes = await queryNodesByType(project.id, "roadmap");
 
@@ -69,7 +69,7 @@ export default async function ExecutiveRoadmapPage({
     await updateGraphNodeAction({
       projectId: project.id,
       nodeId: productRoadmap.id,
-      title: "프로덕트 로드맵",
+      title: "",
       content: loadRoadmapTemplate("product"),
       properties: { doc_status: "draft" },
       revalidatePaths: [revalidatePath],

@@ -4,6 +4,7 @@ import type { RoadmapQuarter } from "@ssota/contracts";
 import type { DocStatus } from "@/lib/roadmap/doc-status";
 import { ProductRoadmapCard } from "@/components/console/roadmap/product-roadmap-card";
 import { PlanningRoadmapsSection } from "@/components/console/roadmap/planning-roadmaps-section";
+import { useLocale } from "@/components/i18n/locale-provider";
 import type { RoadmapNodeView } from "@/lib/roadmap/types";
 
 type ExecutiveRoadmapWorkspaceProps = {
@@ -39,6 +40,8 @@ export function ExecutiveRoadmapWorkspace({
   onCreateAnnualRoadmap,
   onCreateQuarterRoadmap,
 }: ExecutiveRoadmapWorkspaceProps) {
+  const { t } = useLocale();
+
   return (
     <div className="space-y-8">
       <ProductRoadmapCard
@@ -47,7 +50,7 @@ export function ExecutiveRoadmapWorkspace({
         onApplyTemplate={onApplyProductTemplate}
       />
       <PlanningRoadmapsSection
-        productRoadmapTitle={productRoadmap.title}
+        productRoadmapTitle={t("roadmap.planningParent")}
         nodes={planningRoadmaps}
         currentYear={currentYear}
         onCreateAnnual={onCreateAnnualRoadmap}
