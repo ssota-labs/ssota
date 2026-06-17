@@ -691,6 +691,48 @@ test.describe("Editor Lab", () => {
       await expect(surface).toBeFocused();
       await expect(surface.locator("ul ul")).toHaveCount(0);
     });
+
+    test("bubble toolbar nests bullet under numbered item", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "parent");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain()
+          .focus()
+          .toggleList("orderedList", "listItem")
+          .run();
+      });
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("child");
+      await surface.getByText("child").click();
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+      await expect(toolbar).toBeVisible();
+      await toolbar.getByRole("button", { name: "Bullet list" }).click();
+
+      await expect(surface.locator("ol li ul")).toBeVisible();
+      expect(await hasMixedListNesting(page)).toBe(true);
+    });
+
+    test("bubble toolbar nests numbered under bullet item", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "parent");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain()
+          .focus()
+          .toggleList("bulletList", "listItem")
+          .run();
+      });
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("child");
+      await surface.getByText("child").click();
+
+      const toolbar = page.getByTestId("ssota-bubble-toolbar");
+      await expect(toolbar).toBeVisible();
+      await toolbar.getByRole("button", { name: "Numbered list" }).click();
+
+      await expect(surface.locator("ul li ol")).toBeVisible();
+      expect(await hasMixedListNesting(page)).toBe(true);
+    });
   });
 
   test.describe("emoji menu", () => {

@@ -3,7 +3,7 @@ import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import NodeRange from "@tiptap/extension-node-range";
-import { BulletList, ListKeymap, OrderedList } from "@tiptap/extension-list";
+import { BulletList, ListKeymap } from "@tiptap/extension-list";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TableKit } from "@tiptap/extension-table";
 import TaskList from "@tiptap/extension-task-list";
@@ -18,6 +18,10 @@ import { CalloutTitle } from "./extensions/CalloutTitle";
 import { EmojiExtension } from "./extensions/EmojiExtension";
 import { createMentionExtension } from "./extensions/MentionExtension";
 import { GuardedTaskItem } from "./extensions/GuardedTaskItem";
+import {
+  MixedBulletList,
+  MixedOrderedList,
+} from "./extensions/mixed-list-extensions";
 import { NestedListItem } from "./extensions/NestedListItem";
 import { QuoteShortcut } from "./extensions/QuoteShortcut";
 import { Toggle } from "./extensions/Toggle";
@@ -42,10 +46,10 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
       },
     }),
     NodeRange,
-    BulletList.configure({
+    MixedBulletList.configure({
       HTMLAttributes: { class: "ssota-bullet-list" },
     }),
-    OrderedList.configure({
+    MixedOrderedList.configure({
       HTMLAttributes: { class: "ssota-ordered-list" },
     }),
     NestedListItem,

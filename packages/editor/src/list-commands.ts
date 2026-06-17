@@ -33,6 +33,11 @@ export function findInnermostList($from: ResolvedPos): ListNodeMatch | null {
   return match;
 }
 
+/** 현재 커서가 속한 가장 안쪽 list 타입 (혼합 중첩 시 isActive 대신 사용) */
+export function getActiveListType(editor: Editor): EditorListType | null {
+  return findInnermostList(editor.state.selection.$from)?.type ?? null;
+}
+
 function findListItemDepth($from: ResolvedPos): number | null {
   for (let depth = $from.depth; depth > 0; depth -= 1) {
     if ($from.node(depth).type.name === "listItem") {
