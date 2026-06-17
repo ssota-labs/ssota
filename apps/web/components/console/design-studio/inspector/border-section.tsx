@@ -19,7 +19,6 @@ import {
   InspectorNumberInput,
   InspectorSection,
   InspectorToggleRow,
-  type InspectorPresetOption,
   type InspectorToggleOption,
 } from "@ssota/ui/components/design-studio";
 
@@ -54,14 +53,6 @@ const BORDER_STYLE_OPTIONS: InspectorToggleOption[] = [
     tooltip: "None",
     icon: <BorderStyleNoneIcon />,
   },
-];
-
-const BORDER_WIDTH_PRESETS: InspectorPresetOption[] = [
-  { value: "0", label: "0" },
-  { value: "1", label: "1" },
-  { value: "2", label: "2" },
-  { value: "4", label: "4" },
-  { value: "8", label: "8" },
 ];
 
 type BorderSectionProps = {
@@ -102,7 +93,8 @@ export function BorderSection({ parsed, onUpdate }: BorderSectionProps) {
             value={parseBorderWidthPx(parsed.borderWidth)}
             unit="px"
             placeholder="0"
-            presets={BORDER_WIDTH_PRESETS}
+            showPresets={false}
+            scrollAdjust
             onChange={(input) =>
               onUpdate({ borderWidth: formatBorderWidthPx(input) })
             }
