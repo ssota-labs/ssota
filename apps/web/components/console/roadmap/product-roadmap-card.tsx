@@ -53,10 +53,10 @@ export function ProductRoadmapCard({
 
   return (
     <section
-      className="overflow-hidden rounded-lg border bg-card"
+      className="rounded-lg border bg-card"
       data-testid="product-roadmap-card"
     >
-      <header className="border-b px-4 py-3 md:px-6">
+      <header className="rounded-t-lg border-b px-4 py-3 md:px-6">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-semibold tracking-tight">
             {t("roadmap.productRoadmap")}

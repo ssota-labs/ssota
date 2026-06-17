@@ -80,10 +80,10 @@ export function PlanningRoadmapsSection({
 
   return (
     <section
-      className="overflow-hidden rounded-lg border bg-card"
+      className="rounded-lg border bg-card"
       data-testid="planning-roadmaps-section"
     >
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 md:px-6">
+      <header className="rounded-t-lg flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 md:px-6">
         <div className="min-w-0 space-y-1">
           <h2 className="text-lg font-semibold tracking-tight">
             {t("roadmap.planningSectionTitle")}

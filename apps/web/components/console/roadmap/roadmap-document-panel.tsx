@@ -104,7 +104,7 @@ export function RoadmapDocumentPanel({
             </button>
           </div>
         ) : (
-          <div className="pointer-events-none sticky bottom-0 z-10 -mt-14 flex justify-center pb-2">
+          <div className="pointer-events-none sticky bottom-0 z-10 -mt-14 flex justify-center pb-2 pt-1">
             <button
               type="button"
               data-testid={`${expandTestId}-collapse`}
