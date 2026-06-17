@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   CaretDownIcon,
   CheckIcon,
@@ -14,11 +14,7 @@ import {
   InputGroupInput,
   InputGroupText,
 } from "@/components/ui/input-group";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -163,6 +159,7 @@ function InspectorPresetList({
               "flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-muted",
               active && "bg-muted",
             )}
+            onMouseDown={(event) => event.preventDefault()}
             onClick={() => onSelect(option.value)}
           >
             <span className="truncate">{option.label}</span>
@@ -194,37 +191,39 @@ export function InspectorNumberInput({
   "aria-label": ariaLabel,
 }: InspectorNumberInputProps) {
   const [open, setOpen] = useState(false);
+  const anchorRef = useRef<HTMLDivElement>(null);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
-        nativeButton={false}
-        className="w-full"
-        render={
-          <div className="w-full">
-            <InputGroup>
-              <InputGroupInput
-                aria-label={ariaLabel}
-                type="number"
-                inputMode="decimal"
-                step="any"
-                value={value}
-                placeholder={placeholder}
-                onChange={(event) => onChange(event.target.value)}
-                onFocus={() => setOpen(true)}
-              />
-              {unit ? (
-                <InputGroupAddon align="inline-end">
-                  <InputGroupText className="text-xs text-muted-foreground">
-                    {unit}
-                  </InputGroupText>
-                </InputGroupAddon>
-              ) : null}
-            </InputGroup>
-          </div>
-        }
-      />
-      <PopoverContent align="start" className="w-[var(--anchor-width)] p-1">
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <div ref={anchorRef} className="w-full">
+        <InputGroup>
+          <InputGroupInput
+            aria-label={ariaLabel}
+            type="number"
+            inputMode="decimal"
+            step="any"
+            value={value}
+            placeholder={placeholder}
+            onChange={(event) => onChange(event.target.value)}
+            onFocus={() => setOpen(true)}
+            onBlur={() => {
+              window.setTimeout(() => setOpen(false), 0);
+            }}
+          />
+          {unit ? (
+            <InputGroupAddon align="inline-end">
+              <InputGroupText className="text-xs text-muted-foreground">
+                {unit}
+              </InputGroupText>
+            </InputGroupAddon>
+          ) : null}
+        </InputGroup>
+      </div>
+      <PopoverContent
+        anchor={anchorRef}
+        align="start"
+        className="w-[var(--anchor-width)] p-1"
+      >
         <InspectorPresetList
           options={presets}
           value={value}
