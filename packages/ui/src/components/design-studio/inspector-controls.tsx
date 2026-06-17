@@ -224,7 +224,7 @@ function resolveColorPickerHex(
 ): string {
   const trimmed = value.trim();
   if (!trimmed) return "#000000";
-  if (trimmed.startsWith("#") || /^rgba?\(/i.test(trimmed)) {
+  if (isDirectColorValue(trimmed)) {
     return cssColorToHex(trimmed);
   }
 
@@ -233,27 +233,67 @@ function resolveColorPickerHex(
     return cssColorToHex(trimmed);
   }
 
+  if (option.cssVar) {
+    const raw = getComputedStyle(document.documentElement)
+      .getPropertyValue(option.cssVar)
+      .trim();
+    if (raw) return cssColorToHexViaDom(raw);
+    return cssColorToHexViaDom(`var(${option.cssVar})`);
+  }
+
+  if (option.swatchClass) {
+    return cssColorToHexViaDom(resolveSwatchClassColor(option.swatchClass));
+  }
+
+  return cssColorToHex(trimmed);
+}
+
+function cssColorToHexViaDom(color: string): string {
+  const trimmed = color.trim();
+  if (!trimmed) return "#000000";
+  if (trimmed.startsWith("#")) return toHexColor(trimmed);
+
+  const fromRgb = rgbStringToHex(trimmed);
+  if (fromRgb) return fromRgb;
+
+  if (typeof document === "undefined") return cssColorToHex(trimmed);
+
   const probe = document.createElement("div");
-  probe.style.position = "absolute";
+  probe.style.position = "fixed";
   probe.style.visibility = "hidden";
   probe.style.pointerEvents = "none";
+  probe.style.backgroundColor = trimmed;
   document.body.appendChild(probe);
 
   try {
-    if (option.cssVar) {
-      probe.style.backgroundColor = `var(${option.cssVar})`;
-      return cssColorToHex(getComputedStyle(probe).backgroundColor);
-    }
-
-    if (option.swatchClass) {
-      probe.className = option.swatchClass;
-      return cssColorToHex(getComputedStyle(probe).backgroundColor);
+    const computed = getComputedStyle(probe).backgroundColor;
+    if (computed && computed !== "rgba(0, 0, 0, 0)") {
+      const hex = rgbStringToHex(computed);
+      if (hex) return hex;
+      return cssColorToHex(computed);
     }
   } finally {
     document.body.removeChild(probe);
   }
 
   return cssColorToHex(trimmed);
+}
+
+function resolveSwatchClassColor(swatchClass: string): string {
+  if (typeof document === "undefined") return "";
+
+  const probe = document.createElement("div");
+  probe.style.position = "fixed";
+  probe.style.visibility = "hidden";
+  probe.style.pointerEvents = "none";
+  probe.className = swatchClass;
+  document.body.appendChild(probe);
+
+  try {
+    return getComputedStyle(probe).backgroundColor;
+  } finally {
+    document.body.removeChild(probe);
+  }
 }
 
 function useColorPickerHex(
@@ -284,6 +324,25 @@ function resolveColorOption(
   const trimmed = value.trim();
   if (!trimmed) return undefined;
   return options.find((option) => option.value === trimmed);
+}
+
+function isDirectColorValue(value: string): boolean {
+  const trimmed = value.trim();
+  return (
+    trimmed.startsWith("#") ||
+    /^rgba?\(/i.test(trimmed) ||
+    /^hsla?\(/i.test(trimmed) ||
+    /^oklch\(/i.test(trimmed) ||
+    /^lab\(/i.test(trimmed)
+  );
+}
+
+function usesTokenColorSwatch(
+  value: string,
+  presets: InspectorColorOption[],
+): InspectorColorOption | undefined {
+  if (!value.trim() || isDirectColorValue(value)) return undefined;
+  return resolveColorOption(value, presets);
 }
 
 type InspectorColorListProps = {
@@ -441,6 +500,7 @@ export function InspectorColorField({
   const presetAnchorRef = useRef<HTMLDivElement>(null);
   const colorInputRef = useRef<HTMLInputElement>(null);
   const hexValue = useColorPickerHex(value, presets);
+  const tokenSwatch = usesTokenColorSwatch(value, presets);
 
   useLayoutEffect(() => {
     if (colorInputRef.current && colorInputRef.current.value !== hexValue) {
@@ -450,16 +510,35 @@ export function InspectorColorField({
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
-      <input
-        ref={colorInputRef}
-        type="color"
-        aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
-        className={inspectorNativeColorPickerClass}
-        value={hexValue}
-        onChange={(event) =>
-          handleNativeColorChange(value, event.target.value, onChange)
-        }
-      />
+      <div className="relative size-9 shrink-0">
+        {tokenSwatch ? (
+          <span
+            aria-hidden
+            className={cn(
+              "pointer-events-none absolute inset-0 overflow-hidden rounded-full",
+              tokenSwatch.swatchClass,
+            )}
+            style={
+              tokenSwatch.cssVar
+                ? { backgroundColor: `var(${tokenSwatch.cssVar})` }
+                : undefined
+            }
+          />
+        ) : null}
+        <input
+          ref={colorInputRef}
+          type="color"
+          aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
+          className={cn(
+            inspectorNativeColorPickerClass,
+            tokenSwatch && "relative z-10 opacity-0",
+          )}
+          value={hexValue}
+          onChange={(event) =>
+            handleNativeColorChange(value, event.target.value, onChange)
+          }
+        />
+      </div>
 
       <InspectorAnchorPopover
         open={presetOpen}
