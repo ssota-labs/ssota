@@ -80,7 +80,7 @@ export function PlanningRoadmapsSection({
 
   return (
     <section
-      className="rounded-lg border bg-card"
+      className="overflow-hidden rounded-lg border bg-card"
       data-testid="planning-roadmaps-section"
     >
       <header className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 md:px-6">
