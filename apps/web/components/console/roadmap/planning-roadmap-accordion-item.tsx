@@ -10,20 +10,10 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@ssota/ui/components/ui/collapsible";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ssota/ui/components/ui/select";
 import { useLocale } from "@/components/i18n/locale-provider";
+import { RoadmapDocStatusControl } from "@/components/console/roadmap/roadmap-doc-status-control";
 import { RoadmapDocumentSheet } from "@/components/console/roadmap/roadmap-document-sheet";
 import { RoadmapMarkdownPreview } from "@/components/console/roadmap/roadmap-markdown-preview";
-import {
-  DOC_STATUS_LABELS,
-  DOC_STATUS_OPTIONS,
-} from "@/lib/roadmap/doc-status";
 import type { PlanningPeriod, RoadmapNodeView } from "@/lib/roadmap/types";
 
 type PlanningRoadmapAccordionItemProps = {
@@ -92,8 +82,8 @@ export function PlanningRoadmapAccordionItem({
     });
   };
 
-  const handleDocStatusChange = (value: DocStatus | null) => {
-    if (!node || !value) return;
+  const handleDocStatusChange = (value: DocStatus) => {
+    if (!node) return;
     startTransition(async () => {
       await onSave({
         nodeId: node.id,
@@ -132,22 +122,11 @@ export function PlanningRoadmapAccordionItem({
                 onClick={(event) => event.stopPropagation()}
                 onKeyDown={(event) => event.stopPropagation()}
               >
-                <Select
+                <RoadmapDocStatusControl
                   value={node.docStatus ?? "draft"}
-                  onValueChange={handleDocStatusChange}
+                  onChange={handleDocStatusChange}
                   disabled={pending}
-                >
-                  <SelectTrigger size="sm" aria-label="Document status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {DOC_STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {DOC_STATUS_LABELS[status]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                />
               </div>
             ) : null}
           </div>
@@ -217,6 +196,7 @@ export function PlanningRoadmapAccordionItem({
               mode="view"
               title={node.title}
               content={node.content}
+              docStatus={node.docStatus ?? "draft"}
               description={planningLabel(node)}
               saveLabel={t("common.save")}
               onOpenChange={setViewOpen}
@@ -226,6 +206,7 @@ export function PlanningRoadmapAccordionItem({
               mode="edit"
               title={node.title}
               content={node.content}
+              docStatus={node.docStatus ?? "draft"}
               description={planningLabel(node)}
               saveLabel={t("common.save")}
               onOpenChange={setEditOpen}
@@ -233,7 +214,6 @@ export function PlanningRoadmapAccordionItem({
                 await onSave({
                   nodeId: node.id,
                   ...input,
-                  docStatus: node.docStatus,
                 });
               }}
             />

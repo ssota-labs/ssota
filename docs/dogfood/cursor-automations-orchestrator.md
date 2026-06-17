@@ -12,7 +12,7 @@ This runbook sets up external scheduling for `orchestrator.*` workflows against 
 
 1. Add ssota MCP server in Cursor (see `plugins/ssota-plugin/`).
 2. Authenticate with smoke or your operator account.
-3. Verify tools: `list_projects`, `query_tasks`, `spawn_task`, `update_task`.
+3. Verify tools: `list_projects`, `query_tasks`, `spawn_task`, `update_task`, `list_workflows`, `get_workflow_instruction`.
 
 ## Recommended automations
 
@@ -30,19 +30,20 @@ Create four Cursor Automations (or combine watchdog with daily if cost-sensitive
 ```text
 You are the SSOTA daily orchestrator for project ssota-labs/ssota-dev.
 
-1. Load workflow instruction orchestrator.daily from packages/contracts/workflows.
-2. Use ssota MCP: query_tasks, spawn_task, update_task.
-3. Do not clone repos unless spawning work.* tasks that need code.
-4. End with a short summary in the orchestrator task result.
+1. MCP get_workflow_instruction with workflowKey=agent.main (session router).
+2. MCP get_workflow_instruction with workflowKey=orchestrator.daily.
+3. Use ssota MCP: query_tasks, spawn_task, update_task.
+4. Do not read workflow markdown from the local repo.
+5. End with a short summary in the orchestrator task result.
 ```
 
 No-repo mode is sufficient for orchestrator-only runs.
 
 ## Workflow instructions SSOT
 
-Instructions live in `packages/contracts/workflows/instructions/*.md` and are registered in `packages/contracts/src/workflows/index.ts`.
+Instructions live in `packages/contracts/workflows/instructions/*.md`, are registered in `packages/contracts/src/workflows/index.ts`, and are **served to agents via MCP** (`list_workflows`, `get_workflow`, `get_workflow_instruction`). Deployed MCP is the runtime SSOT — agents must not read local workflow files.
 
-Orchestrator workflows spawn `work.*` tasks; separate work automations (or manual agent runs) should pick up `status=ready` work tasks.
+Session entry: `get_workflow_instruction` with `workflowKey=agent.main`.
 
 ## Idempotency
 
