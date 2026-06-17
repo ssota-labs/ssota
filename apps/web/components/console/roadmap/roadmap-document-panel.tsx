@@ -86,7 +86,7 @@ export function RoadmapDocumentPanel({
           content={draftDoc}
           editable={expanded}
           onChange={expanded ? setDraftDoc : undefined}
-          className={cn("roadmap-readonly-editor", expanded && "pb-20")}
+          className={cn("roadmap-readonly-editor", expanded && "pb-14")}
           {...editorHostProps}
         />
 
@@ -104,7 +104,7 @@ export function RoadmapDocumentPanel({
             </button>
           </div>
         ) : (
-          <div className="pointer-events-none sticky bottom-0 z-10 -mt-20 flex h-20 items-end justify-center bg-gradient-to-t from-card via-card/95 to-transparent pb-2">
+          <div className="pointer-events-none sticky bottom-0 z-10 -mt-14 flex justify-center pb-2">
             <button
               type="button"
               data-testid={`${expandTestId}-collapse`}
