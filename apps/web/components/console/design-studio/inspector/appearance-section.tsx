@@ -39,6 +39,17 @@ export function AppearanceSection({
   const radiusMax = radiusUnit === "%" ? 100 : undefined;
 
   const setUnifiedRadius = (value: string) => {
+    if (perCornerMode) {
+      onUpdate({
+        borderRadius: undefined,
+        borderRadiusTopLeft: formatRadiusClass("rounded-tl", value, radiusUnit),
+        borderRadiusTopRight: formatRadiusClass("rounded-tr", value, radiusUnit),
+        borderRadiusBottomLeft: formatRadiusClass("rounded-bl", value, radiusUnit),
+        borderRadiusBottomRight: formatRadiusClass("rounded-br", value, radiusUnit),
+      });
+      return;
+    }
+
     onUpdate({
       borderRadius: formatRadiusClass("rounded", value, radiusUnit),
       borderRadiusTopLeft: undefined,
@@ -152,7 +163,7 @@ export function AppearanceSection({
           <div className="flex items-center gap-1.5">
             <InspectorScrubberNumberInput
               aria-label="All corners radius"
-              value={perCornerMode ? "" : unifiedRadius}
+              value={unifiedRadius}
               unit={radiusUnit}
               units={RADIUS_UNITS}
               onUnitChange={(nextUnit) => {
@@ -162,7 +173,7 @@ export function AppearanceSection({
               }}
               min={radiusUnit === "%" ? 0 : undefined}
               max={radiusMax}
-              placeholder={perCornerMode ? "Mixed" : "0"}
+              placeholder={perCornerMode && !unifiedRadius ? "Mixed" : "0"}
               onChange={setUnifiedRadius}
             />
             <Button
