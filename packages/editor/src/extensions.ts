@@ -14,6 +14,7 @@ import type { Extensions } from "@tiptap/react";
 import { SlashCommand } from "./SlashCommand";
 import type { SsotaExtensionOptions } from "./types";
 import { Callout } from "./extensions/Callout";
+import { CalloutTitle } from "./extensions/CalloutTitle";
 import { EmojiExtension } from "./extensions/EmojiExtension";
 import { createMentionExtension } from "./extensions/MentionExtension";
 import { NestedListItem } from "./extensions/NestedListItem";
@@ -60,10 +61,15 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
     Highlight.configure({ multicolor: true }),
     TextAlign.configure({ types: ["heading", "paragraph"] }),
     Callout,
+    CalloutTitle,
     Toggle,
     EmojiExtension,
     Placeholder.configure({
-      placeholder: options.placeholder ?? "내용을 입력하거나 ‘/’ 를 눌러보세요…",
+      placeholder: ({ node }) => {
+        if (node.type.name === "calloutTitle") return "제목";
+        return options.placeholder ?? "내용을 입력하거나 ‘/’ 를 눌러보세요…";
+      },
+      includeChildren: true,
     }),
     SlashCommand.configure({
       uploadImage: options.uploadImage,

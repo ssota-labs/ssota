@@ -181,6 +181,27 @@ test.describe("Editor Lab", () => {
       await expect(callout.locator("select")).toHaveCount(0);
     });
 
+    test("shows Notion-style title field", async ({ page }) => {
+      const callout = await insertCallout(page);
+      const title = callout.locator("[data-callout-title]");
+
+      await expect(title).toBeVisible();
+      await expect(title).toHaveAttribute("data-placeholder", "제목");
+    });
+
+    test("accepts title and body with Enter between them", async ({ page }) => {
+      const callout = await insertCallout(page);
+
+      await page.keyboard.type("Important note");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("Supporting details");
+
+      await expect(callout.locator("[data-callout-title]")).toContainText(
+        "Important note",
+      );
+      await expect(callout.getByText("Supporting details")).toBeVisible();
+    });
+
     test("icon popover switches variant without select", async ({ page }) => {
       const callout = await insertCallout(page);
       const trigger = callout.getByTestId("ssota-callout-icon-trigger");

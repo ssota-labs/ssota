@@ -55,6 +55,7 @@ export function tiptapDocToPlainText(doc: JSONContent | null | undefined): strin
     if (
       node.type === "paragraph" ||
       node.type === "heading" ||
+      node.type === "calloutTitle" ||
       node.type === "listItem" ||
       node.type === "taskItem" ||
       node.type === "blockquote" ||

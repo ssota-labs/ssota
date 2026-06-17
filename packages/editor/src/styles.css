@@ -357,6 +357,48 @@
   background: color-mix(in oklab, var(--muted) 55%, transparent);
 }
 
+.ssota-callout-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.ssota-callout-icon-col {
+  flex-shrink: 0;
+  padding-top: 0.125rem;
+  color: var(--muted-foreground);
+}
+
+.ssota-callout-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ssota-callout-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.ssota-callout-title.is-empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted-foreground);
+  font-weight: 500;
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
+
+.ssota-callout-content > .ssota-callout-title + * {
+  margin-top: 0.35rem;
+}
+
+.ssota-callout-content > * + *:not(.ssota-callout-title) {
+  margin-top: 0.35rem;
+}
+
 .ssota-callout--info {
   border-color: color-mix(in oklab, var(--primary) 35%, var(--border));
 }
@@ -369,13 +411,6 @@
   border-color: color-mix(in oklab, var(--chart-2) 35%, var(--border));
 }
 
-.ssota-callout-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0.5rem;
-  color: var(--muted-foreground);
-}
-
 .ssota-callout-icon-trigger {
   color: inherit;
 }
@@ -386,10 +421,6 @@
 
 .ssota-callout-icon-option[aria-selected="true"] {
   background: color-mix(in oklab, var(--muted) 80%, transparent);
-}
-
-.ssota-callout-content > * + * {
-  margin-top: 0.35rem;
 }
 
 .ssota-toggle {

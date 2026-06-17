@@ -1,6 +1,7 @@
 "use client";
 
 import { Node, mergeAttributes } from "@tiptap/core";
+import { TextSelection } from "@tiptap/pm/state";
 import {
   NodeViewContent,
   NodeViewWrapper,
@@ -52,61 +53,63 @@ function CalloutView({ node, updateAttributes }: NodeViewProps) {
       className={`ssota-callout ssota-callout--${variant}`}
       data-variant={variant}
     >
-      <div className="ssota-callout-header">
-        <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger
-            aria-label="Change callout icon"
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-xs"
-                className="ssota-callout-icon-trigger"
-                contentEditable={false}
-                data-testid="ssota-callout-icon-trigger"
-              />
-            }
-          >
-            <Icon className="size-4" aria-hidden />
-          </PopoverTrigger>
-          <PopoverContent
-            className="ssota-callout-icon-popover w-auto p-1"
-            align="start"
-            side="bottom"
-          >
-            <div
-              className="flex items-center gap-0.5"
-              role="listbox"
-              aria-label="Callout icon"
+      <div className="ssota-callout-layout">
+        <div className="ssota-callout-icon-col">
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger
+              aria-label="Change callout icon"
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className="ssota-callout-icon-trigger"
+                  contentEditable={false}
+                  data-testid="ssota-callout-icon-trigger"
+                />
+              }
             >
-              {CALLOUT_VARIANTS.map((item) => {
-                const ItemIcon = item.icon;
-                const selected = item.value === variant;
-                return (
-                  <Button
-                    key={item.value}
-                    type="button"
-                    role="option"
-                    aria-selected={selected}
-                    variant={selected ? "secondary" : "ghost"}
-                    size="icon-xs"
-                    title={item.label}
-                    aria-label={item.label}
-                    className="ssota-callout-icon-option"
-                    onClick={() => {
-                      updateAttributes({ variant: item.value });
-                      setOpen(false);
-                    }}
-                  >
-                    <ItemIcon className="size-4" />
-                  </Button>
-                );
-              })}
-            </div>
-          </PopoverContent>
-        </Popover>
+              <Icon className="size-4" aria-hidden />
+            </PopoverTrigger>
+            <PopoverContent
+              className="ssota-callout-icon-popover w-auto p-1"
+              align="start"
+              side="bottom"
+            >
+              <div
+                className="flex items-center gap-0.5"
+                role="listbox"
+                aria-label="Callout icon"
+              >
+                {CALLOUT_VARIANTS.map((item) => {
+                  const ItemIcon = item.icon;
+                  const selected = item.value === variant;
+                  return (
+                    <Button
+                      key={item.value}
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      variant={selected ? "secondary" : "ghost"}
+                      size="icon-xs"
+                      title={item.label}
+                      aria-label={item.label}
+                      className="ssota-callout-icon-option"
+                      onClick={() => {
+                        updateAttributes({ variant: item.value });
+                        setOpen(false);
+                      }}
+                    >
+                      <ItemIcon className="size-4" />
+                    </Button>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+        <NodeViewContent className="ssota-callout-content" />
       </div>
-      <NodeViewContent className="ssota-callout-content" />
     </NodeViewWrapper>
   );
 }
@@ -114,7 +117,7 @@ function CalloutView({ node, updateAttributes }: NodeViewProps) {
 export const Callout = Node.create({
   name: "callout",
   group: "block",
-  content: "block+",
+  content: "calloutTitle? block*",
   defining: true,
 
   addAttributes() {
@@ -153,12 +156,30 @@ export const Callout = Node.create({
     return {
       setCallout:
         (variant: CalloutVariant = "info") =>
-        ({ commands }) =>
-          commands.insertContent({
-            type: this.name,
-            attrs: { variant },
-            content: [{ type: "paragraph" }],
-          }),
+        ({ chain }) =>
+          chain()
+            .insertContent({
+              type: this.name,
+              attrs: { variant },
+              content: [{ type: "calloutTitle" }, { type: "paragraph" }],
+            })
+            .command(({ tr, dispatch }) => {
+              const { $from } = tr.selection;
+
+              for (let depth = $from.depth; depth > 0; depth -= 1) {
+                if ($from.node(depth).type.name !== "callout") continue;
+
+                const titlePos = $from.start(depth) + 1;
+                if (dispatch) {
+                  tr.setSelection(TextSelection.create(tr.doc, titlePos));
+                }
+                return true;
+              }
+
+              return false;
+            })
+            .focus()
+            .run(),
     };
   },
 });
