@@ -1,5 +1,82 @@
 export type FontSizeUnit = "px" | "%" | "em";
 
+const DEFAULT_PARENT_FONT_SIZE_PX = 16;
+
+function formatTypographyNumber(value: number): string {
+  const rounded = Math.round(value * 1000) / 1000;
+  if (Number.isInteger(rounded)) return String(rounded);
+  return String(rounded);
+}
+
+/** line-height·letter-spacing — 요소 font-size 대비 비율로 단위를 변환합니다. */
+function toRelativeTypographyRatio(
+  value: string,
+  unit: FontSizeUnit,
+  fontSizePx: number,
+): number | null {
+  const num = Number(value.trim());
+  if (!Number.isFinite(num)) return null;
+  if (fontSizePx <= 0) return null;
+
+  switch (unit) {
+    case "%":
+      return num / 100;
+    case "em":
+      return num;
+    case "px":
+      return num / fontSizePx;
+  }
+}
+
+function fromRelativeTypographyRatio(
+  ratio: number,
+  unit: FontSizeUnit,
+  fontSizePx: number,
+): string {
+  switch (unit) {
+    case "%":
+      return formatTypographyNumber(ratio * 100);
+    case "em":
+      return formatTypographyNumber(ratio);
+    case "px":
+      return formatTypographyNumber(ratio * fontSizePx);
+  }
+}
+
+/** font-size — 부모 font-size(기본 16px) 대비 절대 px로 변환합니다. */
+function toAbsoluteFontSizePx(
+  value: string,
+  unit: FontSizeUnit,
+  parentFontSizePx: number,
+): number | null {
+  const num = Number(value.trim());
+  if (!Number.isFinite(num)) return null;
+
+  switch (unit) {
+    case "px":
+      return num;
+    case "%":
+      return (parentFontSizePx * num) / 100;
+    case "em":
+      return parentFontSizePx * num;
+  }
+}
+
+function fromAbsoluteFontSizePx(
+  px: number,
+  unit: FontSizeUnit,
+  parentFontSizePx: number,
+): string {
+  switch (unit) {
+    case "px":
+      return formatTypographyNumber(px);
+    case "%":
+      return formatTypographyNumber((px / parentFontSizePx) * 100);
+    case "em":
+      return formatTypographyNumber(px / parentFontSizePx);
+  }
+}
+
 const NAMED_FONT_SIZE_TO_PX: Record<string, string> = {
   "text-xs": "12",
   "text-sm": "14",
@@ -48,6 +125,15 @@ export function parseFontSizeValue(className?: string): {
   return { value: "", unit: "px" };
 }
 
+export function resolveFontSizePxFromClass(className?: string): number {
+  const { value, unit } = parseFontSizeValue(className);
+  if (!value.trim()) return DEFAULT_PARENT_FONT_SIZE_PX;
+  return (
+    toAbsoluteFontSizePx(value, unit, DEFAULT_PARENT_FONT_SIZE_PX) ??
+    DEFAULT_PARENT_FONT_SIZE_PX
+  );
+}
+
 export function formatFontSizeClass(
   value: string,
   unit: FontSizeUnit,
@@ -72,11 +158,22 @@ const FONT_SIZE_UNIT_DEFAULTS: Record<FontSizeUnit, string> = {
 /** 값이 비어 있을 때도 단위 전환이 classname에 반영되도록 기본값을 채웁니다. */
 export function formatFontSizeOnUnitChange(
   value: string,
+  currentUnit: FontSizeUnit,
   nextUnit: FontSizeUnit,
+  parentFontSizePx = DEFAULT_PARENT_FONT_SIZE_PX,
 ): string | undefined {
   const trimmed = value.trim();
-  const resolved = trimmed || FONT_SIZE_UNIT_DEFAULTS[nextUnit];
-  return formatFontSizeClass(resolved, nextUnit);
+  if (!trimmed) {
+    return formatFontSizeClass(FONT_SIZE_UNIT_DEFAULTS[nextUnit], nextUnit);
+  }
+
+  const px = toAbsoluteFontSizePx(trimmed, currentUnit, parentFontSizePx);
+  if (px === null) return formatFontSizeClass(trimmed, nextUnit);
+
+  return formatFontSizeClass(
+    fromAbsoluteFontSizePx(px, nextUnit, parentFontSizePx),
+    nextUnit,
+  );
 }
 
 const NAMED_LINE_HEIGHT_TO_EM: Record<string, string> = {
@@ -145,11 +242,22 @@ const LINE_HEIGHT_UNIT_DEFAULTS: Record<FontSizeUnit, string> = {
 
 export function formatLineHeightOnUnitChange(
   value: string,
+  currentUnit: FontSizeUnit,
   nextUnit: FontSizeUnit,
+  fontSizePx = DEFAULT_PARENT_FONT_SIZE_PX,
 ): string | undefined {
   const trimmed = value.trim();
-  const resolved = trimmed || LINE_HEIGHT_UNIT_DEFAULTS[nextUnit];
-  return formatLineHeightClass(resolved, nextUnit);
+  if (!trimmed) {
+    return formatLineHeightClass(LINE_HEIGHT_UNIT_DEFAULTS[nextUnit], nextUnit);
+  }
+
+  const ratio = toRelativeTypographyRatio(trimmed, currentUnit, fontSizePx);
+  if (ratio === null) return formatLineHeightClass(trimmed, nextUnit);
+
+  return formatLineHeightClass(
+    fromRelativeTypographyRatio(ratio, nextUnit, fontSizePx),
+    nextUnit,
+  );
 }
 
 const NAMED_LETTER_SPACING_TO_EM: Record<string, string> = {
@@ -218,11 +326,25 @@ const LETTER_SPACING_UNIT_DEFAULTS: Record<FontSizeUnit, string> = {
 
 export function formatLetterSpacingOnUnitChange(
   value: string,
+  currentUnit: FontSizeUnit,
   nextUnit: FontSizeUnit,
+  fontSizePx = DEFAULT_PARENT_FONT_SIZE_PX,
 ): string | undefined {
   const trimmed = value.trim();
-  const resolved = trimmed || LETTER_SPACING_UNIT_DEFAULTS[nextUnit];
-  return formatLetterSpacingClass(resolved, nextUnit);
+  if (!trimmed) {
+    return formatLetterSpacingClass(
+      LETTER_SPACING_UNIT_DEFAULTS[nextUnit],
+      nextUnit,
+    );
+  }
+
+  const ratio = toRelativeTypographyRatio(trimmed, currentUnit, fontSizePx);
+  if (ratio === null) return formatLetterSpacingClass(trimmed, nextUnit);
+
+  return formatLetterSpacingClass(
+    fromRelativeTypographyRatio(ratio, nextUnit, fontSizePx),
+    nextUnit,
+  );
 }
 
 export function formatSpacingPx(

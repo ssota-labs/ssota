@@ -25,6 +25,7 @@ import {
   parseFontSizeValue,
   parseLetterSpacingValue,
   parseLineHeightValue,
+  resolveFontSizePxFromClass,
 } from "@/lib/design-studio/tailwind-classname";
 import {
   InspectorColorInput,
@@ -145,6 +146,7 @@ type TypographySectionProps = {
 
 export function TypographySection({ parsed, onUpdate }: TypographySectionProps) {
   const fontSize = parseFontSizeValue(parsed.fontSize);
+  const fontSizePx = resolveFontSizePxFromClass(parsed.fontSize);
   const lineHeight = parseLineHeightValue(parsed.lineHeight);
   const letterSpacing = parseLetterSpacingValue(parsed.letterSpacing);
 
@@ -166,7 +168,11 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
             placeholder="Default"
             onUnitChange={(nextUnit) =>
               onUpdate({
-                fontSize: formatFontSizeOnUnitChange(fontSize.value, nextUnit),
+                fontSize: formatFontSizeOnUnitChange(
+                  fontSize.value,
+                  fontSize.unit,
+                  nextUnit,
+                ),
               })
             }
             onChange={(input) =>
@@ -223,7 +229,9 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
               onUpdate({
                 lineHeight: formatLineHeightOnUnitChange(
                   lineHeight.value,
+                  lineHeight.unit,
                   nextUnit,
+                  fontSizePx,
                 ),
               })
             }
@@ -247,7 +255,9 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
               onUpdate({
                 letterSpacing: formatLetterSpacingOnUnitChange(
                   letterSpacing.value,
+                  letterSpacing.unit,
                   nextUnit,
+                  fontSizePx,
                 ),
               })
             }
