@@ -6,6 +6,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "predev": "pnpm exec turbo run build --filter=@ssota/studio-build...",
     "dev": "next dev --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
