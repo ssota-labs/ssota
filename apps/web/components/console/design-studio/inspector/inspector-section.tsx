@@ -46,8 +46,12 @@ export function InspectorField({
       : children;
 
   return (
-    <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={id} className="text-xs text-muted-foreground">
+    <div className={cn("min-w-0 space-y-1.5", className)}>
+      <label
+        htmlFor={id}
+        className="block truncate text-xs text-muted-foreground"
+        title={label}
+      >
         {label}
       </label>
       {control}
