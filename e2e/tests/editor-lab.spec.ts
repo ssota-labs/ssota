@@ -554,6 +554,82 @@ test.describe("Editor Lab", () => {
     });
   });
 
+  test.describe("bullet list delete", () => {
+    async function setSingleParagraph(page: Page) {
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .setContent({ type: "doc", content: [{ type: "paragraph" }] })
+          .focus("end")
+          .run();
+      });
+    }
+
+    test("backspace on empty line after list removes paragraph instead of adding item", async ({
+      page,
+    }) => {
+      await setSingleParagraph(page);
+
+      await page.keyboard.type("- one");
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("two");
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("Enter");
+
+      const listItemsBefore = await page.evaluate(() => {
+        const doc = window.__ssotaEditorLab?.getJSON();
+        const list = doc?.content?.find(
+          (node: { type?: string }) => node.type === "bulletList",
+        );
+        return list?.content?.length ?? 0;
+      });
+
+      await page.keyboard.press("Backspace");
+
+      const after = await page.evaluate(() => {
+        const doc = window.__ssotaEditorLab?.getJSON();
+        const list = doc?.content?.find(
+          (node: { type?: string }) => node.type === "bulletList",
+        );
+        return list?.content?.length ?? 0;
+      });
+
+      expect(after).toBe(listItemsBefore);
+    });
+
+    test("slash bullet: backspace clears text then exits list on standalone doc", async ({
+      page,
+    }) => {
+      await setSingleParagraph(page);
+
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus()
+          .insertContent({
+            type: "paragraph",
+            content: [{ type: "text", text: "/bullet" }],
+          })
+          .run();
+      });
+
+      await page.getByRole("option", { name: "Bullet list" }).click();
+      await page.keyboard.type("note");
+      for (let i = 0; i < 4; i++) {
+        await page.keyboard.press("Backspace");
+      }
+      await page.keyboard.press("Backspace");
+
+      const hasBulletList = await page.evaluate(() =>
+        JSON.stringify(window.__ssotaEditorLab?.getJSON()).includes(
+          '"bulletList"',
+        ),
+      );
+
+      expect(hasBulletList).toBe(false);
+    });
+  });
+
   test.describe("mixed list nesting", () => {
     async function hasMixedListNesting(page: Page): Promise<boolean> {
       return page.evaluate(() => {
