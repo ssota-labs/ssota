@@ -12,6 +12,7 @@ export type DesignLabUrlState = {
 const GROUP_IDS: CatalogGroupId[] = [
   "tokens",
   "components",
+  "design-studio",
   "page-patterns",
   "typography",
 ];

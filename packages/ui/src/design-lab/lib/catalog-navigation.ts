@@ -2,7 +2,12 @@ import type { ReactNode } from "react";
 
 import type { StoryCatalogEntry } from "./story-catalog";
 
-export type CatalogGroupId = "tokens" | "components" | "typography" | "page-patterns";
+export type CatalogGroupId =
+  | "tokens"
+  | "components"
+  | "design-studio"
+  | "page-patterns"
+  | "typography";
 
 export type CatalogGroup = {
   id: CatalogGroupId;
@@ -47,6 +52,19 @@ function componentKeyFromTitle(title: string): string {
 
 function componentLabelFromTitle(title: string): string {
   const name = title.replace(/^Components\//, "");
+  return name.replace(/([a-z])([A-Z])/g, "$1 $2");
+}
+
+function designStudioKeyFromTitle(title: string): string {
+  const name = title.replace(/^Design Studio\//, "");
+  return name
+    .replace(/([a-z])([A-Z])/g, "$1-$2")
+    .replace(/\s+/g, "-")
+    .toLowerCase();
+}
+
+function designStudioLabelFromTitle(title: string): string {
+  const name = title.replace(/^Design Studio\//, "");
   return name.replace(/([a-z])([A-Z])/g, "$1 $2");
 }
 
@@ -131,6 +149,28 @@ export function buildComponentItems(
     }));
 }
 
+export function buildDesignStudioItems(
+  stories: StoryCatalogEntry[],
+): CatalogItem[] {
+  const byTitle = new Map<string, StoryCatalogEntry[]>();
+
+  for (const story of stories) {
+    if (!story.title.startsWith("Design Studio/")) continue;
+    const list = byTitle.get(story.title) ?? [];
+    list.push(story);
+    byTitle.set(story.title, list);
+  }
+
+  return [...byTitle.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([title, variants]) => ({
+      id: designStudioKeyFromTitle(title),
+      groupId: "design-studio" as const,
+      label: designStudioLabelFromTitle(title),
+      variants: variants.sort((a, b) => a.storyName.localeCompare(b.storyName)),
+    }));
+}
+
 export function buildCatalogGroups(
   stories: StoryCatalogEntry[],
   builtInItems: {
@@ -148,6 +188,11 @@ export function buildCatalogGroups(
       id: "components",
       label: "Components",
       items: buildComponentItems(stories),
+    },
+    {
+      id: "design-studio",
+      label: "Design Studio",
+      items: buildDesignStudioItems(stories),
     },
     {
       id: "page-patterns",

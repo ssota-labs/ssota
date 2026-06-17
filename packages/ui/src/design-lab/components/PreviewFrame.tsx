@@ -64,6 +64,8 @@ export function PreviewFrame({
   const variant = item.variants ? resolveVariant(item, variantId) : null;
   const activeVariantId = variant?.id ?? variantId ?? "";
   const isComponent = item.groupId === "components";
+  const showVariantToolbar =
+    item.groupId === "components" || item.groupId === "design-studio";
   const hasDocumentation =
     isComponent &&
     (docsCatalog.has(item.id) ||
@@ -75,7 +77,7 @@ export function PreviewFrame({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {isComponent && (
+      {showVariantToolbar && (
         <CanvasViewToolbar
           componentLabel={item.label}
           variants={item.variants}
