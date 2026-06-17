@@ -41,6 +41,9 @@ export type InspectorPresetOption = {
   label: string;
 };
 
+const inspectorPopoverContentClass =
+  "cn-popover-menu w-[var(--anchor-width)]";
+
 type InspectorPopoverPickerProps = {
   value: string | undefined;
   placeholder?: string;
@@ -86,7 +89,7 @@ export function InspectorPopoverPicker({
         )}
         <CaretDownIcon className="size-3.5 shrink-0 text-muted-foreground" />
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[var(--anchor-width)] p-1">
+      <PopoverContent align="start" className={inspectorPopoverContentClass}>
         <InspectorPopoverList
           options={options}
           value={value}
@@ -112,7 +115,7 @@ function InspectorPopoverList({
   onSelect,
 }: InspectorPopoverListProps) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0 p-0.5">
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -120,7 +123,7 @@ function InspectorPopoverList({
             key={option.value}
             type="button"
             className={cn(
-              "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted",
+              "flex w-full items-center gap-2 rounded-sm px-1.5 py-1 text-sm hover:bg-muted",
               active && "bg-muted",
             )}
             onClick={() => onSelect(option.value)}
@@ -157,7 +160,7 @@ function InspectorPresetList({
   onSelect,
 }: InspectorPresetListProps) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0 p-0.5">
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -165,7 +168,7 @@ function InspectorPresetList({
             key={option.value}
             type="button"
             className={cn(
-              "flex w-full items-center justify-between rounded-sm px-2 py-1.5 text-sm hover:bg-muted",
+              "flex w-full items-center justify-between rounded-sm px-1.5 py-1 text-sm hover:bg-muted",
               active && "bg-muted",
             )}
             onMouseDown={(event) => event.preventDefault()}
@@ -226,7 +229,7 @@ function InspectorColorList({
   onSelect,
 }: InspectorColorListProps) {
   return (
-    <div className="flex max-h-72 flex-col gap-0.5 overflow-y-auto">
+    <div className="flex max-h-72 flex-col gap-0 overflow-y-auto p-0.5">
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -234,7 +237,7 @@ function InspectorColorList({
             key={option.value}
             type="button"
             className={cn(
-              "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-muted",
+              "flex w-full items-center gap-2 rounded-sm px-1.5 py-1 text-sm hover:bg-muted",
               active && "bg-muted",
             )}
             onMouseDown={(event) => event.preventDefault()}
@@ -292,7 +295,7 @@ function InspectorAnchorPopover({
       <PopoverContent
         anchor={anchorRef}
         align="start"
-        className="w-[var(--anchor-width)] p-1"
+        className={inspectorPopoverContentClass}
         initialFocus={false}
         finalFocus={false}
       >
