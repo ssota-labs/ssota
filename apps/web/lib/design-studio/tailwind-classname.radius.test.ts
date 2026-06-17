@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatRadiusClass,
+  formatRadiusOnUnitChange,
   formatRadiusValueOnUnitChange,
   parseRadiusValue,
   resolveRadiusReferencePx,
@@ -32,5 +33,14 @@ describe("radius unit change helpers", () => {
         "%",
       ),
     ).toBe("rounded-[8%]");
+  });
+
+  it("emits zero class when converting empty radius on unit change", () => {
+    expect(formatRadiusOnUnitChange("rounded", "", "px", "%", 100)).toBe(
+      "rounded-[0%]",
+    );
+    expect(formatRadiusOnUnitChange("rounded", "8", "px", "%", 100)).toBe(
+      "rounded-[8%]",
+    );
   });
 });

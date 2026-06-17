@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SquaresFourIcon } from "@phosphor-icons/react";
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
@@ -36,8 +36,29 @@ export function AppearanceSection({
 }: AppearanceSectionProps) {
   const hasPerCorner = hasPerCornerRadius(parsed);
   const [perCornerMode, setPerCornerMode] = useState(hasPerCorner);
+  const hasRadiusClass = Boolean(
+    parsed.borderRadius || hasPerCornerRadius(parsed),
+  );
+  const [preferredRadiusUnit, setPreferredRadiusUnit] = useState<RadiusUnit>(
+    () => getRadiusUnit(parsed),
+  );
 
-  const radiusUnit = getRadiusUnit(parsed);
+  useEffect(() => {
+    if (hasRadiusClass) {
+      setPreferredRadiusUnit(getRadiusUnit(parsed));
+    }
+  }, [
+    hasRadiusClass,
+    parsed.borderRadius,
+    parsed.borderRadiusTopLeft,
+    parsed.borderRadiusTopRight,
+    parsed.borderRadiusBottomLeft,
+    parsed.borderRadiusBottomRight,
+  ]);
+
+  const radiusUnit = hasRadiusClass
+    ? getRadiusUnit(parsed)
+    : preferredRadiusUnit;
   const unifiedRadius = getUnifiedRadiusValue(parsed);
   const radiusMax = radiusUnit === "%" ? 100 : undefined;
   const radiusReferencePx = resolveRadiusReferencePx(parsed);
@@ -92,45 +113,55 @@ export function AppearanceSection({
   };
 
   const setRadiusUnit = (nextUnit: RadiusUnit) => {
+    setPreferredRadiusUnit(nextUnit);
+
     if (perCornerMode) {
+      const convertCorner = (
+        prefix: "rounded-tl" | "rounded-tr" | "rounded-bl" | "rounded-br",
+        className?: string,
+      ) => {
+        const { value } = parseRadiusValue(className);
+        if (!value.trim()) return className;
+        return formatRadiusOnUnitChange(
+          prefix,
+          value,
+          radiusUnit,
+          nextUnit,
+          radiusReferencePx,
+        );
+      };
+
       onUpdate({
         borderRadius: undefined,
-        borderRadiusTopLeft: formatRadiusOnUnitChange(
+        borderRadiusTopLeft: convertCorner(
           "rounded-tl",
-          parseRadiusValue(parsed.borderRadiusTopLeft).value,
-          radiusUnit,
-          nextUnit,
-          radiusReferencePx,
+          parsed.borderRadiusTopLeft,
         ),
-        borderRadiusTopRight: formatRadiusOnUnitChange(
+        borderRadiusTopRight: convertCorner(
           "rounded-tr",
-          parseRadiusValue(parsed.borderRadiusTopRight).value,
-          radiusUnit,
-          nextUnit,
-          radiusReferencePx,
+          parsed.borderRadiusTopRight,
         ),
-        borderRadiusBottomLeft: formatRadiusOnUnitChange(
+        borderRadiusBottomLeft: convertCorner(
           "rounded-bl",
-          parseRadiusValue(parsed.borderRadiusBottomLeft).value,
-          radiusUnit,
-          nextUnit,
-          radiusReferencePx,
+          parsed.borderRadiusBottomLeft,
         ),
-        borderRadiusBottomRight: formatRadiusOnUnitChange(
+        borderRadiusBottomRight: convertCorner(
           "rounded-br",
-          parseRadiusValue(parsed.borderRadiusBottomRight).value,
-          radiusUnit,
-          nextUnit,
-          radiusReferencePx,
+          parsed.borderRadiusBottomRight,
         ),
       });
+      return;
+    }
+
+    const radiusValue = unifiedRadius.trim();
+    if (!radiusValue && !hasRadiusClass) {
       return;
     }
 
     onUpdate({
       borderRadius: formatRadiusOnUnitChange(
         "rounded",
-        unifiedRadius,
+        radiusValue || "0",
         radiusUnit,
         nextUnit,
         radiusReferencePx,

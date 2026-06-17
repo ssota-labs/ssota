@@ -599,10 +599,12 @@ export function formatRadiusOnUnitChange(
   referencePx = DEFAULT_RADIUS_REFERENCE_PX,
 ): string | undefined {
   const trimmed = value.trim();
-  if (!trimmed) return undefined;
+  if (!trimmed) {
+    return formatRadiusClass(prefix, RADIUS_UNIT_DEFAULTS[nextUnit], nextUnit);
+  }
 
   const converted = formatRadiusValueOnUnitChange(
-    value,
+    trimmed,
     currentUnit,
     nextUnit,
     referencePx,
