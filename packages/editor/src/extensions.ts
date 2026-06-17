@@ -10,6 +10,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
+import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
 import type { Extensions } from "@tiptap/react";
 import { SlashCommand } from "./SlashCommand";
@@ -27,6 +28,7 @@ export type { SsotaExtensionOptions } from "./types";
 
 export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions {
   const extensions: Extensions = [
+    Markdown,
     StarterKit.configure({
       link: false,
       bulletList: false,

@@ -39,7 +39,7 @@ test.describe("Executive roadmap", () => {
     ).toContainText(/Q1/);
   });
 
-  test("opens product roadmap full view sheet", async ({ page }) => {
+  test("expands product roadmap inline editor from chevron", async ({ page }) => {
     const startTemplate = page.getByRole("button", {
       name: /Start from template|양식으로 시작/,
     });
@@ -52,10 +52,12 @@ test.describe("Executive roadmap", () => {
       );
     }
 
-    await page.getByTestId("product-roadmap-view-full").click();
+    await page.getByTestId("product-roadmap-expand").click();
+    await expect(page.getByTestId("roadmap-document-editor")).toBeVisible();
+    await expect(page.getByTestId("ssota-editor-surface")).toBeVisible();
 
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("dialog")).toContainText(/문서 정보/);
+    await page.getByTestId("product-roadmap-expand-collapse").click();
+    await expect(page.getByTestId("roadmap-document-editor")).not.toBeVisible();
   });
 
   test("creates quarter roadmap from empty preview", async ({ page }) => {
@@ -81,7 +83,7 @@ test.describe("Executive roadmap", () => {
     const q1Header = q1Card.locator("header");
     const q1Body = q1Card
       .getByTestId("planning-roadmap-empty-q1")
-      .or(q1Card.getByRole("button", { name: /View full|전체 보기/ }));
+      .or(q1Card.getByTestId("roadmap-document-panel"));
 
     await expect(q1Body.first()).not.toBeVisible();
 
@@ -90,5 +92,33 @@ test.describe("Executive roadmap", () => {
 
     await q1Header.click();
     await expect(q1Body.first()).not.toBeVisible();
+  });
+
+  test("enters inline edit mode for product roadmap", async ({ page }) => {
+    const startTemplate = page.getByRole("button", {
+      name: /Start from template|양식으로 시작/,
+    });
+
+    if (await startTemplate.isVisible()) {
+      await startTemplate.click();
+      await expect(page.getByTestId("product-roadmap-card")).not.toContainText(
+        /Start from template|양식으로 시작/,
+        { timeout: 10_000 },
+      );
+    }
+
+    await page
+      .getByTestId("product-roadmap-card")
+      .getByTestId("roadmap-edit")
+      .click();
+    await expect(
+      page.getByTestId("product-roadmap-card").getByTestId("roadmap-document-editor"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("product-roadmap-card").getByTestId("roadmap-edit-save"),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("product-roadmap-card").getByTestId("roadmap-edit-cancel"),
+    ).toBeVisible();
   });
 });

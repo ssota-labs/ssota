@@ -137,6 +137,7 @@ export default async function ExecutiveRoadmapPage({
 
   return (
     <ExecutiveRoadmapWorkspace
+      projectId={project.id}
       productRoadmap={productRoadmap}
       planningRoadmaps={planningRoadmaps}
       currentYear={currentYear}

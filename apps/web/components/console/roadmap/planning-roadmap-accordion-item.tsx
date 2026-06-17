@@ -12,8 +12,7 @@ import {
 } from "@ssota/ui/components/ui/collapsible";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { RoadmapDocStatusControl } from "@/components/console/roadmap/roadmap-doc-status-control";
-import { RoadmapDocumentSheet } from "@/components/console/roadmap/roadmap-document-sheet";
-import { RoadmapMarkdownPreview } from "@/components/console/roadmap/roadmap-markdown-preview";
+import { RoadmapDocumentPanel } from "@/components/console/roadmap/roadmap-document-panel";
 import type { PlanningPeriod, RoadmapNodeView } from "@/lib/roadmap/types";
 
 type PlanningRoadmapAccordionItemProps = {
@@ -21,6 +20,7 @@ type PlanningRoadmapAccordionItemProps = {
   year: number;
   node?: RoadmapNodeView;
   productRoadmapTitle: string;
+  projectId: string;
   defaultOpen?: boolean;
   onCreate: () => Promise<void>;
   onSave: (input: {
@@ -57,6 +57,7 @@ export function PlanningRoadmapAccordionItem({
   year,
   node,
   productRoadmapTitle,
+  projectId,
   defaultOpen = false,
   onCreate,
   onSave,
@@ -64,8 +65,6 @@ export function PlanningRoadmapAccordionItem({
   const { t } = useLocale();
   const router = useRouter();
   const [open, setOpen] = useState(defaultOpen);
-  const [viewOpen, setViewOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   const cardTestId = periodTestId(period);
@@ -104,7 +103,7 @@ export function PlanningRoadmapAccordionItem({
       <CollapsibleTrigger
         nativeButton={false}
         render={
-          <header className="flex w-full cursor-pointer items-start justify-between gap-3 border-b px-4 py-3 text-left transition-colors hover:bg-muted/30 md:px-6" />
+          <header className="sticky top-0 z-10 flex w-full cursor-pointer items-start justify-between gap-3 border-b bg-card px-4 py-3 text-left shadow-sm transition-colors hover:bg-muted/30 md:px-6" />
         }
       >
         <div className="min-w-0 flex-1 space-y-2">
@@ -164,61 +163,24 @@ export function PlanningRoadmapAccordionItem({
               </Button>
             </div>
           ) : node.content.trim() ? (
-            <RoadmapMarkdownPreview content={node.content} />
+            <RoadmapDocumentPanel
+              content={node.content}
+              projectId={projectId}
+              expandTestId={`planning-roadmap-expand-${cardTestId}`}
+              onSave={async (input) => {
+                await onSave({
+                  nodeId: node.id,
+                  title: node.title,
+                  content: input.content,
+                });
+              }}
+            />
           ) : (
             <p className="text-sm text-muted-foreground">
               {t("roadmap.emptyPlanningDescription")}
             </p>
           )}
-
-          {node ? (
-            <div className="flex flex-wrap justify-end gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={!node.content.trim()}
-                onClick={() => setViewOpen(true)}
-              >
-                {t("roadmap.viewFull")}
-              </Button>
-              <Button type="button" size="sm" onClick={() => setEditOpen(true)}>
-                {t("roadmap.edit")}
-              </Button>
-            </div>
-          ) : null}
         </div>
-
-        {node ? (
-          <>
-            <RoadmapDocumentSheet
-              open={viewOpen}
-              mode="view"
-              title={node.title}
-              content={node.content}
-              docStatus={node.docStatus ?? "draft"}
-              description={planningLabel(node)}
-              saveLabel={t("common.save")}
-              onOpenChange={setViewOpen}
-            />
-            <RoadmapDocumentSheet
-              open={editOpen}
-              mode="edit"
-              title={node.title}
-              content={node.content}
-              docStatus={node.docStatus ?? "draft"}
-              description={planningLabel(node)}
-              saveLabel={t("common.save")}
-              onOpenChange={setEditOpen}
-              onSave={async (input) => {
-                await onSave({
-                  nodeId: node.id,
-                  ...input,
-                });
-              }}
-            />
-          </>
-        ) : null}
       </CollapsibleContent>
     </Collapsible>
   );

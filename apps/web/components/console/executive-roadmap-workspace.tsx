@@ -8,6 +8,7 @@ import { useLocale } from "@/components/i18n/locale-provider";
 import type { RoadmapNodeView } from "@/lib/roadmap/types";
 
 type ExecutiveRoadmapWorkspaceProps = {
+  projectId: string;
   productRoadmap: RoadmapNodeView;
   planningRoadmaps: RoadmapNodeView[];
   currentYear: number;
@@ -31,6 +32,7 @@ type ExecutiveRoadmapWorkspaceProps = {
 };
 
 export function ExecutiveRoadmapWorkspace({
+  projectId,
   productRoadmap,
   planningRoadmaps,
   currentYear,
@@ -46,6 +48,7 @@ export function ExecutiveRoadmapWorkspace({
     <div className="space-y-8">
       <ProductRoadmapCard
         node={productRoadmap}
+        projectId={projectId}
         onSave={onSaveProductRoadmap}
         onApplyTemplate={onApplyProductTemplate}
       />
@@ -53,6 +56,7 @@ export function ExecutiveRoadmapWorkspace({
         productRoadmapTitle={t("roadmap.planningParent")}
         nodes={planningRoadmaps}
         currentYear={currentYear}
+        projectId={projectId}
         onCreateAnnual={onCreateAnnualRoadmap}
         onCreateQuarter={onCreateQuarterRoadmap}
         onSave={onSavePlanningRoadmap}
