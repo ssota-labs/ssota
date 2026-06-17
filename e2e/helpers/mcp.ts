@@ -152,6 +152,74 @@ export async function mcpToolCall(
   return text ? JSON.parse(text) : body;
 }
 
+export async function mcpToolCallExpectError(
+  request: Parameters<typeof mcpToolCall>[0],
+  mcpUrl: string,
+  token: string,
+  toolName: string,
+  args: Record<string, unknown> = {},
+  options?: {
+    orgSlug?: string;
+    projectSlug?: string;
+  },
+): Promise<string> {
+  const endpoint = mcpEndpoint(mcpUrl);
+  const toolArgs = { ...args };
+
+  if (!ACCOUNT_MCP_TOOLS.has(toolName)) {
+    toolArgs.orgSlug ??= options?.orgSlug ?? DEFAULT_MCP_ORG_SLUG;
+    toolArgs.projectSlug ??= options?.projectSlug ?? DEFAULT_MCP_PROJECT_SLUG;
+  }
+
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+    Accept: "application/json, text/event-stream",
+  };
+
+  const initRes = await request.post(endpoint, {
+    headers,
+    data: {
+      jsonrpc: "2.0",
+      method: "initialize",
+      params: {
+        protocolVersion: "2024-11-05",
+        capabilities: {},
+        clientInfo: { name: "e2e", version: "1.0.0" },
+      },
+      id: 1,
+    },
+  });
+  if (!initRes.ok()) {
+    throw new Error("MCP initialize failed");
+  }
+
+  const callRes = await request.post(endpoint, {
+    headers,
+    data: {
+      jsonrpc: "2.0",
+      method: "tools/call",
+      params: { name: toolName, arguments: toolArgs },
+      id: 2,
+    },
+  });
+  if (!callRes.ok()) {
+    throw new Error(`MCP tools/call failed for ${toolName}`);
+  }
+
+  const body = parseJsonRpcResponse(await callRes.text()) as {
+    result?: {
+      isError?: boolean;
+      content?: Array<{ text?: string }>;
+    };
+  };
+  const text = body.result?.content?.[0]?.text ?? "";
+  if (!body.result?.isError) {
+    throw new Error(`Expected MCP tool error for ${toolName}, got: ${text}`);
+  }
+  return text;
+}
+
 function parseJsonRpcResponse(rawBody: string): unknown {
   const trimmed = rawBody.trim();
   if (!trimmed.startsWith("event:") && !trimmed.includes("\ndata:")) {

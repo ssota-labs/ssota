@@ -1,17 +1,21 @@
 import { z } from "zod";
 import { LifecycleStatusSchema, nodeTypeSchema } from "@ssota/contracts";
 import { edgeTypeSchema } from "@ssota/contracts";
-import { jsonContent } from "@/lib/mcp/json-content";
-import { registerScopedProjectTool } from "@/lib/mcp/register-scoped-tool";
+import { throwMcpToolError } from "@/lib/api/mcp-errors";
 import {
+  createEdgeForMcp,
+  createNodeForMcp,
   getNodeForMcp,
   getNodeTypeForMcp,
   listEdgeTypesForMcp,
   listNodeTypesForMcp,
   queryNodesForMcp,
   traverseEdgesForMcp,
+  updateNodeForMcp,
 } from "@/lib/api/graph-services";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import { jsonContent } from "@/lib/mcp/json-content";
+import { registerScopedProjectTool } from "@/lib/mcp/register-scoped-tool";
 
 type McpToolServer = {
   registerTool: (
@@ -109,5 +113,78 @@ export function registerGraphTools(server: McpToolServer) {
     },
     async ({ projectId, args }) =>
       jsonContent(await traverseEdgesForMcp(projectId, args)),
+  );
+
+  registerScopedProjectTool(
+    server,
+    "create_node",
+    {
+      title: "Create Node",
+      description:
+        "Create a graph node in the current project. Validates nodeType and properties against the catalog.",
+      inputSchema: {
+        nodeType: nodeTypeSchema,
+        title: z.string().min(1),
+        properties: z.record(z.unknown()).optional(),
+        content: z.string().nullable().optional(),
+        lifecycleStatus: LifecycleStatusSchema.optional(),
+        initiativeId: z.string().uuid().optional(),
+        releaseId: z.string().uuid().optional(),
+      },
+    },
+    async ({ projectId, args }) => {
+      try {
+        return jsonContent(await createNodeForMcp(projectId, args));
+      } catch (error) {
+        throwMcpToolError(error);
+      }
+    },
+  );
+
+  registerScopedProjectTool(
+    server,
+    "update_node",
+    {
+      title: "Update Node",
+      description:
+        "Patch a graph node (title, properties, content, lifecycleStatus) in the current project.",
+      inputSchema: {
+        nodeId: z.string().uuid(),
+        title: z.string().min(1).optional(),
+        properties: z.record(z.unknown()).optional(),
+        content: z.string().nullable().optional(),
+        lifecycleStatus: LifecycleStatusSchema.optional(),
+      },
+    },
+    async ({ projectId, args }) => {
+      try {
+        return jsonContent(await updateNodeForMcp(projectId, args));
+      } catch (error) {
+        throwMcpToolError(error);
+      }
+    },
+  );
+
+  registerScopedProjectTool(
+    server,
+    "create_edge",
+    {
+      title: "Create Edge",
+      description:
+        "Connect two nodes with a typed edge in the current project.",
+      inputSchema: {
+        edgeType: edgeTypeSchema,
+        sourceNodeId: z.string().uuid(),
+        targetNodeId: z.string().uuid(),
+        properties: z.record(z.unknown()).optional(),
+      },
+    },
+    async ({ projectId, args }) => {
+      try {
+        return jsonContent(await createEdgeForMcp(projectId, args));
+      } catch (error) {
+        throwMcpToolError(error);
+      }
+    },
   );
 }
