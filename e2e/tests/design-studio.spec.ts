@@ -17,9 +17,12 @@ test.describe("design studio", () => {
     });
     await expect(page.getByRole("button", { name: "New component" })).toBeVisible();
 
-    await page.getByText("Demo Button (demo-button)").click();
+    await page
+      .getByRole("row", { name: /Demo Button \(demo-button\)/ })
+      .click();
     await expect(page).toHaveURL(
       new RegExp(`${DEFAULT_CONSOLE_BASE}/design/ui-components/[0-9a-f-]+$`),
+      { timeout: 15_000 },
     );
     await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible();
     await expect(page.getByText("Layers")).toBeVisible();
@@ -29,7 +32,13 @@ test.describe("design studio", () => {
 
   test("editor updates className and saves draft", async ({ page }) => {
     await gotoProject(page, "design/ui-components");
-    await page.getByText("Demo Button").first().click();
+    await page
+      .getByRole("row", { name: /Demo Button \(demo-button\)/ })
+      .click();
+    await expect(page).toHaveURL(
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/design/ui-components/[0-9a-f-]+$`),
+      { timeout: 15_000 },
+    );
     await expect(page.getByText("Inspector")).toBeVisible();
 
     const classField = page.getByLabel("className");

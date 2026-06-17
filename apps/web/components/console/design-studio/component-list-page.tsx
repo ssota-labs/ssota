@@ -41,9 +41,7 @@ export function ComponentListPage({
       emptyDescription="Create a component to open the Design Studio editor."
       onCreate={onCreate}
       onRowClick={(row) => {
-        startTransition(() => {
-          router.push(`${editorBasePath}/${row.id}`);
-        });
+        router.push(`${editorBasePath}/${row.id}`);
       }}
     />
   );
