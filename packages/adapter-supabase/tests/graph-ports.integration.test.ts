@@ -148,4 +148,45 @@ describe("graph ports integration", () => {
     expect(release?.nodeType).toBe("release");
     expect(edges.some((edge) => edge.id === result.pairedWithEdgeId)).toBe(true);
   });
+
+  it("creates composed_of edges between ui_component nodes", async () => {
+    const composite = await createNode(
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      {
+        projectId,
+        nodeType: "ui_component",
+        title: `Composite ${randomUUID()}`,
+        properties: { slug: `composite-${randomUUID().slice(0, 8)}`, tier: "composite" },
+      },
+    );
+    const child = await createNode(
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      {
+        projectId,
+        nodeType: "ui_component",
+        title: `Child ${randomUUID()}`,
+        properties: { slug: `child-${randomUUID().slice(0, 8)}`, tier: "primitive" },
+      },
+    );
+
+    const edge = await createEdge(
+      { graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      {
+        projectId,
+        edgeType: "composed_of",
+        sourceNodeId: composite.id,
+        targetNodeId: child.id,
+      },
+    );
+
+    expect(edge.edgeType).toBe("composed_of");
+
+    const outgoing = await ports.graphRead.traverseEdges({
+      projectId,
+      nodeId: composite.id,
+      direction: "outgoing",
+      edgeType: "composed_of",
+    });
+    expect(outgoing.some((item) => item.targetNodeId === child.id)).toBe(true);
+  });
 });

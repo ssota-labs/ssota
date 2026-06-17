@@ -17,6 +17,7 @@ export const EDGE_TYPES = [
   "contributes_to",
   "reflects_on",
   "snapshotted_from",
+  "composed_of",
 ] as const;
 
 export type EdgeType = (typeof EDGE_TYPES)[number];
@@ -47,4 +48,5 @@ export const EDGE_CATALOG: Record<EdgeType, EdgeTypeCatalogEntry> = {
   contributes_to: { edgeType: "contributes_to", label: "기여" },
   reflects_on: { edgeType: "reflects_on", label: "회고" },
   snapshotted_from: { edgeType: "snapshotted_from", label: "스냅샷" },
+  composed_of: { edgeType: "composed_of", label: "구성" },
 };

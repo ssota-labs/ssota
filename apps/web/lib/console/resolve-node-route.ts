@@ -70,6 +70,10 @@ export async function resolveNodeRoute(
     }
   }
 
+  if (node.nodeType === "ui_component") {
+    return projectPath(ctx, "design", "ui-components", node.id);
+  }
+
   const initiativeId = await findInitiativeIdForNode(projectId, node.id);
   if (initiativeId) {
     const initiativeMeta = findInitiativeRouteMeta(node.nodeType);
