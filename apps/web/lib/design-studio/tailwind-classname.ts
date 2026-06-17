@@ -63,6 +63,58 @@ export function formatFontSizeClass(
   return `text-[${trimmed}${unit}]`;
 }
 
+export function formatSpacingPx(
+  prefix: string,
+  value: string,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  return `${prefix}-[${trimmed}px]`;
+}
+
+export function parseSpacingPx(className?: string): string {
+  if (!className) return "";
+
+  const arbitrary = className.match(/-\[(.+)\]$/);
+  if (arbitrary) {
+    const pxMatch = arbitrary[1]!.match(/^(-?[\d.]+)px$/);
+    if (pxMatch) return pxMatch[1]!;
+    return "";
+  }
+
+  const scaleMatch = className.match(/-(.+)$/);
+  if (!scaleMatch) return "";
+
+  const token = scaleMatch[1]!;
+  if (/^-?\d+(\.\d+)?$/.test(token)) {
+    return String(Number(token) * 4);
+  }
+
+  return "";
+}
+
+function applyMarginShorthand(
+  parsed: ParsedClassName,
+  base: string,
+  sides: Array<"marginTop" | "marginRight" | "marginBottom" | "marginLeft">,
+) {
+  for (const side of sides) {
+    parsed[side] = base;
+  }
+}
+
+function applyPaddingShorthand(
+  parsed: ParsedClassName,
+  base: string,
+  sides: Array<
+    "paddingTop" | "paddingRight" | "paddingBottom" | "paddingLeft"
+  >,
+) {
+  for (const side of sides) {
+    parsed[side] = base;
+  }
+}
+
 export type ShadowPreset =
   | "none"
   | "sm"
@@ -99,10 +151,14 @@ export type ParsedClassName = {
   alignItems?: string;
   justifyContent?: string;
   gap?: string;
-  paddingX?: string;
-  paddingY?: string;
-  marginX?: string;
-  marginY?: string;
+  marginTop?: string;
+  marginRight?: string;
+  marginBottom?: string;
+  marginLeft?: string;
+  paddingTop?: string;
+  paddingRight?: string;
+  paddingBottom?: string;
+  paddingLeft?: string;
   width?: string;
   height?: string;
   background?: string;
@@ -345,29 +401,90 @@ export function parseClassName(className: string | undefined): ParsedClassName {
       parsed.justifyContent = base;
       continue;
     }
-    if (base.startsWith("gap-")) {
+    if (base.startsWith("gap-") || base === "gap") {
       parsed.gap = base;
       continue;
     }
-    if (base.startsWith("px-") || base === "px") {
-      parsed.paddingX = base;
+    if (base.startsWith("mt-") || base === "mt") {
+      parsed.marginTop = base;
       continue;
     }
-    if (base.startsWith("py-") || base === "py") {
-      parsed.paddingY = base;
+    if (base.startsWith("mr-") || base === "mr") {
+      parsed.marginRight = base;
+      continue;
+    }
+    if (base.startsWith("mb-") || base === "mb") {
+      parsed.marginBottom = base;
+      continue;
+    }
+    if (base.startsWith("ml-") || base === "ml") {
+      parsed.marginLeft = base;
       continue;
     }
     if (base.startsWith("mx-") || base === "mx") {
-      parsed.marginX = base;
+      applyMarginShorthand(parsed, base, ["marginLeft", "marginRight"]);
       continue;
     }
     if (base.startsWith("my-") || base === "my") {
-      parsed.marginY = base;
+      applyMarginShorthand(parsed, base, ["marginTop", "marginBottom"]);
       continue;
     }
-    if (base.startsWith("p-") && !base.startsWith("px-") && !base.startsWith("py-")) {
-      parsed.paddingX = base;
-      parsed.paddingY = base;
+    if (
+      base.startsWith("m-") &&
+      !base.startsWith("mx-") &&
+      !base.startsWith("my-") &&
+      !base.startsWith("mt-") &&
+      !base.startsWith("mr-") &&
+      !base.startsWith("mb-") &&
+      !base.startsWith("ml-")
+    ) {
+      applyMarginShorthand(parsed, base, [
+        "marginTop",
+        "marginRight",
+        "marginBottom",
+        "marginLeft",
+      ]);
+      continue;
+    }
+    if (base.startsWith("pt-") || base === "pt") {
+      parsed.paddingTop = base;
+      continue;
+    }
+    if (base.startsWith("pr-") || base === "pr") {
+      parsed.paddingRight = base;
+      continue;
+    }
+    if (base.startsWith("pb-") || base === "pb") {
+      parsed.paddingBottom = base;
+      continue;
+    }
+    if (base.startsWith("pl-") || base === "pl") {
+      parsed.paddingLeft = base;
+      continue;
+    }
+    if (base.startsWith("px-") || base === "px") {
+      applyPaddingShorthand(parsed, base, ["paddingLeft", "paddingRight"]);
+      continue;
+    }
+    if (base.startsWith("py-") || base === "py") {
+      applyPaddingShorthand(parsed, base, ["paddingTop", "paddingBottom"]);
+      continue;
+    }
+    if (
+      base.startsWith("p-") &&
+      !base.startsWith("px-") &&
+      !base.startsWith("py-") &&
+      !base.startsWith("pt-") &&
+      !base.startsWith("pr-") &&
+      !base.startsWith("pb-") &&
+      !base.startsWith("pl-")
+    ) {
+      applyPaddingShorthand(parsed, base, [
+        "paddingTop",
+        "paddingRight",
+        "paddingBottom",
+        "paddingLeft",
+      ]);
       continue;
     }
     if (base.startsWith("w-")) {
@@ -433,10 +550,14 @@ export function serializeClassName(parsed: ParsedClassName): string {
   if (parsed.alignItems) tokens.push(parsed.alignItems);
   if (parsed.justifyContent) tokens.push(parsed.justifyContent);
   if (parsed.gap) tokens.push(parsed.gap);
-  if (parsed.paddingX) tokens.push(parsed.paddingX);
-  if (parsed.paddingY) tokens.push(parsed.paddingY);
-  if (parsed.marginX) tokens.push(parsed.marginX);
-  if (parsed.marginY) tokens.push(parsed.marginY);
+  if (parsed.marginTop) tokens.push(parsed.marginTop);
+  if (parsed.marginRight) tokens.push(parsed.marginRight);
+  if (parsed.marginBottom) tokens.push(parsed.marginBottom);
+  if (parsed.marginLeft) tokens.push(parsed.marginLeft);
+  if (parsed.paddingTop) tokens.push(parsed.paddingTop);
+  if (parsed.paddingRight) tokens.push(parsed.paddingRight);
+  if (parsed.paddingBottom) tokens.push(parsed.paddingBottom);
+  if (parsed.paddingLeft) tokens.push(parsed.paddingLeft);
   if (parsed.width) tokens.push(parsed.width);
   if (parsed.height) tokens.push(parsed.height);
   if (parsed.background) tokens.push(parsed.background);

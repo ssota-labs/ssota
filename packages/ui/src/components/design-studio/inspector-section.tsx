@@ -16,18 +16,25 @@ type InspectorSectionProps = {
   title: string;
   children: ReactNode;
   className?: string;
+  headerAction?: ReactNode;
 };
 
 export function InspectorSection({
   title,
   children,
   className,
+  headerAction,
 }: InspectorSectionProps) {
   return (
     <section className={cn("space-y-3 px-4 py-3", className)}>
-      <h3 className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
-        {title}
-      </h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-[11px] font-medium tracking-wider text-muted-foreground uppercase">
+          {title}
+        </h3>
+        {headerAction ? (
+          <div className="shrink-0">{headerAction}</div>
+        ) : null}
+      </div>
       {children}
     </section>
   );
