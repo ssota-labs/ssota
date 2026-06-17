@@ -174,7 +174,7 @@ function InspectorPresetList({
   onSelect,
 }: InspectorPresetListProps) {
   return (
-    <div className="flex flex-col gap-0 p-0.5">
+    <div className="flex flex-col gap-1 p-1">
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -182,7 +182,7 @@ function InspectorPresetList({
             key={option.value}
             type="button"
             className={cn(
-              "flex w-full items-center justify-between rounded-sm px-1.5 py-0.5 text-xs hover:bg-muted",
+              "flex w-full items-center justify-between rounded-sm px-1.5 py-1 text-xs hover:bg-muted",
               active && "bg-muted",
             )}
             onMouseDown={(event) => event.preventDefault()}
