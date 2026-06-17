@@ -1,5 +1,82 @@
 export type FontSizeUnit = "px" | "%" | "em";
 
+const DEFAULT_PARENT_FONT_SIZE_PX = 16;
+
+function formatTypographyNumber(value: number): string {
+  const rounded = Math.round(value * 1000) / 1000;
+  if (Number.isInteger(rounded)) return String(rounded);
+  return String(rounded);
+}
+
+/** line-height·letter-spacing — 요소 font-size 대비 비율로 단위를 변환합니다. */
+function toRelativeTypographyRatio(
+  value: string,
+  unit: FontSizeUnit,
+  fontSizePx: number,
+): number | null {
+  const num = Number(value.trim());
+  if (!Number.isFinite(num)) return null;
+  if (fontSizePx <= 0) return null;
+
+  switch (unit) {
+    case "%":
+      return num / 100;
+    case "em":
+      return num;
+    case "px":
+      return num / fontSizePx;
+  }
+}
+
+function fromRelativeTypographyRatio(
+  ratio: number,
+  unit: FontSizeUnit,
+  fontSizePx: number,
+): string {
+  switch (unit) {
+    case "%":
+      return formatTypographyNumber(ratio * 100);
+    case "em":
+      return formatTypographyNumber(ratio);
+    case "px":
+      return formatTypographyNumber(ratio * fontSizePx);
+  }
+}
+
+/** font-size — 부모 font-size(기본 16px) 대비 절대 px로 변환합니다. */
+function toAbsoluteFontSizePx(
+  value: string,
+  unit: FontSizeUnit,
+  parentFontSizePx: number,
+): number | null {
+  const num = Number(value.trim());
+  if (!Number.isFinite(num)) return null;
+
+  switch (unit) {
+    case "px":
+      return num;
+    case "%":
+      return (parentFontSizePx * num) / 100;
+    case "em":
+      return parentFontSizePx * num;
+  }
+}
+
+function fromAbsoluteFontSizePx(
+  px: number,
+  unit: FontSizeUnit,
+  parentFontSizePx: number,
+): string {
+  switch (unit) {
+    case "px":
+      return formatTypographyNumber(px);
+    case "%":
+      return formatTypographyNumber((px / parentFontSizePx) * 100);
+    case "em":
+      return formatTypographyNumber(px / parentFontSizePx);
+  }
+}
+
 const NAMED_FONT_SIZE_TO_PX: Record<string, string> = {
   "text-xs": "12",
   "text-sm": "14",
@@ -48,6 +125,15 @@ export function parseFontSizeValue(className?: string): {
   return { value: "", unit: "px" };
 }
 
+export function resolveFontSizePxFromClass(className?: string): number {
+  const { value, unit } = parseFontSizeValue(className);
+  if (!value.trim()) return DEFAULT_PARENT_FONT_SIZE_PX;
+  return (
+    toAbsoluteFontSizePx(value, unit, DEFAULT_PARENT_FONT_SIZE_PX) ??
+    DEFAULT_PARENT_FONT_SIZE_PX
+  );
+}
+
 export function formatFontSizeClass(
   value: string,
   unit: FontSizeUnit,
@@ -61,6 +147,33 @@ export function formatFontSizeClass(
   }
 
   return `text-[${trimmed}${unit}]`;
+}
+
+const FONT_SIZE_UNIT_DEFAULTS: Record<FontSizeUnit, string> = {
+  px: "16",
+  "%": "100",
+  em: "1",
+};
+
+/** 값이 비어 있을 때도 단위 전환이 classname에 반영되도록 기본값을 채웁니다. */
+export function formatFontSizeOnUnitChange(
+  value: string,
+  currentUnit: FontSizeUnit,
+  nextUnit: FontSizeUnit,
+  parentFontSizePx = DEFAULT_PARENT_FONT_SIZE_PX,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return formatFontSizeClass(FONT_SIZE_UNIT_DEFAULTS[nextUnit], nextUnit);
+  }
+
+  const px = toAbsoluteFontSizePx(trimmed, currentUnit, parentFontSizePx);
+  if (px === null) return formatFontSizeClass(trimmed, nextUnit);
+
+  return formatFontSizeClass(
+    fromAbsoluteFontSizePx(px, nextUnit, parentFontSizePx),
+    nextUnit,
+  );
 }
 
 const NAMED_LINE_HEIGHT_TO_EM: Record<string, string> = {
@@ -121,6 +234,32 @@ export function formatLineHeightClass(
   return `leading-[${trimmed}${unit}]`;
 }
 
+const LINE_HEIGHT_UNIT_DEFAULTS: Record<FontSizeUnit, string> = {
+  px: "24",
+  "%": "150",
+  em: "1.5",
+};
+
+export function formatLineHeightOnUnitChange(
+  value: string,
+  currentUnit: FontSizeUnit,
+  nextUnit: FontSizeUnit,
+  fontSizePx = DEFAULT_PARENT_FONT_SIZE_PX,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return formatLineHeightClass(LINE_HEIGHT_UNIT_DEFAULTS[nextUnit], nextUnit);
+  }
+
+  const ratio = toRelativeTypographyRatio(trimmed, currentUnit, fontSizePx);
+  if (ratio === null) return formatLineHeightClass(trimmed, nextUnit);
+
+  return formatLineHeightClass(
+    fromRelativeTypographyRatio(ratio, nextUnit, fontSizePx),
+    nextUnit,
+  );
+}
+
 const NAMED_LETTER_SPACING_TO_EM: Record<string, string> = {
   "tracking-tighter": "-0.05",
   "tracking-tight": "-0.025",
@@ -179,6 +318,35 @@ export function formatLetterSpacingClass(
   return `tracking-[${trimmed}${unit}]`;
 }
 
+const LETTER_SPACING_UNIT_DEFAULTS: Record<FontSizeUnit, string> = {
+  px: "0",
+  "%": "0",
+  em: "0",
+};
+
+export function formatLetterSpacingOnUnitChange(
+  value: string,
+  currentUnit: FontSizeUnit,
+  nextUnit: FontSizeUnit,
+  fontSizePx = DEFAULT_PARENT_FONT_SIZE_PX,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return formatLetterSpacingClass(
+      LETTER_SPACING_UNIT_DEFAULTS[nextUnit],
+      nextUnit,
+    );
+  }
+
+  const ratio = toRelativeTypographyRatio(trimmed, currentUnit, fontSizePx);
+  if (ratio === null) return formatLetterSpacingClass(trimmed, nextUnit);
+
+  return formatLetterSpacingClass(
+    fromRelativeTypographyRatio(ratio, nextUnit, fontSizePx),
+    nextUnit,
+  );
+}
+
 export function formatSpacingPx(
   prefix: string,
   value: string,
@@ -197,6 +365,18 @@ export function formatBorderWidthPx(value: string): string | undefined {
   if (trimmed === "4") return "border-4";
   if (trimmed === "8") return "border-8";
   return `border-[${trimmed}px]`;
+}
+
+export function parseShadowLengthPx(value?: string): string {
+  if (!value) return "";
+  const match = value.trim().match(/^(-?[\d.]+)px$/);
+  return match ? match[1]! : "";
+}
+
+export function formatShadowLengthPx(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "0px";
+  return `${trimmed}px`;
 }
 
 export function parseBorderWidthPx(className?: string): string {
@@ -230,28 +410,233 @@ const NAMED_RADIUS_TO_PX: Record<string, string> = {
   "rounded-full": "9999",
 };
 
-export function parseRadiusPx(className?: string): string {
-  if (!className) return "";
+export type RadiusUnit = "px" | "%";
+
+export function parseRadiusValue(className?: string): {
+  value: string;
+  unit: RadiusUnit;
+} {
+  if (!className) return { value: "", unit: "px" };
 
   if (NAMED_RADIUS_TO_PX[className]) {
-    return NAMED_RADIUS_TO_PX[className]!;
+    return { value: NAMED_RADIUS_TO_PX[className]!, unit: "px" };
   }
 
   const arbitrary = className.match(/-\[(.+)\]$/);
   if (arbitrary) {
+    const match = arbitrary[1]!.match(/^([\d.]+)(px|%)$/);
+    if (match) {
+      return {
+        value: match[1]!,
+        unit: match[2] as RadiusUnit,
+      };
+    }
     const pxMatch = arbitrary[1]!.match(/^([\d.]+)px$/);
-    if (pxMatch) return pxMatch[1]!;
-    return "";
+    if (pxMatch) return { value: pxMatch[1]!, unit: "px" };
   }
 
-  return "";
+  return { value: "", unit: "px" };
+}
+
+export function parseRadiusPx(className?: string): string {
+  return parseRadiusValue(className).value;
+}
+
+export function formatRadiusClass(
+  prefix: string,
+  value: string,
+  unit: RadiusUnit = "px",
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (unit === "px" && prefix === "rounded" && trimmed === "9999") {
+    return "rounded-full";
+  }
+  return `${prefix}-[${trimmed}${unit}]`;
 }
 
 export function formatRadiusPx(prefix: string, value: string): string | undefined {
+  return formatRadiusClass(prefix, value, "px");
+}
+
+const DEFAULT_RADIUS_REFERENCE_PX = 100;
+
+const RADIUS_UNIT_DEFAULTS: Record<RadiusUnit, string> = {
+  px: "0",
+  "%": "0",
+};
+
+/** border-radius % 변환 기준 — width/height arbitrary px가 있으면 사용합니다. */
+export function resolveRadiusReferencePx(
+  parsed?: Pick<ParsedClassName, "width" | "height">,
+): number {
+  const widthPx = parseLayoutDimensionPx(parsed?.width);
+  const heightPx = parseLayoutDimensionPx(parsed?.height);
+  if (widthPx !== null && heightPx !== null) {
+    return Math.min(widthPx, heightPx);
+  }
+  if (widthPx !== null) return widthPx;
+  if (heightPx !== null) return heightPx;
+  return DEFAULT_RADIUS_REFERENCE_PX;
+}
+
+/** className에 명시 size가 없을 때 프리뷰 DOM 실측값을 % 변환 기준으로 씁니다. */
+export function resolveRadiusReferencePxWithDom(
+  parsed?: Pick<ParsedClassName, "width" | "height">,
+  domReferencePx?: number | null,
+): number {
+  const hasExplicitWidth = Boolean(
+    parseLayoutDimensionValue(parsed?.width).value.trim(),
+  );
+  const hasExplicitHeight = Boolean(
+    parseLayoutDimensionValue(parsed?.height).value.trim(),
+  );
+  if (hasExplicitWidth || hasExplicitHeight) {
+    return resolveRadiusReferencePx(parsed);
+  }
+  if (domReferencePx != null && domReferencePx > 0) {
+    return domReferencePx;
+  }
+  return resolveRadiusReferencePx(parsed);
+}
+
+function toAbsoluteRadiusPx(
+  value: string,
+  unit: RadiusUnit,
+  referencePx: number,
+): number | null {
+  const num = Number(value.trim());
+  if (!Number.isFinite(num)) return null;
+  if (referencePx <= 0) return null;
+
+  if (unit === "px") return num;
+  return (referencePx * num) / 100;
+}
+
+function fromAbsoluteRadiusPx(
+  px: number,
+  unit: RadiusUnit,
+  referencePx: number,
+): string {
+  if (unit === "px") return formatTypographyNumber(px);
+  const percent = (px / referencePx) * 100;
+  return formatTypographyNumber(Math.min(100, Math.max(0, percent)));
+}
+
+export function formatRadiusValueOnUnitChange(
+  value: string,
+  currentUnit: RadiusUnit,
+  nextUnit: RadiusUnit,
+  referencePx = DEFAULT_RADIUS_REFERENCE_PX,
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) return RADIUS_UNIT_DEFAULTS[nextUnit];
+
+  const px = toAbsoluteRadiusPx(trimmed, currentUnit, referencePx);
+  if (px === null) return trimmed;
+
+  return fromAbsoluteRadiusPx(px, nextUnit, referencePx);
+}
+
+export type LayoutDimensionUnit = RadiusUnit;
+
+export function parseLayoutDimensionValue(className?: string): {
+  value: string;
+  unit: LayoutDimensionUnit;
+} {
+  if (!className) return { value: "", unit: "px" };
+
+  const arbitrary = className.match(/^[wh]-\[(.+)\]$/);
+  if (arbitrary) {
+    const match = arbitrary[1]!.match(/^([\d.]+)(px|%)$/);
+    if (match) {
+      return {
+        value: match[1]!,
+        unit: match[2] as LayoutDimensionUnit,
+      };
+    }
+    const pxMatch = arbitrary[1]!.match(/^([\d.]+)px$/);
+    if (pxMatch) return { value: pxMatch[1]!, unit: "px" };
+  }
+
+  const legacyPx = className.match(/^[wh]-([\d.]+)px$/);
+  if (legacyPx) return { value: legacyPx[1]!, unit: "px" };
+
+  return { value: "", unit: "px" };
+}
+
+function parseLayoutDimensionPx(className?: string): number | null {
+  const { value, unit } = parseLayoutDimensionValue(className);
+  if (!value.trim() || unit !== "px") return null;
+  const px = Number(value);
+  return Number.isFinite(px) ? px : null;
+}
+
+export function formatLayoutDimensionClass(
+  prefix: "w" | "h",
+  value: string,
+  unit: LayoutDimensionUnit = "px",
+): string | undefined {
   const trimmed = value.trim();
   if (!trimmed) return undefined;
-  if (prefix === "rounded" && trimmed === "9999") return "rounded-full";
-  return `${prefix}-[${trimmed}px]`;
+  return `${prefix}-[${trimmed}${unit}]`;
+}
+
+export function formatLayoutDimensionOnUnitChange(
+  prefix: "w" | "h",
+  value: string,
+  currentUnit: LayoutDimensionUnit,
+  nextUnit: LayoutDimensionUnit,
+  referencePx = DEFAULT_RADIUS_REFERENCE_PX,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
+  const converted = formatRadiusValueOnUnitChange(
+    trimmed,
+    currentUnit,
+    nextUnit,
+    referencePx,
+  );
+  if (nextUnit === "%") {
+    const numeric = Number(converted);
+    if (!Number.isFinite(numeric)) return undefined;
+    return formatLayoutDimensionClass(
+      prefix,
+      String(Math.min(100, Math.max(0, numeric))),
+      "%",
+    );
+  }
+
+  return formatLayoutDimensionClass(prefix, converted, nextUnit);
+}
+
+export function formatRadiusOnUnitChange(
+  prefix: string,
+  value: string,
+  currentUnit: RadiusUnit,
+  nextUnit: RadiusUnit,
+  referencePx = DEFAULT_RADIUS_REFERENCE_PX,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return formatRadiusClass(prefix, RADIUS_UNIT_DEFAULTS[nextUnit], nextUnit);
+  }
+
+  const converted = formatRadiusValueOnUnitChange(
+    trimmed,
+    currentUnit,
+    nextUnit,
+    referencePx,
+  );
+  const nextValue =
+    nextUnit === "%"
+      ? String(
+          Math.min(100, Math.max(0, Number(converted))),
+        )
+      : converted;
+
+  return formatRadiusClass(prefix, nextValue, nextUnit);
 }
 
 export function parseOpacityPercent(className?: string): string {
@@ -260,18 +645,26 @@ export function parseOpacityPercent(className?: string): string {
   const arbitrary = className.match(/^opacity-\[(.+)\]$/);
   if (arbitrary) {
     const percentMatch = arbitrary[1]!.match(/^([\d.]+)%$/);
-    if (percentMatch) return percentMatch[1]!;
+    if (percentMatch) return clampOpacityPercent(percentMatch[1]!);
     const decimalMatch = arbitrary[1]!.match(/^0?\.([\d]+)$/);
     if (decimalMatch) {
-      return String(Number(`0.${decimalMatch[1]}`) * 100);
+      return clampOpacityPercent(String(Number(`0.${decimalMatch[1]}`) * 100));
     }
     return "";
   }
 
   const scaleMatch = className.match(/^opacity-(\d+)$/);
-  if (scaleMatch) return scaleMatch[1]!;
+  if (scaleMatch) {
+    return clampOpacityPercent(scaleMatch[1]!);
+  }
 
   return "";
+}
+
+function clampOpacityPercent(value: string): string {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return "";
+  return String(Math.min(100, Math.max(0, numeric)));
 }
 
 export function formatOpacityPercent(value: string): string | undefined {
@@ -279,10 +672,11 @@ export function formatOpacityPercent(value: string): string | undefined {
   if (!trimmed) return undefined;
   const numeric = Number(trimmed);
   if (!Number.isFinite(numeric)) return undefined;
-  if (numeric >= 0 && numeric <= 100 && Number.isInteger(numeric) && numeric % 5 === 0) {
-    return `opacity-${numeric}`;
+  const clamped = Math.min(100, Math.max(0, numeric));
+  if (clamped >= 0 && clamped <= 100 && Number.isInteger(clamped) && clamped % 5 === 0) {
+    return `opacity-${clamped}`;
   }
-  return `opacity-[${trimmed}%]`;
+  return `opacity-[${clamped}%]`;
 }
 
 export function stripColorToken(className?: string, prefix?: string): string {
@@ -543,6 +937,78 @@ const DEFAULT_SHADOW: ShadowValue = {
   color: "rgba(0, 0, 0, 0.1)",
   inset: false,
 };
+
+/** Tailwind 기본 shadow 토큰의 대표(첫 번째) 레이어 근사값. 실제 CSS는 다층 shadow입니다. */
+const SHADOW_PRESET_DIMENSIONS: Record<
+  Exclude<ShadowPreset, "custom">,
+  Pick<ShadowValue, "x" | "y" | "blur" | "spread" | "color">
+> = {
+  none: {
+    x: "0px",
+    y: "0px",
+    blur: "0px",
+    spread: "0px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  sm: {
+    x: "0px",
+    y: "1px",
+    blur: "2px",
+    spread: "0px",
+    color: "rgba(0, 0, 0, 0.05)",
+  },
+  default: {
+    x: "0px",
+    y: "1px",
+    blur: "3px",
+    spread: "0px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  md: {
+    x: "0px",
+    y: "4px",
+    blur: "6px",
+    spread: "-1px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  lg: {
+    x: "0px",
+    y: "10px",
+    blur: "15px",
+    spread: "-3px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  xl: {
+    x: "0px",
+    y: "20px",
+    blur: "25px",
+    spread: "-5px",
+    color: "rgba(0, 0, 0, 0.1)",
+  },
+  "2xl": {
+    x: "0px",
+    y: "25px",
+    blur: "50px",
+    spread: "-12px",
+    color: "rgba(0, 0, 0, 0.25)",
+  },
+};
+
+export function applyShadowPreset(
+  preset: ShadowPreset,
+  shadow: ShadowValue = DEFAULT_SHADOW,
+): ShadowValue {
+  if (preset === "custom") {
+    return { ...shadow, preset: "custom" };
+  }
+
+  const dimensions = SHADOW_PRESET_DIMENSIONS[preset];
+  return {
+    preset,
+    ...dimensions,
+    inset: false,
+  };
+}
 
 function splitVariants(token: string): { variants: string[]; base: string } {
   const parts = token.split(":");
@@ -809,10 +1275,7 @@ export function parseClassName(className: string | undefined): ParsedClassName {
       continue;
     }
     if (SHADOW_PRESET_MAP[base]) {
-      parsed.shadow = {
-        ...DEFAULT_SHADOW,
-        preset: SHADOW_PRESET_MAP[base]!,
-      };
+      parsed.shadow = applyShadowPreset(SHADOW_PRESET_MAP[base]!);
       continue;
     }
     const customShadow = parseArbitraryShadow(base);

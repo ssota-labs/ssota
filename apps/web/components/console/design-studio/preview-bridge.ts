@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { StudioPatch, StudioMessage } from "@ssota/studio-preview-runtime";
 import {
   createParentMessageListener,
@@ -126,4 +126,51 @@ export function usePreviewBridge(previewUrl: string) {
     patchNode,
     highlightNode,
   };
+}
+
+function measureStudioNodePx(
+  iframe: HTMLIFrameElement | null,
+  nodeId: string,
+): number | null {
+  const doc = iframe?.contentDocument;
+  if (!doc) return null;
+  const el = doc.querySelector(`[data-studio-id="${CSS.escape(nodeId)}"]`);
+  if (!el) return null;
+  const { width, height } = el.getBoundingClientRect();
+  const px = Math.min(width, height);
+  return px > 0 ? Math.round(px) : null;
+}
+
+/** 선택 노드의 프리뷰 DOM 크기 — radius % 변환 기준으로 사용합니다. */
+export function useStudioNodeMeasure(
+  iframeRef: RefObject<HTMLIFrameElement | null>,
+  nodeId: string | null,
+  ready: boolean,
+  /** className 등 변경 시 재측정 트리거 */
+  measureKey: string,
+): number | null {
+  const [sizePx, setSizePx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!ready || !nodeId) {
+      setSizePx(null);
+      return;
+    }
+
+    const measure = () => {
+      setSizePx(measureStudioNodePx(iframeRef.current, nodeId));
+    };
+
+    measure();
+
+    const doc = iframeRef.current?.contentDocument;
+    const el = doc?.querySelector(`[data-studio-id="${CSS.escape(nodeId)}"]`);
+    if (!el) return;
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [iframeRef, nodeId, ready, measureKey]);
+
+  return sizePx;
 }

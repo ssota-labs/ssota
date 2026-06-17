@@ -2,20 +2,20 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { StudioNode } from "@ssota/contracts/catalog";
-import { postToParent } from "./bridge.js";
+import { postToParent } from "./bridge";
 import type {
   StudioInteractionMode,
   StudioMessage,
-} from "./protocol.js";
-import { createParentMessageListener } from "./bridge.js";
-import { renderStudioTree } from "./render-studio-tree.js";
-import { StudioInspectStyle } from "./studio-inspect-styles.js";
-import { StudioThemeStyle, STUDIO_PREVIEW_CLASS } from "./theme-inject.js";
-import { StudioUtilityStyle } from "./utility-styles.js";
-import type { ResolvedComponentMap } from "./resolve-project-ref.js";
-import { inlineProjectRefs } from "./resolve-project-ref.js";
-import type { StudioRenderMode } from "./protocol.js";
-import { hasComponentRefs } from "./collect-utility-classes.js";
+} from "./protocol";
+import { createParentMessageListener } from "./bridge";
+import { renderStudioTree } from "./render-studio-tree";
+import { StudioInspectStyle } from "./studio-inspect-styles";
+import { StudioThemeStyle, STUDIO_PREVIEW_CLASS } from "./theme-inject";
+import { StudioUtilityStyle } from "./utility-styles";
+import type { ResolvedComponentMap } from "./resolve-project-ref";
+import { inlineProjectRefs } from "./resolve-project-ref";
+import type { StudioRenderMode } from "./protocol";
+import { hasComponentRefs } from "./collect-utility-classes";
 
 export type StudioPreviewProps = {
   initialTree?: StudioNode | null;

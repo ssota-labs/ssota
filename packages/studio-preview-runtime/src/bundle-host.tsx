@@ -4,15 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createParentMessageListener,
   postToParent,
-} from "./bridge.js";
-import { StudioInspectStyle } from "./inspect-styles.js";
-import { StudioUtilityStyle } from "./utility-styles.js";
+} from "./bridge";
+import { StudioInspectStyle } from "./inspect-styles";
+import { StudioUtilityStyle } from "./utility-styles";
 import type {
   StudioInteractionMode,
   StudioMessage,
   StudioSourceRef,
-} from "./protocol.js";
-import { applyStudioPatch } from "./patch-applier.js";
+} from "./protocol";
+import { applyStudioPatch } from "./patch-applier";
 
 const BUNDLE_ATTR = "data-studio-bundle-asset";
 

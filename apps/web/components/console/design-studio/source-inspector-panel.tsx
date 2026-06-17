@@ -11,6 +11,7 @@ type SourceInspectorPanelProps = {
   className: string;
   onClassNameChange: (nextClassName: string) => void;
   readOnly?: boolean;
+  domReferencePx?: number | null;
 };
 
 export function SourceInspectorPanel({
@@ -19,6 +20,7 @@ export function SourceInspectorPanel({
   className,
   onClassNameChange,
   readOnly = false,
+  domReferencePx,
 }: SourceInspectorPanelProps) {
   if (!selectedId || !selectedSourceRef) {
     return (
@@ -49,7 +51,11 @@ export function SourceInspectorPanel({
             Could not map this selection back to source. Edit the file manually.
           </p>
         ) : (
-          <ClassnameInspector className={className} onChange={onClassNameChange} />
+          <ClassnameInspector
+            className={className}
+            onChange={onClassNameChange}
+            domReferencePx={domReferencePx}
+          />
         )}
       </div>
     </div>

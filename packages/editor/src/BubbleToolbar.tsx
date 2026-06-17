@@ -6,7 +6,6 @@ import { BubbleMenu } from "@tiptap/react/menus";
 import {
   CodeIcon,
   HighlighterCircleIcon,
-  ListBulletsIcon,
   MinusIcon,
   RowsIcon,
   TextAaIcon,
@@ -54,10 +53,7 @@ export function BubbleToolbar({
         }
         return (
           currentEditor.isEditable &&
-          (linkPopoverOpen ||
-            colorPopoverOpen ||
-            !empty ||
-            currentEditor.isActive("table"))
+          (linkPopoverOpen || colorPopoverOpen || !empty)
         );
       }}
       className="ssota-bubble-toolbar"
@@ -127,7 +123,7 @@ export function BubbleToolbar({
             label="Add column"
             onClick={() => editor.chain().focus().addColumnAfter().run()}
           >
-            <ListBulletsIcon className="size-4 rotate-90" />
+            <MinusIcon className="size-4 rotate-90" />
           </ToolbarButton>
           <ToolbarButton
             label="Delete table"

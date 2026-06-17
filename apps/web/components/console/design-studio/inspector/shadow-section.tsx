@@ -2,7 +2,6 @@
 
 import { MinusIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
-import { Input } from "@ssota/ui/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -13,8 +12,17 @@ import {
 import { Switch } from "@ssota/ui/components/ui/switch";
 import type { ShadowPreset, ShadowValue } from "@/lib/design-studio/tailwind-classname";
 import {
+  applyShadowPreset,
+  formatShadowLengthPx,
+  parseShadowLengthPx,
+} from "@/lib/design-studio/tailwind-classname";
+import {
+  BACKGROUND_THEME_COLOR_OPTIONS,
+  formatInspectorColorAsRgba,
+  InspectorColorField,
   InspectorField,
   InspectorGrid,
+  InspectorScrubberNumberInput,
   InspectorSection,
 } from "@ssota/ui/components/design-studio";
 
@@ -39,85 +47,107 @@ export function ShadowSection({ shadow, onChange }: ShadowSectionProps) {
 
   return (
     <InspectorSection title="Shadow">
-      <div className="flex items-end gap-2">
-        <InspectorField label="Shadow" className="min-w-0 flex-1">
-          <Select
-            value={shadow.preset}
-            onValueChange={(value) =>
+      <div className="space-y-1.5">
+        <span className="block text-xs text-muted-foreground">Shadow</span>
+        <div className="flex items-center gap-1.5">
+          <div className="min-w-0 flex-1">
+            <Select
+              value={shadow.preset}
+              onValueChange={(value) =>
+                onChange(applyShadowPreset(value as ShadowPreset, shadow))
+              }
+            >
+              <SelectTrigger className="w-full" aria-label="Shadow">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SHADOW_PRESET_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon-sm"
+            className="shrink-0"
+            aria-label="Remove shadow"
+            onClick={() =>
               onChange({
                 ...shadow,
-                preset: value as ShadowPreset,
+                preset: "none",
+                inset: false,
               })
             }
           >
-            <SelectTrigger className="w-full">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {SHADOW_PRESET_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </InspectorField>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon-sm"
-          aria-label="Remove shadow"
-          onClick={() =>
-            onChange({
-              ...shadow,
-              preset: "none",
-              inset: false,
-            })
-          }
-        >
-          <MinusIcon className="size-3.5" />
-        </Button>
+            <MinusIcon className="size-3.5" />
+          </Button>
+        </div>
       </div>
 
       {showDetails ? (
         <>
           <InspectorGrid>
             <InspectorField label="X Offset">
-              <Input
-                value={shadow.x}
-                onChange={(event) =>
-                  onChange({ ...shadow, preset: "custom", x: event.target.value })
+              <InspectorScrubberNumberInput
+                aria-label="Shadow X offset"
+                value={parseShadowLengthPx(shadow.x)}
+                unit="px"
+                placeholder="0"
+                onChange={(input) =>
+                  onChange({
+                    ...shadow,
+                    preset: "custom",
+                    x: formatShadowLengthPx(input),
+                  })
                 }
               />
             </InspectorField>
             <InspectorField label="Y Offset">
-              <Input
-                value={shadow.y}
-                onChange={(event) =>
-                  onChange({ ...shadow, preset: "custom", y: event.target.value })
+              <InspectorScrubberNumberInput
+                aria-label="Shadow Y offset"
+                value={parseShadowLengthPx(shadow.y)}
+                unit="px"
+                placeholder="0"
+                onChange={(input) =>
+                  onChange({
+                    ...shadow,
+                    preset: "custom",
+                    y: formatShadowLengthPx(input),
+                  })
                 }
               />
             </InspectorField>
             <InspectorField label="Blur">
-              <Input
-                value={shadow.blur}
-                onChange={(event) =>
+              <InspectorScrubberNumberInput
+                aria-label="Shadow blur"
+                value={parseShadowLengthPx(shadow.blur)}
+                unit="px"
+                placeholder="0"
+                min={0}
+                onChange={(input) =>
                   onChange({
                     ...shadow,
                     preset: "custom",
-                    blur: event.target.value,
+                    blur: formatShadowLengthPx(input),
                   })
                 }
               />
             </InspectorField>
             <InspectorField label="Spread">
-              <Input
-                value={shadow.spread}
-                onChange={(event) =>
+              <InspectorScrubberNumberInput
+                aria-label="Shadow spread"
+                value={parseShadowLengthPx(shadow.spread)}
+                unit="px"
+                placeholder="0"
+                onChange={(input) =>
                   onChange({
                     ...shadow,
                     preset: "custom",
-                    spread: event.target.value,
+                    spread: formatShadowLengthPx(input),
                   })
                 }
               />
@@ -125,37 +155,29 @@ export function ShadowSection({ shadow, onChange }: ShadowSectionProps) {
           </InspectorGrid>
 
           <InspectorField label="Color">
-            <div className="flex items-center gap-2">
-              <input
-                type="color"
-                aria-label="Shadow color"
-                className="size-8 shrink-0 cursor-pointer rounded-md border bg-transparent p-0.5"
-                value={toHexColor(shadow.color)}
-                onChange={(event) =>
-                  onChange({
-                    ...shadow,
-                    preset: "custom",
-                    color: hexToRgba(event.target.value, shadow.color),
-                  })
-                }
-              />
-              <Input
-                value={shadow.color}
-                onChange={(event) =>
-                  onChange({
-                    ...shadow,
-                    preset: "custom",
-                    color: event.target.value,
-                  })
-                }
-              />
-            </div>
+            <InspectorColorField
+              aria-label="Shadow color"
+              value={shadow.color}
+              placeholder="rgba(0, 0, 0, 0.1)"
+              presets={BACKGROUND_THEME_COLOR_OPTIONS}
+              onChange={(color) =>
+                onChange({
+                  ...shadow,
+                  preset: "custom",
+                  color: formatInspectorColorAsRgba(
+                    color,
+                    BACKGROUND_THEME_COLOR_OPTIONS,
+                    shadow.color,
+                  ),
+                })
+              }
+            />
           </InspectorField>
 
-          <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-            <div>
-              <p className="text-sm">Inset</p>
-              <p className="text-xs text-muted-foreground">Inner shadow</p>
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Inset</p>
+              <p className="text-[10px] text-muted-foreground">Inner shadow</p>
             </div>
             <Switch
               checked={shadow.inset}
@@ -172,29 +194,4 @@ export function ShadowSection({ shadow, onChange }: ShadowSectionProps) {
       ) : null}
     </InspectorSection>
   );
-}
-
-function toHexColor(color: string): string {
-  if (color.startsWith("#")) {
-    return color.length === 4
-      ? `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`
-      : color.slice(0, 7);
-  }
-
-  const rgba = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!rgba) return "#000000";
-  const r = Number(rgba[1]).toString(16).padStart(2, "0");
-  const g = Number(rgba[2]).toString(16).padStart(2, "0");
-  const b = Number(rgba[3]).toString(16).padStart(2, "0");
-  return `#${r}${g}${b}`;
-}
-
-function hexToRgba(hex: string, previous: string): string {
-  const alphaMatch = previous.match(/rgba?\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)/);
-  const alpha = alphaMatch ? alphaMatch[1] : "0.1";
-  const normalized = hex.replace("#", "");
-  const r = Number.parseInt(normalized.slice(0, 2), 16);
-  const g = Number.parseInt(normalized.slice(2, 4), 16);
-  const b = Number.parseInt(normalized.slice(4, 6), 16);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }

@@ -33,7 +33,7 @@ import type { StudioInteractionMode } from "@ssota/studio-renderer";
 import { SourceInspectorPanel } from "./source-inspector-panel";
 import { PreviewToolbar } from "./preview-toolbar";
 import { StudioLeftPanel } from "./studio-left-panel";
-import { usePreviewBridge } from "./preview-bridge";
+import { usePreviewBridge, useStudioNodeMeasure } from "./preview-bridge";
 
 type StudioShellProps = {
   ctx: ProjectRouteContext;
@@ -203,6 +203,13 @@ function StudioShellEditor({
     if (!selectedSourceRef) return "";
     return readClassNameFromSource(contentV2.files, selectedSourceRef) ?? "";
   }, [contentV2.files, selectedSourceRef]);
+
+  const domReferencePx = useStudioNodeMeasure(
+    iframeRef,
+    selectedId,
+    ready,
+    selectedSourceClassName,
+  );
 
   useEffect(() => {
     if (!storageKey) return;
@@ -374,6 +381,7 @@ function StudioShellEditor({
             className={selectedSourceClassName}
             onClassNameChange={handleSourceClassNameChange}
             readOnly={Boolean(selectedId && !selectedSourceRef)}
+            domReferencePx={domReferencePx}
           />
         </ResizablePanel>
       </ResizablePanelGroup>

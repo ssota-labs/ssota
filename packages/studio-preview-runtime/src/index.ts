@@ -5,10 +5,10 @@ export type {
   StudioPatch,
   StudioRenderMode,
   StudioSourceRef,
-} from "./protocol.js";
+} from "./protocol";
 export {
   parseStudioMessage,
   isStudioMessageFromOrigin,
-} from "./protocol.js";
-export * from "./bridge.js";
-export * from "./patch-applier.js";
+} from "./protocol";
+export * from "./bridge";
+export * from "./patch-applier";
