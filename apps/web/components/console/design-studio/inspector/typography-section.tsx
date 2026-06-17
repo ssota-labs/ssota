@@ -186,21 +186,25 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
               {
                 value: "left",
                 "aria-label": "Align left",
+                tooltip: "Align left",
                 icon: <TextAlignLeftIcon className="size-3.5" />,
               },
               {
                 value: "center",
                 "aria-label": "Align center",
+                tooltip: "Align center",
                 icon: <TextAlignCenterIcon className="size-3.5" />,
               },
               {
                 value: "right",
                 "aria-label": "Align right",
+                tooltip: "Align right",
                 icon: <TextAlignRightIcon className="size-3.5" />,
               },
               {
                 value: "justify",
                 "aria-label": "Justify",
+                tooltip: "Justify",
                 icon: <TextAlignJustifyIcon className="size-3.5" />,
               },
             ]}
@@ -221,21 +225,25 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
                 value: "none",
                 label: "—",
                 "aria-label": "No case transform",
+                tooltip: "None",
               },
               {
                 value: "capitalize",
                 label: "Aa",
                 "aria-label": "Capitalize",
+                tooltip: "Capitalize",
               },
               {
                 value: "uppercase",
                 label: "AA",
                 "aria-label": "Uppercase",
+                tooltip: "Uppercase",
               },
               {
                 value: "lowercase",
                 label: "aa",
                 "aria-label": "Lowercase",
+                tooltip: "Lowercase",
               },
             ]}
             columns={4}
@@ -261,21 +269,25 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
               {
                 value: "none",
                 "aria-label": "No decoration",
+                tooltip: "None",
                 icon: <MinusIcon className="size-3.5" />,
               },
               {
                 value: "underline",
                 "aria-label": "Underline",
+                tooltip: "Underline",
                 icon: <TextUnderlineIcon className="size-3.5" />,
               },
               {
                 value: "line-through",
                 "aria-label": "Strikethrough",
+                tooltip: "Strikethrough",
                 icon: <TextStrikethroughIcon className="size-3.5" />,
               },
               {
                 value: "overline",
                 "aria-label": "Overline",
+                tooltip: "Overline",
                 icon: <OverlineIcon />,
               },
             ]}

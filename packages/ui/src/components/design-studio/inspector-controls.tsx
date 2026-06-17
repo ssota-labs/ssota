@@ -19,6 +19,11 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 export type InspectorPopoverOption = {
@@ -242,6 +247,7 @@ export type InspectorToggleOption = {
   label?: string;
   icon?: ReactNode;
   "aria-label"?: string;
+  tooltip?: string;
 };
 
 type InspectorToggleRowProps = {
@@ -271,18 +277,41 @@ export function InspectorToggleRow({
         "grid-cols-4": columns === 4,
       })}
     >
-      {options.map((option) => (
-        <ToggleGroupItem
-          key={option.value}
-          value={option.value}
-          aria-label={option["aria-label"] ?? option.label}
-          className="min-w-0 flex-1 px-0"
-        >
-          {option.icon ?? (
-            <span className="text-xs font-medium">{option.label}</span>
-          )}
-        </ToggleGroupItem>
-      ))}
+      {options.map((option) => {
+        const item = (
+          <ToggleGroupItem
+            value={option.value}
+            aria-label={option["aria-label"] ?? option.label}
+            className="min-w-0 flex-1 px-0"
+          >
+            {option.icon ?? (
+              <span className="text-xs font-medium">{option.label}</span>
+            )}
+          </ToggleGroupItem>
+        );
+
+        if (!option.tooltip) {
+          return (
+            <ToggleGroupItem
+              key={option.value}
+              value={option.value}
+              aria-label={option["aria-label"] ?? option.label}
+              className="min-w-0 flex-1 px-0"
+            >
+              {option.icon ?? (
+                <span className="text-xs font-medium">{option.label}</span>
+              )}
+            </ToggleGroupItem>
+          );
+        }
+
+        return (
+          <Tooltip key={option.value}>
+            <TooltipTrigger render={item} />
+            <TooltipContent side="top">{option.tooltip}</TooltipContent>
+          </Tooltip>
+        );
+      })}
     </ToggleGroup>
   );
 }

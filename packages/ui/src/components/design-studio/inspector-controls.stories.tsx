@@ -22,10 +22,18 @@ import {
   InspectorSection,
   InspectorToggleRow,
 } from "@/components/design-studio";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const meta = {
   title: "Design Studio/Inspector Controls",
   tags: ["autodocs"],
+  decorators: [
+    (Story) => (
+      <TooltipProvider>
+        <Story />
+      </TooltipProvider>
+    ),
+  ],
 } satisfies Meta;
 
 export default meta;
@@ -152,21 +160,25 @@ export const ToggleRowAlignment: Story = {
               {
                 value: "left",
                 "aria-label": "Align left",
+                tooltip: "Align left",
                 icon: <TextAlignLeftIcon className="size-3.5" />,
               },
               {
                 value: "center",
                 "aria-label": "Align center",
+                tooltip: "Align center",
                 icon: <TextAlignCenterIcon className="size-3.5" />,
               },
               {
                 value: "right",
                 "aria-label": "Align right",
+                tooltip: "Align right",
                 icon: <TextAlignRightIcon className="size-3.5" />,
               },
               {
                 value: "justify",
                 "aria-label": "Justify",
+                tooltip: "Justify",
                 icon: <TextAlignJustifyIcon className="size-3.5" />,
               },
             ]}
@@ -301,21 +313,25 @@ export const TypographyPanel: Story = {
                   {
                     value: "left",
                     "aria-label": "Align left",
+                    tooltip: "Align left",
                     icon: <TextAlignLeftIcon className="size-3.5" />,
                   },
                   {
                     value: "center",
                     "aria-label": "Align center",
+                    tooltip: "Align center",
                     icon: <TextAlignCenterIcon className="size-3.5" />,
                   },
                   {
                     value: "right",
                     "aria-label": "Align right",
+                    tooltip: "Align right",
                     icon: <TextAlignRightIcon className="size-3.5" />,
                   },
                   {
                     value: "justify",
                     "aria-label": "Justify",
+                    tooltip: "Justify",
                     icon: <TextAlignJustifyIcon className="size-3.5" />,
                   },
                 ]}
@@ -331,21 +347,25 @@ export const TypographyPanel: Story = {
                   {
                     value: "none",
                     "aria-label": "No decoration",
+                    tooltip: "None",
                     icon: <MinusIcon className="size-3.5" />,
                   },
                   {
                     value: "underline",
                     "aria-label": "Underline",
+                    tooltip: "Underline",
                     icon: <TextUnderlineIcon className="size-3.5" />,
                   },
                   {
                     value: "line-through",
                     "aria-label": "Strikethrough",
+                    tooltip: "Strikethrough",
                     icon: <TextStrikethroughIcon className="size-3.5" />,
                   },
                   {
                     value: "overline",
                     "aria-label": "Overline",
+                    tooltip: "Overline",
                     icon: (
                       <span className="relative flex size-3.5 items-center justify-center text-[10px] font-medium leading-none">
                         n
