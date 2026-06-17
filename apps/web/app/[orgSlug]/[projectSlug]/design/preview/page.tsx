@@ -1,3 +1,4 @@
+import { BundlePreviewClient } from "@/components/console/design-studio/bundle-preview-client";
 import { DesignPreviewClient } from "@/components/console/design-studio/design-preview-client";
 import type { StudioRenderMode } from "@ssota/studio-renderer";
 
@@ -7,6 +8,11 @@ export default async function DesignPreviewPage({
   searchParams: Promise<{ mode?: string }>;
 }) {
   const { mode: modeParam } = await searchParams;
+
+  if (modeParam === "bundle") {
+    return <BundlePreviewClient />;
+  }
+
   const mode: StudioRenderMode =
     modeParam === "published" ? "published" : "draft";
 
