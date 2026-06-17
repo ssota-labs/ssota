@@ -53,8 +53,13 @@ test.describe("Executive roadmap", () => {
     }
 
     await page.getByTestId("product-roadmap-expand").click();
-    await expect(page.getByTestId("roadmap-document-editor")).toBeVisible();
-    await expect(page.getByTestId("ssota-editor-surface")).toBeVisible();
+    const productCard = page.getByTestId("product-roadmap-card");
+    const editor = productCard.getByTestId("roadmap-document-editor");
+    await expect(editor).toBeVisible();
+    await expect(editor.getByTestId("ssota-editor-surface")).toBeVisible();
+    await expect(
+      productCard.locator("section").getByTestId("roadmap-document-editor"),
+    ).toHaveCount(0);
 
     await page.getByTestId("product-roadmap-expand-collapse").click();
     await expect(page.getByTestId("roadmap-document-editor")).not.toBeVisible();

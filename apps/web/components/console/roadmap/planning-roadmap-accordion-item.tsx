@@ -140,27 +140,29 @@ export function PlanningRoadmapAccordionItem({
         className="border-b border-border"
         data-testid="planning-roadmap-detail"
       >
-        <div className="space-y-4 px-4 py-4 md:px-6 md:py-6">
+        <div className="space-y-4">
           {!node ? (
-            <div
-              className="rounded-md border border-dashed bg-muted/10 p-6 text-center"
-              data-testid={`planning-roadmap-empty-${cardTestId}`}
-            >
-              <p className="text-sm text-muted-foreground">
-                {t("roadmap.emptyPlanningNotCreated")}
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                className="mt-4"
-                disabled={pending}
-                data-testid={`planning-roadmap-create-${cardTestId}`}
-                onClick={handleCreate}
+            <div className="px-4 py-4 md:px-6 md:py-6">
+              <div
+                className="rounded-md border border-dashed bg-muted/10 p-6 text-center"
+                data-testid={`planning-roadmap-empty-${cardTestId}`}
               >
-                {period === "annual"
-                  ? t("roadmap.createAnnual")
-                  : t("roadmap.createQuarter", { quarter: period })}
-              </Button>
+                <p className="text-sm text-muted-foreground">
+                  {t("roadmap.emptyPlanningNotCreated")}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="mt-4"
+                  disabled={pending}
+                  data-testid={`planning-roadmap-create-${cardTestId}`}
+                  onClick={handleCreate}
+                >
+                  {period === "annual"
+                    ? t("roadmap.createAnnual")
+                    : t("roadmap.createQuarter", { quarter: period })}
+                </Button>
+              </div>
             </div>
           ) : node.content.trim() ? (
             <RoadmapDocumentPanel
@@ -174,11 +176,20 @@ export function PlanningRoadmapAccordionItem({
                   content: input.content,
                 });
               }}
-            />
+            >
+              {({ cardContent, expandedContent }) => (
+                <>
+                  <div className="px-4 py-4 md:px-6 md:py-6">{cardContent}</div>
+                  {expandedContent}
+                </>
+              )}
+            </RoadmapDocumentPanel>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              {t("roadmap.emptyPlanningDescription")}
-            </p>
+            <div className="px-4 py-4 md:px-6 md:py-6">
+              <p className="text-sm text-muted-foreground">
+                {t("roadmap.emptyPlanningDescription")}
+              </p>
+            </div>
           )}
         </div>
       </CollapsibleContent>
