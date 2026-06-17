@@ -18,6 +18,7 @@ import {
   InspectorColorInput,
   InspectorField,
   InspectorFontFamilyRow,
+  InspectorGrid,
   InspectorNumberInput,
   InspectorPopoverPicker,
   InspectorSection,
@@ -163,6 +164,92 @@ export const NumberInputLetterSpacing: Story = {
             onChange={setValue}
           />
         </InspectorField>
+      </div>
+    );
+  },
+};
+
+export const NumberInputScrubber: Story = {
+  render: () => {
+    const [value, setValue] = useState("8");
+    return (
+      <div className="w-56 space-y-2">
+        <InspectorField label="Width">
+          <InspectorNumberInput
+            aria-label="Width"
+            value={value}
+            unit="px"
+            placeholder="0"
+            showPresets={false}
+            scrollAdjust
+            onChange={setValue}
+          />
+        </InspectorField>
+        <p className="text-xs text-muted-foreground">
+          Drag the left handle or scroll over the field to adjust. Hold Shift
+          for 10× steps.
+        </p>
+      </div>
+    );
+  },
+};
+
+export const NumberInputScrubberQuad: Story = {
+  render: () => {
+    const [top, setTop] = useState("8");
+    const [right, setRight] = useState("16");
+    const [bottom, setBottom] = useState("8");
+    const [left, setLeft] = useState("16");
+
+    return (
+      <div className="w-56 space-y-2">
+        <span className="block text-xs text-muted-foreground">Padding</span>
+        <InspectorGrid>
+          <InspectorField label="Top">
+            <InspectorNumberInput
+              aria-label="Padding top"
+              value={top}
+              unit="px"
+              placeholder="0"
+              showPresets={false}
+              scrollAdjust
+              onChange={setTop}
+            />
+          </InspectorField>
+          <InspectorField label="Bottom">
+            <InspectorNumberInput
+              aria-label="Padding bottom"
+              value={bottom}
+              unit="px"
+              placeholder="0"
+              showPresets={false}
+              scrollAdjust
+              onChange={setBottom}
+            />
+          </InspectorField>
+          <InspectorField label="Left">
+            <InspectorNumberInput
+              aria-label="Padding left"
+              value={left}
+              unit="px"
+              placeholder="0"
+              showPresets={false}
+              scrollAdjust
+              onChange={setLeft}
+            />
+          </InspectorField>
+          <InspectorField label="Right">
+            <InspectorNumberInput
+              aria-label="Padding right"
+              value={right}
+              unit="px"
+              placeholder="0"
+              showPresets={false}
+              scrollAdjust
+              onChange={setRight}
+            />
+          </InspectorField>
+        </InspectorGrid>
       </div>
     );
   },
