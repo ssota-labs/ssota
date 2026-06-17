@@ -33,7 +33,6 @@ export function RoadmapDocumentPanel({
   const { t } = useLocale();
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [draftDoc, setDraftDoc] = useState<JSONContent>(() =>
     markdownToTiptapDoc(content),
   );
@@ -47,30 +46,28 @@ export function RoadmapDocumentPanel({
   const sourceDoc = useMemo(() => markdownToTiptapDoc(content), [content]);
 
   useEffect(() => {
-    if (!editing) {
+    if (!expanded) {
       setDraftDoc(sourceDoc);
     }
-  }, [editing, sourceDoc]);
+  }, [expanded, sourceDoc]);
 
-  const handleToggleExpand = () => {
-    setExpanded((current) => !current);
-  };
-
-  const handleEdit = () => {
+  const handleExpand = () => {
     setDraftDoc(sourceDoc);
-    setEditing(true);
     setExpanded(true);
   };
 
-  const handleCancel = () => {
+  const handleCollapse = () => {
     setDraftDoc(sourceDoc);
-    setEditing(false);
+    setExpanded(false);
+  };
+
+  const handleCancel = () => {
+    handleCollapse();
   };
 
   const handleSave = () => {
     startTransition(async () => {
       await onSave({ content: tiptapDocToMarkdown(draftDoc) });
-      setEditing(false);
       router.refresh();
     });
   };
@@ -92,7 +89,7 @@ export function RoadmapDocumentPanel({
               aria-expanded
               aria-label={t("roadmap.collapseContent")}
               className="inline-flex size-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
-              onClick={handleToggleExpand}
+              onClick={handleCollapse}
             >
               <CaretDownIcon className="size-4 rotate-180" aria-hidden />
             </button>
@@ -100,10 +97,10 @@ export function RoadmapDocumentPanel({
         ) : null}
 
         <SsotaEditor
-          key={editing ? "editing" : "readonly"}
+          key={expanded ? "editing" : "readonly"}
           content={draftDoc}
-          editable={editing}
-          onChange={editing ? setDraftDoc : undefined}
+          editable={expanded}
+          onChange={expanded ? setDraftDoc : undefined}
           className="roadmap-readonly-editor"
           {...editorHostProps}
         />
@@ -116,7 +113,7 @@ export function RoadmapDocumentPanel({
               aria-expanded={false}
               aria-label={t("roadmap.expandContent")}
               className="pointer-events-auto inline-flex size-9 items-center justify-center rounded-full border bg-background text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
-              onClick={handleToggleExpand}
+              onClick={handleExpand}
             >
               <CaretDownIcon className="size-4" aria-hidden />
             </button>
@@ -124,40 +121,29 @@ export function RoadmapDocumentPanel({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap justify-end gap-2">
-        {editing ? (
-          <>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={pending}
-              onClick={handleCancel}
-              data-testid="roadmap-edit-cancel"
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              disabled={pending}
-              onClick={handleSave}
-              data-testid="roadmap-edit-save"
-            >
-              {t("common.save")}
-            </Button>
-          </>
-        ) : (
+      {expanded ? (
+        <div className="flex flex-wrap justify-end gap-2">
           <Button
             type="button"
             size="sm"
-            onClick={handleEdit}
-            data-testid="roadmap-edit"
+            variant="outline"
+            disabled={pending}
+            onClick={handleCancel}
+            data-testid="roadmap-edit-cancel"
           >
-            {t("roadmap.edit")}
+            {t("common.cancel")}
           </Button>
-        )}
-      </div>
+          <Button
+            type="button"
+            size="sm"
+            disabled={pending}
+            onClick={handleSave}
+            data-testid="roadmap-edit-save"
+          >
+            {t("common.save")}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
