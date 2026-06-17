@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import type { GraphNode } from "@ssota/core";
-import type { UiComponentDocument } from "@ssota/contracts/catalog";
+import type {
+  UiComponentContentV2,
+  UiComponentDocument,
+} from "@ssota/contracts/catalog";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -13,11 +16,18 @@ import type { ProjectRouteContext } from "@/lib/console/paths";
 import {
   clearSessionDraft,
   draftStorageKey,
+  getUiComponentRepresentation,
+  readSessionContentV2,
   readSessionDraft,
+  resolveInitialContentV2,
   resolveInitialDraft,
+  writeSessionContentV2,
   writeSessionDraft,
 } from "@/lib/design-studio/draft-storage";
-import { createEmptyUiComponentDocument } from "@/lib/design-studio/empty-document";
+import {
+  createEmptyUiComponentContentV2,
+  createEmptyUiComponentDocument,
+} from "@/lib/design-studio/empty-document";
 import { updateStudioNode } from "@/lib/design-studio/tree-utils";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
 import type { ResolvedComponentMap, StudioInteractionMode } from "@ssota/studio-renderer";
@@ -33,12 +43,14 @@ type StudioShellProps = {
   components: UiComponentListRow[];
   studioBasePath: string;
   themeContent: string;
-  previewPath: string;
+  previewBasePath: string;
   resolvedComponents: ResolvedComponentMap;
   onDeploy: (input: {
     projectId: string;
     nodeId: string;
-    document: UiComponentDocument;
+    document?: UiComponentDocument;
+    contentV2?: UiComponentContentV2;
+    themeCss?: string;
     revalidatePath: string;
   }) => Promise<void>;
   onCreateComponent: () => Promise<void> | void;
@@ -50,7 +62,7 @@ export function StudioShell({
   components,
   studioBasePath,
   themeContent,
-  previewPath,
+  previewBasePath,
   resolvedComponents,
   onDeploy,
   onCreateComponent,
@@ -59,13 +71,26 @@ export function StudioShell({
     slug?: string;
     tier?: string;
     draft?: string;
+    representation?: string;
   };
+  const representation = component
+    ? getUiComponentRepresentation(component.properties)
+    : "tree";
+  const isSource = representation === "source";
+
   const storageKey = component
     ? draftStorageKey(projectId, component.id)
     : null;
 
+  const previewUrl = useMemo(() => {
+    if (!component) return `${previewBasePath}?mode=draft`;
+    return isSource
+      ? `${previewBasePath}?mode=bundle`
+      : `${previewBasePath}?mode=draft`;
+  }, [component, isSource, previewBasePath]);
+
   const [document, setDocument] = useState<UiComponentDocument>(() =>
-    component
+    component && !isSource
       ? resolveInitialDraft({
           sessionDraft: null,
           propertiesDraft: props.draft,
@@ -74,8 +99,22 @@ export function StudioShell({
         })
       : createEmptyUiComponentDocument(),
   );
+  const [contentV2, setContentV2] = useState<UiComponentContentV2>(() =>
+    component && isSource
+      ? resolveInitialContentV2({
+          sessionContent: null,
+          publishedContent: component.content,
+          fallback: createEmptyUiComponentContentV2(),
+        })
+      : createEmptyUiComponentContentV2(),
+  );
+  const [buildPreview, setBuildPreview] = useState<{
+    jsUrl: string;
+    cssUrl?: string;
+    buildId: string;
+  } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(
-    component ? "root" : null,
+    component ? (isSource ? null : "root") : null,
   );
   const [interactionMode, setInteractionMode] =
     useState<StudioInteractionMode>("inspect");
@@ -83,26 +122,38 @@ export function StudioShell({
   const {
     iframeRef,
     ready,
-    previewUrl,
     syncTree,
     syncResolvedComponents,
     syncUtilityCss,
     syncTheme,
     syncInteractionMode,
+    syncBundle,
     highlightNode,
-  } = usePreviewBridge(previewPath);
+  } = usePreviewBridge(previewUrl);
 
   useEffect(() => {
     if (!component || !storageKey) return;
-    const sessionDraft = readSessionDraft(storageKey);
     const nextProps = component.properties as {
       slug?: string;
       tier?: string;
       draft?: string;
     };
+    const nextRepresentation = getUiComponentRepresentation(component.properties);
+    if (nextRepresentation === "source") {
+      setContentV2(
+        resolveInitialContentV2({
+          sessionContent: readSessionContentV2(storageKey),
+          publishedContent: component.content,
+          fallback: createEmptyUiComponentContentV2(),
+        }),
+      );
+      setSelectedId(null);
+      return;
+    }
+
     setDocument(
       resolveInitialDraft({
-        sessionDraft,
+        sessionDraft: readSessionDraft(storageKey),
         propertiesDraft: nextProps.draft,
         publishedContent: component.content,
         fallback: createEmptyUiComponentDocument(),
@@ -114,25 +165,29 @@ export function StudioShell({
   useEffect(() => {
     if (!storageKey) return;
     const timer = window.setTimeout(() => {
-      writeSessionDraft(storageKey, document);
+      if (isSource) {
+        writeSessionContentV2(storageKey, contentV2);
+      } else {
+        writeSessionDraft(storageKey, document);
+      }
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [document, storageKey]);
+  }, [document, contentV2, storageKey, isSource]);
 
   useEffect(() => {
-    if (!component || !ready) return;
+    if (!component || !ready || isSource) return;
     syncTree(document.root);
-  }, [component, ready, document.root, syncTree]);
+  }, [component, ready, document.root, syncTree, isSource]);
 
   useEffect(() => {
-    if (!component || !ready) return;
+    if (!component || !ready || isSource) return;
     syncResolvedComponents(resolvedComponents);
-  }, [component, ready, resolvedComponents, syncResolvedComponents]);
+  }, [component, ready, resolvedComponents, syncResolvedComponents, isSource]);
 
   useEffect(() => {
-    if (!component || !ready) return;
+    if (!component || !ready || isSource) return;
     void syncUtilityCss(document.root, resolvedComponents);
-  }, [component, ready, document.root, resolvedComponents, syncUtilityCss]);
+  }, [component, ready, document.root, resolvedComponents, syncUtilityCss, isSource]);
 
   useEffect(() => {
     if (!component || !ready) return;
@@ -143,6 +198,45 @@ export function StudioShell({
     if (!component || !ready) return;
     syncInteractionMode(interactionMode);
   }, [component, ready, interactionMode, syncInteractionMode]);
+
+  useEffect(() => {
+    if (!component || !isSource) return;
+    const timer = window.setTimeout(() => {
+      void (async () => {
+        try {
+          const response = await fetch("/api/studio/build", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              projectId,
+              properties: component.properties,
+              content: JSON.stringify(contentV2),
+              themeCss: themeContent,
+            }),
+          });
+          if (!response.ok) return;
+          const payload = (await response.json()) as {
+            url: string;
+            cssUrl?: string;
+            buildId: string;
+          };
+          setBuildPreview({
+            jsUrl: payload.url,
+            cssUrl: payload.cssUrl,
+            buildId: payload.buildId,
+          });
+        } catch {
+          // preview build is best-effort until deploy
+        }
+      })();
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [component, contentV2, isSource, projectId, themeContent]);
+
+  useEffect(() => {
+    if (!component || !ready || !isSource || !buildPreview) return;
+    syncBundle(buildPreview);
+  }, [component, ready, isSource, buildPreview, syncBundle]);
 
   useEffect(() => {
     if (!ready || !selectedId) return;
@@ -159,6 +253,7 @@ export function StudioShell({
   }, []);
 
   const handlePatch = useCallback((nodeId: string, patch: Record<string, unknown>) => {
+    if (isSource) return;
     setDocument((current) => ({
       ...current,
       root: updateStudioNode(current.root, nodeId, (node) => {
@@ -190,7 +285,7 @@ export function StudioShell({
         return node;
       }),
     }));
-  }, []);
+  }, [isSource]);
 
   const handleDeploy = () => {
     if (!component) return;
@@ -198,8 +293,10 @@ export function StudioShell({
       await onDeploy({
         projectId,
         nodeId: component.id,
-        document,
-        revalidatePath: previewPath.replace(/\?.*$/, "").replace(/^\//, ""),
+        document: isSource ? undefined : document,
+        contentV2: isSource ? contentV2 : undefined,
+        themeCss: themeContent,
+        revalidatePath: previewBasePath.replace(/^\//, ""),
       });
       if (storageKey) {
         clearSessionDraft(storageKey);
@@ -222,7 +319,7 @@ export function StudioShell({
           </h1>
           <p className="text-sm text-muted-foreground">
             {component
-              ? `${props.slug} · ${props.tier ?? "primitive"}`
+              ? `${props.slug} · ${props.tier ?? "primitive"} · ${representation}`
               : "Select or create a component"}
           </p>
         </div>
@@ -249,7 +346,7 @@ export function StudioShell({
             components={components}
             activeComponentId={component?.id ?? null}
             studioBasePath={studioBasePath}
-            root={component ? document.root : null}
+            root={component && !isSource ? document.root : null}
             selectedLayerId={selectedId}
             onSelectLayer={setSelectedId}
             pending={pending}
@@ -296,11 +393,24 @@ export function StudioShell({
           maxSize="35%"
         >
           {component ? (
-            <InspectorPanel
-              root={document.root}
-              selectedId={selectedId}
-              onPatch={handlePatch}
-            />
+            isSource ? (
+              <div className="flex h-full flex-col gap-3 border-l p-4 text-sm text-muted-foreground">
+                <p className="font-medium text-foreground">Source component</p>
+                <p>
+                  Bundle preview is active. Inspector source sync lands in the next
+                  milestone — select nodes in the preview to verify selection.
+                </p>
+                {selectedId ? (
+                  <p data-testid="studio-source-selected-id">Selected: {selectedId}</p>
+                ) : null}
+              </div>
+            ) : (
+              <InspectorPanel
+                root={document.root}
+                selectedId={selectedId}
+                onPatch={handlePatch}
+              />
+            )
           ) : (
             <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
               Inspector appears when a component is open.
