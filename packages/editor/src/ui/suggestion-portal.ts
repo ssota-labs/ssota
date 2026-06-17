@@ -93,14 +93,44 @@ export function createSuggestionPortal<
     }
   }
 
+  function applyMenuProps() {
+    if (!bundle || !lastSuggestionProps) return;
+    bundle.component.updateProps(mappedProps(lastSuggestionProps));
+  }
+
   function updateMenu() {
     if (!bundle || !lastSuggestionProps) return;
-    const nextProps = mappedProps(lastSuggestionProps);
     flushSync(() => {
-      bundle?.component.updateProps(nextProps);
+      applyMenuProps();
     });
     syncSelectedDom();
     scrollActiveSuggestionItem();
+  }
+
+  function mountMenu(props: SuggestionProps<TItem>) {
+    if (typeof document === "undefined" || !document.body) return;
+
+    teardown();
+
+    selectedIndex = 0;
+    lastSuggestionProps = props;
+
+    const menuRoot = document.createElement("div");
+    menuRoot.setAttribute("data-ssota-suggestion-root", "true");
+    document.body.appendChild(menuRoot);
+
+    const component = new ReactRenderer(options.component, {
+      props: mappedProps(props),
+      editor: props.editor,
+    });
+
+    menuRoot.appendChild(component.element);
+    bundle = { component, root: menuRoot };
+    positionSuggestionMenu(menuRoot, props.clientRect);
+    queueMicrotask(() => {
+      props.editor.commands.focus();
+      syncSelectedDom();
+    });
   }
 
   function selectIndex(index: number) {
@@ -150,29 +180,7 @@ export function createSuggestionPortal<
 
   return {
     onStart: (props: SuggestionProps<TItem>) => {
-      if (typeof document === "undefined" || !document.body) return;
-
-      teardown();
-
-      selectedIndex = 0;
-      lastSuggestionProps = props;
-
-      const menuRoot = document.createElement("div");
-      menuRoot.setAttribute("data-ssota-suggestion-root", "true");
-      document.body.appendChild(menuRoot);
-
-      const component = new ReactRenderer(options.component, {
-        props: mappedProps(props),
-        editor: props.editor,
-      });
-
-      menuRoot.appendChild(component.element);
-      bundle = { component, root: menuRoot };
-      positionSuggestionMenu(menuRoot, props.clientRect);
-      queueMicrotask(() => {
-        props.editor.commands.focus();
-        syncSelectedDom();
-      });
+      mountMenu(props);
     },
     onUpdate: (props: SuggestionProps<TItem>) => {
       const queryChanged = lastSuggestionProps?.query !== props.query;
@@ -180,10 +188,20 @@ export function createSuggestionPortal<
       if (queryChanged || selectedIndex >= props.items.length) {
         selectedIndex = 0;
       }
-      updateMenu();
-      if (bundle?.root) {
+
+      if (!bundle) {
+        mountMenu(props);
+        return;
+      }
+
+      applyMenuProps();
+      if (bundle.root) {
         positionSuggestionMenu(bundle.root, props.clientRect);
       }
+      queueMicrotask(() => {
+        syncSelectedDom();
+        scrollActiveSuggestionItem();
+      });
     },
     onKeyDown: (props: SuggestionKeyDownProps) => {
       if (props.event.key === "Escape") return false;

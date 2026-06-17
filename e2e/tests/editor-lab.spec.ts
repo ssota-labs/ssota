@@ -178,9 +178,17 @@ test.describe("Editor Lab", () => {
       const menu = page.getByTestId("ssota-slash-menu");
 
       await expect(menu.getByRole("option", { name: /Paragraph/i })).toBeVisible();
-      await expect(menu.getByRole("option", { name: /Heading 1/i })).toBeVisible();
+      await page.keyboard.type("head", { delay: 30 });
 
-      await page.keyboard.type("head");
+      await expect(menu).toBeVisible();
+      await expect(menu.getByRole("option", { name: /Heading 1/i })).toBeVisible();
+      await expect(menu.getByRole("option", { name: /Paragraph/i })).toBeHidden();
+      await expect(menu.locator('[data-selected="true"]')).toContainText("Heading 1");
+    });
+
+    test("opens with filtered query", async ({ page }) => {
+      await openSlashMenu(page, "head");
+      const menu = page.getByTestId("ssota-slash-menu");
 
       await expect(menu.getByRole("option", { name: /Heading 1/i })).toBeVisible();
       await expect(menu.getByRole("option", { name: /Paragraph/i })).toBeHidden();
