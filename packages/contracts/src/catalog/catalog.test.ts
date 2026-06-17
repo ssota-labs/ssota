@@ -4,12 +4,13 @@ import {
   NODE_TYPES,
   getNodeTypeEntry,
   parseNodeProperties,
+  uiComponentDocumentSchema,
 } from "./index.js";
 
 describe("v2.7 catalog SSOT", () => {
-  it("defines 34 node types and 16 edge types", () => {
+  it("defines 34 node types and 17 edge types", () => {
     expect(NODE_TYPES).toHaveLength(34);
-    expect(EDGE_TYPES).toHaveLength(16);
+    expect(EDGE_TYPES).toHaveLength(17);
   });
 
   it("parses hypothesis properties", () => {
@@ -99,6 +100,83 @@ describe("v2.7 catalog SSOT", () => {
   it("rejects invalid metric_snapshot snapshot_kind", () => {
     expect(() =>
       parseNodeProperties("metric_snapshot", { snapshot_kind: "weekly" }),
+    ).toThrow();
+  });
+
+  it("parses ui_component properties", () => {
+    const parsed = parseNodeProperties("ui_component", {
+      slug: "primary-button",
+      tier: "primitive",
+    });
+    expect(parsed.slug).toBe("primary-button");
+    expect(parsed.tier).toBe("primitive");
+  });
+
+  it("rejects invalid ui_component tier", () => {
+    expect(() =>
+      parseNodeProperties("ui_component", {
+        slug: "btn",
+        tier: "builtin",
+      }),
+    ).toThrow();
+  });
+
+  it("exposes ui_component catalog entry without contentRequired", () => {
+    expect(getNodeTypeEntry("ui_component")?.contentRequired).toBe(false);
+    expect(getNodeTypeEntry("ui_component")?.mutability).toBe("living");
+  });
+
+  it("parses UiComponentDocument with element tree", () => {
+    const doc = uiComponentDocumentSchema.parse({
+      schemaVersion: 1,
+      root: {
+        kind: "element",
+        id: "root",
+        tag: "div",
+        className: "flex gap-2",
+        children: [
+          {
+            kind: "text",
+            id: "label",
+            text: "Click me",
+          },
+        ],
+      },
+    });
+    expect(doc.root.kind).toBe("element");
+    if (doc.root.kind === "element") {
+      expect(doc.root.children).toHaveLength(1);
+    }
+  });
+
+  it("parses UiComponentDocument with project component ref", () => {
+    const doc = uiComponentDocumentSchema.parse({
+      schemaVersion: 1,
+      root: {
+        kind: "component",
+        id: "btn",
+        ref: {
+          type: "project",
+          nodeId: "00000000-0000-4000-8000-000000000001",
+          slug: "button",
+        },
+        children: [],
+      },
+    });
+    expect(doc.root.kind).toBe("component");
+  });
+
+  it("rejects builtin component ref type", () => {
+    expect(() =>
+      uiComponentDocumentSchema.parse({
+        schemaVersion: 1,
+        root: {
+          kind: "component",
+          id: "btn",
+          ref: { type: "builtin", name: "Button" },
+          children: [],
+        },
+      }),
     ).toThrow();
   });
 });

@@ -3,22 +3,11 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { DocStatus } from "@/lib/roadmap/doc-status";
-import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ssota/ui/components/ui/select";
 import { useLocale } from "@/components/i18n/locale-provider";
+import { RoadmapDocStatusControl } from "@/components/console/roadmap/roadmap-doc-status-control";
 import { RoadmapDocumentSheet } from "@/components/console/roadmap/roadmap-document-sheet";
 import { RoadmapMarkdownPreview } from "@/components/console/roadmap/roadmap-markdown-preview";
-import {
-  DOC_STATUS_LABELS,
-  DOC_STATUS_OPTIONS,
-} from "@/lib/roadmap/doc-status";
 import type { RoadmapNodeView } from "@/lib/roadmap/types";
 
 type ProductRoadmapCardProps = {
@@ -45,8 +34,7 @@ export function ProductRoadmapCard({
   const isEmpty = !node.content.trim();
   const docStatus = node.docStatus ?? "draft";
 
-  const handleDocStatusChange = (value: DocStatus | null) => {
-    if (!value) return;
+  const handleDocStatusChange = (value: DocStatus) => {
     startTransition(async () => {
       await onSave({
         title: node.title,
@@ -69,32 +57,20 @@ export function ProductRoadmapCard({
       className="rounded-lg border bg-card"
       data-testid="product-roadmap-card"
     >
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 md:px-6">
-        <div className="min-w-0 space-y-1">
+      <header className="border-b px-4 py-3 md:px-6">
+        <div className="flex flex-wrap items-center gap-2">
           <h2 className="text-lg font-semibold tracking-tight">
             {t("roadmap.productRoadmap")}
           </h2>
-          <p className="text-sm text-muted-foreground">{node.title}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Select
+          <RoadmapDocStatusControl
             value={docStatus}
-            onValueChange={handleDocStatusChange}
+            onChange={handleDocStatusChange}
             disabled={pending}
-          >
-            <SelectTrigger size="sm" aria-label="Document status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {DOC_STATUS_OPTIONS.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {DOC_STATUS_LABELS[status]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Badge variant="secondary">{DOC_STATUS_LABELS[docStatus]}</Badge>
+          />
         </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("roadmap.productRoadmapDescription")}
+        </p>
       </header>
 
       <div className="space-y-4 p-4 md:p-6">
@@ -144,7 +120,8 @@ export function ProductRoadmapCard({
         mode="view"
         title={node.title}
         content={node.content}
-        description={t("roadmap.productRoadmap")}
+        docStatus={docStatus}
+        description={t("roadmap.productRoadmapDescription")}
         saveLabel={t("common.save")}
         onOpenChange={setViewOpen}
       />
@@ -153,12 +130,11 @@ export function ProductRoadmapCard({
         mode="edit"
         title={node.title}
         content={node.content}
-        description={t("roadmap.productRoadmap")}
+        docStatus={docStatus}
+        description={t("roadmap.productRoadmapDescription")}
         saveLabel={t("common.save")}
         onOpenChange={setEditOpen}
-        onSave={async (input) => {
-          await onSave({ ...input, docStatus });
-        }}
+        onSave={onSave}
       />
     </section>
   );

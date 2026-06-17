@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { PencilSimpleIcon } from "@phosphor-icons/react";
-import { updateNodePropertiesBatchFormAction } from "@/app/actions";
+import {
+  updateNodeContentDocAction,
+  updateNodePropertiesBatchFormAction,
+} from "@/app/actions";
 import { PropertyFieldEditor } from "@/components/graph/property-field-editor";
 import {
   GraphFlowCanvas,
@@ -24,6 +27,14 @@ import {
   type PropertyFieldDefinition,
 } from "@/lib/graph/property-field-types";
 import { formatTableCell } from "@/lib/graph/format-table-cell";
+import {
+  isTiptapDoc,
+  plainTextToTiptapDoc,
+  SsotaEditor,
+  type JSONContent,
+} from "@ssota/editor";
+import "@ssota/editor/styles.css";
+import { createSsotaEditorHostProps } from "@/lib/editor/host-props";
 
 type InstanceRowInspectorProps = {
   projectId: string;
@@ -57,14 +68,32 @@ export function InstanceRowInspector({
   onUpdated,
 }: InstanceRowInspectorProps) {
   const [draft, setDraft] = useState(properties);
+  const [bodyDoc, setBodyDoc] = useState<JSONContent>(() =>
+    isTiptapDoc(properties.contentDoc)
+      ? properties.contentDoc
+      : plainTextToTiptapDoc(content),
+  );
+  const [bodySaveState, setBodySaveState] = useState<
+    "saved" | "unsaved" | "saving" | "failed"
+  >("saved");
+  const [bodySaveError, setBodySaveError] = useState<string | null>(null);
   const [editingJsonKey, setEditingJsonKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [tab, setTab] = useState<"fields" | "relations">("fields");
+  const editorHostProps = useMemo(
+    () => createSsotaEditorHostProps(projectId),
+    [projectId],
+  );
+
+  const editableFields = useMemo(
+    () => fields.filter((field) => field.key !== "contentDoc"),
+    [fields],
+  );
 
   const changedProperties = useMemo(() => {
     const diff: Record<string, unknown> = {};
-    for (const field of fields) {
+    for (const field of editableFields) {
       const before = properties[field.key];
       const after = draft[field.key];
       if (JSON.stringify(before) !== JSON.stringify(after)) {
@@ -72,9 +101,15 @@ export function InstanceRowInspector({
       }
     }
     return diff;
-  }, [draft, fields, properties]);
+  }, [draft, editableFields, properties]);
 
   const hasChanges = Object.keys(changedProperties).length > 0;
+
+  const updateBodyDoc = useCallback((doc: JSONContent) => {
+    setBodyDoc(doc);
+    setBodySaveState("unsaved");
+    setBodySaveError(null);
+  }, []);
 
   const queueChanges = useCallback(() => {
     if (!hasChanges) return;
@@ -116,6 +151,40 @@ export function InstanceRowInspector({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [queueChanges]);
 
+  useEffect(() => {
+    const serialized = JSON.stringify(bodyDoc);
+    const persisted = isTiptapDoc(properties.contentDoc)
+      ? JSON.stringify(properties.contentDoc)
+      : JSON.stringify(plainTextToTiptapDoc(content));
+
+    if (serialized === persisted) {
+      return;
+    }
+
+    const timeout = window.setTimeout(async () => {
+      setBodySaveState("saving");
+      const result = await updateNodeContentDocAction({
+        projectId,
+        nodeSlug,
+        nodeId,
+        doc: bodyDoc,
+      });
+
+      if (!result.ok) {
+        setBodySaveState("failed");
+        setBodySaveError(result.error ?? "Failed to save body");
+        return;
+      }
+
+      const merged = { ...properties, contentDoc: bodyDoc };
+      setDraft((current) => ({ ...current, contentDoc: bodyDoc }));
+      onUpdated(merged);
+      setBodySaveState("saved");
+    }, 900);
+
+    return () => window.clearTimeout(timeout);
+  }, [bodyDoc, content, nodeId, nodeSlug, onUpdated, projectId, properties]);
+
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
       <div className="shrink-0 border-b px-6 py-4 pr-14">
@@ -141,7 +210,14 @@ export function InstanceRowInspector({
         <TabsContent value="fields" className="min-h-0 flex-1 overflow-auto p-0">
           <ReadOnlyField label="id" type="uuid" value={nodeId} />
           <ReadOnlyField label="lifecycle_status" type="text" value={lifecycleStatus} />
-          {fields.map((field) => (
+          <BodyEditorField
+            saveState={bodySaveState}
+            error={bodySaveError}
+            doc={bodyDoc}
+            onChange={updateBodyDoc}
+            editorHostProps={editorHostProps}
+          />
+          {editableFields.map((field) => (
             <EditableFieldRow
               key={field.key}
               field={field}
@@ -157,7 +233,9 @@ export function InstanceRowInspector({
               }
             />
           ))}
-          <ReadOnlyTextField label="content" type="text" value={content ?? "NULL"} />
+          {content ? (
+            <ReadOnlyTextField label="content" type="legacy text" value={content} />
+          ) : null}
           <ReadOnlyField label="updated_at" type="timestamptz" value={updatedAt} />
         </TabsContent>
 
@@ -188,6 +266,62 @@ export function InstanceRowInspector({
           {isPending ? "Saving…" : "Queue changes"}
           <span className="ml-2 text-[10px] opacity-70">⌘↵</span>
         </Button>
+      </div>
+    </div>
+  );
+}
+
+function BodyEditorField({
+  saveState,
+  error,
+  doc,
+  onChange,
+  editorHostProps,
+}: {
+  saveState: "saved" | "unsaved" | "saving" | "failed";
+  error: string | null;
+  doc: JSONContent;
+  onChange: (doc: JSONContent) => void;
+  editorHostProps: ReturnType<typeof createSsotaEditorHostProps>;
+}) {
+  const label =
+    saveState === "saving"
+      ? "Saving"
+      : saveState === "unsaved"
+        ? "Unsaved"
+        : saveState === "failed"
+          ? "Failed"
+          : "Saved";
+
+  return (
+    <div className="instance-field-row items-start">
+      <FieldMeta label="body" type="contentDoc" />
+      <div className="instance-field-value min-w-0">
+        <div
+          className="rounded-md border bg-background px-4 py-3"
+          data-testid="node-body-editor"
+        >
+          <SsotaEditor
+            content={doc}
+            onChange={onChange}
+            placeholder="내용을 입력하거나 / 를 눌러 블록을 추가하세요"
+            {...editorHostProps}
+          />
+        </div>
+        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <span
+            className={
+              saveState === "failed"
+                ? "text-destructive"
+                : saveState === "saved"
+                  ? "text-emerald-600"
+                  : ""
+            }
+          >
+            {label}
+          </span>
+          {error ? <span className="text-destructive">{error}</span> : null}
+        </div>
       </div>
     </div>
   );

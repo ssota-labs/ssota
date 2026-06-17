@@ -17,6 +17,7 @@ export * from "./common.js";
 export * from "./edge-types.js";
 export * from "./goal-schemas.js";
 export * from "./node-types.js";
+export * from "./ui-component-schemas.js";
 
 export function listNodeTypes(): NodeType[] {
   return [...NODE_TYPES];

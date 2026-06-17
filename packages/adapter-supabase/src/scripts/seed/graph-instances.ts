@@ -15,7 +15,6 @@ export const EVERGREEN_DEV_SINGLETON_TYPES = [
 /** One evergreen container per project — design track (Console v2.7). */
 export const EVERGREEN_DESIGN_SINGLETON_TYPES = [
   "information_architecture",
-  "ui_component_catalog",
   "design_theme",
   "page_wireframe",
 ] as const satisfies readonly NodeType[];
@@ -26,6 +25,7 @@ export const EXECUTIVE_SINGLETON_TYPES = [] as const satisfies readonly NodeType
 const GRAPH_SEED_IDEMPOTENCY_PREFIX = "seed:graph:";
 const DEMO_OKR_SEED_TITLE = "Demo: First Release completion loop";
 const DEMO_OKR_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}demo_okr`;
+const DEMO_UI_COMPONENT_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}ui_component_demo`;
 
 export async function seedGraphInstances(
   db: ReturnType<typeof createDb>["db"],
@@ -147,6 +147,7 @@ export async function seedGraphInstances(
   }
 
   await seedDemoOkr(db, projectId);
+  await seedDemoUiComponents(db, projectId);
 
   return { hypothesisId };
 }
@@ -349,6 +350,102 @@ async function seedDemoOkr(
       });
     }
   }
+}
+
+async function seedDemoUiComponents(
+  db: ReturnType<typeof createDb>["db"],
+  projectId: string,
+) {
+  const existing = await db
+    .select({ id: schema.nodes.id })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.nodeType, "ui_component"),
+        eq(schema.nodes.title, "Demo Button"),
+      ),
+    )
+    .limit(1);
+
+  if (existing.length > 0) return;
+
+  const buttonDocument = {
+    schemaVersion: 1,
+    root: {
+      kind: "element",
+      id: "root",
+      tag: "button",
+      className: "rounded-md bg-primary px-4 py-2 text-primary-foreground",
+      children: [{ kind: "text", id: "label", text: "Button" }],
+    },
+  };
+
+  const [button] = await db
+    .insert(schema.nodes)
+    .values({
+      projectId,
+      nodeType: "ui_component",
+      title: "Demo Button",
+      properties: {
+        slug: "demo-button",
+        tier: "primitive",
+        seed: `${DEMO_UI_COMPONENT_SEED_KEY}:button`,
+      },
+      content: JSON.stringify(buttonDocument),
+      lifecycleStatus: "Active",
+    })
+    .returning({ id: schema.nodes.id });
+
+  if (!button?.id) return;
+
+  const cardDocument = {
+    schemaVersion: 1,
+    root: {
+      kind: "element",
+      id: "root",
+      tag: "div",
+      className: "rounded-lg border p-4 shadow-sm",
+      children: [
+        {
+          kind: "component",
+          id: "cta",
+          ref: {
+            type: "project",
+            nodeId: button.id,
+            slug: "demo-button",
+          },
+          children: [],
+        },
+      ],
+    },
+  };
+
+  const [card] = await db
+    .insert(schema.nodes)
+    .values({
+      projectId,
+      nodeType: "ui_component",
+      title: "Demo Card",
+      properties: {
+        slug: "demo-card",
+        tier: "composite",
+        seed: `${DEMO_UI_COMPONENT_SEED_KEY}:card`,
+      },
+      content: JSON.stringify(cardDocument),
+      lifecycleStatus: "Active",
+    })
+    .returning({ id: schema.nodes.id });
+
+  if (!card?.id) return;
+
+  await db.insert(schema.edges).values({
+    projectId,
+    edgeType: "composed_of",
+    sourceNodeId: card.id,
+    targetNodeId: button.id,
+    properties: { seed: `${DEMO_UI_COMPONENT_SEED_KEY}:composed_of` },
+  });
 }
 
 async function seedInitiativeScopedNodes(

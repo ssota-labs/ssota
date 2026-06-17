@@ -170,6 +170,7 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 ### 2. E2E
 
 - 변경한 화면·플로우에 맞는 Playwright 스펙을 실행한다. 신규 UX면 **테스트 추가**를 우선 검토한다.
+- **사용자 UI 피드백(버그·UX 개선)은 같은 PR에 E2E를 반드시 추가한다.** 피드백 항목과 테스트명(`pnpm e2e --grep '<키워드>'`)을 PR 설명에 1:1로 적는다. Editor Lab·`@ssota/editor`는 `e2e/tests/editor-lab.spec.ts`.
 - 실행 전: Cloud는 `pnpm cloud:prepare`, 로컬은 `pnpm e2e:prepare` 또는 `supabase start` + migrate + seed.
 - `pnpm e2e`는 **3100/3101**에서 자체 `next dev`를 띄운다. `pnpm dev` tmux 세션이 3000/3001을 쓰면 E2E 전에 `tmux kill-session -t ssota-dev`로 내린다.
 - 관련 테스트만 돌릴 때: `pnpm e2e --grep '<키워드>'` (예: `--grep onboarding`).
@@ -318,7 +319,7 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 ## MCP App Notes (apps/mcp)
 
 - 엔드포인트는 `/api/mcp` (Streamable HTTP, `mcp-handler` + `@modelcontextprotocol/sdk`).
-- Active MCP scope는 account/project discovery, development workflow `tasks` 조회, **graph read-only query** (`list_node_types`, `get_node_type`, `list_edge_types`, `query_nodes`, `get_node`, `traverse_edges`)다. Generic action/workflow runtime tools와 MCP write는 archived/미도입.
+- Active MCP scope는 account/project discovery, development workflow `tasks` CRUD, **workflow instruction fetch** (`list_workflows`, `get_workflow`, `get_workflow_instruction`), **graph read/write** (`list_node_types`, `get_node_type`, `list_edge_types`, `query_nodes`, `get_node`, `traverse_edges`, `create_node`, `update_node`, `create_edge`)다. Workflow instruction SSOT는 `packages/contracts/workflows`이며 MCP를 통해 배포 버전을 fetch한다. Graph write는 core graph use-case 경유. Generic action/workflow runtime tools(`execute_action`, gates)는 archived.
 - 일반 구현 작업에서 `ssota-mcp`를 mount하지 않는다. 사용자가 명시적으로 `ssota-dev` project/task context를 조회하라고 할 때만 사용한다.
 - 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. `apps/mcp`는 Bearer JWT JWKS 검증 + `/.well-known/oauth-protected-resource` + `/api/mcp`를 유지한다.
 - 도구 핸들러에 비즈니스 로직을 넣지 않는다 — task/project 포트 호출 + IO 변환만.

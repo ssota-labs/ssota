@@ -238,6 +238,8 @@ export const WorkflowDefinitionFieldsSchema = z.object({
   workflowBlocks: z.array(WorkflowBlockRefSchema).default([]),
   steps: z.array(WorkflowStepSpecSchema).default([]),
   gates: z.array(WorkflowGateSpecSchema).default([]),
+  /** Rich-text agent notes (Tiptap JSON doc). Plain `agentNotes` is derived for search/fallback. */
+  agentNotesDoc: z.unknown().nullable().optional(),
   /** Freeform agent guidance rendered in the agent package. */
   agentNotes: z.string().nullable().optional(),
   /** @deprecated Migrated to routeBlocks on parse */

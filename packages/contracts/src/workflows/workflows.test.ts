@@ -9,10 +9,19 @@ import {
 
 describe("workflow registry SSOT", () => {
   it("defines pilot orchestrator and work workflows", () => {
-    expect(WORKFLOW_KEYS.length).toBeGreaterThanOrEqual(7);
+    expect(WORKFLOW_KEYS.length).toBeGreaterThanOrEqual(8);
+    expect(isKnownWorkflowKey("agent.main")).toBe(true);
     expect(isKnownWorkflowKey("orchestrator.daily")).toBe(true);
     expect(isKnownWorkflowKey("work.implement_feature")).toBe(true);
     expect(isKnownWorkflowKey("unknown.workflow")).toBe(false);
+  });
+
+  it("returns full instruction for agent.main", () => {
+    const workflow = getWorkflowByKey("agent.main");
+    expect(workflow).not.toBeNull();
+    expect(workflow?.instruction).toContain("agent.main");
+    expect(workflow?.instruction).toContain("get_workflow_instruction");
+    expect(workflow?.cadenceHint).toBe("on_demand");
   });
 
   it("returns full instruction for orchestrator.daily", () => {
