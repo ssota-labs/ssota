@@ -22,10 +22,13 @@ export type ParsedClassName = {
   fontSize?: string;
   fontWeight?: string;
   fontFamily?: string;
+  fontStyle?: string;
   lineHeight?: string;
   letterSpacing?: string;
   textColor?: string;
   textAlign?: string;
+  textTransform?: string;
+  textDecoration?: string;
   display?: string;
   flexDirection?: string;
   alignItems?: string;
@@ -83,6 +86,22 @@ const FONT_WEIGHTS = new Set([
 ]);
 
 const FONT_FAMILIES = new Set(["font-sans", "font-serif", "font-mono"]);
+
+const FONT_STYLES = new Set(["italic", "not-italic"]);
+
+const TEXT_TRANSFORMS = new Set([
+  "uppercase",
+  "lowercase",
+  "capitalize",
+  "normal-case",
+]);
+
+const TEXT_DECORATIONS = new Set([
+  "underline",
+  "line-through",
+  "overline",
+  "no-underline",
+]);
 
 const DISPLAYS = new Set([
   "block",
@@ -225,11 +244,23 @@ export function parseClassName(className: string | undefined): ParsedClassName {
       parsed.fontFamily = base;
       continue;
     }
-    if (base.startsWith("leading-")) {
+    if (FONT_STYLES.has(base)) {
+      parsed.fontStyle = base;
+      continue;
+    }
+    if (TEXT_TRANSFORMS.has(base)) {
+      parsed.textTransform = base;
+      continue;
+    }
+    if (TEXT_DECORATIONS.has(base)) {
+      parsed.textDecoration = base;
+      continue;
+    }
+    if (base.startsWith("leading-") || /^leading-\[.+\]$/.test(base)) {
       parsed.lineHeight = base;
       continue;
     }
-    if (base.startsWith("tracking-")) {
+    if (base.startsWith("tracking-") || /^tracking-\[.+\]$/.test(base)) {
       parsed.letterSpacing = base;
       continue;
     }
@@ -325,9 +356,12 @@ export function serializeClassName(parsed: ParsedClassName): string {
   if (parsed.fontFamily) tokens.push(parsed.fontFamily);
   if (parsed.fontSize) tokens.push(parsed.fontSize);
   if (parsed.fontWeight) tokens.push(parsed.fontWeight);
+  if (parsed.fontStyle) tokens.push(parsed.fontStyle);
   if (parsed.lineHeight) tokens.push(parsed.lineHeight);
   if (parsed.letterSpacing) tokens.push(parsed.letterSpacing);
   if (parsed.textAlign) tokens.push(parsed.textAlign);
+  if (parsed.textTransform) tokens.push(parsed.textTransform);
+  if (parsed.textDecoration) tokens.push(parsed.textDecoration);
   if (parsed.textColor) tokens.push(parsed.textColor);
   if (parsed.display) tokens.push(parsed.display);
   if (parsed.flexDirection) tokens.push(parsed.flexDirection);
