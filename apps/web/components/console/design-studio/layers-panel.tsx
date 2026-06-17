@@ -3,6 +3,7 @@
 import type { StudioNode } from "@ssota/contracts/catalog";
 import { walkStudioNodes } from "@/lib/design-studio/tree-utils";
 import { cn } from "@/lib/utils";
+import { LayerNodeIcon } from "./layer-node-icon";
 
 type LayersPanelProps = {
   root: StudioNode;
@@ -31,9 +32,10 @@ export function LayersPanel({
   onSelect,
   embedded = false,
 }: LayersPanelProps) {
-  const items: Array<{ id: string; label: string; depth: number }> = [];
+  const items: Array<{ id: string; label: string; depth: number; node: StudioNode }> =
+    [];
   walkStudioNodes(root, (node, depth) => {
-    items.push({ id: node.id, label: nodeLabel(node), depth });
+    items.push({ id: node.id, label: nodeLabel(node), depth, node });
   });
 
   return (
@@ -53,10 +55,11 @@ export function LayersPanel({
             key={item.id}
             type="button"
             className={cn(
-              "mb-0.5 block w-full rounded-md px-2 py-1 text-left text-xs font-mono hover:bg-muted",
+              "mb-0.5 flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-mono hover:bg-muted",
               selectedId === item.id && "bg-muted font-semibold",
             )}
             style={{ paddingLeft: `${item.depth * 12 + 8}px` }}
+            data-testid={`studio-layer-${item.id}`}
             onClick={() => {
               onSelect(item.id);
               window.dispatchEvent(
@@ -66,7 +69,8 @@ export function LayersPanel({
               );
             }}
           >
-            {item.label}
+            <LayerNodeIcon node={item.node} />
+            <span className="truncate">{item.label}</span>
           </button>
         ))}
       </div>

@@ -5,12 +5,27 @@ import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { findStudioNode } from "@/lib/design-studio/tree-utils";
+import { ClassnameInspector } from "./inspector/classname-inspector";
+import { LayerNodeIcon } from "./layer-node-icon";
 
 type InspectorPanelProps = {
   root: StudioNode;
   selectedId: string | null;
   onPatch: (nodeId: string, patch: Record<string, unknown>) => void;
 };
+
+function selectedTitle(node: StudioNode): string {
+  switch (node.kind) {
+    case "element":
+      return node.tag;
+    case "component":
+      return node.ref.slug;
+    case "text":
+      return "text";
+    case "fragment":
+      return "fragment";
+  }
+}
 
 export function InspectorPanel({
   root,
@@ -30,9 +45,17 @@ export function InspectorPanel({
     );
   }
 
+  const className =
+    selected.kind === "element" || selected.kind === "component"
+      ? (selected.className ?? "")
+      : "";
+
   return (
     <div className="flex h-full min-h-0 flex-col border-l bg-card">
-      <div className="border-b px-3 py-2 text-sm font-medium">Inspector</div>
+      <div className="flex items-center gap-2 border-b px-3 py-2">
+        <LayerNodeIcon node={selected} className="text-foreground" />
+        <span className="text-sm font-medium">{selectedTitle(selected)}</span>
+      </div>
       <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4">
         <div className="space-y-2">
           <Label htmlFor="studio-node-id">Node ID</Label>
@@ -40,29 +63,16 @@ export function InspectorPanel({
         </div>
 
         {selected.kind === "element" ? (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="studio-tag">Tag</Label>
-              <Input
-                id="studio-tag"
-                value={selected.tag}
-                onChange={(event) =>
-                  onPatch(selected.id, { tag: event.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="studio-class">className</Label>
-              <Textarea
-                id="studio-class"
-                value={selected.className ?? ""}
-                onChange={(event) =>
-                  onPatch(selected.id, { className: event.target.value })
-                }
-                rows={4}
-              />
-            </div>
-          </>
+          <div className="space-y-2">
+            <Label htmlFor="studio-tag">Tag</Label>
+            <Input
+              id="studio-tag"
+              value={selected.tag}
+              onChange={(event) =>
+                onPatch(selected.id, { tag: event.target.value })
+              }
+            />
+          </div>
         ) : null}
 
         {selected.kind === "text" ? (
@@ -80,23 +90,19 @@ export function InspectorPanel({
         ) : null}
 
         {selected.kind === "component" ? (
-          <>
-            <div className="space-y-2">
-              <Label>Ref</Label>
-              <Input value={selected.ref.slug} readOnly />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="studio-component-class">className</Label>
-              <Textarea
-                id="studio-component-class"
-                value={selected.className ?? ""}
-                onChange={(event) =>
-                  onPatch(selected.id, { className: event.target.value })
-                }
-                rows={3}
-              />
-            </div>
-          </>
+          <div className="space-y-2">
+            <Label>Ref</Label>
+            <Input value={selected.ref.slug} readOnly />
+          </div>
+        ) : null}
+
+        {selected.kind === "element" || selected.kind === "component" ? (
+          <ClassnameInspector
+            className={className}
+            onChange={(nextClassName) =>
+              onPatch(selected.id, { className: nextClassName })
+            }
+          />
         ) : null}
       </div>
     </div>

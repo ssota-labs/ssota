@@ -18,7 +18,6 @@ import {
   writeSessionDraft,
 } from "@/lib/design-studio/draft-storage";
 import { createEmptyUiComponentDocument } from "@/lib/design-studio/empty-document";
-import { exportUiComponentDocumentToJsx } from "@/lib/design-studio/export-jsx";
 import { updateStudioNode } from "@/lib/design-studio/tree-utils";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
 import type { ResolvedComponentMap, StudioInteractionMode } from "@ssota/studio-renderer";
@@ -36,12 +35,6 @@ type StudioShellProps = {
   themeContent: string;
   previewPath: string;
   resolvedComponents: ResolvedComponentMap;
-  onSaveDraft: (input: {
-    projectId: string;
-    nodeId: string;
-    draft: string;
-    revalidatePath: string;
-  }) => Promise<void>;
   onDeploy: (input: {
     projectId: string;
     nodeId: string;
@@ -59,7 +52,6 @@ export function StudioShell({
   themeContent,
   previewPath,
   resolvedComponents,
-  onSaveDraft,
   onDeploy,
   onCreateComponent,
 }: StudioShellProps) {
@@ -200,27 +192,6 @@ export function StudioShell({
     }));
   }, []);
 
-  const handleSaveDraft = () => {
-    if (!component) return;
-    startTransition(async () => {
-      await onSaveDraft({
-        projectId,
-        nodeId: component.id,
-        draft: JSON.stringify(document),
-        revalidatePath: previewPath.replace(/\?.*$/, "").replace(/^\//, ""),
-      });
-      if (storageKey) {
-        writeSessionDraft(storageKey, document);
-      }
-    });
-  };
-
-  const handleClearSessionDraft = () => {
-    if (storageKey) {
-      clearSessionDraft(storageKey);
-    }
-  };
-
   const handleDeploy = () => {
     if (!component) return;
     startTransition(async () => {
@@ -234,11 +205,6 @@ export function StudioShell({
         clearSessionDraft(storageKey);
       }
     });
-  };
-
-  const handleCopyJsx = async () => {
-    const jsx = exportUiComponentDocumentToJsx(document.root);
-    await navigator.clipboard.writeText(jsx);
   };
 
   const handleCreateComponent = () => {
@@ -261,33 +227,6 @@ export function StudioShell({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!component}
-            onClick={() => void handleCopyJsx()}
-          >
-            Copy JSX
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={!component}
-            onClick={handleClearSessionDraft}
-          >
-            Clear session
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={!component || pending}
-            onClick={handleSaveDraft}
-          >
-            Save draft
-          </Button>
           <Button
             type="button"
             size="sm"

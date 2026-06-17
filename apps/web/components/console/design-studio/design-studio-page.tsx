@@ -4,7 +4,6 @@ import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { slugifyComponentTitle } from "@/lib/design-studio/tree-utils";
 import { createGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
-import { updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { deployUiComponentAction } from "@/lib/graph/actions/deploy-ui-component";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { ensureEvergreenSingleton } from "@/lib/graph/loaders/ensure-evergreen-singleton";
@@ -68,33 +67,6 @@ export async function DesignStudioPage({
     redirect(projectPath(ctx, "design", "ui-components", node.id));
   }
 
-  async function saveDraft(input: {
-    projectId: string;
-    nodeId: string;
-    draft: string;
-    revalidatePath: string;
-  }) {
-    "use server";
-    const deps = getGraphDeps(input.projectId);
-    const existing = await deps.graphRead.getNode({
-      projectId: input.projectId,
-      nodeId: input.nodeId,
-    });
-    if (!existing) {
-      throw new Error("Component not found");
-    }
-
-    await updateGraphNodeAction({
-      projectId: input.projectId,
-      nodeId: input.nodeId,
-      properties: {
-        ...existing.properties,
-        draft: input.draft,
-      },
-      revalidatePaths: [editorPath],
-    });
-  }
-
   async function deployComponent(input: {
     projectId: string;
     nodeId: string;
@@ -120,7 +92,6 @@ export async function DesignStudioPage({
       themeContent={theme.content ?? ""}
       previewPath={previewPath}
       resolvedComponents={resolvedComponents}
-      onSaveDraft={saveDraft}
       onDeploy={deployComponent}
       onCreateComponent={createComponent}
     />

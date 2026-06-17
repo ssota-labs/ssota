@@ -19,7 +19,7 @@ test.describe("design studio", () => {
     await expect(page.getByRole("tab", { name: "Layers" })).toBeVisible();
     await expect(page.getByTestId("studio-component-demo-button")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible();
-    await expect(page.getByText("Inspector")).toBeVisible();
+    await expect(page.getByLabel("Node ID")).toBeVisible();
     await expect(page.getByRole("button", { name: "Deploy" })).toBeVisible();
   });
 
@@ -36,25 +36,30 @@ test.describe("design studio", () => {
       /\/design\/ui-components\/[0-9a-f-]+$/,
       { timeout: 15_000 },
     );
-    await expect(page.getByRole("heading", { name: "Demo Card" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Demo Card" })).toBeVisible({
+      timeout: 15_000,
+    });
 
     await page.getByRole("tab", { name: "Layers" }).click();
     await expect(page.getByText("<div>")).toBeVisible();
   });
 
-  test("editor updates className and saves draft", async ({ page }) => {
+  test("editor updates styles via inspector controls", async ({ page }) => {
     await gotoProject(page, "design/ui-components");
     await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText("Inspector")).toBeVisible();
 
-    const classField = page.getByLabel("className");
-    await classField.clear();
-    await classField.fill("rounded-full px-6 py-3 bg-blue-600 text-white");
-    await page.getByRole("button", { name: "Save draft" }).click();
+    const backgroundField = page.getByLabel("Background");
+    await backgroundField.clear();
+    await backgroundField.fill("blue-600");
+    await expect(backgroundField).toHaveValue("blue-600");
+
     await page.reload();
-    await expect(classField).toHaveValue("rounded-full px-6 py-3 bg-blue-600 text-white");
+    await expect(page.getByRole("heading", { name: "Demo Button" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByLabel("Background")).toHaveValue("blue-600");
   });
 
   test("wireframes page lists only published components", async ({ page }) => {
