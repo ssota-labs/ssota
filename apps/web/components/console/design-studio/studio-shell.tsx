@@ -18,7 +18,7 @@ import {
   writeSessionDraft,
 } from "@/lib/design-studio/draft-storage";
 import { createEmptyUiComponentDocument } from "@/lib/design-studio/empty-document";
-import { updateStudioNode } from "@/lib/design-studio/tree-utils";
+import { exportUiComponentDocumentToJsx } from "@/lib/design-studio/export-jsx";
 import { LayersPanel } from "./layers-panel";
 import { InspectorPanel } from "./inspector-panel";
 import { usePreviewBridge } from "./preview-bridge";
@@ -35,6 +35,12 @@ type StudioShellProps = {
     draft: string;
     revalidatePath: string;
   }) => Promise<void>;
+  onDeploy: (input: {
+    projectId: string;
+    nodeId: string;
+    document: UiComponentDocument;
+    revalidatePath: string;
+  }) => Promise<void>;
 };
 
 export function StudioShell({
@@ -43,6 +49,7 @@ export function StudioShell({
   themeContent,
   previewPath,
   onSaveDraft,
+  onDeploy,
 }: StudioShellProps) {
   const storageKey = draftStorageKey(projectId, component.id);
   const props = component.properties as {
@@ -152,6 +159,18 @@ export function StudioShell({
     clearSessionDraft(storageKey);
   };
 
+  const handleDeploy = () => {
+    startTransition(async () => {
+      await onDeploy({
+        projectId,
+        nodeId: component.id,
+        document,
+        revalidatePath: previewPath.replace(/\?.*$/, "").replace(/^\//, ""),
+      });
+      clearSessionDraft(storageKey);
+    });
+  };
+
   return (
     <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col">
       <div className="flex items-center justify-between border-b px-4 py-3">
@@ -179,7 +198,12 @@ export function StudioShell({
           >
             Save draft
           </Button>
-          <Button type="button" size="sm" disabled title="Deploy ships in S5">
+          <Button
+            type="button"
+            size="sm"
+            disabled={pending}
+            onClick={handleDeploy}
+          >
             Deploy
           </Button>
         </div>

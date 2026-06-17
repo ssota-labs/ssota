@@ -3,6 +3,7 @@ import { StudioShell } from "@/components/console/design-studio/studio-shell";
 import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
+import { deployUiComponentAction } from "@/lib/graph/actions/deploy-ui-component";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { ensureEvergreenSingleton } from "@/lib/graph/loaders/ensure-evergreen-singleton";
 
@@ -63,6 +64,21 @@ export default async function DesignUiComponentEditorPage({
     });
   }
 
+  async function deployComponent(input: {
+    projectId: string;
+    nodeId: string;
+    document: import("@ssota/contracts/catalog").UiComponentDocument;
+    revalidatePath: string;
+  }) {
+    "use server";
+    await deployUiComponentAction({
+      projectId: input.projectId,
+      nodeId: input.nodeId,
+      document: input.document,
+      revalidatePaths: [editorPath],
+    });
+  }
+
   return (
     <StudioShell
       ctx={ctx}
@@ -71,6 +87,7 @@ export default async function DesignUiComponentEditorPage({
       themeContent={theme.content ?? ""}
       previewPath={previewPath}
       onSaveDraft={saveDraft}
+      onDeploy={deployComponent}
     />
   );
 }
