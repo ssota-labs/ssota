@@ -55,8 +55,8 @@ export function LayersPanel({
             key={item.id}
             type="button"
             className={cn(
-              "mb-0.5 flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-mono hover:bg-primary/8",
-              selectedId === item.id && "bg-primary/16 font-medium text-foreground",
+              "mb-0.5 flex w-full items-center gap-1.5 rounded-md px-2 py-1 text-left text-xs font-mono hover:bg-muted",
+              selectedId === item.id && "bg-muted font-semibold",
             )}
             style={{ paddingLeft: `${item.depth * 12 + 8}px` }}
             data-testid={`studio-layer-${item.id}`}
