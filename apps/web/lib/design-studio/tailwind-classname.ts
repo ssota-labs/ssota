@@ -63,6 +63,122 @@ export function formatFontSizeClass(
   return `text-[${trimmed}${unit}]`;
 }
 
+const NAMED_LINE_HEIGHT_TO_EM: Record<string, string> = {
+  "leading-none": "1",
+  "leading-tight": "1.25",
+  "leading-snug": "1.375",
+  "leading-relaxed": "1.625",
+  "leading-loose": "2",
+};
+
+const EM_LINE_HEIGHT_TO_NAMED: Record<string, string> = {
+  "1": "leading-none",
+  "1.25": "leading-tight",
+  "1.375": "leading-snug",
+  "1.625": "leading-relaxed",
+  "2": "leading-loose",
+};
+
+export function parseLineHeightValue(className?: string): {
+  value: string;
+  unit: FontSizeUnit;
+} {
+  if (!className || className === "leading-normal") {
+    return { value: "", unit: "em" };
+  }
+
+  if (className.startsWith("leading-[") && className.endsWith("]")) {
+    const inner = className.slice(9, -1);
+    const match = inner.match(/^([\d.]+)(px|%|em)$/);
+    if (match) {
+      return {
+        value: match[1]!,
+        unit: match[2] as FontSizeUnit,
+      };
+    }
+    return { value: inner, unit: "em" };
+  }
+
+  if (NAMED_LINE_HEIGHT_TO_EM[className]) {
+    return { value: NAMED_LINE_HEIGHT_TO_EM[className]!, unit: "em" };
+  }
+
+  return { value: className.replace(/^leading-/, ""), unit: "em" };
+}
+
+export function formatLineHeightClass(
+  value: string,
+  unit: FontSizeUnit,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (trimmed === "normal") return "leading-normal";
+
+  if (unit === "em" && EM_LINE_HEIGHT_TO_NAMED[trimmed]) {
+    return EM_LINE_HEIGHT_TO_NAMED[trimmed];
+  }
+
+  return `leading-[${trimmed}${unit}]`;
+}
+
+const NAMED_LETTER_SPACING_TO_EM: Record<string, string> = {
+  "tracking-tighter": "-0.05",
+  "tracking-tight": "-0.025",
+  "tracking-wide": "0.025",
+  "tracking-wider": "0.05",
+  "tracking-widest": "0.1",
+};
+
+const EM_LETTER_SPACING_TO_NAMED: Record<string, string> = {
+  "-0.05": "tracking-tighter",
+  "-0.025": "tracking-tight",
+  "0.025": "tracking-wide",
+  "0.05": "tracking-wider",
+  "0.1": "tracking-widest",
+};
+
+export function parseLetterSpacingValue(className?: string): {
+  value: string;
+  unit: FontSizeUnit;
+} {
+  if (!className || className === "tracking-normal") {
+    return { value: "", unit: "em" };
+  }
+
+  if (className.startsWith("tracking-[") && className.endsWith("]")) {
+    const inner = className.slice(10, -1);
+    const match = inner.match(/^(-?[\d.]+)(px|%|em)$/);
+    if (match) {
+      return {
+        value: match[1]!,
+        unit: match[2] as FontSizeUnit,
+      };
+    }
+    return { value: inner, unit: "em" };
+  }
+
+  if (NAMED_LETTER_SPACING_TO_EM[className]) {
+    return { value: NAMED_LETTER_SPACING_TO_EM[className]!, unit: "em" };
+  }
+
+  return { value: className.replace(/^tracking-/, ""), unit: "em" };
+}
+
+export function formatLetterSpacingClass(
+  value: string,
+  unit: FontSizeUnit,
+): string | undefined {
+  const trimmed = value.trim();
+  if (!trimmed) return undefined;
+  if (trimmed === "normal") return "tracking-normal";
+
+  if (unit === "em" && EM_LETTER_SPACING_TO_NAMED[trimmed]) {
+    return EM_LETTER_SPACING_TO_NAMED[trimmed];
+  }
+
+  return `tracking-[${trimmed}${unit}]`;
+}
+
 export function formatSpacingPx(
   prefix: string,
   value: string,

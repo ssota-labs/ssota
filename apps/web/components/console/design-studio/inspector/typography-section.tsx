@@ -17,7 +17,11 @@ import {
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
   formatFontSizeClass,
+  formatLetterSpacingClass,
+  formatLineHeightClass,
   parseFontSizeValue,
+  parseLetterSpacingValue,
+  parseLineHeightValue,
 } from "@/lib/design-studio/tailwind-classname";
 import {
   InspectorColorInput,
@@ -104,22 +108,66 @@ const FONT_WEIGHT_OPTIONS: InspectorPopoverOption[] = [
   },
 ];
 
-const LINE_HEIGHT_PRESETS: InspectorPresetOption[] = [
-  { value: "", label: "normal" },
-  { value: "1", label: "1" },
-  { value: "1.25", label: "1.25" },
-  { value: "1.43", label: "1.43" },
-  { value: "1.5", label: "1.5" },
-  { value: "2", label: "2" },
-];
+const TYPOGRAPHY_UNITS = ["px", "%", "em"] as const satisfies readonly InspectorNumberUnit[];
 
-const LETTER_SPACING_PRESETS: InspectorPresetOption[] = [
-  { value: "", label: "normal" },
-  { value: "0", label: "0" },
-  { value: "0.025", label: "0.025" },
-  { value: "0.05", label: "0.05" },
-  { value: "0.1", label: "0.1" },
-];
+const LINE_HEIGHT_PRESETS_BY_UNIT: Record<
+  InspectorNumberUnit,
+  InspectorPresetOption[]
+> = {
+  px: [
+    { value: "", label: "normal" },
+    { value: "12", label: "12" },
+    { value: "16", label: "16" },
+    { value: "20", label: "20" },
+    { value: "24", label: "24" },
+    { value: "32", label: "32" },
+  ],
+  "%": [
+    { value: "", label: "normal" },
+    { value: "100", label: "100" },
+    { value: "120", label: "120" },
+    { value: "150", label: "150" },
+    { value: "200", label: "200" },
+  ],
+  em: [
+    { value: "", label: "normal" },
+    { value: "1", label: "1" },
+    { value: "1.25", label: "1.25" },
+    { value: "1.43", label: "1.43" },
+    { value: "1.5", label: "1.5" },
+    { value: "2", label: "2" },
+  ],
+};
+
+const LETTER_SPACING_PRESETS_BY_UNIT: Record<
+  InspectorNumberUnit,
+  InspectorPresetOption[]
+> = {
+  px: [
+    { value: "", label: "normal" },
+    { value: "-2", label: "-2" },
+    { value: "0", label: "0" },
+    { value: "1", label: "1" },
+    { value: "2", label: "2" },
+    { value: "4", label: "4" },
+  ],
+  "%": [
+    { value: "", label: "normal" },
+    { value: "-5", label: "-5" },
+    { value: "0", label: "0" },
+    { value: "2.5", label: "2.5" },
+    { value: "5", label: "5" },
+    { value: "10", label: "10" },
+  ],
+  em: [
+    { value: "", label: "normal" },
+    { value: "-0.05", label: "-0.05" },
+    { value: "0", label: "0" },
+    { value: "0.025", label: "0.025" },
+    { value: "0.05", label: "0.05" },
+    { value: "0.1", label: "0.1" },
+  ],
+};
 
 type TypographySectionProps = {
   parsed: ParsedClassName;
@@ -128,6 +176,8 @@ type TypographySectionProps = {
 
 export function TypographySection({ parsed, onUpdate }: TypographySectionProps) {
   const fontSize = parseFontSizeValue(parsed.fontSize);
+  const lineHeight = parseLineHeightValue(parsed.lineHeight);
+  const letterSpacing = parseLetterSpacingValue(parsed.letterSpacing);
 
   return (
     <InspectorSection title="Typography">
@@ -196,12 +246,20 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         <InspectorField label="Line height">
           <InspectorNumberInput
             aria-label="Line height"
-            value={formatLineHeightNumber(parsed.lineHeight)}
-            unit="em"
+            value={lineHeight.value}
+            unit={lineHeight.unit}
+            units={TYPOGRAPHY_UNITS}
+            presetsByUnit={LINE_HEIGHT_PRESETS_BY_UNIT}
             placeholder="normal"
-            presets={LINE_HEIGHT_PRESETS}
+            onUnitChange={(nextUnit) =>
+              onUpdate({
+                lineHeight: formatLineHeightClass(lineHeight.value, nextUnit),
+              })
+            }
             onChange={(input) =>
-              onUpdate({ lineHeight: parseLineHeightNumber(input) })
+              onUpdate({
+                lineHeight: formatLineHeightClass(input, lineHeight.unit),
+              })
             }
           />
         </InspectorField>
@@ -209,12 +267,26 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         <InspectorField label="Letter spacing">
           <InspectorNumberInput
             aria-label="Letter spacing"
-            value={formatLetterSpacingNumber(parsed.letterSpacing)}
-            unit="em"
+            value={letterSpacing.value}
+            unit={letterSpacing.unit}
+            units={TYPOGRAPHY_UNITS}
+            presetsByUnit={LETTER_SPACING_PRESETS_BY_UNIT}
             placeholder="normal"
-            presets={LETTER_SPACING_PRESETS}
+            onUnitChange={(nextUnit) =>
+              onUpdate({
+                letterSpacing: formatLetterSpacingClass(
+                  letterSpacing.value,
+                  nextUnit,
+                ),
+              })
+            }
             onChange={(input) =>
-              onUpdate({ letterSpacing: parseLetterSpacingNumber(input) })
+              onUpdate({
+                letterSpacing: formatLetterSpacingClass(
+                  input,
+                  letterSpacing.unit,
+                ),
+              })
             }
           />
         </InspectorField>
@@ -366,61 +438,6 @@ function OverlineIcon() {
       <span className="absolute top-0 left-0 h-px w-full bg-current" />
     </span>
   );
-}
-
-function formatLineHeightNumber(className?: string): string {
-  if (!className || className === "leading-normal") return "";
-  if (className.startsWith("leading-[") && className.endsWith("]")) {
-    const inner = className.slice(9, -1);
-    const emMatch = inner.match(/^([\d.]+)em$/);
-    if (emMatch) return emMatch[1]!;
-    return inner;
-  }
-  const named: Record<string, string> = {
-    "leading-none": "1",
-    "leading-tight": "1.25",
-    "leading-snug": "1.375",
-    "leading-normal": "",
-    "leading-relaxed": "1.625",
-    "leading-loose": "2",
-  };
-  if (named[className] !== undefined) return named[className]!;
-  return className.replace(/^leading-/, "");
-}
-
-function parseLineHeightNumber(input: string): string | undefined {
-  const trimmed = input.trim();
-  if (!trimmed) return undefined;
-  if (trimmed === "normal") return "leading-normal";
-  if (/^\d+(\.\d+)?$/.test(trimmed)) return `leading-[${trimmed}em]`;
-  return `leading-${trimmed}`;
-}
-
-function formatLetterSpacingNumber(className?: string): string {
-  if (!className || className === "tracking-normal") return "";
-  if (className.startsWith("tracking-[") && className.endsWith("]")) {
-    const inner = className.slice(10, -1);
-    const emMatch = inner.match(/^([\d.]+)em$/);
-    if (emMatch) return emMatch[1]!;
-    return inner;
-  }
-  const map: Record<string, string> = {
-    "tracking-tighter": "0",
-    "tracking-tight": "0.025",
-    "tracking-normal": "",
-    "tracking-wide": "0.025",
-    "tracking-wider": "0.05",
-    "tracking-widest": "0.1",
-  };
-  return map[className] ?? className.replace(/^tracking-/, "");
-}
-
-function parseLetterSpacingNumber(input: string): string | undefined {
-  const trimmed = input.trim();
-  if (!trimmed) return undefined;
-  if (trimmed === "normal") return "tracking-normal";
-  if (/^\d+(\.\d+)?$/.test(trimmed)) return `tracking-[${trimmed}em]`;
-  return `tracking-${trimmed}`;
 }
 
 function textTransformToToggleValue(textTransform?: string): string | undefined {
