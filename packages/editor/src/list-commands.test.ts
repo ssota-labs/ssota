@@ -11,6 +11,7 @@ import {
   applyListType,
   convertInnermostListType,
   convertListItemToSiblingListType,
+  findInnermostList,
   getActiveListType,
   hasMixedListNesting,
 } from "./list-commands";
@@ -342,6 +343,58 @@ describe("applyListType", () => {
     ).toBe("one");
     expect(hasMixedListNesting(editor.state.doc)).toBe(true);
     expect(getActiveListType(editor)).toBe("bulletList");
+  });
+
+  it("converts empty nested ordered item to bullet via applyListType", () => {
+    editor = createEditor({
+      type: "doc",
+      content: [
+        {
+          type: "orderedList",
+          content: [
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: "ddd" }],
+                },
+                {
+                  type: "orderedList",
+                  content: [
+                    {
+                      type: "listItem",
+                      content: [{ type: "paragraph" }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    let nestedPos = 0;
+    const activeEditor = editor;
+    activeEditor.state.doc.descendants((node, pos) => {
+      if (node.type.name !== "paragraph" || node.textContent !== "") return;
+      const $pos = activeEditor.state.doc.resolve(pos + 1);
+      if (findInnermostList($pos)) {
+        nestedPos = pos + 1;
+        return false;
+      }
+    });
+    editor.commands.setTextSelection(nestedPos);
+
+    expect(applyListType(editor, "bulletList")).toBe(true);
+    const parentItem = editor.getJSON().content?.[0]?.content?.[0] as
+      | JsonNode
+      | undefined;
+    expect(parentItem?.content?.map((child) => child.type)).toEqual([
+      "paragraph",
+      "bulletList",
+    ]);
   });
 
   it("converts only the innermost list level", () => {

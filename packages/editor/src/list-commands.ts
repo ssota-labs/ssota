@@ -83,6 +83,105 @@ function listItemHasNestedList(listItem: ProseMirrorNode): boolean {
   );
 }
 
+function findLastNestedListInListItem(
+  listItem: ProseMirrorNode,
+  listItemPos: number,
+): ListNodeMatch | null {
+  let pos = listItemPos + 1;
+  pos += listItem.child(0).nodeSize;
+
+  let last: ListNodeMatch | null = null;
+  for (let index = 1; index < listItem.childCount; index += 1) {
+    const child = listItem.child(index);
+    if (isEditorListType(child.type.name)) {
+      last = {
+        type: child.type.name,
+        pos,
+        depth: 0,
+      };
+    }
+    pos += child.nodeSize;
+  }
+
+  return last;
+}
+
+function caretPosInNestedListItem(
+  doc: ProseMirrorNode,
+  listPos: number,
+  itemIndex: "first" | "last" = "last",
+): number {
+  const list = doc.nodeAt(listPos);
+  if (!list || !isEditorListType(list.type.name) || list.childCount === 0) {
+    return Math.min(listPos + 2, doc.content.size - 1);
+  }
+
+  const targetIndex = itemIndex === "last" ? list.childCount - 1 : 0;
+  let pos = listPos + 1;
+  for (let index = 0; index < targetIndex; index += 1) {
+    pos += list.child(index).nodeSize;
+  }
+
+  return Math.min(pos + 2, doc.content.size - 1);
+}
+
+/**
+ * listItem의 첫 paragraph(중첩 리스트와 형제)에 커서가 있을 때,
+ * 마커 입력은 새 리스트를 만들지 않고 바로 아래 중첩 리스트를 전환해야 한다.
+ */
+export function shouldRedirectMarkerToSiblingNestedList(
+  $from: ResolvedPos,
+): ListNodeMatch | null {
+  const innermost = findInnermostList($from);
+  if (innermost && isListNestedInListItem($from, innermost)) {
+    return null;
+  }
+
+  const listItemDepth = findListItemDepth($from);
+  if (listItemDepth === null) {
+    return null;
+  }
+
+  const listItem = $from.node(listItemDepth);
+  if (!listItemHasNestedList(listItem)) {
+    return null;
+  }
+
+  const indexInListItem = $from.index(listItemDepth);
+  if (indexInListItem !== 0 || !$from.parent.isTextblock) {
+    return null;
+  }
+
+  const nestedList = findLastNestedListInListItem(
+    listItem,
+    $from.before(listItemDepth),
+  );
+  if (!nestedList) {
+    return null;
+  }
+
+  const $nested = $from.doc.resolve(nestedList.pos);
+  return {
+    ...nestedList,
+    depth: $nested.depth,
+  };
+}
+
+export function focusNestedListForMarkerConversion(
+  editor: Editor,
+  nestedList: ListNodeMatch,
+): boolean {
+  const caretPos = caretPosInNestedListItem(editor.state.doc, nestedList.pos, "last");
+  return editor.chain().focus().setTextSelection(caretPos).run();
+}
+
+export function focusListForMarkerConversion(
+  editor: Editor,
+  listMatch: ListNodeMatch,
+): boolean {
+  return focusNestedListForMarkerConversion(editor, listMatch);
+}
+
 /** 현재 텍스트 블록 맨 앞의 `- ` / `1. ` 마커를 제거한다. */
 function stripListMarkerFromCurrentBlock(editor: Editor): boolean {
   const { state } = editor;
@@ -377,6 +476,13 @@ export function applyListType(
   orderedStart?: number,
 ): boolean {
   stripListMarkerFromCurrentBlock(editor);
+
+  const redirectTarget = shouldRedirectMarkerToSiblingNestedList(
+    editor.state.selection.$from,
+  );
+  if (redirectTarget) {
+    focusNestedListForMarkerConversion(editor, redirectTarget);
+  }
 
   const { state } = editor;
   const $from = state.selection.$from;

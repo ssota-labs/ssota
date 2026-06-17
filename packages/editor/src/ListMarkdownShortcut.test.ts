@@ -8,7 +8,7 @@ import {
   MixedOrderedList,
 } from "./extensions/mixed-list-extensions";
 import { NestedListItem } from "./extensions/NestedListItem";
-import { getActiveListType, hasMixedListNesting } from "./list-commands";
+import { getActiveListType, hasMixedListNesting, findInnermostList } from "./list-commands";
 import { parseListMarkerBeforeSpace } from "./list-marker-utils";
 
 type JsonNode = {
@@ -81,6 +81,42 @@ function triggerListMarkerShortcut(editor: Editor, markerBeforeSpace: string) {
     return false;
   });
   expect(handled).toBe(true);
+}
+
+function selectNestedListParagraph(editor: Editor) {
+  let found = false;
+  editor.state.doc.descendants((node, pos) => {
+    if (found || node.type.name !== "paragraph") {
+      return;
+    }
+
+    const $pos = editor.state.doc.resolve(pos + 1);
+    const innermost = findInnermostList($pos);
+    if (!innermost || !isListNestedInListItem($pos, innermost)) {
+      return;
+    }
+
+    editor.commands.setTextSelection(pos + 1);
+    found = true;
+    return false;
+  });
+  expect(found).toBe(true);
+}
+
+function isListNestedInListItem(
+  $from: ReturnType<Editor["state"]["doc"]["resolve"]>,
+  innermost: { depth: number },
+): boolean {
+  const parentDepth = innermost.depth - 1;
+  if (parentDepth <= 0) {
+    return false;
+  }
+  return $from.node(parentDepth).type.name === "listItem";
+}
+
+function topLevelListItemCount(editor: Editor): number {
+  const topList = editor.getJSON().content?.[0] as JsonNode | undefined;
+  return topList?.content?.length ?? 0;
 }
 
 describe("ListMarkdownShortcut integration", () => {
@@ -318,5 +354,133 @@ describe("ListMarkdownShortcut integration", () => {
     triggerListMarkerShortcut(editor, "a.");
 
     expect(getActiveListType(editor)).toBe("orderedList");
+  });
+
+  it("converts nested a. to bullet in place when typing asterisk on the parent paragraph", () => {
+    const editor = createEditor({
+      type: "doc",
+      content: [
+        {
+          type: "orderedList",
+          content: [
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: "ddd" }],
+                },
+                {
+                  type: "orderedList",
+                  content: [
+                    {
+                      type: "listItem",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [{ type: "text", text: "nested" }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    selectParagraphStart(editor, "ddd");
+    triggerListMarkerShortcut(editor, "*");
+
+    const parentItem = editor.getJSON().content?.[0]?.content?.[0] as
+      | JsonNode
+      | undefined;
+    expect(parentItem?.content?.map((child) => child.type)).toEqual([
+      "paragraph",
+      "bulletList",
+    ]);
+    expect(
+      parentItem?.content?.[1]?.content?.[0]?.content?.[0]?.content?.[0]?.text,
+    ).toBe("nested");
+    expect(getActiveListType(editor)).toBe("bulletList");
+    expect(topLevelListItemCount(editor)).toBe(1);
+  });
+
+  it("reproduces full typing flow: 1. ddd → nest → a. → * stays at level 2", () => {
+    const editor = createEditor({
+      type: "doc",
+      content: [{ type: "paragraph" }],
+    });
+
+    triggerListMarkerShortcut(editor, "1.");
+    editor.commands.insertContent("ddd");
+    editor.commands.setTextSelection(editor.state.selection.to);
+    editor.commands.splitListItem("listItem");
+    editor.commands.sinkListItem("listItem");
+    triggerListMarkerShortcut(editor, "a.");
+    selectNestedListParagraph(editor);
+    triggerListMarkerShortcut(editor, "*");
+
+    const parentItem = editor.getJSON().content?.[0]?.content?.[0] as
+      | JsonNode
+      | undefined;
+    expect(parentItem?.content?.map((child) => child.type)).toEqual([
+      "paragraph",
+      "bulletList",
+    ]);
+    expect(topLevelListItemCount(editor)).toBe(1);
+    expect(getActiveListType(editor)).toBe("bulletList");
+  });
+
+  it("stays at level 2 after converting a. line to bullet and pressing Enter", () => {
+    const editor = createEditor({
+      type: "doc",
+      content: [
+        {
+          type: "orderedList",
+          content: [
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: "ddd" }],
+                },
+                {
+                  type: "orderedList",
+                  content: [
+                    {
+                      type: "listItem",
+                      content: [
+                        {
+                          type: "paragraph",
+                          content: [{ type: "text", text: "nested" }],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    selectParagraphStart(editor, "nested");
+    triggerListMarkerShortcut(editor, "*");
+    expect(getActiveListType(editor)).toBe("bulletList");
+    expect(topLevelListItemCount(editor)).toBe(1);
+
+    editor.commands.splitListItem("listItem");
+
+    expect(topLevelListItemCount(editor)).toBe(1);
+    expect(getActiveListType(editor)).toBe("bulletList");
+
+    triggerListMarkerShortcut(editor, "*");
+    expect(topLevelListItemCount(editor)).toBe(1);
+    expect(getActiveListType(editor)).toBe("bulletList");
   });
 });

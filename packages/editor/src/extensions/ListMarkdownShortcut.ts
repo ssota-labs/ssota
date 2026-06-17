@@ -1,7 +1,13 @@
 import { Extension } from "@tiptap/core";
 import { findWrapping } from "@tiptap/pm/transform";
 import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
-import { applyListType, findInnermostList } from "../list-commands";
+import {
+  applyListType,
+  findInnermostList,
+  focusListForMarkerConversion,
+  focusNestedListForMarkerConversion,
+  shouldRedirectMarkerToSiblingNestedList,
+} from "../list-commands";
 import { parseListMarkerBeforeSpace } from "../list-marker-utils";
 
 /**
@@ -45,12 +51,14 @@ export const ListMarkdownShortcut = Extension.create({
               return false;
             }
 
+            const redirectTarget = shouldRedirectMarkerToSiblingNestedList($from);
             const innermost = findInnermostList($from);
+            const targetList = innermost ?? redirectTarget;
             // Space is not in the document yet; `from` is the insertion point after the marker.
             const markerEnd = from;
             let tr = state.tr.delete(blockStart, markerEnd);
 
-            if (innermost) {
+            if (targetList) {
               tr.setSelection(
                 TextSelection.near(
                   tr.doc.resolve(Math.min(blockStart + 1, tr.doc.content.size - 1)),
@@ -58,9 +66,14 @@ export const ListMarkdownShortcut = Extension.create({
               );
               view.dispatch(tr);
 
-              if (innermost.type !== marker.listType) {
+              if (targetList.type !== marker.listType) {
                 const editor = getEditor();
                 if (editor) {
+                  if (redirectTarget) {
+                    focusNestedListForMarkerConversion(editor, redirectTarget);
+                  } else if (!findInnermostList(editor.state.selection.$from)) {
+                    focusListForMarkerConversion(editor, targetList);
+                  }
                   applyListType(editor, marker.listType, marker.orderedStart);
                 }
               }
