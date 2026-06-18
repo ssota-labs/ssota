@@ -173,10 +173,10 @@ export async function POST(request: Request) {
       JSON.parse(body.content),
     );
     const properties = body.properties;
-    const entry = typeof properties.entry === "string" ? properties.entry : null;
-    if (!entry) {
-      return NextResponse.json({ error: "properties.entry is required" }, { status: 400 });
-    }
+    const entry =
+      typeof properties.entry === "string" && properties.entry.trim()
+        ? properties.entry
+        : "Component.tsx";
 
     const dependencies =
       properties.dependencies && typeof properties.dependencies === "object"
