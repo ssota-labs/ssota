@@ -264,6 +264,7 @@ export function BlockNoteTextColorButton() {
         <Components.FormattingToolbar.Button
           className="bn-button"
           data-test="text-color"
+          isSelected={state.color !== "default"}
           label={dict.color_picker.text_title}
           mainTooltip={dict.color_picker.text_title}
           icon={<BlockNoteColorIcon textColor={state.color} />}
@@ -293,6 +294,7 @@ export function BlockNoteBackgroundColorButton() {
         <Components.FormattingToolbar.Button
           className="bn-button"
           data-test="background-color"
+          isSelected={state.color !== "default"}
           label={dict.color_picker.background_title}
           mainTooltip={dict.color_picker.background_title}
           icon={
