@@ -15,6 +15,27 @@ import { applyStudioPatch } from "./patch-applier";
 
 const BUNDLE_ATTR = "data-studio-bundle-asset";
 
+const STUDIO_UTILITY_STYLE_ID = "studio-utility-overrides";
+
+function setUtilityCss(cssText: string) {
+  const trimmed = cssText.trim();
+  const existing = document.getElementById(STUDIO_UTILITY_STYLE_ID);
+  if (!trimmed) {
+    existing?.remove();
+    return;
+  }
+  const style =
+    existing instanceof HTMLStyleElement
+      ? existing
+      : (() => {
+          const el = document.createElement("style");
+          el.id = STUDIO_UTILITY_STYLE_ID;
+          document.head.appendChild(el);
+          return el;
+        })();
+  style.textContent = trimmed;
+}
+
 async function loadBundle(jsUrl: string, cssUrl?: string) {
   document
     .querySelectorAll(`[${BUNDLE_ATTR}]`)
@@ -94,6 +115,9 @@ export function BundlePreviewHost({
             break;
           case "STUDIO_SET_INTERACTION_MODE":
             setInteractionMode(message.mode);
+            break;
+          case "STUDIO_SET_UTILITY_CSS":
+            setUtilityCss(message.cssText);
             break;
           case "STUDIO_PATCH":
           case "STUDIO_PATCH_NODE":

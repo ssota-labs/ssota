@@ -132,6 +132,7 @@ export function StudioShell({
     syncTree,
     syncResolvedComponents,
     syncUtilityCss,
+    syncSourceUtilityCss,
     syncTheme,
     syncInteractionMode,
     syncBundle,
@@ -222,6 +223,11 @@ export function StudioShell({
     if (!component || !ready || isSource) return;
     void syncUtilityCss(document.root, resolvedComponents);
   }, [component, ready, document.root, resolvedComponents, syncUtilityCss, isSource]);
+
+  useEffect(() => {
+    if (!component || !ready || !isSource) return;
+    void syncSourceUtilityCss(contentV2.files);
+  }, [component, ready, isSource, contentV2.files, syncSourceUtilityCss]);
 
   useEffect(() => {
     if (!component || !ready) return;

@@ -10,6 +10,7 @@ import {
   type ResolvedComponentMap,
   type StudioInteractionMode,
 } from "@ssota/studio-renderer";
+import { collectUtilityClassesFromSourceFiles } from "@/lib/design-studio/source-utility-classes";
 
 async function fetchPreviewUtilityCss(classes: string[]): Promise<string> {
   if (classes.length === 0) return "";
@@ -119,6 +120,15 @@ export function usePreviewBridge(previewUrl: string) {
     [post],
   );
 
+  const syncSourceUtilityCss = useCallback(
+    async (files: Record<string, string>) => {
+      const classes = collectUtilityClassesFromSourceFiles(files);
+      const cssText = await fetchPreviewUtilityCss(classes);
+      post({ type: "STUDIO_SET_UTILITY_CSS", cssText });
+    },
+    [post],
+  );
+
   const patchNode = useCallback(
     (nodeId: string, patch: StudioPatch) => {
       post({ type: "STUDIO_PATCH", nodeId, patch });
@@ -150,6 +160,7 @@ export function usePreviewBridge(previewUrl: string) {
     syncTree,
     syncResolvedComponents,
     syncUtilityCss,
+    syncSourceUtilityCss,
     syncTheme,
     syncInteractionMode,
     syncBundle,
