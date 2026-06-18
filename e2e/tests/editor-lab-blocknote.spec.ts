@@ -350,6 +350,56 @@ test.describe("Editor Lab BlockNote", () => {
     expect(markers).toEqual(["•", "◦", "▪\uFE0E", "•", "◦", "▪\uFE0E"]);
   });
 
+  test("creates a new top-level bullet when Enter is pressed on an empty list item", async ({
+    page,
+  }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+
+      type BulletBlock = {
+        type: "bulletListItem";
+        content: string;
+        children?: BulletBlock[];
+      };
+
+      let chain: BulletBlock = { type: "bulletListItem", content: "oo" };
+      for (let depth = 6; depth >= 1; depth -= 1) {
+        chain = {
+          type: "bulletListItem",
+          content: "oo",
+          children: [chain],
+        };
+      }
+
+      editor.replaceBlocks(editor.document, [
+        chain,
+        { type: "bulletListItem", content: "" },
+      ]);
+      const last = editor.document[editor.document.length - 1];
+      if (!last) {
+        throw new Error("bottom bullet missing");
+      }
+      editor.focus();
+      editor.setTextCursorPosition(last.id, "end");
+    });
+
+    const beforeTop = await page.evaluate(
+      () => window.__ssotaBlockNoteLab!.document.length,
+    );
+    await page.keyboard.press("Enter");
+    const after = await page.evaluate(() => ({
+      top: window.__ssotaBlockNoteLab!.document.length,
+      lastType: window.__ssotaBlockNoteLab!.document.at(-1)?.type,
+    }));
+
+    expect(after.top).toBeGreaterThan(beforeTop);
+    expect(after.lastType).toBe("bulletListItem");
+  });
+
   test("keeps toggle heading placeholder inline when expanded", async ({ page }) => {
     await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
     await page.evaluate(() => {

@@ -16,6 +16,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react"
 import type { CSSProperties } from "react";
 
 import { BlockNoteFormattingToolbar } from "@/components/editor/blocknote-formatting-toolbar";
+import { blockNoteEmptyListEnterExtension } from "@/lib/editor/blocknote-empty-list-enter-extension";
 import {
   resolveBlockNoteMarkerShell,
   updateBlockNoteListMarkers,
@@ -88,6 +89,7 @@ export function SsotaBlockNoteEditor({
     const base = {
       dictionary,
       initialContent,
+      extensions: [blockNoteEmptyListEnterExtension],
     };
 
     if (!uploadImage) {
