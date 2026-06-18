@@ -1,0 +1,46 @@
+/* Nested list markers: JS sets data-marker; CSS overrides BlockNote defaults. */
+.blocknote-editor-shell
+  [data-content-type="numberedListItem"][data-marker]::before,
+.blocknote-editor-shell
+  [data-content-type="bulletListItem"][data-marker]::before {
+  content: attr(data-marker) !important;
+}
+
+.blocknote-editor-shell
+  [data-content-type="numberedListItem"][data-marker-prev]::before,
+.blocknote-editor-shell
+  [data-content-type="bulletListItem"][data-marker-prev]::before {
+  content: attr(data-marker-prev) !important;
+}
+
+.blocknote-editor-shell
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker]::before,
+.blocknote-editor-shell
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > div[data-type="modification"]
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker]::before,
+.blocknote-editor-shell
+  .bn-block-outer[data-prev-type="numberedListItem"]:not([data-prev-index="none"])
+  > .bn-block
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker-prev]::before,
+.blocknote-editor-shell
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > .bn-block-content[data-content-type="bulletListItem"][data-marker]::before,
+.blocknote-editor-shell
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > div[data-type="modification"]
+  > .bn-block-content[data-content-type="bulletListItem"][data-marker]::before,
+.blocknote-editor-shell
+  .bn-block-outer[data-prev-type="bulletListItem"]:not([data-prev-index="none"])
+  > .bn-block
+  > .bn-block-content[data-content-type="bulletListItem"][data-marker-prev]::before {
+  display: flex;
+  justify-content: center;
+  min-width: 24px;
+  padding-right: 4px;
+}

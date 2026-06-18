@@ -10,6 +10,7 @@ import "@blocknote/core/fonts/inter.css";
 import { FormattingToolbarController, useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
+import "./blocknote-list-markers.css";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { CSSProperties } from "react";
@@ -155,7 +156,6 @@ export function SsotaBlockNoteEditor({
     observer.observe(shell, {
       subtree: true,
       attributes: true,
-      attributeFilter: ["data-index", "data-prev-index", "data-prev-type"],
       childList: true,
     });
 
