@@ -249,7 +249,17 @@ function StudioShellEditor({
               themeCss: themeContent,
             }),
           });
-          if (!response.ok) return;
+          if (!response.ok) {
+            const payload = (await response.json().catch(() => null)) as
+              | { error?: string }
+              | null;
+            console.warn(
+              "[studio/build]",
+              response.status,
+              payload?.error ?? response.statusText,
+            );
+            return;
+          }
           const payload = (await response.json()) as {
             url: string;
             cssUrl?: string;
