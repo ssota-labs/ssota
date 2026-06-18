@@ -92,6 +92,26 @@ test.describe("Editor Lab BlockNote", () => {
     const toolbar = page.locator(".bn-formatting-toolbar");
     await expect(toolbar).toBeVisible();
     await expect(toolbar.getByRole("button", { name: "진하게" })).toBeVisible();
+    await expect(toolbar.locator('[data-test="text-color"]')).toBeVisible();
+    await expect(toolbar.locator('[data-test="background-color"]')).toBeVisible();
+  });
+
+  test("opens separate text and background color menus", async ({ page }) => {
+    await page.locator(".bn-editor").getByText("굵게").dblclick();
+    const toolbar = page.locator(".bn-formatting-toolbar");
+    await expect(toolbar).toBeVisible();
+
+    await toolbar.locator('[data-test="text-color"]').click();
+    const textMenu = page.locator('.bn-color-picker-dropdown [data-test="text-color-red"]');
+    await expect(textMenu).toBeVisible();
+    await page.keyboard.press("Escape");
+    await page.locator(".bn-editor").getByText("굵게").dblclick();
+
+    await toolbar.locator('[data-test="background-color"]').click();
+    const backgroundMenu = page.locator(
+      '.bn-color-picker-dropdown [data-test="background-color-blue"]',
+    );
+    await expect(backgroundMenu).toBeVisible();
   });
 
   test("formats nested numbered list markers as a/i/1 cycle", async ({ page }) => {
@@ -126,6 +146,60 @@ test.describe("Editor Lab BlockNote", () => {
         ".blocknote-editor-shell [data-content-type='numberedListItem']",
       );
       return items.length === 3 && items[0]?.hasAttribute("data-index");
+    });
+
+    const markers = await page.evaluate(() => {
+      window.__ssotaBlockNoteLabRefreshMarkers?.();
+      return [
+        ...document.querySelectorAll(
+          ".blocknote-editor-shell [data-content-type='numberedListItem']",
+        ),
+      ].map((item) => item.getAttribute("data-marker"));
+    });
+
+    expect(markers).toEqual(["1.", "a.", "i."]);
+  });
+
+  test("formats numbered markers under bullet parent as 1/a/i cycle", async ({
+    page,
+  }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "bulletListItem",
+          content: "ddd",
+          children: [
+            {
+              type: "numberedListItem",
+              content: "dd",
+              children: [
+                {
+                  type: "numberedListItem",
+                  content: "dd",
+                  children: [
+                    {
+                      type: "numberedListItem",
+                      content: "목록",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ]);
+    });
+
+    await page.waitForFunction(() => {
+      const items = document.querySelectorAll(
+        ".blocknote-editor-shell [data-content-type='numberedListItem']",
+      );
+      return items.length === 3;
     });
 
     const markers = await page.evaluate(() => {

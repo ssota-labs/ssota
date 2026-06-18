@@ -7,13 +7,14 @@ import type {
 } from "@blocknote/core";
 import { ko } from "@blocknote/core/locales";
 import "@blocknote/core/fonts/inter.css";
-import { useCreateBlockNote } from "@blocknote/react";
+import { FormattingToolbarController, useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { CSSProperties } from "react";
 
+import { BlockNoteFormattingToolbar } from "@/components/editor/blocknote-formatting-toolbar";
 import {
   resolveBlockNoteMarkerShell,
   updateBlockNoteNumberedListMarkers,
@@ -191,9 +192,14 @@ export function SsotaBlockNoteEditor({
       <BlockNoteView
         editor={editor}
         editable={editable}
+        formattingToolbar={false}
         onChange={handleChange}
         theme={blockNoteTheme}
-      />
+      >
+        <FormattingToolbarController
+          formattingToolbar={BlockNoteFormattingToolbar}
+        />
+      </BlockNoteView>
     </div>
   );
 }

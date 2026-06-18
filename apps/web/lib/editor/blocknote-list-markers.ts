@@ -38,21 +38,40 @@ export function indexToRoman(index: number): string {
 }
 
 export function numberedListNestingDepth(element: HTMLElement): number {
-  const editor = element.closest(".bn-editor");
-  if (!editor) {
+  if (element.getAttribute("data-content-type") !== "numberedListItem") {
     return 0;
   }
 
-  let groupCount = 0;
-  let node: HTMLElement | null = element.parentElement;
-  while (node && node !== editor) {
-    if (node.classList.contains("bn-block-group")) {
-      groupCount += 1;
+  let depth = 0;
+  let blockOuter = element.closest(".bn-block-outer");
+
+  while (blockOuter) {
+    const parentGroup = blockOuter.parentElement;
+    if (!parentGroup?.classList.contains("bn-block-group")) {
+      break;
     }
-    node = node.parentElement;
+
+    const parentBlock = parentGroup.parentElement;
+    if (!parentBlock?.classList.contains("bn-block")) {
+      break;
+    }
+
+    const ancestorOuter = parentBlock.parentElement;
+    if (!ancestorOuter?.classList.contains("bn-block-outer")) {
+      break;
+    }
+
+    const ancestorNumbered = ancestorOuter.querySelector(
+      ':scope > .bn-block > .bn-block-content[data-content-type="numberedListItem"]',
+    );
+    if (ancestorNumbered) {
+      depth += 1;
+    }
+
+    blockOuter = ancestorOuter;
   }
 
-  return Math.max(0, groupCount - 1);
+  return depth;
 }
 
 /** Top level stays decimal; nested levels cycle a. → i. → 1. */

@@ -5,7 +5,7 @@
 @source "../../../packages/studio-renderer/src/**/*.{ts,tsx}";
 @source "../../../node_modules/@blocknote/shadcn";
 /* BlockNote shadcn uses these as literal class names; @ssota/ui only @apply's them. */
-@source inline("text-popover-foreground text-accent-foreground bg-accent hover:bg-accent focus:bg-accent aria-selected:bg-accent");
+@source inline("text-popover-foreground text-accent-foreground bg-accent hover:bg-accent focus:bg-accent aria-selected:bg-accent bg-popover text-muted-foreground");
 
 /* Graph instance table — Supabase-like grid (light theme) */
 .instance-grid-table .instance-grid-table-inner .cn-table-head {

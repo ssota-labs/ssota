@@ -30,6 +30,41 @@
   color: currentColor;
 }
 
+/* Color picker swatches in bubble toolbar and dropdown menus. */
+.blocknote-editor-shell .bn-color-icon {
+  border-color: var(--bn-colors-border);
+}
+
+.blocknote-editor-shell .bn-color-icon[data-text-color="default"] {
+  color: var(--bn-colors-menu-text);
+}
+
+.blocknote-editor-shell .bn-color-icon[data-background-color="default"] {
+  background-color: var(--bn-colors-menu-background);
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown [data-slot="dropdown-menu-label"] {
+  color: var(--bn-colors-side-menu);
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown [data-slot="dropdown-menu-checkbox-item"],
+.blocknote-editor-shell .bn-color-picker-dropdown [data-slot="dropdown-menu-item"] {
+  color: var(--bn-colors-menu-text);
+}
+
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-checkbox-item"][data-state="checked"],
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-checkbox-item"]:focus,
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-item"]:focus {
+  background-color: var(--bn-colors-hovered-background);
+  color: var(--bn-colors-hovered-text);
+}
+
 .blocknote-editor-shell #bn-suggestion-menu .bn-suggestion-menu-label,
 .blocknote-editor-shell .bn-suggestion-menu .bn-suggestion-menu-label {
   color: var(--bn-colors-side-menu);
@@ -74,6 +109,16 @@
 
 /* Nested numbered lists: top-level 1. → nested a. → i. → 1. (repeat). */
 .blocknote-editor-shell
+  [data-content-type="numberedListItem"][data-marker]::before {
+  content: attr(data-marker) !important;
+}
+
+.blocknote-editor-shell
+  [data-content-type="numberedListItem"][data-marker-prev]::before {
+  content: attr(data-marker-prev) !important;
+}
+
+.blocknote-editor-shell
   .bn-block-outer:not([data-prev-type])
   > .bn-block
   > .bn-block-content[data-content-type="numberedListItem"][data-marker]::before,
@@ -81,15 +126,15 @@
   .bn-block-outer:not([data-prev-type])
   > .bn-block
   > div[data-type="modification"]
-  > .bn-block-content[data-content-type="numberedListItem"][data-marker]::before {
-  content: attr(data-marker) !important;
-}
-
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker]::before,
 .blocknote-editor-shell
   .bn-block-outer[data-prev-type="numberedListItem"]:not([data-prev-index="none"])
   > .bn-block
   > .bn-block-content[data-content-type="numberedListItem"][data-marker-prev]::before {
-  content: attr(data-marker-prev) !important;
+  display: flex;
+  justify-content: center;
+  min-width: 24px;
+  padding-right: 4px;
 }
 
 /* Hide nested-block indent guide lines (BlockNote default border-left on ::before). */
