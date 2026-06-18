@@ -49,6 +49,26 @@
   padding-inline: 0.25rem;
 }
 
+/* Nested numbered lists: top-level 1. → nested a. → i. → 1. (repeat). */
+.blocknote-editor-shell
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker]::before,
+.blocknote-editor-shell
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > div[data-type="modification"]
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker]::before {
+  content: attr(data-marker) !important;
+}
+
+.blocknote-editor-shell
+  .bn-block-outer[data-prev-type="numberedListItem"]:not([data-prev-index="none"])
+  > .bn-block
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker-prev]::before {
+  content: attr(data-marker-prev) !important;
+}
+
 /* Hide nested-block indent guide lines (BlockNote default border-left on ::before). */
 .blocknote-editor-shell
   .bn-block-group

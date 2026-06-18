@@ -11,11 +11,25 @@ import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+
+import {
+  resolveBlockNoteMarkerShell,
+  updateBlockNoteNumberedListMarkers,
+} from "@/lib/editor/blocknote-list-markers";
+
+let markerShellElement: HTMLDivElement | null = null;
+
+function getMarkerShell(shellRef: {
+  current: HTMLDivElement | null;
+}): HTMLElement | null {
+  return markerShellElement ?? resolveBlockNoteMarkerShell(shellRef);
+}
 
 declare global {
   interface Window {
     __ssotaBlockNoteLab?: BlockNoteEditorInstance;
+    __ssotaBlockNoteLabRefreshMarkers?: () => void;
   }
 }
 
@@ -45,6 +59,15 @@ export function SsotaBlockNoteEditor({
   className,
 }: SsotaBlockNoteEditorProps) {
   const { resolvedTheme } = useTheme();
+  const shellRef = useRef<HTMLDivElement>(null);
+  const refreshFrameRef = useRef<number | null>(null);
+  const setShellRef = useCallback((node: HTMLDivElement | null) => {
+    shellRef.current = node;
+    markerShellElement = node;
+    if (node) {
+      updateBlockNoteNumberedListMarkers(node);
+    }
+  }, []);
   const uploadImageRef = useRef(uploadImage);
   uploadImageRef.current = uploadImage;
 
@@ -79,21 +102,80 @@ export function SsotaBlockNoteEditor({
 
   const editor = useCreateBlockNote(editorOptions, [initialContent, uploadImage]);
 
+  const refreshListMarkersSync = useCallback(() => {
+    const shell = getMarkerShell(shellRef);
+    if (!shell) {
+      return;
+    }
+    updateBlockNoteNumberedListMarkers(shell);
+  }, []);
+
+  const refreshListMarkers = useCallback(() => {
+    const shell = getMarkerShell(shellRef);
+    if (!shell) {
+      return;
+    }
+
+    if (refreshFrameRef.current !== null) {
+      window.cancelAnimationFrame(refreshFrameRef.current);
+    }
+
+    refreshFrameRef.current = window.requestAnimationFrame(() => {
+      refreshFrameRef.current = null;
+      updateBlockNoteNumberedListMarkers(shell);
+    });
+  }, []);
+
   const handleChange = useCallback(() => {
     onChange?.(editor.document);
-  }, [editor, onChange]);
+    refreshListMarkers();
+  }, [editor, onChange, refreshListMarkers]);
+
+  useLayoutEffect(() => {
+    const shell = getMarkerShell(shellRef);
+    if (!shell) {
+      return;
+    }
+
+    refreshListMarkersSync();
+
+    const observer = new MutationObserver(() => {
+      refreshListMarkers();
+    });
+
+    observer.observe(shell, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-index", "data-prev-index", "data-prev-type"],
+      childList: true,
+    });
+
+    return () => observer.disconnect();
+  }, [editor, refreshListMarkers, refreshListMarkersSync]);
+
+  useEffect(() => {
+    const unsubscribe = editor.onChange(() => {
+      refreshListMarkers();
+    });
+
+    return unsubscribe;
+  }, [editor, refreshListMarkers]);
 
   useEffect(() => {
     onEditorReady?.(editor);
     window.__ssotaBlockNoteLab = editor;
+    window.__ssotaBlockNoteLabRefreshMarkers = refreshListMarkersSync;
+    refreshListMarkersSync();
 
     return () => {
       delete window.__ssotaBlockNoteLab;
+      delete window.__ssotaBlockNoteLabRefreshMarkers;
     };
-  }, [editor, onEditorReady]);
+  }, [editor, onEditorReady, refreshListMarkersSync]);
 
   return (
     <div
+      ref={setShellRef}
       className={["blocknote-editor-shell", className].filter(Boolean).join(" ")}
       data-testid="blocknote-editor-shell"
     >

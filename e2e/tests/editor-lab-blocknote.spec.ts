@@ -25,8 +25,9 @@ test.describe("Editor Lab BlockNote", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/editor-lab-blocknote");
     await expect(page.getByTestId("editor-lab-blocknote")).toBeVisible();
-    await expect(page.getByTestId("blocknote-editor-shell")).toBeVisible();
-    await editorSurface(page);
+    await expect(page.locator(".blocknote-editor-shell .bn-editor")).toBeVisible({
+      timeout: 15_000,
+    });
   });
 
   test("loads editor and shows sample JSON", async ({ page }) => {
@@ -59,5 +60,51 @@ test.describe("Editor Lab BlockNote", () => {
     const toolbar = page.locator(".bn-formatting-toolbar");
     await expect(toolbar).toBeVisible();
     await expect(toolbar.getByRole("button", { name: "진하게" })).toBeVisible();
+  });
+
+  test("formats nested numbered list markers as a/i/1 cycle", async ({ page }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "numberedListItem",
+          content: "outer",
+          children: [
+            {
+              type: "numberedListItem",
+              content: "nested-alpha",
+              children: [
+                {
+                  type: "numberedListItem",
+                  content: "nested-roman",
+                },
+              ],
+            },
+          ],
+        },
+      ]);
+    });
+
+    await page.waitForFunction(() => {
+      const items = document.querySelectorAll(
+        ".blocknote-editor-shell [data-content-type='numberedListItem']",
+      );
+      return items.length === 3 && items[0]?.hasAttribute("data-index");
+    });
+
+    const markers = await page.evaluate(() => {
+      window.__ssotaBlockNoteLabRefreshMarkers?.();
+      return [
+        ...document.querySelectorAll(
+          ".blocknote-editor-shell [data-content-type='numberedListItem']",
+        ),
+      ].map((item) => item.getAttribute("data-marker"));
+    });
+
+    expect(markers).toEqual(["1.", "a.", "i."]);
   });
 });
