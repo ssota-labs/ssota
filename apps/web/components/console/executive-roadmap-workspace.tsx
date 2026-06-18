@@ -8,6 +8,7 @@ import { useLocale } from "@/components/i18n/locale-provider";
 import type { RoadmapNodeView } from "@/lib/roadmap/types";
 
 type ExecutiveRoadmapWorkspaceProps = {
+  projectId: string;
   productRoadmap: RoadmapNodeView;
   planningRoadmaps: RoadmapNodeView[];
   currentYear: number;
@@ -16,12 +17,19 @@ type ExecutiveRoadmapWorkspaceProps = {
     content: string;
     docStatus?: DocStatus;
   }) => Promise<void>;
+  onSaveProductRoadmapContent: (input: {
+    content: string;
+  }) => Promise<void>;
   onApplyProductTemplate: () => Promise<void>;
   onSavePlanningRoadmap: (input: {
     nodeId: string;
     title: string;
     content: string;
     docStatus?: DocStatus;
+  }) => Promise<void>;
+  onSavePlanningRoadmapContent: (input: {
+    nodeId: string;
+    content: string;
   }) => Promise<void>;
   onCreateAnnualRoadmap: (year: number) => Promise<void>;
   onCreateQuarterRoadmap: (
@@ -31,12 +39,15 @@ type ExecutiveRoadmapWorkspaceProps = {
 };
 
 export function ExecutiveRoadmapWorkspace({
+  projectId,
   productRoadmap,
   planningRoadmaps,
   currentYear,
   onSaveProductRoadmap,
+  onSaveProductRoadmapContent,
   onApplyProductTemplate,
   onSavePlanningRoadmap,
+  onSavePlanningRoadmapContent,
   onCreateAnnualRoadmap,
   onCreateQuarterRoadmap,
 }: ExecutiveRoadmapWorkspaceProps) {
@@ -46,16 +57,20 @@ export function ExecutiveRoadmapWorkspace({
     <div className="space-y-8">
       <ProductRoadmapCard
         node={productRoadmap}
+        projectId={projectId}
         onSave={onSaveProductRoadmap}
+        onSaveContent={onSaveProductRoadmapContent}
         onApplyTemplate={onApplyProductTemplate}
       />
       <PlanningRoadmapsSection
         productRoadmapTitle={t("roadmap.planningParent")}
         nodes={planningRoadmaps}
         currentYear={currentYear}
+        projectId={projectId}
         onCreateAnnual={onCreateAnnualRoadmap}
         onCreateQuarter={onCreateQuarterRoadmap}
         onSave={onSavePlanningRoadmap}
+        onSaveContent={onSavePlanningRoadmapContent}
       />
     </div>
   );

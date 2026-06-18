@@ -18,6 +18,7 @@ type PlanningRoadmapsSectionProps = {
   productRoadmapTitle: string;
   nodes: RoadmapNodeView[];
   currentYear: number;
+  projectId: string;
   onCreateAnnual: (year: number) => Promise<void>;
   onCreateQuarter: (year: number, quarter: RoadmapQuarter) => Promise<void>;
   onSave: (input: {
@@ -25,6 +26,10 @@ type PlanningRoadmapsSectionProps = {
     title: string;
     content: string;
     docStatus?: DocStatus;
+  }) => Promise<void>;
+  onSaveContent: (input: {
+    nodeId: string;
+    content: string;
   }) => Promise<void>;
 };
 
@@ -51,9 +56,11 @@ export function PlanningRoadmapsSection({
   productRoadmapTitle,
   nodes,
   currentYear,
+  projectId,
   onCreateAnnual,
   onCreateQuarter,
   onSave,
+  onSaveContent,
 }: PlanningRoadmapsSectionProps) {
   const { t } = useLocale();
   const [year, setYear] = useState(currentYear);
@@ -81,7 +88,7 @@ export function PlanningRoadmapsSection({
       className="rounded-lg border bg-card"
       data-testid="planning-roadmaps-section"
     >
-      <header className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 md:px-6">
+      <header className="rounded-t-lg flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3 md:px-6">
         <div className="min-w-0 space-y-1">
           <h2 className="text-lg font-semibold tracking-tight">
             {t("roadmap.planningSectionTitle")}
@@ -124,6 +131,7 @@ export function PlanningRoadmapsSection({
           year={year}
           node={findPlanningNode(nodes, year, period)}
           productRoadmapTitle={productRoadmapTitle}
+          projectId={projectId}
           defaultOpen={period === "annual"}
           onCreate={() =>
             period === "annual"
@@ -131,6 +139,7 @@ export function PlanningRoadmapsSection({
               : onCreateQuarter(year, period)
           }
           onSave={onSave}
+          onSaveContent={onSaveContent}
         />
       ))}
     </section>

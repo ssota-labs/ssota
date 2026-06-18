@@ -9,7 +9,7 @@ import {
   uiComponentContentSchemaV2,
 } from "@ssota/contracts/catalog";
 import { buildStudioPreview } from "@ssota/studio-build";
-import { bundlePreviewAssetUrl } from "@/lib/design-studio/bundle-preview-url";
+import { studioPreviewBundleUrl } from "@/lib/design-studio/preview-bundle-url";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -69,8 +69,7 @@ export async function POST(request: Request) {
       }
 
       const representation =
-        (node.properties.representation as "source" | "tree" | undefined) ??
-        "tree";
+        (node.properties.representation as "source" | undefined) ?? "source";
       if (representation !== "source") {
         return NextResponse.json(
           { error: "Only source representation components can be built" },
@@ -146,24 +145,18 @@ export async function POST(request: Request) {
         );
       }
 
-      const [jsUrl, cssUrl] = await Promise.all([
-        Promise.resolve(
-          bundlePreviewAssetUrl({
-            projectId: body.projectId,
-            buildHash: buildHashPreview.buildHash,
-            artifact: "js",
-          }),
-        ),
-        buildHashPreview.artifacts.css
-          ? Promise.resolve(
-              bundlePreviewAssetUrl({
-                projectId: body.projectId,
-                buildHash: buildHashPreview.buildHash,
-                artifact: "css",
-              }),
-            )
-          : Promise.resolve(undefined),
-      ]);
+      const jsUrl = studioPreviewBundleUrl(
+        body.projectId,
+        buildHashPreview.buildHash,
+        "bundle.js",
+      );
+      const cssUrl = buildHashPreview.artifacts.css
+        ? studioPreviewBundleUrl(
+            body.projectId,
+            buildHashPreview.buildHash,
+            "bundle.css",
+          )
+        : undefined;
 
       return NextResponse.json({
         buildId: buildHashPreview.buildHash,
@@ -180,10 +173,10 @@ export async function POST(request: Request) {
       JSON.parse(body.content),
     );
     const properties = body.properties;
-    const entry = typeof properties.entry === "string" ? properties.entry : null;
-    if (!entry) {
-      return NextResponse.json({ error: "properties.entry is required" }, { status: 400 });
-    }
+    const entry =
+      typeof properties.entry === "string" && properties.entry.trim()
+        ? properties.entry
+        : "Component.tsx";
 
     const dependencies =
       properties.dependencies && typeof properties.dependencies === "object"
@@ -227,24 +220,14 @@ export async function POST(request: Request) {
       await storage.upload(body.projectId, buildResult.buildHash, artifacts);
     }
 
-    const [jsUrl, cssUrl] = await Promise.all([
-      Promise.resolve(
-        bundlePreviewAssetUrl({
-          projectId: body.projectId,
-          buildHash: buildResult.buildHash,
-          artifact: "js",
-        }),
-      ),
-      buildResult.artifacts.css
-        ? Promise.resolve(
-            bundlePreviewAssetUrl({
-              projectId: body.projectId,
-              buildHash: buildResult.buildHash,
-              artifact: "css",
-            }),
-          )
-        : Promise.resolve(undefined),
-    ]);
+    const jsUrl = studioPreviewBundleUrl(
+      body.projectId,
+      buildResult.buildHash,
+      "bundle.js",
+    );
+    const cssUrl = buildResult.artifacts.css
+      ? studioPreviewBundleUrl(body.projectId, buildResult.buildHash, "bundle.css")
+      : undefined;
 
     return NextResponse.json({
       buildId: buildResult.buildHash,

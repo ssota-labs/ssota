@@ -132,7 +132,7 @@ export function parseUiComponentDocumentSafe(
 
 export function parseUiComponentContent(
   content: string | null,
-  representation: UiComponentRepresentation = "tree",
+  representation: UiComponentRepresentation = "source",
 ): UiComponentContent {
   if (content === null || content.trim() === "") {
     throw new Error("UI component content is required");
@@ -143,10 +143,8 @@ export function parseUiComponentContent(
       "UI component with representation=source requires content schemaVersion 2",
     );
   }
-  if (representation === "tree" && parsed.schemaVersion !== 1) {
-    throw new Error(
-      "UI component with representation=tree requires content schemaVersion 1",
-    );
+  if (representation === "tree") {
+    throw new Error("UI component tree representation is no longer supported");
   }
   return parsed;
 }

@@ -3,13 +3,13 @@ import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import NodeRange from "@tiptap/extension-node-range";
-import { BulletList, ListKeymap, OrderedList } from "@tiptap/extension-list";
+import { BulletList, ListKeymap } from "@tiptap/extension-list";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TableKit } from "@tiptap/extension-table";
-import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
+import { Markdown } from "@tiptap/markdown";
 import StarterKit from "@tiptap/starter-kit";
 import type { Extensions } from "@tiptap/react";
 import { SlashCommand } from "./SlashCommand";
@@ -18,15 +18,22 @@ import { Callout } from "./extensions/Callout";
 import { CalloutTitle } from "./extensions/CalloutTitle";
 import { EmojiExtension } from "./extensions/EmojiExtension";
 import { createMentionExtension } from "./extensions/MentionExtension";
+import { GuardedTaskItem } from "./extensions/GuardedTaskItem";
 import { ListBackspaceFix } from "./extensions/ListBackspaceFix";
+import {
+  MixedBulletList,
+  MixedOrderedList,
+} from "./extensions/mixed-list-extensions";
 import { NestedListItem } from "./extensions/NestedListItem";
 import { QuoteShortcut } from "./extensions/QuoteShortcut";
+import { ListMarkdownShortcut } from "./extensions/ListMarkdownShortcut";
 import { Toggle } from "./extensions/Toggle";
 
 export type { SsotaExtensionOptions } from "./types";
 
 export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions {
   const extensions: Extensions = [
+    Markdown,
     StarterKit.configure({
       link: false,
       bulletList: false,
@@ -43,17 +50,17 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
       },
     }),
     NodeRange,
-    BulletList.configure({
+    MixedBulletList.configure({
       HTMLAttributes: { class: "ssota-bullet-list" },
     }),
-    OrderedList.configure({
+    MixedOrderedList.configure({
       HTMLAttributes: { class: "ssota-ordered-list" },
     }),
     NestedListItem,
     ListKeymap,
     ListBackspaceFix,
     TaskList,
-    TaskItem.configure({ nested: true }),
+    GuardedTaskItem.configure({ nested: true }),
     TableKit.configure({
       table: {
         resizable: true,
@@ -77,6 +84,7 @@ export function ssotaExtensions(options: SsotaExtensionOptions = {}): Extensions
     CalloutTitle,
     Toggle,
     QuoteShortcut,
+    ListMarkdownShortcut,
     EmojiExtension,
     Placeholder.configure({
       placeholder: ({ node }) => {

@@ -3,14 +3,24 @@
 import { Input } from "@ssota/ui/components/ui/input";
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
+  formatColorToken,
+  formatLayoutDimensionClass,
+  formatLayoutDimensionOnUnitChange,
   parseClassName,
+  parseLayoutDimensionValue,
+  resolveRadiusReferencePx,
   serializeClassName,
+  stripColorToken,
 } from "@/lib/design-studio/tailwind-classname";
 import {
+  BACKGROUND_THEME_COLOR_OPTIONS,
+  InspectorColorField,
   InspectorField,
   InspectorGrid,
+  InspectorScrubberNumberInput,
   InspectorSection,
   InspectorSectionList,
+  type InspectorNumberUnit,
 } from "@ssota/ui/components/design-studio";
 import { AppearanceSection } from "./appearance-section";
 import { BorderSection } from "./border-section";
@@ -18,16 +28,25 @@ import { LayoutSection } from "./layout-section";
 import { ShadowSection } from "./shadow-section";
 import { TypographySection } from "./typography-section";
 
+const SIZE_UNITS = ["px", "%"] as const satisfies readonly InspectorNumberUnit[];
+
 type ClassnameInspectorProps = {
   className: string;
   onChange: (className: string) => void;
+  selectionKey?: string;
+  domReferencePx?: number | null;
 };
 
 export function ClassnameInspector({
   className,
   onChange,
+  selectionKey,
+  domReferencePx,
 }: ClassnameInspectorProps) {
   const parsed = parseClassName(className);
+  const sizeReferencePx = resolveRadiusReferencePx(parsed);
+  const width = parseLayoutDimensionValue(parsed.width);
+  const height = parseLayoutDimensionValue(parsed.height);
 
   const update = (patch: Partial<ParsedClassName>) => {
     const next = { ...parsed, ...patch };
@@ -43,23 +62,57 @@ export function ClassnameInspector({
       <InspectorSection title="Size">
         <InspectorGrid>
           <InspectorField label="Width">
-            <Input
-              value={parsed.width?.replace(/^w-/, "") ?? ""}
+            <InspectorScrubberNumberInput
+              aria-label="Width"
+              value={width.value}
+              unit={width.unit}
+              units={SIZE_UNITS}
+              min={width.unit === "%" ? 0 : undefined}
+              max={width.unit === "%" ? 100 : undefined}
               placeholder="auto"
-              onChange={(event) =>
+              onUnitChange={(nextUnit) => {
+                if (nextUnit !== "px" && nextUnit !== "%") return;
                 update({
-                  width: event.target.value ? `w-${event.target.value}` : undefined,
+                  width: formatLayoutDimensionOnUnitChange(
+                    "w",
+                    width.value,
+                    width.unit,
+                    nextUnit,
+                    sizeReferencePx,
+                  ),
+                });
+              }}
+              onChange={(input) =>
+                update({
+                  width: formatLayoutDimensionClass("w", input, width.unit),
                 })
               }
             />
           </InspectorField>
           <InspectorField label="Height">
-            <Input
-              value={parsed.height?.replace(/^h-/, "") ?? ""}
+            <InspectorScrubberNumberInput
+              aria-label="Height"
+              value={height.value}
+              unit={height.unit}
+              units={SIZE_UNITS}
+              min={height.unit === "%" ? 0 : undefined}
+              max={height.unit === "%" ? 100 : undefined}
               placeholder="auto"
-              onChange={(event) =>
+              onUnitChange={(nextUnit) => {
+                if (nextUnit !== "px" && nextUnit !== "%") return;
                 update({
-                  height: event.target.value ? `h-${event.target.value}` : undefined,
+                  height: formatLayoutDimensionOnUnitChange(
+                    "h",
+                    height.value,
+                    height.unit,
+                    nextUnit,
+                    sizeReferencePx,
+                  ),
+                });
+              }}
+              onChange={(input) =>
+                update({
+                  height: formatLayoutDimensionClass("h", input, height.unit),
                 })
               }
             />
@@ -69,14 +122,14 @@ export function ClassnameInspector({
 
       <InspectorSection title="Fill">
         <InspectorField label="Background">
-          <Input
-            value={parsed.background?.replace(/^bg-/, "") ?? ""}
+          <InspectorColorField
+            aria-label="Background"
+            value={stripColorToken(parsed.background, "bg")}
             placeholder="transparent"
-            onChange={(event) =>
+            presets={BACKGROUND_THEME_COLOR_OPTIONS}
+            onChange={(input) =>
               update({
-                background: event.target.value
-                  ? `bg-${event.target.value}`
-                  : undefined,
+                background: formatColorToken("bg", input),
               })
             }
           />
@@ -85,7 +138,12 @@ export function ClassnameInspector({
 
       <BorderSection parsed={parsed} onUpdate={update} />
 
-      <AppearanceSection parsed={parsed} onUpdate={update} />
+      <AppearanceSection
+        parsed={parsed}
+        onUpdate={update}
+        selectionKey={selectionKey}
+        domReferencePx={domReferencePx}
+      />
 
       <ShadowSection
         shadow={parsed.shadow}

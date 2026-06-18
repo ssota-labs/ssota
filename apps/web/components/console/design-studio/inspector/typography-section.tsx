@@ -17,18 +17,23 @@ import {
 import type { ParsedClassName } from "@/lib/design-studio/tailwind-classname";
 import {
   formatFontSizeClass,
+  formatFontSizeOnUnitChange,
   formatLetterSpacingClass,
+  formatLetterSpacingOnUnitChange,
   formatLineHeightClass,
+  formatLineHeightOnUnitChange,
   parseFontSizeValue,
   parseLetterSpacingValue,
   parseLineHeightValue,
+  resolveFontSizePxFromClass,
 } from "@/lib/design-studio/tailwind-classname";
 import {
-  InspectorColorInput,
+  InspectorColorField,
   InspectorField,
   InspectorFontFamilyRow,
-  InspectorNumberInput,
+  InspectorPresetNumberInput,
   InspectorPopoverPicker,
+  InspectorScrubberNumberInput,
   InspectorSection,
   InspectorToggleRow,
   TEXT_THEME_COLOR_OPTIONS,
@@ -52,38 +57,6 @@ const FONT_FAMILY_OPTIONS: InspectorPopoverOption[] = [
 ];
 
 const FONT_SIZE_UNITS = ["px", "%", "em"] as const satisfies readonly InspectorNumberUnit[];
-
-const FONT_SIZE_PRESETS_BY_UNIT: Record<
-  InspectorNumberUnit,
-  InspectorPresetOption[]
-> = {
-  px: [
-    { value: "10", label: "10" },
-    { value: "12", label: "12" },
-    { value: "14", label: "14" },
-    { value: "16", label: "16" },
-    { value: "18", label: "18" },
-    { value: "20", label: "20" },
-    { value: "24", label: "24" },
-  ],
-  "%": [
-    { value: "75", label: "75" },
-    { value: "87.5", label: "87.5" },
-    { value: "100", label: "100" },
-    { value: "112.5", label: "112.5" },
-    { value: "125", label: "125" },
-    { value: "150", label: "150" },
-  ],
-  em: [
-    { value: "0.75", label: "0.75" },
-    { value: "0.875", label: "0.875" },
-    { value: "1", label: "1" },
-    { value: "1.125", label: "1.125" },
-    { value: "1.25", label: "1.25" },
-    { value: "1.5", label: "1.5" },
-    { value: "2", label: "2" },
-  ],
-};
 
 const FONT_WEIGHT_OPTIONS: InspectorPopoverOption[] = [
   {
@@ -145,7 +118,6 @@ const LETTER_SPACING_PRESETS_BY_UNIT: Record<
 > = {
   px: [
     { value: "", label: "normal" },
-    { value: "-2", label: "-2" },
     { value: "0", label: "0" },
     { value: "1", label: "1" },
     { value: "2", label: "2" },
@@ -153,7 +125,6 @@ const LETTER_SPACING_PRESETS_BY_UNIT: Record<
   ],
   "%": [
     { value: "", label: "normal" },
-    { value: "-5", label: "-5" },
     { value: "0", label: "0" },
     { value: "2.5", label: "2.5" },
     { value: "5", label: "5" },
@@ -161,7 +132,6 @@ const LETTER_SPACING_PRESETS_BY_UNIT: Record<
   ],
   em: [
     { value: "", label: "normal" },
-    { value: "-0.05", label: "-0.05" },
     { value: "0", label: "0" },
     { value: "0.025", label: "0.025" },
     { value: "0.05", label: "0.05" },
@@ -176,6 +146,7 @@ type TypographySectionProps = {
 
 export function TypographySection({ parsed, onUpdate }: TypographySectionProps) {
   const fontSize = parseFontSizeValue(parsed.fontSize);
+  const fontSizePx = resolveFontSizePxFromClass(parsed.fontSize);
   const lineHeight = parseLineHeightValue(parsed.lineHeight);
   const letterSpacing = parseLetterSpacingValue(parsed.letterSpacing);
 
@@ -189,16 +160,19 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         />
 
         <InspectorField label="Size">
-          <InspectorNumberInput
+          <InspectorScrubberNumberInput
             aria-label="Size"
             value={fontSize.value}
             unit={fontSize.unit}
             units={FONT_SIZE_UNITS}
-            presetsByUnit={FONT_SIZE_PRESETS_BY_UNIT}
             placeholder="Default"
             onUnitChange={(nextUnit) =>
               onUpdate({
-                fontSize: formatFontSizeClass(fontSize.value, nextUnit),
+                fontSize: formatFontSizeOnUnitChange(
+                  fontSize.value,
+                  fontSize.unit,
+                  nextUnit,
+                ),
               })
             }
             onChange={(input) =>
@@ -244,7 +218,7 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         </InspectorField>
 
         <InspectorField label="Line height">
-          <InspectorNumberInput
+          <InspectorPresetNumberInput
             aria-label="Line height"
             value={lineHeight.value}
             unit={lineHeight.unit}
@@ -253,7 +227,12 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
             placeholder="normal"
             onUnitChange={(nextUnit) =>
               onUpdate({
-                lineHeight: formatLineHeightClass(lineHeight.value, nextUnit),
+                lineHeight: formatLineHeightOnUnitChange(
+                  lineHeight.value,
+                  lineHeight.unit,
+                  nextUnit,
+                  fontSizePx,
+                ),
               })
             }
             onChange={(input) =>
@@ -265,7 +244,7 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         </InspectorField>
 
         <InspectorField label="Letter spacing">
-          <InspectorNumberInput
+          <InspectorPresetNumberInput
             aria-label="Letter spacing"
             value={letterSpacing.value}
             unit={letterSpacing.unit}
@@ -274,9 +253,11 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
             placeholder="normal"
             onUnitChange={(nextUnit) =>
               onUpdate({
-                letterSpacing: formatLetterSpacingClass(
+                letterSpacing: formatLetterSpacingOnUnitChange(
                   letterSpacing.value,
+                  letterSpacing.unit,
                   nextUnit,
+                  fontSizePx,
                 ),
               })
             }
@@ -414,7 +395,7 @@ export function TypographySection({ parsed, onUpdate }: TypographySectionProps) 
         </InspectorField>
 
         <InspectorField label="Color">
-          <InspectorColorInput
+          <InspectorColorField
             aria-label="Color"
             value={parsed.textColor?.replace(/^text-/, "") ?? ""}
             placeholder="foreground"

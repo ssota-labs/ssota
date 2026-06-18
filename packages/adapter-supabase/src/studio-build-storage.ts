@@ -15,7 +15,7 @@ export type StudioBuildStorage = {
     buildHash: string,
     artifacts: StudioBuildStorageArtifact[],
   ): Promise<void>;
-  download(storagePath: string): Promise<Uint8Array | null>;
+  readArtifact(storagePath: string): Promise<Uint8Array | null>;
   getSignedPreviewUrl(storagePath: string, ttlSeconds: number): Promise<string>;
 };
 
@@ -59,10 +59,11 @@ export class LocalStudioBuildStorage implements StudioBuildStorage {
     }
   }
 
-  async download(storagePath: string): Promise<Uint8Array | null> {
+  async readArtifact(storagePath: string): Promise<Uint8Array | null> {
     try {
-      const buffer = await readFile(path.join(this.rootDir, storagePath));
-      return new Uint8Array(buffer);
+      const absolute = path.join(this.rootDir, storagePath);
+      const data = await readFile(absolute);
+      return new Uint8Array(data);
     } catch {
       return null;
     }
@@ -85,7 +86,9 @@ export class SupabaseStudioBuildStorage implements StudioBuildStorage {
   async exists(projectId: string, buildHash: string): Promise<boolean> {
     const { data, error } = await this.client.storage
       .from(this.bucket)
-      .list(`${projectId}/studio-builds/${buildHash}`, { limit: 20 });
+      .list(`${projectId}/studio-builds/${buildHash}`, {
+        search: "bundle.js",
+      });
     if (error) {
       return false;
     }
@@ -110,14 +113,15 @@ export class SupabaseStudioBuildStorage implements StudioBuildStorage {
     }
   }
 
-  async download(storagePath: string): Promise<Uint8Array | null> {
+  async readArtifact(storagePath: string): Promise<Uint8Array | null> {
     const { data, error } = await this.client.storage
       .from(this.bucket)
       .download(storagePath);
     if (error || !data) {
       return null;
     }
-    return new Uint8Array(await data.arrayBuffer());
+    const buffer = await data.arrayBuffer();
+    return new Uint8Array(buffer);
   }
 
   async getSignedPreviewUrl(

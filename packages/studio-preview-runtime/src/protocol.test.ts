@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseStudioMessage } from "./protocol.js";
+import { parseStudioMessage } from "./protocol";
 
 describe("studio preview runtime protocol", () => {
   it("parses STUDIO_READY", () => {
@@ -8,7 +8,7 @@ describe("studio preview runtime protocol", () => {
     });
   });
 
-  it("parses STUDIO_LOAD_BUNDLE", () => {
+  it("parses STUDIO_LOAD_BUNDLE with absolute URL", () => {
     const message = parseStudioMessage({
       type: "STUDIO_LOAD_BUNDLE",
       jsUrl: "https://example.com/bundle.js",
@@ -17,22 +17,12 @@ describe("studio preview runtime protocol", () => {
     expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");
   });
 
-  it("parses STUDIO_LOAD_BUNDLE with blob URL", () => {
-    const message = parseStudioMessage({
-      type: "STUDIO_LOAD_BUNDLE",
-      jsUrl: "blob:http://localhost:3000/abc-123",
-      buildId: "abc123",
-    });
-    expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");
-  });
-
-  it("parses STUDIO_LOAD_BUNDLE with same-origin path", () => {
+  it("parses STUDIO_LOAD_BUNDLE with same-origin relative URL", () => {
     const message = parseStudioMessage({
       type: "STUDIO_LOAD_BUNDLE",
       jsUrl:
-        "/api/studio/bundle?projectId=11111111-1111-4111-8111-111111111111&buildHash=abc&file=bundle.js",
-      cssUrl:
-        "/api/studio/bundle?projectId=11111111-1111-4111-8111-111111111111&buildHash=abc&file=bundle.css",
+        "/api/studio/bundle/project/build/bundle.js?access=token",
+      cssUrl: "/api/studio/bundle/project/build/bundle.css?access=token",
       buildId: "abc123",
     });
     expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");

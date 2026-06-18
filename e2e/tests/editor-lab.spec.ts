@@ -72,6 +72,68 @@ async function selectEditorText(page: Page, text: string) {
   }, text);
 }
 
+async function selectParagraphStart(page: Page, text: string) {
+  await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
+  await page.evaluate((value) => {
+    const editor = window.__ssotaEditorLab;
+    if (!editor) return;
+
+    editor.state.doc.descendants((node, pos) => {
+      if (!node.isTextblock || node.textContent !== value) return;
+      editor.chain().focus().setTextSelection(pos + 1).run();
+      return false;
+    });
+  }, text);
+}
+
+async function insertListItemAtEnd(
+  page: Page,
+  listType: "bulletList" | "orderedList",
+  text: string,
+) {
+  await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
+  await page.evaluate(
+    ({ type, value }) => {
+      window.__ssotaEditorLab
+        ?.chain()
+        .focus("end")
+        .insertContent({
+          type,
+          content: [
+            {
+              type: "listItem",
+              content: [
+                {
+                  type: "paragraph",
+                  content: [{ type: "text", text: value }],
+                },
+              ],
+            },
+          ],
+        })
+        .run();
+    },
+    { type: listType, value: text },
+  );
+}
+
+async function typeAtBlockStart(page: Page, blockText: string, keys: string) {
+  await selectParagraphStart(page, blockText);
+  await page.waitForFunction(
+    ({ value }) => {
+      const editor = window.__ssotaEditorLab;
+      if (!editor) return false;
+      const { $from } = editor.state.selection;
+      if (!$from.parent.isTextblock || $from.parent.textContent !== value) {
+        return false;
+      }
+      return $from.parentOffset === 0;
+    },
+    { value: blockText },
+  );
+  await page.keyboard.type(keys, { delay: 40 });
+}
+
 async function openSlashMenu(page: Page, query = "") {
   await page.waitForFunction(() => Boolean(window.__ssotaEditorLab));
   await page.evaluate((filter) => {
@@ -327,6 +389,345 @@ test.describe("Editor Lab", () => {
     });
   });
 
+  test.describe("list markdown shortcut", () => {
+    test("creates bullet list when typing dash + space at line start", async ({
+      page,
+    }) => {
+      const surface = await focusEditorEnd(page);
+
+      await page.keyboard.type("- ", { delay: 40 });
+      const bullet = surface.locator("ul li").last();
+      await expect(bullet).toBeVisible();
+      await expect(bullet).not.toContainText("-");
+
+      await page.keyboard.type("Bullet item");
+      await expect(bullet).toContainText("Bullet item");
+      await expect(bullet).not.toContainText("-");
+    });
+
+    test("creates ordered list when typing 1. + space at line start", async ({
+      page,
+    }) => {
+      const surface = await focusEditorEnd(page);
+
+      await page.keyboard.type("1. ", { delay: 40 });
+      const ordered = surface.locator("ol li").last();
+      await expect(ordered).toBeVisible();
+      await expect(ordered).not.toContainText("1.");
+
+      await page.keyboard.type("Numbered item");
+      await expect(ordered).toContainText("Numbered item");
+      await expect(ordered).not.toContainText("1.");
+    });
+
+    test("creates bullet list when typing asterisk + space at line start", async ({
+      page,
+    }) => {
+      const surface = await focusEditorEnd(page);
+
+      await page.keyboard.type("* ", { delay: 40 });
+      const bullet = surface.locator("ul li").last();
+      await expect(bullet).toBeVisible();
+      await expect(bullet).not.toContainText("*");
+    });
+
+    test("converts numbered list to bullet with asterisk + space at line start", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await insertListItemAtEnd(page, "orderedList", "numbered item");
+      await typeAtBlockStart(page, "numbered item", "* ");
+
+      await expect(
+        surface.locator("ul li", { hasText: "numbered item" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ol li", { hasText: "numbered item" }),
+      ).toHaveCount(0);
+      await page.waitForFunction(() => {
+        const json = window.__ssotaEditorLab?.getJSON();
+        const list = json?.content?.find(
+          (node) =>
+            node.type === "bulletList" &&
+            node.content?.some((item) =>
+              item.content?.some((child) =>
+                child.content?.some((text) => text.text === "numbered item"),
+              ),
+            ),
+        );
+        return Boolean(list);
+      });
+    });
+
+    test("converts bullet list to numbered with 1. + space at line start", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await insertListItemAtEnd(page, "bulletList", "bullet item");
+      await typeAtBlockStart(page, "bullet item", "1. ");
+
+      await expect(
+        surface.locator("ol li", { hasText: "bullet item" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ul li", { hasText: "bullet item" }),
+      ).toHaveCount(0);
+      await page.waitForFunction(() => {
+        const json = window.__ssotaEditorLab?.getJSON();
+        const list = json?.content?.find(
+          (node) =>
+            node.type === "orderedList" &&
+            node.content?.some((item) =>
+              item.content?.some((child) =>
+                child.content?.some((text) => text.text === "bullet item"),
+              ),
+            ),
+        );
+        return Boolean(list);
+      });
+    });
+
+    test("converts only the current nested list item with asterisk shortcut", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "orderedList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "parent" }],
+                  },
+                  {
+                    type: "orderedList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "first" }],
+                          },
+                        ],
+                      },
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "second" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      await typeAtBlockStart(page, "second", "* ");
+
+      await expect(
+        surface.locator("ol li ol li", { hasText: "first" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ol li ul li", { hasText: "second" }),
+      ).toBeVisible();
+    });
+
+    test("creates nested ordered list when typing a. + space at line start", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "orderedList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "parent" }],
+                  },
+                  {
+                    type: "bulletList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "child" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      await typeAtBlockStart(page, "child", "a. ");
+
+      await expect(
+        surface.locator("ol li ol li", { hasText: "child" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ol li ul li", { hasText: "child" }),
+      ).toHaveCount(0);
+    });
+
+    test("converts sibling level-2 bullet to ordered when typing a. + space", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "orderedList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "parent" }],
+                  },
+                  {
+                    type: "bulletList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "bullet two" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    type: "orderedList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "ordered one" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    type: "bulletList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "bullet three" }],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      await typeAtBlockStart(page, "bullet three", "a. ");
+
+      await expect(
+        surface.locator("ol li ol li", { hasText: "bullet three" }),
+      ).toBeVisible();
+      await expect(
+        surface.locator("ol li ul li", { hasText: "bullet three" }),
+      ).toHaveCount(0);
+    });
+
+    test("keeps first top-level ordered item when second converts to bullet", async ({
+      page,
+    }) => {
+      const surface = await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "orderedList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "one" }],
+                  },
+                ],
+              },
+              {
+                type: "listItem",
+                content: [
+                  {
+                    type: "paragraph",
+                    content: [{ type: "text", text: "two" }],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      await typeAtBlockStart(page, "two", "* ");
+
+      await expect(surface.locator("ol > li", { hasText: "one" })).toBeVisible();
+      await expect(surface.locator("ol ul li", { hasText: "two" })).toBeVisible();
+      await expect(surface.locator("ul > li", { hasText: "one" })).toHaveCount(0);
+    });
+
+    test("keeps first item when typing 1. one Enter two then asterisk shortcut", async ({
+      page,
+    }) => {
+      const surface = await focusEditorEnd(page);
+      await page.keyboard.type("1. one", { delay: 30 });
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("two", { delay: 30 });
+      await page.keyboard.press("Home");
+      await page.keyboard.type("* ", { delay: 40 });
+
+      await expect(surface.locator("ol > li", { hasText: "one" })).toBeVisible();
+      await expect(surface.locator("ol ul li", { hasText: "two" })).toBeVisible();
+      await expect(surface.locator("ul > li", { hasText: "one" })).toHaveCount(0);
+    });
+  });
+
   test.describe("bubble toolbar", () => {
     test("appears on text selection", async ({ page }) => {
       const surface = await editorSurface(page);
@@ -337,6 +738,22 @@ test.describe("Editor Lab", () => {
       await expect(toolbar.getByRole("button", { name: "Bold" })).toBeVisible();
       await expect(toolbar.getByRole("button", { name: "Italic" })).toBeVisible();
       await expect(toolbar.getByRole("button", { name: "Code" })).toBeVisible();
+    });
+
+    test("does not appear when only placing cursor in a list item", async ({
+      page,
+    }) => {
+      const surface = await typeAtDocumentEnd(page, "cursor in list");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus()
+          .toggleList("orderedList", "listItem")
+          .run();
+      });
+
+      await surface.getByText("cursor in list").click();
+      await expect(page.getByTestId("ssota-bubble-toolbar")).toBeHidden();
     });
 
     test("shows tooltips on toolbar buttons", async ({ page }) => {
@@ -720,6 +1137,52 @@ test.describe("Editor Lab", () => {
       await page.keyboard.press("Tab");
 
       await expect(surface.locator("ul ul")).toBeVisible();
+    });
+
+    test("indents nested ordered list with Tab", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "one");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain().focus().toggleList("orderedList", "listItem").run();
+      });
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("two");
+      await page.keyboard.press("Tab");
+
+      await expect(surface.locator("ol ol")).toBeVisible();
+    });
+
+    test("Tab on first list item keeps editor focus", async ({ page }) => {
+      const surface = await typeAtDocumentEnd(page, "only");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain().focus().toggleList("orderedList", "listItem").run();
+      });
+
+      await page.keyboard.press("Tab");
+
+      await expect(surface).toBeFocused();
+      await expect(surface.locator("ol ol")).toHaveCount(0);
+    });
+
+    test("repeated Shift+Tab keeps editor focus after full outdent", async ({
+      page,
+    }) => {
+      const surface = await typeAtDocumentEnd(page, "one");
+      await page.evaluate(() => {
+        window.__ssotaEditorLab?.chain().focus().toggleList("bulletList", "listItem").run();
+      });
+
+      await page.keyboard.press("Enter");
+      await page.keyboard.type("two");
+      await page.keyboard.press("Tab");
+      await expect(surface.locator("ul ul")).toBeVisible();
+
+      for (let i = 0; i < 4; i += 1) {
+        await page.keyboard.press("Shift+Tab");
+      }
+
+      await expect(surface).toBeFocused();
+      await expect(surface.locator("ul ul")).toHaveCount(0);
     });
   });
 

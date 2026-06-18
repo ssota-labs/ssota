@@ -39,7 +39,7 @@ test.describe("Executive roadmap", () => {
     ).toContainText(/Q1/);
   });
 
-  test("opens product roadmap full view sheet", async ({ page }) => {
+  test("expands product roadmap inline editor from chevron", async ({ page }) => {
     const startTemplate = page.getByRole("button", {
       name: /Start from template|양식으로 시작/,
     });
@@ -52,10 +52,21 @@ test.describe("Executive roadmap", () => {
       );
     }
 
-    await page.getByTestId("product-roadmap-view-full").click();
+    const productCard = page.getByTestId("product-roadmap-card");
+    const editor = productCard.getByTestId("roadmap-document-editor");
+    await expect(editor.getByTestId("ssota-editor-surface")).toBeVisible({
+      timeout: 15_000,
+    });
 
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("dialog")).toContainText(/문서 정보/);
+    await page.getByTestId("product-roadmap-expand").click();
+    await expect(page.getByTestId("product-roadmap-expand-collapse")).toBeVisible();
+    await expect(page.getByTestId("product-roadmap-expand")).not.toBeVisible();
+    await expect(productCard.getByTestId("roadmap-edit-save")).toHaveCount(0);
+    await expect(productCard.getByTestId("roadmap-edit-cancel")).toHaveCount(0);
+
+    await page.getByTestId("product-roadmap-expand-collapse").click();
+    await expect(page.getByTestId("product-roadmap-expand")).toBeVisible();
+    await expect(page.getByTestId("product-roadmap-expand-collapse")).not.toBeVisible();
   });
 
   test("creates quarter roadmap from empty preview", async ({ page }) => {
@@ -81,14 +92,64 @@ test.describe("Executive roadmap", () => {
     const q1Header = q1Card.locator("header");
     const q1Body = q1Card
       .getByTestId("planning-roadmap-empty-q1")
-      .or(q1Card.getByRole("button", { name: /View full|전체 보기/ }));
+      .or(q1Card.getByTestId("roadmap-document-panel"));
 
     await expect(q1Body.first()).not.toBeVisible();
 
     await q1Header.click();
-    await expect(q1Body.first()).toBeVisible();
+    await expect(q1Body.first()).toBeVisible({ timeout: 10_000 });
 
     await q1Header.click();
     await expect(q1Body.first()).not.toBeVisible();
+  });
+
+  test("autosaves product roadmap when expanded", async ({ page }) => {
+    test.slow();
+
+    const startTemplate = page.getByRole("button", {
+      name: /Start from template|양식으로 시작/,
+    });
+
+    if (await startTemplate.isVisible()) {
+      await startTemplate.click();
+      await expect(page.getByTestId("product-roadmap-card")).not.toContainText(
+        /Start from template|양식으로 시작/,
+        { timeout: 10_000 },
+      );
+    }
+
+    const productCard = page.getByTestId("product-roadmap-card");
+    await productCard.getByTestId("product-roadmap-expand").click();
+    await expect(productCard.getByTestId("roadmap-document-editor")).toBeVisible();
+    await expect(productCard.getByTestId("roadmap-edit-save")).toHaveCount(0);
+
+    const editor = productCard
+      .getByTestId("roadmap-document-editor")
+      .locator(".ProseMirror");
+    await expect(editor).toBeVisible({ timeout: 15_000 });
+
+    const marker = `autosave-${Date.now()}`;
+    const saveResponse = page.waitForResponse(
+      (response) => response.request().method() === "POST" && response.ok(),
+      { timeout: 20_000 },
+    );
+    await editor.click();
+    await editor.press("End");
+    await editor.type(` ${marker}`);
+
+    await expect(productCard.getByTestId("roadmap-save-status")).toContainText(
+      /Saved|저장됨/,
+      { timeout: 20_000 },
+    );
+    await saveResponse;
+    await expect(editor).toContainText(marker);
+
+    await page.getByTestId("product-roadmap-expand-collapse").click();
+    await expect(page.getByTestId("product-roadmap-expand")).toBeVisible({
+      timeout: 10_000,
+    });
+
+    await page.reload();
+    await expect(productCard).toContainText(marker, { timeout: 15_000 });
   });
 });

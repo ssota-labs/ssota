@@ -16,18 +16,6 @@ export const studioSourceRefSchema = z.object({
 });
 export type StudioSourceRef = z.infer<typeof studioSourceRefSchema>;
 
-/** Absolute http(s) URL or same-origin path (e.g. /api/studio/bundle). */
-const studioBundleAssetUrlSchema = z
-  .string()
-  .min(1)
-  .refine(
-    (value) =>
-      value.startsWith("/") ||
-      value.startsWith("blob:") ||
-      /^https?:\/\//.test(value),
-    { message: "Bundle URL must be absolute, blob, or a path" },
-  );
-
 const studioPatchSchema = z.object({
   className: z.string().optional(),
   tag: z.string().optional(),
@@ -52,6 +40,17 @@ export type StudioLayerTreeNode = {
   sourceRef?: StudioSourceRef;
   children?: StudioLayerTreeNode[];
 };
+
+const bundleAssetUrlSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (value) =>
+      value.startsWith("/") ||
+      value.startsWith("http://") ||
+      value.startsWith("https://"),
+    { message: "Bundle asset URL must be absolute or root-relative" },
+  );
 
 export const studioMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("STUDIO_READY") }),
@@ -78,8 +77,8 @@ export const studioMessageSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("STUDIO_LOAD_BUNDLE"),
-    jsUrl: studioBundleAssetUrlSchema,
-    cssUrl: studioBundleAssetUrlSchema.optional(),
+    jsUrl: bundleAssetUrlSchema,
+    cssUrl: bundleAssetUrlSchema.optional(),
     buildId: z.string().min(1),
   }),
   z.object({

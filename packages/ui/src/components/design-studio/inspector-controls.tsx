@@ -1,7 +1,7 @@
 "use client";
 
-import type { PointerEvent, ReactNode, RefObject, WheelEvent } from "react";
-import { useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   CaretDownIcon,
   CheckIcon,
@@ -10,10 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
   InputGroupInput,
-  InputGroupText,
 } from "@/components/ui/input-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -27,13 +24,18 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { InspectorColorOption } from "./tailwind-theme-colors";
-import { resolveSemanticColorValue } from "@ssota/contracts/catalog";
 import {
-  colorValueToHex,
-  hexFromScopedCssVar,
-  hexToRgba,
-  normalizeHexColor,
-} from "./color-resolve";
+  InspectorAnchorPopover,
+  useInspectorPresetPopoverToggle,
+} from "./inspector-input-primitives";
+import { InspectorColorPickerPanel } from "./inspector-color-picker";
+import {
+  formatInspectorColorWithAlpha,
+  isDirectColorValue,
+  parseInspectorColorAlphaPercent,
+  rgbComponentsToHex,
+} from "./inspector-color-utils";
+import { hexFromScopedCssVar } from "./color-resolve";
 import { resolveTailwindPaletteColor } from "./tailwind-palette-colors";
 import { useThemeTokensContext } from "./theme-tokens-context";
 
@@ -45,25 +47,11 @@ export type InspectorPopoverOption = {
   icon?: ReactNode;
 };
 
-export type InspectorPresetOption = {
-  value: string;
-  label: string;
-};
-
-export type InspectorNumberUnit = "px" | "%" | "em";
-
-function formatPresetLabel(
-  label: string,
-  unit?: InspectorNumberUnit,
-): string {
-  if (!unit) return label;
-  if (/^(normal|inherit|auto)$/i.test(label)) return label;
-  if (label.endsWith(unit)) return label;
-  return `${label}${unit}`;
-}
-
 const inspectorPopoverContentClass =
   "cn-popover-menu w-[var(--anchor-width)]";
+
+const inspectorColorCheckerboardClass =
+  "bg-[repeating-conic-gradient(var(--border)_0%_25%,transparent_0%_50%)] bg-size-[8px_8px]";
 
 type InspectorPopoverPickerProps = {
   value: string | undefined;
@@ -174,47 +162,6 @@ function InspectorPopoverList({
   );
 }
 
-type InspectorPresetListProps = {
-  options: InspectorPresetOption[];
-  value?: string;
-  unit?: InspectorNumberUnit;
-  onSelect: (value: string) => void;
-};
-
-function InspectorPresetList({
-  options,
-  value,
-  unit,
-  onSelect,
-}: InspectorPresetListProps) {
-  return (
-    <div className="flex flex-col gap-1 p-1">
-      {options.map((option) => {
-        const active = option.value === value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            className={cn(
-              "flex w-full items-center justify-between rounded-sm px-1.5 py-1 text-xs hover:bg-muted",
-              active && "bg-muted",
-            )}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => onSelect(option.value)}
-          >
-            <span className="truncate text-muted-foreground">
-              {formatPresetLabel(option.label, unit)}
-            </span>
-            {active ? (
-              <CheckIcon className="size-3 shrink-0 text-muted-foreground" />
-            ) : null}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 function ColorSwatch({
   cssVar,
   swatchClass,
@@ -248,57 +195,239 @@ function ColorSwatch({
   );
 }
 
-function toHexColor(color: string, scopeElement?: HTMLElement | null): string {
-  return colorValueToHex(color, scopeElement);
+function rgbStringToHex(color: string): string | null {
+  const trimmed = color.trim();
+  if (!trimmed || trimmed === "transparent") return null;
+
+  const commaSeparated = trimmed.match(
+    /^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/i,
+  );
+  if (commaSeparated) {
+    return rgbComponentsToHex(
+      Number(commaSeparated[1]),
+      Number(commaSeparated[2]),
+      Number(commaSeparated[3]),
+    );
+  }
+
+  const spaceSeparated = trimmed.match(
+    /^rgba?\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)/i,
+  );
+  if (spaceSeparated) {
+    return rgbComponentsToHex(
+      Number(spaceSeparated[1]),
+      Number(spaceSeparated[2]),
+      Number(spaceSeparated[3]),
+    );
+  }
+
+  return null;
 }
 
-function resolveInspectorHexValue(
+function isTransparentComputedColor(color: string): boolean {
+  const trimmed = color.trim();
+  if (!trimmed || trimmed === "transparent") return true;
+
+  const alphaMatch = trimmed.match(
+    /^(?:rgba?|hsla?|oklch|lab|lch)\([^)]*?[/,]\s*([\d.]+%?)\s*\)$/i,
+  );
+  if (alphaMatch) {
+    const alpha = alphaMatch[1]!;
+    if (alpha.endsWith("%")) {
+      return Number(alpha.slice(0, -1)) <= 0;
+    }
+    return Number(alpha) <= 0;
+  }
+
+  return trimmed === "rgba(0, 0, 0, 0)" || trimmed === "rgba(0 0 0 / 0)";
+}
+
+function computedBackgroundColorToHex(color: string): string | null {
+  if (isTransparentComputedColor(color)) return null;
+  return rgbStringToHex(color) ?? cssColorToHex(color);
+}
+
+function toHexColor(color: string): string {
+  if (color.startsWith("#")) {
+    return color.length === 4
+      ? `#${color[1]}${color[1]}${color[2]}${color[2]}${color[3]}${color[3]}`
+      : color.slice(0, 7);
+  }
+
+  return rgbStringToHex(color) ?? "#000000";
+}
+
+/** rgb/oklch 등 브라우저가 이해하는 CSS color 문자열을 #rrggbb로 변환합니다. */
+function cssColorToHex(color: string): string {
+  const trimmed = color.trim();
+  if (!trimmed) return "#000000";
+  if (trimmed.startsWith("#")) return toHexColor(trimmed);
+
+  const fromRgb = rgbStringToHex(trimmed);
+  if (fromRgb) return fromRgb;
+
+  if (typeof document === "undefined") return "#000000";
+
+  try {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return "#000000";
+    ctx.fillStyle = trimmed;
+    const normalized = ctx.fillStyle;
+    if (normalized.startsWith("#")) return toHexColor(normalized);
+    return rgbStringToHex(normalized) ?? "#000000";
+  } catch {
+    return "#000000";
+  }
+}
+
+function cssColorToHexViaDom(color: string): string | null {
+  const trimmed = color.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("#")) return toHexColor(trimmed);
+
+  const fromRgb = rgbStringToHex(trimmed);
+  if (fromRgb) return fromRgb;
+
+  if (typeof document === "undefined") return cssColorToHex(trimmed);
+
+  const probe = document.createElement("div");
+  probe.style.position = "fixed";
+  probe.style.visibility = "hidden";
+  probe.style.pointerEvents = "none";
+  probe.style.backgroundColor = trimmed;
+  document.documentElement.appendChild(probe);
+
+  try {
+    const computed = getComputedStyle(probe).backgroundColor;
+    return computedBackgroundColorToHex(computed);
+  } finally {
+    document.documentElement.removeChild(probe);
+  }
+}
+
+function resolveColorPickerHex(
   value: string,
   presets: InspectorColorOption[],
   scopeElement?: HTMLElement | null,
-  themeTokens?: Record<string, string> | null,
 ): string {
-  const preset = resolveColorOption(value, presets);
-  if (preset?.cssVar && scopeElement) {
-    const scopedHex = hexFromScopedCssVar(preset.cssVar, scopeElement);
-    if (scopedHex) return scopedHex;
+  const trimmed = value.trim();
+  if (!trimmed) return "#000000";
+  if (isDirectColorValue(trimmed)) {
+    return cssColorToHex(trimmed);
   }
 
-  if (preset?.cssVar && themeTokens) {
-    const resolved = themeTokens[preset.cssVar];
-    if (resolved) {
-      return colorValueToHex(resolved, scopeElement);
+  const option = resolveColorOption(trimmed, presets);
+
+  if (option?.swatchColor) {
+    return cssColorToHex(option.swatchColor);
+  }
+
+  if (option?.cssVar && scopeElement) {
+    const fromScoped = hexFromScopedCssVar(option.cssVar, scopeElement);
+    if (fromScoped) return fromScoped;
+  }
+
+  if (option && typeof document !== "undefined") {
+    if (option.cssVar) {
+      const fromVar = cssColorToHexViaDom(`var(${option.cssVar})`);
+      if (fromVar) return fromVar;
+
+      const raw = getComputedStyle(document.documentElement)
+        .getPropertyValue(option.cssVar)
+        .trim();
+      if (raw) {
+        const fromRaw = cssColorToHexViaDom(raw);
+        if (fromRaw) return fromRaw;
+      }
+    }
+
+    if (option.swatchClass) {
+      const fromSwatch = computedBackgroundColorToHex(
+        resolveSwatchClassColor(option.swatchClass),
+      );
+      if (fromSwatch) return fromSwatch;
     }
   }
 
-  if (preset?.cssVar) {
-    const resolved = resolveSemanticColorValue(
-      value,
-      themeTokens ?? {},
-    );
-    if (resolved) {
-      return colorValueToHex(resolved, scopeElement);
-    }
-  }
-
-  if (preset?.swatchColor) {
-    return colorValueToHex(preset.swatchColor, scopeElement);
-  }
-
-  const paletteColor = resolveTailwindPaletteColor(value);
+  const paletteColor = resolveTailwindPaletteColor(trimmed);
   if (paletteColor) {
-    return colorValueToHex(paletteColor, scopeElement);
+    return cssColorToHex(paletteColor);
   }
 
-  return toHexColor(value, scopeElement);
+  return cssColorToHex(trimmed);
 }
 
-function isSemanticPresetValue(
+function resolveSwatchClassColor(swatchClass: string): string {
+  if (typeof document === "undefined") return "";
+
+  const probe = document.createElement("div");
+  probe.style.position = "fixed";
+  probe.style.visibility = "hidden";
+  probe.style.pointerEvents = "none";
+  probe.className = swatchClass;
+  document.documentElement.appendChild(probe);
+
+  try {
+    return getComputedStyle(probe).backgroundColor;
+  } finally {
+    document.documentElement.removeChild(probe);
+  }
+}
+
+function readElementBackgroundHex(element: HTMLElement | null): string | null {
+  if (!element || typeof document === "undefined") return null;
+
+  const computed = getComputedStyle(element).backgroundColor;
+  return computedBackgroundColorToHex(computed);
+}
+
+function useColorPickerHex(
   value: string,
   presets: InspectorColorOption[],
-): boolean {
-  const preset = resolveColorOption(value, presets);
-  return Boolean(preset?.cssVar);
+  swatchElement: HTMLElement | null,
+  scopeElement?: HTMLElement | null,
+): string {
+  const [hex, setHex] = useState(() =>
+    resolveColorPickerHex(value, presets, scopeElement),
+  );
+
+  useLayoutEffect(() => {
+    const syncHex = () => {
+      const fromSwatch = readElementBackgroundHex(swatchElement);
+      setHex(
+        fromSwatch ?? resolveColorPickerHex(value, presets, scopeElement),
+      );
+    };
+
+    syncHex();
+    const frame = requestAnimationFrame(syncHex);
+    return () => cancelAnimationFrame(frame);
+  }, [value, presets, swatchElement, scopeElement]);
+
+  return hex;
+}
+
+export { formatInspectorColorWithAlpha } from "./inspector-color-utils";
+
+export function formatInspectorColorAsRgba(
+  value: string,
+  presets: InspectorColorOption[],
+  previousColor?: string,
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return previousColor ?? "rgba(0, 0, 0, 0.1)";
+  }
+  if (isDirectColorValue(trimmed)) return trimmed;
+
+  const alphaPercent = previousColor
+    ? parseInspectorColorAlphaPercent(previousColor)
+    : "10";
+  return formatInspectorColorWithAlpha(
+    resolveColorPickerHex(trimmed, presets),
+    alphaPercent,
+  );
 }
 
 function resolveColorOption(
@@ -308,27 +437,6 @@ function resolveColorOption(
   const trimmed = value.trim();
   if (!trimmed) return undefined;
   return options.find((option) => option.value === trimmed);
-}
-
-function swatchStyleForValue(
-  value: string,
-  presets: InspectorColorOption[],
-): {
-  cssVar?: string;
-  swatchClass?: string;
-  swatchColor?: string;
-  backgroundColor?: string;
-} {
-  const preset = resolveColorOption(value, presets);
-  if (preset?.cssVar) return { cssVar: preset.cssVar };
-  if (preset?.swatchColor) return { swatchColor: preset.swatchColor };
-  if (preset?.swatchClass) return { swatchClass: preset.swatchClass };
-  const paletteColor = resolveTailwindPaletteColor(value);
-  if (paletteColor) return { swatchColor: paletteColor };
-  if (value.startsWith("#") || value.startsWith("rgb") || value.startsWith("lab")) {
-    return { backgroundColor: value.startsWith("lab") ? undefined : value };
-  }
-  return { swatchClass: "bg-muted" };
 }
 
 type InspectorColorListProps = {
@@ -343,7 +451,7 @@ function InspectorColorList({
   onSelect,
 }: InspectorColorListProps) {
   return (
-    <div className="flex max-h-72 flex-col gap-0 overflow-y-auto p-0.5">
+    <div className="flex max-h-72 flex-col gap-1 overflow-y-auto p-1">
       {options.map((option) => {
         const active = option.value === value;
         return (
@@ -351,7 +459,7 @@ function InspectorColorList({
             key={option.value}
             type="button"
             className={cn(
-              "flex w-full items-center gap-2 rounded-sm px-1.5 py-0.5 text-xs hover:bg-muted",
+              "flex w-full items-center gap-2 rounded-sm px-1.5 py-1 text-xs hover:bg-muted",
               active && "bg-muted",
             )}
             onMouseDown={(event) => event.preventDefault()}
@@ -374,321 +482,6 @@ function InspectorColorList({
         );
       })}
     </div>
-  );
-}
-
-function InspectorPresetTrigger({
-  "aria-label": ariaLabel,
-}: {
-  "aria-label": string;
-}) {
-  return (
-    <PopoverTrigger
-      nativeButton
-      aria-label={ariaLabel}
-      render={
-        <InputGroupButton type="button" size="icon-xs" variant="ghost" />
-      }
-    >
-      <CaretDownIcon className="size-3.5 text-muted-foreground" />
-    </PopoverTrigger>
-  );
-}
-
-function InspectorAnchorPopover({
-  open,
-  onOpenChange,
-  anchorRef,
-  children,
-  content,
-  side = "bottom",
-}: InspectorAnchorPopoverProps) {
-  return (
-    <Popover open={open} onOpenChange={onOpenChange} modal={false}>
-      <div ref={anchorRef} className="w-full">
-        {children}
-      </div>
-      <PopoverContent
-        anchor={anchorRef}
-        align="start"
-        side={side}
-        className={inspectorPopoverContentClass}
-        initialFocus={false}
-        finalFocus={false}
-      >
-        {content}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-type InspectorAnchorPopoverProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  anchorRef: RefObject<HTMLDivElement | null>;
-  children: ReactNode;
-  content: ReactNode;
-  side?: "top" | "bottom" | "left" | "right";
-};
-
-type InspectorUnitSelectorProps = {
-  unit: InspectorNumberUnit;
-  units: readonly InspectorNumberUnit[];
-  onUnitChange?: (unit: InspectorNumberUnit) => void;
-  "aria-label"?: string;
-};
-
-function InspectorUnitSelector({
-  unit,
-  units,
-  onUnitChange,
-  "aria-label": ariaLabel,
-}: InspectorUnitSelectorProps) {
-  const [open, setOpen] = useState(false);
-  const selectable = units.length > 1 && onUnitChange;
-
-  if (!selectable) {
-    return (
-      <InputGroupText className="text-xs text-muted-foreground">
-        {unit}
-      </InputGroupText>
-    );
-  }
-
-  return (
-    <Popover open={open} onOpenChange={setOpen} modal={false}>
-      <PopoverTrigger
-        nativeButton
-        aria-label={ariaLabel ?? "Unit"}
-        render={
-          <button
-            type="button"
-            className="cn-input-group-text flex items-center gap-0.5 text-xs text-muted-foreground hover:text-foreground"
-          />
-        }
-      >
-        {unit}
-        <CaretDownIcon className="size-2.5 shrink-0" />
-      </PopoverTrigger>
-      <PopoverContent
-        align="end"
-        className="cn-popover-menu w-auto min-w-16 p-0.5"
-        initialFocus={false}
-        finalFocus={false}
-      >
-        {units.map((option) => {
-          const active = option === unit;
-          return (
-            <button
-              key={option}
-              type="button"
-              className={cn(
-                "flex w-full items-center justify-between rounded-sm px-2 py-1 text-sm hover:bg-muted",
-                active && "bg-muted",
-              )}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                onUnitChange(option);
-                setOpen(false);
-              }}
-            >
-              <span>{option}</span>
-              {active ? (
-                <CheckIcon className="size-3.5 shrink-0 text-muted-foreground" />
-              ) : (
-                <span className="size-3.5 shrink-0" />
-              )}
-            </button>
-          );
-        })}
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-type InspectorNumberInputProps = {
-  value: string;
-  unit?: InspectorNumberUnit;
-  units?: readonly InspectorNumberUnit[];
-  onUnitChange?: (unit: InspectorNumberUnit) => void;
-  placeholder?: string;
-  presets?: InspectorPresetOption[];
-  presetsByUnit?: Partial<
-    Record<InspectorNumberUnit, InspectorPresetOption[]>
-  >;
-  showPresets?: boolean;
-  scrollAdjust?: boolean;
-  scrollStep?: number;
-  onChange: (value: string) => void;
-  "aria-label"?: string;
-};
-
-function adjustNumberByWheel(
-  event: WheelEvent,
-  value: string,
-  onChange: (value: string) => void,
-  step: number,
-) {
-  const horizontal = Math.abs(event.deltaX) > Math.abs(event.deltaY);
-  const delta = horizontal ? event.deltaX : event.deltaY;
-  if (delta === 0) return;
-
-  event.preventDefault();
-  event.stopPropagation();
-
-  const current = value.trim() === "" ? 0 : Number(value);
-  if (!Number.isFinite(current)) return;
-
-  const direction = horizontal ? (delta > 0 ? 1 : -1) : delta < 0 ? 1 : -1;
-  onChange(String(current + direction * step));
-}
-
-type InspectorScrubberHandleProps = {
-  value: string;
-  step: number;
-  onChange: (value: string) => void;
-  "aria-label"?: string;
-};
-
-function InspectorScrubberHandle({
-  value,
-  step,
-  onChange,
-  "aria-label": ariaLabel,
-}: InspectorScrubberHandleProps) {
-  const dragRef = useRef<{ originX: number; originValue: number } | null>(null);
-
-  const endDrag = (event: PointerEvent<HTMLButtonElement>) => {
-    dragRef.current = null;
-    event.currentTarget.releasePointerCapture(event.pointerId);
-  };
-
-  const handlePointerDown = (event: PointerEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    const current = value.trim() === "" ? 0 : Number(value);
-    if (!Number.isFinite(current)) return;
-    dragRef.current = { originX: event.clientX, originValue: current };
-    event.currentTarget.setPointerCapture(event.pointerId);
-  };
-
-  const handlePointerMove = (event: PointerEvent<HTMLButtonElement>) => {
-    if (!dragRef.current) return;
-    const deltaX = event.clientX - dragRef.current.originX;
-    const stepSize = event.shiftKey ? step * 10 : step;
-    const next =
-      dragRef.current.originValue + Math.round(deltaX / 4) * stepSize;
-    onChange(String(next));
-  };
-
-  return (
-    <InputGroupButton
-      type="button"
-      size="icon-xs"
-      variant="ghost"
-      className="cursor-ew-resize touch-none px-1"
-      aria-label={ariaLabel ? `${ariaLabel} scrub` : "Adjust value"}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-    >
-      <span className="flex items-center gap-px" aria-hidden>
-        <span className="h-3 w-px rounded-full bg-muted-foreground/70" />
-        <span className="h-3 w-px rounded-full bg-muted-foreground/70" />
-      </span>
-    </InputGroupButton>
-  );
-}
-
-export function InspectorNumberInput({
-  value,
-  unit = "px",
-  units,
-  onUnitChange,
-  placeholder,
-  presets,
-  presetsByUnit,
-  showPresets: showPresetsProp,
-  scrollAdjust = false,
-  scrollStep = 1,
-  onChange,
-  "aria-label": ariaLabel,
-}: InspectorNumberInputProps) {
-  const [open, setOpen] = useState(false);
-  const anchorRef = useRef<HTMLDivElement>(null);
-  const presetsLabel = ariaLabel ? `${ariaLabel} presets` : "Presets";
-  const unitLabel = ariaLabel ? `${ariaLabel} unit` : "Unit";
-  const availableUnits = units ?? (onUnitChange ? [unit] : []);
-  const activePresets =
-    presetsByUnit?.[unit] ?? presets ?? [];
-  const showPresets = showPresetsProp ?? activePresets.length > 0;
-
-  const handleWheel = scrollAdjust
-    ? (event: WheelEvent) =>
-        adjustNumberByWheel(event, value, onChange, scrollStep)
-    : undefined;
-
-  const field = (
-    <InputGroup onWheel={handleWheel}>
-      {scrollAdjust ? (
-        <InputGroupAddon align="inline-start">
-          <InspectorScrubberHandle
-            value={value}
-            step={scrollStep}
-            onChange={onChange}
-            aria-label={ariaLabel}
-          />
-        </InputGroupAddon>
-      ) : null}
-      {showPresets ? (
-        <InputGroupAddon align="inline-start">
-          <InspectorPresetTrigger aria-label={presetsLabel} />
-        </InputGroupAddon>
-      ) : null}
-      <InputGroupInput
-        aria-label={ariaLabel}
-        type="number"
-        inputMode="decimal"
-        step="any"
-        value={value}
-        placeholder={placeholder}
-        onChange={(event) => onChange(event.target.value)}
-        onWheel={handleWheel}
-      />
-      <InputGroupAddon align="inline-end">
-        <InspectorUnitSelector
-          unit={unit}
-          units={availableUnits.length > 0 ? availableUnits : [unit]}
-          onUnitChange={onUnitChange}
-          aria-label={unitLabel}
-        />
-      </InputGroupAddon>
-    </InputGroup>
-  );
-
-  if (!showPresets) {
-    return field;
-  }
-
-  return (
-    <InspectorAnchorPopover
-      open={open}
-      onOpenChange={setOpen}
-      anchorRef={anchorRef}
-      content={
-        <InspectorPresetList
-          options={activePresets}
-          value={value}
-          unit={unit}
-          onSelect={(nextValue) => {
-            onChange(nextValue);
-            setOpen(false);
-          }}
-        />
-      }
-    >
-      {field}
-    </InspectorAnchorPopover>
   );
 }
 
@@ -768,6 +561,20 @@ export function InspectorColorInput({
   );
 }
 
+function resolveInspectorColorPreview(
+  value: string,
+  presets: InspectorColorOption[],
+  scopeElement?: HTMLElement | null,
+): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "transparent";
+
+  const hex = resolveColorPickerHex(trimmed, presets, scopeElement);
+  const alphaPercent = parseInspectorColorAlphaPercent(trimmed);
+  if (alphaPercent === "100") return hex;
+  return formatInspectorColorWithAlpha(hex, alphaPercent);
+}
+
 type InspectorColorFieldProps = {
   value: string;
   placeholder?: string;
@@ -787,126 +594,91 @@ export function InspectorColorField({
   id,
   "aria-label": ariaLabel,
 }: InspectorColorFieldProps) {
-  const [pickerOpen, setPickerOpen] = useState(false);
   const [presetOpen, setPresetOpen] = useState(false);
-  const pickerAnchorRef = useRef<HTMLDivElement>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const presetAnchorRef = useRef<HTMLDivElement>(null);
+  const swatchAnchorRef = useRef<HTMLButtonElement>(null);
   const themeContext = useThemeTokensContext();
   const scopeElement = themeContext?.scopeElement ?? null;
-  const themeTokens = themeContext?.tokens ?? null;
-  const swatch = swatchStyleForValue(value, presets);
-  const hexValue = resolveInspectorHexValue(
+  const hexValue = useColorPickerHex(value, presets, null, scopeElement);
+  const alphaPercent = parseInspectorColorAlphaPercent(value);
+  const previewColor = resolveInspectorColorPreview(
     value,
     presets,
     scopeElement,
-    themeTokens,
   );
-  const semanticPreset = isSemanticPresetValue(value, presets);
+  const presetPopoverToggle = useInspectorPresetPopoverToggle(
+    presets.length > 0,
+    presetOpen,
+    setPresetOpen,
+  );
 
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
-      <div className="shrink-0">
-        <InspectorAnchorPopover
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        anchorRef={pickerAnchorRef}
-        side="top"
-        content={
-          <div className="flex flex-col gap-2 p-2">
-            <input
-              type="color"
-              aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
-              className="h-8 w-full cursor-pointer rounded-md border bg-transparent"
-              value={hexValue}
-              readOnly={semanticPreset}
-              onChange={(event) => {
-                if (semanticPreset) return;
-                const alphaMatch = value.match(
-                  /rgba?\([^,]+,[^,]+,[^,]+,\s*([0-9.]+)\)/,
-                );
-                const alpha = alphaMatch ? alphaMatch[1]! : "1";
-                onChange(
-                  alpha === "1"
-                    ? normalizeHexColor(event.target.value)
-                    : hexToRgba(normalizeHexColor(event.target.value), alpha),
-                );
-              }}
-            />
+      <Popover open={pickerOpen} onOpenChange={setPickerOpen} modal={false}>
+        <button
+          ref={swatchAnchorRef}
+          type="button"
+          aria-label={ariaLabel ? `${ariaLabel} picker` : "Color picker"}
+          aria-expanded={pickerOpen}
+          aria-haspopup="dialog"
+          className={cn(
+            "relative size-9 shrink-0 overflow-hidden rounded-full border border-border",
+            inspectorColorCheckerboardClass,
+          )}
+          onClick={() => setPickerOpen((current) => !current)}
+        >
+          <span
+            aria-hidden
+            className="absolute inset-0"
+            style={{ backgroundColor: previewColor }}
+          />
+        </button>
+        <PopoverContent
+          anchor={swatchAnchorRef}
+          side="left"
+          align="start"
+          className="cn-popover-menu w-auto"
+          initialFocus={false}
+          finalFocus={false}
+        >
+          <InspectorColorPickerPanel
+            hex={hexValue}
+            alphaPercent={alphaPercent}
+            onChange={onChange}
+          />
+        </PopoverContent>
+      </Popover>
+
+      <InspectorAnchorPopover
+          open={presetOpen}
+          onOpenChange={setPresetOpen}
+          anchorRef={presetAnchorRef}
+          content={
             <InspectorColorList
               options={presets}
               value={value}
               onSelect={(nextValue) => {
                 onChange(nextValue);
-                setPickerOpen(false);
+                setPresetOpen(false);
               }}
             />
-          </div>
-        }
-      >
-        <button
-          type="button"
-          aria-label={ariaLabel ? `${ariaLabel} swatch` : "Color swatch"}
-          aria-expanded={pickerOpen}
-          className="cn-input flex size-9 shrink-0 items-center justify-center rounded-md border border-input bg-transparent shadow-xs outline-none hover:bg-muted/40"
-          onClick={() => setPickerOpen((current) => !current)}
+          }
         >
-          {swatch.cssVar ? (
-            <span
-              className="size-5 rounded-full border border-border"
-              style={{ backgroundColor: `var(${swatch.cssVar})` }}
+          <InputGroup className="min-w-0 flex-1">
+            <InputGroupInput
+              id={id}
+              aria-label={ariaLabel}
+              value={value}
+              placeholder={placeholder}
+              aria-expanded={presets.length > 0 ? presetOpen : undefined}
+              aria-haspopup={presets.length > 0 ? "dialog" : undefined}
+              onChange={(event) => onChange(event.target.value)}
+              onPointerDown={presetPopoverToggle.onInputPointerDown}
+              onClick={presetPopoverToggle.onInputClick}
             />
-          ) : swatch.swatchColor ? (
-            <span
-              className="size-5 rounded-full border border-border"
-              style={{ backgroundColor: swatch.swatchColor }}
-            />
-          ) : (
-            <span
-              className={cn(
-                "size-5 rounded-full border border-border",
-                swatch.swatchClass,
-              )}
-              style={
-                swatch.backgroundColor
-                  ? { backgroundColor: swatch.backgroundColor }
-                  : undefined
-              }
-            />
-          )}
-        </button>
-      </InspectorAnchorPopover>
-      </div>
-
-      <InspectorAnchorPopover
-        open={presetOpen}
-        onOpenChange={setPresetOpen}
-        anchorRef={presetAnchorRef}
-        content={
-          <InspectorColorList
-            options={presets}
-            value={value}
-            onSelect={(nextValue) => {
-              onChange(nextValue);
-              setPresetOpen(false);
-            }}
-          />
-        }
-      >
-        <InputGroup className="min-w-0 flex-1">
-          <InputGroupAddon align="inline-start">
-            <InspectorPresetTrigger
-              aria-label={ariaLabel ? `${ariaLabel} presets` : "Color presets"}
-            />
-          </InputGroupAddon>
-          <InputGroupInput
-            id={id}
-            aria-label={ariaLabel}
-            value={value}
-            placeholder={placeholder}
-            onChange={(event) => onChange(event.target.value)}
-          />
-        </InputGroup>
-      </InspectorAnchorPopover>
+          </InputGroup>
+        </InspectorAnchorPopover>
     </div>
   );
 }

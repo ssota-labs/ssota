@@ -15,3 +15,4 @@ export {
   tiptapDocToPlainText,
   type TiptapDoc,
 } from "./json";
+export { markdownToTiptapDoc, tiptapDocToMarkdown } from "./markdown";

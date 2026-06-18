@@ -8,11 +8,10 @@ import {
 import {
   InspectorField,
   InspectorGrid,
-  InspectorNumberInput,
+  InspectorScrubberNumberInput,
   InspectorPopoverPicker,
   InspectorSection,
   type InspectorPopoverOption,
-  type InspectorPresetOption,
 } from "@ssota/ui/components/design-studio";
 
 const DISPLAY_OPTIONS: InspectorPopoverOption[] = [
@@ -48,16 +47,6 @@ const DISTRIBUTE_OPTIONS: InspectorPopoverOption[] = [
   { value: "justify-between", label: "between" },
   { value: "justify-around", label: "around" },
   { value: "justify-evenly", label: "evenly" },
-];
-
-const GAP_PRESETS: InspectorPresetOption[] = [
-  { value: "0", label: "0" },
-  { value: "4", label: "4" },
-  { value: "8", label: "8" },
-  { value: "12", label: "12" },
-  { value: "16", label: "16" },
-  { value: "24", label: "24" },
-  { value: "32", label: "32" },
 ];
 
 type LayoutSectionProps = {
@@ -117,12 +106,11 @@ export function LayoutSection({ parsed, onUpdate }: LayoutSectionProps) {
         ) : null}
 
         <InspectorField label="Gap">
-          <InspectorNumberInput
+          <InspectorScrubberNumberInput
             aria-label="Gap"
             value={parseSpacingPx(parsed.gap)}
             unit="px"
             placeholder="0"
-            presets={GAP_PRESETS}
             onChange={(input) =>
               onUpdate({ gap: formatSpacingPx("gap", input) })
             }
@@ -197,46 +185,38 @@ function SpacingQuadGroup({
       <span className="block text-xs text-muted-foreground">{label}</span>
       <InspectorGrid>
         <InspectorField label="Top">
-          <InspectorNumberInput
+          <InspectorScrubberNumberInput
             aria-label={`${label} top`}
             value={parseSpacingPx(top)}
             unit="px"
             placeholder="0"
-            showPresets={false}
-            scrollAdjust
             onChange={(value) => onChange("top", value)}
           />
         </InspectorField>
         <InspectorField label="Bottom">
-          <InspectorNumberInput
+          <InspectorScrubberNumberInput
             aria-label={`${label} bottom`}
             value={parseSpacingPx(bottom)}
             unit="px"
             placeholder="0"
-            showPresets={false}
-            scrollAdjust
             onChange={(value) => onChange("bottom", value)}
           />
         </InspectorField>
         <InspectorField label="Left">
-          <InspectorNumberInput
+          <InspectorScrubberNumberInput
             aria-label={`${label} left`}
             value={parseSpacingPx(left)}
             unit="px"
             placeholder="0"
-            showPresets={false}
-            scrollAdjust
             onChange={(value) => onChange("left", value)}
           />
         </InspectorField>
         <InspectorField label="Right">
-          <InspectorNumberInput
+          <InspectorScrubberNumberInput
             aria-label={`${label} right`}
             value={parseSpacingPx(right)}
             unit="px"
             placeholder="0"
-            showPresets={false}
-            scrollAdjust
             onChange={(value) => onChange("right", value)}
           />
         </InspectorField>

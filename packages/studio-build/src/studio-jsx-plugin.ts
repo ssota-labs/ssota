@@ -1,9 +1,23 @@
 import { createHash } from "node:crypto";
 import { parse } from "@babel/parser";
-import generate from "@babel/generator";
-import traverse from "@babel/traverse";
+import generateImport from "@babel/generator";
+import traverseImport from "@babel/traverse";
 import * as t from "@babel/types";
 import type * as esbuild from "esbuild";
+
+type BabelDefaultExport<T> = T | { default: T };
+
+function resolveBabelDefaultExport<T extends (...args: never[]) => unknown>(
+  moduleExport: BabelDefaultExport<T>,
+): T {
+  if (typeof moduleExport === "function") {
+    return moduleExport;
+  }
+  return moduleExport.default;
+}
+
+const traverse = resolveBabelDefaultExport(traverseImport);
+const generate = resolveBabelDefaultExport(generateImport);
 
 function jsxTagName(name: t.JSXElement["openingElement"]["name"]): string {
   if (t.isJSXIdentifier(name)) return name.name;

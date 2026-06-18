@@ -11,11 +11,10 @@ import {
   BORDER_THEME_COLOR_OPTIONS,
   InspectorColorField,
   InspectorField,
-  InspectorNumberInput,
   InspectorPopoverPicker,
+  InspectorScrubberNumberInput,
   InspectorSection,
   type InspectorPopoverOption,
-  type InspectorPresetOption,
 } from "@ssota/ui/components/design-studio";
 
 const BORDER_STYLE_OPTIONS: InspectorPopoverOption[] = [
@@ -24,14 +23,6 @@ const BORDER_STYLE_OPTIONS: InspectorPopoverOption[] = [
   { value: "border-dotted", label: "dotted" },
   { value: "border-double", label: "double" },
   { value: "border-none", label: "none" },
-];
-
-const BORDER_WIDTH_PRESETS: InspectorPresetOption[] = [
-  { value: "0", label: "0" },
-  { value: "1", label: "1" },
-  { value: "2", label: "2" },
-  { value: "4", label: "4" },
-  { value: "8", label: "8" },
 ];
 
 type BorderSectionProps = {
@@ -68,12 +59,12 @@ export function BorderSection({ parsed, onUpdate }: BorderSectionProps) {
         </InspectorField>
 
         <InspectorField label="Width">
-          <InspectorNumberInput
+          <InspectorScrubberNumberInput
             aria-label="Border width"
             value={parseBorderWidthPx(parsed.borderWidth)}
             unit="px"
             placeholder="0"
-            presets={BORDER_WIDTH_PRESETS}
+            min={0}
             onChange={(input) =>
               onUpdate({ borderWidth: formatBorderWidthPx(input) })
             }

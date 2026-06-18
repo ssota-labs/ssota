@@ -1,36 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { StudioNode } from "@ssota/contracts/catalog";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { StudioPatch, StudioMessage } from "@ssota/studio-preview-runtime";
+import { fetchPreviewUtilityCssCached } from "@/lib/design-studio/preview-utility-css";
 import {
-  collectStudioUtilityClassesFromBundle,
   createParentMessageListener,
   postToIframe,
-  type ResolvedComponentMap,
   type StudioInteractionMode,
 } from "@ssota/studio-renderer";
 
-async function fetchPreviewUtilityCss(classes: string[]): Promise<string> {
-  if (classes.length === 0) return "";
-  const response = await fetch("/api/studio/preview-utilities", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ classes }),
-  });
-  if (!response.ok) return "";
-  return response.text();
-}
-
 export function usePreviewBridge(previewUrl: string) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const utilityRequestIdRef = useRef(0);
+  const liveClassNamePatchRequestIdRef = useRef(0);
   const [ready, setReady] = useState(false);
   const origin =
     typeof window !== "undefined" ? window.location.origin : "";
-
-  useEffect(() => {
-    setReady(false);
-  }, [previewUrl]);
 
   useEffect(() => {
     const listener = createParentMessageListener(origin, (message) => {
@@ -64,44 +49,26 @@ export function usePreviewBridge(previewUrl: string) {
     [origin],
   );
 
-  const syncTree = useCallback(
-    (tree: StudioNode) => {
-      post({
-        type: "STUDIO_SET_TREE",
-        tree,
-        mode: "draft",
-      });
-    },
-    [post],
-  );
-
-  const syncResolvedComponents = useCallback(
-    (resolvedComponents: ResolvedComponentMap) => {
-      post({
-        type: "STUDIO_SET_RESOLVED_COMPONENTS",
-        resolvedComponents,
-      });
-    },
-    [post],
-  );
-
   const syncUtilityCss = useCallback(
     async (classes: string[]) => {
-      const cssText = await fetchPreviewUtilityCss(classes);
+      const requestId = ++utilityRequestIdRef.current;
+      const cssText = await fetchPreviewUtilityCssCached(classes);
+      if (requestId !== utilityRequestIdRef.current) return;
       post({ type: "STUDIO_SET_UTILITY_CSS", cssText });
     },
     [post],
   );
 
-  const syncUtilityCssFromTree = useCallback(
-    async (tree: StudioNode, resolvedComponents: ResolvedComponentMap) => {
-      const classes = collectStudioUtilityClassesFromBundle(
-        tree,
-        resolvedComponents,
-      );
-      await syncUtilityCss(classes);
+  /** Compile utility CSS first, then patch className so arbitrary tokens never flash unstyled. */
+  const patchNodeClassName = useCallback(
+    async (nodeId: string, className: string, classes: string[]) => {
+      const requestId = ++liveClassNamePatchRequestIdRef.current;
+      const cssText = await fetchPreviewUtilityCssCached(classes);
+      if (requestId !== liveClassNamePatchRequestIdRef.current) return;
+      post({ type: "STUDIO_SET_UTILITY_CSS", cssText });
+      post({ type: "STUDIO_PATCH", nodeId, patch: { className } });
     },
-    [syncUtilityCss],
+    [post],
   );
 
   const syncTheme = useCallback(
@@ -158,14 +125,59 @@ export function usePreviewBridge(previewUrl: string) {
     iframeRef,
     ready,
     previewUrl,
-    syncTree,
-    syncResolvedComponents,
     syncUtilityCss,
-    syncUtilityCssFromTree,
+    patchNodeClassName,
     syncTheme,
     syncInteractionMode,
     syncBundle,
     patchNode,
     highlightNode,
   };
+}
+
+function measureStudioNodePx(
+  iframe: HTMLIFrameElement | null,
+  nodeId: string,
+): number | null {
+  const doc = iframe?.contentDocument;
+  if (!doc) return null;
+  const el = doc.querySelector(`[data-studio-id="${CSS.escape(nodeId)}"]`);
+  if (!el) return null;
+  const { width, height } = el.getBoundingClientRect();
+  const px = Math.min(width, height);
+  return px > 0 ? Math.round(px) : null;
+}
+
+/** 선택 노드의 프리뷰 DOM 크기 — radius % 변환 기준으로 사용합니다. */
+export function useStudioNodeMeasure(
+  iframeRef: RefObject<HTMLIFrameElement | null>,
+  nodeId: string | null,
+  ready: boolean,
+  /** className 등 변경 시 재측정 트리거 */
+  measureKey: string,
+): number | null {
+  const [sizePx, setSizePx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!ready || !nodeId) {
+      setSizePx(null);
+      return;
+    }
+
+    const measure = () => {
+      setSizePx(measureStudioNodePx(iframeRef.current, nodeId));
+    };
+
+    measure();
+
+    const doc = iframeRef.current?.contentDocument;
+    const el = doc?.querySelector(`[data-studio-id="${CSS.escape(nodeId)}"]`);
+    if (!el) return;
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [iframeRef, nodeId, ready, measureKey]);
+
+  return sizePx;
 }

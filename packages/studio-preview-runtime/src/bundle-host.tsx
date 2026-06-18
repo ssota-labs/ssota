@@ -4,15 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   createParentMessageListener,
   postToParent,
-} from "./bridge.js";
-import { StudioInspectStyle } from "./inspect-styles.js";
-import { StudioUtilityStyle } from "./utility-styles.js";
+} from "./bridge";
+import { StudioInspectStyle } from "./inspect-styles";
+import { StudioUtilityStyle } from "./utility-styles";
 import type {
   StudioInteractionMode,
   StudioMessage,
   StudioSourceRef,
-} from "./protocol.js";
-import { applyStudioPatch } from "./patch-applier.js";
+} from "./protocol";
+import { applyStudioPatch } from "./patch-applier";
 
 const BUNDLE_ATTR = "data-studio-bundle-asset";
 
@@ -66,8 +66,8 @@ export function BundlePreviewHost({
 }: BundlePreviewHostProps) {
   const [interactionMode, setInteractionMode] =
     useState<StudioInteractionMode>(initialInteractionMode);
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [utilityCss, setUtilityCss] = useState("");
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const loadedBuildIdRef = useRef<string | null>(null);
 
   const handleSelect = useCallback(
@@ -77,10 +77,6 @@ export function BundlePreviewHost({
     },
     [targetOrigin],
   );
-
-  useEffect(() => {
-    postToParent({ type: "STUDIO_READY" }, targetOrigin);
-  }, [targetOrigin]);
 
   useEffect(() => {
     const listener = createParentMessageListener(
@@ -113,6 +109,7 @@ export function BundlePreviewHost({
       },
     );
     window.addEventListener("message", listener);
+    postToParent({ type: "STUDIO_READY" }, targetOrigin);
     return () => window.removeEventListener("message", listener);
   }, [targetOrigin]);
 

@@ -1,0 +1,247 @@
+/* BlockNote floating UI — slash menu, bubble/link toolbars, portaled selects. */
+.blocknote-editor-shell .bn-toolbar,
+.blocknote-editor-shell .bn-formatting-toolbar,
+.blocknote-editor-shell .bn-link-toolbar,
+.blocknote-editor-shell #bn-suggestion-menu,
+.blocknote-editor-shell .bn-suggestion-menu,
+.blocknote-editor-shell .bn-grid-suggestion-menu,
+.blocknote-editor-shell [data-slot="select-content"],
+.blocknote-editor-shell [data-slot="dropdown-menu-content"],
+.blocknote-editor-shell [data-slot="popover-content"] {
+  background-color: var(--bn-colors-menu-background);
+  color: var(--bn-colors-menu-text);
+  border-color: var(--bn-colors-border);
+}
+
+.blocknote-editor-shell .bn-toolbar [data-slot="button"],
+.blocknote-editor-shell .bn-toolbar [data-slot="toggle"],
+.blocknote-editor-shell .bn-toolbar [data-slot="select-trigger"],
+.blocknote-editor-shell .bn-toolbar button,
+.blocknote-editor-shell .bn-toolbar [role="combobox"] {
+  color: var(--bn-colors-menu-text);
+}
+
+.blocknote-editor-shell .bn-toolbar [data-slot="toggle"][data-state="on"] {
+  background-color: var(--bn-colors-hovered-background);
+  color: var(--bn-colors-hovered-text);
+}
+
+.blocknote-editor-shell .bn-toolbar svg:not([class*="text-"]) {
+  color: currentColor;
+}
+
+/* Color picker swatches in bubble toolbar and dropdown menus. */
+.blocknote-editor-shell .bn-color-icon {
+  border-color: var(--bn-colors-border);
+}
+
+.blocknote-editor-shell .bn-color-icon[data-text-color="default"] {
+  color: var(--bn-colors-menu-text);
+}
+
+.blocknote-editor-shell .bn-color-icon[data-background-color="default"] {
+  background-color: var(--bn-colors-menu-background);
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown [data-slot="dropdown-menu-label"] {
+  color: var(--bn-colors-side-menu);
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown {
+  min-width: 10rem;
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown .ssota-bn-color-menu-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown .ssota-bn-color-menu-row .bn-color-icon {
+  flex: 0 0 16px;
+  width: 16px;
+  margin-inline-end: 0.125rem;
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown .ssota-bn-color-menu-label {
+  min-width: 0;
+  flex: 1;
+}
+
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-item"].ssota-bn-color-menu-item--selected,
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-item"].ssota-bn-color-menu-item--selected:focus,
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-checkbox-item"],
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-item"] {
+  color: var(--bn-colors-menu-text);
+}
+
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-item"].ssota-bn-color-menu-item--selected,
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-item"]:focus,
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-checkbox-item"]:focus {
+  background-color: var(--bn-colors-hovered-background);
+  color: var(--bn-colors-hovered-text);
+}
+
+.blocknote-editor-shell #bn-suggestion-menu .bn-suggestion-menu-label,
+.blocknote-editor-shell .bn-suggestion-menu .bn-suggestion-menu-label {
+  color: var(--bn-colors-side-menu);
+}
+
+.blocknote-editor-shell #bn-suggestion-menu [role="option"] .text-xs,
+.blocknote-editor-shell .bn-suggestion-menu [role="option"] .text-xs {
+  color: var(--bn-colors-side-menu);
+}
+
+/* Slash menu: keyboard focus uses aria-selected; mirror hover highlight. */
+.blocknote-editor-shell #bn-suggestion-menu [role="option"]:hover,
+.blocknote-editor-shell .bn-suggestion-menu [role="option"]:hover,
+.blocknote-editor-shell #bn-suggestion-menu [role="option"][aria-selected="true"],
+.blocknote-editor-shell .bn-suggestion-menu [role="option"][aria-selected="true"] {
+  background-color: var(--bn-colors-hovered-background);
+  color: var(--bn-colors-hovered-text);
+}
+
+.blocknote-editor-shell
+  #bn-suggestion-menu
+  [role="option"][aria-selected="true"]
+  .text-xs,
+.blocknote-editor-shell
+  .bn-suggestion-menu
+  [role="option"][aria-selected="true"]
+  .text-xs,
+.blocknote-editor-shell #bn-suggestion-menu [role="option"]:hover .text-xs,
+.blocknote-editor-shell .bn-suggestion-menu [role="option"]:hover .text-xs {
+  color: var(--bn-colors-hovered-text);
+  opacity: 0.85;
+}
+
+.blocknote-editor-shell .bn-container {
+  border-radius: var(--radius-md);
+}
+
+.blocknote-editor-shell .bn-editor {
+  min-height: 12rem;
+  padding-inline: 0.25rem;
+}
+
+/* Nested numbered lists: top-level 1. → nested a. → i. → 1. (repeat). */
+.blocknote-editor-shell
+  [data-content-type="numberedListItem"][data-marker]::before {
+  content: attr(data-marker) !important;
+}
+
+.blocknote-editor-shell
+  [data-content-type="numberedListItem"][data-marker-prev]::before {
+  content: attr(data-marker-prev) !important;
+}
+
+.blocknote-editor-shell
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker]::before,
+.blocknote-editor-shell
+  .bn-block-outer:not([data-prev-type])
+  > .bn-block
+  > div[data-type="modification"]
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker]::before,
+.blocknote-editor-shell
+  .bn-block-outer[data-prev-type="numberedListItem"]:not([data-prev-index="none"])
+  > .bn-block
+  > .bn-block-content[data-content-type="numberedListItem"][data-marker-prev]::before {
+  display: flex;
+  justify-content: center;
+  min-width: 24px;
+  padding-right: 4px;
+}
+
+/* Hide nested-block indent guide lines (BlockNote default border-left on ::before). */
+.blocknote-editor-shell
+  .bn-block-group
+  .bn-block:not(:has(.bn-toggle-wrapper))
+  .bn-block-group
+  .bn-block-outer:not([data-prev-depth-changed])::before {
+  border-left: none;
+  display: none;
+}
+
+/* Toggle blocks: BlockNote attaches empty-state ::after to .bn-block-content (flex),
+   which pushes "제목" to the far right when the toggle is expanded. Render placeholders
+   on the inline heading / paragraph inside .bn-toggle-wrapper instead. */
+.blocknote-editor-shell
+  .bn-block-content:has(.bn-toggle-wrapper):has(.ProseMirror-trailingBreak:only-child)::after {
+  content: none !important;
+  display: none !important;
+}
+
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="heading"]:has(.bn-toggle-wrapper):has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  :is(h1, h2, h3, h4, h5, h6) {
+  flex: 0 1 auto;
+  width: fit-content;
+  min-width: 0;
+}
+
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="heading"]:has(.bn-toggle-wrapper):has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  :is(h1, h2, h3, h4, h5, h6)::after,
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="heading"]:has(.bn-toggle-wrapper)[data-is-empty-and-focused]:has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  :is(h1, h2, h3, h4, h5, h6)::after {
+  color: var(--bn-colors-side-menu);
+  content: var(--ssota-bn-placeholder-heading) !important;
+  font-style: italic;
+  margin-inline: -2px;
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="toggleListItem"]:has(.bn-toggle-wrapper):has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  p {
+  flex: 0 1 auto;
+  width: fit-content;
+  min-width: 0;
+}
+
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="toggleListItem"]:has(.bn-toggle-wrapper):has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  p::after,
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="toggleListItem"]:has(.bn-toggle-wrapper)[data-is-empty-and-focused]:has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  p::after {
+  color: var(--bn-colors-side-menu);
+  content: var(--ssota-bn-placeholder-toggle-list) !important;
+  font-style: italic;
+  margin-inline: -2px;
+  max-width: 100%;
+  pointer-events: none;
+}

@@ -4,7 +4,7 @@ import {
   buildResolvedComponentMap,
   inlineProjectRefs,
   resolvePublishedDocument,
-} from "./resolve-project-ref.js";
+} from "./resolve-project-ref";
 
 const buttonDoc: UiComponentDocument = {
   schemaVersion: 1,

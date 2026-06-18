@@ -1,43 +1,40 @@
 import { describe, expect, it } from "vitest";
-import type { UiComponentDocument } from "@ssota/contracts/catalog";
-import { createEmptyUiComponentDocument } from "./empty-document";
-import { resolveInitialDraft } from "./draft-storage";
+import { createEmptyUiComponentContentV2 } from "./empty-document";
+import { resolveInitialContentV2 } from "./draft-storage";
 
-describe("resolveInitialDraft", () => {
-  const fallback = createEmptyUiComponentDocument();
-  const sessionDoc: UiComponentDocument = {
-    schemaVersion: 1,
-    root: { kind: "text", id: "s", text: "session" },
-  };
-  const publishedDoc: UiComponentDocument = {
-    schemaVersion: 1,
-    root: { kind: "text", id: "c", text: "published" },
+describe("resolveInitialContentV2", () => {
+  const fallback = createEmptyUiComponentContentV2();
+  const sessionContent = {
+    schemaVersion: 2 as const,
+    files: {
+      "Component.tsx": `export default function Component() { return null; }`,
+    },
   };
 
-  it("prefers session draft", () => {
+  it("prefers session content over published content", () => {
     expect(
-      resolveInitialDraft({
-        sessionDraft: sessionDoc,
-        publishedContent: JSON.stringify(publishedDoc),
+      resolveInitialContentV2({
+        sessionContent,
+        publishedContent: JSON.stringify(fallback),
         fallback,
-      }).root,
-    ).toEqual(sessionDoc.root);
+      }),
+    ).toEqual(sessionContent);
   });
 
-  it("falls back to published content", () => {
+  it("falls back to published content when session is empty", () => {
     expect(
-      resolveInitialDraft({
-        sessionDraft: null,
-        publishedContent: JSON.stringify(publishedDoc),
+      resolveInitialContentV2({
+        sessionContent: null,
+        publishedContent: JSON.stringify(sessionContent),
         fallback,
-      }).root,
-    ).toEqual(publishedDoc.root);
+      }),
+    ).toEqual(sessionContent);
   });
 
-  it("uses empty template when nothing else is available", () => {
+  it("uses fallback when session and published are unavailable", () => {
     expect(
-      resolveInitialDraft({
-        sessionDraft: null,
+      resolveInitialContentV2({
+        sessionContent: null,
         publishedContent: null,
         fallback,
       }),

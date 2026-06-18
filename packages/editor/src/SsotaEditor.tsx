@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { BubbleToolbar } from "./BubbleToolbar";
 import { DragBlockHandle } from "./DragBlockHandle";
 import { insertUploadedImage } from "./extensions/MentionExtension";
+import { handleListTabKeyDown } from "./list-tab-handler";
 import { ssotaExtensions } from "./extensions";
 import type { SsotaExtensionOptions } from "./types";
 
@@ -82,6 +83,11 @@ export function SsotaEditor({
           void insertUploadedImage(currentEditor, file, upload);
         }
         return true;
+      },
+      handleKeyDown: (_view, event) => {
+        const currentEditor = editorRef.current;
+        if (!currentEditor) return false;
+        return handleListTabKeyDown(currentEditor, event);
       },
     },
   });

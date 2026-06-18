@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { GraphNode } from "@ssota/core";
 import type {
-  UiComponentContentV2,
-  UiComponentDocument,
   DesignThemeTokenMap,
+  UiComponentContentV2,
 } from "@ssota/contracts/catalog";
 import { ThemeTokensProvider } from "@ssota/ui/components/design-studio";
 import {
@@ -18,24 +17,15 @@ import type { ProjectRouteContext } from "@/lib/console/paths";
 import {
   clearSessionDraft,
   draftStorageKey,
-  getUiComponentRepresentation,
   readSessionContentV2,
-  readSessionDraft,
   resolveInitialContentV2,
-  resolveInitialDraft,
   writeSessionContentV2,
-  writeSessionDraft,
 } from "@/lib/design-studio/draft-storage";
+import { createEmptyUiComponentContentV2 } from "@/lib/design-studio/empty-document";
 import {
-  createEmptyUiComponentContentV2,
-  createEmptyUiComponentDocument,
-} from "@/lib/design-studio/empty-document";
-import { collectUtilityClassesFromSourceFiles } from "@/lib/design-studio/collect-source-utility-classes";
-import { updateStudioNode } from "@/lib/design-studio/tree-utils";
-import {
-  resolveStudioBundlePreviewUrls,
-  revokeStudioBundlePreviewUrls,
-} from "@/lib/design-studio/resolve-bundle-preview-urls";
+  collectClassNamesFromContentV2,
+  hashContentStructure,
+} from "@/lib/design-studio/content-structure-hash";
 import { buildSourceLayerIndex } from "@/lib/design-studio/source-layers";
 import {
   patchSourceClassName,
@@ -43,12 +33,11 @@ import {
   type SourceRef,
 } from "@/lib/design-studio/source-patch";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
-import type { ResolvedComponentMap, StudioInteractionMode } from "@ssota/studio-renderer";
-import { InspectorPanel } from "./inspector-panel";
+import type { StudioInteractionMode } from "@ssota/studio-renderer";
 import { SourceInspectorPanel } from "./source-inspector-panel";
 import { PreviewToolbar } from "./preview-toolbar";
 import { StudioLeftPanel } from "./studio-left-panel";
-import { usePreviewBridge } from "./preview-bridge";
+import { usePreviewBridge, useStudioNodeMeasure } from "./preview-bridge";
 
 type StudioShellProps = {
   ctx: ProjectRouteContext;
@@ -59,11 +48,9 @@ type StudioShellProps = {
   themeTokens: DesignThemeTokenMap;
   themeCss: string;
   previewBasePath: string;
-  resolvedComponents: ResolvedComponentMap;
   onDeploy: (input: {
     projectId: string;
     nodeId: string;
-    document?: UiComponentDocument;
     contentV2?: UiComponentContentV2;
     themeCss?: string;
     revalidatePath: string;
@@ -71,7 +58,80 @@ type StudioShellProps = {
   onCreateComponent: () => Promise<void> | void;
 };
 
-export function StudioShell({
+export function StudioShell(props: StudioShellProps) {
+  const { component } = props;
+  if (!component) {
+    return <StudioShellEmpty {...props} />;
+  }
+  return <StudioShellEditor key={component.id} {...props} component={component} />;
+}
+
+function StudioShellEmpty({
+  components,
+  studioBasePath,
+  onCreateComponent,
+}: StudioShellProps) {
+  const [pending, startTransition] = useTransition();
+
+  const handleCreateComponent = () => {
+    startTransition(() => {
+      void onCreateComponent();
+    });
+  };
+
+  return (
+    <div className="flex h-full min-h-0 flex-col" data-testid="design-studio-shell">
+      <ResizablePanelGroup
+        id="design-studio-panels"
+        orientation="horizontal"
+        className="min-h-0 flex-1"
+        defaultLayout={{ left: 22, preview: 53, inspector: 25 }}
+      >
+        <ResizablePanel id="left" defaultSize="22%" minSize="16%" maxSize="32%">
+          <StudioLeftPanel
+            components={components}
+            activeComponentId={null}
+            studioBasePath={studioBasePath}
+            sourceLayers={null}
+            selectedLayerId={null}
+            onSelectLayer={() => {}}
+            pending={pending}
+            onCreateComponent={handleCreateComponent}
+          />
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel id="preview" defaultSize="53%" minSize="35%">
+          <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Create a component or pick one from the Components tab.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              disabled={pending}
+              onClick={handleCreateComponent}
+            >
+              {pending ? "Creating…" : "New component"}
+            </Button>
+          </div>
+        </ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel
+          id="inspector"
+          defaultSize="25%"
+          minSize="18%"
+          maxSize="35%"
+        >
+          <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
+            Inspector appears when a component is open.
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
+    </div>
+  );
+}
+
+function StudioShellEditor({
   projectId,
   component,
   components,
@@ -79,44 +139,23 @@ export function StudioShell({
   themeTokens,
   themeCss,
   previewBasePath,
-  resolvedComponents,
   onDeploy,
   onCreateComponent,
-}: StudioShellProps) {
+}: StudioShellProps & { component: GraphNode }) {
   const props = (component?.properties ?? {}) as {
     slug?: string;
     tier?: string;
-    draft?: string;
-    representation?: string;
     entry?: string;
   };
-  const representation = component
-    ? getUiComponentRepresentation(component.properties)
-    : "tree";
-  const isSource = representation === "source";
 
   const storageKey = component
     ? draftStorageKey(projectId, component.id)
     : null;
 
-  const previewUrl = useMemo(() => {
-    if (!component) return `${previewBasePath}?mode=draft`;
-    return isSource
-      ? `${previewBasePath}?mode=bundle`
-      : `${previewBasePath}?mode=draft`;
-  }, [component, isSource, previewBasePath]);
+  const previewUrl = `${previewBasePath}?mode=bundle`;
 
-  const [document, setDocument] = useState<UiComponentDocument>(() =>
-    component && !isSource
-      ? resolveInitialDraft({
-          sessionDraft: null,
-          publishedContent: component.content,
-          fallback: createEmptyUiComponentDocument(),
-        })
-      : createEmptyUiComponentDocument(),
-  );
   const [contentV2, setContentV2] = useState<UiComponentContentV2>(() => {
-    if (!component || !isSource) return createEmptyUiComponentContentV2();
+    if (!component) return createEmptyUiComponentContentV2();
     const key = draftStorageKey(projectId, component.id);
     return resolveInitialContentV2({
       sessionContent: readSessionContentV2(key),
@@ -129,23 +168,18 @@ export function StudioShell({
     cssUrl?: string;
     buildId: string;
   } | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(
-    component ? (isSource ? null : "root") : null,
-  );
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [interactionMode, setInteractionMode] =
     useState<StudioInteractionMode>("inspect");
   const [pending, startTransition] = useTransition();
   const {
     iframeRef,
     ready,
-    syncTree,
-    syncResolvedComponents,
     syncUtilityCss,
-    syncUtilityCssFromTree,
+    patchNodeClassName,
     syncTheme,
     syncInteractionMode,
     syncBundle,
-    patchNode,
     highlightNode,
   } = usePreviewBridge(previewUrl);
 
@@ -153,83 +187,43 @@ export function StudioShell({
     null,
   );
 
+  const structureHash = useMemo(
+    () => hashContentStructure(contentV2),
+    [contentV2],
+  );
+  const contentV2Ref = useRef(contentV2);
+
+  useEffect(() => {
+    contentV2Ref.current = contentV2;
+  }, [contentV2]);
+
   const sourceLayers = useMemo(() => {
-    if (!isSource) return null;
+    if (!component) return null;
     if (contentV2.layerIndex) return [contentV2.layerIndex];
     const entry =
       typeof props.entry === "string" ? props.entry : "Component.tsx";
     return buildSourceLayerIndex(contentV2.files, entry);
-  }, [contentV2, isSource, props.entry]);
+  }, [component, contentV2, props.entry]);
 
   const selectedSourceClassName = useMemo(() => {
     if (!selectedSourceRef) return "";
     return readClassNameFromSource(contentV2.files, selectedSourceRef) ?? "";
   }, [contentV2.files, selectedSourceRef]);
 
-  useEffect(() => {
-    if (!component || !storageKey) return;
-    const nextRepresentation = getUiComponentRepresentation(component.properties);
-    if (nextRepresentation === "source") {
-      setContentV2(
-        resolveInitialContentV2({
-          sessionContent: readSessionContentV2(storageKey),
-          publishedContent: component.content,
-          fallback: createEmptyUiComponentContentV2(),
-        }),
-      );
-      setSelectedId(null);
-      return;
-    }
-
-    setDocument(
-      resolveInitialDraft({
-        sessionDraft: readSessionDraft(storageKey),
-        publishedContent: component.content,
-        fallback: createEmptyUiComponentDocument(),
-      }),
-    );
-    setSelectedId("root");
-  }, [component, storageKey]);
+  const domReferencePx = useStudioNodeMeasure(
+    iframeRef,
+    selectedId,
+    ready,
+    selectedSourceClassName,
+  );
 
   useEffect(() => {
     if (!storageKey) return;
     const timer = window.setTimeout(() => {
-      if (isSource) {
-        writeSessionContentV2(storageKey, contentV2);
-      } else {
-        writeSessionDraft(storageKey, document);
-      }
+      writeSessionContentV2(storageKey, contentV2);
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [document, contentV2, storageKey, isSource]);
-
-  useEffect(() => {
-    if (!component || !ready || isSource) return;
-    syncTree(document.root);
-  }, [component, ready, document.root, syncTree, isSource]);
-
-  useEffect(() => {
-    if (!component || !ready || isSource) return;
-    syncResolvedComponents(resolvedComponents);
-  }, [component, ready, resolvedComponents, syncResolvedComponents, isSource]);
-
-  useEffect(() => {
-    if (!component || !ready || isSource) return;
-    void syncUtilityCssFromTree(document.root, resolvedComponents);
-  }, [
-    component,
-    ready,
-    document.root,
-    resolvedComponents,
-    syncUtilityCssFromTree,
-    isSource,
-  ]);
-
-  useEffect(() => {
-    if (!component || !ready || !isSource) return;
-    const classes = collectUtilityClassesFromSourceFiles(contentV2.files);
-    void syncUtilityCss(classes);
-  }, [component, ready, isSource, contentV2.files, syncUtilityCss]);
+  }, [contentV2, storageKey]);
 
   useEffect(() => {
     if (!component || !ready) return;
@@ -242,8 +236,12 @@ export function StudioShell({
   }, [component, ready, interactionMode, syncInteractionMode]);
 
   useEffect(() => {
-    if (!component || !isSource) return;
-    let cancelled = false;
+    if (!component || !ready || !buildPreview) return;
+    void syncUtilityCss(collectClassNamesFromContentV2(contentV2Ref.current));
+  }, [component, ready, buildPreview, structureHash, syncUtilityCss]);
+
+  useEffect(() => {
+    if (!component) return;
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
@@ -253,53 +251,43 @@ export function StudioShell({
             body: JSON.stringify({
               projectId,
               properties: component.properties,
-              content: JSON.stringify(contentV2),
-              themeCss: themeCss,
+              content: JSON.stringify(contentV2Ref.current),
+              themeCss,
             }),
           });
-          if (!response.ok || cancelled) return;
+          if (!response.ok) {
+            const payload = (await response.json().catch(() => null)) as
+              | { error?: string }
+              | null;
+            console.warn(
+              "[studio/build]",
+              response.status,
+              payload?.error ?? response.statusText,
+            );
+            return;
+          }
           const payload = (await response.json()) as {
             url: string;
             cssUrl?: string;
             buildId: string;
           };
-          const resolved = await resolveStudioBundlePreviewUrls({
-            jsPath: payload.url,
-            cssPath: payload.cssUrl,
+          setBuildPreview({
+            jsUrl: payload.url,
+            cssUrl: payload.cssUrl,
             buildId: payload.buildId,
-          });
-          if (!resolved || cancelled) {
-            revokeStudioBundlePreviewUrls(resolved ?? undefined);
-            return;
-          }
-          setBuildPreview((current) => {
-            revokeStudioBundlePreviewUrls(current);
-            return resolved;
           });
         } catch {
           // preview build is best-effort until deploy
         }
       })();
     }, 400);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
-    };
-  }, [component, contentV2, isSource, projectId, themeCss]);
+    return () => window.clearTimeout(timer);
+  }, [component, structureHash, projectId, themeCss]);
 
   useEffect(() => {
-    return () => {
-      setBuildPreview((current) => {
-        revokeStudioBundlePreviewUrls(current);
-        return null;
-      });
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!component || !ready || !isSource || !buildPreview) return;
+    if (!component || !ready || !buildPreview) return;
     syncBundle(buildPreview);
-  }, [component, ready, isSource, buildPreview, syncBundle]);
+  }, [component, ready, buildPreview, syncBundle]);
 
   useEffect(() => {
     if (!ready || !selectedId) return;
@@ -326,47 +314,16 @@ export function StudioShell({
         selectedSourceRef,
         nextClassName,
       );
-      setContentV2((current) => ({ ...current, files: nextFiles }));
-      patchNode(selectedId, { className: nextClassName });
+      const nextContent = { ...contentV2, files: nextFiles };
+      setContentV2(nextContent);
+      void patchNodeClassName(
+        selectedId,
+        nextClassName,
+        collectClassNamesFromContentV2(nextContent),
+      );
     },
-    [contentV2.files, patchNode, selectedId, selectedSourceRef],
+    [contentV2, patchNodeClassName, selectedId, selectedSourceRef],
   );
-
-  const handlePatch = useCallback(
-    (nodeId: string, patch: Record<string, unknown>) => {
-    if (isSource) return;
-    setDocument((current) => ({
-      ...current,
-      root: updateStudioNode(current.root, nodeId, (node) => {
-        if (node.kind === "element") {
-          return {
-            ...node,
-            tag: typeof patch.tag === "string" ? patch.tag : node.tag,
-            className:
-              typeof patch.className === "string"
-                ? patch.className
-                : node.className,
-          };
-        }
-        if (node.kind === "text") {
-          return {
-            ...node,
-            text: typeof patch.text === "string" ? patch.text : node.text,
-          };
-        }
-        if (node.kind === "component") {
-          return {
-            ...node,
-            className:
-              typeof patch.className === "string"
-                ? patch.className
-                : node.className,
-          };
-        }
-        return node;
-      }),
-    }));
-  }, [isSource]);
 
   const handleDeploy = () => {
     if (!component) return;
@@ -374,9 +331,8 @@ export function StudioShell({
       await onDeploy({
         projectId,
         nodeId: component.id,
-        document: isSource ? undefined : document,
-        contentV2: isSource ? contentV2 : undefined,
-        themeCss: themeCss,
+        contentV2,
+        themeCss,
         revalidatePath: previewBasePath.replace(/^\//, ""),
       });
       if (storageKey) {
@@ -402,10 +358,9 @@ export function StudioShell({
         <ResizablePanel id="left" defaultSize="22%" minSize="16%" maxSize="32%">
           <StudioLeftPanel
             components={components}
-            activeComponentId={component?.id ?? null}
+            activeComponentId={component.id}
             studioBasePath={studioBasePath}
-            root={component && !isSource ? document.root : null}
-            sourceLayers={component && isSource ? sourceLayers : null}
+            sourceLayers={sourceLayers}
             selectedLayerId={selectedId}
             onSelectLayer={setSelectedId}
             pending={pending}
@@ -414,38 +369,22 @@ export function StudioShell({
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel id="preview" defaultSize="53%" minSize="35%">
-          {component ? (
-            <div className="flex h-full min-h-0 flex-col bg-muted/30">
-              <PreviewToolbar
-                mode={interactionMode}
-                onModeChange={setInteractionMode}
-                disabled={!ready}
-                onDeploy={handleDeploy}
-                deployDisabled={!component}
-                deployPending={pending}
-              />
-              <iframe
-                ref={iframeRef}
-                title="Design preview"
-                src={previewUrl}
-                className="min-h-0 flex-1 w-full border-0 bg-background"
-              />
-            </div>
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">
-              <p className="text-sm text-muted-foreground">
-                Create a component or pick one from the Components tab.
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                disabled={pending}
-                onClick={handleCreateComponent}
-              >
-                {pending ? "Creating…" : "New component"}
-              </Button>
-            </div>
-          )}
+          <div className="flex h-full min-h-0 flex-col bg-muted/30">
+            <PreviewToolbar
+              mode={interactionMode}
+              onModeChange={setInteractionMode}
+              disabled={!ready}
+              onDeploy={handleDeploy}
+              deployDisabled={false}
+              deployPending={pending}
+            />
+            <iframe
+              ref={iframeRef}
+              title="Design preview"
+              src={previewUrl}
+              className="min-h-0 flex-1 w-full border-0 bg-background"
+            />
+          </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel
@@ -455,27 +394,14 @@ export function StudioShell({
           maxSize="35%"
         >
           <ThemeTokensProvider tokens={themeTokens}>
-            {component ? (
-              isSource ? (
-                <SourceInspectorPanel
-                  selectedId={selectedId}
-                  selectedSourceRef={selectedSourceRef}
-                  className={selectedSourceClassName}
-                  onClassNameChange={handleSourceClassNameChange}
-                  readOnly={Boolean(selectedId && !selectedSourceRef)}
-                />
-              ) : (
-                <InspectorPanel
-                  root={document.root}
-                  selectedId={selectedId}
-                  onPatch={handlePatch}
-                />
-              )
-            ) : (
-              <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
-                Inspector appears when a component is open.
-              </div>
-            )}
+            <SourceInspectorPanel
+              selectedId={selectedId}
+              selectedSourceRef={selectedSourceRef}
+              className={selectedSourceClassName}
+              onClassNameChange={handleSourceClassNameChange}
+              readOnly={Boolean(selectedId && !selectedSourceRef)}
+              domReferencePx={domReferencePx}
+            />
           </ThemeTokensProvider>
         </ResizablePanel>
       </ResizablePanelGroup>
