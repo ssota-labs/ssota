@@ -29,6 +29,10 @@ export function usePreviewBridge(previewUrl: string) {
     typeof window !== "undefined" ? window.location.origin : "";
 
   useEffect(() => {
+    setReady(false);
+  }, [previewUrl]);
+
+  useEffect(() => {
     const listener = createParentMessageListener(origin, (message) => {
       if (message.type === "STUDIO_READY") {
         setReady(true);

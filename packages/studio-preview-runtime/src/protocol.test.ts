@@ -17,6 +17,18 @@ describe("studio preview runtime protocol", () => {
     expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");
   });
 
+  it("parses STUDIO_LOAD_BUNDLE with same-origin path", () => {
+    const message = parseStudioMessage({
+      type: "STUDIO_LOAD_BUNDLE",
+      jsUrl:
+        "/api/studio/bundle?projectId=11111111-1111-4111-8111-111111111111&buildHash=abc&file=bundle.js",
+      cssUrl:
+        "/api/studio/bundle?projectId=11111111-1111-4111-8111-111111111111&buildHash=abc&file=bundle.css",
+      buildId: "abc123",
+    });
+    expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");
+  });
+
   it("parses STUDIO_PATCH", () => {
     const message = parseStudioMessage({
       type: "STUDIO_PATCH",
