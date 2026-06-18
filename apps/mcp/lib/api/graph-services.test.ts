@@ -6,21 +6,23 @@ import {
 } from "@/lib/api/graph-services";
 
 describe("graph-services catalog", () => {
-  it("lists node types from contracts", () => {
-    const types = listNodeTypesForMcp();
+  it("lists node types from contracts", async () => {
+    const types = await listNodeTypesForMcp();
     expect(types.length).toBeGreaterThan(30);
-    expect(types.some((entry) => entry.nodeType === "initiative")).toBe(true);
+    expect(types.some((entry) => entry.catalogKey === "initiative")).toBe(true);
   });
 
   it("returns node type entry", () => {
     const entry = getNodeTypeForMcp("hypothesis");
-    expect(entry?.nodeType).toBe("hypothesis");
+    expect(entry?.catalogKey).toBe("hypothesis");
     expect(entry?.label).toBeTruthy();
   });
 
   it("lists edge types from contracts", () => {
     const types = listEdgeTypesForMcp();
     expect(types.length).toBeGreaterThan(10);
-    expect(types.some((entry) => entry.edgeType === "for_initiative")).toBe(true);
+    expect(types.some((entry) => entry.catalogKey === "for_initiative")).toBe(
+      true,
+    );
   });
 });

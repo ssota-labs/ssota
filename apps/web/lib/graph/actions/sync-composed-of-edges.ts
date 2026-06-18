@@ -12,7 +12,7 @@ export async function syncComposedOfEdges(input: {
     projectId: input.projectId,
     nodeId: input.sourceNodeId,
     direction: "outgoing",
-    edgeType: "composed_of",
+    catalogKey: "composed_of",
   });
 
   const currentTargets = existing.map((edge) => edge.targetNodeId);
@@ -33,7 +33,7 @@ export async function syncComposedOfEdges(input: {
   for (const targetNodeId of toCreate) {
     await createEdge(deps, {
       projectId: input.projectId,
-      edgeType: "composed_of",
+      catalogKey: "composed_of",
       sourceNodeId: input.sourceNodeId,
       targetNodeId,
     });

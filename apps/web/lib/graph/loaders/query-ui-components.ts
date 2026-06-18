@@ -14,7 +14,7 @@ export async function queryUiComponents(
   const { graphRead } = getGraphDeps(projectId);
   const nodes = await graphRead.queryNodes({
     projectId,
-    nodeType: "ui_component",
+    catalogKey: "ui_component",
     limit: 200,
   });
 

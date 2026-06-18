@@ -28,6 +28,9 @@ type McpToolServer = {
   ) => void;
 };
 
+const catalogKeySchema = nodeTypeSchema;
+const edgeCatalogKeySchema = edgeTypeSchema;
+
 export function registerGraphTools(server: McpToolServer) {
   registerScopedProjectTool(
     server,
@@ -38,7 +41,7 @@ export function registerGraphTools(server: McpToolServer) {
         "List catalog node types from packages/contracts (no database round-trip).",
       inputSchema: {},
     },
-    async () => jsonContent(listNodeTypesForMcp()),
+    async () => jsonContent(await listNodeTypesForMcp()),
   );
 
   registerScopedProjectTool(
@@ -48,11 +51,11 @@ export function registerGraphTools(server: McpToolServer) {
       title: "Get Node Type",
       description:
         "Fetch a node type catalog entry and property schema summary (contracts SSOT).",
-      inputSchema: { nodeType: nodeTypeSchema },
+      inputSchema: { catalogKey: catalogKeySchema },
     },
     async ({ args }) => {
-      const nodeType = String(args.nodeType);
-      return jsonContent(getNodeTypeForMcp(nodeType));
+      const catalogKey = String(args.catalogKey ?? args.nodeType);
+      return jsonContent(getNodeTypeForMcp(catalogKey));
     },
   );
 
@@ -74,9 +77,9 @@ export function registerGraphTools(server: McpToolServer) {
     {
       title: "Query Nodes",
       description:
-        "Query graph nodes in the current project with optional nodeType and lifecycle filters.",
+        "Query graph nodes in the current project with optional catalogKey and lifecycle filters.",
       inputSchema: {
-        nodeType: nodeTypeSchema.optional(),
+        catalogKey: catalogKeySchema.optional(),
         lifecycleStatus: LifecycleStatusSchema.optional(),
         limit: z.number().int().positive().max(500).optional(),
         offset: z.number().int().nonnegative().optional(),
@@ -104,11 +107,11 @@ export function registerGraphTools(server: McpToolServer) {
     {
       title: "Traverse Edges",
       description:
-        "Traverse edges from a node (alias for traverse_graph semantics). Supports direction and edgeType filters.",
+        "Traverse edges from a node (alias for traverse_graph semantics). Supports direction and catalogKey filters.",
       inputSchema: {
         nodeId: z.string().uuid(),
         direction: z.enum(["outgoing", "incoming", "both"]).optional(),
-        edgeType: edgeTypeSchema.optional(),
+        catalogKey: edgeCatalogKeySchema.optional(),
       },
     },
     async ({ projectId, args }) =>
@@ -121,9 +124,9 @@ export function registerGraphTools(server: McpToolServer) {
     {
       title: "Create Node",
       description:
-        "Create a graph node in the current project. Validates nodeType and properties against the catalog.",
+        "Create a graph node in the current project. Validates catalogKey and properties against the catalog.",
       inputSchema: {
-        nodeType: nodeTypeSchema,
+        catalogKey: catalogKeySchema,
         title: z.string().min(1),
         properties: z.record(z.unknown()).optional(),
         content: z.string().nullable().optional(),
@@ -173,7 +176,7 @@ export function registerGraphTools(server: McpToolServer) {
       description:
         "Connect two nodes with a typed edge in the current project.",
       inputSchema: {
-        edgeType: edgeTypeSchema,
+        catalogKey: edgeCatalogKeySchema,
         sourceNodeId: z.string().uuid(),
         targetNodeId: z.string().uuid(),
         properties: z.record(z.unknown()).optional(),

@@ -20,10 +20,9 @@ export async function ensureInitiativeScopedNode(
   const deps = getGraphDeps(projectId);
   return createNode(deps, {
     projectId,
-    nodeType,
+    catalogKey: nodeType,
     title: defaultTitle,
-    properties: {},
+    properties: { lifecycleStatus: "Draft" },
     initiativeId,
-    lifecycleStatus: "Draft",
   });
 }

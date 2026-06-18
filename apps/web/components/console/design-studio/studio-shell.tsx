@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { GraphNode } from "@ssota/core";
+import { readNodeContent } from "@ssota/core";
 import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
 import {
   ResizableHandle,
@@ -153,7 +154,7 @@ function StudioShellEditor({
     const key = draftStorageKey(projectId, component.id);
     return resolveInitialContentV2({
       sessionContent: readSessionContentV2(key),
-      publishedContent: component.content,
+      publishedContent: readNodeContent(component.properties),
       fallback: createEmptyUiComponentContentV2(),
     });
   });

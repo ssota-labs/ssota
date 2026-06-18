@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createContractsCatalogReadPort } from "../../adapters/contracts-catalog-read-port.js";
+import { readNodeContent } from "../../domain/graph-types.js";
 import {
   createInMemoryGraphReadPort,
   createInMemoryGraphStore,
@@ -19,7 +20,7 @@ describe("v2.7 graph use cases", () => {
         { catalog, graphRead, graphWrite },
         {
           projectId: "00000000-0000-4000-8000-000000000001",
-          nodeType: "not_real" as "task",
+          catalogKey: "not_real" as "task",
           title: "x",
         },
       ),
@@ -35,7 +36,7 @@ describe("v2.7 graph use cases", () => {
         { catalog, graphRead, graphWrite },
         {
           projectId: "00000000-0000-4000-8000-000000000001",
-          nodeType: "hypothesis",
+          catalogKey: "hypothesis",
           title: "Bad",
           properties: { status: "invalid" },
         },
@@ -52,21 +53,27 @@ describe("v2.7 graph use cases", () => {
 
     const source = await graphWrite.createNode({
       projectId: projectA,
-      nodeType: "initiative",
+      nodeCatalogId: "00000000-0000-4000-8000-000000000009",
+      catalogKey: "initiative",
       title: "A",
+      properties: { lifecycleStatus: "Draft" },
+      schemaVersion: 1,
     });
     const target = await graphWrite.createNode({
       projectId: projectB,
-      nodeType: "release",
+      nodeCatalogId: "00000000-0000-4000-8000-000000000010",
+      catalogKey: "release",
       title: "B",
+      properties: { lifecycleStatus: "Draft" },
+      schemaVersion: 1,
     });
 
     await expect(
       createEdge(
-        { graphRead, graphWrite },
+        { catalog, graphRead, graphWrite },
         {
           projectId: projectA,
-          edgeType: "paired_with",
+          catalogKey: "paired_with",
           sourceNodeId: source.id,
           targetNodeId: target.id,
         },
@@ -101,11 +108,11 @@ describe("v2.7 graph use cases", () => {
       projectId,
       nodeId: result.initiativeId,
       direction: "outgoing",
-      edgeType: "paired_with",
+      catalogKey: "paired_with",
     });
 
-    expect(initiative?.nodeType).toBe("initiative");
-    expect(release?.nodeType).toBe("release");
+    expect(initiative?.catalogKey).toBe("initiative");
+    expect(release?.catalogKey).toBe("release");
     expect(edges).toHaveLength(1);
     expect(edges[0]?.id).toBe(result.pairedWithEdgeId);
   });
@@ -117,14 +124,14 @@ describe("v2.7 graph use cases", () => {
     const projectId = "00000000-0000-4000-8000-000000000010";
     const base = {
       projectId,
-      nodeType: "roadmap" as const,
+      catalogKey: "roadmap" as const,
       title: "2026 연간 로드맵",
       properties: {
         kind: "annual" as const,
         year: 2026,
         doc_status: "draft" as const,
+        content: "# Annual",
       },
-      content: "# Annual",
     };
 
     await createNode({ catalog, graphRead, graphWrite }, base);
@@ -147,10 +154,9 @@ describe("v2.7 graph use cases", () => {
         { catalog, graphRead, graphWrite },
         {
           projectId: "00000000-0000-4000-8000-000000000011",
-          nodeType: "roadmap",
+          catalogKey: "roadmap",
           title: "2026 Q1",
-          properties: { kind: "quarter", year: 2026 },
-          content: "# Quarter",
+          properties: { kind: "quarter", year: 2026, content: "# Quarter" },
         },
       ),
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
@@ -163,15 +169,15 @@ describe("v2.7 graph use cases", () => {
     const projectId = "00000000-0000-4000-8000-000000000012";
     const base = {
       projectId,
-      nodeType: "roadmap" as const,
+      catalogKey: "roadmap" as const,
       title: "2026 Q1 분기 로드맵",
       properties: {
         kind: "quarter" as const,
         year: 2026,
         quarter: 1 as const,
         doc_status: "draft" as const,
+        content: "# Q1",
       },
-      content: "# Q1",
     };
 
     await createNode({ catalog, graphRead, graphWrite }, base);
@@ -184,82 +190,7 @@ describe("v2.7 graph use cases", () => {
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
   });
 
-  it("rejects ui_component create without content", async () => {
-    const store = createInMemoryGraphStore();
-    const graphRead = createInMemoryGraphReadPort(store);
-    const graphWrite = createInMemoryGraphWritePort(store);
-    await expect(
-      createNode(
-        { catalog, graphRead, graphWrite },
-        {
-          projectId: "00000000-0000-4000-8000-000000000020",
-          nodeType: "ui_component",
-          title: "Source component",
-          properties: {
-            slug: "source-btn",
-            tier: "primitive",
-            representation: "source",
-            entry: "Component.tsx",
-          },
-        },
-      ),
-    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
-  });
-
-  it("rejects ui_component source create without content", async () => {
-    const store = createInMemoryGraphStore();
-    const graphRead = createInMemoryGraphReadPort(store);
-    const graphWrite = createInMemoryGraphWritePort(store);
-    await expect(
-      createNode(
-        { catalog, graphRead, graphWrite },
-        {
-          projectId: "00000000-0000-4000-8000-000000000021",
-          nodeType: "ui_component",
-          title: "Source component",
-          properties: {
-            slug: "source-btn",
-            tier: "primitive",
-            representation: "source",
-            entry: "Component.tsx",
-          },
-        },
-      ),
-    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
-  });
-
-  it("rejects ui_component source create with v1 content", async () => {
-    const store = createInMemoryGraphStore();
-    const graphRead = createInMemoryGraphReadPort(store);
-    const graphWrite = createInMemoryGraphWritePort(store);
-    await expect(
-      createNode(
-        { catalog, graphRead, graphWrite },
-        {
-          projectId: "00000000-0000-4000-8000-000000000022",
-          nodeType: "ui_component",
-          title: "Bad source component",
-          properties: {
-            slug: "bad-source",
-            tier: "primitive",
-            representation: "source",
-            entry: "Component.tsx",
-          },
-          content: JSON.stringify({
-            schemaVersion: 1,
-            root: {
-              kind: "element",
-              id: "root",
-              tag: "div",
-              children: [],
-            },
-          }),
-        },
-      ),
-    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
-  });
-
-  it("creates ui_component source with v2 content", async () => {
+  it("creates ui_component source with v2 content in properties", async () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
@@ -267,7 +198,7 @@ describe("v2.7 graph use cases", () => {
       { catalog, graphRead, graphWrite },
       {
         projectId: "00000000-0000-4000-8000-000000000023",
-        nodeType: "ui_component",
+        catalogKey: "ui_component",
         title: "Source component",
         properties: {
           slug: "source-btn",
@@ -275,16 +206,16 @@ describe("v2.7 graph use cases", () => {
           representation: "source",
           contentSchemaVersion: 2,
           entry: "Component.tsx",
+          content: JSON.stringify({
+            schemaVersion: 2,
+            files: {
+              "Component.tsx":
+                "export default function Component() { return null; }",
+            },
+          }),
         },
-        content: JSON.stringify({
-          schemaVersion: 2,
-          files: {
-            "Component.tsx":
-              "export default function Component() { return null; }",
-          },
-        }),
       },
     );
-    expect(node.content).toContain("schemaVersion");
+    expect(readNodeContent(node.properties)).toContain("schemaVersion");
   });
 });

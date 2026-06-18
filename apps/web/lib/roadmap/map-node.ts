@@ -1,4 +1,5 @@
 import type { GraphNode } from "@ssota/core";
+import { readNodeContent } from "@ssota/core";
 import { parseDocStatus } from "@/lib/roadmap/doc-status";
 import {
   parseRoadmapKind,
@@ -12,7 +13,7 @@ export function toRoadmapNodeView(node: GraphNode): RoadmapNodeView {
   return {
     id: node.id,
     title: node.title || "",
-    content: node.content ?? "",
+    content: readNodeContent(node.properties) ?? "",
     docStatus: parseDocStatus(properties.doc_status),
     kind: parseRoadmapKind(properties.kind),
     year: parseRoadmapYear(properties.year),

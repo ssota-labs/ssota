@@ -19,7 +19,16 @@
     "./workflows": {
       "types": "./dist/workflows/index.d.ts",
       "default": "./dist/workflows/index.js"
-    }
+    },
+    "./page": {
+      "types": "./dist/page/index.d.ts",
+      "default": "./dist/page/index.js"
+    },
+    "./workspace": {
+      "types": "./dist/workspace/index.d.ts",
+      "default": "./dist/workspace/index.js"
+    },
+    "./seed-packs/dev-workflow/*": "./seed-packs/dev-workflow/*"
   },
   "scripts": {
     "build": "tsx scripts/embed-workflow-instructions.ts && tsc",

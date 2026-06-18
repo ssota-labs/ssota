@@ -31,12 +31,30 @@ async function requireAuth() {
   return user;
 }
 
+function mergeNodeProperties(
+  properties: Record<string, unknown> | undefined,
+  extras?: {
+    content?: string | null;
+    lifecycleStatus?: "Draft" | "Active" | "Archived";
+  },
+): Record<string, unknown> {
+  const merged = { ...(properties ?? {}) };
+  if (extras?.content !== undefined) {
+    merged.content = extras.content;
+  }
+  if (extras?.lifecycleStatus !== undefined) {
+    merged.lifecycleStatus = extras.lifecycleStatus;
+  }
+  return merged;
+}
+
 export async function createGraphNodeAction(input: {
   projectId: string;
-  nodeType: NodeType;
+  catalogKey: NodeType;
   title: string;
   properties?: Record<string, unknown>;
   content?: string | null;
+  lifecycleStatus?: "Draft" | "Active" | "Archived";
   initiativeId?: string;
   revalidatePaths?: string[];
 }) {
@@ -44,10 +62,12 @@ export async function createGraphNodeAction(input: {
   const deps = getGraphDeps(input.projectId);
   const parsed = createNodeInputSchema.parse({
     projectId: input.projectId,
-    nodeType: input.nodeType,
+    catalogKey: input.catalogKey,
     title: input.title,
-    properties: input.properties ?? {},
-    content: input.content,
+    properties: mergeNodeProperties(input.properties, {
+      content: input.content,
+      lifecycleStatus: input.lifecycleStatus,
+    }),
     initiativeId: input.initiativeId,
   });
 
@@ -67,13 +87,27 @@ export async function updateGraphNodeAction(input: {
 }) {
   await requireAuth();
   const deps = getGraphDeps(input.projectId);
+
+  let properties = input.properties;
+  if (input.content !== undefined || input.lifecycleStatus !== undefined) {
+    const existing = await deps.graphRead.getNode({
+      projectId: input.projectId,
+      nodeId: input.nodeId,
+    });
+    properties = mergeNodeProperties(
+      { ...(existing?.properties ?? {}), ...(input.properties ?? {}) },
+      {
+        content: input.content,
+        lifecycleStatus: input.lifecycleStatus,
+      },
+    );
+  }
+
   const parsed = updateNodeInputSchema.parse({
     projectId: input.projectId,
     nodeId: input.nodeId,
     title: input.title,
-    properties: input.properties,
-    content: input.content,
-    lifecycleStatus: input.lifecycleStatus,
+    properties,
   });
 
   const node = await updateNode(deps, parsed);
@@ -132,7 +166,7 @@ export async function createInitiativeFromHypothesisAction(input: {
     projectId: input.projectId,
     nodeId: input.hypothesisId,
   });
-  if (!hypothesis || hypothesis.nodeType !== "hypothesis") {
+  if (!hypothesis || hypothesis.catalogKey !== "hypothesis") {
     throw new GraphError("NOT_FOUND", "Hypothesis not found");
   }
 

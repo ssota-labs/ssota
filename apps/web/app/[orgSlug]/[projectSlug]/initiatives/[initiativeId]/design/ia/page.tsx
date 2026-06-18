@@ -4,6 +4,7 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { createGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { createDefinesPageEdge } from "@/lib/graph/actions/create-defines-edge";
 import { ensureInitiativeScopedNode } from "@/lib/graph/loaders/ensure-initiative-scoped-node";
+import { readNodeContent } from "@ssota/core";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 
 async function buildScopedIaTree(
@@ -22,7 +23,7 @@ async function buildScopedIaTree(
     projectId,
     nodeId: iaRoot.id,
     direction: "outgoing",
-    edgeType: "defines",
+    catalogKey: "defines",
   });
 
   const children: IaTreeNode[] = [];
@@ -31,7 +32,7 @@ async function buildScopedIaTree(
       projectId,
       nodeId: edge.targetNodeId,
     });
-    if (page?.nodeType === "page") {
+    if (page?.catalogKey === "page") {
       children.push({
         id: page.id,
         label: page.title || page.properties.path?.toString() || "Page",
@@ -48,7 +49,7 @@ async function buildScopedIaTree(
       },
     ],
     iaRootId: iaRoot.id,
-    iaContent: iaRoot.content ?? undefined,
+    iaContent: readNodeContent(iaRoot.properties) ?? undefined,
   };
 }
 
@@ -70,7 +71,7 @@ export default async function InitiativeDesignIaPage({
     "use server";
     const page = await createGraphNodeAction({
       projectId: project.id,
-      nodeType: "page",
+      catalogKey: "page",
       title: `Page ${new Date().toISOString().slice(0, 10)}`,
       properties: { path: "/" },
       initiativeId,

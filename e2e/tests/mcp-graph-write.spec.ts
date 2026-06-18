@@ -27,14 +27,19 @@ test.describe("MCP graph write tools", () => {
       token,
       "create_node",
       {
-        nodeType: "hypothesis",
+        catalogKey: "hypothesis",
         title: `E2E MCP hypothesis ${suffix}`,
         properties: { status: "draft", summary: "MCP graph write test" },
       },
       scope,
-    )) as { id: string; title: string; nodeType: string; content: string | null };
+    )) as {
+      id: string;
+      title: string;
+      catalogKey: string;
+      content: string | null;
+    };
     expect(created.id).toBeTruthy();
-    expect(created.nodeType).toBe("hypothesis");
+    expect(created.catalogKey).toBe("hypothesis");
     expect(created.content).toBeNull();
 
     const updated = (await mcpToolCall(
@@ -58,13 +63,18 @@ test.describe("MCP graph write tools", () => {
       token,
       "create_edge",
       {
-        edgeType: "informs",
+        catalogKey: "informs",
         sourceNodeId: created.id,
         targetNodeId: initiativeId,
       },
       scope,
-    )) as { id: string; edgeType: string; sourceNodeId: string; targetNodeId: string };
-    expect(edge.edgeType).toBe("informs");
+    )) as {
+      id: string;
+      catalogKey: string;
+      sourceNodeId: string;
+      targetNodeId: string;
+    };
+    expect(edge.catalogKey).toBe("informs");
     expect(edge.sourceNodeId).toBe(created.id);
     expect(edge.targetNodeId).toBe(initiativeId);
   });
@@ -97,9 +107,21 @@ test.describe("MCP graph write tools", () => {
         values (${otherProjectId}, ${otherProjectId}, 'e2e-other-project', 'E2E Other Project')
         on conflict (id) do nothing
       `;
+      const catalogRows = await sql<{ id: string }[]>`
+        insert into node_catalog (project_id, key, label, property_schema)
+        values (${otherProjectId}, 'release', 'Release', '{}'::jsonb)
+        on conflict (project_id, key) do update set label = excluded.label
+        returning id
+      `;
+      const releaseCatalogId = catalogRows[0]!.id;
       const rows = await sql<{ id: string }[]>`
-        insert into nodes (project_id, node_type, title, properties, lifecycle_status)
-        values (${otherProjectId}, 'release', ${`E2E foreign release ${suffix}`}, '{}'::jsonb, 'Draft')
+        insert into nodes (project_id, node_catalog_id, title, properties)
+        values (
+          ${otherProjectId},
+          ${releaseCatalogId},
+          ${`E2E foreign release ${suffix}`},
+          '{"lifecycleStatus":"Draft"}'::jsonb
+        )
         returning id
       `;
       foreignNodeId = rows[0]!.id;
@@ -113,7 +135,7 @@ test.describe("MCP graph write tools", () => {
       token,
       "create_node",
       {
-        nodeType: "hypothesis",
+        catalogKey: "hypothesis",
         title: `E2E cross-project source ${suffix}`,
         properties: { status: "draft" },
       },
@@ -126,7 +148,7 @@ test.describe("MCP graph write tools", () => {
       token,
       "create_edge",
       {
-        edgeType: "paired_with",
+        catalogKey: "paired_with",
         sourceNodeId: localNode.id,
         targetNodeId: foreignNodeId,
       },

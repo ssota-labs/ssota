@@ -1,3 +1,4 @@
+import { readLifecycleStatus, readNodeContent } from "@ssota/core";
 import type {
   WorkflowLensNode,
   WorkflowLensPhase,
@@ -26,7 +27,7 @@ export async function buildWorkflowLensPhases(
     for (const typeConfig of phase.types) {
       const nodes = await graphRead.queryNodes({
         projectId,
-        nodeType: typeConfig.nodeType,
+        catalogKey: typeConfig.nodeType,
         limit: 200,
       });
 
@@ -35,11 +36,11 @@ export async function buildWorkflowLensPhases(
           const canonicalRoute = await resolveNodeRoute(ctx, projectId, node);
           return {
             id: node.id,
-            nodeType: node.nodeType,
+            nodeType: node.catalogKey,
             title: node.title || "Untitled",
-            lifecycleStatus: node.lifecycleStatus,
+            lifecycleStatus: readLifecycleStatus(node.properties),
             canonicalUrl: canonicalRoute ?? nodeDetailPath(ctx, node.id),
-            content: node.content ?? "",
+            content: readNodeContent(node.properties) ?? "",
             updatedAt: node.updatedAt.toISOString(),
             properties: node.properties,
           };

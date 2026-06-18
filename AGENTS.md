@@ -4,7 +4,7 @@
 
 SSOTA는 더 이상 범용 컨텍스트 그래프 런타임을 active product로 구현하지 않는다. Active product는 개발 에이전트를 찾는 일반 사용자와 개발자를 위한 **개발 워크플로우 작업 공간**이다.
 
-Active DB/runtime keep set은 `profiles`, `organizations`, `organization_memberships`, `projects`, `tasks`, `nodes`, `edges`다. Node/edge type catalog는 DB 테이블이 아니라 `packages/contracts` 코드 SSOT다. 과거 generic graph/catalog/action/workflow runtime 코드는 `archive/generic-runtime/`에 reference-only로 보존하며, 배포 경로와 active Drizzle schema에서는 제외한다.
+Active DB/runtime keep set은 `profiles`, `organizations`, `organization_memberships`, `projects`, `tasks`, `node_catalog`, `edge_catalog`, `nodes`, `edges`다. **L1 데이터 catalog**(`node_catalog`, `edge_catalog`)는 project-scoped DB 테이블이며 uuid PK + `key`(project 내 unique)다. **L2 UI catalog**는 `packages/contracts/ui-catalog`(code, json-render). **L3 페이지**·**L4 워크스페이스 네비**는 `page`/`workspace` catalog key graph 노드(`properties.spec`·`properties.nav`). dev-workflow 시드 pack SSOT는 `packages/contracts/seed-packs/dev-workflow/`다. 과거 generic graph/catalog/action/workflow runtime 코드는 `archive/generic-runtime/`에 reference-only로 보존하며, 배포 경로와 active Drizzle schema에서는 제외한다.
 
 기획·스펙의 SSOT는 Notion의 SSOTA-on-SSOTA 개발 Playbook이다. 일반 코딩 작업은 MCP가 아니라 이 저장소의 개발 워크플로우 명령으로 수행한다.
 
@@ -26,7 +26,7 @@ apps/
 packages/
   core/                 # CatalogReadPort, GraphReadPort, GraphWritePort, graph use-cases (+ legacy executeAction in archive path)
   adapter-supabase/     # Drizzle 스키마·시드, createGraphPorts / createTaskPort
-  contracts/            # catalog/* (34 node + 16 edge types SSOT), graph/* DTO
+  contracts/            # L2 ui-catalog, page/workspace Zod, seed-packs/dev-workflow, graph/* DTO
   config/
 supabase/
 e2e/
@@ -34,15 +34,17 @@ e2e/
 
 **의존 방향:** `apps/* → core ← adapter-supabase`. `packages/core`는 IO 의존 0.
 
-**Adapter 진입점 (active):** `createGraphPorts(db, { projectId })` → `{ catalog, graphRead, graphWrite }`. Catalog는 contracts in-memory — DB round-trip 0.
+**Adapter 진입점 (active):** `createGraphPorts(db, { projectId })` → `{ catalog, graphRead, graphWrite }`. `catalog`는 `createDbCatalogReadPort` — project DB의 `node_catalog`/`edge_catalog` 조회.
 
 ## Console v2.7 Graph Invariants — 협상 불가 (active)
 
-1. **카탈로그 SSOT는 `packages/contracts`다.** `node_type` / `edge_type` 정의를 DB 테이블·Admin UI로 런타임 편집하지 않는다 (v1).
+1. **4계층 catalog** — L1 `node_catalog`/`edge_catalog`(DB, project-scoped uuid PK + `key`); L2 `packages/contracts/ui-catalog`(code); L3 `page` graph nodes(`properties.spec` + `bindings`); L4 `workspace` singleton(`properties.nav` → page node ids). 출시 Console은 읽기 전용 + hardcoded nav fallback; catalog 편집은 lab only (`CATALOG_LAB_ENABLED`).
 2. **그래프 쓰기는 `GraphWritePort` (또는 core graph use-case)로만 한다.** apps/MCP에서 Drizzle·`nodes`/`edges` 직접 CRUD export 금지.
 3. **인스턴스는 `project_id`로 격리한다.** edge·update가 다른 project 노드를 참조하면 `PROJECT_MISMATCH`로 거부.
-4. **타입·properties 검증은 API 동작이다.** catalog에 없는 `node_type`·Zod 위반 properties는 커밋 전 reject.
-5. **노드 = 정형 봉투 + 비정형 content** — 런타임이 참조하는 것만 필드로 구조화하고, 의미는 `content`·`properties`가 담당한다.
+4. **인스턴스 → catalog FK only** — `nodes.node_catalog_id`, `edges.edge_catalog_id`. `node_type`/`edge_type` text 컬럼 없음. API는 `catalogKey`(또는 `nodeCatalogId`/`edgeCatalogId`)로 생성·조회.
+5. **타입·properties 검증은 API 동작이다.** catalog에 없는 `catalogKey`·`property_schema` 위반 properties는 커밋 전 reject. edge domain/range는 `edge_catalog.domain_catalog_ids`/`range_catalog_ids`로 검증.
+6. **노드 봉투 = `title` + `properties` only** — `content`·`lifecycle_status` DB 컬럼 없음. BlockNote 본문·lifecycle·ui_component spec 등은 dev-workflow convention으로 `properties.content`, `properties.lifecycleStatus`, `properties.spec`/`componentTree`에 저장. 읽기 헬퍼: `readNodeContent()`, `readLifecycleStatus()` (`packages/core`).
+7. **시드 pack** — `packages/contracts/seed-packs/dev-workflow/`(L1 catalog + pages + workspace). `seedDevWorkflowCatalog` + `applyDevWorkflowPack`이 onboarding·`pnpm db:seed`에서 호출.
 
 **명시적 비범위 (v1):** `executeAction`, Action Catalog DB, Human Gate, `action_log`, MCP `execute_action` — `archive/generic-runtime/` 참고만.
 
@@ -73,17 +75,17 @@ Console URL `[orgSlug]/[projectSlug]`와 MCP/API 헤더 `X-SSOTA-Project-Id`가 
 
 ### `project_id` 규칙
 
-- **project-scoped** — `nodes`, `edges`, `tasks`는 **`project_id` 필수**. adapter는 `createGraphPorts(db, { projectId })` / `createTaskPort(db, { projectId })`로 생성하며 모든 쿼리·커밋을 project로 필터한다.
-- **platform-global (code)** — `node_type` / `edge_type` catalog는 **`packages/contracts`** — DB 테이블 없음.
-- **쓰기**: core graph use-case + `GraphWritePort`. cross-project node 참조는 `PROJECT_MISMATCH`.
-- **조회**: `queryNodes` / `traverseEdges`는 auth context의 `projectId`로 스코핑.
+- **project-scoped** — `node_catalog`, `edge_catalog`, `nodes`, `edges`, `tasks`는 **`project_id` 필수**. adapter는 `createGraphPorts(db, { projectId })` / `createTaskPort(db, { projectId })`로 생성하며 모든 쿼리·커밋을 project로 필터한다.
+- **L2 UI catalog (code)** — `packages/contracts/ui-catalog` — DB 테이블 없음.
+- **쓰기**: core graph use-case + `GraphWritePort`. `createNode({ catalogKey })` / `createEdge({ catalogKey })`. cross-project node 참조는 `PROJECT_MISMATCH`.
+- **조회**: `queryNodes({ catalogKey })` / `traverseEdges`는 auth context의 `projectId`로 스코핑. 응답 `GraphNode`에 `catalogKey`, `catalogLabel`, `nodeCatalogId` 포함.
 
 ### Tenant property (고객 정의, 플랫폼 미강제)
 
-- **카탈로그 책임** — `HomepageProject` 등 최종 고객별 row에 `subject_id`(또는 고객이 정한 이름)를 둘지는 **node type `propertySchema`·액션 계약**으로 정의한다. SSOTA는 해당 property를 자동 주입·검증·쿼리 필터하지 않는다.
+- **카탈로그 책임** — `HomepageProject` 등 최종 고객별 row에 `subject_id`(또는 고객이 정한 이름)를 둘지는 **node catalog `property_schema`·액션 계약**으로 정의한다. SSOTA는 해당 property를 자동 주입·검증·쿼리 필터하지 않는다.
 - **BFF 패턴** — embedder가 auth 검증 후 `create_node` input의 `properties.subject_id`에 A의 `users.id`를 넣어 `execute_action`으로 전달한다 (`examples/embedder-bff/`).
 - **조회** — `query_nodes`·`traverse_edges`는 `project_id`로만 스코핑한다. tenant별 필터가 필요하면 고객 액션·쿼리 설계 또는 BFF가 담당한다.
-- **인덱스** — 고객이 tenant property를 쓰면 adapter 마이그레이션에서 `(project_id, node_type, (properties->>'subject_id'))` 등 **선택적** 복합 인덱스를 둘 수 있다.
+- **인덱스** — 고객이 tenant property를 쓰면 adapter 마이그레이션에서 `(project_id, node_catalog_id, (properties->>'subject_id'))` 등 **선택적** 복합 인덱스를 둘 수 있다.
 
 예시 (홈페이지 제작 에이전트 — `homepage-agent` project):
 
@@ -91,7 +93,7 @@ Console URL `[orgSlug]/[projectSlug]`와 MCP/API 헤더 `X-SSOTA-Project-Id`가 
 Project homepage-agent 카탈로그: HomepageProject, DesignBrief, PageSection
 Acme 사용자 (A의 users.id = "usr_acme_42")
   → BFF: create_node { properties: { subject_id: "usr_acme_42", title: "..." } }
-query_nodes({ nodeType: "HomepageProject" }) + context.projectId → project 내 전체 row
+query_nodes({ catalogKey: "HomepageProject" }) + context.projectId → project 내 전체 row
   (Acme만 보려면 BFF/앱이 properties 필터 또는 별도 액션으로 처리)
 ```
 
@@ -99,7 +101,7 @@ query_nodes({ nodeType: "HomepageProject" }) + context.projectId → project 내
 
 ### Postgres RLS — 전 테이블 deny-all (의도적)
 
-SSOTA 테이블(`profiles`, `organizations`, `projects`, `organization_memberships`, `tasks`, `nodes`, `edges`) **전부 RLS deny-all**. `action_log`·`gates`·catalog DB 테이블은 active schema에 **없음**.
+SSOTA 테이블(`profiles`, `organizations`, `projects`, `organization_memberships`, `tasks`, `node_catalog`, `edge_catalog`, `nodes`, `edges`) **전부 RLS deny-all**. `action_log`·`gates`는 active schema에 **없음**.
 
 1. **격리의 SSOT는 core graph use-case + 서버 `projectId` context**다.
 2. **서버만 DB 접근**: adapter는 `createDb` / `createAdminDb`로 `DATABASE_URL`(postgres superuser 또는 service role 직접 연결)만 사용한다. 이 경로는 RLS를 bypass한다.
@@ -312,14 +314,14 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 
 - TypeScript strict 모드. `any` 금지, 외부 입력은 Zod(`packages/contracts`)로 파싱.
 - Zod 스키마는 `packages/contracts`에 정의하고 core/apps가 공유한다 — 스키마를 앱에 중복 정의하지 않는다.
-- 도메인 용어 (Console v2.7): `CatalogReadPort`, `GraphReadPort`, `GraphWritePort`, `node_type`, `edge_type`, `lifecycle_status`. Legacy: `executeAction`·`gate`는 archive 맥락에서만.
+- 도메인 용어 (Console v2.7): `CatalogReadPort`, `GraphReadPort`, `GraphWritePort`, `catalogKey`, `nodeCatalogId`, `edgeCatalogId`, `properties.lifecycleStatus`. Legacy: `node_type`·`executeAction`·`gate`는 archive/마이그레이션 맥락에서만.
 - 파일 코멘트·문서는 한국어, 식별자는 영어.
 - UI는 `@ssota/ui` (`packages/ui`) shadcn Base UI 컴포넌트 우선. `pnpm dlx shadcn@latest add <component> -y -c apps/web`로 추가. 디자인 규칙은 루트 [DESIGN.md](DESIGN.md) 및 `.cursor/rules/design.mdc` 참조.
 
 ## MCP App Notes (apps/mcp)
 
 - 엔드포인트는 `/api/mcp` (Streamable HTTP, `mcp-handler` + `@modelcontextprotocol/sdk`).
-- Active MCP scope는 account/project discovery, development workflow `tasks` CRUD, **workflow instruction fetch** (`list_workflows`, `get_workflow`, `get_workflow_instruction`), **graph read/write** (`list_node_types`, `get_node_type`, `list_edge_types`, `query_nodes`, `get_node`, `traverse_edges`, `create_node`, `update_node`, `create_edge`)다. Workflow instruction SSOT는 `packages/contracts/workflows`이며 MCP를 통해 배포 버전을 fetch한다. Graph write는 core graph use-case 경유. Generic action/workflow runtime tools(`execute_action`, gates)는 archived.
+- Active MCP scope는 account/project discovery, development workflow `tasks` CRUD, **workflow instruction fetch** (`list_workflows`, `get_workflow`, `get_workflow_instruction`), **graph read/write** (`list_node_types`, `get_node_type`, `list_edge_types`, `query_nodes`, `get_node`, `traverse_edges`, `create_node`, `update_node`, `create_edge`)다. `create_node`/`update_node`는 `catalogKey` + `properties`(content/lifecycle은 properties convention). Workflow instruction SSOT는 `packages/contracts/workflows`이며 MCP를 통해 배포 버전을 fetch한다. Graph write는 core graph use-case 경유. Generic action/workflow runtime tools(`execute_action`, gates)는 archived.
 - 일반 구현 작업에서 `ssota-mcp`를 mount하지 않는다. 사용자가 명시적으로 `ssota-dev` project/task context를 조회하라고 할 때만 사용한다.
 - 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. `apps/mcp`는 Bearer JWT JWKS 검증 + `/.well-known/oauth-protected-resource` + `/api/mcp`를 유지한다.
 - 도구 핸들러에 비즈니스 로직을 넣지 않는다 — task/project 포트 호출 + IO 변환만.

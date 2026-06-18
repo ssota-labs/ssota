@@ -9,6 +9,7 @@ import { Button } from "@ssota/ui/components/ui/button";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { Input } from "@ssota/ui/components/ui/input";
 import type { NodeDetailView, NodeEdgeView } from "@/lib/graph/loaders/get-node-detail";
+import { readLifecycleStatus, readNodeContent } from "@ssota/core";
 import { updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 
 type NodeDetailWorkspaceProps = {
@@ -80,14 +81,16 @@ export function NodeDetailWorkspace({
 }: NodeDetailWorkspaceProps) {
   const router = useRouter();
   const [draftTitle, setDraftTitle] = useState(detail.node.title);
-  const [draftContent, setDraftContent] = useState(detail.node.content ?? "");
+  const [draftContent, setDraftContent] = useState(
+    readNodeContent(detail.node.properties) ?? "",
+  );
   const [pending, startTransition] = useTransition();
   const readOnly = detail.mutability === "immutable";
 
   useEffect(() => {
     setDraftTitle(detail.node.title);
-    setDraftContent(detail.node.content ?? "");
-  }, [detail.node.title, detail.node.content]);
+    setDraftContent(readNodeContent(detail.node.properties) ?? "");
+  }, [detail.node.title, detail.node.properties]);
 
   const handleSave = () => {
     startTransition(async () => {
@@ -115,7 +118,9 @@ export function NodeDetailWorkspace({
           />
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{detail.typeLabel}</Badge>
-            <Badge variant="outline">{detail.node.lifecycleStatus}</Badge>
+            <Badge variant="outline">
+              {readLifecycleStatus(detail.node.properties)}
+            </Badge>
             <Badge variant="outline">{detail.mutability}</Badge>
           </div>
         </div>

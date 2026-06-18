@@ -36,7 +36,7 @@ export default async function ResearchHypothesesPage({
     "use server";
     await createGraphNodeAction({
       projectId: project.id,
-      nodeType: "hypothesis",
+      catalogKey: "hypothesis",
       title: `Hypothesis ${new Date().toISOString().slice(0, 10)}`,
       properties: { status: "draft" },
       revalidatePaths: [revalidatePath],

@@ -13,6 +13,7 @@ import {
   type NodeTypeCatalogEntry,
 } from "./node-types.js";
 
+export * from "./db-catalog.js";
 export * from "./common.js";
 export * from "./content-parsers.js";
 export * from "./edge-types.js";

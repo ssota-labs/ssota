@@ -13,13 +13,13 @@ export async function queryInitiativeScopedNodes(
     projectId,
     nodeId: initiativeId,
     direction: "incoming",
-    edgeType: "for_initiative",
+    catalogKey: "for_initiative",
   });
   const scopedIds = new Set(edges.map((edge) => edge.sourceNodeId));
 
   const nodes = await graphRead.queryNodes({
     projectId,
-    nodeType,
+    catalogKey: nodeType,
     limit: 500,
   });
 

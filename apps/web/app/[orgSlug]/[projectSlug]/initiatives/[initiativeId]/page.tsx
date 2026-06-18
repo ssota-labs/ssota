@@ -26,7 +26,7 @@ export default async function InitiativeOverviewPage({
     projectId: project.id,
     nodeId: initiativeId,
     direction: "outgoing",
-    edgeType: "paired_with",
+    catalogKey: "paired_with",
   });
   let releaseTitle = "—";
   if (paired[0]) {

@@ -9,6 +9,7 @@ import {
   uiComponentContentSchemaV2,
 } from "@ssota/contracts/catalog";
 import { buildStudioPreview } from "@ssota/studio-build";
+import { readNodeContent } from "@ssota/core";
 import { studioPreviewBundleUrl } from "@/lib/design-studio/preview-bundle-url";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
         projectId: body.projectId,
         nodeId: body.componentId,
       });
-      if (!node || node.nodeType !== "ui_component") {
+      if (!node || node.catalogKey !== "ui_component") {
         return NextResponse.json({ error: "Component not found" }, { status: 404 });
       }
 
@@ -77,7 +78,10 @@ export async function POST(request: Request) {
         );
       }
 
-      const content = parseUiComponentContent(node.content, "source");
+      const content = parseUiComponentContent(
+        readNodeContent(node.properties),
+        "source",
+      );
       if (content.schemaVersion !== 2) {
         return NextResponse.json(
           { error: "Component content must be schemaVersion 2" },

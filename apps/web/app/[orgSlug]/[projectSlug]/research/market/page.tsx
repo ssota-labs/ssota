@@ -32,7 +32,7 @@ export default async function ResearchMarketPage({
     "use server";
     await createGraphNodeAction({
       projectId: project.id,
-      nodeType: "market_research",
+      catalogKey: "market_research",
       title: `Market research ${new Date().toISOString().slice(0, 10)}`,
       revalidatePaths: [revalidatePath],
     });

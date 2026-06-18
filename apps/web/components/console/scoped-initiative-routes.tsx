@@ -3,6 +3,7 @@ import type { GraphListRow } from "@/components/console/graph-list-page";
 import { GraphDocumentPage } from "@/components/console/graph-document-page";
 import { GraphListPage } from "@/components/console/graph-list-page";
 import { initiativePath, type ProjectRouteContext } from "@/lib/console/paths";
+import { readLifecycleStatus, readNodeContent } from "@ssota/core";
 import { createGraphNodeAction, updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { ensureInitiativeScopedNode } from "@/lib/graph/loaders/ensure-initiative-scoped-node";
 import { queryInitiativeScopedNodes } from "@/lib/graph/loaders/query-initiative-scoped";
@@ -42,7 +43,7 @@ export async function ScopedListRoute({
     "use server";
     await createGraphNodeAction({
       projectId,
-      nodeType,
+      catalogKey: nodeType,
       title: `${defaultTitle} ${new Date().toISOString().slice(0, 10)}`,
       initiativeId,
       revalidatePaths: [revalidatePath],
@@ -103,8 +104,8 @@ export async function ScopedDocumentRoute({
   return (
     <GraphDocumentPage
       title={node.title || defaultTitle}
-      status={node.lifecycleStatus}
-      content={node.content ?? ""}
+      status={readLifecycleStatus(node.properties)}
+      content={readNodeContent(node.properties) ?? ""}
       emptyDescription={emptyDescription}
       onSave={saveDocument}
     />

@@ -4,6 +4,7 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { createGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { createDefinesPageEdge } from "@/lib/graph/actions/create-defines-edge";
 import { ensureEvergreenSingleton } from "@/lib/graph/loaders/ensure-evergreen-singleton";
+import { readNodeContent } from "@ssota/core";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 
 async function buildIaTree(projectId: string): Promise<IaTreeNode[]> {
@@ -18,7 +19,7 @@ async function buildIaTree(projectId: string): Promise<IaTreeNode[]> {
     projectId,
     nodeId: iaRoot.id,
     direction: "outgoing",
-    edgeType: "defines",
+    catalogKey: "defines",
   });
 
   const children: IaTreeNode[] = [];
@@ -27,7 +28,7 @@ async function buildIaTree(projectId: string): Promise<IaTreeNode[]> {
       projectId,
       nodeId: edge.targetNodeId,
     });
-    if (page?.nodeType === "page") {
+    if (page?.catalogKey === "page") {
       children.push({
         id: page.id,
         label: page.title || page.properties.path?.toString() || "Page",
@@ -64,7 +65,7 @@ export default async function DesignIaPage({
     "use server";
     const page = await createGraphNodeAction({
       projectId: project.id,
-      nodeType: "page",
+      catalogKey: "page",
       title: `Page ${new Date().toISOString().slice(0, 10)}`,
       properties: { path: "/" },
       revalidatePaths: [revalidatePath],
@@ -79,7 +80,7 @@ export default async function DesignIaPage({
   return (
     <DesignIaWorkspace
       nodes={nodes}
-      selectedPageContent={iaRoot.content ?? undefined}
+      selectedPageContent={readNodeContent(iaRoot.properties) ?? undefined}
       newLabel="New page"
       onCreatePage={createPage}
     />

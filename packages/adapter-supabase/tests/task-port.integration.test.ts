@@ -95,7 +95,7 @@ describe("task port integration", () => {
       { catalog: graphPorts.catalog, graphWrite: graphPorts.graphWrite },
       {
         projectId,
-        nodeType: "feature",
+        catalogKey: "feature",
         title: `Feature ${randomUUID()}`,
         properties: {},
       },
@@ -139,7 +139,7 @@ describe("task port integration", () => {
       { catalog: graphPorts.catalog, graphWrite: graphPorts.graphWrite },
       {
         projectId,
-        nodeType: "initiative",
+        catalogKey: "initiative",
         title: `Initiative ${randomUUID()}`,
         properties: {},
       },

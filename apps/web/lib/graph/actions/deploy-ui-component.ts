@@ -30,7 +30,7 @@ export async function deployUiComponentAction(input: {
     nodeId: input.nodeId,
   });
 
-  if (!existing || existing.nodeType !== "ui_component") {
+  if (!existing || existing.catalogKey !== "ui_component") {
     throw new Error("UI component not found");
   }
 

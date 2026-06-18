@@ -9,7 +9,7 @@ export async function listInitiatives(projectId: string): Promise<InitiativeOpti
   const { graphRead } = getGraphPorts(projectId);
   const nodes = await graphRead.queryNodes({
     projectId,
-    nodeType: "initiative",
+    catalogKey: "initiative",
     limit: 100,
   });
 
@@ -28,7 +28,7 @@ export async function initiativeExists(
   const { graphRead } = getGraphPorts(projectId);
   const nodes = await graphRead.queryNodes({
     projectId,
-    nodeType: "initiative",
+    catalogKey: "initiative",
     limit: 100,
   });
   return nodes.some((node) => node.id === initiativeId);

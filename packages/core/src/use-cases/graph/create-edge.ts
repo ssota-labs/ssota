@@ -1,20 +1,49 @@
 import type { CreateEdgeInput } from "@ssota/contracts/graph";
-import { isKnownEdgeType } from "@ssota/contracts";
 import { GraphError } from "../../domain/graph-errors.js";
+import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
 import type { GraphReadPort } from "../../ports/graph-read-port.js";
 import type { GraphWritePort } from "../../ports/graph-write-port.js";
 import { assertGraphNodeInProject } from "../../domain/graph-scope.js";
 
+async function resolveEdgeCatalog(
+  catalog: CatalogReadPort,
+  input: CreateEdgeInput,
+): Promise<{ id: string; key: string }> {
+  if (input.edgeCatalogId) {
+    const entry = await catalog.getEdgeCatalogById(input.edgeCatalogId);
+    if (!entry) {
+      throw new GraphError(
+        "UNKNOWN_EDGE_TYPE",
+        `Edge catalog id '${input.edgeCatalogId}' not found`,
+      );
+    }
+    return { id: entry.id, key: entry.key };
+  }
+  if (input.catalogKey) {
+    const entry = await catalog.getEdgeCatalogByKey(input.catalogKey);
+    if (!entry) {
+      throw new GraphError(
+        "UNKNOWN_EDGE_TYPE",
+        `Edge catalog key '${input.catalogKey}' not found`,
+      );
+    }
+    return { id: entry.id, key: entry.key };
+  }
+  throw new GraphError(
+    "VALIDATION_FAILED",
+    "catalogKey or edgeCatalogId is required",
+  );
+}
+
 export async function createEdge(
-  deps: { graphRead: GraphReadPort; graphWrite: GraphWritePort },
+  deps: {
+    catalog: CatalogReadPort;
+    graphRead: GraphReadPort;
+    graphWrite: GraphWritePort;
+  },
   input: CreateEdgeInput,
 ) {
-  if (!isKnownEdgeType(input.edgeType)) {
-    throw new GraphError(
-      "UNKNOWN_EDGE_TYPE",
-      `Edge type '${input.edgeType}' is not in the catalog`,
-    );
-  }
+  const catalogRef = await resolveEdgeCatalog(deps.catalog, input);
 
   const [source, target] = await Promise.all([
     deps.graphRead.getNodeById(input.sourceNodeId),
@@ -24,5 +53,23 @@ export async function createEdge(
   assertGraphNodeInProject(input.projectId, source, "Source node");
   assertGraphNodeInProject(input.projectId, target, "Target node");
 
-  return deps.graphWrite.createEdge(input);
+  let validatedProperties: Record<string, unknown>;
+  try {
+    validatedProperties = deps.catalog.validateEdgeProperties(
+      catalogRef.key,
+      input.properties,
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Invalid properties";
+    throw new GraphError("VALIDATION_FAILED", message);
+  }
+
+  return deps.graphWrite.createEdge({
+    projectId: input.projectId,
+    edgeCatalogId: catalogRef.id,
+    catalogKey: catalogRef.key,
+    sourceNodeId: input.sourceNodeId,
+    targetNodeId: input.targetNodeId,
+    properties: validatedProperties,
+  });
 }

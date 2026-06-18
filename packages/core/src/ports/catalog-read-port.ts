@@ -1,23 +1,20 @@
-import type {
-  EdgeTypeCatalogEntry,
-  Mutability,
-  NodeTypeCatalogEntry,
-} from "@ssota/contracts";
+import type { EdgeCatalogRow, NodeCatalogRow } from "@ssota/contracts";
 
 export interface CatalogReadPort {
-  listNodeTypes(): NodeTypeCatalogEntry[];
-  getNodeTypeEntry(nodeType: string): NodeTypeCatalogEntry | null;
-  listEdgeTypes(): EdgeTypeCatalogEntry[];
-  getEdgeTypeEntry(edgeType: string): EdgeTypeCatalogEntry | null;
+  listNodeCatalog(): Promise<NodeCatalogRow[]>;
+  getNodeCatalogById(id: string): Promise<NodeCatalogRow | null>;
+  getNodeCatalogByKey(key: string): Promise<NodeCatalogRow | null>;
+  listEdgeCatalog(): Promise<EdgeCatalogRow[]>;
+  getEdgeCatalogById(id: string): Promise<EdgeCatalogRow | null>;
+  getEdgeCatalogByKey(key: string): Promise<EdgeCatalogRow | null>;
   validateNodeProperties(
-    nodeType: string,
+    catalogKey: string,
     properties: unknown,
   ): Record<string, unknown>;
-  validateNodeContent(
-    nodeType: string,
-    content: string | null,
-    properties: Record<string, unknown>,
-  ): unknown;
+  validateEdgeProperties(
+    catalogKey: string,
+    properties: unknown,
+  ): Record<string, unknown>;
 }
 
-export type { NodeTypeCatalogEntry, EdgeTypeCatalogEntry, Mutability };
+export type { NodeCatalogRow, EdgeCatalogRow };

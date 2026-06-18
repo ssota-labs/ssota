@@ -1,13 +1,14 @@
 import { z } from "zod";
-import { edgeTypeSchema } from "../catalog/edge-types.js";
 
 export const edgeInstanceSchema = z.object({
   id: z.string().uuid(),
   projectId: z.string().uuid(),
-  edgeType: edgeTypeSchema,
+  edgeCatalogId: z.string().uuid(),
+  catalogKey: z.string().min(1).optional(),
+  catalogLabel: z.string().min(1).optional(),
   sourceNodeId: z.string().uuid(),
   targetNodeId: z.string().uuid(),
-  properties: z.record(z.unknown()).default({}),
+  properties: z.record(z.unknown()),
   createdAt: z.coerce.date(),
 });
 
