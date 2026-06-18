@@ -1,4 +1,8 @@
 import type { NodeType } from "@ssota/contracts";
+import {
+  DESIGN_THEME_SCHEMA_VERSION,
+  PLATFORM_DESIGN_THEME_TOKENS,
+} from "@ssota/contracts/catalog";
 import { and, eq } from "drizzle-orm";
 import type { createDb } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
@@ -51,11 +55,20 @@ export async function seedGraphInstances(
 
     if (existing.length > 0) continue;
 
+    const properties =
+      nodeType === "design_theme"
+        ? {
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${nodeType}`,
+            schema_version: DESIGN_THEME_SCHEMA_VERSION,
+            tokens: PLATFORM_DESIGN_THEME_TOKENS,
+          }
+        : { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${nodeType}` };
+
     await db.insert(schema.nodes).values({
       projectId,
       nodeType,
-      title: "",
-      properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${nodeType}` },
+      title: nodeType === "design_theme" ? "Design theme" : "",
+      properties,
       lifecycleStatus: "Draft",
       schemaVersion: 1,
     });

@@ -1,5 +1,11 @@
-import { EvergreenDocumentRoute } from "@/components/console/evergreen-document-route";
+import { DesignThemeEditor } from "@/components/console/design-theme/design-theme-editor";
+import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
+import {
+  buildDesignThemePropertiesForSave,
+  resolveProjectTheme,
+} from "@/lib/design-studio/resolve-project-theme";
+import { updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 
 export default async function DesignThemePage({
   params,
@@ -7,17 +13,35 @@ export default async function DesignThemePage({
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const ctx = { orgSlug, projectSlug };
+  const ctx: ProjectRouteContext = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
+  const { node, tokens } = await resolveProjectTheme(project.id);
+  const revalidatePath = projectPath(ctx, "design", "design-theme");
+
+  async function saveDesignTheme(input: {
+    title: string;
+    tokens: Record<string, string>;
+    content: string;
+  }) {
+    "use server";
+    await updateGraphNodeAction({
+      projectId: project.id,
+      nodeId: node.id,
+      title: input.title,
+      content: input.content,
+      properties: buildDesignThemePropertiesForSave(input.tokens),
+      revalidatePaths: [revalidatePath],
+    });
+  }
 
   return (
-    <EvergreenDocumentRoute
-      projectId={project.id}
-      ctx={ctx}
-      nodeType="design_theme"
-      defaultTitle="Design theme"
-      revalidateSegments={["design", "design-theme"]}
-      emptyDescription="Document design tokens and theme guidelines."
+    <DesignThemeEditor
+      key={node.id}
+      title={node.title || "Design theme"}
+      status={node.lifecycleStatus}
+      initialTokens={tokens}
+      initialContent={node.content ?? ""}
+      onSave={saveDesignTheme}
     />
   );
 }

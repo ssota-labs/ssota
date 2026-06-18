@@ -6,7 +6,7 @@ import { slugifyComponentTitle } from "@/lib/design-studio/tree-utils";
 import { createGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { deployUiComponentAction } from "@/lib/graph/actions/deploy-ui-component";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
-import { ensureEvergreenSingleton } from "@/lib/graph/loaders/ensure-evergreen-singleton";
+import { resolveProjectTheme } from "@/lib/design-studio/resolve-project-theme";
 import { queryUiComponents } from "@/lib/graph/loaders/query-ui-components";
 import {
   createEmptyUiComponentContentV2,
@@ -30,10 +30,8 @@ export async function DesignStudioPage({
   const studioBasePath = projectPath(ctx, "design", "ui-components");
   const previewBasePath = projectPath(ctx, "design", "preview");
 
-  const theme = await ensureEvergreenSingleton(
+  const { tokens: themeTokens, themeCss } = await resolveProjectTheme(
     project.id,
-    "design_theme",
-    "Design theme",
   );
 
   let component = null;
@@ -92,7 +90,8 @@ export async function DesignStudioPage({
       component={component}
       components={components}
       studioBasePath={studioBasePath}
-      themeContent={theme.content ?? ""}
+      themeTokens={themeTokens}
+      themeCss={themeCss}
       previewBasePath={previewBasePath}
       onDeploy={deployComponent}
       onCreateComponent={createComponent}

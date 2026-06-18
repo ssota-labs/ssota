@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { GraphNode } from "@ssota/core";
-import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
+import type {
+  DesignThemeTokenMap,
+  UiComponentContentV2,
+} from "@ssota/contracts/catalog";
+import { ThemeTokensProvider } from "@ssota/ui/components/design-studio";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -41,7 +45,8 @@ type StudioShellProps = {
   component: GraphNode | null;
   components: UiComponentListRow[];
   studioBasePath: string;
-  themeContent: string;
+  themeTokens: DesignThemeTokenMap;
+  themeCss: string;
   previewBasePath: string;
   onDeploy: (input: {
     projectId: string;
@@ -131,7 +136,8 @@ function StudioShellEditor({
   component,
   components,
   studioBasePath,
-  themeContent,
+  themeTokens,
+  themeCss,
   previewBasePath,
   onDeploy,
   onCreateComponent,
@@ -221,8 +227,8 @@ function StudioShellEditor({
 
   useEffect(() => {
     if (!component || !ready) return;
-    syncTheme(themeContent);
-  }, [component, ready, themeContent, syncTheme]);
+    syncTheme(themeCss);
+  }, [component, ready, themeCss, syncTheme]);
 
   useEffect(() => {
     if (!component || !ready) return;
@@ -246,7 +252,7 @@ function StudioShellEditor({
               projectId,
               properties: component.properties,
               content: JSON.stringify(contentV2Ref.current),
-              themeCss: themeContent,
+              themeCss,
             }),
           });
           if (!response.ok) {
@@ -276,7 +282,7 @@ function StudioShellEditor({
       })();
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [component, structureHash, projectId, themeContent]);
+  }, [component, structureHash, projectId, themeCss]);
 
   useEffect(() => {
     if (!component || !ready || !buildPreview) return;
@@ -326,7 +332,7 @@ function StudioShellEditor({
         projectId,
         nodeId: component.id,
         contentV2,
-        themeCss: themeContent,
+        themeCss,
         revalidatePath: previewBasePath.replace(/^\//, ""),
       });
       if (storageKey) {
@@ -387,14 +393,16 @@ function StudioShellEditor({
           minSize="18%"
           maxSize="35%"
         >
-          <SourceInspectorPanel
-            selectedId={selectedId}
-            selectedSourceRef={selectedSourceRef}
-            className={selectedSourceClassName}
-            onClassNameChange={handleSourceClassNameChange}
-            readOnly={Boolean(selectedId && !selectedSourceRef)}
-            domReferencePx={domReferencePx}
-          />
+          <ThemeTokensProvider tokens={themeTokens}>
+            <SourceInspectorPanel
+              selectedId={selectedId}
+              selectedSourceRef={selectedSourceRef}
+              className={selectedSourceClassName}
+              onClassNameChange={handleSourceClassNameChange}
+              readOnly={Boolean(selectedId && !selectedSourceRef)}
+              domReferencePx={domReferencePx}
+            />
+          </ThemeTokensProvider>
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

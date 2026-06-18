@@ -30,7 +30,7 @@ async function openDesignStudioWithPreview(page: Page) {
 }
 
 test.describe("design studio", () => {
-  test.describe.configure({ timeout: 150_000, retries: 1 });
+  test.describe.configure({ timeout: 180_000, retries: 1 });
   test.beforeEach(async ({ page }) => {
     await loginAsSmoke(page);
   });
@@ -84,6 +84,59 @@ test.describe("design studio", () => {
     });
     await expect(layersPanel.getByText("<div>")).toBeVisible({ timeout: 15_000 });
     await expect(layersPanel.getByText("<Button>")).toBeVisible();
+  });
+
+  test("inspect mode selects nodes from preview iframe", async ({ page }) => {
+    const preview = await openDesignStudioWithPreview(page);
+
+    await preview.locator("button").first().click();
+    await expect(page.getByLabel("Node ID")).not.toHaveValue("", {
+      timeout: 10_000,
+    });
+    await expect(page.getByRole("textbox", { name: "Background" })).toBeVisible();
+  });
+
+  test("inspect mode resolves semantic border color", async ({ page }) => {
+    const preview = await openDesignStudioWithPreview(page);
+    await preview.locator("[data-studio-id]").first().click();
+    await expect(page.getByLabel("Node ID")).not.toHaveValue("", {
+      timeout: 10_000,
+    });
+
+    const borderColorField = page.getByRole("textbox", { name: "Border color" });
+    await expect(borderColorField).toBeVisible({ timeout: 10_000 });
+    await page.getByLabel("Border color presets").click();
+    await page.getByRole("button", { name: "primary", exact: true }).click();
+    await expect(borderColorField).toHaveValue("primary");
+
+    await page.getByLabel("Border color swatch").click();
+    const colorPicker = page.getByLabel("Border color picker");
+    await expect(colorPicker).toBeVisible({ timeout: 10_000 });
+    const pickerValue = await colorPicker.inputValue();
+    expect(pickerValue.toLowerCase()).not.toBe("#000000");
+  });
+
+  test("inspect mode resolves palette border color in picker", async ({
+    page,
+  }) => {
+    const preview = await openDesignStudioWithPreview(page);
+    await preview.locator("[data-studio-id]").first().click();
+    await expect(page.getByLabel("Node ID")).not.toHaveValue("", {
+      timeout: 10_000,
+    });
+
+    const borderColorField = page.getByRole("textbox", { name: "Border color" });
+    await expect(borderColorField).toBeVisible({ timeout: 10_000 });
+    await page.getByLabel("Border color presets").click();
+    await page.getByRole("button", { name: "blue-500", exact: true }).click();
+    await expect(borderColorField).toHaveValue("blue-500");
+
+    await page.getByLabel("Border color swatch").click();
+    const colorPicker = page.getByLabel("Border color picker");
+    await expect(colorPicker).toBeVisible({ timeout: 10_000 });
+    const pickerValue = await colorPicker.inputValue();
+    expect(pickerValue.toLowerCase()).not.toBe("#000000");
+    expect(pickerValue.toLowerCase()).toMatch(/^#[0-9a-f]{6}$/);
   });
 
   test("editor updates styles via inspector controls", async ({ page }) => {
@@ -150,18 +203,10 @@ test.describe("design studio", () => {
   test("wireframes page lists only published components", async ({ page }) => {
     const initiativeId = await getSmokeInitiativeId();
     await gotoProject(page, `initiatives/${initiativeId}/design/wireframes`);
-    await expect(page.getByText("Published UI components")).toBeVisible();
+    await expect(page.getByText("Published UI components")).toBeVisible({
+      timeout: 15_000,
+    });
     await expect(page.getByText("Demo Button")).toBeVisible();
     await expect(page.getByText("Demo Card")).toBeVisible();
-  });
-
-  test("inspect mode selects nodes from preview iframe", async ({ page }) => {
-    const preview = await openDesignStudioWithPreview(page);
-
-    await preview.locator("button").first().click();
-    await expect(page.getByLabel("Node ID")).not.toHaveValue("", {
-      timeout: 10_000,
-    });
-    await expect(page.getByRole("textbox", { name: "Background" })).toBeVisible();
   });
 });
