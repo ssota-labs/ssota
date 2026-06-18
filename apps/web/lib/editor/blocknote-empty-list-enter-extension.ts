@@ -11,6 +11,22 @@ const LIST_ITEM_TYPES = new Set([
   "toggleListItem",
 ]);
 
+type ListItemType =
+  | "bulletListItem"
+  | "numberedListItem"
+  | "checkListItem"
+  | "toggleListItem";
+
+function isEmptyListBlockContent(
+  blockContent: { node: { childCount: number; textContent: string } },
+): boolean {
+  if (blockContent.node.childCount === 0) {
+    return true;
+  }
+
+  return blockContent.node.textContent.trim().length === 0;
+}
+
 function handleEmptyListItemEnter(editor: BlockNoteEditor): boolean {
   const state = editor.prosemirrorState;
   const selectionEmpty = state.selection.anchor === state.selection.head;
@@ -23,18 +39,12 @@ function handleEmptyListItemEnter(editor: BlockNoteEditor): boolean {
     return false;
   }
 
-  const { blockContent, bnBlock } = blockInfo;
+  const { blockContent } = blockInfo;
   if (!LIST_ITEM_TYPES.has(blockInfo.blockNoteType)) {
     return false;
   }
 
-  if (blockContent.node.childCount !== 0) {
-    return false;
-  }
-
-  const depth = state.doc.resolve(bnBlock.beforePos).depth;
-  const blockIndented = depth > 1;
-  if (blockIndented) {
+  if (!isEmptyListBlockContent(blockContent)) {
     return false;
   }
 
@@ -43,12 +53,7 @@ function handleEmptyListItemEnter(editor: BlockNoteEditor): boolean {
     return false;
   }
 
-  const listType = cursor.block.type as
-    | "bulletListItem"
-    | "numberedListItem"
-    | "checkListItem"
-    | "toggleListItem";
-
+  const listType = cursor.block.type as ListItemType;
   const inserted = editor.insertBlocks(
     [{ type: listType, content: "" }],
     cursor.block,
@@ -63,7 +68,7 @@ function handleEmptyListItemEnter(editor: BlockNoteEditor): boolean {
   return true;
 }
 
-/** Keep empty top-level list items in the list when pressing Enter. */
+/** Keep empty list items in the list when pressing Enter at any depth. */
 export const blockNoteEmptyListEnterExtension = createExtension({
   key: "ssota-empty-list-enter",
   runsBefore: [

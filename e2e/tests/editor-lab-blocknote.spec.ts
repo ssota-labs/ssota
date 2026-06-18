@@ -350,7 +350,7 @@ test.describe("Editor Lab BlockNote", () => {
     expect(markers).toEqual(["•", "◦", "▪\uFE0E", "•", "◦", "▪\uFE0E"]);
   });
 
-  test("creates a new top-level bullet when Enter is pressed on an empty list item", async ({
+  test("creates a new bullet when Enter is pressed on an empty list item at any depth", async ({
     page,
   }) => {
     await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
@@ -398,6 +398,61 @@ test.describe("Editor Lab BlockNote", () => {
 
     expect(after.top).toBeGreaterThan(beforeTop);
     expect(after.lastType).toBe("bulletListItem");
+  });
+
+  test("creates a sibling nested bullet when Enter is pressed on an empty nested list item", async ({
+    page,
+  }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "bulletListItem",
+          content: "parent",
+          children: [
+            {
+              type: "bulletListItem",
+              content: "child",
+              children: [{ type: "bulletListItem", content: "" }],
+            },
+          ],
+        },
+      ]);
+
+      const nestedEmpty = editor.document[0]?.children[0]?.children[0];
+      if (!nestedEmpty) {
+        throw new Error("nested empty bullet missing");
+      }
+
+      editor.focus();
+      editor.setTextCursorPosition(nestedEmpty.id, "end");
+    });
+
+    const beforeSiblingCount = await page.evaluate(() => {
+      const parent = window.__ssotaBlockNoteLab!.document[0]?.children[0];
+      return parent?.children.length ?? 0;
+    });
+
+    await page.keyboard.press("Enter");
+
+    const after = await page.evaluate(() => {
+      const parent = window.__ssotaBlockNoteLab!.document[0]?.children[0];
+      const siblings = parent?.children ?? [];
+      return {
+        siblingCount: siblings.length,
+        lastType: siblings.at(-1)?.type,
+        lastContent: siblings.at(-1)?.content,
+      };
+    });
+
+    expect(after.siblingCount).toBeGreaterThan(beforeSiblingCount);
+    expect(after.lastType).toBe("bulletListItem");
+    expect(after.lastContent).toEqual([]);
   });
 
   test("keeps toggle heading placeholder inline when expanded", async ({ page }) => {
