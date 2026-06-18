@@ -1,8 +1,9 @@
 "use client";
 
 import type { SourceRef } from "@/lib/design-studio/source-patch";
+import { InspectorSection } from "@ssota/ui/components/design-studio";
 import { Input } from "@ssota/ui/components/ui/input";
-import { Label } from "@ssota/ui/components/ui/label";
+import { Separator } from "@ssota/ui/components/ui/separator";
 import { ClassnameInspector } from "./inspector/classname-inspector";
 
 type SourceInspectorPanelProps = {
@@ -41,13 +42,18 @@ export function SourceInspectorPanel({
           <p className="text-xs text-muted-foreground">{selectedSourceRef.loc}</p>
         ) : null}
       </div>
-      <div className="min-h-0 flex-1 space-y-4 overflow-auto p-4">
-        <div className="space-y-2">
-          <Label htmlFor="studio-node-id">Node ID</Label>
-          <Input id="studio-node-id" value={selectedId} readOnly />
-        </div>
+      <div className="min-h-0 flex-1 overflow-auto">
+        <InspectorSection title="Node ID">
+          <Input
+            id="studio-node-id"
+            aria-label="Node ID"
+            value={selectedId}
+            readOnly
+          />
+        </InspectorSection>
+        <Separator />
         {readOnly ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="px-4 py-3 text-sm text-muted-foreground">
             Could not map this selection back to source. Edit the file manually.
           </p>
         ) : (

@@ -166,7 +166,7 @@ export function patchSourceClassName(
   if (!patched) return files;
 
   const generated = generate(ast, { retainLines: true }).code;
-  const original = files[sourceRef.file];
+  const original = files[sourceRef.file] ?? "";
   const nextSource =
     original.endsWith("\n") || generated.endsWith("\n")
       ? generated

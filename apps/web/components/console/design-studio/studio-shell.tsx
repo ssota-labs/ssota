@@ -170,10 +170,10 @@ function StudioShellEditor({
     iframeRef,
     ready,
     syncUtilityCss,
+    patchNodeClassName,
     syncTheme,
     syncInteractionMode,
     syncBundle,
-    patchNode,
     highlightNode,
   } = usePreviewBridge(previewUrl);
 
@@ -230,12 +230,9 @@ function StudioShellEditor({
   }, [component, ready, interactionMode, syncInteractionMode]);
 
   useEffect(() => {
-    if (!component) return;
-    const timer = window.setTimeout(() => {
-      void syncUtilityCss(collectClassNamesFromContentV2(contentV2));
-    }, 150);
-    return () => window.clearTimeout(timer);
-  }, [component, contentV2, syncUtilityCss]);
+    if (!component || !ready || !buildPreview) return;
+    void syncUtilityCss(collectClassNamesFromContentV2(contentV2Ref.current));
+  }, [component, ready, buildPreview, structureHash, syncUtilityCss]);
 
   useEffect(() => {
     if (!component) return;
@@ -301,10 +298,15 @@ function StudioShellEditor({
         selectedSourceRef,
         nextClassName,
       );
-      setContentV2((current) => ({ ...current, files: nextFiles }));
-      patchNode(selectedId, { className: nextClassName });
+      const nextContent = { ...contentV2, files: nextFiles };
+      setContentV2(nextContent);
+      void patchNodeClassName(
+        selectedId,
+        nextClassName,
+        collectClassNamesFromContentV2(nextContent),
+      );
     },
-    [contentV2.files, patchNode, selectedId, selectedSourceRef],
+    [contentV2, patchNodeClassName, selectedId, selectedSourceRef],
   );
 
   const handleDeploy = () => {
