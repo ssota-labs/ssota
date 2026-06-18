@@ -35,6 +35,10 @@
   border-color: var(--bn-colors-border);
 }
 
+.blocknote-editor-shell .bn-formatting-toolbar .bn-color-icon {
+  box-sizing: border-box;
+}
+
 .blocknote-editor-shell .bn-color-icon[data-text-color="default"] {
   color: var(--bn-colors-menu-text);
 }
