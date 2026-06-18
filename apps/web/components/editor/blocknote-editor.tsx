@@ -17,6 +17,7 @@ import type { CSSProperties } from "react";
 
 import { BlockNoteFormattingToolbar } from "@/components/editor/blocknote-formatting-toolbar";
 import { blockNoteEmptyListEnterExtension } from "@/lib/editor/blocknote-empty-list-enter-extension";
+import { attachBlockNoteSideMenuDragFix } from "@/lib/editor/blocknote-side-menu-drag";
 import {
   resolveBlockNoteMarkerShell,
   updateBlockNoteListMarkers,
@@ -131,6 +132,10 @@ export function SsotaBlockNoteEditor({
 
     refreshListMarkersSync();
   }, [editor, refreshListMarkersSync]);
+
+  useEffect(() => {
+    return attachBlockNoteSideMenuDragFix(editor);
+  }, [editor]);
 
   useEffect(() => {
     const onViewUpdate = () => {

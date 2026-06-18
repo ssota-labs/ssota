@@ -451,6 +451,291 @@ test.describe("Editor Lab BlockNote", () => {
     expect(placeholderTarget.headingAfter).toContain("제목");
   });
 
+  test("moves nested bullet subtree via remove and insert APIs", async ({ page }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    const tree = await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab!;
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "bulletListItem",
+          content: "root-a",
+          children: [
+            {
+              type: "bulletListItem",
+              content: "nested-b",
+              children: [
+                {
+                  type: "bulletListItem",
+                  content: "nested-c",
+                  children: [{ type: "bulletListItem", content: "nested-d" }],
+                },
+              ],
+            },
+          ],
+        },
+        { type: "bulletListItem", content: "root-e" },
+      ]);
+      const nestedB = editor.document[0]?.children?.[0];
+      const rootE = editor.document[1];
+      if (!nestedB || !rootE) {
+        throw new Error("missing blocks");
+      }
+      const snapshot = editor.getBlock(nestedB.id);
+      if (!snapshot) {
+        throw new Error("snapshot missing");
+      }
+      editor.removeBlocks([nestedB.id]);
+      editor.insertBlocks([snapshot], rootE, "after");
+      const serialize = (
+        blocks: typeof editor.document,
+      ): Array<{ text: string; children: ReturnType<typeof serialize> }> =>
+        blocks.map((block) => ({
+          text: Array.isArray(block.content)
+            ? block.content.map((item) => ("text" in item ? item.text : "")).join("")
+            : "",
+          children: block.children?.length ? serialize(block.children) : [],
+        }));
+      return serialize(editor.document);
+    });
+
+    expect(tree).toEqual([
+      { text: "root-a", children: [] },
+      { text: "root-e", children: [] },
+      {
+        text: "nested-b",
+        children: [
+          {
+            text: "nested-c",
+            children: [{ text: "nested-d", children: [] }],
+          },
+        ],
+      },
+    ]);
+  });
+
+  test("moves nested bullet subtree without duplicating child blocks on drag", async ({
+    page,
+  }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    const dragBlockId = await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "bulletListItem",
+          content: "root-a",
+          children: [
+            {
+              type: "bulletListItem",
+              content: "nested-b",
+              children: [
+                {
+                  type: "bulletListItem",
+                  content: "nested-c",
+                  children: [
+                    {
+                      type: "bulletListItem",
+                      content: "nested-d",
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: "bulletListItem",
+          content: "root-e",
+        },
+      ]);
+
+      const nestedB = editor.document[0]?.children?.[0];
+      if (!nestedB) {
+        throw new Error("nested bullet missing");
+      }
+      return nestedB.id;
+    });
+
+    const before = await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab!;
+      const flatten = (
+        blocks: typeof editor.document,
+        acc: Array<{ id: string; text: string }> = [],
+      ) => {
+        for (const block of blocks) {
+          const text =
+            typeof block.content === "string"
+              ? block.content
+              : Array.isArray(block.content)
+                ? block.content
+                    .map((item) =>
+                      typeof item === "string"
+                        ? item
+                        : "text" in item
+                          ? item.text
+                          : "",
+                    )
+                    .join("")
+                : "";
+          acc.push({ id: block.id, text });
+          if (block.children?.length) {
+            flatten(block.children, acc);
+          }
+        }
+        return acc;
+      };
+
+      return {
+        blocks: flatten(editor.document),
+        ids: flatten(editor.document).map((block) => block.id),
+      };
+    });
+
+    expect(before.blocks.map((block) => block.text)).toEqual([
+      "root-a",
+      "nested-b",
+      "nested-c",
+      "nested-d",
+      "root-e",
+    ]);
+    expect(new Set(before.ids).size).toBe(before.ids.length);
+
+    const nestedContent = page.locator(
+      `.blocknote-editor-shell .bn-block[data-id="${dragBlockId}"] [data-content-type="bulletListItem"]`,
+      { hasText: "nested-b" },
+    );
+    await nestedContent.scrollIntoViewIfNeeded();
+    await nestedContent.hover();
+
+    const dragHandle = page.locator(
+      '.blocknote-editor-shell .bn-side-menu [data-test="dragHandle"]',
+    );
+    await expect(dragHandle).toBeVisible({ timeout: 5_000 });
+
+    const rootE = page.locator(
+      '.blocknote-editor-shell .bn-block-content[data-content-type="bulletListItem"]',
+      { hasText: "root-e" },
+    );
+    await expect(rootE).toBeVisible();
+
+    const handleBox = await dragHandle.boundingBox();
+    const nestedBox = await nestedContent.boundingBox();
+    const targetBox = await rootE.boundingBox();
+    if (!handleBox || !nestedBox || !targetBox) {
+      throw new Error("drag handle or drop target not positioned");
+    }
+
+    const dragY = nestedBox.y + nestedBox.height / 2;
+    await page.mouse.move(nestedBox.x + nestedBox.width / 2, dragY);
+    await page.mouse.move(handleBox.x + handleBox.width / 2, dragY);
+    await page.mouse.down();
+    await page.mouse.move(
+      targetBox.x + targetBox.width / 2,
+      targetBox.y + targetBox.height - 4,
+      { steps: 12 },
+    );
+    await page.waitForTimeout(120);
+    await page.mouse.up();
+    await page.waitForTimeout(400);
+
+    const handled = await page.evaluate(
+      () => (window as Window & { __ssotaDragDropHandled?: boolean }).__ssotaDragDropHandled,
+    );
+    expect(handled).toBe(true);
+
+    const after = await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab!;
+      const flatten = (
+        blocks: typeof editor.document,
+        acc: Array<{ id: string; text: string }> = [],
+      ) => {
+        for (const block of blocks) {
+          const text =
+            typeof block.content === "string"
+              ? block.content
+              : Array.isArray(block.content)
+                ? block.content
+                    .map((item) =>
+                      typeof item === "string"
+                        ? item
+                        : "text" in item
+                          ? item.text
+                          : "",
+                    )
+                    .join("")
+                : "";
+          acc.push({ id: block.id, text });
+          if (block.children?.length) {
+            flatten(block.children, acc);
+          }
+        }
+        return acc;
+      };
+      const tree = (
+        blocks: typeof editor.document,
+      ): Array<{ text: string; children: ReturnType<typeof tree> }> =>
+        blocks.map((block) => ({
+          text: Array.isArray(block.content)
+            ? block.content.map((item) => ("text" in item ? item.text : "")).join("")
+            : "",
+          children: block.children?.length ? tree(block.children) : [],
+        }));
+
+      const flat = flatten(editor.document);
+      const domCounts = Object.fromEntries(
+        flat.map((block) => [
+          block.id,
+          document.querySelectorAll(
+            `.blocknote-editor-shell .bn-block[data-id="${block.id}"]`,
+          ).length,
+        ]),
+      );
+
+      return {
+        blocks: flat,
+        ids: flat.map((block) => block.id),
+        tree: tree(editor.document),
+        domCounts,
+        topLevel: editor.document.map((block) => {
+          const text =
+            typeof block.content === "string"
+              ? block.content
+              : Array.isArray(block.content)
+                ? block.content
+                    .map((item) =>
+                      typeof item === "string"
+                        ? item
+                        : "text" in item
+                          ? item.text
+                          : "",
+                    )
+                    .join("")
+                : "";
+          return text;
+        }),
+      };
+    });
+
+    expect(new Set(after.ids).size).toBe(after.ids.length);
+    expect(Object.values(after.domCounts).every((count) => count === 1)).toBe(true);
+    expect(after.tree).toEqual([
+      { text: "root-a", children: [] },
+      { text: "root-e", children: [] },
+      {
+        text: "nested-b",
+        children: [
+          {
+            text: "nested-c",
+            children: [{ text: "nested-d", children: [] }],
+          },
+        ],
+      },
+    ]);
+  });
+
   test("keeps toggle heading title inline and focuses correctly when typing", async ({
     page,
   }) => {
