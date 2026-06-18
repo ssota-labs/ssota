@@ -53,4 +53,11 @@ test.describe("Editor Lab BlockNote", () => {
     await expect(page.locator("#bn-suggestion-menu")).toBeVisible();
     await expect(page.locator("#bn-suggestion-menu")).toContainText("제목1");
   });
+
+  test("opens formatting toolbar on text selection", async ({ page }) => {
+    await page.locator(".bn-editor").getByText("굵게").dblclick();
+    const toolbar = page.locator(".bn-formatting-toolbar");
+    await expect(toolbar).toBeVisible();
+    await expect(toolbar.getByRole("button", { name: "진하게" })).toBeVisible();
+  });
 });

@@ -1,10 +1,33 @@
-/* Slash / suggestion menus: BlockNote shadcn expects popover utilities; fall back to BN tokens. */
+/* BlockNote floating UI — slash menu, bubble/link toolbars, portaled selects. */
+.blocknote-editor-shell .bn-toolbar,
+.blocknote-editor-shell .bn-formatting-toolbar,
+.blocknote-editor-shell .bn-link-toolbar,
 .blocknote-editor-shell #bn-suggestion-menu,
 .blocknote-editor-shell .bn-suggestion-menu,
-.blocknote-editor-shell .bn-grid-suggestion-menu {
+.blocknote-editor-shell .bn-grid-suggestion-menu,
+.blocknote-editor-shell [data-slot="select-content"],
+.blocknote-editor-shell [data-slot="dropdown-menu-content"],
+.blocknote-editor-shell [data-slot="popover-content"] {
   background-color: var(--bn-colors-menu-background);
   color: var(--bn-colors-menu-text);
   border-color: var(--bn-colors-border);
+}
+
+.blocknote-editor-shell .bn-toolbar [data-slot="button"],
+.blocknote-editor-shell .bn-toolbar [data-slot="toggle"],
+.blocknote-editor-shell .bn-toolbar [data-slot="select-trigger"],
+.blocknote-editor-shell .bn-toolbar button,
+.blocknote-editor-shell .bn-toolbar [role="combobox"] {
+  color: var(--bn-colors-menu-text);
+}
+
+.blocknote-editor-shell .bn-toolbar [data-slot="toggle"][data-state="on"] {
+  background-color: var(--bn-colors-hovered-background);
+  color: var(--bn-colors-hovered-text);
+}
+
+.blocknote-editor-shell .bn-toolbar svg:not([class*="text-"]) {
+  color: currentColor;
 }
 
 .blocknote-editor-shell #bn-suggestion-menu .bn-suggestion-menu-label,
