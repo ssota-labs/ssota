@@ -254,6 +254,51 @@ test.describe("Editor Lab BlockNote", () => {
     expect(markers).toEqual(["1.", "a.", "i."]);
   });
 
+  test("cycles nested bullet list markers every three depths", async ({ page }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+
+      type BulletBlock = {
+        type: "bulletListItem";
+        content: string;
+        children?: BulletBlock[];
+      };
+
+      let chain: BulletBlock = { type: "bulletListItem", content: "depth-6" };
+      for (let depth = 5; depth >= 1; depth -= 1) {
+        chain = {
+          type: "bulletListItem",
+          content: `depth-${depth}`,
+          children: [chain],
+        };
+      }
+
+      editor.replaceBlocks(editor.document, [chain]);
+    });
+
+    await page.waitForFunction(() => {
+      const items = document.querySelectorAll(
+        ".blocknote-editor-shell [data-content-type='bulletListItem']",
+      );
+      return items.length === 6;
+    });
+
+    const markers = await page.evaluate(() => {
+      window.__ssotaBlockNoteLabRefreshMarkers?.();
+      return [
+        ...document.querySelectorAll(
+          ".blocknote-editor-shell [data-content-type='bulletListItem']",
+        ),
+      ].map((item) => item.getAttribute("data-marker"));
+    });
+
+    expect(markers).toEqual(["•", "◦", "▪\uFE0E", "•", "◦", "▪\uFE0E"]);
+  });
+
   test("keeps toggle heading placeholder inline when expanded", async ({ page }) => {
     await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
     await page.evaluate(() => {

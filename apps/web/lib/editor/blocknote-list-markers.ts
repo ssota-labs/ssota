@@ -1,3 +1,5 @@
+export type BlockNoteListItemType = "bulletListItem" | "numberedListItem";
+
 export function indexToAlpha(index: number): string {
   let n = index;
   let result = "";
@@ -37,8 +39,11 @@ export function indexToRoman(index: number): string {
   return result || "i";
 }
 
-export function numberedListNestingDepth(element: HTMLElement): number {
-  if (element.getAttribute("data-content-type") !== "numberedListItem") {
+export function listItemNestingDepth(
+  element: HTMLElement,
+  listType: BlockNoteListItemType,
+): number {
+  if (element.getAttribute("data-content-type") !== listType) {
     return 0;
   }
 
@@ -61,10 +66,10 @@ export function numberedListNestingDepth(element: HTMLElement): number {
       break;
     }
 
-    const ancestorNumbered = ancestorOuter.querySelector(
-      ':scope > .bn-block > .bn-block-content[data-content-type="numberedListItem"]',
+    const ancestorList = ancestorOuter.querySelector(
+      `:scope > .bn-block > .bn-block-content[data-content-type="${listType}"]`,
     );
-    if (ancestorNumbered) {
+    if (ancestorList) {
       depth += 1;
     }
 
@@ -72,6 +77,14 @@ export function numberedListNestingDepth(element: HTMLElement): number {
   }
 
   return depth;
+}
+
+export function numberedListNestingDepth(element: HTMLElement): number {
+  return listItemNestingDepth(element, "numberedListItem");
+}
+
+export function bulletListNestingDepth(element: HTMLElement): number {
+  return listItemNestingDepth(element, "bulletListItem");
 }
 
 /** Top level stays decimal; nested levels cycle a. → i. → 1. */
@@ -90,7 +103,19 @@ export function formatNumberedListMarker(index: number, depth: number): string {
   return `${index}.`;
 }
 
-export function updateBlockNoteNumberedListMarkers(shell: HTMLElement): void {
+/** Bullet markers cycle • → ◦ → ▪ every three nesting depths. */
+export function formatBulletListMarker(depth: number): string {
+  const cycle = depth % 3;
+  if (cycle === 0) {
+    return "•";
+  }
+  if (cycle === 1) {
+    return "◦";
+  }
+  return "▪\uFE0E";
+}
+
+function updateNumberedListMarkers(shell: HTMLElement): void {
   const numberedItems = shell.querySelectorAll<HTMLElement>(
     '[data-content-type="numberedListItem"]',
   );
@@ -120,6 +145,42 @@ export function updateBlockNoteNumberedListMarkers(shell: HTMLElement): void {
       item.setAttribute("data-marker-prev", marker);
     }
   }
+}
+
+function updateBulletListMarkers(shell: HTMLElement): void {
+  const bulletItems = shell.querySelectorAll<HTMLElement>(
+    '[data-content-type="bulletListItem"]',
+  );
+
+  for (const item of bulletItems) {
+    const depth = bulletListNestingDepth(item);
+    const marker = formatBulletListMarker(depth);
+    if (item.getAttribute("data-marker") !== marker) {
+      item.setAttribute("data-marker", marker);
+    }
+  }
+
+  const prevItems = shell.querySelectorAll<HTMLElement>(
+    '.bn-block-outer[data-prev-type="bulletListItem"]:not([data-prev-index="none"]) > .bn-block > .bn-block-content[data-content-type="bulletListItem"]',
+  );
+
+  for (const item of prevItems) {
+    const depth = bulletListNestingDepth(item);
+    const marker = formatBulletListMarker(depth);
+    if (item.getAttribute("data-marker-prev") !== marker) {
+      item.setAttribute("data-marker-prev", marker);
+    }
+  }
+}
+
+export function updateBlockNoteListMarkers(shell: HTMLElement): void {
+  updateNumberedListMarkers(shell);
+  updateBulletListMarkers(shell);
+}
+
+/** @deprecated Use updateBlockNoteListMarkers */
+export function updateBlockNoteNumberedListMarkers(shell: HTMLElement): void {
+  updateBlockNoteListMarkers(shell);
 }
 
 export function resolveBlockNoteMarkerShell(

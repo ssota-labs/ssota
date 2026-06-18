@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatBulletListMarker,
   formatNumberedListMarker,
   indexToAlpha,
   indexToRoman,
@@ -18,6 +19,15 @@ describe("blocknote-list-markers", () => {
     expect(formatNumberedListMarker(3, 3)).toBe("3.");
     expect(formatNumberedListMarker(2, 4)).toBe("b.");
     expect(formatNumberedListMarker(3, 5)).toBe("iii.");
+  });
+
+  it("cycles bullet markers as •, ◦, ▪", () => {
+    expect(formatBulletListMarker(0)).toBe("•");
+    expect(formatBulletListMarker(1)).toBe("◦");
+    expect(formatBulletListMarker(2)).toBe("▪\uFE0E");
+    expect(formatBulletListMarker(3)).toBe("•");
+    expect(formatBulletListMarker(4)).toBe("◦");
+    expect(formatBulletListMarker(5)).toBe("▪\uFE0E");
   });
 
   it("converts indices to alpha and roman", () => {

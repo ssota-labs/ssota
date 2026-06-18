@@ -17,7 +17,7 @@ import type { CSSProperties } from "react";
 import { BlockNoteFormattingToolbar } from "@/components/editor/blocknote-formatting-toolbar";
 import {
   resolveBlockNoteMarkerShell,
-  updateBlockNoteNumberedListMarkers,
+  updateBlockNoteListMarkers,
 } from "@/lib/editor/blocknote-list-markers";
 
 let markerShellElement: HTMLDivElement | null = null;
@@ -74,7 +74,7 @@ export function SsotaBlockNoteEditor({
     shellRef.current = node;
     markerShellElement = node;
     if (node) {
-      updateBlockNoteNumberedListMarkers(node);
+      updateBlockNoteListMarkers(node);
     }
   }, []);
   const uploadImageRef = useRef(uploadImage);
@@ -116,7 +116,7 @@ export function SsotaBlockNoteEditor({
     if (!shell) {
       return;
     }
-    updateBlockNoteNumberedListMarkers(shell);
+    updateBlockNoteListMarkers(shell);
   }, []);
 
   const refreshListMarkers = useCallback(() => {
@@ -131,7 +131,7 @@ export function SsotaBlockNoteEditor({
 
     refreshFrameRef.current = window.requestAnimationFrame(() => {
       refreshFrameRef.current = null;
-      updateBlockNoteNumberedListMarkers(shell);
+      updateBlockNoteListMarkers(shell);
     });
   }, []);
 
