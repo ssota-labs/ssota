@@ -55,6 +55,38 @@ test.describe("Editor Lab BlockNote", () => {
     await expect(page.locator("#bn-suggestion-menu")).toContainText("제목1");
   });
 
+  test("highlights slash menu item on arrow key navigation", async ({ page }) => {
+    const surface = await focusEditorEnd(page);
+    await surface.press("Enter");
+    await page.keyboard.type("/", { delay: 40 });
+
+    const menu = page.locator("#bn-suggestion-menu");
+    await expect(menu).toBeVisible();
+
+    const items = menu.locator("[role='option']");
+    await expect(items.first()).toHaveAttribute("aria-selected", "true");
+
+    await page.keyboard.press("ArrowDown");
+    await expect(items.nth(1)).toHaveAttribute("aria-selected", "true");
+    await expect(items.first()).not.toHaveAttribute("aria-selected", "true");
+
+    const highlight = await page.evaluate(() => {
+      const menuEl = document.querySelector("#bn-suggestion-menu");
+      const selected = menuEl?.querySelector('[role="option"][aria-selected="true"]');
+      if (!menuEl || !selected) {
+        return null;
+      }
+
+      return {
+        menuBg: getComputedStyle(menuEl).backgroundColor,
+        selectedBg: getComputedStyle(selected).backgroundColor,
+      };
+    });
+
+    expect(highlight).not.toBeNull();
+    expect(highlight!.selectedBg).not.toBe(highlight!.menuBg);
+  });
+
   test("opens formatting toolbar on text selection", async ({ page }) => {
     await page.locator(".bn-editor").getByText("굵게").dblclick();
     const toolbar = page.locator(".bn-formatting-toolbar");

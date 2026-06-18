@@ -40,6 +40,29 @@
   color: var(--bn-colors-side-menu);
 }
 
+/* Slash menu: keyboard focus uses aria-selected; mirror hover highlight. */
+.blocknote-editor-shell #bn-suggestion-menu [role="option"]:hover,
+.blocknote-editor-shell .bn-suggestion-menu [role="option"]:hover,
+.blocknote-editor-shell #bn-suggestion-menu [role="option"][aria-selected="true"],
+.blocknote-editor-shell .bn-suggestion-menu [role="option"][aria-selected="true"] {
+  background-color: var(--bn-colors-hovered-background);
+  color: var(--bn-colors-hovered-text);
+}
+
+.blocknote-editor-shell
+  #bn-suggestion-menu
+  [role="option"][aria-selected="true"]
+  .text-xs,
+.blocknote-editor-shell
+  .bn-suggestion-menu
+  [role="option"][aria-selected="true"]
+  .text-xs,
+.blocknote-editor-shell #bn-suggestion-menu [role="option"]:hover .text-xs,
+.blocknote-editor-shell .bn-suggestion-menu [role="option"]:hover .text-xs {
+  color: var(--bn-colors-hovered-text);
+  opacity: 0.85;
+}
+
 .blocknote-editor-shell .bn-container {
   border-radius: var(--radius-md);
 }
