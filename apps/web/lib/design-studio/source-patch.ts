@@ -165,8 +165,15 @@ export function patchSourceClassName(
 
   if (!patched) return files;
 
+  const generated = generate(ast, { retainLines: true }).code;
+  const original = files[sourceRef.file];
+  const nextSource =
+    original.endsWith("\n") || generated.endsWith("\n")
+      ? generated
+      : generated.replace(/\n$/, "");
+
   return {
     ...files,
-    [sourceRef.file]: generate(ast, { retainLines: true }).code,
+    [sourceRef.file]: nextSource,
   };
 }

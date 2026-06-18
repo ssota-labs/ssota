@@ -5,6 +5,23 @@ import {
 } from "./content-structure-hash";
 
 describe("hashContentStructure", () => {
+  it("detects structural JSX changes", () => {
+    const before = {
+      schemaVersion: 2 as const,
+      files: {
+        "Component.tsx": `<Button className="rounded-md">Hi</Button>`,
+      },
+    };
+    const after = {
+      schemaVersion: 2 as const,
+      files: {
+        "Component.tsx": `<div><Button className="rounded-md">Hi</Button></div>`,
+      },
+    };
+
+    expect(hashContentStructure(before)).not.toBe(hashContentStructure(after));
+  });
+
   it("ignores className-only changes", () => {
     const before = {
       schemaVersion: 2 as const,
@@ -22,21 +39,39 @@ describe("hashContentStructure", () => {
     expect(hashContentStructure(before)).toBe(hashContentStructure(after));
   });
 
-  it("detects structural JSX changes", () => {
+  it("ignores babel formatting drift on className-only patches", () => {
     const before = {
       schemaVersion: 2 as const,
       files: {
-        "Component.tsx": `<Button className="rounded-md">Hi</Button>`,
+        "Component.tsx": `import { Button } from "@ssota/ui/components/ui/button";
+
+export default function Component() {
+  return (
+    <Button className="rounded-md bg-primary px-4 py-2 text-primary-foreground">
+      Button
+    </Button>
+  );
+}
+`,
       },
     };
     const after = {
       schemaVersion: 2 as const,
       files: {
-        "Component.tsx": `<div><Button className="rounded-md">Hi</Button></div>`,
+        "Component.tsx": `import { Button } from "@ssota/ui/components/ui/button";
+
+export default function Component() {
+  return (
+    <Button className="rounded-md bg-blue-600 px-4 py-2 text-primary-foreground">
+      Button
+    </Button>
+  );
+}
+`,
       },
     };
 
-    expect(hashContentStructure(before)).not.toBe(hashContentStructure(after));
+    expect(hashContentStructure(before)).toBe(hashContentStructure(after));
   });
 });
 
