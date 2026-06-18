@@ -31,6 +31,10 @@ import {
   createEmptyUiComponentDocument,
 } from "@/lib/design-studio/empty-document";
 import { updateStudioNode } from "@/lib/design-studio/tree-utils";
+import {
+  resolveStudioBundlePreviewUrls,
+  revokeStudioBundlePreviewUrls,
+} from "@/lib/design-studio/resolve-bundle-preview-urls";
 import { buildSourceLayerIndex } from "@/lib/design-studio/source-layers";
 import {
   patchSourceClassName,
@@ -224,6 +228,7 @@ export function StudioShell({
 
   useEffect(() => {
     if (!component || !isSource) return;
+    let cancelled = false;
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
@@ -237,24 +242,44 @@ export function StudioShell({
               themeCss: themeCss,
             }),
           });
-          if (!response.ok) return;
+          if (!response.ok || cancelled) return;
           const payload = (await response.json()) as {
             url: string;
             cssUrl?: string;
             buildId: string;
           };
-          setBuildPreview({
-            jsUrl: payload.url,
-            cssUrl: payload.cssUrl,
+          const resolved = await resolveStudioBundlePreviewUrls({
+            jsPath: payload.url,
+            cssPath: payload.cssUrl,
             buildId: payload.buildId,
+          });
+          if (!resolved || cancelled) {
+            revokeStudioBundlePreviewUrls(resolved ?? undefined);
+            return;
+          }
+          setBuildPreview((current) => {
+            revokeStudioBundlePreviewUrls(current);
+            return resolved;
           });
         } catch {
           // preview build is best-effort until deploy
         }
       })();
     }, 400);
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
   }, [component, contentV2, isSource, projectId, themeCss]);
+
+  useEffect(() => {
+    return () => {
+      setBuildPreview((current) => {
+        revokeStudioBundlePreviewUrls(current);
+        return null;
+      });
+    };
+  }, []);
 
   useEffect(() => {
     if (!component || !ready || !isSource || !buildPreview) return;

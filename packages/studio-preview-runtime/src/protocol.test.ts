@@ -17,6 +17,15 @@ describe("studio preview runtime protocol", () => {
     expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");
   });
 
+  it("parses STUDIO_LOAD_BUNDLE with blob URL", () => {
+    const message = parseStudioMessage({
+      type: "STUDIO_LOAD_BUNDLE",
+      jsUrl: "blob:http://localhost:3000/abc-123",
+      buildId: "abc123",
+    });
+    expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");
+  });
+
   it("parses STUDIO_LOAD_BUNDLE with same-origin path", () => {
     const message = parseStudioMessage({
       type: "STUDIO_LOAD_BUNDLE",

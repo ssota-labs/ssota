@@ -21,8 +21,11 @@ const studioBundleAssetUrlSchema = z
   .string()
   .min(1)
   .refine(
-    (value) => value.startsWith("/") || /^https?:\/\//.test(value),
-    { message: "Bundle URL must be absolute or a path" },
+    (value) =>
+      value.startsWith("/") ||
+      value.startsWith("blob:") ||
+      /^https?:\/\//.test(value),
+    { message: "Bundle URL must be absolute, blob, or a path" },
   );
 
 const studioPatchSchema = z.object({
