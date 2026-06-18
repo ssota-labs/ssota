@@ -5,6 +5,7 @@ import {
   formatNumberedListMarker,
   indexToAlpha,
   indexToRoman,
+  listItemNestingDepthFromDocument,
 } from "./blocknote-list-markers";
 
 describe("blocknote-list-markers", () => {
@@ -28,6 +29,26 @@ describe("blocknote-list-markers", () => {
     expect(formatBulletListMarker(3)).toBe("•");
     expect(formatBulletListMarker(4)).toBe("◦");
     expect(formatBulletListMarker(5)).toBe("▪\uFE0E");
+  });
+
+  it("counts list depth from the editor document tree", () => {
+    const editor = {
+      getParentBlock: (blockId: string) => {
+        const parents: Record<string, { id: string; type: string } | undefined> = {
+          child: { id: "parent", type: "numberedListItem" },
+          parent: { id: "bullet", type: "bulletListItem" },
+          bullet: undefined,
+        };
+        return parents[blockId];
+      },
+    };
+
+    expect(
+      listItemNestingDepthFromDocument(editor, "child", "numberedListItem"),
+    ).toBe(1);
+    expect(
+      listItemNestingDepthFromDocument(editor, "parent", "numberedListItem"),
+    ).toBe(0);
   });
 
   it("converts indices to alpha and roman", () => {

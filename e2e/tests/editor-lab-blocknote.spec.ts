@@ -154,6 +154,57 @@ test.describe("Editor Lab BlockNote", () => {
     );
   });
 
+  test("updates nested numbered marker immediately after Enter without click", async ({
+    page,
+  }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "bulletListItem",
+          content: "parent",
+          children: [
+            {
+              type: "numberedListItem",
+              content: "first",
+              children: [],
+            },
+          ],
+        },
+      ]);
+      const block = editor.document[0]?.children?.[0];
+      if (!block) {
+        throw new Error("numbered block missing");
+      }
+      editor.focus();
+      editor.setTextCursorPosition(block.id, "end");
+    });
+
+    await page.keyboard.press("Enter");
+    await page.keyboard.press("Tab");
+
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(() => {
+            const items = [
+              ...document.querySelectorAll(
+                ".blocknote-editor-shell [data-content-type='numberedListItem']",
+              ),
+            ];
+            return items.map(
+              (item) => getComputedStyle(item, "::before").content,
+            );
+          }),
+        { timeout: 2_000 },
+      )
+      .toEqual(['"1."', '"a."']);
+  });
+
   test("formats nested numbered list markers as a/i/1 cycle", async ({ page }) => {
     await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
     await page.evaluate(() => {

@@ -70,13 +70,9 @@ export function SsotaBlockNoteEditor({
 }: SsotaBlockNoteEditorProps) {
   const { resolvedTheme } = useTheme();
   const shellRef = useRef<HTMLDivElement>(null);
-  const refreshFrameRef = useRef<number | null>(null);
   const setShellRef = useCallback((node: HTMLDivElement | null) => {
     shellRef.current = node;
     markerShellElement = node;
-    if (node) {
-      updateBlockNoteListMarkers(node);
-    }
   }, []);
   const uploadImageRef = useRef(uploadImage);
   uploadImageRef.current = uploadImage;
@@ -117,29 +113,13 @@ export function SsotaBlockNoteEditor({
     if (!shell) {
       return;
     }
-    updateBlockNoteListMarkers(shell);
-  }, []);
-
-  const refreshListMarkers = useCallback(() => {
-    const shell = getMarkerShell(shellRef);
-    if (!shell) {
-      return;
-    }
-
-    if (refreshFrameRef.current !== null) {
-      window.cancelAnimationFrame(refreshFrameRef.current);
-    }
-
-    refreshFrameRef.current = window.requestAnimationFrame(() => {
-      refreshFrameRef.current = null;
-      updateBlockNoteListMarkers(shell);
-    });
-  }, []);
+    updateBlockNoteListMarkers(shell, editor);
+  }, [editor]);
 
   const handleChange = useCallback(() => {
     onChange?.(editor.document);
-    refreshListMarkers();
-  }, [editor, onChange, refreshListMarkers]);
+    refreshListMarkersSync();
+  }, [editor, onChange, refreshListMarkersSync]);
 
   useLayoutEffect(() => {
     const shell = getMarkerShell(shellRef);
@@ -148,27 +128,34 @@ export function SsotaBlockNoteEditor({
     }
 
     refreshListMarkersSync();
-
-    const observer = new MutationObserver(() => {
-      refreshListMarkers();
-    });
-
-    observer.observe(shell, {
-      subtree: true,
-      attributes: true,
-      childList: true,
-    });
-
-    return () => observer.disconnect();
-  }, [editor, refreshListMarkers, refreshListMarkersSync]);
+  }, [editor, refreshListMarkersSync]);
 
   useEffect(() => {
-    const unsubscribe = editor.onChange(() => {
-      refreshListMarkers();
+    const onViewUpdate = () => {
+      refreshListMarkersSync();
+    };
+
+    editor._tiptapEditor.on("update", onViewUpdate);
+
+    return () => {
+      editor._tiptapEditor.off("update", onViewUpdate);
+    };
+  }, [editor, refreshListMarkersSync]);
+
+  useEffect(() => {
+    const unsubscribeSelection = editor.onSelectionChange(() => {
+      refreshListMarkersSync();
     });
 
-    return unsubscribe;
-  }, [editor, refreshListMarkers]);
+    const unsubscribeChange = editor.onChange(() => {
+      refreshListMarkersSync();
+    });
+
+    return () => {
+      unsubscribeSelection();
+      unsubscribeChange();
+    };
+  }, [editor, refreshListMarkersSync]);
 
   useEffect(() => {
     onEditorReady?.(editor);
@@ -194,6 +181,7 @@ export function SsotaBlockNoteEditor({
         editable={editable}
         formattingToolbar={false}
         onChange={handleChange}
+        onSelectionChange={refreshListMarkersSync}
         theme={blockNoteTheme}
       >
         <FormattingToolbarController
