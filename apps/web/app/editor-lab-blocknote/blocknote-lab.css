@@ -190,14 +190,57 @@
   display: none !important;
 }
 
+/* Keep the toggle title row compact; do not stretch it across the full editor width. */
+.blocknote-editor-shell .bn-block-content:has(.bn-toggle-wrapper) > div {
+  flex: 0 1 auto;
+  max-width: 100%;
+  width: fit-content;
+}
+
+.blocknote-editor-shell .bn-toggle-wrapper :is(h1, h2, h3, h4, h5, h6, p) {
+  align-self: flex-start;
+  flex: 0 0 auto;
+  line-height: 1.3;
+  min-width: 0;
+  width: auto;
+}
+
+.blocknote-editor-shell
+  .bn-toggle-wrapper
+  :is(h1, h2, h3, h4, h5, h6, p):has(.ProseMirror-trailingBreak:only-child) {
+  min-width: 2.5em;
+  position: relative;
+}
+
 .blocknote-editor-shell
   .bn-block-content[data-content-type="heading"]:has(.bn-toggle-wrapper):has(
     .ProseMirror-trailingBreak:only-child
   )
-  :is(h1, h2, h3, h4, h5, h6) {
-  flex: 0 1 auto;
-  width: fit-content;
-  min-width: 0;
+  :is(h1, h2, h3, h4, h5, h6)::after,
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="heading"]:has(.bn-toggle-wrapper)[data-is-empty-and-focused]:has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  :is(h1, h2, h3, h4, h5, h6)::after,
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="toggleListItem"]:has(.bn-toggle-wrapper):has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  p::after,
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="toggleListItem"]:has(.bn-toggle-wrapper)[data-is-empty-and-focused]:has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  p::after {
+  color: var(--bn-colors-side-menu);
+  font-style: italic;
+  left: 0;
+  margin-inline: 0;
+  max-width: 100%;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
 }
 
 .blocknote-editor-shell
@@ -210,22 +253,7 @@
     .ProseMirror-trailingBreak:only-child
   )
   :is(h1, h2, h3, h4, h5, h6)::after {
-  color: var(--bn-colors-side-menu);
   content: var(--ssota-bn-placeholder-heading) !important;
-  font-style: italic;
-  margin-inline: -2px;
-  max-width: 100%;
-  pointer-events: none;
-}
-
-.blocknote-editor-shell
-  .bn-block-content[data-content-type="toggleListItem"]:has(.bn-toggle-wrapper):has(
-    .ProseMirror-trailingBreak:only-child
-  )
-  p {
-  flex: 0 1 auto;
-  width: fit-content;
-  min-width: 0;
 }
 
 .blocknote-editor-shell
@@ -238,10 +266,5 @@
     .ProseMirror-trailingBreak:only-child
   )
   p::after {
-  color: var(--bn-colors-side-menu);
   content: var(--ssota-bn-placeholder-toggle-list) !important;
-  font-style: italic;
-  margin-inline: -2px;
-  max-width: 100%;
-  pointer-events: none;
 }

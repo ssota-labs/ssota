@@ -304,4 +304,63 @@ test.describe("Editor Lab BlockNote", () => {
     );
     expect(placeholderTarget.headingAfter).toContain("제목");
   });
+
+  test("keeps toggle heading title inline and focuses correctly when typing", async ({
+    page,
+  }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "heading",
+          props: { level: 1, isToggleable: true },
+          content: "",
+          children: [{ type: "paragraph", content: "child block" }],
+        },
+      ]);
+      const block = editor.document[0];
+      if (!block) {
+        throw new Error("toggle heading block was not created");
+      }
+      editor.focus();
+      editor.setTextCursorPosition(block.id, "end");
+    });
+
+    await page.locator(".blocknote-editor-shell .bn-toggle-button").first().click();
+    await page.locator(".blocknote-editor-shell .bn-toggle-wrapper h1").click();
+
+    const layout = await page.evaluate(() => {
+      const heading = document.querySelector(".blocknote-editor-shell .bn-toggle-wrapper h1");
+      if (!heading) {
+        return { error: "toggle heading not found" };
+      }
+
+      const headingRect = heading.getBoundingClientRect();
+      const after = getComputedStyle(heading, "::after");
+
+      return {
+        headingHeight: headingRect.height,
+        headingScrollWidth: heading.scrollWidth,
+        placeholder: after.content,
+        placeholderWhiteSpace: after.whiteSpace,
+      };
+    });
+
+    expect(layout).not.toHaveProperty("error");
+    expect(layout.headingHeight).toBeLessThan(80);
+    expect(layout.headingScrollWidth).toBeGreaterThan(40);
+    expect(layout.placeholder).toContain("제목");
+    expect(layout.placeholderWhiteSpace).toBe("nowrap");
+
+    await page.keyboard.type("ㅇㅇ");
+
+    await expect(page.locator(".blocknote-editor-shell .bn-toggle-wrapper h1")).toContainText(
+      "ㅇㅇ",
+    );
+    await expect(page.getByTestId("editor-lab-blocknote-json")).toContainText("ㅇㅇ");
+  });
 });
