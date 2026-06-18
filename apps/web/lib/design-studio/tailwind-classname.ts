@@ -679,6 +679,45 @@ export function formatOpacityPercent(value: string): string | undefined {
   return `opacity-[${clamped}%]`;
 }
 
+/** Tailwind arbitrary values may contain spaces; split only on whitespace outside `[...]`. */
+export function splitClassNameTokens(className: string): string[] {
+  const tokens: string[] = [];
+  let current = "";
+  let bracketDepth = 0;
+
+  for (const char of className) {
+    if (char === "[") {
+      bracketDepth += 1;
+      current += char;
+      continue;
+    }
+    if (char === "]") {
+      bracketDepth = Math.max(0, bracketDepth - 1);
+      current += char;
+      continue;
+    }
+    if (/\s/.test(char) && bracketDepth === 0) {
+      if (current) {
+        tokens.push(current);
+        current = "";
+      }
+      continue;
+    }
+    current += char;
+  }
+
+  if (current) tokens.push(current);
+  return tokens;
+}
+
+function normalizeDirectColorValue(value: string): string {
+  const trimmed = value.trim();
+  if (/^(?:rgba?|hsla?|oklch|lab|lch)\(/i.test(trimmed)) {
+    return trimmed.replace(/\s+/g, "");
+  }
+  return trimmed;
+}
+
 export function stripColorToken(className?: string, prefix?: string): string {
   if (!className) return "";
   if (prefix && className.startsWith(`${prefix}-`)) {
@@ -703,7 +742,7 @@ export function formatColorToken(
     trimmed.startsWith("hsl") ||
     trimmed.startsWith("lab")
   ) {
-    return `${prefix}-[${trimmed}]`;
+    return `${prefix}-[${normalizeDirectColorValue(trimmed)}]`;
   }
   return `${prefix}-${trimmed}`;
 }
@@ -1066,7 +1105,7 @@ export function parseClassName(className: string | undefined): ParsedClassName {
     remainder: [],
   };
 
-  const tokens = (className ?? "").split(/\s+/).filter(Boolean);
+  const tokens = splitClassNameTokens(className ?? "").filter(Boolean);
 
   for (const token of tokens) {
     const { variants, base } = splitVariants(token);
