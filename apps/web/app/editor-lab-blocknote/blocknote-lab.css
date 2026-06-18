@@ -1,3 +1,22 @@
+/* Slash / suggestion menus: BlockNote shadcn expects popover utilities; fall back to BN tokens. */
+.blocknote-editor-shell #bn-suggestion-menu,
+.blocknote-editor-shell .bn-suggestion-menu,
+.blocknote-editor-shell .bn-grid-suggestion-menu {
+  background-color: var(--bn-colors-menu-background);
+  color: var(--bn-colors-menu-text);
+  border-color: var(--bn-colors-border);
+}
+
+.blocknote-editor-shell #bn-suggestion-menu .bn-suggestion-menu-label,
+.blocknote-editor-shell .bn-suggestion-menu .bn-suggestion-menu-label {
+  color: var(--bn-colors-side-menu);
+}
+
+.blocknote-editor-shell #bn-suggestion-menu [role="option"] .text-xs,
+.blocknote-editor-shell .bn-suggestion-menu [role="option"] .text-xs {
+  color: var(--bn-colors-side-menu);
+}
+
 .blocknote-editor-shell .bn-container {
   border-radius: var(--radius-md);
 }

@@ -10,6 +10,7 @@ import "@blocknote/core/fonts/inter.css";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
+import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 
 declare global {
@@ -43,8 +44,16 @@ export function SsotaBlockNoteEditor({
   onEditorReady,
   className,
 }: SsotaBlockNoteEditorProps) {
+  const { resolvedTheme } = useTheme();
   const uploadImageRef = useRef(uploadImage);
   uploadImageRef.current = uploadImage;
+
+  const blockNoteTheme =
+    resolvedTheme === "dark"
+      ? "dark"
+      : resolvedTheme === "light"
+        ? "light"
+        : undefined;
 
   const editorOptions = useMemo(() => {
     const base = {
@@ -88,7 +97,12 @@ export function SsotaBlockNoteEditor({
       className={["blocknote-editor-shell", className].filter(Boolean).join(" ")}
       data-testid="blocknote-editor-shell"
     >
-      <BlockNoteView editor={editor} editable={editable} onChange={handleChange} />
+      <BlockNoteView
+        editor={editor}
+        editable={editable}
+        onChange={handleChange}
+        theme={blockNoteTheme}
+      />
     </div>
   );
 }
