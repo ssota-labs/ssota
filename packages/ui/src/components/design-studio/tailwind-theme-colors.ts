@@ -1,8 +1,12 @@
+import { resolveTailwindPaletteColor } from "./tailwind-palette-colors";
+
 export type InspectorColorOption = {
   value: string;
   label: string;
   cssVar?: string;
   swatchClass?: string;
+  /** Resolved CSS color for palette presets (no Tailwind utility required). */
+  swatchColor?: string;
 };
 
 const semanticTextColors: InspectorColorOption[] = [
@@ -122,6 +126,7 @@ const paletteTextColors: InspectorColorOption[] = paletteSwatches.map(
     value,
     label: value,
     swatchClass,
+    swatchColor: resolveTailwindPaletteColor(value),
   }),
 );
 
@@ -148,6 +153,7 @@ const paletteBorderColors: InspectorColorOption[] = paletteSwatches.map(
     value,
     label: value,
     swatchClass,
+    swatchColor: resolveTailwindPaletteColor(value),
   }),
 );
 

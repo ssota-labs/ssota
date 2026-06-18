@@ -145,6 +145,30 @@ test.describe("design studio", () => {
     ).toBeVisible();
   });
 
+  test("inspect mode resolves palette border color in picker", async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+    const preview = await openStudioComponent(page, "demo-button");
+    await preview.locator("[data-studio-id]").first().click();
+    await expect(page.getByLabel("Node ID")).not.toHaveValue("", {
+      timeout: 10_000,
+    });
+
+    const borderColorField = page.getByRole("textbox", { name: "Border color" });
+    await expect(borderColorField).toBeVisible({ timeout: 10_000 });
+    await page.getByLabel("Border color presets").click();
+    await page.getByRole("button", { name: "blue-500", exact: true }).click();
+    await expect(borderColorField).toHaveValue("blue-500");
+
+    await page.getByLabel("Border color swatch").click();
+    const colorPicker = page.getByLabel("Border color picker");
+    await expect(colorPicker).toBeVisible({ timeout: 10_000 });
+    const pickerValue = await colorPicker.inputValue();
+    expect(pickerValue.toLowerCase()).not.toBe("#000000");
+    expect(pickerValue.toLowerCase()).toMatch(/^#[0-9a-f]{6}$/);
+  });
+
   test("editor updates styles via inspector controls", async ({ page }) => {
     test.setTimeout(180_000);
 

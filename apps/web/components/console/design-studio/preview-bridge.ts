@@ -86,15 +86,22 @@ export function usePreviewBridge(previewUrl: string) {
   );
 
   const syncUtilityCss = useCallback(
+    async (classes: string[]) => {
+      const cssText = await fetchPreviewUtilityCss(classes);
+      post({ type: "STUDIO_SET_UTILITY_CSS", cssText });
+    },
+    [post],
+  );
+
+  const syncUtilityCssFromTree = useCallback(
     async (tree: StudioNode, resolvedComponents: ResolvedComponentMap) => {
       const classes = collectStudioUtilityClassesFromBundle(
         tree,
         resolvedComponents,
       );
-      const cssText = await fetchPreviewUtilityCss(classes);
-      post({ type: "STUDIO_SET_UTILITY_CSS", cssText });
+      await syncUtilityCss(classes);
     },
-    [post],
+    [syncUtilityCss],
   );
 
   const syncTheme = useCallback(
@@ -154,6 +161,7 @@ export function usePreviewBridge(previewUrl: string) {
     syncTree,
     syncResolvedComponents,
     syncUtilityCss,
+    syncUtilityCssFromTree,
     syncTheme,
     syncInteractionMode,
     syncBundle,

@@ -30,6 +30,7 @@ import {
   createEmptyUiComponentContentV2,
   createEmptyUiComponentDocument,
 } from "@/lib/design-studio/empty-document";
+import { collectUtilityClassesFromSourceFiles } from "@/lib/design-studio/collect-source-utility-classes";
 import { updateStudioNode } from "@/lib/design-studio/tree-utils";
 import {
   resolveStudioBundlePreviewUrls,
@@ -140,6 +141,7 @@ export function StudioShell({
     syncTree,
     syncResolvedComponents,
     syncUtilityCss,
+    syncUtilityCssFromTree,
     syncTheme,
     syncInteractionMode,
     syncBundle,
@@ -213,8 +215,21 @@ export function StudioShell({
 
   useEffect(() => {
     if (!component || !ready || isSource) return;
-    void syncUtilityCss(document.root, resolvedComponents);
-  }, [component, ready, document.root, resolvedComponents, syncUtilityCss, isSource]);
+    void syncUtilityCssFromTree(document.root, resolvedComponents);
+  }, [
+    component,
+    ready,
+    document.root,
+    resolvedComponents,
+    syncUtilityCssFromTree,
+    isSource,
+  ]);
+
+  useEffect(() => {
+    if (!component || !ready || !isSource) return;
+    const classes = collectUtilityClassesFromSourceFiles(contentV2.files);
+    void syncUtilityCss(classes);
+  }, [component, ready, isSource, contentV2.files, syncUtilityCss]);
 
   useEffect(() => {
     if (!component || !ready) return;

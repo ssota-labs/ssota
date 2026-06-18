@@ -34,6 +34,7 @@ import {
   hexToRgba,
   normalizeHexColor,
 } from "./color-resolve";
+import { resolveTailwindPaletteColor } from "./tailwind-palette-colors";
 import { useThemeTokensContext } from "./theme-tokens-context";
 
 export type { InspectorColorOption } from "./tailwind-theme-colors";
@@ -217,12 +218,22 @@ function InspectorPresetList({
 function ColorSwatch({
   cssVar,
   swatchClass,
-}: Pick<InspectorColorOption, "cssVar" | "swatchClass">) {
+  swatchColor,
+}: Pick<InspectorColorOption, "cssVar" | "swatchClass" | "swatchColor">) {
   if (cssVar) {
     return (
       <span
         className="size-4 shrink-0 rounded-sm border border-border"
         style={{ backgroundColor: `var(${cssVar})` }}
+      />
+    );
+  }
+
+  if (swatchColor) {
+    return (
+      <span
+        className="size-4 shrink-0 rounded-sm border border-border"
+        style={{ backgroundColor: swatchColor }}
       />
     );
   }
@@ -270,6 +281,15 @@ function resolveInspectorHexValue(
     }
   }
 
+  if (preset?.swatchColor) {
+    return colorValueToHex(preset.swatchColor, scopeElement);
+  }
+
+  const paletteColor = resolveTailwindPaletteColor(value);
+  if (paletteColor) {
+    return colorValueToHex(paletteColor, scopeElement);
+  }
+
   return toHexColor(value, scopeElement);
 }
 
@@ -293,10 +313,18 @@ function resolveColorOption(
 function swatchStyleForValue(
   value: string,
   presets: InspectorColorOption[],
-): { cssVar?: string; swatchClass?: string; backgroundColor?: string } {
+): {
+  cssVar?: string;
+  swatchClass?: string;
+  swatchColor?: string;
+  backgroundColor?: string;
+} {
   const preset = resolveColorOption(value, presets);
   if (preset?.cssVar) return { cssVar: preset.cssVar };
+  if (preset?.swatchColor) return { swatchColor: preset.swatchColor };
   if (preset?.swatchClass) return { swatchClass: preset.swatchClass };
+  const paletteColor = resolveTailwindPaletteColor(value);
+  if (paletteColor) return { swatchColor: paletteColor };
   if (value.startsWith("#") || value.startsWith("rgb") || value.startsWith("lab")) {
     return { backgroundColor: value.startsWith("lab") ? undefined : value };
   }
@@ -332,6 +360,7 @@ function InspectorColorList({
             <ColorSwatch
               cssVar={option.cssVar}
               swatchClass={option.swatchClass}
+              swatchColor={option.swatchColor}
             />
             <span className="min-w-0 flex-1 truncate text-left text-muted-foreground">
               {option.label}
@@ -719,6 +748,7 @@ export function InspectorColorInput({
             <ColorSwatch
               cssVar={selected.cssVar}
               swatchClass={selected.swatchClass}
+              swatchColor={selected.swatchColor}
             />
             <span className="min-w-0 flex-1 truncate text-left text-xs text-muted-foreground">
               {selected.label}
@@ -824,6 +854,11 @@ export function InspectorColorField({
             <span
               className="size-5 rounded-full border border-border"
               style={{ backgroundColor: `var(${swatch.cssVar})` }}
+            />
+          ) : swatch.swatchColor ? (
+            <span
+              className="size-5 rounded-full border border-border"
+              style={{ backgroundColor: swatch.swatchColor }}
             />
           ) : (
             <span

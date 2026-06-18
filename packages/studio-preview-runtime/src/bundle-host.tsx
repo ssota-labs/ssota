@@ -6,6 +6,7 @@ import {
   postToParent,
 } from "./bridge.js";
 import { StudioInspectStyle } from "./inspect-styles.js";
+import { StudioUtilityStyle } from "./utility-styles.js";
 import type {
   StudioInteractionMode,
   StudioMessage,
@@ -66,6 +67,7 @@ export function BundlePreviewHost({
   const [interactionMode, setInteractionMode] =
     useState<StudioInteractionMode>(initialInteractionMode);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [utilityCss, setUtilityCss] = useState("");
   const loadedBuildIdRef = useRef<string | null>(null);
 
   const handleSelect = useCallback(
@@ -94,6 +96,9 @@ export function BundlePreviewHost({
             break;
           case "STUDIO_SET_INTERACTION_MODE":
             setInteractionMode(message.mode);
+            break;
+          case "STUDIO_SET_UTILITY_CSS":
+            setUtilityCss(message.cssText);
             break;
           case "STUDIO_PATCH":
           case "STUDIO_PATCH_NODE":
@@ -150,6 +155,7 @@ export function BundlePreviewHost({
       }
     >
       <StudioInspectStyle />
+      <StudioUtilityStyle cssText={utilityCss} />
       <div id="studio-root" className="min-h-screen" />
     </div>
   );
