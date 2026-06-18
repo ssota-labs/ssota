@@ -184,20 +184,26 @@ describe("v2.7 graph use cases", () => {
     ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
   });
 
-  it("allows ui_component tree create without content", async () => {
+  it("rejects ui_component create without content", async () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
-    const node = await createNode(
-      { catalog, graphRead, graphWrite },
-      {
-        projectId: "00000000-0000-4000-8000-000000000020",
-        nodeType: "ui_component",
-        title: "Tree component",
-        properties: { slug: "tree-btn", tier: "primitive" },
-      },
-    );
-    expect(node.nodeType).toBe("ui_component");
+    await expect(
+      createNode(
+        { catalog, graphRead, graphWrite },
+        {
+          projectId: "00000000-0000-4000-8000-000000000020",
+          nodeType: "ui_component",
+          title: "Source component",
+          properties: {
+            slug: "source-btn",
+            tier: "primitive",
+            representation: "source",
+            entry: "Component.tsx",
+          },
+        },
+      ),
+    ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
   });
 
   it("rejects ui_component source create without content", async () => {

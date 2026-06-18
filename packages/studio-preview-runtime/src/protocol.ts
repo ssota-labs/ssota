@@ -41,6 +41,17 @@ export type StudioLayerTreeNode = {
   children?: StudioLayerTreeNode[];
 };
 
+const bundleAssetUrlSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (value) =>
+      value.startsWith("/") ||
+      value.startsWith("http://") ||
+      value.startsWith("https://"),
+    { message: "Bundle asset URL must be absolute or root-relative" },
+  );
+
 export const studioMessageSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("STUDIO_READY") }),
   z.object({
@@ -66,8 +77,8 @@ export const studioMessageSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("STUDIO_LOAD_BUNDLE"),
-    jsUrl: z.string().url(),
-    cssUrl: z.string().url().optional(),
+    jsUrl: bundleAssetUrlSchema,
+    cssUrl: bundleAssetUrlSchema.optional(),
     buildId: z.string().min(1),
   }),
   z.object({

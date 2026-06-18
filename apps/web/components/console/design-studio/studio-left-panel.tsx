@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { StudioNode, UiComponentLayerIndexNode } from "@ssota/contracts/catalog";
+import type { UiComponentLayerIndexNode } from "@ssota/contracts/catalog";
 import { PlusIcon } from "@phosphor-icons/react";
 import {
   Tabs,
@@ -13,13 +13,12 @@ import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
 import { ComponentsPanel } from "./components-panel";
-import { LayersPanel, SourceLayersPanel } from "./layers-panel";
+import { SourceLayersPanel } from "./layers-panel";
 
 type StudioLeftPanelProps = {
   components: UiComponentListRow[];
   activeComponentId: string | null;
   studioBasePath: string;
-  root: StudioNode | null;
   sourceLayers: UiComponentLayerIndexNode[] | null;
   selectedLayerId: string | null;
   onSelectLayer: (nodeId: string) => void;
@@ -31,14 +30,13 @@ export function StudioLeftPanel({
   components,
   activeComponentId,
   studioBasePath,
-  root,
   sourceLayers,
   selectedLayerId,
   onSelectLayer,
   pending = false,
   onCreateComponent,
 }: StudioLeftPanelProps) {
-  const layersEnabled = Boolean(root) || Boolean(sourceLayers?.length);
+  const layersEnabled = Boolean(sourceLayers?.length);
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
@@ -94,14 +92,7 @@ export function StudioLeftPanel({
           value="layers"
           className="mt-0 min-h-0 flex-1 overflow-hidden"
         >
-          {root ? (
-            <LayersPanel
-              root={root}
-              selectedId={selectedLayerId}
-              onSelect={onSelectLayer}
-              embedded
-            />
-          ) : sourceLayers ? (
+          {sourceLayers ? (
             <SourceLayersPanel
               layers={sourceLayers}
               selectedId={selectedLayerId}

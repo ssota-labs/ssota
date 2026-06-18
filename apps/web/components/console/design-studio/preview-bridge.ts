@@ -1,29 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import type { StudioNode } from "@ssota/contracts/catalog";
 import type { StudioPatch, StudioMessage } from "@ssota/studio-preview-runtime";
+import { fetchPreviewUtilityCssCached } from "@/lib/design-studio/preview-utility-css";
 import {
-  collectStudioUtilityClassesFromBundle,
   createParentMessageListener,
   postToIframe,
-  type ResolvedComponentMap,
   type StudioInteractionMode,
 } from "@ssota/studio-renderer";
 
-async function fetchPreviewUtilityCss(classes: string[]): Promise<string> {
-  if (classes.length === 0) return "";
-  const response = await fetch("/api/studio/preview-utilities", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ classes }),
-  });
-  if (!response.ok) return "";
-  return response.text();
-}
-
 export function usePreviewBridge(previewUrl: string) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const utilityRequestIdRef = useRef(0);
+  const liveClassNamePatchRequestIdRef = useRef(0);
   const [ready, setReady] = useState(false);
   const origin =
     typeof window !== "undefined" ? window.location.origin : "";
@@ -60,35 +49,24 @@ export function usePreviewBridge(previewUrl: string) {
     [origin],
   );
 
-  const syncTree = useCallback(
-    (tree: StudioNode) => {
-      post({
-        type: "STUDIO_SET_TREE",
-        tree,
-        mode: "draft",
-      });
-    },
-    [post],
-  );
-
-  const syncResolvedComponents = useCallback(
-    (resolvedComponents: ResolvedComponentMap) => {
-      post({
-        type: "STUDIO_SET_RESOLVED_COMPONENTS",
-        resolvedComponents,
-      });
-    },
-    [post],
-  );
-
   const syncUtilityCss = useCallback(
-    async (tree: StudioNode, resolvedComponents: ResolvedComponentMap) => {
-      const classes = collectStudioUtilityClassesFromBundle(
-        tree,
-        resolvedComponents,
-      );
-      const cssText = await fetchPreviewUtilityCss(classes);
+    async (classes: string[]) => {
+      const requestId = ++utilityRequestIdRef.current;
+      const cssText = await fetchPreviewUtilityCssCached(classes);
+      if (requestId !== utilityRequestIdRef.current) return;
       post({ type: "STUDIO_SET_UTILITY_CSS", cssText });
+    },
+    [post],
+  );
+
+  /** Compile utility CSS first, then patch className so arbitrary tokens never flash unstyled. */
+  const patchNodeClassName = useCallback(
+    async (nodeId: string, className: string, classes: string[]) => {
+      const requestId = ++liveClassNamePatchRequestIdRef.current;
+      const cssText = await fetchPreviewUtilityCssCached(classes);
+      if (requestId !== liveClassNamePatchRequestIdRef.current) return;
+      post({ type: "STUDIO_SET_UTILITY_CSS", cssText });
+      post({ type: "STUDIO_PATCH", nodeId, patch: { className } });
     },
     [post],
   );
@@ -147,9 +125,8 @@ export function usePreviewBridge(previewUrl: string) {
     iframeRef,
     ready,
     previewUrl,
-    syncTree,
-    syncResolvedComponents,
     syncUtilityCss,
+    patchNodeClassName,
     syncTheme,
     syncInteractionMode,
     syncBundle,

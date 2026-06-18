@@ -6,6 +6,7 @@ import {
   postToParent,
 } from "./bridge";
 import { StudioInspectStyle } from "./inspect-styles";
+import { StudioUtilityStyle } from "./utility-styles";
 import type {
   StudioInteractionMode,
   StudioMessage,
@@ -65,6 +66,7 @@ export function BundlePreviewHost({
 }: BundlePreviewHostProps) {
   const [interactionMode, setInteractionMode] =
     useState<StudioInteractionMode>(initialInteractionMode);
+  const [utilityCss, setUtilityCss] = useState("");
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const loadedBuildIdRef = useRef<string | null>(null);
 
@@ -75,10 +77,6 @@ export function BundlePreviewHost({
     },
     [targetOrigin],
   );
-
-  useEffect(() => {
-    postToParent({ type: "STUDIO_READY" }, targetOrigin);
-  }, [targetOrigin]);
 
   useEffect(() => {
     const listener = createParentMessageListener(
@@ -95,6 +93,9 @@ export function BundlePreviewHost({
           case "STUDIO_SET_INTERACTION_MODE":
             setInteractionMode(message.mode);
             break;
+          case "STUDIO_SET_UTILITY_CSS":
+            setUtilityCss(message.cssText);
+            break;
           case "STUDIO_PATCH":
           case "STUDIO_PATCH_NODE":
             applyStudioPatch(message.nodeId, message.patch);
@@ -108,6 +109,7 @@ export function BundlePreviewHost({
       },
     );
     window.addEventListener("message", listener);
+    postToParent({ type: "STUDIO_READY" }, targetOrigin);
     return () => window.removeEventListener("message", listener);
   }, [targetOrigin]);
 
@@ -150,6 +152,7 @@ export function BundlePreviewHost({
       }
     >
       <StudioInspectStyle />
+      <StudioUtilityStyle cssText={utilityCss} />
       <div id="studio-root" className="min-h-screen" />
     </div>
   );
