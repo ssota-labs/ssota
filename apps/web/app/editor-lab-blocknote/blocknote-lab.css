@@ -6,3 +6,13 @@
   min-height: 12rem;
   padding-inline: 0.25rem;
 }
+
+/* Hide nested-block indent guide lines (BlockNote default border-left on ::before). */
+.blocknote-editor-shell
+  .bn-block-group
+  .bn-block:not(:has(.bn-toggle-wrapper))
+  .bn-block-group
+  .bn-block-outer:not([data-prev-depth-changed])::before {
+  border-left: none;
+  display: none;
+}
