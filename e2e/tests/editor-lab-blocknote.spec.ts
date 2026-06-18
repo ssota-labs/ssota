@@ -114,6 +114,46 @@ test.describe("Editor Lab BlockNote", () => {
     await expect(backgroundMenu).toBeVisible();
   });
 
+  test("color menu icon and label do not overlap when selected", async ({ page }) => {
+    await page.locator(".bn-editor").getByText("굵게").dblclick();
+    await page.locator('[data-test="text-color"]').click();
+
+    const selectedItem = page.locator(
+      '.bn-color-picker-dropdown [data-test="text-color-default"]',
+    );
+    await expect(selectedItem).toBeVisible();
+
+    const overlap = await page.evaluate(() => {
+      const items = [
+        ...document.querySelectorAll(
+          '.bn-color-picker-dropdown [data-test^="text-color-"]',
+        ),
+      ];
+
+      return items.map((item) => {
+        const icon = item.querySelector(".bn-color-icon");
+        const label = item.querySelector(".ssota-bn-color-menu-label");
+        if (!icon || !label) {
+          return { test: item.getAttribute("data-test"), error: "missing icon or label" };
+        }
+
+        const iconBox = icon.getBoundingClientRect();
+        const labelBox = label.getBoundingClientRect();
+
+        return {
+          test: item.getAttribute("data-test"),
+          horizontalOverlap: iconBox.right > labelBox.left,
+          gap: labelBox.left - iconBox.right,
+        };
+      });
+    });
+
+    expect(overlap.every((item) => !("error" in item))).toBe(true);
+    expect(overlap.every((item) => !item.horizontalOverlap && item.gap > 0)).toBe(
+      true,
+    );
+  });
+
   test("formats nested numbered list markers as a/i/1 cycle", async ({ page }) => {
     await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
     await page.evaluate(() => {

@@ -81,25 +81,32 @@ function BlockNoteColorMenu({
   return (
     <>
       <Components.Generic.Menu.Label>{title}</Components.Generic.Menu.Label>
-      {COLORS.map((name) => (
-        <Components.Generic.Menu.Item
-          key={`${kind}-color-${name}`}
-          data-test={`${kind}-color-${name}`}
-          icon={
-            <BlockNoteColorIcon
-              textColor={kind === "text" ? name : undefined}
-              backgroundColor={kind === "background" ? name : undefined}
-              size={16}
-            />
-          }
-          checked={color === name}
-          onClick={() => {
-            setColor(name);
-          }}
-        >
-          {dict.color_picker.colors[name as ColorName]}
-        </Components.Generic.Menu.Item>
-      ))}
+      {COLORS.map((name) => {
+        const isSelected = color === name;
+        return (
+          <Components.Generic.Menu.Item
+            key={`${kind}-color-${name}`}
+            className={
+              isSelected ? "ssota-bn-color-menu-item--selected" : undefined
+            }
+            data-test={`${kind}-color-${name}`}
+            onClick={() => {
+              setColor(name);
+            }}
+          >
+            <span className="ssota-bn-color-menu-row">
+              <BlockNoteColorIcon
+                textColor={kind === "text" ? name : undefined}
+                backgroundColor={kind === "background" ? name : undefined}
+                size={16}
+              />
+              <span className="ssota-bn-color-menu-label">
+                {dict.color_picker.colors[name as ColorName]}
+              </span>
+            </span>
+          </Components.Generic.Menu.Item>
+        );
+      })}
     </>
   );
 }

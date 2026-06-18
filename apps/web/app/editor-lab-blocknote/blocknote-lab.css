@@ -47,20 +47,54 @@
   color: var(--bn-colors-side-menu);
 }
 
-.blocknote-editor-shell .bn-color-picker-dropdown [data-slot="dropdown-menu-checkbox-item"],
-.blocknote-editor-shell .bn-color-picker-dropdown [data-slot="dropdown-menu-item"] {
+.blocknote-editor-shell .bn-color-picker-dropdown {
+  min-width: 10rem;
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown .ssota-bn-color-menu-row {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 0.625rem;
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown .ssota-bn-color-menu-row .bn-color-icon {
+  flex: 0 0 16px;
+  width: 16px;
+  margin-inline-end: 0.125rem;
+}
+
+.blocknote-editor-shell .bn-color-picker-dropdown .ssota-bn-color-menu-label {
+  min-width: 0;
+  flex: 1;
+}
+
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-item"].ssota-bn-color-menu-item--selected,
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-item"].ssota-bn-color-menu-item--selected:focus,
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-checkbox-item"],
+.blocknote-editor-shell
+  .bn-color-picker-dropdown
+  [data-slot="dropdown-menu-item"] {
   color: var(--bn-colors-menu-text);
 }
 
 .blocknote-editor-shell
   .bn-color-picker-dropdown
-  [data-slot="dropdown-menu-checkbox-item"][data-state="checked"],
+  [data-slot="dropdown-menu-item"].ssota-bn-color-menu-item--selected,
 .blocknote-editor-shell
   .bn-color-picker-dropdown
-  [data-slot="dropdown-menu-checkbox-item"]:focus,
+  [data-slot="dropdown-menu-item"]:focus,
 .blocknote-editor-shell
   .bn-color-picker-dropdown
-  [data-slot="dropdown-menu-item"]:focus {
+  [data-slot="dropdown-menu-checkbox-item"]:focus {
   background-color: var(--bn-colors-hovered-background);
   color: var(--bn-colors-hovered-text);
 }
