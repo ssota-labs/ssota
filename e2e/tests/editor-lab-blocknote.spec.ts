@@ -107,4 +107,55 @@ test.describe("Editor Lab BlockNote", () => {
 
     expect(markers).toEqual(["1.", "a.", "i."]);
   });
+
+  test("keeps toggle heading placeholder inline when expanded", async ({ page }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "heading",
+          props: { level: 1, isToggleable: true },
+          content: "",
+          children: [],
+        },
+      ]);
+      const block = editor.document[0];
+      if (!block) {
+        throw new Error("toggle heading block was not created");
+      }
+      editor.focus();
+      editor.setTextCursorPosition(block.id, "end");
+    });
+
+    const toggleButton = page.locator(".blocknote-editor-shell .bn-toggle-button").first();
+    await toggleButton.click();
+    await expect(
+      page.locator(".blocknote-editor-shell .bn-toggle-add-block-button"),
+    ).toBeVisible();
+
+    const placeholderTarget = await page.evaluate(() => {
+      const blockContent = document.querySelector(
+        ".blocknote-editor-shell .bn-block-content[data-content-type='heading']:has(.bn-toggle-wrapper)",
+      );
+      const heading = blockContent?.querySelector("h1");
+      if (!blockContent || !heading) {
+        return { error: "toggle heading not found" };
+      }
+
+      const blockAfter = getComputedStyle(blockContent, "::after").content;
+      const headingAfter = getComputedStyle(heading, "::after").content;
+
+      return { blockAfter, headingAfter };
+    });
+
+    expect(placeholderTarget).not.toHaveProperty("error");
+    expect(placeholderTarget.blockAfter === "none" || placeholderTarget.blockAfter === '""').toBe(
+      true,
+    );
+    expect(placeholderTarget.headingAfter).toContain("제목");
+  });
 });

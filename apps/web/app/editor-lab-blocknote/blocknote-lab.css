@@ -78,3 +78,68 @@
   border-left: none;
   display: none;
 }
+
+/* Toggle blocks: BlockNote attaches empty-state ::after to .bn-block-content (flex),
+   which pushes "제목" to the far right when the toggle is expanded. Render placeholders
+   on the inline heading / paragraph inside .bn-toggle-wrapper instead. */
+.blocknote-editor-shell
+  .bn-block-content:has(.bn-toggle-wrapper):has(.ProseMirror-trailingBreak:only-child)::after {
+  content: none !important;
+  display: none !important;
+}
+
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="heading"]:has(.bn-toggle-wrapper):has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  :is(h1, h2, h3, h4, h5, h6) {
+  flex: 0 1 auto;
+  width: fit-content;
+  min-width: 0;
+}
+
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="heading"]:has(.bn-toggle-wrapper):has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  :is(h1, h2, h3, h4, h5, h6)::after,
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="heading"]:has(.bn-toggle-wrapper)[data-is-empty-and-focused]:has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  :is(h1, h2, h3, h4, h5, h6)::after {
+  color: var(--bn-colors-side-menu);
+  content: var(--ssota-bn-placeholder-heading) !important;
+  font-style: italic;
+  margin-inline: -2px;
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="toggleListItem"]:has(.bn-toggle-wrapper):has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  p {
+  flex: 0 1 auto;
+  width: fit-content;
+  min-width: 0;
+}
+
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="toggleListItem"]:has(.bn-toggle-wrapper):has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  p::after,
+.blocknote-editor-shell
+  .bn-block-content[data-content-type="toggleListItem"]:has(.bn-toggle-wrapper)[data-is-empty-and-focused]:has(
+    .ProseMirror-trailingBreak:only-child
+  )
+  p::after {
+  color: var(--bn-colors-side-menu);
+  content: var(--ssota-bn-placeholder-toggle-list) !important;
+  font-style: italic;
+  margin-inline: -2px;
+  max-width: 100%;
+  pointer-events: none;
+}

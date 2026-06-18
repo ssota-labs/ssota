@@ -12,6 +12,7 @@ import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import type { CSSProperties } from "react";
 
 import {
   resolveBlockNoteMarkerShell,
@@ -33,13 +34,20 @@ declare global {
   }
 }
 
+const placeholders = {
+  ...ko.placeholders,
+  default: "내용을 입력하거나 '/'를 누르세요",
+};
+
 const dictionary = {
   ...ko,
-  placeholders: {
-    ...ko.placeholders,
-    default: "내용을 입력하거나 '/'를 누르세요",
-  },
+  placeholders,
 };
+
+const placeholderCssVars = {
+  "--ssota-bn-placeholder-heading": `"${ko.placeholders.heading}"`,
+  "--ssota-bn-placeholder-toggle-list": `"${ko.placeholders.toggleListItem}"`,
+} as CSSProperties;
 
 export interface SsotaBlockNoteEditorProps {
   initialContent?: PartialBlock[];
@@ -178,6 +186,7 @@ export function SsotaBlockNoteEditor({
       ref={setShellRef}
       className={["blocknote-editor-shell", className].filter(Boolean).join(" ")}
       data-testid="blocknote-editor-shell"
+      style={placeholderCssVars}
     >
       <BlockNoteView
         editor={editor}
