@@ -17,6 +17,21 @@ describe("studio preview runtime protocol", () => {
     expect(message?.type).toBe("STUDIO_LOAD_BUNDLE");
   });
 
+  it("parses STUDIO_LOAD_BUNDLE with same-origin relative paths", () => {
+    const message = parseStudioMessage({
+      type: "STUDIO_LOAD_BUNDLE",
+      jsUrl: "/api/studio/bundle/project-id/build-hash/bundle.js",
+      cssUrl: "/api/studio/bundle/project-id/build-hash/bundle.css",
+      buildId: "abc123",
+    });
+    expect(message).toEqual({
+      type: "STUDIO_LOAD_BUNDLE",
+      jsUrl: "/api/studio/bundle/project-id/build-hash/bundle.js",
+      cssUrl: "/api/studio/bundle/project-id/build-hash/bundle.css",
+      buildId: "abc123",
+    });
+  });
+
   it("parses STUDIO_PATCH", () => {
     const message = parseStudioMessage({
       type: "STUDIO_PATCH",
