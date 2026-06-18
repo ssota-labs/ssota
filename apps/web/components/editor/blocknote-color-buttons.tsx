@@ -266,7 +266,7 @@ export function BlockNoteTextColorButton() {
           data-test="text-color"
           label={dict.color_picker.text_title}
           mainTooltip={dict.color_picker.text_title}
-          icon={<BlockNoteColorIcon textColor={state.color} size={20} />}
+          icon={<BlockNoteColorIcon textColor={state.color} />}
         />
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown
@@ -296,7 +296,7 @@ export function BlockNoteBackgroundColorButton() {
           label={dict.color_picker.background_title}
           mainTooltip={dict.color_picker.background_title}
           icon={
-            <BlockNoteColorIcon backgroundColor={state.color} size={20} />
+            <BlockNoteColorIcon backgroundColor={state.color} />
           }
         />
       </Components.Generic.Menu.Trigger>
