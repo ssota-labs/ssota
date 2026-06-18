@@ -110,6 +110,43 @@ test.describe("design studio", () => {
     );
   });
 
+  test("new component button creates a user component with live preview", async ({
+    page,
+  }) => {
+    const buildResponses: Array<{ status: number; error?: string }> = [];
+
+    page.on("response", async (response) => {
+      if (!response.url().includes("/api/studio/build")) return;
+      const status = response.status();
+      let error: string | undefined;
+      try {
+        const body = (await response.json()) as { error?: string };
+        error = body.error;
+      } catch {
+        // ignore
+      }
+      buildResponses.push({ status, error });
+    });
+
+    await openDesignStudio(page);
+    const beforeId = page.url().match(/[0-9a-f-]+$/)?.[0];
+    expect(beforeId).toBeTruthy();
+
+    await page.getByRole("button", { name: "New component" }).click();
+    await expect(page).toHaveURL(
+      new RegExp(`/design/ui-components/(?!${beforeId})[0-9a-f-]+$`),
+      { timeout: 30_000 },
+    );
+
+    const preview = await waitForBundlePreview(page);
+    await expect(preview.locator("button").first()).toBeVisible({
+      timeout: 45_000,
+    });
+
+    const failedBuilds = buildResponses.filter((entry) => entry.status >= 400);
+    expect(failedBuilds).toEqual([]);
+  });
+
   test("wireframes page lists only published components", async ({ page }) => {
     const initiativeId = await getSmokeInitiativeId();
     await gotoProject(page, `initiatives/${initiativeId}/design/wireframes`);
