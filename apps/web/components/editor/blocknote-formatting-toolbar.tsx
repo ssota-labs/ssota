@@ -3,17 +3,19 @@
 import {
   BasicTextStyleButton,
   BlockTypeSelect,
-  CreateLinkButton,
   FormattingToolbar,
-  NestBlockButton,
   TextAlignButton,
-  UnnestBlockButton,
 } from "@blocknote/react";
 
 import {
   BlockNoteBackgroundColorButton,
   BlockNoteTextColorButton,
 } from "./blocknote-color-buttons";
+import { BlockNoteCreateLinkButton } from "./blocknote-create-link-button";
+import {
+  BlockNoteNestBlockButton,
+  BlockNoteUnnestBlockButton,
+} from "./blocknote-nest-buttons";
 
 export function BlockNoteFormattingToolbar() {
   return (
@@ -31,9 +33,9 @@ export function BlockNoteFormattingToolbar() {
       <TextAlignButton textAlignment="right" key="textAlignRightButton" />
       <BlockNoteTextColorButton key="textColorButton" />
       <BlockNoteBackgroundColorButton key="backgroundColorButton" />
-      <NestBlockButton key="nestBlockButton" />
-      <UnnestBlockButton key="unnestBlockButton" />
-      <CreateLinkButton key="createLinkButton" />
+      <BlockNoteNestBlockButton key="nestBlockButton" />
+      <BlockNoteUnnestBlockButton key="unnestBlockButton" />
+      <BlockNoteCreateLinkButton key="createLinkButton" />
     </FormattingToolbar>
   );
 }
