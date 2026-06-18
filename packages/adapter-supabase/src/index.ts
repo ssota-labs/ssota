@@ -18,4 +18,5 @@ export {
   studioBuildArtifactPaths,
   type StudioBuildStorage,
   type StudioBuildStorageArtifact,
+  type StudioBuildStorageDownload,
 } from "./studio-build-storage.js";

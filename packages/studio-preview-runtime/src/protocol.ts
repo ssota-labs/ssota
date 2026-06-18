@@ -66,8 +66,8 @@ export const studioMessageSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("STUDIO_LOAD_BUNDLE"),
-    jsUrl: z.string().url(),
-    cssUrl: z.string().url().optional(),
+    jsUrl: z.string().min(1),
+    cssUrl: z.string().min(1).optional(),
     buildId: z.string().min(1),
   }),
   z.object({

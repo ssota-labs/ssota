@@ -8,6 +8,11 @@ export type StudioBuildStorageArtifact = {
   contentType: string;
 };
 
+export type StudioBuildStorageDownload = {
+  body: Uint8Array;
+  contentType: string;
+};
+
 export type StudioBuildStorage = {
   exists(projectId: string, buildHash: string): Promise<boolean>;
   upload(
@@ -15,6 +20,7 @@ export type StudioBuildStorage = {
     buildHash: string,
     artifacts: StudioBuildStorageArtifact[],
   ): Promise<void>;
+  download(storagePath: string): Promise<StudioBuildStorageDownload | null>;
   getSignedPreviewUrl(storagePath: string, ttlSeconds: number): Promise<string>;
 };
 
@@ -55,6 +61,23 @@ export class LocalStudioBuildStorage implements StudioBuildStorage {
     for (const artifact of artifacts) {
       const fileName = path.basename(artifact.path);
       await writeFile(path.join(dir, fileName), artifact.body);
+    }
+  }
+
+  async download(storagePath: string): Promise<StudioBuildStorageDownload | null> {
+    try {
+      const absolute = path.join(this.rootDir, storagePath);
+      const body = await readFile(absolute);
+      const fileName = path.basename(storagePath);
+      const contentType =
+        fileName.endsWith(".css")
+          ? "text/css"
+          : fileName.endsWith(".map")
+            ? "application/json"
+            : "text/javascript";
+      return { body, contentType };
+    } catch {
+      return null;
     }
   }
 
@@ -100,6 +123,24 @@ export class SupabaseStudioBuildStorage implements StudioBuildStorage {
         throw new Error(`Failed to upload ${artifact.path}: ${error.message}`);
       }
     }
+  }
+
+  async download(storagePath: string): Promise<StudioBuildStorageDownload | null> {
+    const { data, error } = await this.client.storage
+      .from(this.bucket)
+      .download(storagePath);
+    if (error || !data) {
+      return null;
+    }
+    const fileName = path.posix.basename(storagePath);
+    const contentType =
+      fileName.endsWith(".css")
+        ? "text/css"
+        : fileName.endsWith(".map")
+          ? "application/json"
+          : "text/javascript";
+    const body = new Uint8Array(await data.arrayBuffer());
+    return { body, contentType };
   }
 
   async getSignedPreviewUrl(
