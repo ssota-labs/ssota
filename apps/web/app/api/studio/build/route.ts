@@ -9,6 +9,7 @@ import {
   uiComponentContentSchemaV2,
 } from "@ssota/contracts/catalog";
 import { buildStudioPreview } from "@ssota/studio-build";
+import { bundlePreviewAssetUrl } from "@/lib/design-studio/bundle-preview-url";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -146,9 +147,21 @@ export async function POST(request: Request) {
       }
 
       const [jsUrl, cssUrl] = await Promise.all([
-        storage.getSignedPreviewUrl(paths.jsPath, 3600),
+        Promise.resolve(
+          bundlePreviewAssetUrl({
+            projectId: body.projectId,
+            buildHash: buildHashPreview.buildHash,
+            artifact: "js",
+          }),
+        ),
         buildHashPreview.artifacts.css
-          ? storage.getSignedPreviewUrl(paths.cssPath, 3600)
+          ? Promise.resolve(
+              bundlePreviewAssetUrl({
+                projectId: body.projectId,
+                buildHash: buildHashPreview.buildHash,
+                artifact: "css",
+              }),
+            )
           : Promise.resolve(undefined),
       ]);
 
@@ -215,9 +228,21 @@ export async function POST(request: Request) {
     }
 
     const [jsUrl, cssUrl] = await Promise.all([
-      storage.getSignedPreviewUrl(paths.jsPath, 3600),
+      Promise.resolve(
+        bundlePreviewAssetUrl({
+          projectId: body.projectId,
+          buildHash: buildResult.buildHash,
+          artifact: "js",
+        }),
+      ),
       buildResult.artifacts.css
-        ? storage.getSignedPreviewUrl(paths.cssPath, 3600)
+        ? Promise.resolve(
+            bundlePreviewAssetUrl({
+              projectId: body.projectId,
+              buildHash: buildResult.buildHash,
+              artifact: "css",
+            }),
+          )
         : Promise.resolve(undefined),
     ]);
 
