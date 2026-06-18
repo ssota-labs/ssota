@@ -1290,7 +1290,25 @@ test.describe("Editor Lab", () => {
         );
         if (!surface) return [];
 
-        const lists = Array.from(surface.querySelectorAll("ol"));
+        const root = Array.from(surface.querySelectorAll("ol")).find((list) => {
+          const parentList = list.parentElement?.closest("ol");
+          return (
+            !parentList &&
+            list.textContent?.includes("d1") &&
+            list.textContent?.includes("d6")
+          );
+        });
+        if (!root) return [];
+
+        const lists: HTMLOListElement[] = [root];
+        let current: HTMLOListElement | null = root;
+        while (current) {
+          const nested = current.querySelector(":scope > li > ol");
+          if (!(nested instanceof HTMLOListElement)) break;
+          lists.push(nested);
+          current = nested;
+        }
+
         return lists.map((list) =>
           window.getComputedStyle(list).listStyleType,
         );
@@ -1376,7 +1394,25 @@ test.describe("Editor Lab", () => {
         );
         if (!surface) return [];
 
-        const lists = Array.from(surface.querySelectorAll("ul"));
+        const root = Array.from(surface.querySelectorAll("ul")).find((list) => {
+          const parentList = list.parentElement?.closest("ul");
+          return (
+            !parentList &&
+            list.textContent?.includes("d1") &&
+            list.textContent?.includes("d4")
+          );
+        });
+        if (!root) return [];
+
+        const lists: HTMLUListElement[] = [root];
+        let current: HTMLUListElement | null = root;
+        while (current) {
+          const nested = current.querySelector(":scope > li > ul");
+          if (!(nested instanceof HTMLUListElement)) break;
+          lists.push(nested);
+          current = nested;
+        }
+
         return lists.map((list) =>
           window.getComputedStyle(list).listStyleType,
         );
