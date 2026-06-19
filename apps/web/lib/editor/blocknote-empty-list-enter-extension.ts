@@ -27,36 +27,26 @@ function isEmptyListBlockContent(
   return blockContent.node.textContent.trim().length === 0;
 }
 
-function handleEmptyListItemEnter(editor: BlockNoteEditor): boolean {
-  const state = editor.prosemirrorState;
-  const selectionEmpty = state.selection.anchor === state.selection.head;
-  if (!selectionEmpty) {
+function isCursorAtEndOfBlockContent(
+  state: BlockNoteEditor["prosemirrorState"],
+  blockContent: { beforePos: number; afterPos: number },
+): boolean {
+  if (state.selection.anchor !== state.selection.head) {
     return false;
   }
 
-  const blockInfo = getBlockInfoFromSelection(state);
-  if (!blockInfo.isBlockContainer) {
-    return false;
-  }
+  const pos = state.selection.head;
+  return pos === blockContent.afterPos - 1;
+}
 
-  const { blockContent } = blockInfo;
-  if (!LIST_ITEM_TYPES.has(blockInfo.blockNoteType)) {
-    return false;
-  }
-
-  if (!isEmptyListBlockContent(blockContent)) {
-    return false;
-  }
-
-  const cursor = editor.getTextCursorPosition();
-  if (!LIST_ITEM_TYPES.has(cursor.block.type)) {
-    return false;
-  }
-
-  const listType = cursor.block.type as ListItemType;
+function insertSiblingListItem(
+  editor: BlockNoteEditor,
+  listType: ListItemType,
+  referenceBlockId: string,
+): boolean {
   const inserted = editor.insertBlocks(
     [{ type: listType, content: "" }],
-    cursor.block,
+    referenceBlockId,
     "after",
   );
   const newBlock = inserted[0];
@@ -68,7 +58,54 @@ function handleEmptyListItemEnter(editor: BlockNoteEditor): boolean {
   return true;
 }
 
-/** Keep empty list items in the list when pressing Enter at any depth. */
+function handleListItemEnter(editor: BlockNoteEditor): boolean {
+  const state = editor.prosemirrorState;
+  const selectionEmpty = state.selection.anchor === state.selection.head;
+  if (!selectionEmpty) {
+    return false;
+  }
+
+  const blockInfo = getBlockInfoFromSelection(state);
+  if (!blockInfo.isBlockContainer) {
+    return false;
+  }
+
+  const { blockContent, bnBlock } = blockInfo;
+  if (!LIST_ITEM_TYPES.has(blockInfo.blockNoteType)) {
+    return false;
+  }
+
+  const blockId = bnBlock.node.attrs.id as string | undefined;
+  if (!blockId) {
+    return false;
+  }
+
+  const cursor = editor.getTextCursorPosition();
+  if (!LIST_ITEM_TYPES.has(cursor.block.type)) {
+    return false;
+  }
+
+  const listType = cursor.block.type as ListItemType;
+
+  if (isEmptyListBlockContent(blockContent)) {
+    return insertSiblingListItem(editor, listType, blockId);
+  }
+
+  const block = editor.getBlock(blockId);
+  if (!block?.children.length) {
+    return false;
+  }
+
+  if (!isCursorAtEndOfBlockContent(state, blockContent)) {
+    return false;
+  }
+
+  // BlockNote's splitBlock no-ops when the cursor is at the end of a list item
+  // that already has nested children. Insert a sibling after the whole subtree.
+  return insertSiblingListItem(editor, listType, blockId);
+}
+
+/** Fix Enter no-ops on empty list items and list parents with nested children. */
 export const blockNoteEmptyListEnterExtension = createExtension({
   key: "ssota-empty-list-enter",
   runsBefore: [
@@ -78,6 +115,6 @@ export const blockNoteEmptyListEnterExtension = createExtension({
     "toggle-list-item-shortcuts",
   ],
   keyboardShortcuts: {
-    Enter: ({ editor }) => handleEmptyListItemEnter(editor),
+    Enter: ({ editor }) => handleListItemEnter(editor),
   },
 });

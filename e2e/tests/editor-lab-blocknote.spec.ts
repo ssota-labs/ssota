@@ -455,6 +455,62 @@ test.describe("Editor Lab BlockNote", () => {
     expect(after.lastContent).toEqual([]);
   });
 
+  test("creates a sibling bullet when Enter is pressed at end of a parent with nested children", async ({
+    page,
+  }) => {
+    await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
+    await page.evaluate(() => {
+      const editor = window.__ssotaBlockNoteLab;
+      if (!editor) {
+        throw new Error("BlockNote editor is not ready");
+      }
+
+      editor.replaceBlocks(editor.document, [
+        {
+          type: "bulletListItem",
+          content: "한국어 locale (ko)",
+        },
+        {
+          type: "bulletListItem",
+          content: "JSON 영속화 — 아래 미리보기",
+          children: [{ type: "bulletListItem", content: "ㅇㅇ" }],
+        },
+      ]);
+
+      const parent = editor.document[1];
+      if (!parent) {
+        throw new Error("parent bullet missing");
+      }
+
+      editor.focus();
+      editor.setTextCursorPosition(parent.id, "end");
+    });
+
+    const before = await page.evaluate(() => ({
+      topLevel: window.__ssotaBlockNoteLab!.document.length,
+      nestedChildCount:
+        window.__ssotaBlockNoteLab!.document[1]?.children.length ?? 0,
+    }));
+
+    await page.keyboard.press("Enter");
+
+    const after = await page.evaluate(() => {
+      const doc = window.__ssotaBlockNoteLab!.document;
+      const last = doc.at(-1);
+      return {
+        topLevel: doc.length,
+        nestedChildCount: doc[1]?.children.length ?? 0,
+        lastType: last?.type,
+        lastContent: last?.content,
+      };
+    });
+
+    expect(after.topLevel).toBeGreaterThan(before.topLevel);
+    expect(after.nestedChildCount).toBe(before.nestedChildCount);
+    expect(after.lastType).toBe("bulletListItem");
+    expect(after.lastContent).toEqual([]);
+  });
+
   test("keeps toggle heading placeholder inline when expanded", async ({ page }) => {
     await page.waitForFunction(() => Boolean(window.__ssotaBlockNoteLab));
     await page.evaluate(() => {
