@@ -27,7 +27,7 @@ export async function getSmokeInitiativeId(): Promise<string> {
   const { graphRead } = createGraphPorts(db, { projectId: project.id });
   const nodes = await graphRead.queryNodes({
     projectId: project.id,
-    nodeType: "initiative",
+    catalogKey: "initiative",
     limit: 100,
   });
   const smoke = nodes.find((node) => node.title === "Smoke initiative");

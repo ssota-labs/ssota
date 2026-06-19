@@ -1,13 +1,11 @@
-import type { LifecycleStatus } from "@ssota/contracts";
-
 export interface GraphNode {
   id: string;
   projectId: string;
-  nodeType: string;
+  nodeCatalogId: string;
+  catalogKey: string;
+  catalogLabel: string;
   title: string;
   properties: Record<string, unknown>;
-  content: string | null;
-  lifecycleStatus: LifecycleStatus;
   schemaVersion: number;
   createdAt: Date;
   updatedAt: Date;
@@ -16,7 +14,9 @@ export interface GraphNode {
 export interface GraphEdge {
   id: string;
   projectId: string;
-  edgeType: string;
+  edgeCatalogId: string;
+  catalogKey: string;
+  catalogLabel: string;
   sourceNodeId: string;
   targetNodeId: string;
   properties: Record<string, unknown>;
@@ -27,4 +27,29 @@ export interface CreateInitiativeBundleResult {
   initiativeId: string;
   releaseId: string;
   pairedWithEdgeId: string;
+}
+
+/** Read lifecycle from properties (dev-workflow convention). */
+export function readLifecycleStatus(
+  properties: Record<string, unknown>,
+): string {
+  const value = properties.lifecycleStatus;
+  if (typeof value === "string" && value.length > 0) {
+    return value;
+  }
+  return "Draft";
+}
+
+/** Read BlockNote / document body from properties. */
+export function readNodeContent(
+  properties: Record<string, unknown>,
+): string | null {
+  const value = properties.content;
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  return JSON.stringify(value);
 }

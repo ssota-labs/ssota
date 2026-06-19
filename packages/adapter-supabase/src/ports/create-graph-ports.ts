@@ -1,6 +1,6 @@
 import type { CatalogReadPort } from "@ssota/core";
 import type { Db } from "../db/client.js";
-import { createContractsCatalogReadPort } from "@ssota/core";
+import { createDbCatalogReadPort } from "./db-catalog-read-port.js";
 import { createGraphReadPort, type GraphPortsScope } from "./graph-read-port.js";
 import { createGraphWritePort } from "./graph-write-port.js";
 
@@ -15,7 +15,7 @@ export function createGraphPorts(
   graphWrite: ReturnType<typeof createGraphWritePort>;
 } {
   return {
-    catalog: createContractsCatalogReadPort(),
+    catalog: createDbCatalogReadPort(db, scope),
     graphRead: createGraphReadPort(db, scope),
     graphWrite: createGraphWritePort(db, scope),
   };

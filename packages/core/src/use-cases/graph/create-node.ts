@@ -1,9 +1,38 @@
 import type { CreateNodeInput } from "@ssota/contracts/graph";
-import { requiresNodeContent, type NodeType } from "@ssota/contracts";
 import { GraphError } from "../../domain/graph-errors.js";
 import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
 import type { GraphReadPort, GraphWritePort } from "../../ports/graph-read-port.js";
 import { assertRoadmapCreateAllowed } from "./validate-roadmap.js";
+
+async function resolveNodeCatalog(
+  catalog: CatalogReadPort,
+  input: CreateNodeInput,
+): Promise<{ id: string; key: string }> {
+  if (input.nodeCatalogId) {
+    const entry = await catalog.getNodeCatalogById(input.nodeCatalogId);
+    if (!entry) {
+      throw new GraphError(
+        "UNKNOWN_NODE_TYPE",
+        `Node catalog id '${input.nodeCatalogId}' not found`,
+      );
+    }
+    return { id: entry.id, key: entry.key };
+  }
+  if (input.catalogKey) {
+    const entry = await catalog.getNodeCatalogByKey(input.catalogKey);
+    if (!entry) {
+      throw new GraphError(
+        "UNKNOWN_NODE_TYPE",
+        `Node catalog key '${input.catalogKey}' not found`,
+      );
+    }
+    return { id: entry.id, key: entry.key };
+  }
+  throw new GraphError(
+    "VALIDATION_FAILED",
+    "catalogKey or nodeCatalogId is required",
+  );
+}
 
 export async function createNode(
   deps: {
@@ -13,18 +42,12 @@ export async function createNode(
   },
   input: CreateNodeInput,
 ) {
-  const entry = deps.catalog.getNodeTypeEntry(input.nodeType);
-  if (!entry) {
-    throw new GraphError(
-      "UNKNOWN_NODE_TYPE",
-      `Node type '${input.nodeType}' is not in the catalog`,
-    );
-  }
+  const catalogRef = await resolveNodeCatalog(deps.catalog, input);
 
   let validatedProperties: Record<string, unknown>;
   try {
     validatedProperties = deps.catalog.validateNodeProperties(
-      input.nodeType,
+      catalogRef.key,
       input.properties,
     );
   } catch (err) {
@@ -32,31 +55,23 @@ export async function createNode(
     throw new GraphError("VALIDATION_FAILED", message);
   }
 
-  const content = input.content ?? null;
-  if (
-    requiresNodeContent(input.nodeType as NodeType, validatedProperties) &&
-    (content === null || content.trim() === "")
-  ) {
-    throw new GraphError(
-      "VALIDATION_FAILED",
-      `Node type '${input.nodeType}' requires content`,
-    );
+  if (validatedProperties.lifecycleStatus === undefined) {
+    validatedProperties = { lifecycleStatus: "Draft", ...validatedProperties };
   }
 
-  if (content !== null && content !== undefined) {
-    try {
-      deps.catalog.validateNodeContent(
-        input.nodeType,
-        content,
-        validatedProperties,
-      );
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Invalid content";
-      throw new GraphError("VALIDATION_FAILED", message);
-    }
-  }
+  await assertRoadmapCreateAllowed(deps.graphRead, {
+    ...input,
+    catalogKey: catalogRef.key,
+  });
 
-  await assertRoadmapCreateAllowed(deps.graphRead, input);
-
-  return deps.graphWrite.createNode(input);
+  return deps.graphWrite.createNode({
+    projectId: input.projectId,
+    nodeCatalogId: catalogRef.id,
+    catalogKey: catalogRef.key,
+    title: input.title,
+    properties: validatedProperties,
+    schemaVersion: input.schemaVersion ?? 1,
+    initiativeId: input.initiativeId,
+    releaseId: input.releaseId,
+  });
 }

@@ -1,0 +1,21 @@
+{
+  "nav": [
+    {
+      "type": "section",
+      "key": "executive",
+      "label": "Executive",
+      "children": [
+        { "type": "link", "key": "executive_roadmap", "label": "Roadmap", "pageKey": "executive/roadmap" },
+        { "type": "link", "key": "executive_goals", "label": "Goals", "pageKey": "executive/goals" }
+      ]
+    },
+    {
+      "type": "section",
+      "key": "research",
+      "label": "Research",
+      "children": [
+        { "type": "link", "key": "research_market", "label": "Market", "pageKey": "research/market" }
+      ]
+    }
+  ]
+}

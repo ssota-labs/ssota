@@ -1,7 +1,5 @@
 import type {
-  CreateEdgeInput,
   CreateInitiativeBundleInput,
-  CreateNodeInput,
   DeleteEdgeInput,
   GetNodeInput,
   ListNodesByTypeInput,
@@ -22,10 +20,31 @@ export interface GraphReadPort {
   traverseEdges(params: TraverseEdgesInput): Promise<GraphEdge[]>;
 }
 
+/** Resolved catalog FK — produced by graph use-cases before adapter write. */
+export interface ResolvedCreateNodeInput {
+  projectId: string;
+  nodeCatalogId: string;
+  catalogKey: string;
+  title: string;
+  properties: Record<string, unknown>;
+  schemaVersion: number;
+  initiativeId?: string;
+  releaseId?: string;
+}
+
+export interface ResolvedCreateEdgeInput {
+  projectId: string;
+  edgeCatalogId: string;
+  catalogKey: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  properties: Record<string, unknown>;
+}
+
 export interface GraphWritePort {
-  createNode(input: CreateNodeInput): Promise<GraphNode>;
+  createNode(input: ResolvedCreateNodeInput): Promise<GraphNode>;
   updateNode(input: UpdateNodeInput): Promise<GraphNode>;
-  createEdge(input: CreateEdgeInput): Promise<GraphEdge>;
+  createEdge(input: ResolvedCreateEdgeInput): Promise<GraphEdge>;
   deleteEdge(input: DeleteEdgeInput): Promise<void>;
   createInitiativeBundle(
     input: CreateInitiativeBundleInput,

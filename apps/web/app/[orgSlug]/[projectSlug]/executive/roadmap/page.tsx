@@ -149,7 +149,7 @@ export default async function ExecutiveRoadmapPage({
     "use server";
     await createGraphNodeAction({
       projectId: project.id,
-      nodeType: "roadmap",
+      catalogKey: "roadmap",
       title: `${year} 연간 로드맵`,
       content: loadRoadmapTemplate("annual"),
       properties: {
@@ -165,7 +165,7 @@ export default async function ExecutiveRoadmapPage({
     "use server";
     await createGraphNodeAction({
       projectId: project.id,
-      nodeType: "roadmap",
+      catalogKey: "roadmap",
       title: `${year} Q${quarter} 분기 로드맵`,
       content: loadRoadmapTemplate("quarter"),
       properties: {

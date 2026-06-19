@@ -1,4 +1,5 @@
 import { toRouteSlug } from "@ssota/core";
+import { applyDevWorkflowPack } from "@ssota/core/seed-packs/apply-dev-workflow-pack";
 import {
   DEFAULT_LOCALE,
   LOCALES,
@@ -11,6 +12,8 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
+import { createGraphPorts } from "./create-graph-ports.js";
+import { seedDevWorkflowCatalog } from "./db-catalog-read-port.js";
 
 function parseLocale(value: string | null | undefined): Locale {
   if (value && (LOCALES as readonly string[]).includes(value)) {
@@ -182,7 +185,7 @@ export function createOnboardingPort(db: Db): OnboardingPort {
     },
 
     async completeProjectStep({ userId, projectName }) {
-      return db.transaction(async (tx) => {
+      const result = await db.transaction(async (tx) => {
         const profileRows = await tx
           .select()
           .from(schema.profiles)
@@ -227,6 +230,17 @@ export function createOnboardingPort(db: Db): OnboardingPort {
 
         return { organization, project };
       });
+
+      const ports = createGraphPorts(db, { projectId: result.project.id });
+      await seedDevWorkflowCatalog(db, result.project.id);
+      await applyDevWorkflowPack({
+        projectId: result.project.id,
+        catalog: ports.catalog,
+        graphRead: ports.graphRead,
+        graphWrite: ports.graphWrite,
+      });
+
+      return result;
     },
   };
 }

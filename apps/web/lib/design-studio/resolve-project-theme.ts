@@ -6,7 +6,7 @@ import {
   tokensToThemeCss,
   type DesignThemeTokenMap,
 } from "@ssota/contracts/catalog";
-import type { GraphNode } from "@ssota/core";
+import { readNodeContent, type GraphNode } from "@ssota/core";
 import { ensureEvergreenSingleton } from "@/lib/graph/loaders/ensure-evergreen-singleton";
 
 export type ResolvedProjectTheme = {
@@ -23,7 +23,7 @@ function extractUserTokens(node: GraphNode): DesignThemeTokenMap {
     return propertyTokens as DesignThemeTokenMap;
   }
 
-  const legacyContent = node.content?.trim();
+  const legacyContent = readNodeContent(node.properties)?.trim();
   if (!legacyContent) {
     return {};
   }

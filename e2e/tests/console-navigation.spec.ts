@@ -103,8 +103,8 @@ test.describe("Console v2.7 routes", () => {
     expect(routes).toHaveLength(35);
 
     for (const route of routes) {
-      const response = await page.goto(`${DEFAULT_CONSOLE_BASE}/${route}`);
-      expect(response?.ok(), `expected 200 for /${route}`).toBeTruthy();
+      const response = await page.request.get(`${DEFAULT_CONSOLE_BASE}/${route}`);
+      expect(response.ok(), `expected 200 for /${route}`).toBeTruthy();
     }
   });
 });

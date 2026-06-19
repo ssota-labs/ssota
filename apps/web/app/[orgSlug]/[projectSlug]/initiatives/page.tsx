@@ -9,7 +9,7 @@ async function buildInitiativeRows(projectId: string): Promise<GraphListRow[]> {
   const { graphRead } = getGraphDeps(projectId);
   const initiatives = await graphRead.queryNodes({
     projectId,
-    nodeType: "initiative",
+    catalogKey: "initiative",
     limit: 200,
   });
 
@@ -19,7 +19,7 @@ async function buildInitiativeRows(projectId: string): Promise<GraphListRow[]> {
       projectId,
       nodeId: initiative.id,
       direction: "outgoing",
-      edgeType: "paired_with",
+      catalogKey: "paired_with",
     });
     let releaseTitle: string | undefined;
     if (paired[0]) {

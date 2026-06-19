@@ -10,7 +10,7 @@ export async function createDefinesPageEdge(input: {
   const deps = getGraphDeps(input.projectId);
   return createEdge(deps, {
     projectId: input.projectId,
-    edgeType: "defines",
+    catalogKey: "defines",
     sourceNodeId: input.iaRootId,
     targetNodeId: input.pageId,
   });

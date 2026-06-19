@@ -37,11 +37,11 @@ async function mapEdges(
     const neighbor = await graphRead.getNode({ projectId, nodeId: neighborId });
     views.push({
       id: edge.id,
-      edgeType: edge.edgeType,
+      edgeType: edge.catalogKey,
       direction,
       neighborId,
       neighborTitle: neighbor?.title || "Untitled",
-      neighborNodeType: neighbor?.nodeType ?? "unknown",
+      neighborNodeType: neighbor?.catalogKey ?? "unknown",
     });
   }
 
@@ -70,11 +70,11 @@ export async function getNodeDetailView(
     }),
   ]);
 
-  const entry = getNodeTypeEntry(node.nodeType);
+  const entry = getNodeTypeEntry(node.catalogKey);
 
   return {
     node,
-    typeLabel: entry?.label ?? node.nodeType,
+    typeLabel: entry?.label ?? node.catalogKey,
     mutability: entry?.mutability ?? "living",
     canonicalRoute: await resolveNodeRoute(ctx, projectId, node),
     detailPath: nodeDetailPath(ctx, node.id),

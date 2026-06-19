@@ -5,6 +5,7 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { slugifyComponentTitle } from "@/lib/design-studio/tree-utils";
 import { createGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { deployUiComponentAction } from "@/lib/graph/actions/deploy-ui-component";
+import { readNodeContent } from "@ssota/core";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { resolveProjectTheme } from "@/lib/design-studio/resolve-project-theme";
 import { queryUiComponents } from "@/lib/graph/loaders/query-ui-components";
@@ -41,7 +42,7 @@ export async function DesignStudioPage({
       projectId: project.id,
       nodeId: componentId,
     });
-    if (!component || component.nodeType !== "ui_component") {
+    if (!component || component.catalogKey !== "ui_component") {
       notFound();
     }
   }
@@ -57,7 +58,7 @@ export async function DesignStudioPage({
     const contentV2 = createEmptyUiComponentContentV2();
     const node = await createGraphNodeAction({
       projectId: project.id,
-      nodeType: "ui_component",
+      catalogKey: "ui_component",
       title,
       properties: defaultSourceComponentProperties(slug),
       content: JSON.stringify(contentV2),

@@ -5,6 +5,7 @@ import {
   buildDesignThemePropertiesForSave,
   resolveProjectTheme,
 } from "@/lib/design-studio/resolve-project-theme";
+import { readLifecycleStatus, readNodeContent } from "@ssota/core";
 import { updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 
 export default async function DesignThemePage({
@@ -38,9 +39,9 @@ export default async function DesignThemePage({
     <DesignThemeEditor
       key={node.id}
       title={node.title || "Design theme"}
-      status={node.lifecycleStatus}
+      status={readLifecycleStatus(node.properties)}
       initialTokens={tokens}
-      initialContent={node.content ?? ""}
+      initialContent={readNodeContent(node.properties) ?? ""}
       onSave={saveDesignTheme}
     />
   );

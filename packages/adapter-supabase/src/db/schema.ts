@@ -11,13 +11,6 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 
-export const lifecycleStatusEnum = pgEnum("lifecycle_status", [
-  "Draft",
-  "Active",
-  "Archived",
-  "Deleted",
-]);
-
 export const executorTypeEnum = pgEnum("executor_type", [
   "Agent",
   "Human",
@@ -95,6 +88,61 @@ export const organizationMemberships = pgTable(
   }),
 );
 
+export const nodeCatalog = pgTable(
+  "node_catalog",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    label: text("label").notNull(),
+    propertySchema: jsonb("property_schema")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectKeyUnique: uniqueIndex("node_catalog_project_key_unique").on(
+      table.projectId,
+      table.key,
+    ),
+    projectIdx: index("node_catalog_project_id_idx").on(table.projectId),
+  }),
+);
+
+export const edgeCatalog = pgTable(
+  "edge_catalog",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    label: text("label").notNull(),
+    domainCatalogIds: uuid("domain_catalog_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'::uuid[]`),
+    rangeCatalogIds: uuid("range_catalog_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'::uuid[]`),
+    propertySchema: jsonb("property_schema").$type<Record<string, unknown> | null>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectKeyUnique: uniqueIndex("edge_catalog_project_key_unique").on(
+      table.projectId,
+      table.key,
+    ),
+    projectIdx: index("edge_catalog_project_id_idx").on(table.projectId),
+  }),
+);
+
 export const tasks = pgTable(
   "tasks",
   {
@@ -157,28 +205,26 @@ export const nodes = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    nodeType: text("node_type").notNull(),
+    nodeCatalogId: uuid("node_catalog_id")
+      .notNull()
+      .references(() => nodeCatalog.id, { onDelete: "restrict" }),
     title: text("title").notNull().default(""),
     properties: jsonb("properties")
       .notNull()
       .default({})
       .$type<Record<string, unknown>>(),
-    content: text("content"),
-    lifecycleStatus: lifecycleStatusEnum("lifecycle_status")
-      .notNull()
-      .default("Draft"),
     schemaVersion: integer("schema_version").notNull().default(1),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    projectNodeTypeIdx: index("nodes_project_node_type_idx").on(
+    projectCatalogIdx: index("nodes_project_node_catalog_id_idx").on(
       table.projectId,
-      table.nodeType,
+      table.nodeCatalogId,
     ),
     projectLifecycleIdx: index("nodes_project_lifecycle_status_idx").on(
       table.projectId,
-      table.lifecycleStatus,
+      sql`(properties->>'lifecycleStatus')`,
     ),
   }),
 );
@@ -190,7 +236,9 @@ export const edges = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    edgeType: text("edge_type").notNull(),
+    edgeCatalogId: uuid("edge_catalog_id")
+      .notNull()
+      .references(() => edgeCatalog.id, { onDelete: "restrict" }),
     sourceNodeId: uuid("source_node_id")
       .notNull()
       .references(() => nodes.id, { onDelete: "cascade" }),
@@ -211,6 +259,10 @@ export const edges = pgTable(
     projectTargetIdx: index("edges_project_target_node_id_idx").on(
       table.projectId,
       table.targetNodeId,
+    ),
+    projectCatalogIdx: index("edges_project_edge_catalog_id_idx").on(
+      table.projectId,
+      table.edgeCatalogId,
     ),
   }),
 );

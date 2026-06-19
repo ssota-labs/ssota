@@ -25,20 +25,22 @@ test.describe("MCP graph read tools", () => {
       "list_node_types",
       {},
       scope,
-    )) as Array<{ nodeType: string; label: string }>;
+    )) as Array<{ catalogKey: string; label: string }>;
     expect(Array.isArray(nodeTypes)).toBe(true);
     expect(nodeTypes.length).toBeGreaterThan(30);
-    expect(nodeTypes.some((entry) => entry.nodeType === "initiative")).toBe(true);
+    expect(nodeTypes.some((entry) => entry.catalogKey === "initiative")).toBe(
+      true,
+    );
 
     const nodeType = (await mcpToolCall(
       request,
       mcpUrl,
       token,
       "get_node_type",
-      { nodeType: "initiative" },
+      { catalogKey: "initiative" },
       scope,
-    )) as { nodeType: string; label: string } | null;
-    expect(nodeType?.nodeType).toBe("initiative");
+    )) as { catalogKey: string; label: string } | null;
+    expect(nodeType?.catalogKey).toBe("initiative");
     expect(nodeType?.label).toBeTruthy();
 
     const edgeTypes = (await mcpToolCall(
@@ -48,8 +50,8 @@ test.describe("MCP graph read tools", () => {
       "list_edge_types",
       {},
       scope,
-    )) as Array<{ edgeType: string }>;
-    expect(edgeTypes.some((entry) => entry.edgeType === "for_initiative")).toBe(
+    )) as Array<{ catalogKey: string }>;
+    expect(edgeTypes.some((entry) => entry.catalogKey === "for_initiative")).toBe(
       true,
     );
 
@@ -58,9 +60,9 @@ test.describe("MCP graph read tools", () => {
       mcpUrl,
       token,
       "query_nodes",
-      { nodeType: "initiative", limit: 10 },
+      { catalogKey: "initiative", limit: 10 },
       scope,
-    )) as Array<{ id: string; title: string; nodeType: string }>;
+    )) as Array<{ id: string; title: string; catalogKey: string }>;
     expect(initiatives.length).toBeGreaterThan(0);
 
     const initiativeId = await getSmokeInitiativeId();
@@ -82,7 +84,7 @@ test.describe("MCP graph read tools", () => {
       "traverse_edges",
       { nodeId: initiativeId, direction: "both" },
       scope,
-    )) as Array<{ edgeType: string }>;
+    )) as Array<{ catalogKey: string }>;
     expect(Array.isArray(edges)).toBe(true);
   });
 });

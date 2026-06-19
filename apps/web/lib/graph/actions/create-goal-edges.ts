@@ -4,14 +4,14 @@ import { getGraphDeps } from "@/lib/graph/graph-deps";
 
 async function createGoalEdge(input: {
   projectId: string;
-  edgeType: EdgeType;
+  catalogKey: EdgeType;
   sourceNodeId: string;
   targetNodeId: string;
 }) {
   const deps = getGraphDeps(input.projectId);
   return createEdge(deps, {
     projectId: input.projectId,
-    edgeType: input.edgeType,
+    catalogKey: input.catalogKey,
     sourceNodeId: input.sourceNodeId,
     targetNodeId: input.targetNodeId,
   });
@@ -24,7 +24,7 @@ export async function createContributesToEdge(input: {
 }) {
   return createGoalEdge({
     projectId: input.projectId,
-    edgeType: "contributes_to",
+    catalogKey: "contributes_to",
     sourceNodeId: input.keyResultId,
     targetNodeId: input.objectiveId,
   });
@@ -37,7 +37,7 @@ export async function createMeasuredByEdge(input: {
 }) {
   return createGoalEdge({
     projectId: input.projectId,
-    edgeType: "measured_by",
+    catalogKey: "measured_by",
     sourceNodeId: input.keyResultId,
     targetNodeId: input.kpiId,
   });
@@ -50,7 +50,7 @@ export async function createTrackedByEdge(input: {
 }) {
   return createGoalEdge({
     projectId: input.projectId,
-    edgeType: "tracked_by",
+    catalogKey: "tracked_by",
     sourceNodeId: input.objectiveId,
     targetNodeId: input.kpiId,
   });
@@ -63,7 +63,7 @@ export async function createInformsEdge(input: {
 }) {
   return createGoalEdge({
     projectId: input.projectId,
-    edgeType: "informs",
+    catalogKey: "informs",
     sourceNodeId: input.roadmapId,
     targetNodeId: input.objectiveId,
   });
@@ -76,7 +76,7 @@ export async function createSnapshotFromEdge(input: {
 }) {
   return createGoalEdge({
     projectId: input.projectId,
-    edgeType: "snapshotted_from",
+    catalogKey: "snapshotted_from",
     sourceNodeId: input.snapshotId,
     targetNodeId: input.kpiId,
   });

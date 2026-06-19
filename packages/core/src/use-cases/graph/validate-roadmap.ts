@@ -33,9 +33,10 @@ function roadmapIdentity(properties: Record<string, unknown>) {
 
 export async function assertRoadmapCreateAllowed(
   graphRead: GraphReadPort,
-  input: CreateNodeInput,
+  input: CreateNodeInput & { catalogKey?: string },
 ) {
-  if (input.nodeType !== "roadmap") return;
+  const catalogKey = input.catalogKey;
+  if (catalogKey !== "roadmap") return;
 
   const { kind, year, quarter } = roadmapIdentity(input.properties ?? {});
   if (!kind || year == null) {
@@ -47,7 +48,7 @@ export async function assertRoadmapCreateAllowed(
 
   const existing = await graphRead.queryNodes({
     projectId: input.projectId,
-    nodeType: "roadmap",
+    catalogKey: "roadmap",
     limit: 200,
   });
 

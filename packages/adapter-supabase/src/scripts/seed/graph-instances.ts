@@ -6,6 +6,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { createDb } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
+import { seedDevWorkflowCatalog } from "../../ports/db-catalog-read-port.js";
 
 /** One evergreen container per project — dev track (Console v2.7). */
 export const EVERGREEN_DEV_SINGLETON_TYPES = [
@@ -23,7 +24,6 @@ export const EVERGREEN_DESIGN_SINGLETON_TYPES = [
   "page_wireframe",
 ] as const satisfies readonly NodeType[];
 
-/** @deprecated OKR nodes are multi-instance; use seedDemoOkr instead. */
 export const EXECUTIVE_SINGLETON_TYPES = [] as const satisfies readonly NodeType[];
 
 const GRAPH_SEED_IDEMPOTENCY_PREFIX = "seed:graph:";
@@ -31,145 +31,194 @@ const DEMO_OKR_SEED_TITLE = "Demo: First Release completion loop";
 const DEMO_OKR_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}demo_okr`;
 const DEMO_UI_COMPONENT_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}ui_component_demo`;
 
+type CatalogMaps = {
+  nodeKeyToId: Map<string, string>;
+  edgeKeyToId: Map<string, string>;
+};
+
+async function findNodeByCatalogKey(
+  db: ReturnType<typeof createDb>["db"],
+  projectId: string,
+  catalogKey: string,
+  nodeCatalogId: string,
+) {
+  const rows = await db
+    .select({ id: schema.nodes.id })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.nodeCatalogId, nodeCatalogId),
+      ),
+    )
+    .limit(1);
+  return rows[0]?.id;
+}
+
 export async function seedGraphInstances(
   db: ReturnType<typeof createDb>["db"],
   projectId: string,
 ) {
+  const { nodeKeyToId, edgeKeyToId } = await seedDevWorkflowCatalog(db, projectId);
+  const maps: CatalogMaps = { nodeKeyToId, edgeKeyToId };
+
   const singletonTypes = [
     ...EVERGREEN_DEV_SINGLETON_TYPES,
     ...EVERGREEN_DESIGN_SINGLETON_TYPES,
     ...EXECUTIVE_SINGLETON_TYPES,
   ];
 
-  for (const nodeType of singletonTypes) {
-    const existing = await db
+  for (const catalogKey of singletonTypes) {
+    const nodeCatalogId = nodeKeyToId.get(catalogKey);
+    if (!nodeCatalogId) continue;
+
+    const existing = await findNodeByCatalogKey(
+      db,
+      projectId,
+      catalogKey,
+      nodeCatalogId,
+    );
+    if (existing) continue;
+
+    const properties =
+      catalogKey === "design_theme"
+        ? {
+            lifecycleStatus: "Draft",
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
+            schema_version: DESIGN_THEME_SCHEMA_VERSION,
+            tokens: PLATFORM_DESIGN_THEME_TOKENS,
+          }
+        : {
+            lifecycleStatus: "Draft",
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
+          };
+
+    await db.insert(schema.nodes).values({
+      projectId,
+      nodeCatalogId,
+      title: catalogKey === "design_theme" ? "Design theme" : "",
+      properties,
+      schemaVersion: 1,
+    });
+  }
+
+  await migrateLegacyRoadmapSingletons(db, projectId, maps);
+
+  const hypothesisCatalogId = nodeKeyToId.get("hypothesis");
+  let hypothesisId: string | undefined;
+  if (hypothesisCatalogId) {
+    const hypothesisExisting = await db
       .select({ id: schema.nodes.id })
       .from(schema.nodes)
       .where(
         and(
           eq(schema.nodes.projectId, projectId),
-          eq(schema.nodes.nodeType, nodeType),
+          eq(schema.nodes.nodeCatalogId, hypothesisCatalogId),
         ),
       )
       .limit(1);
 
-    if (existing.length > 0) continue;
-
-    const properties =
-      nodeType === "design_theme"
-        ? {
-            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${nodeType}`,
-            schema_version: DESIGN_THEME_SCHEMA_VERSION,
-            tokens: PLATFORM_DESIGN_THEME_TOKENS,
-          }
-        : { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${nodeType}` };
-
-    await db.insert(schema.nodes).values({
-      projectId,
-      nodeType,
-      title: nodeType === "design_theme" ? "Design theme" : "",
-      properties,
-      lifecycleStatus: "Draft",
-      schemaVersion: 1,
-    });
-  }
-
-  await migrateLegacyRoadmapSingletons(db, projectId);
-
-  const hypothesisExisting = await db
-    .select({ id: schema.nodes.id })
-    .from(schema.nodes)
-    .where(
-      and(
-        eq(schema.nodes.projectId, projectId),
-        eq(schema.nodes.nodeType, "hypothesis"),
-      ),
-    )
-    .limit(1);
-
-  let hypothesisId = hypothesisExisting[0]?.id;
-  if (!hypothesisId) {
-    const [hypothesis] = await db
-      .insert(schema.nodes)
-      .values({
-        projectId,
-        nodeType: "hypothesis",
-        title: "Smoke hypothesis",
-        properties: {
-          status: "draft",
-          summary: "Seed hypothesis for integration and E2E",
-          seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}hypothesis`,
-        },
-        lifecycleStatus: "Draft",
-      })
-      .returning({ id: schema.nodes.id });
-    hypothesisId = hypothesis?.id;
-  }
-
-  const bundleExisting = await db
-    .select({ id: schema.nodes.id })
-    .from(schema.nodes)
-    .where(
-      and(
-        eq(schema.nodes.projectId, projectId),
-        eq(schema.nodes.nodeType, "initiative"),
-        eq(schema.nodes.title, "Smoke initiative"),
-      ),
-    )
-    .limit(1);
-
-  if (bundleExisting.length === 0) {
-    const [initiative] = await db
-      .insert(schema.nodes)
-      .values({
-        projectId,
-        nodeType: "initiative",
-        title: "Smoke initiative",
-        properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}initiative` },
-        lifecycleStatus: "Draft",
-      })
-      .returning({ id: schema.nodes.id });
-
-    const [release] = await db
-      .insert(schema.nodes)
-      .values({
-        projectId,
-        nodeType: "release",
-        title: "v0.0.0-smoke",
-        properties: {
-          version: "0.0.0-smoke",
-          seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}release`,
-        },
-        lifecycleStatus: "Draft",
-      })
-      .returning({ id: schema.nodes.id });
-
-    if (initiative?.id && release?.id) {
-      await db.insert(schema.edges).values({
-        projectId,
-        edgeType: "paired_with",
-        sourceNodeId: initiative.id,
-        targetNodeId: release.id,
-        properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}paired_with` },
-      });
-
-      await seedInitiativeScopedNodes(db, projectId, initiative.id);
+    hypothesisId = hypothesisExisting[0]?.id;
+    if (!hypothesisId) {
+      const [hypothesis] = await db
+        .insert(schema.nodes)
+        .values({
+          projectId,
+          nodeCatalogId: hypothesisCatalogId,
+          title: "Smoke hypothesis",
+          properties: {
+            lifecycleStatus: "Draft",
+            status: "draft",
+            summary: "Seed hypothesis for integration and E2E",
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}hypothesis`,
+          },
+        })
+        .returning({ id: schema.nodes.id });
+      hypothesisId = hypothesis?.id;
     }
-  } else if (bundleExisting[0]?.id) {
-    await seedInitiativeScopedNodes(db, projectId, bundleExisting[0].id);
   }
 
-  await seedDemoOkr(db, projectId);
-  await seedDemoUiComponents(db, projectId);
+  const initiativeCatalogId = nodeKeyToId.get("initiative");
+  const bundleExisting = initiativeCatalogId
+    ? await db
+        .select({ id: schema.nodes.id })
+        .from(schema.nodes)
+        .where(
+          and(
+            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.nodeCatalogId, initiativeCatalogId),
+            eq(schema.nodes.title, "Smoke initiative"),
+          ),
+        )
+        .limit(1)
+    : [];
+
+  if (bundleExisting && bundleExisting.length === 0) {
+    const releaseCatalogId = nodeKeyToId.get("release");
+    const pairedCatalogId = edgeKeyToId.get("paired_with");
+    if (initiativeCatalogId && releaseCatalogId && pairedCatalogId) {
+      const [initiative] = await db
+        .insert(schema.nodes)
+        .values({
+          projectId,
+          nodeCatalogId: initiativeCatalogId,
+          title: "Smoke initiative",
+          properties: {
+            lifecycleStatus: "Draft",
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}initiative`,
+          },
+        })
+        .returning({ id: schema.nodes.id });
+
+      const [release] = await db
+        .insert(schema.nodes)
+        .values({
+          projectId,
+          nodeCatalogId: releaseCatalogId,
+          title: "v0.0.0-smoke",
+          properties: {
+            lifecycleStatus: "Draft",
+            version: "0.0.0-smoke",
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}release`,
+          },
+        })
+        .returning({ id: schema.nodes.id });
+
+      if (initiative?.id && release?.id) {
+        await db.insert(schema.edges).values({
+          projectId,
+          edgeCatalogId: pairedCatalogId,
+          sourceNodeId: initiative.id,
+          targetNodeId: release.id,
+          properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}paired_with` },
+        });
+
+        await seedInitiativeScopedNodes(db, projectId, initiative.id, maps);
+      }
+    }
+  } else if (bundleExisting?.[0]?.id) {
+    await seedInitiativeScopedNodes(
+      db,
+      projectId,
+      bundleExisting[0].id,
+      maps,
+    );
+  }
+
+  await seedDemoOkr(db, projectId, maps);
+  await seedDemoUiComponents(db, projectId, maps);
 
   return { hypothesisId };
 }
 
-/** Legacy executive roadmap was a singleton without kind/year — remove on re-seed. */
 async function migrateLegacyRoadmapSingletons(
   db: ReturnType<typeof createDb>["db"],
   projectId: string,
+  maps: CatalogMaps,
 ) {
+  const roadmapCatalogId = maps.nodeKeyToId.get("roadmap");
+  if (!roadmapCatalogId) return;
+
   const legacyRows = await db
     .select({
       id: schema.nodes.id,
@@ -179,7 +228,7 @@ async function migrateLegacyRoadmapSingletons(
     .where(
       and(
         eq(schema.nodes.projectId, projectId),
-        eq(schema.nodes.nodeType, "roadmap"),
+        eq(schema.nodes.nodeCatalogId, roadmapCatalogId),
       ),
     );
 
@@ -195,14 +244,18 @@ async function migrateLegacyRoadmapSingletons(
 async function seedDemoOkr(
   db: ReturnType<typeof createDb>["db"],
   projectId: string,
+  maps: CatalogMaps,
 ) {
+  const objectiveCatalogId = maps.nodeKeyToId.get("objective");
+  if (!objectiveCatalogId) return;
+
   const existingObjective = await db
     .select({ id: schema.nodes.id })
     .from(schema.nodes)
     .where(
       and(
         eq(schema.nodes.projectId, projectId),
-        eq(schema.nodes.nodeType, "objective"),
+        eq(schema.nodes.nodeCatalogId, objectiveCatalogId),
         eq(schema.nodes.title, DEMO_OKR_SEED_TITLE),
       ),
     )
@@ -210,52 +263,62 @@ async function seedDemoOkr(
 
   if (existingObjective.length > 0) return;
 
-  const [roadmap] = await db
-    .select({ id: schema.nodes.id })
-    .from(schema.nodes)
-    .where(
-      and(
-        eq(schema.nodes.projectId, projectId),
-        eq(schema.nodes.nodeType, "roadmap"),
-      ),
-    )
-    .limit(1);
+  const roadmapCatalogId = maps.nodeKeyToId.get("roadmap");
+  const [roadmap] = roadmapCatalogId
+    ? await db
+        .select({ id: schema.nodes.id })
+        .from(schema.nodes)
+        .where(
+          and(
+            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.nodeCatalogId, roadmapCatalogId),
+          ),
+        )
+        .limit(1)
+    : [];
 
   const [objective] = await db
     .insert(schema.nodes)
     .values({
       projectId,
-      nodeType: "objective",
+      nodeCatalogId: objectiveCatalogId,
       title: DEMO_OKR_SEED_TITLE,
       properties: {
+        lifecycleStatus: "Active",
         period: "Q2 2026",
         priority: "high",
         status: "on_track",
         seed: DEMO_OKR_SEED_KEY,
       },
-      lifecycleStatus: "Active",
     })
     .returning({ id: schema.nodes.id });
 
   if (!objective?.id) return;
 
-  if (roadmap?.id) {
+  const informsId = maps.edgeKeyToId.get("informs");
+  if (roadmap?.id && informsId) {
     await db.insert(schema.edges).values({
       projectId,
-      edgeType: "informs",
+      edgeCatalogId: informsId,
       sourceNodeId: roadmap.id,
       targetNodeId: objective.id,
       properties: { seed: `${DEMO_OKR_SEED_KEY}:informs` },
     });
   }
 
+  const krCatalogId = maps.nodeKeyToId.get("key_result");
+  const kpiCatalogId = maps.nodeKeyToId.get("kpi");
+  const snapshotCatalogId = maps.nodeKeyToId.get("metric_snapshot");
+  if (!krCatalogId || !kpiCatalogId) return;
+
   const [kr1] = await db
     .insert(schema.nodes)
     .values({
       projectId,
-      nodeType: "key_result",
+      nodeCatalogId: krCatalogId,
       title: "Pilot workspaces complete first Release with retrospective",
       properties: {
+        lifecycleStatus: "Active",
         baseline: 0,
         target: 8,
         current_value: 6,
@@ -264,7 +327,6 @@ async function seedDemoOkr(
         status: "on_track",
         seed: `${DEMO_OKR_SEED_KEY}:kr1`,
       },
-      lifecycleStatus: "Active",
     })
     .returning({ id: schema.nodes.id });
 
@@ -272,9 +334,10 @@ async function seedDemoOkr(
     .insert(schema.nodes)
     .values({
       projectId,
-      nodeType: "key_result",
+      nodeCatalogId: krCatalogId,
       title: "Onboarding completion rate improvement",
       properties: {
+        lifecycleStatus: "Active",
         baseline: 40,
         target: 70,
         current_value: 52,
@@ -283,7 +346,6 @@ async function seedDemoOkr(
         status: "on_track",
         seed: `${DEMO_OKR_SEED_KEY}:kr2`,
       },
-      lifecycleStatus: "Active",
     })
     .returning({ id: schema.nodes.id });
 
@@ -291,9 +353,10 @@ async function seedDemoOkr(
     .insert(schema.nodes)
     .values({
       projectId,
-      nodeType: "kpi",
+      nodeCatalogId: kpiCatalogId,
       title: "Workspace creation rate",
       properties: {
+        lifecycleStatus: "Active",
         baseline: 10,
         target: 25,
         unit: "%",
@@ -302,65 +365,72 @@ async function seedDemoOkr(
         status: "active",
         seed: `${DEMO_OKR_SEED_KEY}:kpi`,
       },
-      lifecycleStatus: "Active",
     })
     .returning({ id: schema.nodes.id });
 
-  for (const kr of [kr1, kr2]) {
-    if (!kr?.id) continue;
-    await db.insert(schema.edges).values({
-      projectId,
-      edgeType: "contributes_to",
-      sourceNodeId: kr.id,
-      targetNodeId: objective.id,
-      properties: { seed: `${DEMO_OKR_SEED_KEY}:contributes_to` },
-    });
+  const contributesId = maps.edgeKeyToId.get("contributes_to");
+  if (contributesId) {
+    for (const kr of [kr1, kr2]) {
+      if (!kr?.id) continue;
+      await db.insert(schema.edges).values({
+        projectId,
+        edgeCatalogId: contributesId,
+        sourceNodeId: kr.id,
+        targetNodeId: objective.id,
+        properties: { seed: `${DEMO_OKR_SEED_KEY}:contributes_to` },
+      });
+    }
   }
 
-  if (kr1?.id && kpi?.id) {
+  const measuredById = maps.edgeKeyToId.get("measured_by");
+  if (kr1?.id && kpi?.id && measuredById) {
     await db.insert(schema.edges).values({
       projectId,
-      edgeType: "measured_by",
+      edgeCatalogId: measuredById,
       sourceNodeId: kr1.id,
       targetNodeId: kpi.id,
       properties: { seed: `${DEMO_OKR_SEED_KEY}:measured_by` },
     });
   }
 
-  if (kpi?.id) {
+  const trackedById = maps.edgeKeyToId.get("tracked_by");
+  const snapshottedId = maps.edgeKeyToId.get("snapshotted_from");
+  if (kpi?.id && trackedById) {
     await db.insert(schema.edges).values({
       projectId,
-      edgeType: "tracked_by",
+      edgeCatalogId: trackedById,
       sourceNodeId: objective.id,
       targetNodeId: kpi.id,
       properties: { seed: `${DEMO_OKR_SEED_KEY}:tracked_by` },
     });
 
-    const [snapshot] = await db
-      .insert(schema.nodes)
-      .values({
-        projectId,
-        nodeType: "metric_snapshot",
-        title: "Workspace creation rate baseline",
-        properties: {
-          value: 12,
-          captured_at: new Date().toISOString(),
-          snapshot_kind: "baseline",
-          source: "manual",
-          seed: `${DEMO_OKR_SEED_KEY}:snapshot`,
-        },
-        lifecycleStatus: "Active",
-      })
-      .returning({ id: schema.nodes.id });
+    if (snapshotCatalogId && snapshottedId) {
+      const [snapshot] = await db
+        .insert(schema.nodes)
+        .values({
+          projectId,
+          nodeCatalogId: snapshotCatalogId,
+          title: "Workspace creation rate baseline",
+          properties: {
+            lifecycleStatus: "Active",
+            value: 12,
+            captured_at: new Date().toISOString(),
+            snapshot_kind: "baseline",
+            source: "manual",
+            seed: `${DEMO_OKR_SEED_KEY}:snapshot`,
+          },
+        })
+        .returning({ id: schema.nodes.id });
 
-    if (snapshot?.id) {
-      await db.insert(schema.edges).values({
-        projectId,
-        edgeType: "snapshotted_from",
-        sourceNodeId: snapshot.id,
-        targetNodeId: kpi.id,
-        properties: { seed: `${DEMO_OKR_SEED_KEY}:snapshotted_from` },
-      });
+      if (snapshot?.id) {
+        await db.insert(schema.edges).values({
+          projectId,
+          edgeCatalogId: snapshottedId,
+          sourceNodeId: snapshot.id,
+          targetNodeId: kpi.id,
+          properties: { seed: `${DEMO_OKR_SEED_KEY}:snapshotted_from` },
+        });
+      }
     }
   }
 }
@@ -368,7 +438,12 @@ async function seedDemoOkr(
 async function seedDemoUiComponents(
   db: ReturnType<typeof createDb>["db"],
   projectId: string,
+  maps: CatalogMaps,
 ) {
+  const uiCatalogId = maps.nodeKeyToId.get("ui_component");
+  const composedOfId = maps.edgeKeyToId.get("composed_of");
+  if (!uiCatalogId) return;
+
   const buttonSource = `import { Button } from "@ssota/ui/components/ui/button";
 
 export default function Component() {
@@ -397,6 +472,8 @@ export default function Component() {
     dependencies: {
       "@ssota/ui": "workspace:*",
     },
+    content: buttonContentV2,
+    lifecycleStatus: "Active",
     seed: `${DEMO_UI_COMPONENT_SEED_KEY}:button`,
   };
 
@@ -406,7 +483,7 @@ export default function Component() {
     .where(
       and(
         eq(schema.nodes.projectId, projectId),
-        eq(schema.nodes.nodeType, "ui_component"),
+        eq(schema.nodes.nodeCatalogId, uiCatalogId),
         eq(schema.nodes.title, "Demo Button"),
       ),
     )
@@ -419,11 +496,9 @@ export default function Component() {
       .insert(schema.nodes)
       .values({
         projectId,
-        nodeType: "ui_component",
+        nodeCatalogId: uiCatalogId,
         title: "Demo Button",
         properties: buttonProperties,
-        content: JSON.stringify(buttonContentV2),
-        lifecycleStatus: "Active",
       })
       .returning({ id: schema.nodes.id });
     buttonId = button?.id;
@@ -433,10 +508,7 @@ export default function Component() {
     if (representation !== "source") {
       await db
         .update(schema.nodes)
-        .set({
-          properties: buttonProperties,
-          content: JSON.stringify(buttonContentV2),
-        })
+        .set({ properties: buttonProperties })
         .where(eq(schema.nodes.id, buttonId));
     }
   }
@@ -473,6 +545,8 @@ export default function Component() {
     dependencies: {
       "@ssota/ui": "workspace:*",
     },
+    content: cardContentV2,
+    lifecycleStatus: "Active",
     seed: `${DEMO_UI_COMPONENT_SEED_KEY}:card`,
   };
 
@@ -482,7 +556,7 @@ export default function Component() {
     .where(
       and(
         eq(schema.nodes.projectId, projectId),
-        eq(schema.nodes.nodeType, "ui_component"),
+        eq(schema.nodes.nodeCatalogId, uiCatalogId),
         eq(schema.nodes.title, "Demo Card"),
       ),
     )
@@ -495,11 +569,9 @@ export default function Component() {
       .insert(schema.nodes)
       .values({
         projectId,
-        nodeType: "ui_component",
+        nodeCatalogId: uiCatalogId,
         title: "Demo Card",
         properties: cardProperties,
-        content: JSON.stringify(cardContentV2),
-        lifecycleStatus: "Active",
       })
       .returning({ id: schema.nodes.id });
     cardId = card?.id;
@@ -509,15 +581,12 @@ export default function Component() {
     if (representation !== "source") {
       await db
         .update(schema.nodes)
-        .set({
-          properties: cardProperties,
-          content: JSON.stringify(cardContentV2),
-        })
+        .set({ properties: cardProperties })
         .where(eq(schema.nodes.id, cardId));
     }
   }
 
-  if (!cardId) return;
+  if (!cardId || !composedOfId) return;
 
   const existingEdge = await db
     .select({ id: schema.edges.id })
@@ -525,7 +594,7 @@ export default function Component() {
     .where(
       and(
         eq(schema.edges.projectId, projectId),
-        eq(schema.edges.edgeType, "composed_of"),
+        eq(schema.edges.edgeCatalogId, composedOfId),
         eq(schema.edges.sourceNodeId, cardId),
         eq(schema.edges.targetNodeId, buttonId),
       ),
@@ -535,7 +604,7 @@ export default function Component() {
   if (existingEdge.length === 0) {
     await db.insert(schema.edges).values({
       projectId,
-      edgeType: "composed_of",
+      edgeCatalogId: composedOfId,
       sourceNodeId: cardId,
       targetNodeId: buttonId,
       properties: { seed: `${DEMO_UI_COMPONENT_SEED_KEY}:composed_of` },
@@ -547,20 +616,25 @@ async function seedInitiativeScopedNodes(
   db: ReturnType<typeof createDb>["db"],
   projectId: string,
   initiativeId: string,
+  maps: CatalogMaps,
 ) {
+  const forInitiativeId = maps.edgeKeyToId.get("for_initiative");
   const scopedSeeds = [
-    { nodeType: "prd" as const, title: "Smoke PRD" },
-    { nodeType: "feature" as const, title: "Smoke feature" },
+    { catalogKey: "prd" as const, title: "Smoke PRD" },
+    { catalogKey: "feature" as const, title: "Smoke feature" },
   ];
 
   for (const seed of scopedSeeds) {
+    const nodeCatalogId = maps.nodeKeyToId.get(seed.catalogKey);
+    if (!nodeCatalogId) continue;
+
     const existing = await db
       .select({ id: schema.nodes.id })
       .from(schema.nodes)
       .where(
         and(
           eq(schema.nodes.projectId, projectId),
-          eq(schema.nodes.nodeType, seed.nodeType),
+          eq(schema.nodes.nodeCatalogId, nodeCatalogId),
           eq(schema.nodes.title, seed.title),
         ),
       )
@@ -572,16 +646,18 @@ async function seedInitiativeScopedNodes(
         .insert(schema.nodes)
         .values({
           projectId,
-          nodeType: seed.nodeType,
+          nodeCatalogId,
           title: seed.title,
-          properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${seed.nodeType}` },
-          lifecycleStatus: "Draft",
+          properties: {
+            lifecycleStatus: "Draft",
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${seed.catalogKey}`,
+          },
         })
         .returning({ id: schema.nodes.id });
       nodeId = row?.id;
     }
 
-    if (!nodeId) continue;
+    if (!nodeId || !forInitiativeId) continue;
 
     const edgeExisting = await db
       .select({ id: schema.edges.id })
@@ -589,7 +665,7 @@ async function seedInitiativeScopedNodes(
       .where(
         and(
           eq(schema.edges.projectId, projectId),
-          eq(schema.edges.edgeType, "for_initiative"),
+          eq(schema.edges.edgeCatalogId, forInitiativeId),
           eq(schema.edges.sourceNodeId, nodeId),
           eq(schema.edges.targetNodeId, initiativeId),
         ),
@@ -599,7 +675,7 @@ async function seedInitiativeScopedNodes(
     if (edgeExisting.length === 0) {
       await db.insert(schema.edges).values({
         projectId,
-        edgeType: "for_initiative",
+        edgeCatalogId: forInitiativeId,
         sourceNodeId: nodeId,
         targetNodeId: initiativeId,
         properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}for_initiative` },

@@ -102,7 +102,7 @@ async function buildLatestSnapshotByKpi(
       projectId,
       nodeId: snapshot.id,
       direction: "outgoing",
-      edgeType: "snapshotted_from",
+      catalogKey: "snapshotted_from",
     });
 
     const capturedAt =
@@ -127,11 +127,11 @@ export async function loadGoalsDashboard(
   const { graphRead } = getGraphDeps(projectId);
 
   const [objectives, keyResults, kpis, snapshots, roadmaps] = await Promise.all([
-    graphRead.queryNodes({ projectId, nodeType: "objective", limit: 200 }),
-    graphRead.queryNodes({ projectId, nodeType: "key_result", limit: 200 }),
-    graphRead.queryNodes({ projectId, nodeType: "kpi", limit: 200 }),
-    graphRead.queryNodes({ projectId, nodeType: "metric_snapshot", limit: 500 }),
-    graphRead.queryNodes({ projectId, nodeType: "roadmap", limit: 10 }),
+    graphRead.queryNodes({ projectId, catalogKey: "objective", limit: 200 }),
+    graphRead.queryNodes({ projectId, catalogKey: "key_result", limit: 200 }),
+    graphRead.queryNodes({ projectId, catalogKey: "kpi", limit: 200 }),
+    graphRead.queryNodes({ projectId, catalogKey: "metric_snapshot", limit: 500 }),
+    graphRead.queryNodes({ projectId, catalogKey: "roadmap", limit: 10 }),
   ]);
 
   const latestSnapshotByKpi = await buildLatestSnapshotByKpi(projectId, snapshots);
@@ -150,13 +150,13 @@ export async function loadGoalsDashboard(
           projectId,
           nodeId: kr.id,
           direction: "outgoing",
-          edgeType: "contributes_to",
+          catalogKey: "contributes_to",
         }),
         graphRead.traverseEdges({
           projectId,
           nodeId: kr.id,
           direction: "outgoing",
-          edgeType: "measured_by",
+          catalogKey: "measured_by",
         }),
       ]);
       for (const edge of contribEdges) {
@@ -175,13 +175,13 @@ export async function loadGoalsDashboard(
           projectId,
           nodeId: objective.id,
           direction: "outgoing",
-          edgeType: "tracked_by",
+          catalogKey: "tracked_by",
         }),
         graphRead.traverseEdges({
           projectId,
           nodeId: objective.id,
           direction: "incoming",
-          edgeType: "informs",
+          catalogKey: "informs",
         }),
       ]);
       objectiveToKpis.set(

@@ -1,5 +1,6 @@
 import { GraphDocumentPage } from "@/components/console/graph-document-page";
 import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
+import { readLifecycleStatus, readNodeContent } from "@ssota/core";
 import { updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { ensureEvergreenSingleton } from "@/lib/graph/loaders/ensure-evergreen-singleton";
 import type { NodeType } from "@ssota/contracts";
@@ -38,8 +39,8 @@ export async function EvergreenDocumentRoute({
   return (
     <GraphDocumentPage
       title={node.title || defaultTitle}
-      status={node.lifecycleStatus}
-      content={node.content ?? ""}
+      status={readLifecycleStatus(node.properties)}
+      content={readNodeContent(node.properties) ?? ""}
       emptyDescription={emptyDescription}
       onSave={saveDocument}
     />

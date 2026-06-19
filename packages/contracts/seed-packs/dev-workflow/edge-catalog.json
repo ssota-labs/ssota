@@ -1,0 +1,19 @@
+[
+  { "key": "informs", "label": "근거", "domainKeys": [], "rangeKeys": [] },
+  { "key": "motivates", "label": "동기", "domainKeys": [], "rangeKeys": [] },
+  { "key": "paired_with", "label": "1:1 쌍", "domainKeys": ["initiative"], "rangeKeys": ["release"] },
+  { "key": "for_initiative", "label": "소속", "domainKeys": [], "rangeKeys": ["initiative"] },
+  { "key": "for_release", "label": "릴리즈", "domainKeys": [], "rangeKeys": ["release"] },
+  { "key": "part_of", "label": "포함", "domainKeys": [], "rangeKeys": [] },
+  { "key": "specifies", "label": "명세", "domainKeys": [], "rangeKeys": [] },
+  { "key": "spawns_story", "label": "스토리", "domainKeys": [], "rangeKeys": [] },
+  { "key": "defines", "label": "정의", "domainKeys": [], "rangeKeys": [] },
+  { "key": "for_page", "label": "페이지", "domainKeys": [], "rangeKeys": [] },
+  { "key": "references", "label": "참조", "domainKeys": [], "rangeKeys": [] },
+  { "key": "measured_by", "label": "측정", "domainKeys": [], "rangeKeys": [] },
+  { "key": "tracked_by", "label": "추적", "domainKeys": [], "rangeKeys": [] },
+  { "key": "contributes_to", "label": "기여", "domainKeys": [], "rangeKeys": [] },
+  { "key": "reflects_on", "label": "회고", "domainKeys": [], "rangeKeys": [] },
+  { "key": "snapshotted_from", "label": "스냅샷", "domainKeys": [], "rangeKeys": [] },
+  { "key": "composed_of", "label": "구성", "domainKeys": ["ui_component"], "rangeKeys": ["ui_component"] }
+]

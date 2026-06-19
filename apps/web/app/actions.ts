@@ -192,7 +192,7 @@ export async function searchMentionNodesAction(input: {
       return {
         id: node.id,
         label: title,
-        nodeType: node.nodeType,
+        nodeType: node.catalogKey,
       };
     })
     .filter((item) => {

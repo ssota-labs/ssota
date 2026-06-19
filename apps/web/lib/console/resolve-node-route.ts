@@ -36,7 +36,7 @@ async function findInitiativeIdForNode(
     projectId,
     nodeId,
     direction: "outgoing",
-    edgeType: "for_initiative",
+    catalogKey: "for_initiative",
   });
   if (edges.length === 0) return null;
   return edges[0]!.targetNodeId;
@@ -48,35 +48,35 @@ export async function resolveNodeRoute(
   projectId: string,
   node: GraphNode,
 ): Promise<string | null> {
-  if (node.nodeType === "initiative") {
+  if (node.catalogKey === "initiative") {
     return initiativePath(ctx, node.id);
   }
 
-  if (node.nodeType === "release") {
+  if (node.catalogKey === "release") {
     const { graphRead } = getGraphDeps(projectId);
     const paired = await graphRead.traverseEdges({
       projectId,
       nodeId: node.id,
       direction: "both",
-      edgeType: "paired_with",
+      catalogKey: "paired_with",
     });
     for (const edge of paired) {
       const otherId =
         edge.sourceNodeId === node.id ? edge.targetNodeId : edge.sourceNodeId;
       const other = await graphRead.getNode({ projectId, nodeId: otherId });
-      if (other?.nodeType === "initiative") {
+      if (other?.catalogKey === "initiative") {
         return initiativePath(ctx, other.id);
       }
     }
   }
 
-  if (node.nodeType === "ui_component") {
+  if (node.catalogKey === "ui_component") {
     return projectPath(ctx, "design", "ui-components", node.id);
   }
 
   const initiativeId = await findInitiativeIdForNode(projectId, node.id);
   if (initiativeId) {
-    const initiativeMeta = findInitiativeRouteMeta(node.nodeType);
+    const initiativeMeta = findInitiativeRouteMeta(node.catalogKey);
     if (initiativeMeta) {
       return initiativeMeta.path
         ? initiativePath(ctx, initiativeId, ...initiativeMeta.path.split("/"))
@@ -84,11 +84,11 @@ export async function resolveNodeRoute(
     }
   }
 
-  const staticMeta = findStaticRouteMeta(node.nodeType);
+  const staticMeta = findStaticRouteMeta(node.catalogKey);
   if (staticMeta && staticMeta.scope === "evergreen") {
     const singleton = await getEvergreenSingleton(
       projectId,
-      node.nodeType as NodeType,
+      node.catalogKey as NodeType,
     );
     if (singleton?.id === node.id) {
       return projectPath(ctx, ...staticMeta.path.split("/"));

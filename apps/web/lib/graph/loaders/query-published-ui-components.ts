@@ -1,3 +1,4 @@
+import { readNodeContent } from "@ssota/core";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 
 export type PublishedUiComponentRow = {
@@ -13,12 +14,15 @@ export async function queryPublishedUiComponents(
   const { graphRead } = getGraphDeps(projectId);
   const nodes = await graphRead.queryNodes({
     projectId,
-    nodeType: "ui_component",
+    catalogKey: "ui_component",
     limit: 200,
   });
 
   return nodes
-    .filter((node) => node.content != null && node.content.length > 0)
+    .filter((node) => {
+      const content = readNodeContent(node.properties);
+      return content != null && content.length > 0;
+    })
     .map((node) => {
       const props = node.properties as { slug?: string; tier?: string };
       return {

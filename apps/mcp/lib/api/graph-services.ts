@@ -17,6 +17,8 @@ import {
   createNode,
   getNode,
   queryNodes,
+  readLifecycleStatus,
+  readNodeContent,
   traverseEdges,
   updateNode,
 } from "@ssota/core";
@@ -29,11 +31,13 @@ function serializeNode(node: GraphNode) {
   return {
     id: node.id,
     projectId: node.projectId,
-    nodeType: node.nodeType,
+    catalogKey: node.catalogKey,
+    nodeCatalogId: node.nodeCatalogId,
+    catalogLabel: node.catalogLabel,
     title: node.title,
     properties: node.properties,
-    content: node.content,
-    lifecycleStatus: node.lifecycleStatus,
+    content: readNodeContent(node.properties),
+    lifecycleStatus: readLifecycleStatus(node.properties),
     schemaVersion: node.schemaVersion,
     createdAt: node.createdAt.toISOString(),
     updatedAt: node.updatedAt.toISOString(),
@@ -44,7 +48,9 @@ function serializeEdge(edge: GraphEdge) {
   return {
     id: edge.id,
     projectId: edge.projectId,
-    edgeType: edge.edgeType,
+    catalogKey: edge.catalogKey,
+    edgeCatalogId: edge.edgeCatalogId,
+    catalogLabel: edge.catalogLabel,
     sourceNodeId: edge.sourceNodeId,
     targetNodeId: edge.targetNodeId,
     properties: edge.properties,
@@ -52,20 +58,62 @@ function serializeEdge(edge: GraphEdge) {
   };
 }
 
-export function listNodeTypesForMcp() {
-  return catalog.listNodeTypes().map((entry) => ({
-    nodeType: entry.nodeType,
-    label: entry.label,
-    mutability: entry.mutability,
-    contentRequired: entry.contentRequired,
-  }));
+function normalizeNodeQueryInput(input: Record<string, unknown>) {
+  const catalogKey =
+    (input.catalogKey as string | undefined) ??
+    (input.nodeType as string | undefined);
+  const { nodeType: _nodeType, ...rest } = input;
+  return catalogKey ? { ...rest, catalogKey } : rest;
 }
 
-export function getNodeTypeForMcp(nodeType: string) {
-  const entry = getNodeTypeEntry(nodeType);
+function normalizeEdgeInput(input: Record<string, unknown>) {
+  const catalogKey =
+    (input.catalogKey as string | undefined) ??
+    (input.edgeType as string | undefined);
+  const { edgeType: _edgeType, ...rest } = input;
+  return catalogKey ? { ...rest, catalogKey } : rest;
+}
+
+function mergeNodePropertiesForWrite(
+  properties: Record<string, unknown> | undefined,
+  extras?: {
+    content?: string | null;
+    lifecycleStatus?: string;
+  },
+): Record<string, unknown> | undefined {
+  if (
+    properties === undefined &&
+    extras?.content === undefined &&
+    extras?.lifecycleStatus === undefined
+  ) {
+    return undefined;
+  }
+  const merged = { ...(properties ?? {}) };
+  if (extras?.content !== undefined) merged.content = extras.content;
+  if (extras?.lifecycleStatus !== undefined) {
+    merged.lifecycleStatus = extras.lifecycleStatus;
+  }
+  return merged;
+}
+
+export async function listNodeTypesForMcp() {
+  const rows = await catalog.listNodeCatalog();
+  return rows.map((entry) => {
+    const meta = getNodeTypeEntry(entry.key);
+    return {
+      catalogKey: entry.key,
+      label: entry.label,
+      mutability: meta?.mutability ?? "living",
+      contentRequired: meta?.contentRequired ?? false,
+    };
+  });
+}
+
+export function getNodeTypeForMcp(catalogKey: string) {
+  const entry = getNodeTypeEntry(catalogKey);
   if (!entry) return null;
   return {
-    nodeType: entry.nodeType,
+    catalogKey: entry.nodeType,
     label: entry.label,
     mutability: entry.mutability,
     contentRequired: entry.contentRequired,
@@ -73,11 +121,11 @@ export function getNodeTypeForMcp(nodeType: string) {
 }
 
 export function listEdgeTypesForMcp() {
-  return listEdgeTypes().map((edgeType) => {
-    const entry = getEdgeTypeEntry(edgeType);
+  return listEdgeTypes().map((catalogKey) => {
+    const entry = getEdgeTypeEntry(catalogKey);
     return {
-      edgeType,
-      label: entry?.label ?? edgeType,
+      catalogKey,
+      label: entry?.label ?? catalogKey,
     };
   });
 }
@@ -88,7 +136,7 @@ export async function queryNodesForMcp(
 ) {
   const parsed = listNodesByTypeInputSchema.parse({
     projectId,
-    ...input,
+    ...normalizeNodeQueryInput(input),
   });
   const { graphRead } = getGraphPorts(projectId);
   const nodes = await queryNodes(graphRead, parsed);
@@ -114,7 +162,7 @@ export async function traverseEdgesForMcp(
 ) {
   const parsed = traverseEdgesInputSchema.parse({
     projectId,
-    ...input,
+    ...normalizeEdgeInput(input),
   });
   const { graphRead } = getGraphPorts(projectId);
   const edges = await traverseEdges(graphRead, parsed);
@@ -129,9 +177,17 @@ export async function createNodeForMcp(
   projectId: string,
   input: Record<string, unknown>,
 ) {
+  const normalized = normalizeNodeQueryInput(input);
   const parsed = createNodeInputSchema.parse({
     projectId,
-    ...input,
+    ...normalized,
+    properties: mergeNodePropertiesForWrite(
+      (normalized.properties as Record<string, unknown> | undefined) ?? {},
+      {
+        content: normalized.content as string | null | undefined,
+        lifecycleStatus: normalized.lifecycleStatus as string | undefined,
+      },
+    ),
   });
   const node = await createNode(graphDeps(projectId), parsed);
   return serializeNode(node);
@@ -141,9 +197,18 @@ export async function updateNodeForMcp(
   projectId: string,
   input: Record<string, unknown>,
 ) {
+  const normalized = normalizeNodeQueryInput(input);
   const parsed = updateNodeInputSchema.parse({
     projectId,
-    ...input,
+    nodeId: normalized.nodeId,
+    title: normalized.title,
+    properties: mergeNodePropertiesForWrite(
+      normalized.properties as Record<string, unknown> | undefined,
+      {
+        content: normalized.content as string | null | undefined,
+        lifecycleStatus: normalized.lifecycleStatus as string | undefined,
+      },
+    ),
   });
   const node = await updateNode(graphDeps(projectId), parsed);
   return serializeNode(node);
@@ -155,9 +220,8 @@ export async function createEdgeForMcp(
 ) {
   const parsed = createEdgeInputSchema.parse({
     projectId,
-    ...input,
+    ...normalizeEdgeInput(input),
   });
-  const { graphRead, graphWrite } = graphDeps(projectId);
-  const edge = await createEdge({ graphRead, graphWrite }, parsed);
+  const edge = await createEdge(graphDeps(projectId), parsed);
   return serializeEdge(edge);
 }

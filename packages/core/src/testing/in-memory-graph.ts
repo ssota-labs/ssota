@@ -1,8 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type {
-  CreateEdgeInput,
   CreateInitiativeBundleInput,
-  CreateNodeInput,
   DeleteEdgeInput,
   GetNodeInput,
   ListNodesByTypeInput,
@@ -14,10 +12,15 @@ import type {
   GraphEdge,
   GraphNode,
 } from "../domain/graph-types.js";
+import { readLifecycleStatus } from "../domain/graph-types.js";
 import { GraphError } from "../domain/graph-errors.js";
 import { assertGraphNodeInProject } from "../domain/graph-scope.js";
-import type { GraphReadPort } from "../ports/graph-read-port.js";
-import type { GraphWritePort } from "../ports/graph-write-port.js";
+import type {
+  GraphReadPort,
+  GraphWritePort,
+  ResolvedCreateEdgeInput,
+  ResolvedCreateNodeInput,
+} from "../ports/graph-read-port.js";
 
 export interface InMemoryGraphStore {
   nodes: Map<string, GraphNode>;
@@ -36,11 +39,17 @@ function filterNodes(
     (node) => node.projectId === params.projectId,
   );
   return rows
-    .filter((node) => !params.nodeType || node.nodeType === params.nodeType)
+    .filter(
+      (node) =>
+        !params.nodeCatalogId || node.nodeCatalogId === params.nodeCatalogId,
+    )
+    .filter(
+      (node) => !params.catalogKey || node.catalogKey === params.catalogKey,
+    )
     .filter(
       (node) =>
         !params.lifecycleStatus ||
-        node.lifecycleStatus === params.lifecycleStatus,
+        readLifecycleStatus(node.properties) === params.lifecycleStatus,
     )
     .slice(params.offset ?? 0, (params.offset ?? 0) + (params.limit ?? 100));
 }
@@ -65,7 +74,15 @@ export function createInMemoryGraphReadPort(
         (edge) => edge.projectId === params.projectId,
       );
       return edges.filter((edge) => {
-        if (params.edgeType && edge.edgeType !== params.edgeType) return false;
+        if (
+          params.edgeCatalogId &&
+          edge.edgeCatalogId !== params.edgeCatalogId
+        ) {
+          return false;
+        }
+        if (params.catalogKey && edge.catalogKey !== params.catalogKey) {
+          return false;
+        }
         if (params.direction === "outgoing") {
           return edge.sourceNodeId === params.nodeId;
         }
@@ -85,16 +102,16 @@ export function createInMemoryGraphWritePort(
   store: InMemoryGraphStore,
 ): GraphWritePort {
   return {
-    async createNode(input: CreateNodeInput) {
+    async createNode(input: ResolvedCreateNodeInput) {
       const now = new Date();
       const node: GraphNode = {
         id: randomUUID(),
         projectId: input.projectId,
-        nodeType: input.nodeType,
+        nodeCatalogId: input.nodeCatalogId,
+        catalogKey: input.catalogKey,
+        catalogLabel: input.catalogKey,
         title: input.title,
         properties: input.properties ?? {},
-        content: input.content ?? null,
-        lifecycleStatus: input.lifecycleStatus ?? "Draft",
         schemaVersion: input.schemaVersion ?? 1,
         createdAt: now,
         updatedAt: now,
@@ -110,23 +127,24 @@ export function createInMemoryGraphWritePort(
         ...existing!,
         title: input.title ?? existing!.title,
         properties: input.properties ?? existing!.properties,
-        content: input.content !== undefined ? input.content : existing!.content,
-        lifecycleStatus: input.lifecycleStatus ?? existing!.lifecycleStatus,
         updatedAt: new Date(),
       };
       store.nodes.set(updated.id, updated);
       return updated;
     },
 
-    async createEdge(input: CreateEdgeInput) {
+    async createEdge(input: ResolvedCreateEdgeInput) {
+      const now = new Date();
       const edge: GraphEdge = {
         id: randomUUID(),
         projectId: input.projectId,
-        edgeType: input.edgeType,
+        edgeCatalogId: input.edgeCatalogId,
+        catalogKey: input.catalogKey,
+        catalogLabel: input.catalogKey,
         sourceNodeId: input.sourceNodeId,
         targetNodeId: input.targetNodeId,
         properties: input.properties ?? {},
-        createdAt: new Date(),
+        createdAt: now,
       };
       store.edges.set(edge.id, edge);
       return edge;
@@ -146,23 +164,30 @@ export function createInMemoryGraphWritePort(
       const write = createInMemoryGraphWritePort(store);
       const initiative = await write.createNode({
         projectId: input.projectId,
-        nodeType: "initiative",
+        nodeCatalogId: "00000000-0000-4000-8000-000000000009",
+        catalogKey: "initiative",
         title: input.initiativeTitle,
-        properties: input.initiativeProperties ?? {},
-        lifecycleStatus: "Draft",
+        properties: {
+          lifecycleStatus: "Draft",
+          ...(input.initiativeProperties ?? {}),
+        },
         schemaVersion: 1,
       });
       const release = await write.createNode({
         projectId: input.projectId,
-        nodeType: "release",
+        nodeCatalogId: "00000000-0000-4000-8000-000000000010",
+        catalogKey: "release",
         title: input.releaseVersion,
-        properties: input.releaseProperties ?? {},
-        lifecycleStatus: "Draft",
+        properties: {
+          lifecycleStatus: "Draft",
+          ...(input.releaseProperties ?? {}),
+        },
         schemaVersion: 1,
       });
       const pairedEdge = await write.createEdge({
         projectId: input.projectId,
-        edgeType: "paired_with",
+        edgeCatalogId: "00000000-0000-4000-9000-000000000003",
+        catalogKey: "paired_with",
         sourceNodeId: initiative.id,
         targetNodeId: release.id,
         properties: {},

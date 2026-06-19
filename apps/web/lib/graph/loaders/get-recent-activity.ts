@@ -20,7 +20,7 @@ export async function getRecentGraphActivity(
     .slice(0, limit)
     .map((node: GraphNode) => ({
       id: node.id,
-      nodeType: node.nodeType,
+      nodeType: node.catalogKey,
       title: node.title || "Untitled",
       updatedAt: node.updatedAt.toISOString(),
     }));

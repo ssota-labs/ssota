@@ -83,12 +83,16 @@ describe("graph instances integration", () => {
 
   it("seed includes hypothesis row in smoke project", async () => {
     const rows = await db!
-      .select({ id: schema.nodes.id, nodeType: schema.nodes.nodeType })
+      .select({ id: schema.nodes.id, catalogKey: schema.nodeCatalog.key })
       .from(schema.nodes)
+      .innerJoin(
+        schema.nodeCatalog,
+        eq(schema.nodes.nodeCatalogId, schema.nodeCatalog.id),
+      )
       .where(
         and(
           eq(schema.nodes.projectId, projectId),
-          eq(schema.nodes.nodeType, "hypothesis"),
+          eq(schema.nodeCatalog.key, "hypothesis"),
         ),
       );
     expect(rows.length).toBeGreaterThanOrEqual(1);
@@ -98,10 +102,14 @@ describe("graph instances integration", () => {
     const initiatives = await db!
       .select({ id: schema.nodes.id })
       .from(schema.nodes)
+      .innerJoin(
+        schema.nodeCatalog,
+        eq(schema.nodes.nodeCatalogId, schema.nodeCatalog.id),
+      )
       .where(
         and(
           eq(schema.nodes.projectId, projectId),
-          eq(schema.nodes.nodeType, "initiative"),
+          eq(schema.nodeCatalog.key, "initiative"),
           eq(schema.nodes.title, "Smoke initiative"),
         ),
       );
@@ -110,10 +118,14 @@ describe("graph instances integration", () => {
     const releases = await db!
       .select({ id: schema.nodes.id })
       .from(schema.nodes)
+      .innerJoin(
+        schema.nodeCatalog,
+        eq(schema.nodes.nodeCatalogId, schema.nodeCatalog.id),
+      )
       .where(
         and(
           eq(schema.nodes.projectId, projectId),
-          eq(schema.nodes.nodeType, "release"),
+          eq(schema.nodeCatalog.key, "release"),
         ),
       );
     expect(releases.length).toBeGreaterThanOrEqual(1);
@@ -121,10 +133,14 @@ describe("graph instances integration", () => {
     const pairedEdges = await db!
       .select({ id: schema.edges.id })
       .from(schema.edges)
+      .innerJoin(
+        schema.edgeCatalog,
+        eq(schema.edges.edgeCatalogId, schema.edgeCatalog.id),
+      )
       .where(
         and(
           eq(schema.edges.projectId, projectId),
-          eq(schema.edges.edgeType, "paired_with"),
+          eq(schema.edgeCatalog.key, "paired_with"),
         ),
       );
     expect(pairedEdges.length).toBeGreaterThanOrEqual(1);
@@ -134,10 +150,14 @@ describe("graph instances integration", () => {
     const objectives = await db!
       .select({ id: schema.nodes.id, title: schema.nodes.title })
       .from(schema.nodes)
+      .innerJoin(
+        schema.nodeCatalog,
+        eq(schema.nodes.nodeCatalogId, schema.nodeCatalog.id),
+      )
       .where(
         and(
           eq(schema.nodes.projectId, projectId),
-          eq(schema.nodes.nodeType, "objective"),
+          eq(schema.nodeCatalog.key, "objective"),
         ),
       );
     expect(objectives.length).toBeGreaterThanOrEqual(1);
@@ -145,10 +165,14 @@ describe("graph instances integration", () => {
     const contributesEdges = await db!
       .select({ id: schema.edges.id })
       .from(schema.edges)
+      .innerJoin(
+        schema.edgeCatalog,
+        eq(schema.edges.edgeCatalogId, schema.edgeCatalog.id),
+      )
       .where(
         and(
           eq(schema.edges.projectId, projectId),
-          eq(schema.edges.edgeType, "contributes_to"),
+          eq(schema.edgeCatalog.key, "contributes_to"),
         ),
       );
     expect(contributesEdges.length).toBeGreaterThanOrEqual(1);

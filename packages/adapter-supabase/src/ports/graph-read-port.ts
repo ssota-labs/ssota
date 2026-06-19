@@ -1,4 +1,4 @@
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import type {
   GetNodeInput,
   ListNodesByTypeInput,
@@ -12,31 +12,84 @@ export interface GraphPortsScope {
   projectId: string;
 }
 
-function mapNode(row: typeof schema.nodes.$inferSelect): GraphNode {
+type NodeRow = typeof schema.nodes.$inferSelect & {
+  catalogKey: string;
+  catalogLabel: string;
+};
+
+type EdgeRow = typeof schema.edges.$inferSelect & {
+  catalogKey: string;
+  catalogLabel: string;
+};
+
+function mapNode(row: NodeRow): GraphNode {
   return {
     id: row.id,
     projectId: row.projectId,
-    nodeType: row.nodeType,
+    nodeCatalogId: row.nodeCatalogId,
+    catalogKey: row.catalogKey,
+    catalogLabel: row.catalogLabel,
     title: row.title,
     properties: row.properties,
-    content: row.content,
-    lifecycleStatus: row.lifecycleStatus,
     schemaVersion: row.schemaVersion,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
 }
 
-function mapEdge(row: typeof schema.edges.$inferSelect): GraphEdge {
+function mapEdge(row: EdgeRow): GraphEdge {
   return {
     id: row.id,
     projectId: row.projectId,
-    edgeType: row.edgeType,
+    edgeCatalogId: row.edgeCatalogId,
+    catalogKey: row.catalogKey,
+    catalogLabel: row.catalogLabel,
     sourceNodeId: row.sourceNodeId,
     targetNodeId: row.targetNodeId,
     properties: row.properties,
     createdAt: row.createdAt,
   };
+}
+
+function nodeSelect(db: Db) {
+  return db
+    .select({
+      id: schema.nodes.id,
+      projectId: schema.nodes.projectId,
+      nodeCatalogId: schema.nodes.nodeCatalogId,
+      catalogKey: schema.nodeCatalog.key,
+      catalogLabel: schema.nodeCatalog.label,
+      title: schema.nodes.title,
+      properties: schema.nodes.properties,
+      schemaVersion: schema.nodes.schemaVersion,
+      createdAt: schema.nodes.createdAt,
+      updatedAt: schema.nodes.updatedAt,
+    })
+    .from(schema.nodes)
+    .innerJoin(
+      schema.nodeCatalog,
+      eq(schema.nodes.nodeCatalogId, schema.nodeCatalog.id),
+    );
+}
+
+function edgeSelect(db: Db) {
+  return db
+    .select({
+      id: schema.edges.id,
+      projectId: schema.edges.projectId,
+      edgeCatalogId: schema.edges.edgeCatalogId,
+      catalogKey: schema.edgeCatalog.key,
+      catalogLabel: schema.edgeCatalog.label,
+      sourceNodeId: schema.edges.sourceNodeId,
+      targetNodeId: schema.edges.targetNodeId,
+      properties: schema.edges.properties,
+      createdAt: schema.edges.createdAt,
+    })
+    .from(schema.edges)
+    .innerJoin(
+      schema.edgeCatalog,
+      eq(schema.edges.edgeCatalogId, schema.edgeCatalog.id),
+    );
 }
 
 export function createGraphReadPort(
@@ -48,16 +101,19 @@ export function createGraphReadPort(
   return {
     async queryNodes(params: ListNodesByTypeInput) {
       const conditions = [eq(schema.nodes.projectId, projectId)];
-      if (params.nodeType) {
-        conditions.push(eq(schema.nodes.nodeType, params.nodeType));
+      if (params.nodeCatalogId) {
+        conditions.push(eq(schema.nodes.nodeCatalogId, params.nodeCatalogId));
+      }
+      if (params.catalogKey) {
+        conditions.push(eq(schema.nodeCatalog.key, params.catalogKey));
       }
       if (params.lifecycleStatus) {
-        conditions.push(eq(schema.nodes.lifecycleStatus, params.lifecycleStatus));
+        conditions.push(
+          sql`${schema.nodes.properties}->>'lifecycleStatus' = ${params.lifecycleStatus}`,
+        );
       }
 
-      const rows = await db
-        .select()
-        .from(schema.nodes)
+      const rows = await nodeSelect(db)
         .where(and(...conditions))
         .orderBy(desc(schema.nodes.updatedAt))
         .limit(params.limit ?? 100)
@@ -66,9 +122,7 @@ export function createGraphReadPort(
     },
 
     async getNode(params: GetNodeInput) {
-      const rows = await db
-        .select()
-        .from(schema.nodes)
+      const rows = await nodeSelect(db)
         .where(
           and(
             eq(schema.nodes.projectId, projectId),
@@ -80,9 +134,7 @@ export function createGraphReadPort(
     },
 
     async getNodeById(nodeId: string) {
-      const rows = await db
-        .select()
-        .from(schema.nodes)
+      const rows = await nodeSelect(db)
         .where(eq(schema.nodes.id, nodeId))
         .limit(1);
       return rows[0] ? mapNode(rows[0]) : null;
@@ -92,8 +144,11 @@ export function createGraphReadPort(
       const direction = params.direction ?? "both";
       const conditions = [eq(schema.edges.projectId, projectId)];
 
-      if (params.edgeType) {
-        conditions.push(eq(schema.edges.edgeType, params.edgeType));
+      if (params.edgeCatalogId) {
+        conditions.push(eq(schema.edges.edgeCatalogId, params.edgeCatalogId));
+      }
+      if (params.catalogKey) {
+        conditions.push(eq(schema.edgeCatalog.key, params.catalogKey));
       }
 
       if (direction === "outgoing") {
@@ -109,9 +164,7 @@ export function createGraphReadPort(
         );
       }
 
-      const rows = await db
-        .select()
-        .from(schema.edges)
+      const rows = await edgeSelect(db)
         .where(and(...conditions))
         .orderBy(desc(schema.edges.createdAt));
       return rows.map(mapEdge);

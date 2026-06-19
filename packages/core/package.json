@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./seed-packs/apply-dev-workflow-pack": {
+      "types": "./dist/seed-packs/apply-dev-workflow-pack.d.ts",
+      "default": "./dist/seed-packs/apply-dev-workflow-pack.js"
     }
   },
   "scripts": {

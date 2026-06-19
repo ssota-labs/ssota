@@ -7,9 +7,9 @@ export function getGraphDeps(projectId: string) {
   return { catalog, graphRead, graphWrite, projectId };
 }
 
-export async function queryNodesByType(projectId: string, nodeType: NodeType) {
+export async function queryNodesByType(projectId: string, catalogKey: NodeType) {
   const { graphRead } = getGraphDeps(projectId);
-  return graphRead.queryNodes({ projectId, nodeType, limit: 200 });
+  return graphRead.queryNodes({ projectId, catalogKey, limit: 200 });
 }
 
 export { createNode, createInitiativeBundle, updateNode, createEdge };

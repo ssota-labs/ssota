@@ -15,9 +15,8 @@ export async function ensureEvergreenSingleton(
   const deps = getGraphDeps(projectId);
   return createNode(deps, {
     projectId,
-    nodeType,
+    catalogKey: nodeType,
     title: defaultTitle,
-    properties: {},
-    lifecycleStatus: "Draft",
+    properties: { lifecycleStatus: "Draft" },
   });
 }

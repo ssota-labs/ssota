@@ -33,7 +33,7 @@ export async function createObjectiveBundleAction(input: {
   const deps = getGraphDeps(input.projectId);
   const objective = await createNode(deps, {
     projectId: input.projectId,
-    nodeType: "objective",
+    catalogKey: "objective",
     title: input.title,
     properties: {
       period: input.period,
@@ -45,7 +45,7 @@ export async function createObjectiveBundleAction(input: {
   for (const kr of input.keyResults ?? []) {
     const keyResult = await createNode(deps, {
       projectId: input.projectId,
-      nodeType: "key_result",
+      catalogKey: "key_result",
       title: kr.title,
       properties: {
         baseline: kr.baseline,

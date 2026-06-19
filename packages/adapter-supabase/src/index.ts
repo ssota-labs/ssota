@@ -6,6 +6,11 @@ export {
   createGraphPorts,
 } from "./ports/index.js";
 export {
+  seedDevWorkflowCatalog,
+  createDbCatalogReadPort,
+} from "./ports/db-catalog-read-port.js";
+export { createDbCatalogWritePort } from "./ports/db-catalog-write-port.js";
+export {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
   DEFAULT_ORG_SLUG,

@@ -12,6 +12,7 @@ import {
   createGraphPorts,
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
+  seedDevWorkflowCatalog,
 } from "../src/index.js";
 import * as schema from "../src/db/schema.js";
 
@@ -52,6 +53,7 @@ describe("graph ports integration", () => {
         .returning();
       otherProjectId = otherProject!.id;
 
+      await seedDevWorkflowCatalog(dbBundle.db, otherProjectId);
       ports = createGraphPorts(dbBundle.db, { projectId });
     } catch {
       skip = true;
@@ -71,13 +73,13 @@ describe("graph ports integration", () => {
       { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
       {
         projectId,
-        nodeType: "feature",
+        catalogKey: "feature",
         title: `Feature ${randomUUID()}`,
         properties: {},
       },
     );
     expect(node.id).toBeTruthy();
-    expect(node.nodeType).toBe("feature");
+    expect(node.catalogKey).toBe("feature");
   });
 
   it("rejects unknown node_type", async () => {
@@ -86,7 +88,7 @@ describe("graph ports integration", () => {
         { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
         {
           projectId,
-          nodeType: "not_real" as "task",
+          catalogKey: "not_real" as "task",
           title: "x",
         },
       ),
@@ -95,23 +97,35 @@ describe("graph ports integration", () => {
 
   it("rejects edge across projects", async () => {
     const otherPorts = createGraphPorts(db!, { projectId: otherProjectId });
+    const releaseCatalog = await otherPorts.catalog.getNodeCatalogByKey("release");
+    const initiativeCatalog = await ports.catalog.getNodeCatalogByKey("initiative");
+    if (!releaseCatalog || !initiativeCatalog) {
+      throw new Error("catalog rows missing");
+    }
+
     const source = await otherPorts.graphWrite.createNode({
       projectId: otherProjectId,
-      nodeType: "initiative",
+      nodeCatalogId: releaseCatalog.id,
+      catalogKey: "release",
       title: "Other project initiative",
+      properties: { lifecycleStatus: "Draft" },
+      schemaVersion: 1,
     });
     const target = await ports.graphWrite.createNode({
       projectId,
-      nodeType: "release",
+      nodeCatalogId: initiativeCatalog.id,
+      catalogKey: "initiative",
       title: "Local release",
+      properties: { lifecycleStatus: "Draft" },
+      schemaVersion: 1,
     });
 
     await expect(
       createEdge(
-        { graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+        { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
         {
           projectId,
-          edgeType: "paired_with",
+          catalogKey: "paired_with",
           sourceNodeId: source.id,
           targetNodeId: target.id,
         },
@@ -141,11 +155,11 @@ describe("graph ports integration", () => {
       projectId,
       nodeId: result.initiativeId,
       direction: "outgoing",
-      edgeType: "paired_with",
+      catalogKey: "paired_with",
     });
 
-    expect(initiative?.nodeType).toBe("initiative");
-    expect(release?.nodeType).toBe("release");
+    expect(initiative?.catalogKey).toBe("initiative");
+    expect(release?.catalogKey).toBe("release");
     expect(edges.some((edge) => edge.id === result.pairedWithEdgeId)).toBe(true);
   });
 
@@ -154,38 +168,56 @@ describe("graph ports integration", () => {
       { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
       {
         projectId,
-        nodeType: "ui_component",
+        catalogKey: "ui_component",
         title: `Composite ${randomUUID()}`,
-        properties: { slug: `composite-${randomUUID().slice(0, 8)}`, tier: "composite" },
+        properties: {
+          slug: `composite-${randomUUID().slice(0, 8)}`,
+          tier: "composite",
+          representation: "source",
+          entry: "Component.tsx",
+          content: JSON.stringify({
+            schemaVersion: 2,
+            files: { "Component.tsx": "export default function C() { return null; }" },
+          }),
+        },
       },
     );
     const child = await createNode(
       { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
       {
         projectId,
-        nodeType: "ui_component",
+        catalogKey: "ui_component",
         title: `Child ${randomUUID()}`,
-        properties: { slug: `child-${randomUUID().slice(0, 8)}`, tier: "primitive" },
+        properties: {
+          slug: `child-${randomUUID().slice(0, 8)}`,
+          tier: "primitive",
+          representation: "source",
+          entry: "Component.tsx",
+          content: JSON.stringify({
+            schemaVersion: 2,
+            files: { "Component.tsx": "export default function C() { return null; }" },
+          }),
+        },
       },
     );
 
     const edge = await createEdge(
-      { graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
       {
         projectId,
-        edgeType: "composed_of",
+        catalogKey: "composed_of",
         sourceNodeId: composite.id,
         targetNodeId: child.id,
       },
     );
 
-    expect(edge.edgeType).toBe("composed_of");
+    expect(edge.catalogKey).toBe("composed_of");
 
     const outgoing = await ports.graphRead.traverseEdges({
       projectId,
       nodeId: composite.id,
       direction: "outgoing",
-      edgeType: "composed_of",
+      catalogKey: "composed_of",
     });
     expect(outgoing.some((item) => item.targetNodeId === child.id)).toBe(true);
   });
