@@ -10,14 +10,17 @@ import "@blocknote/core/fonts/inter.css";
 import { FormattingToolbarController, useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
+import "./blocknote-list-markers.css";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { CSSProperties } from "react";
 
 import { BlockNoteFormattingToolbar } from "@/components/editor/blocknote-formatting-toolbar";
+import { blockNoteEmptyListEnterExtension } from "@/lib/editor/blocknote-empty-list-enter-extension";
+import { attachBlockNoteSideMenuDragFix } from "@/lib/editor/blocknote-side-menu-drag";
 import {
   resolveBlockNoteMarkerShell,
-  updateBlockNoteNumberedListMarkers,
+  updateBlockNoteListMarkers,
 } from "@/lib/editor/blocknote-list-markers";
 
 let markerShellElement: HTMLDivElement | null = null;
@@ -69,13 +72,9 @@ export function SsotaBlockNoteEditor({
 }: SsotaBlockNoteEditorProps) {
   const { resolvedTheme } = useTheme();
   const shellRef = useRef<HTMLDivElement>(null);
-  const refreshFrameRef = useRef<number | null>(null);
   const setShellRef = useCallback((node: HTMLDivElement | null) => {
     shellRef.current = node;
     markerShellElement = node;
-    if (node) {
-      updateBlockNoteNumberedListMarkers(node);
-    }
   }, []);
   const uploadImageRef = useRef(uploadImage);
   uploadImageRef.current = uploadImage;
@@ -91,6 +90,7 @@ export function SsotaBlockNoteEditor({
     const base = {
       dictionary,
       initialContent,
+      extensions: [blockNoteEmptyListEnterExtension],
     };
 
     if (!uploadImage) {
@@ -116,29 +116,13 @@ export function SsotaBlockNoteEditor({
     if (!shell) {
       return;
     }
-    updateBlockNoteNumberedListMarkers(shell);
-  }, []);
-
-  const refreshListMarkers = useCallback(() => {
-    const shell = getMarkerShell(shellRef);
-    if (!shell) {
-      return;
-    }
-
-    if (refreshFrameRef.current !== null) {
-      window.cancelAnimationFrame(refreshFrameRef.current);
-    }
-
-    refreshFrameRef.current = window.requestAnimationFrame(() => {
-      refreshFrameRef.current = null;
-      updateBlockNoteNumberedListMarkers(shell);
-    });
-  }, []);
+    updateBlockNoteListMarkers(shell, editor);
+  }, [editor]);
 
   const handleChange = useCallback(() => {
     onChange?.(editor.document);
-    refreshListMarkers();
-  }, [editor, onChange, refreshListMarkers]);
+    refreshListMarkersSync();
+  }, [editor, onChange, refreshListMarkersSync]);
 
   useLayoutEffect(() => {
     const shell = getMarkerShell(shellRef);
@@ -147,28 +131,38 @@ export function SsotaBlockNoteEditor({
     }
 
     refreshListMarkersSync();
-
-    const observer = new MutationObserver(() => {
-      refreshListMarkers();
-    });
-
-    observer.observe(shell, {
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["data-index", "data-prev-index", "data-prev-type"],
-      childList: true,
-    });
-
-    return () => observer.disconnect();
-  }, [editor, refreshListMarkers, refreshListMarkersSync]);
+  }, [editor, refreshListMarkersSync]);
 
   useEffect(() => {
-    const unsubscribe = editor.onChange(() => {
-      refreshListMarkers();
+    return attachBlockNoteSideMenuDragFix(editor);
+  }, [editor]);
+
+  useEffect(() => {
+    const onViewUpdate = () => {
+      refreshListMarkersSync();
+    };
+
+    editor._tiptapEditor.on("update", onViewUpdate);
+
+    return () => {
+      editor._tiptapEditor.off("update", onViewUpdate);
+    };
+  }, [editor, refreshListMarkersSync]);
+
+  useEffect(() => {
+    const unsubscribeSelection = editor.onSelectionChange(() => {
+      refreshListMarkersSync();
     });
 
-    return unsubscribe;
-  }, [editor, refreshListMarkers]);
+    const unsubscribeChange = editor.onChange(() => {
+      refreshListMarkersSync();
+    });
+
+    return () => {
+      unsubscribeSelection();
+      unsubscribeChange();
+    };
+  }, [editor, refreshListMarkersSync]);
 
   useEffect(() => {
     onEditorReady?.(editor);
@@ -194,6 +188,7 @@ export function SsotaBlockNoteEditor({
         editable={editable}
         formattingToolbar={false}
         onChange={handleChange}
+        onSelectionChange={refreshListMarkersSync}
         theme={blockNoteTheme}
       >
         <FormattingToolbarController

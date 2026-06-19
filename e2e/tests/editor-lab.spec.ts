@@ -1184,6 +1184,242 @@ test.describe("Editor Lab", () => {
       await expect(surface).toBeFocused();
       await expect(surface.locator("ul ul")).toHaveCount(0);
     });
+
+    test("cycles bullet and ordered markers every three nesting depths", async ({
+      page,
+    }) => {
+      await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "orderedList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  { type: "paragraph", content: [{ type: "text", text: "d1" }] },
+                  {
+                    type: "orderedList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "d2" }],
+                          },
+                          {
+                            type: "orderedList",
+                            content: [
+                              {
+                                type: "listItem",
+                                content: [
+                                  {
+                                    type: "paragraph",
+                                    content: [{ type: "text", text: "d3" }],
+                                  },
+                                  {
+                                    type: "orderedList",
+                                    content: [
+                                      {
+                                        type: "listItem",
+                                        content: [
+                                          {
+                                            type: "paragraph",
+                                            content: [{ type: "text", text: "d4" }],
+                                          },
+                                          {
+                                            type: "orderedList",
+                                            content: [
+                                              {
+                                                type: "listItem",
+                                                content: [
+                                                  {
+                                                    type: "paragraph",
+                                                    content: [
+                                                      { type: "text", text: "d5" },
+                                                    ],
+                                                  },
+                                                  {
+                                                    type: "orderedList",
+                                                    content: [
+                                                      {
+                                                        type: "listItem",
+                                                        content: [
+                                                          {
+                                                            type: "paragraph",
+                                                            content: [
+                                                              {
+                                                                type: "text",
+                                                                text: "d6",
+                                                              },
+                                                            ],
+                                                          },
+                                                        ],
+                                                      },
+                                                    ],
+                                                  },
+                                                ],
+                                              },
+                                            ],
+                                          },
+                                        ],
+                                      },
+                                    ],
+                                  },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      const styles = await page.evaluate(() => {
+        const surface = document.querySelector(
+          '[data-testid="ssota-editor-surface"]',
+        );
+        if (!surface) return [];
+
+        const root = Array.from(surface.querySelectorAll("ol")).find((list) => {
+          const parentList = list.parentElement?.closest("ol");
+          return (
+            !parentList &&
+            list.textContent?.includes("d1") &&
+            list.textContent?.includes("d6")
+          );
+        });
+        if (!root) return [];
+
+        const lists: HTMLOListElement[] = [root];
+        let current: HTMLOListElement | null = root;
+        while (current) {
+          const nested = current.querySelector(":scope > li > ol");
+          if (!(nested instanceof HTMLOListElement)) break;
+          lists.push(nested);
+          current = nested;
+        }
+
+        return lists.map((list) =>
+          window.getComputedStyle(list).listStyleType,
+        );
+      });
+
+      expect(styles).toEqual([
+        "decimal",
+        "lower-alpha",
+        "lower-roman",
+        "decimal",
+        "lower-alpha",
+        "lower-roman",
+      ]);
+    });
+
+    test("resets bullet markers on the fourth nesting depth", async ({
+      page,
+    }) => {
+      await editorSurface(page);
+      await page.evaluate(() => {
+        window.__ssotaEditorLab
+          ?.chain()
+          .focus("end")
+          .insertContent({
+            type: "bulletList",
+            content: [
+              {
+                type: "listItem",
+                content: [
+                  { type: "paragraph", content: [{ type: "text", text: "d1" }] },
+                  {
+                    type: "bulletList",
+                    content: [
+                      {
+                        type: "listItem",
+                        content: [
+                          {
+                            type: "paragraph",
+                            content: [{ type: "text", text: "d2" }],
+                          },
+                          {
+                            type: "bulletList",
+                            content: [
+                              {
+                                type: "listItem",
+                                content: [
+                                  {
+                                    type: "paragraph",
+                                    content: [{ type: "text", text: "d3" }],
+                                  },
+                                  {
+                                    type: "bulletList",
+                                    content: [
+                                      {
+                                        type: "listItem",
+                                        content: [
+                                          {
+                                            type: "paragraph",
+                                            content: [{ type: "text", text: "d4" }],
+                                          },
+                                        ],
+                                      },
+                                    ],
+                                  },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          })
+          .run();
+      });
+
+      const styles = await page.evaluate(() => {
+        const surface = document.querySelector(
+          '[data-testid="ssota-editor-surface"]',
+        );
+        if (!surface) return [];
+
+        const root = Array.from(surface.querySelectorAll("ul")).find((list) => {
+          const parentList = list.parentElement?.closest("ul");
+          return (
+            !parentList &&
+            list.textContent?.includes("d1") &&
+            list.textContent?.includes("d4")
+          );
+        });
+        if (!root) return [];
+
+        const lists: HTMLUListElement[] = [root];
+        let current: HTMLUListElement | null = root;
+        while (current) {
+          const nested = current.querySelector(":scope > li > ul");
+          if (!(nested instanceof HTMLUListElement)) break;
+          lists.push(nested);
+          current = nested;
+        }
+
+        return lists.map((list) =>
+          window.getComputedStyle(list).listStyleType,
+        );
+      });
+
+      expect(styles).toEqual(["disc", "circle", "square", "disc"]);
+    });
   });
 
   test.describe("emoji menu", () => {
