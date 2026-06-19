@@ -44,6 +44,7 @@
   margin: 0.25rem 0;
 }
 
+/* Notion-style mixed nesting: bullet ↔ numbered; markers cycle every 3 depths */
 .ssota-editor ul {
   list-style: disc;
 }
@@ -52,21 +53,52 @@
   list-style: decimal;
 }
 
-/* Notion-style mixed nesting: bullet ↔ numbered at each depth */
-.ssota-editor ul ul {
+.ssota-editor :is(ul, ol) ul {
   list-style: circle;
 }
 
-.ssota-editor ul ul ul {
-  list-style: square;
-}
-
-.ssota-editor ol ol {
+.ssota-editor :is(ul, ol) ol {
   list-style: lower-alpha;
 }
 
-.ssota-editor ol ol ol {
+.ssota-editor :is(ul, ol) :is(ul, ol) ul {
+  list-style: square;
+}
+
+.ssota-editor :is(ul, ol) :is(ul, ol) ol {
   list-style: lower-roman;
+}
+
+.ssota-editor :is(ul, ol) :is(ul, ol) :is(ul, ol) ul {
+  list-style: disc;
+}
+
+.ssota-editor :is(ul, ol) :is(ul, ol) :is(ul, ol) ol {
+  list-style: decimal;
+}
+
+.ssota-editor :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) ul {
+  list-style: circle;
+}
+
+.ssota-editor :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) ol {
+  list-style: lower-alpha;
+}
+
+.ssota-editor :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) ul {
+  list-style: square;
+}
+
+.ssota-editor :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) ol {
+  list-style: lower-roman;
+}
+
+.ssota-editor :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) ul {
+  list-style: disc;
+}
+
+.ssota-editor :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) :is(ul, ol) ol {
+  list-style: decimal;
 }
 
 .ssota-editor ol ul,

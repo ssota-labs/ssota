@@ -76,7 +76,8 @@ export function InspectorField({
     isValidElement(children) && children.type !== "div"
       ? cloneElement(children as ReactElement<{ id?: string; "aria-label"?: string }>, {
           id,
-          "aria-label": label,
+          "aria-label":
+            (children.props as { "aria-label"?: string })["aria-label"] ?? label,
         })
       : children;
 

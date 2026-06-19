@@ -2,9 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   EDGE_TYPES,
   NODE_TYPES,
+  PLATFORM_DESIGN_THEME_TOKENS,
   getNodeTypeEntry,
+  mergeDesignThemeTokens,
   parseNodeProperties,
+  parseThemeCssContent,
   requiresNodeContent,
+  resolveSemanticColorValue,
+  tokensToThemeCss,
   parseUiComponentContent,
   uiComponentContentSchemaV2,
   uiComponentDocumentSchema,
@@ -243,5 +248,62 @@ describe("v2.7 catalog SSOT", () => {
         },
       }),
     ).toThrow();
+  });
+});
+
+describe("design_theme catalog", () => {
+  it("parses design_theme properties with tokens", () => {
+    const parsed = parseNodeProperties("design_theme", {
+      schema_version: 1,
+      tokens: {
+        "--primary": "oklch(0.4 0.1 200)",
+      },
+    });
+    expect(parsed.schema_version).toBe(1);
+    expect((parsed.tokens as Record<string, string>)["--primary"]).toBe(
+      "oklch(0.4 0.1 200)",
+    );
+  });
+
+  it("merges user tokens with platform defaults", () => {
+    const merged = mergeDesignThemeTokens({
+      "--primary": "oklch(0.4 0.1 200)",
+    });
+    expect(merged["--primary"]).toBe("oklch(0.4 0.1 200)");
+    expect(merged["--foreground"]).toBe(
+      PLATFORM_DESIGN_THEME_TOKENS["--foreground"],
+    );
+  });
+
+  it("generates theme css declarations", () => {
+    const css = tokensToThemeCss({
+      "--primary": "oklch(0.52 0.105 223.128)",
+      "--foreground": "oklch(0.141 0.005 285.823)",
+    });
+    expect(css).toContain("--primary: oklch(0.52 0.105 223.128);");
+    expect(css).toContain("--foreground: oklch(0.141 0.005 285.823);");
+  });
+
+  it("resolves semantic color token names", () => {
+    const tokens = mergeDesignThemeTokens({
+      "--primary": "oklch(0.4 0.1 200)",
+    });
+    expect(resolveSemanticColorValue("primary", tokens)).toBe(
+      "oklch(0.4 0.1 200)",
+    );
+    expect(resolveSemanticColorValue("--foreground", tokens)).toBe(
+      PLATFORM_DESIGN_THEME_TOKENS["--foreground"],
+    );
+  });
+
+  it("parses legacy css content into token map", () => {
+    const parsed = parseThemeCssContent(`
+      :root {
+        --primary: oklch(0.5 0.1 200);
+        --foreground: #111111;
+      }
+    `);
+    expect(parsed["--primary"]).toBe("oklch(0.5 0.1 200)");
+    expect(parsed["--foreground"]).toBe("#111111");
   });
 });

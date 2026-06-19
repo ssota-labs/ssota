@@ -1,6 +1,7 @@
 import path from "node:path";
 import * as esbuild from "esbuild";
 import { assertAllowedDependencies, isAllowedImport } from "./allowlist.js";
+import { resolveStudioBuildRoot } from "./resolve-root.js";
 import { maybeTransformStudioJsx } from "./studio-jsx-plugin.js";
 import type { StudioBuildArtifacts, StudioBuildInput } from "./types.js";
 
@@ -41,6 +42,7 @@ function resolveImporterPath(importer: string): string {
 function createVirtualFilesPlugin(
   files: Record<string, string>,
   dependencies: Record<string, string>,
+  resolveRoot: string,
 ) {
   const fileMap = new Map<string, string>();
   for (const [filePath, contents] of Object.entries(files)) {
@@ -79,7 +81,7 @@ function createVirtualFilesPlugin(
           return { errors: [{ text: `Dependency not allowed: ${args.path}` }] };
         }
         return build.resolve(args.path, {
-          resolveDir: process.cwd(),
+          resolveDir: resolveRoot,
           kind: args.kind,
           importer: args.importer,
         });
@@ -148,13 +150,15 @@ export async function buildStudioBundle(
     "__studio_entry__.tsx": wrapperSource,
   };
 
+  const resolveRoot = resolveStudioBuildRoot();
+
   const result = await esbuild.build({
-    absWorkingDir: process.cwd(),
+    absWorkingDir: resolveRoot,
     stdin: {
       contents: wrapperSource,
       sourcefile: "__studio_entry__.tsx",
       loader: "tsx",
-      resolveDir: process.cwd(),
+      resolveDir: resolveRoot,
     },
     bundle: true,
     write: false,
@@ -163,7 +167,7 @@ export async function buildStudioBundle(
     target: "es2020",
     jsx: "automatic",
     sourcemap: "inline",
-    plugins: [createVirtualFilesPlugin(virtualFiles, input.dependencies)],
+    plugins: [createVirtualFilesPlugin(virtualFiles, input.dependencies, resolveRoot)],
     logLevel: "silent",
   });
 

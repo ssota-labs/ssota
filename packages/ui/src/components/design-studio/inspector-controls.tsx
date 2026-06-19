@@ -35,6 +35,9 @@ import {
   parseInspectorColorAlphaPercent,
   rgbComponentsToHex,
 } from "./inspector-color-utils";
+import { hexFromScopedCssVar } from "./color-resolve";
+import { resolveTailwindPaletteColor } from "./tailwind-palette-colors";
+import { useThemeTokensContext } from "./theme-tokens-context";
 
 export type { InspectorColorOption } from "./tailwind-theme-colors";
 
@@ -162,12 +165,22 @@ function InspectorPopoverList({
 function ColorSwatch({
   cssVar,
   swatchClass,
-}: Pick<InspectorColorOption, "cssVar" | "swatchClass">) {
+  swatchColor,
+}: Pick<InspectorColorOption, "cssVar" | "swatchClass" | "swatchColor">) {
   if (cssVar) {
     return (
       <span
         className="size-4 shrink-0 rounded-sm border border-border"
         style={{ backgroundColor: `var(${cssVar})` }}
+      />
+    );
+  }
+
+  if (swatchColor) {
+    return (
+      <span
+        className="size-4 shrink-0 rounded-sm border border-border"
+        style={{ backgroundColor: swatchColor }}
       />
     );
   }
@@ -296,6 +309,7 @@ function cssColorToHexViaDom(color: string): string | null {
 function resolveColorPickerHex(
   value: string,
   presets: InspectorColorOption[],
+  scopeElement?: HTMLElement | null,
 ): string {
   const trimmed = value.trim();
   if (!trimmed) return "#000000";
@@ -304,28 +318,41 @@ function resolveColorPickerHex(
   }
 
   const option = resolveColorOption(trimmed, presets);
-  if (!option || typeof document === "undefined") {
-    return cssColorToHex(trimmed);
+
+  if (option?.swatchColor) {
+    return cssColorToHex(option.swatchColor);
   }
 
-  if (option.cssVar) {
-    const fromVar = cssColorToHexViaDom(`var(${option.cssVar})`);
-    if (fromVar) return fromVar;
+  if (option?.cssVar && scopeElement) {
+    const fromScoped = hexFromScopedCssVar(option.cssVar, scopeElement);
+    if (fromScoped) return fromScoped;
+  }
 
-    const raw = getComputedStyle(document.documentElement)
-      .getPropertyValue(option.cssVar)
-      .trim();
-    if (raw) {
-      const fromRaw = cssColorToHexViaDom(raw);
-      if (fromRaw) return fromRaw;
+  if (option && typeof document !== "undefined") {
+    if (option.cssVar) {
+      const fromVar = cssColorToHexViaDom(`var(${option.cssVar})`);
+      if (fromVar) return fromVar;
+
+      const raw = getComputedStyle(document.documentElement)
+        .getPropertyValue(option.cssVar)
+        .trim();
+      if (raw) {
+        const fromRaw = cssColorToHexViaDom(raw);
+        if (fromRaw) return fromRaw;
+      }
+    }
+
+    if (option.swatchClass) {
+      const fromSwatch = computedBackgroundColorToHex(
+        resolveSwatchClassColor(option.swatchClass),
+      );
+      if (fromSwatch) return fromSwatch;
     }
   }
 
-  if (option.swatchClass) {
-    const fromSwatch = computedBackgroundColorToHex(
-      resolveSwatchClassColor(option.swatchClass),
-    );
-    if (fromSwatch) return fromSwatch;
+  const paletteColor = resolveTailwindPaletteColor(trimmed);
+  if (paletteColor) {
+    return cssColorToHex(paletteColor);
   }
 
   return cssColorToHex(trimmed);
@@ -359,19 +386,24 @@ function useColorPickerHex(
   value: string,
   presets: InspectorColorOption[],
   swatchElement: HTMLElement | null,
+  scopeElement?: HTMLElement | null,
 ): string {
-  const [hex, setHex] = useState(() => resolveColorPickerHex(value, presets));
+  const [hex, setHex] = useState(() =>
+    resolveColorPickerHex(value, presets, scopeElement),
+  );
 
   useLayoutEffect(() => {
     const syncHex = () => {
       const fromSwatch = readElementBackgroundHex(swatchElement);
-      setHex(fromSwatch ?? resolveColorPickerHex(value, presets));
+      setHex(
+        fromSwatch ?? resolveColorPickerHex(value, presets, scopeElement),
+      );
     };
 
     syncHex();
     const frame = requestAnimationFrame(syncHex);
     return () => cancelAnimationFrame(frame);
-  }, [value, presets, swatchElement]);
+  }, [value, presets, swatchElement, scopeElement]);
 
   return hex;
 }
@@ -436,6 +468,7 @@ function InspectorColorList({
             <ColorSwatch
               cssVar={option.cssVar}
               swatchClass={option.swatchClass}
+              swatchColor={option.swatchColor}
             />
             <span className="min-w-0 flex-1 truncate text-left text-muted-foreground">
               {option.label}
@@ -508,6 +541,7 @@ export function InspectorColorInput({
             <ColorSwatch
               cssVar={selected.cssVar}
               swatchClass={selected.swatchClass}
+              swatchColor={selected.swatchColor}
             />
             <span className="min-w-0 flex-1 truncate text-left text-xs text-muted-foreground">
               {selected.label}
@@ -530,11 +564,12 @@ export function InspectorColorInput({
 function resolveInspectorColorPreview(
   value: string,
   presets: InspectorColorOption[],
+  scopeElement?: HTMLElement | null,
 ): string {
   const trimmed = value.trim();
   if (!trimmed) return "transparent";
 
-  const hex = resolveColorPickerHex(trimmed, presets);
+  const hex = resolveColorPickerHex(trimmed, presets, scopeElement);
   const alphaPercent = parseInspectorColorAlphaPercent(trimmed);
   if (alphaPercent === "100") return hex;
   return formatInspectorColorWithAlpha(hex, alphaPercent);
@@ -563,9 +598,15 @@ export function InspectorColorField({
   const [pickerOpen, setPickerOpen] = useState(false);
   const presetAnchorRef = useRef<HTMLDivElement>(null);
   const swatchAnchorRef = useRef<HTMLButtonElement>(null);
-  const hexValue = useColorPickerHex(value, presets, null);
+  const themeContext = useThemeTokensContext();
+  const scopeElement = themeContext?.scopeElement ?? null;
+  const hexValue = useColorPickerHex(value, presets, null, scopeElement);
   const alphaPercent = parseInspectorColorAlphaPercent(value);
-  const previewColor = resolveInspectorColorPreview(value, presets);
+  const previewColor = resolveInspectorColorPreview(
+    value,
+    presets,
+    scopeElement,
+  );
   const presetPopoverToggle = useInspectorPresetPopoverToggle(
     presets.length > 0,
     presetOpen,

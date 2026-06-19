@@ -3,6 +3,10 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 const uiRoot = path.resolve(__dirname, "../../packages/ui/src");
+const contractsCatalogRoot = path.resolve(
+  __dirname,
+  "../../packages/contracts/src/catalog/index.ts",
+);
 
 export default defineConfig({
   plugins: [react()],
@@ -10,6 +14,7 @@ export default defineConfig({
     alias: {
       "@": uiRoot,
       "@ssota/ui": uiRoot,
+      "@ssota/contracts/catalog": contractsCatalogRoot,
     },
   },
   server: {
