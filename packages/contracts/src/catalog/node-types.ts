@@ -5,6 +5,7 @@ import {
   propertiesWithKnownKeys,
   type Mutability,
 } from "./common.js";
+import { designThemePropertiesSchema } from "./design-theme-schemas.js";
 import {
   goalHealthStatusSchema,
   goalPrioritySchema,
@@ -263,7 +264,7 @@ const NODE_PROPERTY_SCHEMAS: Record<
       });
     }
   }),
-  design_theme: loosePropertiesSchema,
+  design_theme: designThemePropertiesSchema,
 };
 
 export interface NodeTypeCatalogEntry {

@@ -17,6 +17,11 @@ export {
   type InspectorToggleOption,
 } from "./inspector-controls";
 export {
+  ThemeTokensProvider,
+  useThemeTokens,
+  useThemeTokensContext,
+} from "./theme-tokens-context";
+export {
   InspectorNumberInput,
   InspectorPresetNumberInput,
   InspectorScrubberNumberInput,

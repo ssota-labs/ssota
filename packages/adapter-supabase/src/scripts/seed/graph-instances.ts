@@ -1,4 +1,8 @@
 import type { NodeType } from "@ssota/contracts";
+import {
+  DESIGN_THEME_SCHEMA_VERSION,
+  PLATFORM_DESIGN_THEME_TOKENS,
+} from "@ssota/contracts/catalog";
 import { and, eq } from "drizzle-orm";
 import type { createDb } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
@@ -76,14 +80,24 @@ export async function seedGraphInstances(
     );
     if (existing) continue;
 
+    const properties =
+      catalogKey === "design_theme"
+        ? {
+            lifecycleStatus: "Draft",
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
+            schema_version: DESIGN_THEME_SCHEMA_VERSION,
+            tokens: PLATFORM_DESIGN_THEME_TOKENS,
+          }
+        : {
+            lifecycleStatus: "Draft",
+            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
+          };
+
     await db.insert(schema.nodes).values({
       projectId,
       nodeCatalogId,
-      title: "",
-      properties: {
-        lifecycleStatus: "Draft",
-        seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
-      },
+      title: catalogKey === "design_theme" ? "Design theme" : "",
+      properties,
       schemaVersion: 1,
     });
   }

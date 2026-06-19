@@ -1,0 +1,10 @@
+/* BlockNote list marker layout; content is injected per block id at runtime. */
+.blocknote-editor-shell
+  [data-content-type="numberedListItem"]::before,
+.blocknote-editor-shell
+  [data-content-type="bulletListItem"]::before {
+  display: flex;
+  justify-content: center;
+  min-width: 24px;
+  padding-right: 4px;
+}
