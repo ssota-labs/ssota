@@ -58,6 +58,7 @@ export const NAV_ICONS: Record<string, Icon> = {
   design_ia: TreeStructureIcon,
   design_ui_components: ShapesIcon,
   design_theme: PaintBrushIcon,
+  design_toolchain: WrenchIcon,
   initiative_overview: SquaresFourIcon,
   planning_prd: ClipboardTextIcon,
   planning_features: StackIcon,

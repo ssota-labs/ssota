@@ -1,5 +1,8 @@
 import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
-import { uiComponentContentSchemaV2 } from "@ssota/contracts/catalog";
+import {
+  parseUiComponentFromProperties,
+  uiComponentContentSchemaV2,
+} from "@ssota/contracts/catalog";
 
 export function draftStorageKey(projectId: string, componentId: string): string {
   return `studio:draft:${projectId}:${componentId}`;
@@ -39,13 +42,13 @@ export function clearSessionDraft(key: string): void {
 
 export function resolveInitialContentV2(input: {
   sessionContent: UiComponentContentV2 | null;
-  publishedContent: string | null | undefined;
+  publishedProperties?: Record<string, unknown> | null;
   fallback: UiComponentContentV2;
 }): UiComponentContentV2 {
   if (input.sessionContent) return input.sessionContent;
-  if (input.publishedContent) {
+  if (input.publishedProperties) {
     try {
-      return uiComponentContentSchemaV2.parse(JSON.parse(input.publishedContent));
+      return parseUiComponentFromProperties(input.publishedProperties, "source");
     } catch {
       // fall through
     }

@@ -1,8 +1,12 @@
+import type { DesignToolchainPackageJson } from "@ssota/contracts/catalog";
+
 export type StudioBuildInput = {
   projectId: string;
   entry: string;
   files: Record<string, string>;
-  dependencies: Record<string, string>;
+  packageJson: DesignToolchainPackageJson;
+  lockfile: string;
+  toolchainDigest: string;
   themeCss?: string;
   studioRuntimeInject: boolean;
 };
@@ -20,3 +24,12 @@ export type StudioBuildResult = {
   mapPath?: string;
   cacheHit: boolean;
 };
+
+export function dependencyMapFromPackageJson(
+  packageJson: DesignToolchainPackageJson,
+): Record<string, string> {
+  return {
+    ...(packageJson.dependencies ?? {}),
+    ...(packageJson.devDependencies ?? {}),
+  };
+}

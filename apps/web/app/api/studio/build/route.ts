@@ -1,32 +1,25 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import {
-  createStudioBuildStorage,
-  studioBuildArtifactPaths,
-} from "@ssota/adapter-supabase";
-import {
-  parseUiComponentContent,
-  uiComponentContentSchemaV2,
-} from "@ssota/contracts/catalog";
-import { buildStudioPreview } from "@ssota/studio-build";
-import { readNodeContent } from "@ssota/core";
+import { parseUiComponentFromProperties } from "@ssota/contracts/catalog";
 import { studioPreviewBundleUrl } from "@/lib/design-studio/preview-bundle-url";
+import { resolveBuildContext } from "@/lib/design-studio/resolve-build-context";
+import { resolveProjectTheme } from "@/lib/design-studio/resolve-project-theme";
+import { resolveProjectToolchain } from "@/lib/design-studio/resolve-project-toolchain";
+import { runStudioBuildAndCache } from "@/lib/design-studio/run-studio-build";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+export const maxDuration = 120;
 
 const inlineBuildBodySchema = z.object({
   projectId: z.string().uuid(),
   properties: z.record(z.unknown()),
-  content: z.string().min(1),
-  themeCss: z.string().optional(),
 });
 
 const componentBuildBodySchema = z.object({
   projectId: z.string().uuid(),
   componentId: z.string().uuid(),
-  themeCss: z.string().optional(),
 });
 
 const requestBodySchema = z.union([
@@ -55,10 +48,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const storage = createStudioBuildStorage();
   const startedAt = Date.now();
 
   try {
+    const [{ themeCss }, toolchain] = await Promise.all([
+      resolveProjectTheme(body.projectId),
+      resolveProjectToolchain(body.projectId),
+    ]);
+
     if ("componentId" in body) {
       const deps = getGraphDeps(body.projectId);
       const node = await deps.graphRead.getNode({
@@ -78,169 +75,92 @@ export async function POST(request: Request) {
         );
       }
 
-      const content = parseUiComponentContent(
-        readNodeContent(node.properties),
-        "source",
-      );
-      if (content.schemaVersion !== 2) {
-        return NextResponse.json(
-          { error: "Component content must be schemaVersion 2" },
-          { status: 400 },
-        );
-      }
-
-      const entry = typeof node.properties.entry === "string"
-        ? node.properties.entry
-        : undefined;
-      if (!entry) {
-        return NextResponse.json({ error: "Component entry is missing" }, { status: 400 });
-      }
-
-      const dependencies =
-        node.properties.dependencies &&
-        typeof node.properties.dependencies === "object"
-          ? (node.properties.dependencies as Record<string, string>)
-          : {};
-
-      const buildHashPreview = await buildStudioPreview({
+      const buildContext = resolveBuildContext({
         projectId: body.projectId,
-        entry,
-        files: content.files,
-        dependencies,
-        themeCss: body.themeCss,
-        studioRuntimeInject: true,
+        node,
+        packageJson: toolchain.packageJson,
+        lockfile: toolchain.lockfile,
+        themeCss,
       });
 
-      const paths = studioBuildArtifactPaths(
-        body.projectId,
-        buildHashPreview.buildHash,
-      );
-      const cacheHit = await storage.exists(
-        body.projectId,
-        buildHashPreview.buildHash,
-      );
-
-      if (!cacheHit) {
-        const artifacts = [
-          {
-            path: paths.jsPath,
-            body: buildHashPreview.artifacts.js,
-            contentType: "text/javascript",
-          },
-        ];
-        if (buildHashPreview.artifacts.css) {
-          artifacts.push({
-            path: paths.cssPath,
-            body: buildHashPreview.artifacts.css,
-            contentType: "text/css",
-          });
-        }
-        if (buildHashPreview.artifacts.map) {
-          artifacts.push({
-            path: paths.mapPath,
-            body: buildHashPreview.artifacts.map,
-            contentType: "application/json",
-          });
-        }
-        await storage.upload(
-          body.projectId,
-          buildHashPreview.buildHash,
-          artifacts,
-        );
-      }
+      const { build, cacheHit } = await runStudioBuildAndCache({
+        projectId: body.projectId,
+        buildContext,
+      });
 
       const jsUrl = studioPreviewBundleUrl(
         body.projectId,
-        buildHashPreview.buildHash,
+        build.buildHash,
         "bundle.js",
       );
-      const cssUrl = buildHashPreview.artifacts.css
-        ? studioPreviewBundleUrl(
-            body.projectId,
-            buildHashPreview.buildHash,
-            "bundle.css",
-          )
+      const cssUrl = build.artifacts.css
+        ? studioPreviewBundleUrl(body.projectId, build.buildHash, "bundle.css")
         : undefined;
 
       return NextResponse.json({
-        buildId: buildHashPreview.buildHash,
-        buildHash: buildHashPreview.buildHash,
+        buildId: build.buildHash,
+        buildHash: build.buildHash,
         url: jsUrl,
         cssUrl,
         cacheHit,
         buildMs: Date.now() - startedAt,
-        bundleBytes: buildHashPreview.artifacts.js.byteLength,
+        bundleBytes: build.artifacts.js.byteLength,
       });
     }
 
-    const parsedContent = uiComponentContentSchemaV2.parse(
-      JSON.parse(body.content),
-    );
-    const properties = body.properties;
+    const parsedContent = parseUiComponentFromProperties(body.properties, "source");
     const entry =
-      typeof properties.entry === "string" && properties.entry.trim()
-        ? properties.entry
+      typeof body.properties.entry === "string" && body.properties.entry.trim()
+        ? body.properties.entry
         : "Component.tsx";
 
-    const dependencies =
-      properties.dependencies && typeof properties.dependencies === "object"
-        ? (properties.dependencies as Record<string, string>)
-        : {};
-
-    const buildResult = await buildStudioPreview({
+    const buildContext = resolveBuildContext({
       projectId: body.projectId,
-      entry,
-      files: parsedContent.files,
-      dependencies,
-      themeCss: body.themeCss,
-      studioRuntimeInject: true,
+      node: {
+        id: "inline",
+        projectId: body.projectId,
+        nodeCatalogId: "inline",
+        catalogKey: "ui_component",
+        catalogLabel: "UI component",
+        title: "inline",
+        properties: {
+          ...body.properties,
+          entry,
+          files: parsedContent.files,
+          layerIndex: parsedContent.layerIndex,
+        },
+        schemaVersion: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      packageJson: toolchain.packageJson,
+      lockfile: toolchain.lockfile,
+      themeCss,
+      contentV2: parsedContent,
     });
 
-    const paths = studioBuildArtifactPaths(body.projectId, buildResult.buildHash);
-    const cacheHit = await storage.exists(body.projectId, buildResult.buildHash);
-
-    if (!cacheHit) {
-      const artifacts = [
-        {
-          path: paths.jsPath,
-          body: buildResult.artifacts.js,
-          contentType: "text/javascript",
-        },
-      ];
-      if (buildResult.artifacts.css) {
-        artifacts.push({
-          path: paths.cssPath,
-          body: buildResult.artifacts.css,
-          contentType: "text/css",
-        });
-      }
-      if (buildResult.artifacts.map) {
-        artifacts.push({
-          path: paths.mapPath,
-          body: buildResult.artifacts.map,
-          contentType: "application/json",
-        });
-      }
-      await storage.upload(body.projectId, buildResult.buildHash, artifacts);
-    }
+    const { build, cacheHit } = await runStudioBuildAndCache({
+      projectId: body.projectId,
+      buildContext,
+    });
 
     const jsUrl = studioPreviewBundleUrl(
       body.projectId,
-      buildResult.buildHash,
+      build.buildHash,
       "bundle.js",
     );
-    const cssUrl = buildResult.artifacts.css
-      ? studioPreviewBundleUrl(body.projectId, buildResult.buildHash, "bundle.css")
+    const cssUrl = build.artifacts.css
+      ? studioPreviewBundleUrl(body.projectId, build.buildHash, "bundle.css")
       : undefined;
 
     return NextResponse.json({
-      buildId: buildResult.buildHash,
-      buildHash: buildResult.buildHash,
+      buildId: build.buildHash,
+      buildHash: build.buildHash,
       url: jsUrl,
       cssUrl,
       cacheHit,
       buildMs: Date.now() - startedAt,
-      bundleBytes: buildResult.artifacts.js.byteLength,
+      bundleBytes: build.artifacts.js.byteLength,
     });
   } catch (error) {
     console.error("studio build failed", error);

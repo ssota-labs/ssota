@@ -1,4 +1,4 @@
-import { parseNodeContent } from "@ssota/contracts";
+import { parseNodeContent, parseUiComponentFromProperties } from "@ssota/contracts";
 import { describe, expect, it } from "vitest";
 import { createContractsCatalogReadPort } from "./contracts-catalog-read-port.js";
 
@@ -6,7 +6,7 @@ describe("createContractsCatalogReadPort", () => {
   const catalog = createContractsCatalogReadPort();
 
   it("lists all node and edge catalog entries from contracts SSOT", async () => {
-    expect((await catalog.listNodeCatalog()).length).toBe(34);
+    expect((await catalog.listNodeCatalog()).length).toBe(35);
     expect((await catalog.listEdgeCatalog()).length).toBe(17);
   });
 
@@ -32,6 +32,17 @@ describe("createContractsCatalogReadPort", () => {
     expect(() =>
       catalog.validateNodeProperties("unknown_type", { foo: "bar" }),
     ).toThrow(/UNKNOWN_NODE_TYPE/);
+  });
+
+  it("parses ui_component v2 from properties.files", () => {
+    const parsed = parseUiComponentFromProperties({
+      slug: "btn",
+      tier: "primitive",
+      representation: "source",
+      entry: "Component.tsx",
+      files: { "Component.tsx": "export default function C() {}" },
+    });
+    expect(parsed.schemaVersion).toBe(2);
   });
 
   it("parses ui_component v2 content from properties convention", () => {

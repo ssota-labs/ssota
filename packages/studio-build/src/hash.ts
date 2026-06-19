@@ -6,7 +6,7 @@ export function computeBuildHash(input: StudioBuildInput): string {
     projectId: input.projectId,
     entry: input.entry,
     files: input.files,
-    dependencies: input.dependencies,
+    toolchainDigest: input.toolchainDigest,
     themeCss: input.themeCss ?? "",
     studioRuntimeInject: input.studioRuntimeInject,
   });

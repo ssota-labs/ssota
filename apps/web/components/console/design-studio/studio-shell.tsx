@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import type { GraphNode } from "@ssota/core";
-import { readNodeContent } from "@ssota/core";
 import type {
   DesignThemeTokenMap,
   UiComponentContentV2,
@@ -53,7 +52,6 @@ type StudioShellProps = {
     projectId: string;
     nodeId: string;
     contentV2?: UiComponentContentV2;
-    themeCss?: string;
     revalidatePath: string;
   }) => Promise<void>;
   onCreateComponent: () => Promise<void> | void;
@@ -160,7 +158,7 @@ function StudioShellEditor({
     const key = draftStorageKey(projectId, component.id);
     return resolveInitialContentV2({
       sessionContent: readSessionContentV2(key),
-      publishedContent: readNodeContent(component.properties),
+      publishedProperties: component.properties,
       fallback: createEmptyUiComponentContentV2(),
     });
   });
@@ -251,9 +249,11 @@ function StudioShellEditor({
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               projectId,
-              properties: component.properties,
-              content: JSON.stringify(contentV2Ref.current),
-              themeCss,
+              properties: {
+                ...component.properties,
+                files: contentV2Ref.current.files,
+                layerIndex: contentV2Ref.current.layerIndex,
+              },
             }),
           });
           if (!response.ok) {
@@ -283,7 +283,7 @@ function StudioShellEditor({
       })();
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [component, structureHash, projectId, themeCss]);
+  }, [component, structureHash, projectId]);
 
   useEffect(() => {
     if (!component || !ready || !buildPreview) return;
@@ -333,7 +333,6 @@ function StudioShellEditor({
         projectId,
         nodeId: component.id,
         contentV2,
-        themeCss,
         revalidatePath: previewBasePath.replace(/^\//, ""),
       });
       if (storageKey) {

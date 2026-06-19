@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { propertiesWithKnownKeys } from "./common.js";
 
 export const uiComponentTierSchema = z.enum(["primitive", "composite"]);
 export type UiComponentTier = z.infer<typeof uiComponentTierSchema>;
@@ -128,6 +129,163 @@ export function parseUiComponentDocumentSafe(
   } catch {
     return null;
   }
+}
+
+export const uiComponentFilesSchema = z.record(z.string().min(1));
+
+export const uiComponentPropertiesSchema = propertiesWithKnownKeys({
+  slug: z.string().min(1),
+  tier: uiComponentTierSchema,
+  representation: z.enum(["source", "tree"]).optional(),
+  contentSchemaVersion: z.union([z.literal(1), z.literal(2)]).optional(),
+  entry: z.string().min(1).optional(),
+  files: uiComponentFilesSchema.optional(),
+  layerIndex: uiComponentLayerIndexSchema.optional(),
+  dependencies: z.record(z.string()).optional(),
+  fileKeys: z.array(z.string()).optional(),
+  buildHash: z.string().optional(),
+  previewArtifactPath: z.string().optional(),
+  builtAt: z.string().datetime().optional(),
+  draft: z.string().optional(),
+}).superRefine((properties, ctx) => {
+  const representation = properties.representation ?? "source";
+  if (representation !== "source") {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Only source representation is supported",
+      path: ["representation"],
+    });
+  }
+  if (!properties.entry) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "entry is required for ui_component",
+      path: ["entry"],
+    });
+  }
+});
+
+export type UiComponentProperties = z.infer<typeof uiComponentPropertiesSchema>;
+
+function parseLegacyContentValue(
+  content: unknown,
+): { files?: Record<string, string>; layerIndex?: UiComponentLayerIndexNode } | null {
+  if (content === null || content === undefined) {
+    return null;
+  }
+
+  let parsed: unknown = content;
+  if (typeof content === "string") {
+    const trimmed = content.trim();
+    if (!trimmed) return null;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch {
+      return null;
+    }
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return null;
+  }
+
+  const record = parsed as Record<string, unknown>;
+  if (record.schemaVersion === 2 && record.files && typeof record.files === "object") {
+    const files = record.files as Record<string, unknown>;
+    const normalized: Record<string, string> = {};
+    for (const [path, source] of Object.entries(files)) {
+      if (typeof source === "string") {
+        normalized[path] = source;
+      }
+    }
+    if (Object.keys(normalized).length === 0) {
+      return null;
+    }
+    return {
+      files: normalized,
+      layerIndex:
+        record.layerIndex !== undefined
+          ? uiComponentLayerIndexSchema.parse(record.layerIndex)
+          : undefined,
+    };
+  }
+
+  return null;
+}
+
+/** Read source files from properties.files with legacy properties.content fallback. */
+export function extractUiComponentFiles(
+  properties: Record<string, unknown>,
+): Record<string, string> | null {
+  const direct = properties.files;
+  if (direct && typeof direct === "object" && !Array.isArray(direct)) {
+    const normalized: Record<string, string> = {};
+    for (const [path, source] of Object.entries(direct as Record<string, unknown>)) {
+      if (typeof source === "string") {
+        normalized[path] = source;
+      }
+    }
+    if (Object.keys(normalized).length > 0) {
+      return normalized;
+    }
+  }
+
+  return parseLegacyContentValue(properties.content)?.files ?? null;
+}
+
+export function parseUiComponentFromProperties(
+  properties: Record<string, unknown>,
+  representation: UiComponentRepresentation = "source",
+): UiComponentContentV2 {
+  if (representation !== "source") {
+    throw new Error("UI component tree representation is no longer supported");
+  }
+
+  const files = extractUiComponentFiles(properties);
+  if (!files || Object.keys(files).length === 0) {
+    throw new Error("UI component files are required");
+  }
+
+  const layerIndex =
+    properties.layerIndex !== undefined
+      ? uiComponentLayerIndexSchema.parse(properties.layerIndex)
+      : parseLegacyContentValue(properties.content)?.layerIndex;
+
+  return uiComponentContentSchemaV2.parse({
+    schemaVersion: 2,
+    files,
+    ...(layerIndex ? { layerIndex } : {}),
+  });
+}
+
+export function buildUiComponentPropertiesForSave(input: {
+  slug: string;
+  tier: UiComponentTier;
+  entry: string;
+  files: Record<string, string>;
+  layerIndex?: UiComponentLayerIndexNode;
+  representation?: UiComponentRepresentation;
+  dependencies?: Record<string, string>;
+  buildHash?: string;
+  previewArtifactPath?: string;
+  builtAt?: string;
+}): Record<string, unknown> {
+  return {
+    slug: input.slug,
+    tier: input.tier,
+    representation: input.representation ?? "source",
+    contentSchemaVersion: 2,
+    entry: input.entry,
+    fileKeys: Object.keys(input.files),
+    files: input.files,
+    ...(input.layerIndex ? { layerIndex: input.layerIndex } : {}),
+    ...(input.dependencies ? { dependencies: input.dependencies } : {}),
+    ...(input.buildHash ? { buildHash: input.buildHash } : {}),
+    ...(input.previewArtifactPath
+      ? { previewArtifactPath: input.previewArtifactPath }
+      : {}),
+    ...(input.builtAt ? { builtAt: input.builtAt } : {}),
+  };
 }
 
 export function parseUiComponentContent(

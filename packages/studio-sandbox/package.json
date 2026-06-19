@@ -1,0 +1,36 @@
+{
+  "name": "@ssota/studio-sandbox",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@ssota/contracts": "workspace:*",
+    "@ssota/studio-build": "workspace:*",
+    "@ssota/studio-preview-runtime": "workspace:*"
+  },
+  "optionalDependencies": {
+    "@vercel/sandbox": "^0.0.17"
+  },
+  "devDependencies": {
+    "@ssota/config": "workspace:*",
+    "@types/node": "^22.15.30",
+    "@typescript-eslint/eslint-plugin": "^8.34.0",
+    "@typescript-eslint/parser": "^8.34.0",
+    "eslint": "^9.28.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { createContractsCatalogReadPort } from "../../adapters/contracts-catalog-read-port.js";
-import { readNodeContent } from "../../domain/graph-types.js";
 import {
   createInMemoryGraphReadPort,
   createInMemoryGraphStore,
@@ -206,16 +205,15 @@ describe("v2.7 graph use cases", () => {
           representation: "source",
           contentSchemaVersion: 2,
           entry: "Component.tsx",
-          content: JSON.stringify({
-            schemaVersion: 2,
-            files: {
-              "Component.tsx":
-                "export default function Component() { return null; }",
-            },
-          }),
+          files: {
+            "Component.tsx":
+              "export default function Component() { return null; }",
+          },
         },
       },
     );
-    expect(readNodeContent(node.properties)).toContain("schemaVersion");
+    expect(node.properties.files).toEqual({
+      "Component.tsx": "export default function Component() { return null; }",
+    });
   });
 });

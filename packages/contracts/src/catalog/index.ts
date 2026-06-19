@@ -17,6 +17,7 @@ export * from "./db-catalog.js";
 export * from "./common.js";
 export * from "./content-parsers.js";
 export * from "./design-theme-schemas.js";
+export * from "./design-toolchain-schemas.js";
 export * from "./edge-types.js";
 export * from "./goal-schemas.js";
 export * from "./node-types.js";

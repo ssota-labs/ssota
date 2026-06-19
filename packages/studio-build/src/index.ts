@@ -23,6 +23,6 @@ export async function buildStudioPreview(input: StudioBuildInput): Promise<{
 }
 
 export type { StudioBuildInput, StudioBuildResult, StudioBuildArtifacts };
+export { dependencyMapFromPackageJson } from "./types.js";
 export { buildStudioBundle } from "./build.js";
 export { computeBuildHash } from "./hash.js";
-export { assertAllowedDependencies } from "./allowlist.js";

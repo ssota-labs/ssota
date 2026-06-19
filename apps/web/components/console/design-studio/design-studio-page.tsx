@@ -5,14 +5,10 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { slugifyComponentTitle } from "@/lib/design-studio/tree-utils";
 import { createGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { deployUiComponentAction } from "@/lib/graph/actions/deploy-ui-component";
-import { readNodeContent } from "@ssota/core";
-import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { resolveProjectTheme } from "@/lib/design-studio/resolve-project-theme";
+import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { queryUiComponents } from "@/lib/graph/loaders/query-ui-components";
-import {
-  createEmptyUiComponentContentV2,
-  defaultSourceComponentProperties,
-} from "@/lib/design-studio/empty-document";
+import { defaultSourceComponentProperties } from "@/lib/design-studio/empty-document";
 
 type DesignStudioPageProps = {
   orgSlug: string;
@@ -55,13 +51,11 @@ export async function DesignStudioPage({
     "use server";
     const title = `Component ${new Date().toISOString().slice(0, 10)}`;
     const slug = `${slugifyComponentTitle(title)}-${Date.now().toString(36).slice(-4)}`;
-    const contentV2 = createEmptyUiComponentContentV2();
     const node = await createGraphNodeAction({
       projectId: project.id,
       catalogKey: "ui_component",
       title,
       properties: defaultSourceComponentProperties(slug),
-      content: JSON.stringify(contentV2),
       revalidatePaths: [studioBasePath],
     });
     redirect(projectPath(ctx, "design", "ui-components", node.id));
@@ -71,7 +65,6 @@ export async function DesignStudioPage({
     projectId: string;
     nodeId: string;
     contentV2?: import("@ssota/contracts/catalog").UiComponentContentV2;
-    themeCss?: string;
     revalidatePath: string;
   }) {
     "use server";
@@ -79,7 +72,6 @@ export async function DesignStudioPage({
       projectId: input.projectId,
       nodeId: input.nodeId,
       contentV2: input.contentV2,
-      themeCss: input.themeCss,
       revalidatePaths: [editorPath],
     });
   }
