@@ -1,4 +1,5 @@
 import type { ModelMessage, ToolSet } from "ai";
+import type { SandboxSession } from "../sandbox/session.js";
 
 /**
  * Scope passed to every SSOTA tool call. `accountId` is the end-user data
@@ -29,6 +30,8 @@ export interface LoopEngineRunInput {
   modelId: string;
   /** Per-run scope injected into each tool's execution context. */
   context: AgentRunContext;
+  /** Optional sandbox session for dev-capable runs (injected into tool ctx). */
+  sandbox?: SandboxSession;
   /** Upper bound on model steps before the loop stops. */
   maxSteps?: number;
 }

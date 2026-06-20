@@ -23,6 +23,9 @@
     "ai": "^6.0.165",
     "zod": "^3.25.67"
   },
+  "optionalDependencies": {
+    "@vercel/sandbox": "^0.0.17"
+  },
   "devDependencies": {
     "@ssota/config": "workspace:*",
     "@types/node": "^22.15.30",

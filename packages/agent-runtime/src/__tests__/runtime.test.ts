@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createSsotaTools } from "../tools/index.js";
+import { createSandboxTools } from "../tools/sandbox.js";
 import { buildSystemPrompt } from "../system-prompt.js";
 import { DEFAULT_MODEL_ID } from "../models.js";
 
@@ -24,6 +25,17 @@ describe("createSsotaTools", () => {
         "write_page_definition",
       ].sort(),
     );
+  });
+
+  it("sandbox tools are a separate set (attached only for dev runs)", () => {
+    const base = createSsotaTools();
+    expect(base).not.toHaveProperty("sandbox_exec");
+    const sandbox = createSandboxTools();
+    expect(Object.keys(sandbox).sort()).toEqual([
+      "sandbox_exec",
+      "sandbox_read_file",
+      "sandbox_write_file",
+    ]);
   });
 
   it("each tool has a description and input schema", () => {

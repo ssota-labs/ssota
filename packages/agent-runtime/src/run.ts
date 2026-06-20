@@ -2,10 +2,12 @@ import type { ModelMessage } from "ai";
 import { serializeTask } from "@ssota/core";
 import { getTaskPort } from "./ports.js";
 import { createSsotaTools } from "./tools/index.js";
+import { createSandboxTools } from "./tools/sandbox.js";
 import { buildSystemPrompt } from "./system-prompt.js";
 import { DEFAULT_MODEL_ID } from "./models.js";
 import { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
 import type { AgentRunContext, LoopEngine } from "./engine/types.js";
+import type { SandboxSession } from "./sandbox/session.js";
 
 export interface RunAgentForTaskInput {
   projectId: string;
@@ -17,6 +19,8 @@ export interface RunAgentForTaskInput {
   modelId?: string;
   /** Override the loop engine (defaults to the AI SDK engine). */
   engine?: LoopEngine;
+  /** Dev-capable runs pass a sandbox; sandbox tools are then attached. */
+  sandbox?: SandboxSession;
   maxSteps?: number;
 }
 
@@ -51,7 +55,9 @@ export async function runAgentForTask(
   const task = serializeTask(domainTask);
 
   const engine = input.engine ?? createAiSdkLoopEngine();
-  const tools = createSsotaTools();
+  const tools = input.sandbox
+    ? { ...createSsotaTools(), ...createSandboxTools() }
+    : createSsotaTools();
   const context: AgentRunContext = { projectId, taskId, runId, accountId };
 
   const instructions = buildSystemPrompt({ task, projectId, accountId });
@@ -68,6 +74,7 @@ export async function runAgentForTask(
     tools,
     modelId: input.modelId ?? DEFAULT_MODEL_ID,
     context,
+    sandbox: input.sandbox,
     maxSteps: input.maxSteps,
   });
 

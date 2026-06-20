@@ -1,11 +1,16 @@
 import { getWorkflowMetadata } from "workflow";
 import {
+  createSandboxSession,
   getDb,
   getTaskPort,
   runAgentForTask,
   type RunAgentForTaskResult,
+  type SandboxSession,
 } from "@ssota/agent-runtime";
 import { createAgentRunPort } from "@ssota/adapter-supabase";
+
+/** Workflow keys whose runs get a sandbox for code/build tools (Phase 4). */
+const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
 
 export interface RunSsotaAgentInput {
   projectId: string;
@@ -70,14 +75,40 @@ async function runAgentStep(
   console.log(
     `[ssota-agent] run loop task=${input.taskId} run=${workflowRunId}`,
   );
-  return runAgentForTask({
-    projectId: input.projectId,
-    taskId: input.taskId,
-    runId: workflowRunId,
-    accountId: input.accountId,
-    modelId: input.modelId,
-    maxSteps: input.maxSteps,
-  });
+
+  // Dev-capable tasks get a sandbox so code/build tools are available. The
+  // agent runs OUTSIDE the sandbox. Provisioning degrades gracefully when the
+  // SDK or Vercel credentials are absent (the run just has no sandbox tools).
+  const task = await getTaskPort(input.projectId).getTask(input.taskId);
+  let sandbox: SandboxSession | undefined;
+  if (task && DEV_CAPABLE_WORKFLOW_KEYS.has(task.workflowKey)) {
+    try {
+      sandbox = await createSandboxSession();
+      console.log(`[ssota-agent] sandbox provisioned run=${workflowRunId}`);
+    } catch (error) {
+      console.warn(`[ssota-agent] sandbox unavailable: ${String(error)}`);
+    }
+  }
+
+  try {
+    return await runAgentForTask({
+      projectId: input.projectId,
+      taskId: input.taskId,
+      runId: workflowRunId,
+      accountId: input.accountId,
+      modelId: input.modelId,
+      sandbox,
+      maxSteps: input.maxSteps,
+    });
+  } finally {
+    if (sandbox) {
+      try {
+        await sandbox.stop();
+      } catch {
+        // best-effort teardown
+      }
+    }
+  }
 }
 
 async function finalizeRun(
