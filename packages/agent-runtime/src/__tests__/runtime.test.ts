@@ -16,10 +16,12 @@ describe("createSsotaTools", () => {
         "get_task",
         "query_nodes",
         "query_tasks",
+        "read_page_definition",
         "request_approval",
         "spawn_task",
         "traverse_edges",
         "update_node",
+        "write_page_definition",
       ].sort(),
     );
   });
