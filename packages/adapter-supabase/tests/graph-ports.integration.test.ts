@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { and, eq } from "drizzle-orm";
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
 import {
   createEdge,
@@ -93,6 +94,39 @@ describe("graph ports integration", () => {
         },
       ),
     ).rejects.toBeInstanceOf(GraphError);
+  });
+
+  it("backfills missing catalog keys such as design_theme", async () => {
+    await db!
+      .delete(schema.nodeCatalog)
+      .where(
+        and(
+          eq(schema.nodeCatalog.projectId, otherProjectId),
+          eq(schema.nodeCatalog.key, "design_theme"),
+        ),
+      );
+
+    const before = await createGraphPorts(db!, { projectId: otherProjectId }).catalog.getNodeCatalogByKey(
+      "design_theme",
+    );
+    expect(before).toBeNull();
+
+    await seedDevWorkflowCatalog(db!, otherProjectId);
+
+    const otherPorts = createGraphPorts(db!, { projectId: otherProjectId });
+    const restored = await otherPorts.catalog.getNodeCatalogByKey("design_theme");
+    expect(restored?.key).toBe("design_theme");
+
+    const node = await createNode(
+      { catalog: otherPorts.catalog, graphRead: otherPorts.graphRead, graphWrite: otherPorts.graphWrite },
+      {
+        projectId: otherProjectId,
+        catalogKey: "design_theme",
+        title: "Design theme",
+        properties: { lifecycleStatus: "Draft" },
+      },
+    );
+    expect(node.catalogKey).toBe("design_theme");
   });
 
   it("rejects edge across projects", async () => {
