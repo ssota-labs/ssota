@@ -150,6 +150,8 @@ export const tasks = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
     workflowKey: text("workflow_key").notNull(),
     title: text("title").notNull(),
     status: taskStatusEnum("status").notNull().default("pending"),
@@ -208,6 +210,8 @@ export const nodes = pgTable(
     nodeCatalogId: uuid("node_catalog_id")
       .notNull()
       .references(() => nodeCatalog.id, { onDelete: "restrict" }),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
     title: text("title").notNull().default(""),
     properties: jsonb("properties")
       .notNull()
@@ -239,6 +243,8 @@ export const edges = pgTable(
     edgeCatalogId: uuid("edge_catalog_id")
       .notNull()
       .references(() => edgeCatalog.id, { onDelete: "restrict" }),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
     sourceNodeId: uuid("source_node_id")
       .notNull()
       .references(() => nodes.id, { onDelete: "cascade" }),
@@ -263,6 +269,40 @@ export const edges = pgTable(
     projectCatalogIdx: index("edges_project_edge_catalog_id_idx").on(
       table.projectId,
       table.edgeCatalogId,
+    ),
+  }),
+);
+
+/**
+ * Durable agent run ↔ task bridge. One row per `runSsotaAgentWorkflow`
+ * execution; records the workflow run id, model, token usage and timing.
+ */
+export const agentRuns = pgTable(
+  "agent_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    workflowRunId: text("workflow_run_id").notNull(),
+    status: text("status").notNull().default("running"),
+    model: text("model"),
+    usage: jsonb("usage").notNull().default({}).$type<Record<string, unknown>>(),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => ({
+    projectIdx: index("agent_runs_project_id_idx").on(table.projectId),
+    taskIdx: index("agent_runs_task_id_idx").on(table.taskId),
+    workflowRunUnique: uniqueIndex("agent_runs_workflow_run_id_unique").on(
+      table.workflowRunId,
     ),
   }),
 );

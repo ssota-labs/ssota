@@ -56,6 +56,7 @@ function nodeSelect(db: Db) {
     .select({
       id: schema.nodes.id,
       projectId: schema.nodes.projectId,
+      accountId: schema.nodes.accountId,
       nodeCatalogId: schema.nodes.nodeCatalogId,
       catalogKey: schema.nodeCatalog.key,
       catalogLabel: schema.nodeCatalog.label,
@@ -77,6 +78,7 @@ function edgeSelect(db: Db) {
     .select({
       id: schema.edges.id,
       projectId: schema.edges.projectId,
+      accountId: schema.edges.accountId,
       edgeCatalogId: schema.edges.edgeCatalogId,
       catalogKey: schema.edgeCatalog.key,
       catalogLabel: schema.edgeCatalog.label,

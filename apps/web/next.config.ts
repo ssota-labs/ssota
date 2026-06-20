@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withWorkflow } from "workflow/next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import traceManifest from "../../packages/studio-build/studio-trace-manifest.json" with {
@@ -24,6 +25,7 @@ const nextConfig: NextConfig = {
     "@ssota/core",
     "@ssota/contracts",
     "@ssota/adapter-supabase",
+    "@ssota/agent-runtime",
     "@ssota/editor",
     "@ssota/ui",
     "@ssota/studio-preview-runtime",
@@ -41,4 +43,4 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
 };
 
-export default nextConfig;
+export default withWorkflow(nextConfig);

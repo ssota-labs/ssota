@@ -6,6 +6,11 @@ export {
   createGraphPorts,
 } from "./ports/index.js";
 export {
+  createAgentRunPort,
+  type StartAgentRunInput,
+  type FinishAgentRunInput,
+} from "./ports/agent-runs-port.js";
+export {
   seedDevWorkflowCatalog,
   createDbCatalogReadPort,
 } from "./ports/db-catalog-read-port.js";
