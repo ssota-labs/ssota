@@ -202,12 +202,23 @@ async function seedSmokeUser(): Promise<string | undefined> {
   return data.user?.id;
 }
 
+async function seedAllProjectCatalogs(db: ReturnType<typeof createDb>["db"]) {
+  const projects = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects);
+  for (const { id } of projects) {
+    await seedDevWorkflowCatalog(db, id);
+  }
+}
+
 async function main() {
   const { db, client } = createDb();
   console.log("Seeding smoke user...");
   const smokeUserId = await seedSmokeUser();
   console.log("Seeding active console runtime...");
   await seedConsole(db, smokeUserId);
+  console.log("Backfilling node/edge catalog for all projects...");
+  await seedAllProjectCatalogs(db);
   console.log("Seed complete.");
   await client.end();
 }
