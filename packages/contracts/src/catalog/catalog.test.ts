@@ -11,13 +11,14 @@ import {
   resolveSemanticColorValue,
   tokensToThemeCss,
   parseUiComponentContent,
+  parseUiComponentFromProperties,
   uiComponentContentSchemaV2,
   uiComponentDocumentSchema,
 } from "./index.js";
 
 describe("v2.7 catalog SSOT", () => {
-  it("defines 34 node types and 17 edge types", () => {
-    expect(NODE_TYPES).toHaveLength(34);
+  it("defines 35 node types and 17 edge types", () => {
+    expect(NODE_TYPES).toHaveLength(35);
     expect(EDGE_TYPES).toHaveLength(17);
   });
 
@@ -142,8 +143,16 @@ describe("v2.7 catalog SSOT", () => {
         slug: "btn",
         tier: "primitive",
         entry: "Component.tsx",
+        files: { "Component.tsx": "export default function C() {}" },
       }),
     ).toBe(true);
+    expect(
+      requiresNodeContent("ui_component", {
+        slug: "btn",
+        tier: "primitive",
+        entry: "Component.tsx",
+      }),
+    ).toBe(false);
   });
 
   it("parses ui_component v2 properties with entry", () => {
@@ -167,6 +176,33 @@ describe("v2.7 catalog SSOT", () => {
         representation: "source",
       }),
     ).toThrow();
+  });
+
+  it("parses ui_component from properties.files", () => {
+    const parsed = parseUiComponentFromProperties({
+      slug: "btn",
+      tier: "primitive",
+      entry: "Component.tsx",
+      files: {
+        "Component.tsx": "export default function Component() { return null; }",
+      },
+    });
+    expect(parsed.files["Component.tsx"]).toContain("export default");
+  });
+
+  it("parses ui_component from legacy properties.content", () => {
+    const parsed = parseUiComponentFromProperties({
+      slug: "btn",
+      tier: "primitive",
+      entry: "Component.tsx",
+      content: {
+        schemaVersion: 2,
+        files: {
+          "Component.tsx": "export default function Component() { return null; }",
+        },
+      },
+    });
+    expect(parsed.files["Component.tsx"]).toContain("export default");
   });
 
   it("parses ui_component content v2", () => {
@@ -305,5 +341,22 @@ describe("design_theme catalog", () => {
     `);
     expect(parsed["--primary"]).toBe("oklch(0.5 0.1 200)");
     expect(parsed["--foreground"]).toBe("#111111");
+  });
+});
+
+describe("design_toolchain catalog", () => {
+  it("parses design_toolchain properties", () => {
+    const parsed = parseNodeProperties("design_toolchain", {
+      schema_version: 1,
+      package_json: {
+        name: "studio-user-components",
+        dependencies: { react: "^19.1.0" },
+      },
+      lockfile: "lockfileVersion: '9.0'\n",
+    });
+    expect(parsed.schema_version).toBe(1);
+    expect((parsed.package_json as { name: string }).name).toBe(
+      "studio-user-components",
+    );
   });
 });

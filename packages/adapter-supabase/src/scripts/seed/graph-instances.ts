@@ -1,7 +1,10 @@
 import type { NodeType } from "@ssota/contracts";
 import {
   DESIGN_THEME_SCHEMA_VERSION,
+  DESIGN_TOOLCHAIN_SCHEMA_VERSION,
   PLATFORM_DESIGN_THEME_TOKENS,
+  PLATFORM_DESIGN_TOOLCHAIN_LOCKFILE,
+  PLATFORM_DESIGN_TOOLCHAIN_PACKAGE_JSON,
 } from "@ssota/contracts/catalog";
 import { and, eq } from "drizzle-orm";
 import type { createDb } from "../../db/client.js";
@@ -21,6 +24,7 @@ export const EVERGREEN_DEV_SINGLETON_TYPES = [
 export const EVERGREEN_DESIGN_SINGLETON_TYPES = [
   "information_architecture",
   "design_theme",
+  "design_toolchain",
   "page_wireframe",
 ] as const satisfies readonly NodeType[];
 
@@ -88,15 +92,28 @@ export async function seedGraphInstances(
             schema_version: DESIGN_THEME_SCHEMA_VERSION,
             tokens: PLATFORM_DESIGN_THEME_TOKENS,
           }
-        : {
-            lifecycleStatus: "Draft",
-            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
-          };
+        : catalogKey === "design_toolchain"
+          ? {
+              lifecycleStatus: "Draft",
+              seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
+              schema_version: DESIGN_TOOLCHAIN_SCHEMA_VERSION,
+              package_json: PLATFORM_DESIGN_TOOLCHAIN_PACKAGE_JSON,
+              lockfile: PLATFORM_DESIGN_TOOLCHAIN_LOCKFILE,
+            }
+          : {
+              lifecycleStatus: "Draft",
+              seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
+            };
 
     await db.insert(schema.nodes).values({
       projectId,
       nodeCatalogId,
-      title: catalogKey === "design_theme" ? "Design theme" : "",
+      title:
+        catalogKey === "design_theme"
+          ? "Design theme"
+          : catalogKey === "design_toolchain"
+            ? "Design toolchain"
+            : "",
       properties,
       schemaVersion: 1,
     });
@@ -444,22 +461,37 @@ async function seedDemoUiComponents(
   const composedOfId = maps.edgeKeyToId.get("composed_of");
   if (!uiCatalogId) return;
 
-  const buttonSource = `import { Button } from "@ssota/ui/components/ui/button";
+  const buttonSource = `import { Button } from "./components/ui/button";
 
 export default function Component() {
-  return (
-    <Button className="rounded-md bg-primary px-4 py-2 text-primary-foreground">
-      Button
-    </Button>
-  );
+  return <Button>Button</Button>;
 }
 `;
 
-  const buttonContentV2 = {
-    schemaVersion: 2 as const,
-    files: {
-      "Component.tsx": buttonSource,
-    },
+  const buttonFiles = {
+    "Component.tsx": buttonSource,
+    "components/ui/button.tsx": `import { Button as BaseButton } from "@base-ui/react/button";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "../../lib/utils";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium bg-primary text-primary-foreground",
+);
+
+type ButtonProps = React.ComponentProps<typeof BaseButton> &
+  VariantProps<typeof buttonVariants>;
+
+export function Button({ className, ...props }: ButtonProps) {
+  return <BaseButton className={cn(buttonVariants(), className)} {...props} />;
+}
+`,
+    "lib/utils.ts": `import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+`,
   };
 
   const buttonProperties = {
@@ -468,11 +500,8 @@ export default function Component() {
     representation: "source" as const,
     contentSchemaVersion: 2 as const,
     entry: "Component.tsx",
-    fileKeys: ["Component.tsx"],
-    dependencies: {
-      "@ssota/ui": "workspace:*",
-    },
-    content: buttonContentV2,
+    fileKeys: Object.keys(buttonFiles),
+    files: buttonFiles,
     lifecycleStatus: "Active",
     seed: `${DEMO_UI_COMPONENT_SEED_KEY}:button`,
   };
@@ -503,36 +532,42 @@ export default function Component() {
       .returning({ id: schema.nodes.id });
     buttonId = button?.id;
   } else {
-    const representation = (existingButton[0]?.properties as { representation?: string })
-      ?.representation;
-    if (representation !== "source") {
+    const existingProps = existingButton[0]?.properties as { seed?: string };
+    if (existingProps?.seed === `${DEMO_UI_COMPONENT_SEED_KEY}:button`) {
       await db
         .update(schema.nodes)
         .set({ properties: buttonProperties })
         .where(eq(schema.nodes.id, buttonId));
+    } else {
+      const representation = (
+        existingButton[0]?.properties as { representation?: string }
+      )?.representation;
+      if (representation !== "source") {
+        await db
+          .update(schema.nodes)
+          .set({ properties: buttonProperties })
+          .where(eq(schema.nodes.id, buttonId));
+      }
     }
   }
 
   if (!buttonId) return;
 
-  const cardSource = `import { Button } from "@ssota/ui/components/ui/button";
+  const cardSource = `import { Button } from "./components/ui/button";
 
 export default function Component() {
   return (
     <div className="rounded-lg border p-4 shadow-sm">
-      <Button className="rounded-md bg-primary px-4 py-2 text-primary-foreground">
-        Button
-      </Button>
+      <Button>Button</Button>
     </div>
   );
 }
 `;
 
-  const cardContentV2 = {
-    schemaVersion: 2 as const,
-    files: {
-      "Component.tsx": cardSource,
-    },
+  const cardFiles = {
+    "Component.tsx": cardSource,
+    "components/ui/button.tsx": buttonFiles["components/ui/button.tsx"],
+    "lib/utils.ts": buttonFiles["lib/utils.ts"],
   };
 
   const cardProperties = {
@@ -541,11 +576,8 @@ export default function Component() {
     representation: "source" as const,
     contentSchemaVersion: 2 as const,
     entry: "Component.tsx",
-    fileKeys: ["Component.tsx"],
-    dependencies: {
-      "@ssota/ui": "workspace:*",
-    },
-    content: cardContentV2,
+    fileKeys: Object.keys(cardFiles),
+    files: cardFiles,
     lifecycleStatus: "Active",
     seed: `${DEMO_UI_COMPONENT_SEED_KEY}:card`,
   };
@@ -576,13 +608,22 @@ export default function Component() {
       .returning({ id: schema.nodes.id });
     cardId = card?.id;
   } else {
-    const representation = (existingCard[0]?.properties as { representation?: string })
-      ?.representation;
-    if (representation !== "source") {
+    const existingProps = existingCard[0]?.properties as { seed?: string };
+    if (existingProps?.seed === `${DEMO_UI_COMPONENT_SEED_KEY}:card`) {
       await db
         .update(schema.nodes)
         .set({ properties: cardProperties })
         .where(eq(schema.nodes.id, cardId));
+    } else {
+      const representation = (
+        existingCard[0]?.properties as { representation?: string }
+      )?.representation;
+      if (representation !== "source") {
+        await db
+          .update(schema.nodes)
+          .set({ properties: cardProperties })
+          .where(eq(schema.nodes.id, cardId));
+      }
     }
   }
 

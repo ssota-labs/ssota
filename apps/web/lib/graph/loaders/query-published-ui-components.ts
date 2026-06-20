@@ -1,4 +1,4 @@
-import { readNodeContent } from "@ssota/core";
+import { extractUiComponentFiles } from "@ssota/contracts/catalog";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 
 export type PublishedUiComponentRow = {
@@ -20,8 +20,8 @@ export async function queryPublishedUiComponents(
 
   return nodes
     .filter((node) => {
-      const content = readNodeContent(node.properties);
-      return content != null && content.length > 0;
+      const files = extractUiComponentFiles(node.properties);
+      return files !== null && Object.keys(files).length > 0;
     })
     .map((node) => {
       const props = node.properties as { slug?: string; tier?: string };

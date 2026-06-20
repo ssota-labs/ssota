@@ -83,6 +83,7 @@ export const WORKFLOW_LENS_PHASES: WorkflowLensPhaseConfig[] = [
       TYPE("user_flow", "initiatives", "User flows (initiative scoped)"),
       TYPE("ui_component", "design/ui-components", "UI components"),
       TYPE("design_theme", "design/design-theme", "Design theme tokens"),
+      TYPE("design_toolchain", "design/design-toolchain", "Design build toolchain"),
     ],
   },
   {

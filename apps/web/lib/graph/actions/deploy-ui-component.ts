@@ -1,13 +1,16 @@
 "use server";
 
-import { uiComponentContentSchemaV2, type UiComponentContentV2 } from "@ssota/contracts/catalog";
-import { buildStudioPreview } from "@ssota/studio-build";
 import {
-  createStudioBuildStorage,
-  studioBuildArtifactPaths,
-} from "@ssota/adapter-supabase";
+  buildUiComponentPropertiesForSave,
+  uiComponentContentSchemaV2,
+  type UiComponentContentV2,
+} from "@ssota/contracts/catalog";
 import { revalidatePath } from "next/cache";
 import { withConsolePaths } from "@/lib/console/revalidate";
+import { resolveBuildContext } from "@/lib/design-studio/resolve-build-context";
+import { resolveProjectTheme } from "@/lib/design-studio/resolve-project-theme";
+import { resolveProjectToolchain } from "@/lib/design-studio/resolve-project-toolchain";
+import { runStudioBuildAndCache } from "@/lib/design-studio/run-studio-build";
 import { updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 
@@ -21,7 +24,6 @@ export async function deployUiComponentAction(input: {
   projectId: string;
   nodeId: string;
   contentV2?: UiComponentContentV2;
-  themeCss?: string;
   revalidatePaths: string[];
 }) {
   const deps = getGraphDeps(input.projectId);
@@ -35,72 +37,53 @@ export async function deployUiComponentAction(input: {
   }
 
   const content = uiComponentContentSchemaV2.parse(input.contentV2);
-  const entry =
-    typeof existing.properties.entry === "string"
-      ? existing.properties.entry
-      : "Component.tsx";
-  const dependencies =
-    existing.properties.dependencies &&
-    typeof existing.properties.dependencies === "object"
-      ? (existing.properties.dependencies as Record<string, string>)
-      : { "@ssota/ui": "workspace:*" };
+  const [{ themeCss }, { packageJson, lockfile }] = await Promise.all([
+    resolveProjectTheme(input.projectId),
+    resolveProjectToolchain(input.projectId),
+  ]);
 
-  const build = await buildStudioPreview({
+  const buildContext = resolveBuildContext({
     projectId: input.projectId,
-    entry,
-    files: content.files,
-    dependencies,
-    themeCss: input.themeCss,
-    studioRuntimeInject: true,
+    node: existing,
+    packageJson,
+    lockfile,
+    themeCss,
+    contentV2: content,
   });
 
-  const storage = createStudioBuildStorage();
-  const paths = studioBuildArtifactPaths(input.projectId, build.buildHash);
-  const cacheHit = await storage.exists(input.projectId, build.buildHash);
-  if (!cacheHit) {
-    const artifacts = [
-      {
-        path: paths.jsPath,
-        body: build.artifacts.js,
-        contentType: "text/javascript",
-      },
-    ];
-    if (build.artifacts.css) {
-      artifacts.push({
-        path: paths.cssPath,
-        body: build.artifacts.css,
-        contentType: "text/css",
-      });
-    }
-    if (build.artifacts.map) {
-      artifacts.push({
-        path: paths.mapPath,
-        body: build.artifacts.map,
-        contentType: "application/json",
-      });
-    }
-    await storage.upload(input.projectId, build.buildHash, artifacts);
-  }
+  const { build, paths } = await runStudioBuildAndCache({
+    projectId: input.projectId,
+    buildContext,
+  });
+
+  const slug =
+    typeof existing.properties.slug === "string"
+      ? existing.properties.slug
+      : "component";
+  const tier =
+    existing.properties.tier === "composite" ? "composite" : "primitive";
 
   const nextProperties: Record<string, unknown> = {
     ...existing.properties,
-    representation: "source",
-    contentSchemaVersion: 2,
-    entry,
-    fileKeys: Object.keys(content.files),
-    dependencies,
-    buildHash: build.buildHash,
-    previewArtifactPath: paths.jsPath,
-    builtAt: new Date().toISOString(),
+    ...buildUiComponentPropertiesForSave({
+      slug,
+      tier,
+      entry: buildContext.entry,
+      files: content.files,
+      layerIndex: content.layerIndex,
+      buildHash: build.buildHash,
+      previewArtifactPath: paths.jsPath,
+      builtAt: new Date().toISOString(),
+    }),
+    lifecycleStatus: "Active",
   };
   delete nextProperties.draft;
+  delete nextProperties.content;
 
   await updateGraphNodeAction({
     projectId: input.projectId,
     nodeId: input.nodeId,
-    content: JSON.stringify(content),
     properties: nextProperties,
-    lifecycleStatus: "Active",
     revalidatePaths: input.revalidatePaths,
   });
 

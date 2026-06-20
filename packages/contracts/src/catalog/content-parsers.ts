@@ -1,5 +1,9 @@
 import { NODE_CATALOG, type NodeType } from "./node-types.js";
-import { parseUiComponentContent } from "./ui-component-schemas.js";
+import {
+  extractUiComponentFiles,
+  parseUiComponentContent,
+  parseUiComponentFromProperties,
+} from "./ui-component-schemas.js";
 
 export function requiresNodeContent(
   nodeType: NodeType,
@@ -10,7 +14,8 @@ export function requiresNodeContent(
     return false;
   }
   if (nodeType === "ui_component") {
-    return true;
+    const files = extractUiComponentFiles(_properties);
+    return files !== null && Object.keys(files).length > 0;
   }
   return true;
 }
@@ -22,7 +27,10 @@ export function parseNodeContent(
 ): unknown {
   switch (nodeType) {
     case "ui_component": {
-      return parseUiComponentContent(content, "source");
+      if (content) {
+        return parseUiComponentContent(content, "source");
+      }
+      return parseUiComponentFromProperties(_properties, "source");
     }
     default:
       return content;

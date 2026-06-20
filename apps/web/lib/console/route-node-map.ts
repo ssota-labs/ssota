@@ -44,6 +44,7 @@ export const STATIC_ROUTE_METAS: RouteMeta[] = [
   route("design/ia", "T", ["information_architecture"], "evergreen", "nav.designIa", "cta.newIaNode"),
   route("design/ui-components", "L", ["ui_component"], "evergreen", "nav.designUiComponents", "cta.newUiComponent"),
   route("design/design-theme", "D", ["design_theme"], "evergreen", "nav.designTheme", "cta.newDocument"),
+  route("design/design-toolchain", "D", ["design_toolchain"], "evergreen", "nav.designToolchain", "cta.newDocument"),
 ];
 
 /** Initiative L1 suffixes (under initiatives/:id/). */

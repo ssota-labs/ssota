@@ -142,6 +142,13 @@ export const DESIGN_L1: NavLink[] = [
     href: "design/design-theme",
     pattern: "D",
   },
+  {
+    type: "link",
+    key: "design_toolchain",
+    labelKey: "nav.designToolchain",
+    href: "design/design-toolchain",
+    pattern: "D",
+  },
 ];
 
 export const INITIATIVE_L1_NAV: NavEntry[] = [

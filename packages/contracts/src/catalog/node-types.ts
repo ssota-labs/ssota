@@ -6,6 +6,7 @@ import {
   type Mutability,
 } from "./common.js";
 import { designThemePropertiesSchema } from "./design-theme-schemas.js";
+import { designToolchainPropertiesSchema } from "./design-toolchain-schemas.js";
 import {
   goalHealthStatusSchema,
   goalPrioritySchema,
@@ -17,7 +18,7 @@ import {
   snapshotKindSchema,
   snapshotSourceSchema,
 } from "./goal-schemas.js";
-import { uiComponentTierSchema } from "./ui-component-schemas.js";
+import { uiComponentPropertiesSchema } from "./ui-component-schemas.js";
 
 export const docStatusSchema = z.enum([
   "draft",
@@ -88,6 +89,7 @@ export const NODE_TYPES = [
   "api_snapshot",
   "ui_component",
   "design_theme",
+  "design_toolchain",
 ] as const;
 
 export type NodeType = (typeof NODE_TYPES)[number];
@@ -235,36 +237,9 @@ const NODE_PROPERTY_SCHEMAS: Record<
   api_snapshot: propertiesWithKnownKeys({
     version: z.string().optional(),
   }),
-  ui_component: propertiesWithKnownKeys({
-    slug: z.string().min(1),
-    tier: uiComponentTierSchema,
-    representation: z.enum(["source", "tree"]).optional(),
-    contentSchemaVersion: z.union([z.literal(1), z.literal(2)]).optional(),
-    entry: z.string().min(1).optional(),
-    dependencies: z.record(z.string()).optional(),
-    fileKeys: z.array(z.string()).optional(),
-    buildHash: z.string().optional(),
-    previewArtifactPath: z.string().optional(),
-    builtAt: z.string().datetime().optional(),
-    draft: z.string().optional(),
-  }).superRefine((properties, ctx) => {
-    const representation = properties.representation ?? "source";
-    if (representation !== "source") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Only source representation is supported",
-        path: ["representation"],
-      });
-    }
-    if (!properties.entry) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "entry is required for ui_component",
-        path: ["entry"],
-      });
-    }
-  }),
+  ui_component: uiComponentPropertiesSchema,
   design_theme: designThemePropertiesSchema,
+  design_toolchain: designToolchainPropertiesSchema,
 };
 
 export interface NodeTypeCatalogEntry {
@@ -404,6 +379,11 @@ const NODE_CATALOG_META: Record<
     label: "디자인 테마",
     mutability: "living",
     contentRequired: true,
+  },
+  design_toolchain: {
+    label: "디자인 툴체인",
+    mutability: "living",
+    contentRequired: false,
   },
 };
 

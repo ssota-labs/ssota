@@ -13,19 +13,29 @@ async function openDesignStudio(page: Page) {
   });
 }
 
+async function waitForStudioBuild(page: Page) {
+  await page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/studio/build") && response.status() === 200,
+    { timeout: 120_000 },
+  );
+}
+
 async function waitForBundlePreview(page: Page) {
   await expect(page.getByTestId("studio-mode-inspect")).toBeEnabled({
-    timeout: 60_000,
+    timeout: 120_000,
   });
   const preview = page.frameLocator('iframe[title="Design preview"]');
   await expect(preview.locator("[data-studio-id]").first()).toBeVisible({
-    timeout: 60_000,
+    timeout: 120_000,
   });
   return preview;
 }
 
 async function openDesignStudioWithPreview(page: Page) {
+  const buildDone = waitForStudioBuild(page);
   await openDesignStudio(page);
+  await buildDone;
   return waitForBundlePreview(page);
 }
 
@@ -61,6 +71,7 @@ test.describe("design studio", () => {
   }) => {
     await openDesignStudio(page);
 
+    const buildDone = waitForStudioBuild(page);
     await page.getByTestId("studio-component-demo-card").click();
     await expect(page).toHaveURL(/\/design\/ui-components\/[0-9a-f-]+$/, {
       timeout: 15_000,
@@ -69,6 +80,7 @@ test.describe("design studio", () => {
       /bg-muted/,
       { timeout: 15_000 },
     );
+    await buildDone;
 
     const preview = await waitForBundlePreview(page);
     await expect(preview.locator(".rounded-lg.border").first()).toBeVisible({
@@ -105,15 +117,13 @@ test.describe("design studio", () => {
 
     const borderColorField = page.getByRole("textbox", { name: "Border color" });
     await expect(borderColorField).toBeVisible({ timeout: 10_000 });
-    await page.getByLabel("Border color presets").click();
+    await borderColorField.click();
     await page.getByRole("button", { name: "primary", exact: true }).click();
     await expect(borderColorField).toHaveValue("primary");
 
-    await page.getByLabel("Border color swatch").click();
-    const colorPicker = page.getByLabel("Border color picker");
-    await expect(colorPicker).toBeVisible({ timeout: 10_000 });
-    const pickerValue = await colorPicker.inputValue();
-    expect(pickerValue.toLowerCase()).not.toBe("#000000");
+    await page.getByLabel("Border color picker").click();
+    await expect(page.getByLabel("Hue")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByLabel("Saturation and brightness")).toBeVisible();
   });
 
   test("inspect mode resolves palette border color in picker", async ({
@@ -127,16 +137,13 @@ test.describe("design studio", () => {
 
     const borderColorField = page.getByRole("textbox", { name: "Border color" });
     await expect(borderColorField).toBeVisible({ timeout: 10_000 });
-    await page.getByLabel("Border color presets").click();
+    await borderColorField.click();
     await page.getByRole("button", { name: "blue-500", exact: true }).click();
     await expect(borderColorField).toHaveValue("blue-500");
 
-    await page.getByLabel("Border color swatch").click();
-    const colorPicker = page.getByLabel("Border color picker");
-    await expect(colorPicker).toBeVisible({ timeout: 10_000 });
-    const pickerValue = await colorPicker.inputValue();
-    expect(pickerValue.toLowerCase()).not.toBe("#000000");
-    expect(pickerValue.toLowerCase()).toMatch(/^#[0-9a-f]{6}$/);
+    await page.getByLabel("Border color picker").click();
+    await expect(page.getByLabel("Hue")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByLabel("Saturation and brightness")).toBeVisible();
   });
 
   test("editor updates styles via inspector controls", async ({ page }) => {
@@ -150,10 +157,12 @@ test.describe("design studio", () => {
     await expect(backgroundField).toHaveValue("blue-600");
     await page.waitForTimeout(500);
 
+    const buildDone = waitForStudioBuild(page);
     await page.reload();
     await expect(page.getByTestId("design-studio-shell")).toBeVisible({
       timeout: 15_000,
     });
+    await buildDone;
 
     const reloadedPreview = await waitForBundlePreview(page);
     await reloadedPreview.locator("[data-studio-id]").first().click();

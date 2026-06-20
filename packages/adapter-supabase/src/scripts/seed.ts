@@ -13,10 +13,7 @@ import { seedGraphInstances } from "./seed/graph-instances.js";
 import {
   applyDevWorkflowPack,
 } from "@ssota/core/seed-packs/apply-dev-workflow-pack";
-import {
-  createDbCatalogReadPort,
-  seedDevWorkflowCatalog,
-} from "../ports/db-catalog-read-port.js";
+import { seedDevWorkflowCatalog } from "../ports/db-catalog-read-port.js";
 import { createGraphPorts } from "../ports/create-graph-ports.js";
 
 loadEnv({ path: "../../.env.local" });

@@ -1,9 +1,12 @@
 import path from "node:path";
 import * as esbuild from "esbuild";
-import { assertAllowedDependencies, isAllowedImport } from "./allowlist.js";
 import { resolveStudioBuildRoot } from "./resolve-root.js";
 import { maybeTransformStudioJsx } from "./studio-jsx-plugin.js";
-import type { StudioBuildArtifacts, StudioBuildInput } from "./types.js";
+import {
+  dependencyMapFromPackageJson,
+  type StudioBuildArtifacts,
+  type StudioBuildInput,
+} from "./types.js";
 
 const VIRTUAL_NAMESPACE = "studio-vfs";
 const BOOTSTRAP_MODULE = "@ssota/studio-preview-runtime/bootstrap";
@@ -17,6 +20,29 @@ function normalizeVirtualPath(filePath: string): string {
     return normalized.slice(1);
   }
   return normalized;
+}
+
+function resolveVirtualFilePath(
+  fileMap: Map<string, string>,
+  resolved: string,
+): string | null {
+  if (fileMap.has(resolved)) {
+    return resolved;
+  }
+  const extensions = [".tsx", ".ts", ".jsx", ".js"];
+  for (const ext of extensions) {
+    const withExt = `${resolved}${ext}`;
+    if (fileMap.has(withExt)) {
+      return withExt;
+    }
+  }
+  for (const ext of extensions) {
+    const indexPath = `${resolved}/index${ext}`;
+    if (fileMap.has(indexPath)) {
+      return indexPath;
+    }
+  }
+  return null;
 }
 
 function loaderForPath(filePath: string): esbuild.Loader {
@@ -37,6 +63,35 @@ function resolveImporterPath(importer: string): string {
     return "__studio_entry__.tsx";
   }
   return normalizeVirtualPath(importer);
+}
+
+function isAllowedImport(
+  importPath: string,
+  dependencies: Record<string, string>,
+): boolean {
+  if (importPath.startsWith(".") || importPath.startsWith("/")) {
+    return true;
+  }
+  const builtins = new Set([
+    "react",
+    "react-dom",
+    "react-dom/client",
+    "react/jsx-runtime",
+    "react/jsx-dev-runtime",
+    "@ssota/studio-preview-runtime/bootstrap",
+  ]);
+  if (builtins.has(importPath)) {
+    return true;
+  }
+  if (importPath in dependencies) {
+    return true;
+  }
+  const segments = importPath.split("/");
+  if (segments[0]?.startsWith("@") && segments[1]) {
+    const scope = `${segments[0]}/${segments[1]}`;
+    return scope in dependencies;
+  }
+  return false;
 }
 
 function createVirtualFilesPlugin(
@@ -67,8 +122,9 @@ function createVirtualFilesPlugin(
         const resolved = normalizeVirtualPath(
           path.posix.join(path.posix.dirname(importerPath), args.path),
         );
-        if (fileMap.has(resolved)) {
-          return { path: resolved, namespace: VIRTUAL_NAMESPACE };
+        const virtualPath = resolveVirtualFilePath(fileMap, resolved);
+        if (virtualPath) {
+          return { path: virtualPath, namespace: VIRTUAL_NAMESPACE };
         }
         return { errors: [{ text: `Virtual file not found: ${args.path}` }] };
       });
@@ -142,8 +198,7 @@ export async function buildStudioBundle(
     throw new Error(`entry file not found in files: ${input.entry}`);
   }
 
-  assertAllowedDependencies(input.dependencies);
-
+  const dependencies = dependencyMapFromPackageJson(input.packageJson);
   const wrapperSource = createEntryWrapper(input.entry, input.studioRuntimeInject);
   const virtualFiles = {
     ...input.files,
@@ -167,7 +222,7 @@ export async function buildStudioBundle(
     target: "es2020",
     jsx: "automatic",
     sourcemap: "inline",
-    plugins: [createVirtualFilesPlugin(virtualFiles, input.dependencies, resolveRoot)],
+    plugins: [createVirtualFilesPlugin(virtualFiles, dependencies, resolveRoot)],
     logLevel: "silent",
   });
 

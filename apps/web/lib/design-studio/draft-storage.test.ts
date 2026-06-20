@@ -11,21 +11,31 @@ describe("resolveInitialContentV2", () => {
     },
   };
 
-  it("prefers session content over published content", () => {
+  it("prefers session content over published properties", () => {
     expect(
       resolveInitialContentV2({
         sessionContent,
-        publishedContent: JSON.stringify(fallback),
+        publishedProperties: {
+          slug: "btn",
+          tier: "primitive",
+          entry: "Component.tsx",
+          files: fallback.files,
+        },
         fallback,
       }),
     ).toEqual(sessionContent);
   });
 
-  it("falls back to published content when session is empty", () => {
+  it("falls back to published properties when session is empty", () => {
     expect(
       resolveInitialContentV2({
         sessionContent: null,
-        publishedContent: JSON.stringify(sessionContent),
+        publishedProperties: {
+          slug: "btn",
+          tier: "primitive",
+          entry: "Component.tsx",
+          files: sessionContent.files,
+        },
         fallback,
       }),
     ).toEqual(sessionContent);
@@ -35,7 +45,7 @@ describe("resolveInitialContentV2", () => {
     expect(
       resolveInitialContentV2({
         sessionContent: null,
-        publishedContent: null,
+        publishedProperties: null,
         fallback,
       }),
     ).toEqual(fallback);
