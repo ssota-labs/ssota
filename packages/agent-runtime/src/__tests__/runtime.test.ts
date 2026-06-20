@@ -16,6 +16,7 @@ describe("createSsotaTools", () => {
         "get_task",
         "query_nodes",
         "query_tasks",
+        "request_approval",
         "spawn_task",
         "traverse_edges",
         "update_node",

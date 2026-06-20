@@ -42,7 +42,7 @@ export function buildSystemPrompt(params: {
       ? `\n## Workflow instruction (${task.workflowKey})\n${workflowInstruction}`
       : null,
     `\n## Finishing`,
-    `When the task is complete, call \`complete_task\` with a short summary and any result payload. If you are blocked and need a human decision, call \`block_task\` with the reason. Do not stop without calling one of these.`,
+    `When the task is complete, call \`complete_task\` with a short summary and any result payload. Before a risky or irreversible action that needs human sign-off, call \`request_approval\` with the reason (this pauses the task for approval). If you are blocked by missing input, call \`block_task\` with the reason. Do not stop without calling one of these.`,
   ]
     .filter((line) => line !== null)
     .join("\n");

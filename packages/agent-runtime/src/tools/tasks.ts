@@ -105,5 +105,40 @@ export function createTaskTools(): ToolSet {
         return serializeTask(task);
       },
     }),
+
+    request_approval: tool({
+      description:
+        "Pause for a human approval gate before a risky or irreversible action. Records a gate on the task and blocks it; a human approves/rejects, then the agent re-runs. Use this instead of acting when you need sign-off.",
+      inputSchema: z.object({
+        reason: z
+          .string()
+          .describe("What needs approval and why (shown to the human)."),
+        summary: z
+          .string()
+          .optional()
+          .describe("Optional summary of the proposed action."),
+      }),
+      execute: async (input, { experimental_context }) => {
+        const ctx = getRunContext(experimental_context);
+        // Task-based gate: the task rests in `blocked` with a gate descriptor
+        // (WorkflowGateSpec-shaped) until a human resolves it via the gate
+        // route, which re-runs the agent. Fits the loop-in-a-step design; a
+        // Workflow createHook would suit a continuously-running loop instead.
+        const gate = {
+          id: globalThis.crypto.randomUUID(),
+          policy: "human_approval",
+          required: true,
+          reason: input.reason,
+          ...(input.summary ? { summary: input.summary } : {}),
+          requestedAt: new Date().toISOString(),
+        };
+        const task = await updateTask(taskDeps(ctx.projectId), ctx.projectId, {
+          taskId: ctx.taskId,
+          status: "blocked",
+          context: { gate },
+        });
+        return { gateRequested: true, gate, task: serializeTask(task) };
+      },
+    }),
   };
 }
