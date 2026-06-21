@@ -1,10 +1,18 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import { chatWorkspaces } from "../db/schema.js";
 
 export interface ChatWorkspaceTarget {
   projectId: string;
   accountId: string | null;
+}
+
+export interface ChatWorkspaceRow {
+  id: string;
+  platform: string;
+  workspaceKey: string;
+  accountId: string | null;
+  name: string | null;
 }
 
 export interface LinkChatWorkspaceInput {
@@ -57,6 +65,32 @@ export function createChatWorkspacePort(db: Db) {
             updatedAt: new Date(),
           },
         });
+    },
+
+    async list(projectId: string): Promise<ChatWorkspaceRow[]> {
+      return db
+        .select({
+          id: chatWorkspaces.id,
+          platform: chatWorkspaces.platform,
+          workspaceKey: chatWorkspaces.workspaceKey,
+          accountId: chatWorkspaces.accountId,
+          name: chatWorkspaces.name,
+        })
+        .from(chatWorkspaces)
+        .where(eq(chatWorkspaces.projectId, projectId))
+        .orderBy(desc(chatWorkspaces.createdAt));
+    },
+
+    /** Scoped by projectId so a client can't unlink another project's row. */
+    async unlink(id: string, projectId: string): Promise<void> {
+      await db
+        .delete(chatWorkspaces)
+        .where(
+          and(
+            eq(chatWorkspaces.id, id),
+            eq(chatWorkspaces.projectId, projectId),
+          ),
+        );
     },
   };
 }

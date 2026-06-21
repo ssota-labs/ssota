@@ -28,6 +28,7 @@ export {
 export {
   createChatWorkspacePort,
   type ChatWorkspaceTarget,
+  type ChatWorkspaceRow,
   type LinkChatWorkspaceInput,
 } from "./ports/chat-workspace-port.js";
 export {
