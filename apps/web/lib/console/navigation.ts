@@ -354,43 +354,9 @@ export const L0_NAV: NavEntry[] = [
     href: "overview",
     pattern: "H",
   },
-  {
-    type: "section",
-    key: "l0_workflow",
-    labelKey: "nav.sectionWorkflow",
-    children: [
-      {
-        type: "group",
-        key: "executive",
-        labelKey: "nav.executive",
-        children: EXECUTIVE_L1,
-      },
-      {
-        type: "group",
-        key: "research",
-        labelKey: "nav.research",
-        children: RESEARCH_L1,
-      },
-      {
-        type: "group",
-        key: "manager",
-        labelKey: "nav.manager",
-        children: MANAGER_L1,
-      },
-      {
-        type: "group",
-        key: "development",
-        labelKey: "nav.productDev",
-        children: DEVELOPMENT_L1,
-      },
-      {
-        type: "group",
-        key: "design",
-        labelKey: "nav.productDesign",
-        children: DESIGN_L1,
-      },
-    ],
-  },
+  // The per-stage workflow nav (Executive/Research/Manager/Development/Design)
+  // is now the Notion-style page tree (PageTreeNav, fed by the pages table), not
+  // a static section here. L0 keeps only the always-on top links + Explore.
   {
     type: "section",
     key: "l0_explore",
