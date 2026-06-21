@@ -93,6 +93,9 @@ export const pageActionSchema = z.discriminatedUnion("kind", [
     nodeId: actionParamSchema,
     title: actionParamSchema.optional(),
     properties: z.record(actionParamSchema).optional(),
+    /** When true, merge into the node's existing properties instead of replacing
+     * them (for single-field/token edits). */
+    merge: z.boolean().optional(),
   }),
   z.object({
     kind: z.literal("create_edge"),

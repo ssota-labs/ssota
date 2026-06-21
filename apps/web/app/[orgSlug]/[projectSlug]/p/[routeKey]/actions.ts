@@ -107,16 +107,28 @@ export async function runPageActionAction(
         properties: interpRecord(action.properties, interp),
       });
       break;
-    case "update_node":
+    case "update_node": {
+      const nodeId = String(interp(action.nodeId));
+      let properties = action.properties
+        ? interpRecord(action.properties, interp)
+        : undefined;
+      // graphWrite.updateNode replaces properties wholesale; for merge edits
+      // (tokens, single fields) read the current node and shallow-merge first.
+      if (action.merge && properties) {
+        const existing = await ports.graphRead.getNode({
+          projectId: project.id,
+          nodeId,
+        });
+        properties = { ...(existing?.properties ?? {}), ...properties };
+      }
       await updateNode(ports, {
         projectId: project.id,
-        nodeId: String(interp(action.nodeId)),
+        nodeId,
         title: action.title !== undefined ? String(interp(action.title)) : undefined,
-        properties: action.properties
-          ? interpRecord(action.properties, interp)
-          : undefined,
+        properties,
       });
       break;
+    }
     case "create_edge":
       await createEdge(ports, {
         projectId: project.id,

@@ -30,6 +30,11 @@ export function DynamicPageClient({
     runPageActionAction(orgSlug, projectSlug, routeKey, actionKey, input);
 
   return (
-    <DynamicPageRenderer spec={spec} bindingData={bindingData} onAction={onAction} />
+    <DynamicPageRenderer
+      spec={spec}
+      bindingData={bindingData}
+      onAction={onAction}
+      basePath={`/${orgSlug}/${projectSlug}`}
+    />
   );
 }
