@@ -27,6 +27,7 @@ export {
   getConnectInstallation,
   type CredentialProvider,
   type CredentialScope,
+  type ConnectAuthorizationScope,
   type CredentialToken,
   type StartConnectAuthorizationOptions,
   type ConnectInstallation,

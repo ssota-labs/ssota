@@ -19,6 +19,12 @@ export interface CredentialScope {
   installationId?: string;
 }
 
+/** Scope for `startConnectAuthorization` — Vercel Connect requires a user subject. */
+export interface ConnectAuthorizationScope extends CredentialScope {
+  /** Signed-in user id (e.g. Supabase `auth.users.id`). */
+  userId: string;
+}
+
 export interface CredentialToken {
   token: string;
   expiresAt?: string;
@@ -116,9 +122,13 @@ export interface StartConnectAuthorizationOptions {
 
 export async function startConnectAuthorization(
   connector: string,
-  scope: CredentialScope,
+  scope: ConnectAuthorizationScope,
   options: StartConnectAuthorizationOptions = {},
 ): Promise<string> {
+  if (!scope.userId) {
+    throw new Error("userId is required for Connect authorization");
+  }
+
   // Dev/local stub: skip the real provider OAuth and bounce straight back to
   // our callback with a synthetic installation id, simulating a user who just
   // authorized. Mirrors how Vercel Connect redirects to `callbackUrl` with the
@@ -128,7 +138,7 @@ export async function startConnectAuthorization(
     const callback = new URL(base);
     const slug = connector.replace(/[^a-zA-Z0-9]/g, "-");
     const suffix = Math.abs(
-      [...`${connector}:${scope.accountId ?? ""}:${Date.now()}`].reduce(
+      [...`${connector}:${scope.userId}:${scope.accountId ?? ""}:${Date.now()}`].reduce(
         (acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0,
         7,
       ),
@@ -155,13 +165,12 @@ export async function startConnectAuthorization(
   } catch {
     throw new Error("@vercel/connect is not installed");
   }
-  // App subject: connecting/installing the app into a workspace (the common
-  // multi-tenant "connect your workspace" flow). The connector type decides
-  // what the returned url does (Slack/GitHub install, OAuth consent).
+  // Vercel Connect authorization UI requires a user subject; app-subject tokens
+  // are minted later via getToken after the install/consent flow completes.
   const { url } = await connect.startAuthorization(
     connector,
     {
-      subject: { type: "app" },
+      subject: { type: "user", id: scope.userId },
       ...(scope.installationId ? { installationId: scope.installationId } : {}),
       ...(options.scopes ? { scopes: options.scopes } : {}),
     },

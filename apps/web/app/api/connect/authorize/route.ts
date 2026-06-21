@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { startConnectAuthorization } from "@ssota/agent-runtime";
+import { loginRedirect } from "@/lib/auth/login-redirect";
+import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -29,6 +31,11 @@ export async function GET(request: Request) {
     );
   }
 
+  const user = await getCurrentUser();
+  if (!user) {
+    loginRedirect(returnTo);
+  }
+
   // Connect returns the user here; we carry the context to record the link.
   const callback = new URL("/api/connect/callback", url.origin);
   callback.searchParams.set("connector", connector);
@@ -39,7 +46,7 @@ export async function GET(request: Request) {
   try {
     const flowUrl = await startConnectAuthorization(
       connector,
-      { projectId, accountId },
+      { projectId, accountId, userId: user.id },
       { scopes, callbackUrl: callback.toString() },
     );
     return NextResponse.redirect(flowUrl);
