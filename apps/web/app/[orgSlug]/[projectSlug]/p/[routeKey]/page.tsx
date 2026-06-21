@@ -5,7 +5,7 @@ import {
 } from "@ssota/core";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts } from "@/lib/ports";
-import { DynamicPageRenderer } from "@/lib/lab-sandbox/dynamic-page-renderer";
+import { DynamicPageClient } from "./page-client";
 
 /**
  * Production renderer for an agent-authored page. Loads the `page` node whose
@@ -42,7 +42,13 @@ export default async function AgentDashboardPage({
 
   return (
     <div className="mx-auto max-w-5xl p-6">
-      <DynamicPageRenderer spec={page.definition.spec} bindingData={bindingData} />
+      <DynamicPageClient
+        spec={page.definition.spec}
+        bindingData={bindingData}
+        orgSlug={orgSlug}
+        projectSlug={projectSlug}
+        routeKey={routeKey}
+      />
     </div>
   );
 }

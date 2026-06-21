@@ -95,6 +95,7 @@ export const DEFAULT_LAB_SANDBOX: LabSandboxState = {
         bindings: {
           rows: { kind: "query", catalogKey: "market_research" },
         },
+        actions: {},
       },
     },
     {
@@ -122,6 +123,7 @@ export const DEFAULT_LAB_SANDBOX: LabSandboxState = {
         bindings: {
           rows: { kind: "query", catalogKey: "objective" },
         },
+        actions: {},
       },
     },
     {
@@ -143,6 +145,7 @@ export const DEFAULT_LAB_SANDBOX: LabSandboxState = {
         bindings: {
           rows: { kind: "query", catalogKey: "roadmap" },
         },
+        actions: {},
       },
     },
   ],

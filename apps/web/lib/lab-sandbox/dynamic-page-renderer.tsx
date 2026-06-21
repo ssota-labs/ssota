@@ -1,5 +1,6 @@
 "use client";
 
+import { createContext, useContext, useState } from "react";
 import type { JsonRenderSpec } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import {
@@ -21,11 +22,101 @@ export const UI_CATALOG_COMPONENTS = [
   "NodeField",
   "Tabs",
   "SplitPane",
+  "Form",
+  "Field",
+  "Button",
 ] as const;
+
+/** Invoked when an interactive element fires its action. */
+export type OnAction = (
+  actionKey: string,
+  input: Record<string, unknown>,
+) => void | Promise<void>;
+
+const ActionContext = createContext<OnAction | undefined>(undefined);
+
+type FormCtx = {
+  values: Record<string, unknown>;
+  setValue: (name: string, value: unknown) => void;
+};
+const FormValuesContext = createContext<FormCtx | null>(null);
+
+function FormEl({ children }: { children: React.ReactNode }) {
+  const [values, setValues] = useState<Record<string, unknown>>({});
+  const setValue = (name: string, value: unknown) =>
+    setValues((prev) => ({ ...prev, [name]: value }));
+  return (
+    <FormValuesContext.Provider value={{ values, setValue }}>
+      <form className="space-y-3" onSubmit={(e) => e.preventDefault()}>
+        {children}
+      </form>
+    </FormValuesContext.Provider>
+  );
+}
+
+function FieldEl({
+  name,
+  label,
+  placeholder,
+  inputType,
+}: {
+  name: string;
+  label?: string;
+  placeholder?: string;
+  inputType?: string;
+}) {
+  const form = useContext(FormValuesContext);
+  const value = (form?.values[name] ?? "") as string;
+  return (
+    <label className="block space-y-1 text-sm">
+      {label ? <span className="text-muted-foreground">{label}</span> : null}
+      <input
+        type={inputType ?? "text"}
+        placeholder={placeholder}
+        value={value}
+        onChange={(e) => form?.setValue(name, e.target.value)}
+        className="border-border w-full rounded-md border px-2 py-1.5 text-sm"
+      />
+    </label>
+  );
+}
+
+function ButtonEl({
+  actionKey,
+  label,
+}: {
+  actionKey?: string;
+  label: string;
+}) {
+  const onAction = useContext(ActionContext);
+  const form = useContext(FormValuesContext);
+  const [pending, setPending] = useState(false);
+  const disabled = !onAction || !actionKey || pending;
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={async () => {
+        if (!onAction || !actionKey) return;
+        setPending(true);
+        try {
+          await onAction(actionKey, form?.values ?? {});
+        } finally {
+          setPending(false);
+        }
+      }}
+      className="bg-primary text-primary-foreground inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium disabled:opacity-50"
+    >
+      {pending ? "…" : label}
+    </button>
+  );
+}
 
 type RenderProps = {
   spec: JsonRenderSpec;
   bindingData: BindingContext;
+  /** Bound on the production route; omitted in the lab preview (buttons no-op). */
+  onAction?: OnAction;
 };
 
 function asNodes(value: unknown): MockNode[] {
@@ -147,6 +238,28 @@ function renderElement(
           {childNodes}
         </div>
       );
+    case "Form":
+      return <FormEl key={elementId}>{childNodes}</FormEl>;
+    case "Field":
+      return (
+        <FieldEl
+          key={elementId}
+          name={String(props.name ?? elementId)}
+          label={props.label ? String(props.label) : undefined}
+          placeholder={props.placeholder ? String(props.placeholder) : undefined}
+          inputType={props.inputType ? String(props.inputType) : undefined}
+        />
+      );
+    case "Button":
+      return (
+        <ButtonEl
+          key={elementId}
+          actionKey={
+            typeof props.action === "string" ? props.action : undefined
+          }
+          label={String(props.label ?? "Submit")}
+        />
+      );
     default:
       return (
         <div
@@ -159,10 +272,12 @@ function renderElement(
   }
 }
 
-export function DynamicPageRenderer({ spec, bindingData }: RenderProps) {
+export function DynamicPageRenderer({ spec, bindingData, onAction }: RenderProps) {
   return (
-    <div className="space-y-2" data-testid="dynamic-page-renderer">
-      {renderElement(spec.root, spec, bindingData)}
-    </div>
+    <ActionContext.Provider value={onAction}>
+      <div className="space-y-2" data-testid="dynamic-page-renderer">
+        {renderElement(spec.root, spec, bindingData)}
+      </div>
+    </ActionContext.Provider>
   );
 }

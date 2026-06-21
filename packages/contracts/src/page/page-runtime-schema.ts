@@ -56,6 +56,58 @@ export const jsonRenderSpecSchema = z.object({
 
 export type JsonRenderSpec = z.infer<typeof jsonRenderSpecSchema>;
 
+/**
+ * A value in an action descriptor may be a literal or a reference resolved
+ * server-side at execution time:
+ * - `{ $binding: "rows.0.id" }` — dotted path into the page's resolved bindings
+ * - `{ $ctx: "initiativeId" }`  — value from the page context
+ * - `{ $input: "title" }`       — value from the client-collected form payload
+ */
+export const actionValueRefSchema = z.union([
+  z.object({ $binding: z.string().min(1) }),
+  z.object({ $ctx: z.string().min(1) }),
+  z.object({ $input: z.string().min(1) }),
+]);
+
+export type ActionValueRef = z.infer<typeof actionValueRefSchema>;
+
+/** A descriptor param: a value-ref or any literal JSON. */
+export const actionParamSchema = z.union([actionValueRefSchema, z.unknown()]);
+
+/**
+ * A standardized, declarative action an interactive element can trigger. The
+ * server re-reads this descriptor authoritatively (never trusting the client),
+ * interpolates value-refs, and calls the matching graph use-case. New kinds map
+ * 1:1 to existing graph mutations; the execution chokepoint can later be swapped
+ * for the full executeAction(gate→commit) pipeline.
+ */
+export const pageActionSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("create_node"),
+    catalogKey: z.string().min(1),
+    title: actionParamSchema.optional(),
+    properties: z.record(actionParamSchema).optional(),
+  }),
+  z.object({
+    kind: z.literal("update_node"),
+    nodeId: actionParamSchema,
+    title: actionParamSchema.optional(),
+    properties: z.record(actionParamSchema).optional(),
+  }),
+  z.object({
+    kind: z.literal("create_edge"),
+    catalogKey: z.string().min(1),
+    sourceNodeId: actionParamSchema,
+    targetNodeId: actionParamSchema,
+  }),
+  z.object({
+    kind: z.literal("delete_edge"),
+    edgeId: actionParamSchema,
+  }),
+]);
+
+export type PageAction = z.infer<typeof pageActionSchema>;
+
 export const pageContextDefSchema = z.object({
   initiativeId: z.string().optional(),
 });
@@ -66,10 +118,12 @@ export const pageRuntimeDefinitionSchema = z
     scope: z.enum(["project", "evergreen", "initiative"]),
     spec: jsonRenderSpecSchema,
     bindings: z.record(bindingDefSchema).default({}),
+    actions: z.record(pageActionSchema).default({}),
     context: pageContextDefSchema.optional(),
   })
   .superRefine((value, ctx) => {
     const bindingKeys = new Set(Object.keys(value.bindings));
+    const actionKeys = new Set(Object.keys(value.actions));
     for (const [elementId, element] of Object.entries(value.spec.elements)) {
       const props = element.props ?? {};
       const bindingKey = props.binding;
@@ -78,6 +132,14 @@ export const pageRuntimeDefinitionSchema = z
           code: z.ZodIssueCode.custom,
           message: `Element '${elementId}' references unknown binding '${bindingKey}'`,
           path: ["spec", "elements", elementId, "props", "binding"],
+        });
+      }
+      const actionKey = props.action;
+      if (typeof actionKey === "string" && !actionKeys.has(actionKey)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Element '${elementId}' references unknown action '${actionKey}'`,
+          path: ["spec", "elements", elementId, "props", "action"],
         });
       }
     }
