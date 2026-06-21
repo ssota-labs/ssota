@@ -5,13 +5,6 @@ import { usePathname } from "next/navigation";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import type { Organization } from "@ssota/core";
-import type {
-  WorkspaceDefinition,
-  WorkspaceNavEntry,
-  WorkspaceNavGroup,
-  WorkspaceNavLink,
-  WorkspaceNavSection,
-} from "@ssota/contracts";
 import { cn } from "@ssota/ui/lib/utils";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { useLocale } from "@/components/i18n/locale-provider";
@@ -48,44 +41,9 @@ type AppSidebarProps = {
   initiatives?: InitiativeOption[];
   userEmail: string;
   signOutAction: () => Promise<void>;
-  /** DB-persisted nav from the project's `workspace` node. Null → static fallback. */
-  dbNav?: WorkspaceDefinition | null;
   /** Notion-style page tree from the `pages` table, rendered below the static nav. */
   pageTree?: SidebarPage[];
 };
-
-function isDbLink(entry: WorkspaceNavEntry): entry is WorkspaceNavLink {
-  return entry.type === "link";
-}
-function isDbGroup(entry: WorkspaceNavEntry): entry is WorkspaceNavGroup {
-  return entry.type === "group";
-}
-function isDbSection(entry: WorkspaceNavEntry): entry is WorkspaceNavSection {
-  return entry.type === "section";
-}
-
-/** Keys of groups/sections that contain the active link, for initial expansion. */
-function collectExpandedDbKeys(
-  entries: WorkspaceNavEntry[],
-  relativePath: string,
-): Record<string, boolean> {
-  const expanded: Record<string, boolean> = {};
-  const matches = (href?: string) =>
-    href !== undefined &&
-    href !== "" &&
-    (relativePath === href || relativePath.startsWith(`${href}/`));
-  const walk = (entry: WorkspaceNavEntry): boolean => {
-    if (isDbLink(entry)) return matches(entry.href);
-    if (isDbGroup(entry) || isDbSection(entry)) {
-      const hit = entry.children.map(walk).some(Boolean);
-      if (hit) expanded[entry.key] = true;
-      return hit;
-    }
-    return false;
-  };
-  entries.forEach(walk);
-  return expanded;
-}
 
 function isGroup(entry: NavEntry): entry is NavGroup {
   return entry.type === "group";
@@ -104,7 +62,6 @@ export function AppSidebar({
   initiatives: _initiatives = [],
   userEmail,
   signOutAction,
-  dbNav,
   pageTree = [],
 }: AppSidebarProps) {
   const ctx = useProjectContext();
@@ -113,12 +70,8 @@ export function AppSidebar({
   const projectBase = projectPath(ctx);
   const relativePath = getRelativeProjectPath(pathname, projectBase);
 
-  const useDbNav = Boolean(dbNav?.nav?.length);
-
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() =>
-    useDbNav
-      ? collectExpandedDbKeys(dbNav!.nav, relativePath)
-      : getExpandedGroupsFromPath(relativePath),
+    getExpandedGroupsFromPath(relativePath),
   );
 
   const mode = getSidebarMode(pathname, projectBase);
@@ -135,79 +88,6 @@ export function AppSidebar({
       ...prev,
       [key]: !prev[key],
     }));
-  }
-
-  // ----- DB-driven nav (from the workspace node), rendered recursively -----
-  const dbLabel = (entry: { label: string; labelKey?: string }) =>
-    entry.labelKey ? t(entry.labelKey) : entry.label;
-
-  function renderDbLink(link: WorkspaceNavLink, initiativeId?: string) {
-    // Page-body dynamic rendering is out of scope this iteration: links target
-    // existing console routes via `href`. A pageNodeId-only link is non-navigable
-    // for now and is skipped.
-    if (link.href === undefined) return null;
-    const href = initiativeId
-      ? initiativePath(ctx, initiativeId, link.href)
-      : resolveNavHref(ctx, link.href);
-    const active = isNavLinkActive(pathname, projectBase, link.href, initiativeId);
-    return (
-      <Link
-        key={link.key}
-        href={href}
-        className={cn(
-          "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-          active && "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
-        )}
-      >
-        <NavItemIcon iconKey={link.key} className="size-4 shrink-0 text-muted-foreground" />
-        {dbLabel(link)}
-      </Link>
-    );
-  }
-
-  function renderDbGroup(group: WorkspaceNavGroup, initiativeId?: string) {
-    const expanded = expandedGroups[group.key];
-    return (
-      <div key={group.key} className="space-y-0.5">
-        <button
-          type="button"
-          onClick={() => toggleGroup(group.key)}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-sidebar-accent"
-        >
-          <NavItemIcon iconKey={group.key} className="size-4 shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1 text-left">{dbLabel(group)}</span>
-          <CaretRightIcon
-            className={cn("size-3.5 shrink-0 transition-transform", expanded && "rotate-90")}
-          />
-        </button>
-        {expanded ? (
-          <div className="ml-3 space-y-0.5 border-l pl-2">
-            {group.children.map((child) => renderDbEntry(child, initiativeId))}
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
-  function renderDbSection(section: WorkspaceNavSection, initiativeId?: string) {
-    return (
-      <div key={section.key} className="space-y-0.5 pt-2 first:pt-0">
-        <div className="px-2 py-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          {dbLabel(section)}
-        </div>
-        {section.children.map((child) => renderDbEntry(child, initiativeId))}
-      </div>
-    );
-  }
-
-  function renderDbEntry(
-    entry: WorkspaceNavEntry,
-    initiativeId?: string,
-  ): React.ReactNode {
-    if (isDbLink(entry)) return renderDbLink(entry, initiativeId);
-    if (isDbGroup(entry)) return renderDbGroup(entry, initiativeId);
-    if (isDbSection(entry)) return renderDbSection(entry, initiativeId);
-    return null;
   }
 
   function renderNavLink(item: NavLink, initiativeId?: string) {
@@ -306,9 +186,6 @@ export function AppSidebar({
   }
 
   function renderL0Nav() {
-    if (useDbNav) {
-      return dbNav!.nav.map((entry) => renderDbEntry(entry));
-    }
     return L0_NAV.map((entry) => {
       if (isSection(entry)) return renderL0Section(entry);
       if (isLink(entry)) return renderNavLink(entry);
@@ -318,13 +195,10 @@ export function AppSidebar({
   }
 
   function renderL1Nav(initiativeId: string) {
-    const dbInitiative = dbNav?.navInitiative;
     return (
       <>
         {renderBackButton()}
-        {dbInitiative?.length
-          ? dbInitiative.map((entry) => renderDbEntry(entry, initiativeId))
-          : INITIATIVE_L1_NAV.map((entry) => renderL1Entry(entry, initiativeId))}
+        {INITIATIVE_L1_NAV.map((entry) => renderL1Entry(entry, initiativeId))}
       </>
     );
   }

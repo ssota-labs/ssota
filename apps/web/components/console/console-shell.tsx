@@ -3,7 +3,6 @@
 import { Fragment } from "react";
 import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
-import type { WorkspaceDefinition } from "@ssota/contracts";
 import { AppSidebar } from "./app-sidebar";
 import type { SidebarPage } from "./page-tree-nav";
 import { ConsoleTopBar } from "./console-top-bar";
@@ -24,7 +23,6 @@ type ConsoleShellProps = {
   userEmail: string;
   signOutAction: () => Promise<void>;
   initiatives?: InitiativeOption[];
-  dbNav?: WorkspaceDefinition | null;
   pageTree?: SidebarPage[];
   children: React.ReactNode;
 };
@@ -36,7 +34,6 @@ export function ConsoleShell({
   userEmail,
   signOutAction,
   initiatives = [],
-  dbNav,
   pageTree,
   children,
 }: ConsoleShellProps) {
@@ -53,7 +50,6 @@ export function ConsoleShell({
           initiatives={initiatives}
           userEmail={userEmail}
           signOutAction={signOutAction}
-          dbNav={dbNav}
           pageTree={pageTree}
         />
         <div className="flex min-w-0 flex-1 flex-col">

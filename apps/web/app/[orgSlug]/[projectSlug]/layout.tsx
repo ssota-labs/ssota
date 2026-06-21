@@ -1,18 +1,12 @@
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { workspaceDefinitionSchema } from "@ssota/contracts";
 import { signOutAction } from "@/app/actions";
 import { ConsoleShell } from "@/components/console/console-shell";
 import { getDefaultProjectPath } from "@/lib/console/default-landing";
 import { listInitiatives } from "@/lib/console/initiatives";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { loginRedirect } from "@/lib/auth/login-redirect";
-import {
-  getConsolePort,
-  getOnboardingPort,
-  getGraphPorts,
-  getPagePort,
-} from "@/lib/ports";
+import { getConsolePort, getOnboardingPort, getPagePort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export default async function ProjectLayout({
@@ -45,18 +39,12 @@ export default async function ProjectLayout({
 
   const { org, project } = await resolveProject(orgSlug, projectSlug);
 
-  const [organizations, projects, initiatives, workspaceNodes, pages] =
-    await Promise.all([
-      consolePort.listOrganizationsForUser(user.id),
-      consolePort.listProjectsForOrganization(org.id),
-      listInitiatives(project.id),
-      getGraphPorts(project.id).graphRead.queryNodes({
-        projectId: project.id,
-        catalogKey: "workspace",
-        limit: 1,
-      }),
-      getPagePort(project.id).listPages(),
-    ]);
+  const [organizations, projects, initiatives, pages] = await Promise.all([
+    consolePort.listOrganizationsForUser(user.id),
+    consolePort.listProjectsForOrganization(org.id),
+    listInitiatives(project.id),
+    getPagePort(project.id).listPages(),
+  ]);
 
   // Notion-style page tree for the sidebar (minimal serializable fields only).
   const pageTree = pages.map((p) => ({
@@ -66,14 +54,6 @@ export default async function ProjectLayout({
     position: p.position,
     icon: p.icon ?? null,
   }));
-
-  // DB-driven sidebar nav from the `workspace` node. Parse defensively — on a
-  // missing/invalid node, dbNav stays null and the sidebar falls back to the
-  // static L0_NAV constant.
-  const parsedNav = workspaceNodes[0]
-    ? workspaceDefinitionSchema.safeParse(workspaceNodes[0].properties)
-    : null;
-  const dbNav = parsedNav?.success ? parsedNav.data : null;
 
   if (!organizations.some((item) => item.id === org.id)) {
     redirect(await getDefaultProjectPath(user.id));
@@ -100,7 +80,6 @@ export default async function ProjectLayout({
       userEmail={user.email ?? ""}
       signOutAction={signOutAction}
       initiatives={initiatives}
-      dbNav={dbNav}
       pageTree={pageTree}
     >
       {children}
