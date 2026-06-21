@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
 import { getConnectInstallation, getDb } from "@ssota/agent-runtime";
-import { createAccountConnectionPort } from "@ssota/adapter-supabase";
+import {
+  createAccountConnectionPort,
+  createChatWorkspacePort,
+} from "@ssota/adapter-supabase";
+import { providerOf } from "@/lib/connect/connectors";
 
 export const runtime = "nodejs";
+
+/**
+ * Providers whose Connect install also identifies a chat workspace we route
+ * inbound @mentions for. The Connect `tenantId` is the same id inbound
+ * webhooks carry (Slack `team_id`, Discord `guild_id`), so installing from a
+ * project's Connections page is enough to auto-link the workspace — no manual
+ * id entry. Telegram has no Connect flow (static bot token) so it stays manual.
+ */
+const CHAT_PROVIDERS = new Set(["slack", "discord"]);
 
 /**
  * Vercel Connect return URL. After the user completes the provider flow
@@ -48,6 +61,21 @@ export async function GET(request: Request) {
         installationId: installation.installationId ?? installationId ?? null,
         tenantId: installation.tenantId ?? null,
         name: installation.name ?? null,
+      });
+    }
+
+    // Auto-link the chat workspace so inbound @mentions route to this project
+    // without the creator ever typing a team/guild id. The tenantId Connect
+    // returns is exactly the workspace key inbound webhooks carry.
+    const platform = providerOf(connector);
+    const workspaceKey = installation?.tenantId ?? undefined;
+    if (projectId && workspaceKey && CHAT_PROVIDERS.has(platform)) {
+      await createChatWorkspacePort(getDb()).link({
+        projectId,
+        accountId: accountId ?? null,
+        platform,
+        workspaceKey,
+        name: installation?.name ?? null,
       });
     }
 

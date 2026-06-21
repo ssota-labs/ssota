@@ -87,8 +87,9 @@ export function ChatWorkspaces({
           Chat workspaces
         </CardTitle>
         <CardDescription>
-          Route a Slack, Discord, or Telegram workspace to this project. Messages
-          that mention the bot run this project&apos;s agent.
+          Slack and Discord workspaces link automatically when you Connect them
+          above — messages that mention the bot run this project&apos;s agent. Use
+          manual linking only for Telegram or to fix a mapping by hand.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -127,7 +128,11 @@ export function ChatWorkspaces({
           </p>
         )}
 
-        <div className="flex flex-wrap items-end gap-3 border-t pt-4">
+        <details className="border-t pt-4">
+          <summary className="cursor-pointer text-sm text-muted-foreground">
+            Link a workspace manually
+          </summary>
+          <div className="mt-3 flex flex-wrap items-end gap-3">
           <div className="space-y-1.5">
             <Label htmlFor="chat-platform">Platform</Label>
             <NativeSelect
@@ -172,10 +177,11 @@ export function ChatWorkspaces({
             <PlusIcon className="size-4" />
             Link
           </Button>
-        </div>
-        {hint ? (
-          <p className="text-xs text-muted-foreground">{hint}</p>
-        ) : null}
+          </div>
+          {hint ? (
+            <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
+          ) : null}
+        </details>
       </CardContent>
     </Card>
   );
