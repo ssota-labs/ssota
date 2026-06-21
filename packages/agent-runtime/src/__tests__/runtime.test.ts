@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createSsotaTools } from "../tools/index.js";
 import { createSandboxTools } from "../tools/sandbox.js";
 import { createExternalTools } from "../tools/external.js";
-import { createEnvCredentialProvider } from "../credentials/provider.js";
+import { createEnvCredentialProvider, startConnectAuthorization } from "../credentials/provider.js";
 import { buildSystemPrompt } from "../system-prompt.js";
 import { DEFAULT_MODEL_ID } from "../models.js";
 
@@ -101,6 +101,34 @@ describe("env credential provider", () => {
     delete process.env.CONNECTOR_TESTHUB_TOKEN;
     const missing = await provider.getToken("nope", scope);
     expect(missing).toBeNull();
+  });
+});
+
+describe("startConnectAuthorization", () => {
+  it("requires userId for the Connect authorization flow", async () => {
+    await expect(
+      startConnectAuthorization(
+        "slack/dev",
+        { projectId: "p", userId: "" },
+        { callbackUrl: "http://localhost/api/connect/callback" },
+      ),
+    ).rejects.toThrow(/userId is required/);
+  });
+
+  it("returns a stub callback URL when CONNECT_STUB=1", async () => {
+    process.env.CONNECT_STUB = "1";
+    try {
+      const url = await startConnectAuthorization(
+        "slack/dev",
+        { projectId: "p", accountId: "acc", userId: "user-1" },
+        { callbackUrl: "http://localhost/api/connect/callback" },
+      );
+      const parsed = new URL(url);
+      expect(parsed.pathname).toBe("/api/connect/callback");
+      expect(parsed.searchParams.get("installation_id")).toMatch(/^stub-slack-dev-/);
+    } finally {
+      delete process.env.CONNECT_STUB;
+    }
   });
 });
 
