@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull, or, type SQL } from "drizzle-orm";
 import type {
   ActionPortsScope,
   Task,
@@ -42,10 +42,23 @@ function mapTask(row: typeof schema.tasks.$inferSelect): Task {
 }
 
 export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
-  const { projectId } = scope;
+  const { projectId, accountId } = scope;
+  const accountIdValue = accountId ?? null;
+  const taskAccountConds = (): SQL[] =>
+    accountId
+      ? [
+          or(
+            isNull(schema.tasks.accountId),
+            eq(schema.tasks.accountId, accountId),
+          )!,
+        ]
+      : [];
 
   function buildQuery(params?: TaskQueryInput) {
-    const conditions = [eq(schema.tasks.projectId, projectId)];
+    const conditions = [
+      eq(schema.tasks.projectId, projectId),
+      ...taskAccountConds(),
+    ];
     if (params?.status) conditions.push(eq(schema.tasks.status, params.status));
     if (params?.workflowKey) {
       conditions.push(eq(schema.tasks.workflowKey, params.workflowKey));
@@ -66,7 +79,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
       const rows = await db
         .select()
         .from(schema.tasks)
-        .where(eq(schema.tasks.projectId, projectId))
+        .where(and(eq(schema.tasks.projectId, projectId), ...taskAccountConds()))
         .orderBy(desc(schema.tasks.updatedAt))
         .limit(params?.limit ?? 20);
       return rows.map(mapTask);
@@ -91,6 +104,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           and(
             eq(schema.tasks.projectId, projectId),
             eq(schema.tasks.id, taskId),
+            ...taskAccountConds(),
           ),
         )
         .limit(1);
@@ -116,6 +130,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
         .insert(schema.tasks)
         .values({
           projectId,
+          accountId: accountIdValue,
           title: input.title,
           workflowKey: input.workflowKey,
           status: input.status ?? "pending",

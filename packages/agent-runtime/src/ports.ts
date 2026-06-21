@@ -20,14 +20,14 @@ export function getDb(): Db {
   return cachedDb;
 }
 
-export function getTaskPort(projectId: string) {
-  return createTaskPort(getDb(), { projectId });
+export function getTaskPort(projectId: string, accountId?: string) {
+  return createTaskPort(getDb(), { projectId, accountId });
 }
 
-export function getGraphPorts(projectId: string) {
-  return createGraphPorts(getDb(), { projectId });
+export function getGraphPorts(projectId: string, accountId?: string) {
+  return createGraphPorts(getDb(), { projectId, accountId });
 }
 
-export function getGraphReadPort(projectId: string) {
-  return getGraphPorts(projectId).graphRead;
+export function getGraphReadPort(projectId: string, accountId?: string) {
+  return getGraphPorts(projectId, accountId).graphRead;
 }

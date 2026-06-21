@@ -5,10 +5,10 @@ import { SpawnTaskInputSchema } from "@ssota/contracts";
 import { getGraphReadPort, getTaskPort } from "../ports.js";
 import { getRunContext } from "./context.js";
 
-function taskDeps(projectId: string) {
+function taskDeps(projectId: string, accountId?: string) {
   return {
-    tasks: getTaskPort(projectId),
-    graphRead: getGraphReadPort(projectId),
+    tasks: getTaskPort(projectId, accountId),
+    graphRead: getGraphReadPort(projectId, accountId),
   };
 }
 
@@ -19,7 +19,7 @@ export function createTaskTools(): ToolSet {
       inputSchema: z.object({ taskId: z.string().uuid().optional() }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        const task = await getTaskPort(ctx.projectId).getTask(
+        const task = await getTaskPort(ctx.projectId, ctx.accountId).getTask(
           input.taskId ?? ctx.taskId,
         );
         return task ? serializeTask(task) : null;
@@ -44,7 +44,7 @@ export function createTaskTools(): ToolSet {
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        const tasks = await getTaskPort(ctx.projectId).queryTasks(input);
+        const tasks = await getTaskPort(ctx.projectId, ctx.accountId).queryTasks(input);
         return tasks.map(serializeTask);
       },
     }),
@@ -66,7 +66,7 @@ export function createTaskTools(): ToolSet {
           ...input,
           parentTaskId: ctx.taskId,
         });
-        const task = await spawnTask(taskDeps(ctx.projectId), ctx.projectId, parsed);
+        const task = await spawnTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, parsed);
         return serializeTask(task);
       },
     }),
@@ -80,7 +80,7 @@ export function createTaskTools(): ToolSet {
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        const task = await updateTask(taskDeps(ctx.projectId), ctx.projectId, {
+        const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
           taskId: ctx.taskId,
           status: "done",
           result: { summary: input.summary, ...(input.result ?? {}) },
@@ -97,7 +97,7 @@ export function createTaskTools(): ToolSet {
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        const task = await updateTask(taskDeps(ctx.projectId), ctx.projectId, {
+        const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
           taskId: ctx.taskId,
           status: "blocked",
           context: { blockedReason: input.reason },
@@ -132,7 +132,7 @@ export function createTaskTools(): ToolSet {
           ...(input.summary ? { summary: input.summary } : {}),
           requestedAt: new Date().toISOString(),
         };
-        const task = await updateTask(taskDeps(ctx.projectId), ctx.projectId, {
+        const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
           taskId: ctx.taskId,
           status: "blocked",
           context: { gate },

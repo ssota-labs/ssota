@@ -30,11 +30,14 @@ export function createPageTools(): ToolSet {
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
         try {
-          const node = await writePageDefinition(getGraphPorts(ctx.projectId), {
-            projectId: ctx.projectId,
-            nodeId: input.pageNodeId,
-            definition: input.definition as unknown as PageRuntimeDefinition,
-          });
+          const node = await writePageDefinition(
+            getGraphPorts(ctx.projectId, ctx.accountId),
+            {
+              projectId: ctx.projectId,
+              nodeId: input.pageNodeId,
+              definition: input.definition as unknown as PageRuntimeDefinition,
+            },
+          );
           return { ok: true, node: serializeNode(node) };
         } catch (error) {
           return {
@@ -54,7 +57,7 @@ export function createPageTools(): ToolSet {
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
         const result = await readPageDefinitionByRouteKey(
-          getGraphReadPort(ctx.projectId),
+          getGraphReadPort(ctx.projectId, ctx.accountId),
           ctx.projectId,
           input.routeKey,
         );

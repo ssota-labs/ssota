@@ -11,6 +11,11 @@ export {
   type FinishAgentRunInput,
 } from "./ports/agent-runs-port.js";
 export {
+  createAccountPort,
+  type ProvisionAccountInput,
+  type AccountRecord,
+} from "./ports/account-port.js";
+export {
   seedDevWorkflowCatalog,
   createDbCatalogReadPort,
 } from "./ports/db-catalog-read-port.js";

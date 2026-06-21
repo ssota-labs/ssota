@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
+  createAccountPort,
   createConsolePort,
 } from "@ssota/adapter-supabase";
 import {
@@ -140,5 +141,70 @@ describe.skipIf(!DB_ONLY)("page definition pipeline", () => {
       read!.definition.bindings,
     );
     expect(Array.isArray(data.objectives)).toBe(true);
+  });
+});
+
+// Phase 5: account scoping. Two accounts + shared (builder) data, verifying
+// reads are isolated (each account sees own + shared, not the other's) and
+// builder scope sees all. Needs only DATABASE_URL.
+describe.skipIf(!DB_ONLY)("account isolation", () => {
+  it("isolates account data while sharing builder/null rows", async () => {
+    const projectId = await defaultProjectId();
+    const accounts = createAccountPort(getDb());
+    const stamp = Date.now();
+
+    const a = await accounts.provision({
+      projectId,
+      slug: `iso-a-${stamp}`,
+      name: "Account A",
+    });
+    const b = await accounts.provision({
+      projectId,
+      slug: `iso-b-${stamp}`,
+      name: "Account B",
+    });
+
+    const titleA = `iso-A-${stamp}`;
+    const titleB = `iso-B-${stamp}`;
+    const titleShared = `iso-S-${stamp}`;
+
+    const mk = (accountId: string | undefined, title: string) =>
+      createNode(
+        getGraphPorts(projectId, accountId),
+        createNodeInputSchema.parse({
+          projectId,
+          catalogKey: "objective",
+          title,
+          properties: {},
+        }),
+      );
+
+    await mk(a.id, titleA);
+    await mk(b.id, titleB);
+    await mk(undefined, titleShared); // builder/shared
+
+    const titlesFor = async (accountId?: string) => {
+      const nodes = await getGraphReadPort(projectId, accountId).queryNodes({
+        projectId,
+        catalogKey: "objective",
+        limit: 100,
+      });
+      return new Set(nodes.map((n) => n.title));
+    };
+
+    const aTitles = await titlesFor(a.id);
+    expect(aTitles.has(titleA)).toBe(true);
+    expect(aTitles.has(titleShared)).toBe(true);
+    expect(aTitles.has(titleB)).toBe(false); // isolation
+
+    const bTitles = await titlesFor(b.id);
+    expect(bTitles.has(titleB)).toBe(true);
+    expect(bTitles.has(titleShared)).toBe(true);
+    expect(bTitles.has(titleA)).toBe(false); // isolation
+
+    const builderTitles = await titlesFor(undefined);
+    expect(builderTitles.has(titleA)).toBe(true);
+    expect(builderTitles.has(titleB)).toBe(true);
+    expect(builderTitles.has(titleShared)).toBe(true);
   });
 });

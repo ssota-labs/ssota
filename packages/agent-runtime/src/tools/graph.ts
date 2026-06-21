@@ -31,9 +31,9 @@ export function createGraphTools(): ToolSet {
         limit: z.number().int().positive().max(100).optional(),
       }),
       execute: async (input, { experimental_context }) => {
-        const { projectId } = getRunContext(experimental_context);
+        const { projectId, accountId } = getRunContext(experimental_context);
         const parsed = listNodesByTypeInputSchema.parse({ projectId, ...input });
-        const nodes = await queryNodes(getGraphReadPort(projectId), parsed);
+        const nodes = await queryNodes(getGraphReadPort(projectId, accountId), parsed);
         return nodes.map(serializeNode);
       },
     }),
@@ -42,9 +42,9 @@ export function createGraphTools(): ToolSet {
       description: "Fetch a single node by id, including its content body.",
       inputSchema: z.object({ nodeId: z.string().uuid() }),
       execute: async (input, { experimental_context }) => {
-        const { projectId } = getRunContext(experimental_context);
+        const { projectId, accountId } = getRunContext(experimental_context);
         const parsed = getNodeInputSchema.parse({ projectId, ...input });
-        const node = await getNode(getGraphReadPort(projectId), parsed);
+        const node = await getNode(getGraphReadPort(projectId, accountId), parsed);
         return node ? serializeNode(node) : null;
       },
     }),
@@ -58,9 +58,9 @@ export function createGraphTools(): ToolSet {
         edgeType: z.string().optional(),
       }),
       execute: async (input, { experimental_context }) => {
-        const { projectId } = getRunContext(experimental_context);
+        const { projectId, accountId } = getRunContext(experimental_context);
         const parsed = traverseEdgesInputSchema.parse({ projectId, ...input });
-        const edges = await traverseEdges(getGraphReadPort(projectId), parsed);
+        const edges = await traverseEdges(getGraphReadPort(projectId, accountId), parsed);
         return edges.map(serializeEdge);
       },
     }),
@@ -75,7 +75,7 @@ export function createGraphTools(): ToolSet {
         content: z.string().optional(),
       }),
       execute: async (input, { experimental_context }) => {
-        const { projectId } = getRunContext(experimental_context);
+        const { projectId, accountId } = getRunContext(experimental_context);
         const properties = {
           ...(input.properties ?? {}),
           ...(input.content !== undefined ? { content: input.content } : {}),
@@ -86,7 +86,7 @@ export function createGraphTools(): ToolSet {
           title: input.title,
           properties,
         });
-        const node = await createNode(getGraphPorts(projectId), parsed);
+        const node = await createNode(getGraphPorts(projectId, accountId), parsed);
         return serializeNode(node);
       },
     }),
@@ -100,7 +100,7 @@ export function createGraphTools(): ToolSet {
         content: z.string().optional(),
       }),
       execute: async (input, { experimental_context }) => {
-        const { projectId } = getRunContext(experimental_context);
+        const { projectId, accountId } = getRunContext(experimental_context);
         const properties =
           input.properties !== undefined || input.content !== undefined
             ? {
@@ -116,7 +116,7 @@ export function createGraphTools(): ToolSet {
           title: input.title,
           properties,
         });
-        const node = await updateNode(getGraphPorts(projectId), parsed);
+        const node = await updateNode(getGraphPorts(projectId, accountId), parsed);
         return serializeNode(node);
       },
     }),
@@ -130,9 +130,9 @@ export function createGraphTools(): ToolSet {
         properties: z.record(z.unknown()).optional(),
       }),
       execute: async (input, { experimental_context }) => {
-        const { projectId } = getRunContext(experimental_context);
+        const { projectId, accountId } = getRunContext(experimental_context);
         const parsed = createEdgeInputSchema.parse({ projectId, ...input });
-        const edge = await createEdge(getGraphPorts(projectId), parsed);
+        const edge = await createEdge(getGraphPorts(projectId, accountId), parsed);
         return serializeEdge(edge);
       },
     }),

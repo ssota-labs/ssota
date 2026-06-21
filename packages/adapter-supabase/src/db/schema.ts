@@ -88,6 +88,59 @@ export const organizationMemberships = pgTable(
   }),
 );
 
+/**
+ * End-user data partition within a deployed tenant SaaS (Phase 5). A Project is
+ * the builder's agent-SaaS definition; accounts are the isolated spaces
+ * SSOTA-naive end users work in. Instance rows carry `account_id` (null =
+ * shared/builder). No recursive org/project for end users — sub-structure is
+ * expressed via the builder's node catalog.
+ */
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    ownerUserId: uuid("owner_user_id").references(() => profiles.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    projectSlugUnique: uniqueIndex("accounts_project_slug_unique").on(
+      table.projectId,
+      table.slug,
+    ),
+    projectIdx: index("accounts_project_id_idx").on(table.projectId),
+  }),
+);
+
+export const accountMemberships = pgTable(
+  "account_memberships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    role: text("role").notNull().default("member"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    accountUserUnique: uniqueIndex("account_memberships_account_user_unique").on(
+      table.accountId,
+      table.userId,
+    ),
+  }),
+);
+
 export const nodeCatalog = pgTable(
   "node_catalog",
   {
