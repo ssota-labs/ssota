@@ -122,6 +122,39 @@ export async function resolvePageBindings(
         value = target ? await resolve(def.binding, target, stack) : null;
         break;
       }
+      case "artifact": {
+        let node: GraphNode | null = null;
+        if (def.nodeId) {
+          node = await graph.getNodeById(def.nodeId);
+        } else if (def.ref) {
+          const refDef = bindings[def.ref];
+          const refVal = refDef
+            ? await resolve(def.ref, refDef, stack)
+            : (context[def.ref] ?? null);
+          const id =
+            refVal && typeof refVal === "object" && "id" in refVal
+              ? String((refVal as ResolvedNode).id)
+              : null;
+          node = id ? await graph.getNodeById(id) : null;
+        }
+        if (!node || node.projectId !== projectId) {
+          value = { status: "unbuilt" as const };
+          break;
+        }
+        const buildHash = node.properties.buildHash;
+        const artifactPath = node.properties.previewArtifactPath;
+        value =
+          typeof buildHash === "string" && buildHash.length > 0
+            ? {
+                status: "built" as const,
+                nodeId: node.id,
+                buildId: buildHash,
+                artifactPath:
+                  typeof artifactPath === "string" ? artifactPath : undefined,
+              }
+            : { status: "unbuilt" as const, nodeId: node.id };
+        break;
+      }
     }
 
     stack.delete(key);

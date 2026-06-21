@@ -155,6 +155,7 @@ describe.skipIf(!DB_ONLY)("page definition pipeline", () => {
       bindings: {
         objectives: { kind: "query" as const, catalogKey: "objective" },
       },
+      actions: {},
     };
 
     await writePageDefinition(ports, {

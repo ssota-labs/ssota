@@ -28,7 +28,7 @@
       "types": "./dist/workspace/index.d.ts",
       "default": "./dist/workspace/index.js"
     },
-    "./seed-packs/dev-workflow/*": "./seed-packs/dev-workflow/*"
+    "./seed-packs/software-development-workflow/*": "./seed-packs/software-development-workflow/*"
   },
   "scripts": {
     "build": "tsx scripts/embed-workflow-instructions.ts && tsc",

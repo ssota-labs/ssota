@@ -1,61 +1,101 @@
 import { z } from "zod";
 
-export const workspaceNavLinkSchema = z.object({
-  type: z.literal("link"),
-  key: z.string().min(1),
-  label: z.string().min(1),
-  pageNodeId: z.string().uuid(),
-  icon: z.string().optional(),
-});
+/**
+ * Workspace navigation, stored on a `workspace` graph node and rendered as the
+ * console sidebar. Arbitrarily nestable (group/section children may themselves
+ * be groups/sections). A link targets either an `href` (existing console route,
+ * relative to the project base, e.g. "executive/roadmap") or a `pageNodeId`
+ * (future dynamic `/p/{routeKey}` page). `labelKey` is an optional i18n key —
+ * the renderer prefers it over the literal `label` when present.
+ */
 
-export const workspaceNavGroupSchema: z.ZodType<{
+export interface WorkspaceNavSeparator {
+  type: "separator";
+}
+
+export interface WorkspaceNavLink {
+  type: "link";
+  key: string;
+  label: string;
+  labelKey?: string;
+  href?: string;
+  pageNodeId?: string;
+  icon?: string;
+}
+
+export interface WorkspaceNavGroup {
   type: "group";
   key: string;
   label: string;
-  children: WorkspaceNavLink[];
-}> = z.lazy(() =>
-  z.object({
-    type: z.literal("group"),
-    key: z.string().min(1),
-    label: z.string().min(1),
-    children: z.array(workspaceNavLinkSchema),
-  }),
-);
+  labelKey?: string;
+  children: WorkspaceNavEntry[];
+}
 
-export const workspaceNavSectionSchema: z.ZodType<{
+export interface WorkspaceNavSection {
   type: "section";
   key: string;
   label: string;
-  children: (WorkspaceNavLink | WorkspaceNavGroup)[];
-}> = z.lazy(() =>
-  z.object({
-    type: z.literal("section"),
-    key: z.string().min(1),
-    label: z.string().min(1),
-    children: z.array(
-      z.union([workspaceNavLinkSchema, workspaceNavGroupSchema]),
-    ),
-  }),
-);
+  labelKey?: string;
+  children: WorkspaceNavEntry[];
+}
+
+export type WorkspaceNavEntry =
+  | WorkspaceNavSeparator
+  | WorkspaceNavLink
+  | WorkspaceNavGroup
+  | WorkspaceNavSection;
 
 export const workspaceNavSeparatorSchema = z.object({
   type: z.literal("separator"),
 });
 
-export const workspaceNavEntrySchema = z.union([
-  workspaceNavSeparatorSchema,
-  workspaceNavLinkSchema,
-  workspaceNavGroupSchema,
-  workspaceNavSectionSchema,
-]);
+export const workspaceNavLinkSchema = z
+  .object({
+    type: z.literal("link"),
+    key: z.string().min(1),
+    label: z.string().min(1),
+    labelKey: z.string().optional(),
+    href: z.string().optional(),
+    pageNodeId: z.string().uuid().optional(),
+    icon: z.string().optional(),
+  })
+  .refine((v) => v.href !== undefined || v.pageNodeId !== undefined, {
+    message: "nav link requires href or pageNodeId",
+  });
+
+export const workspaceNavGroupSchema: z.ZodType<WorkspaceNavGroup> = z.lazy(() =>
+  z.object({
+    type: z.literal("group"),
+    key: z.string().min(1),
+    label: z.string().min(1),
+    labelKey: z.string().optional(),
+    children: z.array(workspaceNavEntrySchema),
+  }),
+);
+
+export const workspaceNavSectionSchema: z.ZodType<WorkspaceNavSection> = z.lazy(
+  () =>
+    z.object({
+      type: z.literal("section"),
+      key: z.string().min(1),
+      label: z.string().min(1),
+      labelKey: z.string().optional(),
+      children: z.array(workspaceNavEntrySchema),
+    }),
+);
+
+export const workspaceNavEntrySchema: z.ZodType<WorkspaceNavEntry> = z.lazy(() =>
+  z.union([
+    workspaceNavSeparatorSchema,
+    workspaceNavLinkSchema,
+    workspaceNavGroupSchema,
+    workspaceNavSectionSchema,
+  ]),
+);
 
 export const workspaceDefinitionSchema = z.object({
   nav: z.array(workspaceNavEntrySchema).default([]),
   navInitiative: z.array(workspaceNavEntrySchema).optional(),
 });
 
-export type WorkspaceNavLink = z.infer<typeof workspaceNavLinkSchema>;
-export type WorkspaceNavGroup = z.infer<typeof workspaceNavGroupSchema>;
-export type WorkspaceNavSection = z.infer<typeof workspaceNavSectionSchema>;
-export type WorkspaceNavEntry = z.infer<typeof workspaceNavEntrySchema>;
 export type WorkspaceDefinition = z.infer<typeof workspaceDefinitionSchema>;

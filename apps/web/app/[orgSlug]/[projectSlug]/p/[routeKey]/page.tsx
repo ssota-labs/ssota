@@ -5,7 +5,8 @@ import {
 } from "@ssota/core";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts } from "@/lib/ports";
-import { DynamicPageRenderer } from "@/lib/lab-sandbox/dynamic-page-renderer";
+import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
+import { DynamicPageClient } from "./page-client";
 
 /**
  * Production renderer for an agent-authored page. Loads the `page` node whose
@@ -39,10 +40,23 @@ export default async function AgentDashboardPage({
     page.definition.bindings,
     page.definition.context ?? {},
   );
+  // Enrich `artifact` bindings with server-signed bundle URLs + theme CSS for
+  // Widget elements (core returns graph fields only; signing is server-side).
+  await resolveArtifactBindings(
+    project.id,
+    page.definition.bindings,
+    bindingData,
+  );
 
   return (
     <div className="mx-auto max-w-5xl p-6">
-      <DynamicPageRenderer spec={page.definition.spec} bindingData={bindingData} />
+      <DynamicPageClient
+        spec={page.definition.spec}
+        bindingData={bindingData}
+        orgSlug={orgSlug}
+        projectSlug={projectSlug}
+        routeKey={routeKey}
+      />
     </div>
   );
 }

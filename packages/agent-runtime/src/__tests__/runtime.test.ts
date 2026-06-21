@@ -17,14 +17,17 @@ describe("createSsotaTools", () => {
         "create_node",
         "get_node",
         "get_task",
+        "list_workflows",
         "query_nodes",
         "query_tasks",
         "read_page_definition",
+        "read_workflow",
         "request_approval",
         "spawn_task",
         "traverse_edges",
         "update_node",
         "write_page_definition",
+        "write_workflow",
       ].sort(),
     );
   });

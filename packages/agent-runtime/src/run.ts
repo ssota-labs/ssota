@@ -1,10 +1,15 @@
 import type { ModelMessage } from "ai";
-import { serializeTask } from "@ssota/core";
-import { getTaskPort } from "./ports.js";
+import { serializeTask, readWorkflowByKey } from "@ssota/core";
+import { RESERVED_MAIN_WORKFLOW_KEY } from "@ssota/contracts/workflows";
+import { getTaskPort, getWorkflowPort } from "./ports.js";
 import { createSsotaTools } from "./tools/index.js";
 import { createSandboxTools } from "./tools/sandbox.js";
 import { createExternalTools } from "./tools/external.js";
-import { buildSystemPrompt } from "./system-prompt.js";
+import {
+  buildSystemPrompt,
+  FALLBACK_INSTRUCTIONS,
+  type ResolvedWorkflowInstructions,
+} from "./system-prompt.js";
 import { DEFAULT_MODEL_ID } from "./models.js";
 import { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
 import type { AgentRunContext, LoopEngine } from "./engine/types.js";
@@ -55,8 +60,28 @@ async function prepareRun(input: RunAgentForTaskInput) {
     ...(input.sandbox ? createSandboxTools() : {}),
     ...(input.credentials ? createExternalTools() : {}),
   };
+  // Resolve workflow instructions from the per-project `workflows` table
+  // (DB-persisted, tenant-editable), falling back to the embedded registry on
+  // any read failure so runs never break on an un-seeded/old project.
+  let resolved: ResolvedWorkflowInstructions | undefined;
+  try {
+    const workflows = getWorkflowPort(projectId, accountId);
+    const [main, wf] = await Promise.all([
+      readWorkflowByKey(workflows, RESERVED_MAIN_WORKFLOW_KEY),
+      readWorkflowByKey(workflows, task.workflowKey),
+    ]);
+    if (main || wf) {
+      resolved = {
+        base: main?.definition.instruction ?? FALLBACK_INSTRUCTIONS,
+        workflowInstruction: wf?.definition.instruction ?? null,
+      };
+    }
+  } catch {
+    resolved = undefined; // buildSystemPrompt falls back to the embedded registry
+  }
+
   const runInput = {
-    instructions: buildSystemPrompt({ task, projectId, accountId }),
+    instructions: buildSystemPrompt({ task, projectId, accountId, resolved }),
     messages: [
       {
         role: "user" as const,

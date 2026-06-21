@@ -3,6 +3,7 @@
 import { Fragment } from "react";
 import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
+import type { WorkspaceDefinition } from "@ssota/contracts";
 import { AppSidebar } from "./app-sidebar";
 import { ConsoleTopBar } from "./console-top-bar";
 import {
@@ -22,6 +23,7 @@ type ConsoleShellProps = {
   userEmail: string;
   signOutAction: () => Promise<void>;
   initiatives?: InitiativeOption[];
+  dbNav?: WorkspaceDefinition | null;
   children: React.ReactNode;
 };
 
@@ -32,6 +34,7 @@ export function ConsoleShell({
   userEmail,
   signOutAction,
   initiatives = [],
+  dbNav,
   children,
 }: ConsoleShellProps) {
   const pathname = usePathname();
@@ -47,6 +50,7 @@ export function ConsoleShell({
           initiatives={initiatives}
           userEmail={userEmail}
           signOutAction={signOutAction}
+          dbNav={dbNav}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <ConsoleTopBar projects={projects} initiatives={initiatives} />
