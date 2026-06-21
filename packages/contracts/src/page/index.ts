@@ -11,8 +11,12 @@ export {
   pageActionSchema,
   actionValueRefSchema,
   actionParamSchema,
+  pageRecordSchema,
+  pageSchema,
   type PageRuntimeDefinition,
   type JsonRenderSpec,
   type PageAction,
   type ActionValueRef,
+  type PageRecord,
+  type Page,
 } from "./page-runtime-schema.js";

@@ -123,6 +123,86 @@ export const pageContextDefSchema = z.object({
   initiativeId: z.string().optional(),
 });
 
+/**
+ * Validate that every element's `binding`/`action` prop references a defined
+ * binding/action. Shared by the page-record (Notion tree) and the legacy
+ * runtime-definition schemas.
+ */
+function refineSpecReferences(
+  value: {
+    spec: JsonRenderSpec;
+    bindings: Record<string, unknown>;
+    actions: Record<string, unknown>;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  const bindingKeys = new Set(Object.keys(value.bindings));
+  const actionKeys = new Set(Object.keys(value.actions));
+  for (const [elementId, element] of Object.entries(value.spec.elements)) {
+    const props = element.props ?? {};
+    const bindingKey = props.binding;
+    if (typeof bindingKey === "string" && !bindingKeys.has(bindingKey)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Element '${elementId}' references unknown binding '${bindingKey}'`,
+        path: ["spec", "elements", elementId, "props", "binding"],
+      });
+    }
+    const actionKey = props.action;
+    if (typeof actionKey === "string" && !actionKeys.has(actionKey)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Element '${elementId}' references unknown action '${actionKey}'`,
+        path: ["spec", "elements", elementId, "props", "action"],
+      });
+    }
+  }
+}
+
+/**
+ * A page in the Notion-style tree. NOT 1:1 with a node or workflow: a page is a
+ * JSON-render dashboard (places catalog components) that loads node/edge data via
+ * `bindings`. Hierarchy is `parentId` (recursive tree); addressing is flat by id.
+ * `subjectNodeId` optionally anchors bindings to a node (generic replacement for
+ * the old scope / `{$ctx:initiativeId}`). The `id`/tree fields are managed by the
+ * store; this schema validates the editable content of a page record.
+ */
+export const pageRecordSchema = z
+  .object({
+    title: z.string().min(1),
+    icon: z.string().optional(),
+    slug: z.string().min(1).optional(),
+    parentId: z.string().uuid().nullable().optional(),
+    position: z.number().int().nonnegative().optional(),
+    subjectNodeId: z.string().uuid().nullable().optional(),
+    spec: jsonRenderSpecSchema,
+    bindings: z.record(bindingDefSchema).default({}),
+    actions: z.record(pageActionSchema).default({}),
+  })
+  .superRefine(refineSpecReferences);
+
+export type PageRecord = z.infer<typeof pageRecordSchema>;
+
+/** A persisted page: a {@link PageRecord} plus store-managed identity fields. */
+export const pageSchema = z
+  .object({
+    id: z.string().uuid(),
+    projectId: z.string().uuid(),
+    accountId: z.string().uuid().nullable().optional(),
+    title: z.string().min(1),
+    icon: z.string().nullable().optional(),
+    slug: z.string().nullable().optional(),
+    parentId: z.string().uuid().nullable().optional(),
+    position: z.number().int().nonnegative(),
+    subjectNodeId: z.string().uuid().nullable().optional(),
+    spec: jsonRenderSpecSchema,
+    bindings: z.record(bindingDefSchema).default({}),
+    actions: z.record(pageActionSchema).default({}),
+  })
+  .superRefine(refineSpecReferences);
+
+export type Page = z.infer<typeof pageSchema>;
+
 export const pageRuntimeDefinitionSchema = z
   .object({
     routeKey: z.string().min(1),
