@@ -11,8 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@ssota/ui/components/ui/card";
-import type { BindingContext } from "./binding-resolver";
-import type { MockNode } from "./types";
+import type { BindingContext, RenderNode } from "./types";
 import type { ResolvedArtifact } from "@/lib/design-studio/resolve-artifact-binding";
 
 // BlockNote is browser-only; load the document components lazily (no SSR).
@@ -265,14 +264,14 @@ function NodeTableEl({
   rowHref,
   title,
 }: {
-  nodes: MockNode[];
+  nodes: RenderNode[];
   columns: { key: string; header: string }[];
   rowHref?: string;
   title?: string;
 }) {
   const basePath = useContext(BasePathContext);
   const cols = columns.length ? columns : [{ key: "title", header: "Title" }];
-  const cell = (node: MockNode, key: string) =>
+  const cell = (node: RenderNode, key: string) =>
     key === "title"
       ? node.title
       : String(
@@ -431,10 +430,10 @@ type RenderProps = {
   onBuildWidget?: (nodeId: string) => void | Promise<void>;
 };
 
-function asNodes(value: unknown): MockNode[] {
+function asNodes(value: unknown): RenderNode[] {
   if (!Array.isArray(value)) return [];
   return value.filter(
-    (item): item is MockNode =>
+    (item): item is RenderNode =>
       !!item &&
       typeof item === "object" &&
       "id" in item &&
@@ -593,7 +592,7 @@ function renderElement(
     case "DocumentEditor": {
       const node =
         typeof props.binding === "string"
-          ? (bindingData[props.binding] as MockNode | undefined)
+          ? (bindingData[props.binding] as RenderNode | undefined)
           : undefined;
       const field = typeof props.field === "string" ? props.field : "content";
       const content = node?.properties?.[field];
@@ -617,7 +616,7 @@ function renderElement(
     case "Select": {
       const node =
         typeof props.binding === "string"
-          ? (bindingData[props.binding] as MockNode | undefined)
+          ? (bindingData[props.binding] as RenderNode | undefined)
           : undefined;
       const field = typeof props.field === "string" ? props.field : undefined;
       const initialValue =
@@ -651,7 +650,7 @@ function renderElement(
     case "TokenList": {
       const node =
         typeof props.binding === "string"
-          ? (bindingData[props.binding] as MockNode | undefined)
+          ? (bindingData[props.binding] as RenderNode | undefined)
           : undefined;
       const field = typeof props.field === "string" ? props.field : "tokens";
       const stored = (node?.properties?.[field] ?? {}) as Record<string, string>;

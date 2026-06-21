@@ -1,4 +1,4 @@
-import { UI_CATALOG_COMPONENTS } from "@/lib/lab-sandbox/dynamic-page-renderer";
+import { UI_CATALOG_COMPONENTS } from "@/lib/page-runtime/dynamic-page-renderer";
 
 export default function LabUiCatalogPage() {
   return (

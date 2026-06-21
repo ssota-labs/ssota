@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { resolveSandboxBindings } from "@/lib/lab-sandbox/binding-resolver";
-import { DynamicPageRenderer } from "@/lib/lab-sandbox/dynamic-page-renderer";
+import { DynamicPageRenderer } from "@/lib/page-runtime/dynamic-page-renderer";
 import { useLabSandbox } from "@/lib/lab-sandbox/lab-sandbox-context";
 import {
   findPageById,
