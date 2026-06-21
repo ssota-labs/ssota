@@ -3,6 +3,7 @@ import {
   createSandboxSession,
   getDb,
   getTaskPort,
+  resolveCredentialProvider,
   runAgentForTask,
   type RunAgentForTaskResult,
   type SandboxSession,
@@ -90,6 +91,10 @@ async function runAgentStep(
     }
   }
 
+  // External-service tools (Vercel Connect / env connectors) attach when a
+  // credential provider is configured for this deployment.
+  const credentials = resolveCredentialProvider();
+
   try {
     return await runAgentForTask({
       projectId: input.projectId,
@@ -98,6 +103,7 @@ async function runAgentStep(
       accountId: input.accountId,
       modelId: input.modelId,
       sandbox,
+      credentials,
       maxSteps: input.maxSteps,
     });
   } finally {

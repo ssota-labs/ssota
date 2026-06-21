@@ -44,28 +44,50 @@ export function createEnvCredentialProvider(): CredentialProvider {
 }
 
 /**
- * Production provider backed by Vercel Connect. The Connect SDK is resolved at
- * call time and keyed by project + account installation. Throws if the SDK is
- * not installed — wire `@vercel/connect` and replace the resolution below.
+ * Production provider backed by Vercel Connect (`@vercel/connect`). Auth is via
+ * the deployment's OIDC token (automatic on Vercel). `connector` is the
+ * connector uid (e.g. "slack/acme-slack"); when the run is account-scoped the
+ * token is minted for that user subject, otherwise as the app. The SDK caches
+ * and auto-refreshes. Resolved via dynamic import so the package is optional.
  */
 export function createVercelConnectProvider(): CredentialProvider {
   return {
     async getToken(connector, scope) {
-      let connect: { getToken: (opts: unknown) => Promise<{ token: string; expiresAt?: string }> };
+      let connect: {
+        getToken: (params: {
+          connector: string;
+          subject: { type: "app" } | { type: "user"; id: string };
+        }) => Promise<{ token: string; expiresAt?: string } | null>;
+      };
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        connect = (await import("@vercel/connect" as any)) as never;
+        connect = (await import("@vercel/connect")) as unknown as typeof connect;
       } catch {
         throw new Error(
           "@vercel/connect is not installed — add it to use scoped credentials",
         );
       }
-      const result = await connect.getToken({
-        connector,
-        project: scope.projectId,
-        installation: scope.accountId,
-      });
-      return result ? { token: result.token, expiresAt: result.expiresAt } : null;
+      const subject = scope.accountId
+        ? ({ type: "user", id: scope.accountId } as const)
+        : ({ type: "app" } as const);
+      const result = await connect.getToken({ connector, subject });
+      return result
+        ? { token: result.token, expiresAt: result.expiresAt }
+        : null;
     },
   };
+}
+
+/**
+ * Pick a provider from the environment: explicit Vercel Connect opt-in
+ * (`USE_VERCEL_CONNECT=1`), else the env provider if any `CONNECTOR_*_TOKEN`
+ * is set, else none (external tools stay detached).
+ */
+export function resolveCredentialProvider(): CredentialProvider | undefined {
+  if (process.env.USE_VERCEL_CONNECT === "1") {
+    return createVercelConnectProvider();
+  }
+  const hasConnectorEnv = Object.keys(process.env).some((key) =>
+    /^CONNECTOR_.+_TOKEN$/.test(key),
+  );
+  return hasConnectorEnv ? createEnvCredentialProvider() : undefined;
 }
