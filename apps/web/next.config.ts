@@ -39,6 +39,11 @@ const nextConfig: NextConfig = {
     "lightningcss",
     "esbuild",
     "@ssota/studio-build",
+    // Optional native deps of chat adapters (used only in gateway/socket mode,
+    // not our webhook mode) — leave them external so Turbopack doesn't bundle.
+    "zlib-sync",
+    "bufferutil",
+    "utf-8-validate",
   ],
   allowedDevOrigins: ["127.0.0.1"],
 };

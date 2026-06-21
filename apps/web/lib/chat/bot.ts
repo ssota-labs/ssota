@@ -1,5 +1,7 @@
 import { Chat } from "chat";
 import { createSlackAdapter } from "@chat-adapter/slack";
+import { createDiscordAdapter } from "@chat-adapter/discord";
+import { createTelegramAdapter } from "@chat-adapter/telegram";
 import { createPostgresState } from "@chat-adapter/state-pg";
 import { start } from "workflow/api";
 import { spawnTask } from "@ssota/core";
@@ -10,6 +12,7 @@ import {
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
 import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { extractWorkspaceKey, resolveChatAccountId } from "./resolve-account";
 
 /**
  * Chat SDK bot (chat-sdk.dev) — the inbound/outbound chat channel. A Slack
@@ -74,14 +77,24 @@ async function* uiChunksToText(
   }
 }
 
-async function runAgentStream(text: string, author?: string) {
+interface IncomingMessage {
+  text: string;
+  author?: { userId?: string };
+  raw?: unknown;
+}
+
+async function runAgentStream(message: IncomingMessage) {
   const projectId = process.env.CHAT_PROJECT_ID;
   if (!projectId) {
     return "The agent is not configured for chat (set CHAT_PROJECT_ID).";
   }
-  // Per-workspace tenant scoping (account) is a follow-up; default to the
-  // configured account or shared/builder scope.
-  const accountId = process.env.CHAT_DEFAULT_ACCOUNT_ID || undefined;
+
+  // One workspace = one SSOTA account (data partition). The workspace key comes
+  // from the platform's raw payload (Slack team, Discord guild, …); unknown →
+  // default/shared account.
+  const workspaceKey = extractWorkspaceKey(message.raw);
+  const accountId = await resolveChatAccountId(projectId, workspaceKey);
+  const text = message.text;
 
   const task = await spawnTask(
     {
@@ -93,7 +106,12 @@ async function runAgentStream(text: string, author?: string) {
       title: text.slice(0, 120),
       workflowKey: "agent.main",
       executorType: "Agent",
-      context: { channel: "slack", user: author, message: text },
+      context: {
+        channel: "chat",
+        workspace: workspaceKey,
+        user: message.author?.userId,
+        message: text,
+      },
     },
   );
 
@@ -111,7 +129,18 @@ export function getBot(): Chat {
   if (!cached) {
     const bot = new Chat({
       userName: process.env.CHAT_BOT_NAME ?? "ssota",
-      adapters: { slack: slackAdapter() },
+      // Single-token platforms (Discord/Telegram) register when their bot token
+      // is set — one token, joined to many servers/chats; no per-workspace OAuth
+      // or Connect. Slack (per-workspace token) is always registered.
+      adapters: {
+        slack: slackAdapter(),
+        ...(process.env.DISCORD_BOT_TOKEN
+          ? { discord: createDiscordAdapter() }
+          : {}),
+        ...(process.env.TELEGRAM_BOT_TOKEN
+          ? { telegram: createTelegramAdapter() }
+          : {}),
+      },
       state: createPostgresState({ url: process.env.DATABASE_URL }),
       dedupeTtlMs: 600_000,
     });
@@ -119,12 +148,12 @@ export function getBot(): Chat {
     // @mention in a new thread → subscribe + stream the agent's reply.
     bot.onNewMention(async (thread, message) => {
       await thread.subscribe();
-      await thread.post(await runAgentStream(message.text, message.author?.userId));
+      await thread.post(await runAgentStream(message));
     });
 
     // Follow-up messages in a subscribed thread → keep the conversation going.
     bot.onSubscribedMessage(async (thread, message) => {
-      await thread.post(await runAgentStream(message.text, message.author?.userId));
+      await thread.post(await runAgentStream(message));
     });
 
     cached = bot;

@@ -13,6 +13,12 @@
       "skillPath": "skills/use-ai-sdk/SKILL.md",
       "computedHash": "7cf94b0ed9a47e2a9bd542fc69ce02422e6d5238cf263cc5809a4a117c3f604c"
     },
+    "chat-sdk": {
+      "source": "vercel/chat",
+      "sourceType": "github",
+      "skillPath": "skills/chat/SKILL.md",
+      "computedHash": "3e3e195307f762a685cc38d7f7364d5daff49abd43924d72e53bb214daf83f86"
+    },
     "create-agentsmd": {
       "source": "github/awesome-copilot",
       "sourceType": "github",
