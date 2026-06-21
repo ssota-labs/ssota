@@ -36,6 +36,7 @@ import { projectPath } from "@/lib/console/paths";
 import { ConsoleOrgSwitcher } from "./console-workspace-switcher";
 import { SidebarProfileMenu } from "./sidebar-profile-menu";
 import { useProjectContext } from "./project-context";
+import { PageTreeNav, type SidebarPage } from "./page-tree-nav";
 
 type InitiativeOption = {
   id: string;
@@ -49,6 +50,8 @@ type AppSidebarProps = {
   signOutAction: () => Promise<void>;
   /** DB-persisted nav from the project's `workspace` node. Null → static fallback. */
   dbNav?: WorkspaceDefinition | null;
+  /** Notion-style page tree from the `pages` table, rendered below the static nav. */
+  pageTree?: SidebarPage[];
 };
 
 function isDbLink(entry: WorkspaceNavEntry): entry is WorkspaceNavLink {
@@ -102,6 +105,7 @@ export function AppSidebar({
   userEmail,
   signOutAction,
   dbNav,
+  pageTree = [],
 }: AppSidebarProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
@@ -346,6 +350,7 @@ export function AppSidebar({
                 aria-hidden={mode === "l1"}
               >
                 {renderL0Nav()}
+                <PageTreeNav pages={pageTree} basePath={projectBase} />
               </div>
               <div
                 className={cn(

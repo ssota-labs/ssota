@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
 import type { WorkspaceDefinition } from "@ssota/contracts";
 import { AppSidebar } from "./app-sidebar";
+import type { SidebarPage } from "./page-tree-nav";
 import { ConsoleTopBar } from "./console-top-bar";
 import {
   ProjectProvider,
@@ -24,6 +25,7 @@ type ConsoleShellProps = {
   signOutAction: () => Promise<void>;
   initiatives?: InitiativeOption[];
   dbNav?: WorkspaceDefinition | null;
+  pageTree?: SidebarPage[];
   children: React.ReactNode;
 };
 
@@ -35,6 +37,7 @@ export function ConsoleShell({
   signOutAction,
   initiatives = [],
   dbNav,
+  pageTree,
   children,
 }: ConsoleShellProps) {
   const pathname = usePathname();
@@ -51,6 +54,7 @@ export function ConsoleShell({
           userEmail={userEmail}
           signOutAction={signOutAction}
           dbNav={dbNav}
+          pageTree={pageTree}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <ConsoleTopBar projects={projects} initiatives={initiatives} />
