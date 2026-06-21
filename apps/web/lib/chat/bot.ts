@@ -12,7 +12,7 @@ import {
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
 import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
-import { extractWorkspaceKey, resolveChatAccountId } from "./resolve-account";
+import { extractWorkspaceKey, resolveChatTarget } from "./resolve-account";
 
 /**
  * Chat SDK bot (chat-sdk.dev) — the inbound/outbound chat channel. A Slack
@@ -84,16 +84,15 @@ interface IncomingMessage {
 }
 
 async function runAgentStream(message: IncomingMessage) {
-  const projectId = process.env.CHAT_PROJECT_ID;
-  if (!projectId) {
-    return "The agent is not configured for chat (set CHAT_PROJECT_ID).";
-  }
-
-  // One workspace = one SSOTA account (data partition). The workspace key comes
-  // from the platform's raw payload (Slack team, Discord guild, …); unknown →
-  // default/shared account.
+  // Route the message to the project (+ account) this workspace is linked to.
+  // The workspace key comes from the platform's raw payload (Slack team,
+  // Discord guild, Telegram chat).
   const workspaceKey = extractWorkspaceKey(message.raw);
-  const accountId = await resolveChatAccountId(projectId, workspaceKey);
+  const target = await resolveChatTarget(workspaceKey);
+  if (!target) {
+    return "This workspace isn't connected to a project yet. An admin can link it in SSOTA (Settings → Chat).";
+  }
+  const { projectId, accountId } = target;
   const text = message.text;
 
   const task = await spawnTask(
