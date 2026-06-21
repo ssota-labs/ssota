@@ -4,8 +4,8 @@ import type { JsonRenderSpec } from "@ssota/contracts";
 import {
   DynamicPageRenderer,
   type OnAction,
-} from "@/lib/page-runtime/dynamic-page-renderer";
-import type { BindingContext } from "@/lib/page-runtime/types";
+  type BindingContext,
+} from "@/lib/page-runtime";
 import { runPageActionAction, buildWidgetAction } from "./actions";
 
 /**
