@@ -24,6 +24,13 @@ export const bindingDefSchema = z.discriminatedUnion("kind", [
     nodeId: z.string().uuid(),
   }),
   z.object({
+    // The page's anchor node (from `pages.subject_node_id`), supplied at render
+    // time via the binding context. Generic replacement for initiative-scoping:
+    // a dashboard page bound to a specific node resolves its subject here, and
+    // `traverse`/`artifact` bindings can reference it by `from: "subject"`.
+    kind: z.literal("subject"),
+  }),
+  z.object({
     kind: z.literal("traverse"),
     from: z.string().min(1),
     edgeCatalogKey: z.string().min(1),

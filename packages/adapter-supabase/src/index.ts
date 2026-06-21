@@ -7,6 +7,7 @@ export {
   createWorkflowPort,
   seedWorkflows,
   createPagePort,
+  seedPages,
 } from "./ports/index.js";
 export {
   createAgentRunPort,

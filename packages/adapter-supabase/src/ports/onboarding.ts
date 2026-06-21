@@ -15,6 +15,7 @@ import * as schema from "../db/schema.js";
 import { createGraphPorts } from "./create-graph-ports.js";
 import { seedDomainCatalog } from "./db-catalog-read-port.js";
 import { seedWorkflows } from "./workflow-port.js";
+import { seedPages } from "./page-port.js";
 
 function parseLocale(value: string | null | undefined): Locale {
   if (value && (LOCALES as readonly string[]).includes(value)) {
@@ -237,6 +238,10 @@ export function createOnboardingPort(db: Db): OnboardingPort {
       // Workflows are a core, domain-agnostic concept — bootstrap-seed alongside
       // the catalog, not inside the domain example pack.
       await seedWorkflows(db, result.project.id);
+      // Notion-style page tree (pages table). Coexists with applyDomainPack's
+      // legacy page-as-graph-node seeding until the web app is migrated to read
+      // pages from the PagePort.
+      await seedPages(db, result.project.id);
       await applyDomainPack({
         projectId: result.project.id,
         catalog: ports.catalog,

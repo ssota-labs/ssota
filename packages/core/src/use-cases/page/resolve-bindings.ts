@@ -87,6 +87,16 @@ export async function resolvePageBindings(
         value = node && node.projectId === projectId ? serialize(node) : null;
         break;
       }
+      case "subject": {
+        // The page's anchor node, resolved by the caller and threaded via
+        // `context.subject` (a ResolvedNode) — null for unanchored pages.
+        const subject = context.subject;
+        value =
+          subject && typeof subject === "object" && "id" in subject
+            ? (subject as ResolvedNode)
+            : null;
+        break;
+      }
       case "traverse": {
         const fromDef = bindings[def.from];
         const from = fromDef

@@ -1,0 +1,247 @@
+[
+  {
+    "key": "executive",
+    "parentKey": null,
+    "title": "Executive",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Executive", "subtitle": "Roadmap, goals and KPIs" } } } },
+    "bindings": {}
+  },
+  {
+    "key": "executive/roadmap",
+    "parentKey": "executive",
+    "title": "Roadmap",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Roadmap", "columns": [{ "key": "title", "header": "Title" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "roadmap" } }
+  },
+  {
+    "key": "executive/goals",
+    "parentKey": "executive",
+    "title": "Goals",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Goals", "columns": [{ "key": "title", "header": "Objective" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "objective" } }
+  },
+  {
+    "key": "executive/kpis",
+    "parentKey": "executive",
+    "title": "KPIs",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "KPIs", "columns": [{ "key": "title", "header": "KPI" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "kpi" } }
+  },
+  {
+    "key": "research",
+    "parentKey": null,
+    "title": "Research",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Research", "subtitle": "Market, users and hypotheses" } } } },
+    "bindings": {}
+  },
+  {
+    "key": "research/market",
+    "parentKey": "research",
+    "title": "Market research",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Market research", "columns": [{ "key": "title", "header": "Title" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "market_research" } }
+  },
+  {
+    "key": "research/users",
+    "parentKey": "research",
+    "title": "User research",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "User research", "columns": [{ "key": "title", "header": "Title" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "user_research" } }
+  },
+  {
+    "key": "research/hypotheses",
+    "parentKey": "research",
+    "title": "Hypotheses",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Hypotheses", "columns": [{ "key": "title", "header": "Hypothesis" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "hypothesis" } }
+  },
+  {
+    "key": "delivery",
+    "parentKey": null,
+    "title": "Delivery",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Delivery", "subtitle": "Initiatives, releases and features" } } } },
+    "bindings": {}
+  },
+  {
+    "key": "delivery/initiatives",
+    "parentKey": "delivery",
+    "title": "Initiatives",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Initiatives", "columns": [{ "key": "title", "header": "Initiative" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "initiative" } }
+  },
+  {
+    "key": "delivery/releases",
+    "parentKey": "delivery",
+    "title": "Releases",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Releases", "columns": [{ "key": "title", "header": "Release" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "release" } }
+  },
+  {
+    "key": "delivery/prds",
+    "parentKey": "delivery",
+    "title": "PRDs",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "PRDs", "columns": [{ "key": "title", "header": "PRD" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "prd" } }
+  },
+  {
+    "key": "delivery/features",
+    "parentKey": "delivery",
+    "title": "Features",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Features", "columns": [{ "key": "title", "header": "Feature" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "feature" } }
+  },
+  {
+    "key": "delivery/stories",
+    "parentKey": "delivery",
+    "title": "User stories",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "User stories", "columns": [{ "key": "title", "header": "Story" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "user_story" } }
+  },
+  {
+    "key": "design",
+    "parentKey": null,
+    "title": "Design",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Design", "subtitle": "Information architecture, flows and wireframes" } } } },
+    "bindings": {}
+  },
+  {
+    "key": "design/ia",
+    "parentKey": "design",
+    "title": "Information architecture",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Information architecture", "columns": [{ "key": "title", "header": "IA" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "information_architecture" } }
+  },
+  {
+    "key": "design/flows",
+    "parentKey": "design",
+    "title": "User flows",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "User flows", "columns": [{ "key": "title", "header": "Flow" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "user_flow" } }
+  },
+  {
+    "key": "design/wireframes",
+    "parentKey": "design",
+    "title": "Wireframes",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Wireframes", "columns": [{ "key": "title", "header": "Wireframe" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "page_wireframe" } }
+  },
+  {
+    "key": "engineering",
+    "parentKey": null,
+    "title": "Engineering",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Engineering", "subtitle": "Architecture, data, integration and plans" } } } },
+    "bindings": {}
+  },
+  {
+    "key": "engineering/architecture",
+    "parentKey": "engineering",
+    "title": "Architecture specs",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Architecture specs", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "architecture_spec" } }
+  },
+  {
+    "key": "engineering/data",
+    "parentKey": "engineering",
+    "title": "Data specs",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Data specs", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "data_spec" } }
+  },
+  {
+    "key": "engineering/integration",
+    "parentKey": "engineering",
+    "title": "Integration specs",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Integration specs", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "integration_spec" } }
+  },
+  {
+    "key": "engineering/plans",
+    "parentKey": "engineering",
+    "title": "Implementation plans",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Implementation plans", "columns": [{ "key": "title", "header": "Plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "implementation_plan" } }
+  },
+  {
+    "key": "build",
+    "parentKey": null,
+    "title": "Build",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Build", "subtitle": "Sprints, tasks and pull requests" } } } },
+    "bindings": {}
+  },
+  {
+    "key": "build/sprints",
+    "parentKey": "build",
+    "title": "Sprints",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Sprints", "columns": [{ "key": "title", "header": "Sprint" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "sprint" } }
+  },
+  {
+    "key": "build/tasks",
+    "parentKey": "build",
+    "title": "Tasks",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Tasks", "columns": [{ "key": "title", "header": "Task" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "task" } }
+  },
+  {
+    "key": "build/prs",
+    "parentKey": "build",
+    "title": "Pull requests",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Pull requests", "columns": [{ "key": "title", "header": "PR" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "pull_request" } }
+  },
+  {
+    "key": "quality",
+    "parentKey": null,
+    "title": "Quality & Launch",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Quality & Launch", "subtitle": "Tests, launch plans, release notes and runbooks" } } } },
+    "bindings": {}
+  },
+  {
+    "key": "quality/tests",
+    "parentKey": "quality",
+    "title": "Test plans",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Test plans", "columns": [{ "key": "title", "header": "Test plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "test_plan" } }
+  },
+  {
+    "key": "quality/launch",
+    "parentKey": "quality",
+    "title": "Launch plans",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Launch plans", "columns": [{ "key": "title", "header": "Launch plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "launch_plan" } }
+  },
+  {
+    "key": "quality/release-notes",
+    "parentKey": "quality",
+    "title": "Release notes",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Release notes", "columns": [{ "key": "title", "header": "Release note" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "release_note" } }
+  },
+  {
+    "key": "quality/runbooks",
+    "parentKey": "quality",
+    "title": "Runbooks",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Runbooks", "columns": [{ "key": "title", "header": "Runbook" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "runbook" } }
+  },
+  {
+    "key": "analytics",
+    "parentKey": null,
+    "title": "Analytics",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Analytics", "subtitle": "Metric snapshots and retrospectives" } } } },
+    "bindings": {}
+  },
+  {
+    "key": "analytics/metrics",
+    "parentKey": "analytics",
+    "title": "Metric snapshots",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Metric snapshots", "columns": [{ "key": "title", "header": "Snapshot" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "metric_snapshot" } }
+  },
+  {
+    "key": "analytics/retros",
+    "parentKey": "analytics",
+    "title": "Retrospectives",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Retrospectives", "columns": [{ "key": "title", "header": "Retro" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "retrospective" } }
+  }
+]

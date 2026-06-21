@@ -6,6 +6,7 @@ import {
   type Page,
   type PageRecord,
 } from "@ssota/contracts";
+import pagesTreeSeed from "@ssota/contracts/seed-packs/software-development-workflow/pages-tree.json" with { type: "json" };
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
@@ -142,4 +143,79 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
         );
     },
   };
+}
+
+interface PageTreeSeedEntry {
+  key: string;
+  parentKey: string | null;
+  title: string;
+  icon?: string;
+  spec: unknown;
+  bindings?: Record<string, unknown>;
+  actions?: Record<string, unknown>;
+}
+
+/**
+ * Bootstrap-seed the software-development page tree (Notion-style) into the
+ * `pages` table. Idempotent via `slug` (= the seed `key`); re-running never
+ * clobbers tenant edits. Entries are ordered parents-first so `parentKey`
+ * resolves against already-inserted rows. Call alongside `seedWorkflows` /
+ * `seedDomainCatalog` at project creation.
+ */
+export async function seedPages(db: Db, projectId: string): Promise<void> {
+  const entries = pagesTreeSeed as unknown as PageTreeSeedEntry[];
+  const keyToId = new Map<string, string>();
+  const positionByParent = new Map<string, number>();
+
+  for (const entry of entries) {
+    const parentId = entry.parentKey
+      ? (keyToId.get(entry.parentKey) ?? null)
+      : null;
+
+    const existing = await db
+      .select({ id: schema.pages.id })
+      .from(schema.pages)
+      .where(
+        and(
+          eq(schema.pages.projectId, projectId),
+          eq(schema.pages.slug, entry.key),
+        ),
+      )
+      .limit(1);
+    if (existing[0]) {
+      keyToId.set(entry.key, existing[0].id);
+      continue;
+    }
+
+    const posKey = entry.parentKey ?? "__root__";
+    const position = positionByParent.get(posKey) ?? 0;
+    positionByParent.set(posKey, position + 1);
+
+    const parsed = pageRecordSchema.parse({
+      title: entry.title,
+      icon: entry.icon,
+      slug: entry.key,
+      parentId,
+      position,
+      spec: entry.spec,
+      bindings: entry.bindings ?? {},
+      actions: entry.actions ?? {},
+    });
+
+    const [row] = await db
+      .insert(schema.pages)
+      .values({
+        projectId,
+        parentId,
+        position,
+        title: parsed.title,
+        icon: parsed.icon ?? null,
+        slug: parsed.slug ?? null,
+        spec: parsed.spec,
+        bindings: parsed.bindings,
+        actions: parsed.actions,
+      })
+      .returning({ id: schema.pages.id });
+    keyToId.set(entry.key, row!.id);
+  }
 }

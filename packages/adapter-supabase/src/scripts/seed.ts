@@ -15,6 +15,7 @@ import {
 } from "@ssota/core/seed-packs/apply-domain-pack";
 import { seedDomainCatalog } from "../ports/db-catalog-read-port.js";
 import { seedWorkflows } from "../ports/workflow-port.js";
+import { seedPages } from "../ports/page-port.js";
 import { createGraphPorts } from "../ports/create-graph-ports.js";
 
 loadEnv({ path: "../../.env.local" });
@@ -158,6 +159,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
 
     await seedGraphInstances(db, projectId);
     await seedWorkflows(db, projectId);
+    await seedPages(db, projectId);
 
     const ports = createGraphPorts(db, { projectId });
     await applyDomainPack({
@@ -208,6 +210,7 @@ async function seedAllProjectCatalogs(db: ReturnType<typeof createDb>["db"]) {
   for (const { id } of projects) {
     await seedDomainCatalog(db, id);
     await seedWorkflows(db, id);
+    await seedPages(db, id);
   }
 }
 
