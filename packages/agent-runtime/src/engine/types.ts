@@ -57,6 +57,14 @@ export interface LoopEngineResult {
 export interface LoopEngine {
   readonly kind: "loop";
   run(input: LoopEngineRunInput): Promise<LoopEngineResult>;
+  /**
+   * Run while streaming UI message chunks to `writable` (chat delivery).
+   * Optional — engines that don't support streaming omit it.
+   */
+  stream?(
+    input: LoopEngineRunInput,
+    writable: WritableStream,
+  ): Promise<LoopEngineResult>;
 }
 
 export interface SessionEngineStartInput {

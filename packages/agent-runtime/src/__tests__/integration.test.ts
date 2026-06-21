@@ -13,7 +13,7 @@ import {
   writePageDefinition,
 } from "@ssota/core";
 import { createNodeInputSchema } from "@ssota/contracts/graph";
-import { runAgentForTask } from "../run.js";
+import { runAgentForTask, streamAgentForTask } from "../run.js";
 import { getDb, getGraphPorts, getGraphReadPort, getTaskPort } from "../ports.js";
 
 const DB_ONLY = Boolean(process.env.DATABASE_URL);
@@ -78,6 +78,42 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
         runId: `test-${task.id}`,
       });
 
+      expect(["done", "blocked"]).toContain(result.finalStatus);
+    },
+    180_000,
+  );
+
+  it(
+    "streams UI message chunks while completing a task",
+    async () => {
+      const projectId = await defaultProjectId();
+      const task = await spawnTask(
+        {
+          tasks: getTaskPort(projectId),
+          graphRead: getGraphReadPort(projectId),
+        },
+        projectId,
+        {
+          title: "Streaming smoke: list the project's objectives",
+          workflowKey: "work.write_document",
+          executorType: "Agent",
+          idempotencyKey: `agent-stream-${Date.now()}`,
+        },
+      );
+
+      const chunks: unknown[] = [];
+      const writable = new WritableStream({
+        write(chunk) {
+          chunks.push(chunk);
+        },
+      });
+
+      const result = await streamAgentForTask(
+        { projectId, taskId: task.id, runId: `test-stream-${task.id}` },
+        writable,
+      );
+
+      expect(chunks.length).toBeGreaterThan(0);
       expect(["done", "blocked"]).toContain(result.finalStatus);
     },
     180_000,

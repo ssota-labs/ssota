@@ -1,12 +1,13 @@
-import { getWorkflowMetadata } from "workflow";
+import { getWorkflowMetadata, getWritable } from "workflow";
 import {
   createSandboxSession,
   getDb,
   getTaskPort,
   resolveCredentialProvider,
-  runAgentForTask,
+  streamAgentForTask,
   type RunAgentForTaskResult,
   type SandboxSession,
+  type UIMessageChunk,
 } from "@ssota/agent-runtime";
 import { createAgentRunPort } from "@ssota/adapter-supabase";
 
@@ -95,17 +96,25 @@ async function runAgentStep(
   // credential provider is configured for this deployment.
   const credentials = resolveCredentialProvider();
 
+  // Stream UI message chunks to the run's default stream so chat delivery
+  // (`/api/chat/[platform]`) can read them; non-streaming callers
+  // (`/api/agent/run`) simply ignore the stream.
+  const writable = getWritable<UIMessageChunk>();
+
   try {
-    return await runAgentForTask({
-      projectId: input.projectId,
-      taskId: input.taskId,
-      runId: workflowRunId,
-      accountId: input.accountId,
-      modelId: input.modelId,
-      sandbox,
-      credentials,
-      maxSteps: input.maxSteps,
-    });
+    return await streamAgentForTask(
+      {
+        projectId: input.projectId,
+        taskId: input.taskId,
+        runId: workflowRunId,
+        accountId: input.accountId,
+        modelId: input.modelId,
+        sandbox,
+        credentials,
+        maxSteps: input.maxSteps,
+      },
+      writable,
+    );
   } finally {
     if (sandbox) {
       try {

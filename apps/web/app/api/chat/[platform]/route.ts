@@ -87,5 +87,13 @@ export async function POST(
     },
   ]);
 
-  return NextResponse.json({ runId: run.runId, taskId: task.id });
+  // Stream the agent's UI message chunks back to the caller (platform adapter).
+  // Run/task ids ride in headers so the adapter can correlate.
+  return new Response(run.getReadable(), {
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      "x-run-id": run.runId,
+      "x-task-id": task.id,
+    },
+  });
 }

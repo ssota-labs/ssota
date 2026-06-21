@@ -1,4 +1,5 @@
-export { runAgentForTask } from "./run.js";
+export type { UIMessageChunk } from "ai";
+export { runAgentForTask, streamAgentForTask } from "./run.js";
 export type {
   RunAgentForTaskInput,
   RunAgentForTaskResult,
