@@ -4,6 +4,8 @@ export {
   createOnboardingPort,
   createTaskPort,
   createGraphPorts,
+  createWorkflowPort,
+  seedWorkflows,
 } from "./ports/index.js";
 export {
   createAgentRunPort,

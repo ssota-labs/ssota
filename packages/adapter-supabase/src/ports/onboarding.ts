@@ -14,6 +14,7 @@ import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import { createGraphPorts } from "./create-graph-ports.js";
 import { seedDevWorkflowCatalog } from "./db-catalog-read-port.js";
+import { seedWorkflows } from "./workflow-port.js";
 
 function parseLocale(value: string | null | undefined): Locale {
   if (value && (LOCALES as readonly string[]).includes(value)) {
@@ -233,6 +234,9 @@ export function createOnboardingPort(db: Db): OnboardingPort {
 
       const ports = createGraphPorts(db, { projectId: result.project.id });
       await seedDevWorkflowCatalog(db, result.project.id);
+      // Workflows are a core, domain-agnostic concept — bootstrap-seed alongside
+      // the catalog, not inside the domain example pack.
+      await seedWorkflows(db, result.project.id);
       await applyDevWorkflowPack({
         projectId: result.project.id,
         catalog: ports.catalog,

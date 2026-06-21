@@ -196,6 +196,40 @@ export const edgeCatalog = pgTable(
   }),
 );
 
+/**
+ * Workflow definitions — a core, per-project concept (peer of node/edge catalog
+ * and tasks), NOT domain content. Every project is bootstrap-seeded with the
+ * embedded WORKFLOW_REGISTRY so the agent can operate regardless of domain;
+ * rows are then tenant-editable (and agent-authorable via write_workflow).
+ * `tasks.workflow_key` is a soft reference to `workflow_key` here.
+ */
+export const workflows = pgTable(
+  "workflows",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    workflowKey: text("workflow_key").notNull(),
+    title: text("title").notNull(),
+    category: text("category").notNull(),
+    cadenceHint: text("cadence_hint"),
+    defaultExecutorType: executorTypeEnum("default_executor_type"),
+    defaultStatus: taskStatusEnum("default_status"),
+    instruction: text("instruction").notNull(),
+    lifecycleStatus: text("lifecycle_status").notNull().default("Active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectWorkflowKeyUnique: uniqueIndex("workflows_project_workflow_key_unique").on(
+      table.projectId,
+      table.workflowKey,
+    ),
+    projectIdx: index("workflows_project_id_idx").on(table.projectId),
+  }),
+);
+
 export const tasks = pgTable(
   "tasks",
   {
