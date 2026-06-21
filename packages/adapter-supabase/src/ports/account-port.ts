@@ -105,6 +105,7 @@ export interface RecordAccountConnectionInput {
   installationId?: string | null;
   tenantId?: string | null;
   name?: string | null;
+  subjectUserId?: string | null;
 }
 
 export interface AccountConnectionRecord {
@@ -113,8 +114,14 @@ export interface AccountConnectionRecord {
   installationId: string;
   tenantId: string | null;
   name: string | null;
+  subjectUserId: string | null;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ConnectCredentialScope {
+  installationId: string | null;
+  subjectUserId: string | null;
 }
 
 /**
@@ -125,6 +132,30 @@ export interface AccountConnectionRecord {
  * `getInstallationId` is used at tool-execution time to scope `getToken`.
  */
 export function createAccountConnectionPort(db: Db) {
+  async function getConnectCredentialScope(
+    accountId: string,
+    connector: string,
+  ): Promise<ConnectCredentialScope | null> {
+    const [row] = await db
+      .select({
+        installationId: accountConnections.installationId,
+        subjectUserId: accountConnections.subjectUserId,
+      })
+      .from(accountConnections)
+      .where(
+        and(
+          eq(accountConnections.accountId, accountId),
+          eq(accountConnections.connector, connector),
+        ),
+      )
+      .limit(1);
+    if (!row) return null;
+    return {
+      installationId: row.installationId ? row.installationId : null,
+      subjectUserId: row.subjectUserId ?? null,
+    };
+  }
+
   return {
     async record(input: RecordAccountConnectionInput): Promise<void> {
       const installationId = input.installationId ?? "";
@@ -137,6 +168,7 @@ export function createAccountConnectionPort(db: Db) {
           installationId,
           tenantId: input.tenantId ?? null,
           name: input.name ?? null,
+          subjectUserId: input.subjectUserId ?? null,
         })
         .onConflictDoUpdate({
           target: [
@@ -147,6 +179,7 @@ export function createAccountConnectionPort(db: Db) {
           set: {
             tenantId: input.tenantId ?? null,
             name: input.name ?? null,
+            subjectUserId: input.subjectUserId ?? null,
             updatedAt: new Date(),
           },
         });
@@ -161,6 +194,7 @@ export function createAccountConnectionPort(db: Db) {
           installationId: accountConnections.installationId,
           tenantId: accountConnections.tenantId,
           name: accountConnections.name,
+          subjectUserId: accountConnections.subjectUserId,
           createdAt: accountConnections.createdAt,
           updatedAt: accountConnections.updatedAt,
         })
@@ -186,18 +220,10 @@ export function createAccountConnectionPort(db: Db) {
       accountId: string,
       connector: string,
     ): Promise<string | null> {
-      const [row] = await db
-        .select({ installationId: accountConnections.installationId })
-        .from(accountConnections)
-        .where(
-          and(
-            eq(accountConnections.accountId, accountId),
-            eq(accountConnections.connector, connector),
-          ),
-        )
-        .limit(1);
-      // Empty string = single-install connector with no workspace scoping.
-      return row?.installationId ? row.installationId : null;
+      const scope = await getConnectCredentialScope(accountId, connector);
+      return scope?.installationId ?? null;
     },
+
+    getConnectCredentialScope,
   };
 }

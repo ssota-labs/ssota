@@ -17,6 +17,11 @@ export interface CredentialScope {
    * default installation (single-tenant connectors).
    */
   installationId?: string;
+  /**
+   * Connect user-subject id (Supabase auth user). Required for oauth/* connectors
+   * at authorize/callback/getToken time; omitted for slack/github app installs.
+   */
+  userId?: string;
 }
 
 /** Scope for `startConnectAuthorization` — Vercel Connect requires a user subject. */
@@ -40,6 +45,31 @@ export interface CredentialProvider {
 
 function envKey(connector: string): string {
   return `CONNECTOR_${connector.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_TOKEN`;
+}
+
+/** Slack/GitHub mint app-subject installation tokens; oauth/* uses user subject. */
+export function connectUsesAppSubject(connectorUid: string): boolean {
+  const provider = connectorUid.split("/")[0] ?? connectorUid;
+  return provider === "slack" || provider === "github";
+}
+
+type ConnectTokenSubject =
+  | { type: "app" }
+  | { type: "user"; id: string };
+
+function resolveConnectTokenSubject(
+  connectorUid: string,
+  scope: CredentialScope,
+): ConnectTokenSubject {
+  if (connectUsesAppSubject(connectorUid)) {
+    return { type: "app" };
+  }
+  if (!scope.userId) {
+    throw new Error(
+      `userId is required for user-subject connector '${connectorUid}'`,
+    );
+  }
+  return { type: "user", id: scope.userId };
 }
 
 /**
@@ -84,11 +114,10 @@ export function createVercelConnectProvider(): CredentialProvider {
         );
       }
 
-      // Act as the app/bot; scope to the resolved provider installation when
-      // present, else the connector's default installation.
+      // App-subject for slack/github installs; user-subject for oauth/* (Notion).
       try {
         const token = await connect.getToken(connector, {
-          subject: { type: "app" },
+          subject: resolveConnectTokenSubject(connector, scope),
           ...(scope.installationId
             ? { installationId: scope.installationId }
             : {}),
@@ -209,7 +238,7 @@ export async function getConnectInstallation(
     getTokenResponse: (
       connectorUid: string,
       params: {
-        subject: { type: "app" };
+        subject: ConnectTokenSubject;
         installationId?: string;
       },
     ) => Promise<{
@@ -224,7 +253,7 @@ export async function getConnectInstallation(
     throw new Error("@vercel/connect is not installed");
   }
   const res = await connect.getTokenResponse(connector, {
-    subject: { type: "app" },
+    subject: resolveConnectTokenSubject(connector, scope),
     ...(scope.installationId ? { installationId: scope.installationId } : {}),
   });
   return res

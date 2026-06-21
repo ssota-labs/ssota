@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 import { createSsotaTools } from "../tools/index.js";
 import { createSandboxTools } from "../tools/sandbox.js";
 import { createExternalTools } from "../tools/external.js";
-import { createEnvCredentialProvider, startConnectAuthorization } from "../credentials/provider.js";
+import {
+  connectUsesAppSubject,
+  createEnvCredentialProvider,
+  getConnectInstallation,
+  startConnectAuthorization,
+} from "../credentials/provider.js";
 import { buildSystemPrompt } from "../system-prompt.js";
 import { DEFAULT_MODEL_ID } from "../models.js";
 
@@ -101,6 +106,41 @@ describe("env credential provider", () => {
     delete process.env.CONNECTOR_TESTHUB_TOKEN;
     const missing = await provider.getToken("nope", scope);
     expect(missing).toBeNull();
+  });
+});
+
+describe("connectUsesAppSubject", () => {
+  it("uses app subject for slack and github connectors", () => {
+    expect(connectUsesAppSubject("slack/dev")).toBe(true);
+    expect(connectUsesAppSubject("github/acme")).toBe(true);
+  });
+
+  it("uses user subject for oauth/* connectors (Notion, Linear, …)", () => {
+    expect(connectUsesAppSubject("oauth/ssota-notion")).toBe(false);
+    expect(connectUsesAppSubject("oauth/linear")).toBe(false);
+  });
+});
+
+describe("getConnectInstallation", () => {
+  it("requires userId for oauth connectors outside CONNECT_STUB", async () => {
+    await expect(
+      getConnectInstallation("oauth/ssota-notion", { projectId: "p" }),
+    ).rejects.toThrow(/userId is required/);
+  });
+
+  it("returns stub installation for oauth when CONNECT_STUB=1", async () => {
+    process.env.CONNECT_STUB = "1";
+    try {
+      const installation = await getConnectInstallation("oauth/ssota-notion", {
+        projectId: "p",
+        userId: "user-42",
+        installationId: "stub-oauth-notion-abc123",
+      });
+      expect(installation?.installationId).toBe("stub-oauth-notion-abc123");
+      expect(installation?.name).toMatch(/oauth workspace/);
+    } finally {
+      delete process.env.CONNECT_STUB;
+    }
   });
 });
 

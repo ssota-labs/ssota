@@ -19,6 +19,7 @@ export async function GET(request: Request) {
   const projectId =
     url.searchParams.get("projectId") ?? process.env.CHAT_PROJECT_ID ?? "";
   const returnTo = url.searchParams.get("returnTo") ?? "/";
+  const userId = url.searchParams.get("userId") ?? undefined;
   // Connect may append the new installation id on the redirect; fall back to
   // the connector's default installation otherwise.
   const installationId =
@@ -38,6 +39,7 @@ export async function GET(request: Request) {
       projectId,
       accountId,
       installationId,
+      userId,
     });
 
     if (accountId && installation) {
@@ -48,6 +50,7 @@ export async function GET(request: Request) {
         installationId: installation.installationId ?? installationId ?? null,
         tenantId: installation.tenantId ?? null,
         name: installation.name ?? null,
+        subjectUserId: userId ?? null,
       });
     }
 
