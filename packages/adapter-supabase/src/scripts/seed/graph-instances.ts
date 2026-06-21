@@ -9,7 +9,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { createDb } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
-import { seedDevWorkflowCatalog } from "../../ports/db-catalog-read-port.js";
+import { seedDomainCatalog } from "../../ports/db-catalog-read-port.js";
 
 /** One evergreen container per project — dev track (Console v2.7). */
 export const EVERGREEN_DEV_SINGLETON_TYPES = [
@@ -63,7 +63,7 @@ export async function seedGraphInstances(
   db: ReturnType<typeof createDb>["db"],
   projectId: string,
 ) {
-  const { nodeKeyToId, edgeKeyToId } = await seedDevWorkflowCatalog(db, projectId);
+  const { nodeKeyToId, edgeKeyToId } = await seedDomainCatalog(db, projectId);
   const maps: CatalogMaps = { nodeKeyToId, edgeKeyToId };
 
   const singletonTypes = [

@@ -3,10 +3,17 @@ import {
   workspaceDefinitionSchema,
   type PageRuntimeDefinition,
 } from "@ssota/contracts";
-import pagesSeed from "@ssota/contracts/seed-packs/dev-workflow/pages.json" with { type: "json" };
-import workspaceSeed from "@ssota/contracts/seed-packs/dev-workflow/workspace.json" with { type: "json" };
+import pagesSeed from "@ssota/contracts/seed-packs/software-development-workflow/pages.json" with { type: "json" };
+import workspaceSeed from "@ssota/contracts/seed-packs/software-development-workflow/workspace.json" with { type: "json" };
 import type { CatalogReadPort } from "../ports/catalog-read-port.js";
 import type { GraphReadPort, GraphWritePort } from "../ports/graph-read-port.js";
+
+/**
+ * The starter domain seeded today. The pack mechanism is domain-neutral
+ * (`applyDomainPack`); this is the one bundled domain (executive → testing
+ * software-delivery workflow). Future domains add a sibling seed dir + id.
+ */
+export const SOFTWARE_DEV_WORKFLOW_DOMAIN_ID = "software-development-workflow";
 
 type PageSeed = PageRuntimeDefinition & {
   pageKey: string;
@@ -45,7 +52,7 @@ export interface ApplyDevWorkflowPackDeps {
   ensureCatalog?: (projectId: string) => Promise<void>;
 }
 
-export async function applyDevWorkflowPack(
+export async function applyDomainPack(
   deps: ApplyDevWorkflowPackDeps,
 ): Promise<ApplyDevWorkflowPackResult> {
   const { projectId, catalog, graphRead, graphWrite } = deps;
@@ -166,6 +173,7 @@ export async function applyDevWorkflowPack(
         title: "Workspace",
         properties: {
           lifecycleStatus: "Active",
+          domainId: SOFTWARE_DEV_WORKFLOW_DOMAIN_ID,
           nav: workspaceDef.nav,
           ...(workspaceDef.navInitiative
             ? { navInitiative: workspaceDef.navInitiative }

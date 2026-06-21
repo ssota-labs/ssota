@@ -99,7 +99,7 @@ export function createWorkflowPort(db: Db, scope: ActionPortsScope): WorkflowPor
 /**
  * Bootstrap-seed every project with the embedded workflow registry. Idempotent
  * (insert … on conflict do nothing) so re-running never clobbers tenant edits.
- * Call alongside `seedDevWorkflowCatalog` at project creation — NOT inside the
+ * Call alongside `seedDomainCatalog` at project creation — NOT inside the
  * domain example pack, since workflows are a core, domain-agnostic concept.
  */
 export async function seedWorkflows(db: Db, projectId: string): Promise<void> {

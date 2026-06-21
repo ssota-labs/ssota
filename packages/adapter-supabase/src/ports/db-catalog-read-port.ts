@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import edgeCatalogSeed from "@ssota/contracts/seed-packs/dev-workflow/edge-catalog.json" with {
+import edgeCatalogSeed from "@ssota/contracts/seed-packs/software-development-workflow/edge-catalog.json" with {
   type: "json",
 };
 import {
@@ -157,7 +157,7 @@ export function createDbCatalogReadPort(
 }
 
 /** Seed dev-workflow catalog rows for a project (idempotent). */
-export async function seedDevWorkflowCatalog(
+export async function seedDomainCatalog(
   db: Db,
   projectId: string,
 ): Promise<{ nodeKeyToId: Map<string, string>; edgeKeyToId: Map<string, string> }> {

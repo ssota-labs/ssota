@@ -13,7 +13,7 @@ import {
   createGraphPorts,
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
-  seedDevWorkflowCatalog,
+  seedDomainCatalog,
 } from "../src/index.js";
 import * as schema from "../src/db/schema.js";
 
@@ -54,7 +54,7 @@ describe("graph ports integration", () => {
         .returning();
       otherProjectId = otherProject!.id;
 
-      await seedDevWorkflowCatalog(dbBundle.db, otherProjectId);
+      await seedDomainCatalog(dbBundle.db, otherProjectId);
       ports = createGraphPorts(dbBundle.db, { projectId });
     } catch {
       skip = true;
@@ -111,7 +111,7 @@ describe("graph ports integration", () => {
     );
     expect(before).toBeNull();
 
-    await seedDevWorkflowCatalog(db!, otherProjectId);
+    await seedDomainCatalog(db!, otherProjectId);
 
     const otherPorts = createGraphPorts(db!, { projectId: otherProjectId });
     const restored = await otherPorts.catalog.getNodeCatalogByKey("design_theme");

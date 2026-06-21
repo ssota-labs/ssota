@@ -11,9 +11,9 @@ import {
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
 import {
-  applyDevWorkflowPack,
-} from "@ssota/core/seed-packs/apply-dev-workflow-pack";
-import { seedDevWorkflowCatalog } from "../ports/db-catalog-read-port.js";
+  applyDomainPack,
+} from "@ssota/core/seed-packs/apply-domain-pack";
+import { seedDomainCatalog } from "../ports/db-catalog-read-port.js";
 import { seedWorkflows } from "../ports/workflow-port.js";
 import { createGraphPorts } from "../ports/create-graph-ports.js";
 
@@ -160,13 +160,13 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await seedWorkflows(db, projectId);
 
     const ports = createGraphPorts(db, { projectId });
-    await applyDevWorkflowPack({
+    await applyDomainPack({
       projectId,
       catalog: ports.catalog,
       graphRead: ports.graphRead,
       graphWrite: ports.graphWrite,
       ensureCatalog: async (pid) => {
-        await seedDevWorkflowCatalog(db, pid);
+        await seedDomainCatalog(db, pid);
       },
     });
   }
@@ -206,7 +206,7 @@ async function seedAllProjectCatalogs(db: ReturnType<typeof createDb>["db"]) {
     .select({ id: schema.projects.id })
     .from(schema.projects);
   for (const { id } of projects) {
-    await seedDevWorkflowCatalog(db, id);
+    await seedDomainCatalog(db, id);
     await seedWorkflows(db, id);
   }
 }

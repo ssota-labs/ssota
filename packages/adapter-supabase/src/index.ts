@@ -18,7 +18,7 @@ export {
   type AccountRecord,
 } from "./ports/account-port.js";
 export {
-  seedDevWorkflowCatalog,
+  seedDomainCatalog,
   createDbCatalogReadPort,
 } from "./ports/db-catalog-read-port.js";
 export { createDbCatalogWritePort } from "./ports/db-catalog-write-port.js";
