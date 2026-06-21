@@ -54,10 +54,15 @@ export function createVercelConnectProvider(): CredentialProvider {
   return {
     async getToken(connector, scope) {
       let connect: {
-        getToken: (params: {
-          connector: string;
-          subject: { type: "app" } | { type: "user"; id: string };
-        }) => Promise<{ token: string; expiresAt?: string } | null>;
+        // Real signature: connector uid is positional; returns a token string.
+        getToken: (
+          connectorUid: string,
+          opts: {
+            subject: { type: "app" } | { type: "user"; id: string };
+            installationId?: string;
+          },
+        ) => Promise<string>;
+        UserAuthorizationRequiredError?: new (...args: unknown[]) => Error;
       };
       try {
         connect = (await import("@vercel/connect")) as unknown as typeof connect;
@@ -66,13 +71,25 @@ export function createVercelConnectProvider(): CredentialProvider {
           "@vercel/connect is not installed — add it to use scoped credentials",
         );
       }
-      const subject = scope.accountId
-        ? ({ type: "user", id: scope.accountId } as const)
-        : ({ type: "app" } as const);
-      const result = await connect.getToken({ connector, subject });
-      return result
-        ? { token: result.token, expiresAt: result.expiresAt }
-        : null;
+
+      // Act as the app/bot; address the tenant's installation by account
+      // (multi-tenant connectors like Slack/GitHub). Builders can remap.
+      try {
+        const token = await connect.getToken(connector, {
+          subject: { type: "app" },
+          ...(scope.accountId ? { installationId: scope.accountId } : {}),
+        });
+        return token ? { token } : null;
+      } catch (error) {
+        // Not yet authorized → no credential (surface consent flow upstream).
+        if (
+          connect.UserAuthorizationRequiredError &&
+          error instanceof connect.UserAuthorizationRequiredError
+        ) {
+          return null;
+        }
+        throw error;
+      }
     },
   };
 }
