@@ -1,4 +1,5 @@
-export { runAgentForTask } from "./run.js";
+export type { UIMessageChunk } from "ai";
+export { runAgentForTask, streamAgentForTask } from "./run.js";
 export type {
   RunAgentForTaskInput,
   RunAgentForTaskResult,
@@ -21,9 +22,14 @@ export {
 export {
   createEnvCredentialProvider,
   createVercelConnectProvider,
+  resolveCredentialProvider,
+  startConnectAuthorization,
+  getConnectInstallation,
   type CredentialProvider,
   type CredentialScope,
   type CredentialToken,
+  type StartConnectAuthorizationOptions,
+  type ConnectInstallation,
 } from "./credentials/provider.js";
 export { buildSystemPrompt } from "./system-prompt.js";
 export { createAiSdkLoopEngine } from "./engine/ai-sdk.js";

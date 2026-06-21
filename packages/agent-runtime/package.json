@@ -24,6 +24,7 @@
     "zod": "^3.25.67"
   },
   "optionalDependencies": {
+    "@vercel/connect": "^0.2.5",
     "@vercel/sandbox": "^0.0.17"
   },
   "devDependencies": {

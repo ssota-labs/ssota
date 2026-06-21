@@ -74,8 +74,25 @@ export interface CreateSandboxSessionOptions {
 }
 
 /**
+ * Explicit credentials for local/dev. On Vercel, OIDC is automatic and these
+ * are unnecessary (the SDK falls back to `VERCEL_OIDC_TOKEN`).
+ */
+function getSandboxCredentials(): Record<string, string> {
+  const { VERCEL_TOKEN, VERCEL_TEAM_ID, VERCEL_PROJECT_ID } = process.env;
+  if (VERCEL_TOKEN && VERCEL_TEAM_ID && VERCEL_PROJECT_ID) {
+    return {
+      token: VERCEL_TOKEN,
+      teamId: VERCEL_TEAM_ID,
+      projectId: VERCEL_PROJECT_ID,
+    };
+  }
+  return {};
+}
+
+/**
  * Provision a fresh sandbox. Throws if `@vercel/sandbox` is not installed or
- * credentials are missing (OIDC on Vercel, or VERCEL_TOKEN/TEAM/PROJECT).
+ * credentials are missing (OIDC on Vercel, or VERCEL_TOKEN/TEAM/PROJECT for
+ * local dev).
  */
 export async function createSandboxSession(
   options: CreateSandboxSessionOptions = {},
@@ -88,6 +105,7 @@ export async function createSandboxSession(
   }
 
   const raw = (await Sandbox.create({
+    ...getSandboxCredentials(),
     runtime: (options.runtime ?? "node24") as "node24",
     timeout: options.timeoutMs ?? 120_000,
   })) as unknown as RawSandbox;

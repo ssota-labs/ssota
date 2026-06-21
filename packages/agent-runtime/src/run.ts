@@ -45,18 +45,9 @@ export interface RunAgentForTaskResult {
   };
 }
 
-/**
- * Run the SSOTA agent against a single task to completion. The agent reads/
- * writes the graph and tasks via tools and decides the terminal status itself
- * (`complete_task` / `block_task`). Intended to be called from inside a
- * Vercel Workflow `"use step"` so the whole run is durable.
- */
-export async function runAgentForTask(
-  input: RunAgentForTaskInput,
-): Promise<RunAgentForTaskResult> {
+async function prepareRun(input: RunAgentForTaskInput) {
   const { projectId, taskId, runId, accountId } = input;
-
-  const taskPort = getTaskPort(projectId);
+  const taskPort = getTaskPort(projectId, accountId);
   const domainTask = await taskPort.getTask(taskId);
   if (!domainTask) {
     throw new Error(`Task ${taskId} not found in project ${projectId}`);
@@ -69,8 +60,6 @@ export async function runAgentForTask(
     ...(input.sandbox ? createSandboxTools() : {}),
     ...(input.credentials ? createExternalTools() : {}),
   };
-  const context: AgentRunContext = { projectId, taskId, runId, accountId };
-
   // Resolve workflow instructions from the per-project `workflows` table
   // (DB-persisted, tenant-editable), falling back to the embedded registry on
   // any read failure so runs never break on an un-seeded/old project.
@@ -91,31 +80,64 @@ export async function runAgentForTask(
     resolved = undefined; // buildSystemPrompt falls back to the embedded registry
   }
 
-  const instructions = buildSystemPrompt({ task, projectId, accountId, resolved });
-  const messages: ModelMessage[] = [
-    {
-      role: "user",
-      content: `Work the task "${task.title}" (id ${task.id}) to completion, then call complete_task or block_task.`,
-    },
-  ];
-
-  const result = await engine.run({
-    instructions,
-    messages,
+  const runInput = {
+    instructions: buildSystemPrompt({ task, projectId, accountId, resolved }),
+    messages: [
+      {
+        role: "user" as const,
+        content: `Work the task "${task.title}" (id ${task.id}) to completion, then call complete_task or block_task.`,
+      },
+    ] satisfies ModelMessage[],
     tools,
     modelId: input.modelId ?? DEFAULT_MODEL_ID,
-    context,
+    context: { projectId, taskId, runId, accountId } satisfies AgentRunContext,
     sandbox: input.sandbox,
     credentials: input.credentials,
     maxSteps: input.maxSteps,
-  });
+  };
+  return { taskPort, engine, runInput };
+}
 
-  const finalTask = await taskPort.getTask(taskId);
-
+function buildResult(
+  result: { finishReason: string; text: string; usage?: RunAgentForTaskResult["usage"] },
+  finalStatus: string | null,
+): RunAgentForTaskResult {
   return {
     finishReason: result.finishReason,
     text: result.text,
-    finalStatus: finalTask?.status ?? null,
+    finalStatus,
     usage: result.usage,
   };
+}
+
+/**
+ * Run the SSOTA agent against a single task to completion. The agent reads/
+ * writes the graph and tasks via tools and decides the terminal status itself
+ * (`complete_task` / `block_task`). Intended to be called from inside a
+ * Vercel Workflow `"use step"` so the whole run is durable.
+ */
+export async function runAgentForTask(
+  input: RunAgentForTaskInput,
+): Promise<RunAgentForTaskResult> {
+  const { taskPort, engine, runInput } = await prepareRun(input);
+  const result = await engine.run(runInput);
+  const finalTask = await taskPort.getTask(input.taskId);
+  return buildResult(result, finalTask?.status ?? null);
+}
+
+/**
+ * Like {@link runAgentForTask} but streams UI message chunks to `writable`
+ * (chat delivery). The engine must support streaming.
+ */
+export async function streamAgentForTask(
+  input: RunAgentForTaskInput,
+  writable: WritableStream,
+): Promise<RunAgentForTaskResult> {
+  const { taskPort, engine, runInput } = await prepareRun(input);
+  if (!engine.stream) {
+    throw new Error("The configured engine does not support streaming");
+  }
+  const result = await engine.stream(runInput, writable);
+  const finalTask = await taskPort.getTask(input.taskId);
+  return buildResult(result, finalTask?.status ?? null);
 }

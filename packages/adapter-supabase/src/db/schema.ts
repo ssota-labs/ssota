@@ -141,6 +141,44 @@ export const accountMemberships = pgTable(
   }),
 );
 
+/**
+ * Records a third-party provider an account connected via Vercel Connect (one
+ * row per account × connector). `installationId` is the provider installation
+ * (Slack team id, GitHub org id); the agent uses it to scope `getToken` so each
+ * account's agent acts on that account's own workspace.
+ */
+export const accountConnections = pgTable(
+  "account_connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** Connector uid, e.g. "slack/acme-slack". */
+    connector: text("connector").notNull(),
+    /** Provider installation id (Connect). */
+    installationId: text("installation_id"),
+    /** Provider tenant id (e.g. Slack team id). */
+    tenantId: text("tenant_id"),
+    name: text("name"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    accountConnectorUnique: uniqueIndex(
+      "account_connections_account_connector_unique",
+    ).on(table.accountId, table.connector),
+    projectIdx: index("account_connections_project_id_idx").on(table.projectId),
+  }),
+);
+
 export const nodeCatalog = pgTable(
   "node_catalog",
   {
