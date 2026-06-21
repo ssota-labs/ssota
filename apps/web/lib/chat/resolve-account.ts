@@ -1,12 +1,11 @@
-import { createAccountPort } from "@ssota/adapter-supabase";
+import { createChatWorkspacePort } from "@ssota/adapter-supabase";
 import { getDb } from "@ssota/agent-runtime";
 
 /**
  * Best-effort extraction of the workspace/tenant id from a platform's raw
  * payload (Slack `team_id`/`team`, Discord `guild_id`, Telegram `chat.id`).
- * Returns undefined when not found — callers fall back to the default account.
- * The normalized Chat SDK message doesn't expose a cross-platform tenant id, so
- * this reads `message.raw`; verify field names per platform against live events.
+ * Returns undefined when not found. Reads `message.raw` since the normalized
+ * message has no cross-platform tenant id; verify field names per platform.
  */
 export function extractWorkspaceKey(raw: unknown): string | undefined {
   if (!raw || typeof raw !== "object") return undefined;
@@ -26,24 +25,38 @@ export function extractWorkspaceKey(raw: unknown): string | undefined {
   return undefined;
 }
 
+export interface ResolvedChatTarget {
+  projectId: string;
+  accountId?: string;
+}
+
 /**
- * Map a chat workspace to its SSOTA account (one workspace = one tenant
- * partition). Provisions the account on first contact (idempotent on slug).
- * Falls back to CHAT_DEFAULT_ACCOUNT_ID (or shared scope) when the workspace
- * key is unknown.
+ * Resolve which project (+ account) an inbound chat message belongs to, from
+ * its workspace key. The `chat_workspaces` link is the source of truth (a
+ * creator connected this workspace to one of their projects). Falls back to
+ * CHAT_PROJECT_ID for a single-project setup; returns null when the workspace
+ * isn't linked and there's no fallback — the bot then asks to be connected.
  */
-export async function resolveChatAccountId(
-  projectId: string,
+export async function resolveChatTarget(
   workspaceKey: string | undefined,
-): Promise<string | undefined> {
-  if (!workspaceKey) {
-    return process.env.CHAT_DEFAULT_ACCOUNT_ID || undefined;
+): Promise<ResolvedChatTarget | null> {
+  if (workspaceKey) {
+    const link = await createChatWorkspacePort(getDb()).resolve(workspaceKey);
+    if (link) {
+      return {
+        projectId: link.projectId,
+        accountId: link.accountId ?? undefined,
+      };
+    }
   }
-  const accounts = createAccountPort(getDb());
-  const account = await accounts.provision({
-    projectId,
-    slug: `ws-${workspaceKey}`,
-    name: workspaceKey,
-  });
-  return account.id;
+
+  const fallback = process.env.CHAT_PROJECT_ID;
+  if (fallback) {
+    return {
+      projectId: fallback,
+      accountId: process.env.CHAT_DEFAULT_ACCOUNT_ID || undefined,
+    };
+  }
+
+  return null;
 }

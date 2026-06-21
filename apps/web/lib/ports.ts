@@ -2,6 +2,7 @@ import {
   createAccountConnectionPort,
   createAccountPort,
   createChatPort,
+  createChatWorkspacePort,
   createConsolePort,
   createGraphPorts,
   createDb,
@@ -43,6 +44,10 @@ export function getChatPort(projectId: string, accountId?: string | null) {
 
 export function getAccountConnectionPort() {
   return createAccountConnectionPort(getDb());
+}
+
+export function getChatWorkspacePort() {
+  return createChatWorkspacePort(getDb());
 }
 
 /**

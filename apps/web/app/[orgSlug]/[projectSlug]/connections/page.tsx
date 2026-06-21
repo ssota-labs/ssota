@@ -1,9 +1,11 @@
+import { ChatWorkspaces } from "@/components/connections/chat-workspaces";
 import { ConnectionsList } from "@/components/connections/connections-list";
 import { getConnectors } from "@/lib/connect/connectors";
 import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import {
   getAccountConnectionPort,
+  getChatWorkspacePort,
   getOrCreateProjectAccount,
 } from "@/lib/ports";
 
@@ -17,24 +19,39 @@ export default async function ConnectionsPage({
   const { project } = await resolveProject(orgSlug, projectSlug);
 
   const account = await getOrCreateProjectAccount(project.id);
-  const [connectors, connections] = await Promise.all([
+  const [connectors, connections, chatWorkspaces] = await Promise.all([
     Promise.resolve(getConnectors()),
     getAccountConnectionPort().list(account.id),
+    getChatWorkspacePort().list(project.id),
   ]);
 
+  const returnTo = projectPath(ctx, "connections");
+
   return (
-    <ConnectionsList
-      connectors={connectors}
-      connections={connections.map((c) => ({
-        id: c.id,
-        connector: c.connector,
-        installationId: c.installationId,
-        tenantId: c.tenantId,
-        name: c.name,
-      }))}
-      projectId={project.id}
-      accountId={account.id}
-      returnTo={projectPath(ctx, "connections")}
-    />
+    <div className="mx-auto w-full max-w-3xl space-y-4">
+      <ChatWorkspaces
+        projectId={project.id}
+        workspaces={chatWorkspaces.map((w) => ({
+          id: w.id,
+          platform: w.platform,
+          workspaceKey: w.workspaceKey,
+          name: w.name,
+        }))}
+        returnTo={returnTo}
+      />
+      <ConnectionsList
+        connectors={connectors}
+        connections={connections.map((c) => ({
+          id: c.id,
+          connector: c.connector,
+          installationId: c.installationId,
+          tenantId: c.tenantId,
+          name: c.name,
+        }))}
+        projectId={project.id}
+        accountId={account.id}
+        returnTo={returnTo}
+      />
+    </div>
   );
 }

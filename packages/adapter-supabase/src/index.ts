@@ -26,6 +26,12 @@ export {
   type AppendChatMessageInput,
 } from "./ports/chat-port.js";
 export {
+  createChatWorkspacePort,
+  type ChatWorkspaceTarget,
+  type ChatWorkspaceRow,
+  type LinkChatWorkspaceInput,
+} from "./ports/chat-workspace-port.js";
+export {
   seedDevWorkflowCatalog,
   createDbCatalogReadPort,
 } from "./ports/db-catalog-read-port.js";
