@@ -5,6 +5,7 @@ import {
 } from "@ssota/core";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts } from "@/lib/ports";
+import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { DynamicPageClient } from "./page-client";
 
 /**
@@ -38,6 +39,13 @@ export default async function AgentDashboardPage({
     project.id,
     page.definition.bindings,
     page.definition.context ?? {},
+  );
+  // Enrich `artifact` bindings with server-signed bundle URLs + theme CSS for
+  // Widget elements (core returns graph fields only; signing is server-side).
+  await resolveArtifactBindings(
+    project.id,
+    page.definition.bindings,
+    bindingData,
   );
 
   return (

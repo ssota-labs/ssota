@@ -13,6 +13,7 @@ import {
 } from "@ssota/ui/components/ui/card";
 import type { BindingContext } from "./binding-resolver";
 import type { MockNode } from "./types";
+import type { ResolvedArtifact } from "@/lib/design-studio/resolve-artifact-binding";
 
 // BlockNote is browser-only; load the document components lazily (no SSR).
 const DocumentViewEl = dynamic(
@@ -21,6 +22,10 @@ const DocumentViewEl = dynamic(
 );
 const DocumentEditorEl = dynamic(
   () => import("./catalog-document").then((m) => m.DocumentEditorEl),
+  { ssr: false },
+);
+const WidgetEl = dynamic(
+  () => import("./catalog-widget").then((m) => m.WidgetEl),
   { ssr: false },
 );
 
@@ -44,6 +49,7 @@ export const UI_CATALOG_COMPONENTS = [
   "DocumentView",
   "DocumentEditor",
   "TokenList",
+  "Widget",
 ] as const;
 
 /** A token definition for TokenList (domain-agnostic; supplied via props). */
@@ -141,6 +147,18 @@ function ButtonEl({
 
 /** `/{org}/{project}` prefix for in-page links (e.g. NodeTable rows). */
 const BasePathContext = createContext<string>("");
+
+/** Widget bound to the base path (for the preview-host iframe src). */
+function BoundWidget({
+  data,
+  height,
+}: {
+  data: ResolvedArtifact | undefined;
+  height?: number;
+}) {
+  const basePath = useContext(BasePathContext);
+  return <WidgetEl data={data} basePath={basePath} height={height} />;
+}
 
 /** Generic single-field editor bound to an action; sends `{ value }`. */
 function ActionFieldEl({
@@ -627,6 +645,19 @@ function renderElement(
           actionKey={typeof props.action === "string" ? props.action : undefined}
           manifest={manifest}
           initial={initial}
+        />
+      );
+    }
+    case "Widget": {
+      const data =
+        typeof props.binding === "string"
+          ? (bindingData[props.binding] as ResolvedArtifact | undefined)
+          : undefined;
+      return (
+        <BoundWidget
+          key={elementId}
+          data={data}
+          height={typeof props.height === "number" ? props.height : undefined}
         />
       );
     }

@@ -33,6 +33,14 @@ export const bindingDefSchema = z.discriminatedUnion("kind", [
     kind: z.literal("ref"),
     binding: z.string().min(1),
   }),
+  z.object({
+    // Resolves a node carrying a built artifact (buildHash/previewArtifactPath)
+    // into render metadata. Domain-agnostic: any node type can hold a build.
+    // Core returns graph fields only; signed URLs + theme are resolved web-side.
+    kind: z.literal("artifact"),
+    nodeId: z.string().uuid().optional(),
+    ref: z.string().min(1).optional(),
+  }),
 ]);
 
 export type BindingDef = z.infer<typeof bindingDefSchema>;
