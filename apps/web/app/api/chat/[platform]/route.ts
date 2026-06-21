@@ -1,99 +1,39 @@
-import { NextResponse } from "next/server";
-import { z } from "zod";
-import { start } from "workflow/api";
-import { spawnTask } from "@ssota/core";
-import { getGraphReadPort, getTaskPort } from "@ssota/agent-runtime";
-import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { after } from "next/server";
+import { getBot } from "@/lib/chat/bot";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
-const bodySchema = z.object({
-  projectId: z.string().uuid(),
-  accountId: z.string().uuid().optional(),
-  text: z.string().min(1),
-  threadId: z.string().optional(),
-  user: z.string().optional(),
-  messageId: z.string().optional(),
-});
-
-function authorize(request: Request): boolean {
-  const secret = process.env.AGENT_RUN_SECRET;
-  if (!secret) return true; // open in dev
-  const token = (request.headers.get("authorization") ?? "").replace(
-    /^Bearer\s+/i,
-    "",
-  );
-  return token === secret;
-}
+type WebhookHandler = (
+  request: Request,
+  options: { waitUntil: (promise: Promise<unknown>) => void },
+) => Promise<Response>;
 
 /**
- * Chat SDK delivery adapter (Phase 6). One endpoint per platform
- * (slack/web/telegram/...) — inbound messages become `executorType=Agent`
- * tasks routed through the same durable `runSsotaAgentWorkflow`. "Build the
- * agent once, connect anywhere." Streaming the reply back to the platform is
- * the remaining piece (needs the workflow to stream UIMessageChunks + a
- * per-platform adapter); this returns the run id to track.
+ * Single inbound webhook for every chat platform. One Chat SDK `bot` (with all
+ * registered adapters) handles them from shared handlers (see lib/chat/bot.ts);
+ * this route just dispatches to the matching adapter's `webhooks.<platform>`.
+ * Add a platform by registering its adapter on the bot — no new route needed.
+ *
+ *   POST /api/chat/slack    → bot.webhooks.slack
+ *   POST /api/chat/discord  → bot.webhooks.discord
  */
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ platform: string }> },
-) {
+): Promise<Response> {
   const { platform } = await params;
-  if (!authorize(request)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const webhooks = getBot().webhooks as unknown as Record<
+    string,
+    WebhookHandler | undefined
+  >;
+  const handler = webhooks[platform];
+  if (!handler) {
+    return new Response(`No chat adapter registered for '${platform}'`, {
+      status: 404,
+    });
   }
-
-  let body: z.infer<typeof bodySchema>;
-  try {
-    body = bodySchema.parse(await request.json());
-  } catch (error) {
-    return NextResponse.json(
-      {
-        error: "Invalid request body",
-        detail: error instanceof Error ? error.message : String(error),
-      },
-      { status: 422 },
-    );
-  }
-
-  const task = await spawnTask(
-    {
-      tasks: getTaskPort(body.projectId, body.accountId),
-      graphRead: getGraphReadPort(body.projectId, body.accountId),
-    },
-    body.projectId,
-    {
-      title: body.text.slice(0, 120),
-      workflowKey: "agent.main",
-      executorType: "Agent",
-      context: {
-        channel: platform,
-        threadId: body.threadId,
-        user: body.user,
-        message: body.text,
-      },
-      idempotencyKey: body.messageId
-        ? `chat-${platform}-${body.messageId}`
-        : undefined,
-    },
-  );
-
-  const run = await start(runSsotaAgentWorkflow, [
-    {
-      projectId: body.projectId,
-      taskId: task.id,
-      accountId: body.accountId,
-    },
-  ]);
-
-  // Stream the agent's UI message chunks back to the caller (platform adapter).
-  // Run/task ids ride in headers so the adapter can correlate.
-  return new Response(run.getReadable(), {
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      "x-run-id": run.runId,
-      "x-task-id": task.id,
-    },
+  return handler(request, {
+    waitUntil: (promise) => after(() => promise),
   });
 }
