@@ -444,6 +444,8 @@ export interface ActionPorts {
 /** Resolved once per request — scopes catalog/graph IO to one SSOTA project. */
 export interface ActionPortsScope {
   projectId: string;
+  /** End-user data partition (Phase 5). Undefined = builder/admin scope. */
+  accountId?: string;
 }
 
 export class ActionRejectedError extends Error {

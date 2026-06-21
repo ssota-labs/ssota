@@ -57,7 +57,8 @@ export function createGraphWritePort(
   db: Db,
   scope: GraphPortsScope,
 ): GraphWritePort {
-  const { projectId } = scope;
+  const { projectId, accountId } = scope;
+  const accountIdValue = accountId ?? null;
 
   return {
     async createNode(input: ResolvedCreateNodeInput) {
@@ -72,6 +73,7 @@ export function createGraphWritePort(
         .insert(schema.nodes)
         .values({
           projectId,
+          accountId: accountIdValue,
           nodeCatalogId: input.nodeCatalogId,
           title: input.title,
           properties: input.properties ?? {},
@@ -115,6 +117,7 @@ export function createGraphWritePort(
 
         await db.insert(schema.edges).values({
           projectId,
+          accountId: accountIdValue,
           edgeCatalogId: edgeCatalog.id,
           sourceNodeId: node.id,
           targetNodeId: input.initiativeId,
@@ -227,6 +230,7 @@ export function createGraphWritePort(
         .insert(schema.edges)
         .values({
           projectId,
+          accountId: accountIdValue,
           edgeCatalogId: input.edgeCatalogId,
           sourceNodeId: input.sourceNodeId,
           targetNodeId: input.targetNodeId,

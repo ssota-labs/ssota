@@ -596,3 +596,4 @@ export * from "./ports/catalog-write-port.js";
 export * from "./domain/task-errors.js";
 export * from "./ports/workflow-read-port.js";
 export * from "./use-cases/task/index.js";
+export * from "./use-cases/page/index.js";

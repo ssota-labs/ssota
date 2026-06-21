@@ -1,4 +1,4 @@
-import { and, desc, eq, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNull, or, sql, type SQL } from "drizzle-orm";
 import type {
   GetNodeInput,
   ListNodesByTypeInput,
@@ -10,6 +10,12 @@ import * as schema from "../db/schema.js";
 
 export interface GraphPortsScope {
   projectId: string;
+  /**
+   * End-user data partition (Phase 5). When set, reads see shared
+   * (account_id IS NULL) + own rows, and writes are tagged with it. When
+   * undefined (builder/admin scope), all rows are visible.
+   */
+  accountId?: string;
 }
 
 type NodeRow = typeof schema.nodes.$inferSelect & {
@@ -56,6 +62,7 @@ function nodeSelect(db: Db) {
     .select({
       id: schema.nodes.id,
       projectId: schema.nodes.projectId,
+      accountId: schema.nodes.accountId,
       nodeCatalogId: schema.nodes.nodeCatalogId,
       catalogKey: schema.nodeCatalog.key,
       catalogLabel: schema.nodeCatalog.label,
@@ -77,6 +84,7 @@ function edgeSelect(db: Db) {
     .select({
       id: schema.edges.id,
       projectId: schema.edges.projectId,
+      accountId: schema.edges.accountId,
       edgeCatalogId: schema.edges.edgeCatalogId,
       catalogKey: schema.edgeCatalog.key,
       catalogLabel: schema.edgeCatalog.label,
@@ -96,11 +104,33 @@ export function createGraphReadPort(
   db: Db,
   scope: GraphPortsScope,
 ): GraphReadPort {
-  const { projectId } = scope;
+  const { projectId, accountId } = scope;
+
+  const nodeAccountConds = (): SQL[] =>
+    accountId
+      ? [
+          or(
+            isNull(schema.nodes.accountId),
+            eq(schema.nodes.accountId, accountId),
+          )!,
+        ]
+      : [];
+  const edgeAccountConds = (): SQL[] =>
+    accountId
+      ? [
+          or(
+            isNull(schema.edges.accountId),
+            eq(schema.edges.accountId, accountId),
+          )!,
+        ]
+      : [];
 
   return {
     async queryNodes(params: ListNodesByTypeInput) {
-      const conditions = [eq(schema.nodes.projectId, projectId)];
+      const conditions = [
+        eq(schema.nodes.projectId, projectId),
+        ...nodeAccountConds(),
+      ];
       if (params.nodeCatalogId) {
         conditions.push(eq(schema.nodes.nodeCatalogId, params.nodeCatalogId));
       }
@@ -127,6 +157,7 @@ export function createGraphReadPort(
           and(
             eq(schema.nodes.projectId, projectId),
             eq(schema.nodes.id, params.nodeId),
+            ...nodeAccountConds(),
           ),
         )
         .limit(1);
@@ -142,7 +173,10 @@ export function createGraphReadPort(
 
     async traverseEdges(params: TraverseEdgesInput) {
       const direction = params.direction ?? "both";
-      const conditions = [eq(schema.edges.projectId, projectId)];
+      const conditions = [
+        eq(schema.edges.projectId, projectId),
+        ...edgeAccountConds(),
+      ];
 
       if (params.edgeCatalogId) {
         conditions.push(eq(schema.edges.edgeCatalogId, params.edgeCatalogId));

@@ -1,0 +1,39 @@
+{
+  "name": "@ssota/agent-runtime",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@ssota/adapter-supabase": "workspace:*",
+    "@ssota/contracts": "workspace:*",
+    "@ssota/core": "workspace:*",
+    "ai": "^6.0.165",
+    "zod": "^3.25.67"
+  },
+  "optionalDependencies": {
+    "@vercel/connect": "^0.2.5",
+    "@vercel/sandbox": "^0.0.17"
+  },
+  "devDependencies": {
+    "@ssota/config": "workspace:*",
+    "@types/node": "^22.15.30",
+    "@typescript-eslint/eslint-plugin": "^8.34.0",
+    "@typescript-eslint/parser": "^8.34.0",
+    "eslint": "^9.28.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

@@ -88,6 +88,97 @@ export const organizationMemberships = pgTable(
   }),
 );
 
+/**
+ * End-user data partition within a deployed tenant SaaS (Phase 5). A Project is
+ * the builder's agent-SaaS definition; accounts are the isolated spaces
+ * SSOTA-naive end users work in. Instance rows carry `account_id` (null =
+ * shared/builder). No recursive org/project for end users — sub-structure is
+ * expressed via the builder's node catalog.
+ */
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    ownerUserId: uuid("owner_user_id").references(() => profiles.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    projectSlugUnique: uniqueIndex("accounts_project_slug_unique").on(
+      table.projectId,
+      table.slug,
+    ),
+    projectIdx: index("accounts_project_id_idx").on(table.projectId),
+  }),
+);
+
+export const accountMemberships = pgTable(
+  "account_memberships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    role: text("role").notNull().default("member"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    accountUserUnique: uniqueIndex("account_memberships_account_user_unique").on(
+      table.accountId,
+      table.userId,
+    ),
+  }),
+);
+
+/**
+ * Records a third-party provider an account connected via Vercel Connect (one
+ * row per account × connector). `installationId` is the provider installation
+ * (Slack team id, GitHub org id); the agent uses it to scope `getToken` so each
+ * account's agent acts on that account's own workspace.
+ */
+export const accountConnections = pgTable(
+  "account_connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    /** Connector uid, e.g. "slack/acme-slack". */
+    connector: text("connector").notNull(),
+    /** Provider installation id (Connect). */
+    installationId: text("installation_id"),
+    /** Provider tenant id (e.g. Slack team id). */
+    tenantId: text("tenant_id"),
+    name: text("name"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    accountConnectorUnique: uniqueIndex(
+      "account_connections_account_connector_unique",
+    ).on(table.accountId, table.connector),
+    projectIdx: index("account_connections_project_id_idx").on(table.projectId),
+  }),
+);
+
 export const nodeCatalog = pgTable(
   "node_catalog",
   {
@@ -150,6 +241,8 @@ export const tasks = pgTable(
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
     workflowKey: text("workflow_key").notNull(),
     title: text("title").notNull(),
     status: taskStatusEnum("status").notNull().default("pending"),
@@ -208,6 +301,8 @@ export const nodes = pgTable(
     nodeCatalogId: uuid("node_catalog_id")
       .notNull()
       .references(() => nodeCatalog.id, { onDelete: "restrict" }),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
     title: text("title").notNull().default(""),
     properties: jsonb("properties")
       .notNull()
@@ -239,6 +334,8 @@ export const edges = pgTable(
     edgeCatalogId: uuid("edge_catalog_id")
       .notNull()
       .references(() => edgeCatalog.id, { onDelete: "restrict" }),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
     sourceNodeId: uuid("source_node_id")
       .notNull()
       .references(() => nodes.id, { onDelete: "cascade" }),
@@ -263,6 +360,40 @@ export const edges = pgTable(
     projectCatalogIdx: index("edges_project_edge_catalog_id_idx").on(
       table.projectId,
       table.edgeCatalogId,
+    ),
+  }),
+);
+
+/**
+ * Durable agent run ↔ task bridge. One row per `runSsotaAgentWorkflow`
+ * execution; records the workflow run id, model, token usage and timing.
+ */
+export const agentRuns = pgTable(
+  "agent_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
+    taskId: uuid("task_id")
+      .notNull()
+      .references(() => tasks.id, { onDelete: "cascade" }),
+    workflowRunId: text("workflow_run_id").notNull(),
+    status: text("status").notNull().default("running"),
+    model: text("model"),
+    usage: jsonb("usage").notNull().default({}).$type<Record<string, unknown>>(),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => ({
+    projectIdx: index("agent_runs_project_id_idx").on(table.projectId),
+    taskIdx: index("agent_runs_task_id_idx").on(table.taskId),
+    workflowRunUnique: uniqueIndex("agent_runs_workflow_run_id_unique").on(
+      table.workflowRunId,
     ),
   }),
 );

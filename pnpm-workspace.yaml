@@ -3,9 +3,14 @@ packages:
   - "packages/*"
   - "e2e"
 allowBuilds:
+  '@swc/core': true
+  bufferutil: false
+  cbor-extract: true
   esbuild: true
   sharp: true
   unrs-resolver: true
+  utf-8-validate: false
+  zlib-sync: false
 minimumReleaseAgeExclude:
   - '@supabase/auth-js@2.108.1'
   - '@supabase/functions-js@2.108.1'

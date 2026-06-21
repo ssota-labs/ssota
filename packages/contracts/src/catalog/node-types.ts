@@ -90,6 +90,7 @@ export const NODE_TYPES = [
   "ui_component",
   "design_theme",
   "design_toolchain",
+  "agent",
 ] as const;
 
 export type NodeType = (typeof NODE_TYPES)[number];
@@ -240,6 +241,13 @@ const NODE_PROPERTY_SCHEMAS: Record<
   ui_component: uiComponentPropertiesSchema,
   design_theme: designThemePropertiesSchema,
   design_toolchain: designToolchainPropertiesSchema,
+  agent: propertiesWithKnownKeys({
+    model: z.string().optional(),
+    persona: z.string().optional(),
+    /** routeKey of the page node this agent owns as its dashboard. */
+    owned_page_route_key: z.string().optional(),
+    skills: z.array(z.string()).optional(),
+  }),
 };
 
 export interface NodeTypeCatalogEntry {
@@ -385,6 +393,7 @@ const NODE_CATALOG_META: Record<
     mutability: "living",
     contentRequired: false,
   },
+  agent: { label: "에이전트", mutability: "living", contentRequired: false },
 };
 
 export const nodeTypeCatalogEntrySchema = z.object({
