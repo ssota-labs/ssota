@@ -1,9 +1,13 @@
 import {
+  createAccountConnectionPort,
+  createAccountPort,
+  createChatPort,
   createConsolePort,
   createGraphPorts,
   createDb,
   createOnboardingPort,
   createTaskPort,
+  type AccountRecord,
 } from "@ssota/adapter-supabase";
 
 type Db = ReturnType<typeof createDb>["db"];
@@ -31,6 +35,29 @@ export function getOnboardingPort() {
 
 export function getGraphPorts(projectId: string) {
   return createGraphPorts(getDb(), { projectId });
+}
+
+export function getChatPort(projectId: string, accountId?: string | null) {
+  return createChatPort(getDb(), { projectId, accountId });
+}
+
+export function getAccountConnectionPort() {
+  return createAccountConnectionPort(getDb());
+}
+
+/**
+ * The shared, per-project account the in-app console binds chat + connections
+ * to. Multi-tenant per-user accounts are out of scope for now, so every console
+ * surface for a project uses one stable account (slug "workspace"). Idempotent.
+ */
+export async function getOrCreateProjectAccount(
+  projectId: string,
+): Promise<AccountRecord> {
+  return createAccountPort(getDb()).provision({
+    projectId,
+    slug: "workspace",
+    name: "Workspace",
+  });
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {

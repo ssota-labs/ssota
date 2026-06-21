@@ -56,7 +56,7 @@ export function createExternalTools(): ToolSet {
           if (!cred) {
             return {
               ok: false,
-              error: `No credential for connector '${input.connector}' (connect it first).`,
+              error: `No credential for connector '${input.connector}'. Call request_connection with this connector so the user can connect it, then stop.`,
             };
           }
           headers.authorization = `Bearer ${cred.token}`;
@@ -80,6 +80,33 @@ export function createExternalTools(): ToolSet {
             error: error instanceof Error ? error.message : String(error),
           };
         }
+      },
+    }),
+
+    request_connection: tool({
+      description:
+        "Ask the user to connect a third-party service when a connector is not yet authorized. Call this (instead of failing) when `external_request` reports a missing credential. The chat UI renders a connect card with a button; the run should then stop and wait for the user to connect.",
+      inputSchema: z.object({
+        connector: z
+          .string()
+          .describe(
+            "Connector to request, e.g. 'slack', 'notion', 'github', 'linear', 'discord'.",
+          ),
+        reason: z
+          .string()
+          .describe("Short, user-facing reason this connection is needed."),
+      }),
+      execute: async (input, { experimental_context }) => {
+        const ctx = getRunContext(experimental_context);
+        // Returned as a `tool-request_connection` UI part; the chat front-end
+        // builds the `/api/connect/authorize` URL from this descriptor.
+        return {
+          connectionRequired: true as const,
+          connector: input.connector,
+          reason: input.reason,
+          projectId: ctx.projectId,
+          accountId: ctx.accountId ?? null,
+        };
       },
     }),
   };

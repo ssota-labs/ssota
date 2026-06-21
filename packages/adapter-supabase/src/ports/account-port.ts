@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import {
   accountConnections,
@@ -107,33 +107,79 @@ export interface RecordAccountConnectionInput {
   name?: string | null;
 }
 
+export interface AccountConnectionRecord {
+  id: string;
+  connector: string;
+  installationId: string;
+  tenantId: string | null;
+  name: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 /**
  * Writer/reader for an account's third-party connections (Vercel Connect).
- * `record` upserts on (accountId, connector); `getInstallationId` is used at
- * tool-execution time to scope `getToken` to the account's own installation.
+ * `record` upserts on (accountId, connector, installationId) so connectors that
+ * support multiple workspaces store one row per installation; single-install
+ * connectors normalize a null installation to an empty string (a stable key).
+ * `getInstallationId` is used at tool-execution time to scope `getToken`.
  */
 export function createAccountConnectionPort(db: Db) {
   return {
     async record(input: RecordAccountConnectionInput): Promise<void> {
+      const installationId = input.installationId ?? "";
       await db
         .insert(accountConnections)
         .values({
           projectId: input.projectId,
           accountId: input.accountId,
           connector: input.connector,
-          installationId: input.installationId ?? null,
+          installationId,
           tenantId: input.tenantId ?? null,
           name: input.name ?? null,
         })
         .onConflictDoUpdate({
-          target: [accountConnections.accountId, accountConnections.connector],
+          target: [
+            accountConnections.accountId,
+            accountConnections.connector,
+            accountConnections.installationId,
+          ],
           set: {
-            installationId: input.installationId ?? null,
             tenantId: input.tenantId ?? null,
             name: input.name ?? null,
             updatedAt: new Date(),
           },
         });
+    },
+
+    /** All connections for an account, newest first (connections page). */
+    async list(accountId: string): Promise<AccountConnectionRecord[]> {
+      const rows = await db
+        .select({
+          id: accountConnections.id,
+          connector: accountConnections.connector,
+          installationId: accountConnections.installationId,
+          tenantId: accountConnections.tenantId,
+          name: accountConnections.name,
+          createdAt: accountConnections.createdAt,
+          updatedAt: accountConnections.updatedAt,
+        })
+        .from(accountConnections)
+        .where(eq(accountConnections.accountId, accountId))
+        .orderBy(desc(accountConnections.createdAt));
+      return rows;
+    },
+
+    /** Disconnect a single installation, scoped to the owning account. */
+    async remove(id: string, accountId: string): Promise<void> {
+      await db
+        .delete(accountConnections)
+        .where(
+          and(
+            eq(accountConnections.id, id),
+            eq(accountConnections.accountId, accountId),
+          ),
+        );
     },
 
     async getInstallationId(
@@ -150,7 +196,8 @@ export function createAccountConnectionPort(db: Db) {
           ),
         )
         .limit(1);
-      return row?.installationId ?? null;
+      // Empty string = single-install connector with no workspace scoping.
+      return row?.installationId ? row.installationId : null;
     },
   };
 }

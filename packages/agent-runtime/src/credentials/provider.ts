@@ -119,6 +119,26 @@ export async function startConnectAuthorization(
   scope: CredentialScope,
   options: StartConnectAuthorizationOptions = {},
 ): Promise<string> {
+  // Dev/local stub: skip the real provider OAuth and bounce straight back to
+  // our callback with a synthetic installation id, simulating a user who just
+  // authorized. Mirrors how Vercel Connect redirects to `callbackUrl` with the
+  // new installation. Enable with CONNECT_STUB=1 (no @vercel/connect needed).
+  if (process.env.CONNECT_STUB === "1") {
+    const base = options.callbackUrl ?? "http://127.0.0.1/api/connect/callback";
+    const callback = new URL(base);
+    const slug = connector.replace(/[^a-zA-Z0-9]/g, "-");
+    const suffix = Math.abs(
+      [...`${connector}:${scope.accountId ?? ""}:${Date.now()}`].reduce(
+        (acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0,
+        7,
+      ),
+    )
+      .toString(36)
+      .slice(0, 6);
+    callback.searchParams.set("installation_id", `stub-${slug}-${suffix}`);
+    return callback.toString();
+  }
+
   let connect: {
     startAuthorization: (
       connectorUid: string,
@@ -164,6 +184,18 @@ export async function getConnectInstallation(
   connector: string,
   scope: CredentialScope,
 ): Promise<ConnectInstallation | null> {
+  // Dev/local stub (CONNECT_STUB=1): echo the installation id the stub
+  // authorize put on the callback, with a friendly name — no real provider call.
+  if (process.env.CONNECT_STUB === "1") {
+    const installationId = scope.installationId ?? "stub-install";
+    const provider = connector.split("/")[0] ?? connector;
+    return {
+      installationId,
+      tenantId: installationId,
+      name: `${provider} workspace (${installationId.slice(-6)})`,
+    };
+  }
+
   let connect: {
     getTokenResponse: (
       connectorUid: string,

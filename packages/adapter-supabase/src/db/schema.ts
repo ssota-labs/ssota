@@ -159,8 +159,12 @@ export const accountConnections = pgTable(
       .references(() => accounts.id, { onDelete: "cascade" }),
     /** Connector uid, e.g. "slack/acme-slack". */
     connector: text("connector").notNull(),
-    /** Provider installation id (Connect). */
-    installationId: text("installation_id"),
+    /**
+     * Provider installation id (Connect). Empty string for single-install
+     * connectors (no workspace/org scoping) so the unique index below treats it
+     * as a stable key; multi-workspace connectors get one row per installation.
+     */
+    installationId: text("installation_id").notNull().default(""),
     /** Provider tenant id (e.g. Slack team id). */
     tenantId: text("tenant_id"),
     name: text("name"),
@@ -172,9 +176,9 @@ export const accountConnections = pgTable(
       .notNull(),
   },
   (table) => ({
-    accountConnectorUnique: uniqueIndex(
-      "account_connections_account_connector_unique",
-    ).on(table.accountId, table.connector),
+    accountConnectorInstallationUnique: uniqueIndex(
+      "account_connections_account_connector_installation_unique",
+    ).on(table.accountId, table.connector, table.installationId),
     projectIdx: index("account_connections_project_id_idx").on(table.projectId),
   }),
 );
@@ -395,5 +399,55 @@ export const agentRuns = pgTable(
     workflowRunUnique: uniqueIndex("agent_runs_workflow_run_id_unique").on(
       table.workflowRunId,
     ),
+  }),
+);
+
+/**
+ * In-app web chat conversation. Each thread holds the persisted multi-turn
+ * history for one console chat; each user turn still spawns a durable agent
+ * task (see `tasks.context.chat`), but the conversation lives here so the UI
+ * rehydrates on reload and prior turns are replayed into the agent.
+ */
+export const chatThreads = pgTable(
+  "chat_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
+    title: text("title").notNull().default("New chat"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    projectAccountIdx: index("chat_threads_project_account_id_idx").on(
+      table.projectId,
+      table.accountId,
+    ),
+  }),
+);
+
+export const chatMessages = pgTable(
+  "chat_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => chatThreads.id, { onDelete: "cascade" }),
+    role: text("role").notNull(),
+    /** AI SDK UIMessage parts (text, tool/data parts) for faithful rehydrate. */
+    parts: jsonb("parts").notNull().default([]).$type<unknown[]>(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    threadIdx: index("chat_messages_thread_id_idx").on(table.threadId),
   }),
 );

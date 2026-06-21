@@ -40,6 +40,20 @@ export interface RunAgentForTaskResult {
   };
 }
 
+/**
+ * Pull a replayable conversation out of `task.context.chat.messages` (written by
+ * the in-app web chat). Returns null when absent/empty so callers fall back to
+ * the default single synthetic instruction.
+ */
+function extractChatMessages(
+  context: Record<string, unknown> | undefined,
+): ModelMessage[] | null {
+  const chat = context?.chat as { messages?: unknown } | undefined;
+  const messages = chat?.messages;
+  if (!Array.isArray(messages) || messages.length === 0) return null;
+  return messages as ModelMessage[];
+}
+
 async function prepareRun(input: RunAgentForTaskInput) {
   const { projectId, taskId, runId, accountId } = input;
   const taskPort = getTaskPort(projectId, accountId);
@@ -55,14 +69,22 @@ async function prepareRun(input: RunAgentForTaskInput) {
     ...(input.sandbox ? createSandboxTools() : {}),
     ...(input.credentials ? createExternalTools() : {}),
   };
+
+  // Multi-turn chat: when the task carries a conversation (in-app web chat seeds
+  // `context.chat.messages` with prior turns + the new user message), replay it
+  // so the agent has memory. Headless/Slack tasks omit it and get the default
+  // single synthetic instruction.
+  const chatMessages = extractChatMessages(task.context);
+  const messages: ModelMessage[] = chatMessages ?? [
+    {
+      role: "user" as const,
+      content: `Work the task "${task.title}" (id ${task.id}) to completion, then call complete_task or block_task.`,
+    },
+  ];
+
   const runInput = {
     instructions: buildSystemPrompt({ task, projectId, accountId }),
-    messages: [
-      {
-        role: "user" as const,
-        content: `Work the task "${task.title}" (id ${task.id}) to completion, then call complete_task or block_task.`,
-      },
-    ] satisfies ModelMessage[],
+    messages,
     tools,
     modelId: input.modelId ?? DEFAULT_MODEL_ID,
     context: { projectId, taskId, runId, accountId } satisfies AgentRunContext,
