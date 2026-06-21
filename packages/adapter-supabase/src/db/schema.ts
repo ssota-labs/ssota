@@ -179,6 +179,43 @@ export const accountConnections = pgTable(
   }),
 );
 
+/**
+ * Maps a chat workspace (Slack team, Discord guild, Telegram chat) to the
+ * SSOTA project it belongs to (and optionally an account). Lets the creator
+ * connect a workspace to one of their own projects without a separate tenant
+ * deployment — inbound messages resolve their project by `workspaceKey`.
+ */
+export const chatWorkspaces = pgTable(
+  "chat_workspaces",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    /** Optional data partition; null = the whole project (builder scope). */
+    accountId: uuid("account_id").references(() => accounts.id, {
+      onDelete: "set null",
+    }),
+    /** slack | discord | telegram | … */
+    platform: text("platform").notNull(),
+    /** Provider workspace id (Slack team, Discord guild, Telegram chat). */
+    workspaceKey: text("workspace_key").notNull(),
+    name: text("name"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    workspaceKeyUnique: uniqueIndex("chat_workspaces_workspace_key_unique").on(
+      table.workspaceKey,
+    ),
+    projectIdx: index("chat_workspaces_project_id_idx").on(table.projectId),
+  }),
+);
+
 export const nodeCatalog = pgTable(
   "node_catalog",
   {

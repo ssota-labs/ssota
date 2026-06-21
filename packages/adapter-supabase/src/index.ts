@@ -20,6 +20,11 @@ export {
   type RecordAccountConnectionInput,
 } from "./ports/account-port.js";
 export {
+  createChatWorkspacePort,
+  type ChatWorkspaceTarget,
+  type LinkChatWorkspaceInput,
+} from "./ports/chat-workspace-port.js";
+export {
   seedDomainCatalog,
   createDbCatalogReadPort,
 } from "./ports/db-catalog-read-port.js";
