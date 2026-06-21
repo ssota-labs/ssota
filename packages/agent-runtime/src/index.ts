@@ -32,6 +32,10 @@ export {
   type StartConnectAuthorizationOptions,
   type ConnectInstallation,
 } from "./credentials/provider.js";
+export {
+  createVercelOidcVerifier,
+  type OidcWebhookVerifier,
+} from "./credentials/oidc.js";
 export { buildSystemPrompt } from "./system-prompt.js";
 export { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
 export { gateway, DEFAULT_MODEL_ID } from "./models.js";

@@ -25,6 +25,7 @@
   },
   "optionalDependencies": {
     "@vercel/connect": "^0.2.5",
+    "@vercel/oidc": "^3.6.2",
     "@vercel/sandbox": "^0.0.17"
   },
   "devDependencies": {

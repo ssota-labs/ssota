@@ -7,6 +7,7 @@ import { start } from "workflow/api";
 import { spawnTask } from "@ssota/core";
 import {
   createVercelConnectProvider,
+  createVercelOidcVerifier,
   getGraphReadPort,
   getTaskPort,
   type UIMessageChunk,
@@ -25,6 +26,15 @@ import { extractWorkspaceKey, resolveChatTarget } from "./resolve-account";
  *  - multi workspace via Vercel Connect: SLACK_CONNECT_CONNECTOR (+ clientId/
  *    secret) — installationProvider resolves each workspace's bot token from
  *    Connect by team id. This is the Connect↔Chat integration.
+ *
+ * Webhook verification (multi-workspace only):
+ *  - default (Connect intake): Slack posts to Connect's intake, which verifies
+ *    the Slack signature and forwards to us with a Vercel OIDC bearer token. We
+ *    verify that token (verifyVercelOidcToken) — no SLACK_SIGNING_SECRET needed.
+ *    This is the SaaS path and assumes the Slack app's Event Subscription URL is
+ *    pointed at the Connect intake destination.
+ *  - SLACK_CONNECT_INTAKE=0: opt out and fall back to Slack HMAC via
+ *    SLACK_SIGNING_SECRET (Slack posts to us directly).
  */
 function slackAdapter() {
   const signingSecret = process.env.SLACK_SIGNING_SECRET;
@@ -37,8 +47,14 @@ function slackAdapter() {
   if (connector) {
     const provider = createVercelConnectProvider();
     const projectId = process.env.CHAT_PROJECT_ID ?? "";
+    // Connect intake (default): verify the forwarded request via Vercel OIDC.
+    // webhookVerifier takes precedence over signingSecret in the adapter, so we
+    // omit the secret. Set SLACK_CONNECT_INTAKE=0 to fall back to Slack HMAC.
+    const useIntake = process.env.SLACK_CONNECT_INTAKE !== "0";
     return createSlackAdapter({
-      signingSecret,
+      ...(useIntake
+        ? { webhookVerifier: createVercelOidcVerifier() }
+        : { signingSecret }),
       clientId: process.env.SLACK_CLIENT_ID,
       clientSecret: process.env.SLACK_CLIENT_SECRET,
       installationProvider: {
