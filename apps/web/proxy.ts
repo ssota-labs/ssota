@@ -46,6 +46,10 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    // Exclude the public Vercel Connect entry/return routes: they are
+    // unauthenticated top-level redirects keyed on the `accountId` query (not
+    // the user session). Running the session-refresh proxy on them rotates the
+    // auth cookie mid-redirect and can drop it, bouncing the user to /login.
+    "/((?!api/connect|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

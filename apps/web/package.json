@@ -39,6 +39,7 @@
     "@ssota/studio-renderer": "workspace:*",
     "@ssota/studio-sandbox": "workspace:*",
     "@ssota/ui": "workspace:*",
+    "@ai-sdk/react": "^3.0.167",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.1",
     "@tailwindcss/node": "^4.3.0",
@@ -46,6 +47,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "@xyflow/react": "^12.11.0",
+    "ai": "^6.0.165",
     "chat": "^4.31.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -53,6 +55,7 @@
     "next-themes": "^0.4.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "streamdown": "^2.5.0",
     "tailwind-merge": "^3.3.0",
     "workflow": "^4.5.0",
     "zod": "^3.25.67"

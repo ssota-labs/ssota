@@ -42,7 +42,10 @@ describe("createSsotaTools", () => {
 
   it("external tools are a separate set (attached only with credentials)", () => {
     expect(createSsotaTools()).not.toHaveProperty("external_request");
-    expect(Object.keys(createExternalTools())).toEqual(["external_request"]);
+    expect(Object.keys(createExternalTools())).toEqual([
+      "external_request",
+      "request_connection",
+    ]);
   });
 
   it("each tool has a description and input schema", () => {

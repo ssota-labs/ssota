@@ -16,7 +16,15 @@ export {
   type ProvisionAccountInput,
   type AccountRecord,
   type RecordAccountConnectionInput,
+  type AccountConnectionRecord,
 } from "./ports/account-port.js";
+export {
+  createChatPort,
+  type ChatScope,
+  type ChatThreadRecord,
+  type ChatMessageRecord,
+  type AppendChatMessageInput,
+} from "./ports/chat-port.js";
 export {
   seedDevWorkflowCatalog,
   createDbCatalogReadPort,

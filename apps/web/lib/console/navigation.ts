@@ -347,6 +347,14 @@ export const INITIATIVE_L1: NavLink[] = flattenInitiativeLinks(INITIATIVE_L1_NAV
 
 export const L0_NAV: NavEntry[] = [
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
+  { type: "link", key: "chat", labelKey: "nav.chat", href: "chat", pattern: "L" },
+  {
+    type: "link",
+    key: "connections",
+    labelKey: "nav.connections",
+    href: "connections",
+    pattern: "L",
+  },
   {
     type: "link",
     key: "overview",
@@ -521,6 +529,12 @@ export function buildBreadcrumbSegments(
   }
   if (relative === "tasks" || relative.startsWith("tasks/")) {
     return [{ labelKey: "nav.tasks" }];
+  }
+  if (relative === "chat" || relative.startsWith("chat/")) {
+    return [{ labelKey: "nav.chat" }];
+  }
+  if (relative === "connections" || relative.startsWith("connections/")) {
+    return [{ labelKey: "nav.connections" }];
   }
   if (relative === "workflow/map") {
     return [{ labelKey: "nav.workflowMap" }];
