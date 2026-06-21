@@ -37,7 +37,7 @@ export default function LabPreviewPage() {
     for (const entry of workspace.nav) {
       if (entry.type === "section") {
         for (const child of entry.children) {
-          if (child.type !== "link") continue;
+          if (child.type !== "link" || !child.pageNodeId) continue;
           items.push({
             key: child.key,
             label: child.label,
@@ -45,7 +45,7 @@ export default function LabPreviewPage() {
             section: entry.label,
           });
         }
-      } else if (entry.type === "link") {
+      } else if (entry.type === "link" && entry.pageNodeId) {
         items.push({
           key: entry.key,
           label: entry.label,

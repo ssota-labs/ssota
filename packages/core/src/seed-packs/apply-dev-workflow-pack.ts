@@ -13,14 +13,22 @@ type PageSeed = PageRuntimeDefinition & {
   title: string;
 };
 
+/** Raw seed nav entry — arbitrarily nested; links target `href` or `pageKey`. */
+interface RawNavEntry {
+  type: string;
+  key?: string;
+  label?: string;
+  labelKey?: string;
+  href?: string;
+  icon?: string;
+  /** Resolved to a `pageNodeId` against seeded pages when present. */
+  pageKey?: string;
+  children?: RawNavEntry[];
+}
+
 type WorkspaceSeed = {
-  nav: Array<{
-    type: string;
-    key?: string;
-    label?: string;
-    pageKey?: string;
-    children?: Array<{ type: string; key: string; label: string; pageKey: string }>;
-  }>;
+  nav: RawNavEntry[];
+  navInitiative?: RawNavEntry[];
 };
 
 export interface ApplyDevWorkflowPackResult {
@@ -47,7 +55,7 @@ export async function applyDevWorkflowPack(
   }
 
   const pageKeyToId = new Map<string, string>();
-  const pages = pagesSeed as PageSeed[];
+  const pages = pagesSeed as unknown as PageSeed[];
 
   for (const page of pages) {
     const parsed = pageRuntimeDefinitionSchema.parse({
@@ -96,45 +104,51 @@ export async function applyDevWorkflowPack(
   let workspaceNodeId: string | null = null;
   const workspaceCatalog = await catalog.getNodeCatalogByKey("workspace");
 
-  if (workspaceCatalog && workspaceData.nav?.length) {
-    const nav = workspaceData.nav
-      .map((entry) => {
-        if (entry.type === "section" && entry.children) {
-          const children = entry.children
-            .map((child) => {
-              const pageNodeId = pageKeyToId.get(child.pageKey);
-              if (!pageNodeId) return null;
-              return {
-                type: "link" as const,
-                key: child.key,
-                label: child.label,
-                pageNodeId,
-              };
-            })
-            .filter((child): child is NonNullable<typeof child> => child !== null);
-          if (children.length === 0) return null;
-          return {
-            type: "section" as const,
-            key: entry.key!,
-            label: entry.label!,
-            children,
-          };
-        }
-        if (entry.type === "link" && entry.pageKey) {
-          const pageNodeId = pageKeyToId.get(entry.pageKey);
-          if (!pageNodeId) return null;
-          return {
-            type: "link" as const,
-            key: entry.key!,
-            label: entry.label!,
-            pageNodeId,
-          };
-        }
-        return { type: "separator" as const };
-      })
-      .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+  // Recursively map a raw seed entry to a WorkspaceNavEntry, preserving
+  // href/labelKey/label/icon and resolving pageKey -> pageNodeId when present.
+  // Links without a target (no href and unresolved pageKey) and empty
+  // groups/sections collapse to null so they're dropped.
+  const mapEntry = (entry: RawNavEntry): unknown => {
+    if (entry.type === "separator") return { type: "separator" };
+    if (entry.type === "link") {
+      const pageNodeId = entry.pageKey ? pageKeyToId.get(entry.pageKey) : undefined;
+      if (entry.href === undefined && !pageNodeId) return null;
+      return {
+        type: "link",
+        key: entry.key,
+        label: entry.label,
+        ...(entry.labelKey ? { labelKey: entry.labelKey } : {}),
+        ...(entry.href !== undefined ? { href: entry.href } : {}),
+        ...(pageNodeId ? { pageNodeId } : {}),
+        ...(entry.icon ? { icon: entry.icon } : {}),
+      };
+    }
+    if (entry.type === "group" || entry.type === "section") {
+      const children = (entry.children ?? [])
+        .map(mapEntry)
+        .filter((child): child is NonNullable<typeof child> => child !== null);
+      if (children.length === 0) return null;
+      return {
+        type: entry.type,
+        key: entry.key,
+        label: entry.label,
+        ...(entry.labelKey ? { labelKey: entry.labelKey } : {}),
+        children,
+      };
+    }
+    return null;
+  };
 
-    const workspaceDef = workspaceDefinitionSchema.parse({ nav });
+  const mapNav = (entries: RawNavEntry[]): unknown[] =>
+    entries.map(mapEntry).filter((e): e is NonNullable<typeof e> => e !== null);
+
+  if (workspaceCatalog && workspaceData.nav?.length) {
+    const workspaceDef = workspaceDefinitionSchema.parse({
+      nav: mapNav(workspaceData.nav),
+      ...(workspaceData.navInitiative
+        ? { navInitiative: mapNav(workspaceData.navInitiative) }
+        : {}),
+    });
 
     const existingWorkspace = await graphRead.queryNodes({
       projectId,
@@ -153,6 +167,9 @@ export async function applyDevWorkflowPack(
         properties: {
           lifecycleStatus: "Active",
           nav: workspaceDef.nav,
+          ...(workspaceDef.navInitiative
+            ? { navInitiative: workspaceDef.navInitiative }
+            : {}),
         },
         schemaVersion: 1,
       });
