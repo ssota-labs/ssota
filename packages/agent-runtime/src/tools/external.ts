@@ -1,5 +1,7 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
+import { createAccountConnectionPort } from "@ssota/adapter-supabase";
+import { getDb } from "../ports.js";
 import { getCredentialProvider, getRunContext } from "./context.js";
 
 /**
@@ -38,9 +40,18 @@ export function createExternalTools(): ToolSet {
               error: "No credential provider configured for this run.",
             };
           }
+          // Scope the token to this account's installation for the connector
+          // (Slack team, GitHub org, …) so the agent acts on the right tenant.
+          const installationId = ctx.accountId
+            ? ((await createAccountConnectionPort(getDb()).getInstallationId(
+                ctx.accountId,
+                input.connector,
+              )) ?? undefined)
+            : undefined;
           const cred = await provider.getToken(input.connector, {
             projectId: ctx.projectId,
             accountId: ctx.accountId,
+            installationId,
           });
           if (!cred) {
             return {

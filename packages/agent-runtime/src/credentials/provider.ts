@@ -11,6 +11,12 @@
 export interface CredentialScope {
   projectId: string;
   accountId?: string;
+  /**
+   * Provider installation to scope the token to (Slack team id, GitHub org id).
+   * Resolved per (account, connector) before the call. Omit for the connector's
+   * default installation (single-tenant connectors).
+   */
+  installationId?: string;
 }
 
 export interface CredentialToken {
@@ -72,12 +78,14 @@ export function createVercelConnectProvider(): CredentialProvider {
         );
       }
 
-      // Act as the app/bot; address the tenant's installation by account
-      // (multi-tenant connectors like Slack/GitHub). Builders can remap.
+      // Act as the app/bot; scope to the resolved provider installation when
+      // present, else the connector's default installation.
       try {
         const token = await connect.getToken(connector, {
           subject: { type: "app" },
-          ...(scope.accountId ? { installationId: scope.accountId } : {}),
+          ...(scope.installationId
+            ? { installationId: scope.installationId }
+            : {}),
         });
         return token ? { token } : null;
       } catch (error) {
@@ -100,18 +108,26 @@ export function createVercelConnectProvider(): CredentialProvider {
  * `getToken` calls for that subject succeed. Used by the consent route so
  * end users can connect their own workspaces/accounts.
  */
+export interface StartConnectAuthorizationOptions {
+  scopes?: string[];
+  /** Where Connect returns the user after they complete the provider flow. */
+  callbackUrl?: string;
+}
+
 export async function startConnectAuthorization(
   connector: string,
   scope: CredentialScope,
-  scopes?: string[],
+  options: StartConnectAuthorizationOptions = {},
 ): Promise<string> {
   let connect: {
     startAuthorization: (
       connectorUid: string,
-      opts: {
+      params: {
         subject: { type: "app" } | { type: "user"; id: string };
+        installationId?: string;
         scopes?: string[];
       },
+      options?: { callbackUrl?: string },
     ) => Promise<{ url: string }>;
   };
   try {
@@ -119,14 +135,64 @@ export async function startConnectAuthorization(
   } catch {
     throw new Error("@vercel/connect is not installed");
   }
-  const subject = scope.accountId
-    ? ({ type: "user", id: scope.accountId } as const)
-    : ({ type: "app" } as const);
-  const { url } = await connect.startAuthorization(connector, {
-    subject,
-    ...(scopes ? { scopes } : {}),
-  });
+  // App subject: connecting/installing the app into a workspace (the common
+  // multi-tenant "connect your workspace" flow). The connector type decides
+  // what the returned url does (Slack/GitHub install, OAuth consent).
+  const { url } = await connect.startAuthorization(
+    connector,
+    {
+      subject: { type: "app" },
+      ...(scope.installationId ? { installationId: scope.installationId } : {}),
+      ...(options.scopes ? { scopes: options.scopes } : {}),
+    },
+    options.callbackUrl ? { callbackUrl: options.callbackUrl } : undefined,
+  );
   return url;
+}
+
+export interface ConnectInstallation {
+  installationId?: string;
+  tenantId?: string;
+  name?: string;
+}
+
+/**
+ * Confirm a connection and read its provider ids via `getTokenResponse`
+ * (used by the connect callback after an install/authorize completes).
+ */
+export async function getConnectInstallation(
+  connector: string,
+  scope: CredentialScope,
+): Promise<ConnectInstallation | null> {
+  let connect: {
+    getTokenResponse: (
+      connectorUid: string,
+      params: {
+        subject: { type: "app" };
+        installationId?: string;
+      },
+    ) => Promise<{
+      installationId?: string;
+      tenantId?: string;
+      name?: string;
+    }>;
+  };
+  try {
+    connect = (await import("@vercel/connect")) as unknown as typeof connect;
+  } catch {
+    throw new Error("@vercel/connect is not installed");
+  }
+  const res = await connect.getTokenResponse(connector, {
+    subject: { type: "app" },
+    ...(scope.installationId ? { installationId: scope.installationId } : {}),
+  });
+  return res
+    ? {
+        installationId: res.installationId,
+        tenantId: res.tenantId,
+        name: res.name,
+      }
+    : null;
 }
 
 /**

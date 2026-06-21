@@ -43,7 +43,7 @@ function slackAdapter() {
         getInstallation: async (installationId: string) => {
           const cred = await provider.getToken(connector, {
             projectId,
-            accountId: installationId,
+            installationId,
           });
           return cred ? { botToken: cred.token } : null;
         },

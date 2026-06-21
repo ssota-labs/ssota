@@ -12,8 +12,10 @@ export {
 } from "./ports/agent-runs-port.js";
 export {
   createAccountPort,
+  createAccountConnectionPort,
   type ProvisionAccountInput,
   type AccountRecord,
+  type RecordAccountConnectionInput,
 } from "./ports/account-port.js";
 export {
   seedDevWorkflowCatalog,

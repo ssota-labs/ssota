@@ -1,6 +1,10 @@
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
-import { accountMemberships, accounts } from "../db/schema.js";
+import {
+  accountConnections,
+  accountMemberships,
+  accounts,
+} from "../db/schema.js";
 
 export interface ProvisionAccountInput {
   projectId: string;
@@ -90,6 +94,63 @@ export function createAccountPort(db: Db) {
       return row
         ? { id: row.id, projectId: row.projectId, slug: row.slug, name: row.name }
         : null;
+    },
+  };
+}
+
+export interface RecordAccountConnectionInput {
+  projectId: string;
+  accountId: string;
+  connector: string;
+  installationId?: string | null;
+  tenantId?: string | null;
+  name?: string | null;
+}
+
+/**
+ * Writer/reader for an account's third-party connections (Vercel Connect).
+ * `record` upserts on (accountId, connector); `getInstallationId` is used at
+ * tool-execution time to scope `getToken` to the account's own installation.
+ */
+export function createAccountConnectionPort(db: Db) {
+  return {
+    async record(input: RecordAccountConnectionInput): Promise<void> {
+      await db
+        .insert(accountConnections)
+        .values({
+          projectId: input.projectId,
+          accountId: input.accountId,
+          connector: input.connector,
+          installationId: input.installationId ?? null,
+          tenantId: input.tenantId ?? null,
+          name: input.name ?? null,
+        })
+        .onConflictDoUpdate({
+          target: [accountConnections.accountId, accountConnections.connector],
+          set: {
+            installationId: input.installationId ?? null,
+            tenantId: input.tenantId ?? null,
+            name: input.name ?? null,
+            updatedAt: new Date(),
+          },
+        });
+    },
+
+    async getInstallationId(
+      accountId: string,
+      connector: string,
+    ): Promise<string | null> {
+      const [row] = await db
+        .select({ installationId: accountConnections.installationId })
+        .from(accountConnections)
+        .where(
+          and(
+            eq(accountConnections.accountId, accountId),
+            eq(accountConnections.connector, connector),
+          ),
+        )
+        .limit(1);
+      return row?.installationId ?? null;
     },
   };
 }

@@ -4,15 +4,14 @@ import { startConnectAuthorization } from "@ssota/agent-runtime";
 export const runtime = "nodejs";
 
 /**
- * Vercel Connect consent flow. An end user hits this to authorize a provider
- * (e.g. their Slack/Linear) under a connector; we redirect them to the Connect
- * consent URL. After they authorize, the agent's `external_request` /
- * installation token resolution succeeds for that subject.
+ * Start a Vercel Connect authorization. The end user hits this (from our own
+ * UI) to connect a provider (Slack workspace install, GitHub install, OAuth
+ * consent — the connector type decides). We ask Connect for a flow URL and
+ * redirect the user to it; Connect returns them to `/api/connect/callback`.
  *
- *   GET /api/connect/authorize?connector=oauth/linear&accountId=<account>
+ *   GET /api/connect/authorize?connector=slack/acme&accountId=<account>&returnTo=/settings
  *
- * `accountId` (optional) scopes the authorization to that end-user account
- * (user subject); omit for an app-level authorization.
+ * Works for every connector type — no provider-specific branching.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -20,6 +19,7 @@ export async function GET(request: Request) {
   const accountId = url.searchParams.get("accountId") ?? undefined;
   const projectId =
     url.searchParams.get("projectId") ?? process.env.CHAT_PROJECT_ID ?? "";
+  const returnTo = url.searchParams.get("returnTo") ?? "/";
   const scopes = url.searchParams.get("scopes")?.split(",").filter(Boolean);
 
   if (!connector) {
@@ -29,13 +29,20 @@ export async function GET(request: Request) {
     );
   }
 
+  // Connect returns the user here; we carry the context to record the link.
+  const callback = new URL("/api/connect/callback", url.origin);
+  callback.searchParams.set("connector", connector);
+  if (accountId) callback.searchParams.set("accountId", accountId);
+  if (projectId) callback.searchParams.set("projectId", projectId);
+  callback.searchParams.set("returnTo", returnTo);
+
   try {
-    const consentUrl = await startConnectAuthorization(
+    const flowUrl = await startConnectAuthorization(
       connector,
       { projectId, accountId },
-      scopes,
+      { scopes, callbackUrl: callback.toString() },
     );
-    return NextResponse.redirect(consentUrl);
+    return NextResponse.redirect(flowUrl);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : String(error) },
