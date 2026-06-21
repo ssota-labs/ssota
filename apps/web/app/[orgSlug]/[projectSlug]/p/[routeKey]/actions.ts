@@ -10,9 +10,11 @@ import {
   updateNode,
 } from "@ssota/core";
 import type { PageAction } from "@ssota/contracts";
+import { parseUiComponentFromProperties } from "@ssota/contracts/catalog";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { deployUiComponentAction } from "@/lib/graph/actions/deploy-ui-component";
 
 /** Resolve a dotted path (e.g. "rows.0.id") into a nested value. */
 function getPath(source: unknown, path: string): unknown {
@@ -145,5 +147,38 @@ export async function runPageActionAction(
       break;
   }
 
+  revalidatePath(`/${orgSlug}/${projectSlug}/p/${routeKey}`);
+}
+
+/**
+ * Build (and persist) a buildable node's artifact so a `Widget` can render it.
+ * Loads the node's stored source and runs the same build+persist path as the
+ * studio deploy. Only valid for `ui_component`-shaped (buildable) nodes.
+ */
+export async function buildWidgetAction(
+  orgSlug: string,
+  projectSlug: string,
+  routeKey: string,
+  nodeId: string,
+) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const node = await getGraphPorts(project.id).graphRead.getNode({
+    projectId: project.id,
+    nodeId,
+  });
+  if (!node || node.catalogKey !== "ui_component") {
+    throw new Error("Node is not a buildable component");
+  }
+
+  const contentV2 = parseUiComponentFromProperties(node.properties);
+  await deployUiComponentAction({
+    projectId: project.id,
+    nodeId,
+    contentV2,
+    revalidatePaths: [`/${orgSlug}/${projectSlug}/p/${routeKey}`],
+  });
   revalidatePath(`/${orgSlug}/${projectSlug}/p/${routeKey}`);
 }

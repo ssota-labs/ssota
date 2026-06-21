@@ -148,16 +148,35 @@ function ButtonEl({
 /** `/{org}/{project}` prefix for in-page links (e.g. NodeTable rows). */
 const BasePathContext = createContext<string>("");
 
-/** Widget bound to the base path (for the preview-host iframe src). */
+/** Triggers a server-side build for an unbuilt buildable node (Widget). */
+const WidgetBuildContext = createContext<
+  ((nodeId: string) => void | Promise<void>) | undefined
+>(undefined);
+
+/** Widget bound to base path + build trigger from context. */
 function BoundWidget({
   data,
   height,
+  componentProps,
 }: {
   data: ResolvedArtifact | undefined;
   height?: number;
+  componentProps?: Record<string, unknown>;
 }) {
   const basePath = useContext(BasePathContext);
-  return <WidgetEl data={data} basePath={basePath} height={height} />;
+  const onBuildWidget = useContext(WidgetBuildContext);
+  const nodeId = data?.nodeId;
+  return (
+    <WidgetEl
+      data={data}
+      basePath={basePath}
+      height={height}
+      componentProps={componentProps}
+      onBuild={
+        onBuildWidget && nodeId ? () => onBuildWidget(nodeId) : undefined
+      }
+    />
+  );
 }
 
 /** Generic single-field editor bound to an action; sends `{ value }`. */
@@ -408,6 +427,8 @@ type RenderProps = {
   onAction?: OnAction;
   /** `/{org}/{project}` prefix for in-page links. */
   basePath?: string;
+  /** Triggers a server-side build for an unbuilt buildable Widget node. */
+  onBuildWidget?: (nodeId: string) => void | Promise<void>;
 };
 
 function asNodes(value: unknown): MockNode[] {
@@ -658,6 +679,13 @@ function renderElement(
           key={elementId}
           data={data}
           height={typeof props.height === "number" ? props.height : undefined}
+          componentProps={
+            props.componentProps &&
+            typeof props.componentProps === "object" &&
+            !Array.isArray(props.componentProps)
+              ? (props.componentProps as Record<string, unknown>)
+              : undefined
+          }
         />
       );
     }
@@ -678,14 +706,17 @@ export function DynamicPageRenderer({
   bindingData,
   onAction,
   basePath = "",
+  onBuildWidget,
 }: RenderProps) {
   return (
     <ActionContext.Provider value={onAction}>
-      <BasePathContext.Provider value={basePath}>
-        <div className="space-y-2" data-testid="dynamic-page-renderer">
-          {renderElement(spec.root, spec, bindingData)}
-        </div>
-      </BasePathContext.Provider>
+      <WidgetBuildContext.Provider value={onBuildWidget}>
+        <BasePathContext.Provider value={basePath}>
+          <div className="space-y-2" data-testid="dynamic-page-renderer">
+            {renderElement(spec.root, spec, bindingData)}
+          </div>
+        </BasePathContext.Provider>
+      </WidgetBuildContext.Provider>
     </ActionContext.Provider>
   );
 }

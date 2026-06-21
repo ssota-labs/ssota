@@ -6,7 +6,7 @@ import {
   type OnAction,
 } from "@/lib/lab-sandbox/dynamic-page-renderer";
 import type { BindingContext } from "@/lib/lab-sandbox/binding-resolver";
-import { runPageActionAction } from "./actions";
+import { runPageActionAction, buildWidgetAction } from "./actions";
 
 /**
  * Client wrapper for the agent-authored page: binds the page-action server
@@ -35,6 +35,9 @@ export function DynamicPageClient({
       bindingData={bindingData}
       onAction={onAction}
       basePath={`/${orgSlug}/${projectSlug}`}
+      onBuildWidget={(nodeId) =>
+        buildWidgetAction(orgSlug, projectSlug, routeKey, nodeId)
+      }
     />
   );
 }
