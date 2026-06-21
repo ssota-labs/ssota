@@ -11,12 +11,20 @@ export {
   createPageTools,
 } from "./tools/index.js";
 export { createSandboxTools } from "./tools/sandbox.js";
+export { createExternalTools } from "./tools/external.js";
 export {
   createSandboxSession,
   type SandboxSession,
   type ExecResult,
   type CreateSandboxSessionOptions,
 } from "./sandbox/session.js";
+export {
+  createEnvCredentialProvider,
+  createVercelConnectProvider,
+  type CredentialProvider,
+  type CredentialScope,
+  type CredentialToken,
+} from "./credentials/provider.js";
 export { buildSystemPrompt } from "./system-prompt.js";
 export { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
 export { gateway, DEFAULT_MODEL_ID } from "./models.js";

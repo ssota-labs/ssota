@@ -3,11 +3,13 @@ import { serializeTask } from "@ssota/core";
 import { getTaskPort } from "./ports.js";
 import { createSsotaTools } from "./tools/index.js";
 import { createSandboxTools } from "./tools/sandbox.js";
+import { createExternalTools } from "./tools/external.js";
 import { buildSystemPrompt } from "./system-prompt.js";
 import { DEFAULT_MODEL_ID } from "./models.js";
 import { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
 import type { AgentRunContext, LoopEngine } from "./engine/types.js";
 import type { SandboxSession } from "./sandbox/session.js";
+import type { CredentialProvider } from "./credentials/provider.js";
 
 export interface RunAgentForTaskInput {
   projectId: string;
@@ -21,6 +23,8 @@ export interface RunAgentForTaskInput {
   engine?: LoopEngine;
   /** Dev-capable runs pass a sandbox; sandbox tools are then attached. */
   sandbox?: SandboxSession;
+  /** Credential provider (Vercel Connect); enables external-service tools. */
+  credentials?: CredentialProvider;
   maxSteps?: number;
 }
 
@@ -55,9 +59,11 @@ export async function runAgentForTask(
   const task = serializeTask(domainTask);
 
   const engine = input.engine ?? createAiSdkLoopEngine();
-  const tools = input.sandbox
-    ? { ...createSsotaTools(), ...createSandboxTools() }
-    : createSsotaTools();
+  const tools = {
+    ...createSsotaTools(),
+    ...(input.sandbox ? createSandboxTools() : {}),
+    ...(input.credentials ? createExternalTools() : {}),
+  };
   const context: AgentRunContext = { projectId, taskId, runId, accountId };
 
   const instructions = buildSystemPrompt({ task, projectId, accountId });
@@ -75,6 +81,7 @@ export async function runAgentForTask(
     modelId: input.modelId ?? DEFAULT_MODEL_ID,
     context,
     sandbox: input.sandbox,
+    credentials: input.credentials,
     maxSteps: input.maxSteps,
   });
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createSsotaTools } from "../tools/index.js";
 import { createSandboxTools } from "../tools/sandbox.js";
+import { createExternalTools } from "../tools/external.js";
+import { createEnvCredentialProvider } from "../credentials/provider.js";
 import { buildSystemPrompt } from "../system-prompt.js";
 import { DEFAULT_MODEL_ID } from "../models.js";
 
@@ -36,6 +38,11 @@ describe("createSsotaTools", () => {
       "sandbox_read_file",
       "sandbox_write_file",
     ]);
+  });
+
+  it("external tools are a separate set (attached only with credentials)", () => {
+    expect(createSsotaTools()).not.toHaveProperty("external_request");
+    expect(Object.keys(createExternalTools())).toEqual(["external_request"]);
   });
 
   it("each tool has a description and input schema", () => {
@@ -78,6 +85,19 @@ describe("buildSystemPrompt", () => {
       projectId: "22222222-2222-2222-2222-222222222222",
     });
     expect(prompt).toMatch(/accountId: \(shared/);
+  });
+});
+
+describe("env credential provider", () => {
+  it("resolves CONNECTOR_<NAME>_TOKEN and returns null otherwise", async () => {
+    const provider = createEnvCredentialProvider();
+    const scope = { projectId: "p" };
+    process.env.CONNECTOR_TESTHUB_TOKEN = "tok-123";
+    const found = await provider.getToken("testhub", scope);
+    expect(found?.token).toBe("tok-123");
+    delete process.env.CONNECTOR_TESTHUB_TOKEN;
+    const missing = await provider.getToken("nope", scope);
+    expect(missing).toBeNull();
   });
 });
 

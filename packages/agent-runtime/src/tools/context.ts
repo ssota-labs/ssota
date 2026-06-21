@@ -17,6 +17,17 @@ export function getRunContext(experimentalContext: unknown): AgentRunContext {
   return ctx;
 }
 
+/** Pull the credential provider, if this run configured one. */
+export function getCredentialProvider(
+  experimentalContext: unknown,
+): import("../credentials/provider.js").CredentialProvider | undefined {
+  return (
+    experimentalContext as
+      | { credentials?: import("../credentials/provider.js").CredentialProvider }
+      | undefined
+  )?.credentials;
+}
+
 /** Pull the sandbox session, if this run provisioned one. */
 export function getSandbox(experimentalContext: unknown): SandboxSession {
   const sandbox = (

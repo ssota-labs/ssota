@@ -27,6 +27,7 @@ export function createAiSdkLoopEngine(): LoopEngine {
       modelId,
       context,
       sandbox,
+      credentials,
       maxSteps = 24,
     }): Promise<LoopEngineResult> {
       const agent = new ToolLoopAgent({
@@ -37,7 +38,11 @@ export function createAiSdkLoopEngine(): LoopEngine {
         callOptionsSchema,
         prepareCall: ({ options, ...settings }) => ({
           ...settings,
-          experimental_context: { ssota: options?.context, sandbox },
+          experimental_context: {
+            ssota: options?.context,
+            sandbox,
+            credentials,
+          },
         }),
       });
 

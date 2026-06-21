@@ -1,5 +1,6 @@
 import type { ModelMessage, ToolSet } from "ai";
 import type { SandboxSession } from "../sandbox/session.js";
+import type { CredentialProvider } from "../credentials/provider.js";
 
 /**
  * Scope passed to every SSOTA tool call. `accountId` is the end-user data
@@ -32,6 +33,8 @@ export interface LoopEngineRunInput {
   context: AgentRunContext;
   /** Optional sandbox session for dev-capable runs (injected into tool ctx). */
   sandbox?: SandboxSession;
+  /** Optional credential provider for external-service tools (Vercel Connect). */
+  credentials?: CredentialProvider;
   /** Upper bound on model steps before the loop stops. */
   maxSteps?: number;
 }
