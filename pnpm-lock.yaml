@@ -135,7 +135,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   apps/web:
     dependencies:
@@ -163,10 +163,16 @@ importers:
       '@blocknote/shadcn':
         specifier: ^0.51.4
         version: 0.51.4(@types/hast@3.0.4)(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(tailwindcss@4.3.0)
+      '@chat-adapter/discord':
+        specifier: ^4.31.0
+        version: 4.31.0(ai@6.0.208(zod@3.25.76))(bufferutil@4.1.0)(utf-8-validate@6.0.6)(zod@3.25.76)
       '@chat-adapter/slack':
         specifier: ^4.31.0
-        version: 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
+        version: 4.31.0(ai@6.0.208(zod@3.25.76))(bufferutil@4.1.0)(utf-8-validate@6.0.6)(zod@3.25.76)
       '@chat-adapter/state-pg':
+        specifier: ^4.31.0
+        version: 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
+      '@chat-adapter/telegram':
         specifier: ^4.31.0
         version: 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
       '@dagrejs/dagre':
@@ -235,6 +241,9 @@ importers:
       '@xyflow/react':
         specifier: ^12.11.0
         version: 12.11.0(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(immer@11.1.8)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      bufferutil:
+        specifier: ^4.1.0
+        version: 4.1.0
       chat:
         specifier: ^4.31.0
         version: 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
@@ -259,9 +268,15 @@ importers:
       tailwind-merge:
         specifier: ^3.3.0
         version: 3.6.0
+      utf-8-validate:
+        specifier: ^6.0.6
+        version: 6.0.6
       workflow:
         specifier: ^4.5.0
-        version: 4.5.0(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(next@16.2.7(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)(ws@8.21.0)
+        version: 4.5.0(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(next@16.2.7(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      zlib-sync:
+        specifier: ^0.1.10
+        version: 0.1.10
       zod:
         specifier: ^3.25.67
         version: 3.25.76
@@ -304,7 +319,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   e2e:
     devDependencies:
@@ -374,7 +389,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   packages/agent-runtime:
     dependencies:
@@ -414,7 +429,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
     optionalDependencies:
       '@vercel/connect':
         specifier: ^0.2.5
@@ -452,7 +467,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   packages/config:
     devDependencies:
@@ -467,7 +482,7 @@ importers:
         version: 8.61.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   packages/contracts:
     dependencies:
@@ -495,7 +510,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   packages/core:
     dependencies:
@@ -523,7 +538,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   packages/editor:
     dependencies:
@@ -617,13 +632,13 @@ importers:
         version: 9.39.4(jiti@2.7.0)
       happy-dom:
         specifier: ^20.10.4
-        version: 20.10.4
+        version: 20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       typescript:
         specifier: ^5.8.3
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   packages/studio-build:
     dependencies:
@@ -684,7 +699,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   packages/studio-preview-runtime:
     dependencies:
@@ -724,7 +739,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   packages/studio-renderer:
     dependencies:
@@ -767,7 +782,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
 
   packages/studio-sandbox:
     dependencies:
@@ -801,7 +816,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^3.2.4
-        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4)
     optionalDependencies:
       '@vercel/sandbox':
         specifier: ^0.0.17
@@ -887,7 +902,7 @@ importers:
         version: link:../config
       '@storybook/react-vite':
         specifier: ^9.0.4
-        version: 9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rollup@4.61.1)(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(typescript@5.9.3)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
+        version: 9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rollup@4.61.1)(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(typescript@5.9.3)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
       '@tailwindcss/postcss':
         specifier: ^4.1.8
         version: 4.3.0
@@ -1217,6 +1232,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@chat-adapter/discord@4.31.0':
+    resolution: {integrity: sha512-1dVw1+6ZBwdVh5ynLK9D+SyHdPWIBbiPmKRC+WhzDSddR8eySswcBiDUKaDMUaOmvJavPvibJLwWbohUSBiJww==}
+    engines: {node: '>=20'}
+
   '@chat-adapter/shared@4.31.0':
     resolution: {integrity: sha512-vT/0S/LKSU5QTz5xJNWdiGp1jl55x0o8Z9I2VqlHfwjOKxVR87z++bQjXlE99w6BAxZjSYhWErlveyKo4LiDGg==}
     engines: {node: '>=20'}
@@ -1227,6 +1246,10 @@ packages:
 
   '@chat-adapter/state-pg@4.31.0':
     resolution: {integrity: sha512-cKCjWh4q+w85TGZzTAXpQcDbRVzOy/M/ZEyax3y3/BSrjzy/fxNnhcsuvvNrGKR6605bf404b+tuPQ0wcmgNLA==}
+    engines: {node: '>=20'}
+
+  '@chat-adapter/telegram@4.31.0':
+    resolution: {integrity: sha512-kwhPKkhhRzt82XTunCD1cROkJOo+c1cpOEzSXT3RX6BIcVwqikh6k7qTSPG6gmBPiouMbNnvzgnQYFgA7FZJPw==}
     engines: {node: '>=20'}
 
   '@chevrotain/types@11.1.2':
@@ -1240,6 +1263,34 @@ packages:
 
   '@date-fns/tz@1.5.0':
     resolution: {integrity: sha512-lwYN/vDPeNRULcepoE/LO2Pgx+7/RV+S9ARfbc9lr2DtGkOD7pAiruHvbR1RX3Qyf6ja47EWJDMsNK5vK08DJg==}
+
+  '@discordjs/builders@1.14.1':
+    resolution: {integrity: sha512-gSKkhXLqs96TCzk66VZuHHl8z2bQMJFGwrXC0f33ngK+FLNau4hU1PYny3DNJfNdSH+gVMzE85/d5FQ2BpcNwQ==}
+    engines: {node: '>=16.11.0'}
+
+  '@discordjs/collection@1.5.3':
+    resolution: {integrity: sha512-SVb428OMd3WO1paV3rm6tSjM4wC+Kecaa1EUGX7vc6/fddvw/6lg90z4QtCqm21zvVe92vMMDt9+DkIvjXImQQ==}
+    engines: {node: '>=16.11.0'}
+
+  '@discordjs/collection@2.1.1':
+    resolution: {integrity: sha512-LiSusze9Tc7qF03sLCujF5iZp7K+vRNEDBZ86FT9aQAv3vxMLihUvKvpsCWiQ2DJq1tVckopKm1rxomgNUc9hg==}
+    engines: {node: '>=18'}
+
+  '@discordjs/formatters@0.6.2':
+    resolution: {integrity: sha512-y4UPwWhH6vChKRkGdMB4odasUbHOUwy7KL+OVwF86PvT6QVOwElx+TiI1/6kcmcEe+g5YRXJFiXSXUdabqZOvQ==}
+    engines: {node: '>=16.11.0'}
+
+  '@discordjs/rest@2.6.1':
+    resolution: {integrity: sha512-wwQdgjeaoYFiaG+atbqx6aJDpqW7JHAo0HrQkBTbYzM3/PJ3GweQIpgElNcGZ26DCUOXMyawYd0YF7vtr+fZXg==}
+    engines: {node: '>=18'}
+
+  '@discordjs/util@1.2.0':
+    resolution: {integrity: sha512-3LKP7F2+atl9vJFhaBjn4nOaSWahZ/yWjOvA4e5pnXkt2qyXRCHLxoBQy81GFtLGCq7K9lPm9R517M1U+/90Qg==}
+    engines: {node: '>=18'}
+
+  '@discordjs/ws@1.2.3':
+    resolution: {integrity: sha512-wPlQDxEmlDg5IxhJPuxXr3Vy9AjYq5xCvFWGJyD7w7Np8ZGu+Mc+97LCoEc/+AYCo2IDpKioiH0/c/mj5ZR9Uw==}
+    engines: {node: '>=16.11.0'}
 
   '@dnd-kit/accessibility@3.1.1':
     resolution: {integrity: sha512-2P+YgaXF+gRsIihwwY1gCsQSYnu9Zyj2py8kY5fFvUM1qm2WA2u639R6YNVfU4GWr+ZM5mqEsfHZZLoRONbemw==}
@@ -3290,6 +3341,22 @@ packages:
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
 
+  '@sapphire/async-queue@1.5.5':
+    resolution: {integrity: sha512-cvGzxbba6sav2zZkH8GPf2oGk9yYoD5qrNWdu9fRehifgnFZJMV+nuy2nON2roRO4yQQ+v7MK/Pktl/HgfsUXg==}
+    engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+
+  '@sapphire/shapeshift@4.0.0':
+    resolution: {integrity: sha512-d9dUmWVA7MMiKobL3VpLF8P2aeanRTu6ypG2OIaEv/ZHH/SUQ2iHOVyi5wAPjQ+HmnMuL0whK9ez8I/raWbtIg==}
+    engines: {node: '>=v16'}
+
+  '@sapphire/snowflake@3.5.3':
+    resolution: {integrity: sha512-jjmJywLAFoWeBi1W7994zZyiNWPIiqRRNAmSERxyg93xRGzNYvGjlZ0gR6x0F4gPRi2+0O6S71kOZYyr3cxaIQ==}
+    engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+
+  '@sapphire/snowflake@3.5.5':
+    resolution: {integrity: sha512-xzvBr1Q1c4lCe7i6sRnrofxeO1QTP/LKQ6A6qy0iB4x5yfiSfARMEQEghojzTNALDTcv8En04qYNIco9/K9eZQ==}
+    engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
 
@@ -4581,6 +4648,10 @@ packages:
   '@vitest/utils@3.2.6':
     resolution: {integrity: sha512-lI23nIs4bnT3T8NIoh+vFaz5s2/DdP0Jgt2jxwgWljvwn82cLJtyi/If+fjFyoLMGIOz0U/fKvWE0d4jsNQEfg==}
 
+  '@vladfrangu/async_event_emitter@2.4.7':
+    resolution: {integrity: sha512-Xfe6rpCTxSxfbswi/W/Pz7zp1WWSNn4A0eW4mLkQUewCrXXtMj31lCg+iQyTkh/CkusZSq9eDflu7tjEDXUY6g==}
+    engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+
   '@workflow/astro@4.0.10':
     resolution: {integrity: sha512-uGoA1xHmi8hiadiloqO+xb2GYmQCxltNFJWC99bTnGV4V5lvAgXq01TDESQIReE1ZlA+PuPPtv3jtWk8mCOZRQ==}
 
@@ -5001,6 +5072,10 @@ packages:
 
   buffer@5.7.1:
     resolution: {integrity: sha512-EHcyIPBQ4BSGlvjB16k5KgAJ27CIsHY/2JBmCRReo48y9rQ3MaUzWX3KVlBa4U7MyX02HdVj0K7C3WaB3ju7FQ==}
+
+  bufferutil@4.1.0:
+    resolution: {integrity: sha512-ZMANVnAixE6AWWnPzlW2KpUrxhm9woycYvPOo67jWHyFowASTEd9s+QN1EIMsSDtwhIxN4sWE1jotpuDUIgyIw==}
+    engines: {node: '>=6.14.2'}
 
   builtin-modules@5.0.0:
     resolution: {integrity: sha512-bkXY9WsVpY7CvMhKSR6pZilZu9Ln5WDrKVBUXf2S443etkmEO4V58heTecXcUIsNsi4Rx8JUO4NfX1IcQl4deg==}
@@ -5578,6 +5653,20 @@ packages:
   diff@8.0.4:
     resolution: {integrity: sha512-DPi0FmjiSU5EvQV0++GFDOJ9ASQUVFh5kD+OzOnYdi7n3Wpm9hWWGfB/O2blfHcMVTL5WkQXSnRiK9makhrcnw==}
     engines: {node: '>=0.3.1'}
+
+  discord-api-types@0.37.120:
+    resolution: {integrity: sha512-7xpNK0EiWjjDFp2nAhHXezE4OUWm7s1zhc/UXXN6hnFFU8dfoPHgV0Hx0RPiCa3ILRpdeh152icc68DGCyXYIw==}
+
+  discord-api-types@0.38.49:
+    resolution: {integrity: sha512-XnqcWmnFZFAE8ZM8SHAw9DIV8D3Or00rMQ8iQLotrEA2PmXhl+ykaf6L6q4l474hrSUH1JaYcv+iOMRWp2p6Tg==}
+
+  discord-interactions@4.4.0:
+    resolution: {integrity: sha512-jjJx8iwAeJcj8oEauV43fue9lNqkf38fy60aSs2+G8D1nJmDxUIrk08o3h0F3wgwuBWWJUZO+X/VgfXsxpCiJA==}
+    engines: {node: '>=18.4.0'}
+
+  discord.js@14.26.4:
+    resolution: {integrity: sha512-4oBp8tc6Kf8IDBwAHhbsMaAqx1b5fob9SNasZT7V6yyyUydoO5i5fGuX7TmvRtR+q/WgKRnRViRoAWnG7fNyvA==}
+    engines: {node: '>=18'}
 
   doctrine@2.1.0:
     resolution: {integrity: sha512-35mSku4ZXK0vfCuHEDAwt55dg2jNajHZ1odvF+8SSr82EsZY4QmXfuWso8oEd8zRhVObSN18aM0CjSdoBX7zIw==}
@@ -6992,6 +7081,12 @@ packages:
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
 
+  lodash.snakecase@4.1.1:
+    resolution: {integrity: sha512-QZ1d4xoBHYUeuouhEq3lk3Uq7ldgyFXGBhg04+oRLnIz8o9T65Eh+8YdroUwn846zchkA9yDsDl5CVVaV2nqYw==}
+
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
+
   log-symbols@6.0.0:
     resolution: {integrity: sha512-i24m8rpwhmPIS4zscNzK6MSEhk0DUWa/8iYQWxhffV8jkI4Phvs3F+quL5xvS0gdQR0FyTCMMH33Y78dDTzzIw==}
     engines: {node: '>=18'}
@@ -7024,6 +7119,9 @@ packages:
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
+
+  magic-bytes.js@1.13.0:
+    resolution: {integrity: sha512-afO2mnxW7GDTXMm5/AoN1WuOcdoKhtgXjIvHmobqTD1grNplhGdv3PFOyjCVmrnOZBIT/gD/koDKpYG+0mvHcg==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -7282,6 +7380,9 @@ packages:
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
 
+  nan@2.27.0:
+    resolution: {integrity: sha512-hC+0LidcL3XE4rp1C4H54KujgXKzbfyTngZTwBByQxsOxCEKZT0MPQ4hOKUH2jU1OYstqdDH4onyHPDzcV0XdQ==}
+
   nanoid@3.3.12:
     resolution: {integrity: sha512-ZB9RH/39qpq5Vu6Y+NmUaFhQR6pp+M2Xt76XBnEwDaGcVAqhlvxrl3B2bKS5D3NH3QR76v3aSrKaF/Kiy7lEtQ==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -7346,6 +7447,10 @@ packages:
 
   node-gyp-build-optional-packages@5.1.1:
     resolution: {integrity: sha512-+P72GAjVAbTxjjwUmwjVrqrdZROD4nf8KgpBoDxqXXTiYZZt/ud60dE5yvCSr9lRO8e8yv6kgJIC0K0PfZFVQw==}
+    hasBin: true
+
+  node-gyp-build@4.8.4:
+    resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
     hasBin: true
 
   node-releases@2.0.47:
@@ -8529,6 +8634,9 @@ packages:
     resolution: {integrity: sha512-q5W7tVM71e2xjHZTlgfTDoPF/SmqKG5hddq9SzR49CH2hayqRKJtQ4mtRlSxKaJlR/+9rEM+mnBHf7I2/BQcpQ==}
     engines: {node: '>=6.10'}
 
+  ts-mixer@6.0.4:
+    resolution: {integrity: sha512-ufKpbmrugz5Aou4wcr5Wc1UUFWOLhq+Fm6qa6P0w0K5Qw2yhaUoiWszhCVuNQyNwrlGiscHOmqYoAox1PtvgjA==}
+
   ts-morph@26.0.0:
     resolution: {integrity: sha512-ztMO++owQnz8c/gIENcM9XfCEzgoGphTv+nKpYNM1bgsdOVC/jRZuEBf6N+mLLDNg68Kl+GgUZfOySaRiG1/Ug==}
 
@@ -8626,6 +8734,10 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
+  undici@6.24.1:
+    resolution: {integrity: sha512-sC+b0tB1whOCzbtlx20fx3WgCXwkW627p4EA9uM+/tNNPkSS+eSEld6pAs9nDv7WbY1UUljBMYPtu9BCOrCWKA==}
+    engines: {node: '>=18.17'}
+
   undici@7.26.0:
     resolution: {integrity: sha512-3O9Tf67pGhgOv9jM35AbhkXAKi13f3oy3aE4CSgr+TckGeY+/iu97ZXN+J7DpHPzLbVApFd1IFhcnBjREYXYcg==}
     engines: {node: '>=20.18.1'}
@@ -8712,6 +8824,10 @@ packages:
     resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  utf-8-validate@6.0.6:
+    resolution: {integrity: sha512-q3l3P9UtEEiAHcsgsqTgf9PPjctrDWoIXW3NpOHFdRDbLvu4DLIcxHangJ4RLrWkBcKjmcs/6NkerI8T/rE4LA==}
+    engines: {node: '>=6.14.2'}
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
@@ -9041,6 +9157,9 @@ packages:
   yoctocolors@2.1.2:
     resolution: {integrity: sha512-CzhO+pFNo8ajLM2d2IW/R93ipy99LWjtwblvC1RsoSUMZgyLbYFr221TnSNT7GjGdYui6P459mw9JH/g/zW2ug==}
     engines: {node: '>=18'}
+
+  zlib-sync@0.1.10:
+    resolution: {integrity: sha512-t7/pYg5tLBznL1RuhmbAt8rNp5tbhr+TSrJFnMkRtrGIaPJZ6Dc0uR4u3OoQI2d6cGlVI62E3Gy6gwkxyIqr/w==}
 
   zod-to-json-schema@3.25.2:
     resolution: {integrity: sha512-O/PgfnpT1xKSDeQYSCfRI5Gy3hPf91mKVDuYLUHZJMiDFptvP41MSnWofm8dnCm0256ZNfZIM7DSzuSMAFnjHA==}
@@ -9549,6 +9668,20 @@ snapshots:
   '@cbor-extract/cbor-extract-win32-x64@2.2.2':
     optional: true
 
+  '@chat-adapter/discord@4.31.0(ai@6.0.208(zod@3.25.76))(bufferutil@4.1.0)(utf-8-validate@6.0.6)(zod@3.25.76)':
+    dependencies:
+      '@chat-adapter/shared': 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
+      chat: 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
+      discord-api-types: 0.37.120
+      discord-interactions: 4.4.0
+      discord.js: 14.26.4(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+    transitivePeerDependencies:
+      - ai
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+      - zod
+
   '@chat-adapter/shared@4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)':
     dependencies:
       chat: 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
@@ -9557,10 +9690,10 @@ snapshots:
       - supports-color
       - zod
 
-  '@chat-adapter/slack@4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)':
+  '@chat-adapter/slack@4.31.0(ai@6.0.208(zod@3.25.76))(bufferutil@4.1.0)(utf-8-validate@6.0.6)(zod@3.25.76)':
     dependencies:
       '@chat-adapter/shared': 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
-      '@slack/socket-mode': 2.0.7
+      '@slack/socket-mode': 2.0.7(bufferutil@4.1.0)(utf-8-validate@6.0.6)
       '@slack/web-api': 7.17.0
       chat: 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
     transitivePeerDependencies:
@@ -9581,6 +9714,15 @@ snapshots:
       - supports-color
       - zod
 
+  '@chat-adapter/telegram@4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)':
+    dependencies:
+      '@chat-adapter/shared': 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
+      chat: 4.31.0(ai@6.0.208(zod@3.25.76))(zod@3.25.76)
+    transitivePeerDependencies:
+      - ai
+      - supports-color
+      - zod
+
   '@chevrotain/types@11.1.2': {}
 
   '@dagrejs/dagre@3.0.0':
@@ -9590,6 +9732,55 @@ snapshots:
   '@dagrejs/graphlib@4.0.1': {}
 
   '@date-fns/tz@1.5.0': {}
+
+  '@discordjs/builders@1.14.1':
+    dependencies:
+      '@discordjs/formatters': 0.6.2
+      '@discordjs/util': 1.2.0
+      '@sapphire/shapeshift': 4.0.0
+      discord-api-types: 0.38.49
+      fast-deep-equal: 3.1.3
+      ts-mixer: 6.0.4
+      tslib: 2.8.1
+
+  '@discordjs/collection@1.5.3': {}
+
+  '@discordjs/collection@2.1.1': {}
+
+  '@discordjs/formatters@0.6.2':
+    dependencies:
+      discord-api-types: 0.38.49
+
+  '@discordjs/rest@2.6.1':
+    dependencies:
+      '@discordjs/collection': 2.1.1
+      '@discordjs/util': 1.2.0
+      '@sapphire/async-queue': 1.5.5
+      '@sapphire/snowflake': 3.5.5
+      '@vladfrangu/async_event_emitter': 2.4.7
+      discord-api-types: 0.38.49
+      magic-bytes.js: 1.13.0
+      tslib: 2.8.1
+      undici: 6.24.1
+
+  '@discordjs/util@1.2.0':
+    dependencies:
+      discord-api-types: 0.38.49
+
+  '@discordjs/ws@1.2.3(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
+    dependencies:
+      '@discordjs/collection': 2.1.1
+      '@discordjs/rest': 2.6.1
+      '@discordjs/util': 1.2.0
+      '@sapphire/async-queue': 1.5.5
+      '@types/ws': 8.18.1
+      '@vladfrangu/async_event_emitter': 2.4.7
+      discord-api-types: 0.38.49
+      tslib: 2.8.1
+      ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   '@dnd-kit/accessibility@3.1.1(react@19.2.7)':
     dependencies:
@@ -11130,6 +11321,17 @@ snapshots:
 
   '@rtsao/scc@1.1.0': {}
 
+  '@sapphire/async-queue@1.5.5': {}
+
+  '@sapphire/shapeshift@4.0.0':
+    dependencies:
+      fast-deep-equal: 3.1.3
+      lodash: 4.18.1
+
+  '@sapphire/snowflake@3.5.3': {}
+
+  '@sapphire/snowflake@3.5.5': {}
+
   '@sec-ant/readable-stream@0.4.1': {}
 
   '@shikijs/core@3.23.0':
@@ -11178,14 +11380,14 @@ snapshots:
     dependencies:
       '@types/node': 22.19.20
 
-  '@slack/socket-mode@2.0.7':
+  '@slack/socket-mode@2.0.7(bufferutil@4.1.0)(utf-8-validate@6.0.6)':
     dependencies:
       '@slack/logger': 4.0.1
       '@slack/web-api': 7.17.0
       '@types/node': 22.19.20
       '@types/ws': 8.18.1
       eventemitter3: 5.0.4
-      ws: 8.21.0
+      ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
       - bufferutil
       - debug
@@ -11260,39 +11462,39 @@ snapshots:
 
   '@standard-schema/utils@0.3.0': {}
 
-  '@storybook/builder-vite@9.1.20(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))':
+  '@storybook/builder-vite@9.1.20(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))':
     dependencies:
-      '@storybook/csf-plugin': 9.1.20(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))
-      storybook: 9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
+      '@storybook/csf-plugin': 9.1.20(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))
+      storybook: 9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
       ts-dedent: 2.2.0
       vite: 7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
 
-  '@storybook/csf-plugin@9.1.20(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))':
+  '@storybook/csf-plugin@9.1.20(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))':
     dependencies:
-      storybook: 9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
+      storybook: 9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
       unplugin: 1.16.1
 
   '@storybook/global@5.0.0': {}
 
-  '@storybook/react-dom-shim@9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))':
+  '@storybook/react-dom-shim@9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))':
     dependencies:
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
-      storybook: 9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
+      storybook: 9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
 
-  '@storybook/react-vite@9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rollup@4.61.1)(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(typescript@5.9.3)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))':
+  '@storybook/react-vite@9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rollup@4.61.1)(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(typescript@5.9.3)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))':
     dependencies:
       '@joshwooding/vite-plugin-react-docgen-typescript': 0.6.1(typescript@5.9.3)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
       '@rollup/pluginutils': 5.4.0(rollup@4.61.1)
-      '@storybook/builder-vite': 9.1.20(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
-      '@storybook/react': 9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(typescript@5.9.3)
+      '@storybook/builder-vite': 9.1.20(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
+      '@storybook/react': 9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(typescript@5.9.3)
       find-up: 7.0.0
       magic-string: 0.30.21
       react: 19.2.7
       react-docgen: 8.0.3
       react-dom: 19.2.7(react@19.2.7)
       resolve: 1.22.12
-      storybook: 9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
+      storybook: 9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
       tsconfig-paths: 4.2.0
       vite: 7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)
     transitivePeerDependencies:
@@ -11300,13 +11502,13 @@ snapshots:
       - supports-color
       - typescript
 
-  '@storybook/react@9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(typescript@5.9.3)':
+  '@storybook/react@9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))(typescript@5.9.3)':
     dependencies:
       '@storybook/global': 5.0.0
-      '@storybook/react-dom-shim': 9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))
+      '@storybook/react-dom-shim': 9.1.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)))
       react: 19.2.7
       react-dom: 19.2.7(react@19.2.7)
-      storybook: 9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
+      storybook: 9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4))
     optionalDependencies:
       typescript: 5.9.3
 
@@ -12335,12 +12537,12 @@ snapshots:
       ai: 6.0.208(zod@3.25.76)
     optional: true
 
-  '@vercel/functions@3.7.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.0)':
+  '@vercel/functions@3.7.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@vercel/oidc': 3.6.1
     optionalDependencies:
       '@aws-sdk/credential-provider-web-identity': 3.972.49
-      ws: 8.21.0
+      ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
 
   '@vercel/oidc@2.0.2':
     dependencies:
@@ -12465,13 +12667,15 @@ snapshots:
       loupe: 3.2.1
       tinyrainbow: 2.0.0
 
-  '@workflow/astro@4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)':
+  '@vladfrangu/async_event_emitter@2.4.7': {}
+
+  '@workflow/astro@4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@swc/core': 1.15.3
-      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/rollup': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/rollup': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/swc-plugin': 4.1.1(@swc/core@1.15.3)
-      '@workflow/vite': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/vite': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       exsolve: 1.0.8
       pathe: 2.0.3
     transitivePeerDependencies:
@@ -12480,10 +12684,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@workflow/builders@4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0)':
+  '@workflow/builders@4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@swc/core': 1.15.3
-      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/errors': 4.1.4
       '@workflow/swc-plugin': 4.1.1(@swc/core@1.15.3)
       '@workflow/utils': 4.1.3
@@ -12500,14 +12704,14 @@ snapshots:
       - supports-color
       - ws
 
-  '@workflow/cli@4.2.10(@opentelemetry/api@1.9.1)(ws@8.21.0)':
+  '@workflow/cli@4.2.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@oclif/core': 4.11.4
       '@oclif/plugin-help': 6.2.37
       '@swc/core': 1.15.3
       '@vercel/cli-auth': 0.0.1
-      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/errors': 4.1.4
       '@workflow/swc-plugin': 4.1.1(@swc/core@1.15.3)
       '@workflow/utils': 4.1.3
@@ -12538,13 +12742,13 @@ snapshots:
       - supports-color
       - ws
 
-  '@workflow/core@4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0)':
+  '@workflow/core@4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@aws-sdk/credential-provider-web-identity': 3.972.49
       '@jridgewell/trace-mapping': 0.3.31
       '@standard-schema/spec': 1.0.0
       '@types/ms': 2.1.0
-      '@vercel/functions': 3.7.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.0)
+      '@vercel/functions': 3.7.1(@aws-sdk/credential-provider-web-identity@3.972.49)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/errors': 4.1.4
       '@workflow/serde': 4.1.2
       '@workflow/utils': 4.1.3
@@ -12570,13 +12774,13 @@ snapshots:
       '@workflow/utils': 4.1.3
       ms: 2.1.3
 
-  '@workflow/nest@0.0.10(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(ws@8.21.0)':
+  '@workflow/nest@0.0.10(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@nestjs/common': 11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@nestjs/core': 11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2)
       '@swc/cli': 0.8.1(@swc/core@1.15.3)(chokidar@5.0.0)
       '@swc/core': 1.15.3
-      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/swc-plugin': 4.1.1(@swc/core@1.15.3)
       pathe: 2.0.3
     transitivePeerDependencies:
@@ -12585,11 +12789,11 @@ snapshots:
       - supports-color
       - ws
 
-  '@workflow/next@4.0.11(@opentelemetry/api@1.9.1)(next@16.2.7(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(ws@8.21.0)':
+  '@workflow/next@4.0.11(@opentelemetry/api@1.9.1)(next@16.2.7(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@swc/core': 1.15.3
-      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/swc-plugin': 4.1.1(@swc/core@1.15.3)
       semver: 7.7.4
       watchpack: 2.5.1
@@ -12601,14 +12805,14 @@ snapshots:
       - supports-color
       - ws
 
-  '@workflow/nitro@4.1.1(@opentelemetry/api@1.9.1)(ws@8.21.0)':
+  '@workflow/nitro@4.1.1(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@swc/core': 1.15.3
-      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/rollup': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/rollup': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/swc-plugin': 4.1.1(@swc/core@1.15.3)
-      '@workflow/vite': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/vite': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/web': 4.1.11
       exsolve: 1.0.8
       pathe: 2.0.3
@@ -12618,10 +12822,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@workflow/nuxt@4.0.11(@opentelemetry/api@1.9.1)(ws@8.21.0)':
+  '@workflow/nuxt@4.0.11(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@nuxt/kit': 4.4.7
-      '@workflow/nitro': 4.1.1(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/nitro': 4.1.1(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@swc/helpers'
@@ -12629,10 +12833,10 @@ snapshots:
       - supports-color
       - ws
 
-  '@workflow/rollup@4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)':
+  '@workflow/rollup@4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@swc/core': 1.15.3
-      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/swc-plugin': 4.1.1(@swc/core@1.15.3)
       exsolve: 1.0.7
     transitivePeerDependencies:
@@ -12645,13 +12849,13 @@ snapshots:
 
   '@workflow/serde@4.1.2': {}
 
-  '@workflow/sveltekit@4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)':
+  '@workflow/sveltekit@4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
       '@swc/core': 1.15.3
-      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/rollup': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/rollup': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/swc-plugin': 4.1.1(@swc/core@1.15.3)
-      '@workflow/vite': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/vite': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       exsolve: 1.0.8
       fs-extra: 11.3.5
       pathe: 2.0.3
@@ -12673,9 +12877,9 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
-  '@workflow/vite@4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)':
+  '@workflow/vite@4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))':
     dependencies:
-      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/builders': 4.1.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
     transitivePeerDependencies:
       - '@opentelemetry/api'
       - '@swc/helpers'
@@ -13131,6 +13335,10 @@ snapshots:
     dependencies:
       base64-js: 1.5.1
       ieee754: 1.2.1
+
+  bufferutil@4.1.0:
+    dependencies:
+      node-gyp-build: 4.8.4
 
   builtin-modules@5.0.0: {}
 
@@ -13680,6 +13888,31 @@ snapshots:
       dequal: 2.0.3
 
   diff@8.0.4: {}
+
+  discord-api-types@0.37.120: {}
+
+  discord-api-types@0.38.49: {}
+
+  discord-interactions@4.4.0: {}
+
+  discord.js@14.26.4(bufferutil@4.1.0)(utf-8-validate@6.0.6):
+    dependencies:
+      '@discordjs/builders': 1.14.1
+      '@discordjs/collection': 1.5.3
+      '@discordjs/formatters': 0.6.2
+      '@discordjs/rest': 2.6.1
+      '@discordjs/util': 1.2.0
+      '@discordjs/ws': 1.2.3(bufferutil@4.1.0)(utf-8-validate@6.0.6)
+      '@sapphire/snowflake': 3.5.3
+      discord-api-types: 0.38.49
+      fast-deep-equal: 3.1.3
+      lodash.snakecase: 4.1.1
+      magic-bytes.js: 1.13.0
+      tslib: 2.8.1
+      undici: 6.24.1
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
   doctrine@2.1.0:
     dependencies:
@@ -14832,7 +15065,7 @@ snapshots:
 
   hachure-fill@0.5.2: {}
 
-  happy-dom@20.10.4:
+  happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6):
     dependencies:
       '@types/node': 22.19.20
       '@types/whatwg-mimetype': 3.0.2
@@ -14840,7 +15073,7 @@ snapshots:
       buffer-image-size: 0.6.4
       entities: 7.0.1
       whatwg-mimetype: 3.0.0
-      ws: 8.21.0
+      ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -15435,6 +15668,10 @@ snapshots:
 
   lodash.merge@4.6.2: {}
 
+  lodash.snakecase@4.1.1: {}
+
+  lodash@4.18.1: {}
+
   log-symbols@6.0.0:
     dependencies:
       chalk: 5.6.2
@@ -15461,6 +15698,8 @@ snapshots:
       react: 19.2.7
 
   lz-string@1.5.0: {}
+
+  magic-bytes.js@1.13.0: {}
 
   magic-string@0.30.21:
     dependencies:
@@ -15925,6 +16164,8 @@ snapshots:
 
   ms@2.1.3: {}
 
+  nan@2.27.0: {}
+
   nanoid@3.3.12: {}
 
   nanoid@5.1.6: {}
@@ -15985,6 +16226,8 @@ snapshots:
     dependencies:
       detect-libc: 2.1.2
     optional: true
+
+  node-gyp-build@4.8.4: {}
 
   node-releases@2.0.47: {}
 
@@ -17080,7 +17323,7 @@ snapshots:
       es-errors: 1.3.0
       internal-slot: 1.1.0
 
-  storybook@9.1.20(@testing-library/dom@10.4.1)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)):
+  storybook@9.1.20(@testing-library/dom@10.4.1)(bufferutil@4.1.0)(utf-8-validate@6.0.6)(vite@7.3.5(@types/node@22.19.20)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)):
     dependencies:
       '@storybook/global': 5.0.0
       '@testing-library/jest-dom': 6.9.1
@@ -17093,7 +17336,7 @@ snapshots:
       esbuild-register: 3.6.0(esbuild@0.25.12)
       recast: 0.23.11
       semver: 7.8.3
-      ws: 8.21.0
+      ws: 8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
       - '@testing-library/dom'
       - bufferutil
@@ -17383,6 +17626,8 @@ snapshots:
 
   ts-dedent@2.2.0: {}
 
+  ts-mixer@6.0.4: {}
+
   ts-morph@26.0.0:
     dependencies:
       '@ts-morph/common': 0.27.0
@@ -17522,6 +17767,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
+  undici@6.24.1: {}
+
   undici@7.26.0: {}
 
   unicorn-magic@0.1.0: {}
@@ -17641,6 +17888,10 @@ snapshots:
     dependencies:
       react: 19.2.7
 
+  utf-8-validate@6.0.6:
+    dependencies:
+      node-gyp-build: 4.8.4
+
   util-deprecate@1.0.2: {}
 
   uuid@14.0.0: {}
@@ -17741,7 +17992,7 @@ snapshots:
       lightningcss: 1.32.0
       tsx: 4.22.4
 
-  vitest@3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4)(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4):
+  vitest@3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(tsx@4.22.4):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.6
@@ -17769,7 +18020,7 @@ snapshots:
     optionalDependencies:
       '@types/debug': 4.1.13
       '@types/node': 22.19.20
-      happy-dom: 20.10.4
+      happy-dom: 20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6)
     transitivePeerDependencies:
       - jiti
       - less
@@ -17872,18 +18123,18 @@ snapshots:
 
   wordwrap@1.0.0: {}
 
-  workflow@4.5.0(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(next@16.2.7(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)(ws@8.21.0):
+  workflow@4.5.0(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(next@16.2.7(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(typescript@5.9.3)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6)):
     dependencies:
-      '@workflow/astro': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/cli': 4.2.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/astro': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/cli': 4.2.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/core': 4.5.0(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/errors': 4.1.4
-      '@workflow/nest': 0.0.10(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(ws@8.21.0)
-      '@workflow/next': 4.0.11(@opentelemetry/api@1.9.1)(next@16.2.7(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(ws@8.21.0)
-      '@workflow/nitro': 4.1.1(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/nuxt': 4.0.11(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/rollup': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
-      '@workflow/sveltekit': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0)
+      '@workflow/nest': 0.0.10(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.27(@nestjs/common@11.1.27(reflect-metadata@0.2.2)(rxjs@7.8.2))(reflect-metadata@0.2.2)(rxjs@7.8.2))(@opentelemetry/api@1.9.1)(@swc/cli@0.8.1(@swc/core@1.15.3)(chokidar@5.0.0))(@swc/core@1.15.3)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/next': 4.0.11(@opentelemetry/api@1.9.1)(next@16.2.7(@opentelemetry/api@1.9.1)(@playwright/test@1.60.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/nitro': 4.1.1(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/nuxt': 4.0.11(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/rollup': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
+      '@workflow/sveltekit': 4.0.10(@opentelemetry/api@1.9.1)(ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6))
       '@workflow/typescript-plugin': 4.0.3(typescript@5.9.3)
       '@workflow/utils': 4.1.3
       ms: 2.1.3
@@ -17921,7 +18172,10 @@ snapshots:
 
   wrappy@1.0.2: {}
 
-  ws@8.21.0: {}
+  ws@8.21.0(bufferutil@4.1.0)(utf-8-validate@6.0.6):
+    optionalDependencies:
+      bufferutil: 4.1.0
+      utf-8-validate: 6.0.6
 
   wsl-utils@0.1.0:
     dependencies:
@@ -17984,6 +18238,10 @@ snapshots:
       yoctocolors: 2.1.2
 
   yoctocolors@2.1.2: {}
+
+  zlib-sync@0.1.10:
+    dependencies:
+      nan: 2.27.0
 
   zod-to-json-schema@3.25.2(zod@3.25.76):
     dependencies:

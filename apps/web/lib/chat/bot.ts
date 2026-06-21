@@ -1,5 +1,7 @@
 import { Chat } from "chat";
 import { createSlackAdapter } from "@chat-adapter/slack";
+import { createDiscordAdapter } from "@chat-adapter/discord";
+import { createTelegramAdapter } from "@chat-adapter/telegram";
 import { createPostgresState } from "@chat-adapter/state-pg";
 import { start } from "workflow/api";
 import { spawnTask } from "@ssota/core";
@@ -127,7 +129,18 @@ export function getBot(): Chat {
   if (!cached) {
     const bot = new Chat({
       userName: process.env.CHAT_BOT_NAME ?? "ssota",
-      adapters: { slack: slackAdapter() },
+      // Single-token platforms (Discord/Telegram) register when their bot token
+      // is set — one token, joined to many servers/chats; no per-workspace OAuth
+      // or Connect. Slack (per-workspace token) is always registered.
+      adapters: {
+        slack: slackAdapter(),
+        ...(process.env.DISCORD_BOT_TOKEN
+          ? { discord: createDiscordAdapter() }
+          : {}),
+        ...(process.env.TELEGRAM_BOT_TOKEN
+          ? { telegram: createTelegramAdapter() }
+          : {}),
+      },
       state: createPostgresState({ url: process.env.DATABASE_URL }),
       dedupeTtlMs: 600_000,
     });
