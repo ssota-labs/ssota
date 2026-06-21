@@ -23,6 +23,7 @@ export {
   createEnvCredentialProvider,
   createVercelConnectProvider,
   resolveCredentialProvider,
+  startConnectAuthorization,
   type CredentialProvider,
   type CredentialScope,
   type CredentialToken,

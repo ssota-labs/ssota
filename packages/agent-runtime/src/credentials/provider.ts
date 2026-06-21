@@ -95,6 +95,41 @@ export function createVercelConnectProvider(): CredentialProvider {
 }
 
 /**
+ * Begin a Vercel Connect authorization for a user (the consent flow). Returns
+ * a URL to redirect the end user to; after they authorize, subsequent
+ * `getToken` calls for that subject succeed. Used by the consent route so
+ * end users can connect their own workspaces/accounts.
+ */
+export async function startConnectAuthorization(
+  connector: string,
+  scope: CredentialScope,
+  scopes?: string[],
+): Promise<string> {
+  let connect: {
+    startAuthorization: (
+      connectorUid: string,
+      opts: {
+        subject: { type: "app" } | { type: "user"; id: string };
+        scopes?: string[];
+      },
+    ) => Promise<{ url: string }>;
+  };
+  try {
+    connect = (await import("@vercel/connect")) as unknown as typeof connect;
+  } catch {
+    throw new Error("@vercel/connect is not installed");
+  }
+  const subject = scope.accountId
+    ? ({ type: "user", id: scope.accountId } as const)
+    : ({ type: "app" } as const);
+  const { url } = await connect.startAuthorization(connector, {
+    subject,
+    ...(scopes ? { scopes } : {}),
+  });
+  return url;
+}
+
+/**
  * Pick a provider from the environment: explicit Vercel Connect opt-in
  * (`USE_VERCEL_CONNECT=1`), else the env provider if any `CONNECTOR_*_TOKEN`
  * is set, else none (external tools stay detached).
