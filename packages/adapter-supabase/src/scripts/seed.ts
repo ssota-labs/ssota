@@ -10,13 +10,9 @@ import {
   SMOKE_PASSWORD,
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
-import {
-  applyDomainPack,
-} from "@ssota/core/seed-packs/apply-domain-pack";
 import { seedDomainCatalog } from "../ports/db-catalog-read-port.js";
 import { seedWorkflows } from "../ports/workflow-port.js";
 import { seedPages } from "../ports/page-port.js";
-import { createGraphPorts } from "../ports/create-graph-ports.js";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -161,16 +157,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await seedWorkflows(db, projectId);
     await seedPages(db, projectId);
 
-    const ports = createGraphPorts(db, { projectId });
-    await applyDomainPack({
-      projectId,
-      catalog: ports.catalog,
-      graphRead: ports.graphRead,
-      graphWrite: ports.graphWrite,
-      ensureCatalog: async (pid) => {
-        await seedDomainCatalog(db, pid);
-      },
-    });
+    await seedDomainCatalog(db, projectId);
   }
 
   return { organizationId, projectId };

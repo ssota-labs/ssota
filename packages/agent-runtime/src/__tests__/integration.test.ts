@@ -5,16 +5,16 @@ import {
   createAccountPort,
   createConsolePort,
 } from "@ssota/adapter-supabase";
-import {
-  createNode,
-  readPageDefinitionByRouteKey,
-  resolvePageBindings,
-  spawnTask,
-  writePageDefinition,
-} from "@ssota/core";
+import { createNode, resolvePageBindings, spawnTask } from "@ssota/core";
 import { createNodeInputSchema } from "@ssota/contracts/graph";
 import { runAgentForTask, streamAgentForTask } from "../run.js";
-import { getDb, getGraphPorts, getGraphReadPort, getTaskPort } from "../ports.js";
+import {
+  getDb,
+  getGraphPorts,
+  getGraphReadPort,
+  getPagePort,
+  getTaskPort,
+} from "../ports.js";
 
 const DB_ONLY = Boolean(process.env.DATABASE_URL);
 
@@ -123,25 +123,13 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
 // Deterministic (no LLM): persist a page definition on a `page` node and
 // resolve its bindings against the live graph — the Phase 3 pipeline that
 // backs the production render route. Needs only DATABASE_URL.
-describe.skipIf(!DB_ONLY)("page definition pipeline", () => {
-  it("persists a definition and resolves its bindings", async () => {
+describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
+  it("persists a page and resolves its bindings", async () => {
     const projectId = await defaultProjectId();
-    const ports = getGraphPorts(projectId);
+    const pagePort = getPagePort(projectId);
 
-    const pageNode = await createNode(
-      ports,
-      createNodeInputSchema.parse({
-        projectId,
-        catalogKey: "page",
-        title: "Agent Dashboard",
-        properties: {},
-      }),
-    );
-
-    const routeKey = `agent-dash-${pageNode.id.slice(0, 8)}`;
-    const definition = {
-      routeKey,
-      scope: "project" as const,
+    const page = await pagePort.createPage({
+      title: "Agent Dashboard",
       spec: {
         root: "header",
         elements: {
@@ -153,29 +141,18 @@ describe.skipIf(!DB_ONLY)("page definition pipeline", () => {
         },
       },
       bindings: {
-        objectives: { kind: "query" as const, catalogKey: "objective" },
+        objectives: { kind: "query", catalogKey: "objective" },
       },
       actions: {},
-    };
-
-    await writePageDefinition(ports, {
-      projectId,
-      nodeId: pageNode.id,
-      definition,
     });
 
-    const read = await readPageDefinitionByRouteKey(
-      getGraphReadPort(projectId),
-      projectId,
-      routeKey,
-    );
-    expect(read?.nodeId).toBe(pageNode.id);
-    expect(read?.definition.routeKey).toBe(routeKey);
+    const read = await pagePort.getPage(page.id);
+    expect(read?.id).toBe(page.id);
 
     const data = await resolvePageBindings(
       getGraphReadPort(projectId),
       projectId,
-      read!.definition.bindings,
+      read!.bindings,
     );
     expect(Array.isArray(data.objectives)).toBe(true);
   });
