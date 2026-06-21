@@ -13,7 +13,22 @@ import {
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
 import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { getSiteUrl } from "@/lib/auth/config";
 import { extractWorkspaceKey, resolveChatTarget } from "./resolve-account";
+
+/**
+ * Reply for a message from a workspace we don't have a project link for yet.
+ * Auto-linking happens when an admin connects the workspace from a project's
+ * Connections page (Connect → Slack/Discord), so we point there rather than
+ * asking anyone to copy a workspace id by hand.
+ */
+function notLinkedReply(): string {
+  return (
+    "I'm not connected to a project yet. An admin can connect this workspace " +
+    `from a project's Connections page in SSOTA (${getSiteUrl()}) — pick the ` +
+    "project, then Connect → Slack/Discord. After that, @mention me here again."
+  );
+}
 
 /**
  * Chat SDK bot (chat-sdk.dev) — the inbound/outbound chat channel. A Slack
@@ -106,7 +121,7 @@ async function runAgentStream(message: IncomingMessage) {
   const workspaceKey = extractWorkspaceKey(message.raw);
   const target = await resolveChatTarget(workspaceKey);
   if (!target) {
-    return "This workspace isn't connected to a project yet. An admin can link it in SSOTA (Settings → Chat).";
+    return notLinkedReply();
   }
   const { projectId, accountId } = target;
   const text = message.text;
