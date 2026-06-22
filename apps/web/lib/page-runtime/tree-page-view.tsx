@@ -3,26 +3,22 @@
 import type { JsonRenderSpec } from "@ssota/contracts";
 import { cn } from "@ssota/ui/lib/utils";
 import { DynamicPageRenderer } from "./renderer";
+import type { OnAction } from "./context";
 import type { BindingContext } from "./types";
-import { executePageAction } from "./page-actions";
 import { pageUsesDocumentSheetList } from "./spec-utils";
 
 type TreePageViewProps = {
-  orgSlug: string;
-  projectSlug: string;
-  pageId: string;
   spec: JsonRenderSpec;
   bindingData: BindingContext;
   basePath: string;
+  onAction: OnAction;
 };
 
 export function TreePageView({
-  orgSlug,
-  projectSlug,
-  pageId,
   spec,
   bindingData,
   basePath,
+  onAction,
 }: TreePageViewProps) {
   const fillHeight = pageUsesDocumentSheetList(spec);
 
@@ -39,15 +35,7 @@ export function TreePageView({
         bindingData={bindingData}
         basePath={basePath}
         fillHeight={fillHeight}
-        onAction={async (actionKey, payload) => {
-          await executePageAction({
-            orgSlug,
-            projectSlug,
-            pageId,
-            actionKey,
-            payload,
-          });
-        }}
+        onAction={onAction}
       />
     </div>
   );

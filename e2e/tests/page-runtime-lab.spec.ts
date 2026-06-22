@@ -57,7 +57,6 @@ test.describe("Page Runtime Lab", () => {
     await expect(page).toHaveURL(/demo=document-view/);
     await expect(page.getByRole("heading", { name: "PRD" })).toBeVisible();
   });
-
   test("roadmap document sheet opens BlockNote on row click", async ({ page }) => {
     await page.goto("/labs/page-runtime?demo=roadmap-document-sheet");
     await expect(page.getByTestId("document-sheet-list")).toBeVisible();

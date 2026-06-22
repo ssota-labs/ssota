@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server";
-import { getConnectInstallation, getDb } from "@ssota/agent-runtime";
+import {
+  getConnectInstallation,
+  getDb,
+  normalizeConnectInstallationId,
+} from "@ssota/agent-runtime";
 import {
   createAccountConnectionPort,
   createChatWorkspacePort,
-  createDbAccountReadPort,
 } from "@ssota/adapter-postgres";
 import { providerOf, resolveAuthorizeScopes } from "@/lib/connect/connectors";
+import {
+  isApiAccountScopeError,
+  resolveApiAccountScope,
+} from "@/lib/api/resolve-api-account-scope";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -37,10 +44,10 @@ export async function GET(request: Request) {
   const userId = url.searchParams.get("userId") ?? undefined;
   // Connect may append the new installation id on the redirect; fall back to
   // the connector's default installation otherwise.
-  const installationId =
+  const installationId = normalizeConnectInstallationId(
     url.searchParams.get("installationId") ??
-    url.searchParams.get("installation_id") ??
-    undefined;
+      url.searchParams.get("installation_id"),
+  );
 
   if (!connector) {
     return NextResponse.json(
@@ -71,18 +78,28 @@ export async function GET(request: Request) {
       if (sessionUser && userId && sessionUser.id !== userId) {
         return NextResponse.json({ error: "User mismatch" }, { status: 403 });
       }
-      if (sessionUser) {
-        await createDbAccountReadPort(getDb()).assertAccountAccess(
-          sessionUser.id,
-          accountId,
-        );
+      if (sessionUser && projectId) {
+        try {
+          await resolveApiAccountScope(projectId, {
+            returnTo,
+            requestedAccountId: accountId,
+          });
+        } catch (error) {
+          if (isApiAccountScopeError(error)) {
+            return NextResponse.json({ error: error.message }, { status: error.status });
+          }
+          throw error;
+        }
       }
 
       await createAccountConnectionPort(getDb()).record({
         projectId,
         accountId,
         connector,
-        installationId: installation.installationId ?? installationId ?? null,
+        installationId:
+          normalizeConnectInstallationId(
+            installation.installationId ?? installationId,
+          ) ?? null,
         tenantId: installation.tenantId ?? null,
         name: installation.name ?? null,
         subjectUserId: userId ?? null,

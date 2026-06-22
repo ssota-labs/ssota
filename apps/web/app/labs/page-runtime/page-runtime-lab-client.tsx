@@ -47,6 +47,7 @@ function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
         <DynamicPageRenderer
           spec={demo.spec}
           bindingData={demo.bindingData ?? {}}
+          fillHeight={fillsViewport}
           onAction={async (actionKey, input) => {
             setLastAction(`${actionKey}(${JSON.stringify(input)})`);
           }}

@@ -5,6 +5,7 @@ import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { TreePageView } from "@/lib/page-runtime/tree-page-view";
 import { pageUsesDocumentSheetList } from "@/lib/page-runtime/spec-utils";
+import { runPageAction } from "@/lib/page-runtime/run-page-action";
 
 /**
  * Notion-style page renderer. Loads a page from the `pages` table by id, resolves
@@ -53,6 +54,21 @@ export default async function TreePage({
   const fillHeight = pageUsesDocumentSheetList(page.spec);
   const basePath = `/${orgSlug}/${projectSlug}`;
 
+  async function onAction(
+    actionKey: string,
+    input: Record<string, unknown>,
+  ): Promise<void> {
+    "use server";
+    await runPageAction({
+      projectId: project.id,
+      pageId,
+      actionKey,
+      input,
+      subjectNodeId: page!.subjectNodeId ?? null,
+      revalidate: [`/${orgSlug}/${projectSlug}/p/${pageId}`],
+    });
+  }
+
   return (
     <div
       className={
@@ -62,12 +78,10 @@ export default async function TreePage({
       }
     >
       <TreePageView
-        orgSlug={orgSlug}
-        projectSlug={projectSlug}
-        pageId={pageId}
         spec={page.spec}
         bindingData={bindingData}
         basePath={basePath}
+        onAction={onAction}
       />
     </div>
   );

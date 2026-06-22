@@ -124,6 +124,15 @@ export interface ConnectCredentialScope {
   subjectUserId: string | null;
 }
 
+export interface ConnectCredentialScopeRecord extends ConnectCredentialScope {
+  connector: string;
+  installationName: string | null;
+}
+
+function providerOfConnectorUid(connectorUid: string): string {
+  return connectorUid.split("/")[0] ?? connectorUid;
+}
+
 /**
  * Writer/reader for an account's third-party connections (Vercel Connect).
  * `record` upserts on (accountId, connector, installationId) so connectors that
@@ -132,33 +141,75 @@ export interface ConnectCredentialScope {
  * `getInstallationId` is used at tool-execution time to scope `getToken`.
  */
 export function createAccountConnectionPort(db: Db) {
+  async function listConnectCredentialScopes(
+    accountId: string,
+    connector?: string,
+  ): Promise<ConnectCredentialScopeRecord[]> {
+    const rows = await db
+      .select({
+        connector: accountConnections.connector,
+        installationId: accountConnections.installationId,
+        subjectUserId: accountConnections.subjectUserId,
+        name: accountConnections.name,
+        tenantId: accountConnections.tenantId,
+      })
+      .from(accountConnections)
+      .where(
+        connector
+          ? and(
+              eq(accountConnections.accountId, accountId),
+              eq(accountConnections.connector, connector),
+            )
+          : eq(accountConnections.accountId, accountId),
+      )
+      .orderBy(desc(accountConnections.updatedAt));
+
+    return rows.map((row) => ({
+      connector: row.connector,
+      installationId:
+        row.installationId && row.installationId.toLowerCase() !== "empty"
+          ? row.installationId
+          : null,
+      subjectUserId: row.subjectUserId ?? null,
+      installationName: row.name ?? row.tenantId ?? null,
+    }));
+  }
+
+  async function listConnectCredentialScopesForProvider(
+    accountId: string,
+    provider: string,
+  ): Promise<ConnectCredentialScopeRecord[]> {
+    const rows = await listConnectCredentialScopes(accountId);
+    return rows.filter(
+      (row) => providerOfConnectorUid(row.connector) === provider,
+    );
+  }
+
   async function getConnectCredentialScope(
     accountId: string,
     connector: string,
   ): Promise<ConnectCredentialScope | null> {
-    const [row] = await db
-      .select({
-        installationId: accountConnections.installationId,
-        subjectUserId: accountConnections.subjectUserId,
-      })
-      .from(accountConnections)
-      .where(
-        and(
-          eq(accountConnections.accountId, accountId),
-          eq(accountConnections.connector, connector),
-        ),
-      )
-      .limit(1);
+    const [row] = await listConnectCredentialScopes(accountId, connector);
     if (!row) return null;
     return {
-      installationId: row.installationId ? row.installationId : null,
+      installationId:
+        row.installationId && row.installationId.toLowerCase() !== "empty"
+          ? row.installationId
+          : null,
       subjectUserId: row.subjectUserId ?? null,
     };
   }
 
+  function storageInstallationId(id: string | null | undefined): string {
+    if (!id) return "";
+    const trimmed = id.trim();
+    if (!trimmed || trimmed.toLowerCase() === "empty") return "";
+    return trimmed;
+  }
+
   return {
     async record(input: RecordAccountConnectionInput): Promise<void> {
-      const installationId = input.installationId ?? "";
+      const installationId = storageInstallationId(input.installationId);
       await db
         .insert(accountConnections)
         .values({
@@ -204,6 +255,66 @@ export function createAccountConnectionPort(db: Db) {
       return rows;
     },
 
+    async getById(
+      id: string,
+      accountId: string,
+    ): Promise<(AccountConnectionRecord & { projectId: string }) | null> {
+      const [row] = await db
+        .select({
+          id: accountConnections.id,
+          projectId: accountConnections.projectId,
+          connector: accountConnections.connector,
+          installationId: accountConnections.installationId,
+          tenantId: accountConnections.tenantId,
+          name: accountConnections.name,
+          subjectUserId: accountConnections.subjectUserId,
+          createdAt: accountConnections.createdAt,
+          updatedAt: accountConnections.updatedAt,
+        })
+        .from(accountConnections)
+        .where(
+          and(
+            eq(accountConnections.id, id),
+            eq(accountConnections.accountId, accountId),
+          ),
+        )
+        .limit(1);
+      return row ?? null;
+    },
+
+    async updateDisplayMetadata(
+      id: string,
+      accountId: string,
+      patch: {
+        name?: string | null;
+        tenantId?: string | null;
+        installationId?: string | null;
+      },
+    ): Promise<void> {
+      const updates: {
+        name?: string | null;
+        tenantId?: string | null;
+        installationId?: string;
+        updatedAt: Date;
+      } = { updatedAt: new Date() };
+      if (patch.name !== undefined) updates.name = patch.name;
+      if (patch.tenantId !== undefined) updates.tenantId = patch.tenantId;
+      if (patch.installationId !== undefined) {
+        updates.installationId = storageInstallationId(patch.installationId);
+      }
+      if (Object.keys(updates).length === 1) return;
+
+      await db
+        .update(accountConnections)
+        .set(updates)
+        .where(
+          and(
+            eq(accountConnections.id, id),
+            eq(accountConnections.accountId, accountId),
+          ),
+        );
+    },
+
     /** Disconnect a single installation, scoped to the owning account. */
     async remove(id: string, accountId: string): Promise<void> {
       await db
@@ -225,5 +336,7 @@ export function createAccountConnectionPort(db: Db) {
     },
 
     getConnectCredentialScope,
+    listConnectCredentialScopes,
+    listConnectCredentialScopesForProvider,
   };
 }
