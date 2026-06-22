@@ -57,10 +57,17 @@ type ConnectTokenSubject =
   | { type: "app" }
   | { type: "user"; id: string };
 
-function resolveConnectTokenSubject(
+export function resolveConnectTokenSubject(
   connectorUid: string,
   scope: CredentialScope,
 ): ConnectTokenSubject {
+  const provider = connectorUid.split("/")[0] ?? connectorUid;
+  // Slack MCP (https://mcp.slack.com/mcp) requires user OAuth tokens (xoxp), not
+  // app/bot installation tokens. Mint user-subject when the install row has a
+  // subject user (chat / per-user Connect authorize flow).
+  if (provider === "slack" && scope.userId) {
+    return { type: "user", id: scope.userId };
+  }
   if (connectUsesAppSubject(connectorUid)) {
     return { type: "app" };
   }

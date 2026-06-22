@@ -33,9 +33,20 @@ function labelForTool(toolName: string): string {
 
 function summarizeOutput(toolName: string, output: unknown): string | null {
   if (toolName === "connection_search" && output && typeof output === "object") {
-    const tools = (output as { tools?: Array<{ qualifiedName?: string }> }).tools;
+    const payload = output as {
+      tools?: Array<{ qualifiedName?: string }>;
+      errors?: Array<{ connection?: string; message?: string }>;
+    };
+    const tools = payload.tools;
     const count = tools?.length ?? 0;
-    return count > 0 ? `${count}개 도구 발견` : "연결된 도구 없음";
+    if (count > 0) return `${count}개 도구 발견`;
+    const err = payload.errors?.[0];
+    if (err?.message) {
+      return err.connection
+        ? `${err.connection}: ${err.message}`
+        : err.message;
+    }
+    return "연결된 도구 없음";
   }
   if (output && typeof output === "object" && "ok" in output) {
     const record = output as { ok?: boolean; error?: string };

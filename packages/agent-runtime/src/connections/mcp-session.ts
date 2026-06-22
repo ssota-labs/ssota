@@ -69,10 +69,10 @@ export class McpSessionManager {
   async listTools(
     connection: McpConnectionDef,
     scope: McpSessionScope,
-  ): Promise<McpToolListing[]> {
+  ): Promise<{ tools: McpToolListing[]; error?: string }> {
     const key = sessionKey(connection.id, scope);
     const cached = this.listCache.get(key);
-    if (cached) return cached;
+    if (cached) return { tools: cached };
 
     if (useMcpStub()) {
       const stub = filterMcpTools(
@@ -80,11 +80,11 @@ export class McpSessionManager {
         connection.tools,
       );
       this.listCache.set(key, stub);
-      return stub;
+      return { tools: stub };
     }
 
     const connectorUid = resolveConnectorUid(connection.auth.provider);
-    if (!connectorUid) return [];
+    if (!connectorUid) return { tools: [] };
 
     const cred = await this.credentials.getToken(connectorUid, {
       projectId: scope.projectId,
@@ -98,13 +98,14 @@ export class McpSessionManager {
         reason: "no_credential",
         installationId: scope.installationId ?? null,
       });
-      return [];
+      return { tools: [] };
     }
 
     try {
       logMcp("connect", connection, {
         installationId: scope.installationId ?? null,
         hasToken: true,
+        userId: scope.userId ?? null,
       });
       const client = await experimental_createMCPClient({
         transport: {
@@ -131,14 +132,16 @@ export class McpSessionManager {
         toolCount: filtered.length,
         installationId: scope.installationId ?? null,
       });
-      return filtered;
+      return { tools: filtered };
     } catch (error) {
+      const message = formatMcpError(error);
       logMcp("listTools", connection, {
         outcome: "error",
-        error: formatMcpError(error),
+        error: message,
         installationId: scope.installationId ?? null,
+        userId: scope.userId ?? null,
       });
-      return [];
+      return { tools: [], error: message };
     }
   }
 

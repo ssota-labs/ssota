@@ -10,6 +10,7 @@ import { getDb } from "../ports.js";
 import { resolveConnectorUid } from "../connections/connect-credential.js";
 import type { McpConnectionDef } from "../connections/define-mcp-connection.js";
 import { getConfiguredConnections } from "../connections/registry.js";
+import type { McpToolListing } from "../connections/filter-tools.js";
 import { McpSessionManager } from "../connections/mcp-session.js";
 import {
   getKnownToolsForConnection,
@@ -189,7 +190,7 @@ function buildConnectionSearchTool(
           accountId: ctx.accountId ?? null,
         }),
       );
-      const result: ConnectionSearchResult = { connections: [], tools: [] };
+      const result: ConnectionSearchResult = { connections: [], tools: [], errors: [] };
 
       for (const connection of connections) {
         if (connectionFilter && connectionFilter !== connection.id) {
@@ -245,19 +246,32 @@ function buildConnectionSearchTool(
 
           if (!connected) continue;
 
-          let listings: Awaited<ReturnType<McpSessionManager["listTools"]>> = [];
+          let listings: McpToolListing[] = [];
+          let listError: string | undefined;
           try {
-            listings = await input.sessionManager.listTools(connection, {
+            const listed = await input.sessionManager.listTools(connection, {
               projectId: ctx.projectId,
               accountId: ctx.accountId,
               installationId: install.installationId,
               userId: install.subjectUserId,
             });
+            listings = listed.tools;
+            listError = listed.error;
           } catch (error) {
+            listError =
+              error instanceof Error ? error.message : String(error);
             console.warn(
               `[connection_search] listTools failed for ${connection.id}:`,
-              error instanceof Error ? error.message : error,
+              listError,
             );
+          }
+
+          if (listError) {
+            result.errors?.push({
+              connection: connection.id,
+              installationId: install.installationId,
+              message: listError,
+            });
           }
 
           for (const listing of listings) {
@@ -291,6 +305,9 @@ function buildConnectionSearchTool(
       }
 
       state?.activateFromSearch(result.tools);
+      if (result.errors?.length === 0) {
+        delete result.errors;
+      }
       console.log(
         JSON.stringify({
           component: "connection_search",

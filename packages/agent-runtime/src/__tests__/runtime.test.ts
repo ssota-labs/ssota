@@ -12,6 +12,7 @@ import {
   getConnectInstallation,
   normalizeConnectInstallationId,
   resolveConnectCallbackSubject,
+  resolveConnectTokenSubject,
   startConnectAuthorization,
 } from "../credentials/provider.js";
 import { buildRunInstructions } from "../runtime-prompt.js";
@@ -156,6 +157,27 @@ describe("connectUsesAppSubject", () => {
     expect(connectUsesAppSubject("oauth/ssota-notion")).toBe(false);
     expect(connectUsesAppSubject("oauth/linear")).toBe(false);
     expect(connectUsesAppSubject("linear/mybot")).toBe(false);
+  });
+});
+
+describe("resolveConnectTokenSubject", () => {
+  it("uses user subject for Slack MCP when userId is present", () => {
+    expect(
+      resolveConnectTokenSubject("slack/dev", {
+        projectId: "p",
+        userId: "user-42",
+        installationId: "T0914DV7GA0",
+      }),
+    ).toEqual({ type: "user", id: "user-42" });
+  });
+
+  it("uses app subject for Slack when userId is absent (bot / server flows)", () => {
+    expect(
+      resolveConnectTokenSubject("slack/dev", {
+        projectId: "p",
+        installationId: "T0914DV7GA0",
+      }),
+    ).toEqual({ type: "app" });
   });
 });
 
