@@ -18,6 +18,11 @@ export { createGraphReadPort } from "./graph-read-port.js";
 export { createGraphWritePort } from "./graph-write-port.js";
 export { createWorkflowPort, seedWorkflows } from "./workflow-port.js";
 export { createPagePort, seedPages } from "./page-port.js";
+export {
+  applyTemplate,
+  SOFTWARE_DEV_TEMPLATE,
+  BUILTIN_TEMPLATES,
+} from "./templates.js";
 
 function mapTask(row: typeof schema.tasks.$inferSelect): Task {
   return {

@@ -10,9 +10,7 @@ import {
   SMOKE_PASSWORD,
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
-import { seedDomainCatalog } from "../ports/db-catalog-read-port.js";
-import { seedWorkflows } from "../ports/workflow-port.js";
-import { seedPages } from "../ports/page-port.js";
+import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -154,10 +152,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .onConflictDoNothing();
 
     await seedGraphInstances(db, projectId);
-    await seedWorkflows(db, projectId);
-    await seedPages(db, projectId);
-
-    await seedDomainCatalog(db, projectId);
+    await applyTemplate(db, projectId, SOFTWARE_DEV_TEMPLATE);
   }
 
   return { organizationId, projectId };
@@ -195,9 +190,7 @@ async function seedAllProjectCatalogs(db: ReturnType<typeof createDb>["db"]) {
     .select({ id: schema.projects.id })
     .from(schema.projects);
   for (const { id } of projects) {
-    await seedDomainCatalog(db, id);
-    await seedWorkflows(db, id);
-    await seedPages(db, id);
+    await applyTemplate(db, id, SOFTWARE_DEV_TEMPLATE);
   }
 }
 

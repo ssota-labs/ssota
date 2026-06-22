@@ -181,8 +181,12 @@ interface PageTreeSeedEntry {
  * resolves against already-inserted rows. Call alongside `seedWorkflows` /
  * `seedDomainCatalog` at project creation.
  */
-export async function seedPages(db: Db, projectId: string): Promise<void> {
-  const entries = pagesTreeSeed as unknown as PageTreeSeedEntry[];
+export async function seedPages(
+  db: Db,
+  projectId: string,
+  pages: PageTreeSeedEntry[] = pagesTreeSeed as unknown as PageTreeSeedEntry[],
+): Promise<void> {
+  const entries = pages;
   const keyToId = new Map<string, string>();
   const positionByParent = new Map<string, number>();
 

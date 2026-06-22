@@ -11,9 +11,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { seedDomainCatalog } from "./db-catalog-read-port.js";
-import { seedWorkflows } from "./workflow-port.js";
-import { seedPages } from "./page-port.js";
+import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "./templates.js";
 
 function parseLocale(value: string | null | undefined): Locale {
   if (value && (LOCALES as readonly string[]).includes(value)) {
@@ -231,12 +229,10 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         return { organization, project };
       });
 
-      await seedDomainCatalog(db, result.project.id);
-      // Workflows are a core, domain-agnostic concept — bootstrap-seed alongside
-      // the catalog.
-      await seedWorkflows(db, result.project.id);
-      // Notion-style page tree (pages table) — the sole page system.
-      await seedPages(db, result.project.id);
+      // Seed the project from a template bundle (catalog → workflows → pages).
+      // Defaults to the built-in Software Development template; a template
+      // picker / marketplace will choose the bundle in a later step.
+      await applyTemplate(db, result.project.id, SOFTWARE_DEV_TEMPLATE);
 
       return result;
     },
