@@ -1,7 +1,6 @@
 import type { GraphEdge, GraphNode } from "@ssota/core";
 import { getNodeTypeEntry } from "@ssota/contracts";
-import { nodeDetailPath, resolveNodeRoute } from "@/lib/console/resolve-node-route";
-import type { ProjectRouteContext } from "@/lib/console/paths";
+import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { getGraphDeps } from "../graph-deps";
 
 export type NodeEdgeView = {
@@ -72,12 +71,15 @@ export async function getNodeDetailView(
 
   const entry = getNodeTypeEntry(node.catalogKey);
 
+  // All nodes are addressed by the unified node route `/n/[id]` (template-or-
+  // generic detail). Replaces the per-type resolveNodeRoute switch.
+  const nodePath = projectPath(ctx, "n", node.id);
   return {
     node,
     typeLabel: entry?.label ?? node.catalogKey,
     mutability: entry?.mutability ?? "living",
-    canonicalRoute: await resolveNodeRoute(ctx, projectId, node),
-    detailPath: nodeDetailPath(ctx, node.id),
+    canonicalRoute: nodePath,
+    detailPath: nodePath,
     incomingEdges: await mapEdges(incoming, "incoming", projectId),
     outgoingEdges: await mapEdges(outgoing, "outgoing", projectId),
   };

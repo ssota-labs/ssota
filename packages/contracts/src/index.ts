@@ -7,4 +7,3 @@ export * from "./workflow-store.js";
 export * from "./task.js";
 export * from "./catalog/index.js";
 export * from "./page/index.js";
-export * from "./workspace/index.js";

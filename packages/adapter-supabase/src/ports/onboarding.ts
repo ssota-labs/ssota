@@ -1,5 +1,4 @@
 import { toRouteSlug } from "@ssota/core";
-import { applyDomainPack } from "@ssota/core/seed-packs/apply-domain-pack";
 import {
   DEFAULT_LOCALE,
   LOCALES,
@@ -12,9 +11,9 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { createGraphPorts } from "./create-graph-ports.js";
 import { seedDomainCatalog } from "./db-catalog-read-port.js";
 import { seedWorkflows } from "./workflow-port.js";
+import { seedPages } from "./page-port.js";
 
 function parseLocale(value: string | null | undefined): Locale {
   if (value && (LOCALES as readonly string[]).includes(value)) {
@@ -232,17 +231,12 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         return { organization, project };
       });
 
-      const ports = createGraphPorts(db, { projectId: result.project.id });
       await seedDomainCatalog(db, result.project.id);
       // Workflows are a core, domain-agnostic concept — bootstrap-seed alongside
-      // the catalog, not inside the domain example pack.
+      // the catalog.
       await seedWorkflows(db, result.project.id);
-      await applyDomainPack({
-        projectId: result.project.id,
-        catalog: ports.catalog,
-        graphRead: ports.graphRead,
-        graphWrite: ports.graphWrite,
-      });
+      // Notion-style page tree (pages table) — the sole page system.
+      await seedPages(db, result.project.id);
 
       return result;
     },

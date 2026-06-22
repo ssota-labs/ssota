@@ -24,6 +24,13 @@ export const bindingDefSchema = z.discriminatedUnion("kind", [
     nodeId: z.string().uuid(),
   }),
   z.object({
+    // The page's anchor node (from `pages.subject_node_id`), supplied at render
+    // time via the binding context. Generic replacement for initiative-scoping:
+    // a dashboard page bound to a specific node resolves its subject here, and
+    // `traverse`/`artifact` bindings can reference it by `from: "subject"`.
+    kind: z.literal("subject"),
+  }),
+  z.object({
     kind: z.literal("traverse"),
     from: z.string().min(1),
     edgeCatalogKey: z.string().min(1),
@@ -119,41 +126,84 @@ export const pageActionSchema = z.discriminatedUnion("kind", [
 
 export type PageAction = z.infer<typeof pageActionSchema>;
 
-export const pageContextDefSchema = z.object({
-  initiativeId: z.string().optional(),
-});
+/**
+ * Validate that every element's `binding`/`action` prop references a defined
+ * binding/action.
+ */
+function refineSpecReferences(
+  value: {
+    spec: JsonRenderSpec;
+    bindings: Record<string, unknown>;
+    actions: Record<string, unknown>;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  const bindingKeys = new Set(Object.keys(value.bindings));
+  const actionKeys = new Set(Object.keys(value.actions));
+  for (const [elementId, element] of Object.entries(value.spec.elements)) {
+    const props = element.props ?? {};
+    const bindingKey = props.binding;
+    if (typeof bindingKey === "string" && !bindingKeys.has(bindingKey)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Element '${elementId}' references unknown binding '${bindingKey}'`,
+        path: ["spec", "elements", elementId, "props", "binding"],
+      });
+    }
+    const actionKey = props.action;
+    if (typeof actionKey === "string" && !actionKeys.has(actionKey)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Element '${elementId}' references unknown action '${actionKey}'`,
+        path: ["spec", "elements", elementId, "props", "action"],
+      });
+    }
+  }
+}
 
-export const pageRuntimeDefinitionSchema = z
+/**
+ * A page in the Notion-style tree. NOT 1:1 with a node or workflow: a page is a
+ * JSON-render dashboard (places catalog components) that loads node/edge data via
+ * `bindings`. Hierarchy is `parentId` (recursive tree); addressing is flat by id.
+ * `subjectNodeId` optionally anchors bindings to a node (generic replacement for
+ * the old scope / `{$ctx:initiativeId}`). The `id`/tree fields are managed by the
+ * store; this schema validates the editable content of a page record.
+ */
+export const pageRecordSchema = z
   .object({
-    routeKey: z.string().min(1),
-    scope: z.enum(["project", "evergreen", "initiative"]),
+    title: z.string().min(1),
+    icon: z.string().optional(),
+    slug: z.string().min(1).optional(),
+    parentId: z.string().uuid().nullable().optional(),
+    position: z.number().int().nonnegative().optional(),
+    subjectNodeId: z.string().uuid().nullable().optional(),
+    /** When set, a node-type drill-in template (renders for that catalogKey). */
+    appliesToNodeType: z.string().min(1).nullable().optional(),
     spec: jsonRenderSpecSchema,
     bindings: z.record(bindingDefSchema).default({}),
     actions: z.record(pageActionSchema).default({}),
-    context: pageContextDefSchema.optional(),
   })
-  .superRefine((value, ctx) => {
-    const bindingKeys = new Set(Object.keys(value.bindings));
-    const actionKeys = new Set(Object.keys(value.actions));
-    for (const [elementId, element] of Object.entries(value.spec.elements)) {
-      const props = element.props ?? {};
-      const bindingKey = props.binding;
-      if (typeof bindingKey === "string" && !bindingKeys.has(bindingKey)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Element '${elementId}' references unknown binding '${bindingKey}'`,
-          path: ["spec", "elements", elementId, "props", "binding"],
-        });
-      }
-      const actionKey = props.action;
-      if (typeof actionKey === "string" && !actionKeys.has(actionKey)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Element '${elementId}' references unknown action '${actionKey}'`,
-          path: ["spec", "elements", elementId, "props", "action"],
-        });
-      }
-    }
-  });
+  .superRefine(refineSpecReferences);
 
-export type PageRuntimeDefinition = z.infer<typeof pageRuntimeDefinitionSchema>;
+export type PageRecord = z.infer<typeof pageRecordSchema>;
+
+/** A persisted page: a {@link PageRecord} plus store-managed identity fields. */
+export const pageSchema = z
+  .object({
+    id: z.string().uuid(),
+    projectId: z.string().uuid(),
+    accountId: z.string().uuid().nullable().optional(),
+    title: z.string().min(1),
+    icon: z.string().nullable().optional(),
+    slug: z.string().nullable().optional(),
+    parentId: z.string().uuid().nullable().optional(),
+    position: z.number().int().nonnegative(),
+    subjectNodeId: z.string().uuid().nullable().optional(),
+    appliesToNodeType: z.string().min(1).nullable().optional(),
+    spec: jsonRenderSpecSchema,
+    bindings: z.record(bindingDefSchema).default({}),
+    actions: z.record(pageActionSchema).default({}),
+  })
+  .superRefine(refineSpecReferences);
+
+export type Page = z.infer<typeof pageSchema>;
