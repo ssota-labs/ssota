@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getConnectInstallation, getDb } from "@ssota/agent-runtime";
+import {
+  getConnectInstallation,
+  getDb,
+  normalizeConnectInstallationId,
+} from "@ssota/agent-runtime";
 import {
   createAccountConnectionPort,
   createChatWorkspacePort,
@@ -40,10 +44,10 @@ export async function GET(request: Request) {
   const userId = url.searchParams.get("userId") ?? undefined;
   // Connect may append the new installation id on the redirect; fall back to
   // the connector's default installation otherwise.
-  const installationId =
+  const installationId = normalizeConnectInstallationId(
     url.searchParams.get("installationId") ??
-    url.searchParams.get("installation_id") ??
-    undefined;
+      url.searchParams.get("installation_id"),
+  );
 
   if (!connector) {
     return NextResponse.json(
@@ -92,7 +96,10 @@ export async function GET(request: Request) {
         projectId,
         accountId,
         connector,
-        installationId: installation.installationId ?? installationId ?? null,
+        installationId:
+          normalizeConnectInstallationId(
+            installation.installationId ?? installationId,
+          ) ?? null,
         tenantId: installation.tenantId ?? null,
         name: installation.name ?? null,
         subjectUserId: userId ?? null,

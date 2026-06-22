@@ -166,7 +166,10 @@ export function createAccountConnectionPort(db: Db) {
 
     return rows.map((row) => ({
       connector: row.connector,
-      installationId: row.installationId ? row.installationId : null,
+      installationId:
+        row.installationId && row.installationId.toLowerCase() !== "empty"
+          ? row.installationId
+          : null,
       subjectUserId: row.subjectUserId ?? null,
       installationName: row.name ?? row.tenantId ?? null,
     }));
@@ -189,14 +192,24 @@ export function createAccountConnectionPort(db: Db) {
     const [row] = await listConnectCredentialScopes(accountId, connector);
     if (!row) return null;
     return {
-      installationId: row.installationId,
-      subjectUserId: row.subjectUserId,
+      installationId:
+        row.installationId && row.installationId.toLowerCase() !== "empty"
+          ? row.installationId
+          : null,
+      subjectUserId: row.subjectUserId ?? null,
     };
+  }
+
+  function storageInstallationId(id: string | null | undefined): string {
+    if (!id) return "";
+    const trimmed = id.trim();
+    if (!trimmed || trimmed.toLowerCase() === "empty") return "";
+    return trimmed;
   }
 
   return {
     async record(input: RecordAccountConnectionInput): Promise<void> {
-      const installationId = input.installationId ?? "";
+      const installationId = storageInstallationId(input.installationId);
       await db
         .insert(accountConnections)
         .values({
@@ -240,6 +253,58 @@ export function createAccountConnectionPort(db: Db) {
         .where(eq(accountConnections.accountId, accountId))
         .orderBy(desc(accountConnections.createdAt));
       return rows;
+    },
+
+    async getById(
+      id: string,
+      accountId: string,
+    ): Promise<(AccountConnectionRecord & { projectId: string }) | null> {
+      const [row] = await db
+        .select({
+          id: accountConnections.id,
+          projectId: accountConnections.projectId,
+          connector: accountConnections.connector,
+          installationId: accountConnections.installationId,
+          tenantId: accountConnections.tenantId,
+          name: accountConnections.name,
+          subjectUserId: accountConnections.subjectUserId,
+          createdAt: accountConnections.createdAt,
+          updatedAt: accountConnections.updatedAt,
+        })
+        .from(accountConnections)
+        .where(
+          and(
+            eq(accountConnections.id, id),
+            eq(accountConnections.accountId, accountId),
+          ),
+        )
+        .limit(1);
+      return row ?? null;
+    },
+
+    async updateDisplayMetadata(
+      id: string,
+      accountId: string,
+      patch: { name?: string | null; tenantId?: string | null },
+    ): Promise<void> {
+      const updates: {
+        name?: string | null;
+        tenantId?: string | null;
+        updatedAt: Date;
+      } = { updatedAt: new Date() };
+      if (patch.name !== undefined) updates.name = patch.name;
+      if (patch.tenantId !== undefined) updates.tenantId = patch.tenantId;
+      if (Object.keys(updates).length === 1) return;
+
+      await db
+        .update(accountConnections)
+        .set(updates)
+        .where(
+          and(
+            eq(accountConnections.id, id),
+            eq(accountConnections.accountId, accountId),
+          ),
+        );
     },
 
     /** Disconnect a single installation, scoped to the owning account. */
