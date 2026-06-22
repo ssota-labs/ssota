@@ -34,7 +34,7 @@ function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
           Interactive elements log actions here (Toolbar, Button, Input, editors).
         </p>
       )}
-      <div className="border-border bg-background rounded-lg border p-4">
+      <div className="border-border bg-background relative min-h-[32rem] overflow-hidden rounded-lg border p-4">
         <DynamicPageRenderer
           spec={demo.spec}
           bindingData={demo.bindingData ?? {}}

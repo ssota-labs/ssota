@@ -558,24 +558,18 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     category: "document",
     title: "DocumentSheetList",
     description:
-      "Card-style document rows — click opens a right-side sheet with BlockNote (roadmap pattern).",
-    components: ["Section", "DocumentSheetList"],
+      "Card rows in a parent region — click opens an in-panel overlay + right BlockNote sheet (not a viewport portal).",
+    components: ["DocumentSheetList"],
     spec: {
-      root: "section",
+      root: "list",
       elements: {
-        section: {
-          type: "Section",
-          props: {
-            title: "Planning roadmaps",
-            subtitle:
-              "Accordion 대신 카드 행 클릭 → 우측 시트에서 BlockNote 문서",
-          },
-          children: ["list"],
-        },
         list: {
           type: "DocumentSheetList",
           props: {
             binding: "roadmaps",
+            sectionTitle: "Planning roadmaps",
+            sectionSubtitle:
+              "카드 행 클릭 → 부모 영역 안에서 dim + 우측 패널 BlockNote",
             title: "Product roadmap documents",
             field: "content",
             subtitleField: "summary",

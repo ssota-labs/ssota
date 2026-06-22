@@ -63,6 +63,14 @@ export const documentComponents: Record<string, CatalogComponent> = {
     <DocumentSheetListEl
       nodes={boundNodes(bindingData, props)}
       title={props.title ? String(props.title) : undefined}
+      sectionTitle={
+        typeof props.sectionTitle === "string" ? props.sectionTitle : undefined
+      }
+      sectionSubtitle={
+        typeof props.sectionSubtitle === "string"
+          ? props.sectionSubtitle
+          : undefined
+      }
       field={typeof props.field === "string" ? props.field : "content"}
       subtitleField={
         typeof props.subtitleField === "string" ? props.subtitleField : "summary"
