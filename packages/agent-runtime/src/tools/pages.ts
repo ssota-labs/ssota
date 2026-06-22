@@ -1,5 +1,9 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
+import {
+  listPageComponents,
+  getPageComponent,
+} from "@ssota/contracts/page";
 import { getPagePort } from "../ports.js";
 import { getRunContext } from "./context.js";
 
@@ -12,15 +16,47 @@ import { getRunContext } from "./context.js";
  */
 const SPEC_HELP =
   "spec: { root, elements } where each element is { type, props?, children? }. " +
-  "Component types: PageHeader, Section, Text, Badge, Card, Tabs, Toolbar, SplitPane, NodeList, " +
-  "NodeTable, NodeField, NodeDocument, DocumentView, DocumentEditor, TokenList, " +
-  "Widget, Form, Field, Button, Input, Textarea, Select. " +
-  "bindings (kind: query|singleton|node|traverse|ref|artifact|subject) pull " +
-  "graph data; an element references one via props.binding. `subject` resolves " +
-  "the page's subjectNodeId.";
+  "Call list_page_components / get_page_component for the component catalog " +
+  "(keys, props, examples). bindings (kind: query|singleton|node|traverse|ref|" +
+  "artifact|subject) pull graph data; an element references one via props.binding. " +
+  "`subject` resolves the page's subjectNodeId.";
 
 export function createPageTools(): ToolSet {
   return {
+    list_page_components: tool({
+      description:
+        "List the json-render page component catalog (key, category, description). Call before authoring a page to learn the available building blocks; use get_page_component for a component's props and example.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        return {
+          components: listPageComponents().map((c) => ({
+            key: c.key,
+            category: c.category,
+            description: c.description,
+            children: c.children,
+          })),
+        };
+      },
+    }),
+
+    get_page_component: tool({
+      description:
+        "Get a page component's full descriptor: props (name, type, required) and a copy-paste example element. Use when authoring a page spec.",
+      inputSchema: z.object({
+        key: z.string().describe("Component key, e.g. 'NodeTable'."),
+      }),
+      execute: async (input) => {
+        const descriptor = getPageComponent(input.key);
+        if (!descriptor) {
+          return {
+            found: false,
+            hint: "Unknown component. Call list_page_components for valid keys.",
+          };
+        }
+        return { found: true, ...descriptor };
+      },
+    }),
+
     create_page: tool({
       description:
         "Create a page in the Notion-style page tree (pages table). " + SPEC_HELP,
