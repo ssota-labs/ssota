@@ -64,6 +64,11 @@ function periodTitle(year: number, period: PlanningPeriod): string {
   return `${year} Q${period} 분기 로드맵`;
 }
 
+function periodCardTitle(period: PlanningPeriod): string {
+  if (period === "annual") return "Annual";
+  return `Q${period}`;
+}
+
 function periodTestId(period: PlanningPeriod): string {
   return period === "annual" ? "annual" : `q${period}`;
 }
@@ -217,52 +222,57 @@ export function RoadmapSheetWorkspaceEl({
             </div>
           ) : null}
 
-          <div
-            className="grid gap-3 sm:grid-cols-2"
-            data-testid="planning-roadmap-card-group"
-          >
-            {PERIODS.map((period) => {
-              const node = findPlanningNode(planningNodes, year, period);
-              const cardTestId = `planning-roadmap-card-${periodTestId(period)}`;
-              const eyebrow = `${t("roadmap.planningParent")} › ${
-                period === "annual" ? `${year} 연간` : `Q${period}`
-              }`;
+          <div className="-mx-1 overflow-x-auto px-1">
+            <div
+              className="grid min-w-[42rem] grid-cols-5 gap-3"
+              data-testid="planning-roadmap-card-group"
+            >
+              {PERIODS.map((period) => {
+                const node = findPlanningNode(planningNodes, year, period);
+                const cardTestId = `planning-roadmap-card-${periodTestId(period)}`;
+                const eyebrow = `${year} · ${
+                  period === "annual" ? "Annual" : `Q${period}`
+                }`;
+                const cardTitle = periodCardTitle(period);
 
-              if (node) {
+                if (node) {
+                  return (
+                    <RoadmapDocCard
+                      key={period}
+                      compact
+                      testId={cardTestId}
+                      eyebrow={eyebrow}
+                      title={cardTitle}
+                      subtitle={readNodeField(node, subtitleField)}
+                      status={readNodeField(node, statusField)}
+                      onOpen={() => openNode(node.id)}
+                    />
+                  );
+                }
+
                 return (
                   <RoadmapDocCard
                     key={period}
+                    compact
                     testId={cardTestId}
                     eyebrow={eyebrow}
-                    title={node.title}
-                    subtitle={readNodeField(node, subtitleField)}
-                    status={readNodeField(node, statusField)}
-                    onOpen={() => openNode(node.id)}
+                    title={cardTitle}
+                    empty
+                    emptyLabel={t("roadmap.emptyPlanningNotCreated")}
+                    createLabel={
+                      period === "annual"
+                        ? t("roadmap.createAnnual")
+                        : t("roadmap.createQuarter").replace("{quarter}", String(period))
+                    }
+                    onCreate={() =>
+                      period === "annual"
+                        ? handleCreateAnnual()
+                        : handleCreateQuarter(period)
+                    }
                   />
                 );
-              }
-
-              return (
-                <RoadmapDocCard
-                  key={period}
-                  testId={cardTestId}
-                  eyebrow={eyebrow}
-                  title={periodTitle(year, period)}
-                  empty
-                  emptyLabel={t("roadmap.emptyPlanningNotCreated")}
-                  createLabel={
-                    period === "annual"
-                      ? t("roadmap.createAnnual")
-                      : t("roadmap.createQuarter").replace("{quarter}", String(period))
-                  }
-                  onCreate={() =>
-                    period === "annual"
-                      ? handleCreateAnnual()
-                      : handleCreateQuarter(period)
-                  }
-                />
-              );
-            })}
+              })}
+            </div>
           </div>
         </section>
       </div>

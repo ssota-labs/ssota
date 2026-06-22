@@ -15,6 +15,7 @@ type RoadmapDocCardProps = {
   emptyLabel?: string;
   createLabel?: string;
   testId?: string;
+  compact?: boolean;
   onOpen?: () => void;
   onCreate?: () => void;
 };
@@ -28,6 +29,7 @@ export function RoadmapDocCard({
   emptyLabel,
   createLabel,
   testId,
+  compact = false,
   onOpen,
   onCreate,
 }: RoadmapDocCardProps) {
@@ -35,14 +37,19 @@ export function RoadmapDocCard({
     return (
       <div
         data-testid={testId}
-        className="border-border bg-muted/20 flex flex-col gap-3 rounded-lg border border-dashed p-4"
+        className={cn(
+          "border-border bg-muted/20 flex h-full flex-col gap-2 rounded-lg border border-dashed",
+          compact ? "p-3" : "gap-3 p-4",
+        )}
       >
         {eyebrow ? (
-          <p className="text-muted-foreground text-xs">{eyebrow}</p>
+          <p className="text-muted-foreground truncate text-xs">{eyebrow}</p>
         ) : null}
         <div className="space-y-1">
-          <h3 className="text-sm font-medium">{title}</h3>
-          {emptyLabel ? (
+          <h3 className={cn("font-medium", compact ? "text-xs" : "text-sm")}>
+            {title}
+          </h3>
+          {emptyLabel && !compact ? (
             <p className="text-muted-foreground text-xs">{emptyLabel}</p>
           ) : null}
         </div>
@@ -51,12 +58,13 @@ export function RoadmapDocCard({
             type="button"
             size="sm"
             variant="outline"
-            className="self-start"
+            className={cn("self-start", compact && "h-7 px-2 text-xs")}
             data-testid={testId ? `${testId}-create` : undefined}
             onClick={onCreate}
           >
-            <PlusIcon className="size-3.5" />
-            {createLabel}
+            <PlusIcon className={cn(compact ? "size-3" : "size-3.5")} />
+            {compact ? null : createLabel}
+            {compact ? <span className="sr-only">{createLabel}</span> : null}
           </Button>
         ) : null}
       </div>
@@ -68,24 +76,35 @@ export function RoadmapDocCard({
       type="button"
       data-testid={testId}
       className={cn(
-        "border-border bg-card hover:bg-muted/40 group flex w-full items-start gap-3 rounded-lg border p-4 text-left transition-colors",
+        "border-border bg-card hover:bg-muted/40 group flex h-full w-full items-start gap-2 rounded-lg border text-left transition-colors",
+        compact ? "p-3" : "gap-3 p-4",
       )}
       onClick={onOpen}
     >
-      <div className="min-w-0 flex-1 space-y-2">
+      <div className="min-w-0 flex-1 space-y-1.5">
         {eyebrow ? (
-          <p className="text-muted-foreground text-xs">{eyebrow}</p>
+          <p className="text-muted-foreground truncate text-xs">{eyebrow}</p>
         ) : null}
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold">{title}</h3>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <h3
+            className={cn(
+              "font-semibold",
+              compact ? "truncate text-xs" : "text-sm",
+            )}
+          >
+            {title}
+          </h3>
           {status ? <DocumentStatusBadge status={status} /> : null}
         </div>
-        {subtitle ? (
+        {subtitle && !compact ? (
           <p className="text-muted-foreground line-clamp-2 text-xs">{subtitle}</p>
         ) : null}
       </div>
       <CaretRightIcon
-        className="text-muted-foreground mt-1 size-4 shrink-0 opacity-70 transition-transform group-hover:translate-x-0.5"
+        className={cn(
+          "text-muted-foreground shrink-0 opacity-70 transition-transform group-hover:translate-x-0.5",
+          compact ? "mt-0.5 size-3.5" : "mt-1 size-4",
+        )}
         aria-hidden
       />
     </button>
