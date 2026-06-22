@@ -256,7 +256,9 @@ export async function getConnectInstallation(
       params: {
         subject: ConnectTokenSubject;
         installationId?: string;
+        scopes?: string[];
       },
+      options?: { forceRefresh?: boolean; vercelToken?: string },
     ) => Promise<{
       installationId?: string;
       tenantId?: string;
