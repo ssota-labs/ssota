@@ -20,6 +20,7 @@ import {
   isWorkflowChildVisible,
   isWorkflowGroupExpanded,
   isWorkflowGroupVisible,
+  WORKFLOW_SECTION_REVEAL_KEY,
 } from "./console-preview-provisioning";
 import { useProvisioningReveal } from "./use-provisioning-reveal";
 
@@ -64,6 +65,9 @@ function PreviewSwitcherTrigger({
   );
 }
 
+const WORKFLOW_REVEAL_ANIMATION =
+  "animate-in fade-in slide-in-from-bottom-3 duration-400";
+
 function PreviewNavLink({
   iconKey,
   label,
@@ -84,7 +88,7 @@ function PreviewNavLink({
         active
           ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
           : "text-muted-foreground",
-        isNew && "animate-in fade-in slide-in-from-left-2 duration-300",
+        isNew && WORKFLOW_REVEAL_ANIMATION,
         className,
       )}
     >
@@ -99,7 +103,7 @@ function PreviewSectionLabel({ label, isNew = false }: { label: string; isNew?: 
     <div
       className={cn(
         "px-2 py-1 text-xs font-medium tracking-wide text-muted-foreground uppercase",
-        isNew && "animate-in fade-in duration-300",
+        isNew && WORKFLOW_REVEAL_ANIMATION,
       )}
     >
       {label}
@@ -110,30 +114,39 @@ function PreviewSectionLabel({ label, isNew = false }: { label: string; isNew?: 
 function PreviewWorkflowTree({
   t,
   templateId,
-  isProvisioning,
   visibleKeys,
   lastRevealedKey,
+  revealMode,
+  showWorkflowSection,
 }: {
   t: (key: string) => string;
-  templateId: string | null;
-  isProvisioning: boolean;
+  templateId: string;
   visibleKeys: Set<string> | null;
   lastRevealedKey: string | null;
+  revealMode: "idle" | "provisioning" | "complete";
+  showWorkflowSection: boolean;
 }) {
-  const workflowTree = getTemplateWorkflowPreview(isProvisioning ? templateId : templateId);
+  const workflowTree = getTemplateWorkflowPreview(templateId);
+
+  if (!showWorkflowSection) {
+    return null;
+  }
 
   return (
     <div className="space-y-0.5 pt-2">
-      <PreviewSectionLabel label={t("nav.sectionWorkflow")} />
+      <PreviewSectionLabel
+        label={t("nav.sectionWorkflow")}
+        isNew={lastRevealedKey === WORKFLOW_SECTION_REVEAL_KEY}
+      />
       {workflowTree.map((group) => {
-        if (!isWorkflowGroupVisible(group, visibleKeys, templateId)) {
+        if (!isWorkflowGroupVisible(group, visibleKeys, revealMode)) {
           return null;
         }
 
-        const expanded = isWorkflowGroupExpanded(group, visibleKeys, templateId);
+        const expanded = isWorkflowGroupExpanded(group, visibleKeys, revealMode);
         const visibleChildren =
           group.children?.filter((child) =>
-            isWorkflowChildVisible(child.key, visibleKeys, templateId),
+            isWorkflowChildVisible(child.key, visibleKeys, revealMode),
           ) ?? [];
 
         if (visibleChildren.length > 0) {
@@ -142,8 +155,7 @@ function PreviewWorkflowTree({
               <div
                 className={cn(
                   "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground",
-                  lastRevealedKey === group.key &&
-                    "animate-in fade-in slide-in-from-left-2 duration-300",
+                  lastRevealedKey === group.key && WORKFLOW_REVEAL_ANIMATION,
                 )}
               >
                 <NavItemIcon
@@ -196,7 +208,13 @@ export function ConsolePreview({
   isProvisioning = false,
 }: ConsolePreviewProps) {
   const { t } = useLocale();
-  const { visibleKeys, lastRevealedKey } = useProvisioningReveal(isProvisioning, templateId);
+  const {
+    visibleKeys,
+    lastRevealedKey,
+    revealMode,
+    showWorkflowSection,
+    provisionRevealCount,
+  } = useProvisioningReveal(isProvisioning, templateId);
   const orgLabel = organizationName.trim() || "Your Organization";
   const projectLabel = projectName?.trim() || "Your Project";
   const provisioningLabel = templateName?.trim() || "project template";
@@ -246,9 +264,10 @@ export function ConsolePreview({
               <PreviewWorkflowTree
                 t={t}
                 templateId={templateId}
-                isProvisioning={isProvisioning}
                 visibleKeys={visibleKeys}
                 lastRevealedKey={lastRevealedKey}
+                revealMode={revealMode}
+                showWorkflowSection={showWorkflowSection}
               />
             ) : null}
             </div>
@@ -300,7 +319,7 @@ export function ConsolePreview({
                     key={label}
                     className={cn(
                       "rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground",
-                      index <= (visibleKeys?.size ?? 0) / 4 &&
+                      index <= provisionRevealCount / 4 &&
                         "animate-in fade-in slide-in-from-bottom-2 duration-300",
                     )}
                   >

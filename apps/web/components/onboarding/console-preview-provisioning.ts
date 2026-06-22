@@ -153,20 +153,32 @@ export function getWorkflowProvisionOrder(templateId: string | null): string[] {
 }
 
 export const WORKFLOW_PROVISION_STEP_MS = 420;
+export const WORKFLOW_IDLE_REVEAL_STEP_MS = 300;
+export const WORKFLOW_SECTION_REVEAL_KEY = "__workflow_section__";
+
+export function getTemplateWorkflowRevealOrder(templateId: string | null): string[] {
+  return getTemplateWorkflowPreview(templateId).flatMap((group) => [
+    group.key,
+    ...(group.children?.map((child) => child.key) ?? []),
+  ]);
+}
+
+export type WorkflowRevealMode = "idle" | "provisioning" | "complete";
 
 export function isWorkflowGroupVisible(
   group: WorkflowPreviewNode,
   visibleKeys: Set<string> | null,
-  templateId: string | null = null,
+  revealMode: WorkflowRevealMode,
 ): boolean {
-  if (!visibleKeys) {
-    if (templateId) {
-      return true;
-    }
-    return IDLE_WORKFLOW_KEYS.has(group.key);
+  if (revealMode === "complete") {
+    return true;
   }
 
-  if (IDLE_WORKFLOW_KEYS.has(group.key)) {
+  if (!visibleKeys) {
+    return revealMode === "provisioning" && IDLE_WORKFLOW_KEYS.has(group.key);
+  }
+
+  if (revealMode === "provisioning" && IDLE_WORKFLOW_KEYS.has(group.key)) {
     return true;
   }
 
@@ -176,7 +188,9 @@ export function isWorkflowGroupVisible(
 
   return (
     group.children?.some(
-      (child) => IDLE_WORKFLOW_KEYS.has(child.key) || visibleKeys.has(child.key),
+      (child) =>
+        visibleKeys.has(child.key) ||
+        (revealMode === "provisioning" && IDLE_WORKFLOW_KEYS.has(child.key)),
     ) ?? false
   );
 }
@@ -184,33 +198,41 @@ export function isWorkflowGroupVisible(
 export function isWorkflowChildVisible(
   childKey: string,
   visibleKeys: Set<string> | null,
-  templateId: string | null = null,
+  revealMode: WorkflowRevealMode,
 ): boolean {
-  if (!visibleKeys) {
-    if (templateId) {
-      return true;
-    }
-    return IDLE_WORKFLOW_KEYS.has(childKey);
+  if (revealMode === "complete") {
+    return true;
   }
 
-  return IDLE_WORKFLOW_KEYS.has(childKey) || visibleKeys.has(childKey);
+  if (!visibleKeys) {
+    return revealMode === "provisioning" && IDLE_WORKFLOW_KEYS.has(childKey);
+  }
+
+  return (
+    visibleKeys.has(childKey) ||
+    (revealMode === "provisioning" && IDLE_WORKFLOW_KEYS.has(childKey))
+  );
 }
 
 export function isWorkflowGroupExpanded(
   group: WorkflowPreviewNode,
   visibleKeys: Set<string> | null,
-  templateId: string | null = null,
+  revealMode: WorkflowRevealMode,
 ): boolean {
+  if (revealMode === "complete") {
+    return Boolean(group.children?.length);
+  }
+
   if (!visibleKeys) {
-    if (templateId) {
-      return Boolean(group.children?.length);
+    if (revealMode === "provisioning") {
+      return group.key === "executive";
     }
-    return group.key === "executive";
+    return false;
   }
 
   if (group.children?.length) {
     return group.children.some((child) =>
-      isWorkflowChildVisible(child.key, visibleKeys, templateId),
+      isWorkflowChildVisible(child.key, visibleKeys, revealMode),
     );
   }
 
