@@ -1,6 +1,10 @@
-import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+
+// `getCurrentUser` is the app-wide auth seam; it delegates to the configured
+// AuthProvider (local for OSS, Supabase for Enterprise). Re-exported here so the
+// many existing `@/lib/supabase/server` imports keep working.
+export { getCurrentUser } from "@/lib/auth/provider";
 
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies();
@@ -32,9 +36,3 @@ export async function createSupabaseServerClient() {
     },
   );
 }
-
-export const getCurrentUser = cache(async () => {
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getUser();
-  return data.user;
-});

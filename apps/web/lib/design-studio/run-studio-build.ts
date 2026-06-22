@@ -1,7 +1,7 @@
 import {
   createStudioBuildStorage,
   studioBuildArtifactPaths,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 import type { StudioBuildInput } from "@ssota/studio-build";
 import { runStudioBuild } from "@ssota/studio-sandbox";
 

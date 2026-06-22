@@ -1,8 +1,7 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
-import { start } from "workflow/api";
 import { getTaskPort } from "@ssota/agent-runtime";
-import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { getJobRunner } from "@/app/workflows/job-runner";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -92,13 +91,13 @@ export async function POST(request: Request) {
     context: { gateDecision: { approved: true, note: body.note } },
   });
 
-  const run = await start(runSsotaAgentWorkflow, [
-    {
-      projectId: body.projectId,
-      taskId: body.taskId,
-      accountId,
-    },
-  ]);
+  const runner = await getJobRunner();
+  const run = await runner.start({
+    projectId: body.projectId,
+    taskId: body.taskId,
+    accountId,
+  });
+  after(run.completion);
 
   return NextResponse.json({ ok: true, status: "ready", runId: run.runId });
 }

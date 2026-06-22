@@ -87,14 +87,35 @@ export function resolveConnectCallbackSubject(
   return resolveConnectTokenSubject(connectorUid, scope);
 }
 
+function envSegment(value: string): string {
+  return value.toUpperCase().replace(/[^A-Z0-9]/g, "_");
+}
+
 /**
- * Dev/local provider: reads `CONNECTOR_<NAME>_TOKEN` from the environment.
- * Not account-scoped — every account resolves the same token.
+ * Self-host / local "own-app" provider: reads connector tokens from the
+ * environment. Self-hosters register their own OAuth app per connector and
+ * inject its token here (e.g. a Slack bot token), instead of relying on managed
+ * Vercel Connect.
+ *
+ * Resolution prefers an installation-scoped key, then the connector default:
+ *   1. `CONNECTOR_<NAME>_<INSTALLATION>_TOKEN`  (per workspace/install)
+ *   2. `CONNECTOR_<NAME>_TOKEN`                 (single-tenant default)
+ *
+ * `<NAME>` is the connector uid's provider segment (e.g. "slack" for "slack/acme").
  */
 export function createEnvCredentialProvider(): CredentialProvider {
   return {
-    async getToken(connector) {
-      const token = process.env[envKey(connector)];
+    async getToken(connector, scope) {
+      const provider = connector.split("/")[0] ?? connector;
+      if (scope?.installationId) {
+        const scoped =
+          process.env[
+            `CONNECTOR_${envSegment(provider)}_${envSegment(scope.installationId)}_TOKEN`
+          ];
+        if (scoped) return { token: scoped };
+      }
+      const token =
+        process.env[envKey(provider)] ?? process.env[envKey(connector)];
       return token ? { token } : null;
     },
   };
@@ -289,11 +310,25 @@ export async function getConnectInstallation(
 }
 
 /**
- * Pick a provider from the environment: explicit Vercel Connect opt-in
- * (`USE_VERCEL_CONNECT=1`), else the env provider if any `CONNECTOR_*_TOKEN`
- * is set, else none (external tools stay detached).
+ * Pick a credential provider. `CREDENTIALS` selects explicitly (the open-core
+ * boundary); otherwise it auto-detects for back-compat:
+ *
+ *  - `CREDENTIALS=own-app` (OSS): env-token provider (`CONNECTOR_*_TOKEN`).
+ *  - `CREDENTIALS=connect` (Enterprise): managed Vercel Connect.
+ *  - `CREDENTIALS=none`: no provider (external tools stay detached).
+ *  - unset: Vercel Connect if `USE_VERCEL_CONNECT=1`, else own-app if any
+ *    `CONNECTOR_*_TOKEN` is set, else none.
  */
 export function resolveCredentialProvider(): CredentialProvider | undefined {
+  switch (process.env.CREDENTIALS) {
+    case "own-app":
+      return createEnvCredentialProvider();
+    case "connect":
+      return createVercelConnectProvider();
+    case "none":
+      return undefined;
+  }
+
   if (process.env.USE_VERCEL_CONNECT === "1") {
     return createVercelConnectProvider();
   }

@@ -4,7 +4,7 @@ import {
   createAccountConnectionPort,
   createChatWorkspacePort,
   createDbAccountReadPort,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 import { providerOf, resolveAuthorizeScopes } from "@/lib/connect/connectors";
 import { getCurrentUser } from "@/lib/supabase/server";
 

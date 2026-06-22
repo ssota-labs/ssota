@@ -1,0 +1,25 @@
+# SSOTA self-host (OSS) — Postgres for the core. The app runs via pnpm against
+# this database (see docs/self-hosting.md). On first start, the init script
+# applies the auth-schema shim and every SQL migration in supabase/migrations.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "54322:5432"
+    volumes:
+      - ssota-pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/shim.sql:/shim.sql:ro
+      - ./supabase/migrations:/migrations:ro
+      - ./docker/postgres/init.sh:/docker-entrypoint-initdb.d/10-init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ssota-pgdata:

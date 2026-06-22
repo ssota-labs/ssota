@@ -11,7 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ssota/adapter-supabase": "workspace:*",
+    "@ssota/adapter-postgres": "workspace:*",
     "@ssota/contracts": "workspace:*",
     "@ssota/core": "workspace:*",
     "@ssota/ui": "workspace:*",

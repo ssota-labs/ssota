@@ -4,7 +4,7 @@ import {
   createGraphPorts,
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 
 let cachedInitiativeId: string | undefined;
 

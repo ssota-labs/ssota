@@ -1,6 +1,6 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
-import { createAccountConnectionPort } from "@ssota/adapter-supabase";
+import { createAccountConnectionPort } from "@ssota/adapter-postgres";
 import { getDb } from "../ports.js";
 import { getCredentialProvider, getRunContext } from "./context.js";
 

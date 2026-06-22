@@ -11,7 +11,7 @@ import {
   type AccountRecord,
   createWorkflowPort,
   createPagePort,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 
 type Db = ReturnType<typeof createDb>["db"];
 

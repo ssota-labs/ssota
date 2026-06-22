@@ -2,10 +2,9 @@ import { after, NextResponse } from "next/server";
 import { createUIMessageStreamResponse } from "ai";
 import type { FileUIPart, UIMessage, UIMessageChunk } from "ai";
 import { z } from "zod";
-import { start } from "workflow/api";
 import { spawnTask } from "@ssota/core";
 import { getGraphReadPort, getTaskPort } from "@ssota/agent-runtime";
-import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { getJobRunner } from "@/app/workflows/job-runner";
 import { getChatPort } from "@/lib/ports";
 import { resolveModelId } from "@/lib/chat/models";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
@@ -169,9 +168,15 @@ export async function POST(request: Request) {
     },
   );
 
-  const run = await start(runSsotaAgentWorkflow, [
-    { projectId, taskId: task.id, accountId, modelId },
-  ]);
+  const runner = await getJobRunner();
+  const run = await runner.start({
+    projectId,
+    taskId: task.id,
+    accountId,
+    modelId,
+  });
+  // Inline runner: keep the runtime alive until the in-process run settles.
+  after(run.completion);
 
   const readable = run.getReadable() as ReadableStream<UIMessageChunk>;
   const [clientStream, persistStream] = readable.tee();
