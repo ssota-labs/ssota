@@ -71,6 +71,18 @@ describe("built-in workflows (code-only, not seeded)", () => {
     expect(isKnownWorkflowKey("agent.setup")).toBe(false);
     expect(getWorkflowByKey("agent.setup")).toBeNull();
   });
+
+  it("hides reference guides from the manifest but resolves them by key", () => {
+    const manifestKeys = listBuiltinWorkflowIndex().map((w) => w.key);
+    expect(manifestKeys).toContain("agent.setup");
+    expect(manifestKeys).not.toContain("agent.guide.page_authoring");
+    expect(manifestKeys).not.toContain("agent.guide.workflow_authoring");
+    // ...but they are still loadable on demand.
+    expect(getBuiltinWorkflowByKey("agent.guide.page_authoring")).not.toBeNull();
+    expect(
+      getBuiltinWorkflowByKey("agent.guide.workflow_authoring"),
+    ).not.toBeNull();
+  });
 });
 
 describe("workflow DB seeds", () => {

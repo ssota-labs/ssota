@@ -47,6 +47,15 @@ code and is available in every project without being seeded.
    nodes) and how the user can use it. Spawn tasks only for work that should run
    now.
 
+## Reference guides (load on demand)
+
+For details, load these with `get_workflow_instruction` when you reach the
+relevant step — don't inline them up front:
+
+- `agent.guide.workflow_authoring` — how to write good workflows (step 4).
+- `agent.guide.page_authoring` — the json-render page format (step 5); also call
+  `list_page_components` / `get_page_component` for the live component catalog.
+
 ## Notes
 
 - Re-running setup is safe: `write_workflow_instruction` upserts by key, and a

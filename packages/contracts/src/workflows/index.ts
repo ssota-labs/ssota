@@ -34,6 +34,12 @@ export const WorkflowInstructionDefinitionSchema = z.object({
   cadenceHint: WorkflowCadenceHintSchema.optional(),
   defaultExecutorType: ExecutorTypeSchema.optional(),
   defaultStatus: TaskStatusSchema.optional(),
+  /**
+   * Reference-only built-ins (guides/know-how) are loadable by key via
+   * get_workflow_instruction but hidden from the routing manifest — they are
+   * knowledge, not tasks to route.
+   */
+  reference: z.boolean().optional(),
   instruction: z.string().min(1),
 });
 
@@ -193,6 +199,24 @@ const BUILTIN_WORKFLOW_META: WorkflowMeta[] = [
     defaultStatus: "ready",
     instructionFile: "agent.setup.md",
   },
+  {
+    workflowKey: "agent.guide.page_authoring",
+    title: "Guide: page authoring",
+    description:
+      "Reference for the json-render page format (spec, bindings, actions). Load when authoring pages.",
+    category: "orchestrator",
+    reference: true,
+    instructionFile: "agent.guide.page_authoring.md",
+  },
+  {
+    workflowKey: "agent.guide.workflow_authoring",
+    title: "Guide: workflow authoring",
+    description:
+      "Reference for writing good workflow instructions (key naming, description, body). Load when authoring workflows.",
+    category: "orchestrator",
+    reference: true,
+    instructionFile: "agent.guide.workflow_authoring.md",
+  },
 ];
 
 export const BUILTIN_WORKFLOW_REGISTRY: Record<
@@ -207,13 +231,18 @@ export interface WorkflowManifestEntry {
   description: string;
 }
 
-/** Built-in workflows as manifest rows (key + name + when-to-use). */
+/**
+ * Built-in workflows as manifest rows (key + name + when-to-use). Excludes
+ * reference-only guides — those are loadable by key but not routed.
+ */
 export function listBuiltinWorkflowIndex(): WorkflowManifestEntry[] {
-  return Object.values(BUILTIN_WORKFLOW_REGISTRY).map((w) => ({
-    key: w.workflowKey,
-    name: w.title,
-    description: w.description,
-  }));
+  return Object.values(BUILTIN_WORKFLOW_REGISTRY)
+    .filter((w) => !w.reference)
+    .map((w) => ({
+      key: w.workflowKey,
+      name: w.title,
+      description: w.description,
+    }));
 }
 
 /** Full built-in definition (with instruction text) by key, or null. */
