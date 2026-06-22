@@ -57,6 +57,28 @@ type ConnectTokenSubject =
   | { type: "app" }
   | { type: "user"; id: string };
 
+/** Connect token errors that mean "no credential right now" — not infra bugs. */
+export function isRecoverableConnectTokenError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if (
+    error.name === "UserAuthorizationRequiredError" ||
+    error.name === "NoValidTokenError" ||
+    error.name === "ConnectorInstallationRequiredError"
+  ) {
+    return true;
+  }
+  const code =
+    "code" in error && typeof error.code === "string" ? error.code : undefined;
+  return (
+    error.name === "ConnectError" &&
+    (code === "unresolved_token" ||
+      code === "no_token" ||
+      code === "user_authorization_required" ||
+      code === "connector_installation_required" ||
+      code === "client_installation_required")
+  );
+}
+
 export function resolveConnectTokenSubject(
   connectorUid: string,
   scope: CredentialScope,
@@ -167,11 +189,14 @@ export function createVercelConnectProvider(): CredentialProvider {
         });
         return token ? { token } : null;
       } catch (error) {
-        // Not yet authorized → no credential (surface consent flow upstream).
+        // Not yet authorized / token not minted → no credential (surface consent upstream).
         if (
           connect.UserAuthorizationRequiredError &&
           error instanceof connect.UserAuthorizationRequiredError
         ) {
+          return null;
+        }
+        if (isRecoverableConnectTokenError(error)) {
           return null;
         }
         throw error;

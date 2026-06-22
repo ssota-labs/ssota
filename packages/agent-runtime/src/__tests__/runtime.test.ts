@@ -10,6 +10,7 @@ import {
   connectUsesAppSubject,
   createEnvCredentialProvider,
   getConnectInstallation,
+  isRecoverableConnectTokenError,
   normalizeConnectInstallationId,
   resolveConnectCallbackSubject,
   resolveConnectTokenSubject,
@@ -157,6 +158,21 @@ describe("connectUsesAppSubject", () => {
     expect(connectUsesAppSubject("oauth/ssota-notion")).toBe(false);
     expect(connectUsesAppSubject("oauth/linear")).toBe(false);
     expect(connectUsesAppSubject("linear/mybot")).toBe(false);
+  });
+});
+
+describe("isRecoverableConnectTokenError", () => {
+  it("treats ConnectError unresolved_token as recoverable", () => {
+    const error = Object.assign(new Error("Token unresolved"), {
+      name: "ConnectError",
+      code: "unresolved_token",
+      status: 401,
+    });
+    expect(isRecoverableConnectTokenError(error)).toBe(true);
+  });
+
+  it("does not treat generic errors as recoverable", () => {
+    expect(isRecoverableConnectTokenError(new Error("boom"))).toBe(false);
   });
 });
 
