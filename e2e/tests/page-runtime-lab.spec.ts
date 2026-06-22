@@ -20,7 +20,7 @@ test.describe("Page Runtime Lab", () => {
     await expect(page.getByRole("tab", { name: "Planning" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "Build" })).toBeVisible();
     await expect(
-      page.getByText(
+      page.getByTestId("dynamic-page-renderer").getByText(
         "Initiative summary and KPIs would render here",
       ),
     ).toBeVisible();
