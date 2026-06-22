@@ -1,7 +1,6 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
-import { start } from "workflow/api";
-import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { getJobRunner } from "@/app/workflows/job-runner";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -48,16 +47,18 @@ export async function POST(request: Request) {
     );
   }
 
-  // Fire-and-forget durable run. Returns immediately with the run id.
-  const run = await start(runSsotaAgentWorkflow, [
-    {
-      projectId: parsed.projectId,
-      taskId: parsed.taskId,
-      accountId: parsed.accountId,
-      modelId: parsed.modelId,
-      maxSteps: parsed.maxSteps,
-    },
-  ]);
+  // Fire-and-forget run. Returns immediately with the run id. With the inline
+  // runner the work continues in-process; `after` keeps the runtime alive until
+  // it settles. With the workflow runner it executes durably server-side.
+  const runner = await getJobRunner();
+  const run = await runner.start({
+    projectId: parsed.projectId,
+    taskId: parsed.taskId,
+    accountId: parsed.accountId,
+    modelId: parsed.modelId,
+    maxSteps: parsed.maxSteps,
+  });
+  after(run.completion);
 
   return NextResponse.json({ runId: run.runId });
 }

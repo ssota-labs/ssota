@@ -3,7 +3,6 @@ import { createSlackAdapter } from "@chat-adapter/slack";
 import { createDiscordAdapter } from "@chat-adapter/discord";
 import { createTelegramAdapter } from "@chat-adapter/telegram";
 import { createPostgresState } from "@chat-adapter/state-pg";
-import { start } from "workflow/api";
 import { spawnTask } from "@ssota/core";
 import {
   createVercelConnectProvider,
@@ -12,7 +11,7 @@ import {
   getTaskPort,
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
-import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { getJobRunner } from "@/app/workflows/job-runner";
 import { getSiteUrl } from "@/lib/auth/config";
 import { extractWorkspaceKey, resolveChatTarget } from "./resolve-account";
 
@@ -145,10 +144,12 @@ async function runAgentStream(message: IncomingMessage) {
     },
   );
 
-  const run = await start(runSsotaAgentWorkflow, [
-    { projectId, taskId: task.id, accountId },
-  ]);
+  const runner = await getJobRunner();
+  const run = await runner.start({ projectId, taskId: task.id, accountId });
 
+  // The bot drives the stream to completion (thread.post consumes the async
+  // iterable), so the inline run finalizes as the stream closes — no `after()`
+  // needed here (this runs outside a route's request scope).
   return uiChunksToText(run.getReadable() as ReadableStream<UIMessageChunk>);
 }
 

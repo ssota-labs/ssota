@@ -1,5 +1,4 @@
 import type { NextConfig } from "next";
-import { withWorkflow } from "workflow/next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import traceManifest from "../../packages/studio-build/studio-trace-manifest.json" with {
@@ -48,4 +47,13 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
 };
 
-export default withWorkflow(nextConfig);
+// The Vercel Workflow DevKit build transform is only needed for the Enterprise
+// durable runner (JOB_RUNNER=workflow). The OSS inline default builds without
+// it — and without requiring the `workflow` package's Next plugin.
+export default async (): Promise<NextConfig> => {
+  if (process.env.JOB_RUNNER === "workflow") {
+    const { withWorkflow } = await import("workflow/next");
+    return withWorkflow(nextConfig) as NextConfig;
+  }
+  return nextConfig;
+};
