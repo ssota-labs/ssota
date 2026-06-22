@@ -12,7 +12,7 @@ import { getRunContext } from "./context.js";
  */
 const SPEC_HELP =
   "spec: { root, elements } where each element is { type, props?, children? }. " +
-  "Component types: PageHeader, Text, Badge, Card, Tabs, SplitPane, NodeList, " +
+  "Component types: PageHeader, Section, Text, Badge, Card, Tabs, Toolbar, SplitPane, NodeList, " +
   "NodeTable, NodeField, NodeDocument, DocumentView, DocumentEditor, TokenList, " +
   "Widget, Form, Field, Button, Input, Textarea, Select. " +
   "bindings (kind: query|singleton|node|traverse|ref|artifact|subject) pull " +

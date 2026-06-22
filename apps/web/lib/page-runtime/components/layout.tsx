@@ -6,6 +6,55 @@ import {
   CardTitle,
 } from "@ssota/ui/components/ui/card";
 import type { CatalogComponent } from "../types";
+import { TabsEl, type TabItemDef } from "./layout-tabs";
+import { ToolbarEl, type ToolbarActionDef } from "./layout-toolbar";
+
+function asTabItems(value: unknown): TabItemDef[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    if (
+      typeof row.value !== "string" ||
+      typeof row.label !== "string" ||
+      typeof row.panel !== "string"
+    ) {
+      return [];
+    }
+    return [
+      {
+        value: row.value,
+        label: row.label,
+        panel: row.panel,
+      },
+    ];
+  });
+}
+
+function asToolbarActions(value: unknown): ToolbarActionDef[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const row = item as Record<string, unknown>;
+    if (typeof row.label !== "string" || typeof row.action !== "string") {
+      return [];
+    }
+    const variant = row.variant;
+    return [
+      {
+        label: row.label,
+        action: row.action,
+        variant:
+          variant === "default" ||
+          variant === "outline" ||
+          variant === "secondary" ||
+          variant === "ghost"
+            ? variant
+            : undefined,
+      },
+    ];
+  });
+}
 
 /** Structural / static display components. */
 export const layoutComponents: Record<string, CatalogComponent> = {
@@ -16,6 +65,17 @@ export const layoutComponents: Record<string, CatalogComponent> = {
         <p className="text-muted-foreground text-sm">{String(props.subtitle)}</p>
       ) : null}
     </header>
+  ),
+  Section: ({ props, children }) => (
+    <section className="space-y-4">
+      <header className="space-y-1 border-b pb-3">
+        <h2 className="text-lg font-semibold">{String(props.title ?? "Section")}</h2>
+        {props.subtitle ? (
+          <p className="text-muted-foreground text-sm">{String(props.subtitle)}</p>
+        ) : null}
+      </header>
+      <div className="space-y-3">{children}</div>
+    </section>
   ),
   Text: ({ props }) => <p className="text-sm">{String(props.text ?? "")}</p>,
   Badge: ({ props }) => (
@@ -31,11 +91,23 @@ export const layoutComponents: Record<string, CatalogComponent> = {
       <CardContent className="space-y-3">{children}</CardContent>
     </Card>
   ),
-  Tabs: ({ children }) => (
-    <div className="space-y-3">
-      <p className="text-muted-foreground text-xs">Tabs (mock layout)</p>
-      {children}
-    </div>
+  Tabs: ({ props }) => (
+    <TabsEl
+      defaultValue={
+        typeof props.defaultValue === "string" ? props.defaultValue : undefined
+      }
+      items={asTabItems(props.items)}
+      variant={props.variant === "default" ? "default" : "line"}
+    />
+  ),
+  Toolbar: ({ props }) => (
+    <ToolbarEl
+      title={props.title ? String(props.title) : undefined}
+      searchPlaceholder={
+        props.searchPlaceholder ? String(props.searchPlaceholder) : undefined
+      }
+      actions={asToolbarActions(props.actions)}
+    />
   ),
   SplitPane: ({ children }) => (
     <div className="grid gap-4 md:grid-cols-2">{children}</div>

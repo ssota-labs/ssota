@@ -1,6 +1,17 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, type ReactNode } from "react";
+import type { JsonRenderSpec } from "@ssota/contracts";
+import type { BindingContext } from "./types";
+
+export type JsonRenderRuntime = {
+  spec: JsonRenderSpec;
+  bindingData: BindingContext;
+  renderElement: (elementId: string) => ReactNode;
+};
+
+export const JsonRenderContext = createContext<JsonRenderRuntime | null>(null);
+export const useJsonRender = () => useContext(JsonRenderContext);
 
 /** Invoked when an interactive element fires its action. */
 export type OnAction = (
