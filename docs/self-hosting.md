@@ -15,11 +15,16 @@ filesystem (or S3) storage.
 docker compose up -d
 ```
 
-On first start this applies an `auth`-schema compatibility shim
-(`docker/postgres/shim.sql`) and then every migration in `supabase/migrations`.
-The shim exists because the migrations were authored for Supabase and reference
-its `auth` schema / RLS; the app connects as the database owner and bypasses
-RLS, so the policies only need to be creatable.
+On first start this applies a compatibility shim (`docker/postgres/shim.sql`)
+and then every migration in `supabase/migrations`. The shim exists because the
+migrations were authored for Supabase and reference objects that don't exist on
+plain Postgres: the `auth` schema (`auth.users`, `auth.uid()`), the `storage`
+schema (`storage.buckets`/`storage.objects` for bucket setup), and the `anon` /
+`authenticated` / `service_role` roles used in RLS policies. The app connects as
+the database owner and bypasses RLS, so the policies only need to be creatable.
+
+> Verified: the shim plus all 35 migrations apply cleanly on a stock
+> `postgres:16` container (21 public tables created).
 
 > If port `54322` is already in use (e.g. a running `supabase start` stack),
 > stop that stack first or edit the published port in `docker-compose.yml`.
