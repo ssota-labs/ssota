@@ -123,7 +123,7 @@ test.describe("Connections + Chat", () => {
 
     const slack = page.getByTestId("connector-slack");
     await expect(slack).toBeVisible();
-    await expect(slack.getByText(/multiple workspaces/i)).toBeVisible();
+    await expect(slack.getByText(/multiple workspaces|여러 워크스페이스/i)).toBeVisible();
     await expect(slack.getByTestId("connection-row")).toHaveCount(0);
 
     // First connect → /api/connect/authorize → (stub) callback → records → back.
@@ -141,7 +141,7 @@ test.describe("Connections + Chat", () => {
     await slack
       .getByTestId("connection-row")
       .first()
-      .getByRole("button", { name: "Disconnect" })
+      .getByRole("button", { name: /Disconnect|연결 해제/i })
       .click();
     await expect(slack.getByTestId("connection-row")).toHaveCount(1);
   });
@@ -153,7 +153,7 @@ test.describe("Connections + Chat", () => {
 
     const linear = page.getByTestId("connector-linear");
     await expect(linear).toBeVisible();
-    await expect(linear.getByText("multiple workspaces")).toHaveCount(0);
+    await expect(linear.getByText(/multiple workspaces|여러 워크스페이스/i)).toHaveCount(0);
 
     await page.getByTestId("connect-linear").click();
     await expect(linear.getByTestId("connection-row")).toHaveCount(1);
@@ -161,7 +161,7 @@ test.describe("Connections + Chat", () => {
     await expect(
       linear.getByTestId("connection-row").getByTestId("reconnect-linear"),
     ).toBeVisible();
-    await expect(linear.getByText("Add workspace")).toHaveCount(0);
+    await expect(linear.getByText(/Add workspace|워크스페이스 추가/i)).toHaveCount(0);
   });
 
   test.describe("chat UX", () => {
