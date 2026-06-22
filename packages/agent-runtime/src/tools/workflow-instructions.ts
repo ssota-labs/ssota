@@ -6,8 +6,8 @@ import {
   readWorkflowInstructionByKey,
 } from "@ssota/core";
 import {
-  UpsertWorkflowInstructionInputSchema,
   blockNoteContentToText,
+  textToBlockNoteContent,
 } from "@ssota/contracts";
 import {
   getBuiltinWorkflowByKey,
@@ -86,9 +86,18 @@ export function createWorkflowInstructionTools(): ToolSet {
 
     write_workflow_instruction: tool({
       description:
-        "Create or update a workflow instruction (upsert by key). Fields: key, name, description, content (BlockNote json array).",
+        "Create or update a workflow instruction (upsert by key). Write the playbook as markdown in `body` — a clear step-by-step process. `description` is a skill-style 'when to use' line (routing quality depends on it).",
       inputSchema: z.object({
-        definition: UpsertWorkflowInstructionInputSchema,
+        key: z
+          .string()
+          .describe("Stable workflow key, e.g. 'work.onboard_customer'."),
+        name: z.string().describe("Human-readable title."),
+        description: z
+          .string()
+          .describe("Skill-style 'when to use this workflow' line."),
+        body: z
+          .string()
+          .describe("The playbook as markdown / plain text."),
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
@@ -96,8 +105,13 @@ export function createWorkflowInstructionTools(): ToolSet {
           const saved = await getWorkflowInstructionPort(
             ctx.projectId,
             ctx.accountId,
-          ).upsertInstruction(input.definition);
-          return { ok: true, instruction: saved };
+          ).upsertInstruction({
+            key: input.key,
+            name: input.name,
+            description: input.description,
+            content: textToBlockNoteContent(input.body),
+          });
+          return { ok: true, id: saved.id, key: saved.key };
         } catch (error) {
           return {
             ok: false,
