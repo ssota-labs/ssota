@@ -124,6 +124,15 @@ export interface ConnectCredentialScope {
   subjectUserId: string | null;
 }
 
+export interface ConnectCredentialScopeRecord extends ConnectCredentialScope {
+  connector: string;
+  installationName: string | null;
+}
+
+function providerOfConnectorUid(connectorUid: string): string {
+  return connectorUid.split("/")[0] ?? connectorUid;
+}
+
 /**
  * Writer/reader for an account's third-party connections (Vercel Connect).
  * `record` upserts on (accountId, connector, installationId) so connectors that
@@ -132,27 +141,56 @@ export interface ConnectCredentialScope {
  * `getInstallationId` is used at tool-execution time to scope `getToken`.
  */
 export function createAccountConnectionPort(db: Db) {
+  async function listConnectCredentialScopes(
+    accountId: string,
+    connector?: string,
+  ): Promise<ConnectCredentialScopeRecord[]> {
+    const rows = await db
+      .select({
+        connector: accountConnections.connector,
+        installationId: accountConnections.installationId,
+        subjectUserId: accountConnections.subjectUserId,
+        name: accountConnections.name,
+        tenantId: accountConnections.tenantId,
+      })
+      .from(accountConnections)
+      .where(
+        connector
+          ? and(
+              eq(accountConnections.accountId, accountId),
+              eq(accountConnections.connector, connector),
+            )
+          : eq(accountConnections.accountId, accountId),
+      )
+      .orderBy(desc(accountConnections.updatedAt));
+
+    return rows.map((row) => ({
+      connector: row.connector,
+      installationId: row.installationId ? row.installationId : null,
+      subjectUserId: row.subjectUserId ?? null,
+      installationName: row.name ?? row.tenantId ?? null,
+    }));
+  }
+
+  async function listConnectCredentialScopesForProvider(
+    accountId: string,
+    provider: string,
+  ): Promise<ConnectCredentialScopeRecord[]> {
+    const rows = await listConnectCredentialScopes(accountId);
+    return rows.filter(
+      (row) => providerOfConnectorUid(row.connector) === provider,
+    );
+  }
+
   async function getConnectCredentialScope(
     accountId: string,
     connector: string,
   ): Promise<ConnectCredentialScope | null> {
-    const [row] = await db
-      .select({
-        installationId: accountConnections.installationId,
-        subjectUserId: accountConnections.subjectUserId,
-      })
-      .from(accountConnections)
-      .where(
-        and(
-          eq(accountConnections.accountId, accountId),
-          eq(accountConnections.connector, connector),
-        ),
-      )
-      .limit(1);
+    const [row] = await listConnectCredentialScopes(accountId, connector);
     if (!row) return null;
     return {
-      installationId: row.installationId ? row.installationId : null,
-      subjectUserId: row.subjectUserId ?? null,
+      installationId: row.installationId,
+      subjectUserId: row.subjectUserId,
     };
   }
 
@@ -225,5 +263,7 @@ export function createAccountConnectionPort(db: Db) {
     },
 
     getConnectCredentialScope,
+    listConnectCredentialScopes,
+    listConnectCredentialScopesForProvider,
   };
 }

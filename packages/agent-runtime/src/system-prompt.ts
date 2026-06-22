@@ -43,6 +43,8 @@ export function buildSystemPrompt(params: {
       : null,
     `\n## Finishing`,
     `When the task is complete, call \`complete_task\` with a short summary and any result payload. Before a risky or irreversible action that needs human sign-off, call \`request_approval\` with the reason (this pauses the task for approval). If you are blocked by missing input, call \`block_task\` with the reason. Do not stop without calling one of these.`,
+    `\n## External connections (MCP)`,
+    `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` first to discover available tools. Matched tools become callable by their qualified name (e.g. \`linear__search_issues\`). If a service is not connected, call \`request_connection\` and wait for the user.`,
   ]
     .filter((line) => line !== null)
     .join("\n");

@@ -12,7 +12,7 @@ export {
   createPageTools,
 } from "./tools/index.js";
 export { createSandboxTools } from "./tools/sandbox.js";
-export { createExternalTools } from "./tools/external.js";
+export { createConnectionTools } from "./tools/connections.js";
 export {
   createSandboxSession,
   type SandboxSession,
@@ -40,7 +40,7 @@ export {
 } from "./credentials/oidc.js";
 export { buildSystemPrompt } from "./system-prompt.js";
 export { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
-export { gateway, DEFAULT_MODEL_ID } from "./models.js";
+export { gateway, DEFAULT_MODEL_ID, STUB_CONNECTION_SEARCH_TRIGGER } from "./models.js";
 export { getDb, getGraphPorts, getTaskPort, getGraphReadPort } from "./ports.js";
 
 export type {

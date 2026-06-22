@@ -1,6 +1,8 @@
 import type { ModelMessage, ToolSet } from "ai";
 import type { SandboxSession } from "../sandbox/session.js";
 import type { CredentialProvider } from "../credentials/provider.js";
+import type { ConnectionRunState } from "../connections/run-state.js";
+import type { McpSessionManager } from "../connections/mcp-session.js";
 
 /**
  * Scope passed to every SSOTA tool call. `accountId` is the end-user data
@@ -35,6 +37,12 @@ export interface LoopEngineRunInput {
   sandbox?: SandboxSession;
   /** Optional credential provider for external-service tools (Vercel Connect). */
   credentials?: CredentialProvider;
+  /** Eve-style MCP connection activation state (progressive disclosure). */
+  connectionState?: ConnectionRunState;
+  /** Qualified MCP tool names registered for this run. */
+  qualifiedToolNames?: string[];
+  /** MCP session manager — closed after the run. */
+  connectionSessionManager?: McpSessionManager;
   /** Upper bound on model steps before the loop stops. */
   maxSteps?: number;
 }

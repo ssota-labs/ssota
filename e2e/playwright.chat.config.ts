@@ -23,7 +23,9 @@ const env = {
     process.env.DATABASE_URL ??
     "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
   CONNECT_STUB: "1",
+  MCP_STUB: "1",
   STUB_MODEL: "1",
+  CONNECTOR_LINEAR_DEV_TOKEN: "stub-linear-token",
   SLACK_CONNECT_CONNECTOR: "slack/dev",
   NOTION_CONNECT_CONNECTOR: "notion/dev",
   GITHUB_CONNECT_CONNECTOR: "github/dev",

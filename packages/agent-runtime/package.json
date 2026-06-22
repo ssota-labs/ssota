@@ -17,6 +17,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@ai-sdk/mcp": "^0.0.1",
     "@ssota/adapter-supabase": "workspace:*",
     "@ssota/contracts": "workspace:*",
     "@ssota/core": "workspace:*",

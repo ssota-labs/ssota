@@ -18,6 +18,7 @@ export {
   type RecordAccountConnectionInput,
   type AccountConnectionRecord,
   type ConnectCredentialScope,
+  type ConnectCredentialScopeRecord,
 } from "./ports/account-port.js";
 export {
   createChatPort,

@@ -6,6 +6,7 @@ import {
 } from "@ssota/core";
 import type { AgentRunContext } from "../engine/types.js";
 import type { SandboxSession } from "../sandbox/session.js";
+import type { ConnectionRunState } from "../connections/run-state.js";
 
 /** Pull the per-run SSOTA scope injected via `experimental_context`. */
 export function getRunContext(experimentalContext: unknown): AgentRunContext {
@@ -26,6 +27,15 @@ export function getCredentialProvider(
       | { credentials?: import("../credentials/provider.js").CredentialProvider }
       | undefined
   )?.credentials;
+}
+
+/** Eve-style per-run connection activation state (progressive disclosure). */
+export function getConnectionRunState(
+  experimentalContext: unknown,
+): ConnectionRunState | undefined {
+  return (
+    experimentalContext as { connectionState?: ConnectionRunState } | undefined
+  )?.connectionState;
 }
 
 /** Pull the sandbox session, if this run provisioned one. */

@@ -1,9 +1,11 @@
 import type { ModelMessage } from "ai";
 import { serializeTask } from "@ssota/core";
+import { McpSessionManager } from "./connections/mcp-session.js";
+import { ConnectionRunState } from "./connections/run-state.js";
 import { getTaskPort } from "./ports.js";
 import { createSsotaTools } from "./tools/index.js";
 import { createSandboxTools } from "./tools/sandbox.js";
-import { createExternalTools } from "./tools/external.js";
+import { createConnectionTools } from "./tools/connections.js";
 import { buildSystemPrompt } from "./system-prompt.js";
 import { DEFAULT_MODEL_ID } from "./models.js";
 import { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
@@ -64,16 +66,32 @@ async function prepareRun(input: RunAgentForTaskInput) {
   const task = serializeTask(domainTask);
 
   const engine = input.engine ?? createAiSdkLoopEngine();
+
+  let connectionState: ConnectionRunState | undefined;
+  let qualifiedToolNames: string[] = [];
+  let connectionSessionManager: McpSessionManager | undefined;
+  let connectionTools = {};
+
+  if (input.credentials) {
+    connectionState = new ConnectionRunState();
+    connectionSessionManager = new McpSessionManager(input.credentials);
+    const bundle = await createConnectionTools({
+      credentials: input.credentials,
+      accountId,
+      projectId,
+      connectionState,
+      sessionManager: connectionSessionManager,
+    });
+    connectionTools = bundle.tools;
+    qualifiedToolNames = bundle.qualifiedToolNames;
+  }
+
   const tools = {
     ...createSsotaTools(),
     ...(input.sandbox ? createSandboxTools() : {}),
-    ...(input.credentials ? createExternalTools() : {}),
+    ...connectionTools,
   };
 
-  // Multi-turn chat: when the task carries a conversation (in-app web chat seeds
-  // `context.chat.messages` with prior turns + the new user message), replay it
-  // so the agent has memory. Headless/Slack tasks omit it and get the default
-  // single synthetic instruction.
   const chatMessages = extractChatMessages(task.context);
   const messages: ModelMessage[] = chatMessages ?? [
     {
@@ -90,6 +108,9 @@ async function prepareRun(input: RunAgentForTaskInput) {
     context: { projectId, taskId, runId, accountId } satisfies AgentRunContext,
     sandbox: input.sandbox,
     credentials: input.credentials,
+    connectionState,
+    qualifiedToolNames,
+    connectionSessionManager,
     maxSteps: input.maxSteps,
   };
   return { taskPort, engine, runInput };
