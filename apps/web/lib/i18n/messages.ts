@@ -314,7 +314,7 @@ export const en = {
     notConfiguredHint: "This provider is not configured for this deployment.",
     connect: "Connect",
     addWorkspace: "Add workspace",
-    reconnect: "Reconnect",
+    reconnect: "Refresh",
     disconnect: "Disconnect",
     connectedAs: "Connected as {name}",
     providers: {
@@ -665,7 +665,7 @@ export const ko = {
     notConfiguredHint: "이 배포 환경에서는 이 제공자가 설정되지 않았습니다.",
     connect: "연결",
     addWorkspace: "워크스페이스 추가",
-    reconnect: "다시 연결",
+    reconnect: "새로고침",
     disconnect: "연결 해제",
     connectedAs: "{name}으로 연결됨",
     providers: {

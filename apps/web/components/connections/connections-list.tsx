@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useTransition } from "react";
-import { LinkBreakIcon, PlusIcon } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, LinkBreakIcon, PlusIcon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
 import {
@@ -12,6 +12,11 @@ import {
   CardTitle,
 } from "@ssota/ui/components/ui/card";
 import { cn } from "@ssota/ui/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@ssota/ui/components/ui/tooltip";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { disconnectConnectionAction } from "@/app/[orgSlug]/[projectSlug]/connections/actions";
@@ -273,13 +278,21 @@ function ConnectionItem({
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <a
-          className={buttonVariants({ variant: "ghost", size: "sm" })}
-          href={reconnectHref}
-          data-testid={`reconnect-${provider}`}
-        >
-          {t("connections.reconnect")}
-        </a>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <a
+                className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+                href={reconnectHref}
+                data-testid={`reconnect-${provider}`}
+                aria-label={t("connections.reconnect")}
+              />
+            }
+          >
+            <ArrowClockwiseIcon className="size-4" />
+          </TooltipTrigger>
+          <TooltipContent>{t("connections.reconnect")}</TooltipContent>
+        </Tooltip>
         <Button
           variant="ghost"
           size="sm"
