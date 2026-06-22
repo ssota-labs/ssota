@@ -1,0 +1,9 @@
+/* Narrow embeds (document sheet, inspector) — drop BlockNote's 54px side-menu gutter. */
+.blocknote-editor-shell--compact .bn-editor {
+  min-height: 6rem;
+  padding-inline: 0.25rem;
+}
+
+.blocknote-editor-shell--compact .bn-container {
+  border-radius: 0;
+}

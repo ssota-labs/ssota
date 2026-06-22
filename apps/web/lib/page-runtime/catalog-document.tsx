@@ -18,9 +18,19 @@ function toBlocks(value: unknown): PartialBlock[] | undefined {
 }
 
 /** Read-only document (catalog `DocumentView`). */
-export function DocumentViewEl({ content }: { content: unknown }) {
+export function DocumentViewEl({
+  content,
+  compact,
+}: {
+  content: unknown;
+  compact?: boolean;
+}) {
   return (
-    <SsotaBlockNoteEditor editable={false} initialContent={toBlocks(content)} />
+    <SsotaBlockNoteEditor
+      editable={false}
+      initialContent={toBlocks(content)}
+      compact={compact}
+    />
   );
 }
 
@@ -28,9 +38,11 @@ export function DocumentViewEl({ content }: { content: unknown }) {
 export function DocumentEditorEl({
   content,
   onSave,
+  compact,
 }: {
   content: unknown;
   onSave: (blocks: Block[]) => void | Promise<void>;
+  compact?: boolean;
 }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleChange = useCallback(
@@ -47,6 +59,7 @@ export function DocumentEditorEl({
       editable
       initialContent={toBlocks(content)}
       onChange={handleChange}
+      compact={compact}
     />
   );
 }

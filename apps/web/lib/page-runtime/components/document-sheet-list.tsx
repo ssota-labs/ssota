@@ -158,7 +158,7 @@ export function DocumentSheetListEl({
             panelWidthClass[sheetSize],
           )}
         >
-          <header className="border-border flex shrink-0 items-start gap-3 border-b px-6 py-5">
+          <header className="border-border flex shrink-0 items-start gap-3 border-b px-4 py-4">
             <div className="min-w-0 flex-1 space-y-1">
               <h2
                 id="document-sheet-title"
@@ -184,11 +184,12 @@ export function DocumentSheetListEl({
             </Button>
           </header>
           <div
-            className="min-h-0 flex-1 overflow-y-auto px-6 py-5"
+            className="min-h-0 flex-1 overflow-y-auto px-3 py-3"
             data-testid="document-sheet-editor"
           >
             {editable ? (
               <DocumentEditorEl
+                compact
                 content={readContent(activeNode, field)}
                 onSave={(blocks) => {
                   if (onAction && action) {
@@ -200,7 +201,7 @@ export function DocumentSheetListEl({
                 }}
               />
             ) : (
-              <DocumentViewEl content={readContent(activeNode, field)} />
+              <DocumentViewEl compact content={readContent(activeNode, field)} />
             )}
           </div>
         </div>
