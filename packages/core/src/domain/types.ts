@@ -292,7 +292,7 @@ export interface WorkflowListInput {
   limit?: number;
 }
 
-export type OnboardingStep = "profile" | "project" | "completed";
+export type OnboardingStep = "profile" | "project" | "template" | "completed";
 
 export type Locale = "en" | "ko";
 
@@ -305,6 +305,7 @@ export interface Profile {
   email: string;
   displayName: string | null;
   onboardingStep: OnboardingStep;
+  onboardingDraftProjectName: string | null;
   onboardingCompletedAt: Date | null;
   locale: Locale;
 }
@@ -371,9 +372,13 @@ export interface OnboardingPort {
     displayName: string;
     organizationName: string;
   }): Promise<{ organization: Organization }>;
-  completeProjectStep(input: {
+  saveProjectDraftStep(input: {
     userId: string;
     projectName: string;
+  }): Promise<void>;
+  completeTemplateStep(input: {
+    userId: string;
+    templateId: string;
   }): Promise<{ organization: Organization; project: Project }>;
 }
 

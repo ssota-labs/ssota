@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { CaretRightIcon, CaretUpDownIcon, CubeIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { PagePatternHub } from "@ssota/ui/components/page-patterns";
 import {
@@ -10,22 +10,25 @@ import {
   BreadcrumbPage,
 } from "@ssota/ui/components/ui/breadcrumb";
 import { Button } from "@ssota/ui/components/ui/button";
+import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { L0_NAV, type NavEntry, type NavLink, type NavSection } from "@/lib/console/navigation";
 import { NavItemIcon } from "@/lib/console/nav-icons";
 import {
-  IDLE_WORKFLOW_PREVIEW,
+  getTemplateWorkflowPreview,
   isWorkflowChildVisible,
   isWorkflowGroupExpanded,
   isWorkflowGroupVisible,
-  SOFTWARE_DEV_WORKFLOW_PREVIEW,
+  WORKFLOW_SECTION_REVEAL_KEY,
 } from "./console-preview-provisioning";
 import { useProvisioningReveal } from "./use-provisioning-reveal";
 
 type ConsolePreviewProps = {
   organizationName: string;
   projectName?: string;
+  templateId?: string | null;
+  templateName?: string | null;
   isProvisioning?: boolean;
 };
 
@@ -62,27 +65,68 @@ function PreviewSwitcherTrigger({
   );
 }
 
+const WORKFLOW_REVEAL_ANIMATION =
+  "animate-in fade-in slide-in-from-bottom-3 duration-400";
+
+function workflowRevealProps(revealKey?: string) {
+  return revealKey ? { "data-workflow-reveal-key": revealKey } : {};
+}
+
+function scrollSidebarToRevealedItem(
+  navRoot: HTMLElement | null,
+  revealKey: string,
+): void {
+  const viewport = navRoot?.closest<HTMLElement>('[data-slot="scroll-area-viewport"]');
+  if (!viewport || !navRoot) return;
+
+  const target = navRoot.querySelector<HTMLElement>(
+    `[data-workflow-reveal-key="${CSS.escape(revealKey)}"]`,
+  );
+
+  if (target) {
+    const viewportRect = viewport.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const overflow = targetRect.bottom - viewportRect.bottom + 8;
+
+    if (overflow > 0) {
+      viewport.scrollTo({
+        top: viewport.scrollTop + overflow,
+        behavior: "smooth",
+      });
+    }
+    return;
+  }
+
+  viewport.scrollTo({
+    top: viewport.scrollHeight,
+    behavior: "smooth",
+  });
+}
+
 function PreviewNavLink({
   iconKey,
   label,
   active = false,
   className,
   isNew = false,
+  revealKey,
 }: {
   iconKey: string;
   label: string;
   active?: boolean;
   className?: string;
   isNew?: boolean;
+  revealKey?: string;
 }) {
   return (
     <div
+      {...workflowRevealProps(revealKey)}
       className={cn(
         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm",
         active
           ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
           : "text-muted-foreground",
-        isNew && "animate-in fade-in slide-in-from-left-2 duration-300",
+        isNew && WORKFLOW_REVEAL_ANIMATION,
         className,
       )}
     >
@@ -92,12 +136,21 @@ function PreviewNavLink({
   );
 }
 
-function PreviewSectionLabel({ label, isNew = false }: { label: string; isNew?: boolean }) {
+function PreviewSectionLabel({
+  label,
+  isNew = false,
+  revealKey,
+}: {
+  label: string;
+  isNew?: boolean;
+  revealKey?: string;
+}) {
   return (
     <div
+      {...workflowRevealProps(revealKey)}
       className={cn(
         "px-2 py-1 text-xs font-medium tracking-wide text-muted-foreground uppercase",
-        isNew && "animate-in fade-in duration-300",
+        isNew && WORKFLOW_REVEAL_ANIMATION,
       )}
     >
       {label}
@@ -107,39 +160,51 @@ function PreviewSectionLabel({ label, isNew = false }: { label: string; isNew?: 
 
 function PreviewWorkflowTree({
   t,
-  isProvisioning,
+  templateId,
   visibleKeys,
   lastRevealedKey,
+  revealMode,
+  showWorkflowSection,
 }: {
   t: (key: string) => string;
-  isProvisioning: boolean;
+  templateId: string;
   visibleKeys: Set<string> | null;
   lastRevealedKey: string | null;
+  revealMode: "idle" | "provisioning" | "complete";
+  showWorkflowSection: boolean;
 }) {
-  const workflowTree = isProvisioning ? SOFTWARE_DEV_WORKFLOW_PREVIEW : IDLE_WORKFLOW_PREVIEW;
+  const workflowTree = getTemplateWorkflowPreview(templateId);
+
+  if (!showWorkflowSection) {
+    return null;
+  }
 
   return (
     <div className="space-y-0.5 pt-2">
-      <PreviewSectionLabel label={t("nav.sectionWorkflow")} />
+      <PreviewSectionLabel
+        label={t("nav.sectionWorkflow")}
+        isNew={lastRevealedKey === WORKFLOW_SECTION_REVEAL_KEY}
+        revealKey={WORKFLOW_SECTION_REVEAL_KEY}
+      />
       {workflowTree.map((group) => {
-        if (!isWorkflowGroupVisible(group, visibleKeys)) {
+        if (!isWorkflowGroupVisible(group, visibleKeys, revealMode)) {
           return null;
         }
 
-        const expanded = isWorkflowGroupExpanded(group, visibleKeys);
+        const expanded = isWorkflowGroupExpanded(group, visibleKeys, revealMode);
         const visibleChildren =
           group.children?.filter((child) =>
-            isWorkflowChildVisible(child.key, visibleKeys),
+            isWorkflowChildVisible(child.key, visibleKeys, revealMode),
           ) ?? [];
 
         if (visibleChildren.length > 0) {
           return (
             <div key={group.key} className="space-y-0.5">
               <div
+                {...workflowRevealProps(group.key)}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground",
-                  lastRevealedKey === group.key &&
-                    "animate-in fade-in slide-in-from-left-2 duration-300",
+                  lastRevealedKey === group.key && WORKFLOW_REVEAL_ANIMATION,
                 )}
               >
                 <NavItemIcon
@@ -163,6 +228,7 @@ function PreviewWorkflowTree({
                       label={t(child.titleKey)}
                       className="pl-5"
                       isNew={lastRevealedKey === child.key}
+                      revealKey={child.key}
                     />
                   ))}
                 </div>
@@ -177,6 +243,7 @@ function PreviewWorkflowTree({
             iconKey={group.icon}
             label={t(group.titleKey)}
             isNew={lastRevealedKey === group.key}
+            revealKey={group.key}
           />
         );
       })}
@@ -187,22 +254,47 @@ function PreviewWorkflowTree({
 export function ConsolePreview({
   organizationName,
   projectName,
+  templateId = null,
+  templateName = null,
   isProvisioning = false,
 }: ConsolePreviewProps) {
   const { t } = useLocale();
-  const { visibleKeys, lastRevealedKey } = useProvisioningReveal(isProvisioning);
+  const {
+    visibleKeys,
+    lastRevealedKey,
+    revealMode,
+    showWorkflowSection,
+    provisionRevealCount,
+  } = useProvisioningReveal(isProvisioning, templateId);
   const orgLabel = organizationName.trim() || "Your Organization";
   const projectLabel = projectName?.trim() || "Your Project";
+  const provisioningLabel = templateName?.trim() || "project template";
+  const sidebarNavRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!lastRevealedKey || revealMode === "complete") {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        scrollSidebarToRevealedItem(sidebarNavRef.current, lastRevealedKey);
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [lastRevealedKey, revealMode]);
 
   return (
-    <div className="pointer-events-none flex min-h-[34rem] select-none" aria-hidden>
-      <aside className="flex w-60 shrink-0 flex-col border-r bg-sidebar">
+    <div className="flex h-[34rem] select-none" aria-hidden>
+      <aside className="pointer-events-auto flex h-full w-60 shrink-0 flex-col border-r bg-sidebar">
         <div className="flex h-12 shrink-0 items-center border-b px-2">
           <PreviewSwitcherTrigger label={orgLabel} sectionIcon={<UsersThreeIcon />} />
         </div>
 
-        <nav className="min-h-0 flex-1 overflow-hidden p-2">
-          <div className="space-y-1">
+        <ScrollArea className="min-h-0 flex-1">
+          <nav className="p-2">
+            <div ref={sidebarNavRef} className="space-y-1">
             {L0_NAV.map((entry) => {
               if (isNavLink(entry)) {
                 return (
@@ -234,16 +326,21 @@ export function ConsolePreview({
 
               return null;
             })}
-            <PreviewWorkflowTree
-              t={t}
-              isProvisioning={isProvisioning}
-              visibleKeys={visibleKeys}
-              lastRevealedKey={lastRevealedKey}
-            />
-          </div>
-        </nav>
+            {templateId ? (
+              <PreviewWorkflowTree
+                t={t}
+                templateId={templateId}
+                visibleKeys={visibleKeys}
+                lastRevealedKey={lastRevealedKey}
+                revealMode={revealMode}
+                showWorkflowSection={showWorkflowSection}
+              />
+            ) : null}
+            </div>
+          </nav>
+        </ScrollArea>
 
-        <div className="space-y-0.5 border-t p-2">
+        <div className="shrink-0 space-y-0.5 border-t p-2">
           <PreviewNavLink iconKey="developer_setup" label={t("nav.developerSetup")} />
           <PreviewNavLink iconKey="settings" label={t("nav.settings")} />
           <Button
@@ -260,7 +357,7 @@ export function ConsolePreview({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col bg-background">
+      <div className="pointer-events-none flex min-w-0 flex-1 flex-col bg-background">
         <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b px-4">
           <div className="flex min-w-0 items-center">
             <PreviewSwitcherTrigger label={projectLabel} sectionIcon={<CubeIcon />} />
@@ -280,7 +377,7 @@ export function ConsolePreview({
             <div className="flex flex-1 flex-col justify-center gap-3">
               <p className="text-sm font-medium text-foreground">Setting up workspace…</p>
               <p className="text-sm text-muted-foreground">
-                Applying the software development template and creating workflow pages.
+                Applying the {provisioningLabel} and creating workflow pages.
               </p>
               <div className="flex gap-2 pt-2">
                 {["Tasks", "Workflow", "Initiatives"].map((label, index) => (
@@ -288,7 +385,7 @@ export function ConsolePreview({
                     key={label}
                     className={cn(
                       "rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground",
-                      index <= (visibleKeys?.size ?? 0) / 4 &&
+                      index <= provisionRevealCount / 4 &&
                         "animate-in fade-in slide-in-from-bottom-2 duration-300",
                     )}
                   >

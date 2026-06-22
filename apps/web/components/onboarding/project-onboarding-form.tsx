@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { toast } from "@ssota/ui/components/ui/sonner";
-import { completeProjectOnboardingAction } from "@/app/onboarding/actions";
+import { saveProjectDraftOnboardingAction } from "@/app/onboarding/actions";
 import { ConsolePreview } from "@/components/onboarding/console-preview";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -13,10 +13,12 @@ import { Label } from "@ssota/ui/components/ui/label";
 
 type ProjectOnboardingFormProps = {
   organizationName: string;
+  defaultProjectName?: string;
+  showOrganizationCreatedToast?: boolean;
   error?: string;
 };
 
-function ProjectSubmitButton() {
+function ProjectContinueButton() {
   const { pending } = useFormStatus();
 
   return (
@@ -24,10 +26,10 @@ function ProjectSubmitButton() {
       {pending ? (
         <>
           <SpinnerGapIcon className="size-4 animate-spin" />
-          Setting up project…
+          Saving project…
         </>
       ) : (
-        "Open project"
+        "Continue"
       )}
     </Button>
   );
@@ -35,17 +37,20 @@ function ProjectSubmitButton() {
 
 export function ProjectOnboardingForm({
   organizationName,
+  defaultProjectName = "",
+  showOrganizationCreatedToast = true,
   error,
 }: ProjectOnboardingFormProps) {
-  const [projectName, setProjectName] = useState("");
-  const [isProvisioning, setIsProvisioning] = useState(false);
+  const [projectName, setProjectName] = useState(defaultProjectName);
 
   useEffect(() => {
+    if (!showOrganizationCreatedToast) return;
+
     toast.success(`${organizationName} organization created`, {
       id: "onboarding-organization-created",
       description: "Name your first project below.",
     });
-  }, [organizationName]);
+  }, [organizationName, showOrganizationCreatedToast]);
 
   return (
     <OnboardingShell
@@ -56,11 +61,7 @@ export function ProjectOnboardingForm({
       backHref="/onboarding/profile"
       backLabel="Back to organization"
       form={
-        <form
-          action={completeProjectOnboardingAction}
-          className="space-y-4"
-          onSubmit={() => setIsProvisioning(true)}
-        >
+        <form action={saveProjectDraftOnboardingAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="projectName">Project name</Label>
             <Input
@@ -70,23 +71,21 @@ export function ProjectOnboardingForm({
               onChange={(event) => setProjectName(event.target.value)}
               placeholder="SSOTA Dev"
               required
-              disabled={isProvisioning}
             />
             <p className="text-xs text-muted-foreground">
-              English only. Slug is generated automatically.
+              Any language is fine. The URL slug is generated automatically in English.
             </p>
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <ProjectSubmitButton />
+          <ProjectContinueButton />
         </form>
       }
       preview={
         <ConsolePreview
           organizationName={organizationName}
           projectName={projectName || "Your Project"}
-          isProvisioning={isProvisioning}
         />
       }
     />

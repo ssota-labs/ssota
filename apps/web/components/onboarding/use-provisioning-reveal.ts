@@ -2,42 +2,122 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  WORKFLOW_PROVISION_ORDER,
+  getTemplateWorkflowRevealOrder,
+  getWorkflowProvisionOrder,
+  WORKFLOW_IDLE_REVEAL_STEP_MS,
   WORKFLOW_PROVISION_STEP_MS,
+  WORKFLOW_SECTION_REVEAL_KEY,
+  type WorkflowRevealMode,
 } from "./console-preview-provisioning";
 
-export function useProvisioningReveal(isProvisioning: boolean) {
-  const [revealCount, setRevealCount] = useState(0);
+export function useProvisioningReveal(
+  isProvisioning: boolean,
+  templateId: string | null,
+) {
+  const [idleRevealCount, setIdleRevealCount] = useState(0);
+  const [idleRevealComplete, setIdleRevealComplete] = useState(false);
+  const [provisionRevealCount, setProvisionRevealCount] = useState(0);
+
+  const idleRevealOrder = useMemo(() => {
+    if (!templateId) return [];
+    return [
+      WORKFLOW_SECTION_REVEAL_KEY,
+      ...getTemplateWorkflowRevealOrder(templateId),
+    ];
+  }, [templateId]);
+
+  const provisionOrder = useMemo(
+    () => getWorkflowProvisionOrder(templateId),
+    [templateId],
+  );
 
   useEffect(() => {
-    if (!isProvisioning) {
-      setRevealCount(0);
+    setIdleRevealCount(0);
+    setIdleRevealComplete(false);
+    setProvisionRevealCount(0);
+  }, [templateId]);
+
+  useEffect(() => {
+    if (!templateId || isProvisioning) {
       return;
     }
 
-    setRevealCount(0);
+    setIdleRevealCount(0);
+    setIdleRevealComplete(false);
+
     const intervalId = window.setInterval(() => {
-      setRevealCount((current) =>
-        current >= WORKFLOW_PROVISION_ORDER.length ? current : current + 1,
+      setIdleRevealCount((current) => {
+        const next = current + 1;
+        if (next >= idleRevealOrder.length) {
+          setIdleRevealComplete(true);
+        }
+        return next;
+      });
+    }, WORKFLOW_IDLE_REVEAL_STEP_MS);
+
+    return () => window.clearInterval(intervalId);
+  }, [templateId, isProvisioning, idleRevealOrder.length]);
+
+  useEffect(() => {
+    if (!templateId || !isProvisioning) {
+      setProvisionRevealCount(0);
+      return;
+    }
+
+    setProvisionRevealCount(0);
+
+    const intervalId = window.setInterval(() => {
+      setProvisionRevealCount((current) =>
+        current >= provisionOrder.length ? current : current + 1,
       );
     }, WORKFLOW_PROVISION_STEP_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [isProvisioning]);
+  }, [isProvisioning, provisionOrder.length, templateId]);
+
+  useEffect(() => {
+    if (isProvisioning && templateId) {
+      setIdleRevealComplete(true);
+    }
+  }, [isProvisioning, templateId]);
+
+  const revealMode: WorkflowRevealMode = useMemo(() => {
+    if (!templateId) return "idle";
+    if (idleRevealComplete || isProvisioning) return "complete";
+    return "idle";
+  }, [templateId, isProvisioning, idleRevealComplete]);
 
   const visibleKeys = useMemo(() => {
-    if (!isProvisioning) return null;
-    return new Set(WORKFLOW_PROVISION_ORDER.slice(0, revealCount));
-  }, [isProvisioning, revealCount]);
+    if (!templateId || revealMode === "complete") {
+      return null;
+    }
 
-  const lastRevealedKey =
-    isProvisioning && revealCount > 0
-      ? (WORKFLOW_PROVISION_ORDER[revealCount - 1] ?? null)
-      : null;
+    const keys = new Set<string>();
+    for (const key of idleRevealOrder.slice(0, idleRevealCount)) {
+      if (key !== WORKFLOW_SECTION_REVEAL_KEY) {
+        keys.add(key);
+      }
+    }
+    return keys;
+  }, [templateId, revealMode, idleRevealOrder, idleRevealCount]);
+
+  const lastRevealedKey = useMemo(() => {
+    if (!templateId || revealMode === "complete" || idleRevealCount === 0) {
+      return null;
+    }
+
+    return idleRevealOrder[idleRevealCount - 1] ?? null;
+  }, [templateId, revealMode, idleRevealCount, idleRevealOrder]);
+
+  const showWorkflowSection = revealMode === "complete" || idleRevealCount > 0;
 
   return {
     visibleKeys,
     lastRevealedKey,
-    isProvisioningComplete: revealCount >= WORKFLOW_PROVISION_ORDER.length,
+    revealMode,
+    showWorkflowSection,
+    provisionRevealCount,
+    isProvisioningComplete: provisionRevealCount >= provisionOrder.length,
+    isIdleRevealComplete: idleRevealComplete,
   };
 }

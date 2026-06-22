@@ -39,6 +39,7 @@ export const profiles = pgTable("profiles", {
   email: text("email").notNull(),
   displayName: text("display_name"),
   onboardingStep: text("onboarding_step").notNull().default("profile"),
+  onboardingDraftProjectName: text("onboarding_draft_project_name"),
   onboardingCompletedAt: timestamp("onboarding_completed_at", {
     withTimezone: true,
   }),

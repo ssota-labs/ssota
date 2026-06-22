@@ -17,7 +17,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@ssota/contracts": "workspace:*"
+    "@ssota/contracts": "workspace:*",
+    "transliteration": "^2.6.1"
   },
   "devDependencies": {
     "@ssota/config": "workspace:*",
