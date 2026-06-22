@@ -35,6 +35,7 @@ export {
   getConnectInstallation,
   normalizeConnectInstallationId,
   resolveConnectCallbackSubject,
+  resolveConnectTokenSubject,
   connectUsesAppSubject,
   type CredentialProvider,
   type CredentialScope,
