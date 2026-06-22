@@ -80,7 +80,28 @@ export function getConnectors(): ConnectorDef[] {
   }));
 }
 
-/** The provider segment of a stored connector uid, e.g. "slack/acme" → "slack". */
+/** Default OAuth scopes when starting Connect authorization, per provider. */
+const AUTHORIZE_SCOPES: Partial<Record<ConnectorProvider, readonly string[]>> = {
+  // Discord bot install requires the `bot` scope; without it the OAuth page
+  // shows "No scopes were provided."
+  discord: ["bot"],
+};
+
+/** Resolve the provider segment of a stored connector uid, e.g. "slack/acme" → "slack". */
 export function providerOf(connectorUid: string): string {
   return connectorUid.split("/")[0] ?? connectorUid;
+}
+
+/**
+ * Scopes for `startConnectAuthorization`. Explicit `scopes` query params win;
+ * otherwise use per-provider defaults (e.g. Discord `bot`).
+ */
+export function resolveAuthorizeScopes(
+  connectorUid: string,
+  explicit?: string[],
+): string[] | undefined {
+  if (explicit && explicit.length > 0) return explicit;
+  const provider = providerOf(connectorUid) as ConnectorProvider;
+  const defaults = AUTHORIZE_SCOPES[provider];
+  return defaults ? [...defaults] : undefined;
 }
