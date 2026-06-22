@@ -4,6 +4,7 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { runPageAction } from "@/lib/page-runtime/run-page-action";
 import { projectPath } from "@/lib/console/paths";
 import { getNodeDetailView } from "@/lib/graph/loaders/get-node-detail";
 import { NodeDetailWorkspace } from "@/components/console/node-detail-workspace";
@@ -75,6 +76,21 @@ export default async function NodeLandingPage({
   );
   await resolveArtifactBindings(project.id, home.bindings, bindingData);
 
+  async function onAction(
+    actionKey: string,
+    input: Record<string, unknown>,
+  ): Promise<void> {
+    "use server";
+    await runPageAction({
+      projectId: project.id,
+      pageId: home!.id,
+      actionKey,
+      input,
+      subjectNodeId: subject!.id,
+      revalidate: [`/${orgSlug}/${projectSlug}/n/${nodeId}`],
+    });
+  }
+
   return (
     <div className="mx-auto max-w-5xl p-6">
       <SetNodeDrill
@@ -87,6 +103,7 @@ export default async function NodeLandingPage({
         spec={home.spec}
         bindingData={bindingData}
         basePath={`/${orgSlug}/${projectSlug}`}
+        onAction={onAction}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { runPageAction } from "@/lib/page-runtime/run-page-action";
 
 /**
  * Notion-style page renderer. Loads a page from the `pages` table by id, resolves
@@ -51,12 +52,28 @@ export default async function TreePage({
   );
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
 
+  async function onAction(
+    actionKey: string,
+    input: Record<string, unknown>,
+  ): Promise<void> {
+    "use server";
+    await runPageAction({
+      projectId: project.id,
+      pageId,
+      actionKey,
+      input,
+      subjectNodeId: page!.subjectNodeId ?? null,
+      revalidate: [`/${orgSlug}/${projectSlug}/p/${pageId}`],
+    });
+  }
+
   return (
     <div className="mx-auto max-w-5xl p-6">
       <DynamicPageRenderer
         spec={page.spec}
         bindingData={bindingData}
         basePath={`/${orgSlug}/${projectSlug}`}
+        onAction={onAction}
       />
     </div>
   );
