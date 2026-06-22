@@ -133,14 +133,16 @@ const WORKFLOW_META: WorkflowMeta[] = [
   },
 ];
 
-function buildRegistry(): Record<string, WorkflowInstructionDefinition> {
+function buildRegistry(
+  meta: WorkflowMeta[],
+): Record<string, WorkflowInstructionDefinition> {
   const registry: Record<string, WorkflowInstructionDefinition> = {};
-  for (const meta of WORKFLOW_META) {
-    if (meta.workflowKey in registry) {
-      throw new Error(`Duplicate workflow key: ${meta.workflowKey}`);
+  for (const entry of meta) {
+    if (entry.workflowKey in registry) {
+      throw new Error(`Duplicate workflow key: ${entry.workflowKey}`);
     }
-    const { instructionFile, ...rest } = meta;
-    registry[meta.workflowKey] = WorkflowInstructionDefinitionSchema.parse({
+    const { instructionFile, ...rest } = entry;
+    registry[entry.workflowKey] = WorkflowInstructionDefinitionSchema.parse({
       ...rest,
       instruction: loadWorkflowInstruction(instructionFile),
     });
@@ -149,7 +151,7 @@ function buildRegistry(): Record<string, WorkflowInstructionDefinition> {
 }
 
 export const WORKFLOW_REGISTRY: Record<string, WorkflowInstructionDefinition> =
-  buildRegistry();
+  buildRegistry(WORKFLOW_META);
 
 export const WORKFLOW_KEYS = Object.keys(WORKFLOW_REGISTRY) as WorkflowInstructionKey[];
 
@@ -170,6 +172,55 @@ export function isKnownWorkflowKey(
   workflowKey: string,
 ): workflowKey is WorkflowInstructionKey {
   return workflowKey in WORKFLOW_REGISTRY;
+}
+
+/**
+ * Built-in workflows ship in code and are available in EVERY project without
+ * being seeded into the DB. They are merged into the runtime manifest and
+ * resolved by `get_workflow_instruction` as a fallback when a project has no
+ * DB row for the key (a project may override a built-in by writing its own row
+ * with the same key). Kept OUT of {@link WORKFLOW_INSTRUCTION_SEEDS}.
+ */
+const BUILTIN_WORKFLOW_META: WorkflowMeta[] = [
+  {
+    workflowKey: "agent.setup",
+    title: "Project setup",
+    description:
+      "Set up a project from scratch (or reconfigure it): interview the user about the domain and goals, then author workflows and build pages so the project can operate. Use when the project has no workflows yet, or the user wants to (re)configure how it works.",
+    category: "orchestrator",
+    cadenceHint: "on_demand",
+    defaultExecutorType: "Agent",
+    defaultStatus: "ready",
+    instructionFile: "agent.setup.md",
+  },
+];
+
+export const BUILTIN_WORKFLOW_REGISTRY: Record<
+  string,
+  WorkflowInstructionDefinition
+> = buildRegistry(BUILTIN_WORKFLOW_META);
+
+/** Lightweight routing-manifest row (no DB id — built-ins have none). */
+export interface WorkflowManifestEntry {
+  key: string;
+  name: string;
+  description: string;
+}
+
+/** Built-in workflows as manifest rows (key + name + when-to-use). */
+export function listBuiltinWorkflowIndex(): WorkflowManifestEntry[] {
+  return Object.values(BUILTIN_WORKFLOW_REGISTRY).map((w) => ({
+    key: w.workflowKey,
+    name: w.title,
+    description: w.description,
+  }));
+}
+
+/** Full built-in definition (with instruction text) by key, or null. */
+export function getBuiltinWorkflowByKey(
+  workflowKey: string,
+): WorkflowInstructionDefinition | null {
+  return BUILTIN_WORKFLOW_REGISTRY[workflowKey] ?? null;
 }
 
 import { buildWorkflowInstructionSeeds } from "./seed.js";

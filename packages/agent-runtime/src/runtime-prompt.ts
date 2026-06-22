@@ -3,8 +3,8 @@ import {
   blockNoteContentToText,
   type ExecutionDirective,
   type WorkflowInstruction,
-  type WorkflowInstructionIndex,
 } from "@ssota/contracts";
+import type { WorkflowManifestEntry } from "@ssota/contracts/workflows";
 
 const EXTERNAL_CONNECTIONS_GUIDANCE = `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` first to discover available tools. Matched tools become callable by their qualified name (e.g. \`linear__search_issues\`). If a service is not connected, call \`request_connection\` and wait for the user.`;
 
@@ -34,7 +34,7 @@ export interface BuildRunInstructionsParams {
   projectId: string;
   accountId?: string;
   /** Skill-style routing manifest for the main runtime (key + when-to-use). */
-  workflowManifest?: WorkflowInstructionIndex[];
+  workflowManifest?: WorkflowManifestEntry[];
   mainInstruction?: WorkflowInstruction | null;
   taskPlaybook?: WorkflowInstruction | null;
   task?: {

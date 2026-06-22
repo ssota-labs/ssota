@@ -1,5 +1,6 @@
 import type { ModelMessage } from "ai";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
+import { listBuiltinWorkflowIndex } from "@ssota/contracts/workflows";
 import {
   serializeTask,
   readWorkflowInstructionById,
@@ -81,7 +82,18 @@ async function prepareRun(input: RunAgentInput) {
   let taskPort = getTaskPort(projectId, accountId);
 
   if (runtimeKind === "main") {
-    const workflowManifest = await instructionPort.listInstructions();
+    const dbInstructions = await instructionPort.listInstructions();
+    const dbKeys = new Set(dbInstructions.map((w) => w.key));
+    // DB rows override built-ins with the same key.
+    const builtins = listBuiltinWorkflowIndex().filter((b) => !dbKeys.has(b.key));
+    const workflowManifest = [
+      ...dbInstructions.map((w) => ({
+        key: w.key,
+        name: w.name,
+        description: w.description,
+      })),
+      ...builtins,
+    ];
     instructions = buildRunInstructions({
       runtimeKind: "main",
       projectId,

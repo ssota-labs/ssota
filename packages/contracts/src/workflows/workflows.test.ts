@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   WORKFLOW_KEYS,
   WORKFLOW_REGISTRY,
+  WORKFLOW_INSTRUCTION_SEEDS,
+  getBuiltinWorkflowByKey,
   getWorkflowByKey,
   isKnownWorkflowKey,
+  listBuiltinWorkflowIndex,
   listWorkflowKeys,
 } from "./index.js";
 
@@ -50,5 +53,25 @@ describe("workflow registry SSOT", () => {
 
   it("getWorkflowByKey returns null for unknown keys", () => {
     expect(getWorkflowByKey("not.a.workflow")).toBeNull();
+  });
+});
+
+describe("built-in workflows (code-only, not seeded)", () => {
+  it("exposes agent.setup as a built-in with a full instruction", () => {
+    const setup = getBuiltinWorkflowByKey("agent.setup");
+    expect(setup).not.toBeNull();
+    expect(setup?.instruction.length).toBeGreaterThan(50);
+    expect(setup?.description.length).toBeGreaterThan(20);
+    expect(listBuiltinWorkflowIndex().some((w) => w.key === "agent.setup")).toBe(
+      true,
+    );
+  });
+
+  it("keeps built-ins OUT of the DB seeds and the seeded registry", () => {
+    expect(
+      WORKFLOW_INSTRUCTION_SEEDS.some((s) => s.key === "agent.setup"),
+    ).toBe(false);
+    expect(isKnownWorkflowKey("agent.setup")).toBe(false);
+    expect(getWorkflowByKey("agent.setup")).toBeNull();
   });
 });
