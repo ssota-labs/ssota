@@ -44,6 +44,10 @@ export {
   type ConnectInstallation,
 } from "./credentials/provider.js";
 export {
+  enrichConnectInstallationDisplay,
+  type EnrichConnectInstallationInput,
+} from "./connections/enrich-installation-display.js";
+export {
   createVercelOidcVerifier,
   type OidcWebhookVerifier,
 } from "./credentials/oidc.js";

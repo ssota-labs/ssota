@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  enrichConnectInstallationDisplay,
   getConnectInstallation,
   getDb,
   normalizeConnectInstallationId,
@@ -62,7 +63,7 @@ export async function GET(request: Request) {
   );
 
   try {
-    const installation = await getConnectInstallation(
+    const connectInstallation = await getConnectInstallation(
       connector,
       {
         projectId,
@@ -72,6 +73,19 @@ export async function GET(request: Request) {
       },
       { scopes },
     );
+
+    const installation = connectInstallation
+      ? await enrichConnectInstallationDisplay({
+          connector,
+          installation: connectInstallation,
+          scope: {
+            projectId,
+            accountId,
+            installationId,
+            userId,
+          },
+        })
+      : null;
 
     if (accountId && installation) {
       const sessionUser = await getCurrentUser().catch(() => null);
