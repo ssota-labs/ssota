@@ -68,6 +68,26 @@ function toModelMessage(m: UIMessage): ModelMessage | null {
   return { role: "user", content };
 }
 
+/**
+ * STUB_MODEL cannot fetch private-IP attachment URLs (127.0.0.1 Storage). Strip
+ * images from agent history while still persisting full parts in the thread DB.
+ */
+function toAgentHistory(messages: UIMessage[]): ModelMessage[] {
+  const stub = process.env.STUB_MODEL === "1";
+  return messages
+    .map((m) => {
+      const msg = toModelMessage(m);
+      if (!msg || !stub || msg.role !== "user" || typeof msg.content === "string") {
+        return msg;
+      }
+      const textParts = msg.content.filter((p) => p.type === "text");
+      const text =
+        textParts.map((p) => p.text).join(" ").trim() || "[image attached]";
+      return { role: "user", content: text };
+    })
+    .filter((m): m is ModelMessage => m !== null);
+}
+
 export async function POST(request: Request) {
   const user = await getCurrentUser().catch(() => null);
   if (!user) {
@@ -112,9 +132,7 @@ export async function POST(request: Request) {
 
   // Replay the whole client-side conversation into the agent (multi-turn
   // memory). User turns keep image attachments as multimodal content.
-  const history = messages
-    .map(toModelMessage)
-    .filter((m): m is ModelMessage => m !== null);
+  const history = toAgentHistory(messages);
 
   const task = await spawnTask(
     {

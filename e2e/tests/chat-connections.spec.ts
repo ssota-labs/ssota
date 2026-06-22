@@ -1,4 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createDb } from "@ssota/adapter-supabase";
 import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
@@ -8,6 +10,8 @@ import { gotoProject } from "../helpers/console";
 // workflow / streaming pipeline runs locally without external services.
 
 const CHAT_PLACEHOLDER = /메시지를 입력하세요/;
+const FIXTURE_IMAGE = join(process.cwd(), "fixtures/chat-test-image.png");
+const FIXTURE_BYTES = [...readFileSync(FIXTURE_IMAGE)];
 
 async function resetChatAndConnections() {
   const { db, client } = createDb(
@@ -35,6 +39,74 @@ async function gotoChat(page: Page) {
 async function sendChatMessage(page: Page, text: string) {
   const input = chatComposer(page);
   await input.fill(text);
+  await page.getByRole("button", { name: "전송" }).click();
+}
+
+function chatComposerForm(page: Page) {
+  return page.locator("form").filter({ has: chatComposer(page) });
+}
+
+async function waitForAttachmentReady(page: Page) {
+  const preview = page.getByTestId("attachment-preview");
+  await expect(preview.locator("img")).toBeVisible({ timeout: 15_000 });
+  await expect(preview.locator(".animate-spin")).toHaveCount(0, {
+    timeout: 15_000,
+  });
+}
+
+async function attachImageViaFilePicker(page: Page) {
+  await page
+    .locator('input[type="file"][accept="image/*"]')
+    .setInputFiles(FIXTURE_IMAGE);
+  await waitForAttachmentReady(page);
+}
+
+async function attachImageViaPaste(page: Page) {
+  const input = chatComposer(page);
+  await input.focus();
+  await input.evaluate((el, bytes) => {
+    const dt = new DataTransfer();
+    const file = new File(
+      [new Uint8Array(bytes)],
+      "paste.png",
+      { type: "image/png" },
+    );
+    dt.items.add(file);
+    el.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: dt,
+      }),
+    );
+  }, FIXTURE_BYTES);
+  await waitForAttachmentReady(page);
+}
+
+async function attachImageViaDragDrop(page: Page) {
+  const form = chatComposerForm(page);
+  await form.evaluate((formEl, bytes) => {
+    const dt = new DataTransfer();
+    const file = new File(
+      [new Uint8Array(bytes)],
+      "drop.png",
+      { type: "image/png" },
+    );
+    dt.items.add(file);
+    formEl.dispatchEvent(
+      new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: dt }),
+    );
+  }, FIXTURE_BYTES);
+  await waitForAttachmentReady(page);
+}
+
+async function sendWithReadyAttachment(page: Page, text?: string) {
+  if (text) {
+    await chatComposer(page).fill(text);
+  }
+  await expect(page.getByRole("button", { name: "전송" })).toBeEnabled({
+    timeout: 10_000,
+  });
   await page.getByRole("button", { name: "전송" }).click();
 }
 
@@ -126,13 +198,65 @@ test.describe("Connections + Chat", () => {
     test("@mention dropdown lists connector candidates", async ({ page }) => {
       await gotoChat(page);
 
-      await chatComposer(page).fill("@Sl");
-      await expect(page.getByRole("button", { name: /Slack/ })).toBeVisible({
-        timeout: 10_000,
-      });
+      await chatComposer(page).pressSequentially("@Sl", { delay: 50 });
+      const dropdown = page.getByTestId("mention-dropdown");
+      await expect(dropdown).toBeVisible({ timeout: 10_000 });
+      await expect(dropdown.getByRole("button", { name: /Slack/ })).toBeVisible();
       await expect(
         page.getByText("↑↓ 이동 · Tab/Enter 선택 · Esc 닫기"),
       ).toBeVisible();
+
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-mention-dropdown-open.png",
+        fullPage: true,
+      });
+    });
+
+    test("image attachment via file picker uploads to storage", async ({
+      page,
+    }) => {
+      await gotoChat(page);
+      await attachImageViaFilePicker(page);
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-image-attachment-preview.png",
+        fullPage: true,
+      });
+      await sendWithReadyAttachment(page, "image via file picker");
+
+      await expect(page.getByText("image via file picker")).toBeVisible();
+      await expect(page.getByTestId("user-message-image")).toBeVisible({
+        timeout: 15_000,
+      });
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-image-sent-message.png",
+        fullPage: true,
+      });
+    });
+
+    test("image attachment via clipboard paste uploads to storage", async ({
+      page,
+    }) => {
+      await gotoChat(page);
+      await attachImageViaPaste(page);
+      await sendWithReadyAttachment(page, "image via paste");
+
+      await expect(page.getByText("image via paste")).toBeVisible();
+      await expect(page.getByTestId("user-message-image")).toBeVisible({
+        timeout: 15_000,
+      });
+    });
+
+    test("image attachment via drag-and-drop uploads to storage", async ({
+      page,
+    }) => {
+      await gotoChat(page);
+      await attachImageViaDragDrop(page);
+      await sendWithReadyAttachment(page, "image via drag drop");
+
+      await expect(page.getByText("image via drag drop")).toBeVisible();
+      await expect(page.getByTestId("user-message-image")).toBeVisible({
+        timeout: 15_000,
+      });
     });
 
     test("new chat creates a fresh thread with empty state", async ({ page }) => {

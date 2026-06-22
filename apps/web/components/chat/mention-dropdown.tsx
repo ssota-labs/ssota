@@ -19,7 +19,10 @@ export function MentionDropdown({
   if (suggestions.length === 0) return null;
 
   return (
-    <div className="absolute bottom-full left-0 z-20 mb-2 w-72 overflow-hidden rounded-xl border bg-popover shadow-lg">
+    <div
+      data-testid="mention-dropdown"
+      className="absolute bottom-full left-0 z-20 mb-2 w-72 overflow-hidden rounded-xl border bg-popover shadow-lg"
+    >
       <ul className="max-h-64 overflow-y-auto py-1">
         {suggestions.map((candidate, index) => {
           const Icon = candidate.kind === "connector" ? PlugIcon : CircleIcon;

@@ -17,7 +17,10 @@ export function AttachmentsPreview({
   if (attachments.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-2 px-2 pb-2 pt-1">
+    <div
+      data-testid="attachment-preview"
+      className="flex flex-wrap gap-2 px-2 pb-2 pt-1"
+    >
       {attachments.map((a) => (
         <div key={a.id} className="group relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
