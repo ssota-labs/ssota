@@ -25,8 +25,6 @@ export interface ConnectorDef {
   label: string;
   /** Whether several workspaces/installations can be connected at once. */
   multiWorkspace: boolean;
-  /** One-line description of what connecting unlocks. */
-  description: string;
   /** Connector uid from env (`provider/config-name`), or null if unconfigured. */
   connectorUid: string | null;
 }
@@ -44,31 +42,26 @@ const REGISTRY: Omit<ConnectorDef, "connectorUid">[] = [
     provider: "slack",
     label: "Slack",
     multiWorkspace: true,
-    description: "Let the agent read and post in your Slack workspaces.",
   },
   {
     provider: "notion",
     label: "Notion",
     multiWorkspace: true,
-    description: "Give the agent access to your Notion workspaces.",
   },
   {
     provider: "github",
     label: "GitHub",
     multiWorkspace: true,
-    description: "Connect GitHub orgs so the agent can work with repos.",
   },
   {
     provider: "discord",
     label: "Discord",
     multiWorkspace: true,
-    description: "Add the agent to your Discord servers.",
   },
   {
     provider: "linear",
     label: "Linear",
     multiWorkspace: false,
-    description: "Connect your Linear workspace for issues and projects.",
   },
 ];
 

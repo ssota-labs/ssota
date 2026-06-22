@@ -5,6 +5,8 @@ import { createDb } from "@ssota/adapter-postgres";
 import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
 
+const STUB_CONNECTION_SEARCH_TRIGGER = "e2e-connection-search";
+
 // e2e for the two new console surfaces. Vercel Connect is stubbed
 // (CONNECT_STUB=1) and the LLM is stubbed (STUB_MODEL=1) so the real route /
 // workflow / streaming pipeline runs locally without external services.
@@ -123,7 +125,7 @@ test.describe("Connections + Chat", () => {
 
     const slack = page.getByTestId("connector-slack");
     await expect(slack).toBeVisible();
-    await expect(slack.getByText("multiple workspaces")).toBeVisible();
+    await expect(slack.getByText(/multiple workspaces|여러 워크스페이스/i)).toBeVisible();
     await expect(slack.getByTestId("connection-row")).toHaveCount(0);
 
     // First connect → /api/connect/authorize → (stub) callback → records → back.
@@ -134,12 +136,16 @@ test.describe("Connections + Chat", () => {
     await page.getByTestId("connect-slack").click();
     await expect(slack.getByTestId("connection-row")).toHaveCount(2);
 
+    // Each connected workspace row offers per-installation Reconnect.
+    await expect(slack.getByTestId("reconnect-slack")).toHaveCount(2);
+
     // Disconnect one → back to a single row.
     await slack
       .getByTestId("connection-row")
       .first()
-      .getByRole("button", { name: "Disconnect" })
+      .getByRole("button", { name: /Disconnect|연결 해제/i })
       .click();
+    await page.getByTestId("disconnect-dialog-confirm").click();
     await expect(slack.getByTestId("connection-row")).toHaveCount(1);
   });
 
@@ -150,13 +156,15 @@ test.describe("Connections + Chat", () => {
 
     const linear = page.getByTestId("connector-linear");
     await expect(linear).toBeVisible();
-    await expect(linear.getByText("multiple workspaces")).toHaveCount(0);
+    await expect(linear.getByText(/multiple workspaces|여러 워크스페이스/i)).toHaveCount(0);
 
     await page.getByTestId("connect-linear").click();
     await expect(linear.getByTestId("connection-row")).toHaveCount(1);
-    // Single connectors offer Reconnect, never "Add workspace".
-    await expect(linear.getByTestId("reconnect-linear")).toBeVisible();
-    await expect(linear.getByText("Add workspace")).toHaveCount(0);
+    // Single connectors offer per-row Reconnect, never "Add workspace".
+    await expect(
+      linear.getByTestId("connection-row").getByTestId("reconnect-linear"),
+    ).toBeVisible();
+    await expect(linear.getByText(/Add workspace|워크스페이스 추가/i)).toHaveCount(0);
   });
 
   test.describe("chat UX", () => {
@@ -322,6 +330,31 @@ test.describe("Connections + Chat", () => {
       await expect(
         page.getByTestId("assistant-message").getByText(/stub agent/i),
       ).toBeVisible({ timeout: 30_000 });
+    });
+
+    test("connection_search then linear__search_issues via stub model", async ({
+      page,
+    }) => {
+      await gotoProject(page, "connections");
+      await page.getByTestId("connect-linear").click();
+      await expect(
+        page.getByTestId("connector-linear").getByTestId("connection-row"),
+      ).toHaveCount(1);
+
+      await gotoChat(page);
+      await sendChatMessage(
+        page,
+        `${STUB_CONNECTION_SEARCH_TRIGGER} find linear issues`,
+      );
+
+      await expect(
+        page.getByText(`${STUB_CONNECTION_SEARCH_TRIGGER} find linear issues`),
+      ).toBeVisible();
+      await expect(
+        page
+          .getByTestId("assistant-message")
+          .getByText(/connection_search.*stub MCP/i),
+      ).toBeVisible({ timeout: 60_000 });
     });
   });
 });

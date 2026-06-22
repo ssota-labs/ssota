@@ -5,6 +5,7 @@ import type { JsonRenderSpec } from "@ssota/contracts";
 import {
   ActionContext,
   BasePathContext,
+  JsonRenderContext,
   WidgetBuildContext,
   type OnAction,
 } from "./context";
@@ -62,13 +63,22 @@ export function DynamicPageRenderer({
   basePath = "",
   onBuildWidget,
 }: RenderProps) {
+  const runtime = {
+    spec,
+    bindingData,
+    renderElement: (elementId: string) =>
+      renderElement(elementId, spec, bindingData),
+  };
+
   return (
     <ActionContext.Provider value={onAction}>
       <WidgetBuildContext.Provider value={onBuildWidget}>
         <BasePathContext.Provider value={basePath}>
-          <div className="space-y-2" data-testid="dynamic-page-renderer">
-            {renderElement(spec.root, spec, bindingData)}
-          </div>
+          <JsonRenderContext.Provider value={runtime}>
+            <div className="space-y-2" data-testid="dynamic-page-renderer">
+              {renderElement(spec.root, spec, bindingData)}
+            </div>
+          </JsonRenderContext.Provider>
         </BasePathContext.Provider>
       </WidgetBuildContext.Provider>
     </ActionContext.Provider>

@@ -301,6 +301,47 @@ export const en = {
       baseline_pending: "Baseline pending",
     },
   },
+  connections: {
+    title: "Connections",
+    description:
+      "Connect third-party services so the agent can read, write, and act on your behalf.",
+    summaryConnected: "{count} connected",
+    statusConnected: "Connected",
+    statusNotConnected: "Not connected",
+    statusNotConfigured: "Not configured",
+    multiWorkspace: "Multiple workspaces",
+    noWorkspaces: "No workspaces connected yet.",
+    notConfiguredHint: "This provider is not configured for this deployment.",
+    connect: "Connect",
+    addWorkspace: "Add workspace",
+    reconnect: "Refresh",
+    disconnect: "Disconnect",
+    disconnectTitle: "Disconnect this workspace?",
+    disconnectDescription:
+      "The agent will lose access to {name}. You can reconnect anytime.",
+    disconnectConfirm: "Disconnect",
+    connectedAs: "Connected as {name}",
+    providers: {
+      slack: {
+        description:
+          "Let the agent read and post in your Slack workspaces.",
+      },
+      notion: {
+        description: "Give the agent access to your Notion workspaces.",
+      },
+      github: {
+        description:
+          "Connect GitHub orgs so the agent can work with repos.",
+      },
+      discord: {
+        description: "Add the agent to your Discord servers.",
+      },
+      linear: {
+        description:
+          "Connect your Linear workspace for issues and projects.",
+      },
+    },
+  },
 } as const;
 
 type DeepStringify<T> = {
@@ -613,6 +654,47 @@ export const ko = {
       partial: "부분 달성",
       missed: "미달",
       baseline_pending: "기준선 대기",
+    },
+  },
+  connections: {
+    title: "커넥션",
+    description:
+      "에이전트가 대신 읽고, 쓰고, 작업할 수 있도록 외부 서비스를 연결합니다.",
+    summaryConnected: "{count}개 연결됨",
+    statusConnected: "연결됨",
+    statusNotConnected: "미연결",
+    statusNotConfigured: "미설정",
+    multiWorkspace: "여러 워크스페이스",
+    noWorkspaces: "아직 연결된 워크스페이스가 없습니다.",
+    notConfiguredHint: "이 배포 환경에서는 이 제공자가 설정되지 않았습니다.",
+    connect: "연결",
+    addWorkspace: "워크스페이스 추가",
+    reconnect: "새로고침",
+    disconnect: "연결 해제",
+    disconnectTitle: "이 워크스페이스 연결을 해제할까요?",
+    disconnectDescription:
+      "에이전트가 {name}에 더 이상 접근할 수 없습니다. 언제든 다시 연결할 수 있습니다.",
+    disconnectConfirm: "연결 해제",
+    connectedAs: "{name}으로 연결됨",
+    providers: {
+      slack: {
+        description:
+          "에이전트가 Slack 워크스페이스에서 메시지를 읽고 보낼 수 있게 합니다.",
+      },
+      notion: {
+        description: "에이전트가 Notion 워크스페이스에 접근할 수 있게 합니다.",
+      },
+      github: {
+        description:
+          "GitHub 조직을 연결해 에이전트가 저장소에서 작업할 수 있게 합니다.",
+      },
+      discord: {
+        description: "에이전트를 Discord 서버에 추가합니다.",
+      },
+      linear: {
+        description:
+          "Linear 워크스페이스를 연결해 이슈와 프로젝트를 다룰 수 있게 합니다.",
+      },
     },
   },
 } satisfies Messages;

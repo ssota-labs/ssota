@@ -250,6 +250,114 @@ export interface ConnectInstallation {
   name?: string;
 }
 
+/** Vercel Connect may redirect with `installation_id=EMPTY` when no id is in the URL. */
+const CONNECT_INSTALLATION_ID_SENTINELS = new Set([
+  "",
+  "empty",
+  "null",
+  "undefined",
+]);
+
+/**
+ * Drop Connect placeholder installation/tenant ids before API calls or DB writes.
+ */
+export function normalizeConnectInstallationId(
+  id: string | null | undefined,
+): string | undefined {
+  if (id == null) return undefined;
+  const trimmed = id.trim();
+  if (!trimmed) return undefined;
+  if (CONNECT_INSTALLATION_ID_SENTINELS.has(trimmed.toLowerCase())) {
+    return undefined;
+  }
+  return trimmed;
+}
+
+type ConnectTokenResponseShape = {
+  installationId?: string;
+  tenantId?: string;
+  name?: string;
+  metadata?: Record<string, unknown>;
+};
+
+function extractInstallationName(
+  response: ConnectTokenResponseShape,
+): string | undefined {
+  const direct = response.name?.trim();
+  if (direct) return direct;
+
+  const metadata = response.metadata;
+  if (!metadata) return undefined;
+
+  const keys = [
+    "name",
+    "team_name",
+    "workspace_name",
+    "login",
+    "organization",
+    "org",
+    "display_name",
+    "teamName",
+    "workspaceName",
+  ];
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return undefined;
+}
+
+function mapConnectTokenResponse(
+  response: ConnectTokenResponseShape,
+): ConnectInstallation {
+  return {
+    installationId: normalizeConnectInstallationId(response.installationId),
+    tenantId: normalizeConnectInstallationId(response.tenantId),
+    name: extractInstallationName(response),
+  };
+}
+
+function mergeConnectInstallations(
+  ...parts: Array<ConnectInstallation | null | undefined>
+): ConnectInstallation | null {
+  const merged: ConnectInstallation = {};
+  for (const part of parts) {
+    if (!part) continue;
+    if (!merged.installationId && part.installationId) {
+      merged.installationId = part.installationId;
+    }
+    if (!merged.tenantId && part.tenantId) {
+      merged.tenantId = part.tenantId;
+    }
+    if (!merged.name && part.name) {
+      merged.name = part.name;
+    }
+  }
+  return Object.keys(merged).length > 0 ? merged : null;
+}
+
+function connectSubjectsForInstallationLookup(
+  connector: string,
+  scope: CredentialScope,
+): ConnectTokenSubject[] {
+  const subjects: ConnectTokenSubject[] = [];
+  if (connectUsesAppSubject(connector)) {
+    subjects.push({ type: "app" });
+  }
+  subjects.push(resolveConnectCallbackSubject(connector, scope));
+
+  const seen = new Set<string>();
+  return subjects.filter((subject) => {
+    const key =
+      subject.type === "user" ? `user:${subject.id}` : subject.type;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 /**
  * Confirm a connection and read its provider ids via `getTokenResponse`
  * (used by the connect callback after an install/authorize completes).
@@ -259,10 +367,20 @@ export async function getConnectInstallation(
   scope: CredentialScope,
   options: { scopes?: string[] } = {},
 ): Promise<ConnectInstallation | null> {
+  const normalizedInstallationId = normalizeConnectInstallationId(
+    scope.installationId,
+  );
+  const normalizedScope: CredentialScope = {
+    ...scope,
+    ...(normalizedInstallationId
+      ? { installationId: normalizedInstallationId }
+      : {}),
+  };
+
   // Dev/local stub (CONNECT_STUB=1): echo the installation id the stub
   // authorize put on the callback, with a friendly name — no real provider call.
   if (process.env.CONNECT_STUB === "1") {
-    const installationId = scope.installationId ?? "stub-install";
+    const installationId = normalizedInstallationId ?? "stub-install";
     const provider = connector.split("/")[0] ?? connector;
     return {
       installationId,
@@ -280,33 +398,41 @@ export async function getConnectInstallation(
         scopes?: string[];
       },
       options?: { forceRefresh?: boolean; vercelToken?: string },
-    ) => Promise<{
-      installationId?: string;
-      tenantId?: string;
-      name?: string;
-    }>;
+    ) => Promise<ConnectTokenResponseShape>;
   };
   try {
     connect = (await import("@vercel/connect")) as unknown as typeof connect;
   } catch {
     throw new Error("@vercel/connect is not installed");
   }
-  const res = await connect.getTokenResponse(
+
+  const tokenParams = {
+    ...(normalizedInstallationId
+      ? { installationId: normalizedInstallationId }
+      : {}),
+    ...(options.scopes ? { scopes: options.scopes } : {}),
+  };
+
+  const installations: ConnectInstallation[] = [];
+  for (const subject of connectSubjectsForInstallationLookup(
     connector,
-    {
-      subject: resolveConnectCallbackSubject(connector, scope),
-      ...(scope.installationId ? { installationId: scope.installationId } : {}),
-      ...(options.scopes ? { scopes: options.scopes } : {}),
-    },
-    { forceRefresh: true },
-  );
-  return res
-    ? {
-        installationId: res.installationId,
-        tenantId: res.tenantId,
-        name: res.name,
+    normalizedScope,
+  )) {
+    try {
+      const response = await connect.getTokenResponse(
+        connector,
+        { subject, ...tokenParams },
+        { forceRefresh: true },
+      );
+      if (response) {
+        installations.push(mapConnectTokenResponse(response));
       }
-    : null;
+    } catch {
+      // App-subject lookup can fail before install completes; user-subject may still work.
+    }
+  }
+
+  return mergeConnectInstallations(...installations);
 }
 
 /**
