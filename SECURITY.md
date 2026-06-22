@@ -5,11 +5,10 @@
 Please report security vulnerabilities **privately** — do not open a public
 issue, pull request, or discussion for an unpatched vulnerability.
 
-> **Maintainers:** set the security contact below before public release.
-> Suggested: a dedicated alias (e.g. `security@yourdomain`) or GitHub's
-> [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/configuring-private-vulnerability-reporting).
-
-- **Contact:** `security@ssota.example` _(placeholder — replace)_
+- **Preferred:** GitHub
+  [private vulnerability reporting](https://docs.github.com/en/code-security/security-advisories/working-with-repository-security-advisories/configuring-private-vulnerability-reporting)
+  for this repository.
+- **Email:** `contact@ssota.ai`
 
 When reporting, please include:
 

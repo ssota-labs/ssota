@@ -1,8 +1,9 @@
 # SSOTA Enterprise License
 
-> **Note for SSOTA maintainers:** this Enterprise License text is a placeholder
-> pending legal review. Finalize the commercial terms, contact address, and
-> governing law before public release.
+Copyright © SSOTA Labs, Inc.
+
+> **Note:** the commercial terms below are a working baseline. Finalize them and
+> the governing law with legal counsel before signing enterprise agreements.
 
 This SSOTA Enterprise License (the **"Enterprise License"**) governs the use of
 the SSOTA software files that include `.ee.` in their filename and all content
@@ -38,4 +39,6 @@ to the maximum extent permitted by law.
 
 ## Contact
 
-To obtain an Enterprise License, contact the SSOTA team.
+The licensor is SSOTA Labs, Inc., a Delaware corporation. To obtain an
+Enterprise License, contact `contact@ssota.ai`. For copyright or licensing
+questions, contact `copyright@ssota.ai`.

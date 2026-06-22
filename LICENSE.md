@@ -1,9 +1,6 @@
 # License
 
-> **Note for SSOTA maintainers:** the legal entity named as "licensor" below
-> (`SSOTA`) and the governing-law / commercial terms in `LICENSE_EE.md` are
-> placeholders pending legal review. Replace `SSOTA` with the registered legal
-> entity before public release.
+Copyright © SSOTA Labs, Inc.
 
 Portions of this software are licensed as follows:
 
@@ -79,7 +76,7 @@ any kind of legal claim.
 
 ### Definitions
 
-The "licensor" is SSOTA, the entity offering these terms.
+The "licensor" is SSOTA Labs, Inc., a Delaware corporation, offering these terms.
 
 The "software" is the software the licensor makes available under these terms, including any portion of it.
 
