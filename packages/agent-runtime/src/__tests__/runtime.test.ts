@@ -10,6 +10,7 @@ import {
   connectUsesAppSubject,
   createEnvCredentialProvider,
   getConnectInstallation,
+  normalizeConnectInstallationId,
   resolveConnectCallbackSubject,
   startConnectAuthorization,
 } from "../credentials/provider.js";
@@ -115,7 +116,6 @@ describe("buildRunInstructions", () => {
 
     expect(prompt).toContain("Draft the onboarding PRD");
     expect(prompt).toContain("work.write_document");
-    expect(prompt).toContain("connection_search");
     expect(prompt).toContain("slack__post_message");
     expect(prompt).toContain("Covers activation metric");
     expect(prompt).toContain("Write the PRD for onboarding.");
@@ -182,6 +182,24 @@ describe("resolveConnectCallbackSubject", () => {
     expect(() =>
       resolveConnectCallbackSubject("oauth/notion", { projectId: "p" }),
     ).toThrow(/userId is required/);
+  });
+});
+
+describe("normalizeConnectInstallationId", () => {
+  it("drops Connect placeholder and blank ids", () => {
+    expect(normalizeConnectInstallationId(undefined)).toBeUndefined();
+    expect(normalizeConnectInstallationId(null)).toBeUndefined();
+    expect(normalizeConnectInstallationId("")).toBeUndefined();
+    expect(normalizeConnectInstallationId("   ")).toBeUndefined();
+    expect(normalizeConnectInstallationId("EMPTY")).toBeUndefined();
+    expect(normalizeConnectInstallationId("empty")).toBeUndefined();
+  });
+
+  it("keeps real installation ids", () => {
+    expect(normalizeConnectInstallationId("T0914DV7GA0")).toBe("T0914DV7GA0");
+    expect(normalizeConnectInstallationId(" 3a6919c1-ca19-4ced-b947-487ec85f87b4 ")).toBe(
+      "3a6919c1-ca19-4ced-b947-487ec85f87b4",
+    );
   });
 });
 

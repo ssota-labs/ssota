@@ -22,6 +22,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const connector = url.searchParams.get("connector");
   const accountId = url.searchParams.get("accountId") ?? undefined;
+  const installationId = url.searchParams.get("installationId") ?? undefined;
   const projectId =
     url.searchParams.get("projectId") ?? process.env.CHAT_PROJECT_ID ?? "";
   const returnTo = url.searchParams.get("returnTo") ?? "/";
@@ -69,7 +70,12 @@ export async function GET(request: Request) {
   try {
     const flowUrl = await startConnectAuthorization(
       connector,
-      { projectId, accountId: resolvedAccountId, userId: user.id },
+      {
+        projectId,
+        accountId: resolvedAccountId,
+        userId: user.id,
+        ...(installationId ? { installationId } : {}),
+      },
       { scopes, callbackUrl: callback.toString() },
     );
     return NextResponse.redirect(flowUrl);

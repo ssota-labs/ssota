@@ -21,8 +21,7 @@ export default async function AppConnectionsPage({
   const returnTo = appProjectPath(routeCtx, "connections");
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4">
-      <ConnectionsList
+    <ConnectionsList
         connectors={connectors}
         connections={connections.map((c) => ({
           id: c.id,
@@ -35,6 +34,5 @@ export default async function AppConnectionsPage({
         accountId={ctx.accountId}
         returnTo={returnTo}
       />
-    </div>
   );
 }

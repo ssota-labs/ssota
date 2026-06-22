@@ -28,3 +28,7 @@ export {
   buildActiveTools,
   parseConnectionSearchOutput,
 } from "./activate-tools.js";
+export {
+  enrichConnectInstallationDisplay,
+  type EnrichConnectInstallationInput,
+} from "./enrich-installation-display.js";
