@@ -1,12 +1,13 @@
 import { after, NextResponse } from "next/server";
 import { createUIMessageStreamResponse } from "ai";
-import type { UIMessage, UIMessageChunk } from "ai";
+import type { FileUIPart, UIMessage, UIMessageChunk } from "ai";
 import { z } from "zod";
 import { start } from "workflow/api";
 import { spawnTask } from "@ssota/core";
 import { getGraphReadPort, getTaskPort } from "@ssota/agent-runtime";
 import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
 import { getChatPort } from "@/lib/ports";
+import { resolveModelId } from "@/lib/chat/models";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -18,6 +19,7 @@ const bodySchema = z.object({
   projectId: z.string().uuid(),
   threadId: z.string().uuid(),
   accountId: z.string().uuid(),
+  modelId: z.string().optional(),
   messages: z.array(z.any()),
 });
 
@@ -29,6 +31,41 @@ function textOf(message: UIMessage): string {
     .map((p) => p.text as string)
     .join("")
     .trim();
+}
+
+type ModelMessage =
+  | { role: "assistant"; content: string }
+  | {
+      role: "user";
+      content:
+        | string
+        | Array<
+            | { type: "text"; text: string }
+            | { type: "image"; image: string }
+          >;
+    };
+
+/**
+ * Convert a UIMessage into a model message. User turns may carry image file
+ * parts (Supabase Storage URLs) → multimodal content; assistant turns and
+ * text-only user turns collapse to a string.
+ */
+function toModelMessage(m: UIMessage): ModelMessage | null {
+  const text = textOf(m);
+  if (m.role === "assistant") {
+    return text ? { role: "assistant", content: text } : null;
+  }
+  const images = (m.parts ?? [])
+    .filter(
+      (p): p is FileUIPart =>
+        p.type === "file" && p.mediaType.startsWith("image/"),
+    )
+    .map((p) => ({ type: "image" as const, image: p.url }));
+  if (images.length === 0) return text ? { role: "user", content: text } : null;
+  const content: Array<
+    { type: "text"; text: string } | { type: "image"; image: string }
+  > = [...(text ? [{ type: "text" as const, text }] : []), ...images];
+  return { role: "user", content };
 }
 
 export async function POST(request: Request) {
@@ -51,6 +88,7 @@ export async function POST(request: Request) {
   }
 
   const { projectId, threadId, accountId } = body;
+  const modelId = resolveModelId(body.modelId);
   const messages = body.messages as UIMessage[];
   const chat = getChatPort(projectId, accountId);
 
@@ -72,13 +110,11 @@ export async function POST(request: Request) {
     parts: lastUser?.parts ?? [{ type: "text", text: newUserText }],
   });
 
-  // Replay the whole client-side conversation into the agent (multi-turn memory).
+  // Replay the whole client-side conversation into the agent (multi-turn
+  // memory). User turns keep image attachments as multimodal content.
   const history = messages
-    .map((m) => ({
-      role: m.role === "user" ? ("user" as const) : ("assistant" as const),
-      content: textOf(m),
-    }))
-    .filter((m) => m.content.length > 0);
+    .map(toModelMessage)
+    .filter((m): m is ModelMessage => m !== null);
 
   const task = await spawnTask(
     {
@@ -99,7 +135,7 @@ export async function POST(request: Request) {
   );
 
   const run = await start(runSsotaAgentWorkflow, [
-    { projectId, taskId: task.id, accountId },
+    { projectId, taskId: task.id, accountId, modelId },
   ]);
 
   const readable = run.getReadable() as ReadableStream<UIMessageChunk>;
