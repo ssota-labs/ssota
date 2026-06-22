@@ -52,7 +52,8 @@ export async function completeProjectOnboarding(
   await page.getByLabel("Project name").fill(projectName);
   await page.locator('button[type="submit"]').click();
 
-  await expect(page.getByText("Nothing here yet")).toBeVisible({
+  await expect(page).toHaveURL(/\/overview$/, { timeout: 30_000 });
+  await expect(page.getByText("No graph nodes yet")).toBeVisible({
     timeout: 15_000,
   });
 
