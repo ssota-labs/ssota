@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { CaretRightIcon, CaretUpDownIcon, CubeIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import { PagePatternHub } from "@ssota/ui/components/page-patterns";
 import {
@@ -68,21 +68,59 @@ function PreviewSwitcherTrigger({
 const WORKFLOW_REVEAL_ANIMATION =
   "animate-in fade-in slide-in-from-bottom-3 duration-400";
 
+function workflowRevealProps(revealKey?: string) {
+  return revealKey ? { "data-workflow-reveal-key": revealKey } : {};
+}
+
+function scrollSidebarToRevealedItem(
+  navRoot: HTMLElement | null,
+  revealKey: string,
+): void {
+  const viewport = navRoot?.closest<HTMLElement>('[data-slot="scroll-area-viewport"]');
+  if (!viewport || !navRoot) return;
+
+  const target = navRoot.querySelector<HTMLElement>(
+    `[data-workflow-reveal-key="${CSS.escape(revealKey)}"]`,
+  );
+
+  if (target) {
+    const viewportRect = viewport.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const overflow = targetRect.bottom - viewportRect.bottom + 8;
+
+    if (overflow > 0) {
+      viewport.scrollTo({
+        top: viewport.scrollTop + overflow,
+        behavior: "smooth",
+      });
+    }
+    return;
+  }
+
+  viewport.scrollTo({
+    top: viewport.scrollHeight,
+    behavior: "smooth",
+  });
+}
+
 function PreviewNavLink({
   iconKey,
   label,
   active = false,
   className,
   isNew = false,
+  revealKey,
 }: {
   iconKey: string;
   label: string;
   active?: boolean;
   className?: string;
   isNew?: boolean;
+  revealKey?: string;
 }) {
   return (
     <div
+      {...workflowRevealProps(revealKey)}
       className={cn(
         "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm",
         active
@@ -98,9 +136,18 @@ function PreviewNavLink({
   );
 }
 
-function PreviewSectionLabel({ label, isNew = false }: { label: string; isNew?: boolean }) {
+function PreviewSectionLabel({
+  label,
+  isNew = false,
+  revealKey,
+}: {
+  label: string;
+  isNew?: boolean;
+  revealKey?: string;
+}) {
   return (
     <div
+      {...workflowRevealProps(revealKey)}
       className={cn(
         "px-2 py-1 text-xs font-medium tracking-wide text-muted-foreground uppercase",
         isNew && WORKFLOW_REVEAL_ANIMATION,
@@ -137,6 +184,7 @@ function PreviewWorkflowTree({
       <PreviewSectionLabel
         label={t("nav.sectionWorkflow")}
         isNew={lastRevealedKey === WORKFLOW_SECTION_REVEAL_KEY}
+        revealKey={WORKFLOW_SECTION_REVEAL_KEY}
       />
       {workflowTree.map((group) => {
         if (!isWorkflowGroupVisible(group, visibleKeys, revealMode)) {
@@ -153,6 +201,7 @@ function PreviewWorkflowTree({
           return (
             <div key={group.key} className="space-y-0.5">
               <div
+                {...workflowRevealProps(group.key)}
                 className={cn(
                   "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground",
                   lastRevealedKey === group.key && WORKFLOW_REVEAL_ANIMATION,
@@ -179,6 +228,7 @@ function PreviewWorkflowTree({
                       label={t(child.titleKey)}
                       className="pl-5"
                       isNew={lastRevealedKey === child.key}
+                      revealKey={child.key}
                     />
                   ))}
                 </div>
@@ -193,6 +243,7 @@ function PreviewWorkflowTree({
             iconKey={group.icon}
             label={t(group.titleKey)}
             isNew={lastRevealedKey === group.key}
+            revealKey={group.key}
           />
         );
       })}
@@ -218,6 +269,21 @@ export function ConsolePreview({
   const orgLabel = organizationName.trim() || "Your Organization";
   const projectLabel = projectName?.trim() || "Your Project";
   const provisioningLabel = templateName?.trim() || "project template";
+  const sidebarNavRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!lastRevealedKey || revealMode === "complete") {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        scrollSidebarToRevealedItem(sidebarNavRef.current, lastRevealedKey);
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [lastRevealedKey, revealMode]);
 
   return (
     <div className="flex h-[34rem] select-none" aria-hidden>
@@ -228,7 +294,7 @@ export function ConsolePreview({
 
         <ScrollArea className="min-h-0 flex-1">
           <nav className="p-2">
-            <div className="space-y-1">
+            <div ref={sidebarNavRef} className="space-y-1">
             {L0_NAV.map((entry) => {
               if (isNavLink(entry)) {
                 return (
