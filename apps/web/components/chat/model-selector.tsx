@@ -1,9 +1,11 @@
 "use client";
 
 import { CaretUpDownIcon, CheckIcon } from "@phosphor-icons/react";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -27,11 +29,17 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
     <DropdownMenu>
       <DropdownMenuTrigger
         disabled={disabled}
-        className={cn(
-          "inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors",
-          "hover:bg-secondary hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-        )}
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-8 gap-1 px-2 text-xs text-muted-foreground",
+              "hover:bg-secondary hover:text-foreground",
+            )}
+          />
+        }
       >
         <span className="max-w-[12rem] truncate">
           {active?.label ?? "모델 선택"}
@@ -40,7 +48,7 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
         {groups.map((group, gi) => (
-          <div key={group.provider}>
+          <DropdownMenuGroup key={group.provider}>
             {gi > 0 ? <DropdownMenuSeparator /> : null}
             <DropdownMenuLabel className="text-xs text-muted-foreground">
               {group.provider}
@@ -48,7 +56,7 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
             {group.models.map((model) => (
               <DropdownMenuItem
                 key={model.id}
-                onSelect={() => onChange(model.id)}
+                onClick={() => onChange(model.id)}
                 className="flex items-center justify-between gap-2"
               >
                 <span className="truncate">{model.label}</span>
@@ -57,7 +65,7 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
                 ) : null}
               </DropdownMenuItem>
             ))}
-          </div>
+          </DropdownMenuGroup>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

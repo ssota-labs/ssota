@@ -1,6 +1,7 @@
 import { and, desc, eq, isNull, or, sql, type SQL } from "drizzle-orm";
 import type {
   GetNodeInput,
+  ListEdgesInput,
   ListNodesByTypeInput,
   TraverseEdgesInput,
 } from "@ssota/contracts/graph";
@@ -149,6 +150,26 @@ export function createGraphReadPort(
         .limit(params.limit ?? 100)
         .offset(params.offset ?? 0);
       return rows.map(mapNode);
+    },
+
+    async queryEdges(params: ListEdgesInput) {
+      const conditions = [
+        eq(schema.edges.projectId, projectId),
+        ...edgeAccountConds(),
+      ];
+      if (params.edgeCatalogId) {
+        conditions.push(eq(schema.edges.edgeCatalogId, params.edgeCatalogId));
+      }
+      if (params.catalogKey) {
+        conditions.push(eq(schema.edgeCatalog.key, params.catalogKey));
+      }
+
+      const rows = await edgeSelect(db)
+        .where(and(...conditions))
+        .orderBy(desc(schema.edges.createdAt))
+        .limit(params.limit ?? 100)
+        .offset(params.offset ?? 0);
+      return rows.map(mapEdge);
     },
 
     async getNode(params: GetNodeInput) {

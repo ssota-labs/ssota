@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import type { MentionCandidate } from "@/app/api/chat/mentions/route";
-
-const MAX_VISIBLE = 8;
+import {
+  filterMentionCandidates,
+  type MentionCandidate,
+} from "@/lib/chat/mentions";
 
 interface MentionInfo {
   /** Index of the triggering "@" in the textarea value. */
@@ -60,9 +61,9 @@ export interface UseMentionSuggestions {
 }
 
 /**
- * @-mention autocomplete for the chat composer. Candidates (connectors + graph
- * nodes) are fetched once per project; filtering and keyboard navigation happen
- * client-side. Ported from the open-agents file-suggestions pattern.
+ * @-mention autocomplete for the chat composer. Candidates (connectors, graph
+ * nodes, edges) are fetched once per project; filtering and keyboard navigation
+ * happen client-side.
  */
 export function useMentionSuggestions(
   orgSlug: string,
@@ -89,10 +90,7 @@ export function useMentionSuggestions(
 
   const suggestions = useMemo(() => {
     if (!mention) return [];
-    const q = mention.query.toLowerCase();
-    return all
-      .filter((c) => !q || c.label.toLowerCase().includes(q))
-      .slice(0, MAX_VISIBLE);
+    return filterMentionCandidates(all, mention.query);
   }, [all, mention]);
 
   const open = mention !== null && suggestions.length > 0;
