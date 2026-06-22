@@ -20,8 +20,8 @@ test.describe("Executive roadmap", () => {
     const year = new Date().getFullYear();
     await expect(page.getByTestId("planning-roadmap-card-annual")).toBeVisible();
     await expect(page.getByTestId("planning-roadmap-card-q1")).toBeVisible();
-    await expect(page.getByTestId("planning-roadmap-card-q1")).toContainText("Q1");
-    await expect(page.getByTestId("planning-roadmap-card-annual")).toContainText("Annual");
+    await expect(page.getByText(`${year} 연간 로드맵`)).toBeVisible();
+    await expect(page.getByText(`${year} Q1 분기 로드맵`)).toBeVisible();
   });
 
   test("shows differentiated status badge colors", async ({ page }) => {

@@ -64,11 +64,6 @@ function periodTitle(year: number, period: PlanningPeriod): string {
   return `${year} Q${period} 분기 로드맵`;
 }
 
-function periodCardTitle(period: PlanningPeriod): string {
-  if (period === "annual") return "Annual";
-  return `Q${period}`;
-}
-
 function periodTestId(period: PlanningPeriod): string {
   return period === "annual" ? "annual" : `q${period}`;
 }
@@ -149,7 +144,7 @@ export function RoadmapSheetWorkspaceEl({
           className="border-border bg-card space-y-4 rounded-xl border p-4 md:p-5"
           data-testid="product-roadmap-section"
         >
-          <header className="space-y-1 border-b pb-4">
+          <header className="space-y-1">
             <h2 className="text-lg font-semibold tracking-tight">
               {t("roadmap.productRoadmap")}
             </h2>
@@ -182,7 +177,7 @@ export function RoadmapSheetWorkspaceEl({
           className="border-border bg-card space-y-4 rounded-xl border p-4 md:p-5"
           data-testid="planning-roadmaps-section"
         >
-          <header className="flex flex-wrap items-start justify-between gap-3 border-b pb-4">
+          <header className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 space-y-1">
               <h2 className="text-lg font-semibold tracking-tight">
                 {t("roadmap.planningSectionTitle")}
@@ -222,57 +217,45 @@ export function RoadmapSheetWorkspaceEl({
             </div>
           ) : null}
 
-          <div className="-mx-1 overflow-x-auto px-1">
-            <div
-              className="grid min-w-[42rem] grid-cols-5 gap-3"
-              data-testid="planning-roadmap-card-group"
-            >
-              {PERIODS.map((period) => {
-                const node = findPlanningNode(planningNodes, year, period);
-                const cardTestId = `planning-roadmap-card-${periodTestId(period)}`;
-                const eyebrow = `${year} · ${
-                  period === "annual" ? "Annual" : `Q${period}`
-                }`;
-                const cardTitle = periodCardTitle(period);
+          <div className="flex flex-col gap-3" data-testid="planning-roadmap-card-group">
+            {PERIODS.map((period) => {
+              const node = findPlanningNode(planningNodes, year, period);
+              const cardTestId = `planning-roadmap-card-${periodTestId(period)}`;
+              const cardTitle = node?.title ?? periodTitle(year, period);
 
-                if (node) {
-                  return (
-                    <RoadmapDocCard
-                      key={period}
-                      compact
-                      testId={cardTestId}
-                      eyebrow={eyebrow}
-                      title={cardTitle}
-                      subtitle={readNodeField(node, subtitleField)}
-                      status={readNodeField(node, statusField)}
-                      onOpen={() => openNode(node.id)}
-                    />
-                  );
-                }
-
+              if (node) {
                 return (
                   <RoadmapDocCard
                     key={period}
-                    compact
                     testId={cardTestId}
-                    eyebrow={eyebrow}
                     title={cardTitle}
-                    empty
-                    emptyLabel={t("roadmap.emptyPlanningNotCreated")}
-                    createLabel={
-                      period === "annual"
-                        ? t("roadmap.createAnnual")
-                        : t("roadmap.createQuarter").replace("{quarter}", String(period))
-                    }
-                    onCreate={() =>
-                      period === "annual"
-                        ? handleCreateAnnual()
-                        : handleCreateQuarter(period)
-                    }
+                    subtitle={readNodeField(node, subtitleField)}
+                    status={readNodeField(node, statusField)}
+                    onOpen={() => openNode(node.id)}
                   />
                 );
-              })}
-            </div>
+              }
+
+              return (
+                <RoadmapDocCard
+                  key={period}
+                  testId={cardTestId}
+                  title={cardTitle}
+                  empty
+                  emptyLabel={t("roadmap.emptyPlanningNotCreated")}
+                  createLabel={
+                    period === "annual"
+                      ? t("roadmap.createAnnual")
+                      : t("roadmap.createQuarter").replace("{quarter}", String(period))
+                  }
+                  onCreate={() =>
+                    period === "annual"
+                      ? handleCreateAnnual()
+                      : handleCreateQuarter(period)
+                  }
+                />
+              );
+            })}
           </div>
         </section>
       </div>
