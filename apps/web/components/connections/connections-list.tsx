@@ -167,7 +167,7 @@ function ConnectorCard({
     <Card
       data-testid={`connector-${connector.provider}`}
       className={cn(
-        "flex flex-col transition-colors",
+        "flex h-full flex-col transition-colors",
         connected && "border-primary/20 bg-primary/2",
       )}
     >
@@ -203,7 +203,7 @@ function ConnectorCard({
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="mt-auto space-y-3 pt-0">
+      <CardContent className="flex flex-1 flex-col pt-0">
         {!configured ? (
           <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
             {t("connections.notConfiguredHint")}
@@ -292,10 +292,10 @@ function MultiWorkspaceBody({
   const { t } = useLocale();
 
   return (
-    <>
-      {rows.length > 0 ? (
-        <div className="space-y-2">
-          {rows.map((row) => (
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="min-h-0 flex-1 space-y-2">
+        {rows.length > 0 ? (
+          rows.map((row) => (
             <ConnectionItem
               key={row.id}
               row={row}
@@ -303,15 +303,18 @@ function MultiWorkspaceBody({
               isPending={isPending}
               onDisconnect={onDisconnect}
             />
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {t("connections.noWorkspaces")}
-        </p>
-      )}
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {t("connections.noWorkspaces")}
+          </p>
+        )}
+      </div>
       <a
-        className={buttonVariants({ variant: rows.length > 0 ? "outline" : "default", size: "sm" })}
+        className={buttonVariants({
+          variant: rows.length > 0 ? "outline" : "default",
+          size: "sm",
+        })}
         href={href}
         data-testid={`connect-${provider}`}
       >
@@ -320,7 +323,7 @@ function MultiWorkspaceBody({
           ? t("connections.addWorkspace")
           : t("connections.connect")}
       </a>
-    </>
+    </div>
   );
 }
 
@@ -341,25 +344,29 @@ function SingleWorkspaceBody({
 
   if (!row) {
     return (
-      <a
-        className={buttonVariants({ size: "sm" })}
-        href={href}
-        data-testid={`connect-${provider}`}
-      >
-        <PlusIcon className="size-4" />
-        {t("connections.connect")}
-      </a>
+      <div className="flex min-h-0 flex-1 flex-col justify-end">
+        <a
+          className={buttonVariants({ size: "sm" })}
+          href={href}
+          data-testid={`connect-${provider}`}
+        >
+          <PlusIcon className="size-4" />
+          {t("connections.connect")}
+        </a>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      <ConnectionItem
-        row={row}
-        provider={provider as ConnectorProvider}
-        isPending={isPending}
-        onDisconnect={onDisconnect}
-      />
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
+      <div className="min-h-0 flex-1">
+        <ConnectionItem
+          row={row}
+          provider={provider as ConnectorProvider}
+          isPending={isPending}
+          onDisconnect={onDisconnect}
+        />
+      </div>
       <a
         className={buttonVariants({ variant: "ghost", size: "sm" })}
         href={href}
