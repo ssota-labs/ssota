@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { resolveAuthorizeScopes } from "@/lib/connect/connectors";
 import { startConnectAuthorization } from "@ssota/agent-runtime";
 import { loginRedirect } from "@/lib/auth/login-redirect";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -22,7 +23,6 @@ export async function GET(request: Request) {
   const projectId =
     url.searchParams.get("projectId") ?? process.env.CHAT_PROJECT_ID ?? "";
   const returnTo = url.searchParams.get("returnTo") ?? "/";
-  const scopes = url.searchParams.get("scopes")?.split(",").filter(Boolean);
 
   if (!connector) {
     return NextResponse.json(
@@ -30,6 +30,11 @@ export async function GET(request: Request) {
       { status: 422 },
     );
   }
+
+  const scopes = resolveAuthorizeScopes(
+    connector,
+    url.searchParams.get("scopes")?.split(",").filter(Boolean),
+  );
 
   const user = await getCurrentUser();
   if (!user) {
