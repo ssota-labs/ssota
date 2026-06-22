@@ -25,6 +25,7 @@ export {
   resolveCredentialProvider,
   startConnectAuthorization,
   getConnectInstallation,
+  resolveConnectCallbackSubject,
   connectUsesAppSubject,
   type CredentialProvider,
   type CredentialScope,

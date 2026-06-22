@@ -4,7 +4,7 @@ import {
   createAccountConnectionPort,
   createChatWorkspacePort,
 } from "@ssota/adapter-supabase";
-import { providerOf } from "@/lib/connect/connectors";
+import { providerOf, resolveAuthorizeScopes } from "@/lib/connect/connectors";
 
 export const runtime = "nodejs";
 
@@ -47,13 +47,22 @@ export async function GET(request: Request) {
     );
   }
 
+  const scopes = resolveAuthorizeScopes(
+    connector,
+    url.searchParams.get("scopes")?.split(",").filter(Boolean),
+  );
+
   try {
-    const installation = await getConnectInstallation(connector, {
-      projectId,
-      accountId,
-      installationId,
-      userId,
-    });
+    const installation = await getConnectInstallation(
+      connector,
+      {
+        projectId,
+        accountId,
+        installationId,
+        userId,
+      },
+      { scopes },
+    );
 
     if (accountId && installation) {
       await createAccountConnectionPort(getDb()).record({

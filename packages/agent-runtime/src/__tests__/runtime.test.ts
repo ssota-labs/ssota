@@ -6,6 +6,7 @@ import {
   connectUsesAppSubject,
   createEnvCredentialProvider,
   getConnectInstallation,
+  resolveConnectCallbackSubject,
   startConnectAuthorization,
 } from "../credentials/provider.js";
 import { buildSystemPrompt } from "../system-prompt.js";
@@ -120,6 +121,32 @@ describe("connectUsesAppSubject", () => {
     expect(connectUsesAppSubject("oauth/ssota-notion")).toBe(false);
     expect(connectUsesAppSubject("oauth/linear")).toBe(false);
     expect(connectUsesAppSubject("linear/mybot")).toBe(false);
+  });
+});
+
+describe("resolveConnectCallbackSubject", () => {
+  it("uses user subject when userId is present (post-authorize callback)", () => {
+    expect(
+      resolveConnectCallbackSubject("discord/ssota", {
+        projectId: "p",
+        userId: "user-42",
+      }),
+    ).toEqual({ type: "user", id: "user-42" });
+    expect(
+      resolveConnectCallbackSubject("slack/dev", {
+        projectId: "p",
+        userId: "user-42",
+      }),
+    ).toEqual({ type: "user", id: "user-42" });
+  });
+
+  it("falls back to runtime subject mapping when userId is absent", () => {
+    expect(
+      resolveConnectCallbackSubject("discord/ssota", { projectId: "p" }),
+    ).toEqual({ type: "app" });
+    expect(() =>
+      resolveConnectCallbackSubject("oauth/notion", { projectId: "p" }),
+    ).toThrow(/userId is required/);
   });
 });
 
