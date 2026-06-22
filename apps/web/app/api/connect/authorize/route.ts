@@ -42,6 +42,7 @@ export async function GET(request: Request) {
   if (accountId) callback.searchParams.set("accountId", accountId);
   if (projectId) callback.searchParams.set("projectId", projectId);
   callback.searchParams.set("returnTo", returnTo);
+  callback.searchParams.set("userId", user.id);
 
   try {
     const flowUrl = await startConnectAuthorization(

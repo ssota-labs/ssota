@@ -168,6 +168,8 @@ export const accountConnections = pgTable(
     /** Provider tenant id (e.g. Slack team id). */
     tenantId: text("tenant_id"),
     name: text("name"),
+    /** Supabase user id for user-subject Connect grants (oauth/Notion, linear/*). */
+    subjectUserId: text("subject_user_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
