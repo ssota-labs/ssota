@@ -8,6 +8,9 @@ export {
   seedWorkflows,
   createPagePort,
   seedPages,
+  applyTemplate,
+  SOFTWARE_DEV_TEMPLATE,
+  BUILTIN_TEMPLATES,
 } from "./ports/index.js";
 export {
   createAgentRunPort,

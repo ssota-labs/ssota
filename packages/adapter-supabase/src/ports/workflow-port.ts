@@ -102,10 +102,12 @@ export function createWorkflowPort(db: Db, scope: ActionPortsScope): WorkflowPor
  * Call alongside `seedDomainCatalog` at project creation — NOT inside the
  * domain example pack, since workflows are a core, domain-agnostic concept.
  */
-export async function seedWorkflows(db: Db, projectId: string): Promise<void> {
-  const values = Object.values(WORKFLOW_REGISTRY).map((def) =>
-    toValues(projectId, def),
-  );
+export async function seedWorkflows(
+  db: Db,
+  projectId: string,
+  workflows: WorkflowInstructionDefinition[] = Object.values(WORKFLOW_REGISTRY),
+): Promise<void> {
+  const values = workflows.map((def) => toValues(projectId, def));
   if (values.length === 0) return;
   await db.insert(schema.workflows).values(values).onConflictDoNothing({
     target: [schema.workflows.projectId, schema.workflows.workflowKey],
