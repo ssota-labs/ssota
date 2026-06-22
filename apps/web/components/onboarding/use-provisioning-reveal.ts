@@ -1,13 +1,19 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  WORKFLOW_PROVISION_ORDER,
-  WORKFLOW_PROVISION_STEP_MS,
-} from "./console-preview-provisioning";
+import { getWorkflowProvisionOrder } from "./console-preview-provisioning";
 
-export function useProvisioningReveal(isProvisioning: boolean) {
+const WORKFLOW_PROVISION_STEP_MS = 420;
+
+export function useProvisioningReveal(
+  isProvisioning: boolean,
+  templateId: string | null,
+) {
   const [revealCount, setRevealCount] = useState(0);
+  const provisionOrder = useMemo(
+    () => getWorkflowProvisionOrder(templateId),
+    [templateId],
+  );
 
   useEffect(() => {
     if (!isProvisioning) {
@@ -18,26 +24,26 @@ export function useProvisioningReveal(isProvisioning: boolean) {
     setRevealCount(0);
     const intervalId = window.setInterval(() => {
       setRevealCount((current) =>
-        current >= WORKFLOW_PROVISION_ORDER.length ? current : current + 1,
+        current >= provisionOrder.length ? current : current + 1,
       );
     }, WORKFLOW_PROVISION_STEP_MS);
 
     return () => window.clearInterval(intervalId);
-  }, [isProvisioning]);
+  }, [isProvisioning, provisionOrder.length]);
 
   const visibleKeys = useMemo(() => {
     if (!isProvisioning) return null;
-    return new Set(WORKFLOW_PROVISION_ORDER.slice(0, revealCount));
-  }, [isProvisioning, revealCount]);
+    return new Set(provisionOrder.slice(0, revealCount));
+  }, [isProvisioning, provisionOrder, revealCount]);
 
   const lastRevealedKey =
     isProvisioning && revealCount > 0
-      ? (WORKFLOW_PROVISION_ORDER[revealCount - 1] ?? null)
+      ? (provisionOrder[revealCount - 1] ?? null)
       : null;
 
   return {
     visibleKeys,
     lastRevealedKey,
-    isProvisioningComplete: revealCount >= WORKFLOW_PROVISION_ORDER.length,
+    isProvisioningComplete: revealCount >= provisionOrder.length,
   };
 }

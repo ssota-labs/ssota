@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { projectPath } from "@/lib/console/paths";
 import { getOnboardingPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { getTemplateBundleById } from "@ssota/adapter-postgres";
 
-function validationError(message: string, step: "profile" | "project") {
+function validationError(message: string, step: "profile" | "project" | "template") {
   redirect(`/onboarding/${step}?error=${encodeURIComponent(message)}`);
 }
 
@@ -34,7 +35,7 @@ export async function completeProfileOnboardingAction(formData: FormData) {
   redirect("/onboarding/project");
 }
 
-export async function completeProjectOnboardingAction(formData: FormData) {
+export async function saveProjectDraftOnboardingAction(formData: FormData) {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
@@ -48,9 +49,27 @@ export async function completeProjectOnboardingAction(formData: FormData) {
   }
 
   const onboardingPort = getOnboardingPort();
-  const { organization, project } = await onboardingPort.completeProjectStep({
+  await onboardingPort.saveProjectDraftStep({
     userId: user.id,
     projectName,
+  });
+
+  redirect("/onboarding/template");
+}
+
+export async function completeTemplateOnboardingAction(formData: FormData) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const templateId = String(formData.get("templateId") ?? "").trim();
+  if (!getTemplateBundleById(templateId)) {
+    validationError("Choose a valid project template.", "template");
+  }
+
+  const onboardingPort = getOnboardingPort();
+  const { organization, project } = await onboardingPort.completeTemplateStep({
+    userId: user.id,
+    templateId,
   });
 
   redirect(

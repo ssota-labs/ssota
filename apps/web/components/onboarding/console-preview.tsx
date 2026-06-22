@@ -15,17 +15,18 @@ import { useLocale } from "@/components/i18n/locale-provider";
 import { L0_NAV, type NavEntry, type NavLink, type NavSection } from "@/lib/console/navigation";
 import { NavItemIcon } from "@/lib/console/nav-icons";
 import {
-  IDLE_WORKFLOW_PREVIEW,
+  getTemplateWorkflowPreview,
   isWorkflowChildVisible,
   isWorkflowGroupExpanded,
   isWorkflowGroupVisible,
-  SOFTWARE_DEV_WORKFLOW_PREVIEW,
 } from "./console-preview-provisioning";
 import { useProvisioningReveal } from "./use-provisioning-reveal";
 
 type ConsolePreviewProps = {
   organizationName: string;
   projectName?: string;
+  templateId?: string | null;
+  templateName?: string | null;
   isProvisioning?: boolean;
 };
 
@@ -107,29 +108,31 @@ function PreviewSectionLabel({ label, isNew = false }: { label: string; isNew?: 
 
 function PreviewWorkflowTree({
   t,
+  templateId,
   isProvisioning,
   visibleKeys,
   lastRevealedKey,
 }: {
   t: (key: string) => string;
+  templateId: string | null;
   isProvisioning: boolean;
   visibleKeys: Set<string> | null;
   lastRevealedKey: string | null;
 }) {
-  const workflowTree = isProvisioning ? SOFTWARE_DEV_WORKFLOW_PREVIEW : IDLE_WORKFLOW_PREVIEW;
+  const workflowTree = getTemplateWorkflowPreview(isProvisioning ? templateId : templateId);
 
   return (
     <div className="space-y-0.5 pt-2">
       <PreviewSectionLabel label={t("nav.sectionWorkflow")} />
       {workflowTree.map((group) => {
-        if (!isWorkflowGroupVisible(group, visibleKeys)) {
+        if (!isWorkflowGroupVisible(group, visibleKeys, templateId)) {
           return null;
         }
 
-        const expanded = isWorkflowGroupExpanded(group, visibleKeys);
+        const expanded = isWorkflowGroupExpanded(group, visibleKeys, templateId);
         const visibleChildren =
           group.children?.filter((child) =>
-            isWorkflowChildVisible(child.key, visibleKeys),
+            isWorkflowChildVisible(child.key, visibleKeys, templateId),
           ) ?? [];
 
         if (visibleChildren.length > 0) {
@@ -187,12 +190,15 @@ function PreviewWorkflowTree({
 export function ConsolePreview({
   organizationName,
   projectName,
+  templateId = null,
+  templateName = null,
   isProvisioning = false,
 }: ConsolePreviewProps) {
   const { t } = useLocale();
-  const { visibleKeys, lastRevealedKey } = useProvisioningReveal(isProvisioning);
+  const { visibleKeys, lastRevealedKey } = useProvisioningReveal(isProvisioning, templateId);
   const orgLabel = organizationName.trim() || "Your Organization";
   const projectLabel = projectName?.trim() || "Your Project";
+  const provisioningLabel = templateName?.trim() || "project template";
 
   return (
     <div className="pointer-events-none flex min-h-[34rem] select-none" aria-hidden>
@@ -236,6 +242,7 @@ export function ConsolePreview({
             })}
             <PreviewWorkflowTree
               t={t}
+              templateId={templateId}
               isProvisioning={isProvisioning}
               visibleKeys={visibleKeys}
               lastRevealedKey={lastRevealedKey}
@@ -280,7 +287,7 @@ export function ConsolePreview({
             <div className="flex flex-1 flex-col justify-center gap-3">
               <p className="text-sm font-medium text-foreground">Setting up workspace…</p>
               <p className="text-sm text-muted-foreground">
-                Applying the software development template and creating workflow pages.
+                Applying the {provisioningLabel} and creating workflow pages.
               </p>
               <div className="flex gap-2 pt-2">
                 {["Tasks", "Workflow", "Initiatives"].map((label, index) => (

@@ -20,8 +20,9 @@ export { createWorkflowInstructionPort, createMainInstructionPointerPort, seedWo
 export { createPagePort, seedPages } from "./page-port.js";
 export {
   applyTemplate,
-  SOFTWARE_DEV_TEMPLATE,
   BUILTIN_TEMPLATES,
+  getTemplateBundleById,
+  SOFTWARE_DEV_TEMPLATE,
 } from "./templates.js";
 
 function mapTask(row: typeof schema.tasks.$inferSelect): Task {

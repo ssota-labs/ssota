@@ -18,6 +18,10 @@ export default async function OnboardingProjectPage({
     redirect("/onboarding/profile");
   }
 
+  if (profile.onboardingStep === "template") {
+    redirect("/onboarding/template");
+  }
+
   let organizationName = "Your Organization";
   const consolePort = getConsolePort();
   const personalOrg = await consolePort.getPersonalOrganizationForUser(user.id);

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { SpinnerGapIcon } from "@phosphor-icons/react";
 import { toast } from "@ssota/ui/components/ui/sonner";
-import { completeProjectOnboardingAction } from "@/app/onboarding/actions";
+import { saveProjectDraftOnboardingAction } from "@/app/onboarding/actions";
 import { ConsolePreview } from "@/components/onboarding/console-preview";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -16,7 +16,7 @@ type ProjectOnboardingFormProps = {
   error?: string;
 };
 
-function ProjectSubmitButton() {
+function ProjectContinueButton() {
   const { pending } = useFormStatus();
 
   return (
@@ -24,10 +24,10 @@ function ProjectSubmitButton() {
       {pending ? (
         <>
           <SpinnerGapIcon className="size-4 animate-spin" />
-          Setting up project…
+          Saving project…
         </>
       ) : (
-        "Open project"
+        "Continue"
       )}
     </Button>
   );
@@ -38,7 +38,6 @@ export function ProjectOnboardingForm({
   error,
 }: ProjectOnboardingFormProps) {
   const [projectName, setProjectName] = useState("");
-  const [isProvisioning, setIsProvisioning] = useState(false);
 
   useEffect(() => {
     toast.success(`${organizationName} organization created`, {
@@ -56,11 +55,7 @@ export function ProjectOnboardingForm({
       backHref="/onboarding/profile"
       backLabel="Back to organization"
       form={
-        <form
-          action={completeProjectOnboardingAction}
-          className="space-y-4"
-          onSubmit={() => setIsProvisioning(true)}
-        >
+        <form action={saveProjectDraftOnboardingAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="projectName">Project name</Label>
             <Input
@@ -70,7 +65,6 @@ export function ProjectOnboardingForm({
               onChange={(event) => setProjectName(event.target.value)}
               placeholder="SSOTA Dev"
               required
-              disabled={isProvisioning}
             />
             <p className="text-xs text-muted-foreground">
               English only. Slug is generated automatically.
@@ -79,14 +73,13 @@ export function ProjectOnboardingForm({
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <ProjectSubmitButton />
+          <ProjectContinueButton />
         </form>
       }
       preview={
         <ConsolePreview
           organizationName={organizationName}
           projectName={projectName || "Your Project"}
-          isProvisioning={isProvisioning}
         />
       }
     />

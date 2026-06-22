@@ -24,14 +24,14 @@ test.describe("Console onboarding", () => {
     await signInOnLoginPage(page, email);
     await completeProfileOnboarding(page, "Back Test Organization");
 
-    await expect(page.getByText("Step 2 of 2")).toBeVisible();
+    await expect(page.getByText("Step 2 of 3")).toBeVisible();
     await expect(
       page.locator("[data-sonner-toast]").getByText(/organization created/i),
     ).toBeVisible();
     await page.getByRole("button", { name: "Back to organization" }).click();
 
     await expect(page).toHaveURL(/\/onboarding\/profile/);
-    await expect(page.getByText("Step 1 of 2")).toBeVisible();
+    await expect(page.getByText("Step 1 of 3")).toBeVisible();
     await expect(page.getByLabel("Organization name")).toHaveValue(
       "Back Test Organization",
     );

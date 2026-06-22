@@ -114,8 +114,21 @@ export const SOFTWARE_DEV_WORKFLOW_PREVIEW: WorkflowPreviewNode[] = [
   },
 ];
 
+export const DEFAULT_TEMPLATE_ID = "software-development";
+
+export const TEMPLATE_WORKFLOW_PREVIEW_BY_ID: Record<string, WorkflowPreviewNode[]> = {
+  [DEFAULT_TEMPLATE_ID]: SOFTWARE_DEV_WORKFLOW_PREVIEW,
+};
+
 /** Idle preview shows the first three workflow stages. */
 export const IDLE_WORKFLOW_PREVIEW = SOFTWARE_DEV_WORKFLOW_PREVIEW.slice(0, 3);
+
+export function getTemplateWorkflowPreview(templateId: string | null): WorkflowPreviewNode[] {
+  if (!templateId) {
+    return IDLE_WORKFLOW_PREVIEW;
+  }
+  return TEMPLATE_WORKFLOW_PREVIEW_BY_ID[templateId] ?? IDLE_WORKFLOW_PREVIEW;
+}
 
 const IDLE_WORKFLOW_KEYS = new Set(
   IDLE_WORKFLOW_PREVIEW.flatMap((group) => [
@@ -132,13 +145,24 @@ export const WORKFLOW_PROVISION_ORDER = SOFTWARE_DEV_WORKFLOW_PREVIEW.flatMap(
   ],
 ).filter((key) => !IDLE_WORKFLOW_KEYS.has(key));
 
+export function getWorkflowProvisionOrder(templateId: string | null): string[] {
+  if (!templateId || templateId === DEFAULT_TEMPLATE_ID) {
+    return WORKFLOW_PROVISION_ORDER;
+  }
+  return [];
+}
+
 export const WORKFLOW_PROVISION_STEP_MS = 420;
 
 export function isWorkflowGroupVisible(
   group: WorkflowPreviewNode,
   visibleKeys: Set<string> | null,
+  templateId: string | null = null,
 ): boolean {
   if (!visibleKeys) {
+    if (templateId) {
+      return true;
+    }
     return IDLE_WORKFLOW_KEYS.has(group.key);
   }
 
@@ -160,8 +184,12 @@ export function isWorkflowGroupVisible(
 export function isWorkflowChildVisible(
   childKey: string,
   visibleKeys: Set<string> | null,
+  templateId: string | null = null,
 ): boolean {
   if (!visibleKeys) {
+    if (templateId) {
+      return true;
+    }
     return IDLE_WORKFLOW_KEYS.has(childKey);
   }
 
@@ -171,13 +199,19 @@ export function isWorkflowChildVisible(
 export function isWorkflowGroupExpanded(
   group: WorkflowPreviewNode,
   visibleKeys: Set<string> | null,
+  templateId: string | null = null,
 ): boolean {
   if (!visibleKeys) {
+    if (templateId) {
+      return Boolean(group.children?.length);
+    }
     return group.key === "executive";
   }
 
   if (group.children?.length) {
-    return group.children.some((child) => isWorkflowChildVisible(child.key, visibleKeys));
+    return group.children.some((child) =>
+      isWorkflowChildVisible(child.key, visibleKeys, templateId),
+    );
   }
 
   return false;
