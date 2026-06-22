@@ -8,7 +8,7 @@ import { getRunContext } from "./context.js";
  * table). A page is a JSON-render dashboard (NOT 1:1 with a node): it places
  * catalog components and loads node/edge data via `bindings`. Hierarchy is
  * `parentId` (a recursive tree); addressing is flat by `id`. Pages render at
- * `/{org}/{project}/pages/{id}`.
+ * `/{org}/{project}/p/{id}`.
  */
 const SPEC_HELP =
   "spec: { root, elements } where each element is { type, props?, children? }. " +

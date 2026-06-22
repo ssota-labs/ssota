@@ -43,6 +43,8 @@ type AppSidebarProps = {
   signOutAction: () => Promise<void>;
   /** Notion-style page tree from the `pages` table, rendered below the static nav. */
   pageTree?: SidebarPage[];
+  /** Node drill-in (L1): the current node's type templates, scoped to nodeId. */
+  nodeNav?: { nodeId: string; pages: SidebarPage[] } | null;
 };
 
 function isGroup(entry: NavEntry): entry is NavGroup {
@@ -63,6 +65,7 @@ export function AppSidebar({
   userEmail,
   signOutAction,
   pageTree = [],
+  nodeNav,
 }: AppSidebarProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
@@ -74,8 +77,11 @@ export function AppSidebar({
     getExpandedGroupsFromPath(relativePath),
   );
 
-  const mode = getSidebarMode(pathname, projectBase);
   const initiativeRoute = parseInitiativeRoute(pathname, projectBase);
+  // Node drill-in (generic, page-tree templates) forces L1, like the initiative
+  // route does. Either source drives the slider to its L1 pane.
+  const onNode = Boolean(nodeNav);
+  const mode = onNode ? "l1" : getSidebarMode(pathname, projectBase);
 
   const backLabel = useMemo(() => t("nav.backToInitiatives"), [t]);
 
@@ -203,6 +209,25 @@ export function AppSidebar({
     );
   }
 
+  function renderNodeNav(nav: { nodeId: string; pages: SidebarPage[] }) {
+    return (
+      <>
+        <Link
+          href={projectPath(ctx, "overview")}
+          className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">{t("nav.backToInitiatives")}</span>
+        </Link>
+        <PageTreeNav
+          pages={nav.pages}
+          basePath={`${projectBase}/n/${nav.nodeId}`}
+          heading={null}
+        />
+      </>
+    );
+  }
+
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r bg-sidebar">
       <ConsoleOrgSwitcher organizations={organizations} />
@@ -233,7 +258,11 @@ export function AppSidebar({
                 )}
                 aria-hidden={mode === "l0"}
               >
-                {initiativeRoute ? renderL1Nav(initiativeRoute.initiativeId) : null}
+                {nodeNav
+                  ? renderNodeNav(nodeNav)
+                  : initiativeRoute
+                    ? renderL1Nav(initiativeRoute.initiativeId)
+                    : null}
               </div>
             </div>
           </div>

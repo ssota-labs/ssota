@@ -6,7 +6,12 @@ import { getDefaultProjectPath } from "@/lib/console/default-landing";
 import { listInitiatives } from "@/lib/console/initiatives";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { loginRedirect } from "@/lib/auth/login-redirect";
-import { getConsolePort, getOnboardingPort, getPagePort } from "@/lib/ports";
+import {
+  getConsolePort,
+  getOnboardingPort,
+  getPagePort,
+  getGraphPorts,
+} from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export default async function ProjectLayout({
@@ -47,13 +52,54 @@ export default async function ProjectLayout({
   ]);
 
   // Notion-style page tree for the sidebar (minimal serializable fields only).
-  const pageTree = pages.map((p) => ({
-    id: p.id,
-    title: p.title,
-    parentId: p.parentId ?? null,
-    position: p.position,
-    icon: p.icon ?? null,
-  }));
+  // L0 shows only project-level pages; node-type drill-in templates
+  // (appliesToNodeType set) render as L1 when drilling into a node.
+  const pageTree = pages
+    .filter((p) => !p.appliesToNodeType)
+    .map((p) => ({
+      id: p.id,
+      title: p.title,
+      parentId: p.parentId ?? null,
+      position: p.position,
+      icon: p.icon ?? null,
+    }));
+
+  // Node drill-in (L1): when on /{org}/{proj}/n/{nodeId}, resolve the node's
+  // catalogKey and surface that type's templates (appliesToNodeType) as the L1
+  // nav, scoped to this node. Generic replacement for the initiative slider.
+  const projectBase = `/${orgSlug}/${projectSlug}`;
+  const relative = returnTo.startsWith(projectBase)
+    ? returnTo.slice(projectBase.length)
+    : "";
+  const nodeMatch = relative.match(/^\/n\/([^/]+)/);
+  let nodeNav: {
+    nodeId: string;
+    pages: {
+      id: string;
+      title: string;
+      parentId: string | null;
+      position: number;
+      icon: string | null;
+    }[];
+  } | null = null;
+  if (nodeMatch) {
+    const nodeId = nodeMatch[1]!;
+    const node = await getGraphPorts(project.id).graphRead.getNodeById(nodeId);
+    if (node && node.projectId === project.id) {
+      nodeNav = {
+        nodeId,
+        pages: pages
+          .filter((p) => p.appliesToNodeType === node.catalogKey)
+          .map((p) => ({
+            id: p.id,
+            title: p.title,
+            parentId: p.parentId ?? null,
+            position: p.position,
+            icon: p.icon ?? null,
+          })),
+      };
+    }
+  }
 
   if (!organizations.some((item) => item.id === org.id)) {
     redirect(await getDefaultProjectPath(user.id));
@@ -81,6 +127,7 @@ export default async function ProjectLayout({
       signOutAction={signOutAction}
       initiatives={initiatives}
       pageTree={pageTree}
+      nodeNav={nodeNav}
     >
       {children}
     </ConsoleShell>

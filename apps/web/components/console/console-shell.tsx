@@ -24,6 +24,7 @@ type ConsoleShellProps = {
   signOutAction: () => Promise<void>;
   initiatives?: InitiativeOption[];
   pageTree?: SidebarPage[];
+  nodeNav?: { nodeId: string; pages: SidebarPage[] } | null;
   children: React.ReactNode;
 };
 
@@ -35,6 +36,7 @@ export function ConsoleShell({
   signOutAction,
   initiatives = [],
   pageTree,
+  nodeNav,
   children,
 }: ConsoleShellProps) {
   const pathname = usePathname();
@@ -51,6 +53,7 @@ export function ConsoleShell({
           userEmail={userEmail}
           signOutAction={signOutAction}
           pageTree={pageTree}
+          nodeNav={nodeNav}
         />
         <div className="flex min-w-0 flex-1 flex-col">
           <ConsoleTopBar projects={projects} initiatives={initiatives} />
