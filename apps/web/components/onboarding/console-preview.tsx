@@ -242,13 +242,15 @@ export function ConsolePreview({
 
               return null;
             })}
-            <PreviewWorkflowTree
-              t={t}
-              templateId={templateId}
-              isProvisioning={isProvisioning}
-              visibleKeys={visibleKeys}
-              lastRevealedKey={lastRevealedKey}
-            />
+            {templateId ? (
+              <PreviewWorkflowTree
+                t={t}
+                templateId={templateId}
+                isProvisioning={isProvisioning}
+                visibleKeys={visibleKeys}
+                lastRevealedKey={lastRevealedKey}
+              />
+            ) : null}
             </div>
           </nav>
         </ScrollArea>
