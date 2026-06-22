@@ -11,7 +11,9 @@ describe("createConnectionTools (MCP_STUB)", () => {
   beforeEach(() => {
     process.env.MCP_STUB = "1";
     process.env.LINEAR_CONNECT_CONNECTOR = "linear/test";
+    process.env.SLACK_CONNECT_CONNECTOR = "slack/test";
     process.env.CONNECTOR_LINEAR_TEST_TOKEN = "stub-token";
+    process.env.CONNECTOR_SLACK_TEST_TOKEN = "stub-token";
   });
 
   afterEach(() => {
@@ -19,7 +21,9 @@ describe("createConnectionTools (MCP_STUB)", () => {
     else process.env.MCP_STUB = prevStub;
     if (prevLinear === undefined) delete process.env.LINEAR_CONNECT_CONNECTOR;
     else process.env.LINEAR_CONNECT_CONNECTOR = prevLinear;
+    delete process.env.SLACK_CONNECT_CONNECTOR;
     delete process.env.CONNECTOR_LINEAR_TEST_TOKEN;
+    delete process.env.CONNECTOR_SLACK_TEST_TOKEN;
   });
 
   it("exposes connection_search without account connections", async () => {
