@@ -24,14 +24,6 @@ export function graphPath(ctx: ProjectRouteContext, ...segments: string[]) {
   return projectPath(ctx, "graph", ...segments);
 }
 
-export function initiativePath(
-  ctx: ProjectRouteContext,
-  initiativeId: string,
-  ...segments: string[]
-): string {
-  return projectPath(ctx, "initiatives", initiativeId, ...segments);
-}
-
 /** 프로젝트/조직 전환 시 현재 화면 경로(query 포함)를 유지한 대상 URL */
 export function switchConsolePath(
   pathname: string,
