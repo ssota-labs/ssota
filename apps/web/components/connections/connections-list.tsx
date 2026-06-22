@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useTransition } from "react";
-import { PlusIcon, XIcon } from "@phosphor-icons/react";
+import { LinkBreakIcon, PlusIcon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
 import {
@@ -269,7 +269,7 @@ function ConnectionItem({
         onClick={() => onDisconnect(row.id)}
         className="shrink-0 text-muted-foreground hover:text-destructive"
       >
-        <XIcon className="size-4" />
+        <LinkBreakIcon className="size-4" />
         {t("connections.disconnect")}
       </Button>
     </div>
