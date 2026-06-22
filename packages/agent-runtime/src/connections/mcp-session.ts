@@ -33,6 +33,30 @@ function useMcpStub(): boolean {
   return process.env.MCP_STUB === "1" || process.env.CONNECT_STUB === "1";
 }
 
+function logMcp(
+  phase: "listTools" | "callTool" | "connect",
+  connection: McpConnectionDef,
+  extra: Record<string, unknown> = {},
+): void {
+  console.log(
+    JSON.stringify({
+      component: "mcp",
+      phase,
+      connection: connection.id,
+      url: connection.url,
+      transport: connection.transport,
+      ...extra,
+    }),
+  );
+}
+
+function formatMcpError(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+}
+
 /**
  * MCP client + tools/list cache for a single agent run.
  */
@@ -68,9 +92,20 @@ export class McpSessionManager {
       installationId: scope.installationId ?? undefined,
       userId: scope.userId ?? undefined,
     });
-    if (!cred) return [];
+    if (!cred) {
+      logMcp("listTools", connection, {
+        outcome: "skipped",
+        reason: "no_credential",
+        installationId: scope.installationId ?? null,
+      });
+      return [];
+    }
 
     try {
+      logMcp("connect", connection, {
+        installationId: scope.installationId ?? null,
+        hasToken: true,
+      });
       const client = await experimental_createMCPClient({
         transport: {
           type: connection.transport,
@@ -91,12 +126,18 @@ export class McpSessionManager {
       );
       const filtered = filterMcpTools(listings, connection.tools);
       this.listCache.set(key, filtered);
+      logMcp("listTools", connection, {
+        outcome: "ok",
+        toolCount: filtered.length,
+        installationId: scope.installationId ?? null,
+      });
       return filtered;
     } catch (error) {
-      console.warn(
-        `[mcp] listTools failed for ${connection.id} (${connection.url}):`,
-        error instanceof Error ? error.message : error,
-      );
+      logMcp("listTools", connection, {
+        outcome: "error",
+        error: formatMcpError(error),
+        installationId: scope.installationId ?? null,
+      });
       return [];
     }
   }
@@ -137,6 +178,11 @@ export class McpSessionManager {
     const key = sessionKey(connection.id, scope);
     let client = this.clientCache.get(key);
     if (!client) {
+      logMcp("connect", connection, {
+        tool: toolName,
+        installationId: scope.installationId ?? null,
+        hasToken: true,
+      });
       const created = await experimental_createMCPClient({
         transport: {
           type: connection.transport,
@@ -151,12 +197,41 @@ export class McpSessionManager {
     const mcpTools = await (client as Awaited<ReturnType<typeof experimental_createMCPClient>>).tools();
     const tool = mcpTools[toolName] as Tool | undefined;
     if (!tool?.execute) {
-      throw new Error(`MCP tool '${toolName}' not found on ${connection.id}`);
+      const message = `MCP tool '${toolName}' not found on ${connection.id}`;
+      logMcp("callTool", connection, {
+        outcome: "error",
+        tool: toolName,
+        error: message,
+        installationId: scope.installationId ?? null,
+      });
+      throw new Error(message);
     }
-    return tool.execute(args, {
-      toolCallId: `mcp-${connection.id}-${toolName}`,
-      messages: [],
-    });
+
+    try {
+      logMcp("callTool", connection, {
+        outcome: "start",
+        tool: toolName,
+        installationId: scope.installationId ?? null,
+      });
+      const result = await tool.execute(args, {
+        toolCallId: `mcp-${connection.id}-${toolName}`,
+        messages: [],
+      });
+      logMcp("callTool", connection, {
+        outcome: "ok",
+        tool: toolName,
+        installationId: scope.installationId ?? null,
+      });
+      return result;
+    } catch (error) {
+      logMcp("callTool", connection, {
+        outcome: "error",
+        tool: toolName,
+        error: formatMcpError(error),
+        installationId: scope.installationId ?? null,
+      });
+      throw error;
+    }
   }
 
   async close(): Promise<void> {

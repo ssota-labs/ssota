@@ -125,7 +125,12 @@ export async function createConnectionTools(
               },
               parsed.toolName,
               args as Record<string, unknown>,
-            );
+            ).catch((error: unknown) => ({
+              ok: false as const,
+              connection: parsed.connectionId,
+              tool: parsed.toolName,
+              error: error instanceof Error ? error.message : String(error),
+            }));
           },
         });
       }
@@ -175,6 +180,15 @@ function buildConnectionSearchTool(
       const query = searchInput.query.trim().toLowerCase();
       const connectionFilter =
         searchInput.connection ?? inferConnectionIdFromQuery(query);
+      console.log(
+        JSON.stringify({
+          component: "connection_search",
+          query: searchInput.query,
+          connectionFilter: connectionFilter ?? null,
+          projectId: ctx.projectId,
+          accountId: ctx.accountId ?? null,
+        }),
+      );
       const result: ConnectionSearchResult = { connections: [], tools: [] };
 
       for (const connection of connections) {
@@ -277,6 +291,19 @@ function buildConnectionSearchTool(
       }
 
       state?.activateFromSearch(result.tools);
+      console.log(
+        JSON.stringify({
+          component: "connection_search",
+          outcome: "ok",
+          connections: result.connections.map((c) => ({
+            connection: c.connection,
+            connected: c.connected,
+            installationId: c.installationId,
+          })),
+          toolCount: result.tools.length,
+          tools: result.tools.map((t) => t.qualifiedName),
+        }),
+      );
       return result;
     },
   });
