@@ -53,7 +53,12 @@ export default async function NodeTemplatePage({
 
   return (
     <div className="mx-auto max-w-5xl p-6">
-      <SetNodeDrill nodeId={subject.id} catalogKey={subject.catalogKey} />
+      <SetNodeDrill
+        nodeId={subject.id}
+        catalogKey={subject.catalogKey}
+        nodeTitle={subject.title}
+        pageTitle={page.title}
+      />
       <DynamicPageRenderer
         spec={page.spec}
         bindingData={bindingData}

@@ -11,7 +11,14 @@ import {
 /** The node the user has drilled into (route `/n/[nodeId]`), set by the node
  * page so the (shared, non-re-rendering) layout's sidebar can swap to that
  * node type's L1 templates on client navigation. */
-type Drill = { nodeId: string; catalogKey: string } | null;
+type Drill = {
+  nodeId: string;
+  catalogKey: string;
+  /** Node title — shown in the breadcrumb while drilled in. */
+  nodeTitle: string;
+  /** Active template page title (the breadcrumb leaf), if on a specific page. */
+  pageTitle?: string;
+} | null;
 
 const NodeDrillContext = createContext<{
   drill: Drill;
@@ -39,14 +46,18 @@ export function useNodeDrill(): Drill {
 export function SetNodeDrill({
   nodeId,
   catalogKey,
+  nodeTitle,
+  pageTitle,
 }: {
   nodeId: string;
   catalogKey: string;
+  nodeTitle: string;
+  pageTitle?: string;
 }) {
   const { setDrill } = useContext(NodeDrillContext);
   useEffect(() => {
-    setDrill({ nodeId, catalogKey });
+    setDrill({ nodeId, catalogKey, nodeTitle, pageTitle });
     return () => setDrill(null);
-  }, [nodeId, catalogKey, setDrill]);
+  }, [nodeId, catalogKey, nodeTitle, pageTitle, setDrill]);
   return null;
 }

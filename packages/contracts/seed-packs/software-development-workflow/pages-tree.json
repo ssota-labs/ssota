@@ -172,8 +172,7 @@
     "appliesToNodeType": "initiative",
     "title": "Overview",
     "icon": "initiative_overview",
-    "spec": { "root": "card", "elements": { "card": { "type": "Card", "children": ["h", "f"] }, "h": { "type": "PageHeader", "props": { "title": "Initiative overview" } }, "f": { "type": "NodeField", "props": { "label": "Initiative", "binding": "self" } } } },
-    "bindings": { "self": { "kind": "subject" } }
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Overview", "subtitle": "Initiative overview" } } } }
   },
   {
     "key": "tpl/initiative/planning",
@@ -189,8 +188,7 @@
     "appliesToNodeType": "initiative",
     "title": "PRD",
     "icon": "planning_prd",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "PRD", "columns": [{ "key": "title", "header": "PRD" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "PRD" } }, "b": { "type": "Text", "props": { "text": "Free-form PRD page. Compose with json-render components." } } } }
   },
   {
     "key": "tpl/initiative/planning/features",
@@ -198,8 +196,7 @@
     "appliesToNodeType": "initiative",
     "title": "Features",
     "icon": "planning_features",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Features", "columns": [{ "key": "title", "header": "Feature" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Features" } }, "b": { "type": "Text", "props": { "text": "Free-form Features page." } } } }
   },
   {
     "key": "tpl/initiative/planning/stories",
@@ -207,8 +204,7 @@
     "appliesToNodeType": "initiative",
     "title": "Stories",
     "icon": "planning_stories",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Stories", "columns": [{ "key": "title", "header": "Story" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Stories" } }, "b": { "type": "Text", "props": { "text": "Free-form Stories page." } } } }
   },
   {
     "key": "tpl/initiative/design",
@@ -224,8 +220,7 @@
     "appliesToNodeType": "initiative",
     "title": "Information architecture",
     "icon": "design_ia",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Information architecture", "columns": [{ "key": "title", "header": "IA" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Information architecture" } }, "b": { "type": "Text", "props": { "text": "Free-form IA page." } } } }
   },
   {
     "key": "tpl/initiative/design/wireframes",
@@ -233,8 +228,7 @@
     "appliesToNodeType": "initiative",
     "title": "Wireframes",
     "icon": "design_wireframes",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Wireframes", "columns": [{ "key": "title", "header": "Wireframe" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Wireframes" } }, "b": { "type": "Text", "props": { "text": "Free-form Wireframes page." } } } }
   },
   {
     "key": "tpl/initiative/design/flows",
@@ -242,8 +236,7 @@
     "appliesToNodeType": "initiative",
     "title": "Flows",
     "icon": "design_flows",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Flows", "columns": [{ "key": "title", "header": "Flow" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Flows" } }, "b": { "type": "Text", "props": { "text": "Free-form Flows page." } } } }
   },
   {
     "key": "tpl/initiative/architecture",
@@ -259,8 +252,7 @@
     "appliesToNodeType": "initiative",
     "title": "Architecture spec",
     "icon": "architecture_spec",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Architecture spec", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Architecture spec" } }, "b": { "type": "Text", "props": { "text": "Free-form Architecture spec page." } } } }
   },
   {
     "key": "tpl/initiative/architecture/data",
@@ -268,8 +260,7 @@
     "appliesToNodeType": "initiative",
     "title": "Data",
     "icon": "architecture_data",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Data", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Data" } }, "b": { "type": "Text", "props": { "text": "Free-form Data page." } } } }
   },
   {
     "key": "tpl/initiative/architecture/integration",
@@ -277,8 +268,7 @@
     "appliesToNodeType": "initiative",
     "title": "Integration",
     "icon": "architecture_integration",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Integration", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Integration" } }, "b": { "type": "Text", "props": { "text": "Free-form Integration page." } } } }
   },
   {
     "key": "tpl/initiative/build",
@@ -294,8 +284,7 @@
     "appliesToNodeType": "initiative",
     "title": "Build plan",
     "icon": "build_plan",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Build plan", "columns": [{ "key": "title", "header": "Plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Build plan" } }, "b": { "type": "Text", "props": { "text": "Free-form Build plan page." } } } }
   },
   {
     "key": "tpl/initiative/build/tasks",
@@ -303,8 +292,7 @@
     "appliesToNodeType": "initiative",
     "title": "Tasks",
     "icon": "build_tasks",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Tasks", "columns": [{ "key": "title", "header": "Task" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Tasks" } }, "b": { "type": "Text", "props": { "text": "Free-form Tasks page." } } } }
   },
   {
     "key": "tpl/initiative/build/pull-requests",
@@ -312,8 +300,7 @@
     "appliesToNodeType": "initiative",
     "title": "Pull requests",
     "icon": "build_pull_requests",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Pull requests", "columns": [{ "key": "title", "header": "PR" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Pull requests" } }, "b": { "type": "Text", "props": { "text": "Free-form Pull requests page." } } } }
   },
   {
     "key": "tpl/initiative/qa",
@@ -329,8 +316,7 @@
     "appliesToNodeType": "initiative",
     "title": "Test plan",
     "icon": "qa_test_plan",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Test plan", "columns": [{ "key": "title", "header": "Test plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Test plan" } }, "b": { "type": "Text", "props": { "text": "Free-form Test plan page." } } } }
   },
   {
     "key": "tpl/initiative/launch",
@@ -346,8 +332,7 @@
     "appliesToNodeType": "initiative",
     "title": "Launch plan",
     "icon": "launch_plan",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Launch plan", "columns": [{ "key": "title", "header": "Plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Launch plan" } }, "b": { "type": "Text", "props": { "text": "Free-form Launch plan page." } } } }
   },
   {
     "key": "tpl/initiative/launch/docs",
@@ -355,8 +340,7 @@
     "appliesToNodeType": "initiative",
     "title": "Launch docs",
     "icon": "launch_docs",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Launch docs", "columns": [{ "key": "title", "header": "Doc" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Launch docs" } }, "b": { "type": "Text", "props": { "text": "Free-form Launch docs page." } } } }
   },
   {
     "key": "tpl/initiative/retrospective",
@@ -372,8 +356,7 @@
     "appliesToNodeType": "initiative",
     "title": "Metrics",
     "icon": "retro_metrics",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Metrics", "columns": [{ "key": "title", "header": "Snapshot" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Metrics" } }, "b": { "type": "Text", "props": { "text": "Free-form Metrics page." } } } }
   },
   {
     "key": "tpl/initiative/retrospective/review",
@@ -381,7 +364,6 @@
     "appliesToNodeType": "initiative",
     "title": "Review",
     "icon": "retro_review",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Review", "columns": [{ "key": "title", "header": "Retro" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Review" } }, "b": { "type": "Text", "props": { "text": "Free-form Review page." } } } }
   }
 ]

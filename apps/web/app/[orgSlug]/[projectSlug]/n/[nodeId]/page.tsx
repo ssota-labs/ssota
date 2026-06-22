@@ -43,7 +43,11 @@ export default async function NodeLandingPage({
     if (!detail) notFound();
     return (
       <>
-        <SetNodeDrill nodeId={subject.id} catalogKey={subject.catalogKey} />
+        <SetNodeDrill
+          nodeId={subject.id}
+          catalogKey={subject.catalogKey}
+          nodeTitle={subject.title}
+        />
         <NodeDetailWorkspace
           projectId={project.id}
           detail={detail}
@@ -73,7 +77,12 @@ export default async function NodeLandingPage({
 
   return (
     <div className="mx-auto max-w-5xl p-6">
-      <SetNodeDrill nodeId={subject.id} catalogKey={subject.catalogKey} />
+      <SetNodeDrill
+        nodeId={subject.id}
+        catalogKey={subject.catalogKey}
+        nodeTitle={subject.title}
+        pageTitle={home.title}
+      />
       <DynamicPageRenderer
         spec={home.spec}
         bindingData={bindingData}
