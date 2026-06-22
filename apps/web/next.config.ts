@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@ssota/core",
     "@ssota/contracts",
-    "@ssota/adapter-supabase",
+    "@ssota/adapter-postgres",
     "@ssota/agent-runtime",
     "@ssota/editor",
     "@ssota/ui",

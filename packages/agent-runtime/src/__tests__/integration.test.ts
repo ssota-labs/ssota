@@ -4,7 +4,7 @@ import {
   DEFAULT_PROJECT_SLUG,
   createAccountPort,
   createConsolePort,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 import {
   createNode,
   readPageDefinitionByRouteKey,

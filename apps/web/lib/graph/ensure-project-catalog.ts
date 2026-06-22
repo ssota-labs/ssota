@@ -1,4 +1,4 @@
-import { seedDevWorkflowCatalog } from "@ssota/adapter-supabase";
+import { seedDevWorkflowCatalog } from "@ssota/adapter-postgres";
 import { getDb } from "@/lib/ports";
 
 /** Idempotent — inserts missing node_catalog / edge_catalog rows for a project. */

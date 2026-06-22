@@ -1,5 +1,5 @@
 {
-  "name": "@ssota/adapter-supabase",
+  "name": "@ssota/adapter-postgres",
   "version": "0.0.0",
   "private": true,
   "type": "module",

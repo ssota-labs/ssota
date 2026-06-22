@@ -3,7 +3,7 @@ import { getConnectInstallation, getDb } from "@ssota/agent-runtime";
 import {
   createAccountConnectionPort,
   createChatWorkspacePort,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 import { providerOf, resolveAuthorizeScopes } from "@/lib/connect/connectors";
 
 export const runtime = "nodejs";

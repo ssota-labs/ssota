@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { createDb } from "@ssota/adapter-supabase";
+import { createDb } from "@ssota/adapter-postgres";
 import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
 

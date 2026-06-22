@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
   transpilePackages: [
     "@ssota/core",
     "@ssota/contracts",
-    "@ssota/adapter-supabase",
+    "@ssota/adapter-postgres",
     "@ssota/ui",
   ],
   allowedDevOrigins: ["127.0.0.1"],

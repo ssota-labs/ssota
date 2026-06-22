@@ -9,7 +9,7 @@ import {
   createOnboardingPort,
   createTaskPort,
   type AccountRecord,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 
 type Db = ReturnType<typeof createDb>["db"];
 
