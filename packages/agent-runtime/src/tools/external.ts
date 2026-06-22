@@ -42,16 +42,17 @@ export function createExternalTools(): ToolSet {
           }
           // Scope the token to this account's installation for the connector
           // (Slack team, GitHub org, …) so the agent acts on the right tenant.
-          const installationId = ctx.accountId
-            ? ((await createAccountConnectionPort(getDb()).getInstallationId(
+          const connectScope = ctx.accountId
+            ? await createAccountConnectionPort(getDb()).getConnectCredentialScope(
                 ctx.accountId,
                 input.connector,
-              )) ?? undefined)
-            : undefined;
+              )
+            : null;
           const cred = await provider.getToken(input.connector, {
             projectId: ctx.projectId,
             accountId: ctx.accountId,
-            installationId,
+            installationId: connectScope?.installationId ?? undefined,
+            userId: connectScope?.subjectUserId ?? undefined,
           });
           if (!cred) {
             return {
