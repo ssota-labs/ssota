@@ -8,19 +8,45 @@ test.describe("Executive roadmap", () => {
     await gotoProject(page, "executive/roadmap");
   });
 
-  test("shows planning roadmaps with DocumentSheetList", async ({ page }) => {
+  test("shows product and planning roadmap sections", async ({ page }) => {
     await expect(page.getByTestId("dynamic-page-renderer")).toBeVisible();
-    await expect(page.getByTestId("document-sheet-list")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Planning roadmaps" })).toBeVisible();
+    await expect(page.getByTestId("roadmap-sheet-workspace")).toBeVisible();
+    await expect(page.getByTestId("product-roadmap-section")).toBeVisible();
+    await expect(page.getByTestId("planning-roadmaps-section")).toBeVisible();
+    await expect(page.getByTestId("product-roadmap-card")).toBeVisible();
+    await expect(page.getByTestId("planning-roadmap-card-group")).toBeVisible();
+    await expect(page.getByTestId("planning-year-select")).toBeVisible();
 
     const year = new Date().getFullYear();
+    await expect(page.getByTestId("planning-roadmap-card-annual")).toBeVisible();
+    await expect(page.getByTestId("planning-roadmap-card-q1")).toBeVisible();
     await expect(page.getByText(`${year} 연간 로드맵`)).toBeVisible();
     await expect(page.getByText(`${year} Q1 분기 로드맵`)).toBeVisible();
   });
 
+  test("shows differentiated status badge colors", async ({ page }) => {
+    await expect(page.getByTestId("product-roadmap-card")).toContainText("active");
+    await expect(page.getByTestId("planning-roadmap-card-q1")).toContainText("draft");
+    await expect(page.getByTestId("planning-roadmap-card-q2")).toContainText("review");
+
+    const activeBadge = page
+      .getByTestId("planning-roadmap-card-annual")
+      .locator('[class*="emerald"]');
+    const draftBadge = page
+      .getByTestId("planning-roadmap-card-q1")
+      .locator('[class*="muted"]');
+    const reviewBadge = page
+      .getByTestId("planning-roadmap-card-q2")
+      .locator('[class*="amber"]');
+
+    await expect(activeBadge.first()).toBeVisible();
+    await expect(draftBadge.first()).toBeVisible();
+    await expect(reviewBadge.first()).toBeVisible();
+  });
+
   test("opens roadmap document in floating sheet panel", async ({ page }) => {
     const year = new Date().getFullYear();
-    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기`) }).click();
+    await page.getByTestId("planning-roadmap-card-q1").click();
 
     await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
     await expect(page.getByTestId("document-sheet-editor")).toBeVisible();
@@ -34,8 +60,7 @@ test.describe("Executive roadmap", () => {
   });
 
   test("closes sheet panel with close button", async ({ page }) => {
-    const year = new Date().getFullYear();
-    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기`) }).click();
+    await page.getByTestId("planning-roadmap-card-q1").click();
     await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
 
     await page.getByTestId("document-sheet-close").click();
@@ -45,8 +70,7 @@ test.describe("Executive roadmap", () => {
   test("autosaves roadmap doc edits from sheet panel", async ({ page }) => {
     test.slow();
 
-    const year = new Date().getFullYear();
-    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기`) }).click();
+    await page.getByTestId("planning-roadmap-card-q1").click();
     await expect(page.getByTestId("document-sheet-editor")).toBeVisible();
 
     const editor = page
@@ -66,7 +90,7 @@ test.describe("Executive roadmap", () => {
 
     await page.reload();
     await gotoProject(page, "executive/roadmap");
-    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기`) }).click();
+    await page.getByTestId("planning-roadmap-card-q1").click();
     await expect(editor).toContainText(marker, { timeout: 15_000 });
   });
 });

@@ -27,3 +27,24 @@ export function boundNodes(
   const key = typeof props.binding === "string" ? props.binding : "rows";
   return asNodes(bindingData[key]);
 }
+
+/** Resolve a named binding key to a single node (singleton / node bindings). */
+export function boundSingleton(
+  bindingData: BindingContext,
+  key: string | undefined,
+): RenderNode | undefined {
+  if (!key) return undefined;
+  const value = bindingData[key];
+  return value && typeof value === "object" && "id" in value
+    ? (value as RenderNode)
+    : undefined;
+}
+
+/** Resolve a named binding key to an array of nodes. */
+export function boundNodesByKey(
+  bindingData: BindingContext,
+  key: string | undefined,
+): RenderNode[] {
+  if (!key) return [];
+  return asNodes(bindingData[key]);
+}

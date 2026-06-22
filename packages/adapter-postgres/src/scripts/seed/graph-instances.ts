@@ -100,10 +100,41 @@ export async function seedGraphInstances(
               package_json: PLATFORM_DESIGN_TOOLCHAIN_PACKAGE_JSON,
               lockfile: PLATFORM_DESIGN_TOOLCHAIN_LOCKFILE,
             }
-          : {
-              lifecycleStatus: "Draft",
-              seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
-            };
+          : catalogKey === "product_roadmap"
+            ? {
+                lifecycleStatus: "active",
+                summary:
+                  "Graph-first Console, end-user app partition, and catalog-driven page runtime",
+                seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
+                content: [
+                  {
+                    type: "heading",
+                    props: { level: 2 },
+                    content: "Product direction",
+                  },
+                  {
+                    type: "paragraph",
+                    content:
+                      "Long-term strategic themes that guide annual and quarterly planning.",
+                  },
+                  {
+                    type: "bulletListItem",
+                    content: "Console v2.7 graph UI as the builder workspace",
+                  },
+                  {
+                    type: "bulletListItem",
+                    content: "End-user /app with per-account graph partition",
+                  },
+                  {
+                    type: "bulletListItem",
+                    content: "Design Studio artifact build and widget preview",
+                  },
+                ],
+              }
+            : {
+                lifecycleStatus: "Draft",
+                seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
+              };
 
     await db.insert(schema.nodes).values({
       projectId,
@@ -113,13 +144,16 @@ export async function seedGraphInstances(
           ? "Design theme"
           : catalogKey === "design_toolchain"
             ? "Design toolchain"
-            : "",
+            : catalogKey === "product_roadmap"
+              ? "Product roadmap"
+              : "",
       properties,
       schemaVersion: 1,
     });
   }
 
   await migrateLegacyRoadmapSingletons(db, projectId, maps);
+  await seedProductRoadmapDoc(db, projectId, maps);
   await seedRoadmapPlanningDocs(db, projectId, maps);
 
   const hypothesisCatalogId = nodeKeyToId.get("hypothesis");
@@ -260,6 +294,76 @@ async function migrateLegacyRoadmapSingletons(
 }
 
 const ROADMAP_DOC_SEED_PREFIX = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}roadmap_doc:`;
+const PRODUCT_ROADMAP_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}product_roadmap_doc`;
+
+async function seedProductRoadmapDoc(
+  db: ReturnType<typeof createDb>["db"],
+  projectId: string,
+  maps: CatalogMaps,
+) {
+  const catalogId = maps.nodeKeyToId.get("product_roadmap");
+  if (!catalogId) return;
+
+  const [existing] = await db
+    .select({
+      id: schema.nodes.id,
+      title: schema.nodes.title,
+      properties: schema.nodes.properties,
+    })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.nodeCatalogId, catalogId),
+      ),
+    )
+    .limit(1);
+
+  const content = [
+    {
+      type: "heading",
+      props: { level: 2 },
+      content: "Product direction",
+    },
+    {
+      type: "paragraph",
+      content:
+        "Long-term strategic themes that guide annual and quarterly planning.",
+    },
+    {
+      type: "bulletListItem",
+      content: "Console v2.7 graph UI as the builder workspace",
+    },
+    {
+      type: "bulletListItem",
+      content: "End-user /app with per-account graph partition",
+    },
+    {
+      type: "bulletListItem",
+      content: "Design Studio artifact build and widget preview",
+    },
+  ];
+
+  if (!existing) return;
+
+  const props = existing.properties as Record<string, unknown>;
+  if (props.seed === PRODUCT_ROADMAP_SEED_KEY) return;
+
+  await db
+    .update(schema.nodes)
+    .set({
+      title: existing.title || "Product roadmap",
+      properties: {
+        ...props,
+        lifecycleStatus: "active",
+        summary:
+          "Graph-first Console, end-user app partition, and catalog-driven page runtime",
+        content,
+        seed: PRODUCT_ROADMAP_SEED_KEY,
+      },
+    })
+    .where(eq(schema.nodes.id, existing.id));
+}
 
 type RoadmapDocSeed = {
   seedSuffix: string;

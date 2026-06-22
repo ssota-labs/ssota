@@ -14,26 +14,28 @@
     "title": "Roadmap",
     "icon": "executive_roadmap",
     "spec": {
-      "root": "list",
+      "root": "workspace",
       "elements": {
-        "list": {
-          "type": "DocumentSheetList",
+        "workspace": {
+          "type": "RoadmapSheetWorkspace",
           "props": {
-            "binding": "roadmaps",
-            "sectionTitle": "Planning roadmaps",
-            "sectionSubtitle": "카드 행 클릭 → 우측 패널에서 BlockNote로 편집",
+            "productBinding": "productRoadmap",
+            "planningBinding": "planningRoadmaps",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
             "sheetSize": "half",
             "editable": true,
-            "action": "saveRoadmapDoc"
+            "action": "saveRoadmapDoc",
+            "createAnnualAction": "createAnnualRoadmap",
+            "createQuarterAction": "createQuarterRoadmap"
           }
         }
       }
     },
     "bindings": {
-      "roadmaps": { "kind": "query", "catalogKey": "roadmap" }
+      "productRoadmap": { "kind": "singleton", "catalogKey": "product_roadmap" },
+      "planningRoadmaps": { "kind": "query", "catalogKey": "roadmap" }
     },
     "actions": {
       "saveRoadmapDoc": {
@@ -41,6 +43,31 @@
         "nodeId": { "$input": "nodeId" },
         "properties": { "content": { "$input": "doc" } },
         "merge": true
+      },
+      "createAnnualRoadmap": {
+        "kind": "create_node",
+        "catalogKey": "roadmap",
+        "title": { "$input": "title" },
+        "properties": {
+          "kind": { "$input": "kind" },
+          "year": { "$input": "year" },
+          "lifecycleStatus": "draft",
+          "summary": "",
+          "content": []
+        }
+      },
+      "createQuarterRoadmap": {
+        "kind": "create_node",
+        "catalogKey": "roadmap",
+        "title": { "$input": "title" },
+        "properties": {
+          "kind": { "$input": "kind" },
+          "year": { "$input": "year" },
+          "quarter": { "$input": "quarter" },
+          "lifecycleStatus": "draft",
+          "summary": "",
+          "content": []
+        }
       }
     }
   },

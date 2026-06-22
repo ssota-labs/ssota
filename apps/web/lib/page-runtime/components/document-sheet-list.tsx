@@ -1,29 +1,17 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-import { CaretRightIcon, XIcon } from "@phosphor-icons/react";
-import { Badge } from "@ssota/ui/components/ui/badge";
-import { Button } from "@ssota/ui/components/ui/button";
+import { CaretRightIcon } from "@phosphor-icons/react";
 import { cn } from "@ssota/ui/lib/utils";
 import { useAction } from "../context";
 import type { RenderNode } from "../types";
-
-const DocumentViewEl = dynamic(
-  () => import("../catalog-document").then((m) => m.DocumentViewEl),
-  { ssr: false },
-);
-const DocumentEditorEl = dynamic(
-  () => import("../catalog-document").then((m) => m.DocumentEditorEl),
-  { ssr: false },
-);
-
-type SheetSize = "default" | "half" | "inspector" | "wide" | "full";
+import { DocumentStatusBadge } from "./document-status-badge";
+import { DocumentSheetPanel, type SheetSize } from "./document-sheet-panel";
+import { readNodeField } from "./roadmap-doc-card";
 
 export type DocumentSheetListProps = {
   nodes: RenderNode[];
   title?: string;
-  /** Optional page-style heading rendered inside the panel region (above the list). */
   sectionTitle?: string;
   sectionSubtitle?: string;
   field?: string;
@@ -33,26 +21,6 @@ export type DocumentSheetListProps = {
   action?: string;
   sheetSize?: SheetSize;
 };
-
-/** Panel widths (parent-relative, flush right). */
-const panelWidthClass: Record<SheetSize, string> = {
-  default: "w-[min(24rem,100%)]",
-  half: "w-1/2 min-w-[18rem]",
-  inspector: "w-[min(42%,560px)] min-w-[18rem]",
-  wide: "w-2/3 min-w-[20rem] max-w-[48rem]",
-  full: "w-full",
-};
-
-function readField(node: RenderNode, key: string | undefined): string {
-  if (!key) return "";
-  if (key === "title") return node.title;
-  const value = node.properties[key];
-  return typeof value === "string" ? value : "";
-}
-
-function readContent(node: RenderNode, field: string): unknown {
-  return node.properties[field];
-}
 
 export function DocumentSheetListEl({
   nodes,
@@ -102,8 +70,8 @@ export function DocumentSheetListEl({
 
         <div className="border-border divide-border divide-y overflow-hidden rounded-lg border">
           {nodes.map((node) => {
-            const subtitle = readField(node, subtitleField);
-            const status = readField(node, statusField);
+            const subtitle = readNodeField(node, subtitleField);
+            const status = readNodeField(node, statusField);
             return (
               <button
                 key={node.id}
@@ -118,11 +86,7 @@ export function DocumentSheetListEl({
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm font-medium">{node.title}</span>
-                    {status ? (
-                      <Badge variant="outline" className="text-[10px]">
-                        {status}
-                      </Badge>
-                    ) : null}
+                    {status ? <DocumentStatusBadge status={status} /> : null}
                   </div>
                   {subtitle ? (
                     <p className="text-muted-foreground line-clamp-2 text-xs">
@@ -146,65 +110,23 @@ export function DocumentSheetListEl({
       </div>
 
       {open && activeNode ? (
-        <div
-          role="dialog"
-          aria-modal="false"
-          aria-labelledby="document-sheet-title"
-          data-testid="document-sheet-panel"
-          className={cn(
-            "bg-background border-border absolute top-1 right-2 bottom-1 z-20 flex flex-col overflow-hidden rounded-xl border",
-            "shadow-[0_12px_40px_-8px_rgba(0,0,0,0.18)]",
-            "animate-in slide-in-from-right-4 fade-in duration-200",
-            panelWidthClass[sheetSize],
-          )}
-        >
-          <header className="border-border flex shrink-0 items-start gap-3 border-b px-4 py-3">
-            <div className="min-w-0 flex-1 space-y-1">
-              <h2
-                id="document-sheet-title"
-                className="text-base font-semibold leading-snug"
-              >
-                {activeNode.title}
-              </h2>
-              {readField(activeNode, subtitleField) ? (
-                <p className="text-muted-foreground text-sm">
-                  {readField(activeNode, subtitleField)}
-                </p>
-              ) : null}
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-sm"
-              aria-label="Close"
-              data-testid="document-sheet-close"
-              onClick={close}
-            >
-              <XIcon className="size-4" />
-            </Button>
-          </header>
-          <div
-            className="min-h-0 flex-1 overflow-y-auto px-4 py-3"
-            data-testid="document-sheet-editor"
-          >
-            {editable ? (
-              <DocumentEditorEl
-                compact
-                content={readContent(activeNode, field)}
-                onSave={(blocks) => {
-                  if (onAction && action) {
-                    void onAction(action, {
-                      nodeId: activeNode.id,
-                      doc: blocks,
-                    });
-                  }
-                }}
-              />
-            ) : (
-              <DocumentViewEl compact content={readContent(activeNode, field)} />
-            )}
-          </div>
-        </div>
+        <DocumentSheetPanel
+          node={activeNode}
+          subtitle={readNodeField(activeNode, subtitleField)}
+          status={readNodeField(activeNode, statusField)}
+          field={field}
+          editable={editable}
+          sheetSize={sheetSize}
+          onClose={close}
+          onSave={(blocks) => {
+            if (onAction && action) {
+              void onAction(action, {
+                nodeId: activeNode.id,
+                doc: blocks,
+              });
+            }
+          }}
+        />
       ) : null}
     </div>
   );

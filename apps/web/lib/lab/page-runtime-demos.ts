@@ -72,12 +72,25 @@ const mockPrdContent = [
   },
 ];
 
+const mockProductRoadmap = {
+  id: "66666666-6666-4666-8666-666666666600",
+  catalogKey: "product_roadmap",
+  title: "Product roadmap",
+  properties: {
+    lifecycleStatus: "active",
+    summary: "Graph-first Console, end-user app, Design Studio pipeline",
+    content: mockPrdContent,
+  },
+};
+
 const mockRoadmapDocs = [
   {
     id: "66666666-6666-4666-8666-666666666601",
     catalogKey: "roadmap",
     title: "2026 연간 로드맵",
     properties: {
+      kind: "annual",
+      year: 2026,
       lifecycleStatus: "active",
       summary: "Console v2.7 출시, end-user app, Design Studio 파이프라인",
       content: [
@@ -111,6 +124,9 @@ const mockRoadmapDocs = [
     catalogKey: "roadmap",
     title: "2026 Q1 분기 로드맵",
     properties: {
+      kind: "quarter",
+      year: 2026,
+      quarter: 1,
       lifecycleStatus: "draft",
       summary: "Page runtime catalog, Labs, roadmap document sheet pattern",
       content: [
@@ -140,6 +156,9 @@ const mockRoadmapDocs = [
     catalogKey: "roadmap",
     title: "2026 Q2 분기 로드맵",
     properties: {
+      kind: "quarter",
+      year: 2026,
+      quarter: 2,
       lifecycleStatus: "review",
       summary: "Initiative drill-in, scoped bindings, 18 L2 screens",
       content: [
@@ -582,6 +601,36 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
     bindingData: { roadmaps: mockRoadmapDocs },
+  },
+  {
+    id: "roadmap-sheet-workspace",
+    category: "document",
+    title: "RoadmapSheetWorkspace",
+    description:
+      "Product roadmap card + annual/quarter planning cards with year filter and floating sheet editor.",
+    components: ["RoadmapSheetWorkspace"],
+    spec: {
+      root: "workspace",
+      elements: {
+        workspace: {
+          type: "RoadmapSheetWorkspace",
+          props: {
+            productBinding: "productRoadmap",
+            planningBinding: "planningRoadmaps",
+            field: "content",
+            subtitleField: "summary",
+            statusField: "lifecycleStatus",
+            sheetSize: "half",
+            editable: true,
+            action: "saveRoadmapDoc",
+          },
+        },
+      },
+    },
+    bindingData: {
+      productRoadmap: mockProductRoadmap,
+      planningRoadmaps: mockRoadmapDocs,
+    },
   },
   {
     id: "document-view",
