@@ -55,9 +55,14 @@ test.describe("Executive roadmap", () => {
     await expect(editor).toBeVisible({ timeout: 15_000 });
 
     const marker = `roadmap-autosave-${Date.now()}`;
+    const saveResponse = page.waitForResponse(
+      (response) => response.request().method() === "POST" && response.ok(),
+      { timeout: 20_000 },
+    );
     await editor.click();
     await editor.press("End");
     await editor.type(` ${marker}`);
+    await saveResponse;
 
     await page.reload();
     await gotoProject(page, "executive/roadmap");
