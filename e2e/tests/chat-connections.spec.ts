@@ -73,10 +73,10 @@ test.describe("Connections + Chat", () => {
   test("chat: sends a message and streams the agent reply", async ({ page }) => {
     await gotoProject(page, "chat");
 
-    const input = page.getByPlaceholder("Send a message…");
+    const input = page.getByPlaceholder(/메시지를 입력하세요/);
     await expect(input).toBeVisible();
     await input.fill("ping from e2e");
-    await page.getByRole("button", { name: "Send" }).click();
+    await page.getByRole("button", { name: "전송" }).click();
 
     // User turn echoed, then the stubbed agent reply streams in via the full
     // route → workflow → stream → useChat → streamdown pipeline.
