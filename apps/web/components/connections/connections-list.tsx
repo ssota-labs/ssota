@@ -39,6 +39,7 @@ function authorizeHref(params: {
   accountId: string;
   projectId: string;
   returnTo: string;
+  installationId?: string;
 }): string {
   const search = new URLSearchParams({
     connector: params.connectorUid,
@@ -46,6 +47,9 @@ function authorizeHref(params: {
     projectId: params.projectId,
     returnTo: params.returnTo,
   });
+  if (params.installationId) {
+    search.set("installationId", params.installationId);
+  }
   return `/api/connect/authorize?${search.toString()}`;
 }
 
@@ -211,16 +215,24 @@ function ConnectorCard({
         ) : connector.multiWorkspace ? (
           <MultiWorkspaceBody
             provider={connector.provider}
+            connectorUid={connector.connectorUid as string}
             rows={rows}
             href={href}
+            accountId={accountId}
+            projectId={projectId}
+            returnTo={returnTo}
             isPending={isPending}
             onDisconnect={disconnect}
           />
         ) : (
           <SingleWorkspaceBody
             provider={connector.provider}
+            connectorUid={connector.connectorUid as string}
             row={rows[0]}
             href={href}
+            accountId={accountId}
+            projectId={projectId}
+            returnTo={returnTo}
             isPending={isPending}
             onDisconnect={disconnect}
           />
@@ -233,11 +245,13 @@ function ConnectorCard({
 function ConnectionItem({
   row,
   provider,
+  reconnectHref,
   isPending,
   onDisconnect,
 }: {
   row: ConnectionRow;
   provider: ConnectorProvider;
+  reconnectHref: string;
   isPending: boolean;
   onDisconnect: (id: string) => void;
 }) {
@@ -262,34 +276,67 @@ function ConnectionItem({
           ) : null}
         </div>
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        disabled={isPending}
-        onClick={() => onDisconnect(row.id)}
-        className="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-      >
-        <LinkBreakIcon className="size-4" />
-        {t("connections.disconnect")}
-      </Button>
+      <div className="flex shrink-0 items-center gap-1">
+        <a
+          className={buttonVariants({ variant: "ghost", size: "sm" })}
+          href={reconnectHref}
+          data-testid={`reconnect-${provider}`}
+        >
+          {t("connections.reconnect")}
+        </a>
+        <Button
+          variant="ghost"
+          size="sm"
+          disabled={isPending}
+          onClick={() => onDisconnect(row.id)}
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+        >
+          <LinkBreakIcon className="size-4" />
+          {t("connections.disconnect")}
+        </Button>
+      </div>
     </div>
   );
 }
 
+function reconnectHrefForRow(
+  params: {
+    connectorUid: string;
+    accountId: string;
+    projectId: string;
+    returnTo: string;
+  },
+  row: ConnectionRow,
+): string {
+  return authorizeHref({
+    ...params,
+    ...(row.installationId ? { installationId: row.installationId } : {}),
+  });
+}
+
 function MultiWorkspaceBody({
   provider,
+  connectorUid,
   rows,
   href,
+  accountId,
+  projectId,
+  returnTo,
   isPending,
   onDisconnect,
 }: {
   provider: string;
+  connectorUid: string;
   rows: ConnectionRow[];
   href: string;
+  accountId: string;
+  projectId: string;
+  returnTo: string;
   isPending: boolean;
   onDisconnect: (id: string) => void;
 }) {
   const { t } = useLocale();
+  const authorizeParams = { connectorUid, accountId, projectId, returnTo };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3">
@@ -300,6 +347,7 @@ function MultiWorkspaceBody({
               key={row.id}
               row={row}
               provider={provider as ConnectorProvider}
+              reconnectHref={reconnectHrefForRow(authorizeParams, row)}
               isPending={isPending}
               onDisconnect={onDisconnect}
             />
@@ -329,14 +377,22 @@ function MultiWorkspaceBody({
 
 function SingleWorkspaceBody({
   provider,
+  connectorUid,
   row,
   href,
+  accountId,
+  projectId,
+  returnTo,
   isPending,
   onDisconnect,
 }: {
   provider: string;
+  connectorUid: string;
   row: ConnectionRow | undefined;
   href: string;
+  accountId: string;
+  projectId: string;
+  returnTo: string;
   isPending: boolean;
   onDisconnect: (id: string) => void;
 }) {
@@ -358,22 +414,17 @@ function SingleWorkspaceBody({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3">
-      <div className="min-h-0 flex-1">
-        <ConnectionItem
-          row={row}
-          provider={provider as ConnectorProvider}
-          isPending={isPending}
-          onDisconnect={onDisconnect}
-        />
-      </div>
-      <a
-        className={buttonVariants({ variant: "ghost", size: "sm" })}
-        href={href}
-        data-testid={`reconnect-${provider}`}
-      >
-        {t("connections.reconnect")}
-      </a>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <ConnectionItem
+        row={row}
+        provider={provider as ConnectorProvider}
+        reconnectHref={reconnectHrefForRow(
+          { connectorUid, accountId, projectId, returnTo },
+          row,
+        )}
+        isPending={isPending}
+        onDisconnect={onDisconnect}
+      />
     </div>
   );
 }

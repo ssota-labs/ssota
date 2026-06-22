@@ -134,6 +134,9 @@ test.describe("Connections + Chat", () => {
     await page.getByTestId("connect-slack").click();
     await expect(slack.getByTestId("connection-row")).toHaveCount(2);
 
+    // Each connected workspace row offers per-installation Reconnect.
+    await expect(slack.getByTestId("reconnect-slack")).toHaveCount(2);
+
     // Disconnect one → back to a single row.
     await slack
       .getByTestId("connection-row")
@@ -154,8 +157,10 @@ test.describe("Connections + Chat", () => {
 
     await page.getByTestId("connect-linear").click();
     await expect(linear.getByTestId("connection-row")).toHaveCount(1);
-    // Single connectors offer Reconnect, never "Add workspace".
-    await expect(linear.getByTestId("reconnect-linear")).toBeVisible();
+    // Single connectors offer per-row Reconnect, never "Add workspace".
+    await expect(
+      linear.getByTestId("connection-row").getByTestId("reconnect-linear"),
+    ).toBeVisible();
     await expect(linear.getByText("Add workspace")).toHaveCount(0);
   });
 
