@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@ssota/ui/components/ui/button";
 import { VercelAnalytics } from "@/components/analytics/vercel-analytics";
 import { VercelSpeedInsights } from "@/components/analytics/vercel-speed-insights";
+import { AppToaster } from "@/components/app-toaster";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -60,6 +61,7 @@ export default async function RootLayout({
               <main className="mx-auto max-w-6xl px-6 py-8">{children}</main>
             )}
             </TooltipProvider>
+            <AppToaster />
           </LocaleProvider>
         </ThemeProvider>
         <VercelAnalytics />
