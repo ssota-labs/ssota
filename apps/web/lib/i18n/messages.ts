@@ -306,7 +306,6 @@ export const en = {
     description:
       "Connect third-party services so the agent can read, write, and act on your behalf.",
     summaryConnected: "{count} connected",
-    summaryAvailable: "{count} available",
     statusConnected: "Connected",
     statusNotConnected: "Not connected",
     statusNotConfigured: "Not configured",
@@ -658,7 +657,6 @@ export const ko = {
     description:
       "에이전트가 대신 읽고, 쓰고, 작업할 수 있도록 외부 서비스를 연결합니다.",
     summaryConnected: "{count}개 연결됨",
-    summaryAvailable: "{count}개 사용 가능",
     statusConnected: "연결됨",
     statusNotConnected: "미연결",
     statusNotConfigured: "미설정",

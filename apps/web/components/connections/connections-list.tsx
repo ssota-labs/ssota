@@ -67,7 +67,6 @@ export function ConnectionsList({
   const { t } = useLocale();
 
   const connectedCount = connections.length;
-  const availableCount = connectors.filter((c) => c.connectorUid).length;
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
@@ -84,9 +83,6 @@ export function ConnectionsList({
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="secondary">
             {t("connections.summaryConnected", { count: connectedCount })}
-          </Badge>
-          <Badge variant="outline">
-            {t("connections.summaryAvailable", { count: availableCount })}
           </Badge>
         </div>
       </header>
