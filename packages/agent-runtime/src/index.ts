@@ -33,6 +33,7 @@ export {
   resolveCredentialProvider,
   startConnectAuthorization,
   getConnectInstallation,
+  normalizeConnectInstallationId,
   resolveConnectCallbackSubject,
   connectUsesAppSubject,
   type CredentialProvider,

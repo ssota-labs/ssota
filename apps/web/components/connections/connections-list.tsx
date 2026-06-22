@@ -69,8 +69,19 @@ function authorizeHref(params: {
   return `/api/connect/authorize?${search.toString()}`;
 }
 
+function connectionInstallationId(row: ConnectionRow): string | undefined {
+  const id = row.installationId?.trim();
+  if (!id || id.toLowerCase() === "empty") return undefined;
+  return id;
+}
+
 function connectionLabel(row: ConnectionRow): string {
-  return row.name || row.tenantId || row.installationId || "Connected";
+  return (
+    row.name ||
+    row.tenantId ||
+    connectionInstallationId(row) ||
+    "Connected"
+  );
 }
 
 export function ConnectionsList({

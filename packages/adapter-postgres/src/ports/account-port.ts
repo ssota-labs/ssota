@@ -151,14 +151,24 @@ export function createAccountConnectionPort(db: Db) {
       .limit(1);
     if (!row) return null;
     return {
-      installationId: row.installationId ? row.installationId : null,
+      installationId:
+        row.installationId && row.installationId.toLowerCase() !== "empty"
+          ? row.installationId
+          : null,
       subjectUserId: row.subjectUserId ?? null,
     };
   }
 
+  function storageInstallationId(id: string | null | undefined): string {
+    if (!id) return "";
+    const trimmed = id.trim();
+    if (!trimmed || trimmed.toLowerCase() === "empty") return "";
+    return trimmed;
+  }
+
   return {
     async record(input: RecordAccountConnectionInput): Promise<void> {
-      const installationId = input.installationId ?? "";
+      const installationId = storageInstallationId(input.installationId);
       await db
         .insert(accountConnections)
         .values({
