@@ -211,12 +211,21 @@ export async function seedPages(
     if (existing[0]) {
       keyToId.set(entry.key, existing[0].id);
       if (SEED_SPEC_SYNC_SLUGS.has(entry.key)) {
+        const synced = pageRecordSchema.parse({
+          title: entry.title,
+          icon: entry.icon,
+          slug: entry.key,
+          appliesToNodeType: entry.appliesToNodeType ?? null,
+          spec: entry.spec,
+          bindings: entry.bindings ?? {},
+          actions: entry.actions ?? {},
+        });
         await db
           .update(schema.pages)
           .set({
-            spec: entry.spec,
-            bindings: entry.bindings ?? {},
-            actions: entry.actions ?? {},
+            spec: synced.spec,
+            bindings: synced.bindings,
+            actions: synced.actions,
             updatedAt: new Date(),
           })
           .where(eq(schema.pages.id, existing[0].id));
