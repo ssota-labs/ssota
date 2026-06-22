@@ -123,7 +123,7 @@ test.describe("Connections + Chat", () => {
 
     const slack = page.getByTestId("connector-slack");
     await expect(slack).toBeVisible();
-    await expect(slack.getByText("multiple workspaces")).toBeVisible();
+    await expect(slack.getByText(/multiple workspaces/i)).toBeVisible();
     await expect(slack.getByTestId("connection-row")).toHaveCount(0);
 
     // First connect → /api/connect/authorize → (stub) callback → records → back.
