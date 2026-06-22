@@ -34,13 +34,13 @@ export type DocumentSheetListProps = {
   sheetSize?: SheetSize;
 };
 
-/** Inset floating panel widths (parent-relative, no viewport portal). */
+/** Panel widths (parent-relative, flush right). */
 const panelWidthClass: Record<SheetSize, string> = {
-  default: "w-[min(24rem,calc(100%-1.5rem))]",
-  half: "w-[calc(50%-0.75rem)] min-w-[18rem]",
-  inspector: "w-[min(calc(42%-0.75rem),560px)] min-w-[18rem]",
-  wide: "w-[min(calc(66%-0.75rem),48rem)] min-w-[20rem]",
-  full: "w-[calc(100%-1.5rem)]",
+  default: "w-[min(24rem,100%)]",
+  half: "w-1/2 min-w-[18rem]",
+  inspector: "w-[min(42%,560px)] min-w-[18rem]",
+  wide: "w-2/3 min-w-[20rem] max-w-[48rem]",
+  full: "w-full",
 };
 
 function readField(node: RenderNode, key: string | undefined): string {
@@ -85,7 +85,7 @@ export function DocumentSheetListEl({
 
   return (
     <div
-      className="relative min-h-[28rem] w-full"
+      className="relative flex h-full min-h-[28rem] w-full flex-1 flex-col"
       data-testid="document-sheet-list"
     >
       <div className="space-y-3">
@@ -152,13 +152,13 @@ export function DocumentSheetListEl({
           aria-labelledby="document-sheet-title"
           data-testid="document-sheet-panel"
           className={cn(
-            "bg-background border-border absolute top-3 right-3 bottom-3 z-20 flex flex-col overflow-hidden rounded-xl border",
+            "bg-background border-border absolute inset-y-0 right-0 z-20 flex h-full flex-col overflow-hidden rounded-l-xl border border-r-0",
             "shadow-[0_12px_40px_-8px_rgba(0,0,0,0.18)]",
             "animate-in slide-in-from-right-4 fade-in duration-200",
             panelWidthClass[sheetSize],
           )}
         >
-          <header className="border-border flex shrink-0 items-start gap-3 border-b px-4 py-4">
+          <header className="border-border flex shrink-0 items-start gap-3 border-b px-4 py-3">
             <div className="min-w-0 flex-1 space-y-1">
               <h2
                 id="document-sheet-title"
@@ -184,7 +184,7 @@ export function DocumentSheetListEl({
             </Button>
           </header>
           <div
-            className="min-h-0 flex-1 overflow-y-auto px-3 py-3"
+            className="min-h-0 flex-1 overflow-y-auto"
             data-testid="document-sheet-editor"
           >
             {editable ? (

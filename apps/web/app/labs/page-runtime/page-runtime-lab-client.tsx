@@ -34,10 +34,11 @@ function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
           Interactive elements log actions here (Toolbar, Button, Input, editors).
         </p>
       )}
-      <div className="border-border bg-background relative min-h-[32rem] overflow-hidden rounded-lg border p-4">
-        <DynamicPageRenderer
-          spec={demo.spec}
-          bindingData={demo.bindingData ?? {}}
+      <div className="border-border bg-background relative flex min-h-[calc(100svh-14rem)] flex-col overflow-hidden rounded-lg border p-4 [&_[data-testid=document-sheet-list]]:min-h-full [&_[data-testid=document-sheet-list]]:flex-1 [&_[data-testid=dynamic-page-renderer]]:flex [&_[data-testid=dynamic-page-renderer]]:min-h-0 [&_[data-testid=dynamic-page-renderer]]:flex-1 [&_[data-testid=dynamic-page-renderer]]:flex-col">
+        <div className="min-h-0 flex-1">
+          <DynamicPageRenderer
+            spec={demo.spec}
+            bindingData={demo.bindingData ?? {}}
           onAction={async (actionKey, input) => {
             setLastAction(`${actionKey}(${JSON.stringify(input)})`);
           }}
@@ -45,6 +46,7 @@ function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
             setLastAction(`buildWidget(${JSON.stringify({ nodeId })})`);
           }}
         />
+        </div>
       </div>
     </div>
   );
