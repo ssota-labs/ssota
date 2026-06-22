@@ -24,11 +24,11 @@ test.describe("end-user app", () => {
     await expect(page.getByRole("button", { name: "새 채팅" })).toBeVisible({
       timeout: 15_000,
     });
-    const headerNav = page.locator("header nav");
-    await expect(headerNav.getByRole("link", { name: "Chat", exact: true })).toBeVisible();
-    await expect(headerNav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
+    const sidebar = page.getByRole("navigation", { name: "Primary" });
+    await expect(sidebar.getByRole("link", { name: "Chat", exact: true })).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
     await expect(
-      headerNav.getByRole("link", { name: "Connections", exact: true }),
+      sidebar.getByRole("link", { name: "Connections", exact: true }),
     ).toBeVisible();
   });
 
