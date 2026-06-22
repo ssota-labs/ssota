@@ -406,7 +406,7 @@ function MultiWorkspaceBody({
       </div>
       <a
         className={buttonVariants({
-          variant: rows.length > 0 ? "outline" : "default",
+          variant: "outline",
           size: "sm",
         })}
         href={href}
