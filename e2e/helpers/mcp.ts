@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 import { PROJECT_ID_HEADER } from "@ssota/contracts";
 
 const supabaseUrl = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";
@@ -18,6 +18,15 @@ let cachedDefaultProjectId: string | null = null;
 
 export const DEFAULT_MCP_ORG_SLUG = "ssota-labs";
 export const DEFAULT_MCP_PROJECT_SLUG = "ssota-dev";
+
+/** Minimal execution directive for E2E spawn_task calls. */
+export const E2E_EXECUTION_DIRECTIVE = {
+  goal: "Complete the E2E spawned task with verifiable output.",
+  background: "Spawned from Playwright MCP E2E test fixture.",
+  steps: ["Read task context", "Perform work", "Update task result"],
+  constraints: [],
+  contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
+};
 
 const ACCOUNT_MCP_TOOLS = new Set([
   "list_organizations",

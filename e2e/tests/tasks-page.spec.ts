@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
-import { getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
+import { E2E_EXECUTION_DIRECTIVE, getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
@@ -10,8 +10,10 @@ test.describe("Tasks page", () => {
     const token = await getSmokeAccessToken();
     await mcpToolCall(request, mcpUrl, token, "spawn_task", {
       title: "E2E tasks page fixture",
-      workflowKey: "work.implement_feature",
+      workflowInstructionKey: "work.implement_feature",
       assignee: "agent:e2e-tasks-page",
+      executionDirective: E2E_EXECUTION_DIRECTIVE,
+      acceptanceCriteria: ["Visible on tasks page"],
       idempotencyKey: `e2e-tasks-page-fixture-${Date.now()}`,
     });
   });

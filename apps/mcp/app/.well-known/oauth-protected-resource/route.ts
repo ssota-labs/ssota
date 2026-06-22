@@ -1,5 +1,5 @@
 import { protectedResourceHandler } from "mcp-handler";
-import { supabaseAuthIssuerUrl } from "@/lib/auth";
+import { authServerUrls } from "@/lib/auth";
 import { buildMcpResourceUrl, mcpPublicOrigin } from "@/lib/mcp/resource-url";
 
 export async function GET(req: Request) {
@@ -14,7 +14,7 @@ export async function GET(req: Request) {
       : (process.env.MCP_RESOURCE_URL ?? buildMcpResourceUrl({ origin }));
 
   const handler = protectedResourceHandler({
-    authServerUrls: [supabaseAuthIssuerUrl()],
+    authServerUrls: await authServerUrls(),
     resourceUrl,
   });
 

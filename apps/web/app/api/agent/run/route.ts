@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
-import { start } from "workflow/api";
-import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { getJobRunner } from "@/app/workflows/job-runner";
+import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
+import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -48,16 +49,31 @@ export async function POST(request: Request) {
     );
   }
 
-  // Fire-and-forget durable run. Returns immediately with the run id.
-  const run = await start(runSsotaAgentWorkflow, [
-    {
-      projectId: parsed.projectId,
-      taskId: parsed.taskId,
-      accountId: parsed.accountId,
-      modelId: parsed.modelId,
-      maxSteps: parsed.maxSteps,
-    },
-  ]);
+  const user = await getCurrentUser().catch(() => null);
+  let accountId = parsed.accountId;
+  if (user) {
+    try {
+      const scope = await resolveApiAccountScope(parsed.projectId, {
+        referer: request.headers.get("referer"),
+        requestedAccountId: parsed.accountId,
+      });
+      accountId = scope.accountId;
+    } catch (error) {
+      const response = apiScopeErrorResponse(error);
+      if (response) return response;
+      throw error;
+    }
+  }
+
+  const runner = await getJobRunner();
+  const run = await runner.start({
+    projectId: parsed.projectId,
+    taskId: parsed.taskId,
+    accountId,
+    modelId: parsed.modelId,
+    maxSteps: parsed.maxSteps,
+  });
+  after(run.completion);
 
   return NextResponse.json({ runId: run.runId });
 }

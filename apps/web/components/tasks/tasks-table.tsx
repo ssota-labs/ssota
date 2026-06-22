@@ -47,13 +47,13 @@ export function TasksTable({ rows, onOpenDetail }: TasksTableProps) {
       ),
     },
     {
-      accessorKey: "workflowKey",
+      accessorKey: "workflowInstructionKey",
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title="Workflow" />
       ),
       cell: ({ row }) => (
         <span className="font-mono text-xs text-muted-foreground">
-          {row.original.workflowKey}
+          {row.original.workflowInstructionKey}
         </span>
       ),
     },

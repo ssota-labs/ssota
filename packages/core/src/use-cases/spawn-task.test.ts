@@ -7,6 +7,8 @@ import {
 import {
   createInMemoryState,
   createInMemoryPorts,
+  createInMemoryWorkflowInstructionPort,
+  sampleExecutionDirective,
   TEST_PROJECT_ID,
 } from "../testing/in-memory.js";
 import { spawnTask } from "./spawn-task.js";
@@ -15,48 +17,61 @@ import { updateTask } from "./update-task.js";
 const PROJECT_ID = TEST_PROJECT_ID;
 const OTHER_PROJECT_ID = "00000000-0000-4000-8000-000000000099";
 
-describe("spawnTask", () => {
-  it("creates a task for a known workflow key", async () => {
-    const state = createInMemoryState();
-    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
+function spawnDeps(state: ReturnType<typeof createInMemoryState>, projectId: string) {
+  const { tasks } = createInMemoryPorts(state, { projectId });
+  return {
+    tasks,
+    workflowInstructions: createInMemoryWorkflowInstructionPort(projectId),
+  };
+}
 
-    const task = await spawnTask({ tasks }, PROJECT_ID, {
+describe("spawnTask", () => {
+  it("creates a task for a known workflow instruction key", async () => {
+    const state = createInMemoryState();
+    const task = await spawnTask(spawnDeps(state, PROJECT_ID), PROJECT_ID, {
       title: "Daily planning",
-      workflowKey: "orchestrator.daily",
+      workflowInstructionKey: "orchestrator.daily",
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["Task created"],
     });
 
-    expect(task.workflowKey).toBe("orchestrator.daily");
-    expect(task.status).toBe("ready");
+    expect(task.workflowInstructionKey).toBe("orchestrator.daily");
+    expect(task.status).toBe("pending");
     expect(task.projectId).toBe(PROJECT_ID);
   });
 
-  it("rejects unknown workflow keys", async () => {
+  it("rejects unknown workflow instruction keys", async () => {
     const state = createInMemoryState();
-    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
 
     await expect(
-      spawnTask({ tasks }, PROJECT_ID, {
+      spawnTask(spawnDeps(state, PROJECT_ID), PROJECT_ID, {
         title: "Bad",
-        workflowKey: "not.registered",
+        workflowInstructionKey: "not.registered",
+        context: { executionDirective: sampleExecutionDirective },
+        acceptanceCriteria: ["x"],
       }),
     ).rejects.toMatchObject({
       name: "TaskError",
-      code: "UNKNOWN_WORKFLOW_KEY",
+      code: "UNKNOWN_WORKFLOW_INSTRUCTION",
     });
   });
 
   it("returns existing task on idempotency key collision", async () => {
     const state = createInMemoryState();
-    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
+    const deps = spawnDeps(state, PROJECT_ID);
 
-    const first = await spawnTask({ tasks }, PROJECT_ID, {
+    const first = await spawnTask(deps, PROJECT_ID, {
       title: "Work item",
-      workflowKey: "work.implement_feature",
+      workflowInstructionKey: "work.implement_feature",
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["done"],
       idempotencyKey: "daily:2026-06-15:feature-a",
     });
-    const second = await spawnTask({ tasks }, PROJECT_ID, {
+    const second = await spawnTask(deps, PROJECT_ID, {
       title: "Different title",
-      workflowKey: "work.implement_feature",
+      workflowInstructionKey: "work.implement_feature",
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["done"],
       idempotencyKey: "daily:2026-06-15:feature-a",
     });
 
@@ -82,12 +97,14 @@ describe("spawnTask", () => {
     });
 
     const state = createInMemoryState();
-    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
+    const deps = { ...spawnDeps(state, PROJECT_ID), graphRead };
 
     await expect(
-      spawnTask({ tasks, graphRead }, PROJECT_ID, {
+      spawnTask(deps, PROJECT_ID, {
         title: "Linked work",
-        workflowKey: "work.implement_feature",
+        workflowInstructionKey: "work.implement_feature",
+        context: { executionDirective: sampleExecutionDirective },
+        acceptanceCriteria: ["done"],
         targetNodeId: nodeId,
       }),
     ).rejects.toMatchObject({
@@ -100,13 +117,15 @@ describe("spawnTask", () => {
 describe("updateTask", () => {
   it("updates task status and sets completedAt on done", async () => {
     const state = createInMemoryState();
-    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
-    const created = await spawnTask({ tasks }, PROJECT_ID, {
+    const deps = spawnDeps(state, PROJECT_ID);
+    const created = await spawnTask(deps, PROJECT_ID, {
       title: "Implement",
-      workflowKey: "work.implement_feature",
+      workflowInstructionKey: "work.implement_feature",
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["shipped"],
     });
 
-    const updated = await updateTask({ tasks }, PROJECT_ID, {
+    const updated = await updateTask({ tasks: deps.tasks }, PROJECT_ID, {
       taskId: created.id,
       status: "done",
       result: { summary: "shipped" },
@@ -119,14 +138,16 @@ describe("updateTask", () => {
 
   it("rejects empty patch", async () => {
     const state = createInMemoryState();
-    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
-    const created = await spawnTask({ tasks }, PROJECT_ID, {
+    const deps = spawnDeps(state, PROJECT_ID);
+    const created = await spawnTask(deps, PROJECT_ID, {
       title: "Implement",
-      workflowKey: "work.implement_feature",
+      workflowInstructionKey: "work.implement_feature",
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["shipped"],
     });
 
     await expect(
-      updateTask({ tasks }, PROJECT_ID, { taskId: created.id }),
+      updateTask({ tasks: deps.tasks }, PROJECT_ID, { taskId: created.id }),
     ).rejects.toMatchObject({
       name: "TaskError",
       code: "VALIDATION_FAILED",

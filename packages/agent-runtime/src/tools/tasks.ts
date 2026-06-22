@@ -1,14 +1,15 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
+import { ExecutionDirectiveSchema, SpawnTaskInputSchema } from "@ssota/contracts";
 import { serializeTask, spawnTask, updateTask } from "@ssota/core";
-import { SpawnTaskInputSchema } from "@ssota/contracts";
-import { getGraphReadPort, getTaskPort } from "../ports.js";
+import { getGraphReadPort, getTaskPort, getWorkflowInstructionPort } from "../ports.js";
 import { getRunContext } from "./context.js";
 
 function taskDeps(projectId: string, accountId?: string) {
   return {
     tasks: getTaskPort(projectId, accountId),
     graphRead: getGraphReadPort(projectId, accountId),
+    workflowInstructions: getWorkflowInstructionPort(projectId, accountId),
   };
 }
 
@@ -20,7 +21,7 @@ export function createTaskTools(): ToolSet {
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
         const task = await getTaskPort(ctx.projectId, ctx.accountId).getTask(
-          input.taskId ?? ctx.taskId,
+          input.taskId ?? ctx.taskId ?? "",
         );
         return task ? serializeTask(task) : null;
       },
@@ -51,22 +52,72 @@ export function createTaskTools(): ToolSet {
 
     spawn_task: tool({
       description:
-        "Create a follow-up task. workflowKey must be a registered workflow (e.g. work.implement_feature).",
+        "Create a follow-up task with a full delegation directive. Required: title, workflowInstructionKey (or id), executionDirective (goal, background, steps), acceptanceCriteria.",
       inputSchema: z.object({
         title: z.string(),
-        workflowKey: z.string(),
+        workflowInstructionId: z.string().uuid().optional(),
+        workflowInstructionKey: z.string().optional(),
         targetNodeId: z.string().uuid().optional(),
-        context: z.record(z.unknown()).optional(),
-        acceptanceCriteria: z.array(z.unknown()).optional(),
+        executionDirective: ExecutionDirectiveSchema,
+        acceptanceCriteria: z.array(z.unknown()).min(1),
         idempotencyKey: z.string().optional(),
+        status: z
+          .enum(["pending", "ready", "running", "blocked", "done", "cancelled", "failed"])
+          .optional(),
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
         const parsed = SpawnTaskInputSchema.parse({
-          ...input,
-          parentTaskId: ctx.taskId,
+          title: input.title,
+          workflowInstructionId: input.workflowInstructionId,
+          workflowInstructionKey: input.workflowInstructionKey,
+          targetNodeId: input.targetNodeId,
+          acceptanceCriteria: input.acceptanceCriteria,
+          idempotencyKey: input.idempotencyKey,
+          status: input.status ?? "ready",
+          parentTaskId: ctx.taskId || undefined,
+          context: { executionDirective: input.executionDirective },
         });
-        const task = await spawnTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, parsed);
+        const task = await spawnTask(
+          taskDeps(ctx.projectId, ctx.accountId),
+          ctx.projectId,
+          parsed,
+        );
+        return serializeTask(task);
+      },
+    }),
+
+    update_task: tool({
+      description: "Update fields on a task (defaults to current run's task).",
+      inputSchema: z.object({
+        taskId: z.string().uuid().optional(),
+        title: z.string().optional(),
+        status: z
+          .enum([
+            "pending",
+            "ready",
+            "running",
+            "blocked",
+            "done",
+            "cancelled",
+            "failed",
+          ])
+          .optional(),
+        context: z.record(z.unknown()).optional(),
+        acceptanceCriteria: z.array(z.unknown()).optional(),
+        result: z.record(z.unknown()).optional(),
+      }),
+      execute: async (input, { experimental_context }) => {
+        const ctx = getRunContext(experimental_context);
+        const { taskId, ...patch } = input;
+        const resolvedTaskId = taskId ?? ctx.taskId;
+        if (!resolvedTaskId) {
+          throw new Error("taskId is required");
+        }
+        const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
+          taskId: resolvedTaskId,
+          ...patch,
+        });
         return serializeTask(task);
       },
     }),
@@ -80,6 +131,9 @@ export function createTaskTools(): ToolSet {
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
+        if (!ctx.taskId) {
+          throw new Error("taskId is required for complete_task");
+        }
         const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
           taskId: ctx.taskId,
           status: "done",
@@ -97,6 +151,9 @@ export function createTaskTools(): ToolSet {
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
+        if (!ctx.taskId) {
+          throw new Error("taskId is required for block_task");
+        }
         const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
           taskId: ctx.taskId,
           status: "blocked",
@@ -108,22 +165,16 @@ export function createTaskTools(): ToolSet {
 
     request_approval: tool({
       description:
-        "Pause for a human approval gate before a risky or irreversible action. Records a gate on the task and blocks it; a human approves/rejects, then the agent re-runs. Use this instead of acting when you need sign-off.",
+        "Pause for a human approval gate before a risky or irreversible action.",
       inputSchema: z.object({
-        reason: z
-          .string()
-          .describe("What needs approval and why (shown to the human)."),
-        summary: z
-          .string()
-          .optional()
-          .describe("Optional summary of the proposed action."),
+        reason: z.string().describe("What needs approval and why."),
+        summary: z.string().optional(),
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        // Task-based gate: the task rests in `blocked` with a gate descriptor
-        // (WorkflowGateSpec-shaped) until a human resolves it via the gate
-        // route, which re-runs the agent. Fits the loop-in-a-step design; a
-        // Workflow createHook would suit a continuously-running loop instead.
+        if (!ctx.taskId) {
+          throw new Error("taskId is required for request_approval");
+        }
         const gate = {
           id: globalThis.crypto.randomUUID(),
           policy: "human_approval",

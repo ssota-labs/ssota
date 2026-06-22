@@ -13,7 +13,7 @@ import { withConsolePaths } from "@/lib/console/revalidate";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
-import { getGraphPorts, getTaskPort } from "@/lib/ports";
+import { getGraphPorts, getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
 import { uploadEditorAsset } from "@/lib/editor/storage";
 
 function loginRedirect(error: string, next?: string | null): never {
@@ -52,7 +52,7 @@ export async function spawnTaskAction(
   projectId: string,
   input: {
     title: string;
-    workflowKey: string;
+    workflowInstructionKey: string;
     assignee?: string;
     executorType?: "Agent" | "Human" | "System";
   },
@@ -60,10 +60,36 @@ export async function spawnTaskAction(
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const parsed = SpawnTaskInputSchema.parse(input);
+  const parsed = SpawnTaskInputSchema.parse({
+    title: input.title,
+    workflowInstructionKey: input.workflowInstructionKey,
+    assignee: input.assignee,
+    executorType: input.executorType,
+    acceptanceCriteria: ["Complete the work described in the task title and context"],
+    context: {
+      executionDirective: {
+        goal:
+          input.title.length >= 10
+            ? input.title
+            : `Complete task: ${input.title}`,
+        background: "Created from Console tasks UI for human or agent execution.",
+        steps: [
+          "Review task title and acceptance criteria",
+          "Complete the requested work",
+          "Update task status and result when done",
+        ],
+        constraints: [],
+        contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
+      },
+    },
+  });
   const graphPorts = getGraphPorts(projectId);
   await spawnTask(
-    { tasks: getTaskPort(projectId), graphRead: graphPorts.graphRead },
+    {
+      tasks: getTaskPort(projectId),
+      graphRead: graphPorts.graphRead,
+      workflowInstructions: getWorkflowInstructionPort(projectId),
+    },
     projectId,
     parsed,
   );

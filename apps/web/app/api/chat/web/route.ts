@@ -3,18 +3,16 @@ import { createUIMessageStreamResponse } from "ai";
 import type { FileUIPart, UIMessage, UIMessageChunk } from "ai";
 import { z } from "zod";
 import { start } from "workflow/api";
-import { spawnTask } from "@ssota/core";
-import { getGraphReadPort, getTaskPort } from "@ssota/agent-runtime";
-import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { runMainAgentWorkflow } from "@/app/workflows/main-agent";
 import { getChatPort } from "@/lib/ports";
 import { resolveModelId } from "@/lib/chat/models";
+import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
+import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-// The AI SDK `useChat` transport posts the full UIMessage[]; `projectId` and
-// `threadId` are appended via the transport's custom `body`.
 const bodySchema = z.object({
   projectId: z.string().uuid(),
   threadId: z.string().uuid(),
@@ -23,7 +21,6 @@ const bodySchema = z.object({
   messages: z.array(z.any()),
 });
 
-/** Flatten a UIMessage's text parts into a single string. */
 function textOf(message: UIMessage): string {
   const parts = (message.parts ?? []) as Array<{ type?: string; text?: string }>;
   return parts
@@ -45,11 +42,6 @@ type ModelMessage =
           >;
     };
 
-/**
- * Convert a UIMessage into a model message. User turns may carry image file
- * parts (Supabase Storage URLs) → multimodal content; assistant turns and
- * text-only user turns collapse to a string.
- */
 function toModelMessage(m: UIMessage): ModelMessage | null {
   const text = textOf(m);
   if (m.role === "assistant") {
@@ -107,13 +99,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const { projectId, threadId, accountId } = body;
+  const { projectId, threadId } = body;
+  let scope;
+  try {
+    scope = await resolveApiAccountScope(projectId, {
+      referer: request.headers.get("referer"),
+      requestedAccountId: body.accountId,
+    });
+  } catch (error) {
+    const response = apiScopeErrorResponse(error);
+    if (response) return response;
+    throw error;
+  }
+  const accountId = scope.accountId;
   const modelId = resolveModelId(body.modelId);
   const messages = body.messages as UIMessage[];
   const chat = getChatPort(projectId, accountId);
 
   const thread = await chat.getThread(threadId);
   if (!thread || thread.projectId !== projectId) {
+    return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+  }
+  if (thread.accountId && thread.accountId !== accountId) {
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
   }
 
@@ -123,43 +130,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Empty message" }, { status: 422 });
   }
 
-  // Persist the user turn so the conversation rehydrates on reload.
   await chat.appendMessage({
     threadId,
     role: "user",
     parts: lastUser?.parts ?? [{ type: "text", text: newUserText }],
   });
 
-  // Replay the whole client-side conversation into the agent (multi-turn
-  // memory). User turns keep image attachments as multimodal content.
   const history = toAgentHistory(messages);
 
-  const task = await spawnTask(
+  const run = await start(runMainAgentWorkflow, [
     {
-      tasks: getTaskPort(projectId, accountId),
-      graphRead: getGraphReadPort(projectId, accountId),
+      projectId,
+      threadId,
+      accountId,
+      modelId,
+      chatContext: { chat: { messages: history } },
     },
-    projectId,
-    {
-      title: newUserText.slice(0, 120),
-      workflowKey: "agent.main",
-      executorType: "Agent",
-      context: {
-        channel: "web",
-        threadId,
-        chat: { messages: history },
-      },
-    },
-  );
-
-  const run = await start(runSsotaAgentWorkflow, [
-    { projectId, taskId: task.id, accountId, modelId },
   ]);
 
   const readable = run.getReadable() as ReadableStream<UIMessageChunk>;
   const [clientStream, persistStream] = readable.tee();
 
-  // Persist the assistant turn after the response streams out (text-delta only).
   after(async () => {
     const text = await collectText(persistStream);
     if (text.trim()) {

@@ -1,4 +1,4 @@
-import { createChatWorkspacePort } from "@ssota/adapter-supabase";
+import { createChatWorkspacePort } from "@ssota/adapter-postgres";
 import { getDb } from "@ssota/agent-runtime";
 
 /**

@@ -1,8 +1,9 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
-import { start } from "workflow/api";
 import { getTaskPort } from "@ssota/agent-runtime";
-import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
+import { getJobRunner } from "@/app/workflows/job-runner";
+import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
+import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -52,7 +53,23 @@ export async function POST(request: Request) {
     );
   }
 
-  const tasks = getTaskPort(body.projectId);
+  const user = await getCurrentUser().catch(() => null);
+  let accountId = body.accountId;
+  if (user) {
+    try {
+      const scope = await resolveApiAccountScope(body.projectId, {
+        referer: request.headers.get("referer"),
+        requestedAccountId: body.accountId,
+      });
+      accountId = scope.accountId;
+    } catch (error) {
+      const response = apiScopeErrorResponse(error);
+      if (response) return response;
+      throw error;
+    }
+  }
+
+  const tasks = getTaskPort(body.projectId, accountId);
   const task = await tasks.getTask(body.taskId);
   if (!task || task.projectId !== body.projectId) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -74,13 +91,13 @@ export async function POST(request: Request) {
     context: { gateDecision: { approved: true, note: body.note } },
   });
 
-  const run = await start(runSsotaAgentWorkflow, [
-    {
-      projectId: body.projectId,
-      taskId: body.taskId,
-      accountId: body.accountId,
-    },
-  ]);
+  const runner = await getJobRunner();
+  const run = await runner.start({
+    projectId: body.projectId,
+    taskId: body.taskId,
+    accountId,
+  });
+  after(run.completion);
 
   return NextResponse.json({ ok: true, status: "ready", runId: run.runId });
 }

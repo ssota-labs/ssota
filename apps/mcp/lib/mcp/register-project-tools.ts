@@ -4,6 +4,7 @@ import {
   QueryTasksInputSchema,
   SpawnTaskInputSchema,
   UpdateTaskInputSchema,
+  ExecutionDirectiveSchema,
 } from "@ssota/contracts";
 import {
   getTask,
@@ -68,7 +69,8 @@ export function registerProjectTools(server: McpToolServer) {
         status: z
           .enum(["pending", "ready", "running", "blocked", "done", "cancelled", "failed"])
           .optional(),
-        workflowKey: z.string().min(1).optional(),
+        workflowInstructionId: z.string().uuid().optional(),
+        workflowInstructionKey: z.string().optional(),
         assignee: z.string().optional(),
         subjectId: z.string().optional(),
         targetNodeId: z.string().uuid().optional(),
@@ -89,23 +91,32 @@ export function registerProjectTools(server: McpToolServer) {
     {
       title: "Spawn Task",
       description:
-        "Create a development workflow task. workflowKey must exist in the contracts workflow registry.",
+        "Create a development workflow task. Requires workflowInstructionKey (or id), executionDirective, and acceptanceCriteria.",
       inputSchema: {
         title: z.string().min(1),
-        workflowKey: z.string().min(1),
+        workflowInstructionId: z.string().uuid().optional(),
+        workflowInstructionKey: z.string().optional(),
         assignee: z.string().optional(),
         subjectId: z.string().optional(),
         targetNodeId: z.string().uuid().optional(),
         parentTaskId: z.string().uuid().optional(),
         executorType: z.enum(["Agent", "Human", "System"]).optional(),
-        context: z.record(z.unknown()).optional(),
-        acceptanceCriteria: z.array(z.unknown()).optional(),
+        executionDirective: ExecutionDirectiveSchema,
+        acceptanceCriteria: z.array(z.unknown()).min(1),
         idempotencyKey: z.string().optional(),
+        status: z
+          .enum(["pending", "ready", "running", "blocked", "done", "cancelled", "failed"])
+          .optional(),
       },
     },
     async ({ projectId, args }) => {
       try {
-        const parsed = SpawnTaskInputSchema.parse(args);
+        const parsed = SpawnTaskInputSchema.parse({
+          ...args,
+          context: args.executionDirective
+            ? { executionDirective: args.executionDirective }
+            : undefined,
+        });
         return jsonContent(await spawnTask(projectId, parsed));
       } catch (error) {
         const mapped = mapTaskError(error);

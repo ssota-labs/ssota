@@ -10,7 +10,7 @@ import type { McpSessionManager } from "../connections/mcp-session.js";
  */
 export interface AgentRunContext {
   projectId: string;
-  taskId: string;
+  taskId?: string;
   runId: string;
   accountId?: string;
 }

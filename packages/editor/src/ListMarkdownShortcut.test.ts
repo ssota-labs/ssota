@@ -74,7 +74,8 @@ function triggerListMarkerShortcut(editor: Editor, markerBeforeSpace: string) {
   const from = blockStart + markerBeforeSpace.length;
   let handled = false;
   view.someProp("handleTextInput", (handler) => {
-    if (handler(view, from, from, " ")) {
+    // prosemirror-view 1.41+ adds a 5th `deflt: () => Transaction` parameter.
+    if (handler(view, from, from, " ", () => editor.state.tr)) {
       handled = true;
       return true;
     }

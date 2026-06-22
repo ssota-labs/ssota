@@ -1,8 +1,16 @@
 export type { UIMessageChunk } from "ai";
-export { runAgentForTask, streamAgentForTask } from "./run.js";
+export {
+  runAgent,
+  streamAgent,
+  runAgentForTask,
+  streamAgentForTask,
+} from "./run.js";
 export type {
+  RunAgentInput,
   RunAgentForTaskInput,
-  RunAgentForTaskResult,
+  RunAgentResult,
+  /** @deprecated Use RunAgentResult */
+  RunAgentResult as RunAgentForTaskResult,
 } from "./run.js";
 
 export {
@@ -38,10 +46,17 @@ export {
   createVercelOidcVerifier,
   type OidcWebhookVerifier,
 } from "./credentials/oidc.js";
-export { buildSystemPrompt } from "./system-prompt.js";
+export { buildRunInstructions, LAYER0_RUNTIME_PROMPTS } from "./runtime-prompt.js";
 export { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
 export { gateway, DEFAULT_MODEL_ID, STUB_CONNECTION_SEARCH_TRIGGER } from "./models.js";
-export { getDb, getGraphPorts, getTaskPort, getGraphReadPort } from "./ports.js";
+export {
+  getDb,
+  getGraphPorts,
+  getTaskPort,
+  getGraphReadPort,
+  getWorkflowInstructionPort,
+  getMainInstructionPointerPort,
+} from "./ports.js";
 
 export type {
   AgentEngine,

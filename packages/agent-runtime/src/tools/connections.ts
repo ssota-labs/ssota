@@ -1,7 +1,7 @@
 import {
   createAccountConnectionPort,
   type ConnectCredentialScopeRecord,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 import type { ToolSet } from "ai";
 import { tool } from "ai";
 import { z } from "zod";

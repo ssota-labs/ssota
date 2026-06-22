@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import {
   createStudioBuildStorage,
   studioBuildArtifactPaths,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 import { verifyPreviewBundleAccessToken } from "@/lib/design-studio/preview-bundle-access";
 import {
   contentTypeForPreviewBundleFile,

@@ -4,17 +4,26 @@ import {
   DEFAULT_PROJECT_SLUG,
   createAccountPort,
   createConsolePort,
-} from "@ssota/adapter-supabase";
-import {
-  createNode,
-  readPageDefinitionByRouteKey,
-  resolvePageBindings,
-  spawnTask,
-  writePageDefinition,
-} from "@ssota/core";
+} from "@ssota/adapter-postgres";
+import { createNode, resolvePageBindings, spawnTask } from "@ssota/core";
 import { createNodeInputSchema } from "@ssota/contracts/graph";
 import { runAgentForTask, streamAgentForTask } from "../run.js";
-import { getDb, getGraphPorts, getGraphReadPort, getTaskPort } from "../ports.js";
+import {
+  getDb,
+  getGraphPorts,
+  getGraphReadPort,
+  getPagePort,
+  getTaskPort,
+  getWorkflowInstructionPort,
+} from "../ports.js";
+
+const sampleDirective = {
+  goal: "Summarize project goals in a short note for integration test.",
+  background: "Automated agent-runtime integration smoke test.",
+  steps: ["Query graph if needed", "Write summary", "Complete task"],
+  constraints: ["Read-only unless updating task result"],
+  contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
+};
 
 const DB_ONLY = Boolean(process.env.DATABASE_URL);
 
@@ -59,12 +68,14 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
         {
           tasks: getTaskPort(projectId),
           graphRead: getGraphReadPort(projectId),
+          workflowInstructions: getWorkflowInstructionPort(projectId),
         },
         projectId,
         {
           title: "Integration smoke: summarize the current project's goals",
-          workflowKey: "work.write_document",
+          workflowInstructionKey: "work.write_document",
           executorType: "Agent",
+          context: { executionDirective: sampleDirective },
           acceptanceCriteria: [
             "List the project's objectives (or note none exist)",
           ],
@@ -76,6 +87,7 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
         projectId,
         taskId: task.id,
         runId: `test-${task.id}`,
+        runtimeKind: "task",
       });
 
       expect(["done", "blocked"]).toContain(result.finalStatus);
@@ -91,12 +103,15 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
         {
           tasks: getTaskPort(projectId),
           graphRead: getGraphReadPort(projectId),
+          workflowInstructions: getWorkflowInstructionPort(projectId),
         },
         projectId,
         {
           title: "Streaming smoke: list the project's objectives",
-          workflowKey: "work.write_document",
+          workflowInstructionKey: "work.write_document",
           executorType: "Agent",
+          context: { executionDirective: sampleDirective },
+          acceptanceCriteria: ["List objectives"],
           idempotencyKey: `agent-stream-${Date.now()}`,
         },
       );
@@ -109,7 +124,12 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
       });
 
       const result = await streamAgentForTask(
-        { projectId, taskId: task.id, runId: `test-stream-${task.id}` },
+        {
+          projectId,
+          taskId: task.id,
+          runId: `test-stream-${task.id}`,
+          runtimeKind: "task",
+        },
         writable,
       );
 
@@ -123,25 +143,13 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
 // Deterministic (no LLM): persist a page definition on a `page` node and
 // resolve its bindings against the live graph — the Phase 3 pipeline that
 // backs the production render route. Needs only DATABASE_URL.
-describe.skipIf(!DB_ONLY)("page definition pipeline", () => {
-  it("persists a definition and resolves its bindings", async () => {
+describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
+  it("persists a page and resolves its bindings", async () => {
     const projectId = await defaultProjectId();
-    const ports = getGraphPorts(projectId);
+    const pagePort = getPagePort(projectId);
 
-    const pageNode = await createNode(
-      ports,
-      createNodeInputSchema.parse({
-        projectId,
-        catalogKey: "page",
-        title: "Agent Dashboard",
-        properties: {},
-      }),
-    );
-
-    const routeKey = `agent-dash-${pageNode.id.slice(0, 8)}`;
-    const definition = {
-      routeKey,
-      scope: "project" as const,
+    const page = await pagePort.createPage({
+      title: "Agent Dashboard",
       spec: {
         root: "header",
         elements: {
@@ -153,28 +161,18 @@ describe.skipIf(!DB_ONLY)("page definition pipeline", () => {
         },
       },
       bindings: {
-        objectives: { kind: "query" as const, catalogKey: "objective" },
+        objectives: { kind: "query", catalogKey: "objective" },
       },
-    };
-
-    await writePageDefinition(ports, {
-      projectId,
-      nodeId: pageNode.id,
-      definition,
+      actions: {},
     });
 
-    const read = await readPageDefinitionByRouteKey(
-      getGraphReadPort(projectId),
-      projectId,
-      routeKey,
-    );
-    expect(read?.nodeId).toBe(pageNode.id);
-    expect(read?.definition.routeKey).toBe(routeKey);
+    const read = await pagePort.getPage(page.id);
+    expect(read?.id).toBe(page.id);
 
     const data = await resolvePageBindings(
       getGraphReadPort(projectId),
       projectId,
-      read!.definition.bindings,
+      read!.bindings,
     );
     expect(Array.isArray(data.objectives)).toBe(true);
   });

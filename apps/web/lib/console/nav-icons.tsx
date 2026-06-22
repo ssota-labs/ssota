@@ -3,6 +3,7 @@ import {
   BlueprintIcon,
   BriefcaseIcon,
   ChartLineUpIcon,
+  ChatCircleIcon,
   CheckSquareIcon,
   ClipboardTextIcon,
   CubeIcon,
@@ -22,6 +23,7 @@ import {
   PackageIcon,
   PaintBrushIcon,
   PathIcon,
+  PlugIcon,
   PresentationChartIcon,
   RocketLaunchIcon,
   ShapesIcon,
@@ -35,8 +37,10 @@ import {
 } from "@phosphor-icons/react";
 
 export const NAV_ICONS: Record<string, Icon> = {
+  home: HouseIcon,
   tasks: ListChecksIcon,
-  overview: HouseIcon,
+  chat: ChatCircleIcon,
+  connections: PlugIcon,
   executive: BriefcaseIcon,
   research: MagnifyingGlassIcon,
   product: PackageIcon,

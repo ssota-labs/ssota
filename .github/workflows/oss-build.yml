@@ -1,0 +1,44 @@
+name: OSS build (inline/local)
+
+# Safety net for the open-core boundary: the OSS runtime path must build and
+# typecheck with the local/inline adapters selected and WITHOUT any Vercel or
+# Supabase environment configured. If a cloud dependency leaks into the core
+# code path, this job fails.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  oss-inline:
+    runs-on: ubuntu-latest
+    env:
+      JOB_RUNNER: inline
+      AUTH: local
+      CREDENTIALS: own-app
+      STUDIO_BUILD_STORAGE: local
+      # Intentionally no SUPABASE_* / NEXT_PUBLIC_SUPABASE_* / workflow env.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build workspace packages
+        run: pnpm --filter "./packages/*" build
+
+      - name: Typecheck apps (OSS adapters, no cloud env)
+        run: pnpm --filter web --filter mcp typecheck
