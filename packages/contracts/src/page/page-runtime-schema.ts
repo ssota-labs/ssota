@@ -126,14 +126,9 @@ export const pageActionSchema = z.discriminatedUnion("kind", [
 
 export type PageAction = z.infer<typeof pageActionSchema>;
 
-export const pageContextDefSchema = z.object({
-  initiativeId: z.string().optional(),
-});
-
 /**
  * Validate that every element's `binding`/`action` prop references a defined
- * binding/action. Shared by the page-record (Notion tree) and the legacy
- * runtime-definition schemas.
+ * binding/action.
  */
 function refineSpecReferences(
   value: {
@@ -212,38 +207,3 @@ export const pageSchema = z
   .superRefine(refineSpecReferences);
 
 export type Page = z.infer<typeof pageSchema>;
-
-export const pageRuntimeDefinitionSchema = z
-  .object({
-    routeKey: z.string().min(1),
-    scope: z.enum(["project", "evergreen", "initiative"]),
-    spec: jsonRenderSpecSchema,
-    bindings: z.record(bindingDefSchema).default({}),
-    actions: z.record(pageActionSchema).default({}),
-    context: pageContextDefSchema.optional(),
-  })
-  .superRefine((value, ctx) => {
-    const bindingKeys = new Set(Object.keys(value.bindings));
-    const actionKeys = new Set(Object.keys(value.actions));
-    for (const [elementId, element] of Object.entries(value.spec.elements)) {
-      const props = element.props ?? {};
-      const bindingKey = props.binding;
-      if (typeof bindingKey === "string" && !bindingKeys.has(bindingKey)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Element '${elementId}' references unknown binding '${bindingKey}'`,
-          path: ["spec", "elements", elementId, "props", "binding"],
-        });
-      }
-      const actionKey = props.action;
-      if (typeof actionKey === "string" && !actionKeys.has(actionKey)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Element '${elementId}' references unknown action '${actionKey}'`,
-          path: ["spec", "elements", elementId, "props", "action"],
-        });
-      }
-    }
-  });
-
-export type PageRuntimeDefinition = z.infer<typeof pageRuntimeDefinitionSchema>;

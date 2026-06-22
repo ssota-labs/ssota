@@ -24,10 +24,6 @@
       "types": "./dist/page/index.d.ts",
       "default": "./dist/page/index.js"
     },
-    "./workspace": {
-      "types": "./dist/workspace/index.d.ts",
-      "default": "./dist/workspace/index.js"
-    },
     "./seed-packs/software-development-workflow/*": "./seed-packs/software-development-workflow/*"
   },
   "scripts": {

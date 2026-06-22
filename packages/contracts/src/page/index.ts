@@ -6,14 +6,12 @@ export {
 } from "./page-runtime-schema.js";
 
 export {
-  pageRuntimeDefinitionSchema,
   jsonRenderSpecSchema,
   pageActionSchema,
   actionValueRefSchema,
   actionParamSchema,
   pageRecordSchema,
   pageSchema,
-  type PageRuntimeDefinition,
   type JsonRenderSpec,
   type PageAction,
   type ActionValueRef,
