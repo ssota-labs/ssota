@@ -1,11 +1,8 @@
-import type { WorkflowInstructionDefinition } from "../workflows/index.js";
+import type { WorkflowInstructionSeed } from "../workflow-instruction.js";
 
 /**
  * A project template: a self-contained bundle that seeds a new project's
- * catalog (node/edge types), workflows, and Notion-style page tree. Built-in
- * templates are assembled in code; the same shape is what a DB-backed templates
- * table / "save project as template" capture produces, so onboarding and the
- * marketplace can apply any template through one `applyTemplate` path.
+ * catalog (node/edge types), workflow instructions, and Notion-style page tree.
  */
 export interface TemplateMeta {
   /** Stable id / slug (e.g. "software-development"). */
@@ -18,23 +15,16 @@ export interface TemplateMeta {
   category?: string;
 }
 
-/**
- * The catalog the template seeds. Built-in templates reference shared node/edge
- * type definitions by key (resolved against the embedded catalog at seed time);
- * a fully portable template can later inline the definitions here.
- */
 export interface TemplateCatalog {
   nodeTypeKeys: string[];
   edgeTypeKeys: string[];
 }
 
-/** One page in the template's Notion-style tree (mirrors the seed JSON shape). */
 export interface TemplatePageSeed {
   key: string;
   parentKey: string | null;
   title: string;
   icon?: string;
-  /** Node-type drill-in template marker (e.g. "initiative"); null = L0 page. */
   appliesToNodeType?: string | null;
   spec: unknown;
   bindings?: Record<string, unknown>;
@@ -44,6 +34,6 @@ export interface TemplatePageSeed {
 export interface TemplateBundle {
   meta: TemplateMeta;
   catalog: TemplateCatalog;
-  workflows: WorkflowInstructionDefinition[];
+  workflowInstructions: WorkflowInstructionSeed[];
   pages: TemplatePageSeed[];
 }

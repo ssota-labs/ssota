@@ -3,8 +3,8 @@ import {
   getDb,
   getTaskPort,
   resolveCredentialProvider,
-  streamAgentForTask,
-  type RunAgentForTaskResult,
+  streamAgent,
+  type RunAgentResult,
   type SandboxSession,
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
@@ -19,7 +19,7 @@ import { createAgentRunPort } from "@ssota/adapter-postgres";
  * how the run is scheduled or how chunks are delivered.
  */
 
-/** Workflow keys whose runs get a sandbox for code/build tools (Phase 4). */
+/** Workflow instruction keys whose runs get a sandbox for code/build tools. */
 const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
 
 export interface RunSsotaAgentInput {
@@ -41,12 +41,13 @@ export async function claimRunning(
   const db = getDb();
   await createAgentRunPort(db).start({
     projectId: input.projectId,
+    runtimeKind: "task",
     taskId: input.taskId,
     workflowRunId: runId,
     accountId: input.accountId ?? null,
     model: input.modelId ?? null,
   });
-  await getTaskPort(input.projectId).updateTask(input.taskId, {
+  await getTaskPort(input.projectId, input.accountId).updateTask(input.taskId, {
     status: "running",
   });
 }
@@ -61,15 +62,17 @@ export async function runAgentStepCore(
   input: RunSsotaAgentInput,
   runId: string,
   writable: WritableStream<UIMessageChunk>,
-): Promise<RunAgentForTaskResult> {
+): Promise<RunAgentResult> {
   console.log(`[ssota-agent] run loop task=${input.taskId} run=${runId}`);
 
-  // Dev-capable tasks get a sandbox so code/build tools are available. The
-  // agent runs OUTSIDE the sandbox. Provisioning degrades gracefully when the
-  // SDK or Vercel credentials are absent (the run just has no sandbox tools).
-  const task = await getTaskPort(input.projectId).getTask(input.taskId);
+  const task = await getTaskPort(input.projectId, input.accountId).getTask(
+    input.taskId,
+  );
   let sandbox: SandboxSession | undefined;
-  if (task && DEV_CAPABLE_WORKFLOW_KEYS.has(task.workflowKey)) {
+  if (
+    task?.workflowInstructionKey &&
+    DEV_CAPABLE_WORKFLOW_KEYS.has(task.workflowInstructionKey)
+  ) {
     try {
       sandbox = await createSandboxSession();
       console.log(`[ssota-agent] sandbox provisioned run=${runId}`);
@@ -78,16 +81,15 @@ export async function runAgentStepCore(
     }
   }
 
-  // External-service tools (Vercel Connect / env connectors) attach when a
-  // credential provider is configured for this deployment.
   const credentials = resolveCredentialProvider();
 
   try {
-    return await streamAgentForTask(
+    return await streamAgent(
       {
         projectId: input.projectId,
         taskId: input.taskId,
         runId,
+        runtimeKind: "task",
         accountId: input.accountId,
         modelId: input.modelId,
         sandbox,
@@ -110,26 +112,26 @@ export async function runAgentStepCore(
 export async function finalizeRun(
   input: RunSsotaAgentInput,
   runId: string,
-  result: RunAgentForTaskResult,
+  result: RunAgentResult,
 ): Promise<void> {
   console.log(
     `[ssota-agent] finalize task=${input.taskId} run=${runId} finishReason=${result.finishReason} finalStatus=${result.finalStatus}`,
   );
   const db = getDb();
 
-  // Safety net: if the agent ended without driving the task to a terminal
-  // state, mark it failed so it never hangs in `running`.
   const isTerminal = result.finalStatus
     ? TERMINAL_STATUSES.has(result.finalStatus)
     : false;
   if (!isTerminal) {
-    await getTaskPort(input.projectId).updateTask(input.taskId, {
+    await getTaskPort(input.projectId, input.accountId).updateTask(input.taskId, {
       status: "failed",
       result: { reason: "Agent ended without completing the task", ...result },
     });
   }
 
-  const finalTask = await getTaskPort(input.projectId).getTask(input.taskId);
+  const finalTask = await getTaskPort(input.projectId, input.accountId).getTask(
+    input.taskId,
+  );
   await createAgentRunPort(db).finish(runId, {
     status: finalTask?.status ?? "failed",
     usage: result.usage ?? {},
@@ -145,7 +147,7 @@ export async function runSsotaAgentCore(
   input: RunSsotaAgentInput,
   runId: string,
   writable: WritableStream<UIMessageChunk>,
-): Promise<RunAgentForTaskResult> {
+): Promise<RunAgentResult> {
   await claimRunning(input, runId);
   const result = await runAgentStepCore(input, runId, writable);
   await finalizeRun(input, runId, result);

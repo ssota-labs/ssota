@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { ExecutorTypeSchema } from "./definitions.js";
-
-export const TaskWorkflowKeySchema = z.string().min(1);
+import { ExecutionDirectiveSchema } from "./execution-directive.js";
 
 export const TaskStatusSchema = z.enum([
   "pending",
@@ -18,8 +17,8 @@ export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 export const TaskSchema = z.object({
   id: z.string().uuid(),
   projectId: z.string().uuid(),
-  workflowKey: TaskWorkflowKeySchema,
-  workflowId: z.string().uuid().nullable(),
+  workflowInstructionId: z.string().uuid().nullable(),
+  workflowInstructionKey: z.string().nullable(),
   title: z.string().min(1),
   status: TaskStatusSchema,
   executorType: ExecutorTypeSchema,
@@ -43,7 +42,8 @@ export const TaskIndexSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
   status: TaskStatusSchema,
-  workflowKey: TaskWorkflowKeySchema,
+  workflowInstructionId: z.string().uuid().nullable(),
+  workflowInstructionKey: z.string().nullable(),
   assignee: z.string().nullable(),
   executorType: ExecutorTypeSchema,
   targetNodeId: z.string().uuid().nullable(),
@@ -54,7 +54,8 @@ export type TaskIndex = z.infer<typeof TaskIndexSchema>;
 
 export const QueryTasksInputSchema = z.object({
   status: TaskStatusSchema.optional(),
-  workflowKey: TaskWorkflowKeySchema.optional(),
+  workflowInstructionId: z.string().uuid().optional(),
+  workflowInstructionKey: z.string().optional(),
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
@@ -73,16 +74,31 @@ export type GetTaskInput = z.infer<typeof GetTaskInputSchema>;
 
 export const SpawnTaskInputSchema = z.object({
   title: z.string().min(1),
-  workflowKey: TaskWorkflowKeySchema,
+  workflowInstructionId: z.string().uuid().optional(),
+  workflowInstructionKey: z.string().optional(),
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
   parentTaskId: z.string().uuid().optional(),
   executorType: ExecutorTypeSchema.optional(),
-  context: z.record(z.unknown()).optional(),
-  acceptanceCriteria: z.array(z.unknown()).optional(),
+  context: z
+    .object({
+      executionDirective: ExecutionDirectiveSchema,
+    })
+    .passthrough()
+    .optional(),
+  acceptanceCriteria: z.array(z.unknown()).min(1).optional(),
   idempotencyKey: z.string().optional(),
-});
+  status: TaskStatusSchema.optional(),
+}).refine(
+  (value) =>
+    Boolean(value.workflowInstructionId) || Boolean(value.workflowInstructionKey),
+  {
+    message:
+      "Either workflowInstructionId or workflowInstructionKey is required",
+    path: ["workflowInstructionId"],
+  },
+);
 
 export type SpawnTaskInput = z.infer<typeof SpawnTaskInputSchema>;
 
@@ -115,9 +131,19 @@ export const UpdateTaskInputSchema = z
 
 export type UpdateTaskInput = z.infer<typeof UpdateTaskInputSchema>;
 
-export const CreateTaskEffectPayloadSchema = SpawnTaskInputSchema.extend({
+export const CreateTaskEffectPayloadSchema = z.object({
   id: z.string().uuid().optional(),
-  workflowId: z.string().uuid().nullable().optional(),
+  title: z.string().min(1),
+  workflowInstructionId: z.string().uuid().optional(),
+  workflowInstructionKey: z.string().optional(),
+  assignee: z.string().optional(),
+  subjectId: z.string().optional(),
+  targetNodeId: z.string().uuid().optional(),
+  parentTaskId: z.string().uuid().optional(),
+  executorType: ExecutorTypeSchema.optional(),
+  context: z.record(z.unknown()).optional(),
+  acceptanceCriteria: z.array(z.unknown()).optional(),
+  idempotencyKey: z.string().optional(),
   status: TaskStatusSchema.optional(),
 });
 

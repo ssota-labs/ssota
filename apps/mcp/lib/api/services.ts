@@ -11,13 +11,14 @@ import type {
   SpawnTaskInput,
   UpdateTaskInput,
 } from "@ssota/contracts";
-import { getGraphReadPort, getTaskPort } from "@/lib/ports";
+import { getGraphReadPort, getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
 import { jsonError } from "@/lib/api/response";
 
 function taskDeps(projectId: string) {
   return {
     tasks: getTaskPort(projectId),
     graphRead: getGraphReadPort(projectId),
+    workflowInstructions: getWorkflowInstructionPort(projectId),
   };
 }
 
@@ -26,7 +27,7 @@ export function mapTaskError(error: unknown): Response | null {
     const status =
       error.code === "NOT_FOUND"
         ? 404
-        : error.code === "UNKNOWN_WORKFLOW_KEY" ||
+        : error.code === "UNKNOWN_WORKFLOW_INSTRUCTION" ||
             error.code === "VALIDATION_FAILED"
           ? 422
           : error.code === "PROJECT_MISMATCH"

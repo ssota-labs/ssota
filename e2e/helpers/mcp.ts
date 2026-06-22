@@ -19,6 +19,15 @@ let cachedDefaultProjectId: string | null = null;
 export const DEFAULT_MCP_ORG_SLUG = "ssota-labs";
 export const DEFAULT_MCP_PROJECT_SLUG = "ssota-dev";
 
+/** Minimal execution directive for E2E spawn_task calls. */
+export const E2E_EXECUTION_DIRECTIVE = {
+  goal: "Complete the E2E spawned task with verifiable output.",
+  background: "Spawned from Playwright MCP E2E test fixture.",
+  steps: ["Read task context", "Perform work", "Update task result"],
+  constraints: [],
+  contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
+};
+
 const ACCOUNT_MCP_TOOLS = new Set([
   "list_organizations",
   "list_projects",

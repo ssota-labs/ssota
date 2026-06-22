@@ -14,7 +14,16 @@ import {
   getGraphReadPort,
   getPagePort,
   getTaskPort,
+  getWorkflowInstructionPort,
 } from "../ports.js";
+
+const sampleDirective = {
+  goal: "Summarize project goals in a short note for integration test.",
+  background: "Automated agent-runtime integration smoke test.",
+  steps: ["Query graph if needed", "Write summary", "Complete task"],
+  constraints: ["Read-only unless updating task result"],
+  contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
+};
 
 const DB_ONLY = Boolean(process.env.DATABASE_URL);
 
@@ -59,12 +68,14 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
         {
           tasks: getTaskPort(projectId),
           graphRead: getGraphReadPort(projectId),
+          workflowInstructions: getWorkflowInstructionPort(projectId),
         },
         projectId,
         {
           title: "Integration smoke: summarize the current project's goals",
-          workflowKey: "work.write_document",
+          workflowInstructionKey: "work.write_document",
           executorType: "Agent",
+          context: { executionDirective: sampleDirective },
           acceptanceCriteria: [
             "List the project's objectives (or note none exist)",
           ],
@@ -76,6 +87,7 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
         projectId,
         taskId: task.id,
         runId: `test-${task.id}`,
+        runtimeKind: "task",
       });
 
       expect(["done", "blocked"]).toContain(result.finalStatus);
@@ -91,12 +103,15 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
         {
           tasks: getTaskPort(projectId),
           graphRead: getGraphReadPort(projectId),
+          workflowInstructions: getWorkflowInstructionPort(projectId),
         },
         projectId,
         {
           title: "Streaming smoke: list the project's objectives",
-          workflowKey: "work.write_document",
+          workflowInstructionKey: "work.write_document",
           executorType: "Agent",
+          context: { executionDirective: sampleDirective },
+          acceptanceCriteria: ["List objectives"],
           idempotencyKey: `agent-stream-${Date.now()}`,
         },
       );
@@ -109,7 +124,12 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
       });
 
       const result = await streamAgentForTask(
-        { projectId, taskId: task.id, runId: `test-stream-${task.id}` },
+        {
+          projectId,
+          taskId: task.id,
+          runId: `test-stream-${task.id}`,
+          runtimeKind: "task",
+        },
         writable,
       );
 

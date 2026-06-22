@@ -195,8 +195,8 @@ export interface ImpactQueueQueryInput {
 export interface Task {
   id: string;
   projectId: string;
-  workflowKey: string;
-  workflowId: string | null;
+  workflowInstructionId: string | null;
+  workflowInstructionKey: string | null;
   title: string;
   status: TaskStatus;
   executorType: ExecutorType;
@@ -216,7 +216,8 @@ export interface Task {
 
 export interface TaskQueryInput {
   status?: TaskStatus;
-  workflowKey?: string;
+  workflowInstructionId?: string;
+  workflowInstructionKey?: string;
   assignee?: string;
   subjectId?: string;
   targetNodeId?: string;
@@ -227,14 +228,14 @@ export interface TaskQueryInput {
 
 export interface TaskCreateInput {
   title: string;
-  workflowKey: string;
+  workflowInstructionId?: string | null;
+  workflowInstructionKey?: string | null;
   status?: TaskStatus;
   executorType?: ExecutorType;
   assignee?: string | null;
   subjectId?: string | null;
   targetNodeId?: string | null;
   parentTaskId?: string | null;
-  workflowId?: string | null;
   context?: Record<string, unknown>;
   acceptanceCriteria?: unknown[];
   idempotencyKey?: string | null;

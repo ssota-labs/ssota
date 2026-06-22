@@ -1,6 +1,10 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getJobRunner } from "@/app/workflows/job-runner";
+import { start } from "workflow/api";
+import { runTaskAgentWorkflow } from "@/app/workflows/task-agent";
+import { getDb, getTaskPort } from "@/lib/ports";
+import { and, eq, sql } from "drizzle-orm";
+import { schema } from "@ssota/adapter-postgres";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -8,18 +12,16 @@ import { getCurrentUser } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+const DEFAULT_CONCURRENCY = 3;
+
 const bodySchema = z.object({
-  taskId: z.string().uuid(),
   projectId: z.string().uuid(),
   accountId: z.string().uuid().optional(),
+  taskId: z.string().uuid().optional(),
+  limit: z.number().int().positive().max(20).optional(),
   modelId: z.string().optional(),
-  maxSteps: z.number().int().positive().max(100).optional(),
 });
 
-/**
- * Authorize the request: a shared `AGENT_RUN_SECRET` bearer token (for headless
- * triggers / tests) or an authenticated console user.
- */
 async function authorize(request: Request): Promise<boolean> {
   const secret = process.env.AGENT_RUN_SECRET;
   if (secret) {
@@ -65,15 +67,50 @@ export async function POST(request: Request) {
     }
   }
 
-  const runner = await getJobRunner();
-  const run = await runner.start({
-    projectId: parsed.projectId,
-    taskId: parsed.taskId,
-    accountId,
-    modelId: parsed.modelId,
-    maxSteps: parsed.maxSteps,
-  });
-  after(run.completion);
+  const db = getDb();
+  const concurrency =
+    Number(process.env.AGENT_DISPATCH_CONCURRENCY) || DEFAULT_CONCURRENCY;
 
-  return NextResponse.json({ runId: run.runId });
+  const runningCount = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(schema.agentRuns)
+    .where(
+      and(
+        eq(schema.agentRuns.projectId, parsed.projectId),
+        eq(schema.agentRuns.status, "running"),
+        eq(schema.agentRuns.runtimeKind, "task"),
+      ),
+    );
+  const slots = Math.max(0, concurrency - (runningCount[0]?.count ?? 0));
+
+  if (slots === 0) {
+    return NextResponse.json({ dispatched: [], skipped: "concurrency_limit" });
+  }
+
+  let taskIds: string[] = [];
+  if (parsed.taskId) {
+    taskIds = [parsed.taskId];
+  } else {
+    const tasks = await getTaskPort(parsed.projectId, accountId).queryTasks({
+      status: "ready",
+      executorType: "Agent",
+      limit: Math.min(parsed.limit ?? slots, slots),
+    });
+    taskIds = tasks.map((task) => task.id);
+  }
+
+  const dispatched: string[] = [];
+  for (const taskId of taskIds) {
+    const run = await start(runTaskAgentWorkflow, [
+      {
+        projectId: parsed.projectId,
+        taskId,
+        accountId,
+        modelId: parsed.modelId,
+      },
+    ]);
+    dispatched.push(run.runId);
+  }
+
+  return NextResponse.json({ dispatched, count: dispatched.length });
 }

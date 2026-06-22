@@ -1,0 +1,252 @@
+import { and, eq, isNull } from "drizzle-orm";
+import type {
+  ActionPortsScope,
+  MainInstructionPointerPort,
+  WorkflowInstructionPort,
+} from "@ssota/core";
+import {
+  WorkflowInstructionSchema,
+  WorkflowInstructionSeedSchema,
+  type UpsertWorkflowInstructionInput,
+  type WorkflowInstruction,
+  type WorkflowInstructionIndex,
+} from "@ssota/contracts";
+import type { Db } from "../db/client.js";
+import * as schema from "../db/schema.js";
+
+type InstructionRow = typeof schema.workflowInstructions.$inferSelect;
+
+function mapInstruction(row: InstructionRow): WorkflowInstruction {
+  return WorkflowInstructionSchema.parse({
+    id: row.id,
+    projectId: row.projectId,
+    accountId: row.accountId,
+    key: row.key,
+    name: row.name,
+    description: row.description,
+    content: row.content,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
+  });
+}
+
+function mapIndex(row: InstructionRow): WorkflowInstructionIndex {
+  return {
+    id: row.id,
+    key: row.key,
+    name: row.name,
+    description: row.description,
+  };
+}
+
+function accountCondition(accountId?: string | null) {
+  return accountId
+    ? eq(schema.workflowInstructions.accountId, accountId)
+    : isNull(schema.workflowInstructions.accountId);
+}
+
+export function createWorkflowInstructionPort(
+  db: Db,
+  scope: ActionPortsScope,
+): WorkflowInstructionPort {
+  const { projectId } = scope;
+
+  return {
+    async listInstructions() {
+      const rows = await db
+        .select()
+        .from(schema.workflowInstructions)
+        .where(
+          and(
+            eq(schema.workflowInstructions.projectId, projectId),
+            isNull(schema.workflowInstructions.accountId),
+          ),
+        );
+      return rows.map(mapIndex);
+    },
+
+    async getById(id) {
+      const rows = await db
+        .select()
+        .from(schema.workflowInstructions)
+        .where(
+          and(
+            eq(schema.workflowInstructions.projectId, projectId),
+            eq(schema.workflowInstructions.id, id),
+          ),
+        )
+        .limit(1);
+      return rows[0] ? mapInstruction(rows[0]) : null;
+    },
+
+    async getByKey(key, accountId = null) {
+      const rows = await db
+        .select()
+        .from(schema.workflowInstructions)
+        .where(
+          and(
+            eq(schema.workflowInstructions.projectId, projectId),
+            eq(schema.workflowInstructions.key, key),
+            accountCondition(accountId),
+          ),
+        )
+        .limit(1);
+      return rows[0] ? mapInstruction(rows[0]) : null;
+    },
+
+    async upsertInstruction(input) {
+      const parsed = WorkflowInstructionSeedSchema.parse(input);
+      const accountId = input.accountId ?? null;
+      const existing = await db
+        .select()
+        .from(schema.workflowInstructions)
+        .where(
+          and(
+            eq(schema.workflowInstructions.projectId, projectId),
+            eq(schema.workflowInstructions.key, parsed.key),
+            accountCondition(accountId),
+          ),
+        )
+        .limit(1);
+      if (existing[0]) {
+        const [row] = await db
+          .update(schema.workflowInstructions)
+          .set({
+            name: parsed.name,
+            description: parsed.description,
+            content: parsed.content,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.workflowInstructions.id, existing[0].id))
+          .returning();
+        return mapInstruction(row!);
+      }
+      const [row] = await db
+        .insert(schema.workflowInstructions)
+        .values({
+          projectId,
+          accountId,
+          key: parsed.key,
+          name: parsed.name,
+          description: parsed.description,
+          content: parsed.content,
+        })
+        .returning();
+      return mapInstruction(row!);
+    },
+
+    async deleteByKey(key, accountId = null) {
+      await db
+        .delete(schema.workflowInstructions)
+        .where(
+          and(
+            eq(schema.workflowInstructions.projectId, projectId),
+            eq(schema.workflowInstructions.key, key),
+            accountCondition(accountId),
+          ),
+        );
+    },
+  };
+}
+
+export function createMainInstructionPointerPort(db: Db): MainInstructionPointerPort {
+  return {
+    async getMainInstructionId({ projectId, accountId }) {
+      if (accountId) {
+        const [account] = await db
+          .select({ id: schema.accounts.mainWorkflowInstructionId })
+          .from(schema.accounts)
+          .where(
+            and(
+              eq(schema.accounts.projectId, projectId),
+              eq(schema.accounts.id, accountId),
+            ),
+          )
+          .limit(1);
+        if (account?.id) return account.id;
+      }
+      const [project] = await db
+        .select({ id: schema.projects.mainWorkflowInstructionId })
+        .from(schema.projects)
+        .where(eq(schema.projects.id, projectId))
+        .limit(1);
+      return project?.id ?? null;
+    },
+
+    async setMainInstructionId({ projectId, accountId, instructionId }) {
+      if (accountId) {
+        await db
+          .update(schema.accounts)
+          .set({ mainWorkflowInstructionId: instructionId })
+          .where(
+            and(
+              eq(schema.accounts.projectId, projectId),
+              eq(schema.accounts.id, accountId),
+            ),
+          );
+        return;
+      }
+      await db
+        .update(schema.projects)
+        .set({ mainWorkflowInstructionId: instructionId })
+        .where(eq(schema.projects.id, projectId));
+    },
+  };
+}
+
+/**
+ * Bootstrap-seed workflow instructions for a project. Idempotent.
+ */
+export async function seedWorkflowInstructions(
+  db: Db,
+  projectId: string,
+  seeds: UpsertWorkflowInstructionInput[],
+): Promise<{ mainInstructionId: string | null }> {
+  let mainInstructionId: string | null = null;
+  for (const seed of seeds) {
+    const parsed = WorkflowInstructionSeedSchema.parse(seed);
+    const existing = await db
+      .select()
+      .from(schema.workflowInstructions)
+      .where(
+        and(
+          eq(schema.workflowInstructions.projectId, projectId),
+          eq(schema.workflowInstructions.key, parsed.key),
+          isNull(schema.workflowInstructions.accountId),
+        ),
+      )
+      .limit(1);
+    const [row] = existing[0]
+      ? await db
+          .update(schema.workflowInstructions)
+          .set({
+            name: parsed.name,
+            description: parsed.description,
+            content: parsed.content,
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.workflowInstructions.id, existing[0].id))
+          .returning()
+      : await db
+          .insert(schema.workflowInstructions)
+          .values({
+            projectId,
+            accountId: null,
+            key: parsed.key,
+            name: parsed.name,
+            description: parsed.description,
+            content: parsed.content,
+          })
+          .returning();
+    if (parsed.key === "agent.main" && row) {
+      mainInstructionId = row.id;
+    }
+  }
+  if (mainInstructionId) {
+    await db
+      .update(schema.projects)
+      .set({ mainWorkflowInstructionId: mainInstructionId })
+      .where(eq(schema.projects.id, projectId));
+  }
+  return { mainInstructionId };
+}

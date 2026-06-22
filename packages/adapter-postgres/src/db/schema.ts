@@ -28,6 +28,12 @@ export const taskStatusEnum = pgEnum("task_status", [
   "failed",
 ]);
 
+export const agentRuntimeKindEnum = pgEnum("agent_runtime_kind", [
+  "main",
+  "task",
+  "scheduler",
+]);
+
 export const profiles = pgTable("profiles", {
   id: uuid("id").primaryKey(),
   email: text("email").notNull(),
@@ -59,6 +65,7 @@ export const projects = pgTable(
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     appEnabled: boolean("app_enabled").notNull().default(false),
+    mainWorkflowInstructionId: uuid("main_workflow_instruction_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
@@ -107,6 +114,7 @@ export const accounts = pgTable(
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     ownerUserId: uuid("owner_user_id").references(() => profiles.id),
+    mainWorkflowInstructionId: uuid("main_workflow_instruction_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -280,36 +288,63 @@ export const edgeCatalog = pgTable(
 );
 
 /**
- * Workflow definitions — a core, per-project concept (peer of node/edge catalog
- * and tasks), NOT domain content. Every project is bootstrap-seeded with the
- * embedded WORKFLOW_REGISTRY so the agent can operate regardless of domain;
- * rows are then tenant-editable (and agent-authorable via write_workflow).
- * `tasks.workflow_key` is a soft reference to `workflow_key` here.
+ * Workflow instructions — BlockNote jsonb content, project-scoped (optional
+ * account override). Replaces legacy `workflows` markdown table.
  */
-export const workflows = pgTable(
-  "workflows",
+export const workflowInstructions = pgTable(
+  "workflow_instructions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     projectId: uuid("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
-    workflowKey: text("workflow_key").notNull(),
-    title: text("title").notNull(),
-    category: text("category").notNull(),
-    cadenceHint: text("cadence_hint"),
-    defaultExecutorType: executorTypeEnum("default_executor_type"),
-    defaultStatus: taskStatusEnum("default_status"),
-    instruction: text("instruction").notNull(),
-    lifecycleStatus: text("lifecycle_status").notNull().default("Active"),
+    accountId: uuid("account_id").references(() => accounts.id, {
+      onDelete: "cascade",
+    }),
+    key: text("key").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    content: jsonb("content")
+      .notNull()
+      .default([])
+      .$type<unknown[]>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    projectWorkflowKeyUnique: uniqueIndex("workflows_project_workflow_key_unique").on(
-      table.projectId,
-      table.workflowKey,
-    ),
-    projectIdx: index("workflows_project_id_idx").on(table.projectId),
+    projectKeyUnique: uniqueIndex("workflow_instructions_project_key_unique")
+      .on(table.projectId, table.key)
+      .where(sql`${table.accountId} IS NULL`),
+    projectAccountKeyUnique: uniqueIndex(
+      "workflow_instructions_project_account_key_unique",
+    )
+      .on(table.projectId, table.accountId, table.key)
+      .where(sql`${table.accountId} IS NOT NULL`),
+    projectIdx: index("workflow_instructions_project_id_idx").on(table.projectId),
+  }),
+);
+
+export const schedules = pgTable(
+  "schedules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id").references(() => accounts.id, {
+      onDelete: "cascade",
+    }),
+    workflowInstructionId: uuid("workflow_instruction_id")
+      .notNull()
+      .references(() => workflowInstructions.id, { onDelete: "cascade" }),
+    cronExpression: text("cron_expression").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    idempotencyPrefix: text("idempotency_prefix").notNull().default(""),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectIdx: index("schedules_project_id_idx").on(table.projectId),
   }),
 );
 
@@ -322,7 +357,10 @@ export const tasks = pgTable(
       .references(() => projects.id),
     // End-user data partition (Phase 5). Null = builder/shared scope.
     accountId: uuid("account_id"),
-    workflowKey: text("workflow_key").notNull(),
+    workflowInstructionId: uuid("workflow_instruction_id").references(
+      () => workflowInstructions.id,
+      { onDelete: "set null" },
+    ),
     title: text("title").notNull(),
     status: taskStatusEnum("status").notNull().default("pending"),
     executorType: executorTypeEnum("executor_type").notNull().default("Agent"),
@@ -351,9 +389,9 @@ export const tasks = pgTable(
       table.projectId,
       table.status,
     ),
-    projectWorkflowKeyIdx: index("tasks_project_workflow_key_idx").on(
+    projectWorkflowInstructionIdx: index("tasks_project_workflow_instruction_id_idx").on(
       table.projectId,
-      table.workflowKey,
+      table.workflowInstructionId,
     ),
     projectAssigneeIdx: index("tasks_project_assignee_idx").on(
       table.projectId,
@@ -520,9 +558,14 @@ export const agentRuns = pgTable(
       .references(() => projects.id, { onDelete: "cascade" }),
     // End-user data partition (Phase 5). Null = builder/shared scope.
     accountId: uuid("account_id"),
-    taskId: uuid("task_id")
-      .notNull()
-      .references(() => tasks.id, { onDelete: "cascade" }),
+    runtimeKind: agentRuntimeKindEnum("runtime_kind").notNull().default("task"),
+    taskId: uuid("task_id").references(() => tasks.id, { onDelete: "cascade" }),
+    threadId: uuid("thread_id").references(() => chatThreads.id, {
+      onDelete: "cascade",
+    }),
+    scheduleId: uuid("schedule_id").references(() => schedules.id, {
+      onDelete: "cascade",
+    }),
     workflowRunId: text("workflow_run_id").notNull(),
     status: text("status").notNull().default("running"),
     model: text("model"),
@@ -535,6 +578,8 @@ export const agentRuns = pgTable(
   (table) => ({
     projectIdx: index("agent_runs_project_id_idx").on(table.projectId),
     taskIdx: index("agent_runs_task_id_idx").on(table.taskId),
+    threadIdx: index("agent_runs_thread_id_idx").on(table.threadId),
+    scheduleIdx: index("agent_runs_schedule_id_idx").on(table.scheduleId),
     workflowRunUnique: uniqueIndex("agent_runs_workflow_run_id_unique").on(
       table.workflowRunId,
     ),

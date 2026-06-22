@@ -1,11 +1,15 @@
 import { eq } from "drizzle-orm";
+import type { AgentRuntimeKind } from "@ssota/contracts";
 import type { Db } from "../db/client.js";
 import { agentRuns } from "../db/schema.js";
 
 export interface StartAgentRunInput {
   projectId: string;
-  taskId: string;
   workflowRunId: string;
+  runtimeKind: AgentRuntimeKind;
+  taskId?: string | null;
+  threadId?: string | null;
+  scheduleId?: string | null;
   accountId?: string | null;
   model?: string | null;
 }
@@ -27,7 +31,10 @@ export function createAgentRunPort(db: Db) {
         .insert(agentRuns)
         .values({
           projectId: input.projectId,
-          taskId: input.taskId,
+          runtimeKind: input.runtimeKind,
+          taskId: input.taskId ?? null,
+          threadId: input.threadId ?? null,
+          scheduleId: input.scheduleId ?? null,
           workflowRunId: input.workflowRunId,
           accountId: input.accountId ?? null,
           model: input.model ?? null,

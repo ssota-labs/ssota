@@ -1,13 +1,15 @@
-import type { SpawnTaskInput } from "@ssota/contracts";
-import { getWorkflowByKey } from "@ssota/contracts/workflows";
+import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import { TaskError } from "../domain/task-errors.js";
 import { assertGraphNodeInProject } from "../domain/graph-scope.js";
 import type { GraphReadPort } from "../ports/graph-read-port.js";
+import type { WorkflowInstructionReadPort } from "../ports/workflow-instruction-port.js";
 import type { Task, TaskPort } from "../domain/types.js";
+import type { SpawnTaskInput } from "@ssota/contracts";
 
 export interface SpawnTaskDeps {
   tasks: TaskPort;
   graphRead?: GraphReadPort;
+  workflowInstructions: WorkflowInstructionReadPort;
 }
 
 export async function spawnTask(
@@ -15,12 +17,36 @@ export async function spawnTask(
   projectId: string,
   input: SpawnTaskInput,
 ): Promise<Task> {
-  const workflow = getWorkflowByKey(input.workflowKey);
-  if (!workflow) {
+  let workflowInstructionId = input.workflowInstructionId ?? null;
+  let workflowInstructionKey: string | null = input.workflowInstructionKey ?? null;
+
+  if (workflowInstructionId) {
+    const row = await deps.workflowInstructions.getById(workflowInstructionId);
+    if (!row || row.projectId !== projectId) {
+      throw new TaskError(
+        "UNKNOWN_WORKFLOW_INSTRUCTION",
+        `Workflow instruction '${workflowInstructionId}' not found in project`,
+      );
+    }
+    workflowInstructionKey = row.key;
+  } else if (workflowInstructionKey) {
+    const row = await deps.workflowInstructions.getByKey(workflowInstructionKey);
+    if (!row) {
+      throw new TaskError(
+        "UNKNOWN_WORKFLOW_INSTRUCTION",
+        `Workflow instruction key '${workflowInstructionKey}' not found`,
+      );
+    }
+    workflowInstructionId = row.id;
+  } else {
     throw new TaskError(
-      "UNKNOWN_WORKFLOW_KEY",
-      `Workflow key '${input.workflowKey}' is not in the registry`,
+      "PRECONDITION_FAILED",
+      "workflowInstructionId or workflowInstructionKey is required",
     );
+  }
+
+  if (input.context?.executionDirective) {
+    ExecutionDirectiveSchema.parse(input.context.executionDirective);
   }
 
   if (input.idempotencyKey) {
@@ -58,9 +84,10 @@ export async function spawnTask(
 
   return deps.tasks.createTask({
     title: input.title,
-    workflowKey: input.workflowKey,
-    status: workflow.defaultStatus ?? defaultStatusForCategory(workflow.category),
-    executorType: input.executorType ?? workflow.defaultExecutorType ?? "Agent",
+    workflowInstructionId,
+    workflowInstructionKey,
+    status: input.status ?? "pending",
+    executorType: input.executorType ?? "Agent",
     assignee: input.assignee ?? null,
     subjectId: input.subjectId ?? null,
     targetNodeId: input.targetNodeId ?? null,
@@ -69,11 +96,4 @@ export async function spawnTask(
     acceptanceCriteria: input.acceptanceCriteria ?? [],
     idempotencyKey: input.idempotencyKey ?? null,
   });
-}
-
-function defaultStatusForCategory(
-  category: NonNullable<ReturnType<typeof getWorkflowByKey>>["category"],
-): Task["status"] {
-  if (category === "orchestrator") return "ready";
-  return "pending";
 }

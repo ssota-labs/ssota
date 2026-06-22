@@ -8,9 +8,9 @@ import {
   createGraphPorts,
   createOnboardingPort,
   createTaskPort,
-  type AccountRecord,
-  createWorkflowPort,
+  createWorkflowInstructionPort,
   createPagePort,
+  type AccountRecord,
 } from "@ssota/adapter-postgres";
 
 type Db = ReturnType<typeof createDb>["db"];
@@ -66,8 +66,8 @@ export async function getOrCreateProjectAccount(
   return getAccountReadPort().getOrCreateWorkspaceAccount(projectId);
 }
 
-export function getWorkflowPort(projectId: string) {
-  return createWorkflowPort(getDb(), { projectId });
+export function getWorkflowInstructionPort(projectId: string) {
+  return createWorkflowInstructionPort(getDb(), { projectId });
 }
 
 export function getPagePort(projectId: string) {

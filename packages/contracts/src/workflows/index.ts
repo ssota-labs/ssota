@@ -161,3 +161,8 @@ export function isKnownWorkflowKey(
 ): workflowKey is WorkflowInstructionKey {
   return workflowKey in WORKFLOW_REGISTRY;
 }
+
+import { buildWorkflowInstructionSeeds } from "./seed.js";
+
+export const WORKFLOW_INSTRUCTION_SEEDS =
+  buildWorkflowInstructionSeeds(WORKFLOW_REGISTRY);

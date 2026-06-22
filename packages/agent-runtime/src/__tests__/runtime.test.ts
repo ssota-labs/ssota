@@ -9,7 +9,7 @@ import {
   resolveConnectCallbackSubject,
   startConnectAuthorization,
 } from "../credentials/provider.js";
-import { buildSystemPrompt } from "../system-prompt.js";
+import { buildRunInstructions } from "../runtime-prompt.js";
 import { DEFAULT_MODEL_ID } from "../models.js";
 
 describe("createSsotaTools", () => {
@@ -24,18 +24,19 @@ describe("createSsotaTools", () => {
         "create_page",
         "get_node",
         "get_task",
+        "get_workflow_instruction",
         "list_pages",
-        "list_workflows",
+        "list_workflow_instructions",
         "query_nodes",
         "query_tasks",
         "read_page",
-        "read_workflow",
         "request_approval",
         "spawn_task",
         "traverse_edges",
         "update_node",
         "update_page",
-        "write_workflow",
+        "update_task",
+        "write_workflow_instruction",
       ].sort(),
     );
   });
@@ -68,37 +69,56 @@ describe("createSsotaTools", () => {
   });
 });
 
-describe("buildSystemPrompt", () => {
-  const task = {
-    id: "11111111-1111-1111-1111-111111111111",
-    title: "Draft the onboarding PRD",
-    workflowKey: "work.write_document",
-    acceptanceCriteria: ["Covers activation metric", "Lists open questions"],
-    targetNodeId: null,
-  };
-
-  it("embeds the run scope, task, and finishing instructions", () => {
-    const prompt = buildSystemPrompt({
-      task,
+describe("buildRunInstructions", () => {
+  it("embeds task runtime scope and execution directive", () => {
+    const prompt = buildRunInstructions({
+      runtimeKind: "task",
       projectId: "22222222-2222-2222-2222-222222222222",
-      accountId: undefined,
+      taskPlaybook: {
+        id: "33333333-3333-3333-3333-333333333333",
+        projectId: "22222222-2222-2222-2222-222222222222",
+        accountId: null,
+        key: "work.write_document",
+        name: "Write document",
+        description: "",
+        content: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "Playbook body" }],
+          },
+        ],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+      task: {
+        id: "11111111-1111-1111-1111-111111111111",
+        title: "Draft the onboarding PRD",
+        acceptanceCriteria: ["Covers activation metric", "Lists open questions"],
+        targetNodeId: null,
+        executionDirective: {
+          goal: "Write the PRD for onboarding.",
+          background: "User asked in main chat.",
+          steps: ["Outline", "Draft", "Review"],
+          constraints: [],
+          contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
+        },
+      },
     });
 
     expect(prompt).toContain("Draft the onboarding PRD");
     expect(prompt).toContain("work.write_document");
-    expect(prompt).toContain("22222222-2222-2222-2222-222222222222");
-    expect(prompt).toContain("complete_task");
-    expect(prompt).toContain("block_task");
-    // acceptance criteria are enumerated
     expect(prompt).toContain("Covers activation metric");
+    expect(prompt).toContain("Write the PRD for onboarding.");
+    expect(prompt).toContain("complete_task");
   });
 
   it("notes shared scope when no accountId is given", () => {
-    const prompt = buildSystemPrompt({
-      task,
+    const prompt = buildRunInstructions({
+      runtimeKind: "main",
       projectId: "22222222-2222-2222-2222-222222222222",
+      mainInstruction: null,
     });
-    expect(prompt).toMatch(/accountId: \(shared/);
+    expect(prompt).toMatch(/main runtime agent/i);
   });
 });
 

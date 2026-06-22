@@ -27,8 +27,9 @@ import type {
   Node,
   NodeCatalogEntry,
 } from "../domain/types.js";
+import type { WorkflowInstructionReadPort } from "../ports/workflow-instruction-port.js";
 import { DEFAULT_TITLE_FIELD, ensureTitleInPropertySchema } from "../catalog/property-schema.js";
-import type { Effect, GateStatus, LifecycleStatus } from "@ssota/contracts";
+import type { Effect, GateStatus, LifecycleStatus, WorkflowInstruction } from "@ssota/contracts";
 import { parseWorkflowSpec } from "@ssota/contracts";
 import {
   mergeActionCatalogEntries,
@@ -282,11 +283,19 @@ function applyEffect(
     }
   } else if (effect.kind === "create_task") {
     const id = effect.task.id ?? randomUUID();
+    const legacyKey =
+      "workflowInstructionKey" in effect.task
+        ? (effect.task as { workflowInstructionKey?: string }).workflowInstructionKey
+        : effect.task.workflowKey;
     state.tasks.set(id, {
       id,
       projectId,
-      workflowKey: effect.task.workflowKey,
-      workflowId: effect.task.workflowId ?? null,
+      workflowInstructionId:
+        "workflowInstructionId" in effect.task
+          ? ((effect.task as { workflowInstructionId?: string }).workflowInstructionId ??
+            null)
+          : null,
+      workflowInstructionKey: legacyKey ?? null,
       title: effect.task.title,
       status: effect.task.status ?? "pending",
       executorType: effect.task.executorType ?? "Agent",
@@ -626,8 +635,15 @@ function createInMemoryTaskPort(
     if (params?.status) {
       items = items.filter((task) => task.status === params.status);
     }
-    if (params?.workflowKey) {
-      items = items.filter((task) => task.workflowKey === params.workflowKey);
+    if (params?.workflowInstructionId) {
+      items = items.filter(
+        (task) => task.workflowInstructionId === params.workflowInstructionId,
+      );
+    }
+    if (params?.workflowInstructionKey) {
+      items = items.filter(
+        (task) => task.workflowInstructionKey === params.workflowInstructionKey,
+      );
     }
     if (params?.assignee) {
       items = items.filter((task) => task.assignee === params.assignee);
@@ -674,8 +690,8 @@ function createInMemoryTaskPort(
       const task: Task = {
         id: randomUUID(),
         projectId,
-        workflowKey: input.workflowKey,
-        workflowId: input.workflowId ?? null,
+        workflowInstructionId: input.workflowInstructionId ?? null,
+        workflowInstructionKey: input.workflowInstructionKey ?? null,
         title: input.title,
         status: input.status ?? "pending",
         executorType: input.executorType ?? "Agent",
@@ -972,3 +988,63 @@ export function createTestGate(
     ...overrides,
   };
 }
+
+const TEST_WORKFLOW_INSTRUCTIONS = [
+  { key: "orchestrator.daily", name: "Daily orchestrator" },
+  { key: "work.implement_feature", name: "Implement feature" },
+  { key: "agent.main", name: "Agent main" },
+  { key: "work.write_document", name: "Write document" },
+];
+
+export function createInMemoryWorkflowInstructionPort(
+  projectId: string = TEST_PROJECT_ID,
+): WorkflowInstructionReadPort {
+  const rows = new Map<string, WorkflowInstruction>(
+    TEST_WORKFLOW_INSTRUCTIONS.map((meta) => {
+      const id = randomUUID();
+      return [
+        meta.key,
+        {
+          id,
+          projectId,
+          accountId: null,
+          key: meta.key,
+          name: meta.name,
+          description: "",
+          content: [{ type: "paragraph", content: [{ type: "text", text: meta.name }] }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      ];
+    }),
+  );
+
+  return {
+    async listInstructions() {
+      return [...rows.values()].map(({ id, key, name, description }) => ({
+        id,
+        key,
+        name,
+        description,
+      }));
+    },
+    async getById(id) {
+      for (const row of rows.values()) {
+        if (row.id === id) return row;
+      }
+      return null;
+    },
+    async getByKey(key) {
+      return rows.get(key) ?? null;
+    },
+  };
+}
+
+export const sampleExecutionDirective = {
+  goal: "Complete the seeded test task with verifiable output.",
+  background: "Spawned from unit test fixture for workflow instruction migration.",
+  steps: ["Read task context", "Perform work", "Mark done"],
+  constraints: ["Do not modify unrelated tasks"],
+  contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
+};
+

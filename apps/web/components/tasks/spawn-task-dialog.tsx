@@ -23,7 +23,7 @@ import {
 } from "@ssota/ui/components/ui/select";
 
 export type WorkflowOption = {
-  workflowKey: string;
+  workflowInstructionKey: string;
   title: string;
 };
 
@@ -38,8 +38,8 @@ export function SpawnTaskDialog({
 }: SpawnTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [workflowKey, setWorkflowKey] = useState(
-    workflowOptions[0]?.workflowKey ?? "work.implement_feature",
+  const [workflowInstructionKey, setWorkflowInstructionKey] = useState(
+    workflowOptions[0]?.workflowInstructionKey ?? "work.implement_feature",
   );
   const [assignee, setAssignee] = useState("");
   const [executorType, setExecutorType] = useState<"Agent" | "Human" | "System">(
@@ -52,7 +52,9 @@ export function SpawnTaskDialog({
     setTitle("");
     setAssignee("");
     setExecutorType("Human");
-    setWorkflowKey(workflowOptions[0]?.workflowKey ?? "work.implement_feature");
+    setWorkflowInstructionKey(
+      workflowOptions[0]?.workflowInstructionKey ?? "work.implement_feature",
+    );
     setError(null);
   }
 
@@ -63,7 +65,7 @@ export function SpawnTaskDialog({
       try {
         await spawnTaskAction(projectId, {
           title: title.trim(),
-          workflowKey,
+          workflowInstructionKey,
           assignee: assignee.trim() || undefined,
           executorType,
         });
@@ -106,13 +108,13 @@ export function SpawnTaskDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="task-workflow">Workflow</Label>
+              <Label htmlFor="task-workflow">Workflow instruction</Label>
               <Select
-                value={workflowKey}
-                onValueChange={(value) => value && setWorkflowKey(value)}
+                value={workflowInstructionKey}
+                onValueChange={(value) => value && setWorkflowInstructionKey(value)}
                 disabled={isPending}
                 items={workflowOptions.map((option) => ({
-                  value: option.workflowKey,
+                  value: option.workflowInstructionKey,
                   label: option.title,
                 }))}
               >
@@ -121,7 +123,10 @@ export function SpawnTaskDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {workflowOptions.map((option) => (
-                    <SelectItem key={option.workflowKey} value={option.workflowKey}>
+                    <SelectItem
+                      key={option.workflowInstructionKey}
+                      value={option.workflowInstructionKey}
+                    >
                       {option.title}
                     </SelectItem>
                   ))}

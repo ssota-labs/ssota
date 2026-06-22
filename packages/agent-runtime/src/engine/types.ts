@@ -8,7 +8,7 @@ import type { CredentialProvider } from "../credentials/provider.js";
  */
 export interface AgentRunContext {
   projectId: string;
-  taskId: string;
+  taskId?: string;
   runId: string;
   accountId?: string;
 }
