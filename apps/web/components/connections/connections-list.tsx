@@ -298,7 +298,7 @@ function ConnectionItem({
           size="sm"
           disabled={isPending}
           onClick={() => onDisconnect(row.id)}
-          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
         >
           <LinkBreakIcon className="size-4" />
           {t("connections.disconnect")}
