@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { createSsotaTools } from "../tools/index.js";
 import { createSandboxTools } from "../tools/sandbox.js";
-import { createExternalTools } from "../tools/external.js";
+import {
+  CONNECTION_SEARCH_TOOL,
+  REQUEST_CONNECTION_TOOL,
+  toQualifiedToolName,
+} from "../connections/index.js";
 import {
   connectUsesAppSubject,
   createEnvCredentialProvider,
@@ -52,12 +56,16 @@ describe("createSsotaTools", () => {
     ]);
   });
 
-  it("external tools are a separate set (attached only with credentials)", () => {
-    expect(createSsotaTools()).not.toHaveProperty("external_request");
-    expect(Object.keys(createExternalTools())).toEqual([
-      "external_request",
-      "request_connection",
-    ]);
+  it("connection tool names follow Eve conventions", () => {
+    expect(CONNECTION_SEARCH_TOOL).toBe("connection_search");
+    expect(REQUEST_CONNECTION_TOOL).toBe("request_connection");
+    expect(toQualifiedToolName("linear", "search_issues")).toBe(
+      "linear__search_issues",
+    );
+  });
+
+  it("SSOTA tools do not include connection_search by default", () => {
+    expect(createSsotaTools()).not.toHaveProperty("connection_search");
   });
 
   it("each tool has a description and input schema", () => {
@@ -107,6 +115,8 @@ describe("buildRunInstructions", () => {
 
     expect(prompt).toContain("Draft the onboarding PRD");
     expect(prompt).toContain("work.write_document");
+    expect(prompt).toContain("connection_search");
+    expect(prompt).toContain("linear__search_issues");
     expect(prompt).toContain("Covers activation metric");
     expect(prompt).toContain("Write the PRD for onboarding.");
     expect(prompt).toContain("complete_task");

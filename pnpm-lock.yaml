@@ -412,6 +412,9 @@ importers:
 
   packages/agent-runtime:
     dependencies:
+      '@ai-sdk/mcp':
+        specifier: ^0.0.1
+        version: 0.0.1(zod@3.25.76)
       '@ssota/adapter-postgres':
         specifier: workspace:*
         version: link:../adapter-postgres
@@ -452,7 +455,7 @@ importers:
     optionalDependencies:
       '@vercel/connect':
         specifier: ^0.2.5
-        version: 0.2.5(ai@6.0.208(zod@3.25.76))
+        version: 0.2.5(@ai-sdk/mcp@0.0.1(zod@3.25.76))(ai@6.0.208(zod@3.25.76))
       '@vercel/oidc':
         specifier: ^3.6.2
         version: 3.6.2
@@ -964,11 +967,27 @@ packages:
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
 
+  '@ai-sdk/mcp@0.0.1':
+    resolution: {integrity: sha512-DCO+OS5vw6El5PKkQGrqaUp8ZDOTzgFbTtwqYWt8MZWbectK1dCaOYCsdXQEb0BXNks8wa9GbHVTwm9v//fojw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider-utils@3.0.12':
+    resolution: {integrity: sha512-ZtbdvYxdMoria+2SlNarEk6Hlgyf+zzcznlD55EAl+7VZvJaSg2sqPvwArY7L6TfDEDJsnCq0fdhBSkYo0Xqdg==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      zod: ^3.25.76 || ^4.1.8
+
   '@ai-sdk/provider-utils@4.0.30':
     resolution: {integrity: sha512-VO7I+vPffqI5sMnPoUq5DCSqKIgQIk/naJWRdQVpz2ma2zoprC/lqiJiUEl2s6DfvTD76TbhD3q39ROjlA6rGw==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
+
+  '@ai-sdk/provider@2.0.0':
+    resolution: {integrity: sha512-6o7Y2SeO9vFKB8lArHXehNuusnpddKPk7xqL7T2/b+OvXMRIXUO1rR4wcv1hAFUAT9avGZshty3Wlua/XA7TvA==}
+    engines: {node: '>=18'}
 
   '@ai-sdk/provider@3.0.10':
     resolution: {integrity: sha512-Q3BZ27qfpYqnCYGvE3vt+Qi6LGOF9R5Nmzn+9JoM1lCRsD9mYaIhfJLkSunN48nfGXJ6n+XNV0J/XVpqGQl7Dw==}
@@ -9324,12 +9343,30 @@ snapshots:
       '@vercel/oidc': 3.2.0
       zod: 3.25.76
 
+  '@ai-sdk/mcp@0.0.1(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@ai-sdk/provider-utils': 3.0.12(zod@3.25.76)
+      pkce-challenge: 5.0.1
+      zod: 3.25.76
+
+  '@ai-sdk/provider-utils@3.0.12(zod@3.25.76)':
+    dependencies:
+      '@ai-sdk/provider': 2.0.0
+      '@standard-schema/spec': 1.1.0
+      eventsource-parser: 3.1.0
+      zod: 3.25.76
+
   '@ai-sdk/provider-utils@4.0.30(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 3.0.10
       '@standard-schema/spec': 1.1.0
       eventsource-parser: 3.1.0
       zod: 3.25.76
+
+  '@ai-sdk/provider@2.0.0':
+    dependencies:
+      json-schema: 0.4.0
 
   '@ai-sdk/provider@3.0.10':
     dependencies:
@@ -12867,10 +12904,11 @@ snapshots:
       execa: 5.1.1
     optional: true
 
-  '@vercel/connect@0.2.5(ai@6.0.208(zod@3.25.76))':
+  '@vercel/connect@0.2.5(@ai-sdk/mcp@0.0.1(zod@3.25.76))(ai@6.0.208(zod@3.25.76))':
     dependencies:
       '@vercel/oidc': 3.6.1
     optionalDependencies:
+      '@ai-sdk/mcp': 0.0.1(zod@3.25.76)
       ai: 6.0.208(zod@3.25.76)
     optional: true
 

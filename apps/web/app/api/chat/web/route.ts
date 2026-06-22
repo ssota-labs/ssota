@@ -60,6 +60,10 @@ function toModelMessage(m: UIMessage): ModelMessage | null {
   return { role: "user", content };
 }
 
+/**
+ * STUB_MODEL cannot fetch private-IP attachment URLs (127.0.0.1 Storage). Strip
+ * images from agent history while still persisting full parts in the thread DB.
+ */
 function toAgentHistory(messages: UIMessage[]): ModelMessage[] {
   const stub = process.env.STUB_MODEL === "1";
   return messages

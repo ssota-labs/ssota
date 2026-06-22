@@ -5,6 +5,8 @@ import { createDb } from "@ssota/adapter-postgres";
 import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
 
+const STUB_CONNECTION_SEARCH_TRIGGER = "e2e-connection-search";
+
 // e2e for the two new console surfaces. Vercel Connect is stubbed
 // (CONNECT_STUB=1) and the LLM is stubbed (STUB_MODEL=1) so the real route /
 // workflow / streaming pipeline runs locally without external services.
@@ -322,6 +324,31 @@ test.describe("Connections + Chat", () => {
       await expect(
         page.getByTestId("assistant-message").getByText(/stub agent/i),
       ).toBeVisible({ timeout: 30_000 });
+    });
+
+    test("connection_search then linear__search_issues via stub model", async ({
+      page,
+    }) => {
+      await gotoProject(page, "connections");
+      await page.getByTestId("connect-linear").click();
+      await expect(
+        page.getByTestId("connector-linear").getByTestId("connection-row"),
+      ).toHaveCount(1);
+
+      await gotoChat(page);
+      await sendChatMessage(
+        page,
+        `${STUB_CONNECTION_SEARCH_TRIGGER} find linear issues`,
+      );
+
+      await expect(
+        page.getByText(`${STUB_CONNECTION_SEARCH_TRIGGER} find linear issues`),
+      ).toBeVisible();
+      await expect(
+        page
+          .getByTestId("assistant-message")
+          .getByText(/connection_search.*stub MCP/i),
+      ).toBeVisible({ timeout: 60_000 });
     });
   });
 });
