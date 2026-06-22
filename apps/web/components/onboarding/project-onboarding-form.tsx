@@ -67,7 +67,7 @@ export function ProjectOnboardingForm({
               required
             />
             <p className="text-xs text-muted-foreground">
-              English only. Slug is generated automatically.
+              Any language is fine. The URL slug is generated automatically in English.
             </p>
           </div>
 

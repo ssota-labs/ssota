@@ -1,6 +1,6 @@
 "use server";
 
-import { isEnglishDisplayName } from "@ssota/core";
+import { isDisplayName, isEnglishDisplayName } from "@ssota/core";
 import { redirect } from "next/navigation";
 import { projectPath } from "@/lib/console/paths";
 import { getOnboardingPort } from "@/lib/ports";
@@ -41,9 +41,9 @@ export async function saveProjectDraftOnboardingAction(formData: FormData) {
 
   const projectName = String(formData.get("projectName") ?? "").trim();
 
-  if (!isEnglishDisplayName(projectName)) {
+  if (!isDisplayName(projectName)) {
     validationError(
-      "Project name must be 2–64 English letters, numbers, spaces, or hyphens.",
+      "Project name must be 2–64 characters and may use letters, numbers, spaces, or hyphens.",
       "project",
     );
   }
