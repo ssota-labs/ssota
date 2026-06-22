@@ -170,7 +170,7 @@ export function AppSidebar({
           className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
-          <span className="truncate">{t("nav.overview")}</span>
+          <span className="truncate">{t("nav.home")}</span>
         </Link>
         <PageTreeNav
           pages={nav.pages}

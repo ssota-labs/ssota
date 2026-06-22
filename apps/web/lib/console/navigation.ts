@@ -35,6 +35,13 @@ export type NavEntry = NavSeparator | NavLink | NavGroup | NavSection;
 
 
 export const L0_NAV: NavEntry[] = [
+  {
+    type: "link",
+    key: "home",
+    labelKey: "nav.home",
+    href: "overview",
+    pattern: "H",
+  },
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
   { type: "link", key: "chat", labelKey: "nav.chat", href: "chat", pattern: "L" },
   {
@@ -43,13 +50,6 @@ export const L0_NAV: NavEntry[] = [
     labelKey: "nav.connections",
     href: "connections",
     pattern: "L",
-  },
-  {
-    type: "link",
-    key: "overview",
-    labelKey: "nav.overview",
-    href: "overview",
-    pattern: "H",
   },
   // The per-stage workflow nav (Executive/Research/Manager/Development/Design)
   // is now the Notion-style page tree (PageTreeNav, fed by the pages table), not
@@ -115,7 +115,7 @@ export function buildBreadcrumbSegments(
   const relative = getRelativeProjectPath(pathname, projectBase);
 
   if (!relative || relative === "overview") {
-    return [{ labelKey: "nav.overview" }];
+    return [{ labelKey: "nav.home" }];
   }
   if (relative === "tasks" || relative.startsWith("tasks/")) {
     return [{ labelKey: "nav.tasks" }];
@@ -145,5 +145,5 @@ export function buildBreadcrumbSegments(
     return [{ labelKey: "nav.settings" }];
   }
 
-  return [{ labelKey: "nav.overview" }];
+  return [{ labelKey: "nav.home" }];
 }
