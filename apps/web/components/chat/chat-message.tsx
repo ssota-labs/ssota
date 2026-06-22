@@ -1,6 +1,11 @@
 "use client";
 
-import { getToolName, isToolUIPart, type UIMessage } from "ai";
+import {
+  getToolName,
+  isToolUIPart,
+  type FileUIPart,
+  type UIMessage,
+} from "ai";
 import { Streamdown } from "streamdown";
 import { ConnectCard, type ConnectorOption } from "./connect-card";
 
@@ -24,11 +29,30 @@ export function ChatMessage({
 }: ChatMessageProps) {
   if (message.role === "user") {
     const text = textOf(message);
+    const images = message.parts.filter(
+      (p): p is FileUIPart =>
+        p.type === "file" && p.mediaType.startsWith("image/"),
+    );
     return (
-      <div className="flex justify-end">
-        <div className="max-w-[80%] whitespace-pre-wrap rounded-3xl bg-secondary px-4 py-2 text-sm">
-          {text}
-        </div>
+      <div className="flex flex-col items-end gap-2">
+        {images.length > 0 ? (
+          <div className="flex max-w-[80%] flex-wrap justify-end gap-2">
+            {images.map((img, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={img.url}
+                alt={img.filename ?? "첨부 이미지"}
+                className="max-h-64 rounded-2xl border object-cover"
+              />
+            ))}
+          </div>
+        ) : null}
+        {text ? (
+          <div className="max-w-[80%] whitespace-pre-wrap rounded-3xl bg-secondary px-4 py-2 text-sm">
+            {text}
+          </div>
+        ) : null}
       </div>
     );
   }
