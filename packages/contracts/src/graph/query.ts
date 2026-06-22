@@ -22,6 +22,16 @@ export const traverseEdgesInputSchema = z.object({
 
 export type TraverseEdgesInput = z.input<typeof traverseEdgesInputSchema>;
 
+export const listEdgesInputSchema = z.object({
+  projectId: z.string().uuid(),
+  catalogKey: z.string().min(1).optional(),
+  edgeCatalogId: z.string().uuid().optional(),
+  limit: z.number().int().positive().max(500).default(100),
+  offset: z.number().int().nonnegative().default(0),
+});
+
+export type ListEdgesInput = z.input<typeof listEdgesInputSchema>;
+
 export const getNodeInputSchema = z.object({
   projectId: z.string().uuid(),
   nodeId: z.string().uuid(),

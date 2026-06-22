@@ -2,6 +2,7 @@ import type {
   CreateInitiativeBundleInput,
   DeleteEdgeInput,
   GetNodeInput,
+  ListEdgesInput,
   ListNodesByTypeInput,
   TraverseEdgesInput,
   UpdateNodeInput,
@@ -14,6 +15,7 @@ import type {
 
 export interface GraphReadPort {
   queryNodes(params: ListNodesByTypeInput): Promise<GraphNode[]>;
+  queryEdges(params: ListEdgesInput): Promise<GraphEdge[]>;
   getNode(params: GetNodeInput): Promise<GraphNode | null>;
   /** Load by id only — for edge validation before project scope checks. */
   getNodeById(nodeId: string): Promise<GraphNode | null>;

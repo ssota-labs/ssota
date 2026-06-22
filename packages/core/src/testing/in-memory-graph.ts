@@ -95,6 +95,21 @@ export function createInMemoryGraphReadPort(
         );
       });
     },
+
+    async queryEdges(params) {
+      const rows = [...store.edges.values()].filter(
+        (edge) => edge.projectId === params.projectId,
+      );
+      return rows
+        .filter(
+          (edge) =>
+            !params.edgeCatalogId || edge.edgeCatalogId === params.edgeCatalogId,
+        )
+        .filter(
+          (edge) => !params.catalogKey || edge.catalogKey === params.catalogKey,
+        )
+        .slice(params.offset ?? 0, (params.offset ?? 0) + (params.limit ?? 100));
+    },
   };
 }
 

@@ -195,19 +195,60 @@ test.describe("Connections + Chat", () => {
       ).toBeVisible();
     });
 
-    test("@mention dropdown lists connector candidates", async ({ page }) => {
+    test("@mention dropdown sections connectors, graph nodes, and edges", async ({
+      page,
+    }) => {
       await gotoChat(page);
 
+      // Connectors — section header + Slack row.
       await chatComposer(page).pressSequentially("@Sl", { delay: 50 });
       const dropdown = page.getByTestId("mention-dropdown");
       await expect(dropdown).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId("mention-section-connector")).toBeVisible();
       await expect(dropdown.getByRole("button", { name: /Slack/ })).toBeVisible();
       await expect(
         page.getByText("↑↓ 이동 · Tab/Enter 선택 · Esc 닫기"),
       ).toBeVisible();
 
       await page.screenshot({
-        path: "/opt/cursor/artifacts/screenshots/chat-mention-dropdown-open.png",
+        path: "/opt/cursor/artifacts/screenshots/chat-mention-dropdown-connectors.png",
+        fullPage: true,
+      });
+
+      // Graph nodes — seeded "Smoke initiative" title.
+      await chatComposer(page).fill("");
+      await chatComposer(page).pressSequentially("@Smoke", { delay: 50 });
+      await expect(dropdown).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId("mention-section-node")).toBeVisible();
+      await expect(
+        dropdown.getByTestId("mention-option-node").filter({
+          hasText: /^Smoke initiative/,
+        }),
+      ).toBeVisible();
+
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-mention-dropdown-nodes.png",
+        fullPage: true,
+      });
+
+      // Edges — seeded paired_with "Smoke initiative → v0.0.0-smoke".
+      await chatComposer(page).fill("");
+      await chatComposer(page).pressSequentially("@v0.0.0-smoke", { delay: 50 });
+      await expect(dropdown).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId("mention-section-edge")).toBeVisible();
+      await expect(
+        dropdown.getByTestId("mention-option-edge").filter({
+          hasText: /Smoke initiative → v0\.0\.0-smoke/,
+        }),
+      ).toBeVisible();
+      await expect(
+        dropdown.getByTestId("mention-option-edge").filter({
+          hasText: /1:1 쌍/,
+        }),
+      ).toBeVisible();
+
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-mention-dropdown-edges.png",
         fullPage: true,
       });
     });
