@@ -231,12 +231,20 @@ function buildConnectionSearchTool(
 
           if (!connected) continue;
 
-          const listings = await input.sessionManager.listTools(connection, {
-            projectId: ctx.projectId,
-            accountId: ctx.accountId,
-            installationId: install.installationId,
-            userId: install.subjectUserId,
-          });
+          let listings: Awaited<ReturnType<McpSessionManager["listTools"]>> = [];
+          try {
+            listings = await input.sessionManager.listTools(connection, {
+              projectId: ctx.projectId,
+              accountId: ctx.accountId,
+              installationId: install.installationId,
+              userId: install.subjectUserId,
+            });
+          } catch (error) {
+            console.warn(
+              `[connection_search] listTools failed for ${connection.id}:`,
+              error instanceof Error ? error.message : error,
+            );
+          }
 
           for (const listing of listings) {
             const qualifiedName = toQualifiedToolName(

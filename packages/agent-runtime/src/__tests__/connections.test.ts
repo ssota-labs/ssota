@@ -43,13 +43,23 @@ describe("filterMcpTools", () => {
 });
 
 describe("defineMcpClientConnection", () => {
-  it("infers sse transport from url", () => {
-    const def = defineMcpClientConnection("linear", {
-      url: "https://mcp.linear.app/sse",
-      description: "Linear",
+  it("infers sse transport from legacy /sse urls", () => {
+    const def = defineMcpClientConnection("example", {
+      url: "https://example.com/mcp/sse",
+      description: "Example",
       auth: connectCredential("linear"),
     });
     expect(def.transport).toBe("sse");
+    expect(def.id).toBe("example");
+  });
+
+  it("defaults to http transport for /mcp urls", () => {
+    const def = defineMcpClientConnection("linear", {
+      url: "https://mcp.linear.app/mcp",
+      description: "Linear",
+      auth: connectCredential("linear"),
+    });
+    expect(def.transport).toBe("http");
     expect(def.id).toBe("linear");
   });
 });

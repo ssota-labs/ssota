@@ -110,27 +110,35 @@ export class McpSessionManager {
     });
     if (!cred) return [];
 
-    const client = await experimental_createMCPClient({
-      transport: {
-        type: connection.transport,
-        url: connection.url,
-        headers: {
-          Authorization: `Bearer ${cred.token}`,
+    try {
+      const client = await experimental_createMCPClient({
+        transport: {
+          type: connection.transport,
+          url: connection.url,
+          headers: {
+            Authorization: `Bearer ${cred.token}`,
+          },
         },
-      },
-    });
-    this.clientCache.set(key, client);
+      });
+      this.clientCache.set(key, client);
 
-    const mcpTools = await client.tools();
-    const listings: McpToolListing[] = Object.entries(mcpTools).map(
-      ([name, t]) => ({
-        name,
-        description: t.description,
-      }),
-    );
-    const filtered = filterMcpTools(listings, connection.tools);
-    this.listCache.set(key, filtered);
-    return filtered;
+      const mcpTools = await client.tools();
+      const listings: McpToolListing[] = Object.entries(mcpTools).map(
+        ([name, t]) => ({
+          name,
+          description: t.description,
+        }),
+      );
+      const filtered = filterMcpTools(listings, connection.tools);
+      this.listCache.set(key, filtered);
+      return filtered;
+    } catch (error) {
+      console.warn(
+        `[mcp] listTools failed for ${connection.id} (${connection.url}):`,
+        error instanceof Error ? error.message : error,
+      );
+      return [];
+    }
   }
 
   async callTool(
