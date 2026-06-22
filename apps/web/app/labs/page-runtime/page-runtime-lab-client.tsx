@@ -102,7 +102,7 @@ export function PageRuntimeLabClient() {
         ) : null}
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
+      <div className="grid gap-8 xl:grid-cols-[280px_minmax(0,1fr)]">
         <nav className="space-y-5" aria-label="Page runtime demos">
           {PAGE_RUNTIME_DEMO_CATEGORIES.map((category) => {
             const demos = PAGE_RUNTIME_DEMOS.filter(

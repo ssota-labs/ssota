@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function LabsHomePage() {
   return (
-    <main className="mx-auto max-w-4xl px-6 py-10">
+    <main className="mx-auto w-full max-w-6xl px-6 py-10 lg:max-w-7xl">
       <div className="mb-8 space-y-2">
         <p className="text-muted-foreground text-sm">
           <Link href="/" className="hover:text-foreground underline-offset-4 hover:underline">

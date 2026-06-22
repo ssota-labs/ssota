@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function PageRuntimeLabPage() {
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
+    <main className="mx-auto w-full max-w-7xl px-6 py-8 lg:max-w-[96rem] lg:px-10">
       <div className="mb-8 space-y-2">
         <p className="text-muted-foreground text-sm">
           <Link href="/labs" className="hover:text-foreground underline-offset-4 hover:underline">
