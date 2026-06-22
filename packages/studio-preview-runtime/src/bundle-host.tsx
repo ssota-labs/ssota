@@ -14,6 +14,13 @@ import type {
 } from "./protocol";
 import { applyStudioPatch } from "./patch-applier";
 
+declare global {
+  interface Window {
+    __studioProps?: Record<string, unknown>;
+    __studioSetProps?: (props: Record<string, unknown>) => void;
+  }
+}
+
 const BUNDLE_ATTR = "data-studio-bundle-asset";
 
 async function loadBundle(jsUrl: string, cssUrl?: string) {
@@ -95,6 +102,11 @@ export function BundlePreviewHost({
             break;
           case "STUDIO_SET_UTILITY_CSS":
             setUtilityCss(message.cssText);
+            break;
+          case "STUDIO_SET_PROPS":
+            // Store for components that mount later; apply now if already mounted.
+            window.__studioProps = message.props;
+            window.__studioSetProps?.(message.props);
             break;
           case "STUDIO_PATCH":
           case "STUDIO_PATCH_NODE":

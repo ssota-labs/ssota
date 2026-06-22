@@ -377,7 +377,7 @@ export function createGraphWritePort(
       if (!initiativeCatalog || !releaseCatalog || !pairedCatalog) {
         throw new GraphError(
           "UNKNOWN_NODE_TYPE",
-          "Initiative bundle catalog entries missing — run seedDevWorkflowCatalog",
+          "Initiative bundle catalog entries missing — run seedDomainCatalog",
         );
       }
 

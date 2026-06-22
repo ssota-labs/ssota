@@ -9,8 +9,7 @@ import {
   getWorkflowLensTableHref,
   getWorkflowLensTypeLabel,
 } from "@/lib/console/workflow-lens-config";
-import { nodeDetailPath, resolveNodeRoute } from "@/lib/console/resolve-node-route";
-import type { ProjectRouteContext } from "@/lib/console/paths";
+import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { getGraphDeps } from "../graph-deps";
 
 export async function buildWorkflowLensPhases(
@@ -33,13 +32,12 @@ export async function buildWorkflowLensPhases(
 
       const rows: WorkflowLensNode[] = await Promise.all(
         nodes.map(async (node) => {
-          const canonicalRoute = await resolveNodeRoute(ctx, projectId, node);
           return {
             id: node.id,
             nodeType: node.catalogKey,
             title: node.title || "Untitled",
             lifecycleStatus: readLifecycleStatus(node.properties),
-            canonicalUrl: canonicalRoute ?? nodeDetailPath(ctx, node.id),
+            canonicalUrl: projectPath(ctx, "n", node.id),
             content: readNodeContent(node.properties) ?? "",
             updatedAt: node.updatedAt.toISOString(),
             properties: node.properties,

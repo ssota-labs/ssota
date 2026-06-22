@@ -13,7 +13,7 @@ export default async function AppProjectHome({
   const pageLinks = await listAppPageLinks(ctx.projectId);
 
   if (pageLinks[0]) {
-    redirect(appProjectPath({ orgSlug, projectSlug }, "p", pageLinks[0].routeKey));
+    redirect(appProjectPath({ orgSlug, projectSlug }, "p", pageLinks[0].pageId));
   }
 
   redirect(appProjectPath({ orgSlug, projectSlug }, "chat"));

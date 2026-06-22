@@ -24,6 +24,13 @@ export const bindingDefSchema = z.discriminatedUnion("kind", [
     nodeId: z.string().uuid(),
   }),
   z.object({
+    // The page's anchor node (from `pages.subject_node_id`), supplied at render
+    // time via the binding context. Generic replacement for initiative-scoping:
+    // a dashboard page bound to a specific node resolves its subject here, and
+    // `traverse`/`artifact` bindings can reference it by `from: "subject"`.
+    kind: z.literal("subject"),
+  }),
+  z.object({
     kind: z.literal("traverse"),
     from: z.string().min(1),
     edgeCatalogKey: z.string().min(1),
@@ -32,6 +39,14 @@ export const bindingDefSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("ref"),
     binding: z.string().min(1),
+  }),
+  z.object({
+    // Resolves a node carrying a built artifact (buildHash/previewArtifactPath)
+    // into render metadata. Domain-agnostic: any node type can hold a build.
+    // Core returns graph fields only; signed URLs + theme are resolved web-side.
+    kind: z.literal("artifact"),
+    nodeId: z.string().uuid().optional(),
+    ref: z.string().min(1).optional(),
   }),
 ]);
 
@@ -56,31 +71,139 @@ export const jsonRenderSpecSchema = z.object({
 
 export type JsonRenderSpec = z.infer<typeof jsonRenderSpecSchema>;
 
-export const pageContextDefSchema = z.object({
-  initiativeId: z.string().optional(),
-});
+/**
+ * A value in an action descriptor may be a literal or a reference resolved
+ * server-side at execution time:
+ * - `{ $binding: "rows.0.id" }` — dotted path into the page's resolved bindings
+ * - `{ $ctx: "initiativeId" }`  — value from the page context
+ * - `{ $input: "title" }`       — value from the client-collected form payload
+ */
+export const actionValueRefSchema = z.union([
+  z.object({ $binding: z.string().min(1) }),
+  z.object({ $ctx: z.string().min(1) }),
+  z.object({ $input: z.string().min(1) }),
+]);
 
-export const pageRuntimeDefinitionSchema = z
+export type ActionValueRef = z.infer<typeof actionValueRefSchema>;
+
+/** A descriptor param: a value-ref or any literal JSON. */
+export const actionParamSchema = z.union([actionValueRefSchema, z.unknown()]);
+
+/**
+ * A standardized, declarative action an interactive element can trigger. The
+ * server re-reads this descriptor authoritatively (never trusting the client),
+ * interpolates value-refs, and calls the matching graph use-case. New kinds map
+ * 1:1 to existing graph mutations; the execution chokepoint can later be swapped
+ * for the full executeAction(gate→commit) pipeline.
+ */
+export const pageActionSchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("create_node"),
+    catalogKey: z.string().min(1),
+    title: actionParamSchema.optional(),
+    properties: z.record(actionParamSchema).optional(),
+  }),
+  z.object({
+    kind: z.literal("update_node"),
+    nodeId: actionParamSchema,
+    title: actionParamSchema.optional(),
+    properties: z.record(actionParamSchema).optional(),
+    /** When true, merge into the node's existing properties instead of replacing
+     * them (for single-field/token edits). */
+    merge: z.boolean().optional(),
+  }),
+  z.object({
+    kind: z.literal("create_edge"),
+    catalogKey: z.string().min(1),
+    sourceNodeId: actionParamSchema,
+    targetNodeId: actionParamSchema,
+  }),
+  z.object({
+    kind: z.literal("delete_edge"),
+    edgeId: actionParamSchema,
+  }),
+]);
+
+export type PageAction = z.infer<typeof pageActionSchema>;
+
+/**
+ * Validate that every element's `binding`/`action` prop references a defined
+ * binding/action.
+ */
+function refineSpecReferences(
+  value: {
+    spec: JsonRenderSpec;
+    bindings: Record<string, unknown>;
+    actions: Record<string, unknown>;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  const bindingKeys = new Set(Object.keys(value.bindings));
+  const actionKeys = new Set(Object.keys(value.actions));
+  for (const [elementId, element] of Object.entries(value.spec.elements)) {
+    const props = element.props ?? {};
+    const bindingKey = props.binding;
+    if (typeof bindingKey === "string" && !bindingKeys.has(bindingKey)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Element '${elementId}' references unknown binding '${bindingKey}'`,
+        path: ["spec", "elements", elementId, "props", "binding"],
+      });
+    }
+    const actionKey = props.action;
+    if (typeof actionKey === "string" && !actionKeys.has(actionKey)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Element '${elementId}' references unknown action '${actionKey}'`,
+        path: ["spec", "elements", elementId, "props", "action"],
+      });
+    }
+  }
+}
+
+/**
+ * A page in the Notion-style tree. NOT 1:1 with a node or workflow: a page is a
+ * JSON-render dashboard (places catalog components) that loads node/edge data via
+ * `bindings`. Hierarchy is `parentId` (recursive tree); addressing is flat by id.
+ * `subjectNodeId` optionally anchors bindings to a node (generic replacement for
+ * the old scope / `{$ctx:initiativeId}`). The `id`/tree fields are managed by the
+ * store; this schema validates the editable content of a page record.
+ */
+export const pageRecordSchema = z
   .object({
-    routeKey: z.string().min(1),
-    scope: z.enum(["project", "evergreen", "initiative"]),
+    title: z.string().min(1),
+    icon: z.string().optional(),
+    slug: z.string().min(1).optional(),
+    parentId: z.string().uuid().nullable().optional(),
+    position: z.number().int().nonnegative().optional(),
+    subjectNodeId: z.string().uuid().nullable().optional(),
+    /** When set, a node-type drill-in template (renders for that catalogKey). */
+    appliesToNodeType: z.string().min(1).nullable().optional(),
     spec: jsonRenderSpecSchema,
     bindings: z.record(bindingDefSchema).default({}),
-    context: pageContextDefSchema.optional(),
+    actions: z.record(pageActionSchema).default({}),
   })
-  .superRefine((value, ctx) => {
-    const bindingKeys = new Set(Object.keys(value.bindings));
-    for (const [elementId, element] of Object.entries(value.spec.elements)) {
-      const props = element.props ?? {};
-      const bindingKey = props.binding;
-      if (typeof bindingKey === "string" && !bindingKeys.has(bindingKey)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: `Element '${elementId}' references unknown binding '${bindingKey}'`,
-          path: ["spec", "elements", elementId, "props", "binding"],
-        });
-      }
-    }
-  });
+  .superRefine(refineSpecReferences);
 
-export type PageRuntimeDefinition = z.infer<typeof pageRuntimeDefinitionSchema>;
+export type PageRecord = z.infer<typeof pageRecordSchema>;
+
+/** A persisted page: a {@link PageRecord} plus store-managed identity fields. */
+export const pageSchema = z
+  .object({
+    id: z.string().uuid(),
+    projectId: z.string().uuid(),
+    accountId: z.string().uuid().nullable().optional(),
+    title: z.string().min(1),
+    icon: z.string().nullable().optional(),
+    slug: z.string().nullable().optional(),
+    parentId: z.string().uuid().nullable().optional(),
+    position: z.number().int().nonnegative(),
+    subjectNodeId: z.string().uuid().nullable().optional(),
+    appliesToNodeType: z.string().min(1).nullable().optional(),
+    spec: jsonRenderSpecSchema,
+    bindings: z.record(bindingDefSchema).default({}),
+    actions: z.record(pageActionSchema).default({}),
+  })
+  .superRefine(refineSpecReferences);
+
+export type Page = z.infer<typeof pageSchema>;
