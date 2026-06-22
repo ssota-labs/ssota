@@ -92,10 +92,6 @@ export function useProvisioningReveal(
       return null;
     }
 
-    if (revealMode === "provisioning") {
-      return new Set(provisionOrder.slice(0, provisionRevealCount));
-    }
-
     const keys = new Set<string>();
     for (const key of idleRevealOrder.slice(0, idleRevealCount)) {
       if (key !== WORKFLOW_SECTION_REVEAL_KEY) {
@@ -103,42 +99,17 @@ export function useProvisioningReveal(
       }
     }
     return keys;
-  }, [
-    templateId,
-    revealMode,
-    provisionOrder,
-    provisionRevealCount,
-    idleRevealOrder,
-    idleRevealCount,
-  ]);
+  }, [templateId, revealMode, idleRevealOrder, idleRevealCount]);
 
   const lastRevealedKey = useMemo(() => {
-    if (!templateId || revealMode === "complete") {
+    if (!templateId || revealMode === "complete" || idleRevealCount === 0) {
       return null;
     }
 
-    if (revealMode === "provisioning" && provisionRevealCount > 0) {
-      return provisionOrder[provisionRevealCount - 1] ?? null;
-    }
+    return idleRevealOrder[idleRevealCount - 1] ?? null;
+  }, [templateId, revealMode, idleRevealCount, idleRevealOrder]);
 
-    if (revealMode === "idle" && idleRevealCount > 0) {
-      return idleRevealOrder[idleRevealCount - 1] ?? null;
-    }
-
-    return null;
-  }, [
-    templateId,
-    revealMode,
-    provisionRevealCount,
-    provisionOrder,
-    idleRevealCount,
-    idleRevealOrder,
-  ]);
-
-  const showWorkflowSection =
-    revealMode === "complete" ||
-    revealMode === "provisioning" ||
-    idleRevealCount > 0;
+  const showWorkflowSection = revealMode === "complete" || idleRevealCount > 0;
 
   return {
     visibleKeys,
