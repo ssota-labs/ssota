@@ -15,7 +15,7 @@ test.describe("Console onboarding", () => {
     expect(orgSlug).toMatch(/^e2e-organization-/);
     expect(projectSlug).toMatch(/^e2e-project-/);
     await expect(page).toHaveURL(new RegExp(`/${orgSlug}/${projectSlug}/overview$`));
-    await expect(page.getByText("Nothing here yet")).toBeVisible();
+    await expect(page.getByText("No graph nodes yet")).toBeVisible();
     await expect(page.getByText(projectName).first()).toBeVisible();
   });
 
@@ -25,6 +25,9 @@ test.describe("Console onboarding", () => {
     await completeProfileOnboarding(page, "Back Test Organization");
 
     await expect(page.getByText("Step 2 of 2")).toBeVisible();
+    await expect(
+      page.locator("[data-sonner-toast]").getByText(/organization created/i),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Back to organization" }).click();
 
     await expect(page).toHaveURL(/\/onboarding\/profile/);
