@@ -558,7 +558,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     category: "document",
     title: "DocumentSheetList",
     description:
-      "Card rows in a parent region — click opens an in-panel overlay + right BlockNote sheet (not a viewport portal).",
+      "Card rows — click opens a floating in-panel sheet (border, shadow, no overlay dim).",
     components: ["DocumentSheetList"],
     spec: {
       root: "list",
@@ -569,7 +569,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
             binding: "roadmaps",
             sectionTitle: "Planning roadmaps",
             sectionSubtitle:
-              "카드 행 클릭 → 부모 영역 안에서 dim + 우측 패널 BlockNote",
+              "카드 행 클릭 → dim 없이 우측에 떠 있는 패널에서 BlockNote",
             title: "Product roadmap documents",
             field: "content",
             subtitleField: "summary",

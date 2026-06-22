@@ -65,20 +65,11 @@ test.describe("Page Runtime Lab", () => {
 
     await page.getByRole("button", { name: /2026 Q1 분기 로드맵/ }).click();
     await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
-    await expect(page.getByTestId("document-sheet-backdrop")).toBeVisible();
+    await expect(page.getByTestId("document-sheet-backdrop")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "2026 Q1 분기 로드맵" })).toBeVisible();
     await expect(page.getByTestId("document-sheet-editor")).toBeVisible();
     await expect(page.getByTestId("blocknote-editor-shell")).toBeVisible();
     await expect(page.getByText("DocumentSheetList catalog component")).toBeVisible();
-
-    // Backdrop is scoped to the list parent, not a viewport portal.
-    const listBox = await page.getByTestId("document-sheet-list").boundingBox();
-    const backdropBox = await page.getByTestId("document-sheet-backdrop").boundingBox();
-    expect(listBox).toBeTruthy();
-    expect(backdropBox).toBeTruthy();
-    if (listBox && backdropBox) {
-      expect(backdropBox.width).toBeLessThanOrEqual(listBox.width + 2);
-      expect(backdropBox.height).toBeLessThanOrEqual(listBox.height + 2);
-    }
+    await expect(page.getByText("2026 연간 로드맵")).toBeVisible();
   });
 });

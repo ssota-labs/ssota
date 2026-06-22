@@ -23,7 +23,7 @@ type SheetSize = "default" | "half" | "inspector" | "wide" | "full";
 export type DocumentSheetListProps = {
   nodes: RenderNode[];
   title?: string;
-  /** Optional page-style heading rendered inside the overlay region (above the list). */
+  /** Optional page-style heading rendered inside the panel region (above the list). */
   sectionTitle?: string;
   sectionSubtitle?: string;
   field?: string;
@@ -34,12 +34,13 @@ export type DocumentSheetListProps = {
   sheetSize?: SheetSize;
 };
 
+/** Inset floating panel widths (parent-relative, no viewport portal). */
 const panelWidthClass: Record<SheetSize, string> = {
-  default: "w-[min(24rem,92%)]",
-  half: "w-1/2 min-w-[18rem] max-w-[50%]",
-  inspector: "w-[min(42%,560px)] min-w-[18rem]",
-  wide: "w-2/3 min-w-[20rem] max-w-[48rem]",
-  full: "w-full",
+  default: "w-[min(24rem,calc(100%-1.5rem))]",
+  half: "w-[calc(50%-0.75rem)] min-w-[18rem]",
+  inspector: "w-[min(calc(42%-0.75rem),560px)] min-w-[18rem]",
+  wide: "w-[min(calc(66%-0.75rem),48rem)] min-w-[20rem]",
+  full: "w-[calc(100%-1.5rem)]",
 };
 
 function readField(node: RenderNode, key: string | undefined): string {
@@ -145,72 +146,64 @@ export function DocumentSheetListEl({
       </div>
 
       {open && activeNode ? (
-        <>
-          <button
-            type="button"
-            aria-label="Close document panel"
-            className="absolute inset-0 z-10 bg-black/40"
-            data-testid="document-sheet-backdrop"
-            onClick={close}
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="document-sheet-title"
-            data-testid="document-sheet-panel"
-            className={cn(
-              "bg-background border-border absolute inset-y-0 right-0 z-20 flex flex-col border-l shadow-xl",
-              "animate-in slide-in-from-right duration-200",
-              panelWidthClass[sheetSize],
-            )}
-          >
-            <header className="border-border flex shrink-0 items-start gap-3 border-b px-4 py-4 md:px-6">
-              <div className="min-w-0 flex-1 space-y-1">
-                <h2
-                  id="document-sheet-title"
-                  className="text-base font-semibold leading-snug"
-                >
-                  {activeNode.title}
-                </h2>
-                {readField(activeNode, subtitleField) ? (
-                  <p className="text-muted-foreground text-sm">
-                    {readField(activeNode, subtitleField)}
-                  </p>
-                ) : null}
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                aria-label="Close"
-                data-testid="document-sheet-close"
-                onClick={close}
+        <div
+          role="dialog"
+          aria-modal="false"
+          aria-labelledby="document-sheet-title"
+          data-testid="document-sheet-panel"
+          className={cn(
+            "bg-background border-border absolute top-3 right-3 bottom-3 z-20 flex flex-col overflow-hidden rounded-xl border",
+            "shadow-[0_12px_40px_-8px_rgba(0,0,0,0.18)]",
+            "animate-in slide-in-from-right-4 fade-in duration-200",
+            panelWidthClass[sheetSize],
+          )}
+        >
+          <header className="border-border flex shrink-0 items-start gap-3 border-b px-6 py-5">
+            <div className="min-w-0 flex-1 space-y-1">
+              <h2
+                id="document-sheet-title"
+                className="text-base font-semibold leading-snug"
               >
-                <XIcon className="size-4" />
-              </Button>
-            </header>
-            <div
-              className="min-h-0 flex-1 overflow-y-auto px-4 py-4 md:px-6"
-              data-testid="document-sheet-editor"
-            >
-              {editable ? (
-                <DocumentEditorEl
-                  content={readContent(activeNode, field)}
-                  onSave={(blocks) => {
-                    if (onAction && action) {
-                      void onAction(action, {
-                        nodeId: activeNode.id,
-                        doc: blocks,
-                      });
-                    }
-                  }}
-                />
-              ) : (
-                <DocumentViewEl content={readContent(activeNode, field)} />
-              )}
+                {activeNode.title}
+              </h2>
+              {readField(activeNode, subtitleField) ? (
+                <p className="text-muted-foreground text-sm">
+                  {readField(activeNode, subtitleField)}
+                </p>
+              ) : null}
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              aria-label="Close"
+              data-testid="document-sheet-close"
+              onClick={close}
+            >
+              <XIcon className="size-4" />
+            </Button>
+          </header>
+          <div
+            className="min-h-0 flex-1 overflow-y-auto px-6 py-5"
+            data-testid="document-sheet-editor"
+          >
+            {editable ? (
+              <DocumentEditorEl
+                content={readContent(activeNode, field)}
+                onSave={(blocks) => {
+                  if (onAction && action) {
+                    void onAction(action, {
+                      nodeId: activeNode.id,
+                      doc: blocks,
+                    });
+                  }
+                }}
+              />
+            ) : (
+              <DocumentViewEl content={readContent(activeNode, field)} />
+            )}
           </div>
-        </>
+        </div>
       ) : null}
     </div>
   );
