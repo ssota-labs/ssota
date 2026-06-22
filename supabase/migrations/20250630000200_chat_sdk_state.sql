@@ -1,16 +1,15 @@
 -- Chat SDK (chat-sdk.dev) Postgres state backend.
 --
--- These tables back `createPostgresState({ url: DATABASE_URL })` in
--- apps/web/lib/chat/bot.ts — thread subscriptions, distributed locks (dedupe),
+-- These tables back Chat SDK Postgres state in apps/web/lib/chat/bot.ts — thread subscriptions, distributed locks (dedupe),
 -- key/value cache, ordered lists, and per-thread queues for the Slack/Discord/
 -- Telegram bots.
 --
 -- The DDL below is copied VERBATIM from `@chat-adapter/state-pg@4.31.0`
--- (PostgresStateAdapter.ensureSchema). The adapter still runs ensureSchema() on
--- connect, but it is CREATE TABLE IF NOT EXISTS, so once this migration has run
--- it is a harmless no-op — this file is the source of truth. The adapter does
--- NOT ALTER existing tables, so on a state-pg upgrade re-sync this DDL by hand
--- and add a follow-up migration. Keep @chat-adapter/state-pg pinned.
+-- (PostgresStateAdapter.ensureSchema). Runtime must NOT call ensureSchema —
+-- apps/web uses `createMigrationBackedPostgresState` (skips adapter DDL). This
+-- migration is the source of truth. The adapter does NOT ALTER existing tables,
+-- so on a state-pg upgrade re-sync this DDL by hand and add a follow-up
+-- migration. Keep @chat-adapter/state-pg pinned.
 
 CREATE TABLE IF NOT EXISTS chat_state_subscriptions (
   key_prefix text NOT NULL,
