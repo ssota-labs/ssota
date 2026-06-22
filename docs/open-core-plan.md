@@ -4,6 +4,11 @@
 fair-code 코어 + 관리형 cloud로 나눈다. n8n과 동일한 라이선스 모델(Sustainable Use License +
 Enterprise License)을 적용한다.
 
+> **구현 상태 (P0–P5 완료).** 어댑터 선택은 env로 동작한다:
+> `JOB_RUNNER=inline AUTH=local CREDENTIALS=own-app STUDIO_BUILD_STORAGE=local`.
+> 셀프호스트 가이드는 [self-hosting.md](self-hosting.md). `.ee.` 파일은 런타임에서 dormant이며
+> (OSS env면 실행 경로에 안 탐), 물리적으로 ee를 완전히 제거한 빌드는 별도 maintainer 작업으로 문서화.
+
 > 핵심 통찰: SSOTA는 이미 adapter/port 패턴이라 "cloud 코드"의 대부분은 그냥 인프라 특정 어댑터다.
 > 포크도, 두 번째 레포도 필요 없다. `JobRunner`/`AuthProvider` **어댑터 경계 = OSS/cloud 경계 =
 > 라이선스 경계**가 그대로 일치한다.
