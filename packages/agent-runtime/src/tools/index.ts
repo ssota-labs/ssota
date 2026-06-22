@@ -2,6 +2,7 @@ import type { ToolSet } from "ai";
 import { createGraphTools } from "./graph.js";
 import { createTaskTools } from "./tasks.js";
 import { createPageTools } from "./pages.js";
+import { createWorkflowTools } from "./workflows.js";
 
 /**
  * The full SSOTA tool set bound to `@ssota/core` use-cases. Each tool reads its
@@ -13,7 +14,13 @@ export function createSsotaTools(): ToolSet {
     ...createGraphTools(),
     ...createTaskTools(),
     ...createPageTools(),
+    ...createWorkflowTools(),
   };
 }
 
-export { createGraphTools, createTaskTools, createPageTools };
+export {
+  createGraphTools,
+  createTaskTools,
+  createPageTools,
+  createWorkflowTools,
+};

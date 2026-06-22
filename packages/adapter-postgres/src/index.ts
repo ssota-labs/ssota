@@ -4,12 +4,20 @@ export {
   createOnboardingPort,
   createTaskPort,
   createGraphPorts,
+  createWorkflowPort,
+  seedWorkflows,
+  createPagePort,
+  seedPages,
+  applyTemplate,
+  SOFTWARE_DEV_TEMPLATE,
+  BUILTIN_TEMPLATES,
 } from "./ports/index.js";
 export {
   createAgentRunPort,
   type StartAgentRunInput,
   type FinishAgentRunInput,
 } from "./ports/agent-runs-port.js";
+export { createDbAccountReadPort } from "./ports/account-read-port.js";
 export {
   createAccountPort,
   createAccountConnectionPort,
@@ -33,7 +41,7 @@ export {
   type LinkChatWorkspaceInput,
 } from "./ports/chat-workspace-port.js";
 export {
-  seedDevWorkflowCatalog,
+  seedDomainCatalog,
   createDbCatalogReadPort,
 } from "./ports/db-catalog-read-port.js";
 export { createDbCatalogWritePort } from "./ports/db-catalog-write-port.js";

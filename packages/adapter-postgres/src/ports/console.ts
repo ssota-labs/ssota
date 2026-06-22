@@ -64,6 +64,24 @@ export function createConsolePort(db: Db): ConsolePort {
         organizationId: row.organizationId,
         slug: row.slug,
         name: row.name,
+        appEnabled: row.appEnabled,
+      } satisfies Project;
+    },
+
+    async getProjectById(projectId) {
+      const rows = await db
+        .select()
+        .from(schema.projects)
+        .where(eq(schema.projects.id, projectId))
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return {
+        id: row.id,
+        organizationId: row.organizationId,
+        slug: row.slug,
+        name: row.name,
+        appEnabled: row.appEnabled,
       } satisfies Project;
     },
 
@@ -79,6 +97,7 @@ export function createConsolePort(db: Db): ConsolePort {
             organizationId: row.organizationId,
             slug: row.slug,
             name: row.name,
+            appEnabled: row.appEnabled,
           }) satisfies Project,
       );
     },

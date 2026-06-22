@@ -319,6 +319,7 @@ export interface Project {
   organizationId: string;
   slug: string;
   name: string;
+  appEnabled: boolean;
 }
 
 export interface CatalogPort {
@@ -356,6 +357,7 @@ export interface ConsolePort {
     organizationId: string,
     projectSlug: string,
   ): Promise<Project | null>;
+  getProjectById(projectId: string): Promise<Project | null>;
   listProjectsForOrganization(organizationId: string): Promise<Project[]>;
 }
 

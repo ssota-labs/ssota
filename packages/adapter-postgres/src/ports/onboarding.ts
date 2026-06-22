@@ -1,5 +1,4 @@
 import { toRouteSlug } from "@ssota/core";
-import { applyDevWorkflowPack } from "@ssota/core/seed-packs/apply-dev-workflow-pack";
 import {
   DEFAULT_LOCALE,
   LOCALES,
@@ -12,8 +11,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { createGraphPorts } from "./create-graph-ports.js";
-import { seedDevWorkflowCatalog } from "./db-catalog-read-port.js";
+import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "./templates.js";
 
 function parseLocale(value: string | null | undefined): Locale {
   if (value && (LOCALES as readonly string[]).includes(value)) {
@@ -47,6 +45,7 @@ function mapProject(row: typeof schema.projects.$inferSelect): Project {
     organizationId: row.organizationId,
     slug: row.slug,
     name: row.name,
+    appEnabled: row.appEnabled,
   };
 }
 
@@ -231,14 +230,10 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         return { organization, project };
       });
 
-      const ports = createGraphPorts(db, { projectId: result.project.id });
-      await seedDevWorkflowCatalog(db, result.project.id);
-      await applyDevWorkflowPack({
-        projectId: result.project.id,
-        catalog: ports.catalog,
-        graphRead: ports.graphRead,
-        graphWrite: ports.graphWrite,
-      });
+      // Seed the project from a template bundle (catalog → workflows → pages).
+      // Defaults to the built-in Software Development template; a template
+      // picker / marketplace will choose the bundle in a later step.
+      await applyTemplate(db, result.project.id, SOFTWARE_DEV_TEMPLATE);
 
       return result;
     },

@@ -1,6 +1,8 @@
 import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { getJobRunner } from "@/app/workflows/job-runner";
+import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
+import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -47,6 +49,22 @@ export async function POST(request: Request) {
     );
   }
 
+  const user = await getCurrentUser().catch(() => null);
+  let accountId = parsed.accountId;
+  if (user) {
+    try {
+      const scope = await resolveApiAccountScope(parsed.projectId, {
+        referer: request.headers.get("referer"),
+        requestedAccountId: parsed.accountId,
+      });
+      accountId = scope.accountId;
+    } catch (error) {
+      const response = apiScopeErrorResponse(error);
+      if (response) return response;
+      throw error;
+    }
+  }
+
   // Fire-and-forget run. Returns immediately with the run id. With the inline
   // runner the work continues in-process; `after` keeps the runtime alive until
   // it settles. With the workflow runner it executes durably server-side.
@@ -54,7 +72,7 @@ export async function POST(request: Request) {
   const run = await runner.start({
     projectId: parsed.projectId,
     taskId: parsed.taskId,
-    accountId: parsed.accountId,
+    accountId,
     modelId: parsed.modelId,
     maxSteps: parsed.maxSteps,
   });

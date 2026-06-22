@@ -2,6 +2,8 @@ import {
   createDb,
   createGraphPorts,
   createTaskPort,
+  createWorkflowPort,
+  createPagePort,
 } from "@ssota/adapter-postgres";
 
 type Db = ReturnType<typeof createDb>["db"];
@@ -30,4 +32,12 @@ export function getGraphPorts(projectId: string, accountId?: string) {
 
 export function getGraphReadPort(projectId: string, accountId?: string) {
   return getGraphPorts(projectId, accountId).graphRead;
+}
+
+export function getWorkflowPort(projectId: string, accountId?: string) {
+  return createWorkflowPort(getDb(), { projectId, accountId });
+}
+
+export function getPagePort(projectId: string, accountId?: string) {
+  return createPagePort(getDb(), { projectId, accountId });
 }

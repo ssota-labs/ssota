@@ -43,6 +43,7 @@ export function ChatMessage({
                 key={i}
                 src={img.url}
                 alt={img.filename ?? "첨부 이미지"}
+                data-testid="user-message-image"
                 className="max-h-64 rounded-2xl border object-cover"
               />
             ))}

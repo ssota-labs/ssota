@@ -1,4 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createDb } from "@ssota/adapter-postgres";
 import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
@@ -6,6 +8,10 @@ import { gotoProject } from "../helpers/console";
 // e2e for the two new console surfaces. Vercel Connect is stubbed
 // (CONNECT_STUB=1) and the LLM is stubbed (STUB_MODEL=1) so the real route /
 // workflow / streaming pipeline runs locally without external services.
+
+const CHAT_PLACEHOLDER = /메시지를 입력하세요/;
+const FIXTURE_IMAGE = join(process.cwd(), "fixtures/chat-test-image.png");
+const FIXTURE_BYTES = [...readFileSync(FIXTURE_IMAGE)];
 
 async function resetChatAndConnections() {
   const { db, client } = createDb(
@@ -19,6 +25,89 @@ async function resetChatAndConnections() {
   } finally {
     await client.end();
   }
+}
+
+function chatComposer(page: Page) {
+  return page.getByRole("textbox", { name: CHAT_PLACEHOLDER });
+}
+
+async function gotoChat(page: Page) {
+  await gotoProject(page, "chat");
+  await expect(chatComposer(page)).toBeVisible();
+}
+
+async function sendChatMessage(page: Page, text: string) {
+  const input = chatComposer(page);
+  await input.fill(text);
+  await page.getByRole("button", { name: "전송" }).click();
+}
+
+function chatComposerForm(page: Page) {
+  return page.locator("form").filter({ has: chatComposer(page) });
+}
+
+async function waitForAttachmentReady(page: Page) {
+  const preview = page.getByTestId("attachment-preview");
+  await expect(preview.locator("img")).toBeVisible({ timeout: 15_000 });
+  await expect(preview.locator(".animate-spin")).toHaveCount(0, {
+    timeout: 15_000,
+  });
+}
+
+async function attachImageViaFilePicker(page: Page) {
+  await page
+    .locator('input[type="file"][accept="image/*"]')
+    .setInputFiles(FIXTURE_IMAGE);
+  await waitForAttachmentReady(page);
+}
+
+async function attachImageViaPaste(page: Page) {
+  const input = chatComposer(page);
+  await input.focus();
+  await input.evaluate((el, bytes) => {
+    const dt = new DataTransfer();
+    const file = new File(
+      [new Uint8Array(bytes)],
+      "paste.png",
+      { type: "image/png" },
+    );
+    dt.items.add(file);
+    el.dispatchEvent(
+      new ClipboardEvent("paste", {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: dt,
+      }),
+    );
+  }, FIXTURE_BYTES);
+  await waitForAttachmentReady(page);
+}
+
+async function attachImageViaDragDrop(page: Page) {
+  const form = chatComposerForm(page);
+  await form.evaluate((formEl, bytes) => {
+    const dt = new DataTransfer();
+    const file = new File(
+      [new Uint8Array(bytes)],
+      "drop.png",
+      { type: "image/png" },
+    );
+    dt.items.add(file);
+    formEl.dispatchEvent(
+      new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: dt }),
+    );
+  }, FIXTURE_BYTES);
+  await waitForAttachmentReady(page);
+}
+
+async function sendWithReadyAttachment(page: Page, text?: string) {
+  if (text) {
+    await chatComposer(page).fill(text);
+  }
+  await expect(page.getByRole("button", { name: "전송" })).toBeEnabled({
+    timeout: 10_000,
+  });
+  await page.getByRole("button", { name: "전송" }).click();
 }
 
 test.describe("Connections + Chat", () => {
@@ -70,19 +159,169 @@ test.describe("Connections + Chat", () => {
     await expect(linear.getByText("Add workspace")).toHaveCount(0);
   });
 
-  test("chat: sends a message and streams the agent reply", async ({ page }) => {
-    await gotoProject(page, "chat");
+  test.describe("chat UX", () => {
+    test("empty state and composer chrome render on load", async ({ page }) => {
+      await gotoChat(page);
 
-    const input = page.getByPlaceholder("Send a message…");
-    await expect(input).toBeVisible();
-    await input.fill("ping from e2e");
-    await page.getByRole("button", { name: "Send" }).click();
+      await expect(
+        page.getByText("메시지를 보내 대화를 시작하세요"),
+      ).toBeVisible();
+      await expect(page.getByRole("button", { name: "새 채팅" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "이미지 첨부" })).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Claude Sonnet 4.6" }),
+      ).toBeVisible();
+      await expect(page.getByRole("button", { name: "전송" })).toBeDisabled();
+    });
 
-    // User turn echoed, then the stubbed agent reply streams in via the full
-    // route → workflow → stream → useChat → streamdown pipeline.
-    await expect(page.getByText("ping from e2e")).toBeVisible();
-    await expect(
-      page.getByTestId("assistant-message").getByText(/stub agent/i),
-    ).toBeVisible({ timeout: 30_000 });
+    test("send button enables when text is entered", async ({ page }) => {
+      await gotoChat(page);
+
+      const send = page.getByRole("button", { name: "전송" });
+      await expect(send).toBeDisabled();
+
+      await chatComposer(page).fill("hello");
+      await expect(send).toBeEnabled();
+    });
+
+    test("model selector switches the active model", async ({ page }) => {
+      await gotoChat(page);
+
+      await page.getByRole("button", { name: "Claude Sonnet 4.6" }).click();
+      await page.getByRole("menuitem", { name: "GPT-5.1" }).click();
+
+      await expect(
+        page.getByRole("button", { name: "GPT-5.1" }),
+      ).toBeVisible();
+    });
+
+    test("@mention dropdown sections connectors, graph nodes, and edges", async ({
+      page,
+    }) => {
+      await gotoChat(page);
+
+      // Connectors — section header + Slack row.
+      await chatComposer(page).pressSequentially("@Sl", { delay: 50 });
+      const dropdown = page.getByTestId("mention-dropdown");
+      await expect(dropdown).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId("mention-section-connector")).toBeVisible();
+      await expect(dropdown.getByRole("button", { name: /Slack/ })).toBeVisible();
+      await expect(
+        page.getByText("↑↓ 이동 · Tab/Enter 선택 · Esc 닫기"),
+      ).toBeVisible();
+
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-mention-dropdown-connectors.png",
+        fullPage: true,
+      });
+
+      // Graph nodes — seeded "Smoke initiative" title.
+      await chatComposer(page).fill("");
+      await chatComposer(page).pressSequentially("@Smoke", { delay: 50 });
+      await expect(dropdown).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId("mention-section-node")).toBeVisible();
+      await expect(
+        dropdown.getByTestId("mention-option-node").filter({
+          hasText: /^Smoke initiative/,
+        }),
+      ).toBeVisible();
+
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-mention-dropdown-nodes.png",
+        fullPage: true,
+      });
+
+      // Edges — seeded paired_with "Smoke initiative → v0.0.0-smoke".
+      await chatComposer(page).fill("");
+      await chatComposer(page).pressSequentially("@v0.0.0-smoke", { delay: 50 });
+      await expect(dropdown).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId("mention-section-edge")).toBeVisible();
+      await expect(
+        dropdown.getByTestId("mention-option-edge").filter({
+          hasText: /Smoke initiative → v0\.0\.0-smoke/,
+        }),
+      ).toBeVisible();
+      await expect(
+        dropdown.getByTestId("mention-option-edge").filter({
+          hasText: /1:1 쌍/,
+        }),
+      ).toBeVisible();
+
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-mention-dropdown-edges.png",
+        fullPage: true,
+      });
+    });
+
+    test("image attachment via file picker uploads to storage", async ({
+      page,
+    }) => {
+      await gotoChat(page);
+      await attachImageViaFilePicker(page);
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-image-attachment-preview.png",
+        fullPage: true,
+      });
+      await sendWithReadyAttachment(page, "image via file picker");
+
+      await expect(page.getByText("image via file picker")).toBeVisible();
+      await expect(page.getByTestId("user-message-image")).toBeVisible({
+        timeout: 15_000,
+      });
+      await page.screenshot({
+        path: "/opt/cursor/artifacts/screenshots/chat-image-sent-message.png",
+        fullPage: true,
+      });
+    });
+
+    test("image attachment via clipboard paste uploads to storage", async ({
+      page,
+    }) => {
+      await gotoChat(page);
+      await attachImageViaPaste(page);
+      await sendWithReadyAttachment(page, "image via paste");
+
+      await expect(page.getByText("image via paste")).toBeVisible();
+      await expect(page.getByTestId("user-message-image")).toBeVisible({
+        timeout: 15_000,
+      });
+    });
+
+    test("image attachment via drag-and-drop uploads to storage", async ({
+      page,
+    }) => {
+      await gotoChat(page);
+      await attachImageViaDragDrop(page);
+      await sendWithReadyAttachment(page, "image via drag drop");
+
+      await expect(page.getByText("image via drag drop")).toBeVisible();
+      await expect(page.getByTestId("user-message-image")).toBeVisible({
+        timeout: 15_000,
+      });
+    });
+
+    test("new chat creates a fresh thread with empty state", async ({ page }) => {
+      await gotoChat(page);
+      await sendChatMessage(page, "first thread message");
+      await expect(page.getByText("first thread message")).toBeVisible();
+
+      await page.getByRole("button", { name: "새 채팅" }).click();
+      await expect(page).toHaveURL(/\/chat\?thread=/);
+      await expect(
+        page.getByText("메시지를 보내 대화를 시작하세요"),
+      ).toBeVisible({ timeout: 10_000 });
+    });
+
+    test("sends a message and streams the agent reply", async ({ page }) => {
+      await gotoChat(page);
+      await sendChatMessage(page, "ping from e2e");
+
+      // User turn echoed, then the stubbed agent reply streams in via the full
+      // route → workflow → stream → useChat → streamdown pipeline.
+      await expect(page.getByText("ping from e2e")).toBeVisible();
+      await expect(
+        page.getByTestId("assistant-message").getByText(/stub agent/i),
+      ).toBeVisible({ timeout: 30_000 });
+    });
   });
 });

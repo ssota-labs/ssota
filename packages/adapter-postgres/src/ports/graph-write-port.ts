@@ -26,6 +26,26 @@ function assertSameProject(projectId: string, actual: string, label: string) {
   }
 }
 
+function assertEndUserWritableRow(
+  accountId: string | undefined,
+  rowAccountId: string | null,
+  label: string,
+) {
+  if (!accountId) return;
+  if (rowAccountId === null) {
+    throw new GraphError(
+      "FORBIDDEN",
+      `Cannot modify shared builder ${label} from end-user scope`,
+    );
+  }
+  if (rowAccountId !== accountId) {
+    throw new GraphError(
+      "FORBIDDEN",
+      `${label} belongs to a different account partition`,
+    );
+  }
+}
+
 async function mapNodeRow(
   db: Db,
   row: typeof schema.nodes.$inferSelect,
@@ -135,6 +155,21 @@ export function createGraphWritePort(
           "Input projectId does not match port scope",
         );
       }
+
+      const [existing] = await db
+        .select({ accountId: schema.nodes.accountId })
+        .from(schema.nodes)
+        .where(
+          and(
+            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.id, input.nodeId),
+          ),
+        )
+        .limit(1);
+      if (!existing) {
+        throw new GraphError("NOT_FOUND", `Node '${input.nodeId}' not found`);
+      }
+      assertEndUserWritableRow(accountId, existing.accountId, "node");
 
       const set: Partial<typeof schema.nodes.$inferInsert> = {
         updatedAt: new Date(),
@@ -268,6 +303,21 @@ export function createGraphWritePort(
         );
       }
 
+      const [existing] = await db
+        .select({ accountId: schema.edges.accountId })
+        .from(schema.edges)
+        .where(
+          and(
+            eq(schema.edges.projectId, projectId),
+            eq(schema.edges.id, input.edgeId),
+          ),
+        )
+        .limit(1);
+      if (!existing) {
+        throw new GraphError("NOT_FOUND", `Edge '${input.edgeId}' not found`);
+      }
+      assertEndUserWritableRow(accountId, existing.accountId, "edge");
+
       const deleted = await db
         .delete(schema.edges)
         .where(
@@ -327,7 +377,7 @@ export function createGraphWritePort(
       if (!initiativeCatalog || !releaseCatalog || !pairedCatalog) {
         throw new GraphError(
           "UNKNOWN_NODE_TYPE",
-          "Initiative bundle catalog entries missing — run seedDevWorkflowCatalog",
+          "Initiative bundle catalog entries missing — run seedDomainCatalog",
         );
       }
 

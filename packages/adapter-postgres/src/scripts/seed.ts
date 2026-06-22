@@ -10,11 +10,7 @@ import {
   SMOKE_PASSWORD,
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
-import {
-  applyDevWorkflowPack,
-} from "@ssota/core/seed-packs/apply-dev-workflow-pack";
-import { seedDevWorkflowCatalog } from "../ports/db-catalog-read-port.js";
-import { createGraphPorts } from "../ports/create-graph-ports.js";
+import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -73,6 +69,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       organizationId,
       slug: DEFAULT_PROJECT_SLUG,
       name: "SSOTA Dev",
+      appEnabled: true,
     })
     .onConflictDoNothing()
     .returning();
@@ -86,6 +83,23 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .limit(1);
     projectId = rows[0]?.id;
   }
+
+  if (projectId) {
+    await db
+      .update(schema.projects)
+      .set({ appEnabled: true })
+      .where(eq(schema.projects.id, projectId));
+  }
+
+  await db
+    .insert(schema.projects)
+    .values({
+      organizationId,
+      slug: "app-disabled",
+      name: "App Disabled (E2E)",
+      appEnabled: false,
+    })
+    .onConflictDoNothing();
 
   if (smokeUserId) {
     await db
@@ -156,17 +170,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .onConflictDoNothing();
 
     await seedGraphInstances(db, projectId);
-
-    const ports = createGraphPorts(db, { projectId });
-    await applyDevWorkflowPack({
-      projectId,
-      catalog: ports.catalog,
-      graphRead: ports.graphRead,
-      graphWrite: ports.graphWrite,
-      ensureCatalog: async (pid) => {
-        await seedDevWorkflowCatalog(db, pid);
-      },
-    });
+    await applyTemplate(db, projectId, SOFTWARE_DEV_TEMPLATE);
   }
 
   return { organizationId, projectId };
@@ -204,7 +208,7 @@ async function seedAllProjectCatalogs(db: ReturnType<typeof createDb>["db"]) {
     .select({ id: schema.projects.id })
     .from(schema.projects);
   for (const { id } of projects) {
-    await seedDevWorkflowCatalog(db, id);
+    await applyTemplate(db, id, SOFTWARE_DEV_TEMPLATE);
   }
 }
 

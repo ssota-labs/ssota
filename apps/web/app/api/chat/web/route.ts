@@ -7,6 +7,8 @@ import { getGraphReadPort, getTaskPort } from "@ssota/agent-runtime";
 import { getJobRunner } from "@/app/workflows/job-runner";
 import { getChatPort } from "@/lib/ports";
 import { resolveModelId } from "@/lib/chat/models";
+import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
+import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -67,6 +69,26 @@ function toModelMessage(m: UIMessage): ModelMessage | null {
   return { role: "user", content };
 }
 
+/**
+ * STUB_MODEL cannot fetch private-IP attachment URLs (127.0.0.1 Storage). Strip
+ * images from agent history while still persisting full parts in the thread DB.
+ */
+function toAgentHistory(messages: UIMessage[]): ModelMessage[] {
+  const stub = process.env.STUB_MODEL === "1";
+  return messages
+    .map((m) => {
+      const msg = toModelMessage(m);
+      if (!msg || !stub || msg.role !== "user" || typeof msg.content === "string") {
+        return msg;
+      }
+      const textParts = msg.content.filter((p) => p.type === "text");
+      const text =
+        textParts.map((p) => p.text).join(" ").trim() || "[image attached]";
+      return { role: "user", content: text };
+    })
+    .filter((m): m is ModelMessage => m !== null);
+}
+
 export async function POST(request: Request) {
   const user = await getCurrentUser().catch(() => null);
   if (!user) {
@@ -86,13 +108,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const { projectId, threadId, accountId } = body;
+  const { projectId, threadId } = body;
+  let scope;
+  try {
+    scope = await resolveApiAccountScope(projectId, {
+      referer: request.headers.get("referer"),
+      requestedAccountId: body.accountId,
+    });
+  } catch (error) {
+    const response = apiScopeErrorResponse(error);
+    if (response) return response;
+    throw error;
+  }
+  const accountId = scope.accountId;
   const modelId = resolveModelId(body.modelId);
   const messages = body.messages as UIMessage[];
   const chat = getChatPort(projectId, accountId);
 
   const thread = await chat.getThread(threadId);
   if (!thread || thread.projectId !== projectId) {
+    return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+  }
+  if (thread.accountId && thread.accountId !== accountId) {
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
   }
 
@@ -111,9 +148,7 @@ export async function POST(request: Request) {
 
   // Replay the whole client-side conversation into the agent (multi-turn
   // memory). User turns keep image attachments as multimodal content.
-  const history = messages
-    .map(toModelMessage)
-    .filter((m): m is ModelMessage => m !== null);
+  const history = toAgentHistory(messages);
 
   const task = await spawnTask(
     {

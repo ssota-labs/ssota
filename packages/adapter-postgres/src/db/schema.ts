@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   integer,
   jsonb,
   pgEnum,
@@ -57,6 +58,7 @@ export const projects = pgTable(
       .references(() => organizations.id),
     slug: text("slug").notNull(),
     name: text("name").notNull(),
+    appEnabled: boolean("app_enabled").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
@@ -277,6 +279,40 @@ export const edgeCatalog = pgTable(
   }),
 );
 
+/**
+ * Workflow definitions — a core, per-project concept (peer of node/edge catalog
+ * and tasks), NOT domain content. Every project is bootstrap-seeded with the
+ * embedded WORKFLOW_REGISTRY so the agent can operate regardless of domain;
+ * rows are then tenant-editable (and agent-authorable via write_workflow).
+ * `tasks.workflow_key` is a soft reference to `workflow_key` here.
+ */
+export const workflows = pgTable(
+  "workflows",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    workflowKey: text("workflow_key").notNull(),
+    title: text("title").notNull(),
+    category: text("category").notNull(),
+    cadenceHint: text("cadence_hint"),
+    defaultExecutorType: executorTypeEnum("default_executor_type"),
+    defaultStatus: taskStatusEnum("default_status"),
+    instruction: text("instruction").notNull(),
+    lifecycleStatus: text("lifecycle_status").notNull().default("Active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectWorkflowKeyUnique: uniqueIndex("workflows_project_workflow_key_unique").on(
+      table.projectId,
+      table.workflowKey,
+    ),
+    projectIdx: index("workflows_project_id_idx").on(table.projectId),
+  }),
+);
+
 export const tasks = pgTable(
   "tasks",
   {
@@ -404,6 +440,70 @@ export const edges = pgTable(
       table.projectId,
       table.edgeCatalogId,
     ),
+  }),
+);
+
+/**
+ * Pages — Notion-style page tree. A page is NOT 1:1 with a node or workflow:
+ * it is a JSON-render dashboard (places catalog React components) that loads
+ * data from nodes/edges via `bindings`. Hierarchy lives in `parent_id` (a
+ * recursive tree); addressing is flat by `id` (no level encoded in the route,
+ * no scope enum). `subject_node_id` optionally anchors the page's bindings to a
+ * specific node (e.g. an initiative) — the generic replacement for the old
+ * scope/`{$ctx:initiativeId}` special-casing.
+ */
+export const pages = pgTable(
+  "pages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    // End-user data partition (Phase 5). Null = builder/shared scope.
+    accountId: uuid("account_id"),
+    // Notion-style tree parent. Null = top-level page.
+    parentId: uuid("parent_id"),
+    // Sibling ordering within a parent.
+    position: integer("position").notNull().default(0),
+    title: text("title").notNull(),
+    icon: text("icon"),
+    // Optional human-friendly slug; canonical addressing is still by `id`.
+    slug: text("slug"),
+    // When set (e.g. "initiative"), this page is a node-type drill-in TEMPLATE:
+    // it renders only when the user drills into a node of that catalogKey, with
+    // that node injected as the binding `subject`. Null = project-level (L0) page.
+    appliesToNodeType: text("applies_to_node_type"),
+    // JSON-render element tree (jsonRenderSpecSchema).
+    spec: jsonb("spec").notNull().default({}).$type<Record<string, unknown>>(),
+    // Data bindings (bindingDefSchema map) resolved against nodes/edges.
+    bindings: jsonb("bindings").notNull().default({}).$type<Record<string, unknown>>(),
+    // Declarative page actions (pageActionSchema map).
+    actions: jsonb("actions").notNull().default({}).$type<Record<string, unknown>>(),
+    // Optional anchor node providing data context for this page's bindings.
+    subjectNodeId: uuid("subject_node_id").references(() => nodes.id, {
+      onDelete: "set null",
+    }),
+    lifecycleStatus: text("lifecycle_status").notNull().default("Active"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    projectParentIdx: index("pages_project_parent_id_idx").on(
+      table.projectId,
+      table.parentId,
+    ),
+    projectIdx: index("pages_project_id_idx").on(table.projectId),
+    projectAppliesToIdx: index("pages_project_applies_to_node_type_idx").on(
+      table.projectId,
+      table.appliesToNodeType,
+    ),
+    projectSubjectIdx: index("pages_project_subject_node_id_idx").on(
+      table.projectId,
+      table.subjectNodeId,
+    ),
+    projectSlugUnique: uniqueIndex("pages_project_slug_unique")
+      .on(table.projectId, table.slug)
+      .where(sql`${table.slug} IS NOT NULL`),
   }),
 );
 
