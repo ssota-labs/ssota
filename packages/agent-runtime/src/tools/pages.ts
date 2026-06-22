@@ -3,9 +3,31 @@ import { z } from "zod";
 import {
   listPageComponents,
   getPageComponent,
+  isKnownPageComponent,
 } from "@ssota/contracts/page";
 import { getPagePort } from "../ports.js";
 import { getRunContext } from "./context.js";
+
+/** Collect element `type`s in a spec that aren't known page components. */
+function unknownComponentTypes(spec: unknown): string[] {
+  const elements = (spec as { elements?: unknown } | null | undefined)?.elements;
+  if (!elements || typeof elements !== "object") return [];
+  const bad = new Set<string>();
+  for (const element of Object.values(elements as Record<string, unknown>)) {
+    const type = (element as { type?: unknown } | null)?.type;
+    if (typeof type === "string" && !isKnownPageComponent(type)) bad.add(type);
+  }
+  return [...bad];
+}
+
+function unknownComponentError(spec: unknown): { ok: false; error: string } | null {
+  const unknown = unknownComponentTypes(spec);
+  if (unknown.length === 0) return null;
+  return {
+    ok: false,
+    error: `Unknown component type(s): ${unknown.join(", ")}. Call list_page_components for valid keys.`,
+  };
+}
 
 /**
  * Tools for the agent to author pages in the Notion-style page tree (the `pages`
@@ -80,6 +102,8 @@ export function createPageTools(): ToolSet {
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
+        const badComponents = unknownComponentError(input.spec);
+        if (badComponents) return badComponents;
         try {
           const page = await getPagePort(ctx.projectId, ctx.accountId).createPage({
             title: input.title,
@@ -117,6 +141,10 @@ export function createPageTools(): ToolSet {
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
+        if (input.spec !== undefined) {
+          const badComponents = unknownComponentError(input.spec);
+          if (badComponents) return badComponents;
+        }
         try {
           const { id, ...patch } = input;
           const page = await getPagePort(ctx.projectId, ctx.accountId).updatePage(
