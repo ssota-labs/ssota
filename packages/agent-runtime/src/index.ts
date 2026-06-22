@@ -37,6 +37,7 @@ export {
   resolveConnectCallbackSubject,
   resolveConnectTokenSubject,
   connectUsesAppSubject,
+  isRecoverableConnectTokenError,
   type CredentialProvider,
   type CredentialScope,
   type ConnectAuthorizationScope,

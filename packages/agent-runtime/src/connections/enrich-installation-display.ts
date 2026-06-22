@@ -1,4 +1,5 @@
 import {
+  connectUsesAppSubject,
   type ConnectInstallation,
   type CredentialScope,
   normalizeConnectInstallationId,
@@ -95,13 +96,38 @@ async function mintConnectToken(
     normalizeConnectInstallationId(installation.installationId) ??
     normalizeConnectInstallationId(installation.tenantId);
 
-  const result = await credentialProvider.getToken(connector, {
+  const tokenScope = {
     projectId: scope.projectId,
     accountId: scope.accountId,
-    userId: scope.userId,
     ...(installationKey ? { installationId: installationKey } : {}),
-  });
-  return result?.token ?? null;
+  };
+
+  const tryMint = async (userId?: string): Promise<string | null> => {
+    try {
+      const result = await credentialProvider.getToken(connector, {
+        ...tokenScope,
+        ...(userId ? { userId } : {}),
+      });
+      return result?.token ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Display enrichment (auth.test, /user, guild list) works with app-install
+  // tokens. Slack MCP needs user tokens, but those may be unresolved while the
+  // app-subject install token still resolves — try app first for those connectors.
+  if (connectUsesAppSubject(connector)) {
+    const appToken = await tryMint();
+    if (appToken) return appToken;
+  }
+
+  if (scope.userId) {
+    const userToken = await tryMint(scope.userId);
+    if (userToken) return userToken;
+  }
+
+  return tryMint();
 }
 
 async function fetchEnrichment(
