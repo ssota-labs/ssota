@@ -4,6 +4,9 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { projectPath } from "@/lib/console/paths";
+import { getNodeDetailView } from "@/lib/graph/loaders/get-node-detail";
+import { NodeDetailWorkspace } from "@/components/console/node-detail-workspace";
 
 /**
  * Node drill-in landing. Renders the node's type template "home" — the
@@ -32,13 +35,18 @@ export default async function NodeLandingPage({
       .sort((a, b) => a.position - b.position)[0] ?? null;
 
   if (!home) {
+    // No drill-in template for this node type → universal generic detail view
+    // (edges + properties), the replacement for the old /nodes/[id] route.
+    const ctx = { orgSlug, projectSlug };
+    const detail = await getNodeDetailView(ctx, project.id, nodeId);
+    if (!detail) notFound();
     return (
-      <div className="mx-auto max-w-5xl p-6">
-        <h1 className="text-lg font-medium">{subject.title}</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          No drill-in template defined for “{subject.catalogKey}”.
-        </p>
-      </div>
+      <NodeDetailWorkspace
+        projectId={project.id}
+        detail={detail}
+        nodesBasePath={projectPath(ctx, "n")}
+        revalidatePath={projectPath(ctx, "n", nodeId)}
+      />
     );
   }
 
