@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { PageRuntimeLabClient } from "./page-runtime-lab-client";
 
 export const metadata = {
@@ -17,11 +18,12 @@ export default function PageRuntimeLabPage() {
         <h1 className="text-2xl font-semibold">Page Runtime Lab</h1>
         <p className="text-muted-foreground text-sm">
           Live preview of <code className="font-mono text-xs">DynamicPageRenderer</code>{" "}
-          with sample JSON specs. Use this to validate layout components before seeding
-          pages.
+          with sample JSON specs for every catalog component type.
         </p>
       </div>
-      <PageRuntimeLabClient />
+      <Suspense fallback={<p className="text-muted-foreground text-sm">Loading demos…</p>}>
+        <PageRuntimeLabClient />
+      </Suspense>
     </main>
   );
 }
