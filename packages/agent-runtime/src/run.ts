@@ -3,14 +3,12 @@ import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import {
   serializeTask,
   readWorkflowInstructionById,
-  readWorkflowInstructionByKey,
 } from "@ssota/core";
 import { McpSessionManager } from "./connections/mcp-session.js";
 import { ConnectionRunState } from "./connections/run-state.js";
 import {
   getTaskPort,
   getWorkflowInstructionPort,
-  getMainInstructionPointerPort,
 } from "./ports.js";
 import { createSsotaTools } from "./tools/index.js";
 import { createSandboxTools } from "./tools/sandbox.js";
@@ -77,25 +75,18 @@ function extractExecutionDirective(
 async function prepareRun(input: RunAgentInput) {
   const { projectId, runId, accountId, runtimeKind } = input;
   const instructionPort = getWorkflowInstructionPort(projectId, accountId);
-  const pointerPort = getMainInstructionPointerPort();
 
   let instructions = "";
   let messages: ModelMessage[] = [];
   let taskPort = getTaskPort(projectId, accountId);
 
   if (runtimeKind === "main") {
-    const mainId = await pointerPort.getMainInstructionId({
-      projectId,
-      accountId,
-    });
-    const main = mainId
-      ? await readWorkflowInstructionById(instructionPort, mainId)
-      : await readWorkflowInstructionByKey(instructionPort, "agent.main", accountId);
+    const workflowManifest = await instructionPort.listInstructions();
     instructions = buildRunInstructions({
       runtimeKind: "main",
       projectId,
       accountId,
-      mainInstruction: main?.instruction ?? null,
+      workflowManifest,
     });
     const chatMessages = extractChatMessages(input.chatContext);
     messages = chatMessages ?? [

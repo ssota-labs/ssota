@@ -30,10 +30,10 @@ test.describe("MCP workflow tools", () => {
       scope,
     )) as { workflows: Array<{ key: string; name: string }> };
 
-    expect(listed.workflows.length).toBeGreaterThanOrEqual(9);
-    expect(listed.workflows.some((entry) => entry.key === "agent.main")).toBe(
-      true,
-    );
+    expect(listed.workflows.length).toBeGreaterThanOrEqual(8);
+    expect(
+      listed.workflows.some((entry) => entry.key === "orchestrator.daily"),
+    ).toBe(true);
     for (const workflow of listed.workflows) {
       expect(workflow).not.toHaveProperty("instruction");
       expect(workflow).not.toHaveProperty("content");
@@ -51,17 +51,17 @@ test.describe("MCP workflow tools", () => {
     expect(daily).not.toHaveProperty("instruction");
     expect(daily).not.toHaveProperty("content");
 
-    const mainInstruction = (await mcpToolCall(
+    const dailyInstruction = (await mcpToolCall(
       request,
       mcpUrl,
       token,
       "get_workflow_instruction",
-      { workflowKey: "agent.main" },
+      { workflowKey: "orchestrator.daily" },
       scope,
     )) as { workflowKey: string; instruction: string };
-    expect(mainInstruction.workflowKey).toBe("agent.main");
-    expect(mainInstruction.instruction).toContain("get_workflow_instruction");
-    expect(mainInstruction.instruction.length).toBeGreaterThan(50);
+    expect(dailyInstruction.workflowKey).toBe("orchestrator.daily");
+    expect(dailyInstruction.instruction).toContain("query_tasks");
+    expect(dailyInstruction.instruction.length).toBeGreaterThan(50);
   });
 
   test("rejects unknown workflow keys", async ({ request }) => {

@@ -16,7 +16,7 @@ export { createOnboardingPort } from "./onboarding.js";
 export { createGraphPorts } from "./create-graph-ports.js";
 export { createGraphReadPort } from "./graph-read-port.js";
 export { createGraphWritePort } from "./graph-write-port.js";
-export { createWorkflowInstructionPort, createMainInstructionPointerPort, seedWorkflowInstructions } from "./workflow-instruction-port.js";
+export { createWorkflowInstructionPort, seedWorkflowInstructions } from "./workflow-instruction-port.js";
 export { createPagePort, seedPages } from "./page-port.js";
 export {
   applyTemplate,

@@ -3,9 +3,6 @@ import { ExecutorTypeSchema } from "../definitions.js";
 import { TaskStatusSchema } from "../task.js";
 import { loadWorkflowInstruction } from "./load-instruction.js";
 
-/** Reserved key for the main orchestration/router instruction. */
-export const RESERVED_MAIN_WORKFLOW_KEY = "agent.main" as const;
-
 export const WorkflowCategorySchema = z.enum([
   "orchestrator",
   "recurring",
@@ -27,6 +24,12 @@ export type WorkflowCadenceHint = z.infer<typeof WorkflowCadenceHintSchema>;
 export const WorkflowInstructionDefinitionSchema = z.object({
   workflowKey: z.string().min(1),
   title: z.string().min(1),
+  /**
+   * Skill-style "when to use" line. Injected into the main agent's prompt as a
+   * routing manifest so the agent self-selects the workflow and loads its full
+   * playbook on demand. This is the single source of truth for routing.
+   */
+  description: z.string().min(1),
   category: WorkflowCategorySchema,
   cadenceHint: WorkflowCadenceHintSchema.optional(),
   defaultExecutorType: ExecutorTypeSchema.optional(),
@@ -44,17 +47,10 @@ type WorkflowMeta = Omit<WorkflowInstructionDefinition, "instruction"> & {
 
 const WORKFLOW_META: WorkflowMeta[] = [
   {
-    workflowKey: "agent.main",
-    title: "Agent main router",
-    category: "orchestrator",
-    cadenceHint: "on_demand",
-    defaultExecutorType: "Agent",
-    defaultStatus: "ready",
-    instructionFile: "agent.main.md",
-  },
-  {
     workflowKey: "orchestrator.bootstrap",
     title: "Orchestrator bootstrap",
+    description:
+      "First-time project automation setup. Use once when a project's agent automation is first configured or reconfigured.",
     category: "orchestrator",
     cadenceHint: "on_demand",
     defaultExecutorType: "Agent",
@@ -64,6 +60,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "orchestrator.daily",
     title: "Daily orchestrator",
+    description:
+      "Daily backlog review. Use on a daily cadence (or manual trigger) to review the task backlog and spawn today's work items.",
     category: "orchestrator",
     cadenceHint: "daily",
     defaultExecutorType: "Agent",
@@ -73,6 +71,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "orchestrator.weekly",
     title: "Weekly orchestrator",
+    description:
+      "Weekly planning. Use on a weekly cadence to align tasks with initiatives, schedule larger work, and close stale items.",
     category: "orchestrator",
     cadenceHint: "weekly",
     defaultExecutorType: "Agent",
@@ -82,6 +82,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "orchestrator.monthly",
     title: "Monthly orchestrator",
+    description:
+      "Monthly retrospective. Use on a monthly cadence to summarize throughput and groom long-lived backlog items.",
     category: "orchestrator",
     cadenceHint: "monthly",
     defaultExecutorType: "Agent",
@@ -91,6 +93,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "orchestrator.watchdog",
     title: "Task watchdog",
+    description:
+      "Stalled-task recovery. Use when tasks have stalled (running >24h, ready >48h, or blocked) to spawn recovery or escalation work.",
     category: "orchestrator",
     cadenceHint: "on_demand",
     defaultExecutorType: "Agent",
@@ -100,6 +104,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "work.implement_feature",
     title: "Implement feature",
+    description:
+      "Implement a single scoped feature or fix. Use when executing a concrete, well-specified coding task with clear acceptance criteria.",
     category: "work",
     defaultExecutorType: "Agent",
     defaultStatus: "pending",
@@ -108,6 +114,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "work.write_document",
     title: "Write document",
+    description:
+      "Create or update a graph document node. Use when the deliverable is written content/documentation in the SSOTA graph.",
     category: "work",
     defaultExecutorType: "Agent",
     defaultStatus: "pending",
@@ -116,6 +124,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "work.unblock",
     title: "Unblock stalled task",
+    description:
+      "Recover a stalled or blocked task. Use when a parent task is blocked and needs nudging, re-queuing, or escalation to a human.",
     category: "work",
     defaultExecutorType: "Agent",
     defaultStatus: "ready",

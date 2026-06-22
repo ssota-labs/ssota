@@ -65,7 +65,6 @@ export const projects = pgTable(
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     appEnabled: boolean("app_enabled").notNull().default(false),
-    mainWorkflowInstructionId: uuid("main_workflow_instruction_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
@@ -114,7 +113,6 @@ export const accounts = pgTable(
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     ownerUserId: uuid("owner_user_id").references(() => profiles.id),
-    mainWorkflowInstructionId: uuid("main_workflow_instruction_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),

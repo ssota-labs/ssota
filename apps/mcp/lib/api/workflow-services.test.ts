@@ -52,8 +52,8 @@ describe("workflow-services", () => {
 
   it("lists workflow instructions without bodies", async () => {
     const result = await listWorkflowsForMcp(db, projectId);
-    expect(result.workflows.length).toBeGreaterThanOrEqual(9);
-    expect(result.workflows.some((w) => w.key === "agent.main")).toBe(true);
+    expect(result.workflows.length).toBeGreaterThanOrEqual(8);
+    expect(result.workflows.some((w) => w.key === "orchestrator.daily")).toBe(true);
     for (const workflow of result.workflows) {
       expect(workflow).not.toHaveProperty("content");
       expect(workflow.name.length).toBeGreaterThan(0);
@@ -74,9 +74,13 @@ describe("workflow-services", () => {
   });
 
   it("returns instruction body by key", async () => {
-    const result = await getWorkflowInstructionForMcp(db, projectId, "agent.main");
-    expect(result?.workflowKey).toBe("agent.main");
-    expect(result?.instruction).toContain("get_workflow_instruction");
+    const result = await getWorkflowInstructionForMcp(
+      db,
+      projectId,
+      "orchestrator.daily",
+    );
+    expect(result?.workflowKey).toBe("orchestrator.daily");
+    expect(result?.instruction).toContain("query_tasks");
     expect(result?.instruction.length).toBeGreaterThan(50);
   });
 });

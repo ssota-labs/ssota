@@ -1,7 +1,6 @@
 import {
   createDb,
   createGraphPorts,
-  createMainInstructionPointerPort,
   createTaskPort,
   createWorkflowInstructionPort,
   createPagePort,
@@ -32,10 +31,6 @@ export function getGraphReadPort(projectId: string, accountId?: string) {
 
 export function getWorkflowInstructionPort(projectId: string, accountId?: string) {
   return createWorkflowInstructionPort(getDb(), { projectId, accountId });
-}
-
-export function getMainInstructionPointerPort() {
-  return createMainInstructionPointerPort(getDb());
 }
 
 export function getPagePort(projectId: string, accountId?: string) {

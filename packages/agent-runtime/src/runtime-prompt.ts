@@ -3,12 +3,21 @@ import {
   blockNoteContentToText,
   type ExecutionDirective,
   type WorkflowInstruction,
+  type WorkflowInstructionIndex,
 } from "@ssota/contracts";
 
 const EXTERNAL_CONNECTIONS_GUIDANCE = `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` first to discover available tools. Matched tools become callable by their qualified name (e.g. \`linear__search_issues\`). If a service is not connected, call \`request_connection\` and wait for the user.`;
 
 export const LAYER0_RUNTIME_PROMPTS: Record<AgentRuntimeKind, string> = {
-  main: `You are the SSOTA main runtime agent. You operate in a persistent chat thread — this conversation is NOT a task. Route user intent using your main workflow instruction. Spawn tasks only when delegated work is needed; each spawned task must include a full executionDirective (goal, background, steps, constraints) so the task executor can run without asking follow-up questions. Fetch sub-workflow playbooks on demand via get_workflow_instruction — never inline large playbooks.`,
+  main: `You are the SSOTA main runtime agent. You operate in a persistent chat thread — this conversation is NOT a task.
+
+Routing: Match the user's intent against the "Available workflows" list below. When a workflow's description fits the situation, call get_workflow_instruction(<key>) to load its full playbook before acting — never inline or guess a playbook. If no workflow fits, respond directly in chat or use your tools as needed.
+
+Spawning work: Spawn tasks only when delegated or background execution is needed. Each spawned task must include a full executionDirective (goal, background, steps, constraints) so the task executor can run without asking follow-up questions.
+
+Graph context: When you need product context, read with query_nodes / get_node / traverse_edges, and write with create_node / update_node / create_edge. Prefer task.targetNodeId when set, and get_node before update_node.
+
+Forbidden: Do not access the database or Drizzle directly. Do not read workflow instructions from the local filesystem — the workflows listed here are the source of truth.`,
 
   task: `You are the SSOTA task runtime agent. You execute exactly one task per run. Your prompt includes the task playbook (fetched) and an inline executionDirective from the spawner — follow both. Use tools to read/write the graph and tasks. When complete, call complete_task; if blocked, call block_task or request_approval.`,
 
@@ -19,6 +28,8 @@ export interface BuildRunInstructionsParams {
   runtimeKind: AgentRuntimeKind;
   projectId: string;
   accountId?: string;
+  /** Skill-style routing manifest for the main runtime (key + when-to-use). */
+  workflowManifest?: WorkflowInstructionIndex[];
   mainInstruction?: WorkflowInstruction | null;
   taskPlaybook?: WorkflowInstruction | null;
   task?: {
@@ -31,14 +42,33 @@ export interface BuildRunInstructionsParams {
 }
 
 export function buildRunInstructions(params: BuildRunInstructionsParams): string {
-  const { runtimeKind, projectId, accountId, mainInstruction, taskPlaybook, task } =
-    params;
+  const {
+    runtimeKind,
+    projectId,
+    accountId,
+    workflowManifest,
+    mainInstruction,
+    taskPlaybook,
+    task,
+  } = params;
   const lines: string[] = [LAYER0_RUNTIME_PROMPTS[runtimeKind]];
 
-  if (runtimeKind === "main" && mainInstruction) {
-    lines.push(
-      `\n## Main workflow (${mainInstruction.key})\n${blockNoteContentToText(mainInstruction.content)}`,
-    );
+  if (runtimeKind === "main") {
+    if (workflowManifest && workflowManifest.length > 0) {
+      const rows = workflowManifest
+        .map((w) => `- ${w.key} — ${w.description || w.name}`)
+        .join("\n");
+      lines.push(
+        `\n## Available workflows`,
+        `Match the user's intent to one of these. Load the full playbook with get_workflow_instruction(<key>) before acting.`,
+        rows,
+      );
+    } else {
+      lines.push(
+        `\n## Available workflows`,
+        `No workflows are configured for this project yet. Help the user directly or set them up with write_workflow_instruction.`,
+      );
+    }
   }
 
   if (runtimeKind === "task" && task) {

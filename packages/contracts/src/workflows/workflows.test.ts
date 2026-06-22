@@ -10,18 +10,21 @@ import {
 describe("workflow registry SSOT", () => {
   it("defines pilot orchestrator and work workflows", () => {
     expect(WORKFLOW_KEYS.length).toBeGreaterThanOrEqual(8);
-    expect(isKnownWorkflowKey("agent.main")).toBe(true);
     expect(isKnownWorkflowKey("orchestrator.daily")).toBe(true);
     expect(isKnownWorkflowKey("work.implement_feature")).toBe(true);
     expect(isKnownWorkflowKey("unknown.workflow")).toBe(false);
   });
 
-  it("returns full instruction for agent.main", () => {
-    const workflow = getWorkflowByKey("agent.main");
-    expect(workflow).not.toBeNull();
-    expect(workflow?.instruction).toContain("agent.main");
-    expect(workflow?.instruction).toContain("get_workflow_instruction");
-    expect(workflow?.cadenceHint).toBe("on_demand");
+  it("no longer defines a reserved router workflow", () => {
+    expect(isKnownWorkflowKey("agent.main")).toBe(false);
+    expect(getWorkflowByKey("agent.main")).toBeNull();
+  });
+
+  it("every workflow carries a skill-style description for routing", () => {
+    for (const key of WORKFLOW_KEYS) {
+      const entry = WORKFLOW_REGISTRY[key]!;
+      expect(entry.description.length).toBeGreaterThan(20);
+    }
   });
 
   it("returns full instruction for orchestrator.daily", () => {
