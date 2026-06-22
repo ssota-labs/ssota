@@ -120,4 +120,54 @@ describe("enrichConnectInstallationDisplay", () => {
       }),
     );
   });
+
+  it("enriches GitHub org name via installation repositories", async () => {
+    process.env.CREDENTIALS = "own-app";
+    process.env.CONNECTOR_GITHUB_TOKEN = "ghs_test";
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          repositories: [{ owner: { login: "ssota-labs", type: "Organization" } }],
+        }),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await enrichConnectInstallationDisplay({
+      connector: "github/ssota",
+      installation: {},
+      scope: { projectId: "p", userId: "u" },
+    });
+
+    expect(result.name).toBe("ssota-labs");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.github.com/installation/repositories?per_page=1",
+      expect.any(Object),
+    );
+  });
+
+  it("enriches Discord guild name via bot guild list when ids are missing", async () => {
+    process.env.CREDENTIALS = "own-app";
+    process.env.CONNECTOR_DISCORD_TOKEN = "discord-bot-token";
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ id: "1234567890", name: "SSOTA Community" }],
+      }),
+    );
+
+    const result = await enrichConnectInstallationDisplay({
+      connector: "discord/ssota",
+      installation: {},
+      scope: { projectId: "p", userId: "u" },
+    });
+
+    expect(result.name).toBe("SSOTA Community");
+    expect(result.tenantId).toBe("1234567890");
+    expect(result.installationId).toBe("1234567890");
+  });
 });

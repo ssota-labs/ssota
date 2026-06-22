@@ -48,6 +48,9 @@ export function useConnectionDisplayEnrichment(
           ...current,
           ...(result.name?.trim() ? { name: result.name } : {}),
           ...(result.tenantId ? { tenantId: result.tenantId } : {}),
+          ...(result.installationId
+            ? { installationId: result.installationId }
+            : {}),
         }));
       })
       .finally(() => {

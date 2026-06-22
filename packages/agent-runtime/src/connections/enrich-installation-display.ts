@@ -10,6 +10,12 @@ const ENRICHMENT_TIMEOUT_MS = 5_000;
 
 type EnrichmentProvider = "slack" | "github" | "notion" | "linear" | "discord";
 
+interface EnrichmentResult {
+  name?: string;
+  tenantId?: string;
+  installationId?: string;
+}
+
 export interface EnrichConnectInstallationInput {
   connector: string;
   installation: ConnectInstallation;
@@ -42,11 +48,20 @@ export async function enrichConnectInstallationDisplay(
   }
 
   try {
-    const name = await fetchDisplayName(provider, token, installation);
-    if (!name?.trim()) {
+    const result = await fetchEnrichment(provider, token, installation);
+    if (!result.name?.trim() && !result.tenantId && !result.installationId) {
       return installation;
     }
-    return { ...installation, name: name.trim() };
+    return {
+      ...installation,
+      ...(result.name?.trim() ? { name: result.name.trim() } : {}),
+      ...(result.tenantId
+        ? { tenantId: result.tenantId }
+        : {}),
+      ...(result.installationId
+        ? { installationId: result.installationId }
+        : {}),
+    };
   } catch {
     return installation;
   }
@@ -89,22 +104,28 @@ async function mintConnectToken(
   return result?.token ?? null;
 }
 
-async function fetchDisplayName(
+async function fetchEnrichment(
   provider: EnrichmentProvider,
   token: string,
   installation: ConnectInstallation,
-): Promise<string | undefined> {
+): Promise<EnrichmentResult> {
   switch (provider) {
-    case "slack":
-      return fetchSlackWorkspaceName(token);
+    case "slack": {
+      const name = await fetchSlackWorkspaceName(token);
+      return name ? { name } : {};
+    }
     case "github":
-      return fetchGitHubAccountName(token);
-    case "notion":
-      return fetchNotionWorkspaceName(token);
-    case "linear":
-      return fetchLinearOrganizationName(token);
+      return fetchGitHubInstallation(token);
+    case "notion": {
+      const name = await fetchNotionWorkspaceName(token);
+      return name ? { name } : {};
+    }
+    case "linear": {
+      const name = await fetchLinearOrganizationName(token);
+      return name ? { name } : {};
+    }
     case "discord":
-      return fetchDiscordGuildName(token, installation);
+      return fetchDiscordGuild(token, installation);
   }
 }
 
@@ -134,20 +155,33 @@ async function fetchSlackWorkspaceName(token: string): Promise<string | undefine
   return data?.ok ? data.team : undefined;
 }
 
-async function fetchGitHubAccountName(token: string): Promise<string | undefined> {
-  const data = await fetchJson<{ name?: string | null; login?: string }>(
+async function fetchGitHubInstallation(token: string): Promise<EnrichmentResult> {
+  const repos = await fetchJson<{
+    repositories?: Array<{ owner?: { login?: string; type?: string } }>;
+  }>("https://api.github.com/installation/repositories?per_page=1", {
+    headers: githubHeaders(token),
+  });
+  const ownerLogin = repos?.repositories?.[0]?.owner?.login?.trim();
+  if (ownerLogin) {
+    return { name: ownerLogin };
+  }
+
+  const user = await fetchJson<{ name?: string | null; login?: string }>(
     "https://api.github.com/user",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    },
+    { headers: githubHeaders(token) },
   );
-  const name = data?.name?.trim();
-  if (name) return name;
-  return data?.login?.trim();
+  const name = user?.name?.trim();
+  if (name) return { name };
+  const login = user?.login?.trim();
+  return login ? { name: login } : {};
+}
+
+function githubHeaders(token: string): Record<string, string> {
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+  };
 }
 
 async function fetchNotionWorkspaceName(token: string): Promise<string | undefined> {
@@ -184,22 +218,51 @@ async function fetchLinearOrganizationName(
   return data?.data?.viewer?.organization?.name?.trim();
 }
 
-async function fetchDiscordGuildName(
+async function fetchDiscordGuild(
   token: string,
   installation: ConnectInstallation,
-): Promise<string | undefined> {
+): Promise<EnrichmentResult> {
   const guildId =
     normalizeConnectInstallationId(installation.tenantId) ??
     normalizeConnectInstallationId(installation.installationId);
-  if (!guildId) return undefined;
 
-  const data = await fetchJson<{ name?: string }>(
-    `https://discord.com/api/v10/guilds/${encodeURIComponent(guildId)}`,
+  if (guildId) {
+    const data = await fetchJson<{ name?: string }>(
+      `https://discord.com/api/v10/guilds/${encodeURIComponent(guildId)}`,
+      {
+        headers: {
+          Authorization: `Bot ${token}`,
+        },
+      },
+    );
+    const name = data?.name?.trim();
+    return name ? { name, tenantId: guildId, installationId: guildId } : {};
+  }
+
+  const guilds = await fetchJson<Array<{ id: string; name: string }>>(
+    "https://discord.com/api/v10/users/@me/guilds",
     {
       headers: {
         Authorization: `Bot ${token}`,
       },
     },
   );
-  return data?.name?.trim();
+  if (!guilds?.length) return {};
+
+  if (guilds.length === 1) {
+    const guild = guilds[0]!;
+    return {
+      name: guild.name.trim(),
+      tenantId: guild.id,
+      installationId: guild.id,
+    };
+  }
+
+  return {
+    name: guilds
+      .map((guild) => guild.name.trim())
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(", "),
+  };
 }

@@ -285,15 +285,23 @@ export function createAccountConnectionPort(db: Db) {
     async updateDisplayMetadata(
       id: string,
       accountId: string,
-      patch: { name?: string | null; tenantId?: string | null },
+      patch: {
+        name?: string | null;
+        tenantId?: string | null;
+        installationId?: string | null;
+      },
     ): Promise<void> {
       const updates: {
         name?: string | null;
         tenantId?: string | null;
+        installationId?: string;
         updatedAt: Date;
       } = { updatedAt: new Date() };
       if (patch.name !== undefined) updates.name = patch.name;
       if (patch.tenantId !== undefined) updates.tenantId = patch.tenantId;
+      if (patch.installationId !== undefined) {
+        updates.installationId = storageInstallationId(patch.installationId);
+      }
       if (Object.keys(updates).length === 1) return;
 
       await db
