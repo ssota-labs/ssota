@@ -10,6 +10,7 @@ import {
   BreadcrumbPage,
 } from "@ssota/ui/components/ui/breadcrumb";
 import { Button } from "@ssota/ui/components/ui/button";
+import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { L0_NAV, type NavEntry, type NavLink, type NavSection } from "@/lib/console/navigation";
@@ -201,14 +202,15 @@ export function ConsolePreview({
   const provisioningLabel = templateName?.trim() || "project template";
 
   return (
-    <div className="pointer-events-none flex min-h-[34rem] select-none" aria-hidden>
-      <aside className="flex w-60 shrink-0 flex-col border-r bg-sidebar">
+    <div className="flex h-[34rem] select-none" aria-hidden>
+      <aside className="pointer-events-auto flex h-full w-60 shrink-0 flex-col border-r bg-sidebar">
         <div className="flex h-12 shrink-0 items-center border-b px-2">
           <PreviewSwitcherTrigger label={orgLabel} sectionIcon={<UsersThreeIcon />} />
         </div>
 
-        <nav className="min-h-0 flex-1 overflow-hidden p-2">
-          <div className="space-y-1">
+        <ScrollArea className="min-h-0 flex-1">
+          <nav className="p-2">
+            <div className="space-y-1">
             {L0_NAV.map((entry) => {
               if (isNavLink(entry)) {
                 return (
@@ -247,10 +249,11 @@ export function ConsolePreview({
               visibleKeys={visibleKeys}
               lastRevealedKey={lastRevealedKey}
             />
-          </div>
-        </nav>
+            </div>
+          </nav>
+        </ScrollArea>
 
-        <div className="space-y-0.5 border-t p-2">
+        <div className="shrink-0 space-y-0.5 border-t p-2">
           <PreviewNavLink iconKey="developer_setup" label={t("nav.developerSetup")} />
           <PreviewNavLink iconKey="settings" label={t("nav.settings")} />
           <Button
@@ -267,7 +270,7 @@ export function ConsolePreview({
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col bg-background">
+      <div className="pointer-events-none flex min-w-0 flex-1 flex-col bg-background">
         <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b px-4">
           <div className="flex min-w-0 items-center">
             <PreviewSwitcherTrigger label={projectLabel} sectionIcon={<CubeIcon />} />
