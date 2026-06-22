@@ -448,7 +448,7 @@ function SingleWorkspaceBody({
     return (
       <div className="flex min-h-0 flex-1 flex-col justify-end">
         <a
-          className={buttonVariants({ size: "sm" })}
+          className={buttonVariants({ variant: "outline", size: "sm" })}
           href={href}
           data-testid={`connect-${provider}`}
         >
