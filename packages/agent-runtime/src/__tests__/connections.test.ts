@@ -50,9 +50,11 @@ describe("tool catalog", () => {
   it("lists slack post_message without MCP", () => {
     const def = defineMcpClientConnection("slack", {
       url: "https://mcp.slack.com/mcp",
+      transport: "http",
       description: "Slack",
       auth: connectCredential("slack"),
     });
+    expect(def.transport).toBe("http");
     const names = getKnownToolsForConnection(def).map((t) => t.name);
     expect(names).toContain("post_message");
     expect(names).toContain("search_messages");

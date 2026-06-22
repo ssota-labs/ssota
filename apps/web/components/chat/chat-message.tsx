@@ -8,6 +8,7 @@ import {
 } from "ai";
 import { Streamdown } from "streamdown";
 import { ConnectCard, type ConnectorOption } from "./connect-card";
+import { shouldShowToolActivity, ToolActivity } from "./tool-activity";
 
 interface ChatMessageProps {
   message: UIMessage;
@@ -97,6 +98,26 @@ export function ChatMessage({
                 }}
                 connectors={connectors}
                 returnTo={returnTo}
+              />
+            );
+          }
+        }
+
+        if (isToolUIPart(part)) {
+          const toolName = getToolName(part);
+          if (shouldShowToolActivity(toolName)) {
+            const toolPart = part as {
+              state: string;
+              output?: unknown;
+              errorText?: string;
+            };
+            return (
+              <ToolActivity
+                key={index}
+                toolName={toolName}
+                state={toolPart.state as Parameters<typeof ToolActivity>[0]["state"]}
+                output={toolPart.output}
+                errorText={toolPart.errorText}
               />
             );
           }
