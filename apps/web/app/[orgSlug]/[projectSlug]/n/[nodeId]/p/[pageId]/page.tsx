@@ -4,6 +4,7 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { SetNodeDrill } from "@/components/console/node-drill-context";
 
 /**
  * Node drill-in template renderer. Renders a node-type template page (from the
@@ -52,6 +53,7 @@ export default async function NodeTemplatePage({
 
   return (
     <div className="mx-auto max-w-5xl p-6">
+      <SetNodeDrill nodeId={subject.id} catalogKey={subject.catalogKey} />
       <DynamicPageRenderer
         spec={page.spec}
         bindingData={bindingData}

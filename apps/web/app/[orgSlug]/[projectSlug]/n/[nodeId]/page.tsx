@@ -7,6 +7,7 @@ import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { projectPath } from "@/lib/console/paths";
 import { getNodeDetailView } from "@/lib/graph/loaders/get-node-detail";
 import { NodeDetailWorkspace } from "@/components/console/node-detail-workspace";
+import { SetNodeDrill } from "@/components/console/node-drill-context";
 
 /**
  * Node drill-in landing. Renders the node's type template "home" — the
@@ -41,12 +42,15 @@ export default async function NodeLandingPage({
     const detail = await getNodeDetailView(ctx, project.id, nodeId);
     if (!detail) notFound();
     return (
-      <NodeDetailWorkspace
-        projectId={project.id}
-        detail={detail}
-        nodesBasePath={projectPath(ctx, "n")}
-        revalidatePath={projectPath(ctx, "n", nodeId)}
-      />
+      <>
+        <SetNodeDrill nodeId={subject.id} catalogKey={subject.catalogKey} />
+        <NodeDetailWorkspace
+          projectId={project.id}
+          detail={detail}
+          nodesBasePath={projectPath(ctx, "n")}
+          revalidatePath={projectPath(ctx, "n", nodeId)}
+        />
+      </>
     );
   }
 
@@ -69,6 +73,7 @@ export default async function NodeLandingPage({
 
   return (
     <div className="mx-auto max-w-5xl p-6">
+      <SetNodeDrill nodeId={subject.id} catalogKey={subject.catalogKey} />
       <DynamicPageRenderer
         spec={home.spec}
         bindingData={bindingData}

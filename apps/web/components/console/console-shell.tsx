@@ -6,6 +6,7 @@ import type { Organization, Project } from "@ssota/core";
 import { AppSidebar } from "./app-sidebar";
 import type { SidebarPage } from "./page-tree-nav";
 import { ConsoleTopBar } from "./console-top-bar";
+import { NodeDrillProvider } from "./node-drill-context";
 import {
   ProjectProvider,
   type ConsoleContextValue,
@@ -24,7 +25,9 @@ type ConsoleShellProps = {
   signOutAction: () => Promise<void>;
   initiatives?: InitiativeOption[];
   pageTree?: SidebarPage[];
-  nodeNav?: { nodeId: string; pages: SidebarPage[] } | null;
+  /** Node-type drill-in templates, grouped by catalogKey (static per project).
+   * The active node is resolved client-side via NodeDrill context. */
+  templatesByType?: Record<string, SidebarPage[]>;
   children: React.ReactNode;
 };
 
@@ -36,7 +39,7 @@ export function ConsoleShell({
   signOutAction,
   initiatives = [],
   pageTree,
-  nodeNav,
+  templatesByType,
   children,
 }: ConsoleShellProps) {
   const pathname = usePathname();
@@ -46,28 +49,30 @@ export function ConsoleShell({
 
   return (
     <ProjectProvider value={ctx}>
-      <div className="flex h-svh w-full overflow-hidden">
-        <AppSidebar
-          organizations={organizations}
-          initiatives={initiatives}
-          userEmail={userEmail}
-          signOutAction={signOutAction}
-          pageTree={pageTree}
-          nodeNav={nodeNav}
-        />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <ConsoleTopBar projects={projects} initiatives={initiatives} />
-          <main
-            className={
-              isFullBleedContext
-                ? "flex min-h-0 flex-1 flex-col overflow-hidden"
-                : "flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-6"
-            }
-          >
-            {children}
-          </main>
+      <NodeDrillProvider>
+        <div className="flex h-svh w-full overflow-hidden">
+          <AppSidebar
+            organizations={organizations}
+            initiatives={initiatives}
+            userEmail={userEmail}
+            signOutAction={signOutAction}
+            pageTree={pageTree}
+            templatesByType={templatesByType}
+          />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <ConsoleTopBar projects={projects} />
+            <main
+              className={
+                isFullBleedContext
+                  ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+                  : "flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-6"
+              }
+            >
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
+      </NodeDrillProvider>
     </ProjectProvider>
   );
 }
