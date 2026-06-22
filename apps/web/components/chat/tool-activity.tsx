@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Wrench } from "lucide-react";
+import { SpinnerGapIcon, WrenchIcon } from "@phosphor-icons/react";
 
 type ToolActivityState =
   | "input-streaming"
@@ -69,9 +69,9 @@ export function ToolActivity({
       data-testid={`tool-activity-${toolName}`}
     >
       {isRunning ? (
-        <Loader2 className="mt-0.5 size-3.5 shrink-0 animate-spin" />
+        <SpinnerGapIcon className="mt-0.5 size-3.5 shrink-0 animate-spin" />
       ) : (
-        <Wrench className="mt-0.5 size-3.5 shrink-0" />
+        <WrenchIcon className="mt-0.5 size-3.5 shrink-0" />
       )}
       <div className="min-w-0 space-y-0.5">
         <p className="font-medium text-foreground/80">
