@@ -2,7 +2,7 @@ import { Chat } from "chat";
 import { createSlackAdapter } from "@chat-adapter/slack";
 import { createDiscordAdapter } from "@chat-adapter/discord";
 import { createTelegramAdapter } from "@chat-adapter/telegram";
-import { createPostgresState } from "@chat-adapter/state-pg";
+import { createMigrationBackedPostgresState } from "./postgres-state";
 import { start } from "workflow/api";
 import { spawnTask } from "@ssota/core";
 import {
@@ -34,7 +34,7 @@ function notLinkedReply(): string {
  * Chat SDK bot (chat-sdk.dev) — the inbound/outbound chat channel. A Slack
  * @mention runs the SSOTA agent through the durable workflow and streams the
  * reply back into the thread. State (subscriptions/dedupe/locks) is persisted
- * in our Postgres (createPostgresState defaults to DATABASE_URL).
+ * in our Postgres (`supabase/migrations` DDL; no runtime ensureSchema).
  *
  * Token modes:
  *  - single workspace: SLACK_BOT_TOKEN + SLACK_SIGNING_SECRET
@@ -171,7 +171,9 @@ export function getBot(): Chat {
           ? { telegram: createTelegramAdapter() }
           : {}),
       },
-      state: createPostgresState({ url: process.env.DATABASE_URL }),
+      state: createMigrationBackedPostgresState({
+        url: process.env.DATABASE_URL,
+      }),
       dedupeTtlMs: 600_000,
     });
 

@@ -73,6 +73,21 @@ function resolveConnectTokenSubject(
 }
 
 /**
+ * Subject for `getConnectInstallation` right after `startConnectAuthorization`.
+ * Connect records the install under the same user subject used to start the
+ * flow; app-subject token minting comes later via `getToken` + installationId.
+ */
+export function resolveConnectCallbackSubject(
+  connectorUid: string,
+  scope: CredentialScope,
+): ConnectTokenSubject {
+  if (scope.userId) {
+    return { type: "user", id: scope.userId };
+  }
+  return resolveConnectTokenSubject(connectorUid, scope);
+}
+
+/**
  * Dev/local provider: reads `CONNECTOR_<NAME>_TOKEN` from the environment.
  * Not account-scoped — every account resolves the same token.
  */
@@ -221,6 +236,7 @@ export interface ConnectInstallation {
 export async function getConnectInstallation(
   connector: string,
   scope: CredentialScope,
+  options: { scopes?: string[] } = {},
 ): Promise<ConnectInstallation | null> {
   // Dev/local stub (CONNECT_STUB=1): echo the installation id the stub
   // authorize put on the callback, with a friendly name — no real provider call.
@@ -240,7 +256,9 @@ export async function getConnectInstallation(
       params: {
         subject: ConnectTokenSubject;
         installationId?: string;
+        scopes?: string[];
       },
+      options?: { forceRefresh?: boolean; vercelToken?: string },
     ) => Promise<{
       installationId?: string;
       tenantId?: string;
@@ -252,10 +270,15 @@ export async function getConnectInstallation(
   } catch {
     throw new Error("@vercel/connect is not installed");
   }
-  const res = await connect.getTokenResponse(connector, {
-    subject: resolveConnectTokenSubject(connector, scope),
-    ...(scope.installationId ? { installationId: scope.installationId } : {}),
-  });
+  const res = await connect.getTokenResponse(
+    connector,
+    {
+      subject: resolveConnectCallbackSubject(connector, scope),
+      ...(scope.installationId ? { installationId: scope.installationId } : {}),
+      ...(options.scopes ? { scopes: options.scopes } : {}),
+    },
+    { forceRefresh: true },
+  );
   return res
     ? {
         installationId: res.installationId,
