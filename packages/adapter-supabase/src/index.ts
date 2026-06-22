@@ -10,6 +10,7 @@ export {
   type StartAgentRunInput,
   type FinishAgentRunInput,
 } from "./ports/agent-runs-port.js";
+export { createDbAccountReadPort } from "./ports/account-read-port.js";
 export {
   createAccountPort,
   createAccountConnectionPort,

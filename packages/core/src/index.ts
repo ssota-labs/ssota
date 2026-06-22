@@ -594,6 +594,8 @@ export * from "./use-cases/graph/index.js";
 export * from "./ports/binding-resolver-port.js";
 export * from "./ports/catalog-write-port.js";
 export * from "./domain/task-errors.js";
+export * from "./domain/account-errors.js";
+export * from "./ports/account-read-port.js";
 export * from "./ports/workflow-read-port.js";
 export * from "./use-cases/task/index.js";
 export * from "./use-cases/page/index.js";
