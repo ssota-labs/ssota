@@ -50,10 +50,20 @@ const nextConfig: NextConfig = {
 // The Vercel Workflow DevKit build transform is only needed for the Enterprise
 // durable runner (JOB_RUNNER=workflow). The OSS inline default builds without
 // it — and without requiring the `workflow` package's Next plugin.
-export default async (): Promise<NextConfig> => {
+export default async function config(
+  phase: string,
+  ctx: { defaultConfig: NextConfig },
+): Promise<NextConfig> {
+  let result: NextConfig | typeof config = nextConfig;
+
   if (process.env.JOB_RUNNER === "workflow") {
     const { withWorkflow } = await import("workflow/next");
-    return withWorkflow(nextConfig) as NextConfig;
+    result = withWorkflow(nextConfig);
   }
-  return nextConfig;
+
+  if (typeof result === "function") {
+    result = await result(phase, ctx);
+  }
+
+  return result;
 };
