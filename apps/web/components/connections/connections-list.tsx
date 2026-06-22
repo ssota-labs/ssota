@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@ssota/ui/components/ui/card";
-import { Separator } from "@ssota/ui/components/ui/separator";
 import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
@@ -87,8 +86,6 @@ export function ConnectionsList({
           </Badge>
         </div>
       </header>
-
-      <Separator />
 
       <div className="grid gap-4 sm:grid-cols-2">
         {connectors.map((connector) => {
