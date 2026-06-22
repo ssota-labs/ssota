@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   integer,
   jsonb,
   pgEnum,
@@ -57,6 +58,7 @@ export const projects = pgTable(
       .references(() => organizations.id),
     slug: text("slug").notNull(),
     name: text("name").notNull(),
+    appEnabled: boolean("app_enabled").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({

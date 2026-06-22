@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { resolveAuthorizeScopes } from "@/lib/connect/connectors";
 import { startConnectAuthorization } from "@ssota/agent-runtime";
 import { loginRedirect } from "@/lib/auth/login-redirect";
+import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
+import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -41,10 +43,25 @@ export async function GET(request: Request) {
     loginRedirect(returnTo);
   }
 
+  let resolvedAccountId = accountId;
+  if (projectId) {
+    try {
+      const scope = await resolveApiAccountScope(projectId, {
+        returnTo,
+        requestedAccountId: accountId,
+      });
+      resolvedAccountId = scope.accountId;
+    } catch (error) {
+      const response = apiScopeErrorResponse(error);
+      if (response) return response;
+      throw error;
+    }
+  }
+
   // Connect returns the user here; we carry the context to record the link.
   const callback = new URL("/api/connect/callback", url.origin);
   callback.searchParams.set("connector", connector);
-  if (accountId) callback.searchParams.set("accountId", accountId);
+  if (resolvedAccountId) callback.searchParams.set("accountId", resolvedAccountId);
   if (projectId) callback.searchParams.set("projectId", projectId);
   callback.searchParams.set("returnTo", returnTo);
   callback.searchParams.set("userId", user.id);
@@ -52,7 +69,7 @@ export async function GET(request: Request) {
   try {
     const flowUrl = await startConnectAuthorization(
       connector,
-      { projectId, accountId, userId: user.id },
+      { projectId, accountId: resolvedAccountId, userId: user.id },
       { scopes, callbackUrl: callback.toString() },
     );
     return NextResponse.redirect(flowUrl);

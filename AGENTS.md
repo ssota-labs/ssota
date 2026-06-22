@@ -4,7 +4,7 @@
 
 SSOTA는 더 이상 범용 컨텍스트 그래프 런타임을 active product로 구현하지 않는다. Active product는 개발 에이전트를 찾는 일반 사용자와 개발자를 위한 **개발 워크플로우 작업 공간**이다.
 
-Active DB/runtime keep set은 `profiles`, `organizations`, `organization_memberships`, `projects`, `tasks`, `node_catalog`, `edge_catalog`, `nodes`, `edges`다. **L1 데이터 catalog**(`node_catalog`, `edge_catalog`)는 project-scoped DB 테이블이며 uuid PK + `key`(project 내 unique)다. **L2 UI catalog**는 `packages/contracts/ui-catalog`(code, json-render). **L3 페이지**·**L4 워크스페이스 네비**는 `page`/`workspace` catalog key graph 노드(`properties.spec`·`properties.nav`). dev-workflow 시드 pack SSOT는 `packages/contracts/seed-packs/dev-workflow/`다. 과거 generic graph/catalog/action/workflow runtime 코드는 `archive/generic-runtime/`에 reference-only로 보존하며, 배포 경로와 active Drizzle schema에서는 제외한다.
+Active DB/runtime keep set은 `profiles`, `organizations`, `organization_memberships`, `projects`, `tasks`, `accounts`, `account_memberships`, `account_connections`, `node_catalog`, `edge_catalog`, `nodes`, `edges`다. **L1 데이터 catalog**(`node_catalog`, `edge_catalog`)는 project-scoped DB 테이블이며 uuid PK + `key`(project 내 unique)다. **L2 UI catalog**는 `packages/contracts/ui-catalog`(code, json-render). **L3 페이지**·**L4 워크스페이스 네비**는 `page`/`workspace` catalog key graph 노드(`properties.spec`·`properties.nav`). dev-workflow 시드 pack SSOT는 `packages/contracts/seed-packs/dev-workflow/`다. 과거 generic graph/catalog/action/workflow runtime 코드는 `archive/generic-runtime/`에 reference-only로 보존하며, 배포 경로와 active Drizzle schema에서는 제외한다.
 
 기획·스펙의 SSOT는 Notion의 SSOTA-on-SSOTA 개발 Playbook이다. 일반 코딩 작업은 MCP가 아니라 이 저장소의 개발 워크플로우 명령으로 수행한다.
 
@@ -34,7 +34,7 @@ e2e/
 
 **의존 방향:** `apps/* → core ← adapter-supabase`. `packages/core`는 IO 의존 0.
 
-**Adapter 진입점 (active):** `createGraphPorts(db, { projectId })` → `{ catalog, graphRead, graphWrite }`. `catalog`는 `createDbCatalogReadPort` — project DB의 `node_catalog`/`edge_catalog` 조회.
+**Adapter 진입점 (active):** `createGraphPorts(db, { projectId, accountId? })` → `{ catalog, graphRead, graphWrite }`. `accountId`가 있으면 end-user scope(shared `account_id IS NULL` + own rows). `createDbAccountReadPort(db)` → `provisionForUser`, `assertAccountAccess`, `getOrCreateWorkspaceAccount`.
 
 ## Console v2.7 Graph Invariants — 협상 불가 (active)
 
@@ -52,51 +52,73 @@ e2e/
 
 `archive/generic-runtime/`에 보존된 generic runtime의 불변식(`executeAction` 단일 쓰기, ActionCommitPort+log 단일 트랜잭션, 4대 강제, Gate)은 **active product에 적용하지 않는다**. 해당 코드를 복원·의존하지 말 것.
 
-## Tenancy & Security — Organization + `project_id`
+## Tenancy & Security — Builder / End-user + `project_id`
 
-Active product scope: **조직 멤버가 조직 내 프로젝트에서 워크플로·카탈로그·그래프·페이지를 함께 쓴다.** SaaS 배포, 커스텀 도메인, 엔드유저 account 파티션(Phase 5 스키마)은 **현재 비범위** — 나중에 필요할 때 다시 제품화한다.
+Active product는 **두 가지 Console 모드**를 지원한다. 격리 SSOT는 여전히 `project_id`이며, end-user 모드에서 추가로 **per-user `account_id`** 파티션이 적용된다.
 
-격리 SSOT:
-
-- **Organization** — 팀 경계. `organization_memberships`로 Console/MCP 접근 제어.
-- **Project** — 카탈로그 + 그래프 + tasks 경계. 모든 인스턴스 row는 `project_id`로 스코핑.
+| 모드 | URL | 인증 | Graph scope | Chat/Connect account |
+|------|-----|------|-------------|----------------------|
+| **Builder** | `/[orgSlug]/[projectSlug]/*` | `organization_memberships` | `accountId` 없음 (project 전체) | shared `workspace` (slug `workspace`) |
+| **End-user** | `/app/[orgSlug]/[projectSlug]/*` | Supabase 로그인 + `projects.app_enabled` | `accountId` = personal (`user-{userId}`) | personal account (동일) |
 
 ```plain text
 Organization (예: ssota-labs)
-├── Project: ssota-dev    → node/edge catalog + nodes/edges + tasks + pages
-└── Project: marketing    → 독립 카탈로그 + 그래프 (project 간 데이터 혼합 없음)
+├── Project: ssota-dev (app_enabled=true)
+│   ├── Builder Console  → /ssota-labs/ssota-dev/...
+│   └── End-user App     → /app/ssota-labs/ssota-dev/...  (Pages / Chat / Tasks / Connections)
+└── Project: app-disabled (app_enabled=false) → /app/... 는 404
 ```
 
-Console URL `[orgSlug]/[projectSlug]`와 MCP tool params의 `orgSlug` + `projectSlug`가 **project 격리의 SSOT**다. 레거시 도구 호환용으로 `X-SSOTA-Project-Id`(project UUID) 헤더도 읽을 수 있다.
+### `projects.app_enabled` (end-user 진입 게이트)
+
+**한 줄**: 배포 UI 없이 `/app` end-user 진입을 project 단위로 열고 닫는 스위치.
+
+- 컬럼: `projects.app_enabled boolean NOT NULL DEFAULT false`
+- `false`: `/app/{orgSlug}/{projectSlug}` → **404** (Builder `/org/project`는 무관)
+- `true`: 로그인 유저 → `AccountReadPort.provisionForUser` → personal account + AppShell
+- MVP: `pnpm db:seed`, admin script, E2E fixture만 `true` 설정 (Console UI 토글 없음)
+- 향후 “배포하기” 버튼이 이 플래그를 켠다
+
+### Account 규칙
+
+- **D1 per-user**: `slug = user-{profileId}`, project당 유저당 account 1개. 첫 `/app` 방문 시 idempotent provision + `account_memberships`.
+- **D5 template read**: `nodes.account_id IS NULL` = builder가 심은 shared 템플릿(읽기). end-user write는 own `account_id`만; shared row update는 write port에서 `FORBIDDEN`.
+- **D6 경로 분리**: org 멤버도 `/app`에서는 end-user scope (builder scope로 승격하지 않음).
+- **API**: Chat/Connect/Agent API는 `resolveApiAccountScope`로 서버가 `accountId` 재해석. 클라이언트 body `accountId` 단독 신뢰 금지.
 
 ### `project_id` 규칙
 
-- **project-scoped** — `node_catalog`, `edge_catalog`, `nodes`, `edges`, `tasks`는 **`project_id` 필수**. adapter는 `createGraphPorts(db, { projectId })` / `createTaskPort(db, { projectId })`로 생성하며 모든 쿼리·커밋을 project로 필터한다.
-- **L2 UI catalog (code)** — `packages/contracts/ui-catalog` — DB 테이블 없음.
-- **쓰기**: core graph use-case + `GraphWritePort`. `createNode({ catalogKey })` / `createEdge({ catalogKey })`. cross-project node 참조는 `PROJECT_MISMATCH`.
-- **조회**: `queryNodes({ catalogKey })` / `traverseEdges`는 auth context의 `projectId`로 스코핑. 응답 `GraphNode`에 `catalogKey`, `catalogLabel`, `nodeCatalogId` 포함.
+- **project-scoped** — catalog·graph·tasks·accounts는 **`project_id` 필수**. adapter는 `createGraphPorts(db, { projectId, accountId? })` / `createTaskPort(db, { projectId, accountId? })`.
+- **Builder Console** — `accountId` 생략 → project 전체 graph/tasks.
+- **End-user `/app`** — `accountId` 필수 → shared(null) + own partition.
+- **쓰기**: core graph use-case + `GraphWritePort` only.
+- **조회**: MCP·Builder는 org membership + project slug. End-user MCP는 **비범위** (builder-only).
+
+Console URL `[orgSlug]/[projectSlug]`와 MCP `orgSlug` + `projectSlug`가 **builder project 격리 SSOT**다. End-user는 `/app/[orgSlug]/[projectSlug]`. 레거시 `X-SSOTA-Project-Id` 헤더도 읽을 수 있다.
 
 ### Postgres RLS — 전 테이블 deny-all (의도적)
 
-SSOTA 테이블(`profiles`, `organizations`, `projects`, `organization_memberships`, `tasks`, `node_catalog`, `edge_catalog`, `nodes`, `edges`) **전부 RLS deny-all**. `action_log`·`gates`는 active schema에 **없음**.
+SSOTA 테이블(`profiles`, `organizations`, `projects`, `organization_memberships`, `accounts`, `account_memberships`, `tasks`, `node_catalog`, `edge_catalog`, `nodes`, `edges`, …) **전부 RLS deny-all**.
 
-1. **격리의 SSOT는 core graph use-case + 서버 `projectId` context + org membership 검증**이다.
-2. **서버만 DB 접근**: adapter는 `createDb` / `createAdminDb`로 `DATABASE_URL`(postgres superuser 또는 service role 직접 연결)만 사용한다. 이 경로는 RLS를 bypass한다.
+1. **격리 SSOT**: core use-case + 서버 `projectId` (+ end-user `accountId`) + org/account membership 검증.
+2. **서버만 DB 접근**: `DATABASE_URL` / `createAdminDb`, RLS bypass.
 
 ### Defense in depth (서버사이드)
 
 ```
-[조직 멤버] → [SSOTA apps/web | apps/mcp — Supabase JWT + org membership + projectId]
+[Builder org 멤버] → /org/project → GraphWritePort (no accountId)
+[End-user 로그인]  → /app/org/project (app_enabled) → GraphWritePort (personal accountId)
+[Chat/Connect API] → resolveApiAccountScope (Referer/returnTo /app/ → end_user)
                       ↓
-              [GraphWritePort / queryNodes — catalog Zod + project 스코핑]
-                      ↓
-              [adapter-supabase — createAdminDb / DATABASE_URL, RLS bypass]
+              [adapter-supabase — createAdminDb]
 ```
 
-- **금지**: anon/authenticated PostgREST로 `nodes`/`edges` 직접 노출, permissive RLS policy 추가.
-- **필수**: 모든 graph read/write는 apps 라우트·MCP 핸들러를 통과; RLS 거부 케이스 integration 테스트.
+- **금지**: anon PostgREST로 `nodes`/`edges` 직접 노출, permissive RLS.
+- **필수**: graph read/write는 apps/MCP 핸들러 경유; account 격리 integration·E2E (`end-user-app`).
 
-조직 멤버는 org membership auth로 소속 org의 project 데이터에 접근한다.
+### 비범위 (배포 단계)
+
+배포하기 UI, `deployments` 테이블, 커스텀 도메인 middleware, Vercel Domains API — 후속 PR.
 
 ## Setup Commands
 

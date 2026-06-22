@@ -1,11 +1,11 @@
 import {
   createAccountConnectionPort,
-  createAccountPort,
   createChatPort,
   createChatWorkspacePort,
   createConsolePort,
-  createGraphPorts,
   createDb,
+  createDbAccountReadPort,
+  createGraphPorts,
   createOnboardingPort,
   createTaskPort,
   type AccountRecord,
@@ -22,8 +22,8 @@ export function getDb(): Db {
   return cachedDb;
 }
 
-export function getTaskPort(projectId: string) {
-  return createTaskPort(getDb(), { projectId });
+export function getTaskPort(projectId: string, accountId?: string) {
+  return createTaskPort(getDb(), { projectId, accountId });
 }
 
 export function getConsolePort() {
@@ -34,8 +34,12 @@ export function getOnboardingPort() {
   return createOnboardingPort(getDb());
 }
 
-export function getGraphPorts(projectId: string) {
-  return createGraphPorts(getDb(), { projectId });
+export function getAccountReadPort() {
+  return createDbAccountReadPort(getDb());
+}
+
+export function getGraphPorts(projectId: string, accountId?: string) {
+  return createGraphPorts(getDb(), { projectId, accountId });
 }
 
 export function getChatPort(projectId: string, accountId?: string | null) {
@@ -51,18 +55,13 @@ export function getChatWorkspacePort() {
 }
 
 /**
- * The shared, per-project account the in-app console binds chat + connections
- * to. Multi-tenant per-user accounts are out of scope for now, so every console
- * surface for a project uses one stable account (slug "workspace"). Idempotent.
+ * The shared, per-project account the builder console binds chat + connections to.
+ * End-user surfaces use per-user accounts via AccountReadPort.provisionForUser.
  */
 export async function getOrCreateProjectAccount(
   projectId: string,
 ): Promise<AccountRecord> {
-  return createAccountPort(getDb()).provision({
-    projectId,
-    slug: "workspace",
-    name: "Workspace",
-  });
+  return getAccountReadPort().getOrCreateWorkspaceAccount(projectId);
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {

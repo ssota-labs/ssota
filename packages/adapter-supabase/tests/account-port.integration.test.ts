@@ -1,3 +1,4 @@
+import { config as loadEnv } from "dotenv";
 import { randomUUID } from "node:crypto";
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
 import { AccountError } from "@ssota/core";
@@ -8,7 +9,10 @@ import {
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
 } from "../src/index.js";
-import * as schema from "../src/db/schema.js";
+import { createTestAuthUser } from "./helpers/create-test-auth-user.js";
+
+loadEnv({ path: new URL("../../../.env.local", import.meta.url).pathname });
+loadEnv({ path: new URL("../../../apps/web/.env.local", import.meta.url).pathname });
 
 let skip = false;
 
@@ -40,20 +44,8 @@ describe("account read port integration", () => {
       }
       projectId = project.id;
 
-      userA = randomUUID();
-      userB = randomUUID();
-      await dbBundle.db.insert(schema.profiles).values([
-        {
-          id: userA,
-          email: `account-test-a-${userA.slice(0, 8)}@ssota.test`,
-          displayName: "Account Test A",
-        },
-        {
-          id: userB,
-          email: `account-test-b-${userB.slice(0, 8)}@ssota.test`,
-          displayName: "Account Test B",
-        },
-      ]);
+      userA = await createTestAuthUser(dbBundle.db, "Account Test A");
+      userB = await createTestAuthUser(dbBundle.db, "Account Test B");
     } catch {
       skip = true;
     }
@@ -81,11 +73,7 @@ describe("account read port integration", () => {
   });
 
   it("getAccountForUser returns null before provision", async () => {
-    const freshUser = randomUUID();
-    await db!.insert(schema.profiles).values({
-      id: freshUser,
-      email: `account-fresh-${freshUser.slice(0, 8)}@ssota.test`,
-    });
+    const freshUser = await createTestAuthUser(db!, "Account Fresh");
     const account = await accountRead.getAccountForUser(projectId, freshUser);
     expect(account).toBeNull();
   });

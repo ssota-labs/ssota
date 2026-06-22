@@ -57,7 +57,11 @@ export function ChatHistorySidebar({
         const res = await fetch("/api/chat/thread", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ orgSlug, projectSlug }),
+          body: JSON.stringify({
+            orgSlug,
+            projectSlug,
+            appMode: chatPath.startsWith("/app/"),
+          }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const { thread } = (await res.json()) as { thread: { id: string } };

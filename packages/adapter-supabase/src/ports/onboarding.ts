@@ -47,6 +47,7 @@ function mapProject(row: typeof schema.projects.$inferSelect): Project {
     organizationId: row.organizationId,
     slug: row.slug,
     name: row.name,
+    appEnabled: row.appEnabled,
   };
 }
 

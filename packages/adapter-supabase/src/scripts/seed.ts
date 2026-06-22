@@ -73,6 +73,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       organizationId,
       slug: DEFAULT_PROJECT_SLUG,
       name: "SSOTA Dev",
+      appEnabled: true,
     })
     .onConflictDoNothing()
     .returning();
@@ -86,6 +87,23 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .limit(1);
     projectId = rows[0]?.id;
   }
+
+  if (projectId) {
+    await db
+      .update(schema.projects)
+      .set({ appEnabled: true })
+      .where(eq(schema.projects.id, projectId));
+  }
+
+  await db
+    .insert(schema.projects)
+    .values({
+      organizationId,
+      slug: "app-disabled",
+      name: "App Disabled (E2E)",
+      appEnabled: false,
+    })
+    .onConflictDoNothing();
 
   if (smokeUserId) {
     await db
