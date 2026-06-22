@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createChatWorkspacePort } from "@ssota/adapter-supabase";
+import { createChatWorkspacePort } from "@ssota/adapter-postgres";
 import { getDb } from "@ssota/agent-runtime";
 import { getCurrentUser } from "@/lib/supabase/server";
 

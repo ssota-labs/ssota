@@ -4,7 +4,7 @@ import {
   createDb,
   createTaskPort,
   createWorkflowInstructionPort,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 
 type Db = ReturnType<typeof createDb>["db"];
 

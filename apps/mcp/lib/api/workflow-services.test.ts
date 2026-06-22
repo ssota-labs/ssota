@@ -5,7 +5,7 @@ import {
   createWorkflowInstructionPort,
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 import {
   getWorkflowForMcp,
   getWorkflowInstructionForMcp,

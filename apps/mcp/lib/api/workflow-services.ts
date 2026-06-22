@@ -3,7 +3,7 @@ import {
   blockNoteContentToText,
   type WorkflowInstructionIndex,
 } from "@ssota/contracts";
-import { createWorkflowInstructionPort } from "@ssota/adapter-supabase";
+import { createWorkflowInstructionPort } from "@ssota/adapter-postgres";
 import type { getDb } from "@/lib/ports";
 
 type Db = ReturnType<typeof getDb>;

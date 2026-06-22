@@ -4,7 +4,7 @@ import { start } from "workflow/api";
 import { runTaskAgentWorkflow } from "@/app/workflows/task-agent";
 import { getDb, getTaskPort } from "@/lib/ports";
 import { and, eq, sql } from "drizzle-orm";
-import { schema } from "@ssota/adapter-supabase";
+import { schema } from "@ssota/adapter-postgres";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";

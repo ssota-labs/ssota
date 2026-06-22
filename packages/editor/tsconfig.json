@@ -12,5 +12,7 @@
       "@/hooks/*": ["../ui/src/hooks/*"]
     }
   },
-  "include": ["src", "../ui/src"]
+  "include": ["src", "../ui/src"],
+  "//": "ui/src is included so @ssota/ui sources resolve; exclude its Storybook stories — they use @/components/* path aliases that only resolve under ui's own tsconfig, not editor's.",
+  "exclude": ["node_modules", "dist", "../ui/src/**/*.stories.tsx"]
 }

@@ -1,5 +1,5 @@
 import type { Organization, Project } from "@ssota/core";
-import { createConsolePort } from "@ssota/adapter-supabase";
+import { createConsolePort } from "@ssota/adapter-postgres";
 import { getDb } from "@/lib/ports";
 
 export type ResolvedProjectAccess = {

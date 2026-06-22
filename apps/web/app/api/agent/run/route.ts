@@ -1,7 +1,6 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
-import { start } from "workflow/api";
-import { runTaskAgentWorkflow } from "@/app/workflows/task-agent";
+import { getJobRunner } from "@/app/workflows/job-runner";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -66,15 +65,15 @@ export async function POST(request: Request) {
     }
   }
 
-  const run = await start(runTaskAgentWorkflow, [
-    {
-      projectId: parsed.projectId,
-      taskId: parsed.taskId,
-      accountId,
-      modelId: parsed.modelId,
-      maxSteps: parsed.maxSteps,
-    },
-  ]);
+  const runner = await getJobRunner();
+  const run = await runner.start({
+    projectId: parsed.projectId,
+    taskId: parsed.taskId,
+    accountId,
+    modelId: parsed.modelId,
+    maxSteps: parsed.maxSteps,
+  });
+  after(run.completion);
 
   return NextResponse.json({ runId: run.runId });
 }

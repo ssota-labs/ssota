@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 import { PROJECT_ID_HEADER } from "@ssota/contracts";
 
 const supabaseUrl = process.env.SUPABASE_URL ?? "http://127.0.0.1:54321";

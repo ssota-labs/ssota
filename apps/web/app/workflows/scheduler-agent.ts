@@ -1,6 +1,6 @@
 import { getWorkflowMetadata } from "workflow";
 import { getDb, runAgent } from "@ssota/agent-runtime";
-import { createAgentRunPort } from "@ssota/adapter-supabase";
+import { createAgentRunPort } from "@ssota/adapter-postgres";
 
 export interface RunSchedulerAgentInput {
   projectId: string;

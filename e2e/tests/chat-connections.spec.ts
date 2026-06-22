@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createDb } from "@ssota/adapter-supabase";
+import { createDb } from "@ssota/adapter-postgres";
 import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
 

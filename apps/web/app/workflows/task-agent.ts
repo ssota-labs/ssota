@@ -9,7 +9,7 @@ import {
   type SandboxSession,
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
-import { createAgentRunPort } from "@ssota/adapter-supabase";
+import { createAgentRunPort } from "@ssota/adapter-postgres";
 
 const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
 

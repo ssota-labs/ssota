@@ -6,7 +6,7 @@ import {
   type RunAgentResult,
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
-import { createAgentRunPort } from "@ssota/adapter-supabase";
+import { createAgentRunPort } from "@ssota/adapter-postgres";
 
 export interface RunMainAgentInput {
   projectId: string;

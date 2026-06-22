@@ -338,8 +338,10 @@ describe("applyListType", () => {
     expect(applyListType(editor, "bulletList")).toBe(true);
     expect(editor.getJSON().content?.[0]?.type).toBe("orderedList");
     expect(
-      editor.getJSON().content?.[0]?.content?.[0]?.content?.[0]?.content?.[0]
-        ?.text,
+      // Typed-schema getJSON() narrows nested nodes to a Node|Text union; Text
+      // has no `content`. Cast for this structural assertion.
+      (editor.getJSON() as Record<string, any>).content?.[0]?.content?.[0]
+        ?.content?.[0]?.content?.[0]?.text,
     ).toBe("one");
     expect(hasMixedListNesting(editor.state.doc)).toBe(true);
     expect(getActiveListType(editor)).toBe("bulletList");

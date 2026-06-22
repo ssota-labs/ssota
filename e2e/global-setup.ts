@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 
 const workspaceRoot = process.env.WORKSPACE_ROOT ?? `${process.cwd()}/..`;
 const supabaseUrl =

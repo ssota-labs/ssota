@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { start } from "workflow/api";
 import { getDb } from "@/lib/ports";
-import { schema } from "@ssota/adapter-supabase";
+import { schema } from "@ssota/adapter-postgres";
 import { runSchedulerAgentWorkflow } from "@/app/workflows/scheduler-agent";
 
 export const runtime = "nodejs";

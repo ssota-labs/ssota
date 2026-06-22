@@ -3,7 +3,7 @@ import { expect } from "@playwright/test";
 import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
-} from "@ssota/adapter-supabase";
+} from "@ssota/adapter-postgres";
 
 export async function loginAsSmoke(page: Page): Promise<void> {
   await page.goto("/login");
