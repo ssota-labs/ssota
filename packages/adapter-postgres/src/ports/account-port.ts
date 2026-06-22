@@ -255,6 +255,58 @@ export function createAccountConnectionPort(db: Db) {
       return rows;
     },
 
+    async getById(
+      id: string,
+      accountId: string,
+    ): Promise<(AccountConnectionRecord & { projectId: string }) | null> {
+      const [row] = await db
+        .select({
+          id: accountConnections.id,
+          projectId: accountConnections.projectId,
+          connector: accountConnections.connector,
+          installationId: accountConnections.installationId,
+          tenantId: accountConnections.tenantId,
+          name: accountConnections.name,
+          subjectUserId: accountConnections.subjectUserId,
+          createdAt: accountConnections.createdAt,
+          updatedAt: accountConnections.updatedAt,
+        })
+        .from(accountConnections)
+        .where(
+          and(
+            eq(accountConnections.id, id),
+            eq(accountConnections.accountId, accountId),
+          ),
+        )
+        .limit(1);
+      return row ?? null;
+    },
+
+    async updateDisplayMetadata(
+      id: string,
+      accountId: string,
+      patch: { name?: string | null; tenantId?: string | null },
+    ): Promise<void> {
+      const updates: {
+        name?: string | null;
+        tenantId?: string | null;
+        updatedAt: Date;
+      } = { updatedAt: new Date() };
+      if (patch.name !== undefined) updates.name = patch.name;
+      if (patch.tenantId !== undefined) updates.tenantId = patch.tenantId;
+      if (Object.keys(updates).length === 1) return;
+
+      await db
+        .update(accountConnections)
+        .set(updates)
+        .where(
+          and(
+            eq(accountConnections.id, id),
+            eq(accountConnections.accountId, accountId),
+          ),
+        );
+    },
+
     /** Disconnect a single installation, scoped to the owning account. */
     async remove(id: string, accountId: string): Promise<void> {
       await db

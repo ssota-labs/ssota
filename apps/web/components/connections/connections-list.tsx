@@ -30,6 +30,7 @@ import {
 } from "@ssota/ui/components/ui/alert-dialog";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
+import { useConnectionDisplayEnrichment } from "@/components/connections/use-connection-display-enrichment";
 import { disconnectConnectionAction } from "@/app/[orgSlug]/[projectSlug]/connections/actions";
 import type { ConnectorDef, ConnectorProvider } from "@/lib/connect/connectors";
 import { providerOf } from "@/lib/connect/connectors";
@@ -67,21 +68,6 @@ function authorizeHref(params: {
     search.set("installationId", params.installationId);
   }
   return `/api/connect/authorize?${search.toString()}`;
-}
-
-function connectionInstallationId(row: ConnectionRow): string | undefined {
-  const id = row.installationId?.trim();
-  if (!id || id.toLowerCase() === "empty") return undefined;
-  return id;
-}
-
-function connectionLabel(row: ConnectionRow): string {
-  return (
-    row.name ||
-    row.tenantId ||
-    connectionInstallationId(row) ||
-    "Connected"
-  );
 }
 
 export function ConnectionsList({
@@ -270,16 +256,24 @@ function ConnectionItem({
   provider,
   reconnectHref,
   isPending,
+  projectId,
+  accountId,
   onDisconnect,
 }: {
   row: ConnectionRow;
   provider: ConnectorProvider;
   reconnectHref: string;
   isPending: boolean;
+  projectId: string;
+  accountId: string;
   onDisconnect: (id: string) => void;
 }) {
   const { t } = useLocale();
-  const label = connectionLabel(row);
+  const { label, isEnriching, displayRow } = useConnectionDisplayEnrichment(
+    row,
+    projectId,
+    accountId,
+  );
 
   return (
     <div
@@ -291,10 +285,17 @@ function ConnectionItem({
           <ConnectorBrandIcon provider={provider} className="size-4" />
         </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium">{label}</p>
-          {row.tenantId && row.name ? (
+          <p
+            className={cn(
+              "truncate text-sm font-medium",
+              isEnriching && "text-muted-foreground",
+            )}
+          >
+            {label}
+          </p>
+          {displayRow.tenantId && displayRow.name ? (
             <p className="truncate text-xs text-muted-foreground">
-              {row.tenantId}
+              {displayRow.tenantId}
             </p>
           ) : null}
         </div>
@@ -406,6 +407,8 @@ function MultiWorkspaceBody({
               provider={provider as ConnectorProvider}
               reconnectHref={reconnectHrefForRow(authorizeParams, row)}
               isPending={isPending}
+              projectId={projectId}
+              accountId={accountId}
               onDisconnect={onDisconnect}
             />
           ))
@@ -480,6 +483,8 @@ function SingleWorkspaceBody({
           row,
         )}
         isPending={isPending}
+        projectId={projectId}
+        accountId={accountId}
         onDisconnect={onDisconnect}
       />
     </div>
