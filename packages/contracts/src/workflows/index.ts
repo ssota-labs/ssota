@@ -3,6 +3,9 @@ import { ExecutorTypeSchema } from "../definitions.js";
 import { TaskStatusSchema } from "../task.js";
 import { loadWorkflowInstruction } from "./load-instruction.js";
 
+/** Reserved key for the main orchestration/router instruction. */
+export const RESERVED_MAIN_WORKFLOW_KEY = "agent.main" as const;
+
 export const WorkflowCategorySchema = z.enum([
   "orchestrator",
   "recurring",

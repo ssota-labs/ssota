@@ -1,44 +1,62 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
-import {
-  readPageDefinitionByRouteKey,
-  writePageDefinition,
-} from "@ssota/core";
-import type { PageRuntimeDefinition } from "@ssota/contracts";
-import { getGraphPorts, getGraphReadPort } from "../ports.js";
-import { getRunContext, serializeNode } from "./context.js";
+import { getPagePort } from "../ports.js";
+import { getRunContext } from "./context.js";
 
 /**
- * Tools for the agent to author and own its page dashboard via the internal
- * JSON render. The definition is stored on a `page` node and rendered at
- * `/{org}/{project}/p/{routeKey}` — the agent's owned surface (page-unit).
+ * Tools for the agent to author pages in the Notion-style page tree (the `pages`
+ * table). A page is a JSON-render dashboard (NOT 1:1 with a node): it places
+ * catalog components and loads node/edge data via `bindings`. Hierarchy is
+ * `parentId` (a recursive tree); addressing is flat by `id`. Pages render at
+ * `/{org}/{project}/p/{id}`.
  */
+const SPEC_HELP =
+  "spec: { root, elements } where each element is { type, props?, children? }. " +
+  "Component types: PageHeader, Text, Badge, Card, Tabs, SplitPane, NodeList, " +
+  "NodeTable, NodeField, NodeDocument, DocumentView, DocumentEditor, TokenList, " +
+  "Widget, Form, Field, Button, Input, Textarea, Select. " +
+  "bindings (kind: query|singleton|node|traverse|ref|artifact|subject) pull " +
+  "graph data; an element references one via props.binding. `subject` resolves " +
+  "the page's subjectNodeId.";
+
 export function createPageTools(): ToolSet {
   return {
-    write_page_definition: tool({
+    create_page: tool({
       description:
-        "Author or update a page's JSON-render definition on a `page` node (create the node first with create_node, catalogKey 'page'). The definition has { routeKey, scope: 'project'|'evergreen'|'initiative', spec: { root, elements }, bindings }. Elements use types: PageHeader, Text, Badge, Card, NodeList, NodeDocument, NodeField, Tabs, SplitPane. Bindings (kind: query|singleton|node|traverse|ref) pull graph data; an element references one via props.binding. The page renders at /{org}/{project}/p/{routeKey}.",
+        "Create a page in the Notion-style page tree (pages table). " + SPEC_HELP,
       inputSchema: z.object({
-        pageNodeId: z
+        title: z.string().describe("Page title (shown in the sidebar tree)."),
+        parentId: z
           .string()
           .uuid()
-          .describe("The `page` node this definition belongs to."),
-        definition: z
-          .record(z.unknown())
-          .describe("A PageRuntimeDefinition object (validated server-side)."),
+          .nullable()
+          .optional()
+          .describe("Parent page id for nesting; omit/null for a top-level page."),
+        subjectNodeId: z
+          .string()
+          .uuid()
+          .nullable()
+          .optional()
+          .describe("Optional anchor node id; exposed to bindings as `subject`."),
+        spec: z.record(z.unknown()).describe("JSON-render spec { root, elements }."),
+        bindings: z.record(z.unknown()).optional(),
+        actions: z.record(z.unknown()).optional(),
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
         try {
-          const node = await writePageDefinition(
-            getGraphPorts(ctx.projectId, ctx.accountId),
-            {
-              projectId: ctx.projectId,
-              nodeId: input.pageNodeId,
-              definition: input.definition as unknown as PageRuntimeDefinition,
-            },
-          );
-          return { ok: true, node: serializeNode(node) };
+          const page = await getPagePort(ctx.projectId, ctx.accountId).createPage({
+            title: input.title,
+            parentId: input.parentId ?? null,
+            subjectNodeId: input.subjectNodeId ?? null,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            spec: input.spec as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            bindings: (input.bindings ?? {}) as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            actions: (input.actions ?? {}) as any,
+          });
+          return { ok: true, id: page.id };
         } catch (error) {
           return {
             ok: false,
@@ -48,20 +66,66 @@ export function createPageTools(): ToolSet {
       },
     }),
 
-    read_page_definition: tool({
+    update_page: tool({
       description:
-        "Read the page definition registered for a routeKey (returns its owning nodeId and the definition, or found:false).",
+        "Update a page by id (title/parentId/subjectNodeId/spec/bindings/actions). " +
+        SPEC_HELP,
       inputSchema: z.object({
-        routeKey: z.string().describe("The page's routeKey."),
+        id: z.string().uuid(),
+        title: z.string().optional(),
+        parentId: z.string().uuid().nullable().optional(),
+        subjectNodeId: z.string().uuid().nullable().optional(),
+        spec: z.record(z.unknown()).optional(),
+        bindings: z.record(z.unknown()).optional(),
+        actions: z.record(z.unknown()).optional(),
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        const result = await readPageDefinitionByRouteKey(
-          getGraphReadPort(ctx.projectId, ctx.accountId),
-          ctx.projectId,
-          input.routeKey,
+        try {
+          const { id, ...patch } = input;
+          const page = await getPagePort(ctx.projectId, ctx.accountId).updatePage(
+            id,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            patch as any,
+          );
+          if (!page) return { ok: false, error: "page not found" };
+          return { ok: true, id: page.id };
+        } catch (error) {
+          return {
+            ok: false,
+            error: error instanceof Error ? error.message : String(error),
+          };
+        }
+      },
+    }),
+
+    read_page: tool({
+      description: "Read a page by id (returns its full record, or found:false).",
+      inputSchema: z.object({ id: z.string().uuid() }),
+      execute: async (input, { experimental_context }) => {
+        const ctx = getRunContext(experimental_context);
+        const page = await getPagePort(ctx.projectId, ctx.accountId).getPage(
+          input.id,
         );
-        return result ?? { found: false };
+        return page ?? { found: false };
+      },
+    }),
+
+    list_pages: tool({
+      description:
+        "List all pages in the tree (id, title, parentId, position) for navigation/authoring.",
+      inputSchema: z.object({}),
+      execute: async (_input, { experimental_context }) => {
+        const ctx = getRunContext(experimental_context);
+        const pages = await getPagePort(ctx.projectId, ctx.accountId).listPages();
+        return {
+          pages: pages.map((p) => ({
+            id: p.id,
+            title: p.title,
+            parentId: p.parentId ?? null,
+            position: p.position,
+          })),
+        };
       },
     }),
   };

@@ -1,12 +1,27 @@
 import { getWorkflowByKey } from "@ssota/contracts/workflows";
 import type { Task } from "@ssota/contracts";
 
-const FALLBACK_INSTRUCTIONS = `You are the SSOTA agent. You operate on a project's knowledge graph (nodes/edges), tasks, and workflows through the provided tools. Read context before acting, make the smallest correct change, and finish by recording the task outcome.`;
+export const FALLBACK_INSTRUCTIONS = `You are the SSOTA agent. You operate on a project's knowledge graph (nodes/edges), tasks, and workflows through the provided tools. Read context before acting, make the smallest correct change, and finish by recording the task outcome.`;
 
 /**
- * Build the run instructions. The base body reuses the embedded `agent.main`
- * workflow instruction (single source of truth, authored in
- * `packages/contracts/.../instructions/agent.main.md`) rather than restating it.
+ * Workflow instructions resolved upstream (in `run.ts`) from the per-project
+ * `workflows` table, with embedded-registry fallback. When omitted,
+ * `buildSystemPrompt` resolves from the embedded registry directly — this keeps
+ * the function sync and pure for tests/callers that don't have a workflow port.
+ */
+export interface ResolvedWorkflowInstructions {
+  /** `agent.main` (main router) instruction. */
+  base: string;
+  /** The task's workflowKey instruction, or null if none. */
+  workflowInstruction: string | null;
+}
+
+/**
+ * Build the run instructions. The base body reuses the `agent.main` workflow
+ * instruction (the main router). Instructions are sourced from the per-project
+ * `workflows` table when `resolved` is provided (DB-persisted, tenant-editable),
+ * otherwise from the embedded registry (single source of truth, authored in
+ * `packages/contracts/.../instructions/agent.main.md`).
  */
 export function buildSystemPrompt(params: {
   task: Pick<
@@ -15,11 +30,17 @@ export function buildSystemPrompt(params: {
   >;
   projectId: string;
   accountId?: string;
+  resolved?: ResolvedWorkflowInstructions;
 }): string {
-  const { task, projectId, accountId } = params;
-  const base = getWorkflowByKey("agent.main")?.instruction ?? FALLBACK_INSTRUCTIONS;
+  const { task, projectId, accountId, resolved } = params;
+  const base =
+    resolved?.base ??
+    getWorkflowByKey("agent.main")?.instruction ??
+    FALLBACK_INSTRUCTIONS;
 
-  const workflowInstruction = getWorkflowByKey(task.workflowKey)?.instruction;
+  const workflowInstruction = resolved
+    ? resolved.workflowInstruction
+    : (getWorkflowByKey(task.workflowKey)?.instruction ?? null);
 
   const acceptance =
     task.acceptanceCriteria.length > 0

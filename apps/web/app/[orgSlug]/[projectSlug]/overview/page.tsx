@@ -68,7 +68,7 @@ export default async function OverviewPage({
         },
       ]}
       recentActivity={recentActivity}
-      nodesBasePath={projectPath(ctx, "nodes")}
+      nodesBasePath={projectPath(ctx, "n")}
       workflowMapPath={projectPath(ctx, "workflow", "map")}
       workflowSummary={workflowSummary}
     />

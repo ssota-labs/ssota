@@ -17,7 +17,7 @@ export type AppShellContext = {
   projectId: string;
   accountId: string;
   userEmail: string;
-  pageLinks: { routeKey: string; label: string }[];
+  pageLinks: { pageId: string; label: string }[];
 };
 
 const FIXED_NAV = [
@@ -39,8 +39,8 @@ export function EndUserSidebar({ ctx }: EndUserSidebarProps) {
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  function isPageActive(routeKey: string): boolean {
-    const href = appProjectPath(ctx, "p", routeKey);
+  function isPageActive(pageId: string): boolean {
+    const href = appProjectPath(ctx, "p", pageId);
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
@@ -59,11 +59,11 @@ export function EndUserSidebar({ ctx }: EndUserSidebarProps) {
                 Pages
               </div>
               {ctx.pageLinks.map((page) => {
-                const href = appProjectPath(ctx, "p", page.routeKey);
-                const active = isPageActive(page.routeKey);
+                const href = appProjectPath(ctx, "p", page.pageId);
+                const active = isPageActive(page.pageId);
                 return (
                   <Link
-                    key={page.routeKey}
+                    key={page.pageId}
                     href={href}
                     className={cn(
                       "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

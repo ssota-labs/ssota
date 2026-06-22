@@ -9,6 +9,8 @@ import {
   createOnboardingPort,
   createTaskPort,
   type AccountRecord,
+  createWorkflowPort,
+  createPagePort,
 } from "@ssota/adapter-supabase";
 
 type Db = ReturnType<typeof createDb>["db"];
@@ -62,6 +64,14 @@ export async function getOrCreateProjectAccount(
   projectId: string,
 ): Promise<AccountRecord> {
   return getAccountReadPort().getOrCreateWorkspaceAccount(projectId);
+}
+
+export function getWorkflowPort(projectId: string) {
+  return createWorkflowPort(getDb(), { projectId });
+}
+
+export function getPagePort(projectId: string) {
+  return createPagePort(getDb(), { projectId });
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {

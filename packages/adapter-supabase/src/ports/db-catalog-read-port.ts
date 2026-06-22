@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import edgeCatalogSeed from "@ssota/contracts/seed-packs/dev-workflow/edge-catalog.json" with {
+import edgeCatalogSeed from "@ssota/contracts/seed-packs/software-development-workflow/edge-catalog.json" with {
   type: "json",
 };
 import {
@@ -11,6 +11,8 @@ import {
   parseNodeProperties,
   type EdgeCatalogRow,
   type NodeCatalogRow,
+  type NodeType,
+  type EdgeType,
 } from "@ssota/contracts";
 import type { CatalogReadPort } from "@ssota/core";
 import type { Db } from "../db/client.js";
@@ -156,15 +158,23 @@ export function createDbCatalogReadPort(
   };
 }
 
-/** Seed dev-workflow catalog rows for a project (idempotent). */
-export async function seedDevWorkflowCatalog(
+/**
+ * Seed a project's catalog rows (idempotent). `opts.nodeTypeKeys`/`edgeTypeKeys`
+ * let a template select which types to seed; defaults to the full embedded
+ * catalog. Type labels/schemas are still resolved from the embedded catalog
+ * (inlining per-template definitions is a later step).
+ */
+export async function seedDomainCatalog(
   db: Db,
   projectId: string,
+  opts?: { nodeTypeKeys?: string[]; edgeTypeKeys?: string[] },
 ): Promise<{ nodeKeyToId: Map<string, string>; edgeKeyToId: Map<string, string> }> {
   const nodeKeyToId = new Map<string, string>();
   const edgeKeyToId = new Map<string, string>();
+  const nodeTypeKeys = (opts?.nodeTypeKeys ?? listNodeTypes()) as NodeType[];
+  const edgeTypeKeys = (opts?.edgeTypeKeys ?? listEdgeTypes()) as EdgeType[];
 
-  for (const key of listNodeTypes()) {
+  for (const key of nodeTypeKeys) {
     const entry = getNodeTypeEntry(key)!;
     const existing = await db
       .select({ id: schema.nodeCatalog.id })
@@ -192,7 +202,7 @@ export async function seedDevWorkflowCatalog(
     nodeKeyToId.set(key, row!.id);
   }
 
-  for (const key of listEdgeTypes()) {
+  for (const key of edgeTypeKeys) {
     const entry = getEdgeTypeEntry(key)!;
     const seedEntry = edgeCatalogSeedByKey.get(key);
     const domainCatalogIds = resolveNodeCatalogIds(

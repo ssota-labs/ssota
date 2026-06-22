@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { Organization } from "@ssota/core";
 import { cn } from "@ssota/ui/lib/utils";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
@@ -12,12 +12,8 @@ import { NavItemIcon } from "@/lib/console/nav-icons";
 import {
   getExpandedGroupsFromPath,
   getRelativeProjectPath,
-  getSidebarMode,
-  INITIATIVE_L1_NAV,
-  initiativePath,
   isNavLinkActive,
   L0_NAV,
-  parseInitiativeRoute,
   resolveNavHref,
   type L0GroupKey,
   type NavEntry,
@@ -29,6 +25,8 @@ import { projectPath } from "@/lib/console/paths";
 import { ConsoleOrgSwitcher } from "./console-workspace-switcher";
 import { SidebarProfileMenu } from "./sidebar-profile-menu";
 import { useProjectContext } from "./project-context";
+import { PageTreeNav, type SidebarPage } from "./page-tree-nav";
+import { useNodeDrill } from "./node-drill-context";
 
 type InitiativeOption = {
   id: string;
@@ -40,6 +38,10 @@ type AppSidebarProps = {
   initiatives?: InitiativeOption[];
   userEmail: string;
   signOutAction: () => Promise<void>;
+  /** Notion-style page tree from the `pages` table, rendered below the static nav. */
+  pageTree?: SidebarPage[];
+  /** Node-type drill-in templates grouped by catalogKey (static per project). */
+  templatesByType?: Record<string, SidebarPage[]>;
 };
 
 function isGroup(entry: NavEntry): entry is NavGroup {
@@ -59,6 +61,8 @@ export function AppSidebar({
   initiatives: _initiatives = [],
   userEmail,
   signOutAction,
+  pageTree = [],
+  templatesByType = {},
 }: AppSidebarProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
@@ -66,31 +70,28 @@ export function AppSidebar({
   const projectBase = projectPath(ctx);
   const relativePath = getRelativeProjectPath(pathname, projectBase);
 
-  const [expandedGroups, setExpandedGroups] = useState<Record<L0GroupKey, boolean>>(() =>
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() =>
     getExpandedGroupsFromPath(relativePath),
   );
 
-  const mode = getSidebarMode(pathname, projectBase);
-  const initiativeRoute = parseInitiativeRoute(pathname, projectBase);
+  // Node drill-in (client context, robust to soft navigation) drives the slider
+  // to its L1 pane and selects the node type's templates.
+  const drill = useNodeDrill();
+  const nodeNav = drill
+    ? { nodeId: drill.nodeId, pages: templatesByType[drill.catalogKey] ?? [] }
+    : null;
+  const mode = nodeNav ? "l1" : "l0";
 
-  const backLabel = useMemo(() => t("nav.backToInitiatives"), [t]);
-
-  function handleBack() {
-    window.location.href = resolveNavHref(ctx, "initiatives");
-  }
-
-  function toggleGroup(key: L0GroupKey) {
+  function toggleGroup(key: string) {
     setExpandedGroups((prev) => ({
       ...prev,
       [key]: !prev[key],
     }));
   }
 
-  function renderNavLink(item: NavLink, initiativeId?: string) {
-    const href = initiativeId
-      ? initiativePath(ctx, initiativeId, item.href)
-      : resolveNavHref(ctx, item.href);
-    const active = isNavLinkActive(pathname, projectBase, item.href, initiativeId);
+  function renderNavLink(item: NavLink) {
+    const href = resolveNavHref(ctx, item.href);
+    const active = isNavLinkActive(pathname, projectBase, item.href);
 
     return (
       <Link
@@ -152,35 +153,6 @@ export function AppSidebar({
     );
   }
 
-  function renderL1Entry(entry: NavEntry, initiativeId: string) {
-    if (isLink(entry)) return renderNavLink(entry, initiativeId);
-    if (isSection(entry)) {
-      return (
-        <div key={entry.key} className="space-y-0.5 pt-2 first:pt-0">
-          <NavSectionLabel labelKey={entry.labelKey} />
-          {entry.children.map((child) =>
-            isLink(child) ? renderNavLink(child, initiativeId) : null,
-          )}
-        </div>
-      );
-    }
-    return null;
-  }
-
-  function renderBackButton() {
-    return (
-      <button
-        type="button"
-        onClick={handleBack}
-        data-sidebar-back=""
-        className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-      >
-        <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
-        <span className="truncate">{backLabel}</span>
-      </button>
-    );
-  }
-
   function renderL0Nav() {
     return L0_NAV.map((entry) => {
       if (isSection(entry)) return renderL0Section(entry);
@@ -190,11 +162,21 @@ export function AppSidebar({
     });
   }
 
-  function renderL1Nav(initiativeId: string) {
+  function renderNodeNav(nav: { nodeId: string; pages: SidebarPage[] }) {
     return (
       <>
-        {renderBackButton()}
-        {INITIATIVE_L1_NAV.map((entry) => renderL1Entry(entry, initiativeId))}
+        <Link
+          href={projectPath(ctx, "overview")}
+          className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">{t("nav.overview")}</span>
+        </Link>
+        <PageTreeNav
+          pages={nav.pages}
+          basePath={`${projectBase}/n/${nav.nodeId}`}
+          heading={null}
+        />
       </>
     );
   }
@@ -220,6 +202,7 @@ export function AppSidebar({
                 aria-hidden={mode === "l1"}
               >
                 {renderL0Nav()}
+                <PageTreeNav pages={pageTree} basePath={projectBase} />
               </div>
               <div
                 className={cn(
@@ -228,7 +211,7 @@ export function AppSidebar({
                 )}
                 aria-hidden={mode === "l0"}
               >
-                {initiativeRoute ? renderL1Nav(initiativeRoute.initiativeId) : null}
+                {nodeNav ? renderNodeNav(nodeNav) : null}
               </div>
             </div>
           </div>
