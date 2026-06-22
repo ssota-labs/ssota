@@ -3,7 +3,8 @@ import { resolvePageBindings } from "@ssota/core";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
-import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { TreePageView } from "@/lib/page-runtime/tree-page-view";
+import { pageUsesDocumentSheetList } from "@/lib/page-runtime/spec-utils";
 
 /**
  * Notion-style page renderer. Loads a page from the `pages` table by id, resolves
@@ -27,8 +28,6 @@ export default async function TreePage({
 
   const graphRead = getGraphPorts(project.id).graphRead;
 
-  // Anchor node (generic replacement for initiative-scoping): resolved here and
-  // threaded into the binding context as `subject`.
   const context: Record<string, unknown> = {};
   if (page.subjectNodeId) {
     const subject = await graphRead.getNodeById(page.subjectNodeId);
@@ -51,12 +50,24 @@ export default async function TreePage({
   );
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
 
+  const fillHeight = pageUsesDocumentSheetList(page.spec);
+  const basePath = `/${orgSlug}/${projectSlug}`;
+
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <DynamicPageRenderer
+    <div
+      className={
+        fillHeight
+          ? "flex min-h-0 flex-1 flex-col"
+          : "mx-auto max-w-5xl p-6"
+      }
+    >
+      <TreePageView
+        orgSlug={orgSlug}
+        projectSlug={projectSlug}
+        pageId={pageId}
         spec={page.spec}
         bindingData={bindingData}
-        basePath={`/${orgSlug}/${projectSlug}`}
+        basePath={basePath}
       />
     </div>
   );

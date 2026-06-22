@@ -21,6 +21,8 @@ type RenderProps = {
   basePath?: string;
   /** Triggers a server-side build for an unbuilt buildable Widget node. */
   onBuildWidget?: (nodeId: string) => void | Promise<void>;
+  /** Stretch to fill a flex parent (DocumentSheetList pages). */
+  fillHeight?: boolean;
 };
 
 function renderElement(
@@ -62,6 +64,7 @@ export function DynamicPageRenderer({
   onAction,
   basePath = "",
   onBuildWidget,
+  fillHeight = false,
 }: RenderProps) {
   const runtime = {
     spec,
@@ -75,7 +78,14 @@ export function DynamicPageRenderer({
       <WidgetBuildContext.Provider value={onBuildWidget}>
         <BasePathContext.Provider value={basePath}>
           <JsonRenderContext.Provider value={runtime}>
-            <div className="space-y-2" data-testid="dynamic-page-renderer">
+            <div
+              className={
+                fillHeight
+                  ? "relative min-h-0 flex-1"
+                  : "space-y-2"
+              }
+              data-testid="dynamic-page-renderer"
+            >
               {renderElement(spec.root, spec, bindingData)}
             </div>
           </JsonRenderContext.Provider>

@@ -120,6 +120,7 @@ export async function seedGraphInstances(
   }
 
   await migrateLegacyRoadmapSingletons(db, projectId, maps);
+  await seedRoadmapPlanningDocs(db, projectId, maps);
 
   const hypothesisCatalogId = nodeKeyToId.get("hypothesis");
   let hypothesisId: string | undefined;
@@ -255,6 +256,145 @@ async function migrateLegacyRoadmapSingletons(
       continue;
     }
     await db.delete(schema.nodes).where(eq(schema.nodes.id, row.id));
+  }
+}
+
+const ROADMAP_DOC_SEED_PREFIX = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}roadmap_doc:`;
+
+type RoadmapDocSeed = {
+  seedSuffix: string;
+  title: string;
+  summary: string;
+  lifecycleStatus: string;
+  kind: "annual" | "quarter";
+  year: number;
+  quarter?: 1 | 2 | 3 | 4;
+  content: unknown[];
+};
+
+async function seedRoadmapPlanningDocs(
+  db: ReturnType<typeof createDb>["db"],
+  projectId: string,
+  maps: CatalogMaps,
+) {
+  const roadmapCatalogId = maps.nodeKeyToId.get("roadmap");
+  if (!roadmapCatalogId) return;
+
+  const year = new Date().getFullYear();
+  const docs: RoadmapDocSeed[] = [
+    {
+      seedSuffix: "annual",
+      title: `${year} 연간 로드맵`,
+      summary: "Console v2.7 출시, end-user app, Design Studio 파이프라인",
+      lifecycleStatus: "active",
+      kind: "annual",
+      year,
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Annual themes",
+        },
+        {
+          type: "paragraph",
+          content:
+            "Graph-first Console, per-user app partition, and catalog-driven page runtime.",
+        },
+        {
+          type: "bulletListItem",
+          content: "Q1–Q2: Console v2.7 graph UI + initiative L2 screens",
+        },
+        {
+          type: "bulletListItem",
+          content: "Q3: End-user /app shell with account isolation",
+        },
+        {
+          type: "bulletListItem",
+          content: "Q4: Design Studio artifact build + Widget preview",
+        },
+      ],
+    },
+    {
+      seedSuffix: "q1",
+      title: `${year} Q1 분기 로드맵`,
+      summary: "Page runtime catalog, Labs, roadmap document sheet pattern",
+      lifecycleStatus: "draft",
+      kind: "quarter",
+      year,
+      quarter: 1,
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Q1 deliverables",
+        },
+        {
+          type: "paragraph",
+          content:
+            "Document-type pages open in a right-side sheet with BlockNote instead of inline accordion.",
+        },
+        {
+          type: "bulletListItem",
+          content: "DocumentSheetList catalog component",
+        },
+        {
+          type: "bulletListItem",
+          content: "Executive roadmap dynamic page integration",
+        },
+      ],
+    },
+    {
+      seedSuffix: "q2",
+      title: `${year} Q2 분기 로드맵`,
+      summary: "Initiative drill-in, scoped bindings, 18 L2 screens",
+      lifecycleStatus: "review",
+      kind: "quarter",
+      year,
+      quarter: 2,
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Initiative workspace",
+        },
+        {
+          type: "paragraph",
+          content: "Scoped page bindings and template nav for initiative L2.",
+        },
+      ],
+    },
+  ];
+
+  for (const doc of docs) {
+    const seedKey = `${ROADMAP_DOC_SEED_PREFIX}${doc.seedSuffix}:${year}`;
+    const existing = await db
+      .select({ id: schema.nodes.id })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.nodeCatalogId, roadmapCatalogId),
+          eq(schema.nodes.title, doc.title),
+        ),
+      )
+      .limit(1);
+    if (existing[0]) continue;
+
+    await db.insert(schema.nodes).values({
+      projectId,
+      nodeCatalogId: roadmapCatalogId,
+      title: doc.title,
+      properties: {
+        kind: doc.kind,
+        year: doc.year,
+        ...(doc.quarter != null ? { quarter: doc.quarter } : {}),
+        lifecycleStatus: doc.lifecycleStatus,
+        summary: doc.summary,
+        content: doc.content,
+        seed: seedKey,
+      },
+      schemaVersion: 1,
+    });
   }
 }
 

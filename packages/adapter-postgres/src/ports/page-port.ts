@@ -174,6 +174,9 @@ interface PageTreeSeedEntry {
   actions?: Record<string, unknown>;
 }
 
+/** Seed slugs whose spec/bindings/actions are refreshed on re-seed (dogfood pack updates). */
+const SEED_SPEC_SYNC_SLUGS = new Set(["executive/roadmap"]);
+
 /**
  * Bootstrap-seed the software-development page tree (Notion-style) into the
  * `pages` table. Idempotent via `slug` (= the seed `key`); re-running never
@@ -207,6 +210,17 @@ export async function seedPages(
       .limit(1);
     if (existing[0]) {
       keyToId.set(entry.key, existing[0].id);
+      if (SEED_SPEC_SYNC_SLUGS.has(entry.key)) {
+        await db
+          .update(schema.pages)
+          .set({
+            spec: entry.spec,
+            bindings: entry.bindings ?? {},
+            actions: entry.actions ?? {},
+            updatedAt: new Date(),
+          })
+          .where(eq(schema.pages.id, existing[0].id));
+      }
       continue;
     }
 
