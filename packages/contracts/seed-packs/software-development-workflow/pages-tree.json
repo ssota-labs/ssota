@@ -2,246 +2,386 @@
   {
     "key": "executive",
     "parentKey": null,
+    "appliesToNodeType": null,
     "title": "Executive",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Executive", "subtitle": "Roadmap, goals and KPIs" } } } },
-    "bindings": {}
+    "icon": "executive",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Executive" } } } }
   },
   {
     "key": "executive/roadmap",
     "parentKey": "executive",
+    "appliesToNodeType": null,
     "title": "Roadmap",
+    "icon": "executive_roadmap",
     "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Roadmap", "columns": [{ "key": "title", "header": "Title" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
     "bindings": { "rows": { "kind": "query", "catalogKey": "roadmap" } }
   },
   {
     "key": "executive/goals",
     "parentKey": "executive",
+    "appliesToNodeType": null,
     "title": "Goals",
+    "icon": "executive_goals",
     "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Goals", "columns": [{ "key": "title", "header": "Objective" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
     "bindings": { "rows": { "kind": "query", "catalogKey": "objective" } }
   },
   {
-    "key": "executive/kpis",
-    "parentKey": "executive",
-    "title": "KPIs",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "KPIs", "columns": [{ "key": "title", "header": "KPI" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "kpi" } }
-  },
-  {
     "key": "research",
     "parentKey": null,
+    "appliesToNodeType": null,
     "title": "Research",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Research", "subtitle": "Market, users and hypotheses" } } } },
-    "bindings": {}
+    "icon": "research",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Research" } } } }
   },
   {
     "key": "research/market",
     "parentKey": "research",
+    "appliesToNodeType": null,
     "title": "Market research",
+    "icon": "research_market",
     "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Market research", "columns": [{ "key": "title", "header": "Title" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
     "bindings": { "rows": { "kind": "query", "catalogKey": "market_research" } }
   },
   {
-    "key": "research/users",
+    "key": "research/user",
     "parentKey": "research",
+    "appliesToNodeType": null,
     "title": "User research",
+    "icon": "research_user",
     "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "User research", "columns": [{ "key": "title", "header": "Title" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
     "bindings": { "rows": { "kind": "query", "catalogKey": "user_research" } }
   },
   {
     "key": "research/hypotheses",
     "parentKey": "research",
+    "appliesToNodeType": null,
     "title": "Hypotheses",
+    "icon": "research_hypotheses",
     "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Hypotheses", "columns": [{ "key": "title", "header": "Hypothesis" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
     "bindings": { "rows": { "kind": "query", "catalogKey": "hypothesis" } }
   },
   {
-    "key": "delivery",
+    "key": "manager",
     "parentKey": null,
-    "title": "Delivery",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Delivery", "subtitle": "Initiatives, releases and features" } } } },
-    "bindings": {}
+    "appliesToNodeType": null,
+    "title": "Manager",
+    "icon": "manager",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Manager" } } } }
   },
   {
-    "key": "delivery/initiatives",
-    "parentKey": "delivery",
+    "key": "manager/initiatives",
+    "parentKey": "manager",
+    "appliesToNodeType": null,
     "title": "Initiatives",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Initiatives", "columns": [{ "key": "title", "header": "Initiative" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "icon": "manager_initiatives",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Initiatives", "rowHref": "n", "columns": [{ "key": "title", "header": "Initiative" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
     "bindings": { "rows": { "kind": "query", "catalogKey": "initiative" } }
   },
   {
-    "key": "delivery/releases",
-    "parentKey": "delivery",
-    "title": "Releases",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Releases", "columns": [{ "key": "title", "header": "Release" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "release" } }
+    "key": "development",
+    "parentKey": null,
+    "appliesToNodeType": null,
+    "title": "Development",
+    "icon": "development",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Development" } } } }
   },
   {
-    "key": "delivery/prds",
-    "parentKey": "delivery",
-    "title": "PRDs",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "PRDs", "columns": [{ "key": "title", "header": "PRD" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "prd" } }
+    "key": "development/data-model",
+    "parentKey": "development",
+    "appliesToNodeType": null,
+    "title": "Data model",
+    "icon": "dev_data_model",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Data model", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "data_spec" } }
   },
   {
-    "key": "delivery/features",
-    "parentKey": "delivery",
-    "title": "Features",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Features", "columns": [{ "key": "title", "header": "Feature" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "feature" } }
+    "key": "development/system-model",
+    "parentKey": "development",
+    "appliesToNodeType": null,
+    "title": "System model",
+    "icon": "dev_system_model",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "System model", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "architecture_spec" } }
   },
   {
-    "key": "delivery/stories",
-    "parentKey": "delivery",
-    "title": "User stories",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "User stories", "columns": [{ "key": "title", "header": "Story" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "user_story" } }
+    "key": "development/api-reference",
+    "parentKey": "development",
+    "appliesToNodeType": null,
+    "title": "API reference",
+    "icon": "dev_api_reference",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "API reference", "columns": [{ "key": "title", "header": "Reference" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "api_reference" } }
+  },
+  {
+    "key": "development/integration",
+    "parentKey": "development",
+    "appliesToNodeType": null,
+    "title": "Integration",
+    "icon": "dev_integration",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Integration", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "integration_spec" } }
   },
   {
     "key": "design",
     "parentKey": null,
+    "appliesToNodeType": null,
     "title": "Design",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Design", "subtitle": "Information architecture, flows and wireframes" } } } },
-    "bindings": {}
+    "icon": "design",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Design" } } } }
   },
   {
     "key": "design/ia",
     "parentKey": "design",
+    "appliesToNodeType": null,
     "title": "Information architecture",
+    "icon": "design_ia",
     "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Information architecture", "columns": [{ "key": "title", "header": "IA" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
     "bindings": { "rows": { "kind": "query", "catalogKey": "information_architecture" } }
   },
   {
-    "key": "design/flows",
+    "key": "design/ui-components",
     "parentKey": "design",
-    "title": "User flows",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "User flows", "columns": [{ "key": "title", "header": "Flow" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "user_flow" } }
+    "appliesToNodeType": null,
+    "title": "UI components",
+    "icon": "design_ui_components",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "UI components", "columns": [{ "key": "title", "header": "Component" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "ui_component" } }
   },
   {
-    "key": "design/wireframes",
+    "key": "design/theme",
     "parentKey": "design",
+    "appliesToNodeType": null,
+    "title": "Design theme",
+    "icon": "design_theme",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Design theme", "columns": [{ "key": "title", "header": "Theme" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "design_theme" } }
+  },
+  {
+    "key": "design/toolchain",
+    "parentKey": "design",
+    "appliesToNodeType": null,
+    "title": "Design toolchain",
+    "icon": "design_toolchain",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Design toolchain", "columns": [{ "key": "title", "header": "Toolchain" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "design_toolchain" } }
+  },
+
+  {
+    "key": "tpl/initiative/overview",
+    "parentKey": null,
+    "appliesToNodeType": "initiative",
+    "title": "Overview",
+    "icon": "initiative_overview",
+    "spec": { "root": "card", "elements": { "card": { "type": "Card", "children": ["h", "f"] }, "h": { "type": "PageHeader", "props": { "title": "Initiative overview" } }, "f": { "type": "NodeField", "props": { "label": "Initiative", "binding": "self" } } } },
+    "bindings": { "self": { "kind": "subject" } }
+  },
+  {
+    "key": "tpl/initiative/planning",
+    "parentKey": null,
+    "appliesToNodeType": "initiative",
+    "title": "Planning",
+    "icon": "planning_prd",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Planning" } } } }
+  },
+  {
+    "key": "tpl/initiative/planning/prd",
+    "parentKey": "tpl/initiative/planning",
+    "appliesToNodeType": "initiative",
+    "title": "PRD",
+    "icon": "planning_prd",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "PRD", "columns": [{ "key": "title", "header": "PRD" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+  },
+  {
+    "key": "tpl/initiative/planning/features",
+    "parentKey": "tpl/initiative/planning",
+    "appliesToNodeType": "initiative",
+    "title": "Features",
+    "icon": "planning_features",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Features", "columns": [{ "key": "title", "header": "Feature" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+  },
+  {
+    "key": "tpl/initiative/planning/stories",
+    "parentKey": "tpl/initiative/planning",
+    "appliesToNodeType": "initiative",
+    "title": "Stories",
+    "icon": "planning_stories",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Stories", "columns": [{ "key": "title", "header": "Story" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+  },
+  {
+    "key": "tpl/initiative/design",
+    "parentKey": null,
+    "appliesToNodeType": "initiative",
+    "title": "Design",
+    "icon": "design",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Design" } } } }
+  },
+  {
+    "key": "tpl/initiative/design/ia",
+    "parentKey": "tpl/initiative/design",
+    "appliesToNodeType": "initiative",
+    "title": "Information architecture",
+    "icon": "design_ia",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Information architecture", "columns": [{ "key": "title", "header": "IA" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+  },
+  {
+    "key": "tpl/initiative/design/wireframes",
+    "parentKey": "tpl/initiative/design",
+    "appliesToNodeType": "initiative",
     "title": "Wireframes",
+    "icon": "design_wireframes",
     "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Wireframes", "columns": [{ "key": "title", "header": "Wireframe" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "page_wireframe" } }
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   },
   {
-    "key": "engineering",
+    "key": "tpl/initiative/design/flows",
+    "parentKey": "tpl/initiative/design",
+    "appliesToNodeType": "initiative",
+    "title": "Flows",
+    "icon": "design_flows",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Flows", "columns": [{ "key": "title", "header": "Flow" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+  },
+  {
+    "key": "tpl/initiative/architecture",
     "parentKey": null,
-    "title": "Engineering",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Engineering", "subtitle": "Architecture, data, integration and plans" } } } },
-    "bindings": {}
+    "appliesToNodeType": "initiative",
+    "title": "Architecture",
+    "icon": "architecture_spec",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Architecture" } } } }
   },
   {
-    "key": "engineering/architecture",
-    "parentKey": "engineering",
-    "title": "Architecture specs",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Architecture specs", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "architecture_spec" } }
+    "key": "tpl/initiative/architecture/spec",
+    "parentKey": "tpl/initiative/architecture",
+    "appliesToNodeType": "initiative",
+    "title": "Architecture spec",
+    "icon": "architecture_spec",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Architecture spec", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   },
   {
-    "key": "engineering/data",
-    "parentKey": "engineering",
-    "title": "Data specs",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Data specs", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "data_spec" } }
+    "key": "tpl/initiative/architecture/data",
+    "parentKey": "tpl/initiative/architecture",
+    "appliesToNodeType": "initiative",
+    "title": "Data",
+    "icon": "architecture_data",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Data", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   },
   {
-    "key": "engineering/integration",
-    "parentKey": "engineering",
-    "title": "Integration specs",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Integration specs", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "integration_spec" } }
+    "key": "tpl/initiative/architecture/integration",
+    "parentKey": "tpl/initiative/architecture",
+    "appliesToNodeType": "initiative",
+    "title": "Integration",
+    "icon": "architecture_integration",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Integration", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   },
   {
-    "key": "engineering/plans",
-    "parentKey": "engineering",
-    "title": "Implementation plans",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Implementation plans", "columns": [{ "key": "title", "header": "Plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "implementation_plan" } }
-  },
-  {
-    "key": "build",
+    "key": "tpl/initiative/build",
     "parentKey": null,
+    "appliesToNodeType": "initiative",
     "title": "Build",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Build", "subtitle": "Sprints, tasks and pull requests" } } } },
-    "bindings": {}
+    "icon": "build_plan",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Build" } } } }
   },
   {
-    "key": "build/sprints",
-    "parentKey": "build",
-    "title": "Sprints",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Sprints", "columns": [{ "key": "title", "header": "Sprint" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "sprint" } }
+    "key": "tpl/initiative/build/plan",
+    "parentKey": "tpl/initiative/build",
+    "appliesToNodeType": "initiative",
+    "title": "Build plan",
+    "icon": "build_plan",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Build plan", "columns": [{ "key": "title", "header": "Plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   },
   {
-    "key": "build/tasks",
-    "parentKey": "build",
+    "key": "tpl/initiative/build/tasks",
+    "parentKey": "tpl/initiative/build",
+    "appliesToNodeType": "initiative",
     "title": "Tasks",
+    "icon": "build_tasks",
     "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Tasks", "columns": [{ "key": "title", "header": "Task" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "task" } }
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   },
   {
-    "key": "build/prs",
-    "parentKey": "build",
+    "key": "tpl/initiative/build/pull-requests",
+    "parentKey": "tpl/initiative/build",
+    "appliesToNodeType": "initiative",
     "title": "Pull requests",
+    "icon": "build_pull_requests",
     "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Pull requests", "columns": [{ "key": "title", "header": "PR" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "pull_request" } }
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   },
   {
-    "key": "quality",
+    "key": "tpl/initiative/qa",
     "parentKey": null,
-    "title": "Quality & Launch",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Quality & Launch", "subtitle": "Tests, launch plans, release notes and runbooks" } } } },
-    "bindings": {}
+    "appliesToNodeType": "initiative",
+    "title": "QA",
+    "icon": "qa_test_plan",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "QA" } } } }
   },
   {
-    "key": "quality/tests",
-    "parentKey": "quality",
-    "title": "Test plans",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Test plans", "columns": [{ "key": "title", "header": "Test plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "test_plan" } }
+    "key": "tpl/initiative/qa/test-plan",
+    "parentKey": "tpl/initiative/qa",
+    "appliesToNodeType": "initiative",
+    "title": "Test plan",
+    "icon": "qa_test_plan",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Test plan", "columns": [{ "key": "title", "header": "Test plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   },
   {
-    "key": "quality/launch",
-    "parentKey": "quality",
-    "title": "Launch plans",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Launch plans", "columns": [{ "key": "title", "header": "Launch plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "launch_plan" } }
-  },
-  {
-    "key": "quality/release-notes",
-    "parentKey": "quality",
-    "title": "Release notes",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Release notes", "columns": [{ "key": "title", "header": "Release note" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "release_note" } }
-  },
-  {
-    "key": "quality/runbooks",
-    "parentKey": "quality",
-    "title": "Runbooks",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Runbooks", "columns": [{ "key": "title", "header": "Runbook" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "runbook" } }
-  },
-  {
-    "key": "analytics",
+    "key": "tpl/initiative/launch",
     "parentKey": null,
-    "title": "Analytics",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Analytics", "subtitle": "Metric snapshots and retrospectives" } } } },
-    "bindings": {}
+    "appliesToNodeType": "initiative",
+    "title": "Launch",
+    "icon": "launch_plan",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Launch" } } } }
   },
   {
-    "key": "analytics/metrics",
-    "parentKey": "analytics",
-    "title": "Metric snapshots",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Metric snapshots", "columns": [{ "key": "title", "header": "Snapshot" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "metric_snapshot" } }
+    "key": "tpl/initiative/launch/plan",
+    "parentKey": "tpl/initiative/launch",
+    "appliesToNodeType": "initiative",
+    "title": "Launch plan",
+    "icon": "launch_plan",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Launch plan", "columns": [{ "key": "title", "header": "Plan" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   },
   {
-    "key": "analytics/retros",
-    "parentKey": "analytics",
-    "title": "Retrospectives",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Retrospectives", "columns": [{ "key": "title", "header": "Retro" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "retrospective" } }
+    "key": "tpl/initiative/launch/docs",
+    "parentKey": "tpl/initiative/launch",
+    "appliesToNodeType": "initiative",
+    "title": "Launch docs",
+    "icon": "launch_docs",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Launch docs", "columns": [{ "key": "title", "header": "Doc" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+  },
+  {
+    "key": "tpl/initiative/retrospective",
+    "parentKey": null,
+    "appliesToNodeType": "initiative",
+    "title": "Retrospective",
+    "icon": "retro_review",
+    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Retrospective" } } } }
+  },
+  {
+    "key": "tpl/initiative/retrospective/metrics",
+    "parentKey": "tpl/initiative/retrospective",
+    "appliesToNodeType": "initiative",
+    "title": "Metrics",
+    "icon": "retro_metrics",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Metrics", "columns": [{ "key": "title", "header": "Snapshot" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
+  },
+  {
+    "key": "tpl/initiative/retrospective/review",
+    "parentKey": "tpl/initiative/retrospective",
+    "appliesToNodeType": "initiative",
+    "title": "Review",
+    "icon": "retro_review",
+    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Review", "columns": [{ "key": "title", "header": "Retro" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "bindings": { "rows": { "kind": "traverse", "from": "subject", "edgeCatalogKey": "for_initiative", "direction": "in" } }
   }
 ]

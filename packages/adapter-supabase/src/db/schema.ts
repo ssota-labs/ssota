@@ -424,6 +424,10 @@ export const pages = pgTable(
     icon: text("icon"),
     // Optional human-friendly slug; canonical addressing is still by `id`.
     slug: text("slug"),
+    // When set (e.g. "initiative"), this page is a node-type drill-in TEMPLATE:
+    // it renders only when the user drills into a node of that catalogKey, with
+    // that node injected as the binding `subject`. Null = project-level (L0) page.
+    appliesToNodeType: text("applies_to_node_type"),
     // JSON-render element tree (jsonRenderSpecSchema).
     spec: jsonb("spec").notNull().default({}).$type<Record<string, unknown>>(),
     // Data bindings (bindingDefSchema map) resolved against nodes/edges.
@@ -444,6 +448,10 @@ export const pages = pgTable(
       table.parentId,
     ),
     projectIdx: index("pages_project_id_idx").on(table.projectId),
+    projectAppliesToIdx: index("pages_project_applies_to_node_type_idx").on(
+      table.projectId,
+      table.appliesToNodeType,
+    ),
     projectSubjectIdx: index("pages_project_subject_node_id_idx").on(
       table.projectId,
       table.subjectNodeId,

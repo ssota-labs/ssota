@@ -23,6 +23,7 @@ function mapPage(row: PageRow): Page {
     parentId: row.parentId ?? null,
     position: row.position,
     subjectNodeId: row.subjectNodeId ?? null,
+    appliesToNodeType: row.appliesToNodeType ?? null,
     spec: row.spec,
     bindings: row.bindings,
     actions: row.actions,
@@ -55,6 +56,19 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
             parentId === null
               ? isNull(schema.pages.parentId)
               : eq(schema.pages.parentId, parentId),
+          ),
+        )
+        .orderBy(asc(schema.pages.position));
+      return rows.map(mapPage);
+    },
+    async listTemplatesForNodeType(catalogKey) {
+      const rows = await db
+        .select()
+        .from(schema.pages)
+        .where(
+          and(
+            eq(schema.pages.projectId, projectId),
+            eq(schema.pages.appliesToNodeType, catalogKey),
           ),
         )
         .orderBy(asc(schema.pages.position));
@@ -95,6 +109,7 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
           icon: parsed.icon ?? null,
           slug: parsed.slug ?? null,
           subjectNodeId: parsed.subjectNodeId ?? null,
+          appliesToNodeType: parsed.appliesToNodeType ?? null,
           spec: parsed.spec,
           bindings: parsed.bindings,
           actions: parsed.actions,
@@ -113,6 +128,8 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
       if (patch.position !== undefined) set.position = patch.position;
       if (patch.subjectNodeId !== undefined)
         set.subjectNodeId = patch.subjectNodeId ?? null;
+      if (patch.appliesToNodeType !== undefined)
+        set.appliesToNodeType = patch.appliesToNodeType ?? null;
       if (patch.spec !== undefined) set.spec = patch.spec;
       if (patch.bindings !== undefined) set.bindings = patch.bindings;
       if (patch.actions !== undefined) set.actions = patch.actions;
@@ -150,6 +167,8 @@ interface PageTreeSeedEntry {
   parentKey: string | null;
   title: string;
   icon?: string;
+  /** Node-type drill-in template marker (e.g. "initiative"); null = L0 page. */
+  appliesToNodeType?: string | null;
   spec: unknown;
   bindings?: Record<string, unknown>;
   actions?: Record<string, unknown>;
@@ -187,7 +206,10 @@ export async function seedPages(db: Db, projectId: string): Promise<void> {
       continue;
     }
 
-    const posKey = entry.parentKey ?? "__root__";
+    // Root-level position counters are namespaced per tree (L0 vs each node-type
+    // template) so their orderings don't interleave.
+    const posKey =
+      entry.parentKey ?? `__root__:${entry.appliesToNodeType ?? "null"}`;
     const position = positionByParent.get(posKey) ?? 0;
     positionByParent.set(posKey, position + 1);
 
@@ -197,6 +219,7 @@ export async function seedPages(db: Db, projectId: string): Promise<void> {
       slug: entry.key,
       parentId,
       position,
+      appliesToNodeType: entry.appliesToNodeType ?? null,
       spec: entry.spec,
       bindings: entry.bindings ?? {},
       actions: entry.actions ?? {},
@@ -211,6 +234,7 @@ export async function seedPages(db: Db, projectId: string): Promise<void> {
         title: parsed.title,
         icon: parsed.icon ?? null,
         slug: parsed.slug ?? null,
+        appliesToNodeType: parsed.appliesToNodeType ?? null,
         spec: parsed.spec,
         bindings: parsed.bindings,
         actions: parsed.actions,

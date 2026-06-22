@@ -12,6 +12,11 @@ export interface PagePort {
   listPages(): Promise<Page[]>;
   /** Direct children of `parentId` (null = top-level), ordered by `position`. */
   listChildren(parentId: string | null): Promise<Page[]>;
+  /**
+   * Node-type drill-in templates: pages whose `appliesToNodeType` === catalogKey.
+   * Rendered as the L1 nav when drilling into a node of that type.
+   */
+  listTemplatesForNodeType(catalogKey: string): Promise<Page[]>;
   getPage(id: string): Promise<Page | null>;
   getPageBySlug(slug: string): Promise<Page | null>;
   createPage(record: PageRecord): Promise<Page>;

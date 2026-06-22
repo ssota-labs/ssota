@@ -182,6 +182,8 @@ export const pageRecordSchema = z
     parentId: z.string().uuid().nullable().optional(),
     position: z.number().int().nonnegative().optional(),
     subjectNodeId: z.string().uuid().nullable().optional(),
+    /** When set, a node-type drill-in template (renders for that catalogKey). */
+    appliesToNodeType: z.string().min(1).nullable().optional(),
     spec: jsonRenderSpecSchema,
     bindings: z.record(bindingDefSchema).default({}),
     actions: z.record(pageActionSchema).default({}),
@@ -202,6 +204,7 @@ export const pageSchema = z
     parentId: z.string().uuid().nullable().optional(),
     position: z.number().int().nonnegative(),
     subjectNodeId: z.string().uuid().nullable().optional(),
+    appliesToNodeType: z.string().min(1).nullable().optional(),
     spec: jsonRenderSpecSchema,
     bindings: z.record(bindingDefSchema).default({}),
     actions: z.record(pageActionSchema).default({}),
