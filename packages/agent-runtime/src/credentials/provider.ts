@@ -47,10 +47,10 @@ function envKey(connector: string): string {
   return `CONNECTOR_${connector.toUpperCase().replace(/[^A-Z0-9]/g, "_")}_TOKEN`;
 }
 
-/** Slack/GitHub mint app-subject installation tokens; oauth/* uses user subject. */
+/** Slack/GitHub/Discord mint app-subject installation tokens; oauth/* and linear/* use user subject. */
 export function connectUsesAppSubject(connectorUid: string): boolean {
   const provider = connectorUid.split("/")[0] ?? connectorUid;
-  return provider === "slack" || provider === "github";
+  return provider === "slack" || provider === "github" || provider === "discord";
 }
 
 type ConnectTokenSubject =
@@ -114,7 +114,7 @@ export function createVercelConnectProvider(): CredentialProvider {
         );
       }
 
-      // App-subject for slack/github installs; user-subject for oauth/* (Notion).
+      // App-subject for slack/github/discord installs; user-subject for oauth/* (Notion) and linear/*.
       try {
         const token = await connect.getToken(connector, {
           subject: resolveConnectTokenSubject(connector, scope),

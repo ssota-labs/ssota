@@ -110,14 +110,16 @@ describe("env credential provider", () => {
 });
 
 describe("connectUsesAppSubject", () => {
-  it("uses app subject for slack and github connectors", () => {
+  it("uses app subject for slack, github, and discord connectors", () => {
     expect(connectUsesAppSubject("slack/dev")).toBe(true);
     expect(connectUsesAppSubject("github/acme")).toBe(true);
+    expect(connectUsesAppSubject("discord/ssota-bot")).toBe(true);
   });
 
-  it("uses user subject for oauth/* connectors (Notion, Linear, …)", () => {
+  it("uses user subject for oauth/* and linear/* connectors", () => {
     expect(connectUsesAppSubject("oauth/ssota-notion")).toBe(false);
     expect(connectUsesAppSubject("oauth/linear")).toBe(false);
+    expect(connectUsesAppSubject("linear/mybot")).toBe(false);
   });
 });
 
