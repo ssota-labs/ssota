@@ -10,10 +10,12 @@ test.describe("Console v2.7 navigation", () => {
     await gotoProject(page, "tasks");
   });
 
-  test("sidebar: L0 shows tasks, overview, and collapsible groups", async ({ page }) => {
+  test("sidebar: L0 shows home, tasks, chat, connections, and collapsible groups", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
+    await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Chat", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Connections", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Executive", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Research", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Manager", exact: true })).toBeVisible();

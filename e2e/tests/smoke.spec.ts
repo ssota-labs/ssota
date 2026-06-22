@@ -45,7 +45,7 @@ test.describe("SSOTA Console", () => {
     const sidebar = page.locator("aside");
     await expect(nav).toBeVisible();
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Overview", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
     await expect(sidebar.getByRole("button", { name: "Signed in as" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Workflows", exact: true })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Graph", exact: true })).toHaveCount(0);

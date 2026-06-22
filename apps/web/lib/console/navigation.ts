@@ -346,6 +346,13 @@ function flattenInitiativeLinks(entries: NavEntry[]): NavLink[] {
 export const INITIATIVE_L1: NavLink[] = flattenInitiativeLinks(INITIATIVE_L1_NAV);
 
 export const L0_NAV: NavEntry[] = [
+  {
+    type: "link",
+    key: "home",
+    labelKey: "nav.home",
+    href: "overview",
+    pattern: "H",
+  },
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
   { type: "link", key: "chat", labelKey: "nav.chat", href: "chat", pattern: "L" },
   {
@@ -354,13 +361,6 @@ export const L0_NAV: NavEntry[] = [
     labelKey: "nav.connections",
     href: "connections",
     pattern: "L",
-  },
-  {
-    type: "link",
-    key: "overview",
-    labelKey: "nav.overview",
-    href: "overview",
-    pattern: "H",
   },
   {
     type: "section",
@@ -521,11 +521,11 @@ export function buildBreadcrumbSegments(
   const relative = getRelativeProjectPath(pathname, projectBase);
 
   if (!relative) {
-    return [{ labelKey: "nav.overview" }];
+    return [{ labelKey: "nav.home" }];
   }
 
   if (relative === "overview") {
-    return [{ labelKey: "nav.overview" }];
+    return [{ labelKey: "nav.home" }];
   }
   if (relative === "tasks" || relative.startsWith("tasks/")) {
     return [{ labelKey: "nav.tasks" }];
@@ -608,7 +608,7 @@ export function buildBreadcrumbSegments(
     return [{ labelKey: "nav.settings" }];
   }
 
-  return [{ labelKey: "nav.overview" }];
+  return [{ labelKey: "nav.home" }];
 }
 
 export function isInitiativeScopedRoute(pathname: string, projectBase: string): boolean {

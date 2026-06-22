@@ -28,7 +28,7 @@ const route = (
 
 /** Project-scoped static routes (not initiative L1). */
 export const STATIC_ROUTE_METAS: RouteMeta[] = [
-  route("overview", "H", ["aggregate"], "project", "nav.overview"),
+  route("overview", "H", ["aggregate"], "project", "nav.home"),
   route("tasks", "L", ["task"], "project", "nav.tasks", "cta.newTask"),
   route("workflow/map", "canvas", ["all"], "project", "nav.workflowMap"),
   route("executive/roadmap", "D", ["product_roadmap", "roadmap"], "evergreen", "nav.executiveRoadmap", "cta.newDocument"),
