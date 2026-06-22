@@ -25,9 +25,8 @@ type Story = StoryObj<HoverCardStoryArgs>;
 
 export const Preview: Story = {
   args: {
-    nodeName: "HomepageProject",
-    description:
-      "subject_id scoped instance node for the homepage agent catalog.",
+    nodeName: "Initiative",
+    description: "Project-scoped graph node from the dev-workflow catalog.",
   },
   render: (args) => (
     <div className="flex max-w-md flex-col gap-3">
@@ -44,9 +43,8 @@ export const Preview: Story = {
 
 export const NodePreview: Story = {
   args: {
-    nodeName: "HomepageProject",
-    description:
-      "subject_id scoped instance node for the homepage agent catalog.",
+    nodeName: "Initiative",
+    description: "Project-scoped graph node from the dev-workflow catalog.",
   },
   render: (args) => (
     <HoverCard>

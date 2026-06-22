@@ -52,26 +52,22 @@ e2e/
 
 `archive/generic-runtime/`에 보존된 generic runtime의 불변식(`executeAction` 단일 쓰기, ActionCommitPort+log 단일 트랜잭션, 4대 강제, Gate)은 **active product에 적용하지 않는다**. 해당 코드를 복원·의존하지 말 것.
 
-## Tenancy & Security — `project_id` + 서버사이드 격리
+## Tenancy & Security — Organization + `project_id`
 
-SSOTA 플랫폼이 강제하는 격리 단위는 **`project_id` 하나**다. Supabase가 고객사 DB 스키마에 tenant 컬럼을 강제하지 않듯, SSOTA도 최종 고객(tenant) 구분을 플랫폼 헤더·런타임 검증으로 강제하지 않는다. B2B2C에서 Acme/Beta row 격리는 **고객사가 카탈로그·액션 계약에 정의한 property**(예: `subject_id`)와 **embedder BFF**가 담당한다.
+Active product scope: **조직 멤버가 조직 내 프로젝트에서 워크플로·카탈로그·그래프·페이지를 함께 쓴다.** SaaS 배포, 커스텀 도메인, 엔드유저 account 파티션(Phase 5 스키마)은 **현재 비범위** — 나중에 필요할 때 다시 제품화한다.
+
+격리 SSOT:
+
+- **Organization** — 팀 경계. `organization_memberships`로 Console/MCP 접근 제어.
+- **Project** — 카탈로그 + 그래프 + tasks 경계. 모든 인스턴스 row는 `project_id`로 스코핑.
 
 ```plain text
-Organization (고객사 A)
-├── Project: homepage-agent   → 카탈로그 + 그래프 (project_id)
-└── Project: marketing-agent  → 카탈로그 + 그래프 (project_id)
-    └── tenant 컬럼(예: subject_id)은 고객 카탈로그·BFF 책임 — 플랫폼 미강제
+Organization (예: ssota-labs)
+├── Project: ssota-dev    → node/edge catalog + nodes/edges + tasks + pages
+└── Project: marketing    → 독립 카탈로그 + 그래프 (project 간 데이터 혼합 없음)
 ```
 
-### 레이어 분리
-
-| 레이어 | 담당 | 식별자 |
-|---|---|---|
-| 고객사 A 앱 (자체 Supabase) | 최종 사용자 인증·앱 데이터 RLS | A의 `users.id` (또는 동등한 PK) |
-| SSOTA 그래프 DB | Project별 그래프 인스턴스 (`nodes`, `edges`, `tasks`) | `project_id` |
-| SSOTA Console / MCP | graph read/write·task 조회 스코핑 | 요청 context의 `projectId` |
-
-Console URL `[orgSlug]/[projectSlug]`와 MCP/API 헤더 `X-SSOTA-Project-Id`가 **project 격리의 SSOT**다. Embedder BFF는 org/project slug 또는 project UUID를 MCP에 전달한다.
+Console URL `[orgSlug]/[projectSlug]`와 MCP tool params의 `orgSlug` + `projectSlug`가 **project 격리의 SSOT**다. 레거시 도구 호환용으로 `X-SSOTA-Project-Id`(project UUID) 헤더도 읽을 수 있다.
 
 ### `project_id` 규칙
 
@@ -80,51 +76,27 @@ Console URL `[orgSlug]/[projectSlug]`와 MCP/API 헤더 `X-SSOTA-Project-Id`가 
 - **쓰기**: core graph use-case + `GraphWritePort`. `createNode({ catalogKey })` / `createEdge({ catalogKey })`. cross-project node 참조는 `PROJECT_MISMATCH`.
 - **조회**: `queryNodes({ catalogKey })` / `traverseEdges`는 auth context의 `projectId`로 스코핑. 응답 `GraphNode`에 `catalogKey`, `catalogLabel`, `nodeCatalogId` 포함.
 
-### Tenant property (고객 정의, 플랫폼 미강제)
-
-- **카탈로그 책임** — `HomepageProject` 등 최종 고객별 row에 `subject_id`(또는 고객이 정한 이름)를 둘지는 **node catalog `property_schema`·액션 계약**으로 정의한다. SSOTA는 해당 property를 자동 주입·검증·쿼리 필터하지 않는다.
-- **BFF 패턴** — embedder가 auth 검증 후 `create_node` input의 `properties.subject_id`에 A의 `users.id`를 넣어 `execute_action`으로 전달한다 (`examples/embedder-bff/`).
-- **조회** — `query_nodes`·`traverse_edges`는 `project_id`로만 스코핑한다. tenant별 필터가 필요하면 고객 액션·쿼리 설계 또는 BFF가 담당한다.
-- **인덱스** — 고객이 tenant property를 쓰면 adapter 마이그레이션에서 `(project_id, node_catalog_id, (properties->>'subject_id'))` 등 **선택적** 복합 인덱스를 둘 수 있다.
-
-예시 (홈페이지 제작 에이전트 — `homepage-agent` project):
-
-```plain text
-Project homepage-agent 카탈로그: HomepageProject, DesignBrief, PageSection
-Acme 사용자 (A의 users.id = "usr_acme_42")
-  → BFF: create_node { properties: { subject_id: "usr_acme_42", title: "..." } }
-query_nodes({ catalogKey: "HomepageProject" }) + context.projectId → project 내 전체 row
-  (Acme만 보려면 BFF/앱이 properties 필터 또는 별도 액션으로 처리)
-```
-
-별도 Project `marketing-agent`는 **독립 카탈로그·그래프** — homepage project의 node type/action catalog와 섞이지 않는다.
-
 ### Postgres RLS — 전 테이블 deny-all (의도적)
 
 SSOTA 테이블(`profiles`, `organizations`, `projects`, `organization_memberships`, `tasks`, `node_catalog`, `edge_catalog`, `nodes`, `edges`) **전부 RLS deny-all**. `action_log`·`gates`는 active schema에 **없음**.
 
-1. **격리의 SSOT는 core graph use-case + 서버 `projectId` context**다.
+1. **격리의 SSOT는 core graph use-case + 서버 `projectId` context + org membership 검증**이다.
 2. **서버만 DB 접근**: adapter는 `createDb` / `createAdminDb`로 `DATABASE_URL`(postgres superuser 또는 service role 직접 연결)만 사용한다. 이 경로는 RLS를 bypass한다.
-3. **고객사 A의 최종 사용자 RLS**는 A의 자체 Supabase에서 처리한다. SSOTA 그래프 DB는 A의 백엔드·SSOTA 서버만 접근하는 **서버사이드 데이터 플레인**이다.
 
 ### Defense in depth (서버사이드)
 
 ```
-[최종 사용자] → [고객사 A API — A의 Supabase Auth + A의 RLS]
-                      ↓ (선택) tenant property in action input
-              [SSOTA apps/web | apps/mcp — JWT·projectId 검증]
+[조직 멤버] → [SSOTA apps/web | apps/mcp — Supabase JWT + org membership + projectId]
                       ↓
               [GraphWritePort / queryNodes — catalog Zod + project 스코핑]
                       ↓
               [adapter-supabase — createAdminDb / DATABASE_URL, RLS bypass]
 ```
 
-- **금지**: anon/authenticated PostgREST로 `nodes`/`edges` 직접 노출, permissive RLS policy 추가, 플랫폼 레벨 tenant 헤더(`X-SSOTA-Subject-Id`)로 런타임 강제.
+- **금지**: anon/authenticated PostgREST로 `nodes`/`edges` 직접 노출, permissive RLS policy 추가.
 - **필수**: 모든 graph read/write는 apps 라우트·MCP 핸들러를 통과; RLS 거부 케이스 integration 테스트.
 
-SSOTA Console 운영자(카탈로그 편집·Human Gate)는 org membership auth로 project 전체 데이터에 접근한다.
-
-**Embedder BFF 예시**: `examples/embedder-bff/` — 고객사 A가 `X-Embedder-User-Id`(자체 `users.id`)를 검증 후 `properties.subject_id`를 넣어 SSOTA API로 프록시. 로컬 실행: `pnpm embedder-bff` (MCP 기동 후).
+조직 멤버는 org membership auth로 소속 org의 project 데이터에 접근한다.
 
 ## Setup Commands
 

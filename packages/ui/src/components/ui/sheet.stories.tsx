@@ -34,7 +34,7 @@ export const Preview: Story = {
   args: {
     title: "Node inspector",
     description: "Read-only properties for the selected graph node.",
-    detail: "subject_id: usr_acme_42",
+    detail: "lifecycleStatus: active",
     triggerLabel: "Open inspector",
   },
   render: (args) => (
@@ -52,7 +52,7 @@ export const Right: Story = {
   args: {
     title: "Node inspector",
     description: "Read-only properties for the selected graph node.",
-    detail: "subject_id: usr_acme_42",
+    detail: "lifecycleStatus: active",
     triggerLabel: "Open inspector",
   },
   render: (args) => (
