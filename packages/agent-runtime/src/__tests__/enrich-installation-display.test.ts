@@ -16,6 +16,7 @@ describe("enrichConnectInstallationDisplay", () => {
     delete process.env.CONNECT_STUB;
     delete process.env.CREDENTIALS;
     delete process.env.CONNECTOR_SLACK_TOKEN;
+    delete process.env.CONNECTOR_SLACK_T0914DV7GA0_TOKEN;
   });
 
   it("returns unchanged when Connect already provided a name", async () => {
@@ -68,6 +69,34 @@ describe("enrichConnectInstallationDisplay", () => {
     });
 
     expect(result.name).toBe("Pax Humana");
+  });
+
+  it("prefers app-subject token for Slack enrichment when userId is set", async () => {
+    process.env.CREDENTIALS = "own-app";
+    process.env.CONNECTOR_SLACK_T0914DV7GA0_TOKEN = "xoxb-app";
+    process.env.CONNECTOR_SLACK_TOKEN = "xoxp-user-should-not-use";
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ ok: true, team: "SSOTA Labs" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await enrichConnectInstallationDisplay({
+      connector: "slack/ssota",
+      installation: baseInstallation,
+      scope: { projectId: "p", userId: "user-1" },
+    });
+
+    expect(result.name).toBe("SSOTA Labs");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://slack.com/api/auth.test",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer xoxb-app",
+        }),
+      }),
+    );
   });
 
   it("returns unchanged when provider API fails", async () => {

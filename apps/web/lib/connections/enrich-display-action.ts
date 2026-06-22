@@ -37,20 +37,25 @@ export async function enrichConnectionDisplayAction(input: {
     normalizeConnectInstallationId(row.installationId) ??
     normalizeConnectInstallationId(row.tenantId);
 
-  const enriched = await enrichConnectInstallationDisplay({
-    connector: row.connector,
-    installation: {
-      installationId,
-      tenantId: row.tenantId ?? undefined,
-      name: row.name ?? undefined,
-    },
-    scope: {
-      projectId: row.projectId,
-      accountId: input.accountId,
-      userId: row.subjectUserId ?? user.id,
-      ...(installationId ? { installationId } : {}),
-    },
-  });
+  let enriched;
+  try {
+    enriched = await enrichConnectInstallationDisplay({
+      connector: row.connector,
+      installation: {
+        installationId,
+        tenantId: row.tenantId ?? undefined,
+        name: row.name ?? undefined,
+      },
+      scope: {
+        projectId: row.projectId,
+        accountId: input.accountId,
+        userId: row.subjectUserId ?? user.id,
+        ...(installationId ? { installationId } : {}),
+      },
+    });
+  } catch {
+    return { name: row.name, tenantId: row.tenantId };
+  }
 
   const name = enriched.name?.trim() ?? null;
   const tenantId =
