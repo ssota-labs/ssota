@@ -316,6 +316,10 @@ export const en = {
     addWorkspace: "Add workspace",
     reconnect: "Refresh",
     disconnect: "Disconnect",
+    disconnectTitle: "Disconnect this workspace?",
+    disconnectDescription:
+      "The agent will lose access to {name}. You can reconnect anytime.",
+    disconnectConfirm: "Disconnect",
     connectedAs: "Connected as {name}",
     providers: {
       slack: {
@@ -667,6 +671,10 @@ export const ko = {
     addWorkspace: "워크스페이스 추가",
     reconnect: "새로고침",
     disconnect: "연결 해제",
+    disconnectTitle: "이 워크스페이스 연결을 해제할까요?",
+    disconnectDescription:
+      "에이전트가 {name}에 더 이상 접근할 수 없습니다. 언제든 다시 연결할 수 있습니다.",
+    disconnectConfirm: "연결 해제",
     connectedAs: "{name}으로 연결됨",
     providers: {
       slack: {

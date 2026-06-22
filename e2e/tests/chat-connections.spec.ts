@@ -143,6 +143,7 @@ test.describe("Connections + Chat", () => {
       .first()
       .getByRole("button", { name: /Disconnect|연결 해제/i })
       .click();
+    await page.getByTestId("disconnect-dialog-confirm").click();
     await expect(slack.getByTestId("connection-row")).toHaveCount(1);
   });
 

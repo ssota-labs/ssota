@@ -17,6 +17,17 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@ssota/ui/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@ssota/ui/components/ui/alert-dialog";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { disconnectConnectionAction } from "@/app/[orgSlug]/[projectSlug]/connections/actions";
@@ -293,16 +304,42 @@ function ConnectionItem({
           </TooltipTrigger>
           <TooltipContent>{t("connections.reconnect")}</TooltipContent>
         </Tooltip>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={isPending}
-          onClick={() => onDisconnect(row.id)}
-          className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
-        >
-          <LinkBreakIcon className="size-4" />
-          {t("connections.disconnect")}
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                disabled={isPending}
+                className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+              />
+            }
+          >
+            <LinkBreakIcon className="size-4" />
+            {t("connections.disconnect")}
+          </AlertDialogTrigger>
+          <AlertDialogContent data-testid="disconnect-dialog">
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("connections.disconnectTitle")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("connections.disconnectDescription", { name: label })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                disabled={isPending}
+                data-testid="disconnect-dialog-confirm"
+                onClick={() => onDisconnect(row.id)}
+              >
+                {t("connections.disconnectConfirm")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
