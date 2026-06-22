@@ -12,6 +12,10 @@ import type { McpConnectionDef } from "../connections/define-mcp-connection.js";
 import { getConfiguredConnections } from "../connections/registry.js";
 import { McpSessionManager } from "../connections/mcp-session.js";
 import {
+  getKnownToolsForConnection,
+  inferConnectionIdFromQuery,
+} from "../connections/tool-catalog.js";
+import {
   toQualifiedToolName,
   parseQualifiedToolName,
 } from "../connections/qualified-name.js";
@@ -80,13 +84,10 @@ export async function createConnectionTools(
 
     if (installs.length === 0) continue;
 
+    // Register qualified tool shells from the static catalog only — no MCP
+    // at run start. Live discovery + activation happens in connection_search.
     for (const install of installs) {
-      const listings = await input.sessionManager.listTools(connection, {
-        projectId: input.projectId,
-        accountId: input.accountId,
-        installationId: install.installationId,
-        userId: install.subjectUserId,
-      });
+      const listings = getKnownToolsForConnection(connection);
 
       for (const listing of listings) {
         const qualifiedName = toQualifiedToolName(connection.id, listing.name);
@@ -172,13 +173,12 @@ function buildConnectionSearchTool(
         : null;
 
       const query = searchInput.query.trim().toLowerCase();
+      const connectionFilter =
+        searchInput.connection ?? inferConnectionIdFromQuery(query);
       const result: ConnectionSearchResult = { connections: [], tools: [] };
 
       for (const connection of connections) {
-        if (
-          searchInput.connection &&
-          searchInput.connection !== connection.id
-        ) {
+        if (connectionFilter && connectionFilter !== connection.id) {
           continue;
         }
 

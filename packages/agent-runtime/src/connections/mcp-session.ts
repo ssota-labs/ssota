@@ -4,6 +4,7 @@ import type { CredentialProvider } from "../credentials/provider.js";
 import type { McpConnectionDef } from "./define-mcp-connection.js";
 import { filterMcpTools, type McpToolListing } from "./filter-tools.js";
 import { resolveConnectorUid } from "./connect-credential.js";
+import { getStubToolsForConnection } from "./tool-catalog.js";
 
 export interface McpSessionScope {
   projectId: string;
@@ -12,48 +13,7 @@ export interface McpSessionScope {
   userId?: string | null;
 }
 
-const STUB_TOOLS_BY_CONNECTION: Record<string, McpToolListing[]> = {
-  linear: [
-    {
-      name: "search_issues",
-      description: "Search issues in the connected Linear workspace.",
-    },
-    {
-      name: "get_issue",
-      description: "Get a Linear issue by id or identifier.",
-    },
-    {
-      name: "create_issue",
-      description: "Create a new Linear issue.",
-    },
-  ],
-  slack: [
-    {
-      name: "search_messages",
-      description: "Search messages across the Slack workspace.",
-    },
-    {
-      name: "post_message",
-      description: "Post a message to a Slack channel.",
-    },
-  ],
-  github: [
-    {
-      name: "search_repositories",
-      description: "Search GitHub repositories.",
-    },
-    {
-      name: "list_issues",
-      description: "List issues in a GitHub repository.",
-    },
-  ],
-  notion: [
-    {
-      name: "search",
-      description: "Search Notion pages and databases.",
-    },
-  ],
-};
+const STUB_TOOLS_BY_CONNECTION = getStubToolsForConnection;
 
 type SessionKey = string;
 
@@ -92,7 +52,7 @@ export class McpSessionManager {
 
     if (useMcpStub()) {
       const stub = filterMcpTools(
-        STUB_TOOLS_BY_CONNECTION[connection.id] ?? [],
+        STUB_TOOLS_BY_CONNECTION(connection.id),
         connection.tools,
       );
       this.listCache.set(key, stub);

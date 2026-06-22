@@ -8,6 +8,10 @@ import { ConnectionRunState } from "../connections/run-state.js";
 import { buildActiveTools } from "../connections/activate-tools.js";
 import { defineMcpClientConnection } from "../connections/define-mcp-connection.js";
 import { connectCredential } from "../connections/connect-credential.js";
+import {
+  getKnownToolsForConnection,
+  inferConnectionIdFromQuery,
+} from "../connections/tool-catalog.js";
 
 describe("qualified tool names", () => {
   it("builds and parses Eve-style names", () => {
@@ -39,6 +43,26 @@ describe("filterMcpTools", () => {
       "a",
       "c",
     ]);
+  });
+});
+
+describe("tool catalog", () => {
+  it("lists slack post_message without MCP", () => {
+    const def = defineMcpClientConnection("slack", {
+      url: "https://mcp.slack.com/mcp",
+      description: "Slack",
+      auth: connectCredential("slack"),
+    });
+    const names = getKnownToolsForConnection(def).map((t) => t.name);
+    expect(names).toContain("post_message");
+    expect(names).toContain("search_messages");
+  });
+
+  it("infers connection id from Korean and English service names", () => {
+    expect(inferConnectionIdFromQuery("슬랙에 메시지 보내")).toBe("slack");
+    expect(inferConnectionIdFromQuery("send slack message")).toBe("slack");
+    expect(inferConnectionIdFromQuery("linear issues")).toBe("linear");
+    expect(inferConnectionIdFromQuery("graph nodes")).toBeUndefined();
   });
 });
 

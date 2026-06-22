@@ -116,7 +116,7 @@ describe("buildRunInstructions", () => {
     expect(prompt).toContain("Draft the onboarding PRD");
     expect(prompt).toContain("work.write_document");
     expect(prompt).toContain("connection_search");
-    expect(prompt).toContain("linear__search_issues");
+    expect(prompt).toContain("slack__post_message");
     expect(prompt).toContain("Covers activation metric");
     expect(prompt).toContain("Write the PRD for onboarding.");
     expect(prompt).toContain("complete_task");
