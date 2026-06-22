@@ -57,4 +57,17 @@ test.describe("Page Runtime Lab", () => {
     await expect(page).toHaveURL(/demo=document-view/);
     await expect(page.getByRole("heading", { name: "PRD" })).toBeVisible();
   });
+
+  test("roadmap document sheet opens BlockNote on row click", async ({ page }) => {
+    await page.goto("/labs/page-runtime?demo=roadmap-document-sheet");
+    await expect(page.getByTestId("document-sheet-list")).toBeVisible();
+    await expect(page.getByText("2026 연간 로드맵")).toBeVisible();
+
+    await page.getByRole("button", { name: /2026 Q1 분기 로드맵/ }).click();
+    await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "2026 Q1 분기 로드맵" })).toBeVisible();
+    await expect(page.getByTestId("document-sheet-editor")).toBeVisible();
+    await expect(page.getByTestId("blocknote-editor-shell")).toBeVisible();
+    await expect(page.getByText("DocumentSheetList catalog component")).toBeVisible();
+  });
 });

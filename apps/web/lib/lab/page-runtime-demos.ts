@@ -72,6 +72,91 @@ const mockPrdContent = [
   },
 ];
 
+const mockRoadmapDocs = [
+  {
+    id: "66666666-6666-4666-8666-666666666601",
+    catalogKey: "roadmap",
+    title: "2026 연간 로드맵",
+    properties: {
+      lifecycleStatus: "active",
+      summary: "Console v2.7 출시, end-user app, Design Studio 파이프라인",
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Annual themes",
+        },
+        {
+          type: "paragraph",
+          content:
+            "Graph-first Console, per-user app partition, and catalog-driven page runtime.",
+        },
+        {
+          type: "bulletListItem",
+          content: "Q1–Q2: Console v2.7 graph UI + initiative L2 screens",
+        },
+        {
+          type: "bulletListItem",
+          content: "Q3: End-user /app shell with account isolation",
+        },
+        {
+          type: "bulletListItem",
+          content: "Q4: Design Studio artifact build + Widget preview",
+        },
+      ],
+    },
+  },
+  {
+    id: "66666666-6666-4666-8666-666666666602",
+    catalogKey: "roadmap",
+    title: "2026 Q1 분기 로드맵",
+    properties: {
+      lifecycleStatus: "draft",
+      summary: "Page runtime catalog, Labs, roadmap document sheet pattern",
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Q1 deliverables",
+        },
+        {
+          type: "paragraph",
+          content:
+            "Document-type pages open in a right-side sheet with BlockNote instead of inline accordion.",
+        },
+        {
+          type: "bulletListItem",
+          content: "DocumentSheetList catalog component",
+        },
+        {
+          type: "bulletListItem",
+          content: "Planning roadmap UX migration from accordion to sheet",
+        },
+      ],
+    },
+  },
+  {
+    id: "66666666-6666-4666-8666-666666666603",
+    catalogKey: "roadmap",
+    title: "2026 Q2 분기 로드맵",
+    properties: {
+      lifecycleStatus: "review",
+      summary: "Initiative drill-in, scoped bindings, 18 L2 screens",
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Initiative workspace",
+        },
+        {
+          type: "paragraph",
+          content: "Tabs + Toolbar shell with traverse-bound NodeTable and document sheets.",
+        },
+      ],
+    },
+  },
+];
+
 const mockThemeTokens = {
   "--background": "oklch(0.99 0 0)",
   "--foreground": "oklch(0.2 0.01 285)",
@@ -467,6 +552,42 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
     bindingData: { node: mockHypothesis },
+  },
+  {
+    id: "roadmap-document-sheet",
+    category: "document",
+    title: "DocumentSheetList",
+    description:
+      "Card-style document rows — click opens a right-side sheet with BlockNote (roadmap pattern).",
+    components: ["Section", "DocumentSheetList"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Planning roadmaps",
+            subtitle:
+              "Accordion 대신 카드 행 클릭 → 우측 시트에서 BlockNote 문서",
+          },
+          children: ["list"],
+        },
+        list: {
+          type: "DocumentSheetList",
+          props: {
+            binding: "roadmaps",
+            title: "Product roadmap documents",
+            field: "content",
+            subtitleField: "summary",
+            statusField: "lifecycleStatus",
+            sheetSize: "half",
+            editable: true,
+            action: "saveRoadmapDoc",
+          },
+        },
+      },
+    },
+    bindingData: { roadmaps: mockRoadmapDocs },
   },
   {
     id: "document-view",
