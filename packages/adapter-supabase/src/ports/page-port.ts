@@ -178,7 +178,7 @@ interface PageTreeSeedEntry {
  * Bootstrap-seed the software-development page tree (Notion-style) into the
  * `pages` table. Idempotent via `slug` (= the seed `key`); re-running never
  * clobbers tenant edits. Entries are ordered parents-first so `parentKey`
- * resolves against already-inserted rows. Call alongside `seedWorkflows` /
+ * resolves against already-inserted rows. Call alongside `seedWorkflowInstructions` /
  * `seedDomainCatalog` at project creation.
  */
 export async function seedPages(

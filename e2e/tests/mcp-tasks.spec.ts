@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
+import { E2E_EXECUTION_DIRECTIVE, getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
@@ -10,13 +10,20 @@ test.describe("MCP task tools", () => {
 
     const spawned = (await mcpToolCall(request, mcpUrl, token, "spawn_task", {
       title: "E2E spawned task",
-      workflowKey: "work.implement_feature",
+      workflowInstructionKey: "work.implement_feature",
       assignee: "agent:e2e",
+      executionDirective: E2E_EXECUTION_DIRECTIVE,
+      acceptanceCriteria: ["Task completed in E2E"],
       idempotencyKey,
-    })) as { id: string; title: string; workflowKey: string; status: string };
+    })) as {
+      id: string;
+      title: string;
+      workflowInstructionKey: string;
+      status: string;
+    };
 
     expect(spawned.id).toBeTruthy();
-    expect(spawned.workflowKey).toBe("work.implement_feature");
+    expect(spawned.workflowInstructionKey).toBe("work.implement_feature");
     expect(spawned.status).toBe("pending");
 
     const listed = (await mcpToolCall(
@@ -24,7 +31,7 @@ test.describe("MCP task tools", () => {
       mcpUrl,
       token,
       "list_tasks",
-    )) as Array<{ id: string; title: string; workflowKey: string }>;
+    )) as Array<{ id: string; title: string; workflowInstructionKey: string }>;
     expect(Array.isArray(listed)).toBe(true);
     expect(listed.some((task) => task.title === "E2E spawned task")).toBe(true);
 
@@ -34,7 +41,7 @@ test.describe("MCP task tools", () => {
       token,
       "query_tasks",
       {
-        workflowKey: "work.implement_feature",
+        workflowInstructionKey: "work.implement_feature",
         assignee: "agent:e2e",
         limit: 10,
       },
@@ -44,9 +51,9 @@ test.describe("MCP task tools", () => {
 
     const task = (await mcpToolCall(request, mcpUrl, token, "get_task", {
       taskId: matched!.id,
-    })) as { id: string; title: string; workflowKey: string } | null;
+    })) as { id: string; title: string; workflowInstructionKey: string } | null;
     expect(task?.id).toBe(matched!.id);
-    expect(task?.workflowKey).toBe("work.implement_feature");
+    expect(task?.workflowInstructionKey).toBe("work.implement_feature");
 
     const updated = (await mcpToolCall(request, mcpUrl, token, "update_task", {
       taskId: matched!.id,
@@ -58,7 +65,9 @@ test.describe("MCP task tools", () => {
 
     const duplicate = (await mcpToolCall(request, mcpUrl, token, "spawn_task", {
       title: "Should not create duplicate",
-      workflowKey: "work.implement_feature",
+      workflowInstructionKey: "work.implement_feature",
+      executionDirective: E2E_EXECUTION_DIRECTIVE,
+      acceptanceCriteria: ["done"],
       idempotencyKey,
     })) as { id: string; title: string };
     expect(duplicate.id).toBe(spawned.id);

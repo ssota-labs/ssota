@@ -1,4 +1,3 @@
-import { listWorkflowKeys, getWorkflowByKey } from "@ssota/contracts/workflows";
 import { TasksExplorer } from "@/components/tasks/tasks-explorer";
 import {
   type TaskTab,
@@ -6,7 +5,7 @@ import {
 } from "@/components/tasks/tasks-workspace";
 import { appProjectPath } from "@/lib/console/app-paths";
 import { resolveEndUserContext } from "@/lib/request-context";
-import { getTaskPort } from "@/lib/ports";
+import { getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
 
 const taskTabs = new Set<TaskTab>(["table", "board"]);
 
@@ -32,7 +31,7 @@ export default async function AppTasksPage({
     status: task.status,
     executorType: task.executorType,
     assignee: task.assignee ?? "Unassigned",
-    workflowKey: task.workflowKey,
+    workflowInstructionKey: task.workflowInstructionKey ?? "",
     subjectId: task.subjectId ?? "",
     acceptanceCriteria: task.acceptanceCriteria.flatMap((item) => {
       if (typeof item === "string") return [item];
@@ -46,13 +45,12 @@ export default async function AppTasksPage({
     createdAt: task.createdAt.toISOString(),
   }));
 
-  const workflowOptions = listWorkflowKeys().map((workflowKey) => {
-    const workflow = getWorkflowByKey(workflowKey);
-    return {
-      workflowKey,
-      title: workflow?.title ?? workflowKey,
-    };
-  });
+  const workflowInstructions =
+    await getWorkflowInstructionPort(ctx.projectId).listInstructions();
+  const workflowOptions = workflowInstructions.map((entry) => ({
+    workflowInstructionKey: entry.key,
+    title: entry.name,
+  }));
 
   return (
     <TasksExplorer

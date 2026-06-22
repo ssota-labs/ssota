@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import {
   DEFAULT_MCP_ORG_SLUG,
   DEFAULT_MCP_PROJECT_SLUG,
+  E2E_EXECUTION_DIRECTIVE,
   getSmokeAccessToken,
   mcpToolCall,
   mcpToolCallExpectError,
@@ -15,7 +16,7 @@ const scope = {
 };
 
 test.describe("MCP workflow tools", () => {
-  test("list, get, and get_instruction for registry workflows", async ({
+  test("list, get, and get_instruction for DB workflow instructions", async ({
     request,
   }) => {
     const token = await getSmokeAccessToken();
@@ -27,14 +28,15 @@ test.describe("MCP workflow tools", () => {
       "list_workflows",
       {},
       scope,
-    )) as { workflows: Array<{ workflowKey: string; title: string }> };
+    )) as { workflows: Array<{ key: string; name: string }> };
 
     expect(listed.workflows.length).toBeGreaterThanOrEqual(9);
-    expect(
-      listed.workflows.some((entry) => entry.workflowKey === "agent.main"),
-    ).toBe(true);
+    expect(listed.workflows.some((entry) => entry.key === "agent.main")).toBe(
+      true,
+    );
     for (const workflow of listed.workflows) {
       expect(workflow).not.toHaveProperty("instruction");
+      expect(workflow).not.toHaveProperty("content");
     }
 
     const daily = (await mcpToolCall(
@@ -44,10 +46,10 @@ test.describe("MCP workflow tools", () => {
       "get_workflow",
       { workflowKey: "orchestrator.daily" },
       scope,
-    )) as { workflowKey: string; cadenceHint: string };
-    expect(daily.workflowKey).toBe("orchestrator.daily");
-    expect(daily.cadenceHint).toBe("daily");
+    )) as { key: string; name: string };
+    expect(daily.key).toBe("orchestrator.daily");
     expect(daily).not.toHaveProperty("instruction");
+    expect(daily).not.toHaveProperty("content");
 
     const mainInstruction = (await mcpToolCall(
       request,

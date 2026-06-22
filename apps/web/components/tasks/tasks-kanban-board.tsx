@@ -224,7 +224,7 @@ function TaskCard({
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <span className="font-mono">{task.workflowKey}</span>
+          <span className="font-mono">{task.workflowInstructionKey}</span>
           {task.assignee ? <span>{task.assignee}</span> : null}
         </div>
         {motionReduced && onStatusChange ? (

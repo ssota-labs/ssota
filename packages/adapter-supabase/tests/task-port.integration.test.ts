@@ -6,6 +6,7 @@ import {
   createDb,
   createGraphPorts,
   createTaskPort,
+  createWorkflowInstructionPort,
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
 } from "../src/index.js";
@@ -13,11 +14,20 @@ import * as schema from "../src/db/schema.js";
 
 let skip = false;
 
+const sampleExecutionDirective = {
+  goal: "Complete the integration test task successfully.",
+  background: "Spawned from adapter task-port integration test fixture.",
+  steps: ["Read acceptance criteria", "Perform work", "Mark task done"],
+  constraints: [],
+  contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
+};
+
 describe("task port integration", () => {
   let projectId: string;
   let otherProjectId: string;
   let taskPort: ReturnType<typeof createTaskPort>;
   let graphPorts: ReturnType<typeof createGraphPorts>;
+  let workflowInstructions: ReturnType<typeof createWorkflowInstructionPort>;
   let client: ReturnType<typeof createDb>["client"] | undefined;
 
   beforeAll(async () => {
@@ -38,6 +48,9 @@ describe("task port integration", () => {
       projectId = project.id;
       taskPort = createTaskPort(dbBundle.db, { projectId });
       graphPorts = createGraphPorts(dbBundle.db, { projectId });
+      workflowInstructions = createWorkflowInstructionPort(dbBundle.db, {
+        projectId,
+      });
 
       const [other] = await dbBundle.db
         .insert(schema.projects)
@@ -61,30 +74,40 @@ describe("task port integration", () => {
     if (skip) context.skip();
   });
 
-  it("spawnTask persists task with workflow defaults", async () => {
-    const task = await spawnTask(
-      { tasks: taskPort, graphRead: graphPorts.graphRead },
-      projectId,
-      {
-        title: `Integration ${randomUUID()}`,
-        workflowKey: "work.implement_feature",
-      },
-    );
+  function spawnDeps() {
+    return {
+      tasks: taskPort,
+      graphRead: graphPorts.graphRead,
+      workflowInstructions,
+    };
+  }
+
+  it("spawnTask persists task with workflow instruction defaults", async () => {
+    const task = await spawnTask(spawnDeps(), projectId, {
+      title: `Integration ${randomUUID()}`,
+      workflowInstructionKey: "work.implement_feature",
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["Task completed"],
+    });
     expect(task.id).toBeTruthy();
     expect(task.status).toBe("pending");
-    expect(task.workflowKey).toBe("work.implement_feature");
+    expect(task.workflowInstructionKey).toBe("work.implement_feature");
   });
 
   it("spawnTask dedupes by idempotencyKey", async () => {
     const key = `integration:${randomUUID()}`;
-    const first = await spawnTask({ tasks: taskPort }, projectId, {
+    const first = await spawnTask(spawnDeps(), projectId, {
       title: "First",
-      workflowKey: "orchestrator.daily",
+      workflowInstructionKey: "orchestrator.daily",
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["done"],
       idempotencyKey: key,
     });
-    const second = await spawnTask({ tasks: taskPort }, projectId, {
+    const second = await spawnTask(spawnDeps(), projectId, {
       title: "Second",
-      workflowKey: "orchestrator.daily",
+      workflowInstructionKey: "orchestrator.daily",
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["done"],
       idempotencyKey: key,
     });
     expect(second.id).toBe(first.id);
@@ -101,22 +124,22 @@ describe("task port integration", () => {
       },
     );
 
-    const task = await spawnTask(
-      { tasks: taskPort, graphRead: graphPorts.graphRead },
-      projectId,
-      {
-        title: "Linked task",
-        workflowKey: "work.implement_feature",
-        targetNodeId: node.id,
-      },
-    );
+    const task = await spawnTask(spawnDeps(), projectId, {
+      title: "Linked task",
+      workflowInstructionKey: "work.implement_feature",
+      targetNodeId: node.id,
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["done"],
+    });
     expect(task.targetNodeId).toBe(node.id);
   });
 
   it("updateTask patches status and result", async () => {
-    const created = await spawnTask({ tasks: taskPort }, projectId, {
+    const created = await spawnTask(spawnDeps(), projectId, {
       title: `Patch ${randomUUID()}`,
-      workflowKey: "work.write_document",
+      workflowInstructionKey: "work.write_document",
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["document updated"],
     });
 
     const updated = await updateTask({ tasks: taskPort }, projectId, {
@@ -145,15 +168,13 @@ describe("task port integration", () => {
       },
     );
 
-    await spawnTask(
-      { tasks: taskPort, graphRead: graphPorts.graphRead },
-      projectId,
-      {
-        title: "Filtered",
-        workflowKey: "work.implement_feature",
-        targetNodeId: node.id,
-      },
-    );
+    await spawnTask(spawnDeps(), projectId, {
+      title: "Filtered",
+      workflowInstructionKey: "work.implement_feature",
+      targetNodeId: node.id,
+      context: { executionDirective: sampleExecutionDirective },
+      acceptanceCriteria: ["done"],
+    });
 
     const matches = await taskPort.queryTasks({
       targetNodeId: node.id,

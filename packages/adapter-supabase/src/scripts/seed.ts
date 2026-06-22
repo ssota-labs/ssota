@@ -1,6 +1,6 @@
 import { config as loadEnv } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
@@ -133,11 +133,35 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
   }
 
   if (projectId) {
+    await seedGraphInstances(db, projectId);
+    await applyTemplate(db, projectId, SOFTWARE_DEV_TEMPLATE);
+
+    const implementFeature = await db
+      .select({ id: schema.workflowInstructions.id })
+      .from(schema.workflowInstructions)
+      .where(
+        and(
+          eq(schema.workflowInstructions.projectId, projectId),
+          eq(schema.workflowInstructions.key, "work.implement_feature"),
+        ),
+      )
+      .limit(1);
+    const bootstrap = await db
+      .select({ id: schema.workflowInstructions.id })
+      .from(schema.workflowInstructions)
+      .where(
+        and(
+          eq(schema.workflowInstructions.projectId, projectId),
+          eq(schema.workflowInstructions.key, "orchestrator.bootstrap"),
+        ),
+      )
+      .limit(1);
+
     await db
       .insert(schema.tasks)
       .values({
         projectId,
-        workflowKey: "work.implement_feature",
+        workflowInstructionId: implementFeature[0]?.id ?? null,
         title: "Archive generic runtime and focus active product on development workflow",
         status: "ready",
         executorType: "Agent",
@@ -155,7 +179,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .insert(schema.tasks)
       .values({
         projectId,
-        workflowKey: "orchestrator.bootstrap",
+        workflowInstructionId: bootstrap[0]?.id ?? null,
         title: "Configure Cursor Automations for ssota-dev orchestrators",
         status: "ready",
         executorType: "Human",
@@ -168,9 +192,6 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
         idempotencyKey: "seed:orchestrator-bootstrap",
       })
       .onConflictDoNothing();
-
-    await seedGraphInstances(db, projectId);
-    await applyTemplate(db, projectId, SOFTWARE_DEV_TEMPLATE);
   }
 
   return { organizationId, projectId };

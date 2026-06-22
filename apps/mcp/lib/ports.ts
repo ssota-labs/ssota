@@ -3,6 +3,7 @@ import {
   createGraphPorts,
   createDb,
   createTaskPort,
+  createWorkflowInstructionPort,
 } from "@ssota/adapter-supabase";
 
 type Db = ReturnType<typeof createDb>["db"];
@@ -18,6 +19,10 @@ export function getDb(): Db {
 
 export function getTaskPort(projectId: string) {
   return createTaskPort(getDb(), { projectId });
+}
+
+export function getWorkflowInstructionPort(projectId: string) {
+  return createWorkflowInstructionPort(getDb(), { projectId });
 }
 
 export function getGraphPorts(projectId: string) {

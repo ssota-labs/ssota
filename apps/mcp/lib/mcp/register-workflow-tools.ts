@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import {
   getWorkflowForMcp,
   getWorkflowInstructionForMcp,
@@ -7,6 +8,7 @@ import {
 import { throwUnknownWorkflowKey } from "@/lib/api/mcp-errors";
 import { jsonContent } from "@/lib/mcp/json-content";
 import { registerScopedProjectTool } from "@/lib/mcp/register-scoped-tool";
+import { getDb } from "@/lib/ports";
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 
 type McpToolServer = {
@@ -27,10 +29,11 @@ export function registerWorkflowTools(server: McpToolServer) {
     {
       title: "List Workflows",
       description:
-        "List development workflow definitions from the deployed registry (metadata only, no instruction body).",
+        "List workflow instruction definitions for this project (metadata only).",
       inputSchema: {},
     },
-    async () => jsonContent(listWorkflowsForMcp()),
+    async ({ projectId }) =>
+      jsonContent(await listWorkflowsForMcp(getDb(), projectId)),
   );
 
   registerScopedProjectTool(
@@ -39,12 +42,12 @@ export function registerWorkflowTools(server: McpToolServer) {
     {
       title: "Get Workflow",
       description:
-        "Fetch workflow metadata by workflowKey (title, category, cadence, defaults). Use get_workflow_instruction for the full markdown body.",
+        "Fetch workflow instruction metadata by key. Use get_workflow_instruction for the full body.",
       inputSchema: { workflowKey: z.string().min(1) },
     },
-    async ({ args }) => {
+    async ({ args, projectId }) => {
       const workflowKey = String(args.workflowKey);
-      const workflow = getWorkflowForMcp(workflowKey);
+      const workflow = await getWorkflowForMcp(getDb(), projectId, workflowKey);
       if (!workflow) {
         throwUnknownWorkflowKey(workflowKey);
       }
@@ -58,12 +61,16 @@ export function registerWorkflowTools(server: McpToolServer) {
     {
       title: "Get Workflow Instruction",
       description:
-        "Fetch the full markdown instruction for a workflowKey. Load agent.main at session start, then fetch per-task workflows on demand.",
+        "Fetch the full instruction text for a workflow key from the project DB.",
       inputSchema: { workflowKey: z.string().min(1) },
     },
-    async ({ args }) => {
+    async ({ args, projectId }) => {
       const workflowKey = String(args.workflowKey);
-      const instruction = getWorkflowInstructionForMcp(workflowKey);
+      const instruction = await getWorkflowInstructionForMcp(
+        getDb(),
+        projectId,
+        workflowKey,
+      );
       if (!instruction) {
         throwUnknownWorkflowKey(workflowKey);
       }

@@ -1,5 +1,6 @@
 export {
-  readWorkflowByKey,
-  listWorkflows,
-  type ResolvedWorkflow,
-} from "./read-workflow.js";
+  readWorkflowInstructionByKey,
+  readWorkflowInstructionById,
+  listWorkflowInstructions,
+  type ResolvedWorkflowInstruction,
+} from "./read-workflow-instruction.js";

@@ -8,7 +8,7 @@ export type TaskWorkspaceRow = {
   status: TaskStatus;
   executorType: string;
   assignee: string;
-  workflowKey: string;
+  workflowInstructionKey: string;
   subjectId: string;
   acceptanceCriteria: string[];
   context: Record<string, unknown>;

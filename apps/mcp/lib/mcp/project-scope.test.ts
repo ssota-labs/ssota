@@ -27,6 +27,7 @@ describe("resolveProjectIdForTool", () => {
         organizationId: "org-1",
         slug: "ssota-dev",
         name: "SSOTA Dev",
+        appEnabled: true,
       },
     });
 
@@ -51,6 +52,7 @@ describe("resolveProjectIdForTool", () => {
         organizationId: "org-1",
         slug: "ssota-dev",
         name: "SSOTA Dev",
+        appEnabled: true,
       },
     });
 
