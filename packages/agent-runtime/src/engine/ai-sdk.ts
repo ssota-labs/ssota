@@ -17,6 +17,13 @@ const callOptionsSchema = z.object({
   context: z.custom<AgentRunContext>(),
 });
 
+/**
+ * High safety ceiling on tool-loop iterations. The loop terminates naturally
+ * when the model stops calling tools; this only guards against runaway loops.
+ * Override per-run via `input.maxSteps`.
+ */
+const DEFAULT_MAX_STEPS = 200;
+
 function buildAgent(input: LoopEngineRunInput) {
   const {
     instructions,
@@ -26,7 +33,7 @@ function buildAgent(input: LoopEngineRunInput) {
     credentials,
     connectionState,
     qualifiedToolNames = [],
-    maxSteps = 24,
+    maxSteps = DEFAULT_MAX_STEPS,
   } = input;
 
   const runState = connectionState ?? new ConnectionRunState();
