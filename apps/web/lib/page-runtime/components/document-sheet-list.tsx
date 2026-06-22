@@ -85,7 +85,7 @@ export function DocumentSheetListEl({
 
   return (
     <div
-      className="relative flex h-full min-h-[28rem] w-full flex-1 flex-col"
+      className="absolute inset-0 flex flex-col overflow-hidden"
       data-testid="document-sheet-list"
     >
       <div className="space-y-3">

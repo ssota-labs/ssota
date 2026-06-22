@@ -14,9 +14,12 @@ import {
 
 function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
   const [lastAction, setLastAction] = useState<string | null>(null);
+  const fillsViewport = demo.components.includes("DocumentSheetList");
 
   return (
-    <div className="space-y-4">
+    <div
+      className={fillsViewport ? "flex min-h-0 flex-1 flex-col space-y-4" : "space-y-4"}
+    >
       <div className="flex flex-wrap items-center gap-2">
         <Badge variant="outline">{demo.id}</Badge>
         {demo.components.map((key) => (
@@ -34,11 +37,16 @@ function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
           Interactive elements log actions here (Toolbar, Button, Input, editors).
         </p>
       )}
-      <div className="border-border bg-background relative flex min-h-[calc(100svh-14rem)] flex-col overflow-hidden rounded-lg border p-4 [&_[data-testid=document-sheet-list]]:min-h-full [&_[data-testid=document-sheet-list]]:flex-1 [&_[data-testid=dynamic-page-renderer]]:flex [&_[data-testid=dynamic-page-renderer]]:min-h-0 [&_[data-testid=dynamic-page-renderer]]:flex-1 [&_[data-testid=dynamic-page-renderer]]:flex-col">
-        <div className="min-h-0 flex-1">
-          <DynamicPageRenderer
-            spec={demo.spec}
-            bindingData={demo.bindingData ?? {}}
+      <div
+        className={
+          fillsViewport
+            ? "border-border bg-background relative min-h-0 flex-1 overflow-hidden rounded-lg border p-4"
+            : "border-border bg-background relative min-h-[32rem] overflow-hidden rounded-lg border p-4"
+        }
+      >
+        <DynamicPageRenderer
+          spec={demo.spec}
+          bindingData={demo.bindingData ?? {}}
           onAction={async (actionKey, input) => {
             setLastAction(`${actionKey}(${JSON.stringify(input)})`);
           }}
@@ -46,7 +54,6 @@ function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
             setLastAction(`buildWidget(${JSON.stringify({ nodeId })})`);
           }}
         />
-        </div>
       </div>
     </div>
   );
@@ -141,7 +148,7 @@ export function PageRuntimeLabClient() {
           })}
         </nav>
 
-        <div className="min-w-0 space-y-4">
+        <div className="flex min-h-[calc(100svh-10rem)] min-w-0 flex-col space-y-4">
           <div className="space-y-1">
             <h2 className="text-xl font-semibold">{activeDemo.title}</h2>
             <p className="text-muted-foreground text-sm">{activeDemo.description}</p>
