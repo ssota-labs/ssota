@@ -13,6 +13,8 @@ import { Label } from "@ssota/ui/components/ui/label";
 
 type ProjectOnboardingFormProps = {
   organizationName: string;
+  defaultProjectName?: string;
+  showOrganizationCreatedToast?: boolean;
   error?: string;
 };
 
@@ -35,16 +37,20 @@ function ProjectContinueButton() {
 
 export function ProjectOnboardingForm({
   organizationName,
+  defaultProjectName = "",
+  showOrganizationCreatedToast = true,
   error,
 }: ProjectOnboardingFormProps) {
-  const [projectName, setProjectName] = useState("");
+  const [projectName, setProjectName] = useState(defaultProjectName);
 
   useEffect(() => {
+    if (!showOrganizationCreatedToast) return;
+
     toast.success(`${organizationName} organization created`, {
       id: "onboarding-organization-created",
       description: "Name your first project below.",
     });
-  }, [organizationName]);
+  }, [organizationName, showOrganizationCreatedToast]);
 
   return (
     <OnboardingShell

@@ -18,10 +18,6 @@ export default async function OnboardingProjectPage({
     redirect("/onboarding/profile");
   }
 
-  if (profile.onboardingStep === "template") {
-    redirect("/onboarding/template");
-  }
-
   let organizationName = "Your Organization";
   const consolePort = getConsolePort();
   const personalOrg = await consolePort.getPersonalOrganizationForUser(user.id);
@@ -29,5 +25,12 @@ export default async function OnboardingProjectPage({
 
   const { error } = await searchParams;
 
-  return <ProjectOnboardingForm organizationName={organizationName} error={error} />;
+  return (
+    <ProjectOnboardingForm
+      organizationName={organizationName}
+      defaultProjectName={profile.onboardingDraftProjectName ?? ""}
+      showOrganizationCreatedToast={profile.onboardingStep === "project"}
+      error={error}
+    />
+  );
 }
