@@ -223,7 +223,14 @@ export function getBuiltinWorkflowByKey(
   return BUILTIN_WORKFLOW_REGISTRY[workflowKey] ?? null;
 }
 
-import { buildWorkflowInstructionSeeds } from "./seed.js";
+import type { WorkflowInstructionSeed } from "../workflow-instruction.js";
 
-export const WORKFLOW_INSTRUCTION_SEEDS =
-  buildWorkflowInstructionSeeds(WORKFLOW_REGISTRY);
+/**
+ * DB seeds for project bootstrap — intentionally EMPTY. WORKFLOW_META and the
+ * registry are kept in code for metadata/reference, but workflows are no longer
+ * seeded into each project's DB. A project starts empty and the agent authors
+ * workflows on demand (the `agent.setup` built-in bootstraps this).
+ * `buildWorkflowInstructionSeeds` (./seed.js) stays available if explicit
+ * seeding is ever needed again.
+ */
+export const WORKFLOW_INSTRUCTION_SEEDS: WorkflowInstructionSeed[] = [];

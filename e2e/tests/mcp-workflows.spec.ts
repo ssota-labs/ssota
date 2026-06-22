@@ -30,38 +30,38 @@ test.describe("MCP workflow tools", () => {
       scope,
     )) as { workflows: Array<{ key: string; name: string }> };
 
-    expect(listed.workflows.length).toBeGreaterThanOrEqual(8);
+    // Nothing is seeded; the agent.setup built-in is always available.
     expect(
-      listed.workflows.some((entry) => entry.key === "orchestrator.daily"),
+      listed.workflows.some((entry) => entry.key === "agent.setup"),
     ).toBe(true);
     for (const workflow of listed.workflows) {
       expect(workflow).not.toHaveProperty("instruction");
       expect(workflow).not.toHaveProperty("content");
     }
 
-    const daily = (await mcpToolCall(
+    const setup = (await mcpToolCall(
       request,
       mcpUrl,
       token,
       "get_workflow",
-      { workflowKey: "orchestrator.daily" },
+      { workflowKey: "agent.setup" },
       scope,
     )) as { key: string; name: string };
-    expect(daily.key).toBe("orchestrator.daily");
-    expect(daily).not.toHaveProperty("instruction");
-    expect(daily).not.toHaveProperty("content");
+    expect(setup.key).toBe("agent.setup");
+    expect(setup).not.toHaveProperty("instruction");
+    expect(setup).not.toHaveProperty("content");
 
-    const dailyInstruction = (await mcpToolCall(
+    const setupInstruction = (await mcpToolCall(
       request,
       mcpUrl,
       token,
       "get_workflow_instruction",
-      { workflowKey: "orchestrator.daily" },
+      { workflowKey: "agent.setup" },
       scope,
     )) as { workflowKey: string; instruction: string };
-    expect(dailyInstruction.workflowKey).toBe("orchestrator.daily");
-    expect(dailyInstruction.instruction).toContain("query_tasks");
-    expect(dailyInstruction.instruction.length).toBeGreaterThan(50);
+    expect(setupInstruction.workflowKey).toBe("agent.setup");
+    expect(setupInstruction.instruction).toContain("write_workflow_instruction");
+    expect(setupInstruction.instruction.length).toBeGreaterThan(50);
   });
 
   test("rejects unknown workflow keys", async ({ request }) => {

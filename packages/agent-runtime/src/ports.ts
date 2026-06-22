@@ -1,6 +1,7 @@
 import {
   createDb,
   createGraphPorts,
+  createDbCatalogWritePort,
   createTaskPort,
   createWorkflowInstructionPort,
   createPagePort,
@@ -27,6 +28,11 @@ export function getGraphPorts(projectId: string, accountId?: string) {
 
 export function getGraphReadPort(projectId: string, accountId?: string) {
   return getGraphPorts(projectId, accountId).graphRead;
+}
+
+/** Catalog (node/edge type) write port. Catalog is project-wide (no account). */
+export function getCatalogWritePort(projectId: string) {
+  return createDbCatalogWritePort(getDb(), { projectId });
 }
 
 export function getWorkflowInstructionPort(projectId: string, accountId?: string) {

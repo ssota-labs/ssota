@@ -67,11 +67,14 @@ describe("built-in workflows (code-only, not seeded)", () => {
     );
   });
 
-  it("keeps built-ins OUT of the DB seeds and the seeded registry", () => {
-    expect(
-      WORKFLOW_INSTRUCTION_SEEDS.some((s) => s.key === "agent.setup"),
-    ).toBe(false);
+  it("keeps built-ins OUT of the seeded registry", () => {
     expect(isKnownWorkflowKey("agent.setup")).toBe(false);
     expect(getWorkflowByKey("agent.setup")).toBeNull();
+  });
+});
+
+describe("workflow DB seeds", () => {
+  it("seeds nothing — workflows are no longer seeded per project", () => {
+    expect(WORKFLOW_INSTRUCTION_SEEDS).toHaveLength(0);
   });
 });
