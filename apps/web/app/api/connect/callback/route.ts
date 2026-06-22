@@ -3,8 +3,10 @@ import { getConnectInstallation, getDb } from "@ssota/agent-runtime";
 import {
   createAccountConnectionPort,
   createChatWorkspacePort,
+  createDbAccountReadPort,
 } from "@ssota/adapter-supabase";
 import { providerOf, resolveAuthorizeScopes } from "@/lib/connect/connectors";
+import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
@@ -65,6 +67,17 @@ export async function GET(request: Request) {
     );
 
     if (accountId && installation) {
+      const sessionUser = await getCurrentUser().catch(() => null);
+      if (sessionUser && userId && sessionUser.id !== userId) {
+        return NextResponse.json({ error: "User mismatch" }, { status: 403 });
+      }
+      if (sessionUser) {
+        await createDbAccountReadPort(getDb()).assertAccountAccess(
+          sessionUser.id,
+          accountId,
+        );
+      }
+
       await createAccountConnectionPort(getDb()).record({
         projectId,
         accountId,

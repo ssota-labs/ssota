@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getChatPort, getOrCreateProjectAccount } from "@/lib/ports";
+import { appProjectPath } from "@/lib/console/app-paths";
+import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
+import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
+import { apiScopeErrorResponse } from "@/lib/api/scope-error";
+import { getChatPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -10,6 +14,7 @@ const bodySchema = z.object({
   orgSlug: z.string().min(1),
   projectSlug: z.string().min(1),
   title: z.string().max(120).optional(),
+  appMode: z.boolean().optional(),
 });
 
 /** Create a fresh chat thread for the resolved project's workspace account. */
@@ -33,8 +38,23 @@ export async function POST(request: Request) {
   }
 
   const { project } = await resolveProject(body.orgSlug, body.projectSlug);
-  const account = await getOrCreateProjectAccount(project.id);
-  const chat = getChatPort(project.id, account.id);
+  const returnTo = body.appMode
+    ? appProjectPath({ orgSlug: body.orgSlug, projectSlug: body.projectSlug }, "chat")
+    : projectPath({ orgSlug: body.orgSlug, projectSlug: body.projectSlug }, "chat");
+
+  let scope;
+  try {
+    scope = await resolveApiAccountScope(project.id, {
+      referer: request.headers.get("referer"),
+      returnTo,
+    });
+  } catch (error) {
+    const response = apiScopeErrorResponse(error);
+    if (response) return response;
+    throw error;
+  }
+
+  const chat = getChatPort(project.id, scope.accountId);
   const thread = await chat.createThread(body.title);
 
   return NextResponse.json({ thread });

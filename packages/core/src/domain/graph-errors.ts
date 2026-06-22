@@ -4,7 +4,8 @@ export type GraphErrorCode =
   | "UNKNOWN_EDGE_TYPE"
   | "VALIDATION_FAILED"
   | "NOT_FOUND"
-  | "PRECONDITION_FAILED";
+  | "PRECONDITION_FAILED"
+  | "FORBIDDEN";
 
 export class GraphError extends Error {
   constructor(

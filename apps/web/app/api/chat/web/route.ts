@@ -8,6 +8,8 @@ import { getGraphReadPort, getTaskPort } from "@ssota/agent-runtime";
 import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent";
 import { getChatPort } from "@/lib/ports";
 import { resolveModelId } from "@/lib/chat/models";
+import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
+import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -107,13 +109,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const { projectId, threadId, accountId } = body;
+  const { projectId, threadId } = body;
+  let scope;
+  try {
+    scope = await resolveApiAccountScope(projectId, {
+      referer: request.headers.get("referer"),
+      requestedAccountId: body.accountId,
+    });
+  } catch (error) {
+    const response = apiScopeErrorResponse(error);
+    if (response) return response;
+    throw error;
+  }
+  const accountId = scope.accountId;
   const modelId = resolveModelId(body.modelId);
   const messages = body.messages as UIMessage[];
   const chat = getChatPort(projectId, accountId);
 
   const thread = await chat.getThread(threadId);
   if (!thread || thread.projectId !== projectId) {
+    return NextResponse.json({ error: "Thread not found" }, { status: 404 });
+  }
+  if (thread.accountId && thread.accountId !== accountId) {
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
   }
 
