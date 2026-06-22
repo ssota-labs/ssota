@@ -318,6 +318,26 @@ export const en = {
     reconnect: "Reconnect",
     disconnect: "Disconnect",
     connectedAs: "Connected as {name}",
+    providers: {
+      slack: {
+        description:
+          "Let the agent read and post in your Slack workspaces.",
+      },
+      notion: {
+        description: "Give the agent access to your Notion workspaces.",
+      },
+      github: {
+        description:
+          "Connect GitHub orgs so the agent can work with repos.",
+      },
+      discord: {
+        description: "Add the agent to your Discord servers.",
+      },
+      linear: {
+        description:
+          "Connect your Linear workspace for issues and projects.",
+      },
+    },
   },
 } as const;
 
@@ -650,5 +670,25 @@ export const ko = {
     reconnect: "다시 연결",
     disconnect: "연결 해제",
     connectedAs: "{name}으로 연결됨",
+    providers: {
+      slack: {
+        description:
+          "에이전트가 Slack 워크스페이스에서 메시지를 읽고 보낼 수 있게 합니다.",
+      },
+      notion: {
+        description: "에이전트가 Notion 워크스페이스에 접근할 수 있게 합니다.",
+      },
+      github: {
+        description:
+          "GitHub 조직을 연결해 에이전트가 저장소에서 작업할 수 있게 합니다.",
+      },
+      discord: {
+        description: "에이전트를 Discord 서버에 추가합니다.",
+      },
+      linear: {
+        description:
+          "Linear 워크스페이스를 연결해 이슈와 프로젝트를 다룰 수 있게 합니다.",
+      },
+    },
   },
 } satisfies Messages;

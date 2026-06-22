@@ -199,7 +199,7 @@ function ConnectorCard({
           </div>
         </div>
         <CardDescription className="text-sm leading-relaxed">
-          {connector.description}
+          {t(`connections.providers.${connector.provider}.description`)}
         </CardDescription>
       </CardHeader>
 
