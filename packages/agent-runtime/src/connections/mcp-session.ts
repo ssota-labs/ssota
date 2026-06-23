@@ -127,7 +127,50 @@ export class McpSessionManager {
         installationId: scope.installationId ?? null,
         hasToken: true,
         userId: scope.userId ?? null,
+        // Token prefix only (never the secret): xoxp- = user token (what Slack
+        // MCP needs), xoxb- = bot token (lists zero MCP tools).
+        tokenType: cred.token.slice(0, 5),
       });
+
+      // TEMP DIAGNOSTIC — Slack MCP returns ok+0 tools when the token lacks the
+      // user scopes it gates tools on. `auth.test` succeeds for any valid token;
+      // the `x-oauth-scopes` response header is the ground truth of what scopes
+      // the *exact* token MCP receives actually carries. Remove once resolved.
+      if (connection.id === "slack") {
+        try {
+          const probe = await fetch("https://slack.com/api/auth.test", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${cred.token}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            signal: AbortSignal.timeout(5000),
+          });
+          const grantedScopes = probe.headers.get("x-oauth-scopes");
+          const body = (await probe.json()) as {
+            ok?: boolean;
+            error?: string;
+            team?: string;
+          };
+          logMcp("connect", connection, {
+            diag: "slack_token_probe",
+            tokenType: cred.token.slice(0, 5),
+            authTestOk: body.ok ?? false,
+            authTestError: body.error ?? null,
+            team: body.team ?? null,
+            grantedScopes: grantedScopes ?? null,
+          });
+        } catch (probeError) {
+          logMcp("connect", connection, {
+            diag: "slack_token_probe_failed",
+            error:
+              probeError instanceof Error
+                ? probeError.message
+                : String(probeError),
+          });
+        }
+      }
+
       const client = await experimental_createMCPClient({
         transport: {
           type: connection.transport,
