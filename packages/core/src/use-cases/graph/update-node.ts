@@ -1,4 +1,5 @@
 import type { UpdateNodeInput } from "@ssota/contracts/graph";
+import { normalizeNodeContentForWrite } from "@ssota/contracts";
 import { GraphError } from "../../domain/graph-errors.js";
 import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
 import type { GraphReadPort } from "../../ports/graph-read-port.js";
@@ -28,5 +29,17 @@ export async function updateNode(
     }
   }
 
-  return deps.graphWrite.updateNode(input);
+  // Store markdown content as a BlockNote document so the app renders it richly.
+  const persisted =
+    input.properties !== undefined && input.properties.content !== undefined
+      ? {
+          ...input,
+          properties: {
+            ...input.properties,
+            content: normalizeNodeContentForWrite(input.properties.content),
+          },
+        }
+      : input;
+
+  return deps.graphWrite.updateNode(persisted);
 }

@@ -1,4 +1,5 @@
 import type { CreateNodeInput } from "@ssota/contracts/graph";
+import { normalizeNodeContentForWrite } from "@ssota/contracts";
 import { GraphError } from "../../domain/graph-errors.js";
 import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
 import type { GraphReadPort, GraphWritePort } from "../../ports/graph-read-port.js";
@@ -57,6 +58,14 @@ export async function createNode(
 
   if (validatedProperties.lifecycleStatus === undefined) {
     validatedProperties = { lifecycleStatus: "Draft", ...validatedProperties };
+  }
+
+  // Store markdown content as a BlockNote document so the app renders it richly.
+  if (validatedProperties.content !== undefined) {
+    validatedProperties = {
+      ...validatedProperties,
+      content: normalizeNodeContentForWrite(validatedProperties.content),
+    };
   }
 
   await assertRoadmapCreateAllowed(deps.graphRead, {
