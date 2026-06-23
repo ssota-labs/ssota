@@ -1,3 +1,5 @@
+import { nodeContentToMarkdown } from "@ssota/contracts";
+
 export interface GraphNode {
   id: string;
   projectId: string;
@@ -40,16 +42,14 @@ export function readLifecycleStatus(
   return "Draft";
 }
 
-/** Read BlockNote / document body from properties. */
+/**
+ * Read the document body from properties as markdown. Content is stored as a
+ * BlockNote document (so the web app renders it richly); we convert it back to
+ * markdown here so agents keep reading/writing markdown. Legacy string content
+ * passes through unchanged.
+ */
 export function readNodeContent(
   properties: Record<string, unknown>,
 ): string | null {
-  const value = properties.content;
-  if (value === null || value === undefined) {
-    return null;
-  }
-  if (typeof value === "string") {
-    return value;
-  }
-  return JSON.stringify(value);
+  return nodeContentToMarkdown(properties.content);
 }
