@@ -41,23 +41,6 @@ export interface CredentialProvider {
     connector: string,
     scope: CredentialScope,
   ): Promise<CredentialToken | null>;
-  /**
-   * Optional: an MCP-spec `OAuthClientProvider` for remote MCP servers. When
-   * present, MCP transports must use it (`transport.authProvider`) instead of a
-   * raw Bearer token. The adapter drives the MCP protected-resource OAuth
-   * handshake (`.well-known/oauth-protected-resource` discovery + resource
-   * indicators), so the provider mints a token scoped for *that MCP resource* —
-   * e.g. a real Slack user token — rather than the generic identity token a bare
-   * `getToken()` returns. Returns null when no adapter is available, and the
-   * caller falls back to a static Bearer token from `getToken`.
-   *
-   * Typed as `unknown` to avoid a hard dependency on `@ai-sdk/mcp` here; the MCP
-   * session manager casts it to `OAuthClientProvider`.
-   */
-  getMcpAuthProvider?(
-    connector: string,
-    scope: CredentialScope,
-  ): Promise<unknown | null>;
 }
 
 function envKey(connector: string): string {
@@ -218,48 +201,6 @@ export function createVercelConnectProvider(): CredentialProvider {
         }
         throw error;
       }
-    },
-
-    // Remote MCP servers (e.g. https://mcp.slack.com/mcp) are OAuth-protected
-    // resources: the right token must be obtained through the MCP authorization
-    // handshake, not a bare getToken(). Passing a raw user token as a Bearer
-    // header skips protected-resource discovery and yields a token that isn't
-    // scoped for the MCP resource (Slack hands back a `xoxe.`/`identity.basic`
-    // sign-in token → 0 tools). `@vercel/connect/mcp`'s adapter drives that flow.
-    async getMcpAuthProvider(connector, scope) {
-      let mcp: {
-        connectAuthProvider: (
-          connectorUid: string,
-          params: {
-            subject: { type: "app" } | { type: "user"; id: string };
-            installationId?: string;
-          },
-          options?: { onConsentRequired?: (challenge: unknown) => void },
-        ) => unknown;
-      };
-      try {
-        mcp = (await import("@vercel/connect/mcp")) as unknown as typeof mcp;
-      } catch {
-        // Adapter (or its @ai-sdk/mcp peer) unavailable → caller falls back to
-        // a static Bearer token from getToken (self-host / own-app).
-        return null;
-      }
-
-      return mcp.connectAuthProvider(
-        connector,
-        {
-          subject: resolveConnectTokenSubject(connector, scope),
-          ...(scope.installationId
-            ? { installationId: scope.installationId }
-            : {}),
-        },
-        {
-          // No grant yet → don't hard-throw ConsentRequiredError inside the MCP
-          // client; the missing token then surfaces as an auth error the session
-          // manager already catches (and consent is surfaced via request_connection).
-          onConsentRequired: () => undefined,
-        },
-      );
     },
   };
 }
