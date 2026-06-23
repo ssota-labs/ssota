@@ -7,6 +7,7 @@ import {
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
 import { createAgentRunPort } from "@ssota/adapter-postgres";
+import { dispatchReadyTasks } from "@/lib/agent/dispatch";
 
 export interface RunMainAgentInput {
   projectId: string;
@@ -24,7 +25,32 @@ export async function runMainAgentWorkflow(input: RunMainAgentInput) {
   await claimRunning(input, workflowRunId);
   const result = await runAgentStep(input, workflowRunId);
   await finalizeRun(workflowRunId, result);
+  await dispatchSpawnedTasks(input);
   return result;
+}
+
+/**
+ * Close the loop: after the chat turn, start task-agent runs for any ready
+ * Agent tasks the agent spawned this turn — so spawning in chat executes
+ * without a separate dispatch trigger. Runs as a workflow step (durable, unlike
+ * a request `after()`); concurrency-capped; disable with CHAT_AUTODISPATCH=0.
+ */
+async function dispatchSpawnedTasks(input: RunMainAgentInput): Promise<void> {
+  "use step";
+  if (process.env.CHAT_AUTODISPATCH === "0") return;
+  try {
+    const result = await dispatchReadyTasks({
+      projectId: input.projectId,
+      accountId: input.accountId,
+    });
+    if (result.dispatched.length > 0) {
+      console.log(
+        `[main-agent] auto-dispatched ${result.dispatched.length} task run(s)`,
+      );
+    }
+  } catch (error) {
+    console.error("[main-agent] auto-dispatch failed", error);
+  }
 }
 
 async function claimRunning(
