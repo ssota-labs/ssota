@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./connect-scopes": {
+      "types": "./dist/credentials/mcp-scopes.d.ts",
+      "default": "./dist/credentials/mcp-scopes.js"
     }
   },
   "scripts": {

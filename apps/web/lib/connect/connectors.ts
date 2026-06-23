@@ -1,4 +1,7 @@
-import { mcpScopesForConnector } from "@ssota/agent-runtime";
+// Import from the dependency-free subpath, NOT the package barrel: this module
+// is pulled into client components (connections-list.tsx), and the barrel would
+// drag the DB/runtime (Node built-ins) into the browser bundle.
+import { mcpScopesForConnector } from "@ssota/agent-runtime/connect-scopes";
 
 /**
  * The connectors the in-app Connections page can manage. Auth model per the
