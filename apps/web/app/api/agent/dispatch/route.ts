@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { start } from "workflow/api";
-import { runTaskAgentWorkflow } from "@/app/workflows/task-agent";
-import { getDb, getTaskPort } from "@/lib/ports";
-import { and, eq, sql } from "drizzle-orm";
-import { schema } from "@ssota/adapter-postgres";
+import { dispatchReadyTasks } from "@/lib/agent/dispatch";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
-
-const DEFAULT_CONCURRENCY = 3;
 
 const bodySchema = z.object({
   projectId: z.string().uuid(),
@@ -67,50 +61,19 @@ export async function POST(request: Request) {
     }
   }
 
-  const db = getDb();
-  const concurrency =
-    Number(process.env.AGENT_DISPATCH_CONCURRENCY) || DEFAULT_CONCURRENCY;
+  const result = await dispatchReadyTasks({
+    projectId: parsed.projectId,
+    accountId,
+    taskId: parsed.taskId,
+    limit: parsed.limit,
+    modelId: parsed.modelId,
+  });
 
-  const runningCount = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(schema.agentRuns)
-    .where(
-      and(
-        eq(schema.agentRuns.projectId, parsed.projectId),
-        eq(schema.agentRuns.status, "running"),
-        eq(schema.agentRuns.runtimeKind, "task"),
-      ),
-    );
-  const slots = Math.max(0, concurrency - (runningCount[0]?.count ?? 0));
-
-  if (slots === 0) {
-    return NextResponse.json({ dispatched: [], skipped: "concurrency_limit" });
+  if (result.skipped) {
+    return NextResponse.json({ dispatched: [], skipped: result.skipped });
   }
-
-  let taskIds: string[] = [];
-  if (parsed.taskId) {
-    taskIds = [parsed.taskId];
-  } else {
-    const tasks = await getTaskPort(parsed.projectId, accountId).queryTasks({
-      status: "ready",
-      executorType: "Agent",
-      limit: Math.min(parsed.limit ?? slots, slots),
-    });
-    taskIds = tasks.map((task) => task.id);
-  }
-
-  const dispatched: string[] = [];
-  for (const taskId of taskIds) {
-    const run = await start(runTaskAgentWorkflow, [
-      {
-        projectId: parsed.projectId,
-        taskId,
-        accountId,
-        modelId: parsed.modelId,
-      },
-    ]);
-    dispatched.push(run.runId);
-  }
-
-  return NextResponse.json({ dispatched, count: dispatched.length });
+  return NextResponse.json({
+    dispatched: result.dispatched,
+    count: result.dispatched.length,
+  });
 }
