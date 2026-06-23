@@ -72,6 +72,41 @@ export const jsonRenderSpecSchema = z.object({
 export type JsonRenderSpec = z.infer<typeof jsonRenderSpecSchema>;
 
 /**
+ * Per-user, per-table-element view state for the advanced data table: the
+ * interactive layer (ordering/visibility/sizing/pinning/sorting/filters/
+ * pagination) over an authored column schema. Persisted server-side keyed by
+ * (user, page, element); the table component treats it as a controlled prop so
+ * the storage backend is a swappable seam. All fields optional — a partial blob
+ * round-trips losslessly.
+ */
+export const tableViewStateSchema = z.object({
+  columnOrder: z.array(z.string()).optional(),
+  columnVisibility: z.record(z.boolean()).optional(),
+  columnSizing: z.record(z.number()).optional(),
+  columnPinning: z
+    .object({
+      left: z.array(z.string()).optional(),
+      right: z.array(z.string()).optional(),
+    })
+    .optional(),
+  sorting: z
+    .array(z.object({ id: z.string(), desc: z.boolean() }))
+    .optional(),
+  columnFilters: z
+    .array(z.object({ id: z.string(), value: z.unknown() }))
+    .optional(),
+  globalFilter: z.string().optional(),
+  pagination: z
+    .object({
+      pageIndex: z.number().int().nonnegative(),
+      pageSize: z.number().int().positive(),
+    })
+    .optional(),
+});
+
+export type TableViewState = z.infer<typeof tableViewStateSchema>;
+
+/**
  * A value in an action descriptor may be a literal or a reference resolved
  * server-side at execution time:
  * - `{ $binding: "rows.0.id" }` — dotted path into the page's resolved bindings
@@ -121,6 +156,22 @@ export const pageActionSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("delete_edge"),
     edgeId: actionParamSchema,
+  }),
+  z.object({
+    // A single-field write on a node, where the field name itself is a value-ref.
+    // Powers Notion-style data-table inline editing: one descriptor handles every
+    // editable column (the client supplies `nodeId`/`field`/`value`). The server
+    // treats `field === "title"` as a title update; otherwise it merges the value
+    // into the node's properties. Generalizes `update_node` (whose property keys
+    // are fixed in the descriptor) to a dynamic, per-cell edit.
+    kind: z.literal("set_node_property"),
+    nodeId: actionParamSchema,
+    field: actionParamSchema,
+    value: actionParamSchema,
+  }),
+  z.object({
+    kind: z.literal("delete_node"),
+    nodeId: actionParamSchema,
   }),
 ]);
 

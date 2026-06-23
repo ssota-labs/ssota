@@ -10,6 +10,7 @@ import {
   createTaskPort,
   createWorkflowInstructionPort,
   createPagePort,
+  createPageViewStatePort,
   type AccountRecord,
 } from "@ssota/adapter-postgres";
 
@@ -72,6 +73,10 @@ export function getWorkflowInstructionPort(projectId: string) {
 
 export function getPagePort(projectId: string) {
   return createPagePort(getDb(), { projectId });
+}
+
+export function getPageViewStatePort(projectId: string) {
+  return createPageViewStatePort(getDb(), { projectId });
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {

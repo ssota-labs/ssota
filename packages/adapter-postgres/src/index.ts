@@ -7,6 +7,7 @@ export {
   createWorkflowInstructionPort,
   seedWorkflowInstructions,
   createPagePort,
+  createPageViewStatePort,
   seedPages,
   applyTemplate,
   BUILTIN_TEMPLATES,

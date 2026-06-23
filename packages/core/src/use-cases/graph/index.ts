@@ -6,4 +6,5 @@ export { createNode } from "./create-node.js";
 export { updateNode } from "./update-node.js";
 export { createEdge } from "./create-edge.js";
 export { deleteEdge } from "./delete-edge.js";
+export { deleteNode } from "./delete-node.js";
 export { createInitiativeBundle } from "./create-initiative-bundle.js";

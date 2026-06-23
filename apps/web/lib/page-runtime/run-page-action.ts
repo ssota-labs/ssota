@@ -5,6 +5,7 @@ import {
   createEdge,
   createNode,
   deleteEdge,
+  deleteNode,
   resolvePageBindings,
   updateNode,
 } from "@ssota/core";
@@ -12,6 +13,7 @@ import {
   createEdgeInputSchema,
   createNodeInputSchema,
   deleteEdgeInputSchema,
+  deleteNodeInputSchema,
   updateNodeInputSchema,
 } from "@ssota/contracts/graph";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
@@ -180,6 +182,43 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
         edgeId: asString(resolveParam(descriptor.edgeId, scopes)),
       });
       await deleteEdge(deps.graphWrite, parsed);
+      break;
+    }
+    case "set_node_property": {
+      const nodeId = asString(resolveParam(descriptor.nodeId, scopes));
+      if (!nodeId) throw new Error("set_node_property: missing nodeId");
+      const field = asString(resolveParam(descriptor.field, scopes));
+      if (!field) throw new Error("set_node_property: missing field");
+      const value = resolveParam(descriptor.value, scopes);
+      // `title` lives on the node row; every other field is a property. Merge so a
+      // single-field edit never clobbers the node's other properties.
+      if (field === "title") {
+        const parsed = updateNodeInputSchema.parse({
+          projectId: args.projectId,
+          nodeId,
+          title: asString(value),
+        });
+        await updateNode(deps, parsed);
+      } else {
+        const existing = await deps.graphRead.getNode({
+          projectId: args.projectId,
+          nodeId,
+        });
+        const parsed = updateNodeInputSchema.parse({
+          projectId: args.projectId,
+          nodeId,
+          properties: { ...(existing?.properties ?? {}), [field]: value },
+        });
+        await updateNode(deps, parsed);
+      }
+      break;
+    }
+    case "delete_node": {
+      const parsed = deleteNodeInputSchema.parse({
+        projectId: args.projectId,
+        nodeId: asString(resolveParam(descriptor.nodeId, scopes)),
+      });
+      await deleteNode(deps.graphWrite, parsed);
       break;
     }
   }

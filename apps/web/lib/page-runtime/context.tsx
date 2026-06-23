@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
-import type { JsonRenderSpec } from "@ssota/contracts";
+import type { JsonRenderSpec, TableViewState } from "@ssota/contracts";
 import type { BindingContext } from "./types";
 
 export type JsonRenderRuntime = {
@@ -38,3 +38,18 @@ export const WidgetBuildContext = createContext<
   ((nodeId: string) => void | Promise<void>) | undefined
 >(undefined);
 export const useWidgetBuild = () => useContext(WidgetBuildContext);
+
+/**
+ * Per-user table view-state persistence for the advanced data table. `initial`
+ * seeds each table element from its saved state (keyed by spec element id);
+ * `save` persists a table's view state. Absent in the lab preview (tables fall
+ * back to ephemeral state).
+ */
+export type PageViewStateRuntime = {
+  initial: Record<string, TableViewState>;
+  save: (elementId: string, viewState: TableViewState) => void | Promise<void>;
+};
+export const PageViewStateContext = createContext<PageViewStateRuntime | null>(
+  null,
+);
+export const usePageViewState = () => useContext(PageViewStateContext);
