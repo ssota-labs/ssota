@@ -56,7 +56,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -122,9 +121,9 @@ type AdvancedDataTableProps<TData> = {
   enableGlobalFilter?: boolean
   /** Spreadsheet cell selection + keyboard nav + Cmd/Ctrl+C CSV copy. */
   enableCellSelection?: boolean
-  /** Capped-height scroll viewport with a sticky header (for large datasets). */
+  /** @deprecated The capped-height scroll viewport + sticky header is always on. */
   enableVirtualization?: boolean
-  /** Scroll-viewport height (px) when `enableVirtualization` is on. */
+  /** Max height (px) of the scroll viewport; the sticky header pins to its top. */
   maxBodyHeight?: number
   /** Commit a double-click cell edit (grid mode, `meta.editable` columns). */
   onCellEdit?: (rowId: string, columnId: string, value: string) => void
@@ -145,15 +144,18 @@ function columnIds<TData>(columns: ColumnDef<TData, unknown>[]): string[] {
   )
 }
 
-/** Sticky offsets for a pinned column. */
-function pinStyles<TData>(column: Column<TData, unknown>): React.CSSProperties {
+/** Sticky offsets for a pinned column (`z` orders pinned cells within their section). */
+function pinStyles<TData>(
+  column: Column<TData, unknown>,
+  z: number,
+): React.CSSProperties {
   const pinned = column.getIsPinned()
   if (!pinned) return {}
   return {
     position: "sticky",
     left: pinned === "left" ? column.getStart("left") : undefined,
     right: pinned === "right" ? column.getAfter("right") : undefined,
-    zIndex: 2,
+    zIndex: z,
   }
 }
 
@@ -180,16 +182,13 @@ function SortableHeader<TData>({
     <TableHead
       ref={setNodeRef}
       colSpan={header.colSpan}
-      className={cn(
-        "relative whitespace-nowrap bg-muted/80 backdrop-blur-sm",
-        pinned && "bg-muted",
-      )}
+      className={cn("relative bg-muted whitespace-nowrap")}
       style={{
         width: header.getSize(),
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.7 : 1,
-        ...pinStyles(column),
+        ...pinStyles(column, 2),
       }}
     >
       {header.isPlaceholder ? null : (
@@ -427,7 +426,6 @@ export function AdvancedDataTable<TData>({
   enableMultiSort = true,
   enableGlobalFilter = true,
   enableCellSelection = false,
-  enableVirtualization = false,
   maxBodyHeight = 480,
   onCellEdit,
   searchPlaceholder = "Search…",
@@ -640,7 +638,7 @@ export function AdvancedDataTable<TData>({
                 selection.isFocus(rIndex, c) &&
                 "ring-1 ring-inset ring-primary",
             )}
-            style={{ width: col.getSize(), ...pinStyles(col) }}
+            style={{ width: col.getSize(), ...pinStyles(col, 1) }}
             onMouseDown={
               enableCellSelection && !isEditing
                 ? (e) => selection.onCellMouseDown(rIndex, c, e)
@@ -718,63 +716,67 @@ export function AdvancedDataTable<TData>({
         </div>
       ) : null}
 
-      <div
-        ref={scrollRef}
-        tabIndex={enableCellSelection ? 0 : undefined}
-        onKeyDown={enableCellSelection ? selection.onKeyDown : undefined}
-        className="overflow-x-auto rounded-md border outline-none"
-        style={
-          enableVirtualization
-            ? { height: maxBodyHeight, overflowY: "auto" }
-            : undefined
-        }
-      >
-        <DndContext
-          id={dndId}
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          modifiers={[restrictToHorizontalAxis]}
-          onDragEnd={onColumnDragEnd}
+      {/* One scroll container directly wraps the <table> (no nested overflow
+          div), so the sticky <thead> sticks to the top while the body scrolls. */}
+      <div className="overflow-hidden rounded-md border">
+        <div
+          ref={scrollRef}
+          tabIndex={enableCellSelection ? 0 : undefined}
+          onKeyDown={enableCellSelection ? selection.onKeyDown : undefined}
+          className="relative overflow-auto outline-none"
+          style={{ maxHeight: maxBodyHeight }}
         >
-          <Table style={{ width: table.getTotalSize() }}>
-            <TableHeader className="sticky top-0 z-10">
-              {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow key={headerGroup.id}>
-                  <SortableContext
-                    items={headerGroup.headers.map((h) => h.column.id)}
-                    strategy={horizontalListSortingStrategy}
-                  >
-                    {headerGroup.headers.map((header) => (
-                      <SortableHeader
-                        key={header.id}
-                        header={header}
-                        table={table}
-                        sortableColumns={sortableColumns}
-                        enableColumnResizing={enableColumnResizing}
-                        enableColumnReorder={enableColumnReorder}
-                      />
-                    ))}
-                  </SortableContext>
-                </TableRow>
-              ))}
-            </TableHeader>
-            <TableBody>
-              {rows.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={leafCols.length}
-                    className="h-20 text-center text-muted-foreground"
-                  >
-                    No rows
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rows.map((row, rIndex) => renderRow(row, rIndex))
-              )}
-            </TableBody>
-          </Table>
-        </DndContext>
-        {footer}
+          <DndContext
+            id={dndId}
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToHorizontalAxis]}
+            onDragEnd={onColumnDragEnd}
+          >
+            <table
+              data-slot="table"
+              className="cn-table"
+              style={{ width: table.getTotalSize() }}
+            >
+              <TableHeader className="sticky top-0 z-20 bg-muted">
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    <SortableContext
+                      items={headerGroup.headers.map((h) => h.column.id)}
+                      strategy={horizontalListSortingStrategy}
+                    >
+                      {headerGroup.headers.map((header) => (
+                        <SortableHeader
+                          key={header.id}
+                          header={header}
+                          table={table}
+                          sortableColumns={sortableColumns}
+                          enableColumnResizing={enableColumnResizing}
+                          enableColumnReorder={enableColumnReorder}
+                        />
+                      ))}
+                    </SortableContext>
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {rows.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={leafCols.length}
+                      className="h-20 text-center text-muted-foreground"
+                    >
+                      No rows
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  rows.map((row, rIndex) => renderRow(row, rIndex))
+                )}
+              </TableBody>
+            </table>
+          </DndContext>
+        </div>
+        {footer ? <div className="border-t">{footer}</div> : null}
       </div>
 
       <AdvancedDataTablePagination table={table} />
