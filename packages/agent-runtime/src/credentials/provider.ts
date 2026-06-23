@@ -276,6 +276,70 @@ export async function startConnectAuthorization(
   return url;
 }
 
+/**
+ * Revoke a connector grant at Vercel Connect (the counterpart to
+ * `startConnectAuthorization`). Disconnecting only removes our local link row;
+ * without this the Connect-side grant survives, so the next authorize hands the
+ * existing installation back **without re-prompting** — new provider scopes
+ * (e.g. Slack MCP) never reach the token. Revoking forces a fresh OAuth consent
+ * on reconnect.
+ *
+ * Best-effort: revokes every subject the install could have been minted under
+ * (app + user) and swallows "already gone" / SDK-absent cases so the caller can
+ * still delete the local row.
+ */
+export async function revokeConnectAuthorization(
+  connector: string,
+  scope: CredentialScope,
+): Promise<void> {
+  if (process.env.CONNECT_STUB === "1") return;
+
+  let connect: {
+    revokeToken: (
+      connectorUid: string,
+      params: { subject: ConnectTokenSubject; installationId?: string },
+    ) => Promise<void>;
+  };
+  try {
+    connect = (await import("@vercel/connect")) as unknown as typeof connect;
+  } catch {
+    // No managed Connect (own-app/local) — nothing to revoke upstream.
+    return;
+  }
+
+  const installationId = normalizeConnectInstallationId(scope.installationId);
+  let subjects: ConnectTokenSubject[];
+  try {
+    subjects = connectSubjectsForInstallationLookup(connector, scope);
+  } catch {
+    // Can't resolve a subject (e.g. user-subject connector without a userId) —
+    // there's no grant we can address, so leave the local unlink to proceed.
+    return;
+  }
+  for (const subject of subjects) {
+    try {
+      await connect.revokeToken(connector, {
+        subject,
+        ...(installationId ? { installationId } : {}),
+      });
+    } catch (error) {
+      // Grant already revoked/expired → fine; anything else is logged but must
+      // not block the local unlink the caller is about to perform.
+      if (isRecoverableConnectTokenError(error)) continue;
+      console.warn(
+        JSON.stringify({
+          component: "connect",
+          phase: "revoke",
+          connector,
+          installationId: installationId ?? null,
+          subject: subject.type,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
+  }
+}
+
 export interface ConnectInstallation {
   installationId?: string;
   tenantId?: string;

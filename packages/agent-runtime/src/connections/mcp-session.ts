@@ -50,11 +50,32 @@ function logMcp(
   );
 }
 
+/**
+ * MCP transport errors arrive as one string with the JSON-RPC body appended,
+ * e.g. `MCP HTTP Transport Error: POSTing to endpoint (HTTP 400):
+ * {"jsonrpc":"2.0","id":null,"error":{"code":-32600,"message":"App is not
+ * enabled for Slack MCP server access. Please enable it here: …"}}`. Surface
+ * the inner `error.message` so the chat shows the actionable reason and link
+ * instead of the raw transport dump (applies to every MCP connection, not just
+ * Slack). Falls back to the raw message when there's no JSON-RPC body to parse.
+ */
 function formatMcpError(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message;
+  const raw = error instanceof Error ? error.message : String(error);
+  const jsonStart = raw.indexOf("{");
+  if (jsonStart !== -1) {
+    try {
+      const parsed = JSON.parse(raw.slice(jsonStart)) as {
+        error?: { message?: unknown };
+      };
+      const inner = parsed.error?.message;
+      if (typeof inner === "string" && inner.trim()) {
+        return inner.trim();
+      }
+    } catch {
+      // Not a JSON-RPC body — fall through to the raw transport message.
+    }
   }
-  return String(error);
+  return raw;
 }
 
 /**

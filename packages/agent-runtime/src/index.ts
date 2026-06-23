@@ -32,6 +32,7 @@ export {
   createVercelConnectProvider,
   resolveCredentialProvider,
   startConnectAuthorization,
+  revokeConnectAuthorization,
   getConnectInstallation,
   normalizeConnectInstallationId,
   resolveConnectCallbackSubject,
