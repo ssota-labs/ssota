@@ -233,9 +233,15 @@ function DataTableEl({
       const type = col.type ?? "text";
       const editable = col.editable !== false && !!setAction;
       const isFaceted = type === "select" || type === "badge";
-      // Text/number/date are double-click-editable in grid mode.
+      // Text/number/date/select are double-click-editable in grid mode
+      // (text/number/date → input; select → popover of option chips).
       const gridEditable =
-        gridMode && editable && (type === "text" || type === "number" || type === "date");
+        gridMode &&
+        editable &&
+        (type === "text" ||
+          type === "number" ||
+          type === "date" ||
+          type === "select");
       return {
         id: col.key,
         accessorFn: (row) => readCell(row, col.key),
@@ -245,7 +251,16 @@ function DataTableEl({
           label: col.header,
           align: type === "number" ? "right" : undefined,
           editable: gridEditable,
-          editType: type === "number" ? "number" : type === "date" ? "date" : "text",
+          editType:
+            type === "select"
+              ? "select"
+              : type === "number"
+                ? "number"
+                : type === "date"
+                  ? "date"
+                  : "text",
+          editOptions: type === "select" ? col.options : undefined,
+          editColors: type === "select" ? col.colors : undefined,
         },
         filterFn: isFaceted
           ? (row, columnId, filterValue: string[]) =>

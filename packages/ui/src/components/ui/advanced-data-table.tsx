@@ -40,6 +40,7 @@ import {
 } from "@tanstack/react-table"
 import { MagnifyingGlassIcon } from "@phosphor-icons/react"
 import { toast } from "sonner"
+import { format, isValid, parseISO } from "date-fns"
 
 import { cn } from "@/lib/utils"
 import {
@@ -47,7 +48,13 @@ import {
   csvEscape,
   type CellCoord,
 } from "@/components/ui/advanced-data-table-selection"
+import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import {
   Table,
   TableBody,
@@ -72,10 +79,14 @@ declare module "@tanstack/react-table" {
   interface ColumnMeta<TData extends RowData, TValue> {
     label?: string
     align?: "left" | "right" | "center"
-    /** Opt-in double-click editing in grid mode (uses a text/number/date input). */
+    /** Opt-in double-click editing in grid mode. */
     editable?: boolean
-    /** Input type for the double-click editor (default "text"). */
-    editType?: "text" | "number" | "date"
+    /** Editor variant for the double-click editor (default "text"). */
+    editType?: "text" | "number" | "date" | "select"
+    /** Options for a `select` editor (rendered as a popover of chips). */
+    editOptions?: string[]
+    /** Optional value→color map for the `select` editor chips. */
+    editColors?: Record<string, string>
   }
 }
 
@@ -209,39 +220,188 @@ function SortableHeader<TData>({
   )
 }
 
-/** Inline editor shown on double-click: Enter/blur commits, Escape cancels. */
-function EditCellInput({
+type CellMeta = {
+  editType?: "text" | "number" | "date" | "select"
+  editOptions?: string[]
+  editColors?: Record<string, string>
+}
+
+/** Absolute-overlay text/number editor: Enter/blur commits, Escape cancels. */
+function TextCellEditor({
   initial,
   type,
   onCommit,
   onCancel,
 }: {
   initial: string
-  type: "text" | "number" | "date"
+  type: "text" | "number"
   onCommit: (value: string) => void
   onCancel: () => void
 }) {
   const [value, setValue] = React.useState(initial)
   return (
-    <input
-      autoFocus
-      type={type}
-      value={value}
-      onChange={(e) => setValue(e.target.value)}
-      onMouseDown={(e) => e.stopPropagation()}
-      onBlur={() => onCommit(value)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault()
-          onCommit(value)
-        } else if (e.key === "Escape") {
-          e.preventDefault()
-          onCancel()
-        }
-        e.stopPropagation()
+    <div className="absolute inset-0 z-20 flex items-center bg-background">
+      <input
+        autoFocus
+        type={type}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onMouseDown={(e) => e.stopPropagation()}
+        onBlur={() => onCommit(value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault()
+            onCommit(value)
+          } else if (e.key === "Escape") {
+            e.preventDefault()
+            onCancel()
+          }
+          e.stopPropagation()
+        }}
+        onFocus={(e) => e.currentTarget.select()}
+        className="border-primary ring-primary/30 h-full w-full rounded-none border-2 bg-background px-2 text-sm outline-none ring-2"
+      />
+    </div>
+  )
+}
+
+/** A popover editor anchored to the cell (used by select + date). */
+function PopoverCellEditor({
+  onCancel,
+  className,
+  children,
+}: {
+  onCancel: () => void
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <Popover
+      open
+      onOpenChange={(next) => {
+        if (!next) onCancel()
       }}
-      onFocus={(e) => e.currentTarget.select()}
-      className="border-primary h-7 w-full rounded border bg-background px-1 text-sm outline-none"
+    >
+      <PopoverTrigger
+        render={
+          <button
+            type="button"
+            tabIndex={-1}
+            aria-hidden
+            className="absolute inset-0 cursor-default opacity-0"
+          />
+        }
+      />
+      <PopoverContent align="start" sideOffset={2} className={className}>
+        {children}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function SelectCellEditor({
+  initial,
+  options,
+  colors,
+  onCommit,
+  onCancel,
+}: {
+  initial: string
+  options: string[]
+  colors?: Record<string, string>
+  onCommit: (value: string) => void
+  onCancel: () => void
+}) {
+  return (
+    <PopoverCellEditor onCancel={onCancel} className="w-44 p-1">
+      <div className="flex flex-col">
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => onCommit(option)}
+            className={cn(
+              "flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent",
+              option === initial && "bg-accent",
+            )}
+          >
+            {colors?.[option] ? (
+              <span
+                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium"
+                style={{ backgroundColor: colors[option] }}
+              >
+                {option}
+              </span>
+            ) : (
+              option
+            )}
+          </button>
+        ))}
+      </div>
+    </PopoverCellEditor>
+  )
+}
+
+function DateCellEditor({
+  initial,
+  onCommit,
+  onCancel,
+}: {
+  initial: string
+  onCommit: (value: string) => void
+  onCancel: () => void
+}) {
+  const parsed = initial ? parseISO(initial) : undefined
+  const selected = parsed && isValid(parsed) ? parsed : undefined
+  return (
+    <PopoverCellEditor onCancel={onCancel} className="w-auto p-0">
+      <Calendar
+        mode="single"
+        autoFocus
+        selected={selected}
+        defaultMonth={selected}
+        onSelect={(date) => {
+          if (date) onCommit(format(date, "yyyy-MM-dd"))
+        }}
+      />
+    </PopoverCellEditor>
+  )
+}
+
+/** Double-click cell editor; variant chosen by `meta.editType`. */
+function CellEditor({
+  initial,
+  meta,
+  onCommit,
+  onCancel,
+}: {
+  initial: string
+  meta: CellMeta
+  onCommit: (value: string) => void
+  onCancel: () => void
+}) {
+  const editType = meta.editType ?? "text"
+  if (editType === "select") {
+    return (
+      <SelectCellEditor
+        initial={initial}
+        options={meta.editOptions ?? []}
+        colors={meta.editColors}
+        onCommit={onCommit}
+        onCancel={onCancel}
+      />
+    )
+  }
+  if (editType === "date") {
+    return <DateCellEditor initial={initial} onCommit={onCommit} onCancel={onCancel} />
+  }
+  return (
+    <TextCellEditor
+      initial={initial}
+      type={editType === "number" ? "number" : "text"}
+      onCommit={onCommit}
+      onCancel={onCancel}
     />
   )
 }
@@ -459,7 +619,7 @@ export function AdvancedDataTable<TData>({
           <TableCell
             key={cell.id}
             className={cn(
-              "py-1 whitespace-nowrap",
+              "relative py-1 whitespace-nowrap",
               pinned && "bg-background",
               align === "right" && "text-right",
               align === "center" && "text-center",
@@ -483,19 +643,22 @@ export function AdvancedDataTable<TData>({
                 : undefined
             }
           >
+            {flexRender(col.columnDef.cell, cell.getContext())}
             {isEditing ? (
-              <EditCellInput
+              <CellEditor
                 initial={String(cell.getValue() ?? "")}
-                type={col.columnDef.meta?.editType ?? "text"}
+                meta={{
+                  editType: col.columnDef.meta?.editType,
+                  editOptions: col.columnDef.meta?.editOptions,
+                  editColors: col.columnDef.meta?.editColors,
+                }}
                 onCommit={(value) => {
                   onCellEdit?.(row.id, col.id, value)
                   setEditing(null)
                 }}
                 onCancel={() => setEditing(null)}
               />
-            ) : (
-              flexRender(col.columnDef.cell, cell.getContext())
-            )}
+            ) : null}
           </TableCell>
         )
       })}
