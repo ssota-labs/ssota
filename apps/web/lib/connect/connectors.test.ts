@@ -1,4 +1,4 @@
-import { mcpScopesForConnector } from "@ssota/agent-runtime";
+import { mcpScopesForConnector } from "@ssota/agent-runtime/connect-scopes";
 import { describe, expect, it } from "vitest";
 import { resolveAuthorizeScopes } from "./connectors";
 
