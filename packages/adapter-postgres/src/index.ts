@@ -8,6 +8,7 @@ export {
   createMainInstructionPointerPort,
   seedWorkflowInstructions,
   createPagePort,
+  createPageViewStatePort,
   seedPages,
   applyTemplate,
   SOFTWARE_DEV_TEMPLATE,

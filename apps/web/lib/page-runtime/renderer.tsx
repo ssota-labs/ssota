@@ -6,8 +6,10 @@ import {
   ActionContext,
   BasePathContext,
   JsonRenderContext,
+  PageViewStateContext,
   WidgetBuildContext,
   type OnAction,
+  type PageViewStateRuntime,
 } from "./context";
 import { CATALOG } from "./registry";
 import type { BindingContext } from "./types";
@@ -21,6 +23,8 @@ type RenderProps = {
   basePath?: string;
   /** Triggers a server-side build for an unbuilt buildable Widget node. */
   onBuildWidget?: (nodeId: string) => void | Promise<void>;
+  /** Per-user table view-state persistence (omitted in the lab preview). */
+  viewState?: PageViewStateRuntime;
 };
 
 function renderElement(
@@ -62,6 +66,7 @@ export function DynamicPageRenderer({
   onAction,
   basePath = "",
   onBuildWidget,
+  viewState,
 }: RenderProps) {
   const runtime = {
     spec,
@@ -73,13 +78,15 @@ export function DynamicPageRenderer({
   return (
     <ActionContext.Provider value={onAction}>
       <WidgetBuildContext.Provider value={onBuildWidget}>
-        <BasePathContext.Provider value={basePath}>
-          <JsonRenderContext.Provider value={runtime}>
-            <div className="space-y-2" data-testid="dynamic-page-renderer">
-              {renderElement(spec.root, spec, bindingData)}
-            </div>
-          </JsonRenderContext.Provider>
-        </BasePathContext.Provider>
+        <PageViewStateContext.Provider value={viewState ?? null}>
+          <BasePathContext.Provider value={basePath}>
+            <JsonRenderContext.Provider value={runtime}>
+              <div className="space-y-2" data-testid="dynamic-page-renderer">
+                {renderElement(spec.root, spec, bindingData)}
+              </div>
+            </JsonRenderContext.Provider>
+          </BasePathContext.Provider>
+        </PageViewStateContext.Provider>
       </WidgetBuildContext.Provider>
     </ActionContext.Provider>
   );

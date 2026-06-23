@@ -546,6 +546,50 @@ export const pages = pgTable(
 );
 
 /**
+ * Per-user, per-table-element view state for the advanced data table (column
+ * order/visibility/sizing/pinning, sorting, filters, pagination). Keyed by
+ * (user, page, element) so each user customizes their own view of a table on a
+ * page independently. The component treats this as a controlled prop, so this is
+ * the swappable persistence backend.
+ */
+export const pageViewStates = pgTable(
+  "page_view_states",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    pageId: uuid("page_id")
+      .notNull()
+      .references(() => pages.id, { onDelete: "cascade" }),
+    // The JSON-render spec element key of the table within the page.
+    elementId: text("element_id").notNull(),
+    viewState: jsonb("view_state")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    userPageElementUnique: uniqueIndex(
+      "page_view_states_user_page_element_unique",
+    ).on(table.userId, table.pageId, table.elementId),
+    pageUserIdx: index("page_view_states_page_user_idx").on(
+      table.pageId,
+      table.userId,
+    ),
+  }),
+);
+
+/**
  * Durable agent run ↔ task bridge. One row per `runSsotaAgentWorkflow`
  * execution; records the workflow run id, model, token usage and timing.
  */
