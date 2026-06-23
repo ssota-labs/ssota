@@ -4,7 +4,8 @@ import { resolvePageBindings } from "@ssota/core";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
-import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { TreePageView } from "@/lib/page-runtime/tree-page-view";
+import { pageUsesDocumentSheetList } from "@/lib/page-runtime/spec-utils";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
 import { savePageViewState } from "@/lib/page-runtime/save-page-view-state";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -31,8 +32,6 @@ export default async function TreePage({
 
   const graphRead = getGraphPorts(project.id).graphRead;
 
-  // Anchor node (generic replacement for initiative-scoping): resolved here and
-  // threaded into the binding context as `subject`.
   const context: Record<string, unknown> = {};
   if (page.subjectNodeId) {
     const subject = await graphRead.getNodeById(page.subjectNodeId);
@@ -54,6 +53,9 @@ export default async function TreePage({
     context,
   );
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
+
+  const fillHeight = pageUsesDocumentSheetList(page.spec);
+  const basePath = `/${orgSlug}/${projectSlug}`;
 
   async function onAction(
     actionKey: string,
@@ -92,11 +94,17 @@ export default async function TreePage({
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <DynamicPageRenderer
+    <div
+      className={
+        fillHeight
+          ? "flex min-h-0 flex-1 flex-col"
+          : "mx-auto max-w-5xl p-6"
+      }
+    >
+      <TreePageView
         spec={page.spec}
         bindingData={bindingData}
-        basePath={`/${orgSlug}/${projectSlug}`}
+        basePath={basePath}
         onAction={onAction}
         viewState={{ initial: initialViewStates, save: saveViewState }}
       />

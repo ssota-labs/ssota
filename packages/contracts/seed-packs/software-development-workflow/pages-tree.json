@@ -13,8 +13,61 @@
     "appliesToNodeType": null,
     "title": "Roadmap",
     "icon": "executive_roadmap",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Roadmap", "columns": [{ "key": "title", "header": "Title" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "roadmap" } }
+    "spec": {
+      "root": "workspace",
+      "elements": {
+        "workspace": {
+          "type": "RoadmapSheetWorkspace",
+          "props": {
+            "productBinding": "productRoadmap",
+            "planningBinding": "planningRoadmaps",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
+            "action": "saveRoadmapDoc",
+            "createAnnualAction": "createAnnualRoadmap",
+            "createQuarterAction": "createQuarterRoadmap"
+          }
+        }
+      }
+    },
+    "bindings": {
+      "productRoadmap": { "kind": "singleton", "catalogKey": "product_roadmap" },
+      "planningRoadmaps": { "kind": "query", "catalogKey": "roadmap" }
+    },
+    "actions": {
+      "saveRoadmapDoc": {
+        "kind": "update_node",
+        "nodeId": { "$input": "nodeId" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      },
+      "createAnnualRoadmap": {
+        "kind": "create_node",
+        "catalogKey": "roadmap",
+        "title": { "$input": "title" },
+        "properties": {
+          "kind": { "$input": "kind" },
+          "year": { "$input": "year" },
+          "lifecycleStatus": "draft",
+          "summary": ""
+        }
+      },
+      "createQuarterRoadmap": {
+        "kind": "create_node",
+        "catalogKey": "roadmap",
+        "title": { "$input": "title" },
+        "properties": {
+          "kind": { "$input": "kind" },
+          "year": { "$input": "year" },
+          "quarter": { "$input": "quarter" },
+          "lifecycleStatus": "draft",
+          "summary": ""
+        }
+      }
+    }
   },
   {
     "key": "executive/goals",

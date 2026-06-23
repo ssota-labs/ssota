@@ -11,6 +11,7 @@ import { FormattingToolbarController, useCreateBlockNote } from "@blocknote/reac
 import { BlockNoteView } from "@blocknote/shadcn";
 import "@blocknote/shadcn/style.css";
 import "./blocknote-list-markers.css";
+import "./blocknote-compact.css";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import type { CSSProperties } from "react";
@@ -60,6 +61,8 @@ export interface SsotaBlockNoteEditorProps {
   onChange?: (blocks: Block[]) => void;
   onEditorReady?: (editor: BlockNoteEditorInstance) => void;
   className?: string;
+  /** Drop side-menu gutter — use in narrow panels (document sheet). */
+  compact?: boolean;
 }
 
 export function SsotaBlockNoteEditor({
@@ -69,6 +72,7 @@ export function SsotaBlockNoteEditor({
   onChange,
   onEditorReady,
   className,
+  compact = false,
 }: SsotaBlockNoteEditorProps) {
   const { resolvedTheme } = useTheme();
   const shellRef = useRef<HTMLDivElement>(null);
@@ -179,7 +183,13 @@ export function SsotaBlockNoteEditor({
   return (
     <div
       ref={setShellRef}
-      className={["blocknote-editor-shell", className].filter(Boolean).join(" ")}
+      className={[
+        "blocknote-editor-shell",
+        compact ? "blocknote-editor-shell--compact h-full min-h-full" : null,
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       data-testid="blocknote-editor-shell"
       style={placeholderCssVars}
     >
@@ -187,6 +197,7 @@ export function SsotaBlockNoteEditor({
         editor={editor}
         editable={editable}
         formattingToolbar={false}
+        sideMenu={compact ? false : undefined}
         onChange={handleChange}
         onSelectionChange={refreshListMarkersSync}
         theme={blockNoteTheme}

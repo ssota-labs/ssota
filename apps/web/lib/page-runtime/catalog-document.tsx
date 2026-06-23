@@ -8,9 +8,13 @@ import { SsotaBlockNoteEditor } from "@/components/editor/blocknote-editor";
  * Tolerant conversion of stored node content into BlockNote blocks. Accepts
  * either BlockNote document JSON (array) or a legacy plain/markdown string
  * (wrapped in a single paragraph) so existing documents keep rendering.
+ * Empty arrays are treated as unset — BlockNote rejects `initialContent: []`.
  */
-function toBlocks(value: unknown): PartialBlock[] | undefined {
-  if (Array.isArray(value)) return value as PartialBlock[];
+export function toBlocks(value: unknown): PartialBlock[] | undefined {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined;
+    return value as PartialBlock[];
+  }
   if (typeof value === "string" && value.trim().length > 0) {
     return [{ type: "paragraph", content: value }];
   }
@@ -18,9 +22,19 @@ function toBlocks(value: unknown): PartialBlock[] | undefined {
 }
 
 /** Read-only document (catalog `DocumentView`). */
-export function DocumentViewEl({ content }: { content: unknown }) {
+export function DocumentViewEl({
+  content,
+  compact,
+}: {
+  content: unknown;
+  compact?: boolean;
+}) {
   return (
-    <SsotaBlockNoteEditor editable={false} initialContent={toBlocks(content)} />
+    <SsotaBlockNoteEditor
+      editable={false}
+      initialContent={toBlocks(content)}
+      compact={compact}
+    />
   );
 }
 
@@ -28,9 +42,11 @@ export function DocumentViewEl({ content }: { content: unknown }) {
 export function DocumentEditorEl({
   content,
   onSave,
+  compact,
 }: {
   content: unknown;
   onSave: (blocks: Block[]) => void | Promise<void>;
+  compact?: boolean;
 }) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleChange = useCallback(
@@ -47,6 +63,7 @@ export function DocumentEditorEl({
       editable
       initialContent={toBlocks(content)}
       onChange={handleChange}
+      compact={compact}
     />
   );
 }
