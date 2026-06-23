@@ -1,9 +1,36 @@
 /* Narrow embeds (document sheet, inspector) — drop BlockNote's 54px side-menu gutter. */
-.blocknote-editor-shell--compact .bn-editor {
-  min-height: 6rem;
-  padding-inline: 0.25rem;
+.blocknote-editor-shell--compact {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  height: 100%;
+}
+
+.blocknote-editor-shell--compact .bn-root {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 100%;
+  height: 100%;
+  /* Match app surface — avoid BlockNote's fixed #1f1f1f / #fff editor chrome. */
+  --bn-colors-editor-background: var(--background);
+  --bn-colors-editor-text: var(--foreground);
 }
 
 .blocknote-editor-shell--compact .bn-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 100%;
+  height: 100%;
   border-radius: 0;
+  background: transparent;
+}
+
+.blocknote-editor-shell--compact .bn-editor {
+  flex: 1 1 auto;
+  min-height: 100%;
+  border-radius: 0;
+  background-color: transparent !important;
+  padding-inline: 0.25rem;
 }
