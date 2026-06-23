@@ -8,9 +8,13 @@ import { SsotaBlockNoteEditor } from "@/components/editor/blocknote-editor";
  * Tolerant conversion of stored node content into BlockNote blocks. Accepts
  * either BlockNote document JSON (array) or a legacy plain/markdown string
  * (wrapped in a single paragraph) so existing documents keep rendering.
+ * Empty arrays are treated as unset — BlockNote rejects `initialContent: []`.
  */
-function toBlocks(value: unknown): PartialBlock[] | undefined {
-  if (Array.isArray(value)) return value as PartialBlock[];
+export function toBlocks(value: unknown): PartialBlock[] | undefined {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined;
+    return value as PartialBlock[];
+  }
   if (typeof value === "string" && value.trim().length > 0) {
     return [{ type: "paragraph", content: value }];
   }

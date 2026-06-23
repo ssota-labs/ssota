@@ -52,8 +52,7 @@
           "kind": { "$input": "kind" },
           "year": { "$input": "year" },
           "lifecycleStatus": "draft",
-          "summary": "",
-          "content": []
+          "summary": ""
         }
       },
       "createQuarterRoadmap": {
@@ -65,8 +64,7 @@
           "year": { "$input": "year" },
           "quarter": { "$input": "quarter" },
           "lifecycleStatus": "draft",
-          "summary": "",
-          "content": []
+          "summary": ""
         }
       }
     }

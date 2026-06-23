@@ -69,6 +69,32 @@ test.describe("Executive roadmap", () => {
     await expect(page.getByTestId("document-sheet-panel")).not.toBeVisible();
   });
 
+  test("creates quarter roadmap and opens sheet without BlockNote error", async ({
+    page,
+  }) => {
+    test.slow();
+
+    const year = new Date().getFullYear();
+    const createBtn = page.getByTestId("planning-roadmap-card-q3-create");
+    if (await createBtn.isVisible()) {
+      const createResponse = page.waitForResponse(
+        (response) => response.request().method() === "POST" && response.ok(),
+        { timeout: 20_000 },
+      );
+      await createBtn.click();
+      await createResponse;
+    }
+
+    await page.getByTestId("planning-roadmap-card-q3").click();
+    await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
+    await expect(page.getByTestId("blocknote-editor-shell")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByTestId("document-sheet-panel").getByText(`${year} Q3 분기 로드맵`),
+    ).toBeVisible();
+  });
+
   test("autosaves roadmap doc edits from sheet panel", async ({ page }) => {
     test.slow();
 
