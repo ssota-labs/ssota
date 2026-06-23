@@ -50,19 +50,19 @@ describe("workflow-services", () => {
     if (skip) context.skip();
   });
 
-  it("lists workflow instructions without bodies", async () => {
+  it("lists workflow instructions without bodies (incl. code built-ins)", async () => {
     const result = await listWorkflowsForMcp(db, projectId);
-    expect(result.workflows.length).toBeGreaterThanOrEqual(9);
-    expect(result.workflows.some((w) => w.key === "agent.main")).toBe(true);
+    // Nothing is seeded; the agent.setup built-in is always present.
+    expect(result.workflows.some((w) => w.key === "agent.setup")).toBe(true);
     for (const workflow of result.workflows) {
       expect(workflow).not.toHaveProperty("content");
       expect(workflow.name.length).toBeGreaterThan(0);
     }
   });
 
-  it("returns workflow instruction metadata by key", async () => {
-    const workflow = await getWorkflowForMcp(db, projectId, "orchestrator.daily");
-    expect(workflow?.key).toBe("orchestrator.daily");
+  it("returns workflow instruction metadata by key (built-in)", async () => {
+    const workflow = await getWorkflowForMcp(db, projectId, "agent.setup");
+    expect(workflow?.key).toBe("agent.setup");
     expect(workflow).not.toHaveProperty("content");
   });
 
@@ -73,10 +73,14 @@ describe("workflow-services", () => {
     ).toBeNull();
   });
 
-  it("returns instruction body by key", async () => {
-    const result = await getWorkflowInstructionForMcp(db, projectId, "agent.main");
-    expect(result?.workflowKey).toBe("agent.main");
-    expect(result?.instruction).toContain("get_workflow_instruction");
+  it("returns instruction body by key (built-in)", async () => {
+    const result = await getWorkflowInstructionForMcp(
+      db,
+      projectId,
+      "agent.setup",
+    );
+    expect(result?.workflowKey).toBe("agent.setup");
+    expect(result?.instruction).toContain("write_workflow_instruction");
     expect(result?.instruction.length).toBeGreaterThan(50);
   });
 });

@@ -1,8 +1,5 @@
 import { z } from "zod";
 
-/** Reserved key for the main orchestration/router instruction. */
-export const RESERVED_MAIN_WORKFLOW_KEY = "agent.main" as const;
-
 /** BlockNote block — stored as jsonb; validated loosely at the boundary. */
 export const BlockNoteContentSchema = z.array(z.record(z.unknown()));
 

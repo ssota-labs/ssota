@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@ssota/ui/components/ui/badge";
+import { Toaster } from "@ssota/ui/components/ui/sonner";
 import { DynamicPageRenderer, UI_CATALOG_COMPONENTS } from "@/lib/page-runtime";
 import {
   PAGE_RUNTIME_DEMO_CATEGORIES,
@@ -102,6 +103,7 @@ export function PageRuntimeLabClient() {
 
   return (
     <div className="space-y-6">
+      <Toaster position="bottom-right" />
       <div className="border-border bg-muted/30 rounded-lg border p-4 text-sm">
         <p className="font-medium">Catalog coverage</p>
         <p className="text-muted-foreground mt-1">

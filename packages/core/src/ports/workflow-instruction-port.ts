@@ -24,15 +24,3 @@ export interface WorkflowInstructionWritePort {
 
 export type WorkflowInstructionPort = WorkflowInstructionReadPort &
   WorkflowInstructionWritePort;
-
-export interface MainInstructionPointerPort {
-  getMainInstructionId(params: {
-    projectId: string;
-    accountId?: string | null;
-  }): Promise<string | null>;
-  setMainInstructionId(params: {
-    projectId: string;
-    accountId?: string | null;
-    instructionId: string;
-  }): Promise<void>;
-}

@@ -1,16 +1,15 @@
 import type { ModelMessage } from "ai";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
+import { listBuiltinWorkflowIndex } from "@ssota/contracts/workflows";
 import {
   serializeTask,
   readWorkflowInstructionById,
-  readWorkflowInstructionByKey,
 } from "@ssota/core";
 import { McpSessionManager } from "./connections/mcp-session.js";
 import { ConnectionRunState } from "./connections/run-state.js";
 import {
   getTaskPort,
   getWorkflowInstructionPort,
-  getMainInstructionPointerPort,
 } from "./ports.js";
 import { createSsotaTools } from "./tools/index.js";
 import { createSandboxTools } from "./tools/sandbox.js";
@@ -77,25 +76,29 @@ function extractExecutionDirective(
 async function prepareRun(input: RunAgentInput) {
   const { projectId, runId, accountId, runtimeKind } = input;
   const instructionPort = getWorkflowInstructionPort(projectId, accountId);
-  const pointerPort = getMainInstructionPointerPort();
 
   let instructions = "";
   let messages: ModelMessage[] = [];
   let taskPort = getTaskPort(projectId, accountId);
 
   if (runtimeKind === "main") {
-    const mainId = await pointerPort.getMainInstructionId({
-      projectId,
-      accountId,
-    });
-    const main = mainId
-      ? await readWorkflowInstructionById(instructionPort, mainId)
-      : await readWorkflowInstructionByKey(instructionPort, "agent.main", accountId);
+    const dbInstructions = await instructionPort.listInstructions();
+    const dbKeys = new Set(dbInstructions.map((w) => w.key));
+    // DB rows override built-ins with the same key.
+    const builtins = listBuiltinWorkflowIndex().filter((b) => !dbKeys.has(b.key));
+    const workflowManifest = [
+      ...dbInstructions.map((w) => ({
+        key: w.key,
+        name: w.name,
+        description: w.description,
+      })),
+      ...builtins,
+    ];
     instructions = buildRunInstructions({
       runtimeKind: "main",
       projectId,
       accountId,
-      mainInstruction: main?.instruction ?? null,
+      workflowManifest,
     });
     const chatMessages = extractChatMessages(input.chatContext);
     messages = chatMessages ?? [

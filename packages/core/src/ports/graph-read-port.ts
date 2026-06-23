@@ -1,6 +1,7 @@
 import type {
   CreateInitiativeBundleInput,
   DeleteEdgeInput,
+  DeleteNodeInput,
   GetNodeInput,
   ListEdgesInput,
   ListNodesByTypeInput,
@@ -48,6 +49,8 @@ export interface GraphWritePort {
   updateNode(input: UpdateNodeInput): Promise<GraphNode>;
   createEdge(input: ResolvedCreateEdgeInput): Promise<GraphEdge>;
   deleteEdge(input: DeleteEdgeInput): Promise<void>;
+  /** Delete a node (and its incident edges) within the port's project scope. */
+  deleteNode(input: DeleteNodeInput): Promise<void>;
   createInitiativeBundle(
     input: CreateInitiativeBundleInput,
   ): Promise<CreateInitiativeBundleResult>;

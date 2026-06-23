@@ -5,10 +5,10 @@ import { CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
 
-const TOTAL_STEPS = 2;
+const TOTAL_STEPS = 3;
 
 type OnboardingShellProps = {
-  step: 1 | 2;
+  step: 1 | 2 | 3;
   stepLabel: string;
   title: string;
   description: string;

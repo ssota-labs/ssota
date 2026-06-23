@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type {
   CreateInitiativeBundleInput,
   DeleteEdgeInput,
+  DeleteNodeInput,
   GetNodeInput,
   ListNodesByTypeInput,
   TraverseEdgesInput,
@@ -171,6 +172,22 @@ export function createInMemoryGraphWritePort(
         throw new GraphError("NOT_FOUND", `Edge '${input.edgeId}' not found`);
       }
       store.edges.delete(input.edgeId);
+    },
+
+    async deleteNode(input: DeleteNodeInput) {
+      const node = store.nodes.get(input.nodeId);
+      if (!node || node.projectId !== input.projectId) {
+        throw new GraphError("NOT_FOUND", `Node '${input.nodeId}' not found`);
+      }
+      for (const [edgeId, edge] of store.edges) {
+        if (
+          edge.sourceNodeId === input.nodeId ||
+          edge.targetNodeId === input.nodeId
+        ) {
+          store.edges.delete(edgeId);
+        }
+      }
+      store.nodes.delete(input.nodeId);
     },
 
     async createInitiativeBundle(

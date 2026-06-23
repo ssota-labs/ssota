@@ -16,12 +16,14 @@ export { createOnboardingPort } from "./onboarding.js";
 export { createGraphPorts } from "./create-graph-ports.js";
 export { createGraphReadPort } from "./graph-read-port.js";
 export { createGraphWritePort } from "./graph-write-port.js";
-export { createWorkflowInstructionPort, createMainInstructionPointerPort, seedWorkflowInstructions } from "./workflow-instruction-port.js";
+export { createWorkflowInstructionPort, seedWorkflowInstructions } from "./workflow-instruction-port.js";
 export { createPagePort, seedPages } from "./page-port.js";
+export { createPageViewStatePort } from "./page-view-state-port.js";
 export {
   applyTemplate,
-  SOFTWARE_DEV_TEMPLATE,
   BUILTIN_TEMPLATES,
+  getTemplateBundleById,
+  SOFTWARE_DEV_TEMPLATE,
 } from "./templates.js";
 
 function mapTask(row: typeof schema.tasks.$inferSelect): Task {

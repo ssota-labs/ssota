@@ -32,6 +32,7 @@ export {
   createVercelConnectProvider,
   resolveCredentialProvider,
   startConnectAuthorization,
+  revokeConnectAuthorization,
   getConnectInstallation,
   normalizeConnectInstallationId,
   resolveConnectCallbackSubject,
@@ -62,7 +63,6 @@ export {
   getTaskPort,
   getGraphReadPort,
   getWorkflowInstructionPort,
-  getMainInstructionPointerPort,
 } from "./ports.js";
 
 export type {

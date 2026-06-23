@@ -8,7 +8,7 @@ import {
 } from "../helpers/onboarding";
 
 test.describe("Console onboarding screenshots", () => {
-  test("capture profile, project, and home steps", async ({ page }) => {
+  test("capture profile, project, template, and home steps", async ({ page }) => {
     const suffix = uniqueOnboardingSuffix();
     const email = uniqueOnboardingEmail();
     const organizationName = `Acme Organization ${suffix}`;
@@ -32,13 +32,20 @@ test.describe("Console onboarding screenshots", () => {
       fullPage: true,
     });
 
-    await page.locator('button[type="submit"]').click();
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page).toHaveURL(/\/onboarding\/template/);
+    await page.screenshot({
+      path: "report/screenshots/onboarding-03-template.png",
+      fullPage: true,
+    });
+
+    await page.getByRole("button", { name: "Open project" }).click();
     await expect(page).toHaveURL(/\/overview$/, { timeout: 30_000 });
     await expect(page.getByText("No graph nodes yet")).toBeVisible({
       timeout: 15_000,
     });
     await page.screenshot({
-      path: "report/screenshots/onboarding-03-home.png",
+      path: "report/screenshots/onboarding-04-home.png",
       fullPage: true,
     });
   });

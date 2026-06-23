@@ -4,7 +4,7 @@ import type { WorkflowInstructionSeed } from "../workflow-instruction.js";
 type WorkflowSeedSource = {
   workflowKey: string;
   title: string;
-  category: string;
+  description: string;
   instruction: string;
 };
 
@@ -15,7 +15,7 @@ export function buildWorkflowInstructionSeeds(
   return Object.values(registry).map((entry) => ({
     key: entry.workflowKey,
     name: entry.title,
-    description: entry.category,
+    description: entry.description,
     content: textToBlockNoteContent(entry.instruction),
   }));
 }

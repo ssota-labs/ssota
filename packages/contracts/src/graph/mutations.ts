@@ -49,6 +49,13 @@ export const deleteEdgeInputSchema = z.object({
 
 export type DeleteEdgeInput = z.infer<typeof deleteEdgeInputSchema>;
 
+export const deleteNodeInputSchema = z.object({
+  projectId: z.string().uuid(),
+  nodeId: z.string().uuid(),
+});
+
+export type DeleteNodeInput = z.infer<typeof deleteNodeInputSchema>;
+
 export const createInitiativeBundleInputSchema = z.object({
   projectId: z.string().uuid(),
   initiativeTitle: z.string().min(1),

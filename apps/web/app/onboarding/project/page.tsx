@@ -25,5 +25,12 @@ export default async function OnboardingProjectPage({
 
   const { error } = await searchParams;
 
-  return <ProjectOnboardingForm organizationName={organizationName} error={error} />;
+  return (
+    <ProjectOnboardingForm
+      organizationName={organizationName}
+      defaultProjectName={profile.onboardingDraftProjectName ?? ""}
+      showOrganizationCreatedToast={profile.onboardingStep === "project"}
+      error={error}
+    />
+  );
 }

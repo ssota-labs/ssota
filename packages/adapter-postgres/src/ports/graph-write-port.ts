@@ -1,7 +1,8 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import type {
   CreateInitiativeBundleInput,
   DeleteEdgeInput,
+  DeleteNodeInput,
   UpdateNodeInput,
 } from "@ssota/contracts/graph";
 import {
@@ -330,6 +331,57 @@ export function createGraphWritePort(
 
       if (deleted.length === 0) {
         throw new GraphError("NOT_FOUND", `Edge '${input.edgeId}' not found`);
+      }
+    },
+
+    async deleteNode(input: DeleteNodeInput) {
+      if (input.projectId !== projectId) {
+        throw new GraphError(
+          "PROJECT_MISMATCH",
+          "Input projectId does not match port scope",
+        );
+      }
+
+      const [existing] = await db
+        .select({ accountId: schema.nodes.accountId })
+        .from(schema.nodes)
+        .where(
+          and(
+            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.id, input.nodeId),
+          ),
+        )
+        .limit(1);
+      if (!existing) {
+        throw new GraphError("NOT_FOUND", `Node '${input.nodeId}' not found`);
+      }
+      assertEndUserWritableRow(accountId, existing.accountId, "node");
+
+      // Remove incident edges first to avoid orphaned references, then the node.
+      await db
+        .delete(schema.edges)
+        .where(
+          and(
+            eq(schema.edges.projectId, projectId),
+            or(
+              eq(schema.edges.sourceNodeId, input.nodeId),
+              eq(schema.edges.targetNodeId, input.nodeId),
+            ),
+          ),
+        );
+
+      const deleted = await db
+        .delete(schema.nodes)
+        .where(
+          and(
+            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.id, input.nodeId),
+          ),
+        )
+        .returning({ id: schema.nodes.id });
+
+      if (deleted.length === 0) {
+        throw new GraphError("NOT_FOUND", `Node '${input.nodeId}' not found`);
       }
     },
 
