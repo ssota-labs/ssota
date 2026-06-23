@@ -1,7 +1,4 @@
-import {
-  experimental_createMCPClient,
-  type OAuthClientProvider,
-} from "@ai-sdk/mcp";
+import { experimental_createMCPClient } from "@ai-sdk/mcp";
 import type { Tool } from "ai";
 import type { CredentialProvider } from "../credentials/provider.js";
 import type { McpConnectionDef } from "./define-mcp-connection.js";
@@ -91,35 +88,26 @@ export class McpSessionManager {
   constructor(private readonly credentials: CredentialProvider) {}
 
   /**
-   * Resolve the auth half of an MCP transport for a connection. Prefers the
-   * MCP-spec OAuth adapter (`transport.authProvider`) — it runs the
-   * protected-resource handshake so the provider mints a token scoped for the
-   * MCP resource itself (e.g. a usable Slack user token) rather than the generic
-   * identity token a raw `getToken()` returns. Falls back to a static Bearer
-   * token (self-host / own-app) when no adapter is available. Null = no credential.
+   * Resolve the auth header for an MCP transport: a static `Authorization:
+   * Bearer <token>`.
+   *
+   * NOTE: we intentionally do NOT use the MCP-spec OAuth adapter
+   * (`transport.authProvider`) here. That flow performs OAuth Dynamic Client
+   * Registration (DCR), and Slack's hosted MCP server (mcp.slack.com) does not
+   * support DCR — it requires a pre-registered client and a raw bearer token, so
+   * the adapter path returns `Unauthorized`. A raw `xoxp-` user token sent as a
+   * Bearer header is the supported authentication method. Null = no credential.
    */
   private async buildMcpAuth(
     connectorUid: string,
     scope: McpSessionScope,
-  ): Promise<
-    { authProvider: OAuthClientProvider } | { headers: Record<string, string> } | null
-  > {
-    const credScope = {
+  ): Promise<{ headers: Record<string, string> } | null> {
+    const cred = await this.credentials.getToken(connectorUid, {
       projectId: scope.projectId,
       accountId: scope.accountId,
       installationId: scope.installationId ?? undefined,
       userId: scope.userId ?? undefined,
-    };
-
-    const authProvider = await this.credentials.getMcpAuthProvider?.(
-      connectorUid,
-      credScope,
-    );
-    if (authProvider) {
-      return { authProvider: authProvider as OAuthClientProvider };
-    }
-
-    const cred = await this.credentials.getToken(connectorUid, credScope);
+    });
     if (!cred) return null;
     return { headers: { Authorization: `Bearer ${cred.token}` } };
   }
@@ -158,7 +146,6 @@ export class McpSessionManager {
       logMcp("connect", connection, {
         installationId: scope.installationId ?? null,
         userId: scope.userId ?? null,
-        auth: "authProvider" in auth ? "oauth" : "bearer",
       });
       const client = await experimental_createMCPClient({
         transport: {
@@ -229,7 +216,6 @@ export class McpSessionManager {
       logMcp("connect", connection, {
         tool: toolName,
         installationId: scope.installationId ?? null,
-        auth: "authProvider" in auth ? "oauth" : "bearer",
       });
       const created = await experimental_createMCPClient({
         transport: {
