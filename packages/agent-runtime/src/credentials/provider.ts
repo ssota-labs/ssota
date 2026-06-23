@@ -41,6 +41,76 @@ export interface CredentialProvider {
     connector: string,
     scope: CredentialScope,
   ): Promise<CredentialToken | null>;
+  /**
+   * Optional: an MCP-spec `OAuthClientProvider` (`@ai-sdk/mcp`) for remote MCP
+   * servers, plugged into `transport.authProvider`. This is the official Vercel
+   * Connect path for MCP — the adapter drives the MCP authorization flow against
+   * the server's `.well-known/oauth-protected-resource` while supplying Connect's
+   * pre-registered client (so it never triggers Dynamic Client Registration,
+   * which Slack's MCP server rejects). Returns null when unavailable; the caller
+   * then falls back to a static Bearer token from `getToken`.
+   *
+   * Typed `unknown` to avoid a hard `@ai-sdk/mcp` dependency here; the MCP
+   * session manager casts it to `OAuthClientProvider`.
+   */
+  getMcpAuthProvider?(
+    connector: string,
+    scope: CredentialScope,
+  ): Promise<unknown | null>;
+}
+
+/**
+ * Widest practical provider scopes to request when minting an MCP token, keyed
+ * by connector provider segment. Without explicit scopes Connect mints a
+ * minimal token (e.g. Slack returns a `identity.basic` sign-in token → the MCP
+ * server exposes zero tools), so we request the broad set each MCP server gates
+ * its tools on.
+ *
+ * Slack deliberately OMITS `identity.*` (Sign in with Slack) scopes: per Slack's
+ * docs, SIWS scopes cannot be combined with regular workspace scopes in one
+ * OAuth flow, and mixing them yields an identity-only token. Providers whose
+ * OAuth has no granular scope strings (Notion content grants, GitHub App
+ * installation permissions, self-hosted Discord) are omitted — Connect uses the
+ * connector's configured defaults for those.
+ */
+const MCP_CONNECT_SCOPES: Record<string, string[]> = {
+  slack: [
+    "channels:read",
+    "channels:history",
+    "groups:read",
+    "groups:history",
+    "im:read",
+    "im:history",
+    "mpim:read",
+    "mpim:history",
+    "search:read.public",
+    "search:read.private",
+    "search:read.im",
+    "search:read.mpim",
+    "search:read.files",
+    "search:read.users",
+    "chat:write",
+    "reactions:read",
+    "reactions:write",
+    "users:read",
+    "users:read.email",
+    "emoji:read",
+    "files:read",
+    "pins:read",
+    "bookmarks:read",
+    "usergroups:read",
+    "team:read",
+    "dnd:read",
+    "canvases:read",
+    "canvases:write",
+  ],
+  linear: ["read", "write", "issues:create", "comments:create"],
+};
+
+/** Widest MCP scopes for a connector uid, or undefined to use connector defaults. */
+export function mcpScopesForConnector(connectorUid: string): string[] | undefined {
+  const provider = connectorUid.split("/")[0] ?? connectorUid;
+  return MCP_CONNECT_SCOPES[provider];
 }
 
 function envKey(connector: string): string {
@@ -201,6 +271,53 @@ export function createVercelConnectProvider(): CredentialProvider {
         }
         throw error;
       }
+    },
+
+    // Official Vercel Connect ↔ remote MCP path. `@vercel/connect/ai-sdk`'s
+    // connectAuthProvider plugs into @ai-sdk/mcp's `transport.authProvider`; it
+    // runs the MCP authorization handshake with Connect's pre-registered client
+    // (no Dynamic Client Registration) and mints the token with the requested
+    // provider scopes — so the MCP server (Slack/Notion/Linear/GitHub) receives
+    // a properly-scoped resource token instead of a minimal sign-in token.
+    async getMcpAuthProvider(connector, scope) {
+      let adapter: {
+        connectAuthProvider: (
+          connectorUid: string,
+          params: {
+            subject: { type: "app" } | { type: "user"; id: string };
+            installationId?: string;
+            scopes?: string[];
+          },
+          options?: { onConsentRequired?: (challenge: unknown) => void },
+        ) => unknown;
+      };
+      try {
+        adapter = (await import(
+          "@vercel/connect/ai-sdk"
+        )) as unknown as typeof adapter;
+      } catch {
+        // Adapter (or its @ai-sdk/mcp peer) unavailable → caller falls back to a
+        // static Bearer token from getToken (self-host / own-app).
+        return null;
+      }
+
+      const scopes = mcpScopesForConnector(connector);
+      return adapter.connectAuthProvider(
+        connector,
+        {
+          subject: resolveConnectTokenSubject(connector, scope),
+          ...(scope.installationId
+            ? { installationId: scope.installationId }
+            : {}),
+          ...(scopes && scopes.length > 0 ? { scopes } : {}),
+        },
+        {
+          // No grant yet → don't throw ConsentRequiredError inside the MCP
+          // client; the resulting auth failure is caught by the session manager
+          // (and consent is surfaced to the user via request_connection).
+          onConsentRequired: () => undefined,
+        },
+      );
     },
   };
 }
