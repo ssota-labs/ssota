@@ -39,7 +39,6 @@ export {
   resolveConnectTokenSubject,
   connectUsesAppSubject,
   isRecoverableConnectTokenError,
-  mcpScopesForConnector,
   type CredentialProvider,
   type CredentialScope,
   type ConnectAuthorizationScope,
@@ -47,6 +46,7 @@ export {
   type StartConnectAuthorizationOptions,
   type ConnectInstallation,
 } from "./credentials/provider.js";
+export { mcpScopesForConnector } from "./credentials/mcp-scopes.js";
 export {
   enrichConnectInstallationDisplay,
   type EnrichConnectInstallationInput,
