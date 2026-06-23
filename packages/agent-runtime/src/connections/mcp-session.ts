@@ -1,4 +1,7 @@
-import { experimental_createMCPClient } from "@ai-sdk/mcp";
+import {
+  experimental_createMCPClient,
+  type OAuthClientProvider,
+} from "@ai-sdk/mcp";
 import type { Tool } from "ai";
 import type { CredentialProvider } from "../credentials/provider.js";
 import type { McpConnectionDef } from "./define-mcp-connection.js";
@@ -87,6 +90,40 @@ export class McpSessionManager {
 
   constructor(private readonly credentials: CredentialProvider) {}
 
+  /**
+   * Resolve the auth half of an MCP transport for a connection. Prefers the
+   * MCP-spec OAuth adapter (`transport.authProvider`) — it runs the
+   * protected-resource handshake so the provider mints a token scoped for the
+   * MCP resource itself (e.g. a usable Slack user token) rather than the generic
+   * identity token a raw `getToken()` returns. Falls back to a static Bearer
+   * token (self-host / own-app) when no adapter is available. Null = no credential.
+   */
+  private async buildMcpAuth(
+    connectorUid: string,
+    scope: McpSessionScope,
+  ): Promise<
+    { authProvider: OAuthClientProvider } | { headers: Record<string, string> } | null
+  > {
+    const credScope = {
+      projectId: scope.projectId,
+      accountId: scope.accountId,
+      installationId: scope.installationId ?? undefined,
+      userId: scope.userId ?? undefined,
+    };
+
+    const authProvider = await this.credentials.getMcpAuthProvider?.(
+      connectorUid,
+      credScope,
+    );
+    if (authProvider) {
+      return { authProvider: authProvider as OAuthClientProvider };
+    }
+
+    const cred = await this.credentials.getToken(connectorUid, credScope);
+    if (!cred) return null;
+    return { headers: { Authorization: `Bearer ${cred.token}` } };
+  }
+
   async listTools(
     connection: McpConnectionDef,
     scope: McpSessionScope,
@@ -107,13 +144,8 @@ export class McpSessionManager {
     const connectorUid = resolveConnectorUid(connection.auth.provider);
     if (!connectorUid) return { tools: [] };
 
-    const cred = await this.credentials.getToken(connectorUid, {
-      projectId: scope.projectId,
-      accountId: scope.accountId,
-      installationId: scope.installationId ?? undefined,
-      userId: scope.userId ?? undefined,
-    });
-    if (!cred) {
+    const auth = await this.buildMcpAuth(connectorUid, scope);
+    if (!auth) {
       logMcp("listTools", connection, {
         outcome: "skipped",
         reason: "no_credential",
@@ -125,59 +157,14 @@ export class McpSessionManager {
     try {
       logMcp("connect", connection, {
         installationId: scope.installationId ?? null,
-        hasToken: true,
         userId: scope.userId ?? null,
-        // Token prefix only (never the secret): xoxp- = user token (what Slack
-        // MCP needs), xoxb- = bot token (lists zero MCP tools).
-        tokenType: cred.token.slice(0, 5),
+        auth: "authProvider" in auth ? "oauth" : "bearer",
       });
-
-      // TEMP DIAGNOSTIC — Slack MCP returns ok+0 tools when the token lacks the
-      // user scopes it gates tools on. `auth.test` succeeds for any valid token;
-      // the `x-oauth-scopes` response header is the ground truth of what scopes
-      // the *exact* token MCP receives actually carries. Remove once resolved.
-      if (connection.id === "slack") {
-        try {
-          const probe = await fetch("https://slack.com/api/auth.test", {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${cred.token}`,
-              "Content-Type": "application/x-www-form-urlencoded",
-            },
-            signal: AbortSignal.timeout(5000),
-          });
-          const grantedScopes = probe.headers.get("x-oauth-scopes");
-          const body = (await probe.json()) as {
-            ok?: boolean;
-            error?: string;
-            team?: string;
-          };
-          logMcp("connect", connection, {
-            diag: "slack_token_probe",
-            tokenType: cred.token.slice(0, 5),
-            authTestOk: body.ok ?? false,
-            authTestError: body.error ?? null,
-            team: body.team ?? null,
-            grantedScopes: grantedScopes ?? null,
-          });
-        } catch (probeError) {
-          logMcp("connect", connection, {
-            diag: "slack_token_probe_failed",
-            error:
-              probeError instanceof Error
-                ? probeError.message
-                : String(probeError),
-          });
-        }
-      }
-
       const client = await experimental_createMCPClient({
         transport: {
           type: connection.transport,
           url: connection.url,
-          headers: {
-            Authorization: `Bearer ${cred.token}`,
-          },
+          ...auth,
         },
       });
       this.clientCache.set(key, client);
@@ -230,31 +217,25 @@ export class McpSessionManager {
       throw new Error(`Connector uid not configured for ${connection.id}`);
     }
 
-    const cred = await this.credentials.getToken(connectorUid, {
-      projectId: scope.projectId,
-      accountId: scope.accountId,
-      installationId: scope.installationId ?? undefined,
-      userId: scope.userId ?? undefined,
-    });
-    if (!cred) {
-      throw new Error(
-        `No credential for ${connection.id}. Call request_connection first.`,
-      );
-    }
-
     const key = sessionKey(connection.id, scope);
     let client = this.clientCache.get(key);
     if (!client) {
+      const auth = await this.buildMcpAuth(connectorUid, scope);
+      if (!auth) {
+        throw new Error(
+          `No credential for ${connection.id}. Call request_connection first.`,
+        );
+      }
       logMcp("connect", connection, {
         tool: toolName,
         installationId: scope.installationId ?? null,
-        hasToken: true,
+        auth: "authProvider" in auth ? "oauth" : "bearer",
       });
       const created = await experimental_createMCPClient({
         transport: {
           type: connection.transport,
           url: connection.url,
-          headers: { Authorization: `Bearer ${cred.token}` },
+          ...auth,
         },
       });
       this.clientCache.set(key, created);
