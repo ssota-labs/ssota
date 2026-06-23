@@ -27,11 +27,18 @@ describe("createSsotaTools", () => {
         "block_task",
         "complete_task",
         "create_edge",
+        "create_edge_type",
         "create_node",
+        "create_node_type",
         "create_page",
+        "delegate",
         "get_node",
+        "get_page_component",
         "get_task",
         "get_workflow_instruction",
+        "list_edge_types",
+        "list_node_types",
+        "list_page_components",
         "list_pages",
         "list_workflow_instructions",
         "query_nodes",
@@ -130,7 +137,7 @@ describe("buildRunInstructions", () => {
       projectId: "22222222-2222-2222-2222-222222222222",
       mainInstruction: null,
     });
-    expect(prompt).toMatch(/main runtime agent/i);
+    expect(prompt).toMatch(/persistent chat thread/i);
   });
 });
 
