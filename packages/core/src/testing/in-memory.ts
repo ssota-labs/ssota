@@ -992,7 +992,6 @@ export function createTestGate(
 const TEST_WORKFLOW_INSTRUCTIONS = [
   { key: "orchestrator.daily", name: "Daily orchestrator" },
   { key: "work.implement_feature", name: "Implement feature" },
-  { key: "agent.main", name: "Agent main" },
   { key: "work.write_document", name: "Write document" },
 ];
 

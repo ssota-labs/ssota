@@ -63,7 +63,6 @@ export {
   getTaskPort,
   getGraphReadPort,
   getWorkflowInstructionPort,
-  getMainInstructionPointerPort,
 } from "./ports.js";
 
 export type {

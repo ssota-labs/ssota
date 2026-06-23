@@ -3,9 +3,6 @@ import { ExecutorTypeSchema } from "../definitions.js";
 import { TaskStatusSchema } from "../task.js";
 import { loadWorkflowInstruction } from "./load-instruction.js";
 
-/** Reserved key for the main orchestration/router instruction. */
-export const RESERVED_MAIN_WORKFLOW_KEY = "agent.main" as const;
-
 export const WorkflowCategorySchema = z.enum([
   "orchestrator",
   "recurring",
@@ -27,10 +24,22 @@ export type WorkflowCadenceHint = z.infer<typeof WorkflowCadenceHintSchema>;
 export const WorkflowInstructionDefinitionSchema = z.object({
   workflowKey: z.string().min(1),
   title: z.string().min(1),
+  /**
+   * Skill-style "when to use" line. Injected into the main agent's prompt as a
+   * routing manifest so the agent self-selects the workflow and loads its full
+   * playbook on demand. This is the single source of truth for routing.
+   */
+  description: z.string().min(1),
   category: WorkflowCategorySchema,
   cadenceHint: WorkflowCadenceHintSchema.optional(),
   defaultExecutorType: ExecutorTypeSchema.optional(),
   defaultStatus: TaskStatusSchema.optional(),
+  /**
+   * Reference-only built-ins (guides/know-how) are loadable by key via
+   * get_workflow_instruction but hidden from the routing manifest — they are
+   * knowledge, not tasks to route.
+   */
+  reference: z.boolean().optional(),
   instruction: z.string().min(1),
 });
 
@@ -44,17 +53,10 @@ type WorkflowMeta = Omit<WorkflowInstructionDefinition, "instruction"> & {
 
 const WORKFLOW_META: WorkflowMeta[] = [
   {
-    workflowKey: "agent.main",
-    title: "Agent main router",
-    category: "orchestrator",
-    cadenceHint: "on_demand",
-    defaultExecutorType: "Agent",
-    defaultStatus: "ready",
-    instructionFile: "agent.main.md",
-  },
-  {
     workflowKey: "orchestrator.bootstrap",
     title: "Orchestrator bootstrap",
+    description:
+      "First-time project automation setup. Use once when a project's agent automation is first configured or reconfigured.",
     category: "orchestrator",
     cadenceHint: "on_demand",
     defaultExecutorType: "Agent",
@@ -64,6 +66,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "orchestrator.daily",
     title: "Daily orchestrator",
+    description:
+      "Daily backlog review. Use on a daily cadence (or manual trigger) to review the task backlog and spawn today's work items.",
     category: "orchestrator",
     cadenceHint: "daily",
     defaultExecutorType: "Agent",
@@ -73,6 +77,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "orchestrator.weekly",
     title: "Weekly orchestrator",
+    description:
+      "Weekly planning. Use on a weekly cadence to align tasks with initiatives, schedule larger work, and close stale items.",
     category: "orchestrator",
     cadenceHint: "weekly",
     defaultExecutorType: "Agent",
@@ -82,6 +88,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "orchestrator.monthly",
     title: "Monthly orchestrator",
+    description:
+      "Monthly retrospective. Use on a monthly cadence to summarize throughput and groom long-lived backlog items.",
     category: "orchestrator",
     cadenceHint: "monthly",
     defaultExecutorType: "Agent",
@@ -91,6 +99,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "orchestrator.watchdog",
     title: "Task watchdog",
+    description:
+      "Stalled-task recovery. Use when tasks have stalled (running >24h, ready >48h, or blocked) to spawn recovery or escalation work.",
     category: "orchestrator",
     cadenceHint: "on_demand",
     defaultExecutorType: "Agent",
@@ -100,6 +110,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "work.implement_feature",
     title: "Implement feature",
+    description:
+      "Implement a single scoped feature or fix. Use when executing a concrete, well-specified coding task with clear acceptance criteria.",
     category: "work",
     defaultExecutorType: "Agent",
     defaultStatus: "pending",
@@ -108,6 +120,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "work.write_document",
     title: "Write document",
+    description:
+      "Create or update a graph document node. Use when the deliverable is written content/documentation in the SSOTA graph.",
     category: "work",
     defaultExecutorType: "Agent",
     defaultStatus: "pending",
@@ -116,6 +130,8 @@ const WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "work.unblock",
     title: "Unblock stalled task",
+    description:
+      "Recover a stalled or blocked task. Use when a parent task is blocked and needs nudging, re-queuing, or escalation to a human.",
     category: "work",
     defaultExecutorType: "Agent",
     defaultStatus: "ready",
@@ -123,14 +139,16 @@ const WORKFLOW_META: WorkflowMeta[] = [
   },
 ];
 
-function buildRegistry(): Record<string, WorkflowInstructionDefinition> {
+function buildRegistry(
+  meta: WorkflowMeta[],
+): Record<string, WorkflowInstructionDefinition> {
   const registry: Record<string, WorkflowInstructionDefinition> = {};
-  for (const meta of WORKFLOW_META) {
-    if (meta.workflowKey in registry) {
-      throw new Error(`Duplicate workflow key: ${meta.workflowKey}`);
+  for (const entry of meta) {
+    if (entry.workflowKey in registry) {
+      throw new Error(`Duplicate workflow key: ${entry.workflowKey}`);
     }
-    const { instructionFile, ...rest } = meta;
-    registry[meta.workflowKey] = WorkflowInstructionDefinitionSchema.parse({
+    const { instructionFile, ...rest } = entry;
+    registry[entry.workflowKey] = WorkflowInstructionDefinitionSchema.parse({
       ...rest,
       instruction: loadWorkflowInstruction(instructionFile),
     });
@@ -139,7 +157,7 @@ function buildRegistry(): Record<string, WorkflowInstructionDefinition> {
 }
 
 export const WORKFLOW_REGISTRY: Record<string, WorkflowInstructionDefinition> =
-  buildRegistry();
+  buildRegistry(WORKFLOW_META);
 
 export const WORKFLOW_KEYS = Object.keys(WORKFLOW_REGISTRY) as WorkflowInstructionKey[];
 
@@ -162,7 +180,86 @@ export function isKnownWorkflowKey(
   return workflowKey in WORKFLOW_REGISTRY;
 }
 
-import { buildWorkflowInstructionSeeds } from "./seed.js";
+/**
+ * Built-in workflows ship in code and are available in EVERY project without
+ * being seeded into the DB. They are merged into the runtime manifest and
+ * resolved by `get_workflow_instruction` as a fallback when a project has no
+ * DB row for the key (a project may override a built-in by writing its own row
+ * with the same key). Kept OUT of {@link WORKFLOW_INSTRUCTION_SEEDS}.
+ */
+const BUILTIN_WORKFLOW_META: WorkflowMeta[] = [
+  {
+    workflowKey: "agent.setup",
+    title: "Project setup",
+    description:
+      "Set up a project from scratch (or reconfigure it): interview the user about the domain and goals, then author workflows and build pages so the project can operate. Use when the project has no workflows yet, or the user wants to (re)configure how it works.",
+    category: "orchestrator",
+    cadenceHint: "on_demand",
+    defaultExecutorType: "Agent",
+    defaultStatus: "ready",
+    instructionFile: "agent.setup.md",
+  },
+  {
+    workflowKey: "agent.guide.page_authoring",
+    title: "Guide: page authoring",
+    description:
+      "Reference for the json-render page format (spec, bindings, actions). Load when authoring pages.",
+    category: "orchestrator",
+    reference: true,
+    instructionFile: "agent.guide.page_authoring.md",
+  },
+  {
+    workflowKey: "agent.guide.workflow_authoring",
+    title: "Guide: workflow authoring",
+    description:
+      "Reference for writing good workflow instructions (key naming, description, body). Load when authoring workflows.",
+    category: "orchestrator",
+    reference: true,
+    instructionFile: "agent.guide.workflow_authoring.md",
+  },
+];
 
-export const WORKFLOW_INSTRUCTION_SEEDS =
-  buildWorkflowInstructionSeeds(WORKFLOW_REGISTRY);
+export const BUILTIN_WORKFLOW_REGISTRY: Record<
+  string,
+  WorkflowInstructionDefinition
+> = buildRegistry(BUILTIN_WORKFLOW_META);
+
+/** Lightweight routing-manifest row (no DB id — built-ins have none). */
+export interface WorkflowManifestEntry {
+  key: string;
+  name: string;
+  description: string;
+}
+
+/**
+ * Built-in workflows as manifest rows (key + name + when-to-use). Excludes
+ * reference-only guides — those are loadable by key but not routed.
+ */
+export function listBuiltinWorkflowIndex(): WorkflowManifestEntry[] {
+  return Object.values(BUILTIN_WORKFLOW_REGISTRY)
+    .filter((w) => !w.reference)
+    .map((w) => ({
+      key: w.workflowKey,
+      name: w.title,
+      description: w.description,
+    }));
+}
+
+/** Full built-in definition (with instruction text) by key, or null. */
+export function getBuiltinWorkflowByKey(
+  workflowKey: string,
+): WorkflowInstructionDefinition | null {
+  return BUILTIN_WORKFLOW_REGISTRY[workflowKey] ?? null;
+}
+
+import type { WorkflowInstructionSeed } from "../workflow-instruction.js";
+
+/**
+ * DB seeds for project bootstrap — intentionally EMPTY. WORKFLOW_META and the
+ * registry are kept in code for metadata/reference, but workflows are no longer
+ * seeded into each project's DB. A project starts empty and the agent authors
+ * workflows on demand (the `agent.setup` built-in bootstraps this).
+ * `buildWorkflowInstructionSeeds` (./seed.js) stays available if explicit
+ * seeding is ever needed again.
+ */
+export const WORKFLOW_INSTRUCTION_SEEDS: WorkflowInstructionSeed[] = [];

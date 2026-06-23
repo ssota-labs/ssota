@@ -5,7 +5,6 @@ export {
   createTaskPort,
   createGraphPorts,
   createWorkflowInstructionPort,
-  createMainInstructionPointerPort,
   seedWorkflowInstructions,
   createPagePort,
   seedPages,

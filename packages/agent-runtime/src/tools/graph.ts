@@ -16,11 +16,96 @@ import {
   traverseEdgesInputSchema,
   updateNodeInputSchema,
 } from "@ssota/contracts/graph";
-import { getGraphPorts, getGraphReadPort } from "../ports.js";
+import {
+  getGraphPorts,
+  getGraphReadPort,
+  getCatalogWritePort,
+} from "../ports.js";
 import { getRunContext, serializeEdge, serializeNode } from "./context.js";
 
 export function createGraphTools(): ToolSet {
   return {
+    list_node_types: tool({
+      description:
+        "List the project's node type catalog (the kinds of records that exist). Check this before creating nodes or defining new types.",
+      inputSchema: z.object({}),
+      execute: async (_input, { experimental_context }) => {
+        const { projectId, accountId } = getRunContext(experimental_context);
+        return getGraphPorts(projectId, accountId).catalog.listNodeCatalog();
+      },
+    }),
+
+    list_edge_types: tool({
+      description: "List the project's edge type catalog (the kinds of relationships).",
+      inputSchema: z.object({}),
+      execute: async (_input, { experimental_context }) => {
+        const { projectId, accountId } = getRunContext(experimental_context);
+        return getGraphPorts(projectId, accountId).catalog.listEdgeCatalog();
+      },
+    }),
+
+    create_node_type: tool({
+      description:
+        "Define (or update) a node type in the project catalog. Use during setup to model the domain's records before creating node instances. propertySchema is a JSON-schema-like object describing the type's properties. Upserts by key.",
+      inputSchema: z.object({
+        key: z
+          .string()
+          .describe("Stable type key, e.g. 'customer', 'invoice', 'patient'."),
+        label: z.string().describe("Human-readable name."),
+        propertySchema: z.record(z.unknown()).optional(),
+      }),
+      execute: async (input, { experimental_context }) => {
+        const { projectId } = getRunContext(experimental_context);
+        return getCatalogWritePort(projectId).upsertNodeCatalog({
+          key: input.key,
+          label: input.label,
+          propertySchema: input.propertySchema ?? {},
+        });
+      },
+    }),
+
+    create_edge_type: tool({
+      description:
+        "Define (or update) an edge type in the project catalog. domainKeys/rangeKeys are node-type keys that constrain valid source/target types (empty = unconstrained). Upserts by key.",
+      inputSchema: z.object({
+        key: z.string().describe("Stable type key, e.g. 'placed_by', 'belongs_to'."),
+        label: z.string(),
+        domainKeys: z
+          .array(z.string())
+          .optional()
+          .describe("Allowed source node-type keys."),
+        rangeKeys: z
+          .array(z.string())
+          .optional()
+          .describe("Allowed target node-type keys."),
+        propertySchema: z.record(z.unknown()).optional(),
+      }),
+      execute: async (input, { experimental_context }) => {
+        const { projectId, accountId } = getRunContext(experimental_context);
+        const catalog = getGraphPorts(projectId, accountId).catalog;
+        const resolveKeys = async (keys?: string[]) => {
+          const ids: string[] = [];
+          for (const key of keys ?? []) {
+            const nodeType = await catalog.getNodeCatalogByKey(key);
+            if (!nodeType) {
+              throw new Error(
+                `Unknown node type key '${key}' — create it with create_node_type first.`,
+              );
+            }
+            ids.push(nodeType.id);
+          }
+          return ids;
+        };
+        return getCatalogWritePort(projectId).upsertEdgeCatalog({
+          key: input.key,
+          label: input.label,
+          domainCatalogIds: await resolveKeys(input.domainKeys),
+          rangeCatalogIds: await resolveKeys(input.rangeKeys),
+          propertySchema: input.propertySchema ?? null,
+        });
+      },
+    }),
+
     query_nodes: tool({
       description:
         "List nodes of a catalog type in the current project. Use to read planning context (objectives, prds, features, tasks, pages…).",

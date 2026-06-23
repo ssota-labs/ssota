@@ -2,26 +2,32 @@ import { describe, expect, it } from "vitest";
 import {
   WORKFLOW_KEYS,
   WORKFLOW_REGISTRY,
+  WORKFLOW_INSTRUCTION_SEEDS,
+  getBuiltinWorkflowByKey,
   getWorkflowByKey,
   isKnownWorkflowKey,
+  listBuiltinWorkflowIndex,
   listWorkflowKeys,
 } from "./index.js";
 
 describe("workflow registry SSOT", () => {
   it("defines pilot orchestrator and work workflows", () => {
     expect(WORKFLOW_KEYS.length).toBeGreaterThanOrEqual(8);
-    expect(isKnownWorkflowKey("agent.main")).toBe(true);
     expect(isKnownWorkflowKey("orchestrator.daily")).toBe(true);
     expect(isKnownWorkflowKey("work.implement_feature")).toBe(true);
     expect(isKnownWorkflowKey("unknown.workflow")).toBe(false);
   });
 
-  it("returns full instruction for agent.main", () => {
-    const workflow = getWorkflowByKey("agent.main");
-    expect(workflow).not.toBeNull();
-    expect(workflow?.instruction).toContain("agent.main");
-    expect(workflow?.instruction).toContain("get_workflow_instruction");
-    expect(workflow?.cadenceHint).toBe("on_demand");
+  it("no longer defines a reserved router workflow", () => {
+    expect(isKnownWorkflowKey("agent.main")).toBe(false);
+    expect(getWorkflowByKey("agent.main")).toBeNull();
+  });
+
+  it("every workflow carries a skill-style description for routing", () => {
+    for (const key of WORKFLOW_KEYS) {
+      const entry = WORKFLOW_REGISTRY[key]!;
+      expect(entry.description.length).toBeGreaterThan(20);
+    }
   });
 
   it("returns full instruction for orchestrator.daily", () => {
@@ -47,5 +53,40 @@ describe("workflow registry SSOT", () => {
 
   it("getWorkflowByKey returns null for unknown keys", () => {
     expect(getWorkflowByKey("not.a.workflow")).toBeNull();
+  });
+});
+
+describe("built-in workflows (code-only, not seeded)", () => {
+  it("exposes agent.setup as a built-in with a full instruction", () => {
+    const setup = getBuiltinWorkflowByKey("agent.setup");
+    expect(setup).not.toBeNull();
+    expect(setup?.instruction.length).toBeGreaterThan(50);
+    expect(setup?.description.length).toBeGreaterThan(20);
+    expect(listBuiltinWorkflowIndex().some((w) => w.key === "agent.setup")).toBe(
+      true,
+    );
+  });
+
+  it("keeps built-ins OUT of the seeded registry", () => {
+    expect(isKnownWorkflowKey("agent.setup")).toBe(false);
+    expect(getWorkflowByKey("agent.setup")).toBeNull();
+  });
+
+  it("hides reference guides from the manifest but resolves them by key", () => {
+    const manifestKeys = listBuiltinWorkflowIndex().map((w) => w.key);
+    expect(manifestKeys).toContain("agent.setup");
+    expect(manifestKeys).not.toContain("agent.guide.page_authoring");
+    expect(manifestKeys).not.toContain("agent.guide.workflow_authoring");
+    // ...but they are still loadable on demand.
+    expect(getBuiltinWorkflowByKey("agent.guide.page_authoring")).not.toBeNull();
+    expect(
+      getBuiltinWorkflowByKey("agent.guide.workflow_authoring"),
+    ).not.toBeNull();
+  });
+});
+
+describe("workflow DB seeds", () => {
+  it("seeds nothing — workflows are no longer seeded per project", () => {
+    expect(WORKFLOW_INSTRUCTION_SEEDS).toHaveLength(0);
   });
 });

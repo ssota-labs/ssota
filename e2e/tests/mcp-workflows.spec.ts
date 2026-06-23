@@ -30,38 +30,38 @@ test.describe("MCP workflow tools", () => {
       scope,
     )) as { workflows: Array<{ key: string; name: string }> };
 
-    expect(listed.workflows.length).toBeGreaterThanOrEqual(9);
-    expect(listed.workflows.some((entry) => entry.key === "agent.main")).toBe(
-      true,
-    );
+    // Nothing is seeded; the agent.setup built-in is always available.
+    expect(
+      listed.workflows.some((entry) => entry.key === "agent.setup"),
+    ).toBe(true);
     for (const workflow of listed.workflows) {
       expect(workflow).not.toHaveProperty("instruction");
       expect(workflow).not.toHaveProperty("content");
     }
 
-    const daily = (await mcpToolCall(
+    const setup = (await mcpToolCall(
       request,
       mcpUrl,
       token,
       "get_workflow",
-      { workflowKey: "orchestrator.daily" },
+      { workflowKey: "agent.setup" },
       scope,
     )) as { key: string; name: string };
-    expect(daily.key).toBe("orchestrator.daily");
-    expect(daily).not.toHaveProperty("instruction");
-    expect(daily).not.toHaveProperty("content");
+    expect(setup.key).toBe("agent.setup");
+    expect(setup).not.toHaveProperty("instruction");
+    expect(setup).not.toHaveProperty("content");
 
-    const mainInstruction = (await mcpToolCall(
+    const setupInstruction = (await mcpToolCall(
       request,
       mcpUrl,
       token,
       "get_workflow_instruction",
-      { workflowKey: "agent.main" },
+      { workflowKey: "agent.setup" },
       scope,
     )) as { workflowKey: string; instruction: string };
-    expect(mainInstruction.workflowKey).toBe("agent.main");
-    expect(mainInstruction.instruction).toContain("get_workflow_instruction");
-    expect(mainInstruction.instruction.length).toBeGreaterThan(50);
+    expect(setupInstruction.workflowKey).toBe("agent.setup");
+    expect(setupInstruction.instruction).toContain("write_workflow_instruction");
+    expect(setupInstruction.instruction.length).toBeGreaterThan(50);
   });
 
   test("rejects unknown workflow keys", async ({ request }) => {

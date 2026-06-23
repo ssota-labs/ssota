@@ -6,9 +6,13 @@ import {
   readWorkflowInstructionByKey,
 } from "@ssota/core";
 import {
-  UpsertWorkflowInstructionInputSchema,
   blockNoteContentToText,
+  textToBlockNoteContent,
 } from "@ssota/contracts";
+import {
+  getBuiltinWorkflowByKey,
+  listBuiltinWorkflowIndex,
+} from "@ssota/contracts/workflows";
 import { getWorkflowInstructionPort } from "../ports.js";
 import { getRunContext } from "./context.js";
 
@@ -23,14 +27,18 @@ export function createWorkflowInstructionTools(): ToolSet {
         const items = await listWorkflowInstructions(
           getWorkflowInstructionPort(ctx.projectId, ctx.accountId),
         );
-        return {
-          instructions: items.map(({ instruction }) => ({
-            id: instruction.id,
-            key: instruction.key,
-            name: instruction.name,
-            description: instruction.description,
-          })),
-        };
+        const dbRows = items.map(({ instruction }) => ({
+          id: instruction.id as string | null,
+          key: instruction.key,
+          name: instruction.name,
+          description: instruction.description,
+        }));
+        const dbKeys = new Set(dbRows.map((r) => r.key));
+        // DB rows override built-ins with the same key.
+        const builtins = listBuiltinWorkflowIndex()
+          .filter((b) => !dbKeys.has(b.key))
+          .map((b) => ({ id: null, ...b }));
+        return { instructions: [...dbRows, ...builtins] };
       },
     }),
 
@@ -49,23 +57,47 @@ export function createWorkflowInstructionTools(): ToolSet {
           : input.key
             ? await readWorkflowInstructionByKey(port, input.key, ctx.accountId)
             : null;
-        if (!result) return { found: false };
-        return {
-          found: true,
-          id: result.instruction.id,
-          key: result.instruction.key,
-          name: result.instruction.name,
-          description: result.instruction.description,
-          text: blockNoteContentToText(result.instruction.content),
-        };
+        if (result) {
+          return {
+            found: true,
+            id: result.instruction.id,
+            key: result.instruction.key,
+            name: result.instruction.name,
+            description: result.instruction.description,
+            text: blockNoteContentToText(result.instruction.content),
+          };
+        }
+        // Fall back to a code-defined built-in workflow (e.g. agent.setup),
+        // which is not seeded into the DB.
+        const builtin = input.key ? getBuiltinWorkflowByKey(input.key) : null;
+        if (builtin) {
+          return {
+            found: true,
+            id: null,
+            key: builtin.workflowKey,
+            name: builtin.title,
+            description: builtin.description,
+            text: builtin.instruction,
+          };
+        }
+        return { found: false };
       },
     }),
 
     write_workflow_instruction: tool({
       description:
-        "Create or update a workflow instruction (upsert by key). Fields: key, name, description, content (BlockNote json array).",
+        "Create or update a workflow instruction (upsert by key). Write the playbook as markdown in `body` — a clear step-by-step process. `description` is a skill-style 'when to use' line (routing quality depends on it).",
       inputSchema: z.object({
-        definition: UpsertWorkflowInstructionInputSchema,
+        key: z
+          .string()
+          .describe("Stable workflow key, e.g. 'work.onboard_customer'."),
+        name: z.string().describe("Human-readable title."),
+        description: z
+          .string()
+          .describe("Skill-style 'when to use this workflow' line."),
+        body: z
+          .string()
+          .describe("The playbook as markdown / plain text."),
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
@@ -73,8 +105,13 @@ export function createWorkflowInstructionTools(): ToolSet {
           const saved = await getWorkflowInstructionPort(
             ctx.projectId,
             ctx.accountId,
-          ).upsertInstruction(input.definition);
-          return { ok: true, instruction: saved };
+          ).upsertInstruction({
+            key: input.key,
+            name: input.name,
+            description: input.description,
+            content: textToBlockNoteContent(input.body),
+          });
+          return { ok: true, id: saved.id, key: saved.key };
         } catch (error) {
           return {
             ok: false,

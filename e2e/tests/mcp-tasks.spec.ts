@@ -1,16 +1,42 @@
 import { test, expect } from "@playwright/test";
-import { E2E_EXECUTION_DIRECTIVE, getSmokeAccessToken, mcpToolCall } from "../helpers/mcp";
+import { createDb, createWorkflowInstructionPort } from "@ssota/adapter-postgres";
+import { textToBlockNoteContent } from "@ssota/contracts";
+import {
+  E2E_EXECUTION_DIRECTIVE,
+  getDefaultProjectId,
+  getSmokeAccessToken,
+  mcpToolCall,
+} from "../helpers/mcp";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
+// Workflows are no longer seeded per project, so this spec provisions the one
+// it spawns against (MCP itself is read-only for workflow instructions).
+const WORKFLOW_KEY = "work.e2e_task";
+
 test.describe("MCP task tools", () => {
+  test.beforeAll(async () => {
+    const projectId = await getDefaultProjectId();
+    const { db, client } = createDb(process.env.DATABASE_URL);
+    try {
+      await createWorkflowInstructionPort(db, { projectId }).upsertInstruction({
+        key: WORKFLOW_KEY,
+        name: "E2E task workflow",
+        description: "Workflow referenced by the MCP tasks e2e spec.",
+        content: textToBlockNoteContent("Complete the E2E task."),
+      });
+    } finally {
+      await client.end({ timeout: 1 });
+    }
+  });
+
   test("spawn_task then list/get/query/update tasks", async ({ request }) => {
     const token = await getSmokeAccessToken();
     const idempotencyKey = `e2e-spawn-task-${Date.now()}`;
 
     const spawned = (await mcpToolCall(request, mcpUrl, token, "spawn_task", {
       title: "E2E spawned task",
-      workflowInstructionKey: "work.implement_feature",
+      workflowInstructionKey: WORKFLOW_KEY,
       assignee: "agent:e2e",
       executionDirective: E2E_EXECUTION_DIRECTIVE,
       acceptanceCriteria: ["Task completed in E2E"],
@@ -23,7 +49,7 @@ test.describe("MCP task tools", () => {
     };
 
     expect(spawned.id).toBeTruthy();
-    expect(spawned.workflowInstructionKey).toBe("work.implement_feature");
+    expect(spawned.workflowInstructionKey).toBe(WORKFLOW_KEY);
     expect(spawned.status).toBe("pending");
 
     const listed = (await mcpToolCall(
@@ -41,7 +67,7 @@ test.describe("MCP task tools", () => {
       token,
       "query_tasks",
       {
-        workflowInstructionKey: "work.implement_feature",
+        workflowInstructionKey: WORKFLOW_KEY,
         assignee: "agent:e2e",
         limit: 10,
       },
@@ -53,7 +79,7 @@ test.describe("MCP task tools", () => {
       taskId: matched!.id,
     })) as { id: string; title: string; workflowInstructionKey: string } | null;
     expect(task?.id).toBe(matched!.id);
-    expect(task?.workflowInstructionKey).toBe("work.implement_feature");
+    expect(task?.workflowInstructionKey).toBe(WORKFLOW_KEY);
 
     const updated = (await mcpToolCall(request, mcpUrl, token, "update_task", {
       taskId: matched!.id,
@@ -65,7 +91,7 @@ test.describe("MCP task tools", () => {
 
     const duplicate = (await mcpToolCall(request, mcpUrl, token, "spawn_task", {
       title: "Should not create duplicate",
-      workflowInstructionKey: "work.implement_feature",
+      workflowInstructionKey: WORKFLOW_KEY,
       executionDirective: E2E_EXECUTION_DIRECTIVE,
       acceptanceCriteria: ["done"],
       idempotencyKey,
