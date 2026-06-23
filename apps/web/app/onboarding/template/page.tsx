@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
-import { ProjectOnboardingForm } from "@/components/onboarding/project-onboarding-form";
+import { BUILTIN_TEMPLATES } from "@ssota/adapter-postgres";
+import { TemplateOnboardingForm } from "@/components/onboarding/template-onboarding-form";
+import { DEFAULT_TEMPLATE_ID } from "@/components/onboarding/console-preview-provisioning";
 import { getConsolePort, getOnboardingPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
-export default async function OnboardingProjectPage({
+export default async function OnboardingTemplatePage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
@@ -18,18 +20,29 @@ export default async function OnboardingProjectPage({
     redirect("/onboarding/profile");
   }
 
+  if (profile.onboardingStep === "project") {
+    redirect("/onboarding/project");
+  }
+
+  const projectName = profile.onboardingDraftProjectName?.trim();
+  if (!projectName) {
+    redirect("/onboarding/project");
+  }
+
   let organizationName = "Your Organization";
   const consolePort = getConsolePort();
   const personalOrg = await consolePort.getPersonalOrganizationForUser(user.id);
   if (personalOrg) organizationName = personalOrg.name;
 
   const { error } = await searchParams;
+  const templates = BUILTIN_TEMPLATES.map((template) => template.meta);
 
   return (
-    <ProjectOnboardingForm
+    <TemplateOnboardingForm
       organizationName={organizationName}
-      defaultProjectName={profile.onboardingDraftProjectName ?? ""}
-      showOrganizationCreatedToast={profile.onboardingStep === "project"}
+      projectName={projectName}
+      templates={templates}
+      defaultTemplateId={DEFAULT_TEMPLATE_ID}
       error={error}
     />
   );

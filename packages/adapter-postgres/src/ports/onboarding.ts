@@ -1,4 +1,5 @@
 import { toRouteSlug } from "@ssota/core";
+import { applyTemplate, getTemplateBundleById } from "./templates.js";
 import {
   DEFAULT_LOCALE,
   LOCALES,
@@ -11,7 +12,6 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "./templates.js";
 
 function parseLocale(value: string | null | undefined): Locale {
   if (value && (LOCALES as readonly string[]).includes(value)) {
@@ -26,6 +26,7 @@ function mapProfile(row: typeof schema.profiles.$inferSelect): Profile {
     email: row.email,
     displayName: row.displayName,
     onboardingStep: row.onboardingStep as Profile["onboardingStep"],
+    onboardingDraftProjectName: row.onboardingDraftProjectName ?? null,
     onboardingCompletedAt: row.onboardingCompletedAt,
     locale: parseLocale(row.locale),
   };
@@ -140,6 +141,7 @@ export function createOnboardingPort(db: Db): OnboardingPort {
               email,
               displayName: displayName.trim(),
               onboardingStep: "project",
+              onboardingDraftProjectName: null,
               updatedAt: now,
             })
             .where(eq(schema.profiles.id, userId));
@@ -183,7 +185,29 @@ export function createOnboardingPort(db: Db): OnboardingPort {
       });
     },
 
-    async completeProjectStep({ userId, projectName }) {
+    async saveProjectDraftStep({ userId, projectName }) {
+      const now = new Date();
+      const updated = await db
+        .update(schema.profiles)
+        .set({
+          onboardingStep: "template",
+          onboardingDraftProjectName: projectName.trim(),
+          updatedAt: now,
+        })
+        .where(eq(schema.profiles.id, userId))
+        .returning({ id: schema.profiles.id });
+
+      if (!updated[0]) {
+        throw new Error("Profile is required before saving a project draft");
+      }
+    },
+
+    async completeTemplateStep({ userId, templateId }) {
+      const bundle = getTemplateBundleById(templateId);
+      if (!bundle) {
+        throw new Error(`Unknown template: ${templateId}`);
+      }
+
       const result = await db.transaction(async (tx) => {
         const profileRows = await tx
           .select()
@@ -193,6 +217,11 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         const profile = profileRows[0];
         if (!profile) {
           throw new Error("Profile is required before creating a project");
+        }
+
+        const projectName = profile.onboardingDraftProjectName?.trim();
+        if (!projectName) {
+          throw new Error("Project name draft is required before choosing a template");
         }
 
         const organization = await getPersonalOrganization(tx, userId);
@@ -211,7 +240,7 @@ export function createOnboardingPort(db: Db): OnboardingPort {
           .values({
             organizationId: organization.id,
             slug,
-            name: projectName.trim(),
+            name: projectName,
           })
           .returning();
 
@@ -222,6 +251,7 @@ export function createOnboardingPort(db: Db): OnboardingPort {
           .update(schema.profiles)
           .set({
             onboardingStep: "completed",
+            onboardingDraftProjectName: null,
             onboardingCompletedAt: now,
             updatedAt: now,
           })
@@ -230,10 +260,7 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         return { organization, project };
       });
 
-      // Seed the project from a template bundle (catalog → workflows → pages).
-      // Defaults to the built-in Software Development template; a template
-      // picker / marketplace will choose the bundle in a later step.
-      await applyTemplate(db, result.project.id, SOFTWARE_DEV_TEMPLATE);
+      await applyTemplate(db, result.project.id, bundle);
 
       return result;
     },

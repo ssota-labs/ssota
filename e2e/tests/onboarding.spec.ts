@@ -3,6 +3,7 @@ import { loginAsSmoke } from "../helpers/auth";
 import {
   completeOnboardingFlow,
   completeProfileOnboarding,
+  completeProjectDraftOnboarding,
   signInOnLoginPage,
   uniqueOnboardingEmail,
 } from "../helpers/onboarding";
@@ -15,8 +16,29 @@ test.describe("Console onboarding", () => {
     expect(orgSlug).toMatch(/^e2e-organization-/);
     expect(projectSlug).toMatch(/^e2e-project-/);
     await expect(page).toHaveURL(new RegExp(`/${orgSlug}/${projectSlug}/overview$`));
-    await expect(page.getByText("Nothing here yet")).toBeVisible();
+    await expect(page.getByText("No graph nodes yet")).toBeVisible();
     await expect(page.getByText(projectName).first()).toBeVisible();
+  });
+
+  test("template 스텝에서 project로 돌아가기", async ({ page }) => {
+    const email = uniqueOnboardingEmail();
+    const projectName = "Back Test Project";
+
+    await signInOnLoginPage(page, email);
+    await completeProfileOnboarding(page, "Back Test Organization");
+    await completeProjectDraftOnboarding(page, projectName);
+
+    await page.getByRole("button", { name: "Back to project" }).click();
+
+    await expect(page).toHaveURL(/\/onboarding\/project/);
+    await expect(page.getByText("Step 2 of 3")).toBeVisible();
+    await expect(page.getByLabel("Project name")).toHaveValue(projectName);
+    await expect(
+      page.locator("[data-sonner-toast]").getByText(/organization created/i),
+    ).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page).toHaveURL(/\/onboarding\/template/, { timeout: 15_000 });
   });
 
   test("project 스텝에서 organization으로 돌아가기", async ({ page }) => {
@@ -24,11 +46,14 @@ test.describe("Console onboarding", () => {
     await signInOnLoginPage(page, email);
     await completeProfileOnboarding(page, "Back Test Organization");
 
-    await expect(page.getByText("Step 2 of 2")).toBeVisible();
+    await expect(page.getByText("Step 2 of 3")).toBeVisible();
+    await expect(
+      page.locator("[data-sonner-toast]").getByText(/organization created/i),
+    ).toBeVisible();
     await page.getByRole("button", { name: "Back to organization" }).click();
 
     await expect(page).toHaveURL(/\/onboarding\/profile/);
-    await expect(page.getByText("Step 1 of 2")).toBeVisible();
+    await expect(page.getByText("Step 1 of 3")).toBeVisible();
     await expect(page.getByLabel("Organization name")).toHaveValue(
       "Back Test Organization",
     );

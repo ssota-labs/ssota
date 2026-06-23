@@ -10,7 +10,12 @@ import { getDb } from "../ports.js";
 import { resolveConnectorUid } from "../connections/connect-credential.js";
 import type { McpConnectionDef } from "../connections/define-mcp-connection.js";
 import { getConfiguredConnections } from "../connections/registry.js";
+import type { McpToolListing } from "../connections/filter-tools.js";
 import { McpSessionManager } from "../connections/mcp-session.js";
+import {
+  getKnownToolsForConnection,
+  inferConnectionIdFromQuery,
+} from "../connections/tool-catalog.js";
 import {
   toQualifiedToolName,
   parseQualifiedToolName,
@@ -80,13 +85,10 @@ export async function createConnectionTools(
 
     if (installs.length === 0) continue;
 
+    // Register qualified tool shells from the static catalog only — no MCP
+    // at run start. Live discovery + activation happens in connection_search.
     for (const install of installs) {
-      const listings = await input.sessionManager.listTools(connection, {
-        projectId: input.projectId,
-        accountId: input.accountId,
-        installationId: install.installationId,
-        userId: install.subjectUserId,
-      });
+      const listings = getKnownToolsForConnection(connection);
 
       for (const listing of listings) {
         const qualifiedName = toQualifiedToolName(connection.id, listing.name);
@@ -124,7 +126,12 @@ export async function createConnectionTools(
               },
               parsed.toolName,
               args as Record<string, unknown>,
-            );
+            ).catch((error: unknown) => ({
+              ok: false as const,
+              connection: parsed.connectionId,
+              tool: parsed.toolName,
+              error: error instanceof Error ? error.message : String(error),
+            }));
           },
         });
       }
@@ -172,13 +179,21 @@ function buildConnectionSearchTool(
         : null;
 
       const query = searchInput.query.trim().toLowerCase();
-      const result: ConnectionSearchResult = { connections: [], tools: [] };
+      const connectionFilter =
+        searchInput.connection ?? inferConnectionIdFromQuery(query);
+      console.log(
+        JSON.stringify({
+          component: "connection_search",
+          query: searchInput.query,
+          connectionFilter: connectionFilter ?? null,
+          projectId: ctx.projectId,
+          accountId: ctx.accountId ?? null,
+        }),
+      );
+      const result: ConnectionSearchResult = { connections: [], tools: [], errors: [] };
 
       for (const connection of connections) {
-        if (
-          searchInput.connection &&
-          searchInput.connection !== connection.id
-        ) {
+        if (connectionFilter && connectionFilter !== connection.id) {
           continue;
         }
 
@@ -231,12 +246,33 @@ function buildConnectionSearchTool(
 
           if (!connected) continue;
 
-          const listings = await input.sessionManager.listTools(connection, {
-            projectId: ctx.projectId,
-            accountId: ctx.accountId,
-            installationId: install.installationId,
-            userId: install.subjectUserId,
-          });
+          let listings: McpToolListing[] = [];
+          let listError: string | undefined;
+          try {
+            const listed = await input.sessionManager.listTools(connection, {
+              projectId: ctx.projectId,
+              accountId: ctx.accountId,
+              installationId: install.installationId,
+              userId: install.subjectUserId,
+            });
+            listings = listed.tools;
+            listError = listed.error;
+          } catch (error) {
+            listError =
+              error instanceof Error ? error.message : String(error);
+            console.warn(
+              `[connection_search] listTools failed for ${connection.id}:`,
+              listError,
+            );
+          }
+
+          if (listError) {
+            result.errors?.push({
+              connection: connection.id,
+              installationId: install.installationId,
+              message: listError,
+            });
+          }
 
           for (const listing of listings) {
             const qualifiedName = toQualifiedToolName(
@@ -269,6 +305,22 @@ function buildConnectionSearchTool(
       }
 
       state?.activateFromSearch(result.tools);
+      if (result.errors?.length === 0) {
+        delete result.errors;
+      }
+      console.log(
+        JSON.stringify({
+          component: "connection_search",
+          outcome: "ok",
+          connections: result.connections.map((c) => ({
+            connection: c.connection,
+            connected: c.connected,
+            installationId: c.installationId,
+          })),
+          toolCount: result.tools.length,
+          tools: result.tools.map((t) => t.qualifiedName),
+        }),
+      );
       return result;
     },
   });

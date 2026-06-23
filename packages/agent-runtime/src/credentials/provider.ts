@@ -57,10 +57,39 @@ type ConnectTokenSubject =
   | { type: "app" }
   | { type: "user"; id: string };
 
-function resolveConnectTokenSubject(
+/** Connect token errors that mean "no credential right now" — not infra bugs. */
+export function isRecoverableConnectTokenError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  if (
+    error.name === "UserAuthorizationRequiredError" ||
+    error.name === "NoValidTokenError" ||
+    error.name === "ConnectorInstallationRequiredError"
+  ) {
+    return true;
+  }
+  const code =
+    "code" in error && typeof error.code === "string" ? error.code : undefined;
+  return (
+    error.name === "ConnectError" &&
+    (code === "unresolved_token" ||
+      code === "no_token" ||
+      code === "user_authorization_required" ||
+      code === "connector_installation_required" ||
+      code === "client_installation_required")
+  );
+}
+
+export function resolveConnectTokenSubject(
   connectorUid: string,
   scope: CredentialScope,
 ): ConnectTokenSubject {
+  const provider = connectorUid.split("/")[0] ?? connectorUid;
+  // Slack MCP (https://mcp.slack.com/mcp) requires user OAuth tokens (xoxp), not
+  // app/bot installation tokens. Mint user-subject when the install row has a
+  // subject user (chat / per-user Connect authorize flow).
+  if (provider === "slack" && scope.userId) {
+    return { type: "user", id: scope.userId };
+  }
   if (connectUsesAppSubject(connectorUid)) {
     return { type: "app" };
   }
@@ -160,11 +189,14 @@ export function createVercelConnectProvider(): CredentialProvider {
         });
         return token ? { token } : null;
       } catch (error) {
-        // Not yet authorized → no credential (surface consent flow upstream).
+        // Not yet authorized / token not minted → no credential (surface consent upstream).
         if (
           connect.UserAuthorizationRequiredError &&
           error instanceof connect.UserAuthorizationRequiredError
         ) {
+          return null;
+        }
+        if (isRecoverableConnectTokenError(error)) {
           return null;
         }
         throw error;
@@ -244,10 +276,182 @@ export async function startConnectAuthorization(
   return url;
 }
 
+/**
+ * Revoke a connector grant at Vercel Connect (the counterpart to
+ * `startConnectAuthorization`). Disconnecting only removes our local link row;
+ * without this the Connect-side grant survives, so the next authorize hands the
+ * existing installation back **without re-prompting** — new provider scopes
+ * (e.g. Slack MCP) never reach the token. Revoking forces a fresh OAuth consent
+ * on reconnect.
+ *
+ * Best-effort: revokes every subject the install could have been minted under
+ * (app + user) and swallows "already gone" / SDK-absent cases so the caller can
+ * still delete the local row.
+ */
+export async function revokeConnectAuthorization(
+  connector: string,
+  scope: CredentialScope,
+): Promise<void> {
+  if (process.env.CONNECT_STUB === "1") return;
+
+  let connect: {
+    revokeToken: (
+      connectorUid: string,
+      params: { subject: ConnectTokenSubject; installationId?: string },
+    ) => Promise<void>;
+  };
+  try {
+    connect = (await import("@vercel/connect")) as unknown as typeof connect;
+  } catch {
+    // No managed Connect (own-app/local) — nothing to revoke upstream.
+    return;
+  }
+
+  const installationId = normalizeConnectInstallationId(scope.installationId);
+  let subjects: ConnectTokenSubject[];
+  try {
+    subjects = connectSubjectsForInstallationLookup(connector, scope);
+  } catch {
+    // Can't resolve a subject (e.g. user-subject connector without a userId) —
+    // there's no grant we can address, so leave the local unlink to proceed.
+    return;
+  }
+  for (const subject of subjects) {
+    try {
+      await connect.revokeToken(connector, {
+        subject,
+        ...(installationId ? { installationId } : {}),
+      });
+    } catch (error) {
+      // Grant already revoked/expired → fine; anything else is logged but must
+      // not block the local unlink the caller is about to perform.
+      if (isRecoverableConnectTokenError(error)) continue;
+      console.warn(
+        JSON.stringify({
+          component: "connect",
+          phase: "revoke",
+          connector,
+          installationId: installationId ?? null,
+          subject: subject.type,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
+  }
+}
+
 export interface ConnectInstallation {
   installationId?: string;
   tenantId?: string;
   name?: string;
+}
+
+/** Vercel Connect may redirect with `installation_id=EMPTY` when no id is in the URL. */
+const CONNECT_INSTALLATION_ID_SENTINELS = new Set([
+  "",
+  "empty",
+  "null",
+  "undefined",
+]);
+
+/**
+ * Drop Connect placeholder installation/tenant ids before API calls or DB writes.
+ */
+export function normalizeConnectInstallationId(
+  id: string | null | undefined,
+): string | undefined {
+  if (id == null) return undefined;
+  const trimmed = id.trim();
+  if (!trimmed) return undefined;
+  if (CONNECT_INSTALLATION_ID_SENTINELS.has(trimmed.toLowerCase())) {
+    return undefined;
+  }
+  return trimmed;
+}
+
+type ConnectTokenResponseShape = {
+  installationId?: string;
+  tenantId?: string;
+  name?: string;
+  metadata?: Record<string, unknown>;
+};
+
+function extractInstallationName(
+  response: ConnectTokenResponseShape,
+): string | undefined {
+  const direct = response.name?.trim();
+  if (direct) return direct;
+
+  const metadata = response.metadata;
+  if (!metadata) return undefined;
+
+  const keys = [
+    "name",
+    "team_name",
+    "workspace_name",
+    "login",
+    "organization",
+    "org",
+    "display_name",
+    "teamName",
+    "workspaceName",
+  ];
+  for (const key of keys) {
+    const value = metadata[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return undefined;
+}
+
+function mapConnectTokenResponse(
+  response: ConnectTokenResponseShape,
+): ConnectInstallation {
+  return {
+    installationId: normalizeConnectInstallationId(response.installationId),
+    tenantId: normalizeConnectInstallationId(response.tenantId),
+    name: extractInstallationName(response),
+  };
+}
+
+function mergeConnectInstallations(
+  ...parts: Array<ConnectInstallation | null | undefined>
+): ConnectInstallation | null {
+  const merged: ConnectInstallation = {};
+  for (const part of parts) {
+    if (!part) continue;
+    if (!merged.installationId && part.installationId) {
+      merged.installationId = part.installationId;
+    }
+    if (!merged.tenantId && part.tenantId) {
+      merged.tenantId = part.tenantId;
+    }
+    if (!merged.name && part.name) {
+      merged.name = part.name;
+    }
+  }
+  return Object.keys(merged).length > 0 ? merged : null;
+}
+
+function connectSubjectsForInstallationLookup(
+  connector: string,
+  scope: CredentialScope,
+): ConnectTokenSubject[] {
+  const subjects: ConnectTokenSubject[] = [];
+  if (connectUsesAppSubject(connector)) {
+    subjects.push({ type: "app" });
+  }
+  subjects.push(resolveConnectCallbackSubject(connector, scope));
+
+  const seen = new Set<string>();
+  return subjects.filter((subject) => {
+    const key =
+      subject.type === "user" ? `user:${subject.id}` : subject.type;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 /**
@@ -259,10 +463,20 @@ export async function getConnectInstallation(
   scope: CredentialScope,
   options: { scopes?: string[] } = {},
 ): Promise<ConnectInstallation | null> {
+  const normalizedInstallationId = normalizeConnectInstallationId(
+    scope.installationId,
+  );
+  const normalizedScope: CredentialScope = {
+    ...scope,
+    ...(normalizedInstallationId
+      ? { installationId: normalizedInstallationId }
+      : {}),
+  };
+
   // Dev/local stub (CONNECT_STUB=1): echo the installation id the stub
   // authorize put on the callback, with a friendly name — no real provider call.
   if (process.env.CONNECT_STUB === "1") {
-    const installationId = scope.installationId ?? "stub-install";
+    const installationId = normalizedInstallationId ?? "stub-install";
     const provider = connector.split("/")[0] ?? connector;
     return {
       installationId,
@@ -280,33 +494,41 @@ export async function getConnectInstallation(
         scopes?: string[];
       },
       options?: { forceRefresh?: boolean; vercelToken?: string },
-    ) => Promise<{
-      installationId?: string;
-      tenantId?: string;
-      name?: string;
-    }>;
+    ) => Promise<ConnectTokenResponseShape>;
   };
   try {
     connect = (await import("@vercel/connect")) as unknown as typeof connect;
   } catch {
     throw new Error("@vercel/connect is not installed");
   }
-  const res = await connect.getTokenResponse(
+
+  const tokenParams = {
+    ...(normalizedInstallationId
+      ? { installationId: normalizedInstallationId }
+      : {}),
+    ...(options.scopes ? { scopes: options.scopes } : {}),
+  };
+
+  const installations: ConnectInstallation[] = [];
+  for (const subject of connectSubjectsForInstallationLookup(
     connector,
-    {
-      subject: resolveConnectCallbackSubject(connector, scope),
-      ...(scope.installationId ? { installationId: scope.installationId } : {}),
-      ...(options.scopes ? { scopes: options.scopes } : {}),
-    },
-    { forceRefresh: true },
-  );
-  return res
-    ? {
-        installationId: res.installationId,
-        tenantId: res.tenantId,
-        name: res.name,
+    normalizedScope,
+  )) {
+    try {
+      const response = await connect.getTokenResponse(
+        connector,
+        { subject, ...tokenParams },
+        { forceRefresh: true },
+      );
+      if (response) {
+        installations.push(mapConnectTokenResponse(response));
       }
-    : null;
+    } catch {
+      // App-subject lookup can fail before install completes; user-subject may still work.
+    }
+  }
+
+  return mergeConnectInstallations(...installations);
 }
 
 /**

@@ -21,6 +21,16 @@ export const connectionSearchConnectionSchema = z.object({
 export const connectionSearchResultSchema = z.object({
   connections: z.array(connectionSearchConnectionSchema),
   tools: z.array(connectionSearchToolHitSchema),
+  /** MCP listTools failures — connected but tools could not be discovered. */
+  errors: z
+    .array(
+      z.object({
+        connection: z.string(),
+        installationId: z.string().nullable(),
+        message: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export type ConnectionSearchResult = z.infer<typeof connectionSearchResultSchema>;

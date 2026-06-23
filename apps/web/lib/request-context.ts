@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getDefaultProjectPath } from "@/lib/console/default-landing";
+import { resolveOnboardingPath } from "@/lib/onboarding/resolve";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { loginRedirect } from "@/lib/auth/login-redirect";
 import {
@@ -24,11 +25,7 @@ async function requireOnboardingCompleted(userId: string) {
   const onboardingPort = getOnboardingPort();
   const profile = await onboardingPort.getProfile(userId);
   if (!profile || profile.onboardingStep !== "completed") {
-    redirect(
-      !profile || profile.onboardingStep === "profile"
-        ? "/onboarding/profile"
-        : "/onboarding/project",
-    );
+    redirect(resolveOnboardingPath(profile?.onboardingStep));
   }
 }
 

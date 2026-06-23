@@ -41,18 +41,32 @@ export async function completeProfileOnboarding(
   await expect(page).toHaveURL(/\/onboarding\/project/, { timeout: 15_000 });
 }
 
-export async function completeProjectOnboarding(
+export async function completeProjectDraftOnboarding(
   page: Page,
   projectName: string,
-): Promise<{ orgSlug: string; projectSlug: string }> {
+): Promise<void> {
   await expect(
     page.getByRole("heading", { name: "Create your first project" }),
   ).toBeVisible();
 
   await page.getByLabel("Project name").fill(projectName);
-  await page.locator('button[type="submit"]').click();
+  await page.getByRole("button", { name: "Continue" }).click();
 
-  await expect(page.getByText("Nothing here yet")).toBeVisible({
+  await expect(page).toHaveURL(/\/onboarding\/template/, { timeout: 15_000 });
+  await expect(page.getByText("Step 3 of 3")).toBeVisible();
+}
+
+export async function completeTemplateOnboarding(
+  page: Page,
+): Promise<{ orgSlug: string; projectSlug: string }> {
+  await expect(
+    page.getByRole("heading", { name: "Choose a project template" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Open project" }).click();
+
+  await expect(page).toHaveURL(/\/overview$/, { timeout: 30_000 });
+  await expect(page.getByText("No graph nodes yet")).toBeVisible({
     timeout: 15_000,
   });
 
@@ -63,6 +77,14 @@ export async function completeProjectOnboarding(
   }
 
   return { orgSlug, projectSlug };
+}
+
+export async function completeProjectOnboarding(
+  page: Page,
+  projectName: string,
+): Promise<{ orgSlug: string; projectSlug: string }> {
+  await completeProjectDraftOnboarding(page, projectName);
+  return completeTemplateOnboarding(page);
 }
 
 export async function completeOnboardingFlow(

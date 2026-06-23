@@ -10,7 +10,10 @@ import {
   connectUsesAppSubject,
   createEnvCredentialProvider,
   getConnectInstallation,
+  isRecoverableConnectTokenError,
+  normalizeConnectInstallationId,
   resolveConnectCallbackSubject,
+  resolveConnectTokenSubject,
   startConnectAuthorization,
 } from "../credentials/provider.js";
 import { buildRunInstructions } from "../runtime-prompt.js";
@@ -115,8 +118,7 @@ describe("buildRunInstructions", () => {
 
     expect(prompt).toContain("Draft the onboarding PRD");
     expect(prompt).toContain("work.write_document");
-    expect(prompt).toContain("connection_search");
-    expect(prompt).toContain("linear__search_issues");
+    expect(prompt).toContain("slack__post_message");
     expect(prompt).toContain("Covers activation metric");
     expect(prompt).toContain("Write the PRD for onboarding.");
     expect(prompt).toContain("complete_task");
@@ -159,6 +161,42 @@ describe("connectUsesAppSubject", () => {
   });
 });
 
+describe("isRecoverableConnectTokenError", () => {
+  it("treats ConnectError unresolved_token as recoverable", () => {
+    const error = Object.assign(new Error("Token unresolved"), {
+      name: "ConnectError",
+      code: "unresolved_token",
+      status: 401,
+    });
+    expect(isRecoverableConnectTokenError(error)).toBe(true);
+  });
+
+  it("does not treat generic errors as recoverable", () => {
+    expect(isRecoverableConnectTokenError(new Error("boom"))).toBe(false);
+  });
+});
+
+describe("resolveConnectTokenSubject", () => {
+  it("uses user subject for Slack MCP when userId is present", () => {
+    expect(
+      resolveConnectTokenSubject("slack/dev", {
+        projectId: "p",
+        userId: "user-42",
+        installationId: "T0914DV7GA0",
+      }),
+    ).toEqual({ type: "user", id: "user-42" });
+  });
+
+  it("uses app subject for Slack when userId is absent (bot / server flows)", () => {
+    expect(
+      resolveConnectTokenSubject("slack/dev", {
+        projectId: "p",
+        installationId: "T0914DV7GA0",
+      }),
+    ).toEqual({ type: "app" });
+  });
+});
+
 describe("resolveConnectCallbackSubject", () => {
   it("uses user subject when userId is present (post-authorize callback)", () => {
     expect(
@@ -182,6 +220,24 @@ describe("resolveConnectCallbackSubject", () => {
     expect(() =>
       resolveConnectCallbackSubject("oauth/notion", { projectId: "p" }),
     ).toThrow(/userId is required/);
+  });
+});
+
+describe("normalizeConnectInstallationId", () => {
+  it("drops Connect placeholder and blank ids", () => {
+    expect(normalizeConnectInstallationId(undefined)).toBeUndefined();
+    expect(normalizeConnectInstallationId(null)).toBeUndefined();
+    expect(normalizeConnectInstallationId("")).toBeUndefined();
+    expect(normalizeConnectInstallationId("   ")).toBeUndefined();
+    expect(normalizeConnectInstallationId("EMPTY")).toBeUndefined();
+    expect(normalizeConnectInstallationId("empty")).toBeUndefined();
+  });
+
+  it("keeps real installation ids", () => {
+    expect(normalizeConnectInstallationId("T0914DV7GA0")).toBe("T0914DV7GA0");
+    expect(normalizeConnectInstallationId(" 3a6919c1-ca19-4ced-b947-487ec85f87b4 ")).toBe(
+      "3a6919c1-ca19-4ced-b947-487ec85f87b4",
+    );
   });
 });
 

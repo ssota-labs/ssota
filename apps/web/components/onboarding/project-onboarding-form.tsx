@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircleIcon } from "@phosphor-icons/react";
-import { completeProjectOnboardingAction } from "@/app/onboarding/actions";
+import { useEffect, useState } from "react";
+import { useFormStatus } from "react-dom";
+import { SpinnerGapIcon } from "@phosphor-icons/react";
+import { toast } from "@ssota/ui/components/ui/sonner";
+import { saveProjectDraftOnboardingAction } from "@/app/onboarding/actions";
 import { ConsolePreview } from "@/components/onboarding/console-preview";
 import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -11,14 +13,44 @@ import { Label } from "@ssota/ui/components/ui/label";
 
 type ProjectOnboardingFormProps = {
   organizationName: string;
+  defaultProjectName?: string;
+  showOrganizationCreatedToast?: boolean;
   error?: string;
 };
 
+function ProjectContinueButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" className="w-full" disabled={pending}>
+      {pending ? (
+        <>
+          <SpinnerGapIcon className="size-4 animate-spin" />
+          Saving project…
+        </>
+      ) : (
+        "Continue"
+      )}
+    </Button>
+  );
+}
+
 export function ProjectOnboardingForm({
   organizationName,
+  defaultProjectName = "",
+  showOrganizationCreatedToast = true,
   error,
 }: ProjectOnboardingFormProps) {
-  const [projectName, setProjectName] = useState("");
+  const [projectName, setProjectName] = useState(defaultProjectName);
+
+  useEffect(() => {
+    if (!showOrganizationCreatedToast) return;
+
+    toast.success(`${organizationName} organization created`, {
+      id: "onboarding-organization-created",
+      description: "Name your first project below.",
+    });
+  }, [organizationName, showOrganizationCreatedToast]);
 
   return (
     <OnboardingShell
@@ -28,29 +60,8 @@ export function ProjectOnboardingForm({
       description="Projects organize your context graph, workflows, and gates."
       backHref="/onboarding/profile"
       backLabel="Back to organization"
-      banner={
-        <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5 text-sm">
-          <span className="font-medium text-foreground">{organizationName}</span>
-          <span className="text-muted-foreground">
-            {" "}
-            organization created. Name your first project below.
-          </span>
-        </div>
-      }
       form={
-        <form action={completeProjectOnboardingAction} className="space-y-4">
-          <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2.5">
-            <CheckCircleIcon
-              className="size-4 shrink-0 text-primary"
-              weight="fill"
-              aria-hidden
-            />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs text-muted-foreground">Organization</p>
-              <p className="truncate text-sm font-medium">{organizationName}</p>
-            </div>
-          </div>
-
+        <form action={saveProjectDraftOnboardingAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="projectName">Project name</Label>
             <Input
@@ -62,15 +73,13 @@ export function ProjectOnboardingForm({
               required
             />
             <p className="text-xs text-muted-foreground">
-              English only. Slug is generated automatically.
+              Any language is fine. The URL slug is generated automatically in English.
             </p>
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          <Button type="submit" className="w-full">
-            Open project
-          </Button>
+          <ProjectContinueButton />
         </form>
       }
       preview={

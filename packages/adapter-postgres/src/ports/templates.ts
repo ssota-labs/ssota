@@ -28,6 +28,10 @@ export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
 
 export const BUILTIN_TEMPLATES: TemplateBundle[] = [SOFTWARE_DEV_TEMPLATE];
 
+export function getTemplateBundleById(templateId: string): TemplateBundle | null {
+  return BUILTIN_TEMPLATES.find((template) => template.meta.id === templateId) ?? null;
+}
+
 export async function applyTemplate(
   db: Db,
   projectId: string,

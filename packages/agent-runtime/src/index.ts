@@ -32,9 +32,13 @@ export {
   createVercelConnectProvider,
   resolveCredentialProvider,
   startConnectAuthorization,
+  revokeConnectAuthorization,
   getConnectInstallation,
+  normalizeConnectInstallationId,
   resolveConnectCallbackSubject,
+  resolveConnectTokenSubject,
   connectUsesAppSubject,
+  isRecoverableConnectTokenError,
   type CredentialProvider,
   type CredentialScope,
   type ConnectAuthorizationScope,
@@ -42,6 +46,10 @@ export {
   type StartConnectAuthorizationOptions,
   type ConnectInstallation,
 } from "./credentials/provider.js";
+export {
+  enrichConnectInstallationDisplay,
+  type EnrichConnectInstallationInput,
+} from "./connections/enrich-installation-display.js";
 export {
   createVercelOidcVerifier,
   type OidcWebhookVerifier,

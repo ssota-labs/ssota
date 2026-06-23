@@ -5,14 +5,13 @@ import { CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
 
-const TOTAL_STEPS = 2;
+const TOTAL_STEPS = 3;
 
 type OnboardingShellProps = {
-  step: 1 | 2;
+  step: 1 | 2 | 3;
   stepLabel: string;
   title: string;
   description: string;
-  banner?: React.ReactNode;
   backHref?: string;
   backLabel?: string;
   form: React.ReactNode;
@@ -24,7 +23,6 @@ export function OnboardingShell({
   stepLabel,
   title,
   description,
-  banner,
   backHref,
   backLabel = "Back",
   form,
@@ -83,15 +81,13 @@ export function OnboardingShell({
               <p className="text-sm text-muted-foreground">{description}</p>
             </div>
 
-            {banner}
-
             {form}
           </div>
         </section>
 
         <section className="relative hidden items-center lg:col-span-2 lg:flex">
-          <div className="w-[128%] min-w-[44rem] origin-left scale-[1.06] pr-0 shadow-2xl">
-            {preview}
+          <div className="w-[128%] min-w-[44rem] origin-left scale-[1.06] rounded-xl border border-border bg-background shadow-lg">
+            <div className="overflow-hidden rounded-xl">{preview}</div>
           </div>
         </section>
       </div>

@@ -11,8 +11,9 @@ export {
   createPageViewStatePort,
   seedPages,
   applyTemplate,
-  SOFTWARE_DEV_TEMPLATE,
   BUILTIN_TEMPLATES,
+  getTemplateBundleById,
+  SOFTWARE_DEV_TEMPLATE,
 } from "./ports/index.js";
 export {
   createAgentRunPort,

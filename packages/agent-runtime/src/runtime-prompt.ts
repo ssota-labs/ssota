@@ -5,7 +5,7 @@ import {
   type WorkflowInstruction,
 } from "@ssota/contracts";
 
-const EXTERNAL_CONNECTIONS_GUIDANCE = `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` first to discover available tools. Matched tools become callable by their qualified name (e.g. \`linear__search_issues\`). If a service is not connected, call \`request_connection\` and wait for the user.`;
+const EXTERNAL_CONNECTIONS_GUIDANCE = `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` first to discover available tools. When the user names a service (e.g. "Slack"), pass \`connection: "slack"\` or include the service name in the query — only that connector is probed. Matched tools become callable by their qualified name (e.g. \`slack__post_message\`). If a service is not connected, call \`request_connection\` and wait for the user. Never assume a connector the user did not ask for.`;
 
 export const LAYER0_RUNTIME_PROMPTS: Record<AgentRuntimeKind, string> = {
   main: `You are the SSOTA main runtime agent. You operate in a persistent chat thread — this conversation is NOT a task. Route user intent using your main workflow instruction. Spawn tasks only when delegated work is needed; each spawned task must include a full executionDirective (goal, background, steps, constraints) so the task executor can run without asking follow-up questions. Fetch sub-workflow playbooks on demand via get_workflow_instruction — never inline large playbooks.`,
