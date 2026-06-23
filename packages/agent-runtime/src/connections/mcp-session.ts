@@ -1,7 +1,4 @@
-import {
-  experimental_createMCPClient,
-  type OAuthClientProvider,
-} from "@ai-sdk/mcp";
+import { experimental_createMCPClient } from "@ai-sdk/mcp";
 import type { Tool } from "ai";
 import type { CredentialProvider } from "../credentials/provider.js";
 import type { McpConnectionDef } from "./define-mcp-connection.js";
@@ -91,37 +88,34 @@ export class McpSessionManager {
   constructor(private readonly credentials: CredentialProvider) {}
 
   /**
-   * Resolve the auth half of an MCP transport. Prefers the official MCP OAuth
-   * adapter (`transport.authProvider`, via the credential provider's
-   * `getMcpAuthProvider`) — it runs the MCP authorization handshake against the
-   * server's protected-resource metadata with Connect's pre-registered client
-   * (no Dynamic Client Registration) and mints a token carrying the requested
-   * provider scopes. Falls back to a static `Authorization: Bearer <token>` when
-   * no adapter is available (self-host / own-app static tokens). Null = no
-   * credential.
+   * Resolve the auth for an MCP transport as a static `Authorization: Bearer
+   * <token>` header — the only method the hosted Slack/Notion MCP servers
+   * accept, and exactly what the upstream Eve runtime does.
+   *
+   * We deliberately do NOT use the MCP-spec OAuth adapter
+   * (`transport.authProvider` / `@vercel/connect/ai-sdk`). That path sends the
+   * first request with no Authorization header, takes the server's `401`, then
+   * runs MCP OAuth discovery (`.well-known/oauth-protected-resource`) + Dynamic
+   * Client Registration. `mcp.slack.com` and `mcp.notion.com` implement none of
+   * that — they require a pre-registered client and a raw bearer — so the
+   * adapter path surfaces as `Unauthorized`.
+   *
+   * This has flip-flopped before: authProvider (#196/#199) → `Unauthorized`;
+   * raw bearer (#198) → works. Keep it bearer. The bearer is minted with the
+   * correct user subject and the broad provider scopes inside `getToken`, so it
+   * lists the full tool set instead of an identity-only `0 tools` token. Null =
+   * no credential.
    */
   private async buildMcpAuth(
     connectorUid: string,
     scope: McpSessionScope,
-  ): Promise<
-    { authProvider: OAuthClientProvider } | { headers: Record<string, string> } | null
-  > {
-    const credScope = {
+  ): Promise<{ headers: Record<string, string> } | null> {
+    const cred = await this.credentials.getToken(connectorUid, {
       projectId: scope.projectId,
       accountId: scope.accountId,
       installationId: scope.installationId ?? undefined,
       userId: scope.userId ?? undefined,
-    };
-
-    const authProvider = await this.credentials.getMcpAuthProvider?.(
-      connectorUid,
-      credScope,
-    );
-    if (authProvider) {
-      return { authProvider: authProvider as OAuthClientProvider };
-    }
-
-    const cred = await this.credentials.getToken(connectorUid, credScope);
+    });
     if (!cred) return null;
     return { headers: { Authorization: `Bearer ${cred.token}` } };
   }
@@ -160,7 +154,7 @@ export class McpSessionManager {
       logMcp("connect", connection, {
         installationId: scope.installationId ?? null,
         userId: scope.userId ?? null,
-        auth: "authProvider" in auth ? "oauth" : "bearer",
+        auth: "bearer",
       });
       const client = await experimental_createMCPClient({
         transport: {
@@ -231,7 +225,7 @@ export class McpSessionManager {
       logMcp("connect", connection, {
         tool: toolName,
         installationId: scope.installationId ?? null,
-        auth: "authProvider" in auth ? "oauth" : "bearer",
+        auth: "bearer",
       });
       const created = await experimental_createMCPClient({
         transport: {

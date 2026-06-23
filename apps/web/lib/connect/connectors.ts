@@ -1,3 +1,5 @@
+import { mcpScopesForConnector } from "@ssota/agent-runtime";
+
 /**
  * The connectors the in-app Connections page can manage. Auth model per the
  * providers' official docs determines whether multiple workspaces can be
@@ -87,7 +89,17 @@ export function providerOf(connectorUid: string): string {
 
 /**
  * Scopes for `startConnectAuthorization`. Explicit `scopes` query params win;
- * otherwise use per-provider defaults (e.g. Discord `bot`).
+ * otherwise grant the union of the per-provider default scopes (e.g. Discord
+ * `bot`) and the broad MCP scopes the agent runtime later requests at
+ * token-mint time (`mcpScopesForConnector` — the Slack workspace permissions,
+ * Linear read/write, etc.).
+ *
+ * Consenting these here is what lets the minted Bearer actually carry them: a
+ * Connect token can only hold scopes the user granted at consent. Previously
+ * consent requested nothing for Slack (so the token was identity-only / 0
+ * tools) while the runtime still asked for the broad set — that mismatch is the
+ * bug this closes. Providers without granular scope strings (Notion content
+ * grants) yield `undefined` and fall back to the connector's configured grant.
  */
 export function resolveAuthorizeScopes(
   connectorUid: string,
@@ -95,6 +107,10 @@ export function resolveAuthorizeScopes(
 ): string[] | undefined {
   if (explicit && explicit.length > 0) return explicit;
   const provider = providerOf(connectorUid) as ConnectorProvider;
-  const defaults = AUTHORIZE_SCOPES[provider];
-  return defaults ? [...defaults] : undefined;
+  const merged = [
+    ...(AUTHORIZE_SCOPES[provider] ?? []),
+    ...(mcpScopesForConnector(connectorUid) ?? []),
+  ];
+  const deduped = [...new Set(merged)];
+  return deduped.length > 0 ? deduped : undefined;
 }

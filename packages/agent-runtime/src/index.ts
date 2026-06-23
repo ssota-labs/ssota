@@ -39,6 +39,7 @@ export {
   resolveConnectTokenSubject,
   connectUsesAppSubject,
   isRecoverableConnectTokenError,
+  mcpScopesForConnector,
   type CredentialProvider,
   type CredentialScope,
   type ConnectAuthorizationScope,
