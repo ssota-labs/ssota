@@ -83,7 +83,13 @@ export function DataTableFacetedFilter<TData, TValue>({
           </>
         ) : null}
       </PopoverTrigger>
-      <PopoverContent className="w-[12.5rem] p-0" align="start">
+      <PopoverContent
+        className="w-[12.5rem]"
+        align="start"
+        // `.cn-popover-content` applies p-2.5 + gap-4 (wins over utilities), so
+        // override inline for a tight filter popover; Command handles inner spacing.
+        style={{ padding: "0.25rem", gap: 0 }}
+      >
         <Command>
           <CommandInput placeholder={title} />
           <CommandList>

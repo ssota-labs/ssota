@@ -269,10 +269,14 @@ function TextCellEditor({
 function PopoverCellEditor({
   onCancel,
   className,
+  style,
   children,
 }: {
   onCancel: () => void
   className?: string
+  // `.cn-popover-content` applies p-2.5 + gap-4 (wins over utilities); override
+  // inline so cell editors sit tight against the popover edge.
+  style?: React.CSSProperties
   children: React.ReactNode
 }) {
   return (
@@ -292,7 +296,12 @@ function PopoverCellEditor({
           />
         }
       />
-      <PopoverContent align="start" sideOffset={2} className={className}>
+      <PopoverContent
+        align="start"
+        sideOffset={2}
+        className={className}
+        style={{ gap: 0, ...style }}
+      >
         {children}
       </PopoverContent>
     </Popover>
@@ -313,7 +322,7 @@ function SelectCellEditor({
   onCancel: () => void
 }) {
   return (
-    <PopoverCellEditor onCancel={onCancel} className="w-44 p-1">
+    <PopoverCellEditor onCancel={onCancel} className="w-44" style={{ padding: "0.25rem" }}>
       <div className="flex flex-col">
         {options.map((option) => (
           <button
@@ -355,7 +364,7 @@ function DateCellEditor({
   const parsed = initial ? parseISO(initial) : undefined
   const selected = parsed && isValid(parsed) ? parsed : undefined
   return (
-    <PopoverCellEditor onCancel={onCancel} className="w-auto p-0">
+    <PopoverCellEditor onCancel={onCancel} className="w-auto" style={{ padding: 0 }}>
       <Calendar
         mode="single"
         autoFocus
@@ -677,12 +686,15 @@ export function AdvancedDataTable<TData>({
         <div className="flex flex-wrap items-center gap-2">
           {enableGlobalFilter ? (
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute top-1/2 left-2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              <MagnifyingGlassIcon className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-muted-foreground" />
+              {/* inline paddingLeft: the design-system `.cn-input` px-2 wins over a
+                  `pl-*` utility, so the icon would overlap the placeholder. */}
               <Input
                 placeholder={searchPlaceholder}
                 value={globalFilter}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                className="h-8 w-56 pl-7"
+                className="h-8 w-56"
+                style={{ paddingLeft: "1.875rem" }}
               />
             </div>
           ) : null}
