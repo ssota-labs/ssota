@@ -19,6 +19,7 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -174,20 +175,22 @@ export function AdvancedDataTableColumnHeader<TData, TValue>({
               Columns
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent className="max-h-72 w-44 overflow-y-auto">
-              <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-              {table
-                .getAllLeafColumns()
-                .filter((c) => c.getCanHide())
-                .map((c) => (
-                  <DropdownMenuCheckboxItem
-                    key={c.id}
-                    className="capitalize"
-                    checked={c.getIsVisible()}
-                    onCheckedChange={(value) => c.toggleVisibility(!!value)}
-                  >
-                    {String(c.columnDef.meta?.label ?? c.id)}
-                  </DropdownMenuCheckboxItem>
-                ))}
+              <DropdownMenuGroup>
+                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+                {table
+                  .getAllLeafColumns()
+                  .filter((c) => c.getCanHide())
+                  .map((c) => (
+                    <DropdownMenuCheckboxItem
+                      key={c.id}
+                      className="capitalize"
+                      checked={c.getIsVisible()}
+                      onCheckedChange={(value) => c.toggleVisibility(!!value)}
+                    >
+                      {String(c.columnDef.meta?.label ?? c.id)}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </DropdownMenuGroup>
             </DropdownMenuSubContent>
           </DropdownMenuSub>
 
