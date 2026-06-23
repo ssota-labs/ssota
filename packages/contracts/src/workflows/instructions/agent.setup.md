@@ -16,8 +16,10 @@ code and is available in every project without being seeded.
 
 ## Steps
 
-1. **Interview** — understand the domain before building. In a few focused turns
-   (don't over-question), establish:
+1. **Survey, then interview** — first call `delegate` with `subagentType:
+   "explorer"` to summarize what already exists in this project (catalog, pages,
+   workflows, tasks) so you build on it instead of duplicating. Then understand
+   the domain in a few focused turns (don't over-question), establishing:
    - What the organization / domain is, and its primary goal right now.
    - The main "things" it tracks — these become node records.
    - The recurring processes or jobs it needs, and on what cadence.
