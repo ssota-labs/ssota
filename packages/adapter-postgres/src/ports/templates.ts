@@ -3,7 +3,7 @@ import {
   listEdgeTypes,
   type TemplateBundle,
 } from "@ssota/contracts";
-import { WORKFLOW_INSTRUCTION_SEEDS } from "@ssota/contracts/workflows";
+import { SOFTWARE_DEV_WORKFLOW_SEEDS } from "@ssota/contracts/workflows";
 import pagesTreeSeed from "@ssota/contracts/seed-packs/software-development-workflow/pages-tree.json" with { type: "json" };
 import type { Db } from "../db/client.js";
 import { seedDomainCatalog } from "./db-catalog-read-port.js";
@@ -22,7 +22,7 @@ export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
     nodeTypeKeys: listNodeTypes(),
     edgeTypeKeys: listEdgeTypes(),
   },
-  workflowInstructions: WORKFLOW_INSTRUCTION_SEEDS,
+  workflowInstructions: SOFTWARE_DEV_WORKFLOW_SEEDS,
   pages: pagesTreeSeed as unknown as TemplateBundle["pages"],
 };
 

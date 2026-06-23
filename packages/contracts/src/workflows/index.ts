@@ -253,6 +253,7 @@ export function getBuiltinWorkflowByKey(
 }
 
 import type { WorkflowInstructionSeed } from "../workflow-instruction.js";
+import { buildWorkflowInstructionSeeds } from "./seed.js";
 
 /**
  * DB seeds for project bootstrap — intentionally EMPTY. WORKFLOW_META and the
@@ -263,3 +264,29 @@ import type { WorkflowInstructionSeed } from "../workflow-instruction.js";
  * seeding is ever needed again.
  */
 export const WORKFLOW_INSTRUCTION_SEEDS: WorkflowInstructionSeed[] = [];
+
+/**
+ * Domain reference documents that DO ship seeded into a project's DB (via the
+ * Software Development template bundle), unlike the on-demand workflows above.
+ * Seeding them as `workflow_instructions` rows makes them editable per project.
+ * These are scaffolds (templates) the agent reads when authoring an artifact;
+ * `reference: true` keeps them out of the routing manifest.
+ */
+const SOFTWARE_DEV_SEED_META: WorkflowMeta[] = [
+  {
+    workflowKey: "agent.template.product_roadmap",
+    title: "Template: product roadmap",
+    description:
+      "Header-based scaffold for writing a product_roadmap node. Read and follow its structure when authoring the product roadmap; do not copy the bracketed guidance into the output.",
+    category: "work",
+    reference: true,
+    instructionFile: "agent.template.product_roadmap.md",
+  },
+];
+
+/**
+ * Seeds applied by the Software Development template bundle. Kept separate from
+ * the intentionally-empty {@link WORKFLOW_INSTRUCTION_SEEDS}.
+ */
+export const SOFTWARE_DEV_WORKFLOW_SEEDS: WorkflowInstructionSeed[] =
+  buildWorkflowInstructionSeeds(buildRegistry(SOFTWARE_DEV_SEED_META));
