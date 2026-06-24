@@ -136,10 +136,10 @@ export function RoadmapSheetWorkspaceEl({
 
   return (
     <div
-      className="absolute inset-0 flex flex-col overflow-hidden"
+      className="absolute inset-0 flex flex-col"
       data-testid="roadmap-sheet-workspace"
     >
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4">
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-8">
         <section
           className="border-border bg-card space-y-4 rounded-xl border p-4 md:p-5"
