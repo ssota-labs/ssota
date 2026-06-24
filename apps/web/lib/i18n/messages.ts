@@ -302,6 +302,10 @@ export const en = {
     },
   },
   chat: {
+    sidebar: {
+      newChat: "New chat",
+      defaultThreadTitle: "New chat",
+    },
     toolActivity: {
       connectionSearch: "Connection search",
       connectionCall: "Connection call",
@@ -675,6 +679,10 @@ export const ko = {
     },
   },
   chat: {
+    sidebar: {
+      newChat: "새 채팅",
+      defaultThreadTitle: "새 채팅",
+    },
     toolActivity: {
       connectionSearch: "연결 검색",
       connectionCall: "연결 호출",

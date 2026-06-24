@@ -21,7 +21,7 @@ test.describe("end-user app", () => {
   }) => {
     await loginAsSmoke(page);
     await page.goto(`${DEFAULT_APP_BASE}/c`);
-    await expect(page.getByRole("button", { name: "새 채팅" })).toBeVisible({
+    await expect(page.getByRole("button", { name: /새 채팅|New chat/i })).toBeVisible({
       timeout: 15_000,
     });
     const sidebar = page.getByRole("navigation", { name: "Primary" });

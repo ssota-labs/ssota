@@ -12,6 +12,7 @@ import { Button } from "@ssota/ui/components/ui/button";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
 import { deleteChatThreadAction } from "@/lib/chat/actions";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 export interface ThreadSummary {
   id: string;
@@ -62,6 +63,7 @@ export function ChatHistorySidebar({
   projectSlug,
   appMode,
 }: ChatHistorySidebarProps) {
+  const { t } = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
@@ -124,7 +126,7 @@ export function ChatHistorySidebar({
     const pendingId = `${PENDING_THREAD_PREFIX}${crypto.randomUUID()}`;
     const optimisticThread: ThreadSummary = {
       id: pendingId,
-      title: "New chat",
+      title: t("chat.sidebar.defaultThreadTitle"),
       updatedAt: new Date().toISOString(),
     };
 
@@ -186,7 +188,7 @@ export function ChatHistorySidebar({
           onClick={newChat}
         >
           <PlusIcon className="size-4" />
-          새 채팅
+          {t("chat.sidebar.newChat")}
         </Button>
         {error ? (
           <p className="mt-2 text-xs text-destructive">{error}</p>

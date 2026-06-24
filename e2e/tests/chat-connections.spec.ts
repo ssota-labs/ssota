@@ -12,6 +12,7 @@ const STUB_CONNECTION_SEARCH_TRIGGER = "e2e-connection-search";
 // workflow / streaming pipeline runs locally without external services.
 
 const CHAT_PLACEHOLDER = /메시지를 입력하세요/;
+const NEW_CHAT_BUTTON = /새 채팅|New chat/i;
 const FIXTURE_IMAGE = join(process.cwd(), "fixtures/chat-test-image.png");
 const FIXTURE_BYTES = [...readFileSync(FIXTURE_IMAGE)];
 
@@ -174,7 +175,7 @@ test.describe("Connections + Chat", () => {
       await expect(
         page.getByText("메시지를 보내 대화를 시작하세요"),
       ).toBeVisible();
-      await expect(page.getByRole("button", { name: "새 채팅" })).toBeVisible();
+      await expect(page.getByRole("button", { name: NEW_CHAT_BUTTON })).toBeVisible();
       await expect(page.getByRole("button", { name: "이미지 첨부" })).toBeVisible();
       await expect(
         page.getByRole("button", { name: "Claude Sonnet 4.6" }),
@@ -343,7 +344,7 @@ test.describe("Connections + Chat", () => {
       await sendChatMessage(page, "first thread message");
       await expect(page.getByText("first thread message")).toBeVisible();
 
-      await page.getByRole("button", { name: "새 채팅" }).click();
+      await page.getByRole("button", { name: NEW_CHAT_BUTTON }).click();
       await expect(page).toHaveURL(/\/c\/[0-9a-f-]{36}$/);
       await expect(
         page.getByText("메시지를 보내 대화를 시작하세요"),
@@ -357,11 +358,11 @@ test.describe("Connections + Chat", () => {
 
       const sidebar = page
         .locator("aside")
-        .filter({ has: page.getByRole("button", { name: "새 채팅" }) });
+        .filter({ has: page.getByRole("button", { name: NEW_CHAT_BUTTON }) });
       const countBefore = await sidebar.locator(".group").count();
       const urlBefore = page.url();
 
-      await page.getByRole("button", { name: "새 채팅" }).click();
+      await page.getByRole("button", { name: NEW_CHAT_BUTTON }).click();
 
       await expect(sidebar.locator(".group")).toHaveCount(countBefore + 1, {
         timeout: 500,
@@ -385,9 +386,9 @@ test.describe("Connections + Chat", () => {
 
       const threadRow = page
         .locator("aside")
-        .filter({ has: page.getByRole("button", { name: "새 채팅" }) })
+        .filter({ has: page.getByRole("button", { name: NEW_CHAT_BUTTON }) })
         .locator(".group")
-        .filter({ hasText: /New chat/i })
+        .filter({ hasText: /새 채팅|New chat/i })
         .first();
       await expect(threadRow).toBeVisible();
       await threadRow.hover();
