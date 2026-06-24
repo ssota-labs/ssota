@@ -69,6 +69,17 @@ export function ChatHistorySidebar({
     setConfirmingId(null);
   }, [threads]);
 
+  useEffect(() => {
+    if (!confirmingId) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") cancelDelete();
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [confirmingId]);
+
   function newChat() {
     setError(null);
     setConfirmingId(null);
@@ -95,11 +106,6 @@ export function ChatHistorySidebar({
     startDelete(async () => {
       removeOptimisticThread(threadId);
 
-      if (onDeletedThread) {
-        const next = remaining[0];
-        router.push(next ? `${chatBase}/${next.id}` : `${chatBase}/new`);
-      }
-
       try {
         await deleteChatThreadAction({
           orgSlug,
@@ -108,6 +114,11 @@ export function ChatHistorySidebar({
           appMode,
           chatBase,
         });
+
+        if (onDeletedThread) {
+          const next = remaining[0];
+          router.push(next ? `${chatBase}/${next.id}` : `${chatBase}/new`);
+        }
         router.refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : "채팅 삭제 실패");
@@ -153,9 +164,6 @@ export function ChatHistorySidebar({
                         ? "bg-secondary text-secondary-foreground"
                         : "hover:bg-secondary/60",
                   )}
-                  onMouseLeave={() => {
-                    if (isConfirming) cancelDelete();
-                  }}
                 >
                   <Link
                     href={`${chatBase}/${thread.id}`}
