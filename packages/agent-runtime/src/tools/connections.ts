@@ -14,6 +14,10 @@ import type { McpToolListing } from "../connections/filter-tools.js";
 import { McpSessionManager } from "../connections/mcp-session.js";
 import { inferConnectionIdFromQuery } from "../connections/tool-catalog.js";
 import {
+  rankToolsForQuery,
+  type ToolSearchCandidate,
+} from "../connections/tool-search.js";
+import {
   toQualifiedToolName,
   parseQualifiedToolName,
 } from "../connections/qualified-name.js";
@@ -106,14 +110,17 @@ async function runConnectionSearch(
     credentials: CredentialProvider;
     sessionManager: McpSessionManager;
   },
-): Promise<{ result: ConnectionSearchResult; internalHits: SearchHitInternal[] }> {
-  const query = input.query.trim().toLowerCase();
-  const queryTerms = query.split(/\s+/).filter(Boolean);
+): Promise<{
+  result: ConnectionSearchResult;
+  internalHits: SearchHitInternal[];
+  rankedScores: Array<{ qualifiedName: string; score: number }>;
+}> {
+  const query = input.query.trim();
   const connectionFilter =
-    input.connection ?? inferConnectionIdFromQuery(query);
+    input.connection ?? inferConnectionIdFromQuery(query.toLowerCase());
 
   const result: ConnectionSearchResult = { connections: [], matched: [], errors: [] };
-  const internalHits: SearchHitInternal[] = [];
+  const candidates: ToolSearchCandidate[] = [];
 
   for (const connection of connections) {
     if (connectionFilter && connectionFilter !== connection.id) {
@@ -183,42 +190,41 @@ async function runConnectionSearch(
       }
 
       for (const listing of listings) {
-        const qualifiedName = toQualifiedToolName(connection.id, listing.name);
-        const haystack = [
-          qualifiedName,
-          listing.name,
-          listing.description ?? "",
-          connection.id,
-          connection.description,
-          install.installationName ?? "",
-        ]
-          .join(" ")
-          .toLowerCase();
-
-        if (!toolMatchesQuery(haystack, queryTerms)) continue;
-
-        const hit: SearchHitInternal = {
-          qualifiedName,
+        candidates.push({
+          qualifiedName: toQualifiedToolName(connection.id, listing.name),
           connection: connection.id,
           tool: listing.name,
+          description: listing.description ?? "",
+          connectionDescription: connection.description,
+          installationName: install.installationName ?? "",
           installationId: install.installationId,
-          installationName: install.installationName,
-        };
-        internalHits.push(hit);
-        result.matched.push({
-          qualifiedName: hit.qualifiedName,
-          connection: hit.connection,
-          tool: hit.tool,
         });
       }
     }
   }
 
+  const ranked = rankToolsForQuery(candidates, query);
+  const internalHits: SearchHitInternal[] = ranked.map((hit) => ({
+    qualifiedName: hit.qualifiedName,
+    connection: hit.connection,
+    tool: hit.tool,
+    installationId: hit.installationId,
+    installationName: hit.installationName,
+  }));
+  result.matched = ranked.map((hit) => ({
+    qualifiedName: hit.qualifiedName,
+    connection: hit.connection,
+    tool: hit.tool,
+  }));
+
   if (result.errors?.length === 0) {
     delete result.errors;
   }
 
-  return { result, internalHits };
+  return { result, internalHits, rankedScores: ranked.map((t) => ({
+    qualifiedName: t.qualifiedName,
+    score: t.score,
+  })) };
 }
 
 function buildConnectionSearchTool(
@@ -254,14 +260,17 @@ function buildConnectionSearchTool(
         }),
       );
 
-      const { result, internalHits } = await runConnectionSearch(connections, {
-        query: searchInput.query,
-        connection: searchInput.connection,
-        projectId: ctx.projectId,
-        accountId: ctx.accountId,
-        credentials: provider ?? input.credentials,
-        sessionManager: input.sessionManager,
-      });
+      const { result, internalHits, rankedScores } = await runConnectionSearch(
+        connections,
+        {
+          query: searchInput.query,
+          connection: searchInput.connection,
+          projectId: ctx.projectId,
+          accountId: ctx.accountId,
+          credentials: provider ?? input.credentials,
+          sessionManager: input.sessionManager,
+        },
+      );
 
       state?.recordInstallations(internalHits);
 
@@ -276,6 +285,7 @@ function buildConnectionSearchTool(
           })),
           matchCount: result.matched.length,
           matched: result.matched.map((t) => t.qualifiedName),
+          scores: rankedScores,
         }),
       );
 
@@ -350,22 +360,6 @@ function buildConnectionCallTool(
       }));
     },
   });
-}
-
-/**
- * Whether a tool's lowercased searchable text matches a tokenized query.
- *
- * `connection_search` takes a natural-language query ("slack messaging"), so the
- * original whole-phrase `haystack.includes(query)` matched almost nothing and
- * dropped every tool. We keep a tool when the query is empty or ANY whitespace
- * term appears — loose recall, since the model picks from the returned set.
- */
-export function toolMatchesQuery(
-  haystack: string,
-  queryTerms: readonly string[],
-): boolean {
-  if (queryTerms.length === 0) return true;
-  return queryTerms.some((term) => haystack.includes(term));
 }
 
 function buildRequestConnectionTool() {

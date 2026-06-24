@@ -14,7 +14,14 @@ export {
   isQualifiedToolName,
   QUALIFIED_TOOL_SEPARATOR,
 } from "./qualified-name.js";
-export { filterMcpTools } from "./filter-tools.js";
+export {
+  rankToolsForQuery,
+  toolMatchesQuery,
+  tokenize,
+  DEFAULT_TOOL_SEARCH_LIMIT,
+  type ToolSearchCandidate,
+  type RankedToolSearchHit,
+} from "./tool-search.js";
 export { getConfiguredConnections, getConnectionById } from "./registry.js";
 export { McpSessionManager } from "./mcp-session.js";
 export {
