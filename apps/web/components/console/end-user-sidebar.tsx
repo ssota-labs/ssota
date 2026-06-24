@@ -21,7 +21,7 @@ export type AppShellContext = {
 };
 
 const FIXED_NAV = [
-  { key: "chat", labelKey: "nav.chat", segment: "chat" },
+  { key: "chat", labelKey: "nav.chat", segment: "c" },
   { key: "tasks", labelKey: "nav.tasks", segment: "tasks" },
   { key: "connections", labelKey: "nav.connections", segment: "connections" },
 ] as const;

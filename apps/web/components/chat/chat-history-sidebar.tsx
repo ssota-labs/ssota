@@ -1,8 +1,13 @@
 "use client";
 
+import Link from "next/link";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { PlusIcon, ChatCircleIcon } from "@phosphor-icons/react";
+import {
+  PlusIcon,
+  ChatCircleIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
@@ -15,10 +20,10 @@ export interface ThreadSummary {
 
 interface ChatHistorySidebarProps {
   threads: ThreadSummary[];
-  activeThreadId: string;
-  chatPath: string;
+  chatBase: string;
   orgSlug: string;
   projectSlug: string;
+  appMode: boolean;
 }
 
 /** Relative "2h ago"-style label; falls back to a short date for older items. */
@@ -35,40 +40,60 @@ function formatWhen(iso: string): string {
 }
 
 /**
- * Left rail listing past chat threads. Clicking a thread navigates to
- * `?thread=<id>` (server re-loads that conversation); "새 채팅" creates a thread
- * via the API and navigates to it.
+ * Left rail listing past chat threads. Navigates via `/c/[threadId]` routes;
+ * "새 채팅" goes to `/c/new` immediately (server creates the thread).
  */
 export function ChatHistorySidebar({
   threads,
-  activeThreadId,
-  chatPath,
+  chatBase,
   orgSlug,
   projectSlug,
+  appMode,
 }: ChatHistorySidebarProps) {
   const router = useRouter();
-  const [creating, startCreate] = useTransition();
+  const pathname = usePathname();
+  const params = useParams();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleting, startDelete] = useTransition();
+
+  const activeThreadId =
+    typeof params.threadId === "string" ? params.threadId : undefined;
 
   function newChat() {
     setError(null);
-    startCreate(async () => {
+    router.push(`${chatBase}/new`);
+  }
+
+  function deleteThread(threadId: string) {
+    setError(null);
+    setDeletingId(threadId);
+    startDelete(async () => {
       try {
         const res = await fetch("/api/chat/thread", {
-          method: "POST",
+          method: "DELETE",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
             orgSlug,
             projectSlug,
-            appMode: chatPath.startsWith("/app/"),
+            threadId,
+            appMode,
           }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const { thread } = (await res.json()) as { thread: { id: string } };
-        router.push(`${chatPath}?thread=${thread.id}`);
+        const onDeletedThread =
+          pathname === `${chatBase}/${threadId}` ||
+          activeThreadId === threadId;
+        if (onDeletedThread) {
+          const remaining = threads.filter((t) => t.id !== threadId);
+          const next = remaining[0];
+          router.push(next ? `${chatBase}/${next.id}` : `${chatBase}/new`);
+        }
         router.refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "새 채팅 생성 실패");
+        setError(e instanceof Error ? e.message : "채팅 삭제 실패");
+      } finally {
+        setDeletingId(null);
       }
     });
   }
@@ -81,7 +106,6 @@ export function ChatHistorySidebar({
           variant="outline"
           className="w-full justify-start gap-2"
           onClick={newChat}
-          disabled={creating}
         >
           <PlusIcon className="size-4" />
           새 채팅
@@ -100,25 +124,41 @@ export function ChatHistorySidebar({
           ) : (
             threads.map((thread) => {
               const isActive = thread.id === activeThreadId;
+              const isRemoving = deletingId === thread.id && isDeleting;
               return (
-                <a
+                <div
                   key={thread.id}
-                  href={`${chatPath}?thread=${thread.id}`}
                   className={cn(
-                    "group flex flex-col gap-0.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                    "group flex items-stretch gap-0.5 rounded-lg pr-1 transition-colors",
                     isActive
                       ? "bg-secondary text-secondary-foreground"
                       : "hover:bg-secondary/60",
                   )}
                 >
-                  <span className="flex items-center gap-2 truncate font-medium">
-                    <ChatCircleIcon className="size-3.5 shrink-0 opacity-60" />
-                    <span className="truncate">{thread.title}</span>
-                  </span>
-                  <span className="pl-5 text-xs text-muted-foreground">
-                    {formatWhen(thread.updatedAt)}
-                  </span>
-                </a>
+                  <Link
+                    href={`${chatBase}/${thread.id}`}
+                    className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2 text-sm"
+                  >
+                    <span className="flex items-center gap-2 truncate font-medium">
+                      <ChatCircleIcon className="size-3.5 shrink-0 opacity-60" />
+                      <span className="truncate">{thread.title}</span>
+                    </span>
+                    <span className="pl-5 text-xs text-muted-foreground">
+                      {formatWhen(thread.updatedAt)}
+                    </span>
+                  </Link>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="my-1 size-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
+                    aria-label="채팅 삭제"
+                    disabled={isRemoving}
+                    onClick={() => deleteThread(thread.id)}
+                  >
+                    <TrashIcon className="size-3.5" />
+                  </Button>
+                </div>
               );
             })
           )}
