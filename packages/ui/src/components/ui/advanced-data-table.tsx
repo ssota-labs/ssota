@@ -238,9 +238,23 @@ function TextCellEditor({
   onCancel: () => void
 }) {
   const [value, setValue] = React.useState(initial)
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  // Block mouse-wheel from nudging a focused number input. Wheel listeners are
+  // passive by default (preventDefault is ignored), so attach a non-passive one.
+  React.useEffect(() => {
+    if (type !== "number") return
+    const el = inputRef.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (document.activeElement === el) e.preventDefault()
+    }
+    el.addEventListener("wheel", onWheel, { passive: false })
+    return () => el.removeEventListener("wheel", onWheel)
+  }, [type])
   return (
     <div className="absolute inset-0 z-20 flex items-center bg-background">
       <input
+        ref={inputRef}
         autoFocus
         type={type}
         value={value}
@@ -258,7 +272,12 @@ function TextCellEditor({
           e.stopPropagation()
         }}
         onFocus={(e) => e.currentTarget.select()}
-        className="border-primary ring-primary/30 h-full w-full rounded-none border-2 bg-background px-2 text-sm outline-none ring-2"
+        className={cn(
+          "border-primary ring-primary/30 h-full w-full rounded-none border-2 bg-background px-2 text-sm outline-none ring-2",
+          // Number columns: right-align and strip the native spinner arrows.
+          type === "number" &&
+            "text-right [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none",
+        )}
       />
     </div>
   )

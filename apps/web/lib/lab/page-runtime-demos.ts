@@ -562,7 +562,6 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           type: "DataTable",
           props: {
             binding: "rows",
-            mode: "grid",
             setAction: "setCell",
             columns: [
               { key: "title", header: "Task", type: "text", editable: true, width: 240 },
