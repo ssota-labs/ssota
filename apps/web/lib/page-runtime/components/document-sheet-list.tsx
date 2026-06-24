@@ -86,8 +86,8 @@ export function DocumentSheetListEl({
               >
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium">{node.title}</span>
                     {status ? <DocumentStatusBadge status={status} /> : null}
+                    <span className="text-sm font-medium">{node.title}</span>
                   </div>
                   {subtitle ? (
                     <p className="text-muted-foreground line-clamp-2 text-xs">

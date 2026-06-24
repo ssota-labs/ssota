@@ -66,8 +66,8 @@ export function RoadmapDocCard({
     >
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold">{title}</h3>
           {status ? <DocumentStatusBadge status={status} /> : null}
+          <h3 className="text-sm font-semibold">{title}</h3>
         </div>
         {subtitle ? (
           <p className="text-muted-foreground line-clamp-2 text-xs">{subtitle}</p>

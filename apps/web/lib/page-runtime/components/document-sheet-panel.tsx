@@ -69,13 +69,13 @@ export function DocumentSheetPanel({
       <header className="border-border/50 bg-background/30 supports-backdrop-filter:backdrop-blur-md flex shrink-0 items-start gap-3 border-b px-4 py-3">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
+            {status ? <DocumentStatusBadge status={status} /> : null}
             <h2
               id="document-sheet-title"
               className="text-base font-semibold leading-snug"
             >
               {node.title}
             </h2>
-            {status ? <DocumentStatusBadge status={status} /> : null}
           </div>
           {subtitle ? (
             <p className="text-muted-foreground text-sm">{subtitle}</p>
