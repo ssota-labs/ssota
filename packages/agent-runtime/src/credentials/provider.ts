@@ -538,7 +538,17 @@ export async function getConnectInstallation(
     }
   }
 
-  return mergeConnectInstallations(...installations);
+  const merged = mergeConnectInstallations(...installations);
+  if (merged) return merged;
+
+  // A token response succeeded but carried no installation metadata (no
+  // installationId / tenantId / name). This is normal for user-subject MCP
+  // grants such as Notion's hosted MCP (mcp.notion.com), where the grant is
+  // keyed by the Connect user subject and there is no provider "installation"
+  // id to surface. Return a non-null marker so the connect callback records the
+  // connection instead of mistaking a valid grant for "not connected" — the
+  // failure mode where consent completes but no row is ever written.
+  return installations.length > 0 ? {} : null;
 }
 
 /**
