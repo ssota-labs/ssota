@@ -43,6 +43,33 @@ describe("mcp-tool-schema", () => {
     });
   });
 
+  it("keeps args untouched when the schema already uses the alias source name", () => {
+    // mcp.slack.com's slack_send_message takes `message`/`channel_id`, not
+    // `text`. The alias map must not rename `message`→`text` here.
+    expect(
+      normalizeMcpToolArgs(
+        { channel_id: "C123", message: "hello" },
+        {
+          required: ["channel_id", "message"],
+          properties: {
+            channel_id: "string — 모든 채널 검색",
+            message: "string — 메시지 추가",
+          },
+        },
+      ),
+    ).toEqual({
+      channel_id: "C123",
+      message: "hello",
+    });
+  });
+
+  it("leaves args untouched when no schema is available", () => {
+    expect(normalizeMcpToolArgs({ channel: "C123", message: "hi" })).toEqual({
+      channel: "C123",
+      message: "hi",
+    });
+  });
+
   it("throws when required args are still missing after normalization", () => {
     expect(() =>
       normalizeMcpToolArgs(
