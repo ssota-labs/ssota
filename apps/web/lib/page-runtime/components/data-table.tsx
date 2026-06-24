@@ -8,7 +8,6 @@ import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Checkbox } from "@ssota/ui/components/ui/checkbox";
-import { Input } from "@ssota/ui/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -60,75 +59,6 @@ function Chip({ value, color }: { value: string; color?: string }) {
   );
 }
 
-function TextCell({
-  value,
-  type,
-  editable,
-  onCommit,
-}: {
-  value: string;
-  type: ColumnType;
-  editable: boolean;
-  onCommit: (value: string) => void;
-}) {
-  const [draft, setDraft] = React.useState(value);
-  React.useEffect(() => setDraft(value), [value]);
-
-  if (!editable) {
-    return <span>{value || <span className="text-muted-foreground">—</span>}</span>;
-  }
-  const inputType = type === "number" ? "number" : type === "date" ? "date" : "text";
-  return (
-    <Input
-      type={inputType}
-      value={draft}
-      onChange={(e) => setDraft(e.target.value)}
-      onBlur={() => draft !== value && onCommit(draft)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          (e.target as HTMLInputElement).blur();
-        }
-      }}
-      className="h-7 border-transparent bg-transparent px-1 shadow-none hover:border-border focus-visible:border-border"
-    />
-  );
-}
-
-function SelectCell({
-  value,
-  options,
-  colors,
-  editable,
-  onCommit,
-}: {
-  value: string;
-  options: string[];
-  colors?: Record<string, string>;
-  editable: boolean;
-  onCommit: (value: string) => void;
-}) {
-  if (!editable || options.length === 0) {
-    return <Chip value={value} color={colors?.[value]} />;
-  }
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={<button type="button" className="cursor-pointer outline-none" />}
-      >
-        <Chip value={value} color={colors?.[value]} />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        {options.map((option) => (
-          <DropdownMenuItem key={option} onClick={() => onCommit(option)}>
-            <Chip value={option} color={colors?.[option]} />
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
 /** Debounce a value-emitting callback (trailing edge). */
 function useDebouncedCallback<A extends unknown[]>(
   fn: (...args: A) => void,
@@ -155,7 +85,6 @@ function DataTableEl({
   setAction,
   addAction,
   deleteAction,
-  mode = "edit",
 }: {
   elementId: string;
   nodes: RenderNode[];
@@ -165,16 +94,14 @@ function DataTableEl({
   setAction?: string;
   addAction?: string;
   deleteAction?: string;
-  mode?: "edit" | "grid";
 }) {
   const onAction = useAction();
   const basePath = useBasePath();
   const viewStateCtx = usePageViewState();
 
-  // Grid mode: cells display read-only, double-click to edit, spreadsheet cell
-  // selection + keyboard nav + CSV copy + virtualization. Edit mode (default):
-  // always-on inline inputs.
-  const gridMode = mode === "grid";
+  // Notion-style editing: cells render read-only, double-click opens an
+  // absolute-overlay editor (text/number/date → input, select → popover);
+  // plus spreadsheet cell selection + keyboard nav + CSV copy + virtualization.
 
   const [rows, setRows] = React.useState<RenderNode[]>(nodes);
   const signature = JSON.stringify(
@@ -213,7 +140,7 @@ function DataTableEl({
     if (onAction && addAction) void onAction(addAction, {});
   }, [onAction, addAction]);
 
-  // Grid-mode double-click commit: coerce by the column's declared type.
+  // Double-click commit: coerce by the column's declared type.
   const colTypeByKey = React.useMemo(() => {
     const m: Record<string, ColumnType> = {};
     for (const c of columns) m[c.key] = c.type ?? "text";
@@ -233,10 +160,9 @@ function DataTableEl({
       const type = col.type ?? "text";
       const editable = col.editable !== false && !!setAction;
       const isFaceted = type === "select" || type === "badge";
-      // Text/number/date/select are double-click-editable in grid mode
-      // (text/number/date → input; select → popover of option chips).
-      const gridEditable =
-        gridMode &&
+      // Text/number/date/select are double-click-editable via the absolute
+      // overlay editor (text/number/date → input; select → popover of chips).
+      const overlayEditable =
         editable &&
         (type === "text" ||
           type === "number" ||
@@ -250,7 +176,7 @@ function DataTableEl({
         meta: {
           label: col.header,
           align: type === "number" ? "right" : undefined,
-          editable: gridEditable,
+          editable: overlayEditable,
           editType:
             type === "select"
               ? "select"
@@ -283,13 +209,12 @@ function DataTableEl({
             );
           }
           if (isFaceted) {
+            // Read-only chip; select columns are edited via the double-click
+            // overlay popover (badge columns are display-only).
             return (
-              <SelectCell
+              <Chip
                 value={raw == null ? "" : String(raw)}
-                options={col.options ?? []}
-                colors={col.colors}
-                editable={!gridMode && editable && type === "select"}
-                onCommit={(v) => commitCell(node.id, col.key, v)}
+                color={col.colors?.[String(raw ?? "")]}
               />
             );
           }
@@ -303,27 +228,11 @@ function DataTableEl({
               </Link>
             );
           }
-          // Grid mode: read-only display (double-click → editor via AdvancedDataTable).
-          if (gridMode) {
-            return raw == null || raw === "" ? (
-              <span className="text-muted-foreground">—</span>
-            ) : (
-              <span>{String(raw)}</span>
-            );
-          }
-          return (
-            <TextCell
-              value={raw == null ? "" : String(raw)}
-              type={type}
-              editable={editable}
-              onCommit={(v) =>
-                commitCell(
-                  node.id,
-                  col.key,
-                  type === "number" ? (v === "" ? null : Number(v)) : v,
-                )
-              }
-            />
+          // Read-only display; double-click opens the overlay editor.
+          return raw == null || raw === "" ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <span>{String(raw)}</span>
           );
         },
       };
@@ -368,7 +277,7 @@ function DataTableEl({
       });
     }
     return defs;
-  }, [columns, setAction, deleteAction, rowHref, basePath, commitCell, deleteRow, gridMode]);
+  }, [columns, setAction, deleteAction, rowHref, basePath, commitCell, deleteRow]);
 
   const facetedFilters = React.useMemo<FacetedFilterDef[]>(
     () =>
@@ -400,9 +309,8 @@ function DataTableEl({
         facetedFilters={facetedFilters}
         defaultViewState={viewStateCtx?.initial[elementId]}
         onViewStateChange={viewStateCtx ? save : undefined}
-        enableCellSelection={gridMode}
-        enableVirtualization={gridMode}
-        onCellEdit={gridMode ? onCellEdit : undefined}
+        enableCellSelection
+        onCellEdit={onCellEdit}
         footer={
           addAction ? (
             <button
@@ -434,7 +342,6 @@ export const dataTableComponents: Record<string, CatalogComponent> = {
       deleteAction={
         typeof props.deleteAction === "string" ? props.deleteAction : undefined
       }
-      mode={props.mode === "grid" ? "grid" : "edit"}
     />
   ),
 };

@@ -98,12 +98,12 @@ export function AdvancedDataTableColumnHeader<TData, TValue>({
           render={
             <button
               type="button"
-              className="-ml-1 flex items-center gap-1 rounded px-1 py-1 text-left font-medium outline-none hover:bg-accent data-[popup-open]:bg-accent"
+              className="-ml-1 flex w-full items-center gap-1 rounded px-1 py-1 text-left font-medium outline-none hover:bg-accent data-[popup-open]:bg-accent"
             />
           }
         >
           <span>{title}</span>
-          <SortIcon className="size-3.5 opacity-70" />
+          <SortIcon className="ml-auto size-3.5 opacity-70" />
           {showPriority ? (
             <span className="ml-0.5 rounded bg-muted px-1 font-mono text-[10px] leading-tight text-muted-foreground">
               {sortIndex + 1}
