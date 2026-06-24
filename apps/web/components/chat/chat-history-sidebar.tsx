@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import {
   PlusIcon,
   ChatCircleIcon,
@@ -28,6 +35,56 @@ type OptimisticThreadAction =
 
 function isPendingThreadId(id: string): boolean {
   return id.startsWith(PENDING_THREAD_PREFIX);
+}
+
+interface PendingNewChatState {
+  thread: ThreadSummary;
+  baselineThreadIds: string[];
+}
+
+function pendingNewChatStorageKey(chatBase: string): string {
+  return `ssota:pending-new-chat:${chatBase}`;
+}
+
+function readPendingNewChatState(
+  chatBase: string,
+): PendingNewChatState | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(pendingNewChatStorageKey(chatBase));
+    if (!raw) return null;
+    return JSON.parse(raw) as PendingNewChatState;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingNewChatState(
+  chatBase: string,
+  state: PendingNewChatState,
+): void {
+  sessionStorage.setItem(
+    pendingNewChatStorageKey(chatBase),
+    JSON.stringify(state),
+  );
+}
+
+function clearPendingNewChatState(chatBase: string): void {
+  sessionStorage.removeItem(pendingNewChatStorageKey(chatBase));
+}
+
+function loadPendingNewChatSnapshot(chatBase: string): {
+  pending: ThreadSummary | null;
+  baseline: Set<string>;
+} {
+  const stored = readPendingNewChatState(chatBase);
+  if (!stored) {
+    return { pending: null, baseline: new Set() };
+  }
+  return {
+    pending: stored.thread,
+    baseline: new Set(stored.baselineThreadIds),
+  };
 }
 
 interface ChatHistorySidebarProps {
@@ -67,13 +124,35 @@ export function ChatHistorySidebar({
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
+  const pendingSnapshotRef = useRef<ReturnType<
+    typeof loadPendingNewChatSnapshot
+  > | null>(null);
+  if (!pendingSnapshotRef.current) {
+    pendingSnapshotRef.current = loadPendingNewChatSnapshot(chatBase);
+  }
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pendingNewChat, setPendingNewChat] = useState<ThreadSummary | null>(
-    null,
+    () => pendingSnapshotRef.current!.pending,
   );
+  const baselineThreadIdsRef = useRef<Set<string>>(
+    pendingSnapshotRef.current!.baseline,
+  );
+  const refreshForPendingRef = useRef<string | null>(null);
   const [isDeleting, startDelete] = useTransition();
-  const [, startCreate] = useTransition();
+
+  useEffect(() => {
+    const stored = readPendingNewChatState(chatBase);
+    if (!stored) return;
+    baselineThreadIdsRef.current = new Set(stored.baselineThreadIds);
+    setPendingNewChat((current) => current ?? stored.thread);
+  }, [chatBase]);
+
+  function clearPendingNewChat() {
+    clearPendingNewChatState(chatBase);
+    setPendingNewChat(null);
+    refreshForPendingRef.current = null;
+  }
   const [optimisticThreads, dispatchOptimisticThreads] = useOptimistic(
     threads,
     (state, action: OptimisticThreadAction) => {
@@ -89,24 +168,62 @@ export function ChatHistorySidebar({
   const activeThreadId =
     typeof params.threadId === "string" ? params.threadId : undefined;
 
+  const activeThreadInList =
+    Boolean(
+      activeThreadId &&
+        threads.some((thread) => thread.id === activeThreadId),
+    );
+
+  const shouldShowPending =
+    Boolean(
+      pendingNewChat &&
+        (!activeThreadId ||
+          isPendingThreadId(activeThreadId) ||
+          pathname === `${chatBase}/new` ||
+          !activeThreadInList),
+    );
+
   const sidebarThreads = useMemo(() => {
-    if (!pendingNewChat) return optimisticThreads;
-    if (optimisticThreads.some((thread) => thread.id === pendingNewChat.id)) {
+    if (!shouldShowPending) return optimisticThreads;
+    if (optimisticThreads.some((thread) => thread.id === pendingNewChat!.id)) {
       return optimisticThreads;
     }
-    return [pendingNewChat, ...optimisticThreads];
-  }, [optimisticThreads, pendingNewChat]);
+    return [pendingNewChat!, ...optimisticThreads];
+  }, [optimisticThreads, pendingNewChat, shouldShowPending]);
 
   useEffect(() => {
     setConfirmingId(null);
   }, [threads]);
 
   useEffect(() => {
-    if (!pendingNewChat) return;
-    if (activeThreadId && !isPendingThreadId(activeThreadId)) {
-      setPendingNewChat(null);
+    if (!pendingNewChat) {
+      refreshForPendingRef.current = null;
+      return;
     }
-  }, [activeThreadId, pendingNewChat]);
+
+    if (activeThreadInList) {
+      clearPendingNewChat();
+      return;
+    }
+
+    if (pathname === `${chatBase}/new`) return;
+
+    if (
+      activeThreadId &&
+      !isPendingThreadId(activeThreadId) &&
+      refreshForPendingRef.current !== activeThreadId
+    ) {
+      refreshForPendingRef.current = activeThreadId;
+      router.refresh();
+    }
+  }, [
+    pendingNewChat,
+    activeThreadInList,
+    pathname,
+    chatBase,
+    activeThreadId,
+    router,
+  ]);
 
   useEffect(() => {
     if (!confirmingId) return;
@@ -130,12 +247,14 @@ export function ChatHistorySidebar({
       updatedAt: new Date().toISOString(),
     };
 
-    setPendingNewChat(optimisticThread);
-
-    startCreate(() => {
-      dispatchOptimisticThreads({ type: "add", thread: optimisticThread });
-      router.push(`${chatBase}/new`);
+    const baselineThreadIds = new Set(threads.map((thread) => thread.id));
+    baselineThreadIdsRef.current = baselineThreadIds;
+    writePendingNewChatState(chatBase, {
+      thread: optimisticThread,
+      baselineThreadIds: [...baselineThreadIds],
     });
+    setPendingNewChat(optimisticThread);
+    router.push(`${chatBase}/new`);
   }
 
   function requestDelete(threadId: string) {
@@ -204,11 +323,18 @@ export function ChatHistorySidebar({
           ) : (
             sidebarThreads.map((thread) => {
               const isPending = isPendingThreadId(thread.id);
+              const waitingForServerThread =
+                Boolean(
+                  activeThreadId &&
+                    !isPendingThreadId(activeThreadId) &&
+                    !threads.some((t) => t.id === activeThreadId),
+                );
               const isActive =
                 thread.id === activeThreadId ||
                 (isPending &&
                   (thread.id === pendingNewChat?.id ||
-                    pathname === `${chatBase}/new`));
+                    pathname === `${chatBase}/new` ||
+                    waitingForServerThread));
               const isConfirming = confirmingId === thread.id;
               return (
                 <div

@@ -355,25 +355,38 @@ test.describe("Connections + Chat", () => {
       page,
     }) => {
       await gotoChat(page);
+      await sendChatMessage(page, "sidebar persistence anchor");
+      await expect(page.getByText("sidebar persistence anchor")).toBeVisible();
 
       const sidebar = page
         .locator("aside")
         .filter({ has: page.getByRole("button", { name: NEW_CHAT_BUTTON }) });
       const countBefore = await sidebar.locator(".group").count();
+      expect(countBefore).toBeGreaterThanOrEqual(1);
       const urlBefore = page.url();
 
       await page.getByRole("button", { name: NEW_CHAT_BUTTON }).click();
 
-      await expect(sidebar.locator(".group")).toHaveCount(countBefore + 1, {
-        timeout: 500,
-      });
       await expect(page).not.toHaveURL(urlBefore, { timeout: 1_000 });
       await expect(page).toHaveURL(/\/c\/(new|[0-9a-f-]{36})/, {
         timeout: 1_000,
       });
+
+      // Regression: sidebar must not drop the new entry during server redirect
+      await expect
+        .poll(async () => sidebar.locator(".group").count(), {
+          timeout: 10_000,
+        })
+        .toBeGreaterThanOrEqual(countBefore);
+
       await expect(
         page.getByText("메시지를 보내 대화를 시작하세요"),
       ).toBeVisible({ timeout: 10_000 });
+
+      await page.reload();
+      await expect(sidebar.locator(".group")).toHaveCount(countBefore + 1, {
+        timeout: 10_000,
+      });
     });
 
     test("delete chat removes thread from sidebar", async ({ page }) => {

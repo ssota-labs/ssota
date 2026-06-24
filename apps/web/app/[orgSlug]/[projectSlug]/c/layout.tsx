@@ -1,3 +1,4 @@
+import { unstable_noStore as noStore } from "next/cache";
 import { ChatRouteShell } from "@/components/chat/chat-route-shell";
 import { loadBuilderChatScope } from "@/lib/chat/server-scope";
 
@@ -8,6 +9,7 @@ export default async function ChatLayout({
   children: React.ReactNode;
   params: Promise<{ orgSlug: string; projectSlug: string }>;
 }) {
+  noStore();
   const { orgSlug, projectSlug } = await params;
   const scope = await loadBuilderChatScope(orgSlug, projectSlug);
   const threads = await scope.chat.listThreads();
