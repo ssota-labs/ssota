@@ -16,6 +16,14 @@ const deleteChatThreadInputSchema = z.object({
   chatBase: z.string().min(1),
 });
 
+const createChatThreadInputSchema = z.object({
+  orgSlug: z.string().min(1),
+  projectSlug: z.string().min(1),
+  appMode: z.boolean(),
+  chatBase: z.string().min(1),
+  title: z.string().max(120).optional(),
+});
+
 /** Delete a chat thread and its messages for the resolved project account. */
 export async function deleteChatThreadAction(
   input: z.infer<typeof deleteChatThreadInputSchema>,
@@ -32,4 +40,22 @@ export async function deleteChatThreadAction(
   if (!deleted) throw new Error("Thread not found");
 
   revalidatePath(parsed.chatBase, "layout");
+}
+
+/** Create a chat thread for the resolved project account. */
+export async function createChatThreadAction(
+  input: z.infer<typeof createChatThreadInputSchema>,
+): Promise<{ id: string; title: string }> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const parsed = createChatThreadInputSchema.parse(input);
+  const scope = parsed.appMode
+    ? await loadEndUserChatScope(parsed.orgSlug, parsed.projectSlug)
+    : await loadBuilderChatScope(parsed.orgSlug, parsed.projectSlug);
+
+  const thread = await scope.chat.createThread(parsed.title);
+  revalidatePath(parsed.chatBase, "layout");
+
+  return { id: thread.id, title: thread.title };
 }

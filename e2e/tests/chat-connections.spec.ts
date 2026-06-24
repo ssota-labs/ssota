@@ -350,6 +350,45 @@ test.describe("Connections + Chat", () => {
       ).toBeVisible({ timeout: 10_000 });
     });
 
+    test("new chat button optimistically adds sidebar item before navigation", async ({
+      page,
+    }) => {
+      await gotoChat(page);
+      await expect(
+        page.getByText("아직 대화가 없습니다"),
+      ).toBeVisible();
+
+      let releaseCreate: () => void = () => {};
+      const createGate = new Promise<void>((resolve) => {
+        releaseCreate = resolve;
+      });
+
+      await page.route("**/*", async (route) => {
+        const request = route.request();
+        if (
+          request.method() === "POST" &&
+          request.headers()["next-action"]
+        ) {
+          await createGate;
+        }
+        await route.continue();
+      });
+
+      await page.getByRole("button", { name: "새 채팅" }).click();
+
+      const sidebar = page
+        .locator("aside")
+        .filter({ has: page.getByRole("button", { name: "새 채팅" }) });
+      await expect(sidebar.getByText("New chat")).toBeVisible({ timeout: 2_000 });
+      await expect(page).not.toHaveURL(/\/c\/[0-9a-f-]{36}$/);
+
+      releaseCreate();
+      await expect(page).toHaveURL(/\/c\/[0-9a-f-]{36}$/, { timeout: 10_000 });
+      await expect(
+        page.getByText("메시지를 보내 대화를 시작하세요"),
+      ).toBeVisible();
+    });
+
     test("delete chat removes thread from sidebar", async ({ page }) => {
       await gotoChat(page);
       await sendChatMessage(page, "thread to delete");
