@@ -266,13 +266,24 @@ import { buildWorkflowInstructionSeeds } from "./seed.js";
 export const WORKFLOW_INSTRUCTION_SEEDS: WorkflowInstructionSeed[] = [];
 
 /**
- * Domain reference documents that DO ship seeded into a project's DB (via the
- * Software Development template bundle), unlike the on-demand workflows above.
- * Seeding them as `workflow_instructions` rows makes them editable per project.
- * These are scaffolds (templates) the agent reads when authoring an artifact;
- * `reference: true` keeps them out of the routing manifest.
+ * Domain workflows + reference docs that DO ship seeded into a project's DB
+ * (via the Software Development template bundle), unlike the on-demand workflows
+ * above. Seeding them as `workflow_instructions` rows makes them editable per
+ * project. Includes both routable workflows (e.g. `work.plan_roadmap`) and
+ * reference-only scaffolds (`agent.template.*`, `reference: true`) that the
+ * routable workflow reads while authoring an artifact.
  */
 const SOFTWARE_DEV_SEED_META: WorkflowMeta[] = [
+  {
+    workflowKey: "work.plan_roadmap",
+    title: "Plan product roadmap",
+    description:
+      "Author or update the product roadmap and its goal structure (product_roadmap → roadmap → objective → key_result/kpi → initiative). Use when the user wants to create/update the roadmap, set objectives/OKRs, or plan a quarter/year.",
+    category: "work",
+    defaultExecutorType: "Agent",
+    defaultStatus: "pending",
+    instructionFile: "work.plan_roadmap.md",
+  },
   {
     workflowKey: "agent.template.product_roadmap",
     title: "Template: product roadmap",
