@@ -102,8 +102,14 @@ export function ConnectionsList({
 
       <div className="grid gap-4 sm:grid-cols-2">
         {connectors.map((connector) => {
-          const rows = connections.filter(
-            (c) => providerOf(c.connector) === connector.provider,
+          // Match by the exact configured connector uid. This is required for
+          // MCP connectors whose uid host (`mcp.notion.com/...`) does not equal
+          // the provider segment, so a `providerOf` comparison would never match
+          // them. Falls back to provider matching only when unconfigured.
+          const rows = connections.filter((c) =>
+            connector.connectorUid
+              ? c.connector === connector.connectorUid
+              : providerOf(c.connector) === connector.provider,
           );
           return (
             <ConnectorCard
@@ -156,7 +162,11 @@ function ConnectorCard({
     }
     if (connected) {
       return {
-        label: t("connections.statusConnected"),
+        label: t(
+          connector.isMcp
+            ? "connections.statusMcpConnected"
+            : "connections.statusConnected",
+        ),
         variant: "default" as const,
       };
     }
@@ -164,7 +174,7 @@ function ConnectorCard({
       label: t("connections.statusNotConnected"),
       variant: "outline" as const,
     };
-  }, [configured, connected, t]);
+  }, [configured, connected, connector.isMcp, t]);
 
   function disconnect(connectionId: string) {
     startTransition(async () => {
@@ -202,7 +212,11 @@ function ConnectorCard({
               <CardTitle className="text-base">{connector.label}</CardTitle>
               <div className="flex flex-wrap items-center gap-1.5">
                 <Badge variant={status.variant}>{status.label}</Badge>
-                {connector.multiWorkspace ? (
+                {connector.isMcp ? (
+                  <Badge variant="outline" className="font-normal">
+                    {t("connections.mcpBadge")}
+                  </Badge>
+                ) : connector.multiWorkspace ? (
                   <Badge variant="outline" className="font-normal">
                     {t("connections.multiWorkspace")}
                   </Badge>
@@ -221,6 +235,18 @@ function ConnectorCard({
           <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
             {t("connections.notConfiguredHint")}
           </p>
+        ) : connector.isMcp ? (
+          <McpBody
+            provider={connector.provider}
+            connectorUid={connector.connectorUid as string}
+            row={rows[0]}
+            href={href}
+            accountId={accountId}
+            projectId={projectId}
+            returnTo={returnTo}
+            isPending={isPending}
+            onDisconnect={disconnect}
+          />
         ) : connector.multiWorkspace ? (
           <MultiWorkspaceBody
             provider={connector.provider}
@@ -300,59 +326,91 @@ function ConnectionItem({
           ) : null}
         </div>
       </div>
-      <div className="flex shrink-0 items-center gap-1">
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <a
-                className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
-                href={reconnectHref}
-                data-testid={`reconnect-${provider}`}
-                aria-label={t("connections.reconnect")}
-              />
-            }
-          >
-            <ArrowClockwiseIcon className="size-4" />
-          </TooltipTrigger>
-          <TooltipContent>{t("connections.reconnect")}</TooltipContent>
-        </Tooltip>
-        <AlertDialog>
-          <AlertDialogTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={isPending}
-                className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
-              />
-            }
-          >
-            <LinkBreakIcon className="size-4" />
-            {t("connections.disconnect")}
-          </AlertDialogTrigger>
-          <AlertDialogContent data-testid="disconnect-dialog">
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                {t("connections.disconnectTitle")}
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                {t("connections.disconnectDescription", { name: label })}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-              <AlertDialogAction
-                variant="destructive"
-                disabled={isPending}
-                data-testid="disconnect-dialog-confirm"
-                onClick={() => onDisconnect(row.id)}
-              >
-                {t("connections.disconnectConfirm")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+      <ConnectionActions
+        provider={provider}
+        reconnectHref={reconnectHref}
+        label={label}
+        rowId={row.id}
+        isPending={isPending}
+        onDisconnect={onDisconnect}
+      />
+    </div>
+  );
+}
+
+/**
+ * Reconnect + disconnect controls shared by the per-workspace install row
+ * (`ConnectionItem`) and the single-grant MCP row (`McpBody`).
+ */
+function ConnectionActions({
+  provider,
+  reconnectHref,
+  label,
+  rowId,
+  isPending,
+  onDisconnect,
+}: {
+  provider: ConnectorProvider;
+  reconnectHref: string;
+  label: string;
+  rowId: string;
+  isPending: boolean;
+  onDisconnect: (id: string) => void;
+}) {
+  const { t } = useLocale();
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <a
+              className={buttonVariants({ variant: "ghost", size: "icon-sm" })}
+              href={reconnectHref}
+              data-testid={`reconnect-${provider}`}
+              aria-label={t("connections.reconnect")}
+            />
+          }
+        >
+          <ArrowClockwiseIcon className="size-4" />
+        </TooltipTrigger>
+        <TooltipContent>{t("connections.reconnect")}</TooltipContent>
+      </Tooltip>
+      <AlertDialog>
+        <AlertDialogTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isPending}
+              className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+            />
+          }
+        >
+          <LinkBreakIcon className="size-4" />
+          {t("connections.disconnect")}
+        </AlertDialogTrigger>
+        <AlertDialogContent data-testid="disconnect-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("connections.disconnectTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("connections.disconnectDescription", { name: label })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={isPending}
+              data-testid="disconnect-dialog-confirm"
+              onClick={() => onDisconnect(rowId)}
+            >
+              {t("connections.disconnectConfirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -487,6 +545,90 @@ function SingleWorkspaceBody({
         accountId={accountId}
         onDisconnect={onDisconnect}
       />
+    </div>
+  );
+}
+
+/**
+ * Body for an MCP-type connector (e.g. Notion via mcp.notion.com). Unlike the
+ * provider-API connectors, an MCP connector is a single user-subject grant with
+ * no per-workspace installation id — so there is no workspace list and no "Add
+ * workspace": just a single "MCP Connected" state with reconnect/disconnect.
+ *
+ * Deliberately skips `useConnectionDisplayEnrichment`: that hook calls the
+ * provider's REST API (e.g. api.notion.com) to resolve a workspace name, but an
+ * MCP grant's token is scoped to the MCP server and is not a valid provider-API
+ * token, so the lookup would always fail. There is no workspace name to show.
+ */
+function McpBody({
+  provider,
+  connectorUid,
+  row,
+  href,
+  accountId,
+  projectId,
+  returnTo,
+  isPending,
+  onDisconnect,
+}: {
+  provider: string;
+  connectorUid: string;
+  row: ConnectionRow | undefined;
+  href: string;
+  accountId: string;
+  projectId: string;
+  returnTo: string;
+  isPending: boolean;
+  onDisconnect: (id: string) => void;
+}) {
+  const { t } = useLocale();
+
+  if (!row) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col justify-end">
+        <a
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+          href={href}
+          data-testid={`connect-${provider}`}
+        >
+          <PlusIcon className="size-4" />
+          {t("connections.connect")}
+        </a>
+      </div>
+    );
+  }
+
+  const label = t("connections.statusMcpConnected");
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div
+        className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2.5"
+        data-testid="connection-row"
+      >
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-background p-1">
+            <ConnectorBrandIcon
+              provider={provider as ConnectorProvider}
+              className="size-4"
+            />
+          </div>
+          <p className="truncate text-sm font-medium">{label}</p>
+        </div>
+        <ConnectionActions
+          provider={provider as ConnectorProvider}
+          reconnectHref={authorizeHref({
+            connectorUid,
+            accountId,
+            projectId,
+            returnTo,
+          })}
+          label={label}
+          rowId={row.id}
+          isPending={isPending}
+          onDisconnect={onDisconnect}
+        />
+      </div>
     </div>
   );
 }

@@ -1,6 +1,72 @@
 import { mcpScopesForConnector } from "@ssota/agent-runtime/connect-scopes";
-import { describe, expect, it } from "vitest";
-import { resolveAuthorizeScopes } from "./connectors";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  getConnectors,
+  isMcpConnector,
+  resolveAuthorizeScopes,
+} from "./connectors";
+
+describe("getConnectors env resolution", () => {
+  const keys = [
+    "NOTION_MCP_CONNECTOR",
+    "NOTION_API_CONNECTOR",
+    "NOTION_CONNECT_CONNECTOR",
+  ];
+  const saved: Record<string, string | undefined> = {};
+  beforeEach(() => {
+    for (const k of keys) {
+      saved[k] = process.env[k];
+      delete process.env[k];
+    }
+  });
+  afterEach(() => {
+    for (const k of keys) {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    }
+  });
+
+  const notion = () => getConnectors().find((c) => c.provider === "notion")!;
+
+  it("splits MCP and API connectors into separate slots", () => {
+    process.env.NOTION_MCP_CONNECTOR = "mcp.notion.com/ssota";
+    process.env.NOTION_API_CONNECTOR = "notion/ssota";
+    const c = notion();
+    expect(c.connectorUid).toBe("mcp.notion.com/ssota");
+    expect(c.apiConnectorUid).toBe("notion/ssota");
+    expect(c.isMcp).toBe(true);
+  });
+
+  it("falls back to the legacy slot for the MCP connector", () => {
+    process.env.NOTION_CONNECT_CONNECTOR = "mcp.notion.com/legacy";
+    const c = notion();
+    expect(c.connectorUid).toBe("mcp.notion.com/legacy");
+    expect(c.apiConnectorUid).toBeNull();
+    expect(c.isMcp).toBe(true);
+  });
+
+  it("MCP slot wins over the legacy slot", () => {
+    process.env.NOTION_MCP_CONNECTOR = "mcp.notion.com/new";
+    process.env.NOTION_CONNECT_CONNECTOR = "notion/old";
+    expect(notion().connectorUid).toBe("mcp.notion.com/new");
+  });
+});
+
+describe("isMcpConnector", () => {
+  it("treats mcp.* host uids as MCP-type", () => {
+    expect(isMcpConnector("mcp.notion.com/ssota")).toBe(true);
+  });
+
+  it("treats provider uids as API/OAuth (non-MCP)", () => {
+    expect(isMcpConnector("notion/ssota")).toBe(false);
+    expect(isMcpConnector("slack/ssota")).toBe(false);
+  });
+
+  it("returns false when unconfigured", () => {
+    expect(isMcpConnector(null)).toBe(false);
+    expect(isMcpConnector(undefined)).toBe(false);
+  });
+});
 
 describe("resolveAuthorizeScopes", () => {
   it("returns explicit scopes when provided", () => {
