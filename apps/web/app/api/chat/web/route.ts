@@ -1,10 +1,9 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createUIMessageStreamResponse } from "ai";
 import type { FileUIPart, UIMessage } from "ai";
 import { z } from "zod";
 import { start } from "workflow/api";
 import { runMainAgentWorkflow } from "@/app/workflows/main-agent";
-import { collectAssistantMessageParts } from "@/lib/chat/persist-assistant-message";
 import { getChatPort } from "@/lib/ports";
 import { resolveModelId } from "@/lib/chat/models";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
@@ -150,18 +149,6 @@ export async function POST(request: Request) {
   ]);
 
   const readable = run.getReadable();
-  const [clientStream, persistStream] = readable.tee();
 
-  after(async () => {
-    const parts = await collectAssistantMessageParts(persistStream);
-    if (parts) {
-      await chat.appendMessage({
-        threadId,
-        role: "assistant",
-        parts,
-      });
-    }
-  });
-
-  return createUIMessageStreamResponse({ stream: clientStream });
+  return createUIMessageStreamResponse({ stream: readable });
 }
