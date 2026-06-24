@@ -355,6 +355,9 @@ test.describe("Connections + Chat", () => {
       await sendChatMessage(page, "thread to delete");
       await expect(page.getByText("thread to delete")).toBeVisible();
 
+      const threadId = page.url().match(/\/c\/([0-9a-f-]{36})/)?.[1];
+      expect(threadId).toBeTruthy();
+
       const threadRow = page
         .locator("aside")
         .filter({ has: page.getByRole("button", { name: "새 채팅" }) })
@@ -364,9 +367,18 @@ test.describe("Connections + Chat", () => {
       await expect(threadRow).toBeVisible();
       await threadRow.hover();
       await threadRow.getByRole("button", { name: "채팅 삭제" }).click();
+      await threadRow.getByRole("button", { name: "삭제 확인" }).click();
 
       await expect(page).toHaveURL(/\/c\/(new|[0-9a-f-]{36})/);
       await expect(page.getByText("thread to delete")).toHaveCount(0);
+      await expect(
+        page.locator(`aside a[href$="/c/${threadId}"]`),
+      ).toHaveCount(0);
+
+      await page.reload();
+      await expect(
+        page.locator(`aside a[href$="/c/${threadId}"]`),
+      ).toHaveCount(0);
     });
 
     test("sends a message and streams the agent reply", async ({ page }) => {

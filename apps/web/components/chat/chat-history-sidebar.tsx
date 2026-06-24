@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useOptimistic, useState, useTransition } from "react";
 import {
   PlusIcon,
   ChatCircleIcon,
@@ -54,22 +54,58 @@ export function ChatHistorySidebar({
   const router = useRouter();
   const pathname = usePathname();
   const params = useParams();
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, startDelete] = useTransition();
+  const [optimisticThreads, removeOptimisticThread] = useOptimistic(
+    threads,
+    (state, deletedId: string) => state.filter((t) => t.id !== deletedId),
+  );
 
   const activeThreadId =
     typeof params.threadId === "string" ? params.threadId : undefined;
 
+  useEffect(() => {
+    setConfirmingId(null);
+  }, [threads]);
+
+  useEffect(() => {
+    if (!confirmingId) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") cancelDelete();
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [confirmingId]);
+
   function newChat() {
     setError(null);
+    setConfirmingId(null);
     router.push(`${chatBase}/new`);
   }
 
-  function deleteThread(threadId: string) {
+  function requestDelete(threadId: string) {
     setError(null);
-    setDeletingId(threadId);
+    setConfirmingId(threadId);
+  }
+
+  function cancelDelete() {
+    setConfirmingId(null);
+  }
+
+  function confirmDelete(threadId: string) {
+    setError(null);
+    setConfirmingId(null);
+
+    const onDeletedThread =
+      pathname === `${chatBase}/${threadId}` || activeThreadId === threadId;
+    const remaining = threads.filter((t) => t.id !== threadId);
+
     startDelete(async () => {
+      removeOptimisticThread(threadId);
+
       try {
         await deleteChatThreadAction({
           orgSlug,
@@ -78,19 +114,14 @@ export function ChatHistorySidebar({
           appMode,
           chatBase,
         });
-        const onDeletedThread =
-          pathname === `${chatBase}/${threadId}` ||
-          activeThreadId === threadId;
+
         if (onDeletedThread) {
-          const remaining = threads.filter((t) => t.id !== threadId);
           const next = remaining[0];
           router.push(next ? `${chatBase}/${next.id}` : `${chatBase}/new`);
         }
         router.refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : "채팅 삭제 실패");
-      } finally {
-        setDeletingId(null);
       }
     });
   }
@@ -114,47 +145,78 @@ export function ChatHistorySidebar({
 
       <ScrollArea className="min-h-0 flex-1">
         <nav className="flex flex-col gap-0.5 px-2 pb-3">
-          {threads.length === 0 ? (
+          {optimisticThreads.length === 0 ? (
             <p className="px-2 py-6 text-center text-xs text-muted-foreground">
               아직 대화가 없습니다
             </p>
           ) : (
-            threads.map((thread) => {
+            optimisticThreads.map((thread) => {
               const isActive = thread.id === activeThreadId;
-              const isRemoving = deletingId === thread.id && isDeleting;
+              const isConfirming = confirmingId === thread.id;
               return (
                 <div
                   key={thread.id}
                   className={cn(
                     "group flex items-stretch gap-0.5 rounded-lg pr-1 transition-colors",
-                    isActive
-                      ? "bg-secondary text-secondary-foreground"
-                      : "hover:bg-secondary/60",
+                    isConfirming
+                      ? "bg-destructive/10 text-destructive"
+                      : isActive
+                        ? "bg-secondary text-secondary-foreground"
+                        : "hover:bg-secondary/60",
                   )}
                 >
                   <Link
                     href={`${chatBase}/${thread.id}`}
                     className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2 text-sm"
+                    onClick={cancelDelete}
                   >
                     <span className="flex items-center gap-2 truncate font-medium">
-                      <ChatCircleIcon className="size-3.5 shrink-0 opacity-60" />
+                      <ChatCircleIcon
+                        className={cn(
+                          "size-3.5 shrink-0 opacity-60",
+                          isConfirming && "text-destructive opacity-80",
+                        )}
+                      />
                       <span className="truncate">{thread.title}</span>
                     </span>
-                    <span className="pl-5 text-xs text-muted-foreground">
+                    <span
+                      className={cn(
+                        "pl-5 text-xs text-muted-foreground",
+                        isConfirming && "text-destructive/70",
+                      )}
+                    >
                       {formatWhen(thread.updatedAt)}
                     </span>
                   </Link>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="my-1 size-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-                    aria-label="채팅 삭제"
-                    disabled={isRemoving}
-                    onClick={() => deleteThread(thread.id)}
-                  >
-                    <TrashIcon className="size-3.5" />
-                  </Button>
+                  {isConfirming ? (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="my-1 h-7 shrink-0 px-2 text-xs"
+                      aria-label="삭제 확인"
+                      disabled={isDeleting}
+                      onClick={() => confirmDelete(thread.id)}
+                    >
+                      삭제
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="my-1 size-7 shrink-0 text-muted-foreground opacity-0 transition-[opacity,color,background-color] group-hover:opacity-100 hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100"
+                      aria-label="채팅 삭제"
+                      disabled={isDeleting}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        requestDelete(thread.id);
+                      }}
+                    >
+                      <TrashIcon className="size-3.5" />
+                    </Button>
+                  )}
                 </div>
               );
             })
