@@ -37,8 +37,8 @@ describe("createConnectionTools (MCP_STUB)", () => {
     });
 
     expect(bundle.tools.connection_search).toBeDefined();
+    expect(bundle.tools.connection_call).toBeDefined();
     expect(bundle.tools.request_connection).toBeDefined();
-    expect(bundle.qualifiedToolNames).toEqual([]);
     await sessionManager.close();
   });
 });

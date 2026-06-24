@@ -3,6 +3,7 @@ import { createSsotaTools } from "../tools/index.js";
 import { createSandboxTools } from "../tools/sandbox.js";
 import {
   CONNECTION_SEARCH_TOOL,
+  CONNECTION_CALL_TOOL,
   REQUEST_CONNECTION_TOOL,
   toQualifiedToolName,
 } from "../connections/index.js";
@@ -68,6 +69,7 @@ describe("createSsotaTools", () => {
 
   it("connection tool names follow Eve conventions", () => {
     expect(CONNECTION_SEARCH_TOOL).toBe("connection_search");
+    expect(CONNECTION_CALL_TOOL).toBe("connection_call");
     expect(REQUEST_CONNECTION_TOOL).toBe("request_connection");
     expect(toQualifiedToolName("linear", "search_issues")).toBe(
       "linear__search_issues",
@@ -125,7 +127,8 @@ describe("buildRunInstructions", () => {
 
     expect(prompt).toContain("Draft the onboarding PRD");
     expect(prompt).toContain("work.write_document");
-    expect(prompt).toContain("slack__post_message");
+    expect(prompt).toContain("connection_call");
+    expect(prompt).toContain("connection_search");
     expect(prompt).toContain("Covers activation metric");
     expect(prompt).toContain("Write the PRD for onboarding.");
     expect(prompt).toContain("complete_task");

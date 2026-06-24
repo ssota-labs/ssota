@@ -37,10 +37,8 @@ export interface LoopEngineRunInput {
   sandbox?: SandboxSession;
   /** Optional credential provider for external-service tools (Vercel Connect). */
   credentials?: CredentialProvider;
-  /** Eve-style MCP connection activation state (progressive disclosure). */
+  /** Per-run MCP installation scope (connection_search → connection_call). */
   connectionState?: ConnectionRunState;
-  /** Qualified MCP tool names registered for this run. */
-  qualifiedToolNames?: string[];
   /** MCP session manager — closed after the run. */
   connectionSessionManager?: McpSessionManager;
   /** Upper bound on model steps before the loop stops. */

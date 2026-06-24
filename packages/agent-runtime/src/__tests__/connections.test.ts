@@ -5,13 +5,13 @@ import {
   toQualifiedToolName,
 } from "../connections/qualified-name.js";
 import { ConnectionRunState } from "../connections/run-state.js";
-import { buildActiveTools } from "../connections/activate-tools.js";
 import { defineMcpClientConnection } from "../connections/define-mcp-connection.js";
 import { connectCredential } from "../connections/connect-credential.js";
 import {
   getKnownToolsForConnection,
   inferConnectionIdFromQuery,
 } from "../connections/tool-catalog.js";
+import { CONNECTION_CALL_TOOL, CONNECTION_SEARCH_TOOL } from "../connections/run-state.js";
 
 describe("qualified tool names", () => {
   it("builds and parses Eve-style names", () => {
@@ -90,28 +90,19 @@ describe("defineMcpClientConnection", () => {
   });
 });
 
-describe("buildActiveTools", () => {
-  it("starts with connection_search only among MCP tools", () => {
+describe("ConnectionRunState", () => {
+  it("records installation scope from search hits", () => {
     const state = new ConnectionRunState();
-    const active = buildActiveTools(state, [
-      "linear__search_issues",
-      "linear__get_issue",
+    state.recordInstallations([
+      { connection: "linear", installationId: "inst-1" },
     ]);
-    expect(active).toContain("connection_search");
-    expect(active).toContain("request_connection");
-    expect(active).not.toContain("linear__search_issues");
+    expect(state.getInstallationId("linear")).toBe("inst-1");
   });
+});
 
-  it("activates qualified tools after connection_search", () => {
-    const state = new ConnectionRunState();
-    state.activateFromSearch([
-      {
-        qualifiedName: "linear__search_issues",
-        connection: "linear",
-        installationId: "inst-1",
-      },
-    ]);
-    const active = buildActiveTools(state, ["linear__search_issues"]);
-    expect(active).toContain("linear__search_issues");
+describe("connection facade tool names", () => {
+  it("exposes stable search and call tool ids", () => {
+    expect(CONNECTION_SEARCH_TOOL).toBe("connection_search");
+    expect(CONNECTION_CALL_TOOL).toBe("connection_call");
   });
 });

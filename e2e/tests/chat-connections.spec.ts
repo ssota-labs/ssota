@@ -383,7 +383,7 @@ test.describe("Connections + Chat", () => {
       await expect(page.getByRole("button", { name: "전송" })).toBeVisible();
     });
 
-    test("connection_search then linear__search_issues via stub model", async ({
+    test("connection_search then connection_call via stub model", async ({
       page,
     }) => {
       await gotoProject(page, "connections");

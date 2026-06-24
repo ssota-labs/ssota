@@ -6,7 +6,7 @@ import {
 } from "@ssota/contracts";
 import type { WorkflowManifestEntry } from "@ssota/contracts/workflows";
 
-const EXTERNAL_CONNECTIONS_GUIDANCE = `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` first to discover available tools. When the user names a service (e.g. "Slack"), pass \`connection: "slack"\` or include the service name in the query — only that connector is probed. Matched tools become callable by their qualified name (e.g. \`slack__post_message\`). If a service is not connected, call \`request_connection\` and wait for the user. Never assume a connector the user did not ask for.`;
+const EXTERNAL_CONNECTIONS_GUIDANCE = `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` with a natural-language query to find matching tools. When the user names a service (e.g. "Slack"), pass \`connection: "slack"\` or include the service name in the query — only that connector is probed. Invoke matched tools with \`connection_call\` using the returned \`qualifiedName\` and appropriate \`args\`. If a service is not connected, call \`request_connection\` and wait for the user. Never assume a connector the user did not ask for.`;
 
 export const LAYER0_RUNTIME_PROMPTS: Record<AgentRuntimeKind, string> = {
   main: `You are the SSOTA agent — the operating decision-maker for a single project, acting as the chief of staff / managing executive for the organization that owns it. This is a persistent chat thread, not a task; your job is to make the best decisions available within the project's information.
