@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { filterMcpTools } from "../connections/filter-tools.js";
 import {
   parseQualifiedToolName,
@@ -6,7 +6,10 @@ import {
 } from "../connections/qualified-name.js";
 import { ConnectionRunState } from "../connections/run-state.js";
 import { defineMcpClientConnection } from "../connections/define-mcp-connection.js";
-import { connectCredential } from "../connections/connect-credential.js";
+import {
+  connectCredential,
+  resolveConnectorUid,
+} from "../connections/connect-credential.js";
 import {
   getKnownToolsForConnection,
   inferConnectionIdFromQuery,
@@ -97,6 +100,39 @@ describe("ConnectionRunState", () => {
       { connection: "linear", installationId: "inst-1" },
     ]);
     expect(state.getInstallationId("linear")).toBe("inst-1");
+  });
+});
+
+describe("resolveConnectorUid", () => {
+  const keys = ["NOTION_MCP_CONNECTOR", "NOTION_CONNECT_CONNECTOR", "NOTION_API_CONNECTOR"];
+  const saved: Record<string, string | undefined> = {};
+  beforeEach(() => {
+    for (const k of keys) {
+      saved[k] = process.env[k];
+      delete process.env[k];
+    }
+  });
+  afterEach(() => {
+    for (const k of keys) {
+      if (saved[k] === undefined) delete process.env[k];
+      else process.env[k] = saved[k];
+    }
+  });
+
+  it("prefers the MCP connector over the legacy slot", () => {
+    process.env.NOTION_MCP_CONNECTOR = "mcp.notion.com/ssota";
+    process.env.NOTION_CONNECT_CONNECTOR = "notion/legacy";
+    expect(resolveConnectorUid("notion")).toBe("mcp.notion.com/ssota");
+  });
+
+  it("falls back to the legacy slot for existing deployments", () => {
+    process.env.NOTION_CONNECT_CONNECTOR = "notion/legacy";
+    expect(resolveConnectorUid("notion")).toBe("notion/legacy");
+  });
+
+  it("never resolves the API connector slot (agent uses MCP only)", () => {
+    process.env.NOTION_API_CONNECTOR = "notion/api-only";
+    expect(resolveConnectorUid("notion")).toBeNull();
   });
 });
 

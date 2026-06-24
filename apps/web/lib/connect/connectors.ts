@@ -30,8 +30,21 @@ export interface ConnectorDef {
   label: string;
   /** Whether several workspaces/installations can be connected at once. */
   multiWorkspace: boolean;
-  /** Connector uid from env (`provider/config-name`), or null if unconfigured. */
+  /**
+   * The connector the agent uses to reach the hosted MCP server — resolved from
+   * `<PROVIDER>_MCP_CONNECTOR`, falling back to the legacy
+   * `<PROVIDER>_CONNECT_CONNECTOR`. Null if unconfigured. This is the connector
+   * the Connections card connects/disconnects.
+   */
   connectorUid: string | null;
+  /**
+   * The provider API/OAuth connector, resolved from `<PROVIDER>_API_CONNECTOR`.
+   * In Vercel Connect the MCP and API connectors are separate records, so this
+   * is a distinct slot from {@link connectorUid}. Reserved for REST enrichment
+   * and future direct-API features — not consumed by the agent yet. Null if
+   * unconfigured.
+   */
+  apiConnectorUid: string | null;
   /**
    * Whether the configured connector is a Vercel Connect **MCP-type** connector
    * (its own OAuth via the hosted MCP server's authorization server, e.g.
@@ -44,7 +57,26 @@ export interface ConnectorDef {
   isMcp: boolean;
 }
 
-const ENV_KEYS: Record<ConnectorProvider, string> = {
+// MCP and API are separate Vercel Connect connectors, so each provider has its
+// own env slot. `*_CONNECT_CONNECTOR` is the legacy single slot, kept as a
+// fallback for the MCP connector so existing deployments keep working.
+const MCP_ENV_KEYS: Record<ConnectorProvider, string> = {
+  slack: "SLACK_MCP_CONNECTOR",
+  notion: "NOTION_MCP_CONNECTOR",
+  github: "GITHUB_MCP_CONNECTOR",
+  linear: "LINEAR_MCP_CONNECTOR",
+  discord: "DISCORD_MCP_CONNECTOR",
+};
+
+const API_ENV_KEYS: Record<ConnectorProvider, string> = {
+  slack: "SLACK_API_CONNECTOR",
+  notion: "NOTION_API_CONNECTOR",
+  github: "GITHUB_API_CONNECTOR",
+  linear: "LINEAR_API_CONNECTOR",
+  discord: "DISCORD_API_CONNECTOR",
+};
+
+const LEGACY_ENV_KEYS: Record<ConnectorProvider, string> = {
   slack: "SLACK_CONNECT_CONNECTOR",
   notion: "NOTION_CONNECT_CONNECTOR",
   github: "GITHUB_CONNECT_CONNECTOR",
@@ -52,7 +84,10 @@ const ENV_KEYS: Record<ConnectorProvider, string> = {
   discord: "DISCORD_CONNECT_CONNECTOR",
 };
 
-const REGISTRY: Omit<ConnectorDef, "connectorUid" | "isMcp">[] = [
+const REGISTRY: Omit<
+  ConnectorDef,
+  "connectorUid" | "apiConnectorUid" | "isMcp"
+>[] = [
   {
     provider: "slack",
     label: "Slack",
@@ -85,9 +120,8 @@ const REGISTRY: Omit<ConnectorDef, "connectorUid" | "isMcp">[] = [
  * `mcp.notion.com/ssota`. Vercel Connect's "MCP" connection type names the
  * connector after the MCP server host (`mcp.<provider>.com`), whereas an API
  * OAuth connector is named after the provider (`notion/ssota`). We key off that
- * `mcp.` host so the distinction needs no extra config or env var — a single
- * `*_CONNECT_CONNECTOR` per provider holds whichever connector the deployment
- * chose, and its type is self-describing.
+ * `mcp.` host to drive the per-card rendering (single "MCP Connected" state vs
+ * the per-workspace install list).
  */
 export function isMcpConnector(connectorUid: string | null | undefined): boolean {
   if (!connectorUid) return false;
@@ -97,10 +131,15 @@ export function isMcpConnector(connectorUid: string | null | undefined): boolean
 /** Resolve the connector registry with per-deployment env configuration. */
 export function getConnectors(): ConnectorDef[] {
   return REGISTRY.map((def) => {
-    const connectorUid = process.env[ENV_KEYS[def.provider]] ?? null;
+    const connectorUid =
+      process.env[MCP_ENV_KEYS[def.provider]] ??
+      process.env[LEGACY_ENV_KEYS[def.provider]] ??
+      null;
+    const apiConnectorUid = process.env[API_ENV_KEYS[def.provider]] ?? null;
     return {
       ...def,
       connectorUid,
+      apiConnectorUid,
       isMcp: isMcpConnector(connectorUid),
     };
   });
