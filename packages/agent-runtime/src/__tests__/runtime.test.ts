@@ -142,6 +142,29 @@ describe("buildRunInstructions", () => {
     });
     expect(prompt).toMatch(/persistent chat thread/i);
   });
+
+  it("requires professional communication style for user-facing runtimes", () => {
+    const main = buildRunInstructions({
+      runtimeKind: "main",
+      projectId: "22222222-2222-2222-2222-222222222222",
+    });
+    expect(main).toContain("professional workplace tone");
+    expect(main).toContain("Do not use emojis");
+    expect(main).toContain("합니다/습니다체");
+
+    const task = buildRunInstructions({
+      runtimeKind: "task",
+      projectId: "22222222-2222-2222-2222-222222222222",
+      task: {
+        id: "11111111-1111-1111-1111-111111111111",
+        title: "Example",
+        acceptanceCriteria: [],
+        targetNodeId: null,
+        executionDirective: null,
+      },
+    });
+    expect(task).toContain("professional workplace tone");
+  });
 });
 
 describe("env credential provider", () => {

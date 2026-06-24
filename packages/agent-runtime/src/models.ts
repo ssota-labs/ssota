@@ -102,7 +102,7 @@ function promptContainsTrigger(prompt: unknown, trigger: string): boolean {
  */
 function stubModel(): LanguageModel {
   const defaultReply =
-    "Hi — I'm the local stub agent. The chat streaming pipeline works end to end.";
+    "안녕하세요. 로컬 stub agent입니다. 채팅 스트리밍 파이프라인이 정상 동작합니다.";
   const connectionReply =
     "Linear search completed via connection_search — stub MCP returned one issue.";
 
