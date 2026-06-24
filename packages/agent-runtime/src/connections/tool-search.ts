@@ -38,6 +38,38 @@ export function tokenize(text: string): readonly string[] {
     .filter((t) => t.length > 0);
 }
 
+/** Terms that indicate a connection-status check rather than a capability search. */
+export const CONNECTION_STATUS_TERMS = new Set([
+  "status",
+  "connection",
+  "connected",
+  "connect",
+  "check",
+  "verify",
+  "state",
+  "enabled",
+  "available",
+  "linked",
+  "installed",
+]);
+
+/**
+ * When BM25 finds no tool hits, status-style queries should still return a
+ * browse sample so the model (and UI) can see what is available on connected services.
+ */
+export function shouldBrowseOnEmptyMatch(
+  query: string,
+  connectionFilter?: string,
+): boolean {
+  const terms = tokenize(query);
+  if (terms.length === 0) return false;
+  if (terms.every((t) => CONNECTION_STATUS_TERMS.has(t))) return true;
+  if (connectionFilter && terms.some((t) => CONNECTION_STATUS_TERMS.has(t))) {
+    return true;
+  }
+  return false;
+}
+
 function repeatTokens(tokens: readonly string[], times: number): string[] {
   if (times <= 1) return [...tokens];
   const out: string[] = [];

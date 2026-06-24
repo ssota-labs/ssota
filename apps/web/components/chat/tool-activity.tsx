@@ -33,11 +33,22 @@ function summarizeOutput(toolName: string, output: unknown): string | null {
     const payload = output as {
       matched?: Array<{ qualifiedName?: string }>;
       tools?: Array<{ qualifiedName?: string }>;
+      connections?: Array<{ connection?: string; connected?: boolean }>;
       errors?: Array<{ connection?: string; message?: string }>;
     };
     const matched = payload.matched ?? payload.tools;
     const count = matched?.length ?? 0;
     if (count > 0) return `${count}개 도구 발견`;
+    const connected = payload.connections?.filter((c) => c.connected) ?? [];
+    if (connected.length > 0) {
+      const names = connected
+        .map((c) => c.connection)
+        .filter(Boolean)
+        .join(", ");
+      return names
+        ? `${connected.length}개 연결됨 · 검색 일치 도구 없음 (${names})`
+        : `${connected.length}개 연결됨 · 검색 일치 도구 없음`;
+    }
     const err = payload.errors?.[0];
     if (err?.message) {
       return err.connection

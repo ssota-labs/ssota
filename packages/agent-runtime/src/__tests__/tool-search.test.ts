@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   rankToolsForQuery,
+  shouldBrowseOnEmptyMatch,
   toolMatchesQuery,
   tokenize,
   type ToolSearchCandidate,
@@ -115,5 +116,25 @@ describe("rankToolsForQuery", () => {
   it("prefers tool name matches over connection-only overlap", () => {
     const hits = rankToolsForQuery(allDocs, "create issue");
     expect(hits[0]?.qualifiedName).toBe("linear__create_issue");
+  });
+
+  it("returns no hits for generic status query without service name", () => {
+    expect(rankToolsForQuery(allDocs, "connection status")).toEqual([]);
+  });
+});
+
+describe("shouldBrowseOnEmptyMatch", () => {
+  it("detects English connection-status queries", () => {
+    expect(shouldBrowseOnEmptyMatch("connection status")).toBe(true);
+    expect(shouldBrowseOnEmptyMatch("check connection")).toBe(true);
+  });
+
+  it("does not treat capability queries as status browse", () => {
+    expect(shouldBrowseOnEmptyMatch("create issue")).toBe(false);
+    expect(shouldBrowseOnEmptyMatch("notion graph")).toBe(false);
+  });
+
+  it("allows status browse when connection filter is set", () => {
+    expect(shouldBrowseOnEmptyMatch("slack status check", "slack")).toBe(true);
   });
 });

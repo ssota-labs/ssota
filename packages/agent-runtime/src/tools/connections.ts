@@ -14,7 +14,9 @@ import type { McpToolListing } from "../connections/filter-tools.js";
 import { McpSessionManager } from "../connections/mcp-session.js";
 import { inferConnectionIdFromQuery } from "../connections/tool-catalog.js";
 import {
+  DEFAULT_TOOL_SEARCH_LIMIT,
   rankToolsForQuery,
+  shouldBrowseOnEmptyMatch,
   type ToolSearchCandidate,
 } from "../connections/tool-search.js";
 import {
@@ -203,7 +205,20 @@ async function runConnectionSearch(
     }
   }
 
-  const ranked = rankToolsForQuery(candidates, query);
+  let ranked = rankToolsForQuery(candidates, query);
+  if (
+    ranked.length === 0 &&
+    candidates.length > 0 &&
+    shouldBrowseOnEmptyMatch(query, connectionFilter)
+  ) {
+    const pool = connectionFilter
+      ? candidates.filter((c) => c.connection === connectionFilter)
+      : candidates;
+    ranked = pool.slice(0, DEFAULT_TOOL_SEARCH_LIMIT).map((doc) => ({
+      ...doc,
+      score: 0,
+    }));
+  }
   const internalHits: SearchHitInternal[] = ranked.map((hit) => ({
     qualifiedName: hit.qualifiedName,
     connection: hit.connection,
