@@ -1,9 +1,10 @@
 import { after, NextResponse } from "next/server";
 import { createUIMessageStreamResponse } from "ai";
-import type { FileUIPart, UIMessage, UIMessageChunk } from "ai";
+import type { FileUIPart, UIMessage } from "ai";
 import { z } from "zod";
 import { start } from "workflow/api";
 import { runMainAgentWorkflow } from "@/app/workflows/main-agent";
+import { collectAssistantMessageParts } from "@/lib/chat/persist-assistant-message";
 import { getChatPort } from "@/lib/ports";
 import { resolveModelId } from "@/lib/chat/models";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
@@ -148,39 +149,19 @@ export async function POST(request: Request) {
     },
   ]);
 
-  const readable = run.getReadable() as ReadableStream<UIMessageChunk>;
+  const readable = run.getReadable();
   const [clientStream, persistStream] = readable.tee();
 
   after(async () => {
-    const text = await collectText(persistStream);
-    if (text.trim()) {
+    const parts = await collectAssistantMessageParts(persistStream);
+    if (parts) {
       await chat.appendMessage({
         threadId,
         role: "assistant",
-        parts: [{ type: "text", text }],
+        parts,
       });
     }
   });
 
   return createUIMessageStreamResponse({ stream: clientStream });
-}
-
-async function collectText(
-  stream: ReadableStream<UIMessageChunk>,
-): Promise<string> {
-  const reader = stream.getReader();
-  let text = "";
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = value as { type?: string; delta?: string } | undefined;
-      if (chunk?.type === "text-delta" && typeof chunk.delta === "string") {
-        text += chunk.delta;
-      }
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  return text;
 }
