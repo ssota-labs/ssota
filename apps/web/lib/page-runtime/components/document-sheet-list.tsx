@@ -53,10 +53,11 @@ export function DocumentSheetListEl({
 
   return (
     <div
-      className="absolute inset-0 flex flex-col overflow-hidden p-4"
+      className="absolute inset-0 flex flex-col overflow-hidden p-4 md:p-6"
       data-testid="document-sheet-list"
     >
-      <div className="space-y-3">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="space-y-3">
         {sectionTitle ? (
           <header className="space-y-1 border-b pb-3">
             <h2 className="text-lg font-semibold">{sectionTitle}</h2>
@@ -106,6 +107,7 @@ export function DocumentSheetListEl({
               No documents
             </p>
           ) : null}
+        </div>
         </div>
       </div>
 

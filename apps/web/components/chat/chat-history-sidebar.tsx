@@ -69,6 +69,17 @@ export function ChatHistorySidebar({
     setConfirmingId(null);
   }, [threads]);
 
+  useEffect(() => {
+    if (!confirmingId) return;
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") cancelDelete();
+    }
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [confirmingId]);
+
   function newChat() {
     setError(null);
     setConfirmingId(null);
@@ -95,11 +106,6 @@ export function ChatHistorySidebar({
     startDelete(async () => {
       removeOptimisticThread(threadId);
 
-      if (onDeletedThread) {
-        const next = remaining[0];
-        router.push(next ? `${chatBase}/${next.id}` : `${chatBase}/new`);
-      }
-
       try {
         await deleteChatThreadAction({
           orgSlug,
@@ -108,6 +114,11 @@ export function ChatHistorySidebar({
           appMode,
           chatBase,
         });
+
+        if (onDeletedThread) {
+          const next = remaining[0];
+          router.push(next ? `${chatBase}/${next.id}` : `${chatBase}/new`);
+        }
         router.refresh();
       } catch (e) {
         setError(e instanceof Error ? e.message : "채팅 삭제 실패");
@@ -147,14 +158,12 @@ export function ChatHistorySidebar({
                   key={thread.id}
                   className={cn(
                     "group flex items-stretch gap-0.5 rounded-lg pr-1 transition-colors",
-                    isActive
-                      ? "bg-secondary text-secondary-foreground"
-                      : "hover:bg-secondary/60",
-                    isConfirming && "bg-destructive/5",
+                    isConfirming
+                      ? "bg-destructive/10 text-destructive"
+                      : isActive
+                        ? "bg-secondary text-secondary-foreground"
+                        : "hover:bg-secondary/60",
                   )}
-                  onMouseLeave={() => {
-                    if (isConfirming) cancelDelete();
-                  }}
                 >
                   <Link
                     href={`${chatBase}/${thread.id}`}
@@ -162,10 +171,20 @@ export function ChatHistorySidebar({
                     onClick={cancelDelete}
                   >
                     <span className="flex items-center gap-2 truncate font-medium">
-                      <ChatCircleIcon className="size-3.5 shrink-0 opacity-60" />
+                      <ChatCircleIcon
+                        className={cn(
+                          "size-3.5 shrink-0 opacity-60",
+                          isConfirming && "text-destructive opacity-80",
+                        )}
+                      />
                       <span className="truncate">{thread.title}</span>
                     </span>
-                    <span className="pl-5 text-xs text-muted-foreground">
+                    <span
+                      className={cn(
+                        "pl-5 text-xs text-muted-foreground",
+                        isConfirming && "text-destructive/70",
+                      )}
+                    >
                       {formatWhen(thread.updatedAt)}
                     </span>
                   </Link>

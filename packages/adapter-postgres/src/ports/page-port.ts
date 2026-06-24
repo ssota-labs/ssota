@@ -175,7 +175,12 @@ interface PageTreeSeedEntry {
 }
 
 /** Seed slugs whose spec/bindings/actions are refreshed on re-seed (dogfood pack updates). */
-const SEED_SPEC_SYNC_SLUGS = new Set(["executive/roadmap"]);
+const SEED_SPEC_SYNC_SLUGS = new Set([
+  "executive/roadmap",
+  "research/market",
+  "research/user",
+  "research/hypotheses",
+]);
 
 /**
  * Bootstrap-seed the software-development page tree (Notion-style) into the

@@ -156,39 +156,7 @@ export async function seedGraphInstances(
   await seedProductRoadmapDoc(db, projectId, maps);
   await seedRoadmapPlanningDocs(db, projectId, maps);
 
-  const hypothesisCatalogId = nodeKeyToId.get("hypothesis");
-  let hypothesisId: string | undefined;
-  if (hypothesisCatalogId) {
-    const hypothesisExisting = await db
-      .select({ id: schema.nodes.id })
-      .from(schema.nodes)
-      .where(
-        and(
-          eq(schema.nodes.projectId, projectId),
-          eq(schema.nodes.nodeCatalogId, hypothesisCatalogId),
-        ),
-      )
-      .limit(1);
-
-    hypothesisId = hypothesisExisting[0]?.id;
-    if (!hypothesisId) {
-      const [hypothesis] = await db
-        .insert(schema.nodes)
-        .values({
-          projectId,
-          nodeCatalogId: hypothesisCatalogId,
-          title: "Smoke hypothesis",
-          properties: {
-            lifecycleStatus: "Draft",
-            status: "draft",
-            summary: "Seed hypothesis for integration and E2E",
-            seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}hypothesis`,
-          },
-        })
-        .returning({ id: schema.nodes.id });
-      hypothesisId = hypothesis?.id;
-    }
-  }
+  const hypothesisId = await seedResearchDocs(db, projectId, maps);
 
   const initiativeCatalogId = nodeKeyToId.get("initiative");
   const bundleExisting = initiativeCatalogId
@@ -500,6 +468,185 @@ async function seedRoadmapPlanningDocs(
       schemaVersion: 1,
     });
   }
+}
+
+type ResearchDocSeed = {
+  catalogKey: "market_research" | "user_research" | "hypothesis";
+  seedSuffix: string;
+  title: string;
+  summary: string;
+  lifecycleStatus: string;
+  extraProperties?: Record<string, unknown>;
+  content: unknown[];
+};
+
+const RESEARCH_DOC_SEED_PREFIX = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}research_doc:`;
+
+async function seedResearchDocs(
+  db: ReturnType<typeof createDb>["db"],
+  projectId: string,
+  maps: CatalogMaps,
+): Promise<string | undefined> {
+  const docs: ResearchDocSeed[] = [
+    {
+      catalogKey: "market_research",
+      seedSuffix: "competitive-landscape",
+      title: "Competitive landscape — dev workflow tools",
+      summary: "Notion, Linear, Cursor, and internal builder consoles",
+      lifecycleStatus: "active",
+      extraProperties: { source: "desk research", conducted_at: "2026-01-15" },
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Key competitors",
+        },
+        {
+          type: "paragraph",
+          content:
+            "Teams mix docs (Notion), issue tracking (Linear), and AI IDE agents (Cursor). SSOTA targets a graph-native builder workspace with end-user app deployment.",
+        },
+        {
+          type: "bulletListItem",
+          content: "Notion: flexible docs, weak typed graph + workflow enforcement",
+        },
+        {
+          type: "bulletListItem",
+          content: "Linear: strong execution, limited product/research doc model",
+        },
+      ],
+    },
+    {
+      catalogKey: "market_research",
+      seedSuffix: "tam-segment",
+      title: "TAM / segment sizing",
+      summary: "Product eng teams adopting AI-assisted delivery",
+      lifecycleStatus: "draft",
+      extraProperties: { source: "analyst notes", conducted_at: "2026-02-01" },
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Initial segment",
+        },
+        {
+          type: "paragraph",
+          content:
+            "Seed segment: 5–50 person product engineering teams dogfooding their own workflow in SSOTA.",
+        },
+      ],
+    },
+    {
+      catalogKey: "user_research",
+      seedSuffix: "onboarding-interviews",
+      title: "Onboarding interviews (smoke cohort)",
+      summary: "First-time builder setup and page runtime comprehension",
+      lifecycleStatus: "review",
+      extraProperties: { method: "interview", conducted_at: "2026-02-10" },
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Findings",
+        },
+        {
+          type: "paragraph",
+          content:
+            "Builders expect sidebar page tree navigation and in-place document editing without losing list context.",
+        },
+        {
+          type: "bulletListItem",
+          content: "Document sheet pattern matches mental model from Notion side peek",
+        },
+      ],
+    },
+    {
+      catalogKey: "hypothesis",
+      seedSuffix: "smoke",
+      title: "Smoke hypothesis",
+      summary: "Document sheet list improves research doc iteration speed",
+      lifecycleStatus: "draft",
+      extraProperties: { status: "draft" },
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Hypothesis",
+        },
+        {
+          type: "paragraph",
+          content:
+            "If research pages use DocumentSheetList, teams will edit market/user/hypothesis notes 2× faster than table-only navigation.",
+        },
+      ],
+    },
+  ];
+
+  let hypothesisId: string | undefined;
+
+  for (const doc of docs) {
+    const catalogId = maps.nodeKeyToId.get(doc.catalogKey);
+    if (!catalogId) continue;
+
+    const seedKey = `${RESEARCH_DOC_SEED_PREFIX}${doc.seedSuffix}`;
+    const existing = await db
+      .select({ id: schema.nodes.id, properties: schema.nodes.properties })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.nodeCatalogId, catalogId),
+          eq(schema.nodes.title, doc.title),
+        ),
+      )
+      .limit(1);
+
+    if (existing[0]) {
+      if (doc.catalogKey === "hypothesis") {
+        hypothesisId = existing[0].id;
+      }
+      const props = existing[0].properties as Record<string, unknown>;
+      if (props.content) continue;
+
+      await db
+        .update(schema.nodes)
+        .set({
+          properties: {
+            ...props,
+            summary: doc.summary,
+            lifecycleStatus: doc.lifecycleStatus,
+            content: doc.content,
+            seed: seedKey,
+            ...doc.extraProperties,
+          },
+        })
+        .where(eq(schema.nodes.id, existing[0].id));
+      continue;
+    }
+
+    const [inserted] = await db
+      .insert(schema.nodes)
+      .values({
+        projectId,
+        nodeCatalogId: catalogId,
+        title: doc.title,
+        properties: {
+          lifecycleStatus: doc.lifecycleStatus,
+          summary: doc.summary,
+          content: doc.content,
+          seed: seedKey,
+          ...doc.extraProperties,
+        },
+        schemaVersion: 1,
+      })
+      .returning({ id: schema.nodes.id });
+
+    if (doc.catalogKey === "hypothesis") {
+      hypothesisId = inserted?.id;
+    }
+  }
+
+  return hypothesisId;
 }
 
 async function seedDemoOkr(

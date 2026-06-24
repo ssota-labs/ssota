@@ -157,7 +157,6 @@ async function prepareRun(input: RunAgentInput) {
   const engine = input.engine ?? createAiSdkLoopEngine();
 
   let connectionState: ConnectionRunState | undefined;
-  let qualifiedToolNames: string[] = [];
   let connectionSessionManager: McpSessionManager | undefined;
   let connectionTools = {};
 
@@ -172,7 +171,6 @@ async function prepareRun(input: RunAgentInput) {
       sessionManager: connectionSessionManager,
     });
     connectionTools = bundle.tools;
-    qualifiedToolNames = bundle.qualifiedToolNames;
   }
 
   const tools = {
@@ -195,7 +193,6 @@ async function prepareRun(input: RunAgentInput) {
     sandbox: input.sandbox,
     credentials: input.credentials,
     connectionState,
-    qualifiedToolNames,
     connectionSessionManager,
     maxSteps: input.maxSteps,
   };

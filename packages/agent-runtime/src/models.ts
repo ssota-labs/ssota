@@ -97,8 +97,8 @@ function promptContainsTrigger(prompt: unknown, trigger: string): boolean {
  * e2e without an AI Gateway key. Dev-only seam — not used in production.
  *
  * When the user message contains {@link STUB_CONNECTION_SEARCH_TRIGGER}, the
- * stub runs connection_search → linear__search_issues → a short text reply so
- * E2E can exercise progressive disclosure without a real model.
+ * stub runs connection_search → connection_call → a short text reply so
+ * E2E can exercise the MCP facade without a real model.
  */
 function stubModel(): LanguageModel {
   const defaultReply =
@@ -140,8 +140,11 @@ function stubModel(): LanguageModel {
           stream: simulateReadableStream({
             chunks: toolCallStreamChunks(
               "stub-linear-search",
-              "linear__search_issues",
-              { query: "e2e" },
+              "connection_call",
+              {
+                qualifiedName: "linear__search_issues",
+                args: { query: "e2e" },
+              },
             ) as never,
             chunkDelayInMs: 5,
           }),

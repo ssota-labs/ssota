@@ -12,18 +12,23 @@ import type { McpConnectionDef } from "../connections/define-mcp-connection.js";
 import { getConfiguredConnections } from "../connections/registry.js";
 import type { McpToolListing } from "../connections/filter-tools.js";
 import { McpSessionManager } from "../connections/mcp-session.js";
+import { inferConnectionIdFromQuery } from "../connections/tool-catalog.js";
 import {
-  getKnownToolsForConnection,
-  inferConnectionIdFromQuery,
-} from "../connections/tool-catalog.js";
+  rankToolsForQuery,
+  type ToolSearchCandidate,
+} from "../connections/tool-search.js";
 import {
   toQualifiedToolName,
   parseQualifiedToolName,
 } from "../connections/qualified-name.js";
-import type { ConnectionSearchResult } from "../connections/connection-search-result.js";
+import type {
+  ConnectionSearchResult,
+  ConnectionSearchMatch,
+} from "../connections/connection-search-result.js";
 import {
   ConnectionRunState,
   CONNECTION_SEARCH_TOOL,
+  CONNECTION_CALL_TOOL,
   REQUEST_CONNECTION_TOOL,
 } from "../connections/run-state.js";
 import {
@@ -42,7 +47,6 @@ export interface CreateConnectionToolsInput {
 
 export interface ConnectionToolsBundle {
   tools: ToolSet;
-  qualifiedToolNames: string[];
   connectionState: ConnectionRunState;
   sessionManager: McpSessionManager;
 }
@@ -54,102 +58,173 @@ interface InstallScope {
   subjectUserId: string | null;
 }
 
+interface SearchHitInternal extends ConnectionSearchMatch {
+  installationId: string | null;
+  installationName: string | null;
+}
+
 export async function createConnectionTools(
   input: CreateConnectionToolsInput,
 ): Promise<ConnectionToolsBundle> {
   const connections = getConfiguredConnections();
-  const port = input.accountId
-    ? createAccountConnectionPort(getDb())
-    : null;
+  const tools: ToolSet = {
+    [CONNECTION_SEARCH_TOOL]: buildConnectionSearchTool(connections, input),
+    [CONNECTION_CALL_TOOL]: buildConnectionCallTool(connections, input),
+    [REQUEST_CONNECTION_TOOL]: buildRequestConnectionTool(),
+  };
 
-  const qualifiedToolNames: string[] = [];
-  const tools: ToolSet = {};
+  return {
+    tools,
+    connectionState: input.connectionState,
+    sessionManager: input.sessionManager,
+  };
+}
+
+async function listInstallScopes(
+  connection: McpConnectionDef,
+  accountId: string | undefined,
+): Promise<InstallScope[]> {
+  const connectorUid = resolveConnectorUid(connection.auth.provider);
+  if (!connectorUid) return [];
+
+  if (!accountId) return [];
+
+  const port = createAccountConnectionPort(getDb());
+  return (
+    await port.listConnectCredentialScopesForProvider(accountId, connection.id)
+  ).map((row: ConnectCredentialScopeRecord) => ({
+    connectorUid: row.connector,
+    installationId: row.installationId,
+    installationName: row.installationName,
+    subjectUserId: row.subjectUserId,
+  }));
+}
+
+async function runConnectionSearch(
+  connections: McpConnectionDef[],
+  input: {
+    query: string;
+    connection?: string;
+    projectId: string;
+    accountId?: string;
+    credentials: CredentialProvider;
+    sessionManager: McpSessionManager;
+  },
+): Promise<{
+  result: ConnectionSearchResult;
+  internalHits: SearchHitInternal[];
+  rankedScores: Array<{ qualifiedName: string; score: number }>;
+}> {
+  const query = input.query.trim();
+  const connectionFilter =
+    input.connection ?? inferConnectionIdFromQuery(query.toLowerCase());
+
+  const result: ConnectionSearchResult = { connections: [], matched: [], errors: [] };
+  const candidates: ToolSearchCandidate[] = [];
 
   for (const connection of connections) {
+    if (connectionFilter && connectionFilter !== connection.id) {
+      continue;
+    }
+
     const connectorUid = resolveConnectorUid(connection.auth.provider);
-    if (!connectorUid) continue;
+    const installs = await listInstallScopes(connection, input.accountId);
 
-    const installs: InstallScope[] = input.accountId
-      ? (
-          await port!.listConnectCredentialScopesForProvider(
-            input.accountId,
-            connection.id,
-          )
-        ).map((row: ConnectCredentialScopeRecord) => ({
-          connectorUid: row.connector,
-          installationId: row.installationId,
-          installationName: row.installationName,
-          subjectUserId: row.subjectUserId,
-        }))
-      : [];
+    if (installs.length === 0) {
+      result.connections.push({
+        connection: connection.id,
+        description: connection.description,
+        connected: false,
+        installationId: null,
+        installationName: null,
+        connectorUid,
+      });
+      continue;
+    }
 
-    if (installs.length === 0) continue;
-
-    // Register qualified tool shells from the static catalog only — no MCP
-    // at run start. Live discovery + activation happens in connection_search.
     for (const install of installs) {
-      const listings = getKnownToolsForConnection(connection);
+      const connected =
+        (await input.credentials.getToken(install.connectorUid, {
+          projectId: input.projectId,
+          accountId: input.accountId,
+          installationId: install.installationId ?? undefined,
+          userId: install.subjectUserId ?? undefined,
+        })) !== null;
+
+      result.connections.push({
+        connection: connection.id,
+        description: connection.description,
+        connected,
+        installationId: install.installationId,
+        installationName: install.installationName,
+        connectorUid: install.connectorUid,
+      });
+
+      if (!connected) continue;
+
+      let listings: McpToolListing[] = [];
+      let listError: string | undefined;
+      try {
+        const listed = await input.sessionManager.listTools(connection, {
+          projectId: input.projectId,
+          accountId: input.accountId,
+          installationId: install.installationId,
+          userId: install.subjectUserId,
+        });
+        listings = listed.tools;
+        listError = listed.error;
+      } catch (error) {
+        listError = error instanceof Error ? error.message : String(error);
+        console.warn(
+          `[connection_search] listTools failed for ${connection.id}:`,
+          listError,
+        );
+      }
+
+      if (listError) {
+        result.errors?.push({
+          connection: connection.id,
+          installationId: install.installationId,
+          message: listError,
+        });
+      }
 
       for (const listing of listings) {
-        const qualifiedName = toQualifiedToolName(connection.id, listing.name);
-        if (tools[qualifiedName]) continue;
-        qualifiedToolNames.push(qualifiedName);
-
-        tools[qualifiedName] = tool({
-          description:
-            listing.description ??
-            `${connection.description} — ${listing.name}`,
-          inputSchema: z.record(z.unknown()),
-          execute: async (args, { experimental_context }) => {
-            const ctx = getRunContext(experimental_context);
-            const state = getConnectionRunState(experimental_context);
-            const parsed = parseQualifiedToolName(qualifiedName);
-            if (!parsed) {
-              throw new Error(`Invalid qualified tool name: ${qualifiedName}`);
-            }
-            const conn = connections.find((c) => c.id === parsed.connectionId);
-            if (!conn) {
-              throw new Error(`Unknown connection: ${parsed.connectionId}`);
-            }
-
-            const installationId =
-              state?.getInstallationId(parsed.connectionId) ??
-              install.installationId;
-
-            return input.sessionManager.callTool(
-              conn,
-              {
-                projectId: ctx.projectId,
-                accountId: ctx.accountId,
-                installationId,
-                userId: install.subjectUserId,
-              },
-              parsed.toolName,
-              args as Record<string, unknown>,
-            ).catch((error: unknown) => ({
-              ok: false as const,
-              connection: parsed.connectionId,
-              tool: parsed.toolName,
-              error: error instanceof Error ? error.message : String(error),
-            }));
-          },
+        candidates.push({
+          qualifiedName: toQualifiedToolName(connection.id, listing.name),
+          connection: connection.id,
+          tool: listing.name,
+          description: listing.description ?? "",
+          connectionDescription: connection.description,
+          installationName: install.installationName ?? "",
+          installationId: install.installationId,
         });
       }
     }
   }
 
-  tools[CONNECTION_SEARCH_TOOL] = buildConnectionSearchTool(
-    connections,
-    input,
-  );
-  tools[REQUEST_CONNECTION_TOOL] = buildRequestConnectionTool();
+  const ranked = rankToolsForQuery(candidates, query);
+  const internalHits: SearchHitInternal[] = ranked.map((hit) => ({
+    qualifiedName: hit.qualifiedName,
+    connection: hit.connection,
+    tool: hit.tool,
+    installationId: hit.installationId,
+    installationName: hit.installationName,
+  }));
+  result.matched = ranked.map((hit) => ({
+    qualifiedName: hit.qualifiedName,
+    connection: hit.connection,
+    tool: hit.tool,
+  }));
 
-  return {
-    tools,
-    qualifiedToolNames,
-    connectionState: input.connectionState,
-    sessionManager: input.sessionManager,
-  };
+  if (result.errors?.length === 0) {
+    delete result.errors;
+  }
+
+  return { result, internalHits, rankedScores: ranked.map((t) => ({
+    qualifiedName: t.qualifiedName,
+    score: t.score,
+  })) };
 }
 
 function buildConnectionSearchTool(
@@ -158,7 +233,7 @@ function buildConnectionSearchTool(
 ) {
   return tool({
     description:
-      "Discover tools across declared MCP connections. Matched tools become directly callable by their qualified name (e.g. linear__search_issues).",
+      "Discover MCP tools for connected third-party services. Pass a natural-language query; matched tools are invoked with connection_call (qualifiedName + args). Does not return full tool schemas — only matched names.",
     inputSchema: z.object({
       query: z
         .string()
@@ -174,148 +249,31 @@ function buildConnectionSearchTool(
       const ctx = getRunContext(experimental_context);
       const state = getConnectionRunState(experimental_context);
       const provider = getCredentialProvider(experimental_context);
-      const port = ctx.accountId
-        ? createAccountConnectionPort(getDb())
-        : null;
 
-      const query = searchInput.query.trim().toLowerCase();
-      // Match per whitespace term, not the whole phrase. `query` is a
-      // natural-language capability description (e.g. "slack messaging"), so a
-      // contiguous `includes(query)` substring test matches almost nothing —
-      // it silently dropped every tool even when listTools returned many.
-      const queryTerms = query.split(/\s+/).filter(Boolean);
-      const connectionFilter =
-        searchInput.connection ?? inferConnectionIdFromQuery(query);
       console.log(
         JSON.stringify({
           component: "connection_search",
           query: searchInput.query,
-          connectionFilter: connectionFilter ?? null,
+          connectionFilter: searchInput.connection ?? null,
           projectId: ctx.projectId,
           accountId: ctx.accountId ?? null,
         }),
       );
-      const result: ConnectionSearchResult = { connections: [], tools: [], errors: [] };
 
-      for (const connection of connections) {
-        if (connectionFilter && connectionFilter !== connection.id) {
-          continue;
-        }
+      const { result, internalHits, rankedScores } = await runConnectionSearch(
+        connections,
+        {
+          query: searchInput.query,
+          connection: searchInput.connection,
+          projectId: ctx.projectId,
+          accountId: ctx.accountId,
+          credentials: provider ?? input.credentials,
+          sessionManager: input.sessionManager,
+        },
+      );
 
-        const connectorUid = resolveConnectorUid(connection.auth.provider);
-        const installs: InstallScope[] =
-          ctx.accountId && port
-            ? (
-                await port.listConnectCredentialScopesForProvider(
-                  ctx.accountId,
-                  connection.id,
-                )
-              ).map((row: ConnectCredentialScopeRecord) => ({
-                connectorUid: row.connector,
-                installationId: row.installationId,
-                installationName: row.installationName,
-                subjectUserId: row.subjectUserId,
-              }))
-            : [];
+      state?.recordInstallations(internalHits);
 
-        if (installs.length === 0) {
-          result.connections.push({
-            connection: connection.id,
-            description: connection.description,
-            connected: false,
-            installationId: null,
-            installationName: null,
-            connectorUid,
-          });
-          continue;
-        }
-
-        for (const install of installs) {
-          const connected = provider
-            ? (await provider.getToken(install.connectorUid, {
-                projectId: ctx.projectId,
-                accountId: ctx.accountId,
-                installationId: install.installationId ?? undefined,
-                userId: install.subjectUserId ?? undefined,
-              })) !== null
-            : false;
-
-          result.connections.push({
-            connection: connection.id,
-            description: connection.description,
-            connected,
-            installationId: install.installationId,
-            installationName: install.installationName,
-            connectorUid: install.connectorUid,
-          });
-
-          if (!connected) continue;
-
-          let listings: McpToolListing[] = [];
-          let listError: string | undefined;
-          try {
-            const listed = await input.sessionManager.listTools(connection, {
-              projectId: ctx.projectId,
-              accountId: ctx.accountId,
-              installationId: install.installationId,
-              userId: install.subjectUserId,
-            });
-            listings = listed.tools;
-            listError = listed.error;
-          } catch (error) {
-            listError =
-              error instanceof Error ? error.message : String(error);
-            console.warn(
-              `[connection_search] listTools failed for ${connection.id}:`,
-              listError,
-            );
-          }
-
-          if (listError) {
-            result.errors?.push({
-              connection: connection.id,
-              installationId: install.installationId,
-              message: listError,
-            });
-          }
-
-          for (const listing of listings) {
-            const qualifiedName = toQualifiedToolName(
-              connection.id,
-              listing.name,
-            );
-            const haystack = [
-              qualifiedName,
-              listing.name,
-              listing.description ?? "",
-              connection.id,
-              connection.description,
-              install.installationName ?? "",
-            ]
-              .join(" ")
-              .toLowerCase();
-
-            // Loose recall: keep a tool if ANY query term appears. The model
-            // filters the returned set, so missing a relevant tool (empty
-            // result) is far worse than returning a superset.
-            if (!toolMatchesQuery(haystack, queryTerms)) continue;
-
-            result.tools.push({
-              qualifiedName,
-              connection: connection.id,
-              tool: listing.name,
-              description: listing.description ?? listing.name,
-              installationId: install.installationId,
-              installationName: install.installationName,
-            });
-          }
-        }
-      }
-
-      state?.activateFromSearch(result.tools);
-      if (result.errors?.length === 0) {
-        delete result.errors;
-      }
       console.log(
         JSON.stringify({
           component: "connection_search",
@@ -325,29 +283,83 @@ function buildConnectionSearchTool(
             connected: c.connected,
             installationId: c.installationId,
           })),
-          toolCount: result.tools.length,
-          tools: result.tools.map((t) => t.qualifiedName),
+          matchCount: result.matched.length,
+          matched: result.matched.map((t) => t.qualifiedName),
+          scores: rankedScores,
         }),
       );
+
       return result;
     },
   });
 }
 
-/**
- * Whether a tool's lowercased searchable text matches a tokenized query.
- *
- * `connection_search` takes a natural-language query ("slack messaging"), so the
- * original whole-phrase `haystack.includes(query)` matched almost nothing and
- * dropped every tool. We keep a tool when the query is empty or ANY whitespace
- * term appears — loose recall, since the model picks from the returned set.
- */
-export function toolMatchesQuery(
-  haystack: string,
-  queryTerms: readonly string[],
-): boolean {
-  if (queryTerms.length === 0) return true;
-  return queryTerms.some((term) => haystack.includes(term));
+function buildConnectionCallTool(
+  connections: McpConnectionDef[],
+  input: CreateConnectionToolsInput,
+) {
+  return tool({
+    description:
+      "Invoke an MCP tool by qualified name (e.g. linear__search_issues). Call connection_search first when unsure which tool fits. Args must match the remote tool schema.",
+    inputSchema: z.object({
+      qualifiedName: z
+        .string()
+        .describe("Qualified tool name from connection_search (connection__tool)."),
+      args: z
+        .record(z.unknown())
+        .describe("Arguments for the remote MCP tool."),
+    }),
+    execute: async (callInput, { experimental_context }) => {
+      const ctx = getRunContext(experimental_context);
+      const state = getConnectionRunState(experimental_context);
+      const parsed = parseQualifiedToolName(callInput.qualifiedName);
+      if (!parsed) {
+        throw new Error(
+          `Invalid qualified tool name: ${callInput.qualifiedName}`,
+        );
+      }
+
+      const connection = connections.find((c) => c.id === parsed.connectionId);
+      if (!connection) {
+        throw new Error(`Unknown connection: ${parsed.connectionId}`);
+      }
+
+      let installationId = state?.getInstallationId(parsed.connectionId) ?? null;
+      let subjectUserId: string | null = null;
+
+      if (!installationId && ctx.accountId) {
+        const installs = await listInstallScopes(connection, ctx.accountId);
+        const first = installs[0];
+        if (first) {
+          installationId = first.installationId;
+          subjectUserId = first.subjectUserId;
+        }
+      } else if (ctx.accountId) {
+        const installs = await listInstallScopes(connection, ctx.accountId);
+        const match = installs.find(
+          (i) => i.installationId === installationId,
+        );
+        subjectUserId = match?.subjectUserId ?? installs[0]?.subjectUserId ?? null;
+      }
+
+      return input.sessionManager.callTool(
+        connection,
+        {
+          projectId: ctx.projectId,
+          accountId: ctx.accountId,
+          installationId,
+          userId: subjectUserId,
+        },
+        parsed.toolName,
+        callInput.args,
+      ).catch((error: unknown) => ({
+        ok: false as const,
+        connection: parsed.connectionId,
+        tool: parsed.toolName,
+        error: error instanceof Error ? error.message : String(error),
+      }));
+    },
+  });
 }
 
 function buildRequestConnectionTool() {
