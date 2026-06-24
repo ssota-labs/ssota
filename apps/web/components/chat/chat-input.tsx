@@ -220,31 +220,31 @@ export function ChatInput({
       />
 
       <div className="flex items-center justify-between gap-2 px-1 pt-1">
-        <div className="flex items-center gap-1">
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="size-8 text-muted-foreground"
-            onClick={() => fileInputRef.current?.click()}
-            aria-label="이미지 첨부"
-          >
-            <PaperclipIcon className="size-4" />
-          </Button>
-          <ModelSelector value={model} onChange={onModelChange} disabled={isStreaming} />
-        </div>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="size-8 text-muted-foreground"
+          onClick={() => fileInputRef.current?.click()}
+          aria-label="이미지 첨부"
+        >
+          <PaperclipIcon className="size-4" />
+        </Button>
 
-        {isStreaming ? (
-          <Button type="button" size="icon" variant="secondary" onClick={onStop}>
-            <StopIcon className="size-4" weight="fill" />
-            <span className="sr-only">중지</span>
-          </Button>
-        ) : (
-          <Button type="submit" size="icon" disabled={!canSend}>
-            <ArrowUpIcon className="size-4" />
-            <span className="sr-only">전송</span>
-          </Button>
-        )}
+        <div className="flex items-center gap-1">
+          <ModelSelector value={model} onChange={onModelChange} disabled={isStreaming} />
+          {isStreaming ? (
+            <Button type="button" size="icon" variant="secondary" onClick={onStop}>
+              <StopIcon className="size-4" weight="fill" />
+              <span className="sr-only">중지</span>
+            </Button>
+          ) : (
+            <Button type="submit" size="icon" disabled={!canSend}>
+              <ArrowUpIcon className="size-4" />
+              <span className="sr-only">전송</span>
+            </Button>
+          )}
+        </div>
       </div>
     </form>
   );

@@ -83,7 +83,7 @@ export function ChatConversation({
         </div>
       </div>
 
-      <div className="border-t p-4">
+      <div className="p-4">
         <div className="mx-auto w-full max-w-3xl">
           <ChatInput
             isStreaming={isStreaming}

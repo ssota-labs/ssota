@@ -19,7 +19,7 @@ export function ChatThreadLoading() {
           </div>
         </div>
       </div>
-      <div className="border-t p-4">
+      <div className="p-4">
         <div className="mx-auto w-full max-w-3xl">
           <Skeleton className="h-24 w-full rounded-xl" />
         </div>
