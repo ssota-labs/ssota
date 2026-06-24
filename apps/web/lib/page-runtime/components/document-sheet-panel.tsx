@@ -127,9 +127,9 @@ export function DocumentSheetPanel({
       style={widthPx === null ? undefined : { width: widthPx }}
       className={cn(
         "border-border/60 absolute inset-y-2 right-0 z-20 flex flex-col overflow-hidden rounded-xl border",
-        "bg-background/60 shadow-lg shadow-black/5",
+        "bg-background/50 shadow-lg shadow-black/5",
         "supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150",
-        "supports-backdrop-filter:bg-background/50",
+        "supports-backdrop-filter:bg-background/40",
         "animate-in slide-in-from-right-4 fade-in duration-200",
         widthPx === null ? panelWidthClass[sheetSize] : "min-w-0",
       )}
@@ -143,7 +143,7 @@ export function DocumentSheetPanel({
         onMouseDown={handleResizeMouseDown}
         onPointerDown={handleResizePointerDown}
       />
-      <header className="border-border/50 bg-background/30 supports-backdrop-filter:backdrop-blur-md flex shrink-0 items-start gap-3 border-b px-4 py-3">
+      <header className="border-border/50 bg-background/20 supports-backdrop-filter:backdrop-blur-md flex shrink-0 items-start gap-3 border-b px-4 py-3">
         <div className="flex min-w-0 flex-1 items-start gap-2">
           {status ? (
             <DocumentStatusBadge status={status} className="mt-1 shrink-0" />
