@@ -6,8 +6,16 @@ export interface ConnectionSearchSummaryPayload {
   errors?: Array<{ connection?: string; message?: string }>;
 }
 
+export type ConnectionSearchSummaryTranslator = (
+  key: string,
+  vars?: Record<string, string | number>,
+) => string;
+
+const PREFIX = "chat.toolActivity.";
+
 export function summarizeConnectionSearchOutput(
   output: unknown,
+  t: ConnectionSearchSummaryTranslator,
 ): string | null {
   if (!output || typeof output !== "object") return null;
 
@@ -21,7 +29,8 @@ export function summarizeConnectionSearchOutput(
         ?.map((hit) => hit.tool ?? hit.qualifiedName?.split("__").pop())
         .filter((name): name is string => Boolean(name)) ?? [];
     const preview = toolLabels.slice(0, 3).join(", ");
-    const extra = count > 3 ? ` 외 ${count - 3}개` : "";
+    const extra =
+      count > 3 ? t(`${PREFIX}moreTools`, { count: count - 3 }) : "";
     const connectedNames = payload.connections
       ?.filter((c) => c.connected)
       .map((c) => c.connection)
@@ -29,10 +38,15 @@ export function summarizeConnectionSearchOutput(
 
     if (preview) {
       return connectedNames?.length
-        ? `${connectedNames.join(", ")} · ${count}개 도구 (${preview}${extra})`
-        : `${count}개 도구 (${preview}${extra})`;
+        ? t(`${PREFIX}toolsWithConnections`, {
+            connections: connectedNames.join(", "),
+            count,
+            preview,
+            extra,
+          })
+        : t(`${PREFIX}toolsPreview`, { count, preview, extra });
     }
-    return `${count}개 도구 발견`;
+    return t(`${PREFIX}toolsFound`, { count });
   }
 
   const connected = payload.connections?.filter((c) => c.connected) ?? [];
@@ -42,8 +56,11 @@ export function summarizeConnectionSearchOutput(
       .filter((name): name is string => Boolean(name))
       .join(", ");
     return names
-      ? `${connected.length}개 연결됨 · 검색 일치 도구 없음 (${names})`
-      : `${connected.length}개 연결됨 · 검색 일치 도구 없음`;
+      ? t(`${PREFIX}connectedNoMatchNames`, {
+          count: connected.length,
+          names,
+        })
+      : t(`${PREFIX}connectedNoMatch`, { count: connected.length });
   }
 
   const err = payload.errors?.[0];
@@ -51,5 +68,5 @@ export function summarizeConnectionSearchOutput(
     return err.connection ? `${err.connection}: ${err.message}` : err.message;
   }
 
-  return "연결된 도구 없음";
+  return t(`${PREFIX}noConnectedTools`);
 }

@@ -1,7 +1,11 @@
 "use client";
 
 import { SpinnerGapIcon, WrenchIcon } from "@phosphor-icons/react";
-import { summarizeConnectionSearchOutput } from "@/lib/chat/connection-search-summary";
+import { useLocale } from "@/components/i18n/locale-provider";
+import {
+  summarizeConnectionSearchOutput,
+  type ConnectionSearchSummaryTranslator,
+} from "@/lib/chat/connection-search-summary";
 
 type ToolActivityState =
   | "input-streaming"
@@ -23,34 +27,6 @@ function isVisibleToolName(toolName: string): boolean {
   return VISIBLE_TOOLS.has(toolName);
 }
 
-function labelForTool(toolName: string): string {
-  if (toolName === "connection_search") return "연결 검색";
-  if (toolName === "connection_call") return "연결 호출";
-  return toolName;
-}
-
-function summarizeOutput(toolName: string, output: unknown): string | null {
-  if (toolName === "connection_search") {
-    return summarizeConnectionSearchOutput(output);
-  }
-  if (toolName === "connection_call" && output && typeof output === "object") {
-    const record = output as { ok?: boolean; error?: string; stub?: boolean };
-    if (record.ok === false && record.error) {
-      return record.error;
-    }
-    if (record.stub) {
-      return "stub MCP 호출 완료";
-    }
-  }
-  if (output && typeof output === "object" && "ok" in output) {
-    const record = output as { ok?: boolean; error?: string };
-    if (record.ok === false && record.error) {
-      return record.error;
-    }
-  }
-  return null;
-}
-
 export function shouldShowToolActivity(toolName: string): boolean {
   return isVisibleToolName(toolName);
 }
@@ -61,11 +37,22 @@ export function ToolActivity({
   output,
   errorText,
 }: ToolActivityProps) {
-  const label = labelForTool(toolName);
+  const { t } = useLocale();
+
+  const label =
+    toolName === "connection_search"
+      ? t("chat.toolActivity.connectionSearch")
+      : toolName === "connection_call"
+        ? t("chat.toolActivity.connectionCall")
+        : toolName;
+
   const isRunning =
     state === "input-streaming" || state === "input-available";
+
   const summary =
-    state === "output-available" ? summarizeOutput(toolName, output) : null;
+    state === "output-available"
+      ? summarizeToolOutput(toolName, output, t)
+      : null;
   const error = state === "output-error" ? errorText : null;
 
   return (
@@ -80,7 +67,9 @@ export function ToolActivity({
       )}
       <div className="min-w-0 space-y-0.5">
         <p className="font-medium text-foreground/80">
-          {isRunning ? `${label} 실행 중…` : label}
+          {isRunning
+            ? t("chat.toolActivity.running", { label })
+            : label}
         </p>
         {summary ? <p className="break-words">{summary}</p> : null}
         {error ? (
@@ -89,4 +78,30 @@ export function ToolActivity({
       </div>
     </div>
   );
+}
+
+function summarizeToolOutput(
+  toolName: string,
+  output: unknown,
+  t: ConnectionSearchSummaryTranslator,
+): string | null {
+  if (toolName === "connection_search") {
+    return summarizeConnectionSearchOutput(output, t);
+  }
+  if (toolName === "connection_call" && output && typeof output === "object") {
+    const record = output as { ok?: boolean; error?: string; stub?: boolean };
+    if (record.ok === false && record.error) {
+      return record.error;
+    }
+    if (record.stub) {
+      return t("chat.toolActivity.stubCallComplete");
+    }
+  }
+  if (output && typeof output === "object" && "ok" in output) {
+    const record = output as { ok?: boolean; error?: string };
+    if (record.ok === false && record.error) {
+      return record.error;
+    }
+  }
+  return null;
 }
