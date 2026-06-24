@@ -92,8 +92,13 @@ async function listInstallScopes(
   if (!accountId) return [];
 
   const port = createAccountConnectionPort(getDb());
+  // Match install rows by the exact configured connector uid, NOT the provider
+  // segment. An MCP connector uid (`mcp.notion.com/ssota-notion`) has a
+  // different leading segment than the provider id ("notion"), so the
+  // provider-based listing would never find its rows — the connection would show
+  // as "not connected" even with a valid recorded grant.
   return (
-    await port.listConnectCredentialScopesForProvider(accountId, connection.id)
+    await port.listConnectCredentialScopes(accountId, connectorUid)
   ).map((row: ConnectCredentialScopeRecord) => ({
     connectorUid: row.connector,
     installationId: row.installationId,
