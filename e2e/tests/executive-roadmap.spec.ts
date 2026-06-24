@@ -69,6 +69,31 @@ test.describe("Executive roadmap", () => {
     await expect(page.getByTestId("document-sheet-panel")).not.toBeVisible();
   });
 
+  test("widens sheet panel from left resize handle", async ({ page }) => {
+    await page.getByTestId("planning-roadmap-card-q1").click();
+    const panel = page.getByTestId("document-sheet-panel");
+    await expect(panel).toBeVisible();
+
+    const before = await panel.boundingBox();
+    const handle = page.getByTestId("document-sheet-resize-handle");
+    await expect(handle).toBeVisible();
+    const handleBox = await handle.boundingBox();
+    expect(before).not.toBeNull();
+    expect(handleBox).not.toBeNull();
+
+    const centerY = handleBox!.y + handleBox!.height / 2;
+    const startX = handleBox!.x + handleBox!.width / 2;
+    await page.mouse.move(startX, centerY);
+    await page.mouse.down();
+    await page.mouse.move(startX - 200, centerY, { steps: 12 });
+    await page.mouse.up();
+    await page.waitForTimeout(100);
+
+    const after = await panel.boundingBox();
+    expect(after).not.toBeNull();
+    expect(after!.width).toBeGreaterThan(before!.width);
+  });
+
   test("creates quarter roadmap and opens sheet without BlockNote error", async ({
     page,
   }) => {

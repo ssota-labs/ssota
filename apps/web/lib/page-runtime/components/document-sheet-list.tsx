@@ -53,10 +53,10 @@ export function DocumentSheetListEl({
 
   return (
     <div
-      className="absolute inset-0 flex flex-col overflow-hidden p-4 md:p-6"
+      className="absolute inset-0 flex flex-col"
       data-testid="document-sheet-list"
     >
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4">
         <div className="space-y-3">
         {sectionTitle ? (
           <header className="space-y-1 border-b pb-3">
@@ -84,16 +84,18 @@ export function DocumentSheetListEl({
                 )}
                 onClick={() => setActiveId(node.id)}
               >
-                <div className="min-w-0 flex-1 space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-medium">{node.title}</span>
-                    {status ? <DocumentStatusBadge status={status} /> : null}
-                  </div>
-                  {subtitle ? (
-                    <p className="text-muted-foreground line-clamp-2 text-xs">
-                      {subtitle}
-                    </p>
+                <div className="flex min-w-0 flex-1 items-start gap-2">
+                  {status ? (
+                    <DocumentStatusBadge status={status} className="mt-0.5 shrink-0" />
                   ) : null}
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <span className="text-sm font-medium">{node.title}</span>
+                    {subtitle ? (
+                      <p className="text-muted-foreground line-clamp-2 text-xs">
+                        {subtitle}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
                 <CaretRightIcon
                   className="text-muted-foreground size-4 shrink-0"

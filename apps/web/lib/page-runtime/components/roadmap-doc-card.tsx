@@ -64,14 +64,16 @@ export function RoadmapDocCard({
       className="border-border bg-card hover:bg-muted/40 group flex w-full items-center gap-3 rounded-lg border p-4 text-left transition-colors"
       onClick={onOpen}
     >
-      <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold">{title}</h3>
-          {status ? <DocumentStatusBadge status={status} /> : null}
-        </div>
-        {subtitle ? (
-          <p className="text-muted-foreground line-clamp-2 text-xs">{subtitle}</p>
+      <div className="flex min-w-0 flex-1 items-start gap-2">
+        {status ? (
+          <DocumentStatusBadge status={status} className="mt-0.5 shrink-0" />
         ) : null}
+        <div className="min-w-0 flex-1 space-y-1">
+          <h3 className="text-sm font-semibold">{title}</h3>
+          {subtitle ? (
+            <p className="text-muted-foreground line-clamp-2 text-xs">{subtitle}</p>
+          ) : null}
+        </div>
       </div>
       <CaretRightIcon
         className="text-muted-foreground size-4 shrink-0 opacity-70 transition-transform group-hover:translate-x-0.5"
