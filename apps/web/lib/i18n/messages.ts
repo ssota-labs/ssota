@@ -301,6 +301,22 @@ export const en = {
       baseline_pending: "Baseline pending",
     },
   },
+  chat: {
+    toolActivity: {
+      connectionSearch: "Connection search",
+      connectionCall: "Connection call",
+      running: "{label} running…",
+      toolsWithConnections: "{connections} · {count} tools ({preview}{extra})",
+      toolsPreview: "{count} tools ({preview}{extra})",
+      toolsFound: "{count} tools found",
+      connectedNoMatchNames:
+        "{count} connected · no matching tools ({names})",
+      connectedNoMatch: "{count} connected · no matching tools",
+      noConnectedTools: "No connected tools",
+      moreTools: " +{count} more",
+      stubCallComplete: "Stub MCP call completed",
+    },
+  },
   connections: {
     title: "Connections",
     description:
@@ -654,6 +670,22 @@ export const ko = {
       partial: "부분 달성",
       missed: "미달",
       baseline_pending: "기준선 대기",
+    },
+  },
+  chat: {
+    toolActivity: {
+      connectionSearch: "연결 검색",
+      connectionCall: "연결 호출",
+      running: "{label} 실행 중…",
+      toolsWithConnections: "{connections} · {count}개 도구 ({preview}{extra})",
+      toolsPreview: "{count}개 도구 ({preview}{extra})",
+      toolsFound: "{count}개 도구 발견",
+      connectedNoMatchNames:
+        "{count}개 연결됨 · 검색 일치 도구 없음 ({names})",
+      connectedNoMatch: "{count}개 연결됨 · 검색 일치 도구 없음",
+      noConnectedTools: "연결된 도구 없음",
+      moreTools: " 외 {count}개",
+      stubCallComplete: "stub MCP 호출 완료",
     },
   },
   connections: {
