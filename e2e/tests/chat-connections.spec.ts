@@ -407,5 +407,50 @@ test.describe("Connections + Chat", () => {
           .getByText(/connection_search.*stub MCP/i),
       ).toBeVisible({ timeout: 60_000 });
     });
+
+    test("assistant reply persists after page refresh", async ({ page }) => {
+      await gotoChat(page);
+      await sendChatMessage(page, "ping from e2e refresh");
+
+      await expect(page.getByText("ping from e2e refresh")).toBeVisible();
+      await expect(
+        page.getByTestId("assistant-message").getByText(/stub agent/i),
+      ).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByRole("button", { name: "전송" })).toBeVisible();
+
+      await page.reload();
+      await expect(chatComposer(page)).toBeVisible();
+      await expect(page.getByText("ping from e2e refresh")).toBeVisible();
+      await expect(
+        page.getByTestId("assistant-message").getByText(/stub agent/i),
+      ).toBeVisible({ timeout: 15_000 });
+    });
+
+    test("tool activity persists after page refresh", async ({ page }) => {
+      await gotoProject(page, "connections");
+      await page.getByTestId("connect-linear").click();
+      await expect(
+        page.getByTestId("connector-linear").getByTestId("connection-row"),
+      ).toHaveCount(1);
+
+      await gotoChat(page);
+      await sendChatMessage(
+        page,
+        `${STUB_CONNECTION_SEARCH_TRIGGER} find linear issues`,
+      );
+
+      await expect(
+        page.getByTestId("tool-activity-connection_search"),
+      ).toBeVisible({ timeout: 60_000 });
+      await expect(page.getByRole("button", { name: "전송" })).toBeVisible({
+        timeout: 60_000,
+      });
+
+      await page.reload();
+      await expect(chatComposer(page)).toBeVisible();
+      await expect(
+        page.getByTestId("tool-activity-connection_search"),
+      ).toBeVisible({ timeout: 15_000 });
+    });
   });
 });
