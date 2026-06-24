@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "accelerator-application": {
+      "source": "shawnpang/startup-founder-skills",
+      "sourceType": "github",
+      "skillPath": "skills/accelerator-application/SKILL.md",
+      "computedHash": "f28c440ac6393b8b63e21563677afc87022b554b57f4b56e9115c9340cb1a049"
+    },
     "agent-browser": {
       "source": "vercel-labs/agent-browser",
       "sourceType": "github",
@@ -42,6 +48,12 @@
       "sourceType": "github",
       "skillPath": "skills/frontend-design/SKILL.md",
       "computedHash": "4eabc66183767153e404b39d1b839b1c37f2d82d86f0a0d7e880a579d8d62336"
+    },
+    "gstack": {
+      "source": "garrytan/gstack",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "d64c411237c1bbd77937c7cf4dc29cc7730453c61d9b1984d520ac8233056d58"
     },
     "next-best-practices": {
       "source": "vercel-labs/next-skills",
