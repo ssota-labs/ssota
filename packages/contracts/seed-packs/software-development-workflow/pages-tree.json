@@ -92,8 +92,34 @@
     "appliesToNodeType": null,
     "title": "Market research",
     "icon": "research_market",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Market research", "columns": [{ "key": "title", "header": "Title" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "market_research" } }
+    "spec": {
+      "root": "list",
+      "elements": {
+        "list": {
+          "type": "DocumentSheetList",
+          "props": {
+            "binding": "rows",
+            "sectionTitle": "Market research",
+            "sectionSubtitle": "Market sizing, competitors, and trend notes",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
+            "action": "saveDoc"
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "market_research" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$input": "nodeId" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "research/user",
@@ -101,8 +127,34 @@
     "appliesToNodeType": null,
     "title": "User research",
     "icon": "research_user",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "User research", "columns": [{ "key": "title", "header": "Title" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "user_research" } }
+    "spec": {
+      "root": "list",
+      "elements": {
+        "list": {
+          "type": "DocumentSheetList",
+          "props": {
+            "binding": "rows",
+            "sectionTitle": "User research",
+            "sectionSubtitle": "Interviews, surveys, and usability findings",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
+            "action": "saveDoc"
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "user_research" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$input": "nodeId" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "research/hypotheses",
@@ -110,8 +162,34 @@
     "appliesToNodeType": null,
     "title": "Hypotheses",
     "icon": "research_hypotheses",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Hypotheses", "columns": [{ "key": "title", "header": "Hypothesis" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "hypothesis" } }
+    "spec": {
+      "root": "list",
+      "elements": {
+        "list": {
+          "type": "DocumentSheetList",
+          "props": {
+            "binding": "rows",
+            "sectionTitle": "Hypotheses",
+            "sectionSubtitle": "Product bets to validate with research and delivery",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
+            "action": "saveDoc"
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "hypothesis" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$input": "nodeId" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "manager",
