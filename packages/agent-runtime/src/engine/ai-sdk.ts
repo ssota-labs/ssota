@@ -118,6 +118,12 @@ export function createAiSdkLoopEngine(): LoopEngine {
           for await (const chunk of result.toUIMessageStream()) {
             await writer.write(chunk);
           }
+          await writer.close();
+        } catch (error) {
+          await writer.abort(
+            error instanceof Error ? error : new Error(String(error)),
+          );
+          throw error;
         } finally {
           writer.releaseLock();
         }

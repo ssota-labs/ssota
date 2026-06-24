@@ -81,10 +81,16 @@ export function createChatPort(db: Db, scope: ChatScope) {
 
     /** Most recent thread for the scope, or null. */
     async latestThread(): Promise<ChatThreadRecord | null> {
+      const where = accountId
+        ? and(
+            eq(chatThreads.projectId, projectId),
+            eq(chatThreads.accountId, accountId),
+          )
+        : eq(chatThreads.projectId, projectId);
       const [row] = await db
         .select()
         .from(chatThreads)
-        .where(eq(chatThreads.projectId, projectId))
+        .where(where)
         .orderBy(desc(chatThreads.updatedAt))
         .limit(1);
       return row ?? null;
@@ -103,6 +109,28 @@ export function createChatPort(db: Db, scope: ChatScope) {
         parts: (r.parts ?? []) as unknown[],
         createdAt: r.createdAt,
       }));
+    },
+
+    async deleteThread(threadId: string): Promise<boolean> {
+      const thread = await db
+        .select()
+        .from(chatThreads)
+        .where(
+          and(eq(chatThreads.id, threadId), eq(chatThreads.projectId, projectId)),
+        )
+        .limit(1)
+        .then((rows) => rows[0] ?? null);
+      if (!thread) return false;
+      if (accountId !== null && thread.accountId !== accountId) {
+        return false;
+      }
+      const result = await db
+        .delete(chatThreads)
+        .where(
+          and(eq(chatThreads.id, threadId), eq(chatThreads.projectId, projectId)),
+        )
+        .returning({ id: chatThreads.id });
+      return result.length > 0;
     },
 
     async appendMessage(

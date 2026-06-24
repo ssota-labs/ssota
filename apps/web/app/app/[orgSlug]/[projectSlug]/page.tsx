@@ -16,5 +16,5 @@ export default async function AppProjectHome({
     redirect(appProjectPath({ orgSlug, projectSlug }, "p", pageLinks[0].pageId));
   }
 
-  redirect(appProjectPath({ orgSlug, projectSlug }, "chat"));
+  redirect(appProjectPath({ orgSlug, projectSlug }, "c"));
 }

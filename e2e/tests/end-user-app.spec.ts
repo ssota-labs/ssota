@@ -11,7 +11,7 @@ test.describe("end-user app", () => {
   test("app_enabled gate: disabled project returns 404", async ({ page }) => {
     await loginAsSmoke(page);
     const response = await page.goto(
-      `/app/${DEFAULT_ORG_SLUG}/app-disabled/chat`,
+      `/app/${DEFAULT_ORG_SLUG}/app-disabled/c`,
     );
     expect(response?.status()).toBe(404);
   });
@@ -20,7 +20,7 @@ test.describe("end-user app", () => {
     page,
   }) => {
     await loginAsSmoke(page);
-    await page.goto(`${DEFAULT_APP_BASE}/chat`);
+    await page.goto(`${DEFAULT_APP_BASE}/c`);
     await expect(page.getByRole("button", { name: "새 채팅" })).toBeVisible({
       timeout: 15_000,
     });

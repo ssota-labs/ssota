@@ -17,6 +17,16 @@ const bodySchema = z.object({
   appMode: z.boolean().optional(),
 });
 
+function chatBasePath(
+  orgSlug: string,
+  projectSlug: string,
+  appMode?: boolean,
+): string {
+  return appMode
+    ? appProjectPath({ orgSlug, projectSlug }, "c")
+    : projectPath({ orgSlug, projectSlug }, "c");
+}
+
 /** Create a fresh chat thread for the resolved project's workspace account. */
 export async function POST(request: Request) {
   const user = await getCurrentUser().catch(() => null);
@@ -38,9 +48,7 @@ export async function POST(request: Request) {
   }
 
   const { project } = await resolveProject(body.orgSlug, body.projectSlug);
-  const returnTo = body.appMode
-    ? appProjectPath({ orgSlug: body.orgSlug, projectSlug: body.projectSlug }, "chat")
-    : projectPath({ orgSlug: body.orgSlug, projectSlug: body.projectSlug }, "chat");
+  const returnTo = chatBasePath(body.orgSlug, body.projectSlug, body.appMode);
 
   let scope;
   try {

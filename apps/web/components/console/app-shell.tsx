@@ -13,7 +13,8 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isChat = pathname.includes("/chat");
+  const isChat =
+    pathname.includes("/c/") || pathname.endsWith("/c");
   const isFullBleed = isChat;
 
   return (

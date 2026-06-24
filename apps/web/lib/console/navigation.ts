@@ -43,7 +43,7 @@ export const L0_NAV: NavEntry[] = [
     pattern: "H",
   },
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
-  { type: "link", key: "chat", labelKey: "nav.chat", href: "chat", pattern: "L" },
+  { type: "link", key: "chat", labelKey: "nav.chat", href: "c", pattern: "L" },
   {
     type: "link",
     key: "connections",
@@ -120,7 +120,7 @@ export function buildBreadcrumbSegments(
   if (relative === "tasks" || relative.startsWith("tasks/")) {
     return [{ labelKey: "nav.tasks" }];
   }
-  if (relative === "chat" || relative.startsWith("chat/")) {
+  if (relative === "c" || relative.startsWith("c/")) {
     return [{ labelKey: "nav.chat" }];
   }
   if (relative === "connections" || relative.startsWith("connections/")) {

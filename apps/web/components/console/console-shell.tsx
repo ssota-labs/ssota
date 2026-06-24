@@ -44,7 +44,7 @@ export function ConsoleShell({
 }: ConsoleShellProps) {
   const pathname = usePathname();
   const isTasksContext = pathname.includes(`/${ctx.projectSlug}/tasks`);
-  const isChatContext = pathname.includes(`/${ctx.projectSlug}/chat`);
+  const isChatContext = pathname.includes(`/${ctx.projectSlug}/c`);
   const isDesignStudio = pathname.includes("/design/ui-components");
   const isFullBleedContext = isTasksContext || isChatContext || isDesignStudio;
 

@@ -46,7 +46,7 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
         </span>
         <CaretUpDownIcon className="size-3.5" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-56">
+      <DropdownMenuContent align="end" className="w-56">
         {groups.map((group, gi) => (
           <DropdownMenuGroup key={group.provider}>
             {gi > 0 ? <DropdownMenuSeparator /> : null}

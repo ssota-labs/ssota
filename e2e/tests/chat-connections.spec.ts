@@ -34,7 +34,7 @@ function chatComposer(page: Page) {
 }
 
 async function gotoChat(page: Page) {
-  await gotoProject(page, "chat");
+  await gotoProject(page, "c");
   await expect(chatComposer(page)).toBeVisible();
 }
 
@@ -192,6 +192,36 @@ test.describe("Connections + Chat", () => {
       await expect(send).toBeEnabled();
     });
 
+    test("composer clears fully after Enter send with trailing IME composition", async ({
+      page,
+    }) => {
+      await gotoChat(page);
+      const input = chatComposer(page);
+      await input.fill("~~~해줘");
+      await input.press("Enter");
+      await expect(page.getByText("~~~해줘")).toBeVisible();
+      await expect(input).toHaveValue("");
+
+      // Late compositionend can re-inject the last jamo after a controlled clear.
+      await input.evaluate((el) => {
+        const textarea = el as HTMLTextAreaElement;
+        textarea.dispatchEvent(
+          new CompositionEvent("compositionstart", { bubbles: true }),
+        );
+        textarea.dispatchEvent(
+          new CompositionEvent("compositionend", { bubbles: true, data: "줘" }),
+        );
+        const setter = Object.getOwnPropertyDescriptor(
+          HTMLTextAreaElement.prototype,
+          "value",
+        )?.set;
+        setter?.call(textarea, "줘");
+        textarea.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+
+      await expect(input).toHaveValue("");
+    });
+
     test("model selector switches the active model", async ({ page }) => {
       await gotoChat(page);
 
@@ -314,10 +344,29 @@ test.describe("Connections + Chat", () => {
       await expect(page.getByText("first thread message")).toBeVisible();
 
       await page.getByRole("button", { name: "새 채팅" }).click();
-      await expect(page).toHaveURL(/\/chat\?thread=/);
+      await expect(page).toHaveURL(/\/c\/[0-9a-f-]{36}$/);
       await expect(
         page.getByText("메시지를 보내 대화를 시작하세요"),
       ).toBeVisible({ timeout: 10_000 });
+    });
+
+    test("delete chat removes thread from sidebar", async ({ page }) => {
+      await gotoChat(page);
+      await sendChatMessage(page, "thread to delete");
+      await expect(page.getByText("thread to delete")).toBeVisible();
+
+      const threadRow = page
+        .locator("aside")
+        .filter({ has: page.getByRole("button", { name: "새 채팅" }) })
+        .locator(".group")
+        .filter({ hasText: /New chat/i })
+        .first();
+      await expect(threadRow).toBeVisible();
+      await threadRow.hover();
+      await threadRow.getByRole("button", { name: "채팅 삭제" }).click();
+
+      await expect(page).toHaveURL(/\/c\/(new|[0-9a-f-]{36})/);
+      await expect(page.getByText("thread to delete")).toHaveCount(0);
     });
 
     test("sends a message and streams the agent reply", async ({ page }) => {
@@ -330,6 +379,8 @@ test.describe("Connections + Chat", () => {
       await expect(
         page.getByTestId("assistant-message").getByText(/stub agent/i),
       ).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByRole("button", { name: "중지" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "전송" })).toBeVisible();
     });
 
     test("connection_search then linear__search_issues via stub model", async ({
