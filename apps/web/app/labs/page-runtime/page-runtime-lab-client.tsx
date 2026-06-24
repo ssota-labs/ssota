@@ -198,6 +198,17 @@ export function LabsHomeLinks() {
           </p>
         </Link>
       </li>
+      <li>
+        <Link
+          href="/labs/tasks-board"
+          className="border-border hover:bg-muted/40 block rounded-lg border p-4 transition-colors"
+        >
+          <h2 className="font-medium">Tasks Board Lab</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            kibo-ui kanban board for the tasks workspace, with mock data.
+          </p>
+        </Link>
+      </li>
     </ul>
   );
 }
