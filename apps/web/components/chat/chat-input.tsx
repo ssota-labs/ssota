@@ -45,6 +45,9 @@ export function ChatInput({
   const [isDragging, setIsDragging] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isComposingRef = useRef(false);
+  /** Ignore stale IME onChange/compositionEnd briefly after send. */
+  const ignoreStaleInputUntilRef = useRef(0);
 
   const mention = useMentionSuggestions(orgSlug, projectSlug);
   const attach = useImageAttachments(projectId);
@@ -70,11 +73,23 @@ export function ChatInput({
     return true;
   }
 
+  function shouldIgnoreStaleInput() {
+    return performance.now() < ignoreStaleInputUntilRef.current;
+  }
+
+  function syncInput(next: string, cursor?: number) {
+    setValue(next);
+    mention.refresh(next, cursor ?? next.length);
+    resize();
+  }
+
   function submit() {
-    const text = value.trim();
+    const el = textareaRef.current;
+    const text = (el?.value ?? value).trim();
     const files = attach.getFileParts();
     if ((!text && files.length === 0) || isStreaming || attach.uploading) return;
     onSend(text, files);
+    ignoreStaleInputUntilRef.current = performance.now() + 100;
     setValue("");
     attach.clear();
     mention.close();
@@ -145,9 +160,29 @@ export function ChatInput({
         placeholder="메시지를 입력하세요…  (@로 멘션)"
         className="max-h-[200px] w-full resize-none bg-transparent px-2 py-1.5 text-sm focus:outline-none"
         onChange={(e) => {
-          setValue(e.target.value);
-          mention.refresh(e.target.value, e.target.selectionStart ?? e.target.value.length);
-          resize();
+          if (shouldIgnoreStaleInput()) {
+            setValue("");
+            return;
+          }
+          syncInput(
+            e.target.value,
+            e.target.selectionStart ?? e.target.value.length,
+          );
+        }}
+        onCompositionStart={() => {
+          isComposingRef.current = true;
+        }}
+        onCompositionEnd={(e) => {
+          isComposingRef.current = false;
+          if (shouldIgnoreStaleInput()) {
+            setValue("");
+            requestAnimationFrame(resize);
+            return;
+          }
+          syncInput(
+            e.currentTarget.value,
+            e.currentTarget.selectionStart ?? e.currentTarget.value.length,
+          );
         }}
         onClick={(e) => {
           const el = e.currentTarget;
@@ -175,6 +210,9 @@ export function ChatInput({
             return;
           }
           if (e.key === "Enter" && !e.shiftKey) {
+            if (e.nativeEvent.isComposing || isComposingRef.current) {
+              return;
+            }
             e.preventDefault();
             submit();
           }
