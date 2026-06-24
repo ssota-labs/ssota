@@ -51,10 +51,54 @@ describe("collectAssistantMessageParts", () => {
     );
 
     expect(parts).not.toBeNull();
-    expect(parts).toHaveLength(3);
+    expect(parts).toHaveLength(4);
     expect(parts!.map((p) => p.type)).toEqual([
+      "step-start",
       "text",
       "tool-connection_search",
+      "text",
+    ]);
+  });
+
+  it("persists reasoning, sources, file, and data parts", async () => {
+    const parts = await collectAssistantMessageParts(
+      chunkStream([
+        { type: "start", messageId: "msg-2" },
+        { type: "start-step" },
+        { type: "reasoning-start", id: "reason-1" },
+        { type: "reasoning-delta", id: "reason-1", delta: "Checking connectors…" },
+        { type: "reasoning-end", id: "reason-1" },
+        {
+          type: "source-url",
+          sourceId: "src-1",
+          url: "https://example.com/docs",
+          title: "Docs",
+        },
+        {
+          type: "file",
+          url: "https://example.com/image.png",
+          mediaType: "image/png",
+        },
+        {
+          type: "data-status",
+          id: "data-1",
+          data: { phase: "search" },
+        },
+        { type: "text-start", id: "text-1" },
+        { type: "text-delta", id: "text-1", delta: "Done." },
+        { type: "text-end", id: "text-1" },
+        { type: "finish-step" },
+        { type: "finish", finishReason: "stop" },
+      ]),
+    );
+
+    expect(parts).not.toBeNull();
+    expect(parts!.map((p) => p.type)).toEqual([
+      "step-start",
+      "reasoning",
+      "source-url",
+      "file",
+      "data-status",
       "text",
     ]);
   });

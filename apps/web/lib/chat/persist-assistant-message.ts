@@ -1,18 +1,20 @@
 import {
-  isToolUIPart,
+  isReasoningUIPart,
+  isTextUIPart,
   readUIMessageStream,
   type UIMessage,
   type UIMessageChunk,
 } from "ai";
 
+/**
+ * Keep every assistant UI part for faithful DB rehydration. UI may choose not to
+ * render some types (reasoning, sources, step boundaries, etc.).
+ */
 function isPersistablePart(part: UIMessage["parts"][number]): boolean {
-  if (part.type === "step-start") return false;
-  if (part.type === "text") {
-    const text = (part as { text?: string }).text;
-    return typeof text === "string" && text.trim().length > 0;
+  if (isTextUIPart(part) || isReasoningUIPart(part)) {
+    return part.text.trim().length > 0;
   }
-  if (isToolUIPart(part)) return true;
-  return false;
+  return true;
 }
 
 /** Reconstruct the final assistant UIMessage parts from a UI message stream. */
