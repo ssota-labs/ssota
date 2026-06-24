@@ -16,29 +16,27 @@ interface ToolActivityProps {
   errorText?: string;
 }
 
-const VISIBLE_TOOLS = new Set(["connection_search"]);
+const VISIBLE_TOOLS = new Set(["connection_search", "connection_call"]);
 
 function isVisibleToolName(toolName: string): boolean {
-  return VISIBLE_TOOLS.has(toolName) || toolName.includes("__");
+  return VISIBLE_TOOLS.has(toolName);
 }
 
 function labelForTool(toolName: string): string {
   if (toolName === "connection_search") return "연결 검색";
-  if (toolName.includes("__")) {
-    const [connection, tool] = toolName.split("__");
-    return `${connection} · ${tool}`;
-  }
+  if (toolName === "connection_call") return "연결 호출";
   return toolName;
 }
 
 function summarizeOutput(toolName: string, output: unknown): string | null {
   if (toolName === "connection_search" && output && typeof output === "object") {
     const payload = output as {
+      matched?: Array<{ qualifiedName?: string }>;
       tools?: Array<{ qualifiedName?: string }>;
       errors?: Array<{ connection?: string; message?: string }>;
     };
-    const tools = payload.tools;
-    const count = tools?.length ?? 0;
+    const matched = payload.matched ?? payload.tools;
+    const count = matched?.length ?? 0;
     if (count > 0) return `${count}개 도구 발견`;
     const err = payload.errors?.[0];
     if (err?.message) {
@@ -47,6 +45,15 @@ function summarizeOutput(toolName: string, output: unknown): string | null {
         : err.message;
     }
     return "연결된 도구 없음";
+  }
+  if (toolName === "connection_call" && output && typeof output === "object") {
+    const record = output as { ok?: boolean; error?: string; stub?: boolean };
+    if (record.ok === false && record.error) {
+      return record.error;
+    }
+    if (record.stub) {
+      return "stub MCP 호출 완료";
+    }
   }
   if (output && typeof output === "object" && "ok" in output) {
     const record = output as { ok?: boolean; error?: string };

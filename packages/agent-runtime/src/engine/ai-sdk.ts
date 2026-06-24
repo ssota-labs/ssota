@@ -1,9 +1,5 @@
 import { stepCountIs, ToolLoopAgent, type UIMessageChunk } from "ai";
 import { z } from "zod";
-import {
-  buildActiveTools,
-  syncConnectionRunStateFromSteps,
-} from "../connections/activate-tools.js";
 import { ConnectionRunState } from "../connections/run-state.js";
 import { gateway } from "../models.js";
 import type {
@@ -32,7 +28,6 @@ function buildAgent(input: LoopEngineRunInput) {
     sandbox,
     credentials,
     connectionState,
-    qualifiedToolNames = [],
     maxSteps = DEFAULT_MAX_STEPS,
   } = input;
 
@@ -53,22 +48,6 @@ function buildAgent(input: LoopEngineRunInput) {
         connectionState: runState,
       },
     }),
-    prepareStep: ({ steps }) => {
-      syncConnectionRunStateFromSteps(runState, steps);
-      const sandboxTools = sandbox
-        ? ["sandbox_exec", "sandbox_read_file", "sandbox_write_file"]
-        : [];
-      if (qualifiedToolNames.length === 0) {
-        return {};
-      }
-      return {
-        activeTools: buildActiveTools(
-          runState,
-          qualifiedToolNames,
-          sandboxTools,
-        ),
-      };
-    },
   });
 }
 
@@ -77,6 +56,9 @@ function buildAgent(input: LoopEngineRunInput) {
  * and wrapped by Vercel Workflow for durability (decision: ToolLoopAgent +
  * "use workflow"). The per-run SSOTA scope rides in `experimental_context` so
  * every tool resolves its `projectId`/`accountId` without rebinding.
+ *
+ * MCP tools use a stable facade (`connection_search`, `connection_call`) so the
+ * tools prefix never changes between steps — prompt-cache friendly.
  */
 export function createAiSdkLoopEngine(): LoopEngine {
   return {
