@@ -58,10 +58,23 @@ export function normalizeMcpToolArgs(
 ): Record<string, unknown> {
   const normalized = { ...args };
 
-  for (const [from, to] of Object.entries(COMMON_ARG_ALIASES)) {
-    if (from in normalized && !(to in normalized)) {
-      normalized[to] = normalized[from];
-      delete normalized[from];
+  // Apply alias remapping only when the schema confirms it helps: the target
+  // name is a real property and the source name is not. Without this guard a
+  // blind rename clobbers correct args — e.g. Slack's `slack_send_message`
+  // actually takes `message`, so remapping `message`→`text` would drop it and
+  // trip the "Missing required args: message" check below.
+  const schemaProps = schema?.properties;
+  if (schemaProps) {
+    for (const [from, to] of Object.entries(COMMON_ARG_ALIASES)) {
+      if (
+        from in normalized &&
+        !(to in normalized) &&
+        to in schemaProps &&
+        !(from in schemaProps)
+      ) {
+        normalized[to] = normalized[from];
+        delete normalized[from];
+      }
     }
   }
 
