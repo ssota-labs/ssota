@@ -147,10 +147,11 @@ export function ChatHistorySidebar({
                   key={thread.id}
                   className={cn(
                     "group flex items-stretch gap-0.5 rounded-lg pr-1 transition-colors",
-                    isActive
-                      ? "bg-secondary text-secondary-foreground"
-                      : "hover:bg-secondary/60",
-                    isConfirming && "bg-destructive/5",
+                    isConfirming
+                      ? "bg-destructive/10 text-destructive"
+                      : isActive
+                        ? "bg-secondary text-secondary-foreground"
+                        : "hover:bg-secondary/60",
                   )}
                   onMouseLeave={() => {
                     if (isConfirming) cancelDelete();
@@ -162,10 +163,20 @@ export function ChatHistorySidebar({
                     onClick={cancelDelete}
                   >
                     <span className="flex items-center gap-2 truncate font-medium">
-                      <ChatCircleIcon className="size-3.5 shrink-0 opacity-60" />
+                      <ChatCircleIcon
+                        className={cn(
+                          "size-3.5 shrink-0 opacity-60",
+                          isConfirming && "text-destructive opacity-80",
+                        )}
+                      />
                       <span className="truncate">{thread.title}</span>
                     </span>
-                    <span className="pl-5 text-xs text-muted-foreground">
+                    <span
+                      className={cn(
+                        "pl-5 text-xs text-muted-foreground",
+                        isConfirming && "text-destructive/70",
+                      )}
+                    >
                       {formatWhen(thread.updatedAt)}
                     </span>
                   </Link>
