@@ -11,12 +11,25 @@ import {
 import { Button } from "@ssota/ui/components/ui/button";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
-import { deleteChatThreadAction } from "@/lib/chat/actions";
+import {
+  createChatThreadAction,
+  deleteChatThreadAction,
+} from "@/lib/chat/actions";
 
 export interface ThreadSummary {
   id: string;
   title: string;
   updatedAt: string;
+}
+
+const PENDING_THREAD_PREFIX = "pending:";
+
+type OptimisticThreadAction =
+  | { type: "add"; thread: ThreadSummary }
+  | { type: "delete"; id: string };
+
+function isPendingThreadId(id: string): boolean {
+  return id.startsWith(PENDING_THREAD_PREFIX);
 }
 
 interface ChatHistorySidebarProps {
@@ -42,7 +55,8 @@ function formatWhen(iso: string): string {
 
 /**
  * Left rail listing past chat threads. Navigates via `/c/[threadId]` routes;
- * "새 채팅" goes to `/c/new` immediately (server creates the thread).
+ * "새 채팅" optimistically inserts a sidebar row, then creates the thread via
+ * server action and navigates to `/c/[threadId]`.
  */
 export function ChatHistorySidebar({
   threads,
@@ -56,10 +70,19 @@ export function ChatHistorySidebar({
   const params = useParams();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pendingNewChatId, setPendingNewChatId] = useState<string | null>(null);
   const [isDeleting, startDelete] = useTransition();
-  const [optimisticThreads, removeOptimisticThread] = useOptimistic(
+  const [isCreating, startCreate] = useTransition();
+  const [optimisticThreads, dispatchOptimisticThreads] = useOptimistic(
     threads,
-    (state, deletedId: string) => state.filter((t) => t.id !== deletedId),
+    (state, action: OptimisticThreadAction) => {
+      switch (action.type) {
+        case "add":
+          return [action.thread, ...state];
+        case "delete":
+          return state.filter((t) => t.id !== action.id);
+      }
+    },
   );
 
   const activeThreadId =
@@ -81,9 +104,39 @@ export function ChatHistorySidebar({
   }, [confirmingId]);
 
   function newChat() {
+    if (isCreating) return;
+
     setError(null);
     setConfirmingId(null);
-    router.push(`${chatBase}/new`);
+
+    const pendingId = `${PENDING_THREAD_PREFIX}${crypto.randomUUID()}`;
+    const optimisticThread: ThreadSummary = {
+      id: pendingId,
+      title: "New chat",
+      updatedAt: new Date().toISOString(),
+    };
+
+    setPendingNewChatId(pendingId);
+
+    startCreate(async () => {
+      dispatchOptimisticThreads({ type: "add", thread: optimisticThread });
+
+      try {
+        const thread = await createChatThreadAction({
+          orgSlug,
+          projectSlug,
+          appMode,
+          chatBase,
+        });
+        setPendingNewChatId(null);
+        router.push(`${chatBase}/${thread.id}`);
+        router.refresh();
+      } catch (e) {
+        setPendingNewChatId(null);
+        setError(e instanceof Error ? e.message : "새 채팅 만들기 실패");
+        router.refresh();
+      }
+    });
   }
 
   function requestDelete(threadId: string) {
@@ -104,7 +157,7 @@ export function ChatHistorySidebar({
     const remaining = threads.filter((t) => t.id !== threadId);
 
     startDelete(async () => {
-      removeOptimisticThread(threadId);
+      dispatchOptimisticThreads({ type: "delete", id: threadId });
 
       try {
         await deleteChatThreadAction({
@@ -134,6 +187,7 @@ export function ChatHistorySidebar({
           variant="outline"
           className="w-full justify-start gap-2"
           onClick={newChat}
+          disabled={isCreating}
         >
           <PlusIcon className="size-4" />
           새 채팅
@@ -151,7 +205,9 @@ export function ChatHistorySidebar({
             </p>
           ) : (
             optimisticThreads.map((thread) => {
-              const isActive = thread.id === activeThreadId;
+              const isPending = isPendingThreadId(thread.id);
+              const isActive =
+                thread.id === activeThreadId || thread.id === pendingNewChatId;
               const isConfirming = confirmingId === thread.id;
               return (
                 <div
@@ -165,30 +221,52 @@ export function ChatHistorySidebar({
                         : "hover:bg-secondary/60",
                   )}
                 >
-                  <Link
-                    href={`${chatBase}/${thread.id}`}
-                    className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2 text-sm"
-                    onClick={cancelDelete}
-                  >
-                    <span className="flex items-center gap-2 truncate font-medium">
-                      <ChatCircleIcon
+                  {isPending ? (
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2 text-sm">
+                      <span className="flex items-center gap-2 truncate font-medium">
+                        <ChatCircleIcon
+                          className={cn(
+                            "size-3.5 shrink-0 opacity-60",
+                            isConfirming && "text-destructive opacity-80",
+                          )}
+                        />
+                        <span className="truncate">{thread.title}</span>
+                      </span>
+                      <span
                         className={cn(
-                          "size-3.5 shrink-0 opacity-60",
-                          isConfirming && "text-destructive opacity-80",
+                          "pl-5 text-xs text-muted-foreground",
+                          isConfirming && "text-destructive/70",
                         )}
-                      />
-                      <span className="truncate">{thread.title}</span>
-                    </span>
-                    <span
-                      className={cn(
-                        "pl-5 text-xs text-muted-foreground",
-                        isConfirming && "text-destructive/70",
-                      )}
+                      >
+                        {formatWhen(thread.updatedAt)}
+                      </span>
+                    </div>
+                  ) : (
+                    <Link
+                      href={`${chatBase}/${thread.id}`}
+                      className="flex min-w-0 flex-1 flex-col gap-0.5 px-3 py-2 text-sm"
+                      onClick={cancelDelete}
                     >
-                      {formatWhen(thread.updatedAt)}
-                    </span>
-                  </Link>
-                  {isConfirming ? (
+                      <span className="flex items-center gap-2 truncate font-medium">
+                        <ChatCircleIcon
+                          className={cn(
+                            "size-3.5 shrink-0 opacity-60",
+                            isConfirming && "text-destructive opacity-80",
+                          )}
+                        />
+                        <span className="truncate">{thread.title}</span>
+                      </span>
+                      <span
+                        className={cn(
+                          "pl-5 text-xs text-muted-foreground",
+                          isConfirming && "text-destructive/70",
+                        )}
+                      >
+                        {formatWhen(thread.updatedAt)}
+                      </span>
+                    </Link>
+                  )}
+                  {isPending ? null : isConfirming ? (
                     <Button
                       type="button"
                       variant="destructive"
