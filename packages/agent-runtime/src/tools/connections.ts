@@ -179,6 +179,11 @@ function buildConnectionSearchTool(
         : null;
 
       const query = searchInput.query.trim().toLowerCase();
+      // Match per whitespace term, not the whole phrase. `query` is a
+      // natural-language capability description (e.g. "slack messaging"), so a
+      // contiguous `includes(query)` substring test matches almost nothing —
+      // it silently dropped every tool even when listTools returned many.
+      const queryTerms = query.split(/\s+/).filter(Boolean);
       const connectionFilter =
         searchInput.connection ?? inferConnectionIdFromQuery(query);
       console.log(
@@ -290,7 +295,10 @@ function buildConnectionSearchTool(
               .join(" ")
               .toLowerCase();
 
-            if (query && !haystack.includes(query)) continue;
+            // Loose recall: keep a tool if ANY query term appears. The model
+            // filters the returned set, so missing a relevant tool (empty
+            // result) is far worse than returning a superset.
+            if (!toolMatchesQuery(haystack, queryTerms)) continue;
 
             result.tools.push({
               qualifiedName,
@@ -324,6 +332,22 @@ function buildConnectionSearchTool(
       return result;
     },
   });
+}
+
+/**
+ * Whether a tool's lowercased searchable text matches a tokenized query.
+ *
+ * `connection_search` takes a natural-language query ("slack messaging"), so the
+ * original whole-phrase `haystack.includes(query)` matched almost nothing and
+ * dropped every tool. We keep a tool when the query is empty or ANY whitespace
+ * term appears — loose recall, since the model picks from the returned set.
+ */
+export function toolMatchesQuery(
+  haystack: string,
+  queryTerms: readonly string[],
+): boolean {
+  if (queryTerms.length === 0) return true;
+  return queryTerms.some((term) => haystack.includes(term));
 }
 
 function buildRequestConnectionTool() {
