@@ -33,7 +33,8 @@ export interface AppendChatMessageInput {
 /**
  * Persistence for in-app web chat (multi-turn). Threads + messages are scoped to
  * a project account; the `/api/chat/web` route appends the user turn, replays
- * prior turns into the agent, then appends the assistant turn on finish.
+ * prior turns into the agent, then the main-agent workflow appends the assistant
+ * turn when the durable run finishes.
  */
 export function createChatPort(db: Db, scope: ChatScope) {
   const { projectId } = scope;
