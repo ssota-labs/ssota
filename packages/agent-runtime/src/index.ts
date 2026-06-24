@@ -55,7 +55,7 @@ export {
   createVercelOidcVerifier,
   type OidcWebhookVerifier,
 } from "./credentials/oidc.js";
-export { buildRunInstructions, LAYER0_RUNTIME_PROMPTS } from "./runtime-prompt.js";
+export { buildRunInstructions, COMMUNICATION_STYLE, LAYER0_RUNTIME_PROMPTS } from "./runtime-prompt.js";
 export { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
 export { gateway, DEFAULT_MODEL_ID, STUB_CONNECTION_SEARCH_TRIGGER } from "./models.js";
 export {
