@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { XIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
@@ -72,13 +72,10 @@ export function DocumentSheetPanel({
     setWidthPx(null);
   }, [node.id, sheetSize]);
 
-  const handleResizePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    event.preventDefault();
-
+  const beginResize = (startX: number) => {
     const panel = panelRef.current;
     if (!panel) return;
 
-    const startX = event.clientX;
     const startWidth = panel.getBoundingClientRect().width;
     if (minWidthPxRef.current === null) {
       minWidthPxRef.current = startWidth;
@@ -86,7 +83,7 @@ export function DocumentSheetPanel({
     const minWidth = minWidthPxRef.current;
     const maxWidth = readMaxPanelWidth(panel);
 
-    const onPointerMove = (moveEvent: globalThis.PointerEvent) => {
+    const onMove = (moveEvent: MouseEvent | globalThis.PointerEvent) => {
       const delta = startX - moveEvent.clientX;
       const nextWidth = Math.min(
         maxWidth,
@@ -95,13 +92,29 @@ export function DocumentSheetPanel({
       setWidthPx(nextWidth);
     };
 
-    const onPointerUp = () => {
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", onPointerUp);
+    const onUp = () => {
+      document.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseup", onUp);
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
     };
 
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("mousemove", onMove);
+    document.addEventListener("mouseup", onUp);
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  };
+
+  const handleResizePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+    beginResize(event.clientX);
+  };
+
+  const handleResizeMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    beginResize(event.clientX);
   };
 
   return (
@@ -127,6 +140,7 @@ export function DocumentSheetPanel({
         aria-label="Resize panel"
         data-testid="document-sheet-resize-handle"
         className="hover:bg-primary/20 active:bg-primary/30 absolute top-0 bottom-0 left-0 z-30 w-1.5 -translate-x-1/2 cursor-col-resize touch-none"
+        onMouseDown={handleResizeMouseDown}
         onPointerDown={handleResizePointerDown}
       />
       <header className="border-border/50 bg-background/30 supports-backdrop-filter:backdrop-blur-md flex shrink-0 items-start gap-3 border-b px-4 py-3">

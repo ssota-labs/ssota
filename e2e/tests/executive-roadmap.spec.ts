@@ -82,10 +82,12 @@ test.describe("Executive roadmap", () => {
     expect(handleBox).not.toBeNull();
 
     const centerY = handleBox!.y + handleBox!.height / 2;
-    await page.mouse.move(handleBox!.x + handleBox!.width / 2, centerY);
+    const startX = handleBox!.x + handleBox!.width / 2;
+    await page.mouse.move(startX, centerY);
     await page.mouse.down();
-    await page.mouse.move(handleBox!.x - 120, centerY);
+    await page.mouse.move(startX - 200, centerY, { steps: 12 });
     await page.mouse.up();
+    await page.waitForTimeout(100);
 
     const after = await panel.boundingBox();
     expect(after).not.toBeNull();
