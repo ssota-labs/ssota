@@ -2,10 +2,14 @@ import { Badge } from "@ssota/ui/components/ui/badge";
 import { cn } from "@ssota/ui/lib/utils";
 
 const STATUS_STYLES: Record<string, string> = {
-  draft: "border-border bg-muted/60 text-muted-foreground",
-  review: "border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-100",
-  approved: "border-sky-500/40 bg-sky-500/15 text-sky-900 dark:text-sky-100",
-  active: "border-emerald-500/40 bg-emerald-500/15 text-emerald-900 dark:text-emerald-100",
+  draft:
+    "!border-border !bg-muted/80 !text-muted-foreground",
+  review:
+    "!border-amber-500/50 !bg-amber-500/25 !text-amber-950 dark:!text-amber-100",
+  approved:
+    "!border-sky-500/50 !bg-sky-500/25 !text-sky-950 dark:!text-sky-100",
+  active:
+    "!border-emerald-500/50 !bg-emerald-500/25 !text-emerald-950 dark:!text-emerald-100",
 };
 
 function normalizeStatus(value: string): string {
