@@ -32,6 +32,16 @@ export interface ConnectorDef {
   multiWorkspace: boolean;
   /** Connector uid from env (`provider/config-name`), or null if unconfigured. */
   connectorUid: string | null;
+  /**
+   * Whether the configured connector is a Vercel Connect **MCP-type** connector
+   * (its own OAuth via the hosted MCP server's authorization server, e.g.
+   * `mcp.notion.com/ssota`) rather than a provider API OAuth connector
+   * (`notion/ssota`). Derived from the connector uid — MCP connectors mint a
+   * single user-subject grant with no per-workspace installation id, so the UI
+   * renders them as a single "MCP Connected" state instead of the
+   * per-workspace install list.
+   */
+  isMcp: boolean;
 }
 
 const ENV_KEYS: Record<ConnectorProvider, string> = {
@@ -42,7 +52,7 @@ const ENV_KEYS: Record<ConnectorProvider, string> = {
   discord: "DISCORD_CONNECT_CONNECTOR",
 };
 
-const REGISTRY: Omit<ConnectorDef, "connectorUid">[] = [
+const REGISTRY: Omit<ConnectorDef, "connectorUid" | "isMcp">[] = [
   {
     provider: "slack",
     label: "Slack",
@@ -70,12 +80,30 @@ const REGISTRY: Omit<ConnectorDef, "connectorUid">[] = [
   },
 ];
 
+/**
+ * A connector is MCP-type when its uid host is a hosted MCP server, e.g.
+ * `mcp.notion.com/ssota`. Vercel Connect's "MCP" connection type names the
+ * connector after the MCP server host (`mcp.<provider>.com`), whereas an API
+ * OAuth connector is named after the provider (`notion/ssota`). We key off that
+ * `mcp.` host so the distinction needs no extra config or env var — a single
+ * `*_CONNECT_CONNECTOR` per provider holds whichever connector the deployment
+ * chose, and its type is self-describing.
+ */
+export function isMcpConnector(connectorUid: string | null | undefined): boolean {
+  if (!connectorUid) return false;
+  return providerOf(connectorUid).startsWith("mcp.");
+}
+
 /** Resolve the connector registry with per-deployment env configuration. */
 export function getConnectors(): ConnectorDef[] {
-  return REGISTRY.map((def) => ({
-    ...def,
-    connectorUid: process.env[ENV_KEYS[def.provider]] ?? null,
-  }));
+  return REGISTRY.map((def) => {
+    const connectorUid = process.env[ENV_KEYS[def.provider]] ?? null;
+    return {
+      ...def,
+      connectorUid,
+      isMcp: isMcpConnector(connectorUid),
+    };
+  });
 }
 
 /** Default OAuth scopes when starting Connect authorization, per provider. */

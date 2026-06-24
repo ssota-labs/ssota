@@ -1,6 +1,22 @@
 import { mcpScopesForConnector } from "@ssota/agent-runtime/connect-scopes";
 import { describe, expect, it } from "vitest";
-import { resolveAuthorizeScopes } from "./connectors";
+import { isMcpConnector, resolveAuthorizeScopes } from "./connectors";
+
+describe("isMcpConnector", () => {
+  it("treats mcp.* host uids as MCP-type", () => {
+    expect(isMcpConnector("mcp.notion.com/ssota")).toBe(true);
+  });
+
+  it("treats provider uids as API/OAuth (non-MCP)", () => {
+    expect(isMcpConnector("notion/ssota")).toBe(false);
+    expect(isMcpConnector("slack/ssota")).toBe(false);
+  });
+
+  it("returns false when unconfigured", () => {
+    expect(isMcpConnector(null)).toBe(false);
+    expect(isMcpConnector(undefined)).toBe(false);
+  });
+});
 
 describe("resolveAuthorizeScopes", () => {
   it("returns explicit scopes when provided", () => {
