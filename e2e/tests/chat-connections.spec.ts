@@ -350,7 +350,7 @@ test.describe("Connections + Chat", () => {
       ).toBeVisible({ timeout: 10_000 });
     });
 
-    test("new chat button optimistically adds sidebar item before navigation", async ({
+    test("new chat button optimistically adds sidebar item and navigates immediately", async ({
       page,
     }) => {
       await gotoChat(page);
@@ -359,36 +359,20 @@ test.describe("Connections + Chat", () => {
         .locator("aside")
         .filter({ has: page.getByRole("button", { name: "새 채팅" }) });
       const countBefore = await sidebar.locator(".group").count();
-
-      let releaseCreate: () => void = () => {};
-      const createGate = new Promise<void>((resolve) => {
-        releaseCreate = resolve;
-      });
-
-      await page.route("**/*", async (route) => {
-        const request = route.request();
-        if (
-          request.method() === "POST" &&
-          request.headers()["next-action"]
-        ) {
-          await createGate;
-        }
-        await route.continue();
-      });
-
       const urlBefore = page.url();
+
       await page.getByRole("button", { name: "새 채팅" }).click();
 
       await expect(sidebar.locator(".group")).toHaveCount(countBefore + 1, {
-        timeout: 2_000,
+        timeout: 500,
       });
-      await expect(page).toHaveURL(urlBefore);
-
-      releaseCreate();
-      await expect(page).toHaveURL(/\/c\/[0-9a-f-]{36}$/, { timeout: 10_000 });
+      await expect(page).not.toHaveURL(urlBefore, { timeout: 1_000 });
+      await expect(page).toHaveURL(/\/c\/(new|[0-9a-f-]{36})/, {
+        timeout: 1_000,
+      });
       await expect(
         page.getByText("메시지를 보내 대화를 시작하세요"),
-      ).toBeVisible();
+      ).toBeVisible({ timeout: 10_000 });
     });
 
     test("delete chat removes thread from sidebar", async ({ page }) => {

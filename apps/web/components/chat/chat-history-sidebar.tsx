@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { useEffect, useOptimistic, useState, useTransition } from "react";
+import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
 import {
   PlusIcon,
   ChatCircleIcon,
@@ -11,10 +11,7 @@ import {
 import { Button } from "@ssota/ui/components/ui/button";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
-import {
-  createChatThreadAction,
-  deleteChatThreadAction,
-} from "@/lib/chat/actions";
+import { deleteChatThreadAction } from "@/lib/chat/actions";
 
 export interface ThreadSummary {
   id: string;
@@ -55,8 +52,8 @@ function formatWhen(iso: string): string {
 
 /**
  * Left rail listing past chat threads. Navigates via `/c/[threadId]` routes;
- * "새 채팅" optimistically inserts a sidebar row, then creates the thread via
- * server action and navigates to `/c/[threadId]`.
+ * "새 채팅" optimistically inserts a sidebar row and navigates to `/c/new`
+ * immediately; the server route creates the thread and redirects to `/c/[threadId]`.
  */
 export function ChatHistorySidebar({
   threads,
@@ -70,9 +67,11 @@ export function ChatHistorySidebar({
   const params = useParams();
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [pendingNewChatId, setPendingNewChatId] = useState<string | null>(null);
+  const [pendingNewChat, setPendingNewChat] = useState<ThreadSummary | null>(
+    null,
+  );
   const [isDeleting, startDelete] = useTransition();
-  const [isCreating, startCreate] = useTransition();
+  const [, startCreate] = useTransition();
   const [optimisticThreads, dispatchOptimisticThreads] = useOptimistic(
     threads,
     (state, action: OptimisticThreadAction) => {
@@ -88,9 +87,24 @@ export function ChatHistorySidebar({
   const activeThreadId =
     typeof params.threadId === "string" ? params.threadId : undefined;
 
+  const sidebarThreads = useMemo(() => {
+    if (!pendingNewChat) return optimisticThreads;
+    if (optimisticThreads.some((thread) => thread.id === pendingNewChat.id)) {
+      return optimisticThreads;
+    }
+    return [pendingNewChat, ...optimisticThreads];
+  }, [optimisticThreads, pendingNewChat]);
+
   useEffect(() => {
     setConfirmingId(null);
   }, [threads]);
+
+  useEffect(() => {
+    if (!pendingNewChat) return;
+    if (activeThreadId && !isPendingThreadId(activeThreadId)) {
+      setPendingNewChat(null);
+    }
+  }, [activeThreadId, pendingNewChat]);
 
   useEffect(() => {
     if (!confirmingId) return;
@@ -104,8 +118,6 @@ export function ChatHistorySidebar({
   }, [confirmingId]);
 
   function newChat() {
-    if (isCreating) return;
-
     setError(null);
     setConfirmingId(null);
 
@@ -116,26 +128,11 @@ export function ChatHistorySidebar({
       updatedAt: new Date().toISOString(),
     };
 
-    setPendingNewChatId(pendingId);
+    setPendingNewChat(optimisticThread);
 
-    startCreate(async () => {
+    startCreate(() => {
       dispatchOptimisticThreads({ type: "add", thread: optimisticThread });
-
-      try {
-        const thread = await createChatThreadAction({
-          orgSlug,
-          projectSlug,
-          appMode,
-          chatBase,
-        });
-        setPendingNewChatId(null);
-        router.push(`${chatBase}/${thread.id}`);
-        router.refresh();
-      } catch (e) {
-        setPendingNewChatId(null);
-        setError(e instanceof Error ? e.message : "새 채팅 만들기 실패");
-        router.refresh();
-      }
+      router.push(`${chatBase}/new`);
     });
   }
 
@@ -187,7 +184,6 @@ export function ChatHistorySidebar({
           variant="outline"
           className="w-full justify-start gap-2"
           onClick={newChat}
-          disabled={isCreating}
         >
           <PlusIcon className="size-4" />
           새 채팅
@@ -199,15 +195,18 @@ export function ChatHistorySidebar({
 
       <ScrollArea className="min-h-0 flex-1">
         <nav className="flex flex-col gap-0.5 px-2 pb-3">
-          {optimisticThreads.length === 0 ? (
+          {sidebarThreads.length === 0 ? (
             <p className="px-2 py-6 text-center text-xs text-muted-foreground">
               아직 대화가 없습니다
             </p>
           ) : (
-            optimisticThreads.map((thread) => {
+            sidebarThreads.map((thread) => {
               const isPending = isPendingThreadId(thread.id);
               const isActive =
-                thread.id === activeThreadId || thread.id === pendingNewChatId;
+                thread.id === activeThreadId ||
+                (isPending &&
+                  (thread.id === pendingNewChat?.id ||
+                    pathname === `${chatBase}/new`));
               const isConfirming = confirmingId === thread.id;
               return (
                 <div
