@@ -19,12 +19,16 @@ const KNOWN_TOOLS_BY_CONNECTION: Record<string, McpToolListing[]> = {
   ],
   slack: [
     {
-      name: "search_messages",
-      description: "Search messages across the Slack workspace.",
+      name: "slack_search_channels",
+      description: "Search channels by name or description.",
     },
     {
-      name: "post_message",
-      description: "Post a message to a Slack channel.",
+      name: "slack_send_message",
+      description: "Send a message to a Slack channel or user.",
+    },
+    {
+      name: "slack_read_channel",
+      description: "Read messages from a Slack channel.",
     },
   ],
   github: [

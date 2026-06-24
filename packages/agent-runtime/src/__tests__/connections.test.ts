@@ -56,8 +56,8 @@ describe("tool catalog", () => {
     });
     expect(def.transport).toBe("http");
     const names = getKnownToolsForConnection(def).map((t) => t.name);
-    expect(names).toContain("post_message");
-    expect(names).toContain("search_messages");
+    expect(names).toContain("slack_send_message");
+    expect(names).toContain("slack_search_channels");
   });
 
   it("infers connection id from Korean and English service names", () => {
@@ -91,12 +91,24 @@ describe("defineMcpClientConnection", () => {
 });
 
 describe("ConnectionRunState", () => {
-  it("records installation scope from search hits", () => {
+  it("records installation scope and args schema from search hits", () => {
     const state = new ConnectionRunState();
     state.recordInstallations([
-      { connection: "linear", installationId: "inst-1" },
+      {
+        connection: "linear",
+        installationId: "inst-1",
+        qualifiedName: "linear__search_issues",
+        argsSchema: {
+          required: ["query"],
+          properties: { query: "string" },
+        },
+      },
     ]);
     expect(state.getInstallationId("linear")).toBe("inst-1");
+    expect(state.getArgsSchema("linear__search_issues")).toEqual({
+      required: ["query"],
+      properties: { query: "string" },
+    });
   });
 });
 

@@ -17,6 +17,7 @@ import {
   rankToolsForQuery,
   type ToolSearchCandidate,
 } from "../connections/tool-search.js";
+import type { CompactArgsSchema } from "../connections/mcp-tool-schema.js";
 import {
   toQualifiedToolName,
   parseQualifiedToolName,
@@ -61,6 +62,7 @@ interface InstallScope {
 interface SearchHitInternal extends ConnectionSearchMatch {
   installationId: string | null;
   installationName: string | null;
+  argsSchema?: CompactArgsSchema;
 }
 
 export async function createConnectionTools(
@@ -198,6 +200,7 @@ async function runConnectionSearch(
           connectionDescription: connection.description,
           installationName: install.installationName ?? "",
           installationId: install.installationId,
+          argsSchema: listing.inputSchema as CompactArgsSchema | undefined,
         });
       }
     }
@@ -210,11 +213,13 @@ async function runConnectionSearch(
     tool: hit.tool,
     installationId: hit.installationId,
     installationName: hit.installationName,
+    argsSchema: hit.argsSchema,
   }));
   result.matched = ranked.map((hit) => ({
     qualifiedName: hit.qualifiedName,
     connection: hit.connection,
     tool: hit.tool,
+    ...(hit.argsSchema ? { argsSchema: hit.argsSchema } : {}),
   }));
 
   if (result.errors?.length === 0) {
@@ -233,7 +238,7 @@ function buildConnectionSearchTool(
 ) {
   return tool({
     description:
-      "Discover MCP tools for connected third-party services. Pass a natural-language query; matched tools are invoked with connection_call (qualifiedName + args). Does not return full tool schemas — only matched names.",
+      "Discover MCP tools for connected third-party services. Pass a natural-language query; matched tools are invoked with connection_call (qualifiedName + args). Returns matched tool names and compact argsSchema hints. Call once per user request or new capability — reuse prior results in the same conversation.",
     inputSchema: z.object({
       query: z
         .string()
@@ -300,7 +305,7 @@ function buildConnectionCallTool(
 ) {
   return tool({
     description:
-      "Invoke an MCP tool by qualified name (e.g. linear__search_issues). Call connection_search first when unsure which tool fits. Args must match the remote tool schema.",
+      "Invoke an MCP tool by qualifiedName (e.g. slack__slack_send_message). Reuse qualifiedName from an earlier connection_search in this conversation. Pass args using the exact parameter names from argsSchema (e.g. channel_id and text for Slack messages).",
     inputSchema: z.object({
       qualifiedName: z
         .string()
@@ -352,6 +357,9 @@ function buildConnectionCallTool(
         },
         parsed.toolName,
         callInput.args,
+        {
+          argsSchema: state?.getArgsSchema(callInput.qualifiedName),
+        },
       ).catch((error: unknown) => ({
         ok: false as const,
         connection: parsed.connectionId,

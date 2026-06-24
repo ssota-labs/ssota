@@ -1,6 +1,8 @@
 /** Default max tools returned from connection_search (Claude tool search returns 3–5). */
 export const DEFAULT_TOOL_SEARCH_LIMIT = 5;
 
+import type { CompactArgsSchema } from "./mcp-tool-schema.js";
+
 export interface ToolSearchDocument {
   qualifiedName: string;
   connection: string;
@@ -8,6 +10,7 @@ export interface ToolSearchDocument {
   description: string;
   connectionDescription: string;
   installationName: string;
+  argsSchema?: CompactArgsSchema;
 }
 
 export interface ToolSearchCandidate extends ToolSearchDocument {

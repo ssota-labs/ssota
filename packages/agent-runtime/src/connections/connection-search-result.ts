@@ -1,10 +1,16 @@
 import { z } from "zod";
 
-/** Minimal hit returned to the model — no MCP listTools payload or descriptions. */
+export const connectionSearchArgsSchema = z.object({
+  required: z.array(z.string()).optional(),
+  properties: z.record(z.string()),
+});
+
+/** Matched tool hit — includes compact arg hints so connection_call uses correct names. */
 export const connectionSearchMatchSchema = z.object({
   qualifiedName: z.string(),
   connection: z.string(),
   tool: z.string(),
+  argsSchema: connectionSearchArgsSchema.optional(),
 });
 
 export const connectionSearchConnectionSchema = z.object({
