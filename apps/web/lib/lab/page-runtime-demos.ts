@@ -99,6 +99,38 @@ const mockTasksLarge = Array.from({ length: 24 }, (_, i) => {
   };
 });
 
+// Roadmap-style dataset for the Gantt demo: dated work across groups/owners.
+const ganttGroups = ["Console v2.7", "End-user app", "Design Studio"];
+const ganttOwners = ["Alice Kim", "Bob Lee", "Carmen Park", "Dev Sohn"];
+const ganttStatuses = ["todo", "doing", "done"];
+const mockGanttTasks = Array.from({ length: 14 }, (_, i) => {
+  const startMonth = i % 6; // spread across ~6 months
+  const startDay = ((i * 5) % 25) + 1;
+  const lengthDays = 10 + ((i * 7) % 40);
+  const start = new Date(2026, 3 + startMonth, startDay);
+  const end = new Date(start.getTime() + lengthDays * 86_400_000);
+  const n = i + 1;
+  const group = ganttGroups[i % ganttGroups.length] ?? "Work";
+  const phase = ["spec", "build", "review", "ship", "polish"][i % 5] ?? "task";
+  return {
+    id: `88888888-8888-4888-8888-${String(n).padStart(12, "0")}`,
+    catalogKey: "task",
+    title: `${group.split(" ")[0]} — ${phase} ${n}`,
+    properties: {
+      startAt: start.toISOString().slice(0, 10),
+      endAt: end.toISOString().slice(0, 10),
+      status: ganttStatuses[i % ganttStatuses.length] ?? "todo",
+      group,
+      owner: ganttOwners[i % ganttOwners.length] ?? "Unassigned",
+    },
+  };
+});
+
+const ganttMarkers = [
+  { date: "2026-06-30", label: "Q2 cutoff", color: "#F59E0B" },
+  { date: "2026-09-30", label: "Q3 cutoff", color: "#8B5CF6" },
+];
+
 const mockHypothesis = {
   id: "22222222-2222-4222-8222-222222222201",
   catalogKey: "hypothesis",
@@ -589,6 +621,45 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
     bindingData: { rows: mockTasksLarge },
+  },
+  {
+    id: "data-gantt",
+    category: "data",
+    title: "Gantt (timeline)",
+    description:
+      "Roadmap timeline: swim-lane groups, status-colored bars, owner avatars, faceted filters (search + status + group chips), day/week/month zoom, a today line, milestone markers, and drag-to-reschedule (drag a bar to move, drag edges to resize → fires moveTask).",
+    components: ["Section", "Gantt"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Roadmap",
+            subtitle: "Gantt chart bound to dated tasks",
+          },
+          children: ["gantt"],
+        },
+        gantt: {
+          type: "Gantt",
+          props: {
+            binding: "rows",
+            startKey: "startAt",
+            endKey: "endAt",
+            groupKey: "group",
+            statusKey: "status",
+            statusColors: taskStatusColors,
+            ownerKey: "owner",
+            range: "month",
+            markers: ganttMarkers,
+            rowAction: "viewTask",
+            moveAction: "moveTask",
+            removeAction: "removeTask",
+          },
+        },
+      },
+    },
+    bindingData: { rows: mockGanttTasks },
   },
   {
     id: "data-list",

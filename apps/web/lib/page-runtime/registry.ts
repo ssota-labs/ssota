@@ -2,6 +2,7 @@ import type { CatalogComponent } from "./types";
 import { layoutComponents } from "./components/layout";
 import { dataComponents } from "./components/data";
 import { dataTableComponents } from "./components/data-table";
+import { ganttComponents } from "./components/gantt";
 import { formComponents } from "./components/forms";
 import { tokenComponents } from "./components/tokens";
 import { documentComponents } from "./components/document";
@@ -16,6 +17,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...layoutComponents,
   ...dataComponents,
   ...dataTableComponents,
+  ...ganttComponents,
   ...formComponents,
   ...tokenComponents,
   ...documentComponents,
