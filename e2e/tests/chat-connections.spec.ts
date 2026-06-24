@@ -364,6 +364,7 @@ test.describe("Connections + Chat", () => {
       await expect(threadRow).toBeVisible();
       await threadRow.hover();
       await threadRow.getByRole("button", { name: "채팅 삭제" }).click();
+      await threadRow.getByRole("button", { name: "삭제 확인" }).click();
 
       await expect(page).toHaveURL(/\/c\/(new|[0-9a-f-]{36})/);
       await expect(page.getByText("thread to delete")).toHaveCount(0);
