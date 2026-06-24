@@ -349,6 +349,8 @@ test.describe("Connections + Chat", () => {
       await expect(
         page.getByTestId("assistant-message").getByText(/stub agent/i),
       ).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByRole("button", { name: "중지" })).toHaveCount(0);
+      await expect(page.getByRole("button", { name: "전송" })).toBeVisible();
     });
 
     test("connection_search then linear__search_issues via stub model", async ({
