@@ -58,12 +58,15 @@ export function DocumentSheetPanel({
       aria-labelledby="document-sheet-title"
       data-testid="document-sheet-panel"
       className={cn(
-        "bg-background border-border absolute inset-y-2 right-0 z-20 flex flex-col overflow-hidden rounded-xl border shadow-md",
+        "border-border/60 absolute inset-y-2 right-0 z-20 flex flex-col overflow-hidden rounded-xl border",
+        "bg-background/75 shadow-lg shadow-black/5",
+        "supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150",
+        "supports-backdrop-filter:bg-background/65",
         "animate-in slide-in-from-right-4 fade-in duration-200",
         panelWidthClass[sheetSize],
       )}
     >
-      <header className="border-border flex shrink-0 items-start gap-3 border-b px-4 py-3">
+      <header className="border-border/50 bg-background/40 supports-backdrop-filter:backdrop-blur-md flex shrink-0 items-start gap-3 border-b px-4 py-3">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
             <h2
