@@ -1,6 +1,7 @@
 "use client";
 
 import { SpinnerGapIcon, WrenchIcon } from "@phosphor-icons/react";
+import { summarizeConnectionSearchOutput } from "@/lib/chat/connection-search-summary";
 
 type ToolActivityState =
   | "input-streaming"
@@ -29,33 +30,8 @@ function labelForTool(toolName: string): string {
 }
 
 function summarizeOutput(toolName: string, output: unknown): string | null {
-  if (toolName === "connection_search" && output && typeof output === "object") {
-    const payload = output as {
-      matched?: Array<{ qualifiedName?: string }>;
-      tools?: Array<{ qualifiedName?: string }>;
-      connections?: Array<{ connection?: string; connected?: boolean }>;
-      errors?: Array<{ connection?: string; message?: string }>;
-    };
-    const matched = payload.matched ?? payload.tools;
-    const count = matched?.length ?? 0;
-    if (count > 0) return `${count}개 도구 발견`;
-    const connected = payload.connections?.filter((c) => c.connected) ?? [];
-    if (connected.length > 0) {
-      const names = connected
-        .map((c) => c.connection)
-        .filter(Boolean)
-        .join(", ");
-      return names
-        ? `${connected.length}개 연결됨 · 검색 일치 도구 없음 (${names})`
-        : `${connected.length}개 연결됨 · 검색 일치 도구 없음`;
-    }
-    const err = payload.errors?.[0];
-    if (err?.message) {
-      return err.connection
-        ? `${err.connection}: ${err.message}`
-        : err.message;
-    }
-    return "연결된 도구 없음";
+  if (toolName === "connection_search") {
+    return summarizeConnectionSearchOutput(output);
   }
   if (toolName === "connection_call" && output && typeof output === "object") {
     const record = output as { ok?: boolean; error?: string; stub?: boolean };
