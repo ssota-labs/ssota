@@ -11,6 +11,7 @@ import {
 import { Button } from "@ssota/ui/components/ui/button";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
+import { deleteChatThreadAction } from "@/lib/chat/actions";
 
 export interface ThreadSummary {
   id: string;
@@ -70,17 +71,13 @@ export function ChatHistorySidebar({
     setDeletingId(threadId);
     startDelete(async () => {
       try {
-        const res = await fetch("/api/chat/thread", {
-          method: "DELETE",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({
-            orgSlug,
-            projectSlug,
-            threadId,
-            appMode,
-          }),
+        await deleteChatThreadAction({
+          orgSlug,
+          projectSlug,
+          threadId,
+          appMode,
+          chatBase,
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const onDeletedThread =
           pathname === `${chatBase}/${threadId}` ||
           activeThreadId === threadId;
