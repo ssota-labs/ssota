@@ -1,25 +1,38 @@
 /**
  * Per-run state for MCP connection tools: installation scope chosen by search.
  */
+import type { CompactArgsSchema } from "./mcp-tool-schema.js";
+
 export class ConnectionRunState {
   /** connection id → installation id chosen by the latest connection_search. */
   readonly installationByConnection = new Map<string, string>();
+  /** qualified tool name → compact args schema from the latest connection_search. */
+  readonly argsSchemaByQualifiedName = new Map<string, CompactArgsSchema>();
 
   recordInstallations(
     hits: Array<{
       connection: string;
       installationId: string | null;
+      qualifiedName?: string;
+      argsSchema?: CompactArgsSchema;
     }>,
   ): void {
     for (const hit of hits) {
       if (hit.installationId) {
         this.installationByConnection.set(hit.connection, hit.installationId);
       }
+      if (hit.qualifiedName && hit.argsSchema) {
+        this.argsSchemaByQualifiedName.set(hit.qualifiedName, hit.argsSchema);
+      }
     }
   }
 
   getInstallationId(connectionId: string): string | null {
     return this.installationByConnection.get(connectionId) ?? null;
+  }
+
+  getArgsSchema(qualifiedName: string): CompactArgsSchema | undefined {
+    return this.argsSchemaByQualifiedName.get(qualifiedName);
   }
 }
 

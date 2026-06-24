@@ -1,10 +1,16 @@
 import { experimental_createMCPClient } from "@ai-sdk/mcp";
-import type { Tool } from "ai";
+import { asSchema, type Tool } from "ai";
 import type { CredentialProvider } from "../credentials/provider.js";
 import type { McpConnectionDef } from "./define-mcp-connection.js";
 import { filterMcpTools, type McpToolListing } from "./filter-tools.js";
 import { resolveConnectorUid } from "./connect-credential.js";
 import { getStubToolsForConnection } from "./tool-catalog.js";
+import {
+  enrichGenericMcpError,
+  normalizeMcpToolArgs,
+  summarizeInputSchema,
+  type CompactArgsSchema,
+} from "./mcp-tool-schema.js";
 
 export interface McpSessionScope {
   projectId: string;
@@ -83,6 +89,7 @@ function formatMcpError(error: unknown): string {
  */
 export class McpSessionManager {
   private readonly listCache = new Map<SessionKey, McpToolListing[]>();
+  private readonly schemaCache = new Map<SessionKey, Map<string, CompactArgsSchema>>();
   private readonly clientCache = new Map<SessionKey, { close: () => Promise<void> }>();
 
   constructor(private readonly credentials: CredentialProvider) {}
@@ -106,6 +113,15 @@ export class McpSessionManager {
    * lists the full tool set instead of an identity-only `0 tools` token. Null =
    * no credential.
    */
+  private async summarizeToolSchema(tool: Tool): Promise<CompactArgsSchema | undefined> {
+    try {
+      const schema = await Promise.resolve(asSchema(tool.inputSchema).jsonSchema);
+      return summarizeInputSchema(schema);
+    } catch {
+      return undefined;
+    }
+  }
+
   private async buildMcpAuth(
     connectorUid: string,
     scope: McpSessionScope,
@@ -166,14 +182,21 @@ export class McpSessionManager {
       this.clientCache.set(key, client);
 
       const mcpTools = await client.tools();
-      const listings: McpToolListing[] = Object.entries(mcpTools).map(
-        ([name, t]) => ({
-          name,
-          description: t.description,
+      const schemaByTool = new Map<string, CompactArgsSchema>();
+      const listings: McpToolListing[] = await Promise.all(
+        Object.entries(mcpTools).map(async ([name, t]) => {
+          const argsSchema = await this.summarizeToolSchema(t as Tool);
+          if (argsSchema) schemaByTool.set(name, argsSchema);
+          return {
+            name,
+            description: t.description,
+            inputSchema: argsSchema,
+          };
         }),
       );
       const filtered = filterMcpTools(listings, connection.tools);
       this.listCache.set(key, filtered);
+      this.schemaCache.set(key, schemaByTool);
       logMcp("listTools", connection, {
         outcome: "ok",
         toolCount: filtered.length,
@@ -192,11 +215,21 @@ export class McpSessionManager {
     }
   }
 
+  getToolArgsSchema(
+    connection: McpConnectionDef,
+    scope: McpSessionScope,
+    toolName: string,
+  ): CompactArgsSchema | undefined {
+    const key = sessionKey(connection.id, scope);
+    return this.schemaCache.get(key)?.get(toolName);
+  }
+
   async callTool(
     connection: McpConnectionDef,
     scope: McpSessionScope,
     toolName: string,
     args: Record<string, unknown>,
+    options?: { argsSchema?: CompactArgsSchema },
   ): Promise<unknown> {
     if (useMcpStub()) {
       return {
@@ -251,13 +284,32 @@ export class McpSessionManager {
       throw new Error(message);
     }
 
+    const argsSchema =
+      options?.argsSchema ??
+      this.getToolArgsSchema(connection, scope, toolName) ??
+      (await this.summarizeToolSchema(tool));
+
+    let normalizedArgs: Record<string, unknown>;
+    try {
+      normalizedArgs = normalizeMcpToolArgs(args, argsSchema);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      logMcp("callTool", connection, {
+        outcome: "error",
+        tool: toolName,
+        error: message,
+        installationId: scope.installationId ?? null,
+      });
+      throw error;
+    }
+
     try {
       logMcp("callTool", connection, {
         outcome: "start",
         tool: toolName,
         installationId: scope.installationId ?? null,
       });
-      const result = await tool.execute(args, {
+      const result = await tool.execute(normalizedArgs, {
         toolCallId: `mcp-${connection.id}-${toolName}`,
         messages: [],
       });
@@ -268,13 +320,19 @@ export class McpSessionManager {
       });
       return result;
     } catch (error) {
+      const message = enrichGenericMcpError(
+        formatMcpError(error),
+        toolName,
+        normalizedArgs,
+        argsSchema,
+      );
       logMcp("callTool", connection, {
         outcome: "error",
         tool: toolName,
-        error: formatMcpError(error),
+        error: message,
         installationId: scope.installationId ?? null,
       });
-      throw error;
+      throw new Error(message);
     }
   }
 
@@ -284,5 +342,6 @@ export class McpSessionManager {
     );
     this.clientCache.clear();
     this.listCache.clear();
+    this.schemaCache.clear();
   }
 }

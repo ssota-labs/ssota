@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { createUIMessageStreamResponse } from "ai";
-import type { FileUIPart, UIMessage } from "ai";
+import type { UIMessage } from "ai";
 import { z } from "zod";
 import { start } from "workflow/api";
 import { runMainAgentWorkflow } from "@/app/workflows/main-agent";
 import { getChatPort } from "@/lib/ports";
 import { resolveModelId } from "@/lib/chat/models";
+import { toAgentHistory } from "@/lib/chat/to-agent-history";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -28,56 +29,6 @@ function textOf(message: UIMessage): string {
     .map((p) => p.text as string)
     .join("")
     .trim();
-}
-
-type ModelMessage =
-  | { role: "assistant"; content: string }
-  | {
-      role: "user";
-      content:
-        | string
-        | Array<
-            | { type: "text"; text: string }
-            | { type: "image"; image: string }
-          >;
-    };
-
-function toModelMessage(m: UIMessage): ModelMessage | null {
-  const text = textOf(m);
-  if (m.role === "assistant") {
-    return text ? { role: "assistant", content: text } : null;
-  }
-  const images = (m.parts ?? [])
-    .filter(
-      (p): p is FileUIPart =>
-        p.type === "file" && p.mediaType.startsWith("image/"),
-    )
-    .map((p) => ({ type: "image" as const, image: p.url }));
-  if (images.length === 0) return text ? { role: "user", content: text } : null;
-  const content: Array<
-    { type: "text"; text: string } | { type: "image"; image: string }
-  > = [...(text ? [{ type: "text" as const, text }] : []), ...images];
-  return { role: "user", content };
-}
-
-/**
- * STUB_MODEL cannot fetch private-IP attachment URLs (127.0.0.1 Storage). Strip
- * images from agent history while still persisting full parts in the thread DB.
- */
-function toAgentHistory(messages: UIMessage[]): ModelMessage[] {
-  const stub = process.env.STUB_MODEL === "1";
-  return messages
-    .map((m) => {
-      const msg = toModelMessage(m);
-      if (!msg || !stub || msg.role !== "user" || typeof msg.content === "string") {
-        return msg;
-      }
-      const textParts = msg.content.filter((p) => p.type === "text");
-      const text =
-        textParts.map((p) => p.text).join(" ").trim() || "[image attached]";
-      return { role: "user", content: text };
-    })
-    .filter((m): m is ModelMessage => m !== null);
 }
 
 export async function POST(request: Request) {
@@ -136,7 +87,7 @@ export async function POST(request: Request) {
     parts: lastUser?.parts ?? [{ type: "text", text: newUserText }],
   });
 
-  const history = toAgentHistory(messages);
+  const history = await toAgentHistory(messages);
 
   const run = await start(runMainAgentWorkflow, [
     {
