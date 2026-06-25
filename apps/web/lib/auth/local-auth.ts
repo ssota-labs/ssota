@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isAuthSignedOut, setAuthSignedOut } from "./signed-out-cookie";
 import type { AuthProvider, AuthUser } from "./types";
 
 /** Default single-user identity for self-hosted local mode. */
@@ -20,8 +21,14 @@ export function createLocalAuthProvider(): AuthProvider {
 
   return {
     async getCurrentUser() {
+      if (await isAuthSignedOut()) return null;
       return user;
     },
+
+    async signOut() {
+      await setAuthSignedOut();
+    },
+
     async updateSession(request: NextRequest) {
       // No session to refresh — just set the x-pathname header the app reads.
       const requestHeaders = new Headers(request.headers);

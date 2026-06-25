@@ -10,6 +10,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { withConsolePaths } from "@/lib/console/revalidate";
+import { getAuthProvider } from "@/lib/auth/provider";
+import { clearAuthSignedOut } from "@/lib/auth/signed-out-cookie";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
@@ -154,6 +156,7 @@ export async function signInAction(formData: FormData) {
   });
 
   if (!signInError && signInData.user) {
+    await clearAuthSignedOut();
     const path = await resolvePostSignInPath(signInData.user.id, nextValue);
     redirect(path);
   }
@@ -169,6 +172,7 @@ export async function signInAction(formData: FormData) {
         loginRedirect(INVALID_CREDENTIALS_MESSAGE, nextValue);
       }
 
+      await clearAuthSignedOut();
       const path = await resolvePostSignInPath(signUpData.user.id, nextValue);
       redirect(path);
     }
@@ -187,8 +191,8 @@ export async function signInAction(formData: FormData) {
 }
 
 export async function signOutAction() {
-  const supabase = await createSupabaseServerClient();
-  await supabase.auth.signOut();
+  const provider = await getAuthProvider();
+  await provider.signOut();
   redirect("/login");
 }
 

@@ -20,6 +20,11 @@ export function createSupabaseAuthProvider(): AuthProvider {
         : null;
     },
 
+    async signOut(): Promise<void> {
+      const supabase = await createSupabaseServerClient();
+      await supabase.auth.signOut();
+    },
+
     async updateSession(request: NextRequest): Promise<NextResponse> {
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set(
