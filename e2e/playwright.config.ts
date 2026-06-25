@@ -1,9 +1,12 @@
 import { defineConfig, devices } from "@playwright/test";
+import { chatStubWebEnv } from "./chat-stub-env";
 
 const webPort = process.env.WEB_PORT ?? "3100";
 const mcpPort = process.env.MCP_PORT ?? "3101";
 const designLabPort = process.env.DESIGN_LAB_PORT ?? "6107";
-const webUrl = process.env.WEB_URL ?? `http://127.0.0.1:${webPort}`;
+// Use localhost consistently: connect OAuth derives redirect origin from the
+// request host; browser cookies must match redirect targets.
+const webUrl = process.env.WEB_URL ?? `http://localhost:${webPort}`;
 const mcpUrl = process.env.MCP_URL ?? `http://127.0.0.1:${mcpPort}`;
 const designLabUrl =
   process.env.DESIGN_LAB_URL ?? `http://127.0.0.1:${designLabPort}`;
@@ -65,6 +68,7 @@ export default defineConfig({
       env: {
         ...process.env,
         ...defaultSupabaseEnv,
+        ...chatStubWebEnv,
         PORT: webPort,
       },
     },

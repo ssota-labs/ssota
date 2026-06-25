@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { chatStubWebEnv } from "./chat-stub-env";
 
 // Focused config for the chat + connections e2e: only the web server, with the
 // local dev stubs enabled (CONNECT_STUB, STUB_MODEL) and connector env set so
@@ -22,15 +23,7 @@ const env = {
   DATABASE_URL:
     process.env.DATABASE_URL ??
     "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
-  CONNECT_STUB: "1",
-  MCP_STUB: "1",
-  STUB_MODEL: "1",
-  CONNECTOR_LINEAR_DEV_TOKEN: "stub-linear-token",
-  SLACK_CONNECT_CONNECTOR: "slack/dev",
-  NOTION_CONNECT_CONNECTOR: "notion/dev",
-  GITHUB_CONNECT_CONNECTOR: "github/dev",
-  DISCORD_CONNECT_CONNECTOR: "discord/dev",
-  LINEAR_CONNECT_CONNECTOR: "linear/dev",
+  ...chatStubWebEnv,
 };
 
 export default defineConfig({
