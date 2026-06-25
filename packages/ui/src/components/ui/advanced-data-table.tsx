@@ -126,6 +126,11 @@ type AdvancedDataTableProps<TData> = {
   enableCellSelection?: boolean
   /** @deprecated The capped-height scroll viewport + sticky header is always on. */
   enableVirtualization?: boolean
+  /**
+   * Paginate rows + show the pagination bar. When false, every filtered/sorted
+   * row renders inside the capped-height scroll viewport (scroll, no pages).
+   */
+  enablePagination?: boolean
   /** Max height (px) of the scroll viewport; the sticky header pins to its top. */
   maxBodyHeight?: number
   /** Commit a double-click cell edit (grid mode, `meta.editable` columns). */
@@ -456,6 +461,7 @@ export function AdvancedDataTable<TData>({
   enableMultiSort = true,
   enableGlobalFilter = true,
   enableCellSelection = false,
+  enablePagination = true,
   maxBodyHeight = 480,
   onCellEdit,
   getRowCanExpand,
@@ -528,7 +534,7 @@ export function AdvancedDataTable<TData>({
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: enablePagination ? getPaginationRowModel() : undefined,
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
@@ -825,7 +831,7 @@ export function AdvancedDataTable<TData>({
         {footer ? <div className="border-t">{footer}</div> : null}
       </div>
 
-      <AdvancedDataTablePagination table={table} />
+      {enablePagination ? <AdvancedDataTablePagination table={table} /> : null}
     </div>
   )
 }
