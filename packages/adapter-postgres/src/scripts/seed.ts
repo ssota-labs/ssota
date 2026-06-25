@@ -13,6 +13,7 @@ import {
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
+import { ensureAuthUserRow } from "../ensure-auth-user.js";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -206,29 +207,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
 async function seedLocalAuthUser(db: ReturnType<typeof createDb>["db"]) {
   const userId = process.env.LOCAL_AUTH_USER_ID ?? LOCAL_AUTH_USER_ID;
   const email = process.env.LOCAL_AUTH_USER_EMAIL ?? LOCAL_AUTH_USER_EMAIL;
-
-  await db.execute(sql`
-    INSERT INTO auth.users (
-      id, instance_id, aud, role, email, email_confirmed_at,
-      raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
-      is_sso_user, is_anonymous
-    )
-    VALUES (
-      ${userId}::uuid,
-      '00000000-0000-0000-0000-000000000000'::uuid,
-      'authenticated',
-      'authenticated',
-      ${email},
-      now(),
-      '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"name":"Local Dev"}'::jsonb,
-      now(),
-      now(),
-      false,
-      false
-    )
-    ON CONFLICT (id) DO NOTHING
-  `);
+  await ensureAuthUserRow(db, userId, email);
 }
 
 async function seedSmokeUser(

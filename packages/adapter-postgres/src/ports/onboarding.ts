@@ -12,6 +12,7 @@ import {
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
+import { ensureAuthUserRow } from "../ensure-auth-user.js";
 
 function parseLocale(value: string | null | undefined): Locale {
   if (value && (LOCALES as readonly string[]).includes(value)) {
@@ -127,6 +128,8 @@ export function createOnboardingPort(db: Db): OnboardingPort {
 
     async completeProfileStep({ userId, email, displayName, organizationName }) {
       return db.transaction(async (tx) => {
+        await ensureAuthUserRow(tx as unknown as Db, userId, email);
+
         const existingProfile = await tx
           .select()
           .from(schema.profiles)
