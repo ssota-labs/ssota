@@ -8,7 +8,7 @@ test.describe("initiative wireframes", () => {
     await loginAsSmoke(page);
   });
 
-  test("wireframes page uses left explorer instead of NodeTable", async ({
+  test("wireframes page uses ArtifactWorkbench explorer and linked DataTable", async ({
     page,
   }) => {
     const initiativeId = await getSmokeInitiativeId();
@@ -27,7 +27,7 @@ test.describe("initiative wireframes", () => {
     await expect(
       page.getByPlaceholder("Search wireframes..."),
     ).toBeVisible();
-    await expect(page.getByRole("table")).not.toBeVisible();
+    await expect(page.getByText("Linked UI components")).toBeVisible();
     await expect(
       page.getByText(/No wireframes yet|Select a wireframe from the list/i),
     ).toBeVisible();

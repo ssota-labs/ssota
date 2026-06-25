@@ -444,7 +444,7 @@
       "root": "studio",
       "elements": {
         "studio": {
-          "type": "ComponentStudio",
+          "type": "ArtifactWorkbench",
           "props": {
             "binding": "rows",
             "themeBinding": "theme"
@@ -454,6 +454,11 @@
     },
     "bindings": {
       "rows": { "kind": "query", "catalogKey": "ui_component" },
+      "selected": {
+        "kind": "url_selection",
+        "param": "component",
+        "catalogKey": "ui_component"
+      },
       "theme": { "kind": "evergreen", "catalogKey": "design_theme" }
     },
     "actions": {}
@@ -720,15 +725,34 @@
     "title": "Wireframes",
     "icon": "design_wireframes",
     "spec": {
-      "root": "studio",
+      "root": "layout",
       "elements": {
-        "studio": {
-          "type": "ComponentStudio",
+        "layout": {
+          "type": "SplitPane",
+          "children": ["workbench", "linkedTable"]
+        },
+        "workbench": {
+          "type": "ArtifactWorkbench",
           "props": {
             "binding": "rows",
-            "themeBinding": "theme",
-            "mode": "preview",
-            "selectionParam": "wireframe"
+            "themeBinding": "theme"
+          }
+        },
+        "linkedTable": {
+          "type": "DataTable",
+          "props": {
+            "binding": "linked",
+            "title": "Linked UI components",
+            "columns": [
+              { "key": "title", "header": "Component", "type": "text", "width": 280 },
+              { "key": "slug", "header": "Slug", "type": "text" },
+              {
+                "key": "tier",
+                "header": "Tier",
+                "type": "select",
+                "options": ["primitive", "composite", "page"]
+              }
+            ]
           }
         }
       }
@@ -736,13 +760,19 @@
     "bindings": {
       "rows": {
         "kind": "initiative_scope",
-        "catalogKey": "page_wireframe",
-        "attachChildren": {
-          "edgeCatalogKey": "references",
-          "direction": "out",
-          "catalogKey": "ui_component",
-          "property": "uiComponents"
-        }
+        "catalogKey": "page_wireframe"
+      },
+      "selected": {
+        "kind": "url_selection",
+        "param": "wireframe",
+        "catalogKey": "page_wireframe"
+      },
+      "linked": {
+        "kind": "traverse",
+        "from": "selected",
+        "edgeCatalogKey": "references",
+        "direction": "out",
+        "catalogKey": "ui_component"
       },
       "theme": { "kind": "evergreen", "catalogKey": "design_theme" }
     }

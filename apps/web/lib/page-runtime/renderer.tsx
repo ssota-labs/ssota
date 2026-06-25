@@ -1,24 +1,29 @@
 "use client";
 
-import { Fragment, type ReactNode } from "react";
-import type { JsonRenderSpec } from "@ssota/contracts";
+import { Fragment, type ReactNode, Suspense } from "react";
+import type { BindingDef, JsonRenderSpec } from "@ssota/contracts";
 import {
   ActionContext,
+  ArtifactWorkbenchContext,
   BasePathContext,
-  ComponentStudioContext,
   JsonRenderContext,
   PageViewStateContext,
   WidgetBuildContext,
-  type ComponentStudioRuntime,
+  type ArtifactWorkbenchRuntime,
   type OnAction,
   type PageViewStateRuntime,
 } from "./context";
 import { CATALOG } from "./registry";
 import type { BindingContext } from "./types";
+import {
+  extractUrlSelectionBindings,
+  SelectionProvider,
+} from "./selection-context";
 
 type RenderProps = {
   spec: JsonRenderSpec;
   bindingData: BindingContext;
+  pageBindings?: Record<string, BindingDef>;
   /** Bound on the production route; omitted in the lab preview (buttons no-op). */
   onAction?: OnAction;
   /** `/{org}/{project}` prefix for in-page links. */
@@ -29,8 +34,8 @@ type RenderProps = {
   fillHeight?: boolean;
   /** Per-user table view-state persistence (omitted in the lab preview). */
   viewState?: PageViewStateRuntime;
-  /** UI component studio callbacks (ComponentStudio pages). */
-  componentStudio?: ComponentStudioRuntime | null;
+  /** Artifact workbench callbacks (ArtifactWorkbench pages). */
+  artifactWorkbench?: ArtifactWorkbenchRuntime | null;
 };
 
 function renderElement(
@@ -58,7 +63,6 @@ function renderElement(
     );
   }
 
-  // The catalog component is keyless; the renderer owns keys for tree placement.
   return (
     <Fragment key={elementId}>
       {component({ elementId, props, children, bindingData })}
@@ -66,15 +70,38 @@ function renderElement(
   );
 }
 
+function SelectionWrappedTree({
+  spec,
+  bindingData,
+  selectionConfig,
+  children,
+}: {
+  spec: JsonRenderSpec;
+  bindingData: BindingContext;
+  selectionConfig: ReturnType<typeof extractUrlSelectionBindings>[number] | null;
+  children: ReactNode;
+}) {
+  if (!selectionConfig) return <>{children}</>;
+
+  return (
+    <Suspense fallback={children}>
+      <SelectionProvider config={selectionConfig} bindingData={bindingData}>
+        {children}
+      </SelectionProvider>
+    </Suspense>
+  );
+}
+
 export function DynamicPageRenderer({
   spec,
   bindingData,
+  pageBindings = {},
   onAction,
   basePath = "",
   onBuildWidget,
   fillHeight = false,
   viewState,
-  componentStudio = null,
+  artifactWorkbench = null,
 }: RenderProps) {
   const runtime = {
     spec,
@@ -83,25 +110,36 @@ export function DynamicPageRenderer({
       renderElement(elementId, spec, bindingData),
   };
 
+  const urlSelections = extractUrlSelectionBindings(pageBindings);
+  const selectionConfig = urlSelections[0] ?? null;
+
+  const tree = (
+    <div
+      className={fillHeight ? "relative min-h-0 flex-1" : "space-y-2"}
+      data-testid="dynamic-page-renderer"
+    >
+      {renderElement(spec.root, spec, bindingData)}
+    </div>
+  );
+
   return (
     <ActionContext.Provider value={onAction}>
       <WidgetBuildContext.Provider value={onBuildWidget}>
-        <ComponentStudioContext.Provider value={componentStudio}>
+        <ArtifactWorkbenchContext.Provider value={artifactWorkbench}>
           <PageViewStateContext.Provider value={viewState ?? null}>
             <BasePathContext.Provider value={basePath}>
               <JsonRenderContext.Provider value={runtime}>
-                <div
-                  className={
-                    fillHeight ? "relative min-h-0 flex-1" : "space-y-2"
-                  }
-                  data-testid="dynamic-page-renderer"
+                <SelectionWrappedTree
+                  spec={spec}
+                  bindingData={bindingData}
+                  selectionConfig={selectionConfig}
                 >
-                  {renderElement(spec.root, spec, bindingData)}
-                </div>
+                  {tree}
+                </SelectionWrappedTree>
               </JsonRenderContext.Provider>
             </BasePathContext.Provider>
           </PageViewStateContext.Provider>
-        </ComponentStudioContext.Provider>
+        </ArtifactWorkbenchContext.Provider>
       </WidgetBuildContext.Provider>
     </ActionContext.Provider>
   );

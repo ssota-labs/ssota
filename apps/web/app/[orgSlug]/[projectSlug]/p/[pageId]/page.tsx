@@ -8,9 +8,10 @@ import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { TreePageView } from "@/lib/page-runtime/tree-page-view";
 import {
-  pageUsesComponentStudio,
+  pageUsesArtifactWorkbench,
   pageUsesFillHeight,
 } from "@/lib/page-runtime/spec-utils";
+import { normalizeSearchParams } from "@/lib/page-runtime/search-params";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
 import { savePageViewState } from "@/lib/page-runtime/save-page-view-state";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -31,10 +32,10 @@ export default async function TreePage({
   searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string; pageId: string }>;
-  searchParams: Promise<{ component?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { orgSlug, projectSlug, pageId } = await params;
-  const { component: initialComponentId } = await searchParams;
+  const urlParams = normalizeSearchParams(await searchParams);
   const { project } = await resolveProject(orgSlug, projectSlug);
 
   const page = await getPagePort(project.id).getPage(pageId);
@@ -44,7 +45,7 @@ export default async function TreePage({
 
   const graphRead = getGraphPorts(project.id).graphRead;
 
-  const context: Record<string, unknown> = {};
+  const context: Record<string, unknown> = { searchParams: urlParams };
   if (page.subjectNodeId) {
     const subject = await graphRead.getNodeById(page.subjectNodeId);
     if (subject && subject.projectId === project.id) {
@@ -67,7 +68,7 @@ export default async function TreePage({
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
 
   const fillHeight = pageUsesFillHeight(page.spec);
-  const usesStudio = pageUsesComponentStudio(page.spec);
+  const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
   const basePath = `/${orgSlug}/${projectSlug}`;
   const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
   const pagePath = projectPath(routeCtx, "p", pageId);
@@ -146,16 +147,16 @@ export default async function TreePage({
     >
       <TreePageView
         spec={page.spec}
+        bindings={page.bindings}
         bindingData={bindingData}
         basePath={basePath}
         onAction={onAction}
         viewState={{ initial: initialViewStates, save: saveViewState }}
-        componentStudio={
-          usesStudio
+        artifactWorkbench={
+          usesWorkbench
             ? {
                 projectId: project.id,
                 previewBasePath,
-                initialSelectionId: initialComponentId ?? null,
                 onCreateComponent: onStudioCreateComponent,
                 onDeployComponent: onStudioDeployComponent,
               }

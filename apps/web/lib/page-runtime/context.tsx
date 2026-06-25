@@ -40,12 +40,10 @@ export const WidgetBuildContext = createContext<
 >(undefined);
 export const useWidgetBuild = () => useContext(WidgetBuildContext);
 
-/** Design studio runtime for ComponentStudio pages. */
-export type ComponentStudioRuntime = {
+/** Artifact workbench runtime (ui_component / page_wireframe pages). */
+export type ArtifactWorkbenchRuntime = {
   projectId: string;
   previewBasePath: string;
-  /** Pre-selected row id from URL (`component` or `wireframe` search param). */
-  initialSelectionId?: string | null;
   onCreateComponent?: () => Promise<string>;
   onDeployComponent?: (input: {
     nodeId: string;
@@ -53,10 +51,17 @@ export type ComponentStudioRuntime = {
   }) => Promise<void>;
 };
 
-export const ComponentStudioContext = createContext<
-  ComponentStudioRuntime | null
+export const ArtifactWorkbenchContext = createContext<
+  ArtifactWorkbenchRuntime | null
 >(null);
-export const useComponentStudio = () => useContext(ComponentStudioContext);
+export const useArtifactWorkbench = () => useContext(ArtifactWorkbenchContext);
+
+/** @deprecated Use {@link ArtifactWorkbenchRuntime}. */
+export type ComponentStudioRuntime = ArtifactWorkbenchRuntime;
+/** @deprecated Use {@link useArtifactWorkbench}. */
+export const ComponentStudioContext = ArtifactWorkbenchContext;
+/** @deprecated Use {@link useArtifactWorkbench}. */
+export const useComponentStudio = useArtifactWorkbench;
 
 /**
  * Per-user table view-state persistence for the advanced data table. `initial`

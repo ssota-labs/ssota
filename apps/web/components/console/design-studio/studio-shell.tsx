@@ -39,10 +39,11 @@ import { StudioLeftPanel } from "./studio-left-panel";
 import { usePreviewBridge, useStudioNodeMeasure } from "./preview-bridge";
 
 type StudioShellProps = {
-  mode?: "authoring" | "preview";
+  readOnly?: boolean;
+  listVariant?: "grouped" | "flat";
   projectId: string;
   component: GraphNode | null;
-  /** Row id highlighted in the left explorer (wireframe id in preview mode). */
+  /** Row id highlighted in the left explorer. */
   activeListItemId?: string | null;
   components: UiComponentListRow[];
   onSelectComponent: (componentId: string) => void;
@@ -58,30 +59,37 @@ type StudioShellProps = {
 };
 
 export function StudioShell(props: StudioShellProps) {
-  const { component, mode = "authoring", activeListItemId } = props;
+  const { component, readOnly = false, activeListItemId } = props;
   if (!component) {
-    return <StudioShellEmpty {...props} mode={mode} activeListItemId={activeListItemId} />;
+    return (
+      <StudioShellEmpty
+        {...props}
+        readOnly={readOnly}
+        activeListItemId={activeListItemId}
+      />
+    );
   }
   return (
     <StudioShellEditor
       key={component.id}
       {...props}
-      mode={mode}
+      readOnly={readOnly}
       component={component}
     />
   );
 }
 
 function StudioShellEmpty({
-  mode = "authoring",
+  readOnly = false,
+  listVariant = "grouped",
   activeListItemId,
   components,
   onSelectComponent,
   onCreateComponent,
 }: StudioShellProps) {
   const [pending, startTransition] = useTransition();
-  const isPreview = mode === "preview";
   const hasSelection = Boolean(activeListItemId);
+  const isWireframeList = listVariant === "flat";
 
   const handleCreateComponent = () => {
     startTransition(() => {
@@ -96,17 +104,18 @@ function StudioShellEmpty({
         orientation="horizontal"
         className="min-h-0 flex-1"
         defaultLayout={
-          isPreview ? { left: 28, preview: 72 } : { left: 22, preview: 53, inspector: 25 }
+          readOnly ? { left: 28, preview: 72 } : { left: 22, preview: 53, inspector: 25 }
         }
       >
         <ResizablePanel
           id="left"
-          defaultSize={isPreview ? "28%" : "22%"}
+          defaultSize={readOnly ? "28%" : "22%"}
           minSize="16%"
-          maxSize={isPreview ? "40%" : "32%"}
+          maxSize={readOnly ? "40%" : "32%"}
         >
           <StudioLeftPanel
-            mode={mode}
+            readOnly={readOnly}
+            listVariant={listVariant}
             components={components}
             activeComponentId={activeListItemId ?? null}
             onSelectComponent={onSelectComponent}
@@ -118,18 +127,22 @@ function StudioShellEmpty({
           />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel id="preview" defaultSize={isPreview ? "72%" : "53%"} minSize="35%">
+        <ResizablePanel id="preview" defaultSize={readOnly ? "72%" : "53%"} minSize="35%">
           <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">
             <p className="text-sm text-muted-foreground">
-              {isPreview
+              {readOnly
                 ? components.length === 0
-                  ? "No wireframes yet. Create wireframe nodes scoped to this initiative."
+                  ? isWireframeList
+                    ? "No wireframes yet. Create wireframe nodes scoped to this initiative."
+                    : "No items to preview."
                   : hasSelection
-                    ? "This wireframe has no linked UI component. Add a references edge to a ui_component or set uiComponentId."
-                    : "Select a wireframe from the list to preview its linked UI component."
+                    ? "This artifact has no preview build yet."
+                    : isWireframeList
+                      ? "Select a wireframe from the list to preview."
+                      : "Select an item from the list to preview."
                 : "Create a component or pick one from the Components tab."}
             </p>
-            {!isPreview ? (
+            {!readOnly ? (
               <Button
                 type="button"
                 size="sm"
@@ -141,7 +154,7 @@ function StudioShellEmpty({
             ) : null}
           </div>
         </ResizablePanel>
-        {!isPreview ? (
+        {!readOnly ? (
           <>
             <ResizableHandle withHandle />
             <ResizablePanel
@@ -162,7 +175,8 @@ function StudioShellEmpty({
 }
 
 function StudioShellEditor({
-  mode = "authoring",
+  readOnly = false,
+  listVariant = "grouped",
   projectId,
   component,
   activeListItemId,
@@ -174,7 +188,6 @@ function StudioShellEditor({
   onDeploy,
   onCreateComponent,
 }: StudioShellProps & { component: GraphNode }) {
-  const isPreview = mode === "preview";
   const highlightedListId = activeListItemId ?? component.id;
   const props = (component?.properties ?? {}) as {
     slug?: string;
@@ -190,7 +203,7 @@ function StudioShellEditor({
 
   const [contentV2, setContentV2] = useState<UiComponentContentV2>(() => {
     if (!component) return createEmptyUiComponentContentV2();
-    if (isPreview) {
+    if (readOnly) {
       return resolveInitialContentV2({
         sessionContent: null,
         publishedProperties: component.properties,
@@ -211,7 +224,7 @@ function StudioShellEditor({
   } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [interactionMode, setInteractionMode] =
-    useState<StudioInteractionMode>(isPreview ? "preview" : "inspect");
+    useState<StudioInteractionMode>(readOnly ? "preview" : "inspect");
   const [pending, startTransition] = useTransition();
   const {
     iframeRef,
@@ -259,12 +272,12 @@ function StudioShellEditor({
   );
 
   useEffect(() => {
-    if (!storageKey || isPreview) return;
+    if (!storageKey || readOnly) return;
     const timer = window.setTimeout(() => {
       writeSessionContentV2(storageKey, contentV2);
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [contentV2, storageKey, isPreview]);
+  }, [contentV2, storageKey, readOnly]);
 
   useEffect(() => {
     if (!component || !ready) return;
@@ -395,21 +408,22 @@ function StudioShellEditor({
         orientation="horizontal"
         className="min-h-0 flex-1"
         defaultLayout={
-          isPreview ? { left: 28, preview: 72 } : { left: 22, preview: 53, inspector: 25 }
+          readOnly ? { left: 28, preview: 72 } : { left: 22, preview: 53, inspector: 25 }
         }
       >
         <ResizablePanel
           id="left"
-          defaultSize={isPreview ? "28%" : "22%"}
+          defaultSize={readOnly ? "28%" : "22%"}
           minSize="16%"
-          maxSize={isPreview ? "40%" : "32%"}
+          maxSize={readOnly ? "40%" : "32%"}
         >
           <StudioLeftPanel
-            mode={mode}
+            readOnly={readOnly}
+            listVariant={listVariant}
             components={components}
             activeComponentId={highlightedListId}
             onSelectComponent={onSelectComponent}
-            sourceLayers={isPreview ? null : sourceLayers}
+            sourceLayers={readOnly ? null : sourceLayers}
             selectedLayerId={selectedId}
             onSelectLayer={setSelectedId}
             pending={pending}
@@ -417,9 +431,9 @@ function StudioShellEditor({
           />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel id="preview" defaultSize={isPreview ? "72%" : "53%"} minSize="35%">
+        <ResizablePanel id="preview" defaultSize={readOnly ? "72%" : "53%"} minSize="35%">
           <div className="flex h-full min-h-0 flex-col bg-muted/30">
-            {!isPreview ? (
+            {!readOnly ? (
               <PreviewToolbar
                 mode={interactionMode}
                 onModeChange={setInteractionMode}
@@ -437,7 +451,7 @@ function StudioShellEditor({
             />
           </div>
         </ResizablePanel>
-        {!isPreview ? (
+        {!readOnly ? (
           <>
             <ResizableHandle withHandle />
             <ResizablePanel

@@ -6,9 +6,10 @@ import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { TreePageView } from "@/lib/page-runtime/tree-page-view";
 import {
-  pageUsesComponentStudio,
+  pageUsesArtifactWorkbench,
   pageUsesFillHeight,
 } from "@/lib/page-runtime/spec-utils";
+import { normalizeSearchParams } from "@/lib/page-runtime/search-params";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
 import { SetNodeDrill } from "@/components/console/node-drill-context";
 
@@ -29,10 +30,10 @@ export default async function NodeTemplatePage({
     nodeId: string;
     pageId: string;
   }>;
-  searchParams: Promise<{ component?: string; wireframe?: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { orgSlug, projectSlug, nodeId, pageId } = await params;
-  const urlParams = await searchParams;
+  const urlParams = normalizeSearchParams(await searchParams);
   const { project } = await resolveProject(orgSlug, projectSlug);
 
   const page = await getPagePort(project.id).getPage(pageId);
@@ -43,6 +44,7 @@ export default async function NodeTemplatePage({
   if (!subject || subject.projectId !== project.id) notFound();
 
   const context: Record<string, unknown> = {
+    searchParams: urlParams,
     subjectNodeId: subject.id,
     subject: {
       id: subject.id,
@@ -61,14 +63,11 @@ export default async function NodeTemplatePage({
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
 
   const fillHeight = pageUsesFillHeight(page.spec);
-  const usesStudio = pageUsesComponentStudio(page.spec);
+  const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
   const basePath = `/${orgSlug}/${projectSlug}`;
   const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
   const pagePath = projectPath(routeCtx, "n", nodeId, "p", pageId);
   const previewBasePath = projectPath(routeCtx, "design", "preview");
-
-  const initialSelectionId =
-    urlParams.wireframe ?? urlParams.component ?? null;
 
   async function onAction(
     actionKey: string,
@@ -101,15 +100,15 @@ export default async function NodeTemplatePage({
       />
       <TreePageView
         spec={page.spec}
+        bindings={page.bindings}
         bindingData={bindingData}
         basePath={basePath}
         onAction={onAction}
-        componentStudio={
-          usesStudio
+        artifactWorkbench={
+          usesWorkbench
             ? {
                 projectId: project.id,
                 previewBasePath,
-                initialSelectionId,
               }
             : null
         }

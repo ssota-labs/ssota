@@ -320,6 +320,27 @@ export async function resolvePageBindings(
             : { status: "unbuilt" as const, nodeId: node.id };
         break;
       }
+      case "url_selection": {
+        const searchParams = context.searchParams as
+          | Record<string, string | undefined>
+          | undefined;
+        const rawId = searchParams?.[def.param];
+        if (!rawId) {
+          value = null;
+          break;
+        }
+        const node = await graph.getNodeById(rawId);
+        if (
+          !node ||
+          node.projectId !== projectId ||
+          node.catalogKey !== def.catalogKey
+        ) {
+          value = null;
+          break;
+        }
+        value = serialize(node);
+        break;
+      }
     }
 
     stack.delete(key);

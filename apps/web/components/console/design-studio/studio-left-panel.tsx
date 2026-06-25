@@ -16,7 +16,8 @@ import { ComponentsPanel } from "./components-panel";
 import { SourceLayersPanel } from "./layers-panel";
 
 type StudioLeftPanelProps = {
-  mode?: "authoring" | "preview";
+  readOnly?: boolean;
+  listVariant?: "grouped" | "flat";
   components: UiComponentListRow[];
   activeComponentId: string | null;
   onSelectComponent: (componentId: string) => void;
@@ -28,7 +29,8 @@ type StudioLeftPanelProps = {
 };
 
 export function StudioLeftPanel({
-  mode = "authoring",
+  readOnly = false,
+  listVariant = "grouped",
   components,
   activeComponentId,
   onSelectComponent,
@@ -38,11 +40,11 @@ export function StudioLeftPanel({
   pending = false,
   onCreateComponent,
 }: StudioLeftPanelProps) {
-  const isPreview = mode === "preview";
-  const layersEnabled = Boolean(sourceLayers?.length) && !isPreview;
+  const isFlatList = listVariant === "flat";
+  const layersEnabled = Boolean(sourceLayers?.length) && !readOnly;
   const [searchQuery, setSearchQuery] = useState("");
 
-  if (isPreview) {
+  if (readOnly && isFlatList) {
     return (
       <div className="flex h-full min-h-0 flex-col border-r bg-card">
         <div className="shrink-0 border-b p-2">
@@ -96,17 +98,19 @@ export function StudioLeftPanel({
               className="h-8"
               aria-label="Search components"
             />
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="w-full"
-              disabled={pending}
-              onClick={() => void onCreateComponent()}
-            >
-              <PlusIcon className="size-3.5" />
-              {pending ? "Creating…" : "New component"}
-            </Button>
+            {!readOnly ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="w-full"
+                disabled={pending}
+                onClick={() => void onCreateComponent()}
+              >
+                <PlusIcon className="size-3.5" />
+                {pending ? "Creating…" : "New component"}
+              </Button>
+            ) : null}
           </div>
           <ComponentsPanel
             components={components}

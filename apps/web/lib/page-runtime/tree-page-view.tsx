@@ -1,10 +1,10 @@
 "use client";
 
-import type { JsonRenderSpec } from "@ssota/contracts";
+import type { BindingDef, JsonRenderSpec } from "@ssota/contracts";
 import { cn } from "@ssota/ui/lib/utils";
 import { DynamicPageRenderer } from "./renderer";
 import type {
-  ComponentStudioRuntime,
+  ArtifactWorkbenchRuntime,
   OnAction,
   PageViewStateRuntime,
 } from "./context";
@@ -13,20 +13,22 @@ import { pageUsesFillHeight } from "./spec-utils";
 
 type TreePageViewProps = {
   spec: JsonRenderSpec;
+  bindings: Record<string, BindingDef>;
   bindingData: BindingContext;
   basePath: string;
   onAction: OnAction;
   viewState?: PageViewStateRuntime;
-  componentStudio?: ComponentStudioRuntime | null;
+  artifactWorkbench?: ArtifactWorkbenchRuntime | null;
 };
 
 export function TreePageView({
   spec,
+  bindings,
   bindingData,
   basePath,
   onAction,
   viewState,
-  componentStudio = null,
+  artifactWorkbench = null,
 }: TreePageViewProps) {
   const fillHeight = pageUsesFillHeight(spec);
 
@@ -40,12 +42,13 @@ export function TreePageView({
     >
       <DynamicPageRenderer
         spec={spec}
+        pageBindings={bindings}
         bindingData={bindingData}
         basePath={basePath}
         fillHeight={fillHeight}
         viewState={viewState}
         onAction={onAction}
-        componentStudio={componentStudio}
+        artifactWorkbench={artifactWorkbench}
       />
     </div>
   );

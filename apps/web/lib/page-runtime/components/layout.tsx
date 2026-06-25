@@ -110,6 +110,8 @@ export const layoutComponents: Record<string, CatalogComponent> = {
     />
   ),
   SplitPane: ({ children }) => (
-    <div className="grid gap-4 md:grid-cols-2">{children}</div>
+    <div className="grid min-h-0 flex-1 gap-4 md:grid-cols-2 md:items-stretch">
+      {children}
+    </div>
   ),
 };

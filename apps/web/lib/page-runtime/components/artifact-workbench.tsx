@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { Suspense, useCallback, useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { GraphNode } from "@ssota/core";
 import {
   mergeDesignThemeTokens,
@@ -12,7 +12,8 @@ import {
   type DesignThemeTokenMap,
 } from "@ssota/contracts/catalog";
 import { readNodeContent } from "@ssota/core";
-import { useComponentStudio } from "../context";
+import { useArtifactWorkbench } from "../context";
+import { useSelection } from "../selection-context";
 import { boundNodes, boundSingleton } from "../bindings";
 import type { CatalogComponent, RenderNode } from "../types";
 import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components";
@@ -24,8 +25,6 @@ const StudioShell = dynamic(
     ),
   { ssr: false },
 );
-
-type StudioMode = "authoring" | "preview";
 
 function toListRows(nodes: RenderNode[]): UiComponentListRow[] {
   return nodes
@@ -80,51 +79,16 @@ function resolveThemeFromBinding(
   return { tokens, themeCss: tokensToThemeCss(tokens) };
 }
 
-/** Linked ui_component from attachChildren (`uiComponents`) or `uiComponentId`. */
-function resolveWireframePreviewNode(
-  wireframe: RenderNode,
-  projectId: string,
-): GraphNode | null {
-  const props = wireframe.properties ?? {};
-  const linked = props.uiComponents;
-  if (Array.isArray(linked) && linked.length > 0) {
-    const first = linked[0];
-    if (first && typeof first === "object" && "id" in first) {
-      return toGraphNode(first as RenderNode, projectId);
-    }
-  }
-  const componentId = props.uiComponentId;
-  if (typeof componentId === "string" && componentId.length > 0) {
-    return {
-      id: componentId,
-      projectId,
-      nodeCatalogId: "",
-      catalogKey: "ui_component",
-      catalogLabel: "ui_component",
-      title: wireframe.title,
-      properties: {},
-      schemaVersion: 1,
-      createdAt: new Date(0),
-      updatedAt: new Date(0),
-    };
-  }
-  return null;
-}
-
-function ComponentStudioEl({
+function ArtifactWorkbenchEl({
   nodes,
   themeNode,
-  mode,
-  selectionParam,
 }: {
   nodes: RenderNode[];
   themeNode?: RenderNode;
-  mode: StudioMode;
-  selectionParam: string;
 }) {
-  const studio = useComponentStudio();
+  const studio = useArtifactWorkbench();
+  const selection = useSelection();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
   const listItems = useMemo(() => toListRows(nodes), [nodes]);
@@ -133,63 +97,57 @@ function ComponentStudioEl({
     [themeNode],
   );
 
-  const querySelectionId = searchParams.get(selectionParam);
-  const [selectedId, setSelectedId] = useState<string | null>(() => {
-    const initial = studio?.initialSelectionId ?? querySelectionId;
-    if (initial && nodes.some((n) => n.id === initial)) return initial;
+  const isWireframeList =
+    nodes.length > 0 && nodes.every((n) => n.catalogKey === "page_wireframe");
+  const readOnly = !studio?.onDeployComponent;
+
+  const resolvedSelectionId = selection?.selectedId ?? null;
+  const [localSelectedId, setLocalSelectedId] = useState<string | null>(() => {
+    if (resolvedSelectionId && nodes.some((n) => n.id === resolvedSelectionId)) {
+      return resolvedSelectionId;
+    }
     return listItems[0]?.id ?? null;
   });
 
   useEffect(() => {
-    if (querySelectionId && nodes.some((n) => n.id === querySelectionId)) {
-      setSelectedId(querySelectionId);
+    if (resolvedSelectionId && nodes.some((n) => n.id === resolvedSelectionId)) {
+      setLocalSelectedId(resolvedSelectionId);
+      return;
     }
-  }, [querySelectionId, nodes]);
+    if (!resolvedSelectionId && listItems[0] && selection) {
+      setLocalSelectedId(listItems[0].id);
+      selection.setSelectedId(listItems[0].id);
+    }
+  }, [resolvedSelectionId, nodes, listItems, selection]);
 
-  const syncUrl = useCallback(
-    (itemId: string | null) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (itemId) {
-        params.set(selectionParam, itemId);
-      } else {
-        params.delete(selectionParam);
-      }
-      const qs = params.toString();
-      router.replace(qs ? `?${qs}` : "?", { scroll: false });
-    },
-    [router, searchParams, selectionParam],
-  );
+  const selectedId = localSelectedId;
 
   const onSelectItem = useCallback(
     (itemId: string) => {
-      setSelectedId(itemId);
-      syncUrl(itemId);
+      setLocalSelectedId(itemId);
+      selection?.setSelectedId(itemId);
     },
-    [syncUrl],
+    [selection],
   );
 
   if (!studio) {
     return (
       <p className="text-muted-foreground text-sm">
-        Component studio is not configured for this page.
+        Artifact workbench is not configured for this page.
       </p>
     );
   }
 
   const activeRow = nodes.find((n) => n.id === selectedId) ?? null;
-
-  const previewComponent =
-    mode === "preview" && activeRow
-      ? resolveWireframePreviewNode(activeRow, studio.projectId)
-      : activeRow
-        ? toGraphNode(activeRow, studio.projectId)
-        : null;
+  const previewComponent = activeRow
+    ? toGraphNode(activeRow, studio.projectId)
+    : null;
 
   const handleCreate = async () => {
     if (!studio.onCreateComponent) return;
     const id = await studio.onCreateComponent();
-    setSelectedId(id);
-    syncUrl(id);
+    setLocalSelectedId(id);
+    selection?.setSelectedId(id);
   };
 
   const handleDeploy = async (input: {
@@ -207,7 +165,8 @@ function ComponentStudioEl({
 
   return (
     <StudioShell
-      mode={mode}
+      readOnly={readOnly}
+      listVariant={isWireframeList ? "flat" : "grouped"}
       projectId={studio.projectId}
       component={previewComponent}
       activeListItemId={selectedId}
@@ -222,34 +181,37 @@ function ComponentStudioEl({
   );
 }
 
-export const componentStudioComponents: Record<string, CatalogComponent> = {
-  ComponentStudio: ({ props, bindingData }) => {
-    const nodes = boundNodes(bindingData, props);
-    const themeBinding =
-      typeof props.themeBinding === "string" ? props.themeBinding : "theme";
-    const themeNode = boundSingleton(bindingData, themeBinding);
-    const mode: StudioMode =
-      props.mode === "preview" ? "preview" : "authoring";
-    const selectionParam =
-      typeof props.selectionParam === "string" && props.selectionParam.length > 0
-        ? props.selectionParam
-        : "component";
+function ArtifactWorkbenchView({
+  props,
+  bindingData,
+}: {
+  props: Record<string, unknown>;
+  bindingData: import("../types").BindingContext;
+}) {
+  const nodes = boundNodes(bindingData, props);
+  const themeBinding =
+    typeof props.themeBinding === "string" ? props.themeBinding : "theme";
+  const themeNode = boundSingleton(bindingData, themeBinding);
 
-    return (
-      <Suspense
-        fallback={
-          <div className="text-muted-foreground flex h-full min-h-[320px] items-center justify-center text-sm">
-            Loading studio…
-          </div>
-        }
-      >
-        <ComponentStudioEl
-          nodes={nodes}
-          themeNode={themeNode}
-          mode={mode}
-          selectionParam={selectionParam}
-        />
-      </Suspense>
-    );
-  },
+  return (
+    <Suspense
+      fallback={
+        <div className="text-muted-foreground flex h-full min-h-[320px] items-center justify-center text-sm">
+          Loading workbench…
+        </div>
+      }
+    >
+      <ArtifactWorkbenchEl nodes={nodes} themeNode={themeNode} />
+    </Suspense>
+  );
+}
+
+export const artifactWorkbenchComponents: Record<string, CatalogComponent> = {
+  ArtifactWorkbench: ({ props, bindingData }) => (
+    <ArtifactWorkbenchView props={props} bindingData={bindingData} />
+  ),
+  /** @deprecated Use ArtifactWorkbench */
+  ComponentStudio: ({ props, bindingData }) => (
+    <ArtifactWorkbenchView props={props} bindingData={bindingData} />
+  ),
 };

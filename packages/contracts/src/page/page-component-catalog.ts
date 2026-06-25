@@ -500,7 +500,25 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "ComponentStudio",
     category: "widget",
     description:
-      "Component browser + live preview workspace. authoring mode: full studio with deploy; preview mode: read-only explorer (e.g. wireframes).",
+      "@deprecated Use ArtifactWorkbench. Kept for legacy page specs.",
+    children: false,
+    props: {
+      binding: binding("Rows binding."),
+      themeBinding: {
+        type: "binding",
+        description: 'Evergreen design_theme binding (default "theme").',
+      },
+    },
+    example: {
+      type: "ComponentStudio",
+      props: { binding: "rows", themeBinding: "theme" },
+    },
+  },
+  ArtifactWorkbench: {
+    key: "ArtifactWorkbench",
+    category: "widget",
+    description:
+      "Artifact browser + live preview workspace. Selection is driven by url_selection binding + SelectionProvider. Authoring pages pass deploy/create callbacks; read-only pages (e.g. wireframes) omit them.",
     children: false,
     props: {
       binding: binding(
@@ -511,19 +529,9 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         description:
           'Evergreen design_theme binding for preview tokens (default "theme").',
       },
-      mode: {
-        type: "string",
-        description:
-          '"authoring" (default) — editable studio; "preview" — left explorer + read-only preview.',
-      },
-      selectionParam: {
-        type: "string",
-        description:
-          'URL search param for selected row id (default "component"; wireframes use "wireframe").',
-      },
     },
     example: {
-      type: "ComponentStudio",
+      type: "ArtifactWorkbench",
       props: { binding: "rows", themeBinding: "theme" },
     },
   },
