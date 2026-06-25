@@ -100,8 +100,9 @@ function DataTableEl({
   const viewStateCtx = usePageViewState();
 
   // Notion-style editing: cells render read-only, double-click opens an
-  // absolute-overlay editor (text/number/date → input, select → popover);
-  // plus spreadsheet cell selection + keyboard nav + CSV copy + virtualization.
+  // absolute-overlay editor (text/number/date → input, select → popover).
+  // Rows scroll inside a capped-height viewport (no pagination); add/delete
+  // rows via the footer / row menu.
 
   const [rows, setRows] = React.useState<RenderNode[]>(nodes);
   const signature = JSON.stringify(
@@ -309,7 +310,8 @@ function DataTableEl({
         facetedFilters={facetedFilters}
         defaultViewState={viewStateCtx?.initial[elementId]}
         onViewStateChange={viewStateCtx ? save : undefined}
-        enableCellSelection
+        enablePagination={false}
+        enableCellFocus
         onCellEdit={onCellEdit}
         footer={
           addAction ? (
