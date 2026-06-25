@@ -9,6 +9,7 @@
  * tools consume the provider, the model only sees results.
  */
 import { mcpScopesForConnector } from "./mcp-scopes.js";
+import { resolveEmulateSlackOAuthAuthorizeUrl } from "../connections/provider-api-base.js";
 
 export interface CredentialScope {
   projectId: string;
@@ -256,6 +257,14 @@ export async function startConnectAuthorization(
     return callback.toString();
   }
 
+  if (connector.startsWith("slack/")) {
+    const emulateOAuth = resolveEmulateSlackOAuthAuthorizeUrl(
+      options.callbackUrl ?? "http://127.0.0.1/api/connect/callback",
+      options.scopes,
+    );
+    if (emulateOAuth) return emulateOAuth;
+  }
+
   let connect: {
     startAuthorization: (
       connectorUid: string,
@@ -493,6 +502,25 @@ export async function getConnectInstallation(
       tenantId: installationId,
       name: `${provider} workspace (${installationId.slice(-6)})`,
     };
+  }
+
+  if (process.env.EMULATE_OAUTH === "1") {
+    const provider = connector.split("/")[0] ?? connector;
+    const installationId =
+      normalizedInstallationId ??
+      `emulate-${provider}-${scope.userId ?? "anon"}`;
+    const installation: ConnectInstallation = {
+      installationId,
+      tenantId: installationId,
+    };
+    const { enrichConnectInstallationDisplay } = await import(
+      "../connections/enrich-installation-display.js"
+    );
+    return enrichConnectInstallationDisplay({
+      connector,
+      installation,
+      scope: normalizedScope,
+    });
   }
 
   let connect: {

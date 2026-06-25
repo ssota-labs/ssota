@@ -245,13 +245,17 @@ function ChildTable({
   label,
   basePath,
   childSetAction,
+  childCellAction,
 }: {
   parent: RenderNode;
   rows: RenderNode[];
   columns: TableColumn[];
   label?: string;
   basePath: string;
+  /** Rewrite the parent's inline array property (embedded children). */
   childSetAction?: string;
+  /** Update each child node directly (graph-backed children). */
+  childCellAction?: string;
 }) {
   const onAction = useAction();
 
@@ -261,11 +265,14 @@ function ChildTable({
     return m;
   }, [columns]);
 
-  // Children live in the parent node's array property; a cell edit rewrites the
-  // whole array and writes it back to the parent via `childSetAction`.
   const commitChild = React.useCallback(
     (childId: string, field: string, value: unknown) => {
-      if (!onAction || !childSetAction) return;
+      if (!onAction) return;
+      if (childCellAction) {
+        void onAction(childCellAction, { nodeId: childId, field, value });
+        return;
+      }
+      if (!childSetAction) return;
       const next = rows.map((r) =>
         r.id === childId
           ? field === "title"
@@ -279,7 +286,7 @@ function ChildTable({
         value: next,
       });
     },
-    [onAction, childSetAction, rows, parent.id],
+    [onAction, childCellAction, childSetAction, rows, parent.id],
   );
 
   const onCellEdit = React.useCallback(
@@ -294,9 +301,10 @@ function ChildTable({
     [colTypeByKey, commitChild],
   );
 
+  const childEditable = Boolean(childCellAction || childSetAction);
   const { defs, facetedFilters } = useGridColumns({
     columns,
-    setAction: childSetAction,
+    setAction: childEditable ? "edit" : undefined,
     commitCell: commitChild,
     basePath,
   });
@@ -322,7 +330,7 @@ function ChildTable({
         enablePinning={false}
         enableColumnResizing={false}
         enableCellSelection
-        onCellEdit={childSetAction ? onCellEdit : undefined}
+        onCellEdit={childEditable ? onCellEdit : undefined}
       />
     </div>
   );
@@ -340,6 +348,7 @@ function ExpandableTableEl({
   setAction,
   addAction,
   childSetAction,
+  childCellAction,
 }: {
   elementId: string;
   nodes: RenderNode[];
@@ -352,6 +361,7 @@ function ExpandableTableEl({
   setAction?: string;
   addAction?: string;
   childSetAction?: string;
+  childCellAction?: string;
 }) {
   const onAction = useAction();
   const basePath = useBasePath();
@@ -420,9 +430,17 @@ function ExpandableTableEl({
         label={childLabel}
         basePath={basePath}
         childSetAction={childSetAction}
+        childCellAction={childCellAction}
       />
     ),
-    [childColumns, childProperty, childLabel, basePath, childSetAction],
+    [
+      childColumns,
+      childProperty,
+      childLabel,
+      basePath,
+      childSetAction,
+      childCellAction,
+    ],
   );
 
   const addRow = React.useCallback(() => {
@@ -498,6 +516,9 @@ export const expandableTableComponents: Record<string, CatalogComponent> = {
       addAction={typeof props.addAction === "string" ? props.addAction : undefined}
       childSetAction={
         typeof props.childSetAction === "string" ? props.childSetAction : undefined
+      }
+      childCellAction={
+        typeof props.childCellAction === "string" ? props.childCellAction : undefined
       }
     />
   ),

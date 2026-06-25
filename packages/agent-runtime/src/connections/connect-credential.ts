@@ -26,6 +26,10 @@ const LEGACY_CONNECTOR_ENV_KEYS: Record<string, string> = {
   discord: "DISCORD_CONNECT_CONNECTOR",
 };
 
+const API_CONNECTOR_ENV_KEYS: Record<string, string> = {
+  twitter: "TWITTER_API_CONNECTOR",
+};
+
 export interface ConnectAuthBinding {
   type: "connect";
   provider: string;
@@ -50,6 +54,12 @@ export function resolveConnectorUid(provider: string): string | null {
     (legacyKey ? process.env[legacyKey] : undefined) ??
     null
   );
+}
+
+/** Resolve the API/OAuth connector uid for REST-only providers (e.g. Twitter). */
+export function resolveApiConnectorUid(provider: string): string | null {
+  const key = API_CONNECTOR_ENV_KEYS[provider];
+  return (key ? process.env[key] : undefined) ?? null;
 }
 
 export function providerOfConnectorUid(connectorUid: string): string {

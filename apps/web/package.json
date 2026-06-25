@@ -69,6 +69,10 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
+    "@emulators/adapter-next": "^0.7.0",
+    "@emulators/github": "^0.7.0",
+    "@emulators/google": "^0.7.0",
+    "@emulators/slack": "^0.7.0",
     "@ssota/config": "workspace:*",
     "@tailwindcss/postcss": "^4.1.8",
     "@types/babel__generator": "^7.27.0",
@@ -76,6 +80,7 @@
     "@types/node": "^22.15.30",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
+    "emulate": "^0.8.0",
     "eslint": "^9.28.0",
     "eslint-config-next": "^16.0.0",
     "postcss": "^8.5.4",

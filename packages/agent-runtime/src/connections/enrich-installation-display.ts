@@ -5,6 +5,9 @@ import {
   normalizeConnectInstallationId,
   resolveCredentialProvider,
 } from "../credentials/provider.js";
+import {
+  resolveProviderApiUrl,
+} from "../connections/provider-api-base.js";
 import { providerOfConnectorUid } from "./connect-credential.js";
 
 const ENRICHMENT_TIMEOUT_MS = 5_000;
@@ -169,7 +172,7 @@ async function fetchJson<T>(
 
 async function fetchSlackWorkspaceName(token: string): Promise<string | undefined> {
   const data = await fetchJson<{ ok?: boolean; team?: string }>(
-    "https://slack.com/api/auth.test",
+    resolveProviderApiUrl("slack", "https://slack.com/api/auth.test"),
     {
       method: "POST",
       headers: {
@@ -184,7 +187,10 @@ async function fetchSlackWorkspaceName(token: string): Promise<string | undefine
 async function fetchGitHubInstallation(token: string): Promise<EnrichmentResult> {
   const repos = await fetchJson<{
     repositories?: Array<{ owner?: { login?: string; type?: string } }>;
-  }>("https://api.github.com/installation/repositories?per_page=1", {
+  }>(resolveProviderApiUrl(
+    "github",
+    "https://api.github.com/installation/repositories?per_page=1",
+  ), {
     headers: githubHeaders(token),
   });
   const ownerLogin = repos?.repositories?.[0]?.owner?.login?.trim();
@@ -193,7 +199,7 @@ async function fetchGitHubInstallation(token: string): Promise<EnrichmentResult>
   }
 
   const user = await fetchJson<{ name?: string | null; login?: string }>(
-    "https://api.github.com/user",
+    resolveProviderApiUrl("github", "https://api.github.com/user"),
     { headers: githubHeaders(token) },
   );
   const name = user?.name?.trim();
@@ -231,7 +237,7 @@ async function fetchLinearOrganizationName(
 ): Promise<string | undefined> {
   const data = await fetchJson<{
     data?: { viewer?: { organization?: { name?: string } } };
-  }>("https://api.linear.app/graphql", {
+  }>(resolveProviderApiUrl("linear", "https://api.linear.app/graphql"), {
     method: "POST",
     headers: {
       Authorization: token,

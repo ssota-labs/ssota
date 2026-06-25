@@ -841,36 +841,6 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     bindingData: { roadmaps: mockRoadmapDocs },
   },
   {
-    id: "roadmap-sheet-workspace",
-    category: "document",
-    title: "RoadmapSheetWorkspace",
-    description:
-      "Product roadmap card + annual/quarter planning cards with year filter and floating sheet editor.",
-    components: ["RoadmapSheetWorkspace"],
-    spec: {
-      root: "workspace",
-      elements: {
-        workspace: {
-          type: "RoadmapSheetWorkspace",
-          props: {
-            productBinding: "productRoadmap",
-            planningBinding: "planningRoadmaps",
-            field: "content",
-            subtitleField: "summary",
-            statusField: "lifecycleStatus",
-            sheetSize: "half",
-            editable: true,
-            action: "saveRoadmapDoc",
-          },
-        },
-      },
-    },
-    bindingData: {
-      productRoadmap: mockProductRoadmap,
-      planningRoadmaps: mockRoadmapDocs,
-    },
-  },
-  {
     id: "document-view",
     category: "document",
     title: "DocumentView",

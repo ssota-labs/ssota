@@ -1,4 +1,4 @@
-import type { BindingDef } from "@ssota/contracts";
+import type { AttachChildren, BindingDef } from "@ssota/contracts";
 import type { GraphReadPort } from "../../ports/graph-read-port.js";
 import type { GraphNode } from "../../domain/graph-types.js";
 
@@ -32,6 +32,100 @@ function matchesFilter(node: GraphNode, filter: QueryFilter): boolean {
     if (clause.op === "neq" && value === clause.value) return false;
   }
   return true;
+}
+
+function filterByCatalogKey(
+  nodes: GraphNode[],
+  catalogKey: string | undefined,
+): GraphNode[] {
+  if (!catalogKey) return nodes;
+  return nodes.filter((node) => node.catalogKey === catalogKey);
+}
+
+async function attachChildrenToNodes(
+  graph: GraphReadPort,
+  projectId: string,
+  nodes: GraphNode[],
+  attach: AttachChildren,
+): Promise<ResolvedNode[]> {
+  return Promise.all(
+    nodes.map(async (node) => {
+      const edges = await graph.traverseEdges({
+        projectId,
+        nodeId: node.id,
+        catalogKey: attach.edgeCatalogKey,
+        direction: attach.direction === "in" ? "incoming" : "outgoing",
+      });
+      const childIds = edges.map((edge) =>
+        attach.direction === "in" ? edge.sourceNodeId : edge.targetNodeId,
+      );
+      const children = await Promise.all(
+        childIds.map((id) => graph.getNodeById(id)),
+      );
+      const serializedChildren = filterByCatalogKey(
+        children.filter(
+          (child): child is GraphNode =>
+            child !== null && child.projectId === projectId,
+        ),
+        attach.catalogKey,
+      ).map(serialize);
+
+      return {
+        ...serialize(node),
+        properties: {
+          ...node.properties,
+          [attach.property]: serializedChildren,
+        },
+      };
+    }),
+  );
+}
+
+async function resolveInitiativeScopedNodes(
+  graph: GraphReadPort,
+  projectId: string,
+  subjectId: string,
+  catalogKey: string,
+  limit?: number,
+): Promise<GraphNode[]> {
+  const edges = await graph.traverseEdges({
+    projectId,
+    nodeId: subjectId,
+    catalogKey: "for_initiative",
+    direction: "incoming",
+  });
+  const scopedIds = new Set(edges.map((edge) => edge.sourceNodeId));
+  const nodes = await graph.queryNodes({
+    projectId,
+    catalogKey,
+    limit: limit ?? 500,
+  });
+  const scoped = nodes.filter((node) => scopedIds.has(node.id));
+  return limit ? scoped.slice(0, limit) : scoped;
+}
+
+async function resolveEvergreenSingleton(
+  graph: GraphReadPort,
+  projectId: string,
+  catalogKey: string,
+): Promise<GraphNode | null> {
+  const candidates = await graph.queryNodes({
+    projectId,
+    catalogKey,
+    limit: 100,
+  });
+  for (const node of candidates) {
+    const scopedEdges = await graph.traverseEdges({
+      projectId,
+      nodeId: node.id,
+      direction: "outgoing",
+      catalogKey: "for_initiative",
+    });
+    if (scopedEdges.length === 0) {
+      return node;
+    }
+  }
+  return null;
 }
 
 /**
@@ -70,7 +164,16 @@ export async function resolvePageBindings(
         const filtered = def.filter?.length
           ? nodes.filter((n) => matchesFilter(n, def.filter as QueryFilter))
           : nodes;
-        value = filtered.map(serialize);
+        if (def.attachChildren) {
+          value = await attachChildrenToNodes(
+            graph,
+            projectId,
+            filtered,
+            def.attachChildren,
+          );
+        } else {
+          value = filtered.map(serialize);
+        }
         break;
       }
       case "singleton": {
@@ -82,14 +185,53 @@ export async function resolvePageBindings(
         value = nodes[0] ? serialize(nodes[0]) : null;
         break;
       }
+      case "evergreen": {
+        const node = await resolveEvergreenSingleton(
+          graph,
+          projectId,
+          def.catalogKey,
+        );
+        value = node ? serialize(node) : null;
+        break;
+      }
+      case "initiative_scope": {
+        const subject = context.subject;
+        const subjectId =
+          subject && typeof subject === "object" && "id" in subject
+            ? String((subject as ResolvedNode).id)
+            : null;
+        if (!subjectId) {
+          value = def.limit === 1 ? null : [];
+          break;
+        }
+        const scoped = await resolveInitiativeScopedNodes(
+          graph,
+          projectId,
+          subjectId,
+          def.catalogKey,
+          def.limit,
+        );
+        if (def.attachChildren) {
+          const enriched = await attachChildrenToNodes(
+            graph,
+            projectId,
+            scoped,
+            def.attachChildren,
+          );
+          value = def.limit === 1 ? (enriched[0] ?? null) : enriched;
+        } else if (def.limit === 1) {
+          value = scoped[0] ? serialize(scoped[0]) : null;
+        } else {
+          value = scoped.map(serialize);
+        }
+        break;
+      }
       case "node": {
         const node = await graph.getNodeById(def.nodeId);
         value = node && node.projectId === projectId ? serialize(node) : null;
         break;
       }
       case "subject": {
-        // The page's anchor node, resolved by the caller and threaded via
-        // `context.subject` (a ResolvedNode) — null for unanchored pages.
         const subject = context.subject;
         value =
           subject && typeof subject === "object" && "id" in subject
@@ -122,9 +264,22 @@ export async function resolvePageBindings(
         const targets = await Promise.all(
           targetIds.map((id) => graph.getNodeById(id)),
         );
-        value = targets
-          .filter((n): n is GraphNode => n !== null && n.projectId === projectId)
-          .map(serialize);
+        const nodes = filterByCatalogKey(
+          targets.filter(
+            (n): n is GraphNode => n !== null && n.projectId === projectId,
+          ),
+          def.catalogKey,
+        );
+        if (def.attachChildren) {
+          value = await attachChildrenToNodes(
+            graph,
+            projectId,
+            nodes,
+            def.attachChildren,
+          );
+        } else {
+          value = nodes.map(serialize);
+        }
         break;
       }
       case "ref": {

@@ -22,14 +22,19 @@
     "db:seed:demo-connections": "pnpm exec tsx scripts/seed-demo-connections.ts",
     "design-lab": "pnpm --filter design-lab dev",
     "design-lab:build": "pnpm --filter design-lab build",
-    "e2e:design-lab": "pnpm --filter e2e exec playwright test -c playwright.design-lab.config.ts"
+    "e2e:design-lab": "pnpm --filter e2e exec playwright test -c playwright.design-lab.config.ts",
+    "emulate:dev": "bash scripts/emulate-dev.sh",
+    "emulate:ports": "bash scripts/emulate-dev-ports.sh",
+    "e2e:emulate": "pnpm --filter e2e exec playwright test -c playwright.emulate.config.ts"
   },
   "devDependencies": {
     "@ssota/client": "workspace:*",
+    "emulate": "^0.8.0",
     "supabase": "^2.105.0",
+    "tsx": "^4.19.4",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3",
-    "tsx": "^4.19.4"
+    "yaml": "^2.9.0"
   },
   "packageManager": "pnpm@11.5.2",
   "engines": {

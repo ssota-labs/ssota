@@ -1,6 +1,8 @@
 export {
+  attachChildrenSchema,
   bindingDefSchema,
   propertyFilterSchema,
+  type AttachChildren,
   type BindingDef,
   type PropertyFilter,
 } from "./page-runtime-schema.js";

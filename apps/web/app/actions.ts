@@ -2,8 +2,10 @@
 
 import {
   type TaskStatus,
+  BlockNoteContentSchema,
   SpawnTaskInputSchema,
   UpdateTaskInputSchema,
+  UpsertWorkflowInstructionInputSchema,
 } from "@ssota/contracts";
 import { spawnTask } from "@ssota/core";
 import { revalidatePath } from "next/cache";
@@ -27,6 +29,32 @@ async function resolvePostSignInPath(userId: string, next?: string | null) {
   const safe = safeNextPath(next);
   if (safe) return safe;
   return resolvePostAuthPath(userId);
+}
+
+export async function updateWorkflowInstructionAction(
+  projectId: string,
+  input: {
+    key: string;
+    name: string;
+    description?: string;
+    content: unknown;
+  },
+) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const parsed = UpsertWorkflowInstructionInputSchema.parse({
+    key: input.key,
+    name: input.name,
+    description: input.description ?? "",
+    content: BlockNoteContentSchema.parse(input.content),
+  });
+
+  await getWorkflowInstructionPort(projectId).upsertInstruction(parsed);
+
+  for (const path of withConsolePaths(["/workflow/instructions"])) {
+    revalidatePath(path);
+  }
 }
 
 export async function updateTaskStatusAction(

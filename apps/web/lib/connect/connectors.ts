@@ -23,7 +23,8 @@ export type ConnectorProvider =
   | "notion"
   | "github"
   | "linear"
-  | "discord";
+  | "discord"
+  | "twitter";
 
 export interface ConnectorDef {
   provider: ConnectorProvider;
@@ -60,12 +61,13 @@ export interface ConnectorDef {
 // MCP and API are separate Vercel Connect connectors, so each provider has its
 // own env slot. `*_CONNECT_CONNECTOR` is the legacy single slot, kept as a
 // fallback for the MCP connector so existing deployments keep working.
-const MCP_ENV_KEYS: Record<ConnectorProvider, string> = {
+const MCP_ENV_KEYS: Partial<Record<ConnectorProvider, string>> = {
   slack: "SLACK_MCP_CONNECTOR",
   notion: "NOTION_MCP_CONNECTOR",
   github: "GITHUB_MCP_CONNECTOR",
   linear: "LINEAR_MCP_CONNECTOR",
   discord: "DISCORD_MCP_CONNECTOR",
+  // twitter has no hosted MCP server — omitted intentionally
 };
 
 const API_ENV_KEYS: Record<ConnectorProvider, string> = {
@@ -74,14 +76,16 @@ const API_ENV_KEYS: Record<ConnectorProvider, string> = {
   github: "GITHUB_API_CONNECTOR",
   linear: "LINEAR_API_CONNECTOR",
   discord: "DISCORD_API_CONNECTOR",
+  twitter: "TWITTER_API_CONNECTOR",
 };
 
-const LEGACY_ENV_KEYS: Record<ConnectorProvider, string> = {
+const LEGACY_ENV_KEYS: Partial<Record<ConnectorProvider, string>> = {
   slack: "SLACK_CONNECT_CONNECTOR",
   notion: "NOTION_CONNECT_CONNECTOR",
   github: "GITHUB_CONNECT_CONNECTOR",
   linear: "LINEAR_CONNECT_CONNECTOR",
   discord: "DISCORD_CONNECT_CONNECTOR",
+  // twitter has no legacy slot — it uses TWITTER_API_CONNECTOR as its primary
 };
 
 const REGISTRY: Omit<
@@ -113,6 +117,11 @@ const REGISTRY: Omit<
     label: "Linear",
     multiWorkspace: false,
   },
+  {
+    provider: "twitter",
+    label: "X",
+    multiWorkspace: false,
+  },
 ];
 
 /**
@@ -131,11 +140,15 @@ export function isMcpConnector(connectorUid: string | null | undefined): boolean
 /** Resolve the connector registry with per-deployment env configuration. */
 export function getConnectors(): ConnectorDef[] {
   return REGISTRY.map((def) => {
-    const connectorUid =
-      process.env[MCP_ENV_KEYS[def.provider]] ??
-      process.env[LEGACY_ENV_KEYS[def.provider]] ??
-      null;
     const apiConnectorUid = process.env[API_ENV_KEYS[def.provider]] ?? null;
+    // Resolution order: MCP connector → legacy single slot → API connector.
+    // The API connector fallback allows REST-only providers (e.g. Twitter) that
+    // have no hosted MCP server to appear as configured and drive the Connect
+    // auth flow, while still recording a separate apiConnectorUid for clarity.
+    const connectorUid =
+      process.env[MCP_ENV_KEYS[def.provider] ?? ""] ??
+      process.env[LEGACY_ENV_KEYS[def.provider] ?? ""] ??
+      apiConnectorUid;
     return {
       ...def,
       connectorUid,
@@ -150,6 +163,16 @@ const AUTHORIZE_SCOPES: Partial<Record<ConnectorProvider, readonly string[]>> = 
   // Discord bot install requires the `bot` scope; without it the OAuth page
   // shows "No scopes were provided."
   discord: ["bot"],
+  // Twitter uses provider-level OAuth (no hosted MCP), so all required scopes
+  // must be declared here. `offline.access` requests a refresh token.
+  twitter: [
+    "tweet.read",
+    "tweet.write",
+    "users.read",
+    "follows.read",
+    "follows.write",
+    "offline.access",
+  ],
 };
 
 /** Resolve the provider segment of a stored connector uid, e.g. "slack/acme" → "slack". */
