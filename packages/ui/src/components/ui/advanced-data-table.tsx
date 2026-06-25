@@ -124,6 +124,8 @@ type AdvancedDataTableProps<TData> = {
   enableGlobalFilter?: boolean
   /** Spreadsheet cell selection + keyboard nav + Cmd/Ctrl+C CSV copy. */
   enableCellSelection?: boolean
+  /** Single-cell click focus ring only (no multi-select, no keyboard nav, no CSV). */
+  enableCellFocus?: boolean
   /** @deprecated The capped-height scroll viewport + sticky header is always on. */
   enableVirtualization?: boolean
   /**
@@ -289,7 +291,7 @@ function TextCellEditor({
         }}
         onFocus={(e) => e.currentTarget.select()}
         className={cn(
-          "border-primary ring-primary/30 h-full w-full rounded-none border-2 bg-background px-2 text-sm outline-none ring-2",
+          "border-primary ring-primary/30 h-full w-full rounded-none border-2 bg-background px-2 text-sm outline-none ring-2 select-text",
           // Number columns: right-align and strip the native spinner arrows.
           type === "number" &&
             "text-right [appearance:textfield] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none",
@@ -461,6 +463,7 @@ export function AdvancedDataTable<TData>({
   enableMultiSort = true,
   enableGlobalFilter = true,
   enableCellSelection = false,
+  enableCellFocus = false,
   enablePagination = true,
   maxBodyHeight = 480,
   onCellEdit,
@@ -654,6 +657,13 @@ export function AdvancedDataTable<TData>({
     colId: string
   } | null>(null)
 
+  // Single-cell click focus (independent of multi-select); keyed by row id +
+  // column id so it survives sort/filter/pagination reordering.
+  const [focusedCell, setFocusedCell] = React.useState<{
+    rowId: string
+    colId: string
+  } | null>(null)
+
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   const renderRow = (row: (typeof rows)[number], rIndex: number) => (
@@ -674,6 +684,9 @@ export function AdvancedDataTable<TData>({
               pinned && "bg-background",
               align === "right" && "text-right",
               align === "center" && "text-center",
+              // Grid modes: click is a cell action, so suppress text drag-select
+              // (the overlay editor re-enables selection via `select-text`).
+              (enableCellSelection || enableCellFocus) && "select-none",
               enableCellSelection && "cursor-cell",
               enableCellSelection &&
                 selection.isSelected(rIndex, c) &&
@@ -681,12 +694,18 @@ export function AdvancedDataTable<TData>({
               enableCellSelection &&
                 selection.isFocus(rIndex, c) &&
                 "ring-1 ring-inset ring-primary",
+              enableCellFocus &&
+                focusedCell?.rowId === row.id &&
+                focusedCell?.colId === col.id &&
+                "bg-primary/15 ring-1 ring-inset ring-primary",
             )}
             style={{ width: col.getSize(), ...pinStyles(col, 1) }}
             onMouseDown={
               enableCellSelection && !isEditing
                 ? (e) => selection.onCellMouseDown(rIndex, c, e)
-                : undefined
+                : enableCellFocus && !isEditing
+                  ? () => setFocusedCell({ rowId: row.id, colId: col.id })
+                  : undefined
             }
             onDoubleClick={
               editable
