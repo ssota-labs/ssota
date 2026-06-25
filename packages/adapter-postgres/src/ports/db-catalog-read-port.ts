@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import edgeCatalogSeed from "@ssota/contracts/seed-packs/software-development-workflow/edge-catalog.json" with {
   type: "json",
 };
@@ -9,8 +9,8 @@ import {
   listEdgeTypes,
   listNodeTypes,
   parseNodeProperties,
-  rankCatalogCandidates,
-  type CatalogSearchCandidate,
+  type CatalogKind,
+  type CatalogSearchHit,
   type EdgeCatalogRow,
   type NodeCatalogRow,
   type NodeType,
@@ -77,6 +77,51 @@ function mapEdgeCatalogRow(
     rangeCatalogIds: row.rangeCatalogIds ?? [],
     propertySchema: row.propertySchema ?? null,
   };
+}
+
+/**
+ * Phase 2 (FTS): rank one catalog table with `ts_rank` over the generated
+ * `search_tsv` column (GIN-indexed), with an ILIKE substring OR-clause so
+ * prefix/partial queries that don't tokenize (e.g. "retro" → "retrospective")
+ * still match. ILIKE-only rows score 0 and sort after FTS hits.
+ */
+async function searchCatalogTable(
+  db: Db,
+  tableName: string,
+  kind: CatalogKind,
+  projectId: string,
+  query: string,
+  limit: number,
+): Promise<CatalogSearchHit[]> {
+  const like = `%${query}%`;
+  const table = sql.identifier(tableName);
+  const rows = (await db.execute(sql`
+    select key, label, description,
+      ts_rank(search_tsv, websearch_to_tsquery('simple', ${query})) as rank
+    from ${table}
+    where project_id = ${projectId}
+      and (
+        search_tsv @@ websearch_to_tsquery('simple', ${query})
+        or key ilike ${like}
+        or label ilike ${like}
+        or description ilike ${like}
+        or exists (select 1 from unnest(keywords) kw where kw ilike ${like})
+      )
+    order by rank desc, label asc
+    limit ${limit}
+  `)) as unknown as Array<{
+    key: string;
+    label: string;
+    description: string | null;
+    rank: number | string;
+  }>;
+  return rows.map((row) => ({
+    kind,
+    key: row.key,
+    label: row.label,
+    snippet: row.description && row.description.length > 0 ? row.description : row.label,
+    score: typeof row.rank === "number" ? row.rank : Number(row.rank) || 0,
+  }));
 }
 
 export function createDbCatalogReadPort(
@@ -153,42 +198,37 @@ export function createDbCatalogReadPort(
       return rows[0] ? mapEdgeCatalogRow(rows[0]) : null;
     },
     async searchCatalog(input) {
-      // Phase 1 (ILIKE-class): the per-project catalog is small, so fetch the
-      // candidate rows and rank in-process with the shared scorer. Phase 2 swaps
-      // this body for a tsvector/ts_rank query and Phase 3 for vector cosine —
-      // the port contract and ranking shape stay the same.
-      const candidates: CatalogSearchCandidate[] = [];
+      // Phase 2 (FTS): rank in SQL via ts_rank over the GIN-indexed search_tsv
+      // (see searchCatalogTable). The port contract and hit shape are unchanged
+      // from Phase 1, so Phase 3 can layer vector cosine on the same surface.
+      const hits: CatalogSearchHit[] = [];
       if (input.kind !== "edge") {
-        const rows = await db
-          .select()
-          .from(schema.nodeCatalog)
-          .where(eq(schema.nodeCatalog.projectId, projectId));
-        for (const row of rows) {
-          candidates.push({
-            kind: "node",
-            key: row.key,
-            label: row.label,
-            description: row.description ?? "",
-            keywords: row.keywords ?? [],
-          });
-        }
+        hits.push(
+          ...(await searchCatalogTable(
+            db,
+            "node_catalog",
+            "node",
+            projectId,
+            input.query,
+            input.limit,
+          )),
+        );
       }
       if (input.kind !== "node") {
-        const rows = await db
-          .select()
-          .from(schema.edgeCatalog)
-          .where(eq(schema.edgeCatalog.projectId, projectId));
-        for (const row of rows) {
-          candidates.push({
-            kind: "edge",
-            key: row.key,
-            label: row.label,
-            description: row.description ?? "",
-            keywords: row.keywords ?? [],
-          });
-        }
+        hits.push(
+          ...(await searchCatalogTable(
+            db,
+            "edge_catalog",
+            "edge",
+            projectId,
+            input.query,
+            input.limit,
+          )),
+        );
       }
-      return rankCatalogCandidates(input.query, candidates, input.limit);
+      return hits
+        .sort((a, b) => b.score - a.score || a.label.localeCompare(b.label))
+        .slice(0, input.limit);
     },
     validateNodeProperties(catalogKey, properties) {
       if (isKnownNodeType(catalogKey)) {
