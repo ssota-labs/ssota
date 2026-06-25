@@ -362,6 +362,10 @@ export const en = {
         description:
           "Connect your Linear workspace for issues and projects.",
       },
+      twitter: {
+        description:
+          "Connect your X account so the agent can post, search, and engage.",
+      },
     },
   },
 } as const;
@@ -738,6 +742,10 @@ export const ko = {
       linear: {
         description:
           "Linear 워크스페이스를 연결해 이슈와 프로젝트를 다룰 수 있게 합니다.",
+      },
+      twitter: {
+        description:
+          "에이전트가 X 계정에서 게시, 검색, 반응할 수 있게 합니다.",
       },
     },
   },

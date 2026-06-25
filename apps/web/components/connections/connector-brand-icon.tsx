@@ -8,6 +8,8 @@ import {
   Linear,
   Notion,
   Slack,
+  XDark,
+  XLight,
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@ssota/ui/lib/utils";
 import type { ConnectorProvider } from "@/lib/connect/connectors";
@@ -25,6 +27,7 @@ const PROVIDER_SVGS: Record<
   github: GitHubLight,
   discord: Discord,
   linear: Linear,
+  twitter: XLight,
 };
 
 export function ConnectorBrandIcon({
@@ -41,6 +44,23 @@ export function ConnectorBrandIcon({
           {...props}
         />
         <GitHubDark
+          aria-hidden
+          className={cn("hidden dark:block", className)}
+          {...props}
+        />
+      </>
+    );
+  }
+
+  if (provider === "twitter") {
+    return (
+      <>
+        <XLight
+          aria-hidden
+          className={cn("dark:hidden", className)}
+          {...props}
+        />
+        <XDark
           aria-hidden
           className={cn("hidden dark:block", className)}
           {...props}

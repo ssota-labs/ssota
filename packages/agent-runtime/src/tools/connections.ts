@@ -7,7 +7,11 @@ import { tool } from "ai";
 import { z } from "zod";
 import type { CredentialProvider } from "../credentials/provider.js";
 import { getDb } from "../ports.js";
-import { resolveConnectorUid } from "../connections/connect-credential.js";
+import {
+  resolveConnectorUid,
+  resolveApiConnectorUid,
+} from "../connections/connect-credential.js";
+import { createTwitterRestTools } from "./twitter.js";
 import type { McpConnectionDef } from "../connections/define-mcp-connection.js";
 import { getConfiguredConnections } from "../connections/registry.js";
 import type { McpToolListing } from "../connections/filter-tools.js";
@@ -73,6 +77,7 @@ export async function createConnectionTools(
     [CONNECTION_SEARCH_TOOL]: buildConnectionSearchTool(connections, input),
     [CONNECTION_CALL_TOOL]: buildConnectionCallTool(connections, input),
     [REQUEST_CONNECTION_TOOL]: buildRequestConnectionTool(),
+    ...(await buildRestTools(input)),
   };
 
   return {
@@ -80,6 +85,35 @@ export async function createConnectionTools(
     connectionState: input.connectionState,
     sessionManager: input.sessionManager,
   };
+}
+
+async function buildRestTools(
+  input: CreateConnectionToolsInput,
+): Promise<ToolSet> {
+  const tools: ToolSet = {};
+
+  // Twitter — REST-only provider with user-subject OAuth via Vercel Connect.
+  const twitterConnectorUid = resolveApiConnectorUid("twitter");
+  if (twitterConnectorUid && input.accountId) {
+    const port = createAccountConnectionPort(getDb());
+    const rows = await port.listConnectCredentialScopes(
+      input.accountId,
+      twitterConnectorUid,
+    );
+    const twitterUserId = rows[0]?.subjectUserId ?? undefined;
+    Object.assign(
+      tools,
+      createTwitterRestTools({
+        credentials: input.credentials,
+        connectorUid: twitterConnectorUid,
+        projectId: input.projectId,
+        accountId: input.accountId,
+        userId: twitterUserId,
+      }),
+    );
+  }
+
+  return tools;
 }
 
 async function listInstallScopes(
