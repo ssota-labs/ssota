@@ -16,6 +16,7 @@ import {
   traverseEdgesInputSchema,
   updateNodeInputSchema,
 } from "@ssota/contracts/graph";
+import { catalogSearchInputSchema } from "@ssota/contracts";
 import {
   getGraphPorts,
   getGraphReadPort,
@@ -44,6 +45,48 @@ export function createGraphTools(): ToolSet {
       },
     }),
 
+    search_catalog: tool({
+      description:
+        "Search the project's type catalog (node + edge types) by keyword. Returns lightweight hits {kind,key,label,snippet,score}; fetch full detail with get_node_type / get_edge_type. Prefer this over list_node_types when the catalog is large or you only need types matching an intent (e.g. 'billing', '회고', 'metric').",
+      inputSchema: z.object({
+        query: z.string().min(1).describe("Search text — matches key, label, keywords, description."),
+        kind: z
+          .enum(["node", "edge"])
+          .optional()
+          .describe("Restrict to node types or edge types. Omit to search both."),
+        limit: z.number().int().positive().max(50).optional(),
+      }),
+      execute: async (input, { experimental_context }) => {
+        const { projectId, accountId } = getRunContext(experimental_context);
+        const parsed = catalogSearchInputSchema.parse(input);
+        return getGraphPorts(projectId, accountId).catalog.searchCatalog(parsed);
+      },
+    }),
+
+    get_node_type: tool({
+      description:
+        "Fetch one node type's full detail (label, description, keywords, property schema) by key. Use after search_catalog / list_node_types to read the property schema before creating nodes.",
+      inputSchema: z.object({ key: z.string() }),
+      execute: async (input, { experimental_context }) => {
+        const { projectId, accountId } = getRunContext(experimental_context);
+        return getGraphPorts(projectId, accountId).catalog.getNodeCatalogByKey(
+          input.key,
+        );
+      },
+    }),
+
+    get_edge_type: tool({
+      description:
+        "Fetch one edge type's full detail (label, description, keywords, domain/range constraints) by key.",
+      inputSchema: z.object({ key: z.string() }),
+      execute: async (input, { experimental_context }) => {
+        const { projectId, accountId } = getRunContext(experimental_context);
+        return getGraphPorts(projectId, accountId).catalog.getEdgeCatalogByKey(
+          input.key,
+        );
+      },
+    }),
+
     create_node_type: tool({
       description:
         "Define (or update) a node type in the project catalog. Use during setup to model the domain's records before creating node instances. propertySchema is a JSON-schema-like object describing the type's properties. Upserts by key.",
@@ -52,6 +95,14 @@ export function createGraphTools(): ToolSet {
           .string()
           .describe("Stable type key, e.g. 'customer', 'invoice', 'patient'."),
         label: z.string().describe("Human-readable name."),
+        description: z
+          .string()
+          .optional()
+          .describe("One-line, search-facing description of when to use this type."),
+        keywords: z
+          .array(z.string())
+          .optional()
+          .describe("Search aliases/synonyms to improve catalog search recall."),
         propertySchema: z.record(z.unknown()).optional(),
       }),
       execute: async (input, { experimental_context }) => {
@@ -59,6 +110,8 @@ export function createGraphTools(): ToolSet {
         return getCatalogWritePort(projectId).upsertNodeCatalog({
           key: input.key,
           label: input.label,
+          description: input.description,
+          keywords: input.keywords,
           propertySchema: input.propertySchema ?? {},
         });
       },
@@ -70,6 +123,14 @@ export function createGraphTools(): ToolSet {
       inputSchema: z.object({
         key: z.string().describe("Stable type key, e.g. 'placed_by', 'belongs_to'."),
         label: z.string(),
+        description: z
+          .string()
+          .optional()
+          .describe("One-line, search-facing description of the relationship."),
+        keywords: z
+          .array(z.string())
+          .optional()
+          .describe("Search aliases/synonyms to improve catalog search recall."),
         domainKeys: z
           .array(z.string())
           .optional()
@@ -99,6 +160,8 @@ export function createGraphTools(): ToolSet {
         return getCatalogWritePort(projectId).upsertEdgeCatalog({
           key: input.key,
           label: input.label,
+          description: input.description,
+          keywords: input.keywords,
           domainCatalogIds: await resolveKeys(input.domainKeys),
           rangeCatalogIds: await resolveKeys(input.rangeKeys),
           propertySchema: input.propertySchema ?? null,

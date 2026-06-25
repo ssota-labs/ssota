@@ -14,6 +14,67 @@ describe("createContractsCatalogReadPort", () => {
     expect(await catalog.getNodeCatalogByKey("not_a_real_type")).toBeNull();
   });
 
+  it("populates description and keywords on catalog rows", async () => {
+    const node = await catalog.getNodeCatalogByKey("retrospective");
+    expect(node?.description).toMatch(/회고/);
+    expect(node?.keywords).toContain("retro");
+    const edge = await catalog.getEdgeCatalogByKey("informs");
+    expect(edge?.keywords).toContain("informs");
+  });
+
+  describe("searchCatalog", () => {
+    it("finds a node type by english keyword", async () => {
+      const hits = await catalog.searchCatalog({
+        query: "retrospective",
+        limit: 10,
+      });
+      expect(hits[0]?.key).toBe("retrospective");
+      expect(hits[0]?.kind).toBe("node");
+    });
+
+    it("finds a node type by korean label/keyword", async () => {
+      const hits = await catalog.searchCatalog({ query: "회고", limit: 10 });
+      expect(hits.map((h) => h.key)).toContain("retrospective");
+    });
+
+    it("matches via keyword aliases (metric → kpi)", async () => {
+      const hits = await catalog.searchCatalog({ query: "metric", limit: 10 });
+      const keys = hits.map((h) => h.key);
+      expect(keys).toContain("kpi");
+    });
+
+    it("respects the kind filter", async () => {
+      const nodeHits = await catalog.searchCatalog({
+        query: "page",
+        kind: "node",
+        limit: 20,
+      });
+      expect(nodeHits.every((h) => h.kind === "node")).toBe(true);
+      const edgeHits = await catalog.searchCatalog({
+        query: "page",
+        kind: "edge",
+        limit: 20,
+      });
+      expect(edgeHits.every((h) => h.kind === "edge")).toBe(true);
+      expect(edgeHits.map((h) => h.key)).toContain("for_page");
+    });
+
+    it("orders better matches first and caps to limit", async () => {
+      const hits = await catalog.searchCatalog({ query: "design", limit: 2 });
+      expect(hits.length).toBeLessThanOrEqual(2);
+      // exact-ish design types should outrank incidental description matches
+      expect(hits.map((h) => h.key)).toContain("design_theme");
+    });
+
+    it("returns no hits for a nonsense query", async () => {
+      const hits = await catalog.searchCatalog({
+        query: "zzzznotareal",
+        limit: 10,
+      });
+      expect(hits).toEqual([]);
+    });
+  });
+
   it("validates known node properties", () => {
     const parsed = catalog.validateNodeProperties("hypothesis", {
       status: "validated",

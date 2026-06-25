@@ -240,6 +240,11 @@ export const nodeCatalog = pgTable(
       .references(() => projects.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
     label: text("label").notNull(),
+    description: text("description").notNull().default(""),
+    keywords: text("keywords")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     propertySchema: jsonb("property_schema")
       .notNull()
       .default({})
@@ -265,6 +270,11 @@ export const edgeCatalog = pgTable(
       .references(() => projects.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
     label: text("label").notNull(),
+    description: text("description").notNull().default(""),
+    keywords: text("keywords")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     domainCatalogIds: uuid("domain_catalog_ids")
       .array()
       .notNull()

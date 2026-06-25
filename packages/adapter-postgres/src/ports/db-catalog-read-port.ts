@@ -9,6 +9,8 @@ import {
   listEdgeTypes,
   listNodeTypes,
   parseNodeProperties,
+  rankCatalogCandidates,
+  type CatalogSearchCandidate,
   type EdgeCatalogRow,
   type NodeCatalogRow,
   type NodeType,
@@ -55,6 +57,8 @@ function mapNodeCatalogRow(
     projectId: row.projectId,
     key: row.key,
     label: row.label,
+    description: row.description ?? "",
+    keywords: row.keywords ?? [],
     propertySchema: row.propertySchema ?? {},
   };
 }
@@ -67,6 +71,8 @@ function mapEdgeCatalogRow(
     projectId: row.projectId,
     key: row.key,
     label: row.label,
+    description: row.description ?? "",
+    keywords: row.keywords ?? [],
     domainCatalogIds: row.domainCatalogIds ?? [],
     rangeCatalogIds: row.rangeCatalogIds ?? [],
     propertySchema: row.propertySchema ?? null,
@@ -146,6 +152,44 @@ export function createDbCatalogReadPort(
         .limit(1);
       return rows[0] ? mapEdgeCatalogRow(rows[0]) : null;
     },
+    async searchCatalog(input) {
+      // Phase 1 (ILIKE-class): the per-project catalog is small, so fetch the
+      // candidate rows and rank in-process with the shared scorer. Phase 2 swaps
+      // this body for a tsvector/ts_rank query and Phase 3 for vector cosine —
+      // the port contract and ranking shape stay the same.
+      const candidates: CatalogSearchCandidate[] = [];
+      if (input.kind !== "edge") {
+        const rows = await db
+          .select()
+          .from(schema.nodeCatalog)
+          .where(eq(schema.nodeCatalog.projectId, projectId));
+        for (const row of rows) {
+          candidates.push({
+            kind: "node",
+            key: row.key,
+            label: row.label,
+            description: row.description ?? "",
+            keywords: row.keywords ?? [],
+          });
+        }
+      }
+      if (input.kind !== "node") {
+        const rows = await db
+          .select()
+          .from(schema.edgeCatalog)
+          .where(eq(schema.edgeCatalog.projectId, projectId));
+        for (const row of rows) {
+          candidates.push({
+            kind: "edge",
+            key: row.key,
+            label: row.label,
+            description: row.description ?? "",
+            keywords: row.keywords ?? [],
+          });
+        }
+      }
+      return rankCatalogCandidates(input.query, candidates, input.limit);
+    },
     validateNodeProperties(catalogKey, properties) {
       if (isKnownNodeType(catalogKey)) {
         return parseNodeProperties(catalogKey, properties);
@@ -187,6 +231,12 @@ export async function seedDomainCatalog(
       )
       .limit(1);
     if (existing[0]) {
+      // Backfill search text on pre-existing rows so older projects pick up
+      // description/keywords without a reseed-from-scratch.
+      await db
+        .update(schema.nodeCatalog)
+        .set({ description: entry.description, keywords: entry.keywords })
+        .where(eq(schema.nodeCatalog.id, existing[0].id));
       nodeKeyToId.set(key, existing[0].id);
       continue;
     }
@@ -196,6 +246,8 @@ export async function seedDomainCatalog(
         projectId,
         key,
         label: entry.label,
+        description: entry.description,
+        keywords: entry.keywords,
         propertySchema: { type: "object" },
       })
       .returning({ id: schema.nodeCatalog.id });
@@ -230,6 +282,8 @@ export async function seedDomainCatalog(
           domainCatalogIds,
           rangeCatalogIds,
           label: entry.label,
+          description: entry.description,
+          keywords: entry.keywords,
         })
         .where(eq(schema.edgeCatalog.id, existing[0].id));
       edgeKeyToId.set(key, existing[0].id);
@@ -241,6 +295,8 @@ export async function seedDomainCatalog(
         projectId,
         key,
         label: entry.label,
+        description: entry.description,
+        keywords: entry.keywords,
         domainCatalogIds,
         rangeCatalogIds,
         propertySchema: null,

@@ -5,11 +5,13 @@ import { throwMcpToolError } from "@/lib/api/mcp-errors";
 import {
   createEdgeForMcp,
   createNodeForMcp,
+  getEdgeTypeForMcp,
   getNodeForMcp,
   getNodeTypeForMcp,
   listEdgeTypesForMcp,
   listNodeTypesForMcp,
   queryNodesForMcp,
+  searchCatalogForMcp,
   traverseEdgesForMcp,
   updateNodeForMcp,
 } from "@/lib/api/graph-services";
@@ -61,6 +63,21 @@ export function registerGraphTools(server: McpToolServer) {
 
   registerScopedProjectTool(
     server,
+    "get_edge_type",
+    {
+      title: "Get Edge Type",
+      description:
+        "Fetch an edge type catalog entry (label, description, keywords) from the contracts SSOT.",
+      inputSchema: { catalogKey: edgeCatalogKeySchema },
+    },
+    async ({ args }) => {
+      const catalogKey = String(args.catalogKey ?? args.edgeType);
+      return jsonContent(getEdgeTypeForMcp(catalogKey));
+    },
+  );
+
+  registerScopedProjectTool(
+    server,
     "list_edge_types",
     {
       title: "List Edge Types",
@@ -69,6 +86,23 @@ export function registerGraphTools(server: McpToolServer) {
       inputSchema: {},
     },
     async () => jsonContent(listEdgeTypesForMcp()),
+  );
+
+  registerScopedProjectTool(
+    server,
+    "search_catalog",
+    {
+      title: "Search Catalog",
+      description:
+        "Search the project's type catalog (node + edge types) by keyword. Returns lightweight hits {kind,key,label,snippet,score}; fetch detail with get_node_type / get_edge_type. Prefer over list_node_types when you only need types matching an intent.",
+      inputSchema: {
+        query: z.string().min(1),
+        kind: z.enum(["node", "edge"]).optional(),
+        limit: z.number().int().positive().max(50).optional(),
+      },
+    },
+    async ({ projectId, args }) =>
+      jsonContent(await searchCatalogForMcp(projectId, args)),
   );
 
   registerScopedProjectTool(
