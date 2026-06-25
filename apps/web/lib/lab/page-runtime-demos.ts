@@ -79,6 +79,83 @@ const taskPriorityColors = {
   high: "oklch(0.9 0.08 25)",
 };
 
+const okrStatusColors = {
+  "on-track": "oklch(0.9 0.07 150)",
+  "at-risk": "oklch(0.92 0.06 70)",
+  "off-track": "oklch(0.9 0.08 25)",
+};
+
+// Objectives carry their key results inline as an array property (`keyResults`),
+// so the expandable table reads children without a per-row traverse binding.
+const mockObjectives = [
+  {
+    id: "88888888-8888-4888-8888-888888888801",
+    catalogKey: "objective",
+    title: "Ship the graph console GA",
+    properties: {
+      owner: "Felix",
+      status: "on-track",
+      progress: 72,
+      keyResults: [
+        {
+          id: "kr-1a",
+          title: "p95 page load < 800ms",
+          properties: { target: 800, current: 910, unit: "ms", status: "at-risk" },
+        },
+        {
+          id: "kr-1b",
+          title: "Catalog components shipped",
+          properties: { target: 12, current: 9, unit: "count", status: "on-track" },
+        },
+        {
+          id: "kr-1c",
+          title: "Design-partner sign-offs",
+          properties: { target: 5, current: 5, unit: "count", status: "on-track" },
+        },
+      ],
+    },
+  },
+  {
+    id: "88888888-8888-4888-8888-888888888802",
+    catalogKey: "objective",
+    title: "Grow weekly active workspaces",
+    properties: {
+      owner: "Nina",
+      status: "at-risk",
+      progress: 41,
+      keyResults: [
+        {
+          id: "kr-2a",
+          title: "WAW from 120 → 300",
+          properties: { target: 300, current: 168, unit: "count", status: "at-risk" },
+        },
+        {
+          id: "kr-2b",
+          title: "Activation rate",
+          properties: { target: 60, current: 47, unit: "%", status: "at-risk" },
+        },
+      ],
+    },
+  },
+  {
+    id: "88888888-8888-4888-8888-888888888803",
+    catalogKey: "objective",
+    title: "Harden the agent runtime",
+    properties: {
+      owner: "Oliver",
+      status: "off-track",
+      progress: 18,
+      keyResults: [
+        {
+          id: "kr-3a",
+          title: "Workflow success rate",
+          properties: { target: 99, current: 92, unit: "%", status: "off-track" },
+        },
+      ],
+    },
+  },
+];
+
 // Larger dataset for the grid-mode demo (virtualization + cell selection).
 const mockTasksLarge = Array.from({ length: 24 }, (_, i) => {
   const statuses = ["todo", "doing", "done"];
@@ -1049,6 +1126,63 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
         },
       },
     },
+  },
+  {
+    id: "expandable-table",
+    category: "data",
+    title: "ExpandableTable (OKR master-detail)",
+    description:
+      "Clones the grid-mode DataTable and adds an expander column: each Objective row expands to a nested Key Results sub-table (its own typed columns, chips, cell selection, inline edit). Children are read from the objective node's `keyResults` array; child edits rewrite the array on the parent via childSetAction. Click the caret to expand, then double-click a KR cell to edit.",
+    components: ["Section", "ExpandableTable"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Objectives",
+            subtitle: "Expand an objective to see and edit its key results",
+          },
+          children: ["okr"],
+        },
+        okr: {
+          type: "ExpandableTable",
+          props: {
+            binding: "objectives",
+            setAction: "setCell",
+            childSetAction: "setChild",
+            childProperty: "keyResults",
+            childLabel: "Key results",
+            columns: [
+              { key: "title", header: "Objective", type: "text", editable: true, width: 320 },
+              { key: "owner", header: "Owner", type: "text", editable: true, width: 120 },
+              {
+                key: "status",
+                header: "Status",
+                type: "select",
+                options: ["on-track", "at-risk", "off-track"],
+                colors: okrStatusColors,
+              },
+              { key: "progress", header: "Progress %", type: "number", editable: true },
+            ],
+            childColumns: [
+              { key: "title", header: "Key result", type: "text", editable: true, width: 320 },
+              { key: "current", header: "Current", type: "number", editable: true },
+              { key: "target", header: "Target", type: "number", editable: true },
+              { key: "unit", header: "Unit", type: "text" },
+              {
+                key: "status",
+                header: "Status",
+                type: "select",
+                options: ["on-track", "at-risk", "off-track"],
+                colors: okrStatusColors,
+              },
+            ],
+          },
+        },
+      },
+    },
+    bindingData: { objectives: mockObjectives },
   },
 ];
 
