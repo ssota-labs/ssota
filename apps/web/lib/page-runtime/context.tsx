@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import type { JsonRenderSpec, TableViewState } from "@ssota/contracts";
+import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
 import type { BindingContext } from "./types";
 
 export type JsonRenderRuntime = {
@@ -38,6 +39,23 @@ export const WidgetBuildContext = createContext<
   ((nodeId: string) => void | Promise<void>) | undefined
 >(undefined);
 export const useWidgetBuild = () => useContext(WidgetBuildContext);
+
+/** Design studio mutations for ComponentStudio (create/deploy). */
+export type ComponentStudioRuntime = {
+  projectId: string;
+  previewBasePath: string;
+  initialComponentId?: string | null;
+  onCreateComponent: () => Promise<string>;
+  onDeployComponent: (input: {
+    nodeId: string;
+    contentV2: UiComponentContentV2;
+  }) => Promise<void>;
+};
+
+export const ComponentStudioContext = createContext<
+  ComponentStudioRuntime | null
+>(null);
+export const useComponentStudio = () => useContext(ComponentStudioContext);
 
 /**
  * Per-user table view-state persistence for the advanced data table. `initial`

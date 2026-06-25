@@ -25,6 +25,8 @@ type ConsoleShellProps = {
   signOutAction: () => Promise<void>;
   initiatives?: InitiativeOption[];
   pageTree?: SidebarPage[];
+  /** Page ids that render full-bleed (ComponentStudio, DocumentSheetList, …). */
+  fillHeightPageIds?: string[];
   /** Node-type drill-in templates, grouped by catalogKey (static per project).
    * The active node is resolved client-side via NodeDrill context. */
   templatesByType?: Record<string, SidebarPage[]>;
@@ -39,14 +41,18 @@ export function ConsoleShell({
   signOutAction,
   initiatives = [],
   pageTree,
+  fillHeightPageIds = [],
   templatesByType,
   children,
 }: ConsoleShellProps) {
   const pathname = usePathname();
   const isTasksContext = pathname.includes(`/${ctx.projectSlug}/tasks`);
   const isChatContext = pathname.includes(`/${ctx.projectSlug}/c`);
-  const isDesignStudio = pathname.includes("/design/ui-components");
-  const isFullBleedContext = isTasksContext || isChatContext || isDesignStudio;
+  const isFillHeightPage = fillHeightPageIds.some((pageId) =>
+    pathname.endsWith(`/p/${pageId}`),
+  );
+  const isFullBleedContext =
+    isTasksContext || isChatContext || isFillHeightPage;
 
   return (
     <ProjectProvider value={ctx}>

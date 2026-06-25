@@ -8,6 +8,7 @@ import { formComponents } from "./components/forms";
 import { tokenComponents } from "./components/tokens";
 import { documentComponents } from "./components/document";
 import { spreadsheetComponents } from "./components/spreadsheet";
+import { componentStudioComponents } from "./components/component-studio";
 import { widgetComponents } from "./components/widget";
 
 /**
@@ -25,6 +26,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...tokenComponents,
   ...documentComponents,
   ...spreadsheetComponents,
+  ...componentStudioComponents,
   ...widgetComponents,
 };
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { CaretDownIcon, CaretRightIcon } from "@phosphor-icons/react";
 import {
   Collapsible,
@@ -15,17 +14,16 @@ import type { UiComponentListRow } from "@/lib/graph/loaders/query-ui-components
 type ComponentsPanelProps = {
   components: UiComponentListRow[];
   activeComponentId: string | null;
-  studioBasePath: string;
+  onSelectComponent: (componentId: string) => void;
   searchQuery?: string;
 };
 
 export function ComponentsPanel({
   components,
   activeComponentId,
-  studioBasePath,
+  onSelectComponent,
   searchQuery = "",
 }: ComponentsPanelProps) {
-  const router = useRouter();
   const filteredComponents = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     if (!query) return components;
@@ -93,9 +91,7 @@ export function ComponentsPanel({
                           "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-muted",
                           active && "bg-muted",
                         )}
-                        onClick={() => {
-                          router.push(`${studioBasePath}/${component.id}`);
-                        }}
+                        onClick={() => onSelectComponent(component.id)}
                       >
                         <span
                           className={cn(

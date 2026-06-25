@@ -1,14 +1,23 @@
 import { notFound } from "next/navigation";
 import type { TableViewState } from "@ssota/contracts";
+import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
 import { resolvePageBindings } from "@ssota/core";
 import { resolveProject } from "@/lib/console/resolve-project";
+import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { TreePageView } from "@/lib/page-runtime/tree-page-view";
-import { pageUsesDocumentSheetList } from "@/lib/page-runtime/spec-utils";
+import {
+  pageUsesComponentStudio,
+  pageUsesFillHeight,
+} from "@/lib/page-runtime/spec-utils";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
 import { savePageViewState } from "@/lib/page-runtime/save-page-view-state";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { createGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
+import { deployUiComponentAction } from "@/lib/graph/actions/deploy-ui-component";
+import { defaultSourceComponentProperties } from "@/lib/design-studio/empty-document";
+import { slugifyComponentTitle } from "@/lib/design-studio/tree-utils";
 
 /**
  * Notion-style page renderer. Loads a page from the `pages` table by id, resolves
@@ -19,10 +28,13 @@ import { getCurrentUser } from "@/lib/supabase/server";
  */
 export default async function TreePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string; pageId: string }>;
+  searchParams: Promise<{ component?: string }>;
 }) {
   const { orgSlug, projectSlug, pageId } = await params;
+  const { component: initialComponentId } = await searchParams;
   const { project } = await resolveProject(orgSlug, projectSlug);
 
   const page = await getPagePort(project.id).getPage(pageId);
@@ -54,8 +66,12 @@ export default async function TreePage({
   );
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
 
-  const fillHeight = pageUsesDocumentSheetList(page.spec);
+  const fillHeight = pageUsesFillHeight(page.spec);
+  const usesStudio = pageUsesComponentStudio(page.spec);
   const basePath = `/${orgSlug}/${projectSlug}`;
+  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
+  const pagePath = projectPath(routeCtx, "p", pageId);
+  const previewBasePath = projectPath(routeCtx, "design", "preview");
 
   async function onAction(
     actionKey: string,
@@ -68,7 +84,34 @@ export default async function TreePage({
       actionKey,
       input,
       subjectNodeId: page!.subjectNodeId ?? null,
-      revalidate: [`/${orgSlug}/${projectSlug}/p/${pageId}`],
+      revalidate: [pagePath],
+    });
+  }
+
+  async function onStudioCreateComponent(): Promise<string> {
+    "use server";
+    const title = `Component ${new Date().toISOString().slice(0, 10)}`;
+    const slug = `${slugifyComponentTitle(title)}-${Date.now().toString(36).slice(-4)}`;
+    const node = await createGraphNodeAction({
+      projectId: project.id,
+      catalogKey: "ui_component",
+      title,
+      properties: defaultSourceComponentProperties(slug),
+      revalidatePaths: [pagePath],
+    });
+    return node.id;
+  }
+
+  async function onStudioDeployComponent(input: {
+    nodeId: string;
+    contentV2: UiComponentContentV2;
+  }): Promise<void> {
+    "use server";
+    await deployUiComponentAction({
+      projectId: project.id,
+      nodeId: input.nodeId,
+      contentV2: input.contentV2,
+      revalidatePaths: [pagePath],
     });
   }
 
@@ -107,6 +150,17 @@ export default async function TreePage({
         basePath={basePath}
         onAction={onAction}
         viewState={{ initial: initialViewStates, save: saveViewState }}
+        componentStudio={
+          usesStudio
+            ? {
+                projectId: project.id,
+                previewBasePath,
+                initialComponentId: initialComponentId ?? null,
+                onCreateComponent: onStudioCreateComponent,
+                onDeployComponent: onStudioDeployComponent,
+              }
+            : null
+        }
       />
     </div>
   );

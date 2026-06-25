@@ -1,10 +1,14 @@
 import { notFound, redirect } from "next/navigation";
-import { DesignStudioPage } from "@/components/console/design-studio/design-studio-page";
 import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { queryUiComponents } from "@/lib/graph/loaders/query-ui-components";
+import { getPagePort } from "@/lib/ports";
 
-export default async function DesignUiComponentsRoutePage({
+/**
+ * Legacy Design Studio URLs redirect into the json-render page
+ * (`/p/{pageId}?component={id}`).
+ */
+export default async function DesignUiComponentsRedirectPage({
   params,
 }: {
   params: Promise<{
@@ -20,24 +24,23 @@ export default async function DesignUiComponentsRoutePage({
   }
 
   const componentId = componentIdSegments?.[0];
+  const ctx = { orgSlug, projectSlug };
+  const { project } = await resolveProject(orgSlug, projectSlug);
+  const page = await getPagePort(project.id).getPageBySlug("design/ui-components");
+  if (!page) notFound();
 
-  if (!componentId) {
-    const ctx = { orgSlug, projectSlug };
-    const { project } = await resolveProject(orgSlug, projectSlug);
+  let targetComponentId = componentId;
+  if (!targetComponentId) {
     const components = await queryUiComponents(project.id);
-
     if (components.length > 0) {
-      const preferred =
-        components.find((row) => row.slug === "demo-button") ?? components[0]!;
-      redirect(projectPath(ctx, "design", "ui-components", preferred.id));
+      targetComponentId =
+        components.find((row) => row.slug === "demo-button")?.id ??
+        components[0]!.id;
     }
   }
 
-  return (
-    <DesignStudioPage
-      orgSlug={orgSlug}
-      projectSlug={projectSlug}
-      componentId={componentId}
-    />
+  const base = projectPath(ctx, "p", page.id);
+  redirect(
+    targetComponentId ? `${base}?component=${targetComponentId}` : base,
   );
 }

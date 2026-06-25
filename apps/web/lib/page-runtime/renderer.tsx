@@ -5,9 +5,11 @@ import type { JsonRenderSpec } from "@ssota/contracts";
 import {
   ActionContext,
   BasePathContext,
+  ComponentStudioContext,
   JsonRenderContext,
   PageViewStateContext,
   WidgetBuildContext,
+  type ComponentStudioRuntime,
   type OnAction,
   type PageViewStateRuntime,
 } from "./context";
@@ -27,6 +29,8 @@ type RenderProps = {
   fillHeight?: boolean;
   /** Per-user table view-state persistence (omitted in the lab preview). */
   viewState?: PageViewStateRuntime;
+  /** UI component studio callbacks (ComponentStudio pages). */
+  componentStudio?: ComponentStudioRuntime | null;
 };
 
 function renderElement(
@@ -70,6 +74,7 @@ export function DynamicPageRenderer({
   onBuildWidget,
   fillHeight = false,
   viewState,
+  componentStudio = null,
 }: RenderProps) {
   const runtime = {
     spec,
@@ -81,20 +86,22 @@ export function DynamicPageRenderer({
   return (
     <ActionContext.Provider value={onAction}>
       <WidgetBuildContext.Provider value={onBuildWidget}>
-        <PageViewStateContext.Provider value={viewState ?? null}>
-          <BasePathContext.Provider value={basePath}>
-            <JsonRenderContext.Provider value={runtime}>
-              <div
-                className={
-                  fillHeight ? "relative min-h-0 flex-1" : "space-y-2"
-                }
-                data-testid="dynamic-page-renderer"
-              >
-                {renderElement(spec.root, spec, bindingData)}
-              </div>
-            </JsonRenderContext.Provider>
-          </BasePathContext.Provider>
-        </PageViewStateContext.Provider>
+        <ComponentStudioContext.Provider value={componentStudio}>
+          <PageViewStateContext.Provider value={viewState ?? null}>
+            <BasePathContext.Provider value={basePath}>
+              <JsonRenderContext.Provider value={runtime}>
+                <div
+                  className={
+                    fillHeight ? "relative min-h-0 flex-1" : "space-y-2"
+                  }
+                  data-testid="dynamic-page-renderer"
+                >
+                  {renderElement(spec.root, spec, bindingData)}
+                </div>
+              </JsonRenderContext.Provider>
+            </BasePathContext.Provider>
+          </PageViewStateContext.Provider>
+        </ComponentStudioContext.Provider>
       </WidgetBuildContext.Provider>
     </ActionContext.Provider>
   );

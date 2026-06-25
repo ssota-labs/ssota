@@ -13,7 +13,6 @@ import {
   ResizablePanelGroup,
 } from "@ssota/ui/components/ui/resizable";
 import { Button } from "@ssota/ui/components/ui/button";
-import type { ProjectRouteContext } from "@/lib/console/paths";
 import {
   clearSessionDraft,
   draftStorageKey,
@@ -40,11 +39,10 @@ import { StudioLeftPanel } from "./studio-left-panel";
 import { usePreviewBridge, useStudioNodeMeasure } from "./preview-bridge";
 
 type StudioShellProps = {
-  ctx: ProjectRouteContext;
   projectId: string;
   component: GraphNode | null;
   components: UiComponentListRow[];
-  studioBasePath: string;
+  onSelectComponent: (componentId: string) => void;
   themeTokens: DesignThemeTokenMap;
   themeCss: string;
   previewBasePath: string;
@@ -52,7 +50,6 @@ type StudioShellProps = {
     projectId: string;
     nodeId: string;
     contentV2?: UiComponentContentV2;
-    revalidatePath: string;
   }) => Promise<void>;
   onCreateComponent: () => Promise<void> | void;
 };
@@ -67,7 +64,7 @@ export function StudioShell(props: StudioShellProps) {
 
 function StudioShellEmpty({
   components,
-  studioBasePath,
+  onSelectComponent,
   onCreateComponent,
 }: StudioShellProps) {
   const [pending, startTransition] = useTransition();
@@ -90,7 +87,7 @@ function StudioShellEmpty({
           <StudioLeftPanel
             components={components}
             activeComponentId={null}
-            studioBasePath={studioBasePath}
+            onSelectComponent={onSelectComponent}
             sourceLayers={null}
             selectedLayerId={null}
             onSelectLayer={() => {}}
@@ -134,7 +131,7 @@ function StudioShellEditor({
   projectId,
   component,
   components,
-  studioBasePath,
+  onSelectComponent,
   themeTokens,
   themeCss,
   previewBasePath,
@@ -333,7 +330,6 @@ function StudioShellEditor({
         projectId,
         nodeId: component.id,
         contentV2,
-        revalidatePath: previewBasePath.replace(/^\//, ""),
       });
       if (storageKey) {
         clearSessionDraft(storageKey);
@@ -359,7 +355,7 @@ function StudioShellEditor({
           <StudioLeftPanel
             components={components}
             activeComponentId={component.id}
-            studioBasePath={studioBasePath}
+            onSelectComponent={onSelectComponent}
             sourceLayers={sourceLayers}
             selectedLayerId={selectedId}
             onSelectLayer={setSelectedId}

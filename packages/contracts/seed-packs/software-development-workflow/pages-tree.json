@@ -441,23 +441,22 @@
     "title": "UI components",
     "icon": "design_ui_components",
     "spec": {
-      "root": "table",
+      "root": "studio",
       "elements": {
-        "table": {
-          "type": "NodeTable",
+        "studio": {
+          "type": "ComponentStudio",
           "props": {
             "binding": "rows",
-            "title": "UI components",
-            "rowHref": "n",
-            "columns": [
-              { "key": "title", "header": "Component" },
-              { "key": "lifecycleStatus", "header": "Status" }
-            ]
+            "themeBinding": "theme"
           }
         }
       }
     },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "ui_component" } }
+    "bindings": {
+      "rows": { "kind": "query", "catalogKey": "ui_component" },
+      "theme": { "kind": "evergreen", "catalogKey": "design_theme" }
+    },
+    "actions": {}
   },
   {
     "key": "design/theme",

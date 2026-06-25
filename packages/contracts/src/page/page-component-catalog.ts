@@ -496,6 +496,25 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     },
   },
   // ── widget ───────────────────────────────────────────────────────────────
+  ComponentStudio: {
+    key: "ComponentStudio",
+    category: "widget",
+    description:
+      "Full UI component authoring workspace: component browser, live preview, layer inspector, and deploy.",
+    children: false,
+    props: {
+      binding: binding("Query binding listing ui_component nodes."),
+      themeBinding: {
+        type: "binding",
+        description:
+          'Evergreen design_theme binding for preview tokens (default "theme").',
+      },
+    },
+    example: {
+      type: "ComponentStudio",
+      props: { binding: "rows", themeBinding: "theme" },
+    },
+  },
   Widget: {
     key: "Widget",
     category: "widget",

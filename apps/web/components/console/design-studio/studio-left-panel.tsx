@@ -18,7 +18,7 @@ import { SourceLayersPanel } from "./layers-panel";
 type StudioLeftPanelProps = {
   components: UiComponentListRow[];
   activeComponentId: string | null;
-  studioBasePath: string;
+  onSelectComponent: (componentId: string) => void;
   sourceLayers: UiComponentLayerIndexNode[] | null;
   selectedLayerId: string | null;
   onSelectLayer: (nodeId: string) => void;
@@ -29,7 +29,7 @@ type StudioLeftPanelProps = {
 export function StudioLeftPanel({
   components,
   activeComponentId,
-  studioBasePath,
+  onSelectComponent,
   sourceLayers,
   selectedLayerId,
   onSelectLayer,
@@ -84,7 +84,7 @@ export function StudioLeftPanel({
           <ComponentsPanel
             components={components}
             activeComponentId={activeComponentId}
-            studioBasePath={studioBasePath}
+            onSelectComponent={onSelectComponent}
             searchQuery={searchQuery}
           />
         </TabsContent>
