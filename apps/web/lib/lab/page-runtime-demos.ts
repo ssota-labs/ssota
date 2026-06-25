@@ -984,6 +984,72 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
   },
+  {
+    id: "spreadsheet",
+    category: "data",
+    title: "Spreadsheet (Google Sheets-style)",
+    description:
+      "Freeform grid bound to a single node's jsonb property (sparse A1 cells). Click a cell or Tab in, then arrow/Home/End/Shift to move and build ranges; type or double-click to edit; Enter/Tab commit; Cmd/Ctrl+C copies as CSV; Delete clears. The formula bar edits the active cell; cells starting with = compute (SUM/AVERAGE/MIN/MAX/COUNT, refs, ranges). Add rows/columns at the bottom.",
+    components: ["Section", "Spreadsheet"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Q3 Budget",
+            subtitle: "Single node · jsonb grid · live formulas",
+          },
+          children: ["sheet"],
+        },
+        sheet: {
+          type: "Spreadsheet",
+          props: {
+            binding: "sheet",
+            property: "grid",
+            setAction: "setCell",
+          },
+        },
+      },
+    },
+    bindingData: {
+      sheet: {
+        id: "77777777-7777-4777-8777-777777777701",
+        catalogKey: "spreadsheet",
+        title: "Q3 Budget",
+        properties: {
+          grid: {
+            rowCount: 8,
+            colCount: 4,
+            cells: {
+              A1: { value: "Item" },
+              B1: { value: "Jan" },
+              C1: { value: "Feb" },
+              D1: { value: "Mar" },
+              A2: { value: "Marketing" },
+              B2: { value: 1200 },
+              C2: { value: 1500 },
+              D2: { value: 1800 },
+              A3: { value: "Engineering" },
+              B3: { value: 4200 },
+              C3: { value: 4200 },
+              D3: { value: 4600 },
+              A4: { value: "Ops" },
+              B4: { value: 800 },
+              C4: { value: 950 },
+              D4: { value: 900 },
+              A6: { value: "Total" },
+              B6: { value: "=SUM(B2:B4)" },
+              C6: { value: "=SUM(C2:C4)" },
+              D6: { value: "=SUM(D2:D4)" },
+              A7: { value: "Avg/mo" },
+              B7: { value: "=AVERAGE(B6:D6)" },
+            },
+          },
+        },
+      },
+    },
+  },
 ];
 
 export function getPageRuntimeDemo(id: string): PageRuntimeDemo | undefined {

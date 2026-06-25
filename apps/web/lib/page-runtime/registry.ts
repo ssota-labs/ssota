@@ -6,6 +6,7 @@ import { ganttComponents } from "./components/gantt";
 import { formComponents } from "./components/forms";
 import { tokenComponents } from "./components/tokens";
 import { documentComponents } from "./components/document";
+import { spreadsheetComponents } from "./components/spreadsheet";
 import { widgetComponents } from "./components/widget";
 
 /**
@@ -21,6 +22,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...formComponents,
   ...tokenComponents,
   ...documentComponents,
+  ...spreadsheetComponents,
   ...widgetComponents,
 };
 
