@@ -500,14 +500,26 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "ComponentStudio",
     category: "widget",
     description:
-      "Full UI component authoring workspace: component browser, live preview, layer inspector, and deploy.",
+      "Component browser + live preview workspace. authoring mode: full studio with deploy; preview mode: read-only explorer (e.g. wireframes).",
     children: false,
     props: {
-      binding: binding("Query binding listing ui_component nodes."),
+      binding: binding(
+        "Rows binding (ui_component query or initiative-scoped page_wireframe).",
+      ),
       themeBinding: {
         type: "binding",
         description:
           'Evergreen design_theme binding for preview tokens (default "theme").',
+      },
+      mode: {
+        type: "string",
+        description:
+          '"authoring" (default) — editable studio; "preview" — left explorer + read-only preview.',
+      },
+      selectionParam: {
+        type: "string",
+        description:
+          'URL search param for selected row id (default "component"; wireframes use "wireframe").',
       },
     },
     example: {

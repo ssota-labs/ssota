@@ -16,6 +16,7 @@ import { ComponentsPanel } from "./components-panel";
 import { SourceLayersPanel } from "./layers-panel";
 
 type StudioLeftPanelProps = {
+  mode?: "authoring" | "preview";
   components: UiComponentListRow[];
   activeComponentId: string | null;
   onSelectComponent: (componentId: string) => void;
@@ -27,6 +28,7 @@ type StudioLeftPanelProps = {
 };
 
 export function StudioLeftPanel({
+  mode = "authoring",
   components,
   activeComponentId,
   onSelectComponent,
@@ -36,8 +38,33 @@ export function StudioLeftPanel({
   pending = false,
   onCreateComponent,
 }: StudioLeftPanelProps) {
-  const layersEnabled = Boolean(sourceLayers?.length);
+  const isPreview = mode === "preview";
+  const layersEnabled = Boolean(sourceLayers?.length) && !isPreview;
   const [searchQuery, setSearchQuery] = useState("");
+
+  if (isPreview) {
+    return (
+      <div className="flex h-full min-h-0 flex-col border-r bg-card">
+        <div className="shrink-0 border-b p-2">
+          <Input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.currentTarget.value)}
+            placeholder="Search wireframes..."
+            className="h-8"
+            aria-label="Search wireframes"
+          />
+        </div>
+        <ComponentsPanel
+          components={components}
+          activeComponentId={activeComponentId}
+          onSelectComponent={onSelectComponent}
+          searchQuery={searchQuery}
+          variant="flat"
+          emptyMessage="No wireframes scoped to this initiative."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col border-r bg-card">

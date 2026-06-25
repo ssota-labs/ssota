@@ -39,8 +39,11 @@ import { StudioLeftPanel } from "./studio-left-panel";
 import { usePreviewBridge, useStudioNodeMeasure } from "./preview-bridge";
 
 type StudioShellProps = {
+  mode?: "authoring" | "preview";
   projectId: string;
   component: GraphNode | null;
+  /** Row id highlighted in the left explorer (wireframe id in preview mode). */
+  activeListItemId?: string | null;
   components: UiComponentListRow[];
   onSelectComponent: (componentId: string) => void;
   themeTokens: DesignThemeTokenMap;
@@ -55,19 +58,30 @@ type StudioShellProps = {
 };
 
 export function StudioShell(props: StudioShellProps) {
-  const { component } = props;
+  const { component, mode = "authoring", activeListItemId } = props;
   if (!component) {
-    return <StudioShellEmpty {...props} />;
+    return <StudioShellEmpty {...props} mode={mode} activeListItemId={activeListItemId} />;
   }
-  return <StudioShellEditor key={component.id} {...props} component={component} />;
+  return (
+    <StudioShellEditor
+      key={component.id}
+      {...props}
+      mode={mode}
+      component={component}
+    />
+  );
 }
 
 function StudioShellEmpty({
+  mode = "authoring",
+  activeListItemId,
   components,
   onSelectComponent,
   onCreateComponent,
 }: StudioShellProps) {
   const [pending, startTransition] = useTransition();
+  const isPreview = mode === "preview";
+  const hasSelection = Boolean(activeListItemId);
 
   const handleCreateComponent = () => {
     startTransition(() => {
@@ -81,12 +95,20 @@ function StudioShellEmpty({
         id="design-studio-panels"
         orientation="horizontal"
         className="min-h-0 flex-1"
-        defaultLayout={{ left: 22, preview: 53, inspector: 25 }}
+        defaultLayout={
+          isPreview ? { left: 28, preview: 72 } : { left: 22, preview: 53, inspector: 25 }
+        }
       >
-        <ResizablePanel id="left" defaultSize="22%" minSize="16%" maxSize="32%">
+        <ResizablePanel
+          id="left"
+          defaultSize={isPreview ? "28%" : "22%"}
+          minSize="16%"
+          maxSize={isPreview ? "40%" : "32%"}
+        >
           <StudioLeftPanel
+            mode={mode}
             components={components}
-            activeComponentId={null}
+            activeComponentId={activeListItemId ?? null}
             onSelectComponent={onSelectComponent}
             sourceLayers={null}
             selectedLayerId={null}
@@ -96,40 +118,54 @@ function StudioShellEmpty({
           />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel id="preview" defaultSize="53%" minSize="35%">
+        <ResizablePanel id="preview" defaultSize={isPreview ? "72%" : "53%"} minSize="35%">
           <div className="flex h-full flex-col items-center justify-center gap-3 bg-muted/20 p-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Create a component or pick one from the Components tab.
+              {isPreview
+                ? components.length === 0
+                  ? "No wireframes yet. Create wireframe nodes scoped to this initiative."
+                  : hasSelection
+                    ? "This wireframe has no linked UI component. Add a references edge to a ui_component or set uiComponentId."
+                    : "Select a wireframe from the list to preview its linked UI component."
+                : "Create a component or pick one from the Components tab."}
             </p>
-            <Button
-              type="button"
-              size="sm"
-              disabled={pending}
-              onClick={handleCreateComponent}
+            {!isPreview ? (
+              <Button
+                type="button"
+                size="sm"
+                disabled={pending}
+                onClick={handleCreateComponent}
+              >
+                {pending ? "Creating…" : "New component"}
+              </Button>
+            ) : null}
+          </div>
+        </ResizablePanel>
+        {!isPreview ? (
+          <>
+            <ResizableHandle withHandle />
+            <ResizablePanel
+              id="inspector"
+              defaultSize="25%"
+              minSize="18%"
+              maxSize="35%"
             >
-              {pending ? "Creating…" : "New component"}
-            </Button>
-          </div>
-        </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel
-          id="inspector"
-          defaultSize="25%"
-          minSize="18%"
-          maxSize="35%"
-        >
-          <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
-            Inspector appears when a component is open.
-          </div>
-        </ResizablePanel>
+              <div className="flex h-full items-center justify-center border-l p-4 text-xs text-muted-foreground">
+                Inspector appears when a component is open.
+              </div>
+            </ResizablePanel>
+          </>
+        ) : null}
       </ResizablePanelGroup>
     </div>
   );
 }
 
 function StudioShellEditor({
+  mode = "authoring",
   projectId,
   component,
+  activeListItemId,
   components,
   onSelectComponent,
   themeTokens,
@@ -138,6 +174,8 @@ function StudioShellEditor({
   onDeploy,
   onCreateComponent,
 }: StudioShellProps & { component: GraphNode }) {
+  const isPreview = mode === "preview";
+  const highlightedListId = activeListItemId ?? component.id;
   const props = (component?.properties ?? {}) as {
     slug?: string;
     tier?: string;
@@ -152,6 +190,13 @@ function StudioShellEditor({
 
   const [contentV2, setContentV2] = useState<UiComponentContentV2>(() => {
     if (!component) return createEmptyUiComponentContentV2();
+    if (isPreview) {
+      return resolveInitialContentV2({
+        sessionContent: null,
+        publishedProperties: component.properties,
+        fallback: createEmptyUiComponentContentV2(),
+      });
+    }
     const key = draftStorageKey(projectId, component.id);
     return resolveInitialContentV2({
       sessionContent: readSessionContentV2(key),
@@ -166,7 +211,7 @@ function StudioShellEditor({
   } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [interactionMode, setInteractionMode] =
-    useState<StudioInteractionMode>("inspect");
+    useState<StudioInteractionMode>(isPreview ? "preview" : "inspect");
   const [pending, startTransition] = useTransition();
   const {
     iframeRef,
@@ -214,12 +259,12 @@ function StudioShellEditor({
   );
 
   useEffect(() => {
-    if (!storageKey) return;
+    if (!storageKey || isPreview) return;
     const timer = window.setTimeout(() => {
       writeSessionContentV2(storageKey, contentV2);
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [contentV2, storageKey]);
+  }, [contentV2, storageKey, isPreview]);
 
   useEffect(() => {
     if (!component || !ready) return;
@@ -349,14 +394,22 @@ function StudioShellEditor({
         id="design-studio-panels"
         orientation="horizontal"
         className="min-h-0 flex-1"
-        defaultLayout={{ left: 22, preview: 53, inspector: 25 }}
+        defaultLayout={
+          isPreview ? { left: 28, preview: 72 } : { left: 22, preview: 53, inspector: 25 }
+        }
       >
-        <ResizablePanel id="left" defaultSize="22%" minSize="16%" maxSize="32%">
+        <ResizablePanel
+          id="left"
+          defaultSize={isPreview ? "28%" : "22%"}
+          minSize="16%"
+          maxSize={isPreview ? "40%" : "32%"}
+        >
           <StudioLeftPanel
+            mode={mode}
             components={components}
-            activeComponentId={component.id}
+            activeComponentId={highlightedListId}
             onSelectComponent={onSelectComponent}
-            sourceLayers={sourceLayers}
+            sourceLayers={isPreview ? null : sourceLayers}
             selectedLayerId={selectedId}
             onSelectLayer={setSelectedId}
             pending={pending}
@@ -364,16 +417,18 @@ function StudioShellEditor({
           />
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel id="preview" defaultSize="53%" minSize="35%">
+        <ResizablePanel id="preview" defaultSize={isPreview ? "72%" : "53%"} minSize="35%">
           <div className="flex h-full min-h-0 flex-col bg-muted/30">
-            <PreviewToolbar
-              mode={interactionMode}
-              onModeChange={setInteractionMode}
-              disabled={!ready}
-              onDeploy={handleDeploy}
-              deployDisabled={false}
-              deployPending={pending}
-            />
+            {!isPreview ? (
+              <PreviewToolbar
+                mode={interactionMode}
+                onModeChange={setInteractionMode}
+                disabled={!ready}
+                onDeploy={handleDeploy}
+                deployDisabled={false}
+                deployPending={pending}
+              />
+            ) : null}
             <iframe
               ref={iframeRef}
               title="Design preview"
@@ -382,24 +437,28 @@ function StudioShellEditor({
             />
           </div>
         </ResizablePanel>
-        <ResizableHandle withHandle />
-        <ResizablePanel
-          id="inspector"
-          defaultSize="25%"
-          minSize="18%"
-          maxSize="35%"
-        >
-          <ThemeTokensProvider tokens={themeTokens}>
-            <SourceInspectorPanel
-              selectedId={selectedId}
-              selectedSourceRef={selectedSourceRef}
-              className={selectedSourceClassName}
-              onClassNameChange={handleSourceClassNameChange}
-              readOnly={Boolean(selectedId && !selectedSourceRef)}
-              domReferencePx={domReferencePx}
-            />
-          </ThemeTokensProvider>
-        </ResizablePanel>
+        {!isPreview ? (
+          <>
+            <ResizableHandle withHandle />
+            <ResizablePanel
+              id="inspector"
+              defaultSize="25%"
+              minSize="18%"
+              maxSize="35%"
+            >
+              <ThemeTokensProvider tokens={themeTokens}>
+                <SourceInspectorPanel
+                  selectedId={selectedId}
+                  selectedSourceRef={selectedSourceRef}
+                  className={selectedSourceClassName}
+                  onClassNameChange={handleSourceClassNameChange}
+                  readOnly={Boolean(selectedId && !selectedSourceRef)}
+                  domReferencePx={domReferencePx}
+                />
+              </ThemeTokensProvider>
+            </ResizablePanel>
+          </>
+        ) : null}
       </ResizablePanelGroup>
     </div>
   );

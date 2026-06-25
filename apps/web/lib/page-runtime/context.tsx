@@ -40,13 +40,14 @@ export const WidgetBuildContext = createContext<
 >(undefined);
 export const useWidgetBuild = () => useContext(WidgetBuildContext);
 
-/** Design studio mutations for ComponentStudio (create/deploy). */
+/** Design studio runtime for ComponentStudio pages. */
 export type ComponentStudioRuntime = {
   projectId: string;
   previewBasePath: string;
-  initialComponentId?: string | null;
-  onCreateComponent: () => Promise<string>;
-  onDeployComponent: (input: {
+  /** Pre-selected row id from URL (`component` or `wireframe` search param). */
+  initialSelectionId?: string | null;
+  onCreateComponent?: () => Promise<string>;
+  onDeployComponent?: (input: {
     nodeId: string;
     contentV2: UiComponentContentV2;
   }) => Promise<void>;

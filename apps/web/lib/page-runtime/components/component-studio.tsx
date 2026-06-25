@@ -25,6 +25,8 @@ const StudioShell = dynamic(
   { ssr: false },
 );
 
+type StudioMode = "authoring" | "preview";
+
 function toListRows(nodes: RenderNode[]): UiComponentListRow[] {
   return nodes
     .map((node) => {
@@ -78,55 +80,90 @@ function resolveThemeFromBinding(
   return { tokens, themeCss: tokensToThemeCss(tokens) };
 }
 
+/** Linked ui_component from attachChildren (`uiComponents`) or `uiComponentId`. */
+function resolveWireframePreviewNode(
+  wireframe: RenderNode,
+  projectId: string,
+): GraphNode | null {
+  const props = wireframe.properties ?? {};
+  const linked = props.uiComponents;
+  if (Array.isArray(linked) && linked.length > 0) {
+    const first = linked[0];
+    if (first && typeof first === "object" && "id" in first) {
+      return toGraphNode(first as RenderNode, projectId);
+    }
+  }
+  const componentId = props.uiComponentId;
+  if (typeof componentId === "string" && componentId.length > 0) {
+    return {
+      id: componentId,
+      projectId,
+      nodeCatalogId: "",
+      catalogKey: "ui_component",
+      catalogLabel: "ui_component",
+      title: wireframe.title,
+      properties: {},
+      schemaVersion: 1,
+      createdAt: new Date(0),
+      updatedAt: new Date(0),
+    };
+  }
+  return null;
+}
+
 function ComponentStudioEl({
   nodes,
   themeNode,
+  mode,
+  selectionParam,
 }: {
   nodes: RenderNode[];
   themeNode?: RenderNode;
+  mode: StudioMode;
+  selectionParam: string;
 }) {
   const studio = useComponentStudio();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [, startTransition] = useTransition();
 
-  const components = useMemo(() => toListRows(nodes), [nodes]);
+  const listItems = useMemo(() => toListRows(nodes), [nodes]);
   const { tokens: themeTokens, themeCss } = useMemo(
     () => resolveThemeFromBinding(themeNode),
     [themeNode],
   );
 
-  const queryComponentId = searchParams.get("component");
+  const querySelectionId = searchParams.get(selectionParam);
   const [selectedId, setSelectedId] = useState<string | null>(() => {
-    const initial = studio?.initialComponentId ?? queryComponentId;
+    const initial = studio?.initialSelectionId ?? querySelectionId;
     if (initial && nodes.some((n) => n.id === initial)) return initial;
-    return components[0]?.id ?? null;
+    return listItems[0]?.id ?? null;
   });
 
   useEffect(() => {
-    if (queryComponentId && nodes.some((n) => n.id === queryComponentId)) {
-      setSelectedId(queryComponentId);
+    if (querySelectionId && nodes.some((n) => n.id === querySelectionId)) {
+      setSelectedId(querySelectionId);
     }
-  }, [queryComponentId, nodes]);
+  }, [querySelectionId, nodes]);
 
   const syncUrl = useCallback(
-    (componentId: string | null) => {
+    (itemId: string | null) => {
       const params = new URLSearchParams(searchParams.toString());
-      if (componentId) {
-        params.set("component", componentId);
+      if (itemId) {
+        params.set(selectionParam, itemId);
       } else {
-        params.delete("component");
+        params.delete(selectionParam);
       }
       const qs = params.toString();
       router.replace(qs ? `?${qs}` : "?", { scroll: false });
     },
-    [router, searchParams],
+    [router, searchParams, selectionParam],
   );
 
-  const onSelectComponent = useCallback(
-    (componentId: string) => {
-      setSelectedId(componentId);
-      syncUrl(componentId);
+  const onSelectItem = useCallback(
+    (itemId: string) => {
+      setSelectedId(itemId);
+      syncUrl(itemId);
     },
     [syncUrl],
   );
@@ -139,12 +176,17 @@ function ComponentStudioEl({
     );
   }
 
-  const activeNode = nodes.find((n) => n.id === selectedId) ?? null;
-  const component = activeNode
-    ? toGraphNode(activeNode, studio.projectId)
-    : null;
+  const activeRow = nodes.find((n) => n.id === selectedId) ?? null;
+
+  const previewComponent =
+    mode === "preview" && activeRow
+      ? resolveWireframePreviewNode(activeRow, studio.projectId)
+      : activeRow
+        ? toGraphNode(activeRow, studio.projectId)
+        : null;
 
   const handleCreate = async () => {
+    if (!studio.onCreateComponent) return;
     const id = await studio.onCreateComponent();
     setSelectedId(id);
     syncUrl(id);
@@ -155,7 +197,7 @@ function ComponentStudioEl({
     nodeId: string;
     contentV2?: import("@ssota/contracts/catalog").UiComponentContentV2;
   }) => {
-    if (!input.contentV2) return;
+    if (!input.contentV2 || !studio.onDeployComponent) return;
     await studio.onDeployComponent({
       nodeId: input.nodeId,
       contentV2: input.contentV2,
@@ -165,10 +207,12 @@ function ComponentStudioEl({
 
   return (
     <StudioShell
+      mode={mode}
       projectId={studio.projectId}
-      component={component}
-      components={components}
-      onSelectComponent={onSelectComponent}
+      component={previewComponent}
+      activeListItemId={selectedId}
+      components={listItems}
+      onSelectComponent={onSelectItem}
       themeTokens={themeTokens}
       themeCss={themeCss}
       previewBasePath={studio.previewBasePath}
@@ -184,6 +228,12 @@ export const componentStudioComponents: Record<string, CatalogComponent> = {
     const themeBinding =
       typeof props.themeBinding === "string" ? props.themeBinding : "theme";
     const themeNode = boundSingleton(bindingData, themeBinding);
+    const mode: StudioMode =
+      props.mode === "preview" ? "preview" : "authoring";
+    const selectionParam =
+      typeof props.selectionParam === "string" && props.selectionParam.length > 0
+        ? props.selectionParam
+        : "component";
 
     return (
       <Suspense
@@ -193,7 +243,12 @@ export const componentStudioComponents: Record<string, CatalogComponent> = {
           </div>
         }
       >
-        <ComponentStudioEl nodes={nodes} themeNode={themeNode} />
+        <ComponentStudioEl
+          nodes={nodes}
+          themeNode={themeNode}
+          mode={mode}
+          selectionParam={selectionParam}
+        />
       </Suspense>
     );
   },

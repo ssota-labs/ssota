@@ -720,23 +720,32 @@
     "title": "Wireframes",
     "icon": "design_wireframes",
     "spec": {
-      "root": "table",
+      "root": "studio",
       "elements": {
-        "table": {
-          "type": "NodeTable",
+        "studio": {
+          "type": "ComponentStudio",
           "props": {
             "binding": "rows",
-            "title": "Wireframes",
-            "rowHref": "n",
-            "columns": [
-              { "key": "title", "header": "Wireframe" },
-              { "key": "lifecycleStatus", "header": "Status" }
-            ]
+            "themeBinding": "theme",
+            "mode": "preview",
+            "selectionParam": "wireframe"
           }
         }
       }
     },
-    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "page_wireframe" } }
+    "bindings": {
+      "rows": {
+        "kind": "initiative_scope",
+        "catalogKey": "page_wireframe",
+        "attachChildren": {
+          "edgeCatalogKey": "references",
+          "direction": "out",
+          "catalogKey": "ui_component",
+          "property": "uiComponents"
+        }
+      },
+      "theme": { "kind": "evergreen", "catalogKey": "design_theme" }
+    }
   },
   {
     "key": "tpl/initiative/design/flows",

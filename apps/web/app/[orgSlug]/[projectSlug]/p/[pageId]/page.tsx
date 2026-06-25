@@ -155,7 +155,7 @@ export default async function TreePage({
             ? {
                 projectId: project.id,
                 previewBasePath,
-                initialComponentId: initialComponentId ?? null,
+                initialSelectionId: initialComponentId ?? null,
                 onCreateComponent: onStudioCreateComponent,
                 onDeployComponent: onStudioDeployComponent,
               }

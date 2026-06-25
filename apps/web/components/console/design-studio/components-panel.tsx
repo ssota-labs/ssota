@@ -16,6 +16,8 @@ type ComponentsPanelProps = {
   activeComponentId: string | null;
   onSelectComponent: (componentId: string) => void;
   searchQuery?: string;
+  variant?: "grouped" | "flat";
+  emptyMessage?: string;
 };
 
 export function ComponentsPanel({
@@ -23,6 +25,8 @@ export function ComponentsPanel({
   activeComponentId,
   onSelectComponent,
   searchQuery = "",
+  variant = "grouped",
+  emptyMessage,
 }: ComponentsPanelProps) {
   const filteredComponents = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -33,6 +37,47 @@ export function ComponentsPanel({
         component.slug.toLowerCase().includes(query),
     );
   }, [components, searchQuery]);
+
+  if (variant === "flat") {
+    return (
+      <div className="min-h-0 flex-1 overflow-auto p-2">
+        {filteredComponents.length === 0 ? (
+          <p className="px-2 py-4 text-xs text-muted-foreground">
+            {searchQuery.trim()
+              ? "No wireframes match your search."
+              : (emptyMessage ?? "No items yet.")}
+          </p>
+        ) : (
+          <div className="space-y-0.5">
+            {filteredComponents.map((component) => {
+              const active = component.id === activeComponentId;
+              return (
+                <button
+                  key={component.id}
+                  type="button"
+                  data-testid={`studio-wireframe-${component.slug}`}
+                  className={cn(
+                    "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-muted",
+                    active && "bg-muted",
+                  )}
+                  onClick={() => onSelectComponent(component.id)}
+                >
+                  <span
+                    className={cn(
+                      "min-w-0 flex-1 truncate text-xs",
+                      active && "font-medium text-foreground",
+                    )}
+                  >
+                    {component.title}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   const groups = useMemo(
     () => groupUiComponents(filteredComponents),
