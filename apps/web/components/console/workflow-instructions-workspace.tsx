@@ -6,7 +6,7 @@ import { CaretRightIcon } from "@phosphor-icons/react";
 import type { WorkflowInstruction } from "@ssota/contracts";
 import { cn } from "@ssota/ui/lib/utils";
 import { updateWorkflowInstructionAction } from "@/app/actions";
-import { groupWorkflowInstructions } from "@/lib/console/workflow-instruction-groups";
+import type { WorkflowInstructionGroup } from "@/lib/console/load-workflow-instructions-for-ui";
 import {
   DocumentSheetPanel,
   type SheetSize,
@@ -15,7 +15,7 @@ import type { RenderNode } from "@/lib/page-runtime/types";
 
 type WorkflowInstructionsWorkspaceProps = {
   projectId: string;
-  instructions: WorkflowInstruction[];
+  groups: WorkflowInstructionGroup[];
 };
 
 function toRenderNode(instruction: WorkflowInstruction): RenderNode {
@@ -32,22 +32,22 @@ function toRenderNode(instruction: WorkflowInstruction): RenderNode {
 
 export function WorkflowInstructionsWorkspace({
   projectId,
-  instructions: initialInstructions,
+  groups: initialGroups,
 }: WorkflowInstructionsWorkspaceProps) {
-  const [instructions, setInstructions] = useState(initialInstructions);
+  const [groups, setGroups] = useState(initialGroups);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
+  const instructions = groups.flatMap((group) => group.items);
   const activeInstruction =
     instructions.find((entry) => entry.id === activeId) ?? null;
   const open = activeInstruction !== null;
-  const groups = groupWorkflowInstructions(instructions);
   const sheetSize: SheetSize = "half";
 
   useEffect(() => {
-    setInstructions(initialInstructions);
-  }, [initialInstructions]);
+    setGroups(initialGroups);
+  }, [initialGroups]);
 
   useEffect(() => {
     if (!open) return;
@@ -70,12 +70,18 @@ export function WorkflowInstructionsWorkspace({
         description: activeInstruction.description,
         content: blocks,
       });
-      setInstructions((current) =>
-        current.map((entry) =>
-          entry.id === activeInstruction.id
-            ? { ...entry, content: blocks as WorkflowInstruction["content"] }
-            : entry,
-        ),
+      setGroups((current) =>
+        current.map((group) => ({
+          ...group,
+          items: group.items.map((entry) =>
+            entry.id === activeInstruction.id
+              ? {
+                  ...entry,
+                  content: blocks as WorkflowInstruction["content"],
+                }
+              : entry,
+          ),
+        })),
       );
       router.refresh();
     });

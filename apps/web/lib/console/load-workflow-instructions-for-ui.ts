@@ -1,12 +1,16 @@
+import { textToBlockNoteContent, type WorkflowInstruction } from "@ssota/contracts";
 import {
   getBuiltinWorkflowByKey,
   getWorkflowByKey,
   listBuiltinWorkflowIndex,
   listWorkflowKeys,
-  textToBlockNoteContent,
-  type WorkflowInstruction,
-} from "@ssota/contracts";
+} from "@ssota/contracts/workflows";
+import { groupWorkflowInstructions } from "@/lib/console/workflow-instruction-groups";
 import { getWorkflowInstructionPort } from "@/lib/ports";
+
+export type WorkflowInstructionGroup = ReturnType<
+  typeof groupWorkflowInstructions
+>[number];
 
 const VIRTUAL_ID_PREFIX = "virtual:";
 
@@ -83,4 +87,11 @@ export async function loadWorkflowInstructionsForUi(
   }
 
   return [...byKey.values()].toSorted((a, b) => a.name.localeCompare(b.name));
+}
+
+export async function loadWorkflowInstructionGroupsForUi(
+  projectId: string,
+): Promise<WorkflowInstructionGroup[]> {
+  const instructions = await loadWorkflowInstructionsForUi(projectId);
+  return groupWorkflowInstructions(instructions);
 }

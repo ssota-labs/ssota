@@ -1,18 +1,15 @@
+import type { WorkflowInstruction } from "@ssota/contracts";
 import {
+  getBuiltinWorkflowByKey,
   getWorkflowByKey,
-  RESERVED_MAIN_WORKFLOW_KEY,
   type WorkflowCategory,
-  type WorkflowInstruction,
-} from "@ssota/contracts";
-import { getBuiltinWorkflowByKey } from "@ssota/contracts/workflows";
+} from "@ssota/contracts/workflows";
 
 export type WorkflowInstructionGroupKey =
-  | "main"
   | WorkflowCategory
   | "custom";
 
 const GROUP_ORDER: WorkflowInstructionGroupKey[] = [
-  "main",
   "orchestrator",
   "recurring",
   "work",
@@ -21,7 +18,6 @@ const GROUP_ORDER: WorkflowInstructionGroupKey[] = [
 ];
 
 const GROUP_LABEL: Record<WorkflowInstructionGroupKey, string> = {
-  main: "Main agent",
   orchestrator: "Orchestrator",
   recurring: "Recurring",
   work: "Work",
@@ -32,7 +28,6 @@ const GROUP_LABEL: Record<WorkflowInstructionGroupKey, string> = {
 export function workflowInstructionGroupKey(
   instructionKey: string,
 ): WorkflowInstructionGroupKey {
-  if (instructionKey === RESERVED_MAIN_WORKFLOW_KEY) return "main";
   const definition = getWorkflowByKey(instructionKey);
   if (definition) return definition.category;
   const builtin = getBuiltinWorkflowByKey(instructionKey);
