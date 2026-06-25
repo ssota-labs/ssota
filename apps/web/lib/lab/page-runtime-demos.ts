@@ -6,6 +6,7 @@ export type PageRuntimeDemoCategory =
   | "data"
   | "forms"
   | "document"
+  | "canvas"
   | "design";
 
 export type PageRuntimeDemo = {
@@ -344,6 +345,7 @@ export const PAGE_RUNTIME_DEMO_CATEGORIES: {
   { id: "data", label: "Data" },
   { id: "forms", label: "Forms" },
   { id: "document", label: "Document" },
+  { id: "canvas", label: "Canvas" },
   { id: "design", label: "Design" },
 ];
 
@@ -1082,6 +1084,172 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
     bindingData: { objectives: mockObjectives },
+  },
+  {
+    id: "flow-canvas",
+    category: "canvas",
+    title: "FlowCanvas (user flow)",
+    description:
+      "A node/edge graph rendered with ReactFlow. The whole graph lives in one node's `flow` jsonb property; the nodePresentation manifest maps nodeType → color/shape variant (section = purple, page = blue, action = gray pill). Nodes carry no coordinates, so ELK lays them out left-to-right. Click a node → the same DocumentSheet slides in from the right (with backdrop blur) and the canvas pans so the node centres in the space left of the sheet; click an edge for the blue highlight, the empty pane to dismiss.",
+    components: ["Section", "FlowCanvas"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Pet Health — User Flow",
+            subtitle: "Single node · jsonb graph · ELK auto-layout",
+          },
+          children: ["flow"],
+        },
+        flow: {
+          type: "FlowCanvas",
+          props: {
+            binding: "userFlow",
+            property: "flow",
+            layout: "LR",
+            height: 560,
+            nodePresentation: [
+              { match: { nodeType: "section" }, variant: "section", color: "purple" },
+              {
+                match: { nodeType: "page" },
+                variant: "page",
+                color: "blue",
+                badgeFrom: "status",
+              },
+              {
+                match: { nodeType: "action" },
+                variant: "action",
+                color: "gray",
+                shape: "pill",
+              },
+            ],
+          },
+        },
+      },
+    },
+    bindingData: {
+      userFlow: {
+        id: "99999999-9999-4999-8999-999999999901",
+        catalogKey: "user_flow",
+        title: "Pet Health User Flow",
+        properties: {
+          flow: {
+            nodes: [
+              { id: "auth", nodeType: "section", title: "Authentication" },
+              {
+                id: "welcome",
+                nodeType: "page",
+                title: "Welcome Screen",
+                props: {
+                  status: "approved",
+                  subtitle: "First-run entry point",
+                  content:
+                    "Welcome screen shown on app launch. Offers Login and Sign Up, plus a short value-prop carousel for first-time visitors.",
+                },
+              },
+              {
+                id: "login",
+                nodeType: "page",
+                title: "Login",
+                props: {
+                  status: "active",
+                  subtitle: "Returning users",
+                  content:
+                    "Email + password form with social-login options. On success routes to the Home Dashboard; on failure shows inline validation.",
+                },
+              },
+              { id: "signup", nodeType: "page", title: "Sign Up" },
+              { id: "enter-creds", nodeType: "action", title: "Enter Credentials" },
+              { id: "create-acct", nodeType: "action", title: "Create Account" },
+              {
+                id: "home",
+                nodeType: "page",
+                title: "Home Dashboard",
+                props: {
+                  status: "active",
+                  subtitle: "Main hub",
+                  content:
+                    "Central hub after auth. Surfaces pet health summary cards, recent media, active alerts, and quick links into every section.",
+                },
+              },
+              { id: "pets", nodeType: "section", title: "Pet Management" },
+              {
+                id: "pet-list",
+                nodeType: "page",
+                title: "Pet List",
+                props: {
+                  status: "review",
+                  subtitle: "All registered pets",
+                  content:
+                    "Scrollable list of the user's pets with avatar, species, and health badge. Tap a pet for its profile; FAB adds a new pet.",
+                },
+              },
+              { id: "add-pet", nodeType: "action", title: "Add New Pet" },
+              { id: "media", nodeType: "section", title: "Media Logging" },
+              {
+                id: "timeline",
+                nodeType: "page",
+                title: "Media Timeline",
+                props: {
+                  status: "draft",
+                  subtitle: "Photos & videos",
+                  content:
+                    "Reverse-chronological media feed per pet. Supports upload, tagging, and notes; entries link back to related health alerts.",
+                },
+              },
+              { id: "upload", nodeType: "action", title: "Upload Media" },
+              { id: "health", nodeType: "section", title: "Health Monitoring" },
+              {
+                id: "alerts",
+                nodeType: "page",
+                title: "Health Alerts",
+                props: {
+                  status: "active",
+                  subtitle: "AI-detected issues",
+                  content:
+                    "List of proactive health alerts with severity, evidence media, and recommended actions. Mark as reviewed or resolved.",
+                },
+              },
+              { id: "settings", nodeType: "section", title: "Settings" },
+              {
+                id: "account",
+                nodeType: "page",
+                title: "Account Settings",
+                props: {
+                  status: "draft",
+                  subtitle: "Profile & security",
+                  content:
+                    "Manage email, password, push-notification preferences, privacy policy, data export, and account deletion.",
+                },
+              },
+              { id: "logout", nodeType: "action", title: "Logout" },
+            ],
+            edges: [
+              { source: "auth", target: "welcome" },
+              { source: "welcome", target: "login" },
+              { source: "welcome", target: "signup" },
+              { source: "login", target: "enter-creds" },
+              { source: "signup", target: "create-acct" },
+              { source: "enter-creds", target: "home", animated: true },
+              { source: "create-acct", target: "home", animated: true },
+              { source: "home", target: "pets" },
+              { source: "pets", target: "pet-list" },
+              { source: "pet-list", target: "add-pet" },
+              { source: "home", target: "media" },
+              { source: "media", target: "timeline" },
+              { source: "timeline", target: "upload" },
+              { source: "home", target: "health" },
+              { source: "health", target: "alerts" },
+              { source: "home", target: "settings" },
+              { source: "settings", target: "account" },
+              { source: "account", target: "logout" },
+            ],
+          },
+        },
+      },
+    },
   },
 ];
 

@@ -1,0 +1,334 @@
+"use client";
+
+import * as React from "react";
+import {
+  Background,
+  BackgroundVariant,
+  Controls,
+  ReactFlow,
+  ReactFlowProvider,
+  useNodesInitialized,
+  useReactFlow,
+  useUpdateNodeInternals,
+  type Edge,
+  type Node,
+} from "@xyflow/react";
+import { useAction } from "../context";
+import { boundNode } from "../bindings";
+import {
+  coerceFlow,
+  coercePresentation,
+  resolveNodeStyle,
+  DEFAULT_NODE_HEIGHT,
+  DEFAULT_NODE_WIDTH,
+  type FlowModel,
+} from "../flow-model";
+import { layoutFlow, type FlowLayoutDirection, type Positioned } from "../flow-layout";
+import { FlowNode } from "./flow-node";
+import { FlowEdge } from "./flow-edge";
+import { DocumentSheetPanel, type SheetSize } from "./document-sheet-panel";
+import { readNodeField } from "./roadmap-doc-card";
+import type { CatalogComponent, RenderNode } from "../types";
+
+const NODE_TYPES = { generic: FlowNode };
+const EDGE_TYPES = { flow: FlowEdge };
+
+const SHEET_SIZES: SheetSize[] = ["default", "half", "inspector", "wide", "full"];
+
+/** Z-index layering (edge line/marker colors are handled by the custom FlowEdge). */
+const FLOW_STYLES = `
+.ssota-flow .react-flow__node { z-index: 0; }
+.ssota-flow .react-flow__edge { z-index: 1; }
+.ssota-flow .react-flow__node.selected { z-index: 3; }
+`;
+
+/**
+ * Re-fits the viewport once nodes are measured, and nudges handle-bounds
+ * measurement so edge paths resolve. Nodes arrive after an async ELK pass, so
+ * the bare `fitView` prop (which fires on mount with zero nodes) can't fit them;
+ * `useNodesInitialized` flips true when React Flow has measured every node, which
+ * is the right moment to fit and the point at which edges can render.
+ */
+function FlowReady({ nodeIds }: { nodeIds: string[] }) {
+  const initialized = useNodesInitialized();
+  const { fitView } = useReactFlow();
+  const updateNodeInternals = useUpdateNodeInternals();
+  const key = nodeIds.join(",");
+
+  React.useEffect(() => {
+    if (nodeIds.length > 0) updateNodeInternals(nodeIds);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, updateNodeInternals]);
+
+  React.useEffect(() => {
+    if (initialized && nodeIds.length > 0) {
+      void fitView({ padding: 0.15, duration: 250 });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialized, key, fitView]);
+
+  return null;
+}
+
+type SheetConfig = {
+  field: string;
+  subtitleField: string;
+  statusField: string;
+  editable: boolean;
+  sheetSize: SheetSize;
+  setAction?: string;
+};
+
+function FlowCanvasEl({
+  node,
+  property,
+  presentation,
+  direction,
+  height,
+  sheet,
+}: {
+  node: RenderNode | undefined;
+  property: string;
+  presentation: unknown;
+  direction: FlowLayoutDirection;
+  height: number;
+  sheet: SheetConfig;
+}) {
+  const onAction = useAction();
+  const { setCenter } = useReactFlow();
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const model = React.useMemo(
+    () => coerceFlow(node?.properties?.[property]),
+    [node?.properties, property],
+  );
+  const manifest = React.useMemo(
+    () => coercePresentation(presentation),
+    [presentation],
+  );
+  const signature = React.useMemo(() => JSON.stringify(model), [model]);
+
+  // Async ELK layout (or persisted coordinates) → positions keyed by node id.
+  const [positions, setPositions] = React.useState<Positioned>({});
+  React.useEffect(() => {
+    let cancelled = false;
+    void layoutFlow(model, direction).then((pos) => {
+      if (!cancelled) setPositions(pos);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signature, direction]);
+
+  const ready = Object.keys(positions).length > 0;
+
+  // ── Detail sheet ────────────────────────────────────────────────────────
+  const [activeId, setActiveId] = React.useState<string | null>(null);
+  // Drop the open sheet when the underlying graph changes.
+  React.useEffect(() => setActiveId(null), [signature]);
+
+  const activeFlowNode = activeId
+    ? model.nodes.find((n) => n.id === activeId) ?? null
+    : null;
+  const activeRenderNode: RenderNode | null = activeFlowNode
+    ? {
+        id: activeFlowNode.id,
+        catalogKey: activeFlowNode.nodeType ?? "node",
+        title: activeFlowNode.title,
+        properties: activeFlowNode.props ?? {},
+      }
+    : null;
+
+  React.useEffect(() => {
+    if (!activeId) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveId(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeId]);
+
+  // Pan so the selected node lands in the CENTER of the space left of the sheet
+  // (legacy ssota canvas behaviour). Runs after the sheet has slid in so the
+  // panel width is measurable.
+  React.useEffect(() => {
+    if (!activeId) return;
+    const pos = positions[activeId];
+    const flowNode = model.nodes.find((n) => n.id === activeId);
+    if (!pos || !flowNode) return;
+    const timer = setTimeout(() => {
+      const pane = containerRef.current;
+      if (!pane) return;
+      const paneW = pane.clientWidth;
+      if (paneW < 120) return; // skip panning on a degraded/zero-size read
+      const panelEl = pane.querySelector<HTMLElement>(
+        '[data-testid="document-sheet-panel"]',
+      );
+      const panelW = panelEl
+        ? panelEl.getBoundingClientRect().width
+        : Math.min(384, paneW * 0.4);
+      const paneH = pane.clientHeight;
+      const pad = 24;
+      const availW = Math.max(140, paneW - panelW - pad * 2);
+      const screenCenterX = pad + availW / 2;
+      const nodeW = flowNode.width ?? DEFAULT_NODE_WIDTH;
+      const nodeH = flowNode.height ?? DEFAULT_NODE_HEIGHT;
+      const nodeCenterX = pos.x + nodeW / 2;
+      const nodeCenterY = pos.y + nodeH / 2;
+      // Zoom in so the node fills a comfortable share of the space left of the
+      // sheet (legacy ssota behaviour) — bounded so it never overflows the pane.
+      const zoom = Math.min(
+        (availW * 0.42) / nodeW,
+        (paneH * 0.5) / nodeH,
+        1.5,
+      );
+      const targetZoom = Math.max(zoom, 0.7);
+      // Offset the centred flow point so the node appears at screenCenterX
+      // (left of the pane centre) instead of the viewport centre.
+      const targetX = nodeCenterX + (paneW / 2 - screenCenterX) / targetZoom;
+      void setCenter(targetX, nodeCenterY, { zoom: targetZoom, duration: 450 });
+    }, 210);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId, positions]);
+
+  const rfNodes = React.useMemo<Node[]>(() => {
+    if (!ready) return [];
+    return model.nodes.map((n) => ({
+      id: n.id,
+      type: "generic",
+      position: positions[n.id] ?? { x: 0, y: 0 },
+      data: {
+        style: resolveNodeStyle(n, manifest),
+        status: n.status,
+        direction,
+      },
+    }));
+  }, [model.nodes, manifest, positions, ready, direction]);
+
+  const rfEdges = React.useMemo<Edge[]>(
+    () =>
+      model.edges.map((e) => ({
+        id: e.id,
+        type: "flow",
+        source: e.source,
+        target: e.target,
+        label: e.label,
+        animated: e.animated ?? false,
+      })),
+    [model.edges],
+  );
+
+  if (!node) {
+    return (
+      <div className="text-muted-foreground border-border rounded border border-dashed p-4 text-xs">
+        FlowCanvas: no bound node.
+      </div>
+    );
+  }
+
+  const onSave = (blocks: unknown[]) => {
+    if (!onAction || !sheet.setAction || !activeId) return;
+    const nextFlow: FlowModel = {
+      ...model,
+      nodes: model.nodes.map((n) =>
+        n.id === activeId
+          ? { ...n, props: { ...(n.props ?? {}), [sheet.field]: blocks } }
+          : n,
+      ),
+    };
+    void onAction(sheet.setAction, {
+      nodeId: node.id,
+      field: property,
+      value: nextFlow,
+    });
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="ssota-flow border-border bg-card relative w-full overflow-hidden rounded-lg border"
+      style={{ height }}
+    >
+      <style>{FLOW_STYLES}</style>
+      {/* Mount ReactFlow only once positions are ready so it measures every node
+          (and its handles) in one clean pass. */}
+      {ready ? (
+        <ReactFlow
+          nodes={rfNodes}
+          edges={rfEdges}
+          nodeTypes={NODE_TYPES}
+          edgeTypes={EDGE_TYPES}
+          nodesDraggable={false}
+          elementsSelectable
+          proOptions={{ hideAttribution: true }}
+          minZoom={0.2}
+          fitView
+          fitViewOptions={{ padding: 0.15 }}
+          onNodeClick={(_, n) => setActiveId(n.id)}
+          onPaneClick={() => setActiveId(null)}
+        >
+          <FlowReady nodeIds={rfNodes.map((n) => n.id)} />
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+      ) : (
+        <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
+          Laying out…
+        </div>
+      )}
+
+      {activeRenderNode ? (
+        <DocumentSheetPanel
+          node={activeRenderNode}
+          subtitle={readNodeField(activeRenderNode, sheet.subtitleField)}
+          status={readNodeField(activeRenderNode, sheet.statusField)}
+          field={sheet.field}
+          editable={sheet.editable}
+          sheetSize={sheet.sheetSize}
+          onClose={() => setActiveId(null)}
+          onSave={onSave}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export const flowComponents: Record<string, CatalogComponent> = {
+  FlowCanvas: ({ props, bindingData }) => {
+    const node = boundNode(bindingData, props);
+    const property =
+      typeof props.property === "string" ? props.property : "flow";
+    const direction = ((): FlowLayoutDirection => {
+      const l = props.layout;
+      return l === "RL" || l === "TB" || l === "BT" ? l : "LR";
+    })();
+    const height =
+      typeof props.height === "number" && props.height > 0 ? props.height : 480;
+    const sheet: SheetConfig = {
+      field: typeof props.field === "string" ? props.field : "content",
+      subtitleField:
+        typeof props.subtitleField === "string" ? props.subtitleField : "subtitle",
+      statusField:
+        typeof props.statusField === "string" ? props.statusField : "status",
+      editable: props.editable === true,
+      sheetSize: SHEET_SIZES.includes(props.sheetSize as SheetSize)
+        ? (props.sheetSize as SheetSize)
+        : "default",
+      setAction: typeof props.setAction === "string" ? props.setAction : undefined,
+    };
+    return (
+      <ReactFlowProvider>
+        <FlowCanvasEl
+          node={node}
+          property={property}
+          presentation={props.nodePresentation}
+          direction={direction}
+          height={height}
+          sheet={sheet}
+        />
+      </ReactFlowProvider>
+    );
+  },
+};
