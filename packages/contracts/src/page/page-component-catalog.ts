@@ -16,6 +16,7 @@ export type PageComponentCategory =
   | "forms"
   | "tokens"
   | "document"
+  | "canvas"
   | "widget";
 
 export interface PageComponentPropDescriptor {
@@ -384,6 +385,49 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     example: {
       type: "DocumentEditor",
       props: { binding: "article", field: "content", action: "saveArticle" },
+    },
+  },
+  // ── canvas ───────────────────────────────────────────────────────────────
+  FlowCanvas: {
+    key: "FlowCanvas",
+    category: "canvas",
+    description:
+      "Renders a node/edge graph (e.g. a user flow) with ReactFlow. The whole graph lives in one node's jsonb property; node visuals are driven by a `nodePresentation` manifest that maps node types/properties to color/shape variants. Auto-layout (ELK layered) runs when nodes lack coordinates.",
+    children: false,
+    props: {
+      binding: binding("A single-node binding (the node holding the graph)."),
+      property: {
+        type: "string",
+        description:
+          'Node property holding the graph jsonb (default "flow"). Shape: { nodes:[{ id, nodeType?, title, x?, y?, props?, status? }], edges:[{ source, target, label?, animated? }] }.',
+      },
+      nodePresentation: {
+        type: "{ match:{ nodeType?, property?, eq? }, variant?, color?, shape?, titleFrom?, badgeFrom? }[]",
+        description:
+          "Manifest mapping each node to a visual variant (first matching rule wins). color = red|orange|amber|green|blue|purple|pink|gray; shape = rect|pill|diamond.",
+      },
+      layout: {
+        type: "string",
+        description:
+          "Auto-layout direction LR|RL|TB|BT (default LR), used when nodes lack x/y.",
+      },
+      height: { type: "number", description: "Canvas height in px (default 480)." },
+      stream: {
+        type: "boolean",
+        description: "Reveal nodes one-by-one on mount (default true).",
+      },
+    },
+    example: {
+      type: "FlowCanvas",
+      props: {
+        binding: "userFlow",
+        property: "flow",
+        nodePresentation: [
+          { match: { nodeType: "section" }, variant: "section", color: "purple" },
+          { match: { nodeType: "page" }, variant: "page", color: "blue" },
+          { match: { nodeType: "action" }, variant: "action", color: "gray", shape: "pill" },
+        ],
+      },
     },
   },
   // ── widget ───────────────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ export type PageRuntimeDemoCategory =
   | "data"
   | "forms"
   | "document"
+  | "canvas"
   | "design";
 
 export type PageRuntimeDemo = {
@@ -344,6 +345,7 @@ export const PAGE_RUNTIME_DEMO_CATEGORIES: {
   { id: "data", label: "Data" },
   { id: "forms", label: "Forms" },
   { id: "document", label: "Document" },
+  { id: "canvas", label: "Canvas" },
   { id: "design", label: "Design" },
 ];
 
@@ -1112,6 +1114,107 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
     bindingData: { objectives: mockObjectives },
+  },
+  {
+    id: "flow-canvas",
+    category: "canvas",
+    title: "FlowCanvas (user flow)",
+    description:
+      "A node/edge graph rendered with ReactFlow. The whole graph lives in one node's `flow` jsonb property; the nodePresentation manifest maps nodeType → color/shape variant (section = purple, page = blue, action = gray pill). Nodes carry no coordinates, so ELK lays them out left-to-right. Nodes stream in on mount; click a node for the selection ring/glow, click an edge for the blue highlight.",
+    components: ["Section", "FlowCanvas"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Pet Health — User Flow",
+            subtitle: "Single node · jsonb graph · ELK auto-layout",
+          },
+          children: ["flow"],
+        },
+        flow: {
+          type: "FlowCanvas",
+          props: {
+            binding: "userFlow",
+            property: "flow",
+            layout: "LR",
+            height: 560,
+            nodePresentation: [
+              { match: { nodeType: "section" }, variant: "section", color: "purple" },
+              {
+                match: { nodeType: "page" },
+                variant: "page",
+                color: "blue",
+                badgeFrom: "status",
+              },
+              {
+                match: { nodeType: "action" },
+                variant: "action",
+                color: "gray",
+                shape: "pill",
+              },
+            ],
+          },
+        },
+      },
+    },
+    bindingData: {
+      userFlow: {
+        id: "99999999-9999-4999-8999-999999999901",
+        catalogKey: "user_flow",
+        title: "Pet Health User Flow",
+        properties: {
+          flow: {
+            nodes: [
+              { id: "auth", nodeType: "section", title: "Authentication" },
+              { id: "welcome", nodeType: "page", title: "Welcome Screen" },
+              { id: "login", nodeType: "page", title: "Login" },
+              { id: "signup", nodeType: "page", title: "Sign Up" },
+              { id: "enter-creds", nodeType: "action", title: "Enter Credentials" },
+              { id: "create-acct", nodeType: "action", title: "Create Account" },
+              {
+                id: "home",
+                nodeType: "page",
+                title: "Home Dashboard",
+                props: { status: "main" },
+              },
+              { id: "pets", nodeType: "section", title: "Pet Management" },
+              { id: "pet-list", nodeType: "page", title: "Pet List" },
+              { id: "add-pet", nodeType: "action", title: "Add New Pet" },
+              { id: "media", nodeType: "section", title: "Media Logging" },
+              { id: "timeline", nodeType: "page", title: "Media Timeline" },
+              { id: "upload", nodeType: "action", title: "Upload Media" },
+              { id: "health", nodeType: "section", title: "Health Monitoring" },
+              { id: "alerts", nodeType: "page", title: "Health Alerts" },
+              { id: "settings", nodeType: "section", title: "Settings" },
+              { id: "account", nodeType: "page", title: "Account Settings" },
+              { id: "logout", nodeType: "action", title: "Logout" },
+            ],
+            edges: [
+              { source: "auth", target: "welcome" },
+              { source: "welcome", target: "login" },
+              { source: "welcome", target: "signup" },
+              { source: "login", target: "enter-creds" },
+              { source: "signup", target: "create-acct" },
+              { source: "enter-creds", target: "home", animated: true },
+              { source: "create-acct", target: "home", animated: true },
+              { source: "home", target: "pets" },
+              { source: "pets", target: "pet-list" },
+              { source: "pet-list", target: "add-pet" },
+              { source: "home", target: "media" },
+              { source: "media", target: "timeline" },
+              { source: "timeline", target: "upload" },
+              { source: "home", target: "health" },
+              { source: "health", target: "alerts" },
+              { source: "home", target: "settings" },
+              { source: "settings", target: "account" },
+              { source: "account", target: "logout" },
+            ],
+          },
+        },
+      },
+    },
   },
 ];
 
