@@ -10,6 +10,7 @@
  * hardcodes domain concepts — it just applies the resolved variant.
  */
 
+import type { JsonRenderSpec } from "@ssota/contracts";
 import { asColorToken, type FlowColorToken } from "./flow-tokens";
 import type { RenderNode } from "./types";
 
@@ -63,6 +64,13 @@ export type NodePresentationRule = {
   titleFrom?: string;
   /** Property key to read a small badge label from. */
   badgeFrom?: string;
+  /**
+   * Optional card template: a UI-catalog element tree rendered INSIDE the node
+   * (via DynamicPageRenderer). String props support `{{prop}}` / `{{view.key}}`
+   * interpolation, and elements with `props.when` are gated on the view state.
+   * When present it replaces the default colored box.
+   */
+  card?: JsonRenderSpec;
 };
 
 /** Resolved visual variant for one node. */
@@ -72,6 +80,7 @@ export type ResolvedNodeStyle = {
   shape: FlowNodeShape;
   title: string;
   badge?: string;
+  card?: JsonRenderSpec;
 };
 
 export const DEFAULT_NODE_WIDTH = 168;
@@ -238,5 +247,6 @@ export function resolveNodeStyle(
     shape: rule?.shape ?? "rect",
     title,
     badge,
+    card: rule?.card,
   };
 }

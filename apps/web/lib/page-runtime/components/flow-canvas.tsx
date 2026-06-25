@@ -261,6 +261,12 @@ function FlowCanvasEl({
         childCount: childMap[n.id]?.length ?? 0,
         collapsed: collapsed.has(n.id),
         onToggleCollapse: () => toggleCollapse(n.id),
+        renderNode: {
+          id: n.id,
+          catalogKey: n.nodeType ?? "node",
+          title: n.title,
+          properties: n.props ?? {},
+        },
       },
     }));
   }, [model.nodes, manifest, positions, ready, direction, hidden, childMap, collapsed, toggleCollapse]);

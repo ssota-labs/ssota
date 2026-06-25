@@ -517,9 +517,9 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         "Model 2: a binding to an edge list (e.g. `traverse_edges`); records use source/target (or sourceNodeId/targetNodeId, from/to).",
       ),
       nodePresentation: {
-        type: "{ match:{ nodeType?, property?, eq? }, variant?, color?, shape?, titleFrom?, badgeFrom? }[]",
+        type: "{ match:{ nodeType?, property?, eq? }, variant?, color?, shape?, titleFrom?, badgeFrom?, card? }[]",
         description:
-          "Manifest mapping each node to a visual variant (first matching rule wins). color = red|orange|amber|green|blue|purple|pink|gray; shape = rect|pill|diamond.",
+          "Manifest mapping each node to a visual variant (first matching rule wins). color = red|orange|amber|green|blue|purple|pink|gray; shape = rect|pill|diamond. `card` is a JsonRenderSpec rendered INSIDE the node (mini JSON-render): string props support `{{prop}}`/`{{view.key}}` interpolation and elements with `props.when` are gated on the view state.",
       },
       layout: {
         type: "string",
