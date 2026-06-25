@@ -47,12 +47,20 @@ export function ConsoleShell({
 }: ConsoleShellProps) {
   const pathname = usePathname();
   const isTasksContext = pathname.includes(`/${ctx.projectSlug}/tasks`);
+  const isWorkflowInstructionsContext = pathname.includes(
+    `/${ctx.projectSlug}/workflow/instructions`,
+  );
   const isChatContext = pathname.includes(`/${ctx.projectSlug}/c`);
   const isFillHeightPage = fillHeightPageIds.some((pageId) =>
     pathname.endsWith(`/p/${pageId}`),
   );
+  const isDesignStudio = pathname.includes("/design/ui-components");
   const isFullBleedContext =
-    isTasksContext || isChatContext || isFillHeightPage;
+    isTasksContext ||
+    isWorkflowInstructionsContext ||
+    isChatContext ||
+    isDesignStudio ||
+    isFillHeightPage;
 
   return (
     <ProjectProvider value={ctx}>

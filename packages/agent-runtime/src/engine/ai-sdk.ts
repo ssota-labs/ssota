@@ -58,7 +58,9 @@ function buildAgent(input: LoopEngineRunInput) {
  * every tool resolves its `projectId`/`accountId` without rebinding.
  *
  * MCP tools use a stable facade (`connection_search`, `connection_call`) so the
- * tools prefix never changes between steps — prompt-cache friendly.
+ * tools prefix never changes between steps. `instructions` arrives as
+ * `SystemModelMessage[]` carrying Anthropic ephemeral cache breakpoints
+ * (see buildRunInstructionMessages), so the static prefix is prompt-cached.
  */
 export function createAiSdkLoopEngine(): LoopEngine {
   return {

@@ -443,6 +443,18 @@ pnpm dev   # web :3000, mcp :3001
 
 `pnpm e2e`는 Playwright가 **3100/3101**에서 자체 `next dev`를 띄우므로, `pnpm dev` tmux 세션이 살아 있으면 Next.js dev lock 충돌로 실패한다. e2e 전에 `tmux kill-session -t ssota-dev`로 dev 서버를 내린다.
 
+### emulate (선택 — provider API 로컬)
+
+[Vercel Labs emulate](https://github.com/vercel-labs/emulate)는 GitHub·Slack·Linear 등 **외부 SaaS HTTP API**를 로컬에서 상태ful하게 흉내 낸다. Supabase docker·SSOTA graph와 별개이며, **E2E 기본은 여전히 `CONNECT_STUB`/`MCP_STUB`**이다.
+
+```bash
+pnpm emulate:dev          # emulate.config.yaml seed로 GitHub/Slack/Linear/Google 기동
+pnpm emulate:ports        # 기본 URL (4001/4003/4012 등) 출력
+pnpm e2e:emulate          # emulate OAuth E2E (별도 Playwright config)
+```
+
+`EMULATE_ENABLED=1`일 때 agent-runtime enrichment가 emulate URL을 사용한다. agent-browser·Playwright UI 검증 워크플로는 그대로 유지한다.
+
 ### 검증 명령 (Cloud 세션)
 
 | 목적 | 명령 | 사전 조건 |
