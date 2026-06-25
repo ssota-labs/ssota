@@ -301,8 +301,11 @@ function DataTableEl({
   }, 600);
 
   return (
-    <div className="space-y-2">
-      {title ? <h2 className="text-sm font-medium">{title}</h2> : null}
+    <div className="flex h-full min-h-0 flex-col gap-3">
+      {title ? (
+        <h2 className="shrink-0 text-sm font-semibold">{title}</h2>
+      ) : null}
+      <div className="min-h-0 flex-1">
       <AdvancedDataTable<RenderNode>
         columns={columnDefs}
         data={rows}
@@ -326,6 +329,7 @@ function DataTableEl({
           ) : null
         }
       />
+      </div>
     </div>
   );
 }

@@ -115,7 +115,11 @@ export function DynamicPageRenderer({
 
   const tree = (
     <div
-      className={fillHeight ? "relative min-h-0 flex-1" : "space-y-2"}
+      className={
+        fillHeight
+          ? "relative flex min-h-0 flex-1 flex-col"
+          : "space-y-2"
+      }
       data-testid="dynamic-page-renderer"
     >
       {renderElement(spec.root, spec, bindingData)}

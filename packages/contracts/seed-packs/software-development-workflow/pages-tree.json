@@ -735,7 +735,8 @@
           "type": "ArtifactWorkbench",
           "props": {
             "binding": "rows",
-            "themeBinding": "theme"
+            "themeBinding": "theme",
+            "listVariant": "flat"
           }
         },
         "linkedTable": {

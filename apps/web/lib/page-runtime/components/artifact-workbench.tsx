@@ -82,9 +82,11 @@ function resolveThemeFromBinding(
 function ArtifactWorkbenchEl({
   nodes,
   themeNode,
+  listVariant: listVariantProp,
 }: {
   nodes: RenderNode[];
   themeNode?: RenderNode;
+  listVariant?: "flat" | "grouped";
 }) {
   const studio = useArtifactWorkbench();
   const selection = useSelection();
@@ -97,8 +99,15 @@ function ArtifactWorkbenchEl({
     [themeNode],
   );
 
+  const listVariantFromProps =
+    listVariantProp === "flat" || listVariantProp === "grouped"
+      ? listVariantProp
+      : undefined;
+
   const isWireframeList =
-    nodes.length > 0 && nodes.every((n) => n.catalogKey === "page_wireframe");
+    listVariantFromProps === "flat" ||
+    (nodes.length > 0 &&
+      nodes.every((n) => n.catalogKey === "page_wireframe"));
   const readOnly = !studio?.onDeployComponent;
 
   const resolvedSelectionId = selection?.selectedId ?? null;
@@ -164,7 +173,8 @@ function ArtifactWorkbenchEl({
   };
 
   return (
-    <StudioShell
+    <div className="flex h-full min-h-0 flex-col">
+      <StudioShell
       readOnly={readOnly}
       listVariant={isWireframeList ? "flat" : "grouped"}
       projectId={studio.projectId}
@@ -177,7 +187,8 @@ function ArtifactWorkbenchEl({
       previewBasePath={studio.previewBasePath}
       onDeploy={handleDeploy}
       onCreateComponent={handleCreate}
-    />
+      />
+    </div>
   );
 }
 
@@ -193,16 +204,27 @@ function ArtifactWorkbenchView({
     typeof props.themeBinding === "string" ? props.themeBinding : "theme";
   const themeNode = boundSingleton(bindingData, themeBinding);
 
+  const listVariant =
+    props.listVariant === "flat" || props.listVariant === "grouped"
+      ? props.listVariant
+      : undefined;
+
   return (
-    <Suspense
-      fallback={
-        <div className="text-muted-foreground flex h-full min-h-[320px] items-center justify-center text-sm">
-          Loading workbench…
-        </div>
-      }
-    >
-      <ArtifactWorkbenchEl nodes={nodes} themeNode={themeNode} />
-    </Suspense>
+    <div className="flex h-full min-h-0 flex-col">
+      <Suspense
+        fallback={
+          <div className="text-muted-foreground flex h-full min-h-[320px] items-center justify-center text-sm">
+            Loading workbench…
+          </div>
+        }
+      >
+        <ArtifactWorkbenchEl
+          nodes={nodes}
+          themeNode={themeNode}
+          listVariant={listVariant}
+        />
+      </Suspense>
+    </div>
   );
 }
 
