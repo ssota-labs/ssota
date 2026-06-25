@@ -412,10 +412,28 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
           "Auto-layout direction LR|RL|TB|BT (default LR), used when nodes lack x/y.",
       },
       height: { type: "number", description: "Canvas height in px (default 480)." },
-      stream: {
-        type: "boolean",
-        description: "Reveal nodes one-by-one on mount (default true).",
+      field: {
+        type: "string",
+        description:
+          'Node prop holding the document shown in the click-through sheet (default "content").',
       },
+      subtitleField: {
+        type: "string",
+        description: 'Node prop for the sheet subtitle (default "subtitle").',
+      },
+      statusField: {
+        type: "string",
+        description: 'Node prop for the sheet status badge (default "status").',
+      },
+      editable: {
+        type: "boolean",
+        description: "Make the click-through sheet an editor (default false).",
+      },
+      sheetSize: {
+        type: "string",
+        description: "Sheet width: default|half|inspector|wide|full (default default).",
+      },
+      setAction: action("Dispatched with { nodeId, field, value } when an editable sheet saves."),
     },
     example: {
       type: "FlowCanvas",

@@ -1120,7 +1120,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     category: "canvas",
     title: "FlowCanvas (user flow)",
     description:
-      "A node/edge graph rendered with ReactFlow. The whole graph lives in one node's `flow` jsonb property; the nodePresentation manifest maps nodeType → color/shape variant (section = purple, page = blue, action = gray pill). Nodes carry no coordinates, so ELK lays them out left-to-right. Nodes stream in on mount; click a node for the selection ring/glow, click an edge for the blue highlight.",
+      "A node/edge graph rendered with ReactFlow. The whole graph lives in one node's `flow` jsonb property; the nodePresentation manifest maps nodeType → color/shape variant (section = purple, page = blue, action = gray pill). Nodes carry no coordinates, so ELK lays them out left-to-right. Click a node → the same DocumentSheet slides in from the right (with backdrop blur) and the canvas pans so the node centres in the space left of the sheet; click an edge for the blue highlight, the empty pane to dismiss.",
     components: ["Section", "FlowCanvas"],
     spec: {
       root: "section",
@@ -1168,8 +1168,28 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           flow: {
             nodes: [
               { id: "auth", nodeType: "section", title: "Authentication" },
-              { id: "welcome", nodeType: "page", title: "Welcome Screen" },
-              { id: "login", nodeType: "page", title: "Login" },
+              {
+                id: "welcome",
+                nodeType: "page",
+                title: "Welcome Screen",
+                props: {
+                  status: "approved",
+                  subtitle: "First-run entry point",
+                  content:
+                    "Welcome screen shown on app launch. Offers Login and Sign Up, plus a short value-prop carousel for first-time visitors.",
+                },
+              },
+              {
+                id: "login",
+                nodeType: "page",
+                title: "Login",
+                props: {
+                  status: "active",
+                  subtitle: "Returning users",
+                  content:
+                    "Email + password form with social-login options. On success routes to the Home Dashboard; on failure shows inline validation.",
+                },
+              },
               { id: "signup", nodeType: "page", title: "Sign Up" },
               { id: "enter-creds", nodeType: "action", title: "Enter Credentials" },
               { id: "create-acct", nodeType: "action", title: "Create Account" },
@@ -1177,18 +1197,63 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
                 id: "home",
                 nodeType: "page",
                 title: "Home Dashboard",
-                props: { status: "main" },
+                props: {
+                  status: "active",
+                  subtitle: "Main hub",
+                  content:
+                    "Central hub after auth. Surfaces pet health summary cards, recent media, active alerts, and quick links into every section.",
+                },
               },
               { id: "pets", nodeType: "section", title: "Pet Management" },
-              { id: "pet-list", nodeType: "page", title: "Pet List" },
+              {
+                id: "pet-list",
+                nodeType: "page",
+                title: "Pet List",
+                props: {
+                  status: "review",
+                  subtitle: "All registered pets",
+                  content:
+                    "Scrollable list of the user's pets with avatar, species, and health badge. Tap a pet for its profile; FAB adds a new pet.",
+                },
+              },
               { id: "add-pet", nodeType: "action", title: "Add New Pet" },
               { id: "media", nodeType: "section", title: "Media Logging" },
-              { id: "timeline", nodeType: "page", title: "Media Timeline" },
+              {
+                id: "timeline",
+                nodeType: "page",
+                title: "Media Timeline",
+                props: {
+                  status: "draft",
+                  subtitle: "Photos & videos",
+                  content:
+                    "Reverse-chronological media feed per pet. Supports upload, tagging, and notes; entries link back to related health alerts.",
+                },
+              },
               { id: "upload", nodeType: "action", title: "Upload Media" },
               { id: "health", nodeType: "section", title: "Health Monitoring" },
-              { id: "alerts", nodeType: "page", title: "Health Alerts" },
+              {
+                id: "alerts",
+                nodeType: "page",
+                title: "Health Alerts",
+                props: {
+                  status: "active",
+                  subtitle: "AI-detected issues",
+                  content:
+                    "List of proactive health alerts with severity, evidence media, and recommended actions. Mark as reviewed or resolved.",
+                },
+              },
               { id: "settings", nodeType: "section", title: "Settings" },
-              { id: "account", nodeType: "page", title: "Account Settings" },
+              {
+                id: "account",
+                nodeType: "page",
+                title: "Account Settings",
+                props: {
+                  status: "draft",
+                  subtitle: "Profile & security",
+                  content:
+                    "Manage email, password, push-notification preferences, privacy policy, data export, and account deletion.",
+                },
+              },
               { id: "logout", nodeType: "action", title: "Logout" },
             ],
             edges: [
