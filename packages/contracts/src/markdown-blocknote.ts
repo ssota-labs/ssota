@@ -388,3 +388,45 @@ export function normalizeNodeContentForWrite(value: unknown): unknown {
   if (value.trim().length === 0) return [];
   return markdownToBlockNoteContent(value);
 }
+
+const STRUCTURED_BLOCK_TYPES = new Set([
+  "heading",
+  "bulletListItem",
+  "numberedListItem",
+  "table",
+  "blockquote",
+  "quote",
+  "codeBlock",
+]);
+
+function hasStructuredBlocks(content: BlockNoteContent): boolean {
+  return content.some((block) => {
+    const type = block.type;
+    return typeof type === "string" && STRUCTURED_BLOCK_TYPES.has(type);
+  });
+}
+
+const MARKDOWN_SIGNAL_RE =
+  /(^|\n)(#{1,6}\s|[-*+]\s|\d+\.\s|\|[^\n]+\|)|\*\*[^*\n]+\*\*/;
+
+function looksLikeMarkdownDocument(text: string): boolean {
+  return MARKDOWN_SIGNAL_RE.test(text);
+}
+
+/**
+ * Workflow instructions are often stored as markdown (registry bodies, legacy DB
+ * migration) wrapped in plain paragraph blocks. Convert to a real BlockNote doc
+ * for the web editor without re-processing content the user already saved as
+ * structured blocks.
+ */
+export function normalizeWorkflowInstructionContent(
+  content: BlockNoteContent,
+): BlockNoteContent {
+  if (!Array.isArray(content) || content.length === 0) return content;
+  if (hasStructuredBlocks(content)) return content;
+
+  const markdown = blockNoteContentToMarkdown(content);
+  if (!markdown.trim() || !looksLikeMarkdownDocument(markdown)) return content;
+
+  return markdownToBlockNoteContent(markdown);
+}
