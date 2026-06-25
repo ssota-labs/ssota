@@ -1,4 +1,4 @@
-import type { ModelMessage, ToolSet } from "ai";
+import type { ModelMessage, SystemModelMessage, ToolSet } from "ai";
 import type { SandboxSession } from "../sandbox/session.js";
 import type { CredentialProvider } from "../credentials/provider.js";
 import type { ConnectionRunState } from "../connections/run-state.js";
@@ -23,8 +23,11 @@ export type AgentEvent =
   | { type: "finish"; finishReason: string };
 
 export interface LoopEngineRunInput {
-  /** System prompt / instructions for this run. */
-  instructions: string;
+  /**
+   * System prompt / instructions for this run. An array of `SystemModelMessage`s
+   * carries Anthropic prompt-cache breakpoints (see buildRunInstructionMessages).
+   */
+  instructions: string | SystemModelMessage | SystemModelMessage[];
   /** Conversation so far. */
   messages: ModelMessage[];
   /** SSOTA tool set the engine binds to. */

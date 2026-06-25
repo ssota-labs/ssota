@@ -1,4 +1,4 @@
-import type { ModelMessage } from "ai";
+import type { ModelMessage, SystemModelMessage } from "ai";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import { listBuiltinWorkflowIndex } from "@ssota/contracts/workflows";
 import {
@@ -14,7 +14,7 @@ import {
 import { createSsotaTools } from "./tools/index.js";
 import { createSandboxTools } from "./tools/sandbox.js";
 import { createConnectionTools } from "./tools/connections.js";
-import { buildRunInstructions } from "./runtime-prompt.js";
+import { buildRunInstructionMessages } from "./runtime-prompt.js";
 import { DEFAULT_MODEL_ID } from "./models.js";
 import { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
 import type { AgentRunContext, LoopEngine } from "./engine/types.js";
@@ -77,7 +77,7 @@ async function prepareRun(input: RunAgentInput) {
   const { projectId, runId, accountId, runtimeKind } = input;
   const instructionPort = getWorkflowInstructionPort(projectId, accountId);
 
-  let instructions = "";
+  let instructions: SystemModelMessage[] = [];
   let messages: ModelMessage[] = [];
   let taskPort = getTaskPort(projectId, accountId);
 
@@ -94,7 +94,7 @@ async function prepareRun(input: RunAgentInput) {
       })),
       ...builtins,
     ];
-    instructions = buildRunInstructions({
+    instructions = buildRunInstructionMessages({
       runtimeKind: "main",
       projectId,
       accountId,
@@ -116,7 +116,7 @@ async function prepareRun(input: RunAgentInput) {
     const playbook = task.workflowInstructionId
       ? await readWorkflowInstructionById(instructionPort, task.workflowInstructionId)
       : null;
-    instructions = buildRunInstructions({
+    instructions = buildRunInstructionMessages({
       runtimeKind: "task",
       projectId,
       accountId,
@@ -138,7 +138,7 @@ async function prepareRun(input: RunAgentInput) {
     ];
   } else if (runtimeKind === "scheduler" && input.scheduleId) {
     const scheduleInstruction = await instructionPort.getByKey("orchestrator.daily");
-    instructions = buildRunInstructions({
+    instructions = buildRunInstructionMessages({
       runtimeKind: "scheduler",
       projectId,
       accountId,

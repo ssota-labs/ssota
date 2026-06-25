@@ -5,6 +5,7 @@ import {
   type WorkflowInstruction,
 } from "@ssota/contracts";
 import type { WorkflowManifestEntry } from "@ssota/contracts/workflows";
+import type { SystemModelMessage } from "ai";
 
 const EXTERNAL_CONNECTIONS_GUIDANCE = `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` with a natural-language query to find matching tools. When the user names a service (e.g. "Slack"), pass \`connection: "slack"\` or include the service name in the query — only that connector is probed. Call \`connection_search\` once per user request or when you need a new capability; reuse \`qualifiedName\` and \`argsSchema\` from earlier results in this conversation instead of searching again before every \`connection_call\`. Invoke matched tools with \`connection_call\` using the returned \`qualifiedName\` and args that match \`argsSchema\` exactly (e.g. Slack \`slack_send_message\` uses \`channel_id\` and \`text\`, not \`channel\`/\`message\`). If a service is not connected, call \`request_connection\` and wait for the user. Never assume a connector the user did not ask for.`;
 
@@ -49,7 +50,42 @@ export interface BuildRunInstructionsParams {
   };
 }
 
-export function buildRunInstructions(params: BuildRunInstructionsParams): string {
+const EPHEMERAL_CACHE: SystemModelMessage["providerOptions"] = {
+  // Anthropic prompt-prefix cache breakpoint (not the AI Gateway response cache).
+  anthropic: { cacheControl: { type: "ephemeral" } },
+};
+
+/**
+ * Static instruction segment — identical for every run of a given runtimeKind.
+ * Kept first so it forms a stable, cacheable prefix (tools + this block) that is
+ * reused across runs within Anthropic's cache TTL.
+ */
+function buildStaticInstructionSegment(runtimeKind: AgentRuntimeKind): string {
+  const lines: string[] = [LAYER0_RUNTIME_PROMPTS[runtimeKind]];
+
+  if (runtimeKind === "task") {
+    lines.push(
+      `\n## Finishing`,
+      `When done, call complete_task. If blocked, call block_task or request_approval.`,
+    );
+  }
+
+  if (runtimeKind === "main" || runtimeKind === "task") {
+    lines.push(`\n## External connections (MCP)`, EXTERNAL_CONNECTIONS_GUIDANCE);
+    lines.push(`\n## Communication style`, COMMUNICATION_STYLE);
+  }
+
+  return lines.filter(Boolean).join("\n");
+}
+
+/**
+ * Per-run dynamic instruction segment — varies by project/task/schedule. Stable
+ * across the multi-step tool loop within a single run, so it is the second cache
+ * breakpoint. Returns "" when there is no dynamic content for the runtimeKind.
+ */
+function buildDynamicInstructionSegment(
+  params: BuildRunInstructionsParams,
+): string {
   const {
     runtimeKind,
     projectId,
@@ -59,7 +95,7 @@ export function buildRunInstructions(params: BuildRunInstructionsParams): string
     taskPlaybook,
     task,
   } = params;
-  const lines: string[] = [LAYER0_RUNTIME_PROMPTS[runtimeKind]];
+  const lines: string[] = [];
 
   if (runtimeKind === "main") {
     if (workflowManifest && workflowManifest.length > 0) {
@@ -67,13 +103,13 @@ export function buildRunInstructions(params: BuildRunInstructionsParams): string
         .map((w) => `- ${w.key} — ${w.description || w.name}`)
         .join("\n");
       lines.push(
-        `\n## Available workflows`,
+        `## Available workflows`,
         `Match the user's intent to one of these. Load the full playbook with get_workflow_instruction(<key>) before acting.`,
         rows,
       );
     } else {
       lines.push(
-        `\n## Available workflows`,
+        `## Available workflows`,
         `No workflows are configured for this project yet. Help the user directly or set them up with write_workflow_instruction.`,
       );
     }
@@ -81,7 +117,7 @@ export function buildRunInstructions(params: BuildRunInstructionsParams): string
 
   if (runtimeKind === "task" && task) {
     lines.push(
-      `\n## Current task`,
+      `## Current task`,
       `- projectId: ${projectId}`,
       accountId
         ? `- accountId: ${accountId}`
@@ -118,22 +154,52 @@ export function buildRunInstructions(params: BuildRunInstructionsParams): string
         blockNoteContentToText(taskPlaybook.content),
       );
     }
-    lines.push(
-      `\n## Finishing`,
-      `When done, call complete_task. If blocked, call block_task or request_approval.`,
-    );
   }
 
   if (runtimeKind === "scheduler" && mainInstruction) {
     lines.push(
-      `\n## Scheduler instruction (${mainInstruction.key})\n${blockNoteContentToText(mainInstruction.content)}`,
+      `## Scheduler instruction (${mainInstruction.key})\n${blockNoteContentToText(mainInstruction.content)}`,
     );
   }
 
-  if (runtimeKind === "main" || runtimeKind === "task") {
-    lines.push(`\n## External connections (MCP)`, EXTERNAL_CONNECTIONS_GUIDANCE);
-    lines.push(`\n## Communication style`, COMMUNICATION_STYLE);
+  return lines.filter(Boolean).join("\n");
+}
+
+/**
+ * Build the run's system prompt as an array of `SystemModelMessage`s with
+ * Anthropic prompt-cache breakpoints: a static block (shared across runs) and a
+ * per-run dynamic block. Pass this directly to `ToolLoopAgent`'s `instructions`.
+ */
+export function buildRunInstructionMessages(
+  params: BuildRunInstructionsParams,
+): SystemModelMessage[] {
+  const messages: SystemModelMessage[] = [
+    {
+      role: "system",
+      content: buildStaticInstructionSegment(params.runtimeKind),
+      providerOptions: EPHEMERAL_CACHE,
+    },
+  ];
+
+  const dynamic = buildDynamicInstructionSegment(params);
+  if (dynamic) {
+    messages.push({
+      role: "system",
+      content: dynamic,
+      providerOptions: EPHEMERAL_CACHE,
+    });
   }
 
-  return lines.filter(Boolean).join("\n");
+  return messages;
+}
+
+/**
+ * String form of the run instructions (static block first, then dynamic).
+ * Retained for callers/tests that need a single string; the runtime uses
+ * {@link buildRunInstructionMessages} so prompt caching applies.
+ */
+export function buildRunInstructions(params: BuildRunInstructionsParams): string {
+  return buildRunInstructionMessages(params)
+    .map((m) => m.content)
+    .join("\n");
 }

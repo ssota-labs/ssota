@@ -17,7 +17,10 @@ import {
   resolveConnectTokenSubject,
   startConnectAuthorization,
 } from "../credentials/provider.js";
-import { buildRunInstructions } from "../runtime-prompt.js";
+import {
+  buildRunInstructionMessages,
+  buildRunInstructions,
+} from "../runtime-prompt.js";
 import { DEFAULT_MODEL_ID } from "../models.js";
 
 describe("createSsotaTools", () => {
@@ -164,6 +167,51 @@ describe("buildRunInstructions", () => {
       },
     });
     expect(task).toContain("professional workplace tone");
+  });
+});
+
+describe("buildRunInstructionMessages", () => {
+  const ephemeral = { anthropic: { cacheControl: { type: "ephemeral" } } };
+
+  it("emits a cache-marked static block and dynamic block for task runtime", () => {
+    const messages = buildRunInstructionMessages({
+      runtimeKind: "task",
+      projectId: "22222222-2222-2222-2222-222222222222",
+      task: {
+        id: "11111111-1111-1111-1111-111111111111",
+        title: "Draft the onboarding PRD",
+        acceptanceCriteria: [],
+        targetNodeId: null,
+        executionDirective: null,
+      },
+    });
+
+    expect(messages).toHaveLength(2);
+    const [staticBlock, dynamicBlock] = messages;
+    if (!staticBlock || !dynamicBlock) throw new Error("expected two blocks");
+    for (const m of messages) {
+      expect(m.role).toBe("system");
+      expect(m.providerOptions).toEqual(ephemeral);
+    }
+    // Static block carries the shared, run-invariant guidance...
+    expect(staticBlock.content).toContain("professional workplace tone");
+    expect(staticBlock.content).toContain("complete_task");
+    expect(staticBlock.content).not.toContain("Draft the onboarding PRD");
+    // ...while the per-run dynamic block carries the task specifics.
+    expect(dynamicBlock.content).toContain("Draft the onboarding PRD");
+    expect(dynamicBlock.content).toContain(
+      "22222222-2222-2222-2222-222222222222",
+    );
+  });
+
+  it("returns only the static block when there is no dynamic content", () => {
+    const messages = buildRunInstructionMessages({
+      runtimeKind: "scheduler",
+      projectId: "22222222-2222-2222-2222-222222222222",
+      mainInstruction: null,
+    });
+    expect(messages).toHaveLength(1);
+    expect(messages[0]?.providerOptions).toEqual(ephemeral);
   });
 });
 
