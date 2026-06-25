@@ -3,13 +3,12 @@ import { createSlackAdapter } from "@chat-adapter/slack";
 import { createDiscordAdapter } from "@chat-adapter/discord";
 import { createTelegramAdapter } from "@chat-adapter/telegram";
 import { createMigrationBackedPostgresState } from "./postgres-state";
-import { start } from "workflow/api";
 import {
   createVercelConnectProvider,
   createVercelOidcVerifier,
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
-import { runMainAgentWorkflow } from "@/app/workflows/main-agent";
+import { getMainAgentRunner } from "@/app/workflows/main-agent-job-runner";
 import { getSiteUrl } from "@/lib/auth/config";
 import { extractWorkspaceKey, resolveChatTarget } from "./resolve-account";
 
@@ -89,21 +88,20 @@ async function runAgentStream(message: IncomingMessage) {
   const text = message.text;
   const threadId = message.threadId ?? `chat:${workspaceKey}`;
 
-  const run = await start(runMainAgentWorkflow, [
-    {
-      projectId,
-      threadId,
-      accountId,
-      chatContext: {
-        chat: {
-          messages: [{ role: "user", content: text }],
-        },
-        channel: "chat",
-        workspace: workspaceKey,
-        user: message.author?.userId,
+  const runner = await getMainAgentRunner();
+  const run = await runner.start({
+    projectId,
+    threadId,
+    accountId,
+    chatContext: {
+      chat: {
+        messages: [{ role: "user", content: text }],
       },
+      channel: "chat",
+      workspace: workspaceKey,
+      user: message.author?.userId,
     },
-  ]);
+  });
 
   return uiChunksToText(run.getReadable() as ReadableStream<UIMessageChunk>);
 }
