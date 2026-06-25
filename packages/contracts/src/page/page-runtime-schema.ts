@@ -72,6 +72,14 @@ export const bindingDefSchema = z.discriminatedUnion("kind", [
     nodeId: z.string().uuid().optional(),
     ref: z.string().min(1).optional(),
   }),
+  z.object({
+    // URL-driven row selection: reads `context.searchParams[param]`, loads the
+    // node by id, and rejects when catalogKey mismatches. Drives SelectionProvider
+    // client sync and traverse bindings (`from: "selected"`).
+    kind: z.literal("url_selection"),
+    param: z.string().min(1),
+    catalogKey: z.string().min(1),
+  }),
 ]);
 
 export type BindingDef = z.infer<typeof bindingDefSchema>;

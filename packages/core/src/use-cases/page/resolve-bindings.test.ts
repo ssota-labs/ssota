@@ -195,4 +195,71 @@ describe("resolvePageBindings", () => {
       expect.objectContaining({ id: evergreen.id, title: "Evergreen data spec" }),
     );
   });
+
+  it("resolves url_selection from searchParams and validates catalogKey", async () => {
+    const store = createInMemoryGraphStore();
+    const graphWrite = createInMemoryGraphWritePort(store);
+    const graphRead = createInMemoryGraphReadPort(store);
+
+    const wireframe = await graphWrite.createNode({
+      projectId: PROJECT_ID,
+      nodeCatalogId: "00000000-0000-4000-8000-000000000020",
+      catalogKey: "page_wireframe",
+      title: "Login wireframe",
+      properties: { lifecycleStatus: "Draft" },
+      schemaVersion: 1,
+    });
+    const component = await graphWrite.createNode({
+      projectId: PROJECT_ID,
+      nodeCatalogId: "00000000-0000-4000-8000-000000000021",
+      catalogKey: "ui_component",
+      title: "Button",
+      properties: { lifecycleStatus: "Draft" },
+      schemaVersion: 1,
+    });
+
+    const selected = await resolvePageBindings(
+      graphRead,
+      PROJECT_ID,
+      {
+        selected: {
+          kind: "url_selection",
+          param: "wireframe",
+          catalogKey: "page_wireframe",
+        },
+      },
+      { searchParams: { wireframe: wireframe.id } },
+    );
+    expect(selected.selected).toEqual(
+      expect.objectContaining({ id: wireframe.id, catalogKey: "page_wireframe" }),
+    );
+
+    const wrongCatalog = await resolvePageBindings(
+      graphRead,
+      PROJECT_ID,
+      {
+        selected: {
+          kind: "url_selection",
+          param: "wireframe",
+          catalogKey: "page_wireframe",
+        },
+      },
+      { searchParams: { wireframe: component.id } },
+    );
+    expect(wrongCatalog.selected).toBeNull();
+
+    const missing = await resolvePageBindings(
+      graphRead,
+      PROJECT_ID,
+      {
+        selected: {
+          kind: "url_selection",
+          param: "wireframe",
+          catalogKey: "page_wireframe",
+        },
+      },
+      { searchParams: {} },
+    );
+    expect(missing.selected).toBeNull();
+  });
 });

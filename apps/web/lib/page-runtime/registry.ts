@@ -8,6 +8,7 @@ import { formComponents } from "./components/forms";
 import { tokenComponents } from "./components/tokens";
 import { documentComponents } from "./components/document";
 import { spreadsheetComponents } from "./components/spreadsheet";
+import { artifactWorkbenchComponents } from "./components/artifact-workbench";
 import { flowComponents } from "./components/flow-canvas";
 import { widgetComponents } from "./components/widget";
 
@@ -26,6 +27,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...tokenComponents,
   ...documentComponents,
   ...spreadsheetComponents,
+  ...artifactWorkbenchComponents,
   ...flowComponents,
   ...widgetComponents,
 };

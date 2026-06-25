@@ -441,23 +441,27 @@
     "title": "UI components",
     "icon": "design_ui_components",
     "spec": {
-      "root": "table",
+      "root": "studio",
       "elements": {
-        "table": {
-          "type": "NodeTable",
+        "studio": {
+          "type": "ArtifactWorkbench",
           "props": {
             "binding": "rows",
-            "title": "UI components",
-            "rowHref": "n",
-            "columns": [
-              { "key": "title", "header": "Component" },
-              { "key": "lifecycleStatus", "header": "Status" }
-            ]
+            "themeBinding": "theme"
           }
         }
       }
     },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "ui_component" } }
+    "bindings": {
+      "rows": { "kind": "query", "catalogKey": "ui_component" },
+      "selected": {
+        "kind": "url_selection",
+        "param": "component",
+        "catalogKey": "ui_component"
+      },
+      "theme": { "kind": "evergreen", "catalogKey": "design_theme" }
+    },
+    "actions": {}
   },
   {
     "key": "design/theme",
@@ -721,23 +725,58 @@
     "title": "Wireframes",
     "icon": "design_wireframes",
     "spec": {
-      "root": "table",
+      "root": "layout",
       "elements": {
-        "table": {
-          "type": "NodeTable",
+        "layout": {
+          "type": "SplitPane",
+          "children": ["workbench", "linkedTable"]
+        },
+        "workbench": {
+          "type": "ArtifactWorkbench",
           "props": {
             "binding": "rows",
-            "title": "Wireframes",
-            "rowHref": "n",
+            "themeBinding": "theme",
+            "listVariant": "flat"
+          }
+        },
+        "linkedTable": {
+          "type": "DataTable",
+          "props": {
+            "binding": "linked",
+            "title": "Linked UI components",
             "columns": [
-              { "key": "title", "header": "Wireframe" },
-              { "key": "lifecycleStatus", "header": "Status" }
+              { "key": "title", "header": "Component", "type": "text", "width": 280 },
+              { "key": "slug", "header": "Slug", "type": "text" },
+              {
+                "key": "tier",
+                "header": "Tier",
+                "type": "select",
+                "options": ["primitive", "composite", "page"]
+              }
             ]
           }
         }
       }
     },
-    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "page_wireframe" } }
+    "bindings": {
+      "rows": {
+        "kind": "initiative_scope",
+        "catalogKey": "page_wireframe"
+      },
+      "selected": {
+        "kind": "url_selection",
+        "param": "wireframe",
+        "catalogKey": "page_wireframe"
+      },
+      "linked": {
+        "kind": "traverse",
+        "from": "selected",
+        "edgeCatalogKey": "references",
+        "direction": "out",
+        "catalogKey": "ui_component"
+      },
+      "theme": { "kind": "evergreen", "catalogKey": "design_theme" }
+    }
   },
   {
     "key": "tpl/initiative/design/flows",

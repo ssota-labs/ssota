@@ -558,6 +558,45 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     },
   },
   // ── widget ───────────────────────────────────────────────────────────────
+  ComponentStudio: {
+    key: "ComponentStudio",
+    category: "widget",
+    description:
+      "@deprecated Use ArtifactWorkbench. Kept for legacy page specs.",
+    children: false,
+    props: {
+      binding: binding("Rows binding."),
+      themeBinding: {
+        type: "binding",
+        description: 'Evergreen design_theme binding (default "theme").',
+      },
+    },
+    example: {
+      type: "ComponentStudio",
+      props: { binding: "rows", themeBinding: "theme" },
+    },
+  },
+  ArtifactWorkbench: {
+    key: "ArtifactWorkbench",
+    category: "widget",
+    description:
+      "Artifact browser + live preview workspace. Selection is driven by url_selection binding + SelectionProvider. Authoring pages pass deploy/create callbacks; read-only pages (e.g. wireframes) omit them.",
+    children: false,
+    props: {
+      binding: binding(
+        "Rows binding (ui_component query or initiative-scoped page_wireframe).",
+      ),
+      themeBinding: {
+        type: "binding",
+        description:
+          'Evergreen design_theme binding for preview tokens (default "theme").',
+      },
+    },
+    example: {
+      type: "ArtifactWorkbench",
+      props: { binding: "rows", themeBinding: "theme" },
+    },
+  },
   Widget: {
     key: "Widget",
     category: "widget",

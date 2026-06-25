@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CaretLeftIcon } from "@phosphor-icons/react";
+import { signOutAction } from "@/app/actions";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
 
@@ -30,10 +31,15 @@ export function OnboardingShell({
 }: OnboardingShellProps) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-muted/30">
-      <header className="border-b bg-background px-6 py-4">
+      <header className="flex items-center justify-between border-b bg-background px-6 py-4">
         <Link href="/" className="text-lg font-semibold">
           SSOTA
         </Link>
+        <form action={signOutAction}>
+          <Button type="submit" variant="ghost" size="sm">
+            Sign out
+          </Button>
+        </form>
       </header>
 
       <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-3">

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import type { JsonRenderSpec, TableViewState } from "@ssota/contracts";
+import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
 import type { BindingContext } from "./types";
 
 export type JsonRenderRuntime = {
@@ -38,6 +39,29 @@ export const WidgetBuildContext = createContext<
   ((nodeId: string) => void | Promise<void>) | undefined
 >(undefined);
 export const useWidgetBuild = () => useContext(WidgetBuildContext);
+
+/** Artifact workbench runtime (ui_component / page_wireframe pages). */
+export type ArtifactWorkbenchRuntime = {
+  projectId: string;
+  previewBasePath: string;
+  onCreateComponent?: () => Promise<string>;
+  onDeployComponent?: (input: {
+    nodeId: string;
+    contentV2: UiComponentContentV2;
+  }) => Promise<void>;
+};
+
+export const ArtifactWorkbenchContext = createContext<
+  ArtifactWorkbenchRuntime | null
+>(null);
+export const useArtifactWorkbench = () => useContext(ArtifactWorkbenchContext);
+
+/** @deprecated Use {@link ArtifactWorkbenchRuntime}. */
+export type ComponentStudioRuntime = ArtifactWorkbenchRuntime;
+/** @deprecated Use {@link useArtifactWorkbench}. */
+export const ComponentStudioContext = ArtifactWorkbenchContext;
+/** @deprecated Use {@link useArtifactWorkbench}. */
+export const useComponentStudio = useArtifactWorkbench;
 
 /**
  * Per-user table view-state persistence for the advanced data table. `initial`

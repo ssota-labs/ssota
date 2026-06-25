@@ -16,6 +16,8 @@ export interface AuthUser {
 export interface AuthProvider {
   /** The authenticated user for the current request, or null. */
   getCurrentUser(): Promise<AuthUser | null>;
+  /** End the current session (no-op redirect target is still /login). */
+  signOut(): Promise<void>;
   /**
    * Proxy/middleware hook: refresh the session and return the response. Always
    * sets the `x-pathname` header the app relies on.

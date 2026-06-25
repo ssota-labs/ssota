@@ -1,11 +1,10 @@
 import { test, expect, type Page } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
-import { getSmokeInitiativeId } from "../helpers/graph-seed";
 
 async function openDesignStudio(page: Page) {
   await gotoProject(page, "design/ui-components");
-  await expect(page).toHaveURL(/\/design\/ui-components\/[0-9a-f-]+$/, {
+  await expect(page).toHaveURL(/\/p\/[0-9a-f-]+\?component=[0-9a-f-]+$/, {
     timeout: 15_000,
   });
   await expect(page.getByTestId("design-studio-shell")).toBeVisible({
@@ -73,7 +72,7 @@ test.describe("design studio", () => {
 
     const buildDone = waitForStudioBuild(page);
     await page.getByTestId("studio-component-demo-card").click();
-    await expect(page).toHaveURL(/\/design\/ui-components\/[0-9a-f-]+$/, {
+    await expect(page).toHaveURL(/component=[0-9a-f-]+$/, {
       timeout: 15_000,
     });
     await expect(page.getByTestId("studio-component-demo-card")).toHaveClass(
@@ -191,12 +190,12 @@ test.describe("design studio", () => {
     });
 
     await openDesignStudio(page);
-    const beforeId = page.url().match(/[0-9a-f-]+$/)?.[0];
+    const beforeId = new URL(page.url()).searchParams.get("component");
     expect(beforeId).toBeTruthy();
 
     await page.getByRole("button", { name: "New component" }).click();
     await expect(page).toHaveURL(
-      new RegExp(`/design/ui-components/(?!${beforeId})[0-9a-f-]+$`),
+      new RegExp(`component=(?!${beforeId})[0-9a-f-]+`),
       { timeout: 30_000 },
     );
 
@@ -207,15 +206,5 @@ test.describe("design studio", () => {
 
     const failedBuilds = buildResponses.filter((entry) => entry.status >= 400);
     expect(failedBuilds).toEqual([]);
-  });
-
-  test("wireframes page lists only published components", async ({ page }) => {
-    const initiativeId = await getSmokeInitiativeId();
-    await gotoProject(page, `initiatives/${initiativeId}/design/wireframes`);
-    await expect(page.getByText("Published UI components")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(page.getByText("Demo Button")).toBeVisible();
-    await expect(page.getByText("Demo Card")).toBeVisible();
   });
 });

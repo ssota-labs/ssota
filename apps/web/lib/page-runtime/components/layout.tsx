@@ -1,3 +1,4 @@
+import { Children, type ReactNode } from "react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import {
   Card,
@@ -109,7 +110,30 @@ export const layoutComponents: Record<string, CatalogComponent> = {
       actions={asToolbarActions(props.actions)}
     />
   ),
-  SplitPane: ({ children }) => (
-    <div className="grid gap-4 md:grid-cols-2">{children}</div>
-  ),
+  SplitPane: ({ children }) => {
+    const childArray = Children.toArray(children);
+    const [primary, secondary, ...rest] = childArray as ReactNode[];
+
+    return (
+      <div
+        className="flex min-h-0 flex-1 overflow-hidden"
+        data-testid="split-pane"
+      >
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {primary}
+        </div>
+        {secondary != null ? (
+          <aside
+            className="flex min-h-0 w-full max-w-md shrink-0 flex-col border-l bg-muted/20 md:w-[38%] md:max-w-none"
+            data-testid="split-pane-side"
+          >
+            <div className="flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-5">
+              {secondary}
+            </div>
+          </aside>
+        ) : null}
+        {rest}
+      </div>
+    );
+  },
 };

@@ -1,16 +1,19 @@
 import { config as loadEnv } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
   DEFAULT_ORG_SLUG,
   DEFAULT_PROJECT_SLUG,
+  LOCAL_AUTH_USER_EMAIL,
+  LOCAL_AUTH_USER_ID,
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
+import { ensureAuthUserRow } from "../ensure-auth-user.js";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -197,7 +200,19 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
   return { organizationId, projectId };
 }
 
-async function seedSmokeUser(): Promise<string | undefined> {
+/**
+ * `AUTH=local` uses a fixed user id. `profiles.id` FK-references auth.users, so
+ * seed that row on Supabase local (docker/postgres/shim.sql only covers plain Postgres).
+ */
+async function seedLocalAuthUser(db: ReturnType<typeof createDb>["db"]) {
+  const userId = process.env.LOCAL_AUTH_USER_ID ?? LOCAL_AUTH_USER_ID;
+  const email = process.env.LOCAL_AUTH_USER_EMAIL ?? LOCAL_AUTH_USER_EMAIL;
+  await ensureAuthUserRow(db, userId, email);
+}
+
+async function seedSmokeUser(
+  db: ReturnType<typeof createDb>["db"],
+): Promise<string | undefined> {
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!supabaseUrl || !serviceRoleKey) {
@@ -220,7 +235,16 @@ async function seedSmokeUser(): Promise<string | undefined> {
     user_metadata: { name: "Smoke Operator" },
   });
 
-  if (error) throw error;
+  if (error) {
+    if (error.code === "email_exists") {
+      const rows = await db.execute<{ id: string }>(sql`
+        SELECT id::text AS id FROM auth.users WHERE email = ${SMOKE_EMAIL} LIMIT 1
+      `);
+      const row = rows[0] as { id: string } | undefined;
+      return row?.id;
+    }
+    throw error;
+  }
   return data.user?.id;
 }
 
@@ -235,8 +259,10 @@ async function seedAllProjectCatalogs(db: ReturnType<typeof createDb>["db"]) {
 
 async function main() {
   const { db, client } = createDb();
+  console.log("Seeding local auth user (AUTH=local)...");
+  await seedLocalAuthUser(db);
   console.log("Seeding smoke user...");
-  const smokeUserId = await seedSmokeUser();
+  const smokeUserId = await seedSmokeUser(db);
   console.log("Seeding active console runtime...");
   await seedConsole(db, smokeUserId);
   console.log("Backfilling node/edge catalog for all projects...");

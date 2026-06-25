@@ -16,9 +16,11 @@ import { ComponentsPanel } from "./components-panel";
 import { SourceLayersPanel } from "./layers-panel";
 
 type StudioLeftPanelProps = {
+  readOnly?: boolean;
+  listVariant?: "grouped" | "flat";
   components: UiComponentListRow[];
   activeComponentId: string | null;
-  studioBasePath: string;
+  onSelectComponent: (componentId: string) => void;
   sourceLayers: UiComponentLayerIndexNode[] | null;
   selectedLayerId: string | null;
   onSelectLayer: (nodeId: string) => void;
@@ -27,17 +29,44 @@ type StudioLeftPanelProps = {
 };
 
 export function StudioLeftPanel({
+  readOnly = false,
+  listVariant = "grouped",
   components,
   activeComponentId,
-  studioBasePath,
+  onSelectComponent,
   sourceLayers,
   selectedLayerId,
   onSelectLayer,
   pending = false,
   onCreateComponent,
 }: StudioLeftPanelProps) {
-  const layersEnabled = Boolean(sourceLayers?.length);
+  const isFlatList = listVariant === "flat";
+  const layersEnabled = Boolean(sourceLayers?.length) && !readOnly;
   const [searchQuery, setSearchQuery] = useState("");
+
+  if (readOnly && isFlatList) {
+    return (
+      <div className="flex h-full min-h-0 flex-col border-r bg-card">
+        <div className="shrink-0 border-b p-2">
+          <Input
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.currentTarget.value)}
+            placeholder="Search wireframes..."
+            className="h-8"
+            aria-label="Search wireframes"
+          />
+        </div>
+        <ComponentsPanel
+          components={components}
+          activeComponentId={activeComponentId}
+          onSelectComponent={onSelectComponent}
+          searchQuery={searchQuery}
+          variant="flat"
+          emptyMessage="No wireframes scoped to this initiative."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full min-h-0 flex-col border-r bg-card">
@@ -69,22 +98,24 @@ export function StudioLeftPanel({
               className="h-8"
               aria-label="Search components"
             />
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="w-full"
-              disabled={pending}
-              onClick={() => void onCreateComponent()}
-            >
-              <PlusIcon className="size-3.5" />
-              {pending ? "Creating…" : "New component"}
-            </Button>
+            {!readOnly ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="w-full"
+                disabled={pending}
+                onClick={() => void onCreateComponent()}
+              >
+                <PlusIcon className="size-3.5" />
+                {pending ? "Creating…" : "New component"}
+              </Button>
+            ) : null}
           </div>
           <ComponentsPanel
             components={components}
             activeComponentId={activeComponentId}
-            studioBasePath={studioBasePath}
+            onSelectComponent={onSelectComponent}
             searchQuery={searchQuery}
           />
         </TabsContent>
