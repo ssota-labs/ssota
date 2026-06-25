@@ -40,32 +40,29 @@ const mockInitiatives = [
   },
 ];
 
-const mockTasks = [
-  {
-    id: "66666666-6666-4666-8666-666666666601",
+// ~100-row dataset for the DataTable demo: scrolls inside a capped-height
+// viewport (no pagination), double-click to edit, add/delete rows.
+const taskOwners = ["Alice", "Bob", "Carmen", "Dev", "Eun"];
+const taskPhases = ["spec", "build", "review", "ship", "polish"];
+const mockTasks = Array.from({ length: 100 }, (_, i) => {
+  const statuses = ["todo", "doing", "done"];
+  const priorities = ["low", "medium", "high"];
+  const n = i + 1;
+  const status = statuses[i % 3]!;
+  return {
+    id: `66666666-6666-4666-8666-${String(n).padStart(12, "0")}`,
     catalogKey: "task",
-    title: "Wire DataTable inline editing",
-    properties: { status: "doing", priority: "high", points: 5, done: false, due: "2026-07-01" },
-  },
-  {
-    id: "66666666-6666-4666-8666-666666666602",
-    catalogKey: "task",
-    title: "Add faceted status filter",
-    properties: { status: "todo", priority: "medium", points: 3, done: false, due: "2026-07-04" },
-  },
-  {
-    id: "66666666-6666-4666-8666-666666666603",
-    catalogKey: "task",
-    title: "Ship set_node_property action",
-    properties: { status: "done", priority: "high", points: 2, done: true, due: "2026-06-20" },
-  },
-  {
-    id: "66666666-6666-4666-8666-666666666604",
-    catalogKey: "task",
-    title: "Seed task-board demo",
-    properties: { status: "todo", priority: "low", points: 1, done: false, due: "2026-07-08" },
-  },
-];
+    title: `Task ${n} — ${taskPhases[i % taskPhases.length]}`,
+    properties: {
+      owner: taskOwners[i % taskOwners.length],
+      status,
+      priority: priorities[(i * 2) % 3],
+      points: ((i * 3) % 8) + 1,
+      done: status === "done",
+      due: `2026-07-${String((i % 28) + 1).padStart(2, "0")}`,
+    },
+  };
+});
 
 const taskStatusColors = {
   todo: "oklch(0.93 0.03 250)",
@@ -155,26 +152,6 @@ const mockObjectives = [
     },
   },
 ];
-
-// Larger dataset for the grid-mode demo (virtualization + cell selection).
-const mockTasksLarge = Array.from({ length: 24 }, (_, i) => {
-  const statuses = ["todo", "doing", "done"];
-  const priorities = ["low", "medium", "high"];
-  const owners = ["Alice", "Bob", "Carmen", "Dev", "Eun"];
-  const n = i + 1;
-  return {
-    id: `77777777-7777-4777-8777-${String(n).padStart(12, "0")}`,
-    catalogKey: "task",
-    title: `Task ${n} — ${["spec", "build", "review", "ship", "polish"][i % 5]}`,
-    properties: {
-      owner: owners[i % owners.length],
-      status: statuses[i % 3],
-      priority: priorities[(i * 2) % 3],
-      points: ((i * 3) % 8) + 1,
-      due: `2026-07-${String((i % 28) + 1).padStart(2, "0")}`,
-    },
-  };
-});
 
 // Roadmap-style dataset for the Gantt demo: dated work across groups/owners.
 const ganttGroups = ["Console v2.7", "End-user app", "Design Studio"];
@@ -603,7 +580,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     category: "data",
     title: "DataTable (Notion-style)",
     description:
-      "Advanced editable grid: typed columns + color chips, inline edit, column drag-reorder/resize/pin/hide, multi-sort popover, faceted filters, global search, full pagination, sticky header, add/delete rows. View state persists per-user on real pages.",
+      "Notion-style editable grid: typed columns + color chips, double-click inline edit (text/number/date/select), column drag-reorder/resize/pin/hide, multi-sort popover, faceted filters, global search, add/delete rows, sticky header. ~100 rows scroll inside a capped-height viewport (no pagination). View state persists per-user on real pages.",
     components: ["Section", "DataTable"],
     spec: {
       root: "section",
@@ -612,7 +589,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           type: "Section",
           props: {
             title: "Tasks",
-            subtitle: "Inline-editable data table bound to a query",
+            subtitle: "Double-click a cell to edit · scroll the body · add/delete rows",
           },
           children: ["grid"],
         },
@@ -623,55 +600,6 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
             setAction: "setCell",
             addAction: "addRow",
             deleteAction: "deleteRow",
-            columns: [
-              { key: "title", header: "Task", type: "text", editable: true },
-              {
-                key: "status",
-                header: "Status",
-                type: "select",
-                options: ["todo", "doing", "done"],
-                colors: taskStatusColors,
-              },
-              {
-                key: "priority",
-                header: "Priority",
-                type: "select",
-                options: ["low", "medium", "high"],
-                colors: taskPriorityColors,
-              },
-              { key: "points", header: "Points", type: "number" },
-              { key: "done", header: "Done", type: "checkbox" },
-              { key: "due", header: "Due", type: "date" },
-            ],
-          },
-        },
-      },
-    },
-    bindingData: { rows: mockTasks },
-  },
-  {
-    id: "data-grid-pro",
-    category: "data",
-    title: "DataTable — Grid mode",
-    description:
-      "Spreadsheet mode: click a cell or Tab into the grid, then arrow/Home/End/Shift to move and build multi-cell selections; Cmd/Ctrl+click toggles cells; Cmd/Ctrl+C copies as CSV; Escape clears; Delete clears editable cells. Double-click a Task/Points/Due cell to edit. Rows are virtualized.",
-    components: ["Section", "DataTable"],
-    spec: {
-      root: "section",
-      elements: {
-        section: {
-          type: "Section",
-          props: {
-            title: "Tasks (grid)",
-            subtitle: "Virtualized · cell selection · CSV copy · double-click edit",
-          },
-          children: ["grid"],
-        },
-        grid: {
-          type: "DataTable",
-          props: {
-            binding: "rows",
-            setAction: "setCell",
             columns: [
               { key: "title", header: "Task", type: "text", editable: true, width: 240 },
               { key: "owner", header: "Owner", type: "text", editable: true, width: 120 },
@@ -690,13 +618,14 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
                 colors: taskPriorityColors,
               },
               { key: "points", header: "Points", type: "number", editable: true },
+              { key: "done", header: "Done", type: "checkbox" },
               { key: "due", header: "Due", type: "date", editable: true },
             ],
           },
         },
       },
     },
-    bindingData: { rows: mockTasksLarge },
+    bindingData: { rows: mockTasks },
   },
   {
     id: "data-gantt",
