@@ -20,6 +20,7 @@ import { CSS } from "@dnd-kit/utilities"
 import {
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
@@ -32,8 +33,10 @@ import {
   type ColumnOrderState,
   type ColumnPinningState,
   type ColumnSizingState,
+  type ExpandedState,
   type Header,
   type PaginationState,
+  type Row,
   type RowData,
   type SortingState,
   type VisibilityState,
@@ -127,6 +130,14 @@ type AdvancedDataTableProps<TData> = {
   maxBodyHeight?: number
   /** Commit a double-click cell edit (grid mode, `meta.editable` columns). */
   onCellEdit?: (rowId: string, columnId: string, value: string) => void
+  /**
+   * Master-detail expansion. When `renderExpanded` is set, expandable rows
+   * render an extra full-width row beneath them. `getRowCanExpand` gates which
+   * rows can expand (default: all). An expander column toggles via
+   * `row.toggleExpanded()` in its cell.
+   */
+  getRowCanExpand?: (row: Row<TData>) => boolean
+  renderExpanded?: (row: Row<TData>) => React.ReactNode
   searchPlaceholder?: string
   pageSize?: number
   facetedFilters?: FacetedFilterDef[]
@@ -447,6 +458,8 @@ export function AdvancedDataTable<TData>({
   enableCellSelection = false,
   maxBodyHeight = 480,
   onCellEdit,
+  getRowCanExpand,
+  renderExpanded,
   searchPlaceholder = "Search…",
   pageSize = 25,
   facetedFilters = [],
@@ -480,6 +493,7 @@ export function AdvancedDataTable<TData>({
   const [pagination, setPagination] = React.useState<PaginationState>(
     defaultViewState?.pagination ?? { pageIndex: 0, pageSize },
   )
+  const [expanded, setExpanded] = React.useState<ExpandedState>({})
 
   const table = useReactTable({
     data,
@@ -494,7 +508,11 @@ export function AdvancedDataTable<TData>({
       columnFilters,
       globalFilter,
       pagination,
+      expanded,
     },
+    onExpandedChange: setExpanded,
+    getExpandedRowModel: getExpandedRowModel(),
+    getRowCanExpand: getRowCanExpand ?? (renderExpanded ? () => true : undefined),
     enableMultiSort,
     enableColumnResizing,
     enableColumnPinning: enablePinning,
@@ -633,7 +651,8 @@ export function AdvancedDataTable<TData>({
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   const renderRow = (row: (typeof rows)[number], rIndex: number) => (
-    <TableRow key={row.id} data-index={rIndex}>
+    <React.Fragment key={row.id}>
+    <TableRow data-index={rIndex}>
       {row.getVisibleCells().map((cell, c) => {
         const col = cell.column
         const pinned = col.getIsPinned()
@@ -689,6 +708,14 @@ export function AdvancedDataTable<TData>({
         )
       })}
     </TableRow>
+      {renderExpanded && row.getIsExpanded() ? (
+        <TableRow data-expanded-for={row.id} className="hover:bg-transparent">
+          <TableCell colSpan={leafCols.length} className="bg-muted/30 p-0">
+            {renderExpanded(row)}
+          </TableCell>
+        </TableRow>
+      ) : null}
+    </React.Fragment>
   )
 
   const showToolbar =
