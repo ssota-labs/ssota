@@ -94,7 +94,7 @@ export function WorkflowInstructionsWorkspace({
     >
       <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4">
         <div className="space-y-6">
-          <header className="space-y-1 border-b pb-3">
+          <header className="space-y-1">
             <h1 className="text-xl font-semibold tracking-tight">
               Workflow instructions
             </h1>

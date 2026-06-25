@@ -4,6 +4,7 @@ import {
   markdownToBlockNoteContent,
   nodeContentToMarkdown,
   normalizeNodeContentForWrite,
+  normalizeWorkflowInstructionContent,
   parseInline,
 } from "./markdown-blocknote.js";
 
@@ -117,6 +118,35 @@ describe("nodeContentToMarkdown", () => {
     expect(nodeContentToMarkdown(undefined)).toBeNull();
     expect(nodeContentToMarkdown("plain")).toBe("plain");
     expect(nodeContentToMarkdown(markdownToBlockNoteContent("# Title"))).toBe("# Title");
+  });
+});
+
+describe("normalizeWorkflowInstructionContent", () => {
+  it("converts legacy paragraph-wrapped markdown to BlockNote blocks", () => {
+    const legacy = [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "# Daily\n\n- step one\n- step two" }],
+      },
+    ];
+    const normalized = normalizeWorkflowInstructionContent(legacy);
+    expect(normalized.some((b) => b.type === "heading")).toBe(true);
+    expect(normalized.some((b) => b.type === "bulletListItem")).toBe(true);
+  });
+
+  it("passes through structured BlockNote documents", () => {
+    const blocks = markdownToBlockNoteContent("## Already converted");
+    expect(normalizeWorkflowInstructionContent(blocks)).toEqual(blocks);
+  });
+
+  it("passes through plain paragraph text without markdown signals", () => {
+    const plain = [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "Just a short note." }],
+      },
+    ];
+    expect(normalizeWorkflowInstructionContent(plain)).toEqual(plain);
   });
 });
 

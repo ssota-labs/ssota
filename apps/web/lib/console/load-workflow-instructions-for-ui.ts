@@ -1,4 +1,8 @@
-import { textToBlockNoteContent, type WorkflowInstruction } from "@ssota/contracts";
+import {
+  markdownToBlockNoteContent,
+  normalizeWorkflowInstructionContent,
+  type WorkflowInstruction,
+} from "@ssota/contracts";
 import {
   getBuiltinWorkflowByKey,
   getWorkflowByKey,
@@ -33,7 +37,9 @@ function virtualInstruction(
     key,
     name,
     description,
-    content: textToBlockNoteContent(instructionText),
+    content: normalizeWorkflowInstructionContent(
+      markdownToBlockNoteContent(instructionText),
+    ),
     createdAt: now,
     updatedAt: now,
   };
@@ -52,7 +58,15 @@ export async function loadWorkflowInstructionsForUi(
     await Promise.all(indices.map((entry) => port.getById(entry.id)))
   ).filter((entry): entry is WorkflowInstruction => entry !== null);
 
-  const byKey = new Map(dbRows.map((row) => [row.key, row]));
+  const byKey = new Map(
+    dbRows.map((row) => [
+      row.key,
+      {
+        ...row,
+        content: normalizeWorkflowInstructionContent(row.content),
+      },
+    ]),
+  );
 
   for (const builtin of listBuiltinWorkflowIndex()) {
     if (byKey.has(builtin.key)) continue;
