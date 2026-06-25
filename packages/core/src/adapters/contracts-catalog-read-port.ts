@@ -5,6 +5,8 @@ import {
   listEdgeTypes,
   listNodeTypes,
   parseNodeProperties,
+  rankCatalogCandidates,
+  type CatalogSearchCandidate,
   type EdgeCatalogRow,
   type NodeCatalogRow,
 } from "@ssota/contracts";
@@ -19,6 +21,8 @@ export function createContractsCatalogReadPort(): CatalogReadPort {
       projectId: "00000000-0000-4000-8000-000000000000",
       key,
       label: entry.label,
+      description: entry.description,
+      keywords: entry.keywords,
       propertySchema: { type: "object" },
     };
   });
@@ -30,6 +34,8 @@ export function createContractsCatalogReadPort(): CatalogReadPort {
       projectId: "00000000-0000-4000-8000-000000000000",
       key,
       label: entry.label,
+      description: entry.description,
+      keywords: entry.keywords,
       domainCatalogIds: [],
       rangeCatalogIds: [],
       propertySchema: null,
@@ -48,6 +54,32 @@ export function createContractsCatalogReadPort(): CatalogReadPort {
     listEdgeCatalog: async () => [...edgeRows],
     getEdgeCatalogById: async (id) => edgeById.get(id) ?? null,
     getEdgeCatalogByKey: async (key) => edgeByKey.get(key) ?? null,
+    async searchCatalog(input) {
+      const candidates: CatalogSearchCandidate[] = [];
+      if (input.kind !== "edge") {
+        for (const r of nodeRows) {
+          candidates.push({
+            kind: "node",
+            key: r.key,
+            label: r.label,
+            description: r.description,
+            keywords: r.keywords,
+          });
+        }
+      }
+      if (input.kind !== "node") {
+        for (const r of edgeRows) {
+          candidates.push({
+            kind: "edge",
+            key: r.key,
+            label: r.label,
+            description: r.description,
+            keywords: r.keywords,
+          });
+        }
+      }
+      return rankCatalogCandidates(input.query, candidates, input.limit);
+    },
     validateNodeProperties(catalogKey, properties) {
       if (!isKnownNodeType(catalogKey)) {
         throw new Error(`UNKNOWN_NODE_TYPE:${catalogKey}`);

@@ -1,14 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
+  EDGE_CATALOG,
   EDGE_TYPES,
+  NODE_CATALOG,
   NODE_TYPES,
   PLATFORM_DESIGN_THEME_TOKENS,
   getNodeTypeEntry,
   mergeDesignThemeTokens,
   parseNodeProperties,
   parseThemeCssContent,
+  rankCatalogCandidates,
   requiresNodeContent,
   resolveSemanticColorValue,
+  scoreCatalogCandidate,
   tokensToThemeCss,
   parseUiComponentContent,
   parseUiComponentFromProperties,
@@ -20,6 +24,19 @@ describe("v2.7 catalog SSOT", () => {
   it("defines 36 node types and 18 edge types", () => {
     expect(NODE_TYPES).toHaveLength(36);
     expect(EDGE_TYPES).toHaveLength(18);
+  });
+
+  it("authors a description and keywords for every node and edge type", () => {
+    for (const key of NODE_TYPES) {
+      const entry = NODE_CATALOG[key];
+      expect(entry.description.length).toBeGreaterThan(0);
+      expect(entry.keywords.length).toBeGreaterThan(0);
+    }
+    for (const key of EDGE_TYPES) {
+      const entry = EDGE_CATALOG[key];
+      expect(entry.description.length).toBeGreaterThan(0);
+      expect(entry.keywords.length).toBeGreaterThan(0);
+    }
   });
 
   it("parses hypothesis properties", () => {
@@ -284,6 +301,53 @@ describe("v2.7 catalog SSOT", () => {
         },
       }),
     ).toThrow();
+  });
+});
+
+describe("catalog search scorer", () => {
+  const candidate = {
+    kind: "node" as const,
+    key: "retrospective",
+    label: "회고",
+    description: "스프린트·프로젝트 회고.",
+    keywords: ["회고", "retrospective", "retro"],
+  };
+
+  it("scores exact key/label above substring and description matches", () => {
+    const exact = scoreCatalogCandidate("retrospective", candidate);
+    const keyword = scoreCatalogCandidate("retro", candidate);
+    const description = scoreCatalogCandidate("프로젝트", candidate);
+    expect(exact).toBeGreaterThan(keyword);
+    expect(keyword).toBeGreaterThan(description);
+    expect(description).toBeGreaterThan(0);
+  });
+
+  it("returns 0 when nothing matches", () => {
+    expect(scoreCatalogCandidate("zzz", candidate)).toBe(0);
+  });
+
+  it("ranks, filters non-matches, and caps to the limit", () => {
+    const candidates = [
+      candidate,
+      {
+        kind: "node" as const,
+        key: "feature",
+        label: "기능",
+        description: "사용자에게 제공되는 기능 단위.",
+        keywords: ["feature"],
+      },
+      {
+        kind: "edge" as const,
+        key: "informs",
+        label: "근거",
+        description: "근거가 되는 정보.",
+        keywords: ["informs"],
+      },
+    ];
+    const hits = rankCatalogCandidates("retro", candidates, 5);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.key).toBe("retrospective");
+    expect(hits[0]?.snippet.length).toBeGreaterThan(0);
   });
 });
 

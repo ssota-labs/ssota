@@ -8,6 +8,36 @@ export interface DbCatalogWriteScope {
   projectId: string;
 }
 
+function mapNodeCatalogRow(
+  row: typeof schema.nodeCatalog.$inferSelect,
+): NodeCatalogRow {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    key: row.key,
+    label: row.label,
+    description: row.description ?? "",
+    keywords: row.keywords ?? [],
+    propertySchema: row.propertySchema ?? {},
+  };
+}
+
+function mapEdgeCatalogRow(
+  row: typeof schema.edgeCatalog.$inferSelect,
+): EdgeCatalogRow {
+  return {
+    id: row.id,
+    projectId: row.projectId,
+    key: row.key,
+    label: row.label,
+    description: row.description ?? "",
+    keywords: row.keywords ?? [],
+    domainCatalogIds: row.domainCatalogIds ?? [],
+    rangeCatalogIds: row.rangeCatalogIds ?? [],
+    propertySchema: row.propertySchema ?? null,
+  };
+}
+
 export function createDbCatalogWritePort(
   db: Db,
   scope: DbCatalogWriteScope,
@@ -16,12 +46,16 @@ export function createDbCatalogWritePort(
 
   return {
     async upsertNodeCatalog(entry) {
+      const description = entry.description ?? "";
+      const keywords = entry.keywords ?? [];
       if (entry.id) {
         const [row] = await db
           .update(schema.nodeCatalog)
           .set({
             key: entry.key,
             label: entry.label,
+            description,
+            keywords,
             propertySchema: entry.propertySchema ?? {},
             updatedAt: new Date(),
           })
@@ -32,7 +66,7 @@ export function createDbCatalogWritePort(
             ),
           )
           .returning();
-        return row as NodeCatalogRow;
+        return mapNodeCatalogRow(row!);
       }
 
       const [row] = await db
@@ -41,33 +75,35 @@ export function createDbCatalogWritePort(
           projectId,
           key: entry.key,
           label: entry.label,
+          description,
+          keywords,
           propertySchema: entry.propertySchema ?? {},
         })
         .onConflictDoUpdate({
           target: [schema.nodeCatalog.projectId, schema.nodeCatalog.key],
           set: {
             label: entry.label,
+            description,
+            keywords,
             propertySchema: entry.propertySchema ?? {},
             updatedAt: new Date(),
           },
         })
         .returning();
-      return {
-        id: row!.id,
-        projectId: row!.projectId,
-        key: row!.key,
-        label: row!.label,
-        propertySchema: row!.propertySchema ?? {},
-      };
+      return mapNodeCatalogRow(row!);
     },
 
     async upsertEdgeCatalog(entry) {
+      const description = entry.description ?? "";
+      const keywords = entry.keywords ?? [];
       if (entry.id) {
         const [row] = await db
           .update(schema.edgeCatalog)
           .set({
             key: entry.key,
             label: entry.label,
+            description,
+            keywords,
             domainCatalogIds: entry.domainCatalogIds,
             rangeCatalogIds: entry.rangeCatalogIds,
             propertySchema: entry.propertySchema,
@@ -80,15 +116,7 @@ export function createDbCatalogWritePort(
             ),
           )
           .returning();
-        return {
-          id: row!.id,
-          projectId: row!.projectId,
-          key: row!.key,
-          label: row!.label,
-          domainCatalogIds: row!.domainCatalogIds ?? [],
-          rangeCatalogIds: row!.rangeCatalogIds ?? [],
-          propertySchema: row!.propertySchema ?? null,
-        };
+        return mapEdgeCatalogRow(row!);
       }
 
       const [row] = await db
@@ -97,6 +125,8 @@ export function createDbCatalogWritePort(
           projectId,
           key: entry.key,
           label: entry.label,
+          description,
+          keywords,
           domainCatalogIds: entry.domainCatalogIds ?? [],
           rangeCatalogIds: entry.rangeCatalogIds ?? [],
           propertySchema: entry.propertySchema ?? null,
@@ -105,6 +135,8 @@ export function createDbCatalogWritePort(
           target: [schema.edgeCatalog.projectId, schema.edgeCatalog.key],
           set: {
             label: entry.label,
+            description,
+            keywords,
             domainCatalogIds: entry.domainCatalogIds ?? [],
             rangeCatalogIds: entry.rangeCatalogIds ?? [],
             propertySchema: entry.propertySchema ?? null,
@@ -113,15 +145,7 @@ export function createDbCatalogWritePort(
         })
         .returning();
 
-      return {
-        id: row!.id,
-        projectId: row!.projectId,
-        key: row!.key,
-        label: row!.label,
-        domainCatalogIds: row!.domainCatalogIds ?? [],
-        rangeCatalogIds: row!.rangeCatalogIds ?? [],
-        propertySchema: row!.propertySchema ?? null,
-      } satisfies EdgeCatalogRow;
+      return mapEdgeCatalogRow(row!);
     },
 
     async deleteNodeCatalog(id) {

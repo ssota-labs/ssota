@@ -1,4 +1,5 @@
 import {
+  catalogSearchInputSchema,
   getEdgeTypeEntry,
   getNodeTypeEntry,
   listEdgeTypes,
@@ -115,8 +116,21 @@ export function getNodeTypeForMcp(catalogKey: string) {
   return {
     catalogKey: entry.nodeType,
     label: entry.label,
+    description: entry.description,
+    keywords: entry.keywords,
     mutability: entry.mutability,
     contentRequired: entry.contentRequired,
+  };
+}
+
+export function getEdgeTypeForMcp(catalogKey: string) {
+  const entry = getEdgeTypeEntry(catalogKey);
+  if (!entry) return null;
+  return {
+    catalogKey: entry.edgeType,
+    label: entry.label,
+    description: entry.description,
+    keywords: entry.keywords,
   };
 }
 
@@ -128,6 +142,21 @@ export function listEdgeTypesForMcp() {
       label: entry?.label ?? catalogKey,
     };
   });
+}
+
+/**
+ * Progressive-disclosure catalog search. Hits the project-scoped DB catalog so
+ * custom node/edge types created in the project are included (not just the
+ * contracts SSOT). Returns lightweight hits; fetch detail with
+ * get_node_type / get_edge_type.
+ */
+export async function searchCatalogForMcp(
+  projectId: string,
+  input: Record<string, unknown>,
+) {
+  const parsed = catalogSearchInputSchema.parse(input);
+  const { catalog: projectCatalog } = getGraphPorts(projectId);
+  return projectCatalog.searchCatalog(parsed);
 }
 
 export async function queryNodesForMcp(
