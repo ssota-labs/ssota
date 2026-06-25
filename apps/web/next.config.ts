@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { withEmulate } from "@emulators/adapter-next";
 import traceManifest from "../../packages/studio-build/studio-trace-manifest.json" with {
   type: "json",
 };
@@ -63,6 +64,10 @@ export default async function config(
 
   if (typeof result === "function") {
     result = await result(phase, ctx);
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    result = withEmulate(result);
   }
 
   return result;

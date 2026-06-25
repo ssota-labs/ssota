@@ -1,0 +1,103 @@
+# SSOTA local emulate seed — used by `pnpm emulate:dev` and emulate E2E setup.
+# Docs: https://github.com/vercel-labs/emulate
+
+slack:
+  team:
+    name: SSOTA Dev
+    domain: ssota-dev
+  users:
+    - name: smoke
+      real_name: Smoke Test
+      email: smoke@ssota.test
+  channels:
+    - name: general
+      topic: SSOTA emulate dev channel
+  bots:
+    - name: ssota-bot
+  oauth_apps:
+    - client_id: "12345.ssota-dev"
+      client_secret: ssota_emulate_secret
+      app_id: A000SSOTA01
+      name: SSOTA Slack Dev
+      redirect_uris:
+        - http://localhost:3000/api/connect/callback
+        - http://localhost:3100/api/connect/callback
+      scopes:
+        - chat:write
+        - channels:read
+        - channels:history
+        - users:read
+        - team:read
+      user_scopes: [users:read]
+      bot_name: ssota-bot
+  tokens:
+    - token: xoxb-local-test
+      user: smoke
+      scopes:
+        - chat:write
+        - channels:read
+        - channels:history
+        - users:read
+        - team:read
+  strict_scopes: false
+
+github:
+  users:
+    - login: smoke-dev
+      name: Smoke Developer
+      email: smoke@ssota.test
+  orgs:
+    - login: ssota-labs
+      name: SSOTA Labs
+  repos:
+    - owner: ssota-labs
+      name: ssota-dev
+      language: TypeScript
+      auto_init: true
+  oauth_apps:
+    - client_id: Iv1.ssota-dev
+      client_secret: ssota_github_secret
+      name: SSOTA GitHub Dev
+      redirect_uris:
+        - http://localhost:3000/api/connect/callback
+        - http://localhost:3100/api/connect/callback
+
+linear:
+  organization:
+    name: SSOTA
+    url_key: ssota
+  users:
+    - email: smoke@ssota.test
+      name: Smoke Test
+      admin: true
+  teams:
+    - key: ENG
+      name: Engineering
+  issues:
+    - team: ENG
+      title: Emulate integration smoke issue
+      state: Todo
+      assignee: smoke@ssota.test
+  oauth_apps:
+    - client_id: lin_ssota_dev
+      client_secret: ssota_linear_secret
+      name: SSOTA Linear Dev
+      redirect_uris:
+        - http://localhost:3000/api/connect/callback
+        - http://localhost:3100/api/connect/callback
+      scopes: [read, write, issues:create, comments:create]
+  tokens:
+    - token: lin_test_smoke
+      user: smoke@ssota.test
+      scopes: [read, write, issues:create, comments:create, admin]
+
+google:
+  users:
+    - email: smoke@ssota.test
+      name: Smoke Test
+  oauth_clients:
+    - client_id: ssota-dev.apps.googleusercontent.com
+      client_secret: GOCSPX-ssota-dev
+      redirect_uris:
+        - http://localhost:3000/api/auth/callback/google
+        - http://localhost:3100/api/auth/callback/google

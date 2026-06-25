@@ -323,6 +323,26 @@ describe("startConnectAuthorization", () => {
       delete process.env.CONNECT_STUB;
     }
   });
+
+  it("returns emulate slack OAuth URL when EMULATE_OAUTH=1", async () => {
+    process.env.EMULATE_OAUTH = "1";
+    process.env.EMULATE_ENABLED = "1";
+    try {
+      const url = await startConnectAuthorization(
+        "slack/dev",
+        { projectId: "p", accountId: "acc", userId: "user-1" },
+        {
+          callbackUrl: "http://localhost:3100/api/connect/callback",
+          scopes: ["team:read"],
+        },
+      );
+      expect(url).toContain("/oauth/v2/authorize");
+      expect(url).toContain("client_id=12345.ssota-dev");
+    } finally {
+      delete process.env.EMULATE_OAUTH;
+      delete process.env.EMULATE_ENABLED;
+    }
+  });
 });
 
 describe("model default", () => {

@@ -19,3 +19,4 @@ minimumReleaseAgeExclude:
   - '@supabase/storage-js@2.108.1'
   - '@supabase/supabase-js@2.108.1'
   - '@vercel/oidc@3.6.2'
+  - emulate@0.8.0
