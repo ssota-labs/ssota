@@ -39,6 +39,7 @@ import {
 export const NAV_ICONS: Record<string, Icon> = {
   home: HouseIcon,
   tasks: ListChecksIcon,
+  workflow_instructions: ClipboardTextIcon,
   chat: ChatCircleIcon,
   connections: PlugIcon,
   executive: BriefcaseIcon,
@@ -46,6 +47,7 @@ export const NAV_ICONS: Record<string, Icon> = {
   product: PackageIcon,
   manager: RocketLaunchIcon,
   workflow_map: GraphIcon,
+  workflow_instructions: ClipboardTextIcon,
   executive_roadmap: MapTrifoldIcon,
   executive_goals: TargetIcon,
   research_market: ChartLineUpIcon,

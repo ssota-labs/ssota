@@ -44,9 +44,16 @@ export function ConsoleShell({
 }: ConsoleShellProps) {
   const pathname = usePathname();
   const isTasksContext = pathname.includes(`/${ctx.projectSlug}/tasks`);
+  const isWorkflowInstructionsContext = pathname.includes(
+    `/${ctx.projectSlug}/workflow/instructions`,
+  );
   const isChatContext = pathname.includes(`/${ctx.projectSlug}/c`);
   const isDesignStudio = pathname.includes("/design/ui-components");
-  const isFullBleedContext = isTasksContext || isChatContext || isDesignStudio;
+  const isFullBleedContext =
+    isTasksContext ||
+    isWorkflowInstructionsContext ||
+    isChatContext ||
+    isDesignStudio;
 
   return (
     <ProjectProvider value={ctx}>
