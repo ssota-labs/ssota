@@ -55,7 +55,7 @@ export function groupWorkflowInstructions(
     (key) => ({
       key,
       label: GROUP_LABEL[key],
-      items: (buckets.get(key) ?? []).toSorted((a, b) =>
+      items: [...(buckets.get(key) ?? [])].sort((a, b) =>
         a.name.localeCompare(b.name),
       ),
     }),

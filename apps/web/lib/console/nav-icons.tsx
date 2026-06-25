@@ -47,7 +47,6 @@ export const NAV_ICONS: Record<string, Icon> = {
   product: PackageIcon,
   manager: RocketLaunchIcon,
   workflow_map: GraphIcon,
-  workflow_instructions: ClipboardTextIcon,
   executive_roadmap: MapTrifoldIcon,
   executive_goals: TargetIcon,
   research_market: ChartLineUpIcon,

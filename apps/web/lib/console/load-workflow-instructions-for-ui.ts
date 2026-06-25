@@ -100,7 +100,7 @@ export async function loadWorkflowInstructionsForUi(
     );
   }
 
-  return [...byKey.values()].toSorted((a, b) => a.name.localeCompare(b.name));
+  return [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export async function loadWorkflowInstructionGroupsForUi(
