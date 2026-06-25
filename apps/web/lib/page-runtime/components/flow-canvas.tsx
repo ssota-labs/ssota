@@ -212,19 +212,58 @@ function FlowCanvasEl({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, positions]);
 
+  // ── Subtree collapse ──────────────────────────────────────────────────────
+  // Parent → direct children (edge source → targets), for the collapse toggle.
+  const childMap = React.useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const e of model.edges) (map[e.source] ??= []).push(e.target);
+    return map;
+  }, [model.edges]);
+
+  const [collapsed, setCollapsed] = React.useState<Set<string>>(new Set());
+  React.useEffect(() => setCollapsed(new Set()), [signature]);
+
+  const toggleCollapse = React.useCallback((id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Every descendant of a collapsed node is hidden.
+  const hidden = React.useMemo(() => {
+    const out = new Set<string>();
+    const visit = (id: string) => {
+      for (const child of childMap[id] ?? []) {
+        if (!out.has(child)) {
+          out.add(child);
+          visit(child);
+        }
+      }
+    };
+    for (const id of collapsed) visit(id);
+    return out;
+  }, [collapsed, childMap]);
+
   const rfNodes = React.useMemo<Node[]>(() => {
     if (!ready) return [];
     return model.nodes.map((n) => ({
       id: n.id,
       type: "generic",
       position: positions[n.id] ?? { x: 0, y: 0 },
+      hidden: hidden.has(n.id),
       data: {
         style: resolveNodeStyle(n, manifest),
         status: n.status,
         direction,
+        childCount: childMap[n.id]?.length ?? 0,
+        collapsed: collapsed.has(n.id),
+        onToggleCollapse: () => toggleCollapse(n.id),
       },
     }));
-  }, [model.nodes, manifest, positions, ready, direction]);
+  }, [model.nodes, manifest, positions, ready, direction, hidden, childMap, collapsed, toggleCollapse]);
 
   const rfEdges = React.useMemo<Edge[]>(
     () =>
@@ -235,8 +274,9 @@ function FlowCanvasEl({
         target: e.target,
         label: e.label,
         animated: e.animated ?? false,
+        hidden: hidden.has(e.source) || hidden.has(e.target),
       })),
-    [model.edges],
+    [model.edges, hidden],
   );
 
   if (mode === "jsonb" && !node) {

@@ -22,6 +22,12 @@ export type FlowNodePayload = {
   status?: FlowNodeStatus;
   /** LR/RL/TB/BT — picks which sides carry the source/target handles. */
   direction?: "LR" | "RL" | "TB" | "BT";
+  /** Number of direct children (drives the collapse toggle). */
+  childCount?: number;
+  /** Whether this node's subtree is currently collapsed. */
+  collapsed?: boolean;
+  /** Toggle this node's subtree collapse. */
+  onToggleCollapse?: () => void;
 };
 
 const STATUS_BORDER: Record<FlowNodeStatus, string> = {
@@ -49,7 +55,7 @@ function handlePositions(direction: FlowNodePayload["direction"]): {
 
 function FlowNodeComponent({ data, selected }: NodeProps) {
   const payload = data as unknown as FlowNodePayload;
-  const { style, status } = payload;
+  const { style, status, childCount = 0, collapsed, onToggleCollapse } = payload;
   const colors = flowColorClasses(style.color);
   const isPill = style.shape === "pill";
   const isDiamond = style.shape === "diamond";
@@ -100,6 +106,21 @@ function FlowNodeComponent({ data, selected }: NodeProps) {
         </div>
       </div>
       <Handle type="source" position={source} className={handleClass} />
+      {childCount > 0 && onToggleCollapse ? (
+        <button
+          type="button"
+          aria-label={collapsed ? "Expand subtree" : "Collapse subtree"}
+          className="bg-background text-muted-foreground hover:text-foreground absolute -bottom-2.5 left-1/2 z-10 flex -translate-x-1/2 items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-medium shadow-sm transition-colors nodrag"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCollapse();
+          }}
+        >
+          <span>{childCount}</span>
+          <span aria-hidden>{collapsed ? "▸" : "▾"}</span>
+        </button>
+      ) : null}
     </div>
   );
 }
