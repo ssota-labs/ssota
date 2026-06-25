@@ -23,7 +23,12 @@ import {
   DEFAULT_NODE_WIDTH,
   type FlowModel,
 } from "../flow-model";
-import { layoutFlow, type FlowLayoutDirection, type Positioned } from "../flow-layout";
+import {
+  layoutFlow,
+  type FlowLayoutAlgorithm,
+  type FlowLayoutDirection,
+  type Positioned,
+} from "../flow-layout";
 import { FlowNode } from "./flow-node";
 import { FlowEdge } from "./flow-edge";
 import { DocumentSheetPanel, type SheetSize } from "./document-sheet-panel";
@@ -84,6 +89,7 @@ function FlowCanvasEl({
   property,
   presentation,
   direction,
+  algorithm,
   height,
   sheet,
 }: {
@@ -91,6 +97,7 @@ function FlowCanvasEl({
   property: string;
   presentation: unknown;
   direction: FlowLayoutDirection;
+  algorithm: FlowLayoutAlgorithm;
   height: number;
   sheet: SheetConfig;
 }) {
@@ -112,14 +119,14 @@ function FlowCanvasEl({
   const [positions, setPositions] = React.useState<Positioned>({});
   React.useEffect(() => {
     let cancelled = false;
-    void layoutFlow(model, direction).then((pos) => {
+    void layoutFlow(model, direction, algorithm).then((pos) => {
       if (!cancelled) setPositions(pos);
     });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature, direction]);
+  }, [signature, direction, algorithm]);
 
   const ready = Object.keys(positions).length > 0;
 
@@ -304,6 +311,7 @@ export const flowComponents: Record<string, CatalogComponent> = {
       const l = props.layout;
       return l === "RL" || l === "TB" || l === "BT" ? l : "LR";
     })();
+    const algorithm: FlowLayoutAlgorithm = props.algorithm === "tree" ? "tree" : "layered";
     const height =
       typeof props.height === "number" && props.height > 0 ? props.height : 480;
     const sheet: SheetConfig = {
@@ -325,6 +333,7 @@ export const flowComponents: Record<string, CatalogComponent> = {
           property={property}
           presentation={props.nodePresentation}
           direction={direction}
+          algorithm={algorithm}
           height={height}
           sheet={sheet}
         />

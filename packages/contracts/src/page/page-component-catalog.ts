@@ -520,6 +520,11 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         description:
           "Auto-layout direction LR|RL|TB|BT (default LR), used when nodes lack x/y.",
       },
+      algorithm: {
+        type: "string",
+        description:
+          'Auto-layout algorithm "layered" (default, generic DAG) or "tree" (org-chart). Pair "tree" + layout "TB" for a top-down org chart.',
+      },
       height: { type: "number", description: "Canvas height in px (default 480)." },
       field: {
         type: "string",
