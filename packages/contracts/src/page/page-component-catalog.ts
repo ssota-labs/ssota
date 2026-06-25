@@ -102,7 +102,7 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     props: {
       items: {
         type: "{ value, label, panel }[]",
-        description: "Tabs; `panel` is the text shown for that tab.",
+        description: "Tabs; `panel` is the element id rendered inside that tab.",
         required: true,
       },
       defaultValue: { type: "string", description: "Initially selected tab value." },
@@ -113,8 +113,8 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       props: {
         defaultValue: "open",
         items: [
-          { value: "open", label: "Open", panel: "Open items" },
-          { value: "done", label: "Done", panel: "Completed items" },
+          { value: "open", label: "Open", panel: "openPanel" },
+          { value: "done", label: "Done", panel: "donePanel" },
         ],
       },
     },
@@ -179,6 +179,69 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
           { key: "title", header: "Name" },
           { key: "email", header: "Email" },
         ],
+      },
+    },
+  },
+  DataTable: {
+    key: "DataTable",
+    category: "data",
+    description:
+      "Advanced data grid with typed columns, faceted filters, inline edit, and optional row actions.",
+    children: false,
+    props: {
+      binding: binding("A multi-node binding (e.g. a `query`)."),
+      columns: {
+        type: "{ key, header, type?, editable?, width?, options?, colors? }[]",
+        description: "Column schema; `type` = text|select|number|checkbox|date|badge.",
+        required: true,
+      },
+      title: { type: "string", description: "Optional table title." },
+      rowHref: { type: "string", description: "Optional row link template." },
+      setAction: action("Dispatched with { nodeId, field, value } on cell edit."),
+      addAction: action("Dispatched when the user adds a row."),
+      deleteAction: action("Dispatched with { nodeId } when a row is deleted."),
+    },
+    example: {
+      type: "DataTable",
+      props: {
+        binding: "rows",
+        setAction: "setCell",
+        columns: [
+          { key: "title", header: "Name", type: "text", editable: true },
+          { key: "status", header: "Status", type: "badge" },
+        ],
+      },
+    },
+  },
+  ExpandableTable: {
+    key: "ExpandableTable",
+    category: "data",
+    description:
+      "Master-detail table: expand a parent row to reveal nested child rows from a property or graph attachChildren binding.",
+    children: false,
+    props: {
+      binding: binding("A multi-node binding."),
+      columns: { type: "object[]", description: "Parent column schema.", required: true },
+      childColumns: { type: "object[]", description: "Child column schema.", required: true },
+      childProperty: {
+        type: "string",
+        description: 'Property on each parent row holding child rows (default "children").',
+      },
+      childLabel: { type: "string", description: "Heading above the nested sub-table." },
+      setAction: action("Parent row cell edit."),
+      childSetAction: action("Rewrite embedded child array on the parent node."),
+      childCellAction: action("Edit a graph-backed child node via set_node_property."),
+      addAction: action("Add a parent row."),
+    },
+    example: {
+      type: "ExpandableTable",
+      props: {
+        binding: "objectives",
+        childProperty: "keyResults",
+        childCellAction: "setCell",
+        setAction: "setCell",
+        columns: [{ key: "title", header: "Objective", type: "text", editable: true }],
+        childColumns: [{ key: "title", header: "Key result", type: "text", editable: true }],
       },
     },
   },
@@ -384,6 +447,52 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     example: {
       type: "DocumentEditor",
       props: { binding: "article", field: "content", action: "saveArticle" },
+    },
+  },
+  DocumentSheetList: {
+    key: "DocumentSheetList",
+    category: "document",
+    description:
+      "List of document nodes; clicking a row opens a floating BlockNote sheet panel.",
+    children: false,
+    props: {
+      binding: binding("A multi-node binding."),
+      sectionTitle: { type: "string", description: "Section heading above the list." },
+      sectionSubtitle: { type: "string", description: "Optional secondary line." },
+      title: { type: "string", description: "Optional list title." },
+      field: { type: "string", description: 'Document property (default "content").' },
+      subtitleField: { type: "string", description: 'Preview line property (default "summary").' },
+      statusField: { type: "string", description: 'Status badge property (default "lifecycleStatus").' },
+      editable: { type: "boolean", description: "Enable in-sheet editing." },
+      action: action("Dispatched on save with { nodeId, doc }."),
+      sheetSize: { type: "string", description: '"default"|"half"|"inspector"|"wide"|"full".' },
+    },
+    example: {
+      type: "DocumentSheetList",
+      props: {
+        binding: "rows",
+        sectionTitle: "Research notes",
+        field: "content",
+        editable: true,
+        action: "saveDoc",
+      },
+    },
+  },
+  Spreadsheet: {
+    key: "Spreadsheet",
+    category: "data",
+    description:
+      "Google Sheets-style grid bound to a single node's jsonb property with formulas.",
+    children: false,
+    props: {
+      binding: binding("A single-node binding."),
+      property: { type: "string", description: 'Grid property key (default "grid").' },
+      action: action("Dispatched (debounced) with the updated grid."),
+      title: { type: "string", description: "Optional title." },
+    },
+    example: {
+      type: "Spreadsheet",
+      props: { binding: "budget", property: "grid", action: "saveGrid" },
     },
   },
   // ── widget ───────────────────────────────────────────────────────────────

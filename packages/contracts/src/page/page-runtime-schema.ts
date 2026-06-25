@@ -8,16 +8,37 @@ export const propertyFilterSchema = z.object({
 
 export type PropertyFilter = z.infer<typeof propertyFilterSchema>;
 
+/** Attach graph-linked child nodes onto each parent row (for ExpandableTable). */
+export const attachChildrenSchema = z.object({
+  edgeCatalogKey: z.string().min(1),
+  direction: z.enum(["out", "in"]).default("out"),
+  catalogKey: z.string().min(1).optional(),
+  property: z.string().min(1),
+});
+
+export type AttachChildren = z.infer<typeof attachChildrenSchema>;
+
 export const bindingDefSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("query"),
     catalogKey: z.string().min(1),
     filter: z.array(propertyFilterSchema).optional(),
+    attachChildren: attachChildrenSchema.optional(),
   }),
   z.object({
     kind: z.literal("singleton"),
     catalogKey: z.string().min(1),
     ensure: z.boolean().optional(),
+  }),
+  z.object({
+    kind: z.literal("evergreen"),
+    catalogKey: z.string().min(1),
+  }),
+  z.object({
+    kind: z.literal("initiative_scope"),
+    catalogKey: z.string().min(1),
+    limit: z.number().int().positive().optional(),
+    attachChildren: attachChildrenSchema.optional(),
   }),
   z.object({
     kind: z.literal("node"),
@@ -35,6 +56,9 @@ export const bindingDefSchema = z.discriminatedUnion("kind", [
     from: z.string().min(1),
     edgeCatalogKey: z.string().min(1),
     direction: z.enum(["out", "in"]).default("out"),
+    /** When set, keep only targets whose catalogKey matches. */
+    catalogKey: z.string().min(1).optional(),
+    attachChildren: attachChildrenSchema.optional(),
   }),
   z.object({
     kind: z.literal("ref"),

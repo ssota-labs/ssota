@@ -215,7 +215,11 @@ export async function seedPages(
       .limit(1);
     if (existing[0]) {
       keyToId.set(entry.key, existing[0].id);
-      if (SEED_SPEC_SYNC_SLUGS.has(entry.key)) {
+      const shouldSyncSpec =
+        SEED_SPEC_SYNC_SLUGS.has(entry.key) ||
+        (entry.bindings && Object.keys(entry.bindings).length > 0) ||
+        (entry.actions && Object.keys(entry.actions).length > 0);
+      if (shouldSyncSpec) {
         const synced = pageRecordSchema.parse({
           title: entry.title,
           icon: entry.icon,

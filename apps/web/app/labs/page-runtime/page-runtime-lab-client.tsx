@@ -16,8 +16,7 @@ import {
 function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
   const [lastAction, setLastAction] = useState<string | null>(null);
   const fillsViewport =
-    demo.components.includes("DocumentSheetList") ||
-    demo.components.includes("RoadmapSheetWorkspace");
+    demo.components.includes("DocumentSheetList");
 
   return (
     <div

@@ -2,9 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { useAction } from "../context";
-import { boundNode, boundNodes, boundNodesByKey, boundSingleton } from "../bindings";
+import { boundNode, boundNodes } from "../bindings";
 import { DocumentSheetListEl } from "./document-sheet-list";
-import { RoadmapSheetWorkspaceEl } from "./roadmap-sheet-workspace";
 import type { CatalogComponent } from "../types";
 
 // BlockNote is browser-only; load lazily (no SSR).
@@ -83,52 +82,6 @@ export const documentComponents: Record<string, CatalogComponent> = {
       }
       editable={props.editable === true}
       action={typeof props.action === "string" ? props.action : undefined}
-      sheetSize={
-        props.sheetSize === "default" ||
-        props.sheetSize === "half" ||
-        props.sheetSize === "inspector" ||
-        props.sheetSize === "wide" ||
-        props.sheetSize === "full"
-          ? props.sheetSize
-          : "half"
-      }
-    />
-  ),
-  RoadmapSheetWorkspace: ({ props, bindingData }) => (
-    <RoadmapSheetWorkspaceEl
-      productNode={boundSingleton(
-        bindingData,
-        typeof props.productBinding === "string"
-          ? props.productBinding
-          : undefined,
-      )}
-      planningNodes={boundNodesByKey(
-        bindingData,
-        typeof props.planningBinding === "string"
-          ? props.planningBinding
-          : undefined,
-      )}
-      field={typeof props.field === "string" ? props.field : "content"}
-      subtitleField={
-        typeof props.subtitleField === "string" ? props.subtitleField : "summary"
-      }
-      statusField={
-        typeof props.statusField === "string"
-          ? props.statusField
-          : "lifecycleStatus"
-      }
-      editable={props.editable === true}
-      action={typeof props.action === "string" ? props.action : undefined}
-      createAnnualAction={
-        typeof props.createAnnualAction === "string"
-          ? props.createAnnualAction
-          : undefined
-      }
-      createQuarterAction={
-        typeof props.createQuarterAction === "string"
-          ? props.createQuarterAction
-          : undefined
-      }
       sheetSize={
         props.sheetSize === "default" ||
         props.sheetSize === "half" ||

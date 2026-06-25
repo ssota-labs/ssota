@@ -131,11 +131,21 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
 
   switch (descriptor.kind) {
     case "create_node": {
+      const subject = ctx.subject;
+      const subjectInitiativeId =
+        subject &&
+        typeof subject === "object" &&
+        "catalogKey" in subject &&
+        (subject as { catalogKey: string }).catalogKey === "initiative" &&
+        "id" in subject
+          ? String((subject as { id: string }).id)
+          : undefined;
       const parsed = createNodeInputSchema.parse({
         projectId: args.projectId,
         catalogKey: descriptor.catalogKey,
         title: asString(resolveParam(descriptor.title, scopes)) ?? "Untitled",
         properties: resolveProps(descriptor.properties, scopes),
+        initiativeId: subjectInitiativeId,
       });
       await createNode(deps, parsed);
       break;
