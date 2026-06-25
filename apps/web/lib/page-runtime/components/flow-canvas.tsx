@@ -14,10 +14,11 @@ import {
   type Node,
 } from "@xyflow/react";
 import { useAction } from "../context";
-import { boundNode } from "../bindings";
+import { boundNode, boundNodesByKey } from "../bindings";
 import {
   coerceFlow,
   coercePresentation,
+  flowFromNodes,
   resolveNodeStyle,
   DEFAULT_NODE_HEIGHT,
   DEFAULT_NODE_WIDTH,
@@ -85,16 +86,22 @@ type SheetConfig = {
 };
 
 function FlowCanvasEl({
+  mode,
   node,
   property,
+  nodes,
+  edges,
   presentation,
   direction,
   algorithm,
   height,
   sheet,
 }: {
+  mode: "jsonb" | "graph";
   node: RenderNode | undefined;
   property: string;
+  nodes: RenderNode[];
+  edges: unknown;
   presentation: unknown;
   direction: FlowLayoutDirection;
   algorithm: FlowLayoutAlgorithm;
@@ -105,9 +112,14 @@ function FlowCanvasEl({
   const { setCenter } = useReactFlow();
   const containerRef = React.useRef<HTMLDivElement>(null);
 
+  // Model 1 (jsonb): the whole graph lives in one node's property.
+  // Model 2 (graph): real graph nodes + an edge list (e.g. traverse_edges).
   const model = React.useMemo(
-    () => coerceFlow(node?.properties?.[property]),
-    [node?.properties, property],
+    () =>
+      mode === "graph"
+        ? flowFromNodes(nodes, edges)
+        : coerceFlow(node?.properties?.[property]),
+    [mode, nodes, edges, node?.properties, property],
   );
   const manifest = React.useMemo(
     () => coercePresentation(presentation),
@@ -227,16 +239,33 @@ function FlowCanvasEl({
     [model.edges],
   );
 
-  if (!node) {
+  if (mode === "jsonb" && !node) {
     return (
       <div className="text-muted-foreground border-border rounded border border-dashed p-4 text-xs">
         FlowCanvas: no bound node.
       </div>
     );
   }
+  if (model.nodes.length === 0) {
+    return (
+      <div className="text-muted-foreground border-border rounded border border-dashed p-4 text-xs">
+        FlowCanvas: no nodes to display.
+      </div>
+    );
+  }
 
   const onSave = (blocks: unknown[]) => {
     if (!onAction || !sheet.setAction || !activeId) return;
+    if (mode === "graph") {
+      // Model 2: persist the edited document straight onto the graph node.
+      void onAction(sheet.setAction, {
+        nodeId: activeId,
+        field: sheet.field,
+        value: blocks,
+      });
+      return;
+    }
+    if (!node) return;
     const nextFlow: FlowModel = {
       ...model,
       nodes: model.nodes.map((n) =>
@@ -304,7 +333,18 @@ function FlowCanvasEl({
 
 export const flowComponents: Record<string, CatalogComponent> = {
   FlowCanvas: ({ props, bindingData }) => {
+    // Model 2 (graph) when a `nodes` binding is given; else model 1 (jsonb).
+    const mode: "jsonb" | "graph" =
+      typeof props.nodes === "string" ? "graph" : "jsonb";
     const node = boundNode(bindingData, props);
+    const nodes =
+      mode === "graph"
+        ? boundNodesByKey(bindingData, props.nodes as string)
+        : [];
+    const edges =
+      mode === "graph" && typeof props.edges === "string"
+        ? bindingData[props.edges]
+        : undefined;
     const property =
       typeof props.property === "string" ? props.property : "flow";
     const direction = ((): FlowLayoutDirection => {
@@ -329,8 +369,11 @@ export const flowComponents: Record<string, CatalogComponent> = {
     return (
       <ReactFlowProvider>
         <FlowCanvasEl
+          mode={mode}
           node={node}
           property={property}
+          nodes={nodes}
+          edges={edges}
           presentation={props.nodePresentation}
           direction={direction}
           algorithm={algorithm}

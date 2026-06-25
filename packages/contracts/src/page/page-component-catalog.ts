@@ -504,12 +504,18 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       "Renders a node/edge graph (e.g. a user flow) with ReactFlow. The whole graph lives in one node's jsonb property; node visuals are driven by a `nodePresentation` manifest that maps node types/properties to color/shape variants. Auto-layout (ELK layered) runs when nodes lack coordinates.",
     children: false,
     props: {
-      binding: binding("A single-node binding (the node holding the graph)."),
+      binding: binding("Model 1: a single-node binding (the node holding the graph jsonb)."),
       property: {
         type: "string",
         description:
-          'Node property holding the graph jsonb (default "flow"). Shape: { nodes:[{ id, nodeType?, title, x?, y?, props?, status? }], edges:[{ source, target, label?, animated? }] }.',
+          'Model 1: node property holding the graph jsonb (default "flow"). Shape: { nodes:[{ id, nodeType?, title, x?, y?, props?, status? }], edges:[{ source, target, label?, animated? }] }.',
       },
+      nodes: binding(
+        "Model 2: a multi-node binding (e.g. a `query`). When set, the graph is built from these live nodes (nodeType = catalogKey) + `edges` instead of the jsonb.",
+      ),
+      edges: binding(
+        "Model 2: a binding to an edge list (e.g. `traverse_edges`); records use source/target (or sourceNodeId/targetNodeId, from/to).",
+      ),
       nodePresentation: {
         type: "{ match:{ nodeType?, property?, eq? }, variant?, color?, shape?, titleFrom?, badgeFrom? }[]",
         description:
