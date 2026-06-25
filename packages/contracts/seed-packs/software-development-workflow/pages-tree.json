@@ -14,21 +14,37 @@
     "title": "Roadmap",
     "icon": "executive_roadmap",
     "spec": {
-      "root": "workspace",
+      "root": "layout",
       "elements": {
-        "workspace": {
-          "type": "RoadmapSheetWorkspace",
+        "layout": { "type": "SplitPane", "children": ["product", "planning"] },
+        "product": {
+          "type": "Section",
           "props": {
-            "productBinding": "productRoadmap",
-            "planningBinding": "planningRoadmaps",
+            "title": "Product roadmap",
+            "subtitle": "Long-term strategic direction"
+          },
+          "children": ["productDoc"]
+        },
+        "productDoc": {
+          "type": "DocumentEditor",
+          "props": {
+            "binding": "productRoadmap",
+            "field": "content",
+            "action": "saveProductDoc"
+          }
+        },
+        "planning": {
+          "type": "DocumentSheetList",
+          "props": {
+            "binding": "planningRoadmaps",
+            "sectionTitle": "Planning roadmaps",
+            "sectionSubtitle": "Annual and quarterly execution plans",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
             "sheetSize": "half",
             "editable": true,
-            "action": "saveRoadmapDoc",
-            "createAnnualAction": "createAnnualRoadmap",
-            "createQuarterAction": "createQuarterRoadmap"
+            "action": "savePlanningDoc"
           }
         }
       }
@@ -38,34 +54,17 @@
       "planningRoadmaps": { "kind": "query", "catalogKey": "roadmap" }
     },
     "actions": {
-      "saveRoadmapDoc": {
+      "saveProductDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "productRoadmap.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      },
+      "savePlanningDoc": {
         "kind": "update_node",
         "nodeId": { "$input": "nodeId" },
         "properties": { "content": { "$input": "doc" } },
         "merge": true
-      },
-      "createAnnualRoadmap": {
-        "kind": "create_node",
-        "catalogKey": "roadmap",
-        "title": { "$input": "title" },
-        "properties": {
-          "kind": { "$input": "kind" },
-          "year": { "$input": "year" },
-          "lifecycleStatus": "draft",
-          "summary": ""
-        }
-      },
-      "createQuarterRoadmap": {
-        "kind": "create_node",
-        "catalogKey": "roadmap",
-        "title": { "$input": "title" },
-        "properties": {
-          "kind": { "$input": "kind" },
-          "year": { "$input": "year" },
-          "quarter": { "$input": "quarter" },
-          "lifecycleStatus": "draft",
-          "summary": ""
-        }
       }
     }
   },
@@ -75,8 +74,64 @@
     "appliesToNodeType": null,
     "title": "Goals",
     "icon": "executive_goals",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Goals", "columns": [{ "key": "title", "header": "Objective" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "objective" } }
+    "spec": {
+      "root": "okr",
+      "elements": {
+        "okr": {
+          "type": "ExpandableTable",
+          "props": {
+            "binding": "objectives",
+            "title": "Goals",
+            "setAction": "setCell",
+            "childCellAction": "setCell",
+            "childProperty": "keyResults",
+            "childLabel": "Key results",
+            "columns": [
+              { "key": "title", "header": "Objective", "type": "text", "editable": true, "width": 320 },
+              { "key": "period", "header": "Period", "type": "text", "editable": true, "width": 120 },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["on-track", "at-risk", "off-track"]
+              }
+            ],
+            "childColumns": [
+              { "key": "title", "header": "Key result", "type": "text", "editable": true, "width": 320 },
+              { "key": "current_value", "header": "Current", "type": "number", "editable": true },
+              { "key": "target", "header": "Target", "type": "number", "editable": true },
+              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["on-track", "at-risk", "off-track"]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": {
+      "objectives": {
+        "kind": "query",
+        "catalogKey": "objective",
+        "attachChildren": {
+          "edgeCatalogKey": "contributes_to",
+          "direction": "in",
+          "catalogKey": "key_result",
+          "property": "keyResults"
+        }
+      }
+    },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": { "$input": "field" },
+        "value": { "$input": "value" }
+      }
+    }
   },
   {
     "key": "research",
@@ -222,8 +277,29 @@
     "appliesToNodeType": null,
     "title": "Data model",
     "icon": "dev_data_model",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Data model", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "data_spec" } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": {
+          "type": "Section",
+          "props": { "title": "Data model", "subtitle": "Evergreen data specification" },
+          "children": ["editor"]
+        },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "data_spec" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "development/system-model",
@@ -231,8 +307,29 @@
     "appliesToNodeType": null,
     "title": "System model",
     "icon": "dev_system_model",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "System model", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "architecture_spec" } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": {
+          "type": "Section",
+          "props": { "title": "System model", "subtitle": "Evergreen architecture specification" },
+          "children": ["editor"]
+        },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "architecture_spec" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "development/api-reference",
@@ -240,8 +337,29 @@
     "appliesToNodeType": null,
     "title": "API reference",
     "icon": "dev_api_reference",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "API reference", "columns": [{ "key": "title", "header": "Reference" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "api_reference" } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": {
+          "type": "Section",
+          "props": { "title": "API reference", "subtitle": "Evergreen API documentation" },
+          "children": ["editor"]
+        },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "api_reference" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "development/integration",
@@ -249,8 +367,29 @@
     "appliesToNodeType": null,
     "title": "Integration",
     "icon": "dev_integration",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Integration", "columns": [{ "key": "title", "header": "Spec" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "integration_spec" } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": {
+          "type": "Section",
+          "props": { "title": "Integration", "subtitle": "Evergreen integration specification" },
+          "children": ["editor"]
+        },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "integration_spec" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "design",
@@ -266,8 +405,34 @@
     "appliesToNodeType": null,
     "title": "Information architecture",
     "icon": "design_ia",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Information architecture", "columns": [{ "key": "title", "header": "IA" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "information_architecture" } }
+    "spec": {
+      "root": "list",
+      "elements": {
+        "list": {
+          "type": "DocumentSheetList",
+          "props": {
+            "binding": "rows",
+            "sectionTitle": "Information architecture",
+            "sectionSubtitle": "Site maps, navigation models, and content hierarchy",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
+            "action": "saveDoc"
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "information_architecture" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$input": "nodeId" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "design/ui-components",
@@ -275,7 +440,23 @@
     "appliesToNodeType": null,
     "title": "UI components",
     "icon": "design_ui_components",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "UI components", "columns": [{ "key": "title", "header": "Component" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
+    "spec": {
+      "root": "table",
+      "elements": {
+        "table": {
+          "type": "NodeTable",
+          "props": {
+            "binding": "rows",
+            "title": "UI components",
+            "rowHref": "n",
+            "columns": [
+              { "key": "title", "header": "Component" },
+              { "key": "lifecycleStatus", "header": "Status" }
+            ]
+          }
+        }
+      }
+    },
     "bindings": { "rows": { "kind": "query", "catalogKey": "ui_component" } }
   },
   {
@@ -284,8 +465,40 @@
     "appliesToNodeType": null,
     "title": "Design theme",
     "icon": "design_theme",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Design theme", "columns": [{ "key": "title", "header": "Theme" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "design_theme" } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": {
+          "type": "Section",
+          "props": { "title": "Design theme", "subtitle": "Semantic design tokens" },
+          "children": ["tokens"]
+        },
+        "tokens": {
+          "type": "TokenList",
+          "props": {
+            "binding": "theme",
+            "field": "tokens",
+            "action": "saveTokens",
+            "manifest": [
+              { "name": "--background", "label": "Background", "kind": "color" },
+              { "name": "--foreground", "label": "Foreground", "kind": "color" },
+              { "name": "--primary", "label": "Primary", "kind": "color" },
+              { "name": "--primary-foreground", "label": "Primary foreground", "kind": "color" },
+              { "name": "--radius", "label": "Radius", "kind": "length" }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": { "theme": { "kind": "evergreen", "catalogKey": "design_theme" } },
+    "actions": {
+      "saveTokens": {
+        "kind": "set_node_property",
+        "nodeId": { "$binding": "theme.id" },
+        "field": "tokens",
+        "value": { "$input": "tokens" }
+      }
+    }
   },
   {
     "key": "design/toolchain",
@@ -293,8 +506,29 @@
     "appliesToNodeType": null,
     "title": "Design toolchain",
     "icon": "design_toolchain",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Design toolchain", "columns": [{ "key": "title", "header": "Toolchain" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "design_toolchain" } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": {
+          "type": "Section",
+          "props": { "title": "Design toolchain", "subtitle": "Figma, tokens, and handoff workflow" },
+          "children": ["editor"]
+        },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "evergreen", "catalogKey": "design_toolchain" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
 
   {
@@ -319,7 +553,25 @@
     "appliesToNodeType": "initiative",
     "title": "PRD",
     "icon": "planning_prd",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "PRD" } }, "b": { "type": "Text", "props": { "text": "Free-form PRD page. Compose with json-render components." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "PRD" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "prd", "limit": 1 } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/planning/features",
@@ -327,7 +579,66 @@
     "appliesToNodeType": "initiative",
     "title": "Features",
     "icon": "planning_features",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Features" } }, "b": { "type": "Text", "props": { "text": "Free-form Features page." } } } }
+    "spec": {
+      "root": "features",
+      "elements": {
+        "features": {
+          "type": "ExpandableTable",
+          "props": {
+            "binding": "features",
+            "title": "Features",
+            "setAction": "setCell",
+            "childCellAction": "setCell",
+            "childProperty": "userStories",
+            "childLabel": "User stories",
+            "columns": [
+              { "key": "title", "header": "Feature", "type": "text", "editable": true, "width": 320 },
+              {
+                "key": "priority",
+                "header": "Priority",
+                "type": "select",
+                "options": ["P0", "P1", "P2", "P3"]
+              },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["draft", "approved", "in_progress", "done"]
+              }
+            ],
+            "childColumns": [
+              { "key": "title", "header": "Story", "type": "text", "editable": true, "width": 320 },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["draft", "ready", "in_progress", "done"]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": {
+      "features": {
+        "kind": "initiative_scope",
+        "catalogKey": "feature",
+        "attachChildren": {
+          "edgeCatalogKey": "spawns_story",
+          "direction": "out",
+          "catalogKey": "user_story",
+          "property": "userStories"
+        }
+      }
+    },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": { "$input": "field" },
+        "value": { "$input": "value" }
+      }
+    }
   },
   {
     "key": "tpl/initiative/planning/stories",
@@ -335,7 +646,37 @@
     "appliesToNodeType": "initiative",
     "title": "Stories",
     "icon": "planning_stories",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Stories" } }, "b": { "type": "Text", "props": { "text": "Free-form Stories page." } } } }
+    "spec": {
+      "root": "stories",
+      "elements": {
+        "stories": {
+          "type": "DataTable",
+          "props": {
+            "binding": "stories",
+            "title": "User stories",
+            "setAction": "setCell",
+            "columns": [
+              { "key": "title", "header": "Story", "type": "text", "editable": true, "width": 360 },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["draft", "ready", "in_progress", "done"]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": { "stories": { "kind": "initiative_scope", "catalogKey": "user_story" } },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": { "$input": "field" },
+        "value": { "$input": "value" }
+      }
+    }
   },
   {
     "key": "tpl/initiative/design",
@@ -351,7 +692,27 @@
     "appliesToNodeType": "initiative",
     "title": "Information architecture",
     "icon": "design_ia",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Information architecture" } }, "b": { "type": "Text", "props": { "text": "Free-form IA page." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "Information architecture" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": {
+      "doc": { "kind": "initiative_scope", "catalogKey": "information_architecture", "limit": 1 }
+    },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/design/wireframes",
@@ -359,7 +720,24 @@
     "appliesToNodeType": "initiative",
     "title": "Wireframes",
     "icon": "design_wireframes",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Wireframes" } }, "b": { "type": "Text", "props": { "text": "Free-form Wireframes page." } } } }
+    "spec": {
+      "root": "table",
+      "elements": {
+        "table": {
+          "type": "NodeTable",
+          "props": {
+            "binding": "rows",
+            "title": "Wireframes",
+            "rowHref": "n",
+            "columns": [
+              { "key": "title", "header": "Wireframe" },
+              { "key": "lifecycleStatus", "header": "Status" }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "page_wireframe" } }
   },
   {
     "key": "tpl/initiative/design/flows",
@@ -367,7 +745,25 @@
     "appliesToNodeType": "initiative",
     "title": "Flows",
     "icon": "design_flows",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Flows" } }, "b": { "type": "Text", "props": { "text": "Free-form Flows page." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "Flows" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "user_flow", "limit": 1 } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/architecture",
@@ -383,7 +779,27 @@
     "appliesToNodeType": "initiative",
     "title": "Architecture spec",
     "icon": "architecture_spec",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Architecture spec" } }, "b": { "type": "Text", "props": { "text": "Free-form Architecture spec page." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "Architecture spec" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": {
+      "doc": { "kind": "initiative_scope", "catalogKey": "architecture_spec", "limit": 1 }
+    },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/architecture/data",
@@ -391,7 +807,25 @@
     "appliesToNodeType": "initiative",
     "title": "Data",
     "icon": "architecture_data",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Data" } }, "b": { "type": "Text", "props": { "text": "Free-form Data page." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "Data" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "data_spec", "limit": 1 } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/architecture/integration",
@@ -399,7 +833,27 @@
     "appliesToNodeType": "initiative",
     "title": "Integration",
     "icon": "architecture_integration",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Integration" } }, "b": { "type": "Text", "props": { "text": "Free-form Integration page." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "Integration" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": {
+      "doc": { "kind": "initiative_scope", "catalogKey": "integration_spec", "limit": 1 }
+    },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/build",
@@ -415,7 +869,27 @@
     "appliesToNodeType": "initiative",
     "title": "Build plan",
     "icon": "build_plan",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Build plan" } }, "b": { "type": "Text", "props": { "text": "Free-form Build plan page." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "Build plan" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": {
+      "doc": { "kind": "initiative_scope", "catalogKey": "implementation_plan", "limit": 1 }
+    },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/build/tasks",
@@ -423,7 +897,71 @@
     "appliesToNodeType": "initiative",
     "title": "Tasks",
     "icon": "build_tasks",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Tasks" } }, "b": { "type": "Text", "props": { "text": "Free-form Tasks page." } } } }
+    "spec": {
+      "root": "tabs",
+      "elements": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "table",
+            "items": [
+              { "value": "table", "label": "Table", "panel": "tablePanel" },
+              { "value": "gantt", "label": "Gantt", "panel": "ganttPanel" }
+            ]
+          }
+        },
+        "tablePanel": {
+          "type": "DataTable",
+          "props": {
+            "binding": "tasks",
+            "title": "Tasks",
+            "setAction": "setCell",
+            "columns": [
+              { "key": "title", "header": "Task", "type": "text", "editable": true, "width": 320 },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["open", "in_progress", "done", "cancelled"]
+              },
+              { "key": "route", "header": "Route", "type": "text", "editable": true }
+            ]
+          }
+        },
+        "ganttPanel": {
+          "type": "Gantt",
+          "props": {
+            "binding": "tasks",
+            "title": "Task timeline",
+            "startKey": "startAt",
+            "endKey": "endAt",
+            "statusKey": "status",
+            "statusColors": {
+              "open": "#6B7280",
+              "in_progress": "#F59E0B",
+              "done": "#10B981",
+              "cancelled": "#EF4444"
+            },
+            "moveAction": "moveTask"
+          }
+        }
+      }
+    },
+    "bindings": { "tasks": { "kind": "initiative_scope", "catalogKey": "task" } },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": { "$input": "field" },
+        "value": { "$input": "value" }
+      },
+      "moveTask": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": "startAt",
+        "value": { "$input": "startAt" }
+      }
+    }
   },
   {
     "key": "tpl/initiative/build/pull-requests",
@@ -431,7 +969,38 @@
     "appliesToNodeType": "initiative",
     "title": "Pull requests",
     "icon": "build_pull_requests",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Pull requests" } }, "b": { "type": "Text", "props": { "text": "Free-form Pull requests page." } } } }
+    "spec": {
+      "root": "table",
+      "elements": {
+        "table": {
+          "type": "DataTable",
+          "props": {
+            "binding": "rows",
+            "title": "Pull requests",
+            "setAction": "setCell",
+            "columns": [
+              { "key": "title", "header": "Pull request", "type": "text", "editable": true, "width": 320 },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["open", "merged", "closed"]
+              },
+              { "key": "url", "header": "URL", "type": "text", "editable": true }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "pull_request" } },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": { "$input": "field" },
+        "value": { "$input": "value" }
+      }
+    }
   },
   {
     "key": "tpl/initiative/qa",
@@ -447,7 +1016,25 @@
     "appliesToNodeType": "initiative",
     "title": "Test plan",
     "icon": "qa_test_plan",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Test plan" } }, "b": { "type": "Text", "props": { "text": "Free-form Test plan page." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "Test plan" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "test_plan", "limit": 1 } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/launch",
@@ -463,7 +1050,25 @@
     "appliesToNodeType": "initiative",
     "title": "Launch plan",
     "icon": "launch_plan",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Launch plan" } }, "b": { "type": "Text", "props": { "text": "Free-form Launch plan page." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "Launch plan" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "launch_plan", "limit": 1 } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/launch/docs",
@@ -471,7 +1076,34 @@
     "appliesToNodeType": "initiative",
     "title": "Launch docs",
     "icon": "launch_docs",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Launch docs" } }, "b": { "type": "Text", "props": { "text": "Free-form Launch docs page." } } } }
+    "spec": {
+      "root": "list",
+      "elements": {
+        "list": {
+          "type": "DocumentSheetList",
+          "props": {
+            "binding": "rows",
+            "sectionTitle": "Launch docs",
+            "sectionSubtitle": "Release notes and runbooks",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
+            "action": "saveDoc"
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "release_note" } },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$input": "nodeId" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   },
   {
     "key": "tpl/initiative/retrospective",
@@ -487,7 +1119,40 @@
     "appliesToNodeType": "initiative",
     "title": "Metrics",
     "icon": "retro_metrics",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Metrics" } }, "b": { "type": "Text", "props": { "text": "Free-form Metrics page." } } } }
+    "spec": {
+      "root": "table",
+      "elements": {
+        "table": {
+          "type": "DataTable",
+          "props": {
+            "binding": "rows",
+            "title": "Metrics",
+            "setAction": "setCell",
+            "columns": [
+              { "key": "title", "header": "KPI", "type": "text", "editable": true, "width": 280 },
+              { "key": "current_value", "header": "Current", "type": "number", "editable": true },
+              { "key": "target", "header": "Target", "type": "number", "editable": true },
+              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["active", "paused", "archived"]
+              }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "kpi" } },
+    "actions": {
+      "setCell": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": { "$input": "field" },
+        "value": { "$input": "value" }
+      }
+    }
   },
   {
     "key": "tpl/initiative/retrospective/review",
@@ -495,6 +1160,26 @@
     "appliesToNodeType": "initiative",
     "title": "Review",
     "icon": "retro_review",
-    "spec": { "root": "c", "elements": { "c": { "type": "Card", "children": ["h", "b"] }, "h": { "type": "PageHeader", "props": { "title": "Review" } }, "b": { "type": "Text", "props": { "text": "Free-form Review page." } } } }
+    "spec": {
+      "root": "section",
+      "elements": {
+        "section": { "type": "Section", "props": { "title": "Review" }, "children": ["editor"] },
+        "editor": {
+          "type": "DocumentEditor",
+          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        }
+      }
+    },
+    "bindings": {
+      "doc": { "kind": "initiative_scope", "catalogKey": "retrospective", "limit": 1 }
+    },
+    "actions": {
+      "saveDoc": {
+        "kind": "update_node",
+        "nodeId": { "$binding": "doc.id" },
+        "properties": { "content": { "$input": "doc" } },
+        "merge": true
+      }
+    }
   }
 ]

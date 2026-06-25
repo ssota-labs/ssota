@@ -23,7 +23,7 @@ type RenderProps = {
   basePath?: string;
   /** Triggers a server-side build for an unbuilt buildable Widget node. */
   onBuildWidget?: (nodeId: string) => void | Promise<void>;
-  /** Stretch to fill a flex parent (DocumentSheetList / RoadmapSheetWorkspace pages). */
+  /** Stretch to fill a flex parent (DocumentSheetList pages). */
   fillHeight?: boolean;
   /** Per-user table view-state persistence (omitted in the lab preview). */
   viewState?: PageViewStateRuntime;

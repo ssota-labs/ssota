@@ -8,61 +8,57 @@ test.describe("Executive roadmap", () => {
     await gotoProject(page, "executive/roadmap");
   });
 
-  test("shows product and planning roadmap sections", async ({ page }) => {
-    await expect(page.getByTestId("dynamic-page-renderer")).toBeVisible();
-    await expect(page.getByTestId("roadmap-sheet-workspace")).toBeVisible();
-    await expect(page.getByTestId("product-roadmap-section")).toBeVisible();
-    await expect(page.getByTestId("planning-roadmaps-section")).toBeVisible();
-    await expect(page.getByTestId("product-roadmap-card")).toBeVisible();
-    await expect(page.getByTestId("planning-roadmap-card-group")).toBeVisible();
-    await expect(page.getByTestId("planning-year-select")).toBeVisible();
+  test("shows product editor and planning document list", async ({ page }) => {
+    await expect(page.getByText("Planning roadmaps")).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(page.getByText("Product roadmap")).toBeVisible();
+    await expect(page.getByTestId("document-sheet-list")).toBeVisible();
 
     const year = new Date().getFullYear();
-    await expect(page.getByTestId("planning-roadmap-card-annual")).toBeVisible();
-    await expect(page.getByTestId("planning-roadmap-card-q1")).toBeVisible();
-    await expect(page.getByText(`${year} 연간 로드맵`)).toBeVisible();
-    await expect(page.getByText(`${year} Q1 분기 로드맵`)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: new RegExp(`${year} 연간 로드맵`) }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: new RegExp(`${year} Q2 분기 로드맵`) }),
+    ).toBeVisible();
   });
 
-  test("shows differentiated status badge colors", async ({ page }) => {
-    await expect(page.getByTestId("product-roadmap-card")).toContainText("active");
-    await expect(page.getByTestId("planning-roadmap-card-q1")).toContainText("draft");
-    await expect(page.getByTestId("planning-roadmap-card-q2")).toContainText("review");
+  test("shows differentiated status badge colors in planning list", async ({
+    page,
+  }) => {
+    const year = new Date().getFullYear();
+    const annualRow = page.getByRole("button", { name: new RegExp(`${year} 연간 로드맵`) });
+    const q1Row = page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) });
+    const q2Row = page.getByRole("button", { name: new RegExp(`${year} Q2 분기 로드맵`) });
 
-    const activeBadge = page
-      .getByTestId("planning-roadmap-card-annual")
-      .locator('[class*="emerald"]');
-    const draftBadge = page
-      .getByTestId("planning-roadmap-card-q1")
-      .locator('[class*="muted"]');
-    const reviewBadge = page
-      .getByTestId("planning-roadmap-card-q2")
-      .locator('[class*="amber"]');
-
-    await expect(activeBadge.first()).toBeVisible();
-    await expect(draftBadge.first()).toBeVisible();
-    await expect(reviewBadge.first()).toBeVisible();
+    await expect(annualRow.locator('[class*="emerald"]').first()).toBeVisible();
+    await expect(q1Row.locator('[class*="muted"]').first()).toBeVisible();
+    await expect(q2Row.locator('[class*="amber"]').first()).toBeVisible();
   });
 
   test("opens roadmap document in floating sheet panel", async ({ page }) => {
     const year = new Date().getFullYear();
-    await page.getByTestId("planning-roadmap-card-q1").click();
+    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
 
     await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
     await expect(page.getByTestId("document-sheet-editor")).toBeVisible();
-    await expect(page.getByTestId("blocknote-editor-shell")).toBeVisible({
+    await expect(
+      page.getByTestId("document-sheet-editor").getByTestId("blocknote-editor-shell"),
+    ).toBeVisible({
       timeout: 15_000,
     });
-    await expect(
-      page.getByText("DocumentSheetList catalog component"),
-    ).toBeVisible();
     await expect(
       page.getByTestId("document-sheet-panel").getByText(`${year} Q1 분기 로드맵`),
     ).toBeVisible();
   });
 
   test("closes sheet panel with close button", async ({ page }) => {
-    await page.getByTestId("planning-roadmap-card-q1").click();
+    const year = new Date().getFullYear();
+    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
     await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
 
     await page.getByTestId("document-sheet-close").click();
@@ -70,7 +66,8 @@ test.describe("Executive roadmap", () => {
   });
 
   test("widens sheet panel from left resize handle", async ({ page }) => {
-    await page.getByTestId("planning-roadmap-card-q1").click();
+    const year = new Date().getFullYear();
+    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
     const panel = page.getByTestId("document-sheet-panel");
     await expect(panel).toBeVisible();
 
@@ -85,45 +82,20 @@ test.describe("Executive roadmap", () => {
     const startX = handleBox!.x + handleBox!.width / 2;
     await page.mouse.move(startX, centerY);
     await page.mouse.down();
-    await page.mouse.move(startX - 200, centerY, { steps: 12 });
+    await page.mouse.move(startX - 320, centerY, { steps: 24 });
     await page.mouse.up();
-    await page.waitForTimeout(100);
+    await page.waitForTimeout(200);
 
     const after = await panel.boundingBox();
     expect(after).not.toBeNull();
-    expect(after!.width).toBeGreaterThan(before!.width);
-  });
-
-  test("creates quarter roadmap and opens sheet without BlockNote error", async ({
-    page,
-  }) => {
-    test.slow();
-
-    const year = new Date().getFullYear();
-    const createBtn = page.getByTestId("planning-roadmap-card-q3-create");
-    if (await createBtn.isVisible()) {
-      const createResponse = page.waitForResponse(
-        (response) => response.request().method() === "POST" && response.ok(),
-        { timeout: 20_000 },
-      );
-      await createBtn.click();
-      await createResponse;
-    }
-
-    await page.getByTestId("planning-roadmap-card-q3").click();
-    await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
-    await expect(page.getByTestId("blocknote-editor-shell")).toBeVisible({
-      timeout: 15_000,
-    });
-    await expect(
-      page.getByTestId("document-sheet-panel").getByText(`${year} Q3 분기 로드맵`),
-    ).toBeVisible();
+    expect(after!.width).toBeGreaterThanOrEqual(before!.width + 20);
   });
 
   test("autosaves roadmap doc edits from sheet panel", async ({ page }) => {
     test.slow();
 
-    await page.getByTestId("planning-roadmap-card-q1").click();
+    const year = new Date().getFullYear();
+    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
     await expect(page.getByTestId("document-sheet-editor")).toBeVisible();
 
     const editor = page
@@ -143,7 +115,7 @@ test.describe("Executive roadmap", () => {
 
     await page.reload();
     await gotoProject(page, "executive/roadmap");
-    await page.getByTestId("planning-roadmap-card-q1").click();
+    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
     await expect(editor).toContainText(marker, { timeout: 15_000 });
   });
 });

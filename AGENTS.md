@@ -45,6 +45,7 @@ e2e/
 5. **타입·properties 검증은 API 동작이다.** catalog에 없는 `catalogKey`·`property_schema` 위반 properties는 커밋 전 reject. edge domain/range는 `edge_catalog.domain_catalog_ids`/`range_catalog_ids`로 검증.
 6. **노드 봉투 = `title` + `properties` only** — `content`·`lifecycle_status` DB 컬럼 없음. BlockNote 본문·lifecycle·ui_component spec 등은 dev-workflow convention으로 `properties.content`, `properties.lifecycleStatus`, `properties.spec`/`componentTree`에 저장. 읽기 헬퍼: `readNodeContent()`, `readLifecycleStatus()` (`packages/core`).
 7. **시드 pack** — `packages/contracts/seed-packs/dev-workflow/`(L1 catalog + pages + workspace). `seedDevWorkflowCatalog` + `applyDevWorkflowPack`이 onboarding·`pnpm db:seed`에서 호출.
+8. **페이지 UI는 json-render 조합만** — L3 `page.properties.spec`은 L2 catalog 컴포넌트(`DocumentEditor`, `DataTable`, `ExpandableTable` 등)를 `bindings`·`actions`와 함께 선언적으로 조합한다. `RoadmapSheetWorkspace`처럼 특정 화면·도메인 전용 React 페이지 컴포넌트를 추가하지 않는다. 새 UX가 필요하면 L2 catalog에 범용 컴포넌트를 추가하고 spec에서 조합한다.
 
 **명시적 비범위 (v1):** `executeAction`, Action Catalog DB, Human Gate, `action_log`, MCP `execute_action` — `archive/generic-runtime/` 참고만.
 
