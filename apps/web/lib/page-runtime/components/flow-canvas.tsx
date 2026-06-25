@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import {
   Background,
   BackgroundVariant,
@@ -13,7 +14,14 @@ import {
   type Edge,
   type Node,
 } from "@xyflow/react";
-import { useAction } from "../context";
+import type { JsonRenderSpec } from "@ssota/contracts";
+import { useAction, type OnAction } from "../context";
+
+// Lazy import breaks the static cycle flow-canvas → renderer → registry → flow-canvas.
+const PanelRenderer = dynamic(
+  () => import("../renderer").then((m) => m.DynamicPageRenderer),
+  { ssr: false },
+);
 import { boundNode, boundNodesByKey } from "../bindings";
 import {
   coerceFlow,
@@ -96,6 +104,8 @@ function FlowCanvasEl({
   algorithm,
   height,
   sheet,
+  panel,
+  viewAction,
 }: {
   mode: "jsonb" | "graph";
   node: RenderNode | undefined;
@@ -107,6 +117,8 @@ function FlowCanvasEl({
   algorithm: FlowLayoutAlgorithm;
   height: number;
   sheet: SheetConfig;
+  panel: JsonRenderSpec | null;
+  viewAction: string;
 }) {
   const onAction = useAction();
   const { setCenter } = useReactFlow();
@@ -247,6 +259,28 @@ function FlowCanvasEl({
     return out;
   }, [collapsed, childMap]);
 
+  // ── Shared view state ─────────────────────────────────────────────────────
+  // The panel writes it (via `viewAction`), every node card reads it (`{{view.*}}`
+  // + `when` gating). One toggle in the panel flips a metric row on all cards.
+  const [view, setView] = React.useState<Record<string, unknown>>({});
+  const handlePanelAction = React.useCallback<OnAction>(
+    (actionKey, input) => {
+      if (actionKey !== viewAction) return onAction?.(actionKey, input);
+      setView((prev) => {
+        const next = { ...prev };
+        if (typeof input.key === "string") {
+          next[input.key] = "value" in input ? input.value : !prev[input.key];
+        } else if (typeof input.field === "string") {
+          next[input.field] = input.value;
+        } else if (input.tokens && typeof input.tokens === "object") {
+          Object.assign(next, input.tokens as Record<string, unknown>);
+        }
+        return next;
+      });
+    },
+    [viewAction, onAction],
+  );
+
   const rfNodes = React.useMemo<Node[]>(() => {
     if (!ready) return [];
     return model.nodes.map((n) => ({
@@ -267,9 +301,10 @@ function FlowCanvasEl({
           title: n.title,
           properties: n.props ?? {},
         },
+        view,
       },
     }));
-  }, [model.nodes, manifest, positions, ready, direction, hidden, childMap, collapsed, toggleCollapse]);
+  }, [model.nodes, manifest, positions, ready, direction, hidden, childMap, collapsed, toggleCollapse, view]);
 
   const rfEdges = React.useMemo<Edge[]>(
     () =>
@@ -361,6 +396,19 @@ function FlowCanvasEl({
         </div>
       )}
 
+      {panel ? (
+        <div
+          data-testid="flow-panel"
+          className="border-border/60 bg-background/70 supports-backdrop-filter:bg-background/50 supports-backdrop-filter:backdrop-blur-md absolute top-2 right-2 z-20 w-[min(15rem,60%)] rounded-xl border p-2 text-xs shadow-lg shadow-black/5"
+        >
+          <PanelRenderer
+            spec={panel}
+            bindingData={{ view }}
+            onAction={handlePanelAction}
+          />
+        </div>
+      ) : null}
+
       {activeRenderNode ? (
         <DocumentSheetPanel
           node={activeRenderNode}
@@ -412,6 +460,15 @@ export const flowComponents: Record<string, CatalogComponent> = {
         : "default",
       setAction: typeof props.setAction === "string" ? props.setAction : undefined,
     };
+    const panel =
+      props.panel &&
+      typeof props.panel === "object" &&
+      "root" in props.panel &&
+      "elements" in props.panel
+        ? (props.panel as JsonRenderSpec)
+        : null;
+    const viewAction =
+      typeof props.viewAction === "string" ? props.viewAction : "setView";
     return (
       <ReactFlowProvider>
         <FlowCanvasEl
@@ -425,6 +482,8 @@ export const flowComponents: Record<string, CatalogComponent> = {
           algorithm={algorithm}
           height={height}
           sheet={sheet}
+          panel={panel}
+          viewAction={viewAction}
         />
       </ReactFlowProvider>
     );

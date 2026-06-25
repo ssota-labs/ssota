@@ -553,6 +553,16 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         type: "string",
         description: "Sheet width: default|half|inspector|wide|full (default default).",
       },
+      panel: {
+        type: "object",
+        description:
+          "Optional floating control panel — a JsonRenderSpec rendered top-right (bound to `{ view }`). Dispatch `viewAction` to write the shared view state that node cards read.",
+      },
+      viewAction: {
+        type: "string",
+        description:
+          'Action key the panel dispatches to update the shared view state (default "setView"). Accepts { key, value? } (set/toggle), { field, value }, or { tokens }.',
+      },
       setAction: action("Dispatched with { nodeId, field, value } when an editable sheet saves."),
     },
     example: {
