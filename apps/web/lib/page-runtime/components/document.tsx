@@ -58,19 +58,19 @@ export const documentComponents: Record<string, CatalogComponent> = {
     const fillHeight = useFillHeight();
     return (
       <div
-        className={fillHeight ? "flex min-h-0 flex-1 flex-col" : undefined}
+        className={fillHeight ? "min-h-0 flex-1 overflow-auto" : undefined}
       >
         <BoundDocumentEditor
           actionKey={typeof props.action === "string" ? props.action : undefined}
           content={docContent(bindingData, props)}
-          compact={fillHeight}
         />
       </div>
     );
   },
   DocumentSheetList: ({ props, bindingData }) => (
-    <DocumentSheetListEl
-      nodes={boundNodes(bindingData, props)}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <DocumentSheetListEl
+        nodes={boundNodes(bindingData, props)}
       title={props.title ? String(props.title) : undefined}
       sectionTitle={
         typeof props.sectionTitle === "string" ? props.sectionTitle : undefined
@@ -100,6 +100,7 @@ export const documentComponents: Record<string, CatalogComponent> = {
           ? props.sheetSize
           : "half"
       }
-    />
+      />
+    </div>
   ),
 };

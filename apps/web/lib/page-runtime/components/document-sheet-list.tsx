@@ -53,7 +53,7 @@ export function DocumentSheetListEl({
 
   return (
     <div
-      className="absolute inset-0 flex flex-col"
+      className="flex min-h-0 flex-1 flex-col"
       data-testid="document-sheet-list"
     >
       <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4">
