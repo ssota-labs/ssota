@@ -24,21 +24,26 @@ type NavigableProps = WireframeBaseProps & {
 function NavigableSurface({
   navigateTo,
   onClick,
+  active,
   className,
   children,
   as: Tag = "div",
   ...props
-}: NavigableProps & { as?: "div" | "button" | "a" }) {
+}: NavigableProps & { active?: boolean; as?: "div" | "button" | "a" }) {
   const nav = useWireframeNavigation();
   const target = navigateTo?.trim().toLowerCase();
   const hasTarget = target ? nav?.knownSlugs.has(target) : false;
   const isMissing = Boolean(target && nav && !hasTarget);
   const isInteractive = Boolean(target || onClick);
+  const isHotspotSelected =
+    Boolean(active) ||
+    Boolean(target && nav?.selectedHotspotSlug === target);
 
   const handleClick = (event: MouseEvent<HTMLElement>) => {
     if (!isInteractive) return;
     event.stopPropagation();
     if (target && nav) {
+      nav.selectHotspot(target);
       nav.navigateTo(target);
     }
     onClick?.();
@@ -48,17 +53,16 @@ function NavigableSurface({
     <Tag
       type={Tag === "button" ? "button" : undefined}
       className={cn(
-        "relative transition-shadow",
+        "relative",
         isInteractive && "cursor-pointer",
-        isInteractive &&
-          "hover:ring-2 hover:ring-primary/60 hover:ring-offset-1 hover:ring-offset-background",
-        isMissing &&
-          "hover:ring-amber-500/70 border-amber-500/40 border border-dashed",
+        isHotspotSelected && "border-2 border-blue-500 bg-blue-500/10",
+        isMissing && "border-amber-500/40 border border-dashed",
         className,
       )}
       onClick={isInteractive ? handleClick : undefined}
       data-navigate-to={target || undefined}
       data-testid={target ? `wireframe-nav-${target}` : undefined}
+      data-hotspot-selected={isHotspotSelected ? "true" : undefined}
       data-nav-missing={isMissing ? "true" : undefined}
       title={
         isMissing
@@ -118,9 +122,11 @@ export function NavItem({
   return (
     <NavigableSurface
       navigateTo={navigateTo}
+      active={active}
       className={cn(
         "mb-1 rounded px-2 py-1",
-        active ? "bg-foreground/10 font-semibold" : "text-muted-foreground",
+        !active && "text-muted-foreground",
+        active && "font-semibold",
         className,
       )}
     >

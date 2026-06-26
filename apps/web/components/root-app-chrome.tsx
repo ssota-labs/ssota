@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 
-/** Routes that render without guest header / padded main (e.g. iframe embeds). */
-const BARE_ROUTE_PREFIXES = ["/wireframe/embed"];
+/** Routes that render without guest header / padded main (e.g. bare embeds). */
+const BARE_ROUTE_PREFIXES: string[] = [];
 
 type RootAppChromeProps = {
   children: React.ReactNode;

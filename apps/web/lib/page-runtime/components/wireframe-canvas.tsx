@@ -53,7 +53,6 @@ function SingleWireframeViewport({ nodeId }: { nodeId: string | null }) {
 
 function WireframePreviewCanvas({
   activeFrame,
-  onNavigateBySlug,
 }: {
   activeFrame: {
     id: string;
@@ -61,7 +60,6 @@ function WireframePreviewCanvas({
     title: string;
     properties: Record<string, unknown>;
   };
-  onNavigateBySlug: (slug: string) => void;
 }) {
   const { viewport, setViewport } = useWireframeViewport();
 
@@ -73,13 +71,12 @@ function WireframePreviewCanvas({
         position: { x: 0, y: 0 },
         data: {
           properties: activeFrame.properties,
-          onNavigateBySlug,
         },
         draggable: false,
         selectable: true,
       },
     ],
-    [activeFrame, onNavigateBySlug],
+    [activeFrame],
   );
 
   return (
@@ -156,12 +153,11 @@ function WireframeCanvasEl({
   const toolbarTitle = activeFrame?.title ?? "Wireframes";
   const toolbarSlug = activeFrame?.slug ?? "—";
 
-  const onNavigateBySlug = React.useCallback(
-    (slug: string) => {
-      const nodeId = slugToNodeId[slug.trim().toLowerCase()];
-      if (nodeId) onSelect(nodeId);
+  const handleNavigate = React.useCallback(
+    (nodeId: string) => {
+      onSelect(nodeId);
     },
-    [onSelect, slugToNodeId],
+    [onSelect],
   );
 
   if (nodes.length === 0) {
@@ -217,7 +213,8 @@ function WireframeCanvasEl({
   return (
     <WireframeNavigationProvider
       slugToNodeId={slugToNodeId}
-      onNavigate={(nodeId) => onSelect(nodeId)}
+      activePageSlug={activeFrame.slug}
+      onNavigate={handleNavigate}
     >
       <WireframeViewportProvider
         viewport={viewport}
@@ -229,10 +226,7 @@ function WireframeCanvasEl({
           data-testid="wireframe-canvas"
         >
           <style>{WIREFRAME_FLOW_STYLES}</style>
-          <WireframePreviewCanvas
-            activeFrame={activeFrame}
-            onNavigateBySlug={onNavigateBySlug}
-          />
+          <WireframePreviewCanvas activeFrame={activeFrame} />
         </div>
       </WireframeViewportProvider>
     </WireframeNavigationProvider>
