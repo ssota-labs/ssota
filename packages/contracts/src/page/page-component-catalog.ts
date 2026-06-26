@@ -620,6 +620,25 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   },
 };
 
+/** Documented multi-element layouts (not standalone React registry entries). */
+export const PAGE_COMPOSITE_PATTERNS: Record<string, PageComponentDescriptor> = {
+  RoadmapSheetWorkspace: {
+    key: "RoadmapSheetWorkspace",
+    category: "document",
+    description:
+      "SplitPane + DocumentEditor (evergreen product roadmap) + DocumentSheetList (planning docs). See executive/roadmap in pages-tree.json.",
+    children: false,
+    props: {
+      editorBinding: binding("Single-node binding for the evergreen roadmap editor."),
+      listBinding: binding("Multi-node binding for roadmap planning documents."),
+    },
+    example: {
+      type: "SplitPane",
+      children: ["editorSection", "listSection"],
+    },
+  },
+};
+
 export const PAGE_COMPONENT_KEYS = Object.keys(PAGE_COMPONENT_CATALOG);
 
 export function listPageComponents(): PageComponentDescriptor[] {
