@@ -4,6 +4,7 @@ import { ThemeProvider } from "@ssota/ui/components/theme-provider";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { getTranslations } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/supabase/server";
+import "@xyflow/react/dist/style.css";
 import "./globals.css";
 import { Geist } from "next/font/google";
 import { cn } from "@/lib/utils";

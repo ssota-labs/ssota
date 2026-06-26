@@ -27,11 +27,14 @@ export function WireframePreviewIframe({
 }: WireframePreviewIframeProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
   const onNavigateRef = React.useRef(onNavigate);
-  onNavigateRef.current = onNavigate;
 
   const origin =
     typeof window !== "undefined" ? window.location.origin : "";
   const embedSrc = `${origin}/wireframe/embed`;
+
+  React.useEffect(() => {
+    onNavigateRef.current = onNavigate;
+  }, [onNavigate]);
 
   const pushInit = React.useCallback(() => {
     const message: WireframeParentMessage = {

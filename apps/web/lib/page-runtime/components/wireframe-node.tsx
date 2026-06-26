@@ -22,7 +22,10 @@ function WireframeNodeComponent({ data }: NodeProps) {
   const { size, viewport } = useWireframeViewport();
   const nav = useWireframeNavigation();
   const onNavigateBySlugRef = React.useRef(payload.onNavigateBySlug);
-  onNavigateBySlugRef.current = payload.onNavigateBySlug;
+
+  React.useEffect(() => {
+    onNavigateBySlugRef.current = payload.onNavigateBySlug;
+  }, [payload.onNavigateBySlug]);
   const jsx = React.useMemo(
     () => readWireframeJsx(payload.properties, viewport),
     [payload.properties, viewport],

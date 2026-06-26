@@ -27,6 +27,15 @@ import { WireframeFlowNode } from "./wireframe-node";
 
 const NODE_TYPES = { wireframe: WireframeFlowNode };
 
+const WIREFRAME_FLOW_STYLES = `
+.ssota-wireframe-flow .react-flow__renderer { z-index: 4; }
+.ssota-wireframe-flow .react-flow__pane { z-index: 1; }
+.ssota-wireframe-flow .react-flow__viewport { z-index: 2; pointer-events: none; }
+.ssota-wireframe-flow .react-flow__nodes { pointer-events: none; }
+.ssota-wireframe-flow .react-flow__node { z-index: 1; pointer-events: all; }
+.ssota-wireframe-flow .react-flow__node.selected { z-index: 2; }
+`;
+
 /** Fit the single centered wireframe when selection or viewport changes. */
 function SingleWireframeViewport({ nodeId }: { nodeId: string | null }) {
   const initialized = useNodesInitialized();
@@ -67,7 +76,7 @@ function WireframePreviewCanvas({
           onNavigateBySlug,
         },
         draggable: false,
-        selectable: false,
+        selectable: true,
       },
     ],
     [activeFrame, onNavigateBySlug],
@@ -89,7 +98,7 @@ function WireframePreviewCanvas({
           nodeTypes={NODE_TYPES}
           nodesDraggable={false}
           nodesConnectable={false}
-          elementsSelectable={false}
+          elementsSelectable
           panOnDrag={[1, 2]}
           zoomOnScroll
           proOptions={{ hideAttribution: true }}
@@ -143,10 +152,6 @@ function WireframeCanvasEl({
 
   const activeFrame =
     frames.find((frame) => frame.id === selectedId) ?? frames[0] ?? null;
-
-  React.useEffect(() => {
-    setViewport("mobile");
-  }, [activeFrame?.id]);
 
   const toolbarTitle = activeFrame?.title ?? "Wireframes";
   const toolbarSlug = activeFrame?.slug ?? "—";
@@ -223,6 +228,7 @@ function WireframeCanvasEl({
           style={{ height }}
           data-testid="wireframe-canvas"
         >
+          <style>{WIREFRAME_FLOW_STYLES}</style>
           <WireframePreviewCanvas
             activeFrame={activeFrame}
             onNavigateBySlug={onNavigateBySlug}
@@ -344,13 +350,11 @@ function WireframeCanvasView({
     [nodes, bindingData, selectedBinding],
   );
 
-  const [activeId, setActiveId] = React.useState<string | null>(bindingSelectedId);
-
-  React.useEffect(() => {
-    setActiveId(bindingSelectedId);
-  }, [bindingSelectedId]);
-
-  const selectedId = activeId ?? bindingSelectedId;
+  const [activeId, setActiveId] = React.useState<string | null>(null);
+  const activeIdExists = activeId
+    ? nodes.some((node) => node.id === activeId)
+    : false;
+  const selectedId = activeIdExists ? activeId : bindingSelectedId;
 
   const height =
     typeof props.height === "number" && props.height > 0 ? props.height : 640;

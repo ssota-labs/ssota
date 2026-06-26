@@ -68,29 +68,13 @@ test.describe("Page Runtime Lab", () => {
       timeout: 15_000,
     });
 
-    await page.evaluate(() => {
-      const iframe = document.querySelector(
-        '[data-testid="wireframe-preview-iframe"]',
-      ) as HTMLIFrameElement | null;
-      const hotspot = iframe?.contentDocument?.querySelector(
-        '[data-testid="wireframe-nav-login"]',
-      ) as HTMLElement | null;
-      if (!hotspot) throw new Error("wireframe-nav-login not found in embed");
-      hotspot.click();
-    });
+    await preview.getByTestId("wireframe-nav-login").scrollIntoViewIfNeeded();
+    await preview.getByTestId("wireframe-nav-login").click();
     await expect(page.getByTestId("wireframe-viewport-toolbar")).toContainText("Login");
     await expect(preview.getByText("Welcome back")).toBeVisible();
 
-    await page.evaluate(() => {
-      const iframe = document.querySelector(
-        '[data-testid="wireframe-preview-iframe"]',
-      ) as HTMLIFrameElement | null;
-      const hotspot = iframe?.contentDocument?.querySelector(
-        '[data-testid="wireframe-nav-welcome"]',
-      ) as HTMLElement | null;
-      if (!hotspot) throw new Error("wireframe-nav-welcome not found in embed");
-      hotspot.click();
-    });
+    await preview.getByTestId("wireframe-nav-welcome").scrollIntoViewIfNeeded();
+    await preview.getByTestId("wireframe-nav-welcome").click();
     await expect(page.getByTestId("wireframe-viewport-toolbar")).toContainText(
       "Welcome Screen",
     );
