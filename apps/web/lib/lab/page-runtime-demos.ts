@@ -1387,6 +1387,147 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
   },
+  {
+    id: "schema-display",
+    category: "data",
+    title: "SchemaDisplay (API reference)",
+    description:
+      "A rich REST-API reference: collapsible endpoint rows with color-coded method badges, parameter-highlighted paths, an auth lock, a parameters table (name/in/type/required/description), and a response list with shapes. Click a row to expand. Inspired by the ai-sdk elements `schema-display` and the builder.io API-reference demo.",
+    components: ["Section", "SchemaDisplay"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "New API Endpoints",
+            subtitle: "Mounted via createCoreRoutesPlugin · Bearer / MCP-OAuth",
+          },
+          children: ["schema"],
+        },
+        schema: {
+          type: "SchemaDisplay",
+          props: {
+            endpoints: [
+              {
+                method: "GET",
+                path: "/_agent-native/runs",
+                summary: "List agent runs for the authenticated workspace, newest first.",
+                auth: "Bearer",
+                tag: "ADDED",
+                responses: [{ status: 200, shape: "{ runs: AgentRun[] }" }],
+              },
+              {
+                method: "GET",
+                path: "/_agent-native/runs/:runId",
+                summary: "Fetch a single run with its full steps array.",
+                description:
+                  "Live polling via useDbSync. Auth is the same bearer-token / MCP-OAuth path used by the action route.",
+                auth: "Bearer",
+                tag: "ADDED",
+                defaultOpen: true,
+                parameters: [
+                  {
+                    name: "runId",
+                    in: "path",
+                    type: "string",
+                    required: true,
+                    description: "The run to fetch.",
+                  },
+                ],
+                responses: [
+                  { status: 200, shape: "{ run: AgentRun, steps: RunStep[] }" },
+                  { status: 404, description: "Run not found or not in this workspace" },
+                ],
+              },
+              {
+                method: "POST",
+                path: "/_agent-native/runs/:runId/stop",
+                summary: "Stop a running agent. Sets status = stopped, emits run.stopped.",
+                auth: "Bearer",
+                tag: "ADDED",
+                parameters: [
+                  { name: "runId", in: "path", type: "string", required: true },
+                ],
+                requestBody: [
+                  {
+                    name: "reason",
+                    type: "string",
+                    description: "Optional human-readable stop reason.",
+                  },
+                ],
+                responses: [
+                  { status: 200, shape: "{ run: AgentRun }" },
+                  { status: 409, description: "Run already finished" },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    },
+  },
+  {
+    id: "test-results",
+    category: "data",
+    title: "TestResults (test run)",
+    description:
+      "A test-run report: a summary header with passed/failed/skipped counts and total duration, a stacked progress bar, and collapsible suites. Each test shows a status icon and duration; failures show an error message with an expandable stack. The failing suite auto-opens. Inspired by the ai-sdk elements `test-results`.",
+    components: ["Section", "TestResults"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "CI — page-runtime",
+            subtitle: "vitest run · 3 suites",
+          },
+          children: ["results"],
+        },
+        results: {
+          type: "TestResults",
+          props: {
+            suites: [
+              {
+                name: "erd-model",
+                tests: [
+                  { name: "coerceErd returns empty for junk", status: "passed", duration: 3 },
+                  { name: "drops dangling relations", status: "passed", duration: 2 },
+                  { name: "infers fk flag on source column", status: "passed", duration: 1 },
+                ],
+              },
+              {
+                name: "schema-doc",
+                tests: [
+                  { name: "accepts array / single / { endpoints }", status: "passed", duration: 4 },
+                  { name: "normalizes method case", status: "passed", duration: 2 },
+                  { name: "recursive request body", status: "skipped" },
+                ],
+              },
+              {
+                name: "run-page-action",
+                tests: [
+                  { name: "set_node_property merges", status: "passed", duration: 18 },
+                  {
+                    name: "delete_node removes incident edges",
+                    status: "failed",
+                    duration: 24,
+                    error: {
+                      message: "AssertionError: expected 0 edges, received 1",
+                      stack:
+                        "at delete-node.test.ts:42:18\n  at processTicksAndRejections (node:internal/process/task_queues:95:5)",
+                    },
+                  },
+                  { name: "rejects cross-workspace writes", status: "passed", duration: 9 },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    },
+  },
 ];
 
 export function getPageRuntimeDemo(id: string): PageRuntimeDemo | undefined {

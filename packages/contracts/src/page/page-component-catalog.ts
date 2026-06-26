@@ -306,6 +306,84 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     props: {},
     example: { type: "NodeDocument" },
   },
+  SchemaDisplay: {
+    key: "SchemaDisplay",
+    category: "data",
+    description:
+      "Rich REST-API reference: a list of collapsible endpoint rows. Each shows a color-coded method badge (GET/POST/PUT/PATCH/DELETE), the path (`:param`/`{param}` highlighted), an optional auth lock + status tag, a parameter table (name/in/type/required/description), a recursive request-body schema, and a response list (status + shape, with nested body). Data is supplied inline via `endpoints` or read from a bound node property.",
+    children: false,
+    props: {
+      binding: binding("Optional single-node binding holding the schema jsonb."),
+      property: {
+        type: "string",
+        description:
+          'When `binding` is set, the node property holding the endpoints array (default "endpoints").',
+      },
+      endpoints: {
+        type: "{ method, path, summary?, description?, auth?, tag?, defaultOpen?, parameters?:[{ name, in, type?, required?, description? }], requestBody?:SchemaProperty[], responses?:[{ status, description?, shape?, body?:SchemaProperty[] }] }[]",
+        description:
+          "Inline endpoint list (when no binding). SchemaProperty is recursive: { name, type?, required?, description?, properties?:SchemaProperty[], items?:SchemaProperty[] }. method = GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS; in = path|query|header|cookie|body.",
+      },
+      title: { type: "string", description: "Optional heading above the list." },
+    },
+    example: {
+      type: "SchemaDisplay",
+      props: {
+        endpoints: [
+          {
+            method: "GET",
+            path: "/runs/:runId",
+            summary: "Fetch a single run.",
+            auth: "Bearer",
+            tag: "ADDED",
+            parameters: [
+              { name: "runId", in: "path", type: "string", required: true },
+            ],
+            responses: [{ status: 200, shape: "{ run: AgentRun }" }],
+          },
+        ],
+      },
+    },
+  },
+  TestResults: {
+    key: "TestResults",
+    category: "data",
+    description:
+      "Test-run report: a summary header (passed/failed/skipped counts + total duration), a stacked progress bar, and collapsible suites. Each test shows a status icon (passed=green, failed=red, skipped=amber, running=blue spinner), a duration, and — on failure — an error message + expandable stack. Data is supplied inline via `suites`/`tests` or read from a bound node property.",
+    children: false,
+    props: {
+      binding: binding("Optional single-node binding holding the test-run jsonb."),
+      property: {
+        type: "string",
+        description:
+          'When `binding` is set, the node property holding the run (default "testRun").',
+      },
+      suites: {
+        type: "{ name, status?, defaultOpen?, tests:[{ name, status, duration?, error?:{ message?, stack? } }] }[]",
+        description:
+          "Inline suites (when no binding). status = passed|failed|skipped|running; a suite's status is derived from its tests when omitted.",
+      },
+      tests: {
+        type: "{ name, status, duration?, error? }[]",
+        description: "Inline flat test list (wrapped into a single suite).",
+      },
+      title: { type: "string", description: "Optional summary heading override." },
+    },
+    example: {
+      type: "TestResults",
+      props: {
+        suites: [
+          {
+            name: "auth",
+            tests: [
+              { name: "logs in", status: "passed", duration: 12 },
+              { name: "rejects bad token", status: "failed", error: { message: "expected 401" } },
+            ],
+          },
+        ],
+      },
+    },
+  },
   // ── forms ────────────────────────────────────────────────────────────────
   Form: {
     key: "Form",
