@@ -5,7 +5,6 @@ import dynamic from "next/dynamic";
 import {
   Background,
   BackgroundVariant,
-  Controls,
   ReactFlow,
   ReactFlowProvider,
   useNodesInitialized,
@@ -40,6 +39,7 @@ import {
 } from "../flow-layout";
 import { FlowNode } from "./flow-node";
 import { FlowEdge } from "./flow-edge";
+import { FlowTopToolbar, FlowViewportToolbar } from "./flow-toolbar";
 import { DocumentSheetPanel, type SheetSize } from "./document-sheet-panel";
 import { readNodeField } from "./roadmap-doc-card";
 import type { CatalogComponent, RenderNode } from "../types";
@@ -153,6 +153,9 @@ function FlowCanvasEl({
   }, [signature, direction, algorithm]);
 
   const ready = Object.keys(positions).length > 0;
+
+  // Pan/zoom lock, toggled from the top toolbar.
+  const [locked, setLocked] = React.useState(false);
 
   // ── Detail sheet ────────────────────────────────────────────────────────
   const [activeId, setActiveId] = React.useState<string | null>(null);
@@ -383,12 +386,20 @@ function FlowCanvasEl({
           minZoom={0.2}
           fitView
           fitViewOptions={{ padding: 0.15 }}
+          panOnDrag={!locked}
+          zoomOnScroll={!locked}
+          zoomOnPinch={!locked}
+          zoomOnDoubleClick={!locked}
           onNodeClick={(_, n) => setActiveId(n.id)}
           onPaneClick={() => setActiveId(null)}
         >
           <FlowReady nodeIds={rfNodes.map((n) => n.id)} />
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-          <Controls showInteractive={false} />
+          <FlowTopToolbar
+            locked={locked}
+            onToggleLock={() => setLocked((v) => !v)}
+          />
+          <FlowViewportToolbar />
         </ReactFlow>
       ) : (
         <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
