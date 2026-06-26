@@ -8,7 +8,7 @@
  * provider is included for local/dev. The agent never sees the raw token —
  * tools consume the provider, the model only sees results.
  */
-import { mcpScopesForConnector } from "./mcp-scopes.js";
+import { connectTokenScopesForConnector } from "./mcp-scopes.js";
 import { resolveEmulateSlackOAuthAuthorizeUrl } from "../connections/provider-api-base.js";
 
 export interface CredentialScope {
@@ -184,12 +184,12 @@ export function createVercelConnectProvider(): CredentialProvider {
       }
 
       // App-subject for slack/github/discord; user-subject for oauth/* (Notion) and linear/*.
-      // Mint with the broad provider scopes (mcpScopesForConnector) so the
+      // Mint with the broad provider scopes (connectTokenScopesForConnector) so the
       // resulting raw Bearer is a full workspace token. Without them Slack mints
       // an identity-only token and its MCP server lists 0 tools. The user must
       // have consented to these same scopes (see resolveAuthorizeScopes in
       // apps/web) — otherwise Connect can't carry them and getToken returns null.
-      const scopes = mcpScopesForConnector(connector);
+      const scopes = connectTokenScopesForConnector(connector);
       try {
         const token = await connect.getToken(connector, {
           subject: resolveConnectTokenSubject(connector, scope),
@@ -412,6 +412,8 @@ function extractInstallationName(
     "organization",
     "org",
     "display_name",
+    "username",
+    "screen_name",
     "teamName",
     "workspaceName",
   ];

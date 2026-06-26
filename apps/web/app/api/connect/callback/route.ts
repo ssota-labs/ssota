@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  enrichConnectInstallationDisplay,
   getConnectInstallation,
   getDb,
   normalizeConnectInstallationId,
@@ -92,16 +93,36 @@ export async function GET(request: Request) {
         }
       }
 
+      const resolvedInstallationId = normalizeConnectInstallationId(
+        installation.installationId ?? installationId,
+      );
+      const enrichedInstallation =
+        userId != null
+          ? await enrichConnectInstallationDisplay({
+              connector,
+              installation: {
+                installationId: resolvedInstallationId,
+                tenantId: installation.tenantId,
+                name: installation.name,
+              },
+              scope: {
+                projectId,
+                accountId,
+                userId,
+                ...(resolvedInstallationId
+                  ? { installationId: resolvedInstallationId }
+                  : {}),
+              },
+            })
+          : installation;
+
       await createAccountConnectionPort(getDb()).record({
         projectId,
         accountId,
         connector,
-        installationId:
-          normalizeConnectInstallationId(
-            installation.installationId ?? installationId,
-          ) ?? null,
-        tenantId: installation.tenantId ?? null,
-        name: installation.name ?? null,
+        installationId: resolvedInstallationId ?? null,
+        tenantId: enrichedInstallation.tenantId ?? installation.tenantId ?? null,
+        name: enrichedInstallation.name ?? installation.name ?? null,
         subjectUserId: userId ?? null,
       });
     }
