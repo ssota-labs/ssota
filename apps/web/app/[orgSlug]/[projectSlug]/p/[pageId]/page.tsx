@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { TableViewState } from "@ssota/contracts";
 import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
 import { resolvePageBindings } from "@ssota/core";
@@ -11,6 +11,10 @@ import {
   pageUsesArtifactWorkbench,
   pageUsesFillHeight,
 } from "@/lib/page-runtime/spec-utils";
+import {
+  isHubPage,
+  resolveHubRedirectPath,
+} from "@/lib/page-runtime/hub-redirect";
 import { normalizeSearchParams } from "@/lib/page-runtime/search-params";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
 import { savePageViewState } from "@/lib/page-runtime/save-page-view-state";
@@ -43,6 +47,16 @@ export default async function TreePage({
     notFound();
   }
 
+  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
+  if (isHubPage(page.spec)) {
+    const hubRedirect = await resolveHubRedirectPath(
+      getPagePort(project.id),
+      pageId,
+      routeCtx,
+    );
+    if (hubRedirect) redirect(hubRedirect);
+  }
+
   const graphRead = getGraphPorts(project.id).graphRead;
 
   const context: Record<string, unknown> = { searchParams: urlParams };
@@ -70,7 +84,6 @@ export default async function TreePage({
   const fillHeight = pageUsesFillHeight(page.spec);
   const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
   const basePath = `/${orgSlug}/${projectSlug}`;
-  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
   const pagePath = projectPath(routeCtx, "p", pageId);
   const previewBasePath = projectPath(routeCtx, "design", "preview");
 

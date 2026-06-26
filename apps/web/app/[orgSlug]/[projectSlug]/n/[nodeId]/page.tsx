@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { resolvePageBindings } from "@ssota/core";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
@@ -6,6 +6,10 @@ import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-bi
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
 import { projectPath } from "@/lib/console/paths";
+import {
+  isHubPage,
+  resolveHubRedirectPath,
+} from "@/lib/page-runtime/hub-redirect";
 import { getNodeDetailView } from "@/lib/graph/loaders/get-node-detail";
 import { NodeDetailWorkspace } from "@/components/console/node-detail-workspace";
 import { SetNodeDrill } from "@/components/console/node-drill-context";
@@ -35,6 +39,17 @@ export default async function NodeLandingPage({
     templates
       .filter((p) => !p.parentId)
       .sort((a, b) => a.position - b.position)[0] ?? null;
+
+  const routeCtx = { orgSlug, projectSlug };
+  if (home && isHubPage(home.spec)) {
+    const hubRedirect = await resolveHubRedirectPath(
+      getPagePort(project.id),
+      home.id,
+      routeCtx,
+      nodeId,
+    );
+    if (hubRedirect) redirect(hubRedirect);
+  }
 
   if (!home) {
     // No drill-in template for this node type → universal generic detail view

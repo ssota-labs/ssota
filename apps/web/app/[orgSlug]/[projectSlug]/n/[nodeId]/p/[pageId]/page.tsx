@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { resolvePageBindings } from "@ssota/core";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
@@ -9,6 +9,10 @@ import {
   pageUsesArtifactWorkbench,
   pageUsesFillHeight,
 } from "@/lib/page-runtime/spec-utils";
+import {
+  isHubPage,
+  resolveHubRedirectPath,
+} from "@/lib/page-runtime/hub-redirect";
 import { normalizeSearchParams } from "@/lib/page-runtime/search-params";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
 import { SetNodeDrill } from "@/components/console/node-drill-context";
@@ -39,6 +43,17 @@ export default async function NodeTemplatePage({
   const page = await getPagePort(project.id).getPage(pageId);
   if (!page) notFound();
 
+  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
+  if (isHubPage(page.spec)) {
+    const hubRedirect = await resolveHubRedirectPath(
+      getPagePort(project.id),
+      pageId,
+      routeCtx,
+      nodeId,
+    );
+    if (hubRedirect) redirect(hubRedirect);
+  }
+
   const graphRead = getGraphPorts(project.id).graphRead;
   const subject = await graphRead.getNodeById(nodeId);
   if (!subject || subject.projectId !== project.id) notFound();
@@ -65,7 +80,6 @@ export default async function NodeTemplatePage({
   const fillHeight = pageUsesFillHeight(page.spec);
   const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
   const basePath = `/${orgSlug}/${projectSlug}`;
-  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
   const pagePath = projectPath(routeCtx, "n", nodeId, "p", pageId);
   const previewBasePath = projectPath(routeCtx, "design", "preview");
 
