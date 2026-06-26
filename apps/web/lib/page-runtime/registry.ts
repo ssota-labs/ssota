@@ -1,6 +1,8 @@
 import type { CatalogComponent } from "./types";
 import { layoutComponents } from "./components/layout";
 import { dataComponents } from "./components/data";
+import { schemaDisplayComponents } from "./components/schema-display";
+import { testResultsComponents } from "./components/test-results";
 import { dataTableComponents } from "./components/data-table";
 import { expandableTableComponents } from "./components/expandable-table";
 import { ganttComponents } from "./components/gantt";
@@ -10,6 +12,7 @@ import { documentComponents } from "./components/document";
 import { spreadsheetComponents } from "./components/spreadsheet";
 import { artifactWorkbenchComponents } from "./components/artifact-workbench";
 import { flowComponents } from "./components/flow-canvas";
+import { erdDiagramComponents } from "./components/erd-diagram";
 import { widgetComponents } from "./components/widget";
 
 /**
@@ -20,6 +23,8 @@ import { widgetComponents } from "./components/widget";
 export const CATALOG: Record<string, CatalogComponent> = {
   ...layoutComponents,
   ...dataComponents,
+  ...schemaDisplayComponents,
+  ...testResultsComponents,
   ...dataTableComponents,
   ...expandableTableComponents,
   ...ganttComponents,
@@ -29,6 +34,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...spreadsheetComponents,
   ...artifactWorkbenchComponents,
   ...flowComponents,
+  ...erdDiagramComponents,
   ...widgetComponents,
 };
 
