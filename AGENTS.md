@@ -514,8 +514,8 @@ pnpm e2e:emulate          # emulate OAuth E2E (별도 Playwright config)
 
 > 어댑터 패키지는 `@ssota/adapter-postgres`다 (구 `@ssota/adapter-supabase` 명칭 아님). `--filter` 시 `adapter-postgres`를 쓴다.
 
-### 알려진 pre-existing 테스트 실패 (환경 문제 아님)
+### Vitest 경로 해석 — `apps/web`
 
-- **`web#test` `lib/page-runtime/registry.test.ts`** — `apps/web/vitest.config.ts`가 `@` → `apps/web`만 alias하는데, 이 테스트가 transitively 로드하는 `packages/ui/src/.../advanced-data-table.tsx`도 자기 디렉터리를 `@/`로 import한다(`@/components/ui/advanced-data-table-selection`). 동일 `@/` alias 충돌로 vitest가 모듈을 못 찾는다(`Cannot find module`). lint/typecheck/build/Next 런타임은 패키지별 tsconfig·`transpilePackages`로 정상. `pnpm test --filter web`만 영향. 올바른 수정은 web vitest의 패키지별 path 해석(`vite-tsconfig-paths` 등) 도입이며 별도 인프라 작업이다.
+`apps/web/vitest.config.ts`의 `resolve.alias`는 `apps/web/tsconfig.json`의 `paths`를 미러링한다 (shadcn 컨벤션: `@/lib/utils`·`@/components/ui/*`·`@/hooks/*`는 `packages/ui/src`로, `@/*`는 `apps/web`로). Vitest는 tsconfig paths를 읽지 않으므로, transitively 로드되는 `packages/ui` 소스의 `@/` self-import(`@/components/ui/…`)가 해석되려면 이 alias가 필요하다. **`packages/ui`의 `@/` 매핑을 바꾸면 이 vitest alias도 함께 갱신**한다 (drift 주의). alias는 most-specific-first 순서여야 한다.
 
-> 과거 여기 적혀 있던 adapter `task-port` 5건·smoke/onboarding·`executive-goals` 실패는 수정됨: adapter 테스트는 `beforeAll`에서 필요한 workflow instruction을 시드(self-contained), smoke overview는 seeded 환경에서 안정적인 "Open Workflow Map" CTA를 assert, onboarding은 submit selector를 `getByRole(Continue)`로 범위 지정, 그리고 cutover에서 제거된 `executive/goals` 라우트의 stale spec은 삭제했다.
+> 과거 pre-existing 실패는 모두 수정됨: adapter `task-port`는 `beforeAll`에서 필요한 workflow instruction 시드(self-contained), smoke overview는 seeded 환경에서 안정적인 "Open Workflow Map" CTA assert, onboarding은 submit selector를 `getByRole(Continue)`로 범위 지정, cutover에서 제거된 `executive/goals` stale spec 삭제, `web#test` registry는 위 vitest alias로 해소.
