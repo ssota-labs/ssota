@@ -29,8 +29,6 @@ export function WireframeEmbedClient() {
   React.useEffect(() => {
     if (!origin) return;
 
-    postWireframeToParent({ type: "WIREFRAME_EMBED_READY" }, origin);
-
     const listener = (event: MessageEvent) => {
       if (event.origin !== origin) return;
       if (!isWireframeParentMessage(event.data)) return;
@@ -45,8 +43,25 @@ export function WireframeEmbedClient() {
     return () => window.removeEventListener("message", listener);
   }, [origin]);
 
+  React.useEffect(() => {
+    if (!origin || state) return;
+
+    const announceReady = () => {
+      postWireframeToParent({ type: "WIREFRAME_EMBED_READY" }, origin);
+    };
+
+    announceReady();
+    const readyInterval = window.setInterval(announceReady, 250);
+    return () => window.clearInterval(readyInterval);
+  }, [origin, state]);
+
   if (!state) {
-    return <div className="bg-muted/20 h-full w-full" data-testid="wireframe-embed-loading" />;
+    return (
+      <div
+        className="bg-muted/20 h-full w-full"
+        data-testid="wireframe-embed-loading"
+      />
+    );
   }
 
   const slugToNodeId = Object.fromEntries(
@@ -61,7 +76,7 @@ export function WireframeEmbedClient() {
           postWireframeToParent({ type: "WIREFRAME_NAVIGATE", slug }, origin);
         }}
       >
-        <div className="h-dvh w-dvw overflow-auto">
+        <div className="h-full w-full overflow-auto" data-testid="wireframe-embed-root">
           <JSXPreview jsx={state.jsx} components={WIREFRAME_JSX_COMPONENTS}>
             <JSXPreviewContent className="min-h-dvh text-xs" />
             <JSXPreviewError className="m-3" />

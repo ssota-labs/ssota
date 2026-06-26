@@ -26,7 +26,9 @@ export function WireframePreviewIframe({
   height,
 }: WireframePreviewIframeProps) {
   const iframeRef = React.useRef<HTMLIFrameElement>(null);
-  const [ready, setReady] = React.useState(false);
+  const onNavigateRef = React.useRef(onNavigate);
+  onNavigateRef.current = onNavigate;
+
   const origin =
     typeof window !== "undefined" ? window.location.origin : "";
   const embedSrc = `${origin}/wireframe/embed`;
@@ -49,21 +51,25 @@ export function WireframePreviewIframe({
       if (!isWireframeChildMessage(event.data)) return;
 
       if (event.data.type === "WIREFRAME_EMBED_READY") {
-        setReady(true);
+        pushInit();
       }
       if (event.data.type === "WIREFRAME_NAVIGATE") {
-        onNavigate(event.data.slug);
+        onNavigateRef.current(event.data.slug);
       }
     };
 
     window.addEventListener("message", listener);
     return () => window.removeEventListener("message", listener);
-  }, [origin, onNavigate]);
+  }, [origin, pushInit]);
 
   React.useEffect(() => {
-    if (!ready) return;
     pushInit();
-  }, [ready, pushInit]);
+  }, [pushInit]);
+
+  const handleIframeLoad = React.useCallback(() => {
+    pushInit();
+    window.setTimeout(() => pushInit(), 100);
+  }, [pushInit]);
 
   return (
     <iframe
@@ -74,6 +80,7 @@ export function WireframePreviewIframe({
       className="bg-background block border-0"
       style={{ width, height }}
       data-testid="wireframe-preview-iframe"
+      onLoad={handleIframeLoad}
     />
   );
 }

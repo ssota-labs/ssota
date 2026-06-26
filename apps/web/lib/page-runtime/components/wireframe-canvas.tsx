@@ -44,7 +44,7 @@ function SingleWireframeViewport({ nodeId }: { nodeId: string | null }) {
 
 function WireframePreviewCanvas({
   activeFrame,
-  onSelect,
+  onNavigateBySlug,
 }: {
   activeFrame: {
     id: string;
@@ -52,7 +52,7 @@ function WireframePreviewCanvas({
     title: string;
     properties: Record<string, unknown>;
   };
-  onSelect: (id: string) => void;
+  onNavigateBySlug: (slug: string) => void;
 }) {
   const { viewport, setViewport } = useWireframeViewport();
 
@@ -62,12 +62,15 @@ function WireframePreviewCanvas({
         id: activeFrame.id,
         type: "wireframe",
         position: { x: 0, y: 0 },
-        data: { properties: activeFrame.properties },
+        data: {
+          properties: activeFrame.properties,
+          onNavigateBySlug,
+        },
         draggable: false,
         selectable: false,
       },
     ],
-    [activeFrame],
+    [activeFrame, onNavigateBySlug],
   );
 
   return (
@@ -87,7 +90,7 @@ function WireframePreviewCanvas({
           nodesDraggable={false}
           nodesConnectable={false}
           elementsSelectable={false}
-          panOnDrag
+          panOnDrag={[1, 2]}
           zoomOnScroll
           proOptions={{ hideAttribution: true }}
           minZoom={0.2}
@@ -147,6 +150,14 @@ function WireframeCanvasEl({
 
   const toolbarTitle = activeFrame?.title ?? "Wireframes";
   const toolbarSlug = activeFrame?.slug ?? "—";
+
+  const onNavigateBySlug = React.useCallback(
+    (slug: string) => {
+      const nodeId = slugToNodeId[slug.trim().toLowerCase()];
+      if (nodeId) onSelect(nodeId);
+    },
+    [onSelect, slugToNodeId],
+  );
 
   if (nodes.length === 0) {
     return (
@@ -214,7 +225,7 @@ function WireframeCanvasEl({
         >
           <WireframePreviewCanvas
             activeFrame={activeFrame}
-            onSelect={onSelect}
+            onNavigateBySlug={onNavigateBySlug}
           />
         </div>
       </WireframeViewportProvider>
@@ -300,6 +311,22 @@ function WireframeSidebar({
   );
 }
 
+function resolveInitialWireframeId(
+  nodes: RenderNode[],
+  bindingData: Record<string, unknown>,
+  selectedBinding: string,
+): string | null {
+  const selectedFromBinding = bindingData[selectedBinding];
+  if (
+    selectedFromBinding &&
+    typeof selectedFromBinding === "object" &&
+    "id" in selectedFromBinding
+  ) {
+    return String((selectedFromBinding as { id: string }).id);
+  }
+  return nodes[0]?.id ?? null;
+}
+
 function WireframeCanvasView({
   props,
   bindingData,
@@ -311,19 +338,26 @@ function WireframeCanvasView({
   const selection = useSelection();
   const selectedBinding =
     typeof props.selectedBinding === "string" ? props.selectedBinding : "selected";
-  const selectedFromBinding = bindingData[selectedBinding];
-  const selectedId =
-    selectedFromBinding &&
-    typeof selectedFromBinding === "object" &&
-    "id" in selectedFromBinding
-      ? String((selectedFromBinding as { id: string }).id)
-      : selection?.selectedId ?? nodes[0]?.id ?? null;
+
+  const bindingSelectedId = React.useMemo(
+    () => resolveInitialWireframeId(nodes, bindingData, selectedBinding),
+    [nodes, bindingData, selectedBinding],
+  );
+
+  const [activeId, setActiveId] = React.useState<string | null>(bindingSelectedId);
+
+  React.useEffect(() => {
+    setActiveId(bindingSelectedId);
+  }, [bindingSelectedId]);
+
+  const selectedId = activeId ?? bindingSelectedId;
 
   const height =
     typeof props.height === "number" && props.height > 0 ? props.height : 640;
 
   const onSelect = React.useCallback(
     (id: string) => {
+      setActiveId(id);
       selection?.setSelectedId(id);
     },
     [selection],

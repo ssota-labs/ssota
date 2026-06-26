@@ -58,6 +58,7 @@ function NavigableSurface({
       )}
       onClick={isInteractive ? handleClick : undefined}
       data-navigate-to={target || undefined}
+      data-testid={target ? `wireframe-nav-${target}` : undefined}
       data-nav-missing={isMissing ? "true" : undefined}
       title={
         isMissing

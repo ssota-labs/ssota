@@ -57,6 +57,46 @@ test.describe("Page Runtime Lab", () => {
     await expect(page).toHaveURL(/demo=document-view/);
     await expect(page.getByRole("heading", { name: "PRD" })).toBeVisible();
   });
+  test("wireframe canvas navigateTo switches sidebar selection inside preview", async ({
+    page,
+  }) => {
+    await page.goto("/labs/page-runtime?demo=wireframe-canvas");
+    await expect(page.getByTestId("wireframe-canvas-shell")).toBeVisible();
+
+    const preview = page.frameLocator('[data-testid="wireframe-preview-iframe"]');
+    await expect(preview.getByTestId("wireframe-embed-root")).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.evaluate(() => {
+      const iframe = document.querySelector(
+        '[data-testid="wireframe-preview-iframe"]',
+      ) as HTMLIFrameElement | null;
+      const hotspot = iframe?.contentDocument?.querySelector(
+        '[data-testid="wireframe-nav-login"]',
+      ) as HTMLElement | null;
+      if (!hotspot) throw new Error("wireframe-nav-login not found in embed");
+      hotspot.click();
+    });
+    await expect(page.getByTestId("wireframe-viewport-toolbar")).toContainText("Login");
+    await expect(preview.getByText("Welcome back")).toBeVisible();
+
+    await page.evaluate(() => {
+      const iframe = document.querySelector(
+        '[data-testid="wireframe-preview-iframe"]',
+      ) as HTMLIFrameElement | null;
+      const hotspot = iframe?.contentDocument?.querySelector(
+        '[data-testid="wireframe-nav-welcome"]',
+      ) as HTMLElement | null;
+      if (!hotspot) throw new Error("wireframe-nav-welcome not found in embed");
+      hotspot.click();
+    });
+    await expect(page.getByTestId("wireframe-viewport-toolbar")).toContainText(
+      "Welcome Screen",
+    );
+    await expect(page.getByTestId("wireframe-list-welcome")).toHaveClass(/bg-primary/);
+  });
+
   test("roadmap document sheet opens BlockNote on row click", async ({ page }) => {
     await page.goto("/labs/page-runtime?demo=roadmap-document-sheet");
     await expect(page.getByTestId("document-sheet-list")).toBeVisible();
