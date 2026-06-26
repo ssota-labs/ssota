@@ -145,25 +145,56 @@ function WireframeCanvasEl({
     setViewport("mobile");
   }, [activeFrame?.id]);
 
+  const toolbarTitle = activeFrame?.title ?? "Wireframes";
+  const toolbarSlug = activeFrame?.slug ?? "—";
+
   if (nodes.length === 0) {
     return (
-      <div
-        className="text-muted-foreground border-border flex h-full items-center justify-center rounded-lg border border-dashed p-6 text-sm"
-        data-testid="wireframe-canvas"
+      <WireframeViewportProvider
+        viewport={viewport}
+        onViewportChange={setViewport}
       >
-        No wireframes scoped to this initiative.
-      </div>
+        <div
+          className="ssota-wireframe-flow border-border bg-card relative flex w-full flex-col overflow-hidden rounded-lg border"
+          style={{ height }}
+          data-testid="wireframe-canvas"
+        >
+          <WireframeViewportToolbar
+            title={toolbarTitle}
+            slug={toolbarSlug}
+            viewport={viewport}
+            onViewportChange={setViewport}
+          />
+          <div className="text-muted-foreground flex flex-1 items-center justify-center p-6 text-sm">
+            No wireframes scoped to this initiative.
+          </div>
+        </div>
+      </WireframeViewportProvider>
     );
   }
 
   if (!activeFrame) {
     return (
-      <div
-        className="text-muted-foreground border-border flex h-full items-center justify-center rounded-lg border border-dashed p-6 text-sm"
-        data-testid="wireframe-canvas"
+      <WireframeViewportProvider
+        viewport={viewport}
+        onViewportChange={setViewport}
       >
-        Select a wireframe from the list to preview.
-      </div>
+        <div
+          className="ssota-wireframe-flow border-border bg-card relative flex w-full flex-col overflow-hidden rounded-lg border"
+          style={{ height }}
+          data-testid="wireframe-canvas"
+        >
+          <WireframeViewportToolbar
+            title={toolbarTitle}
+            slug={toolbarSlug}
+            viewport={viewport}
+            onViewportChange={setViewport}
+          />
+          <div className="text-muted-foreground flex flex-1 items-center justify-center p-6 text-sm">
+            Select a wireframe from the list to preview.
+          </div>
+        </div>
+      </WireframeViewportProvider>
     );
   }
 
@@ -177,7 +208,7 @@ function WireframeCanvasEl({
         onViewportChange={setViewport}
       >
         <div
-          className="ssota-wireframe-flow border-border bg-card relative w-full overflow-hidden rounded-lg border"
+          className="ssota-wireframe-flow border-border bg-card relative flex w-full flex-col overflow-hidden rounded-lg border"
           style={{ height }}
           data-testid="wireframe-canvas"
         >
