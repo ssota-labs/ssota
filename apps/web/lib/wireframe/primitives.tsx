@@ -1,7 +1,15 @@
 "use client";
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverDescription,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@ssota/ui/components/ui/popover";
 import { cn } from "@ssota/ui/lib/utils";
-import type { MouseEvent, ReactNode } from "react";
+import { useState, type MouseEvent, type ReactNode } from "react";
 import { useWireframeNavigation } from "./navigation-context";
 
 type WireframeBaseProps = {
@@ -30,6 +38,7 @@ function NavigableSurface({
   ...props
 }: NavigableProps & { as?: "div" | "button" | "a" }) {
   const nav = useWireframeNavigation();
+  const [missingOpen, setMissingOpen] = useState(false);
   const target = navigateTo?.trim().toLowerCase();
   const hasTarget = target ? nav?.knownSlugs.has(target) : false;
   const isMissing = Boolean(target && nav && !hasTarget);
@@ -39,46 +48,55 @@ function NavigableSurface({
   const handleClick = (event: MouseEvent<HTMLElement>) => {
     if (!isInteractive) return;
     event.stopPropagation();
+    if (isMissing) {
+      setMissingOpen(true);
+      return;
+    }
     if (target && nav) {
       nav.navigateTo(target);
     }
     onClick?.();
   };
 
-  return (
-    <Tag
-      type={Tag === "button" ? "button" : undefined}
-      className={cn(
-        "relative",
-        isMissing && "inline-flex flex-wrap items-center gap-1",
-        isInteractive && "cursor-pointer",
-        isMissing && !showHotspotCue && "border-amber-500/40 border border-dashed",
-        className,
-        showHotspotCue &&
-          "border-2 border-solid border-blue-500 bg-blue-500/10 shadow-none",
-      )}
-      onClick={isInteractive ? handleClick : undefined}
-      data-navigate-to={target || undefined}
-      data-testid={target ? `wireframe-nav-${target}` : undefined}
-      data-hotspot-visible={showHotspotCue ? "true" : undefined}
-      data-nav-missing={isMissing ? "true" : undefined}
-      title={
-        isMissing
-          ? `Page "${target}" does not exist — create it`
-          : target
-            ? `Navigate to ${target}`
-            : undefined
-      }
-      {...props}
-    >
-      {children}
-      {isMissing ? (
-        <span className="bg-amber-500/10 text-amber-700 shrink-0 rounded px-1 py-0.5 text-[9px] font-medium">
-          Missing page
-        </span>
-      ) : null}
-    </Tag>
+  const surfaceClassName = cn(
+    "relative",
+    isInteractive && "cursor-pointer",
+    className,
+    showHotspotCue &&
+      "border-2 border-solid border-blue-500 bg-blue-500/10 shadow-none",
   );
+
+  const surfaceProps = {
+    type: Tag === "button" ? ("button" as const) : undefined,
+    className: surfaceClassName,
+    onClick: isInteractive ? handleClick : undefined,
+    "data-navigate-to": target || undefined,
+    "data-testid": target ? `wireframe-nav-${target}` : undefined,
+    "data-hotspot-visible": showHotspotCue ? "true" : undefined,
+    "data-nav-missing": isMissing ? "true" : undefined,
+    title: !isMissing && target ? `Navigate to ${target}` : undefined,
+    ...props,
+  };
+
+  if (isMissing) {
+    return (
+      <Popover open={missingOpen} onOpenChange={setMissingOpen}>
+        <PopoverTrigger render={<Tag {...surfaceProps} />}>{children}</PopoverTrigger>
+        <PopoverContent side="top" align="start" className="w-56 text-xs">
+          <PopoverHeader>
+            <PopoverTitle>Missing page</PopoverTitle>
+            <PopoverDescription>
+              Page &quot;{target}&quot; is not in this wireframe set. Add a{" "}
+              <span className="font-mono">page_wireframe</span> with slug{" "}
+              <span className="font-mono">{target}</span> to enable navigation.
+            </PopoverDescription>
+          </PopoverHeader>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+
+  return <Tag {...surfaceProps}>{children}</Tag>;
 }
 
 export function Screen({ className, children }: WireframeBaseProps) {
