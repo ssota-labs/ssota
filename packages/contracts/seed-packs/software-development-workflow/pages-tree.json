@@ -1271,13 +1271,23 @@
     "title": "Metrics",
     "icon": "retro_metrics",
     "spec": {
-      "root": "table",
+      "root": "tabs",
       "elements": {
-        "table": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "kpis",
+            "items": [
+              { "value": "kpis", "label": "KPIs", "panel": "kpiPanel" },
+              { "value": "snapshots", "label": "Snapshots", "panel": "snapshotPanel" }
+            ]
+          }
+        },
+        "kpiPanel": {
           "type": "DataTable",
           "props": {
-            "binding": "rows",
-            "title": "Metrics",
+            "binding": "kpis",
+            "title": "KPIs",
             "setAction": "setCell",
             "columns": [
               { "key": "title", "header": "KPI", "type": "text", "editable": true, "width": 280 },
@@ -1292,10 +1302,33 @@
               }
             ]
           }
+        },
+        "snapshotPanel": {
+          "type": "DataTable",
+          "props": {
+            "binding": "snapshots",
+            "title": "Metric snapshots",
+            "setAction": "setCell",
+            "columns": [
+              { "key": "title", "header": "Snapshot", "type": "text", "editable": true, "width": 280 },
+              { "key": "recorded_at", "header": "Recorded", "type": "date", "editable": true },
+              { "key": "value", "header": "Value", "type": "number", "editable": true },
+              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["draft", "final"]
+              }
+            ]
+          }
         }
       }
     },
-    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "kpi" } },
+    "bindings": {
+      "kpis": { "kind": "initiative_scope", "catalogKey": "kpi" },
+      "snapshots": { "kind": "initiative_scope", "catalogKey": "metric_snapshot" }
+    },
     "actions": {
       "setCell": {
         "kind": "set_node_property",
