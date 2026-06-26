@@ -841,20 +841,31 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Flows" }, "children": ["editor"] },
-        "editor": {
-          "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        "section": { "type": "Section", "props": { "title": "Flows" }, "children": ["canvas"] },
+        "canvas": {
+          "type": "FlowCanvas",
+          "props": {
+            "binding": "doc",
+            "property": "flow",
+            "height": 520,
+            "nodePresentation": [
+              { "match": { "nodeType": "section" }, "variant": "section", "color": "purple" },
+              { "match": { "nodeType": "page" }, "variant": "page", "color": "blue" },
+              { "match": { "nodeType": "action" }, "variant": "action", "color": "gray", "shape": "pill" }
+            ],
+            "editable": true,
+            "setAction": "saveFlowNode"
+          }
         }
       }
     },
     "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "user_flow", "limit": 1 } },
     "actions": {
-      "saveDoc": {
-        "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
-        "merge": true
+      "saveFlowNode": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": { "$input": "field" },
+        "value": { "$input": "value" }
       }
     }
   },
