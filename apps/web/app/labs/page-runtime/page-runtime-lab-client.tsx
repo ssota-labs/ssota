@@ -16,7 +16,8 @@ import {
 function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
   const [lastAction, setLastAction] = useState<string | null>(null);
   const fillsViewport =
-    demo.components.includes("DocumentSheetList");
+    demo.components.includes("DocumentSheetList") ||
+    demo.id === "wireframe-canvas";
 
   return (
     <div
@@ -183,6 +184,17 @@ export function LabsHomeLinks() {
           <h2 className="font-medium">Page Runtime Lab</h2>
           <p className="text-muted-foreground mt-1 text-sm">
             JSON-render catalog — all {UI_CATALOG_COMPONENTS.length} component types with live demos.
+          </p>
+        </Link>
+      </li>
+      <li>
+        <Link
+          href="/labs/page-runtime?demo=wireframe-canvas"
+          className="border-border hover:bg-muted/40 block rounded-lg border p-4 transition-colors"
+        >
+          <h2 className="font-medium">Wireframe Canvas Lab</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            JSX Preview wireframes with navigateTo hotspots and device viewport toggles.
           </p>
         </Link>
       </li>
