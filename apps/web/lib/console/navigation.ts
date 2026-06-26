@@ -55,7 +55,7 @@ export const L0_NAV: NavEntry[] = [
     type: "link",
     key: "connections",
     labelKey: "nav.connections",
-    href: "connections",
+    href: "connectors",
     pattern: "L",
   },
   // The per-stage workflow nav (Executive/Research/Manager/Development/Design)
@@ -130,7 +130,7 @@ export function buildBreadcrumbSegments(
   if (relative === "c" || relative.startsWith("c/")) {
     return [{ labelKey: "nav.chat" }];
   }
-  if (relative === "connections" || relative.startsWith("connections/")) {
+  if (relative === "connectors" || relative.startsWith("connectors/")) {
     return [{ labelKey: "nav.connections" }];
   }
   if (relative === "workflow/map") {
