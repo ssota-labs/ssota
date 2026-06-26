@@ -185,7 +185,7 @@ export function SsotaBlockNoteEditor({
       ref={setShellRef}
       className={[
         "blocknote-editor-shell",
-        compact ? "blocknote-editor-shell--compact h-full min-h-full" : null,
+        compact ? "blocknote-editor-shell--compact" : null,
         className,
       ]
         .filter(Boolean)
