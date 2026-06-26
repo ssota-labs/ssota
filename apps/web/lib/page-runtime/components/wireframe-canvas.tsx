@@ -173,7 +173,10 @@ function WireframeCanvasEl({
 
   if (nodes.length === 0) {
     return (
-      <div className="text-muted-foreground border-border flex h-full items-center justify-center rounded-lg border border-dashed p-6 text-sm">
+      <div
+        className="text-muted-foreground border-border flex h-full items-center justify-center rounded-lg border border-dashed p-6 text-sm"
+        data-testid="wireframe-canvas"
+      >
         No wireframes scoped to this initiative.
       </div>
     );
