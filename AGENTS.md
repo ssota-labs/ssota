@@ -259,7 +259,7 @@ Phase 1 구현 계획(`ssota_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0�
 - 마일스톤 완료 직후 **해당 마일스톤 파일만** 스테이징한다.
 - 커밋 전 해당 마일스톤의 **최소 검증 명령**을 실행하고, 실패 시 커밋하지 않는다.
 - `.env.local`·시크릿·`node_modules`·`dist`는 커밋하지 않는다.
-- plan 파일의 todo 상태만 유지하고, **커밋 정책 SSOT는 AGENTS.md(이 섹션)** 이다.
+- plan 파일의 todo 상태만 유지하고, **커밋 정책 SSOT는 [Git 커밋 정책](#git-커밋-정책)** 이다 (마일스톤당 1커밋은 그 특례).
 
 ## Testing Instructions
 
@@ -321,6 +321,51 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 - 인증: Supabase OAuth 2.1 Server가 authorize/token/discovery/등록을 호스팅. `apps/mcp`는 Bearer JWT JWKS 검증 + `/.well-known/oauth-protected-resource` + `/api/mcp`를 유지한다.
 - 도구 핸들러에 비즈니스 로직을 넣지 않는다 — task/project 포트 호출 + IO 변환만.
 
+## Git 커밋 정책
+
+**한 커밋 = 모듈·기능(태스크) 단위 하나.** 여러 화면·레이어·무관한 수정을 한 커밋에 묶지 않는다. 사용자가 “각 테스크마다 커밋”을 요청한 경우에도 이 절을 따른다.
+
+### 모듈·기능별 커밋 분리 (에이전트 필수)
+
+| 해야 할 것 | 하지 말 것 |
+|---|---|
+| Hub redirect, overview spec, E2E 등 **완료된 기능마다 커밋 1개** | gap 목록 전체를 한 커밋으로 제출 |
+| `git add`로 **해당 태스크 파일만** 스테이징 | `git add .`로 다른 태스크 변경까지 포함 |
+| 의존 순서가 있으면 **contracts → core → adapter → apps → e2e** 순으로 커밋 | 하위 레이어가 깨진 상태로 상위만 커밋 |
+| 커밋마다 **해당 범위 최소 검증** 후 커밋 | “나중에 한꺼번에 테스트” |
+
+**커밋 단위 예시**
+
+- `packages/contracts` 시드·스키마 변경 1커밋
+- `apps/web` page-runtime 컴포넌트 1커밋
+- 특정 페이지 spec(`pages-tree.json` 한 슬라이스) 1커밋
+- 해당 플로우 E2E 추가·수정 1커밋 (또는 바로 앞 기능 커밋과 묶을 수 없을 때만 별도)
+
+**커밋 메시지**
+
+- 접두사: `[core|adapter|mcp|web|e2e|infra]` (변경 레이어·앱 기준)
+- 본문: **왜/무엇** 한 줄 + 필요 시 불릿으로 태스크 요약
+
+```
+[web] initiative overview를 roadmap 스타일 SplitPane으로 정리
+
+- tpl/initiative/overview spec 2열 구조
+- fillHeight 루트 SplitPane 감지
+```
+
+**PR과의 관계**
+
+- **한 PR 안에 커밋 여러 개는 권장**한다 (기능별 히스토리·리뷰·revert 용이).
+- **한 PR = 기능 슬라이스 하나**는 [기능별 PR 분리](#기능별-pr-분리-에이전트-필수)와 동일 — 커밋을 쪼갠다고 서로 다른 PR 범위를 한 브랜치에 섞어도 된다는 뜻이 아니다.
+
+**예외 (한 커밋에 묶어도 되는 경우)**
+
+- 동일 버그의 원인·수정·회귀 테스트 한 세트
+- 한 파일에서 분리 불가능한 기계적 리네임·import 정리
+- 사용자가 명시적으로 “한 커밋으로” 요청한 경우
+
+MVP 마일스톤(M0–M6)의 “마일스톤당 1커밋”은 이 정책의 **레이어 단위 특례**다.
+
 ## PR Guidelines
 
 - 제목: `[core|adapter|mcp|web|e2e|infra] 요약` — Console UI는 `[web] Console v2.7 PR N — …` 형식 권장.
@@ -355,7 +400,7 @@ pnpm e2e                                          # 또는 pnpm e2e:report (HTML
 - 동일 버그의 원인·수정·회귀 테스트 한 세트
 - 사용자가 명시적으로 “한 PR로” 요청한 경우
 
-이 정책은 MVP 마일스톤(M0–M6)의 “한 마일스톤 = 한 커밋 단위”와 같고, Console v2.7 UI는 **Notion PR 번호 단위**로 적용한다.
+이 정책은 MVP 마일스톤(M0–M6)의 “한 마일스톤 = 한 커밋 단위”·[Git 커밋 정책](#git-커밋-정책)의 모듈 분리와 같고, Console v2.7 UI는 **Notion PR 번호 단위**로 적용한다.
 
 ## Additional Notes
 

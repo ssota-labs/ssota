@@ -1,11 +1,19 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { resolvePageBindings } from "@ssota/core";
 import { resolveProject } from "@/lib/console/resolve-project";
+import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
-import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { TreePageView } from "@/lib/page-runtime/tree-page-view";
+import {
+  pageUsesArtifactWorkbench,
+  pageUsesFillHeight,
+} from "@/lib/page-runtime/spec-utils";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
-import { projectPath } from "@/lib/console/paths";
+import {
+  isHubPage,
+  resolveHubRedirectPath,
+} from "@/lib/page-runtime/hub-redirect";
 import { getNodeDetailView } from "@/lib/graph/loaders/get-node-detail";
 import { NodeDetailWorkspace } from "@/components/console/node-detail-workspace";
 import { SetNodeDrill } from "@/components/console/node-drill-context";
@@ -36,9 +44,18 @@ export default async function NodeLandingPage({
       .filter((p) => !p.parentId)
       .sort((a, b) => a.position - b.position)[0] ?? null;
 
+  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
+  if (home && isHubPage(home.spec)) {
+    const hubRedirect = await resolveHubRedirectPath(
+      getPagePort(project.id),
+      home.id,
+      routeCtx,
+      nodeId,
+    );
+    if (hubRedirect) redirect(hubRedirect);
+  }
+
   if (!home) {
-    // No drill-in template for this node type → universal generic detail view
-    // (edges + properties), the replacement for the old /nodes/[id] route.
     const ctx = { orgSlug, projectSlug };
     const detail = await getNodeDetailView(ctx, project.id, nodeId);
     if (!detail) notFound();
@@ -76,6 +93,12 @@ export default async function NodeLandingPage({
   );
   await resolveArtifactBindings(project.id, home.bindings, bindingData);
 
+  const fillHeight = pageUsesFillHeight(home.spec);
+  const usesWorkbench = pageUsesArtifactWorkbench(home.spec);
+  const basePath = `/${orgSlug}/${projectSlug}`;
+  const pagePath = projectPath(routeCtx, "n", nodeId);
+  const previewBasePath = projectPath(routeCtx, "design", "preview");
+
   async function onAction(
     actionKey: string,
     input: Record<string, unknown>,
@@ -87,23 +110,38 @@ export default async function NodeLandingPage({
       actionKey,
       input,
       subjectNodeId: subject!.id,
-      revalidate: [`/${orgSlug}/${projectSlug}/n/${nodeId}`],
+      revalidate: [pagePath],
     });
   }
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
+    <div
+      className={
+        fillHeight
+          ? "flex min-h-0 w-full flex-1 flex-col"
+          : "mx-auto w-full max-w-5xl p-6"
+      }
+    >
       <SetNodeDrill
         nodeId={subject.id}
         catalogKey={subject.catalogKey}
         nodeTitle={subject.title}
         pageTitle={home.title}
       />
-      <DynamicPageRenderer
+      <TreePageView
         spec={home.spec}
+        bindings={home.bindings}
         bindingData={bindingData}
-        basePath={`/${orgSlug}/${projectSlug}`}
+        basePath={basePath}
         onAction={onAction}
+        artifactWorkbench={
+          usesWorkbench
+            ? {
+                projectId: project.id,
+                previewBasePath,
+              }
+            : null
+        }
       />
     </div>
   );

@@ -6,6 +6,7 @@ import {
   ActionContext,
   ArtifactWorkbenchContext,
   BasePathContext,
+  FillHeightContext,
   JsonRenderContext,
   PageViewStateContext,
   WidgetBuildContext,
@@ -132,15 +133,17 @@ export function DynamicPageRenderer({
         <ArtifactWorkbenchContext.Provider value={artifactWorkbench}>
           <PageViewStateContext.Provider value={viewState ?? null}>
             <BasePathContext.Provider value={basePath}>
-              <JsonRenderContext.Provider value={runtime}>
-                <SelectionWrappedTree
-                  spec={spec}
-                  bindingData={bindingData}
-                  selectionConfig={selectionConfig}
-                >
-                  {tree}
-                </SelectionWrappedTree>
-              </JsonRenderContext.Provider>
+              <FillHeightContext.Provider value={fillHeight}>
+                <JsonRenderContext.Provider value={runtime}>
+                  <SelectionWrappedTree
+                    spec={spec}
+                    bindingData={bindingData}
+                    selectionConfig={selectionConfig}
+                  >
+                    {tree}
+                  </SelectionWrappedTree>
+                </JsonRenderContext.Provider>
+              </FillHeightContext.Provider>
             </BasePathContext.Provider>
           </PageViewStateContext.Provider>
         </ArtifactWorkbenchContext.Provider>

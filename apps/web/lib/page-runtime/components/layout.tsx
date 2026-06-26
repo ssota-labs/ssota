@@ -6,6 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@ssota/ui/components/ui/card";
+import { cn } from "@ssota/ui/lib/utils";
+import { useFillHeight } from "../context";
 import type { CatalogComponent } from "../types";
 import { TabsEl, type TabItemDef } from "./layout-tabs";
 import { ToolbarEl, type ToolbarActionDef } from "./layout-toolbar";
@@ -67,17 +69,32 @@ export const layoutComponents: Record<string, CatalogComponent> = {
       ) : null}
     </header>
   ),
-  Section: ({ props, children }) => (
-    <section className="space-y-4">
-      <header className="space-y-1 border-b pb-3">
-        <h2 className="text-lg font-semibold">{String(props.title ?? "Section")}</h2>
-        {props.subtitle ? (
-          <p className="text-muted-foreground text-sm">{String(props.subtitle)}</p>
-        ) : null}
-      </header>
-      <div className="space-y-3">{children}</div>
-    </section>
-  ),
+  Section: ({ props, children }) => {
+    const fillHeight = useFillHeight();
+    return (
+      <section
+        className={cn(
+          fillHeight ? "flex min-h-0 flex-1 flex-col gap-4" : "space-y-4",
+        )}
+      >
+        <header className="shrink-0 space-y-1 border-b pb-3">
+          <h2 className="text-lg font-semibold">{String(props.title ?? "Section")}</h2>
+          {props.subtitle ? (
+            <p className="text-muted-foreground text-sm">{String(props.subtitle)}</p>
+          ) : null}
+        </header>
+        <div
+          className={cn(
+            fillHeight
+              ? "flex min-h-0 flex-1 flex-col gap-3 overflow-auto"
+              : "space-y-3",
+          )}
+        >
+          {children}
+        </div>
+      </section>
+    );
+  },
   Text: ({ props }) => <p className="text-sm">{String(props.text ?? "")}</p>,
   Badge: ({ props }) => (
     <Badge variant="secondary">{String(props.label ?? "Badge")}</Badge>
@@ -120,14 +137,16 @@ export const layoutComponents: Record<string, CatalogComponent> = {
         data-testid="split-pane"
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          {primary}
+          <div className="flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-5">
+            {primary}
+          </div>
         </div>
         {secondary != null ? (
           <aside
             className="flex min-h-0 w-full max-w-md shrink-0 flex-col border-l bg-muted/20 md:w-[38%] md:max-w-none"
             data-testid="split-pane-side"
           >
-            <div className="flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-5">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {secondary}
             </div>
           </aside>

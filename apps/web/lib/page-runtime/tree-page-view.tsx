@@ -36,7 +36,7 @@ export function TreePageView({
     <div
       className={cn(
         fillHeight
-          ? "relative flex min-h-0 flex-1 flex-col"
+          ? "relative flex min-h-0 w-full flex-1 flex-col"
           : "mx-auto w-full max-w-5xl",
       )}
     >

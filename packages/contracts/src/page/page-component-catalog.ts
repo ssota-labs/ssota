@@ -290,13 +290,21 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   NodeField: {
     key: "NodeField",
     category: "data",
-    description: "A read-only label/value pair.",
+    description: "A read-only label/value pair from a static value or bound node field.",
     children: false,
     props: {
       label: { type: "string", description: "Field label.", required: true },
-      value: { type: "string", description: "Field value." },
+      value: { type: "string", description: "Literal value when no binding is set." },
+      binding: binding("Optional single-node binding (arrays use the first row)."),
+      field: {
+        type: "string",
+        description: 'Node property key (or "title"). Requires `binding`.',
+      },
     },
-    example: { type: "NodeField", props: { label: "Status", value: "Active" } },
+    example: {
+      type: "NodeField",
+      props: { binding: "subject", field: "lifecycleStatus", label: "Status" },
+    },
   },
   NodeDocument: {
     key: "NodeDocument",
@@ -756,6 +764,25 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     example: {
       type: "FigmaEmbed",
       props: { binding: "designNode", urlField: "figmaUrl", embedType: "design", height: 480 },
+    },
+  },
+};
+
+/** Documented multi-element layouts (not standalone React registry entries). */
+export const PAGE_COMPOSITE_PATTERNS: Record<string, PageComponentDescriptor> = {
+  RoadmapSheetWorkspace: {
+    key: "RoadmapSheetWorkspace",
+    category: "document",
+    description:
+      "SplitPane + DocumentEditor (evergreen product roadmap) + DocumentSheetList (planning docs). See executive/roadmap in pages-tree.json.",
+    children: false,
+    props: {
+      editorBinding: binding("Single-node binding for the evergreen roadmap editor."),
+      listBinding: binding("Multi-node binding for roadmap planning documents."),
+    },
+    example: {
+      type: "SplitPane",
+      children: ["editorSection", "listSection"],
     },
   },
 };

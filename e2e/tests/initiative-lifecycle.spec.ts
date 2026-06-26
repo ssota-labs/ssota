@@ -1,33 +1,40 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
-import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
+import { gotoProject } from "../helpers/console";
 import { getSmokeInitiativeId } from "../helpers/graph-seed";
+import { getSmokePageIdBySlug } from "../helpers/pages-seed";
 
 test.describe("Initiative lifecycle", () => {
-  test("smoke initiative hub and PRD editing", async ({ page }) => {
+  test("smoke initiative overview and PRD editing", async ({ page }) => {
     const initiativeId = await getSmokeInitiativeId();
+    const prdPageId = await getSmokePageIdBySlug("tpl/initiative/planning/prd");
     await loginAsSmoke(page);
-    await gotoProject(page, `initiatives/${initiativeId}`);
+    await gotoProject(page, `n/${initiativeId}`);
 
-    await expect(page.getByRole("main").getByText("Smoke initiative")).toBeVisible();
-    await expect(page.getByText("Scoped nodes")).toBeVisible();
+    const main = page.getByRole("main");
+    await expect(
+      main.getByRole("heading", { level: 2, name: "Overview" }),
+    ).toBeVisible();
+    await expect(
+      main.getByRole("heading", { name: "Release", exact: true }),
+    ).toBeVisible();
 
-    await gotoProject(page, `initiatives/${initiativeId}/planning/prd`);
-    const content = page.getByRole("textbox", { name: "Content" });
+    await gotoProject(page, `n/${initiativeId}/p/${prdPageId}`);
+    await expect(page.getByRole("main").getByRole("heading", { name: "PRD" })).toBeVisible();
+    const content = page.getByRole("main").getByRole("textbox");
     await expect(content).toBeVisible();
-
-    await content.fill("# Smoke PRD\n\nE2E initiative lifecycle update.");
-    await page.getByRole("button", { name: "Save" }).click();
-
-    await expect(content).toHaveValue(/E2E initiative lifecycle update\./, {
-      timeout: 10_000,
-    });
+    await content.click();
+    await page.keyboard.type("E2E initiative lifecycle update.");
+    await expect(content).toContainText("E2E initiative lifecycle update.");
   });
 
   test("planning features lists seeded feature", async ({ page }) => {
     const initiativeId = await getSmokeInitiativeId();
+    const featuresPageId = await getSmokePageIdBySlug(
+      "tpl/initiative/planning/features",
+    );
     await loginAsSmoke(page);
-    await gotoProject(page, `initiatives/${initiativeId}/planning/features`);
+    await gotoProject(page, `n/${initiativeId}/p/${featuresPageId}`);
 
     await expect(page.getByRole("cell", { name: "Smoke feature" })).toBeVisible();
   });

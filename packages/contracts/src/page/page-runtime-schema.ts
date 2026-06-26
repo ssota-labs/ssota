@@ -205,6 +205,11 @@ export const pageActionSchema = z.discriminatedUnion("kind", [
     kind: z.literal("delete_node"),
     nodeId: actionParamSchema,
   }),
+  z.object({
+    kind: z.literal("create_initiative_bundle"),
+    initiativeTitle: actionParamSchema,
+    releaseVersion: actionParamSchema,
+  }),
 ]);
 
 export type PageAction = z.infer<typeof pageActionSchema>;

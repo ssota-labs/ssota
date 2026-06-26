@@ -14,6 +14,10 @@ export type JsonRenderRuntime = {
 export const JsonRenderContext = createContext<JsonRenderRuntime | null>(null);
 export const useJsonRender = () => useContext(JsonRenderContext);
 
+/** True when the page stretches to the console main viewport (SplitPane, DocumentSheetList, …). */
+export const FillHeightContext = createContext(false);
+export const useFillHeight = () => useContext(FillHeightContext);
+
 /** Invoked when an interactive element fires its action. */
 export type OnAction = (
   actionKey: string,
