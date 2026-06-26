@@ -122,4 +122,15 @@ test.describe("Page Runtime Lab", () => {
     await expect(page.getByText("DocumentSheetList catalog component")).toBeVisible();
     await expect(page.getByText("2026 연간 로드맵")).toBeVisible();
   });
+
+  test("design figma embed demo renders Resizable panes without unknown components", async ({
+    page,
+  }) => {
+    await page.goto("/labs/page-runtime?demo=design-figma-embed");
+    await expect(page.getByTestId("dynamic-page-renderer")).toBeVisible();
+    await expect(page.getByText(/Unknown component:/)).toHaveCount(0);
+    await expect(page.getByTestId("resizable-panels")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Design" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Prototype" })).toBeVisible();
+  });
 });
