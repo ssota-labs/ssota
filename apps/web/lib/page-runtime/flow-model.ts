@@ -10,7 +10,9 @@
  * hardcodes domain concepts — it just applies the resolved variant.
  */
 
+import type { JsonRenderSpec } from "@ssota/contracts";
 import { asColorToken, type FlowColorToken } from "./flow-tokens";
+import type { RenderNode } from "./types";
 
 export type FlowNodeStatus = "loading" | "success" | "error";
 
@@ -62,6 +64,13 @@ export type NodePresentationRule = {
   titleFrom?: string;
   /** Property key to read a small badge label from. */
   badgeFrom?: string;
+  /**
+   * Optional card template: a UI-catalog element tree rendered INSIDE the node
+   * (via DynamicPageRenderer). String props support `{{prop}}` / `{{view.key}}`
+   * interpolation, and elements with `props.when` are gated on the view state.
+   * When present it replaces the default colored box.
+   */
+  card?: JsonRenderSpec;
 };
 
 /** Resolved visual variant for one node. */
@@ -71,6 +80,7 @@ export type ResolvedNodeStyle = {
   shape: FlowNodeShape;
   title: string;
   badge?: string;
+  card?: JsonRenderSpec;
 };
 
 export const DEFAULT_NODE_WIDTH = 168;
@@ -142,6 +152,65 @@ export function coerceFlow(value: unknown): FlowModel {
   return { nodes, edges };
 }
 
+/**
+ * Build a FlowModel from a live graph: a bound set of nodes (model 2) + an edge
+ * list (e.g. the result of a `traverse_edges` binding). Each RenderNode becomes a
+ * flow node (nodeType = catalogKey, props = properties); coordinates are read from
+ * `properties.x/y` when present, else auto-layout assigns them. Edge records may
+ * use `source`/`target`, `sourceNodeId`/`targetNodeId`, or `from`/`to`.
+ */
+export function flowFromNodes(
+  nodes: RenderNode[],
+  rawEdges: unknown,
+): FlowModel {
+  const flowNodes: FlowNodeData[] = nodes.map((n) => {
+    const props = isRecord(n.properties) ? n.properties : {};
+    const node: FlowNodeData = {
+      id: n.id,
+      title: n.title,
+      nodeType: n.catalogKey,
+      props,
+    };
+    if (typeof props.x === "number") node.x = props.x;
+    if (typeof props.y === "number") node.y = props.y;
+    return node;
+  });
+  const nodeIds = new Set(flowNodes.map((n) => n.id));
+  const rawList = Array.isArray(rawEdges) ? rawEdges : [];
+  const edges = rawList
+    .map((e, i) => coerceGraphEdge(e, i, nodeIds))
+    .filter((e): e is FlowEdgeData => e !== null);
+  return { nodes: flowNodes, edges };
+}
+
+function pickString(rec: Record<string, unknown>, ...keys: string[]): string | undefined {
+  for (const k of keys) {
+    if (typeof rec[k] === "string" && (rec[k] as string).length > 0) {
+      return rec[k] as string;
+    }
+  }
+  return undefined;
+}
+
+/** Like coerceEdge but tolerant of graph-edge field aliases. */
+function coerceGraphEdge(
+  raw: unknown,
+  index: number,
+  nodeIds: Set<string>,
+): FlowEdgeData | null {
+  if (!isRecord(raw)) return null;
+  const source = pickString(raw, "source", "sourceNodeId", "from");
+  const target = pickString(raw, "target", "targetNodeId", "to");
+  if (!source || !target) return null;
+  if (!nodeIds.has(source) || !nodeIds.has(target)) return null;
+  const id = pickString(raw, "id") ?? `e${index}-${source}-${target}`;
+  const label = pickString(raw, "label", "edgeType");
+  const edge: FlowEdgeData = { id, source, target };
+  if (label) edge.label = label;
+  if (typeof raw.animated === "boolean") edge.animated = raw.animated;
+  return edge;
+}
+
 /** Coerce an unknown manifest value into presentation rules. */
 export function coercePresentation(value: unknown): NodePresentationRule[] {
   if (!Array.isArray(value)) return [];
@@ -178,5 +247,6 @@ export function resolveNodeStyle(
     shape: rule?.shape ?? "rect",
     title,
     badge,
+    card: rule?.card,
   };
 }

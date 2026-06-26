@@ -504,21 +504,32 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       "Renders a node/edge graph (e.g. a user flow) with ReactFlow. The whole graph lives in one node's jsonb property; node visuals are driven by a `nodePresentation` manifest that maps node types/properties to color/shape variants. Auto-layout (ELK layered) runs when nodes lack coordinates.",
     children: false,
     props: {
-      binding: binding("A single-node binding (the node holding the graph)."),
+      binding: binding("Model 1: a single-node binding (the node holding the graph jsonb)."),
       property: {
         type: "string",
         description:
-          'Node property holding the graph jsonb (default "flow"). Shape: { nodes:[{ id, nodeType?, title, x?, y?, props?, status? }], edges:[{ source, target, label?, animated? }] }.',
+          'Model 1: node property holding the graph jsonb (default "flow"). Shape: { nodes:[{ id, nodeType?, title, x?, y?, props?, status? }], edges:[{ source, target, label?, animated? }] }.',
       },
+      nodes: binding(
+        "Model 2: a multi-node binding (e.g. a `query`). When set, the graph is built from these live nodes (nodeType = catalogKey) + `edges` instead of the jsonb.",
+      ),
+      edges: binding(
+        "Model 2: a binding to an edge list (e.g. `traverse_edges`); records use source/target (or sourceNodeId/targetNodeId, from/to).",
+      ),
       nodePresentation: {
-        type: "{ match:{ nodeType?, property?, eq? }, variant?, color?, shape?, titleFrom?, badgeFrom? }[]",
+        type: "{ match:{ nodeType?, property?, eq? }, variant?, color?, shape?, titleFrom?, badgeFrom?, card? }[]",
         description:
-          "Manifest mapping each node to a visual variant (first matching rule wins). color = red|orange|amber|green|blue|purple|pink|gray; shape = rect|pill|diamond.",
+          "Manifest mapping each node to a visual variant (first matching rule wins). color = red|orange|amber|green|blue|purple|pink|gray; shape = rect|pill|diamond. `card` is a JsonRenderSpec rendered INSIDE the node (mini JSON-render): string props support `{{prop}}`/`{{view.key}}` interpolation and elements with `props.when` are gated on the view state.",
       },
       layout: {
         type: "string",
         description:
           "Auto-layout direction LR|RL|TB|BT (default LR), used when nodes lack x/y.",
+      },
+      algorithm: {
+        type: "string",
+        description:
+          'Auto-layout algorithm "layered" (default, generic DAG) or "tree" (org-chart). Pair "tree" + layout "TB" for a top-down org chart.',
       },
       height: { type: "number", description: "Canvas height in px (default 480)." },
       field: {
@@ -541,6 +552,16 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       sheetSize: {
         type: "string",
         description: "Sheet width: default|half|inspector|wide|full (default default).",
+      },
+      panel: {
+        type: "object",
+        description:
+          "Optional floating control panel — a JsonRenderSpec rendered top-right (bound to `{ view }`). Dispatch `viewAction` to write the shared view state that node cards read.",
+      },
+      viewAction: {
+        type: "string",
+        description:
+          'Action key the panel dispatches to update the shared view state (default "setView"). Accepts { key, value? } (set/toggle), { field, value }, or { tokens }.',
       },
       setAction: action("Dispatched with { nodeId, field, value } when an editable sheet saves."),
     },

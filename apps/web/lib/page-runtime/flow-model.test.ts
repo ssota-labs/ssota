@@ -2,9 +2,39 @@ import { describe, expect, it } from "vitest";
 import {
   coerceFlow,
   coercePresentation,
+  flowFromNodes,
   resolveNodeStyle,
   type FlowNodeData,
 } from "./flow-model";
+
+describe("flowFromNodes (model 2)", () => {
+  const nodes = [
+    { id: "ceo", catalogKey: "org_unit", title: "CEO", properties: { headcount: 24 } },
+    { id: "eng", catalogKey: "org_unit", title: "Engineering", properties: { x: 10, y: 20 } },
+  ];
+
+  it("maps RenderNodes → flow nodes (nodeType=catalogKey, props=properties, x/y)", () => {
+    const model = flowFromNodes(nodes, []);
+    expect(model.nodes[0]).toMatchObject({
+      id: "ceo",
+      nodeType: "org_unit",
+      title: "CEO",
+      props: { headcount: 24 },
+    });
+    expect(model.nodes[1]).toMatchObject({ id: "eng", x: 10, y: 20 });
+  });
+
+  it("accepts edge field aliases and drops dangling edges", () => {
+    const model = flowFromNodes(nodes, [
+      { source: "ceo", target: "eng" }, // ok
+      { sourceNodeId: "ceo", targetNodeId: "eng", edgeType: "part_of" }, // alias + label
+      { from: "ceo", to: "zzz" }, // dangling → dropped
+    ]);
+    expect(model.edges).toHaveLength(2);
+    expect(model.edges[0]).toMatchObject({ source: "ceo", target: "eng" });
+    expect(model.edges[1]?.label).toBe("part_of");
+  });
+});
 
 describe("coerceFlow", () => {
   it("returns empty model for junk / empty input", () => {
