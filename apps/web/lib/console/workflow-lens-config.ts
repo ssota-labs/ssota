@@ -65,8 +65,8 @@ export const WORKFLOW_LENS_PHASES: WorkflowLensPhaseConfig[] = [
     title: "Product",
     description: "Initiatives, releases, and planning artifacts",
     types: [
-      TYPE("initiative", "initiatives", "Product initiatives"),
-      TYPE("release", "initiatives", "Releases paired with initiatives"),
+      TYPE("initiative", "manager/initiatives", "Product initiatives"),
+      TYPE("release", "manager/initiatives", "Releases paired with initiatives"),
       TYPE("prd", "initiatives", "Product requirements (initiative scoped)"),
       TYPE("feature", "initiatives", "Features (initiative scoped)"),
       TYPE("user_story", "initiatives", "User stories (initiative scoped)"),
