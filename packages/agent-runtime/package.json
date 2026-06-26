@@ -21,13 +21,13 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@ai-sdk/mcp": "^0.0.1",
+    "@ai-sdk/mcp": "^2.0.0",
     "@ssota/adapter-postgres": "workspace:*",
     "@ssota/contracts": "workspace:*",
     "@ssota/core": "workspace:*",
     "@xdevplatform/xdk": "^0.5.0",
-    "ai": "^6.0.165",
-    "zod": "^3.25.67"
+    "ai": "^7.0.2",
+    "zod": "^3.25.76"
   },
   "optionalDependencies": {
     "@vercel/connect": "^0.2.5",

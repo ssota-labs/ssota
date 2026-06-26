@@ -189,7 +189,9 @@ export class McpSessionManager {
           if (argsSchema) schemaByTool.set(name, argsSchema);
           return {
             name,
-            description: t.description,
+            // v7 tool `description` may be a function; keep only string copy.
+            description:
+              typeof t.description === "string" ? t.description : undefined,
             inputSchema: argsSchema,
           };
         }),
@@ -312,6 +314,7 @@ export class McpSessionManager {
       const result = await tool.execute(normalizedArgs, {
         toolCallId: `mcp-${connection.id}-${toolName}`,
         messages: [],
+        context: undefined,
       });
       logMcp("callTool", connection, {
         outcome: "ok",

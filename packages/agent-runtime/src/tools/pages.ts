@@ -100,8 +100,8 @@ export function createPageTools(): ToolSet {
         bindings: z.record(z.unknown()).optional(),
         actions: z.record(z.unknown()).optional(),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         const badComponents = unknownComponentError(input.spec);
         if (badComponents) return badComponents;
         try {
@@ -139,8 +139,8 @@ export function createPageTools(): ToolSet {
         bindings: z.record(z.unknown()).optional(),
         actions: z.record(z.unknown()).optional(),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         if (input.spec !== undefined) {
           const badComponents = unknownComponentError(input.spec);
           if (badComponents) return badComponents;
@@ -166,8 +166,8 @@ export function createPageTools(): ToolSet {
     read_page: tool({
       description: "Read a page by id (returns its full record, or found:false).",
       inputSchema: z.object({ id: z.string().uuid() }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         const page = await getPagePort(ctx.projectId, ctx.accountId).getPage(
           input.id,
         );
@@ -179,8 +179,8 @@ export function createPageTools(): ToolSet {
       description:
         "List all pages in the tree (id, title, parentId, position) for navigation/authoring.",
       inputSchema: z.object({}),
-      execute: async (_input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (_input, { context }) => {
+        const ctx = getRunContext(context);
         const pages = await getPagePort(ctx.projectId, ctx.accountId).listPages();
         return {
           pages: pages.map((p) => ({

@@ -1,6 +1,7 @@
-import { stepCountIs, ToolLoopAgent, type UIMessageChunk } from "ai";
+import { isStepCount, ToolLoopAgent, type UIMessageChunk } from "ai";
 import { z } from "zod";
 import { ConnectionRunState } from "../connections/run-state.js";
+import { buildToolsContext } from "../tools/context.js";
 import { gateway } from "../models.js";
 import type {
   AgentRunContext,
@@ -37,16 +38,18 @@ function buildAgent(input: LoopEngineRunInput) {
     model: gateway(modelId),
     instructions,
     tools,
-    stopWhen: stepCountIs(maxSteps),
+    stopWhen: isStepCount(maxSteps),
     callOptionsSchema,
     prepareCall: ({ options, ...settings }) => ({
       ...settings,
-      experimental_context: {
+      // v7 has no shared runtime-context channel into tool execution; hand the
+      // per-run SSOTA scope to every tool via `toolsContext[toolName]`.
+      toolsContext: buildToolsContext(settings.tools, {
         ssota: options?.context,
         sandbox,
         credentials,
         connectionState: runState,
-      },
+      }),
     }),
   });
 }

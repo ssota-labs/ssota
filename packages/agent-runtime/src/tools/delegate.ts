@@ -61,9 +61,9 @@ BEHAVIOR:
       outputSchema: delegateOutputSchema,
       execute: async function* (
         { subagentType, task, instructions },
-        { experimental_context, abortSignal },
+        { context, abortSignal },
       ) {
-        const ctx = getRunContext(experimental_context);
+        const ctx = getRunContext(context);
         const model = gateway(SUBAGENT_MODEL_ID);
         const subagent = SUBAGENT_REGISTRY[subagentType].agent;
 

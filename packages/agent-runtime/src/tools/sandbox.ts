@@ -17,8 +17,8 @@ export function createSandboxTools(): ToolSet {
         cmd: z.string().describe("Executable, e.g. 'pnpm', 'git', 'bash'."),
         args: z.array(z.string()).optional().describe("Arguments."),
       }),
-      execute: async (input, { experimental_context }) => {
-        const sandbox = getSandbox(experimental_context);
+      execute: async (input, { context }) => {
+        const sandbox = getSandbox(context);
         const result = await sandbox.exec(input.cmd, input.args ?? []);
         return {
           exitCode: result.exitCode,
@@ -34,8 +34,8 @@ export function createSandboxTools(): ToolSet {
         path: z.string().describe("Sandbox path."),
         content: z.string(),
       }),
-      execute: async (input, { experimental_context }) => {
-        const sandbox = getSandbox(experimental_context);
+      execute: async (input, { context }) => {
+        const sandbox = getSandbox(context);
         await sandbox.writeFile(input.path, input.content);
         return { ok: true, path: input.path };
       },
@@ -44,8 +44,8 @@ export function createSandboxTools(): ToolSet {
     sandbox_read_file: tool({
       description: "Read a UTF-8 file from the sandbox.",
       inputSchema: z.object({ path: z.string() }),
-      execute: async (input, { experimental_context }) => {
-        const sandbox = getSandbox(experimental_context);
+      execute: async (input, { context }) => {
+        const sandbox = getSandbox(context);
         try {
           const content = await sandbox.readFile(input.path);
           return { ok: true, content: content.slice(0, 50_000) };
