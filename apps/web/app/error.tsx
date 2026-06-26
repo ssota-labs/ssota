@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { Button } from "@ssota/ui/components/ui/button";
 
 function isChunkLoadError(error: Error) {
@@ -21,7 +22,9 @@ export default function Error({
   useEffect(() => {
     if (isChunkLoadError(error)) {
       window.location.reload();
+      return;
     }
+    Sentry.captureException(error);
   }, [error]);
 
   return (
