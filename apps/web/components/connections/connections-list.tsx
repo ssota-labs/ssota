@@ -300,6 +300,7 @@ function ConnectionItem({
     row,
     projectId,
     accountId,
+    provider,
   );
   const subtitle = connectionDisplaySubtitle(displayRow, provider);
 

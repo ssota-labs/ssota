@@ -15,6 +15,32 @@ describe("connectionDisplayLabel", () => {
       }),
     ).toBe("SSOTA Labs");
   });
+
+  it("strips trailing (@handle) from twitter title", () => {
+    expect(
+      connectionDisplayLabel(
+        {
+          installationId: "inst",
+          tenantId: "1668922501483888642",
+          name: "Tony Yohn (JooWhan) (@yohnjw)",
+        },
+        "twitter",
+      ),
+    ).toBe("Tony Yohn (JooWhan)");
+  });
+
+  it("keeps @handle-only name for twitter when no display name", () => {
+    expect(
+      connectionDisplayLabel(
+        {
+          installationId: "inst",
+          tenantId: "123",
+          name: "@yohnjw",
+        },
+        "twitter",
+      ),
+    ).toBe("@yohnjw");
+  });
 });
 
 describe("connectionDisplaySubtitle", () => {

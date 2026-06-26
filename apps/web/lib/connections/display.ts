@@ -16,13 +16,21 @@ export function connectionInstallationId(
   return id;
 }
 
-export function connectionDisplayLabel(row: ConnectionDisplayRow): string {
-  return (
+export function connectionDisplayLabel(
+  row: ConnectionDisplayRow,
+  provider?: ConnectorProvider,
+): string {
+  const raw =
     row.name?.trim() ||
     row.tenantId?.trim() ||
     connectionInstallationId(row) ||
-    "Connected"
-  );
+    "Connected";
+
+  if (provider === "twitter") {
+    return stripTwitterHandleFromDisplayName(raw);
+  }
+
+  return raw;
 }
 
 /** True when a provider API lookup may fill a human-readable workspace name. */
@@ -61,4 +69,16 @@ function extractTwitterHandleFromName(name: string): string | null {
 
   const atMatch = name.trim().match(/^@([A-Za-z0-9_]+)$/);
   return atMatch?.[1] ?? null;
+}
+
+/** Title line for X — omits trailing " (@handle)" when stored in name. */
+function stripTwitterHandleFromDisplayName(name: string): string {
+  const trimmed = name.trim();
+  const withoutParenHandle = trimmed.replace(TWITTER_HANDLE_IN_NAME, "").trim();
+  if (withoutParenHandle) return withoutParenHandle;
+
+  const handle = extractTwitterHandleFromName(trimmed);
+  if (handle && trimmed === `@${handle}`) return `@${handle}`;
+
+  return trimmed;
 }
