@@ -54,6 +54,20 @@ const MCP_CONNECT_SCOPES: Record<string, string[]> = {
     "canvases:write",
   ],
   linear: ["read", "write", "issues:create", "comments:create"],
+  // Google (Gmail/Drive/Calendar). Read + write set. gmail.modify covers
+  // read/label/draft; gmail.send covers sending. drive/calendar are full scopes.
+  // These are SENSITIVE/RESTRICTED scopes — the Google OAuth app needs
+  // verification before non-test users can grant them.
+  google: [
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.settings.basic",
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/calendar",
+    "openid",
+    "email",
+    "profile",
+  ],
 };
 
 /** Widest MCP scopes for a connector uid, or undefined to use connector defaults. */
