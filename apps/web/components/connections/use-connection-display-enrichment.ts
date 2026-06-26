@@ -57,14 +57,7 @@ export function useConnectionDisplayEnrichment(
         inflight.delete(row.id);
         if (mountedRef.current) setIsEnriching(false);
       });
-  }, [
-    accountId,
-    projectId,
-    row.id,
-    row.installationId,
-    row.name,
-    row.tenantId,
-  ]);
+  }, [accountId, projectId, row]);
 
   return {
     label: connectionDisplayLabel(displayRow),

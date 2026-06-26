@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { EditorLabBlockNoteClient } from "./editor-lab-blocknote-client";
 import { resolveDefaultProjectId } from "@/lib/ports";
 
@@ -19,9 +20,9 @@ export default async function EditorLabBlockNotePage() {
         <h1 className="text-2xl font-semibold">Editor Lab — BlockNote PoC</h1>
         <p className="text-sm text-muted-foreground">
           BlockNote(shadcn + ko) 기반 Notion-like 에디터 비교 스파이크. 기존 Tiptap{" "}
-          <a href="/editor-lab" className="underline underline-offset-2">
+          <Link href="/editor-lab" className="underline underline-offset-2">
             /editor-lab
-          </a>
+          </Link>
           와 나란히 검증합니다.
         </p>
         {!projectId ? (

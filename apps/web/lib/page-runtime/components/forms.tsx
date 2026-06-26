@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { FormValuesContext, useAction, useFormValues } from "../context";
 import { boundNode } from "../bindings";
-import type { CatalogComponent } from "../types";
+import type { CatalogComponent, CatalogRenderArgs } from "../types";
 
 function FormEl({ children }: { children: React.ReactNode }) {
   const [values, setValues] = useState<Record<string, unknown>>({});
@@ -133,7 +133,7 @@ function ActionFieldEl({
 }
 
 function actionField(kind: "input" | "textarea" | "select"): CatalogComponent {
-  return ({ props, bindingData }) => {
+  function ActionField({ props, bindingData }: CatalogRenderArgs) {
     const node = boundNode(bindingData, props);
     const field = typeof props.field === "string" ? props.field : undefined;
     const initialValue =
@@ -154,7 +154,9 @@ function actionField(kind: "input" | "textarea" | "select"): CatalogComponent {
         }
       />
     );
-  };
+  }
+  ActionField.displayName = `ActionField(${kind})`;
+  return ActionField;
 }
 
 /** Input / action components. */

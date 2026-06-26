@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useMemo,
   useState,
@@ -44,17 +45,20 @@ export function WireframeViewportProvider({
   const [uncontrolledViewport, setUncontrolledViewport] =
     useState<WireframeViewport>(defaultViewport);
   const viewport = controlledViewport ?? uncontrolledViewport;
-  const setViewport = (next: WireframeViewport) => {
-    onViewportChange?.(next);
-    if (controlledViewport === undefined) {
-      setUncontrolledViewport(next);
-    }
-  };
+  const setViewport = useCallback(
+    (next: WireframeViewport) => {
+      onViewportChange?.(next);
+      if (controlledViewport === undefined) {
+        setUncontrolledViewport(next);
+      }
+    },
+    [controlledViewport, onViewportChange],
+  );
   const size = WIREFRAME_VIEWPORT_SIZES[viewport];
 
   const value = useMemo(
     () => ({ viewport, setViewport, size }),
-    [viewport, size],
+    [viewport, setViewport, size],
   );
 
   return (
