@@ -541,7 +541,61 @@
     "appliesToNodeType": "initiative",
     "title": "Overview",
     "icon": "initiative_overview",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Overview", "subtitle": "Initiative overview" } } } }
+    "spec": {
+      "root": "page",
+      "elements": {
+        "page": {
+          "type": "Section",
+          "props": { "title": "Overview", "subtitle": "Initiative overview" },
+          "children": ["header", "columns"]
+        },
+        "header": {
+          "type": "PageHeader",
+          "props": { "title": "Overview", "subtitle": "Initiative overview" }
+        },
+        "columns": { "type": "SplitPane", "children": ["initiativeCol", "releaseCol"] },
+        "initiativeCol": {
+          "type": "Section",
+          "props": { "title": "Initiative" },
+          "children": ["status", "summary"]
+        },
+        "status": {
+          "type": "NodeField",
+          "props": { "binding": "subject", "field": "lifecycleStatus", "label": "Status" }
+        },
+        "summary": {
+          "type": "NodeField",
+          "props": { "binding": "subject", "field": "summary", "label": "Summary" }
+        },
+        "releaseCol": {
+          "type": "Section",
+          "props": { "title": "Release" },
+          "children": ["releaseTitle", "releaseVersion", "releaseStatus"]
+        },
+        "releaseTitle": {
+          "type": "NodeField",
+          "props": { "binding": "release", "field": "title", "label": "Release" }
+        },
+        "releaseVersion": {
+          "type": "NodeField",
+          "props": { "binding": "release", "field": "version", "label": "Version" }
+        },
+        "releaseStatus": {
+          "type": "NodeField",
+          "props": { "binding": "release", "field": "lifecycleStatus", "label": "Release status" }
+        }
+      }
+    },
+    "bindings": {
+      "subject": { "kind": "subject" },
+      "release": {
+        "kind": "traverse",
+        "from": "subject",
+        "edgeCatalogKey": "paired_with",
+        "direction": "out",
+        "catalogKey": "release"
+      }
+    }
   },
   {
     "key": "tpl/initiative/planning",
@@ -819,12 +873,34 @@
     "title": "Architecture spec",
     "icon": "architecture_spec",
     "spec": {
-      "root": "section",
+      "root": "layout",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Architecture spec" }, "children": ["editor"] },
+        "layout": { "type": "SplitPane", "children": ["editorCol", "metaCol"] },
+        "editorCol": {
+          "type": "Section",
+          "props": { "title": "Architecture spec" },
+          "children": ["editor"]
+        },
         "editor": {
           "type": "DocumentEditor",
           "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        },
+        "metaCol": {
+          "type": "Section",
+          "props": { "title": "Metadata" },
+          "children": ["status", "version", "owner"]
+        },
+        "status": {
+          "type": "NodeField",
+          "props": { "binding": "doc", "field": "lifecycleStatus", "label": "Status" }
+        },
+        "version": {
+          "type": "NodeField",
+          "props": { "binding": "doc", "field": "version", "label": "Version" }
+        },
+        "owner": {
+          "type": "NodeField",
+          "props": { "binding": "doc", "field": "owner", "label": "Owner" }
         }
       }
     },

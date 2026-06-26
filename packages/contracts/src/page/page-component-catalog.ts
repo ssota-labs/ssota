@@ -290,13 +290,21 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   NodeField: {
     key: "NodeField",
     category: "data",
-    description: "A read-only label/value pair.",
+    description: "A read-only label/value pair from a static value or bound node field.",
     children: false,
     props: {
       label: { type: "string", description: "Field label.", required: true },
-      value: { type: "string", description: "Field value." },
+      value: { type: "string", description: "Literal value when no binding is set." },
+      binding: binding("Optional single-node binding (arrays use the first row)."),
+      field: {
+        type: "string",
+        description: 'Node property key (or "title"). Requires `binding`.',
+      },
     },
-    example: { type: "NodeField", props: { label: "Status", value: "Active" } },
+    example: {
+      type: "NodeField",
+      props: { binding: "subject", field: "lifecycleStatus", label: "Status" },
+    },
   },
   NodeDocument: {
     key: "NodeDocument",
