@@ -21,6 +21,10 @@ export {
 } from "./ports/agent-runs-port.js";
 export { createDbAccountReadPort } from "./ports/account-read-port.js";
 export {
+  createConnectorToolSettingsPort,
+  type ConnectorToolSettingsPort,
+} from "./ports/connector-tool-settings-port.js";
+export {
   createAccountPort,
   createAccountConnectionPort,
   type ProvisionAccountInput,

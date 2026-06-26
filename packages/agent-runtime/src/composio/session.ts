@@ -17,6 +17,25 @@ export interface ToolRouterSessionInput {
   profileId: string;
   /** Where Composio returns the user after a connect flow (web authorize route). */
   callbackUrl?: string;
+  /**
+   * Per-toolkit disabled tool slugs — excluded from the session
+   * (`tools: { <toolkit>: { disable } }`). Sourced from connector_tool_settings.
+   */
+  disabledTools?: Record<string, string[]>;
+}
+
+/** Build the Tool Router `tools` config from per-toolkit disabled slugs. */
+function toolsConfig(
+  disabledTools: Record<string, string[]> | undefined,
+): Record<string, { disable: string[] }> | undefined {
+  if (!disabledTools) return undefined;
+  const entries = Object.entries(disabledTools).filter(
+    ([, slugs]) => slugs.length > 0,
+  );
+  if (entries.length === 0) return undefined;
+  return Object.fromEntries(
+    entries.map(([toolkit, slugs]) => [toolkit, { disable: slugs }]),
+  );
 }
 
 /**
@@ -28,11 +47,13 @@ export async function getToolRouterSession(input: ToolRouterSessionInput) {
   if (!composio) return null;
 
   const userId = composioUserId({ orgId: input.orgId, profileId: input.profileId });
+  const tools = toolsConfig(input.disabledTools);
   return composio.toolRouter.create(userId, {
     toolkits: getComposioToolkitSlugs(),
     // Per-toolkit BYOA: slugs present here use our own auth config; absent
     // slugs fall back to Composio-managed auth.
     authConfigs: resolveComposioAuthConfigs(),
+    ...(tools ? { tools } : {}),
     manageConnections: input.callbackUrl
       ? { enable: true, callbackUrl: input.callbackUrl }
       : true,

@@ -37,7 +37,9 @@ export {
 } from "./composio/session.js";
 export {
   createComposioTools,
+  listComposioToolkitTools,
   type ComposioToolsInput,
+  type ComposioToolInfo,
 } from "./composio/tools.js";
 export {
   composioUserId,

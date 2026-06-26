@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   BuildingsIcon,
   CheckCircleIcon,
@@ -9,6 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
+import { Switch } from "@ssota/ui/components/ui/switch";
 import {
   Sheet,
   SheetContent,
@@ -22,7 +23,11 @@ import {
 } from "@ssota/ui/components/ui/expandable-list-section";
 import { cn } from "@ssota/ui/lib/utils";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
-import { disconnectConnectionAction } from "@/app/[orgSlug]/[projectSlug]/connectors/actions";
+import {
+  disconnectConnectionAction,
+  loadToolkitToolSettingsAction,
+  setToolkitDisabledAction,
+} from "@/app/[orgSlug]/[projectSlug]/connectors/actions";
 import {
   CONNECTOR_THEMES,
   type ConnectorDef,
@@ -298,11 +303,118 @@ function ConnectorSettings({
                   <PlusIcon className="size-4" />
                   {connected ? "Add account" : "Connect"}
                 </a>
+
+                {connected ? (
+                  <ToolAccessSection
+                    toolkit={connector.provider}
+                    projectId={projectId}
+                    returnTo={returnTo}
+                  />
+                ) : null}
               </div>
             </ExpandableListItem>
           </ExpandableListSection>
         )}
       </div>
     </>
+  );
+}
+
+interface ToolRow {
+  slug: string;
+  name: string;
+}
+
+/**
+ * Per-toolkit tool restrictions. Lazily loads the toolkit's available tools and
+ * the entity's disabled set when the accordion is open; toggling a tool off
+ * persists it (connector_tool_settings) and excludes it from the agent's next
+ * Tool Router session.
+ */
+function ToolAccessSection({
+  toolkit,
+  projectId,
+  returnTo,
+}: {
+  toolkit: string;
+  projectId: string;
+  returnTo: string;
+}) {
+  const [tools, setTools] = useState<ToolRow[] | null>(null);
+  const [disabled, setDisabled] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    loadToolkitToolSettingsAction({ projectId, toolkit })
+      .then((res) => {
+        if (!active) return;
+        setTools(res.tools.map((t) => ({ slug: t.slug, name: t.name })));
+        setDisabled(new Set(res.disabled));
+      })
+      .catch(() => {
+        if (active) setTools([]);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [projectId, toolkit]);
+
+  function toggle(slug: string, enabled: boolean) {
+    const next = new Set(disabled);
+    if (enabled) next.delete(slug);
+    else next.add(slug);
+    setDisabled(next);
+    startTransition(async () => {
+      await setToolkitDisabledAction({
+        projectId,
+        toolkit,
+        disabled: [...next],
+        revalidate: returnTo,
+      });
+    });
+  }
+
+  return (
+    <div className="space-y-2 border-t pt-3">
+      <div className="space-y-0.5">
+        <p className="text-xs font-medium">Tool access</p>
+        <p className="text-[11px] text-muted-foreground">
+          Turn off tools the agent should not use for this connector.
+        </p>
+      </div>
+
+      {loading ? (
+        <p className="text-xs text-muted-foreground">Loading tools…</p>
+      ) : !tools || tools.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No tools available.</p>
+      ) : (
+        <ul className="max-h-64 space-y-0.5 overflow-y-auto">
+          {tools.map((tool) => {
+            const enabled = !disabled.has(tool.slug);
+            return (
+              <li
+                key={tool.slug}
+                className="flex items-center justify-between gap-3 rounded-md px-1.5 py-1.5 hover:bg-accent/40"
+              >
+                <span className="min-w-0 truncate text-xs" title={tool.slug}>
+                  {tool.name}
+                </span>
+                <Switch
+                  checked={enabled}
+                  onCheckedChange={(checked) => toggle(tool.slug, checked)}
+                  aria-label={`Enable ${tool.name}`}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
   );
 }

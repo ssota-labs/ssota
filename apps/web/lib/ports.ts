@@ -11,6 +11,7 @@ import {
   createWorkflowInstructionPort,
   createPagePort,
   createPageViewStatePort,
+  createConnectorToolSettingsPort,
   type AccountRecord,
 } from "@ssota/adapter-postgres";
 
@@ -31,6 +32,10 @@ export function getTaskPort(projectId: string, accountId?: string) {
 
 export function getConsolePort() {
   return createConsolePort(getDb());
+}
+
+export function getConnectorToolSettingsPort() {
+  return createConnectorToolSettingsPort(getDb());
 }
 
 export function getOnboardingPort() {

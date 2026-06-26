@@ -3,10 +3,13 @@
  * `session.tools()` returns the Tool Router meta-tools (native tool search +
  * multi-execute + manage-connections) formatted for the AI SDK, so the model
  * gets just-in-time access to 1000+ toolkits behind a tiny, stable tool set —
- * no per-provider tool definitions on our side.
+ * no per-provider tool definitions on our side. Per-toolkit tool restrictions
+ * (connector_tool_settings) are applied to the session.
  */
 import type { ToolSet } from "ai";
+import { getComposioClient } from "./client.js";
 import { getToolRouterSession } from "./session.js";
+import { getConnectorToolSettingsPort } from "../ports.js";
 
 export interface ComposioToolsInput {
   orgId: string;
@@ -17,8 +20,40 @@ export interface ComposioToolsInput {
 export async function createComposioTools(
   input: ComposioToolsInput,
 ): Promise<ToolSet> {
-  const session = await getToolRouterSession(input);
+  const disabledTools = await getConnectorToolSettingsPort()
+    .getDisabledByToolkit(input.orgId, input.profileId)
+    .catch(() => ({}) as Record<string, string[]>);
+
+  const session = await getToolRouterSession({ ...input, disabledTools });
   if (!session) return {};
   const tools = await session.tools();
   return tools as ToolSet;
+}
+
+export interface ComposioToolInfo {
+  slug: string;
+  name: string;
+  description?: string;
+}
+
+/**
+ * List the available tools for a toolkit (for the Connectors settings sheet's
+ * tool-restriction UI). Returns `[]` when Composio is not configured.
+ */
+export async function listComposioToolkitTools(
+  toolkit: string,
+): Promise<ComposioToolInfo[]> {
+  const composio = getComposioClient();
+  if (!composio) return [];
+  const list = await composio.tools.getRawComposioTools({ toolkits: [toolkit] });
+  const items = Array.isArray(list)
+    ? list
+    : ((list as { items?: unknown[] }).items ?? []);
+  return (items as Array<{ slug: string; name: string; description?: string }>).map(
+    (tool) => ({
+      slug: tool.slug,
+      name: tool.name,
+      description: tool.description,
+    }),
+  );
 }
