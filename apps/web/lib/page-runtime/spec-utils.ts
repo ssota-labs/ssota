@@ -7,6 +7,8 @@ const FILL_HEIGHT_PAGE_COMPONENTS = new Set([
 ]);
 
 export function pageUsesFillHeight(spec: JsonRenderSpec): boolean {
+  const root = spec.elements[spec.root];
+  if (root?.type === "SplitPane") return true;
   return Object.values(spec.elements).some((element) =>
     FILL_HEIGHT_PAGE_COMPONENTS.has(element.type),
   );

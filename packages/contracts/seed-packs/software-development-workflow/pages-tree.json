@@ -594,21 +594,15 @@
     "title": "Overview",
     "icon": "initiative_overview",
     "spec": {
-      "root": "page",
+      "root": "layout",
       "elements": {
-        "page": {
-          "type": "Section",
-          "props": { "title": "Overview", "subtitle": "Initiative overview" },
-          "children": ["header", "columns"]
-        },
-        "header": {
-          "type": "PageHeader",
-          "props": { "title": "Overview", "subtitle": "Initiative overview" }
-        },
-        "columns": { "type": "SplitPane", "children": ["initiativeCol", "releaseCol"] },
+        "layout": { "type": "SplitPane", "children": ["initiativeCol", "releaseCol"] },
         "initiativeCol": {
           "type": "Section",
-          "props": { "title": "Initiative" },
+          "props": {
+            "title": "Overview",
+            "subtitle": "Initiative summary and status"
+          },
           "children": ["status", "summary"]
         },
         "status": {
@@ -621,7 +615,10 @@
         },
         "releaseCol": {
           "type": "Section",
-          "props": { "title": "Release" },
+          "props": {
+            "title": "Release",
+            "subtitle": "Paired release for this initiative"
+          },
           "children": ["releaseTitle", "releaseVersion", "releaseStatus"]
         },
         "releaseTitle": {

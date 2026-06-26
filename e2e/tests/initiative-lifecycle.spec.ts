@@ -13,10 +13,7 @@ test.describe("Initiative lifecycle", () => {
 
     const main = page.getByRole("main");
     await expect(
-      main.getByRole("heading", { level: 1, name: "Overview" }),
-    ).toBeVisible();
-    await expect(
-      main.getByRole("heading", { name: "Initiative", exact: true }),
+      main.getByRole("heading", { level: 2, name: "Overview" }),
     ).toBeVisible();
     await expect(
       main.getByRole("heading", { name: "Release", exact: true }),
