@@ -172,20 +172,18 @@ export function DocumentSheetPanel({
         </Button>
       </header>
       <div
-        className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3"
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-3"
         data-testid="document-sheet-editor"
       >
-        <div className="flex min-h-full flex-1 flex-col">
-          {editable ? (
-            <DocumentEditorEl
-              compact
-              content={readContent(node, field)}
-              onSave={(blocks) => onSave?.(blocks)}
-            />
-          ) : (
-            <DocumentViewEl compact content={readContent(node, field)} />
-          )}
-        </div>
+        {editable ? (
+          <DocumentEditorEl
+            compact
+            content={readContent(node, field)}
+            onSave={(blocks) => onSave?.(blocks)}
+          />
+        ) : (
+          <DocumentViewEl compact content={readContent(node, field)} />
+        )}
       </div>
     </div>
   );

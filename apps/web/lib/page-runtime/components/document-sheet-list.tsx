@@ -56,7 +56,7 @@ export function DocumentSheetListEl({
       className="flex min-h-0 flex-1 flex-col"
       data-testid="document-sheet-list"
     >
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-3">
         {sectionTitle ? (
           <header className="space-y-1 border-b pb-3">

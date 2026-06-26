@@ -39,4 +39,24 @@ describe("flow-layout", () => {
   it("returns empty for an empty model", async () => {
     expect(await layoutFlow(coerceFlow({}), "LR")).toEqual({});
   });
+
+  it("lays out a tree top-down with the tree (mrtree) algorithm", async () => {
+    const model = coerceFlow({
+      nodes: [
+        { id: "root", title: "Root" },
+        { id: "a", title: "A" },
+        { id: "b", title: "B" },
+      ],
+      edges: [
+        { source: "root", target: "a" },
+        { source: "root", target: "b" },
+      ],
+    });
+    const pos = await layoutFlow(model, "TB", "tree");
+    expect(Object.keys(pos).sort()).toEqual(["a", "b", "root"]);
+    // TB tree: children sit below the root, side by side.
+    expect(pos.a!.y).toBeGreaterThan(pos.root!.y);
+    expect(pos.b!.y).toBeGreaterThan(pos.root!.y);
+    expect(pos.a!.x).not.toEqual(pos.b!.x);
+  });
 });

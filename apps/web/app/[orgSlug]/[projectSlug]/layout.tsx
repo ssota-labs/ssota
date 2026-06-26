@@ -8,7 +8,10 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { resolveBuilderContext } from "@/lib/request-context";
 import { getConsolePort, getPagePort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { pageUsesFillHeight, fillHeightNodeLandingCatalogKeys } from "@/lib/page-runtime/spec-utils";
+import {
+  pageUsesFillHeight,
+  fillHeightNodeLandingCatalogKeys,
+} from "@/lib/page-runtime/spec-utils";
 
 export default async function ProjectLayout({
   children,

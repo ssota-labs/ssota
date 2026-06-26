@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { createUIMessageStreamResponse } from "ai";
 import type { UIMessage } from "ai";
 import { z } from "zod";
-import { start } from "workflow/api";
-import { runMainAgentWorkflow } from "@/app/workflows/main-agent";
+import { after } from "next/server";
+import { getMainAgentRunner } from "@/app/workflows/main-agent-job-runner";
 import { getChatPort } from "@/lib/ports";
 import { resolveModelId } from "@/lib/chat/models";
 import { toAgentHistory } from "@/lib/chat/to-agent-history";
@@ -89,15 +89,15 @@ export async function POST(request: Request) {
 
   const history = await toAgentHistory(messages);
 
-  const run = await start(runMainAgentWorkflow, [
-    {
-      projectId,
-      threadId,
-      accountId,
-      modelId,
-      chatContext: { chat: { messages: history } },
-    },
-  ]);
+  const runner = await getMainAgentRunner();
+  const run = await runner.start({
+    projectId,
+    threadId,
+    accountId,
+    modelId,
+    chatContext: { chat: { messages: history } },
+  });
+  after(run.completion);
 
   const readable = run.getReadable();
 

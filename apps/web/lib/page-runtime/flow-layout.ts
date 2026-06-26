@@ -15,6 +15,9 @@ import {
 
 export type FlowLayoutDirection = "LR" | "RL" | "TB" | "BT";
 
+/** `layered` = generic DAG (default); `tree` = ELK mrtree, ideal for org charts. */
+export type FlowLayoutAlgorithm = "layered" | "tree";
+
 export type Positioned = Record<string, { x: number; y: number }>;
 
 const DEFAULT_SPACING = 56;
@@ -57,6 +60,7 @@ function explicitPositions(model: FlowModel): Positioned {
 export async function layoutFlow(
   model: FlowModel,
   direction: FlowLayoutDirection = "LR",
+  algorithm: FlowLayoutAlgorithm = "layered",
   spacing: number = DEFAULT_SPACING,
 ): Promise<Positioned> {
   if (model.nodes.length === 0) return {};
@@ -75,10 +79,13 @@ export async function layoutFlow(
     targets: [e.target],
   }));
 
+  // `mrtree` gives the classic top-down org-chart look; `layered` is the generic
+  // DAG default. Both honour `elk.direction` + node spacing.
+  const elkAlgorithm = algorithm === "tree" ? "mrtree" : "layered";
   const laidOut = await elk.layout({
     id: "root",
     layoutOptions: {
-      "elk.algorithm": "layered",
+      "elk.algorithm": elkAlgorithm,
       "elk.direction": toElkDirection(direction),
       "elk.spacing.nodeNode": String(spacing),
       "elk.layered.spacing.nodeNodeBetweenLayers": String(spacing + 24),

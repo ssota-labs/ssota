@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
+import dynamic from "next/dynamic";
 import {
   Background,
   BackgroundVariant,
-  Controls,
   ReactFlow,
   ReactFlowProvider,
   useNodesInitialized,
@@ -13,19 +13,33 @@ import {
   type Edge,
   type Node,
 } from "@xyflow/react";
-import { useAction } from "../context";
-import { boundNode } from "../bindings";
+import type { JsonRenderSpec } from "@ssota/contracts";
+import { useAction, type OnAction } from "../context";
+
+// Lazy import breaks the static cycle flow-canvas → renderer → registry → flow-canvas.
+const PanelRenderer = dynamic(
+  () => import("../renderer").then((m) => m.DynamicPageRenderer),
+  { ssr: false },
+);
+import { boundNode, boundNodesByKey } from "../bindings";
 import {
   coerceFlow,
   coercePresentation,
+  flowFromNodes,
   resolveNodeStyle,
   DEFAULT_NODE_HEIGHT,
   DEFAULT_NODE_WIDTH,
   type FlowModel,
 } from "../flow-model";
-import { layoutFlow, type FlowLayoutDirection, type Positioned } from "../flow-layout";
+import {
+  layoutFlow,
+  type FlowLayoutAlgorithm,
+  type FlowLayoutDirection,
+  type Positioned,
+} from "../flow-layout";
 import { FlowNode } from "./flow-node";
 import { FlowEdge } from "./flow-edge";
+import { FlowTopToolbar, FlowViewportToolbar } from "./flow-toolbar";
 import { DocumentSheetPanel, type SheetSize } from "./document-sheet-panel";
 import { readNodeField } from "./roadmap-doc-card";
 import type { CatalogComponent, RenderNode } from "../types";
@@ -80,27 +94,44 @@ type SheetConfig = {
 };
 
 function FlowCanvasEl({
+  mode,
   node,
   property,
+  nodes,
+  edges,
   presentation,
   direction,
+  algorithm,
   height,
   sheet,
+  panel,
+  viewAction,
 }: {
+  mode: "jsonb" | "graph";
   node: RenderNode | undefined;
   property: string;
+  nodes: RenderNode[];
+  edges: unknown;
   presentation: unknown;
   direction: FlowLayoutDirection;
+  algorithm: FlowLayoutAlgorithm;
   height: number;
   sheet: SheetConfig;
+  panel: JsonRenderSpec | null;
+  viewAction: string;
 }) {
   const onAction = useAction();
   const { setCenter } = useReactFlow();
   const containerRef = React.useRef<HTMLDivElement>(null);
 
+  // Model 1 (jsonb): the whole graph lives in one node's property.
+  // Model 2 (graph): real graph nodes + an edge list (e.g. traverse_edges).
   const model = React.useMemo(
-    () => coerceFlow(node?.properties?.[property]),
-    [node?.properties, property],
+    () =>
+      mode === "graph"
+        ? flowFromNodes(nodes, edges)
+        : coerceFlow(node?.properties?.[property]),
+    [mode, nodes, edges, node?.properties, property],
   );
   const manifest = React.useMemo(
     () => coercePresentation(presentation),
@@ -112,16 +143,19 @@ function FlowCanvasEl({
   const [positions, setPositions] = React.useState<Positioned>({});
   React.useEffect(() => {
     let cancelled = false;
-    void layoutFlow(model, direction).then((pos) => {
+    void layoutFlow(model, direction, algorithm).then((pos) => {
       if (!cancelled) setPositions(pos);
     });
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signature, direction]);
+  }, [signature, direction, algorithm]);
 
   const ready = Object.keys(positions).length > 0;
+
+  // Pan/zoom lock, toggled from the top toolbar.
+  const [locked, setLocked] = React.useState(false);
 
   // ── Detail sheet ────────────────────────────────────────────────────────
   const [activeId, setActiveId] = React.useState<string | null>(null);
@@ -193,19 +227,87 @@ function FlowCanvasEl({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId, positions]);
 
+  // ── Subtree collapse ──────────────────────────────────────────────────────
+  // Parent → direct children (edge source → targets), for the collapse toggle.
+  const childMap = React.useMemo(() => {
+    const map: Record<string, string[]> = {};
+    for (const e of model.edges) (map[e.source] ??= []).push(e.target);
+    return map;
+  }, [model.edges]);
+
+  const [collapsed, setCollapsed] = React.useState<Set<string>>(new Set());
+  React.useEffect(() => setCollapsed(new Set()), [signature]);
+
+  const toggleCollapse = React.useCallback((id: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Every descendant of a collapsed node is hidden.
+  const hidden = React.useMemo(() => {
+    const out = new Set<string>();
+    const visit = (id: string) => {
+      for (const child of childMap[id] ?? []) {
+        if (!out.has(child)) {
+          out.add(child);
+          visit(child);
+        }
+      }
+    };
+    for (const id of collapsed) visit(id);
+    return out;
+  }, [collapsed, childMap]);
+
+  // ── Shared view state ─────────────────────────────────────────────────────
+  // The panel writes it (via `viewAction`), every node card reads it (`{{view.*}}`
+  // + `when` gating). One toggle in the panel flips a metric row on all cards.
+  const [view, setView] = React.useState<Record<string, unknown>>({});
+  const handlePanelAction = React.useCallback<OnAction>(
+    (actionKey, input) => {
+      if (actionKey !== viewAction) return onAction?.(actionKey, input);
+      setView((prev) => {
+        const next = { ...prev };
+        if (typeof input.key === "string") {
+          next[input.key] = "value" in input ? input.value : !prev[input.key];
+        } else if (typeof input.field === "string") {
+          next[input.field] = input.value;
+        } else if (input.tokens && typeof input.tokens === "object") {
+          Object.assign(next, input.tokens as Record<string, unknown>);
+        }
+        return next;
+      });
+    },
+    [viewAction, onAction],
+  );
+
   const rfNodes = React.useMemo<Node[]>(() => {
     if (!ready) return [];
     return model.nodes.map((n) => ({
       id: n.id,
       type: "generic",
       position: positions[n.id] ?? { x: 0, y: 0 },
+      hidden: hidden.has(n.id),
       data: {
         style: resolveNodeStyle(n, manifest),
         status: n.status,
         direction,
+        childCount: childMap[n.id]?.length ?? 0,
+        collapsed: collapsed.has(n.id),
+        onToggleCollapse: () => toggleCollapse(n.id),
+        renderNode: {
+          id: n.id,
+          catalogKey: n.nodeType ?? "node",
+          title: n.title,
+          properties: n.props ?? {},
+        },
+        view,
       },
     }));
-  }, [model.nodes, manifest, positions, ready, direction]);
+  }, [model.nodes, manifest, positions, ready, direction, hidden, childMap, collapsed, toggleCollapse, view]);
 
   const rfEdges = React.useMemo<Edge[]>(
     () =>
@@ -216,20 +318,38 @@ function FlowCanvasEl({
         target: e.target,
         label: e.label,
         animated: e.animated ?? false,
+        hidden: hidden.has(e.source) || hidden.has(e.target),
       })),
-    [model.edges],
+    [model.edges, hidden],
   );
 
-  if (!node) {
+  if (mode === "jsonb" && !node) {
     return (
       <div className="text-muted-foreground border-border rounded border border-dashed p-4 text-xs">
         FlowCanvas: no bound node.
       </div>
     );
   }
+  if (model.nodes.length === 0) {
+    return (
+      <div className="text-muted-foreground border-border rounded border border-dashed p-4 text-xs">
+        FlowCanvas: no nodes to display.
+      </div>
+    );
+  }
 
   const onSave = (blocks: unknown[]) => {
     if (!onAction || !sheet.setAction || !activeId) return;
+    if (mode === "graph") {
+      // Model 2: persist the edited document straight onto the graph node.
+      void onAction(sheet.setAction, {
+        nodeId: activeId,
+        field: sheet.field,
+        value: blocks,
+      });
+      return;
+    }
+    if (!node) return;
     const nextFlow: FlowModel = {
       ...model,
       nodes: model.nodes.map((n) =>
@@ -266,18 +386,39 @@ function FlowCanvasEl({
           minZoom={0.2}
           fitView
           fitViewOptions={{ padding: 0.15 }}
+          panOnDrag={!locked}
+          zoomOnScroll={!locked}
+          zoomOnPinch={!locked}
+          zoomOnDoubleClick={!locked}
           onNodeClick={(_, n) => setActiveId(n.id)}
           onPaneClick={() => setActiveId(null)}
         >
           <FlowReady nodeIds={rfNodes.map((n) => n.id)} />
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-          <Controls showInteractive={false} />
+          <FlowTopToolbar
+            locked={locked}
+            onToggleLock={() => setLocked((v) => !v)}
+          />
+          <FlowViewportToolbar />
         </ReactFlow>
       ) : (
         <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
           Laying out…
         </div>
       )}
+
+      {panel ? (
+        <div
+          data-testid="flow-panel"
+          className="border-border/60 bg-background/70 supports-backdrop-filter:bg-background/50 supports-backdrop-filter:backdrop-blur-md absolute top-2 right-2 z-20 w-[min(15rem,60%)] rounded-xl border p-2 text-xs shadow-lg shadow-black/5"
+        >
+          <PanelRenderer
+            spec={panel}
+            bindingData={{ view }}
+            onAction={handlePanelAction}
+          />
+        </div>
+      ) : null}
 
       {activeRenderNode ? (
         <DocumentSheetPanel
@@ -297,13 +438,25 @@ function FlowCanvasEl({
 
 export const flowComponents: Record<string, CatalogComponent> = {
   FlowCanvas: ({ props, bindingData }) => {
+    // Model 2 (graph) when a `nodes` binding is given; else model 1 (jsonb).
+    const mode: "jsonb" | "graph" =
+      typeof props.nodes === "string" ? "graph" : "jsonb";
     const node = boundNode(bindingData, props);
+    const nodes =
+      mode === "graph"
+        ? boundNodesByKey(bindingData, props.nodes as string)
+        : [];
+    const edges =
+      mode === "graph" && typeof props.edges === "string"
+        ? bindingData[props.edges]
+        : undefined;
     const property =
       typeof props.property === "string" ? props.property : "flow";
     const direction = ((): FlowLayoutDirection => {
       const l = props.layout;
       return l === "RL" || l === "TB" || l === "BT" ? l : "LR";
     })();
+    const algorithm: FlowLayoutAlgorithm = props.algorithm === "tree" ? "tree" : "layered";
     const height =
       typeof props.height === "number" && props.height > 0 ? props.height : 480;
     const sheet: SheetConfig = {
@@ -318,15 +471,30 @@ export const flowComponents: Record<string, CatalogComponent> = {
         : "default",
       setAction: typeof props.setAction === "string" ? props.setAction : undefined,
     };
+    const panel =
+      props.panel &&
+      typeof props.panel === "object" &&
+      "root" in props.panel &&
+      "elements" in props.panel
+        ? (props.panel as JsonRenderSpec)
+        : null;
+    const viewAction =
+      typeof props.viewAction === "string" ? props.viewAction : "setView";
     return (
       <ReactFlowProvider>
         <FlowCanvasEl
+          mode={mode}
           node={node}
           property={property}
+          nodes={nodes}
+          edges={edges}
           presentation={props.nodePresentation}
           direction={direction}
+          algorithm={algorithm}
           height={height}
           sheet={sheet}
+          panel={panel}
+          viewAction={viewAction}
         />
       </ReactFlowProvider>
     );
