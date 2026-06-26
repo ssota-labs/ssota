@@ -27,7 +27,8 @@ export type ConnectorProvider =
   | "github"
   | "linear"
   | "discord"
-  | "twitter";
+  | "twitter"
+  | "google";
 
 export interface ConnectorDef {
   provider: ConnectorProvider;
@@ -80,6 +81,8 @@ const API_ENV_KEYS: Record<ConnectorProvider, string> = {
   linear: "LINEAR_API_CONNECTOR",
   discord: "DISCORD_API_CONNECTOR",
   twitter: "TWITTER_API_CONNECTOR",
+  // Gmail/Drive/Calendar share this single Google OAuth connector.
+  google: "GOOGLE_API_CONNECTOR",
 };
 
 const LEGACY_ENV_KEYS: Partial<Record<ConnectorProvider, string>> = {
@@ -124,6 +127,13 @@ const REGISTRY: Omit<
     provider: "twitter",
     label: "X",
     multiWorkspace: false,
+  },
+  {
+    // One card grants Gmail + Drive + Calendar (provider-level OAuth, no hosted
+    // MCP). Multiple Google accounts can be connected.
+    provider: "google",
+    label: "Google",
+    multiWorkspace: true,
   },
 ];
 
