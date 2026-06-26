@@ -1251,6 +1251,101 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
   },
+  {
+    id: "wireframe-canvas",
+    category: "canvas",
+    title: "WireframeCanvas (JSX preview)",
+    description:
+      "Initiative wireframes on a React Flow canvas. Each page_wireframe node renders grayscale JSX via JSXPreview. Link/Button/NavItem navigateTo attributes create interactive hotspots (hover ring + click to focus another card) and navigation edges; missing targets show dashed amber edges.",
+    components: ["Section", "WireframeCanvas"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Pet Health — Wireframes",
+            subtitle: "JSX preview · navigateTo hotspots",
+          },
+          children: ["canvas"],
+        },
+        canvas: {
+          type: "WireframeCanvas",
+          props: {
+            binding: "rows",
+            selectedBinding: "selected",
+            height: 640,
+          },
+        },
+      },
+    },
+    bindingData: {
+      rows: [
+        {
+          id: "wf-welcome",
+          catalogKey: "page_wireframe",
+          title: "Welcome Screen",
+          properties: {
+            slug: "welcome",
+            jsx: `<Screen title="Welcome">
+  <Main>
+    <Title>Pet Health</Title>
+    <Text>Track your pet wellness in one place.</Text>
+    <Button navigateTo="login">Log in</Button>
+    <Button navigateTo="signup">Sign up</Button>
+  </Main>
+</Screen>`,
+          },
+        },
+        {
+          id: "wf-login",
+          catalogKey: "page_wireframe",
+          title: "Login",
+          properties: {
+            slug: "login",
+            jsx: `<Screen title="Login">
+  <Main>
+    <Title>Welcome back</Title>
+    <Input label="Email" placeholder="you@example.com" />
+    <Input label="Password" placeholder="••••••••" />
+    <Button navigateTo="home">Continue</Button>
+    <Link navigateTo="welcome">Back</Link>
+  </Main>
+</Screen>`,
+          },
+        },
+        {
+          id: "wf-timeline",
+          catalogKey: "page_wireframe",
+          title: "Media Timeline",
+          properties: {
+            slug: "media-timeline",
+            jsx: `<Screen title="Media Timeline">
+  <Sidebar>
+    <NavItem navigateTo="home">Dashboard</NavItem>
+    <NavItem active>Media</NavItem>
+  </Sidebar>
+  <Main>
+    <Title>Media Timeline</Title>
+    <Card>
+      <Image label="Photo" />
+      <Text>Bella — Morning Walk</Text>
+    </Card>
+    <Button navigateTo="upload-media">Upload Media</Button>
+    <Link navigateTo="missing-page">Broken link demo</Link>
+  </Main>
+</Screen>`,
+          },
+        },
+      ],
+      selected: {
+        id: "wf-welcome",
+        catalogKey: "page_wireframe",
+        title: "Welcome Screen",
+        properties: { slug: "welcome" },
+      },
+    },
+  },
 ];
 
 export function getPageRuntimeDemo(id: string): PageRuntimeDemo | undefined {

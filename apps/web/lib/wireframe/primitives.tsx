@@ -1,0 +1,268 @@
+"use client";
+
+import { cn } from "@ssota/ui/lib/utils";
+import type { ReactNode } from "react";
+import { useWireframeNavigation } from "./navigation-context";
+
+type WireframeBaseProps = {
+  className?: string;
+  children?: ReactNode;
+};
+
+function wireframeBox(className?: string) {
+  return cn(
+    "border-border bg-muted/40 text-foreground/80 border border-dashed",
+    className,
+  );
+}
+
+type NavigableProps = WireframeBaseProps & {
+  navigateTo?: string;
+  onClick?: () => void;
+};
+
+function NavigableSurface({
+  navigateTo,
+  onClick,
+  className,
+  children,
+  as: Tag = "div",
+  ...props
+}: NavigableProps & { as?: "div" | "button" | "a" }) {
+  const nav = useWireframeNavigation();
+  const target = navigateTo?.trim().toLowerCase();
+  const hasTarget = target ? nav?.knownSlugs.has(target) : false;
+  const isMissing = Boolean(target && nav && !hasTarget);
+  const isInteractive = Boolean(target || onClick);
+
+  const handleClick = (event: MouseEvent) => {
+    if (!isInteractive) return;
+    event.stopPropagation();
+    if (target && nav) {
+      nav.navigateTo(target);
+    }
+    onClick?.();
+  };
+
+  return (
+    <Tag
+      type={Tag === "button" ? "button" : undefined}
+      className={cn(
+        "relative transition-shadow",
+        isInteractive && "cursor-pointer",
+        isInteractive &&
+          "hover:ring-2 hover:ring-primary/60 hover:ring-offset-1 hover:ring-offset-background",
+        isMissing &&
+          "hover:ring-amber-500/70 border-amber-500/40 border border-dashed",
+        className,
+      )}
+      onClick={isInteractive ? handleClick : undefined}
+      data-navigate-to={target || undefined}
+      data-nav-missing={isMissing ? "true" : undefined}
+      title={
+        isMissing
+          ? `Page "${target}" does not exist — create it`
+          : target
+            ? `Navigate to ${target}`
+            : undefined
+      }
+      {...props}
+    >
+      {children}
+      {isMissing ? (
+        <span className="bg-amber-500/10 text-amber-700 absolute top-1 right-1 rounded px-1 py-0.5 text-[9px] font-medium">
+          Missing page
+        </span>
+      ) : null}
+    </Tag>
+  );
+}
+
+export function Screen({
+  title,
+  className,
+  children,
+}: WireframeBaseProps & { title?: string }) {
+  return (
+    <div
+      className={cn(
+        "bg-background text-foreground flex h-full min-h-[420px] flex-col overflow-hidden rounded-lg border shadow-sm grayscale",
+        className,
+      )}
+    >
+      {title ? (
+        <header className="border-border border-b px-3 py-2 text-xs font-semibold">
+          {title}
+        </header>
+      ) : null}
+      <div className="flex min-h-0 flex-1">{children}</div>
+    </div>
+  );
+}
+
+export function Sidebar({ className, children }: WireframeBaseProps) {
+  return (
+    <aside
+      className={cn(
+        "border-border bg-muted/30 w-24 shrink-0 border-r p-2 text-[10px]",
+        className,
+      )}
+    >
+      {children}
+    </aside>
+  );
+}
+
+export function Main({ className, children }: WireframeBaseProps) {
+  return <main className={cn("min-w-0 flex-1 p-3", className)}>{children}</main>;
+}
+
+export function NavItem({
+  active,
+  navigateTo,
+  className,
+  children,
+}: NavigableProps & { active?: boolean }) {
+  return (
+    <NavigableSurface
+      navigateTo={navigateTo}
+      className={cn(
+        "mb-1 rounded px-2 py-1",
+        active ? "bg-foreground/10 font-semibold" : "text-muted-foreground",
+        className,
+      )}
+    >
+      {children}
+    </NavigableSurface>
+  );
+}
+
+export function Title({ className, children }: WireframeBaseProps) {
+  return (
+    <h1 className={cn("mb-3 text-sm font-semibold", className)}>{children}</h1>
+  );
+}
+
+export function Text({ className, children }: WireframeBaseProps) {
+  return <p className={cn("text-muted-foreground mb-2 text-[11px]", className)}>{children}</p>;
+}
+
+export function Button({
+  navigateTo,
+  className,
+  children,
+}: NavigableProps) {
+  return (
+    <NavigableSurface
+      as="button"
+      navigateTo={navigateTo}
+      className={cn(
+        wireframeBox("bg-muted mb-2 rounded px-3 py-1.5 text-[11px] font-medium"),
+        className,
+      )}
+    >
+      {children}
+    </NavigableSurface>
+  );
+}
+
+export function Link({
+  navigateTo,
+  className,
+  children,
+}: NavigableProps) {
+  return (
+    <NavigableSurface
+      navigateTo={navigateTo}
+      className={cn("text-foreground mb-2 inline-block text-[11px] underline", className)}
+    >
+      {children}
+    </NavigableSurface>
+  );
+}
+
+export function Image({ className, label = "Image" }: WireframeBaseProps & { label?: string }) {
+  return (
+    <div
+      className={cn(
+        wireframeBox("mb-2 flex aspect-video w-full items-center justify-center text-[10px]"),
+        className,
+      )}
+      aria-hidden
+    >
+      <span className="text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+export function Card({ className, children }: WireframeBaseProps) {
+  return (
+    <div className={cn(wireframeBox("mb-3 rounded-md p-2"), className)}>{children}</div>
+  );
+}
+
+export function List({ className, children }: WireframeBaseProps) {
+  return <ul className={cn("mb-2 space-y-1", className)}>{children}</ul>;
+}
+
+export function ListItem({ className, children }: WireframeBaseProps) {
+  return (
+    <li className={cn(wireframeBox("rounded px-2 py-1 text-[10px]"), className)}>
+      {children}
+    </li>
+  );
+}
+
+export function Input({
+  label,
+  className,
+  placeholder = "…",
+}: WireframeBaseProps & { label?: string; placeholder?: string }) {
+  return (
+    <label className={cn("mb-2 block text-[10px]", className)}>
+      {label ? <span className="mb-1 block font-medium">{label}</span> : null}
+      <span
+        className={wireframeBox(
+          "bg-background block rounded px-2 py-1.5 text-muted-foreground",
+        )}
+      >
+        {placeholder}
+      </span>
+    </label>
+  );
+}
+
+export function Row({ className, children }: WireframeBaseProps) {
+  return <div className={cn("mb-2 flex gap-2", className)}>{children}</div>;
+}
+
+export function Placeholder({
+  className,
+  height = 48,
+}: WireframeBaseProps & { height?: number }) {
+  return (
+    <div
+      className={cn(wireframeBox("mb-2 w-full rounded"), className)}
+      style={{ height }}
+    />
+  );
+}
+
+/** Component map injected into JSXPreview for wireframe JSX strings. */
+export const WIREFRAME_JSX_COMPONENTS = {
+  Screen,
+  Sidebar,
+  Main,
+  NavItem,
+  Title,
+  Text,
+  Button,
+  Link,
+  Image,
+  Card,
+  List,
+  ListItem,
+  Input,
+  Row,
+  Placeholder,
+} as const;

@@ -729,14 +729,14 @@
       "elements": {
         "layout": {
           "type": "SplitPane",
-          "children": ["workbench", "linkedTable"]
+          "children": ["canvas", "linkedTable"]
         },
-        "workbench": {
-          "type": "ArtifactWorkbench",
+        "canvas": {
+          "type": "WireframeCanvas",
           "props": {
             "binding": "rows",
-            "themeBinding": "theme",
-            "listVariant": "flat"
+            "selectedBinding": "selected",
+            "height": 680
           }
         },
         "linkedTable": {

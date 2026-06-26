@@ -578,6 +578,30 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       },
     },
   },
+  WireframeCanvas: {
+    key: "WireframeCanvas",
+    category: "canvas",
+    description:
+      "React Flow canvas for initiative-scoped page_wireframe nodes. Each node renders grayscale JSX via JSXPreview (properties.jsx). Interactive Link/Button/NavItem elements use navigateTo to jump between wireframe cards; missing targets show a dashed border and edge label. Includes a searchable page sidebar and url_selection integration.",
+    children: false,
+    props: {
+      binding: binding("Multi-node binding of page_wireframe nodes (initiative_scope)."),
+      selectedBinding: {
+        type: "binding",
+        description:
+          'url_selection binding key for the active wireframe (default "selected").',
+      },
+      height: { type: "number", description: "Canvas height in px (default 640)." },
+    },
+    example: {
+      type: "WireframeCanvas",
+      props: {
+        binding: "rows",
+        selectedBinding: "selected",
+        height: 640,
+      },
+    },
+  },
   // ── widget ───────────────────────────────────────────────────────────────
   ComponentStudio: {
     key: "ComponentStudio",
