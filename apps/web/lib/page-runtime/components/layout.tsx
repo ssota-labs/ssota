@@ -111,7 +111,7 @@ export const layoutComponents: Record<string, CatalogComponent> = {
         paddingClass(props.padding),
       )}
     >
-      <header className="shrink-0 space-y-1 border-b pb-3">
+      <header className="shrink-0 space-y-1">
         <h2 className="text-lg font-semibold">{String(props.title ?? "Section")}</h2>
         {props.subtitle ? (
           <p className="text-muted-foreground text-sm">{String(props.subtitle)}</p>

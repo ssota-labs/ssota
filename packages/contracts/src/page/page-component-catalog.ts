@@ -64,7 +64,7 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "Section",
     category: "layout",
     description:
-      "Titled section container that groups child elements. Use padding:none inside Resizable/Grid panels when the parent already pads.",
+      "Titled section container with default padding (p-4 md:p-6). Wrap lists, editors, and tables; put the heading in Section props, not on child components.",
     children: true,
     props: {
       title: { type: "string", description: "Section heading." },
@@ -605,12 +605,18 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "DocumentSheetList",
     category: "document",
     description:
-      "List of document nodes; clicking a row opens a floating BlockNote sheet panel.",
+      "List of document nodes; clicking a row opens a floating BlockNote sheet panel. Wrap in Section for page headings and padding.",
     children: false,
     props: {
       binding: binding("A multi-node binding."),
-      sectionTitle: { type: "string", description: "Section heading above the list." },
-      sectionSubtitle: { type: "string", description: "Optional secondary line." },
+      sectionTitle: {
+        type: "string",
+        description: "Deprecated — use a parent Section title instead.",
+      },
+      sectionSubtitle: {
+        type: "string",
+        description: "Deprecated — use a parent Section subtitle instead.",
+      },
       title: { type: "string", description: "Optional list title." },
       field: { type: "string", description: 'Document property (default "content").' },
       subtitleField: { type: "string", description: 'Preview line property (default "summary").' },
@@ -623,7 +629,6 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       type: "DocumentSheetList",
       props: {
         binding: "rows",
-        sectionTitle: "Research notes",
         field: "content",
         editable: true,
         action: "saveDoc",
