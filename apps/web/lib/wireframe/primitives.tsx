@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@ssota/ui/lib/utils";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { useWireframeNavigation } from "./navigation-context";
 
 type WireframeBaseProps = {
@@ -35,7 +35,7 @@ function NavigableSurface({
   const isMissing = Boolean(target && nav && !hasTarget);
   const isInteractive = Boolean(target || onClick);
 
-  const handleClick = (event: MouseEvent) => {
+  const handleClick = (event: MouseEvent<HTMLElement>) => {
     if (!isInteractive) return;
     event.stopPropagation();
     if (target && nav) {
