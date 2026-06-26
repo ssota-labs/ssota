@@ -12,7 +12,13 @@ import { providerOfConnectorUid } from "./connect-credential.js";
 
 const ENRICHMENT_TIMEOUT_MS = 5_000;
 
-type EnrichmentProvider = "slack" | "github" | "notion" | "linear" | "discord";
+type EnrichmentProvider =
+  | "slack"
+  | "github"
+  | "notion"
+  | "linear"
+  | "discord"
+  | "twitter";
 
 interface EnrichmentResult {
   name?: string;
@@ -76,6 +82,7 @@ function resolveEnrichmentProvider(
 ): EnrichmentProvider | null {
   const segment = providerOfConnectorUid(connectorUid);
   if (segment === "oauth" || segment === "notion") return "notion";
+  if (segment === "x.com" || segment === "twitter") return "twitter";
   if (
     segment === "slack" ||
     segment === "github" ||
@@ -155,6 +162,8 @@ async function fetchEnrichment(
     }
     case "discord":
       return fetchDiscordGuild(token, installation);
+    case "twitter":
+      return fetchTwitterProfile(token);
   }
 }
 
@@ -296,5 +305,34 @@ async function fetchDiscordGuild(
       .filter(Boolean)
       .slice(0, 3)
       .join(", "),
+  };
+}
+
+async function fetchTwitterProfile(token: string): Promise<EnrichmentResult> {
+  const data = await fetchJson<{
+    data?: { id?: string; username?: string; name?: string };
+  }>("https://api.twitter.com/2/users/me?user.fields=username,name", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const user = data?.data;
+  const username = user?.username?.trim();
+  const displayName = user?.name?.trim();
+  const userId = user?.id?.trim();
+
+  let name: string | undefined;
+  if (username && displayName) {
+    name = `${displayName} (@${username})`;
+  } else if (username) {
+    name = `@${username}`;
+  } else if (displayName) {
+    name = displayName;
+  }
+
+  return {
+    ...(name ? { name } : {}),
+    ...(userId ? { tenantId: userId } : {}),
   };
 }

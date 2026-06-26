@@ -306,6 +306,84 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     props: {},
     example: { type: "NodeDocument" },
   },
+  SchemaDisplay: {
+    key: "SchemaDisplay",
+    category: "data",
+    description:
+      "Rich REST-API reference: a list of collapsible endpoint rows. Each shows a color-coded method badge (GET/POST/PUT/PATCH/DELETE), the path (`:param`/`{param}` highlighted), an optional auth lock + status tag, a parameter table (name/in/type/required/description), a recursive request-body schema, and a response list (status + shape, with nested body). Data is supplied inline via `endpoints` or read from a bound node property.",
+    children: false,
+    props: {
+      binding: binding("Optional single-node binding holding the schema jsonb."),
+      property: {
+        type: "string",
+        description:
+          'When `binding` is set, the node property holding the endpoints array (default "endpoints").',
+      },
+      endpoints: {
+        type: "{ method, path, summary?, description?, auth?, tag?, defaultOpen?, parameters?:[{ name, in, type?, required?, description? }], requestBody?:SchemaProperty[], responses?:[{ status, description?, shape?, body?:SchemaProperty[] }] }[]",
+        description:
+          "Inline endpoint list (when no binding). SchemaProperty is recursive: { name, type?, required?, description?, properties?:SchemaProperty[], items?:SchemaProperty[] }. method = GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS; in = path|query|header|cookie|body.",
+      },
+      title: { type: "string", description: "Optional heading above the list." },
+    },
+    example: {
+      type: "SchemaDisplay",
+      props: {
+        endpoints: [
+          {
+            method: "GET",
+            path: "/runs/:runId",
+            summary: "Fetch a single run.",
+            auth: "Bearer",
+            tag: "ADDED",
+            parameters: [
+              { name: "runId", in: "path", type: "string", required: true },
+            ],
+            responses: [{ status: 200, shape: "{ run: AgentRun }" }],
+          },
+        ],
+      },
+    },
+  },
+  TestResults: {
+    key: "TestResults",
+    category: "data",
+    description:
+      "Test-run report: a summary header (passed/failed/skipped counts + total duration), a stacked progress bar, and collapsible suites. Each test shows a status icon (passed=green, failed=red, skipped=amber, running=blue spinner), a duration, and — on failure — an error message + expandable stack. Data is supplied inline via `suites`/`tests` or read from a bound node property.",
+    children: false,
+    props: {
+      binding: binding("Optional single-node binding holding the test-run jsonb."),
+      property: {
+        type: "string",
+        description:
+          'When `binding` is set, the node property holding the run (default "testRun").',
+      },
+      suites: {
+        type: "{ name, status?, defaultOpen?, tests:[{ name, status, duration?, error?:{ message?, stack? } }] }[]",
+        description:
+          "Inline suites (when no binding). status = passed|failed|skipped|running; a suite's status is derived from its tests when omitted.",
+      },
+      tests: {
+        type: "{ name, status, duration?, error? }[]",
+        description: "Inline flat test list (wrapped into a single suite).",
+      },
+      title: { type: "string", description: "Optional summary heading override." },
+    },
+    example: {
+      type: "TestResults",
+      props: {
+        suites: [
+          {
+            name: "auth",
+            tests: [
+              { name: "logs in", status: "passed", duration: 12 },
+              { name: "rejects bad token", status: "failed", error: { message: "expected 401" } },
+            ],
+          },
+        ],
+      },
+    },
+  },
   // ── forms ────────────────────────────────────────────────────────────────
   Form: {
     key: "Form",
@@ -602,6 +680,26 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       },
     },
   },
+  ErdDiagram: {
+    key: "ErdDiagram",
+    category: "canvas",
+    description:
+      "Entity-relationship diagram. The whole schema lives in one node's jsonb property: tables (each with typed columns, PK/FK/NN/UQ flags) and relations between them. Tables render as cards with column rows; relations render as crow's-foot lines whose ends reflect the cardinality and anchor to the exact FK/PK columns. Auto-layout (ELK, left-to-right) runs when tables lack coordinates.",
+    children: false,
+    props: {
+      binding: binding("A single-node binding (the node holding the schema jsonb)."),
+      property: {
+        type: "string",
+        description:
+          'Node property holding the schema jsonb (default "erd"). Shape: { tables:[{ id, name, color?, note?, x?, y?, columns:[{ name, type?, pk?, fk?, notNull?, unique? }] }], relations:[{ source, target, sourceColumn?, targetColumn?, cardinality?, label? }] }. cardinality = 1:1|1:N|N:1|N:M; color = red|orange|amber|green|blue|purple|pink|gray.',
+      },
+      height: { type: "number", description: "Canvas height in px (default 480)." },
+    },
+    example: {
+      type: "ErdDiagram",
+      props: { binding: "schema", property: "erd", height: 520 },
+    },
+  },
   // ── widget ───────────────────────────────────────────────────────────────
   ComponentStudio: {
     key: "ComponentStudio",
@@ -654,6 +752,35 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       componentProps: { type: "object", description: "Free-form props for the embedded component." },
     },
     example: { type: "Widget", props: { binding: "chartArtifact", height: 320 } },
+  },
+  FigmaEmbed: {
+    key: "FigmaEmbed",
+    category: "widget",
+    description:
+      "Embeds a live Figma file via Embed Kit 2.0. The bound node supplies a Figma URL (share or embed.figma.com link) in a property field. `embedType` selects the surface: design/board/slides render read-only; proto additionally bridges the Embed API so prototype events (frame changes, clicks) dispatch a page action.",
+    children: false,
+    props: {
+      binding: binding(
+        "A single-node binding (node/ref/singleton) whose property field holds the Figma URL.",
+      ),
+      urlField: {
+        type: "string",
+        description: 'Node property field holding the Figma URL (default "figmaUrl").',
+      },
+      embedType: {
+        type: "string",
+        description:
+          'Figma surface: "design" (default) | "proto" | "board" | "slides". Only "proto" emits Embed API events.',
+      },
+      height: { type: "number", description: "Embed height in px (default 480)." },
+      onEvent: action(
+        "proto only: dispatched on each prototype event with input { type, ...payload }.",
+      ),
+    },
+    example: {
+      type: "FigmaEmbed",
+      props: { binding: "designNode", urlField: "figmaUrl", embedType: "design", height: 480 },
+    },
   },
 };
 

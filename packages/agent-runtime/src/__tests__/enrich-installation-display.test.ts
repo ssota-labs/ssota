@@ -199,4 +199,38 @@ describe("enrichConnectInstallationDisplay", () => {
     expect(result.tenantId).toBe("1234567890");
     expect(result.installationId).toBe("1234567890");
   });
+
+  it("enriches X account via users/me for x.com connector uids", async () => {
+    process.env.CREDENTIALS = "own-app";
+    process.env.CONNECTOR_X_COM_TOKEN = "x-user-token";
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: {
+          id: "12345",
+          username: "felixyeon",
+          name: "Felix Yeon",
+        },
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await enrichConnectInstallationDisplay({
+      connector: "x.com/ssota",
+      installation: {},
+      scope: { projectId: "p", userId: "u" },
+    });
+
+    expect(result.name).toBe("Felix Yeon (@felixyeon)");
+    expect(result.tenantId).toBe("12345");
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://api.twitter.com/2/users/me?user.fields=username,name",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer x-user-token",
+        }),
+      }),
+    );
+  });
 });

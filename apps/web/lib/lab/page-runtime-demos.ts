@@ -963,6 +963,71 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     },
   },
   {
+    id: "design-figma-embed",
+    category: "design",
+    title: "FigmaEmbed",
+    description:
+      "Live Figma file via Embed Kit 2.0. The bound node supplies a Figma URL; embedType selects the surface. design = read-only; proto bridges the Embed API so prototype events (frame changes, clicks) dispatch a page action — watch the 'Last action' line as you click through the prototype. (Prototype events require NEXT_PUBLIC_FIGMA_CLIENT_ID.)",
+    components: ["Section", "FigmaEmbed"],
+    spec: {
+      root: "wrap",
+      elements: {
+        wrap: { type: "SplitPane", children: ["designPane", "protoPane"] },
+        designPane: {
+          type: "Section",
+          props: { title: "Design", subtitle: "embedType: design (read-only)" },
+          children: ["designEmbed"],
+        },
+        designEmbed: {
+          type: "FigmaEmbed",
+          props: {
+            binding: "designNode",
+            urlField: "figmaUrl",
+            embedType: "design",
+            height: 360,
+          },
+        },
+        protoPane: {
+          type: "Section",
+          props: { title: "Prototype", subtitle: "embedType: proto (events → action)" },
+          children: ["protoEmbed"],
+        },
+        protoEmbed: {
+          type: "FigmaEmbed",
+          props: {
+            binding: "protoNode",
+            urlField: "figmaUrl",
+            embedType: "proto",
+            height: 360,
+            onEvent: "figmaProtoEvent",
+          },
+        },
+      },
+    },
+    bindingData: {
+      designNode: {
+        id: "99999999-9999-4999-8999-999999999901",
+        catalogKey: "design_file",
+        title: "Figma sample file",
+        properties: {
+          // Figma's public "Sample File" used throughout the REST API docs.
+          figmaUrl:
+            "https://www.figma.com/design/LKQ4FJ4bTnCSjedbRpk931/Sample-File",
+        },
+      },
+      protoNode: {
+        id: "99999999-9999-4999-8999-999999999902",
+        catalogKey: "design_file",
+        title: "Embed Kit 2.0 examples",
+        properties: {
+          // Figma's public Embed Kit 2.0 prototype (share = anyone with link).
+          figmaUrl:
+            "https://www.figma.com/proto/nrPSsILSYjesyc5UHjYYa4/Embed-Kit-2.0-examples?node-id=5-3",
+        },
+      },
+    },
+  },
+  {
     id: "spreadsheet",
     category: "data",
     title: "Spreadsheet (Google Sheets-style)",
@@ -1409,6 +1474,283 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
         catalogKey: "page_wireframe",
         title: "Welcome Screen",
         properties: { slug: "welcome" },
+      },
+    },
+  },
+  {
+    id: "erd-diagram",
+    category: "canvas",
+    title: "ErdDiagram (database schema)",
+    description:
+      "An entity-relationship diagram rendered with ReactFlow. The whole schema lives in one node's `erd` jsonb property: tables with typed columns (PK 🔑 / FK link glyph / NN / UQ tags) and relations drawn as crow's-foot lines that anchor to the exact FK→PK columns and reflect each relation's cardinality (1:N, N:1, N:M). Tables carry no coordinates, so ELK lays them out left-to-right. NOTE: ReactFlow measures nodes via ResizeObserver, which is inert in the preview harness — the table cards render, but relation lines only resolve in a real browser (or after clicking the canvas ⤢ fit-view control).",
+    components: ["Section", "ErdDiagram"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Blog Platform — Schema",
+            subtitle: "Single node · jsonb schema · ELK auto-layout · crow's-foot relations",
+          },
+          children: ["erd"],
+        },
+        erd: {
+          type: "ErdDiagram",
+          props: {
+            binding: "schema",
+            property: "erd",
+            height: 600,
+          },
+        },
+      },
+    },
+    bindingData: {
+      schema: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01",
+        catalogKey: "db_schema",
+        title: "Blog Platform Schema",
+        properties: {
+          erd: {
+            tables: [
+              {
+                id: "users",
+                name: "users",
+                color: "blue",
+                note: "Registered accounts",
+                columns: [
+                  { id: "id", name: "id", type: "uuid", pk: true },
+                  { name: "email", type: "varchar(255)", notNull: true, unique: true },
+                  { name: "display_name", type: "varchar(80)", notNull: true },
+                  { name: "created_at", type: "timestamptz", notNull: true },
+                ],
+              },
+              {
+                id: "posts",
+                name: "posts",
+                color: "purple",
+                note: "Articles authored by users",
+                columns: [
+                  { name: "id", type: "uuid", pk: true },
+                  { name: "author_id", type: "uuid", notNull: true },
+                  { name: "title", type: "varchar(200)", notNull: true },
+                  { name: "slug", type: "varchar(200)", unique: true, notNull: true },
+                  { name: "body", type: "text" },
+                  { name: "published_at", type: "timestamptz" },
+                ],
+              },
+              {
+                id: "comments",
+                name: "comments",
+                color: "green",
+                columns: [
+                  { name: "id", type: "uuid", pk: true },
+                  { name: "post_id", type: "uuid", notNull: true },
+                  { name: "author_id", type: "uuid", notNull: true },
+                  { name: "body", type: "text", notNull: true },
+                  { name: "created_at", type: "timestamptz", notNull: true },
+                ],
+              },
+              {
+                id: "tags",
+                name: "tags",
+                color: "amber",
+                columns: [
+                  { name: "id", type: "uuid", pk: true },
+                  { name: "name", type: "varchar(40)", unique: true, notNull: true },
+                ],
+              },
+              {
+                id: "post_tags",
+                name: "post_tags",
+                color: "gray",
+                note: "Join table",
+                columns: [
+                  { name: "post_id", type: "uuid", pk: true },
+                  { name: "tag_id", type: "uuid", pk: true },
+                ],
+              },
+            ],
+            relations: [
+              {
+                source: "posts",
+                sourceColumn: "author_id",
+                target: "users",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+              {
+                source: "comments",
+                sourceColumn: "post_id",
+                target: "posts",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+              {
+                source: "comments",
+                sourceColumn: "author_id",
+                target: "users",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+              {
+                source: "post_tags",
+                sourceColumn: "post_id",
+                target: "posts",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+              {
+                source: "post_tags",
+                sourceColumn: "tag_id",
+                target: "tags",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+            ],
+          },
+        },
+      },
+    },
+  },
+  {
+    id: "schema-display",
+    category: "data",
+    title: "SchemaDisplay (API reference)",
+    description:
+      "A rich REST-API reference: collapsible endpoint rows with color-coded method badges, parameter-highlighted paths, an auth lock, a parameters table (name/in/type/required/description), and a response list with shapes. Click a row to expand. Inspired by the ai-sdk elements `schema-display` and the builder.io API-reference demo.",
+    components: ["Section", "SchemaDisplay"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "New API Endpoints",
+            subtitle: "Mounted via createCoreRoutesPlugin · Bearer / MCP-OAuth",
+          },
+          children: ["schema"],
+        },
+        schema: {
+          type: "SchemaDisplay",
+          props: {
+            endpoints: [
+              {
+                method: "GET",
+                path: "/_agent-native/runs",
+                summary: "List agent runs for the authenticated workspace, newest first.",
+                auth: "Bearer",
+                tag: "ADDED",
+                responses: [{ status: 200, shape: "{ runs: AgentRun[] }" }],
+              },
+              {
+                method: "GET",
+                path: "/_agent-native/runs/:runId",
+                summary: "Fetch a single run with its full steps array.",
+                description:
+                  "Live polling via useDbSync. Auth is the same bearer-token / MCP-OAuth path used by the action route.",
+                auth: "Bearer",
+                tag: "ADDED",
+                defaultOpen: true,
+                parameters: [
+                  {
+                    name: "runId",
+                    in: "path",
+                    type: "string",
+                    required: true,
+                    description: "The run to fetch.",
+                  },
+                ],
+                responses: [
+                  { status: 200, shape: "{ run: AgentRun, steps: RunStep[] }" },
+                  { status: 404, description: "Run not found or not in this workspace" },
+                ],
+              },
+              {
+                method: "POST",
+                path: "/_agent-native/runs/:runId/stop",
+                summary: "Stop a running agent. Sets status = stopped, emits run.stopped.",
+                auth: "Bearer",
+                tag: "ADDED",
+                parameters: [
+                  { name: "runId", in: "path", type: "string", required: true },
+                ],
+                requestBody: [
+                  {
+                    name: "reason",
+                    type: "string",
+                    description: "Optional human-readable stop reason.",
+                  },
+                ],
+                responses: [
+                  { status: 200, shape: "{ run: AgentRun }" },
+                  { status: 409, description: "Run already finished" },
+                ],
+              },
+            ],
+          },
+        },
+      },
+    },
+  },
+  {
+    id: "test-results",
+    category: "data",
+    title: "TestResults (test run)",
+    description:
+      "A test-run report: a summary header with passed/failed/skipped counts and total duration, a stacked progress bar, and collapsible suites. Each test shows a status icon and duration; failures show an error message with an expandable stack. The failing suite auto-opens. Inspired by the ai-sdk elements `test-results`.",
+    components: ["Section", "TestResults"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "CI — page-runtime",
+            subtitle: "vitest run · 3 suites",
+          },
+          children: ["results"],
+        },
+        results: {
+          type: "TestResults",
+          props: {
+            suites: [
+              {
+                name: "erd-model",
+                tests: [
+                  { name: "coerceErd returns empty for junk", status: "passed", duration: 3 },
+                  { name: "drops dangling relations", status: "passed", duration: 2 },
+                  { name: "infers fk flag on source column", status: "passed", duration: 1 },
+                ],
+              },
+              {
+                name: "schema-doc",
+                tests: [
+                  { name: "accepts array / single / { endpoints }", status: "passed", duration: 4 },
+                  { name: "normalizes method case", status: "passed", duration: 2 },
+                  { name: "recursive request body", status: "skipped" },
+                ],
+              },
+              {
+                name: "run-page-action",
+                tests: [
+                  { name: "set_node_property merges", status: "passed", duration: 18 },
+                  {
+                    name: "delete_node removes incident edges",
+                    status: "failed",
+                    duration: 24,
+                    error: {
+                      message: "AssertionError: expected 0 edges, received 1",
+                      stack:
+                        "at delete-node.test.ts:42:18\n  at processTicksAndRejections (node:internal/process/task_queues:95:5)",
+                    },
+                  },
+                  { name: "rejects cross-workspace writes", status: "passed", duration: 9 },
+                ],
+              },
+            ],
+          },
+        },
       },
     },
   },

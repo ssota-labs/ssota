@@ -25,6 +25,7 @@
     "@ssota/adapter-postgres": "workspace:*",
     "@ssota/contracts": "workspace:*",
     "@ssota/core": "workspace:*",
+    "@xdevplatform/xdk": "^0.5.0",
     "ai": "^6.0.165",
     "zod": "^3.25.67"
   },

@@ -43,7 +43,7 @@ function DemoPreview({ demo }: { demo: PageRuntimeDemo }) {
       <div
         className={
           fillsViewport
-            ? "border-border bg-background relative min-h-0 flex-1 overflow-hidden rounded-lg border p-4"
+            ? "border-border bg-background relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border p-4"
             : "border-border bg-background relative min-h-[32rem] overflow-hidden rounded-lg border p-4"
         }
       >
