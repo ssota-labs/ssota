@@ -578,6 +578,26 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       },
     },
   },
+  ErdDiagram: {
+    key: "ErdDiagram",
+    category: "canvas",
+    description:
+      "Entity-relationship diagram. The whole schema lives in one node's jsonb property: tables (each with typed columns, PK/FK/NN/UQ flags) and relations between them. Tables render as cards with column rows; relations render as crow's-foot lines whose ends reflect the cardinality and anchor to the exact FK/PK columns. Auto-layout (ELK, left-to-right) runs when tables lack coordinates.",
+    children: false,
+    props: {
+      binding: binding("A single-node binding (the node holding the schema jsonb)."),
+      property: {
+        type: "string",
+        description:
+          'Node property holding the schema jsonb (default "erd"). Shape: { tables:[{ id, name, color?, note?, x?, y?, columns:[{ name, type?, pk?, fk?, notNull?, unique? }] }], relations:[{ source, target, sourceColumn?, targetColumn?, cardinality?, label? }] }. cardinality = 1:1|1:N|N:1|N:M; color = red|orange|amber|green|blue|purple|pink|gray.',
+      },
+      height: { type: "number", description: "Canvas height in px (default 480)." },
+    },
+    example: {
+      type: "ErdDiagram",
+      props: { binding: "schema", property: "erd", height: 520 },
+    },
+  },
   // ── widget ───────────────────────────────────────────────────────────────
   ComponentStudio: {
     key: "ComponentStudio",

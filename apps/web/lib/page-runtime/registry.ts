@@ -10,6 +10,7 @@ import { documentComponents } from "./components/document";
 import { spreadsheetComponents } from "./components/spreadsheet";
 import { artifactWorkbenchComponents } from "./components/artifact-workbench";
 import { flowComponents } from "./components/flow-canvas";
+import { erdDiagramComponents } from "./components/erd-diagram";
 import { widgetComponents } from "./components/widget";
 
 /**
@@ -29,6 +30,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...spreadsheetComponents,
   ...artifactWorkbenchComponents,
   ...flowComponents,
+  ...erdDiagramComponents,
   ...widgetComponents,
 };
 

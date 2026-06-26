@@ -1251,6 +1251,142 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
   },
+  {
+    id: "erd-diagram",
+    category: "canvas",
+    title: "ErdDiagram (database schema)",
+    description:
+      "An entity-relationship diagram rendered with ReactFlow. The whole schema lives in one node's `erd` jsonb property: tables with typed columns (PK 🔑 / FK link glyph / NN / UQ tags) and relations drawn as crow's-foot lines that anchor to the exact FK→PK columns and reflect each relation's cardinality (1:N, N:1, N:M). Tables carry no coordinates, so ELK lays them out left-to-right. NOTE: ReactFlow measures nodes via ResizeObserver, which is inert in the preview harness — the table cards render, but relation lines only resolve in a real browser (or after clicking the canvas ⤢ fit-view control).",
+    components: ["Section", "ErdDiagram"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Blog Platform — Schema",
+            subtitle: "Single node · jsonb schema · ELK auto-layout · crow's-foot relations",
+          },
+          children: ["erd"],
+        },
+        erd: {
+          type: "ErdDiagram",
+          props: {
+            binding: "schema",
+            property: "erd",
+            height: 600,
+          },
+        },
+      },
+    },
+    bindingData: {
+      schema: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01",
+        catalogKey: "db_schema",
+        title: "Blog Platform Schema",
+        properties: {
+          erd: {
+            tables: [
+              {
+                id: "users",
+                name: "users",
+                color: "blue",
+                note: "Registered accounts",
+                columns: [
+                  { id: "id", name: "id", type: "uuid", pk: true },
+                  { name: "email", type: "varchar(255)", notNull: true, unique: true },
+                  { name: "display_name", type: "varchar(80)", notNull: true },
+                  { name: "created_at", type: "timestamptz", notNull: true },
+                ],
+              },
+              {
+                id: "posts",
+                name: "posts",
+                color: "purple",
+                note: "Articles authored by users",
+                columns: [
+                  { name: "id", type: "uuid", pk: true },
+                  { name: "author_id", type: "uuid", notNull: true },
+                  { name: "title", type: "varchar(200)", notNull: true },
+                  { name: "slug", type: "varchar(200)", unique: true, notNull: true },
+                  { name: "body", type: "text" },
+                  { name: "published_at", type: "timestamptz" },
+                ],
+              },
+              {
+                id: "comments",
+                name: "comments",
+                color: "green",
+                columns: [
+                  { name: "id", type: "uuid", pk: true },
+                  { name: "post_id", type: "uuid", notNull: true },
+                  { name: "author_id", type: "uuid", notNull: true },
+                  { name: "body", type: "text", notNull: true },
+                  { name: "created_at", type: "timestamptz", notNull: true },
+                ],
+              },
+              {
+                id: "tags",
+                name: "tags",
+                color: "amber",
+                columns: [
+                  { name: "id", type: "uuid", pk: true },
+                  { name: "name", type: "varchar(40)", unique: true, notNull: true },
+                ],
+              },
+              {
+                id: "post_tags",
+                name: "post_tags",
+                color: "gray",
+                note: "Join table",
+                columns: [
+                  { name: "post_id", type: "uuid", pk: true },
+                  { name: "tag_id", type: "uuid", pk: true },
+                ],
+              },
+            ],
+            relations: [
+              {
+                source: "posts",
+                sourceColumn: "author_id",
+                target: "users",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+              {
+                source: "comments",
+                sourceColumn: "post_id",
+                target: "posts",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+              {
+                source: "comments",
+                sourceColumn: "author_id",
+                target: "users",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+              {
+                source: "post_tags",
+                sourceColumn: "post_id",
+                target: "posts",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+              {
+                source: "post_tags",
+                sourceColumn: "tag_id",
+                target: "tags",
+                targetColumn: "id",
+                cardinality: "N:1",
+              },
+            ],
+          },
+        },
+      },
+    },
+  },
 ];
 
 export function getPageRuntimeDemo(id: string): PageRuntimeDemo | undefined {
