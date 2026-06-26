@@ -1295,6 +1295,66 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     <Button navigateTo="signup">Sign up</Button>
   </Main>
 </Screen>`,
+            jsxByViewport: {
+              mobile: `<Screen>
+  <Main>
+    <Title>Pet Health</Title>
+    <Text className="text-primary font-medium">📱 Mobile — one-thumb onboarding</Text>
+    <Image label="App icon" className="max-h-32" />
+    <Text>Swipe-friendly welcome with a single primary action.</Text>
+    <Button navigateTo="login">Get started</Button>
+    <Link navigateTo="media-timeline">Browse as guest</Link>
+  </Main>
+</Screen>`,
+              tablet: `<Screen>
+  <Main>
+    <Title>Pet Health</Title>
+    <Text className="text-primary font-medium">📲 Tablet — split hero + features</Text>
+    <Row>
+      <Card className="flex-1">
+        <Image label="Hero" />
+        <Text>Track walks, meals, and vet visits in one timeline.</Text>
+      </Card>
+      <Card className="flex-1">
+        <Title>Why owners love it</Title>
+        <List>
+          <ListItem>Shared family access</ListItem>
+          <ListItem>Smart reminders</ListItem>
+          <ListItem>Export for your vet</ListItem>
+        </List>
+      </Card>
+    </Row>
+    <Button navigateTo="login">Log in</Button>
+  </Main>
+</Screen>`,
+              desktop: `<Screen>
+  <Sidebar>
+    <NavItem active>Home</NavItem>
+    <NavItem navigateTo="login">Login</NavItem>
+    <NavItem navigateTo="media-timeline">Media</NavItem>
+  </Sidebar>
+  <Main>
+    <Title>Pet Health Dashboard</Title>
+    <Text className="text-primary font-medium">🖥 Desktop — full workspace with nav + metrics</Text>
+    <Row>
+      <Card className="flex-1">
+        <Image label="Analytics" />
+        <Text>Weekly activity up 12%</Text>
+      </Card>
+      <Card className="flex-1">
+        <Image label="Pets" />
+        <Text>3 active profiles</Text>
+      </Card>
+      <Card className="flex-1">
+        <Image label="Calendar" />
+        <Text>Next vet visit: Apr 12</Text>
+      </Card>
+    </Row>
+    <Button navigateTo="login">Open console</Button>
+    <Link navigateTo="media-timeline">View media timeline →</Link>
+  </Main>
+</Screen>`,
+            },
           },
         },
         {
