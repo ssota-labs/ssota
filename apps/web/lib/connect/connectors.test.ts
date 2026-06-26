@@ -1,6 +1,7 @@
 import { mcpScopesForConnector } from "@ssota/agent-runtime/connect-scopes";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  connectorProviderForAuthorize,
   getConnectors,
   isMcpConnector,
   resolveAuthorizeScopes,
@@ -100,5 +101,23 @@ describe("resolveAuthorizeScopes", () => {
     // Notion uses a content-grant model — no scope strings — so consent falls
     // back to the connector's configured default grant.
     expect(resolveAuthorizeScopes("notion/ssota")).toBeUndefined();
+  });
+
+  it("grants full X scopes for twitter and x.com connector uids", () => {
+    const expected = resolveAuthorizeScopes("twitter/ssota");
+    expect(expected).toContain("list.read");
+    expect(expected).toContain("list.write");
+    expect(expected).toContain("space.read");
+    expect(expected).toContain("mute.write");
+    expect(expected).toContain("block.read");
+    expect(expected).toContain("tweet.moderate.write");
+    expect(expected).toContain("offline.access");
+    expect(resolveAuthorizeScopes("x.com/ssota")).toEqual(expected);
+  });
+});
+
+describe("connectorProviderForAuthorize", () => {
+  it("maps x.com connector uids to twitter", () => {
+    expect(connectorProviderForAuthorize("x.com/ssota")).toBe("twitter");
   });
 });
