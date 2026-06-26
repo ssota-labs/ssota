@@ -65,6 +65,14 @@ test.describe("Page Runtime Lab", () => {
     await expect(page.getByTestId("wireframe-flow-node-shell")).toBeVisible();
 
     await expect(page.getByText("one-thumb onboarding")).toBeVisible();
+    await expect(page.getByTestId("wireframe-flow-node-shell")).toHaveAttribute(
+      "data-wireframe-node-focused",
+      "true",
+    );
+    await expect(page.getByTestId("wireframe-nav-login")).toHaveAttribute(
+      "data-hotspot-visible",
+      "true",
+    );
 
     const loginHotspot = page.getByTestId("wireframe-nav-login");
     await loginHotspot.scrollIntoViewIfNeeded();
@@ -90,9 +98,11 @@ test.describe("Page Runtime Lab", () => {
 
     await page.getByTestId("wireframe-viewport-desktop").click();
     await expect(page.getByText("full workspace")).toBeVisible();
-    await expect(
-      page.locator('[data-hotspot-selected="true"]').filter({ hasText: "Home" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open console" })).toHaveAttribute(
+      "data-hotspot-visible",
+      "true",
+    );
+    await expect(page.locator('[data-hotspot-visible="true"]')).toHaveCount(4);
 
     await page.getByTestId("wireframe-viewport-mobile").click();
     await expect(page.getByText("one-thumb onboarding")).toBeVisible();

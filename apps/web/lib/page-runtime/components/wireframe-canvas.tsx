@@ -53,6 +53,8 @@ function SingleWireframeViewport({ nodeId }: { nodeId: string | null }) {
 
 function WireframePreviewCanvas({
   activeFrame,
+  nodeFocused,
+  onNodeFocusedChange,
 }: {
   activeFrame: {
     id: string;
@@ -60,6 +62,8 @@ function WireframePreviewCanvas({
     title: string;
     properties: Record<string, unknown>;
   };
+  nodeFocused: boolean;
+  onNodeFocusedChange: (focused: boolean) => void;
 }) {
   const { viewport, setViewport } = useWireframeViewport();
 
@@ -74,10 +78,19 @@ function WireframePreviewCanvas({
         },
         draggable: false,
         selectable: true,
+        selected: nodeFocused,
       },
     ],
-    [activeFrame],
+    [activeFrame, nodeFocused],
   );
+
+  const handleNodeClick = React.useCallback(() => {
+    onNodeFocusedChange(true);
+  }, [onNodeFocusedChange]);
+
+  const handlePaneClick = React.useCallback(() => {
+    onNodeFocusedChange(false);
+  }, [onNodeFocusedChange]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -98,6 +111,8 @@ function WireframePreviewCanvas({
           elementsSelectable
           panOnDrag={[1, 2]}
           zoomOnScroll
+          onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
           proOptions={{ hideAttribution: true }}
           minZoom={0.2}
           maxZoom={1.5}
@@ -126,6 +141,11 @@ function WireframeCanvasEl({
   height: number;
 }) {
   const [viewport, setViewport] = React.useState<WireframeViewport>("mobile");
+  const [nodeFocused, setNodeFocused] = React.useState(true);
+
+  React.useEffect(() => {
+    setNodeFocused(true);
+  }, [selectedId]);
 
   const frames = React.useMemo(
     () =>
@@ -154,7 +174,7 @@ function WireframeCanvasEl({
   const toolbarSlug = activeFrame?.slug ?? "—";
 
   const handleNavigate = React.useCallback(
-    (nodeId: string) => {
+    (nodeId: string, _slug: string) => {
       onSelect(nodeId);
     },
     [onSelect],
@@ -213,7 +233,7 @@ function WireframeCanvasEl({
   return (
     <WireframeNavigationProvider
       slugToNodeId={slugToNodeId}
-      activePageSlug={activeFrame.slug}
+      hotspotsVisible={nodeFocused}
       onNavigate={handleNavigate}
     >
       <WireframeViewportProvider
@@ -226,7 +246,11 @@ function WireframeCanvasEl({
           data-testid="wireframe-canvas"
         >
           <style>{WIREFRAME_FLOW_STYLES}</style>
-          <WireframePreviewCanvas activeFrame={activeFrame} />
+          <WireframePreviewCanvas
+            activeFrame={activeFrame}
+            nodeFocused={nodeFocused}
+            onNodeFocusedChange={setNodeFocused}
+          />
         </div>
       </WireframeViewportProvider>
     </WireframeNavigationProvider>

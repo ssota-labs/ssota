@@ -24,26 +24,22 @@ type NavigableProps = WireframeBaseProps & {
 function NavigableSurface({
   navigateTo,
   onClick,
-  active,
   className,
   children,
   as: Tag = "div",
   ...props
-}: NavigableProps & { active?: boolean; as?: "div" | "button" | "a" }) {
+}: NavigableProps & { as?: "div" | "button" | "a" }) {
   const nav = useWireframeNavigation();
   const target = navigateTo?.trim().toLowerCase();
   const hasTarget = target ? nav?.knownSlugs.has(target) : false;
   const isMissing = Boolean(target && nav && !hasTarget);
   const isInteractive = Boolean(target || onClick);
-  const isHotspotSelected =
-    Boolean(active) ||
-    Boolean(target && nav?.selectedHotspotSlug === target);
+  const showHotspotCue = Boolean(isInteractive && nav?.hotspotsVisible);
 
   const handleClick = (event: MouseEvent<HTMLElement>) => {
     if (!isInteractive) return;
     event.stopPropagation();
     if (target && nav) {
-      nav.selectHotspot(target);
       nav.navigateTo(target);
     }
     onClick?.();
@@ -56,24 +52,15 @@ function NavigableSurface({
         "relative",
         isMissing && "inline-flex flex-wrap items-center gap-1",
         isInteractive && "cursor-pointer",
-        // Hotspot affordance: subtle cue on all navigateTo surfaces, stronger when selected.
-        isInteractive &&
-          !isHotspotSelected &&
-          "ring-1 ring-inset ring-blue-400/40 transition-[box-shadow,background-color]",
-        isInteractive &&
-          !isHotspotSelected &&
-          "hover:bg-blue-500/5 hover:ring-blue-400/70",
-        isHotspotSelected &&
-          "ring-2 ring-inset ring-blue-500 bg-blue-500/10",
-        isMissing &&
-          !isHotspotSelected &&
-          "border-amber-500/40 border border-dashed",
+        showHotspotCue &&
+          "ring-2 ring-inset ring-blue-500 bg-blue-500/10 transition-[box-shadow,background-color]",
+        isMissing && !showHotspotCue && "border-amber-500/40 border border-dashed",
         className,
       )}
       onClick={isInteractive ? handleClick : undefined}
       data-navigate-to={target || undefined}
       data-testid={target ? `wireframe-nav-${target}` : undefined}
-      data-hotspot-selected={isHotspotSelected ? "true" : undefined}
+      data-hotspot-visible={showHotspotCue ? "true" : undefined}
       data-nav-missing={isMissing ? "true" : undefined}
       title={
         isMissing
@@ -133,7 +120,6 @@ export function NavItem({
   return (
     <NavigableSurface
       navigateTo={navigateTo}
-      active={active}
       className={cn(
         "mb-1 rounded px-2 py-1",
         !active && "text-muted-foreground",
