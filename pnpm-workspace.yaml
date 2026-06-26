@@ -3,6 +3,7 @@ packages:
   - "packages/*"
   - "e2e"
 allowBuilds:
+  '@sentry/cli': true
   '@swc/core': true
   bufferutil: false
   cbor-extract: true
