@@ -2,7 +2,6 @@ import {
   createSandboxSession,
   getDb,
   getTaskPort,
-  resolveCredentialProvider,
   streamAgent,
   type RunAgentResult,
   type SandboxSession,
@@ -81,8 +80,6 @@ export async function runAgentStepCore(
     }
   }
 
-  const credentials = resolveCredentialProvider();
-
   try {
     return await streamAgent(
       {
@@ -93,7 +90,6 @@ export async function runAgentStepCore(
         accountId: input.accountId,
         modelId: input.modelId,
         sandbox,
-        credentials,
         maxSteps: input.maxSteps,
       },
       writable,
