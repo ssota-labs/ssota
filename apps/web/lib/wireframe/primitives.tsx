@@ -56,8 +56,18 @@ function NavigableSurface({
         "relative",
         isMissing && "inline-flex flex-wrap items-center gap-1",
         isInteractive && "cursor-pointer",
-        isHotspotSelected && "border-2 border-blue-500 bg-blue-500/10",
-        isMissing && "border-amber-500/40 border border-dashed",
+        // Hotspot affordance: subtle cue on all navigateTo surfaces, stronger when selected.
+        isInteractive &&
+          !isHotspotSelected &&
+          "ring-1 ring-inset ring-blue-400/40 transition-[box-shadow,background-color]",
+        isInteractive &&
+          !isHotspotSelected &&
+          "hover:bg-blue-500/5 hover:ring-blue-400/70",
+        isHotspotSelected &&
+          "ring-2 ring-inset ring-blue-500 bg-blue-500/10",
+        isMissing &&
+          !isHotspotSelected &&
+          "border-amber-500/40 border border-dashed",
         className,
       )}
       onClick={isInteractive ? handleClick : undefined}

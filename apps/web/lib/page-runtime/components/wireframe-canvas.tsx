@@ -33,7 +33,7 @@ const WIREFRAME_FLOW_STYLES = `
 .ssota-wireframe-flow .react-flow__viewport { z-index: 2; pointer-events: none; }
 .ssota-wireframe-flow .react-flow__nodes { pointer-events: none; }
 .ssota-wireframe-flow .react-flow__node { z-index: 1; pointer-events: all; }
-.ssota-wireframe-flow .react-flow__node.selected { z-index: 2; }
+.ssota-wireframe-flow .react-flow__node.selected { z-index: 2; box-shadow: none; outline: none; }
 `;
 
 /** Fit the single centered wireframe when selection or viewport changes. */
