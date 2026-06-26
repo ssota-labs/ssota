@@ -507,7 +507,16 @@ pnpm e2e:emulate          # emulate OAuth E2E (별도 Playwright config)
 | 부트스트랩 | `pnpm cloud:prepare` | Node 24 |
 | 린트·타입 | `pnpm lint && pnpm typecheck` | 없음 |
 | 코어 유닛 | `pnpm test --filter @ssota/core` | 없음 |
-| 어댑터 통합 | `pnpm test --filter @ssota/adapter-supabase` | `cloud:prepare` |
+| 어댑터 통합 | `pnpm test --filter @ssota/adapter-postgres` | `cloud:prepare` |
 | E2E | `pnpm e2e` | `cloud:prepare` |
 
 스모크 계정: `smoke@ssota.test` / `smoke-test-password-123` (시드 생성).
+
+> 어댑터 패키지는 `@ssota/adapter-postgres`다 (구 `@ssota/adapter-supabase` 명칭 아님). `--filter` 시 `adapter-postgres`를 쓴다.
+
+### 알려진 pre-existing 테스트 실패 (환경 문제 아님)
+
+아래는 `main` 기준 **이미 실패하는** 테스트다. 환경 셋업이 깨진 게 아니라 시드·테스트 기대값 불일치이므로, 셋업 검증 중 이걸 보고 환경을 의심하지 말 것. 무관한 작업에서 고치지 말 것.
+
+- **`@ssota/adapter-postgres` `task-port.integration.test.ts` (5 fail)** — `WORKFLOW_INSTRUCTION_SEEDS`가 의도적으로 비어 있어(프로젝트는 워크플로우 instruction 없이 시작, 에이전트가 `agent.setup`으로 on-demand 작성) DB에 `work.implement_feature`·`work.write_document`·`orchestrator.daily` row가 없다. `spawnTask`/Tasks UI의 "New task"는 DB workflow instruction row를 요구하므로 시드만으론 태스크 생성이 안 된다. 나머지 24/29 통합 테스트(graph CRUD·RLS·시드 무결성)는 통과한다.
+- **일부 E2E (`smoke` 일부, `onboarding`, `executive-goals`, `initiative-lifecycle` 등)** — 시드가 `ssota-dev`에 그래프 노드를 채워 넣어 "빈 상태"(`Nothing here yet`)를 기대하는 smoke assert가 깨지고, onboarding은 selector strict-mode 충돌(`button[type="submit"]`이 "Sign out"+"Continue" 둘 다 매칭)로 깨진다. 앱 자체는 정상 동작(로그인→Overview 렌더, 신규 가입→org/project 생성→Overview)한다.
