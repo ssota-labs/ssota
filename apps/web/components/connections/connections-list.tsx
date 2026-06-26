@@ -83,6 +83,7 @@ export function ConnectionsList({
   const connectedCount = connections.length;
 
   return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-6">
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
       <header className="space-y-4">
         <div className="space-y-1">
@@ -124,6 +125,7 @@ export function ConnectionsList({
           );
         })}
       </div>
+    </div>
     </div>
   );
 }
