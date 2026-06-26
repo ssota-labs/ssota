@@ -3,12 +3,8 @@
 import * as React from "react";
 import { type NodeProps } from "@xyflow/react";
 import { cn } from "@ssota/ui/lib/utils";
-import {
-  JSXPreview,
-  JSXPreviewContent,
-  JSXPreviewError,
-} from "@/components/ai-elements/jsx-preview";
-import { WIREFRAME_JSX_COMPONENTS } from "@/lib/wireframe/primitives";
+import { WireframePreviewIframe } from "@/components/console/wireframe/wireframe-preview-iframe";
+import { useWireframeNavigation } from "@/lib/wireframe/navigation-context";
 import { readWireframeJsx } from "@/lib/wireframe/read-wireframe";
 import { useWireframeViewport } from "@/lib/wireframe/viewport-context";
 
@@ -18,10 +14,22 @@ export type WireframeNodePayload = {
 
 function WireframeNodeComponent({ data }: NodeProps) {
   const payload = data as unknown as WireframeNodePayload;
-  const { size } = useWireframeViewport();
+  const { size, viewport } = useWireframeViewport();
+  const nav = useWireframeNavigation();
   const jsx = React.useMemo(
-    () => readWireframeJsx(payload.properties),
-    [payload.properties],
+    () => readWireframeJsx(payload.properties, viewport),
+    [payload.properties, viewport],
+  );
+  const knownSlugs = React.useMemo(
+    () => [...(nav?.knownSlugs ?? [])],
+    [nav?.knownSlugs],
+  );
+
+  const handleNavigate = React.useCallback(
+    (slug: string) => {
+      nav?.navigateTo(slug);
+    },
+    [nav],
   );
 
   return (
@@ -32,10 +40,14 @@ function WireframeNodeComponent({ data }: NodeProps) {
       style={{ width: size.width, height: size.height }}
     >
       <div className="nodrag nopan h-full overflow-hidden">
-        <JSXPreview jsx={jsx} components={WIREFRAME_JSX_COMPONENTS}>
-          <JSXPreviewContent className="h-full overflow-auto text-xs" />
-          <JSXPreviewError className="m-3" />
-        </JSXPreview>
+        <WireframePreviewIframe
+          jsx={jsx}
+          viewport={viewport}
+          knownSlugs={knownSlugs}
+          onNavigate={handleNavigate}
+          width={size.width}
+          height={size.height}
+        />
       </div>
     </div>
   );

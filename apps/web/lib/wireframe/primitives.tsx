@@ -82,7 +82,7 @@ export function Screen({ className, children }: WireframeBaseProps) {
   return (
     <div
       className={cn(
-        "bg-background text-foreground flex h-full min-h-0 flex-col overflow-hidden grayscale",
+        "bg-background text-foreground flex h-full min-h-dvh flex-col md:flex-row overflow-hidden grayscale",
         className,
       )}
     >
@@ -95,7 +95,7 @@ export function Sidebar({ className, children }: WireframeBaseProps) {
   return (
     <aside
       className={cn(
-        "border-border bg-muted/30 w-24 shrink-0 border-r p-2 text-[10px]",
+        "border-border bg-muted/30 hidden w-full shrink-0 border-b p-2 text-[10px] md:flex md:w-28 md:flex-col md:border-r md:border-b-0 lg:w-32",
         className,
       )}
     >
@@ -224,7 +224,11 @@ export function Input({
 }
 
 export function Row({ className, children }: WireframeBaseProps) {
-  return <div className={cn("mb-2 flex gap-2", className)}>{children}</div>;
+  return (
+    <div className={cn("mb-2 flex flex-col gap-2 sm:flex-row", className)}>
+      {children}
+    </div>
+  );
 }
 
 export function Placeholder({

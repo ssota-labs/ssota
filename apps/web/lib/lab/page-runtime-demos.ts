@@ -1327,10 +1327,16 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
   </Sidebar>
   <Main>
     <Title>Media Timeline</Title>
-    <Card>
-      <Image label="Photo" />
-      <Text>Bella — Morning Walk</Text>
-    </Card>
+    <Row>
+      <Card className="flex-1">
+        <Image label="Photo" />
+        <Text>Bella — Morning Walk</Text>
+      </Card>
+      <Card className="hidden flex-1 md:block">
+        <Image label="Photo" />
+        <Text>Evening feed</Text>
+      </Card>
+    </Row>
     <Button navigateTo="upload-media">Upload Media</Button>
     <Link navigateTo="missing-page">Broken link demo</Link>
   </Main>
