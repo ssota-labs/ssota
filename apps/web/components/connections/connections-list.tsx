@@ -34,6 +34,7 @@ import { useConnectionDisplayEnrichment } from "@/components/connections/use-con
 import { disconnectConnectionAction } from "@/app/[orgSlug]/[projectSlug]/connections/actions";
 import type { ConnectorDef, ConnectorProvider } from "@/lib/connect/connectors";
 import { providerOf } from "@/lib/connect/connectors";
+import { connectionDisplaySubtitle } from "@/lib/connections/display";
 
 export interface ConnectionRow {
   id: string;
@@ -300,6 +301,7 @@ function ConnectionItem({
     projectId,
     accountId,
   );
+  const subtitle = connectionDisplaySubtitle(displayRow, provider);
 
   return (
     <div
@@ -319,9 +321,9 @@ function ConnectionItem({
           >
             {label}
           </p>
-          {displayRow.tenantId && displayRow.name ? (
+          {subtitle ? (
             <p className="truncate text-xs text-muted-foreground">
-              {displayRow.tenantId}
+              {subtitle}
             </p>
           ) : null}
         </div>

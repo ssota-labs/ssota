@@ -1,8 +1,12 @@
+import type { ConnectorProvider } from "@/lib/connect/connectors";
+
 export interface ConnectionDisplayRow {
   installationId: string;
   tenantId: string | null;
   name: string | null;
 }
+
+const TWITTER_HANDLE_IN_NAME = /\(@([A-Za-z0-9_]+)\)\s*$/;
 
 export function connectionInstallationId(
   row: ConnectionDisplayRow,
@@ -26,4 +30,35 @@ export function needsConnectionDisplayEnrichment(
   row: ConnectionDisplayRow,
 ): boolean {
   return !row.name?.trim();
+}
+
+/**
+ * Secondary line under the connection title (e.g. Slack team id, X @handle).
+ * X stores the numeric user id in tenantId — show @handle parsed from name instead.
+ */
+export function connectionDisplaySubtitle(
+  row: ConnectionDisplayRow,
+  provider: ConnectorProvider,
+): string | null {
+  if (!row.name?.trim()) return null;
+
+  if (provider === "twitter") {
+    const handle = extractTwitterHandleFromName(row.name);
+    if (handle) return `@${handle}`;
+    const tenant = row.tenantId?.trim();
+    if (tenant && !/^\d+$/.test(tenant)) {
+      return tenant.startsWith("@") ? tenant : `@${tenant}`;
+    }
+    return null;
+  }
+
+  return row.tenantId?.trim() || null;
+}
+
+function extractTwitterHandleFromName(name: string): string | null {
+  const parenMatch = name.match(TWITTER_HANDLE_IN_NAME);
+  if (parenMatch?.[1]) return parenMatch[1];
+
+  const atMatch = name.trim().match(/^@([A-Za-z0-9_]+)$/);
+  return atMatch?.[1] ?? null;
 }
