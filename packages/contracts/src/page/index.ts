@@ -26,6 +26,7 @@ export {
 export {
   PAGE_COMPONENT_CATALOG,
   PAGE_COMPONENT_KEYS,
+  PAGE_COMPOSITE_PATTERNS,
   listPageComponents,
   getPageComponent,
   isKnownPageComponent,

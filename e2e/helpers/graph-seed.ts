@@ -38,6 +38,38 @@ export async function getSmokeInitiativeId(): Promise<string> {
   return smoke.id;
 }
 
+let cachedHypothesisId: string | undefined;
+
+/** Smoke seed hypothesis id for generic node detail E2E. */
+export async function getSmokeHypothesisId(): Promise<string> {
+  if (cachedHypothesisId) return cachedHypothesisId;
+
+  const databaseUrl =
+    process.env.DATABASE_URL ??
+    "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
+
+  const { db } = createDb(databaseUrl);
+  const consolePort = createConsolePort(db);
+  const org = await consolePort.getOrganizationBySlug(DEFAULT_ORG_SLUG);
+  if (!org) throw new Error("Default org not found — run db:seed");
+
+  const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+  if (!project) throw new Error("Default project not found — run db:seed");
+
+  const { graphRead } = createGraphPorts(db, { projectId: project.id });
+  const nodes = await graphRead.queryNodes({
+    projectId: project.id,
+    catalogKey: "hypothesis",
+    limit: 100,
+  });
+  const smoke = nodes.find((node) => node.title === "Smoke hypothesis");
+
+  if (!smoke?.id) throw new Error("Smoke hypothesis not found — run db:seed");
+
+  cachedHypothesisId = smoke.id;
+  return smoke.id;
+}
+
 const uiComponentIdCache = new Map<string, string>();
 
 /** Smoke seed ui_component id by properties.slug (e.g. demo-card). */

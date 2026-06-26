@@ -53,13 +53,13 @@ export function DocumentSheetListEl({
 
   return (
     <div
-      className="absolute inset-0 flex flex-col"
+      className="flex min-h-0 flex-1 flex-col"
       data-testid="document-sheet-list"
     >
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-3">
         {sectionTitle ? (
-          <header className="space-y-1 border-b pb-3">
+          <header className="space-y-1">
             <h2 className="text-lg font-semibold">{sectionTitle}</h2>
             {sectionSubtitle ? (
               <p className="text-muted-foreground text-sm">{sectionSubtitle}</p>

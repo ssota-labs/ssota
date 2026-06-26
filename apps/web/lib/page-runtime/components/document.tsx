@@ -20,14 +20,17 @@ const DocumentEditorEl = dynamic(
 function BoundDocumentEditor({
   actionKey,
   content,
+  compact,
 }: {
   actionKey?: string;
   content: unknown;
+  compact?: boolean;
 }) {
   const onAction = useAction();
   return (
     <DocumentEditorEl
       content={content}
+      compact={compact}
       onSave={(blocks) => {
         if (onAction && actionKey) void onAction(actionKey, { doc: blocks });
       }}
@@ -52,7 +55,7 @@ export const documentComponents: Record<string, CatalogComponent> = {
     </div>
   ),
   DocumentEditor: ({ props, bindingData }) => (
-    <div>
+    <div className="min-h-0 flex-1 overflow-auto">
       <BoundDocumentEditor
         actionKey={typeof props.action === "string" ? props.action : undefined}
         content={docContent(bindingData, props)}
@@ -60,8 +63,9 @@ export const documentComponents: Record<string, CatalogComponent> = {
     </div>
   ),
   DocumentSheetList: ({ props, bindingData }) => (
-    <DocumentSheetListEl
-      nodes={boundNodes(bindingData, props)}
+    <div className="flex min-h-0 flex-1 flex-col">
+      <DocumentSheetListEl
+        nodes={boundNodes(bindingData, props)}
       title={props.title ? String(props.title) : undefined}
       sectionTitle={
         typeof props.sectionTitle === "string" ? props.sectionTitle : undefined
@@ -91,6 +95,7 @@ export const documentComponents: Record<string, CatalogComponent> = {
           ? props.sheetSize
           : "half"
       }
-    />
+      />
+    </div>
   ),
 };

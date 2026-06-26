@@ -225,7 +225,7 @@ describe("enrichConnectInstallationDisplay", () => {
     expect(result.name).toBe("Felix Yeon (@felixyeon)");
     expect(result.tenantId).toBe("12345");
     expect(fetchMock).toHaveBeenCalledWith(
-      "https://api.twitter.com/2/users/me?user.fields=username,name",
+      "https://api.x.com/2/users/me?user.fields=username,name",
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: "Bearer x-user-token",

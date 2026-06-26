@@ -33,6 +33,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@phosphor-icons/react": "^2.1.10",
     "@ridemountainpig/svgl-react": "^1.0.17",
+    "@sentry/nextjs": "^10.60.0",
     "@ssota/adapter-postgres": "workspace:*",
     "@ssota/agent-runtime": "workspace:*",
     "@ssota/contracts": "workspace:*",

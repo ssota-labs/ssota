@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { withSentryConfig } from "@sentry/nextjs";
 import { withEmulate } from "@emulators/adapter-next";
 import traceManifest from "../../packages/studio-build/studio-trace-manifest.json" with {
   type: "json",
@@ -70,5 +71,17 @@ export default async function config(
     result = withEmulate(result);
   }
 
-  return result;
+  // Sentry: wraps the build to upload source maps and instrument the runtime.
+  // No-op for events at runtime unless NEXT_PUBLIC_SENTRY_DSN is set; source
+  // maps upload only when SENTRY_AUTH_TOKEN/ORG/PROJECT are present (CI/Vercel).
+  return withSentryConfig(result, {
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    silent: !process.env.CI,
+    // Upload a wider set of client files for better stack traces.
+    widenClientFileUpload: true,
+    // Tree-shake Sentry's debug logger out of the client bundle.
+    disableLogger: true,
+  });
 };

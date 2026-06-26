@@ -54,10 +54,73 @@ const MCP_CONNECT_SCOPES: Record<string, string[]> = {
     "canvases:write",
   ],
   linear: ["read", "write", "issues:create", "comments:create"],
+  // Google (Gmail/Drive/Calendar). Read + write set. gmail.modify covers
+  // read/label/draft; gmail.send covers sending. drive/calendar are full scopes.
+  // These are SENSITIVE/RESTRICTED scopes — the Google OAuth app needs
+  // verification before non-test users can grant them.
+  google: [
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.settings.basic",
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/calendar",
+    "openid",
+    "email",
+    "profile",
+  ],
 };
+
+/** X REST API scopes — shared by authorize consent and Connect token mint. */
+export const TWITTER_REST_SCOPES = [
+  "tweet.read",
+  "tweet.write",
+  "tweet.moderate.write",
+  "users.read",
+  "follows.read",
+  "follows.write",
+  "like.read",
+  "like.write",
+  "bookmark.read",
+  "bookmark.write",
+  "list.read",
+  "list.write",
+  "dm.read",
+  "dm.write",
+  "space.read",
+  "mute.read",
+  "mute.write",
+  "block.read",
+  "offline.access",
+] as const;
+
+const REST_API_CONNECT_SCOPES: Record<string, readonly string[]> = {
+  "x.com": TWITTER_REST_SCOPES,
+  twitter: TWITTER_REST_SCOPES,
+};
+
+/** REST-only provider scopes for Connect token mint (e.g. X has no MCP server). */
+export function restApiScopesForConnector(
+  connectorUid: string,
+): string[] | undefined {
+  const provider = connectorUid.split("/")[0] ?? connectorUid;
+  const scopes = REST_API_CONNECT_SCOPES[provider];
+  return scopes ? [...scopes] : undefined;
+}
 
 /** Widest MCP scopes for a connector uid, or undefined to use connector defaults. */
 export function mcpScopesForConnector(connectorUid: string): string[] | undefined {
   const provider = connectorUid.split("/")[0] ?? connectorUid;
   return MCP_CONNECT_SCOPES[provider];
+}
+
+/** Scopes to request when minting a Connect token (MCP + REST providers). */
+export function connectTokenScopesForConnector(
+  connectorUid: string,
+): string[] | undefined {
+  const merged = [
+    ...(mcpScopesForConnector(connectorUid) ?? []),
+    ...(restApiScopesForConnector(connectorUid) ?? []),
+  ];
+  const deduped = [...new Set(merged)];
+  return deduped.length > 0 ? deduped : undefined;
 }

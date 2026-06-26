@@ -63,13 +63,86 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   Section: {
     key: "Section",
     category: "layout",
-    description: "Titled section container that groups child elements.",
+    description:
+      "Titled section container with default padding (p-4 md:p-6). Wrap lists, editors, and tables; put the heading in Section props, not on child components.",
     children: true,
     props: {
       title: { type: "string", description: "Section heading." },
       subtitle: { type: "string", description: "Optional secondary line." },
+      padding: {
+        type: "string",
+        description: '"default" (p-4 md:p-6) or "none". Default "default".',
+      },
     },
     example: { type: "Section", props: { title: "Overview" }, children: [] },
+  },
+  Grid: {
+    key: "Grid",
+    category: "layout",
+    description:
+      "CSS grid layout. Each child occupies one grid cell. Fills the page main area.",
+    children: true,
+    props: {
+      columns: {
+        type: "number | string",
+        description: '2, 3, or "sidebar" (2fr + 1fr). Default 2.',
+      },
+      gap: { type: "string", description: '"sm" or "md". Default "md".' },
+      padding: {
+        type: "string",
+        description: '"default" (p-4 md:p-6) or "none". Default "default".',
+      },
+    },
+    example: {
+      type: "Grid",
+      props: { columns: 2, gap: "md" },
+      children: [],
+    },
+  },
+  Resizable: {
+    key: "Resizable",
+    category: "layout",
+    description:
+      "Draggable split panels (horizontal or vertical). Each child is one panel. Fills the page main area.",
+    children: true,
+    props: {
+      orientation: {
+        type: "string",
+        description: '"horizontal" (default) or "vertical".',
+      },
+      defaultSizes: {
+        type: "number[]",
+        description: "Initial panel sizes as percentages (sum ~100).",
+      },
+      minSizes: {
+        type: "number[]",
+        description: "Minimum panel sizes as percentages.",
+      },
+    },
+    example: {
+      type: "Resizable",
+      props: { defaultSizes: [62, 38], minSizes: [30, 25] },
+      children: [],
+    },
+  },
+  Stack: {
+    key: "Stack",
+    category: "layout",
+    description:
+      "Vertical flex stack. Each child is a full-width row (e.g. product roadmap above planning periods).",
+    children: true,
+    props: {
+      gap: { type: "string", description: '"sm", "md" (default), or "lg".' },
+      padding: {
+        type: "string",
+        description: '"default" (p-4 md:p-6) or "none". Default "none".',
+      },
+    },
+    example: {
+      type: "Stack",
+      props: { gap: "lg" },
+      children: [],
+    },
   },
   Text: {
     key: "Text",
@@ -137,14 +210,6 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       type: "Toolbar",
       props: { title: "Invoices", actions: [{ label: "New", action: "createInvoice" }] },
     },
-  },
-  SplitPane: {
-    key: "SplitPane",
-    category: "layout",
-    description: "A two-column grid; place two children side by side.",
-    children: true,
-    props: {},
-    example: { type: "SplitPane", children: [] },
   },
   // ── data ─────────────────────────────────────────────────────────────────
   NodeList: {
@@ -290,13 +355,21 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   NodeField: {
     key: "NodeField",
     category: "data",
-    description: "A read-only label/value pair.",
+    description: "A read-only label/value pair from a static value or bound node field.",
     children: false,
     props: {
       label: { type: "string", description: "Field label.", required: true },
-      value: { type: "string", description: "Field value." },
+      value: { type: "string", description: "Literal value when no binding is set." },
+      binding: binding("Optional single-node binding (arrays use the first row)."),
+      field: {
+        type: "string",
+        description: 'Node property key (or "title"). Requires `binding`.',
+      },
     },
-    example: { type: "NodeField", props: { label: "Status", value: "Active" } },
+    example: {
+      type: "NodeField",
+      props: { binding: "subject", field: "lifecycleStatus", label: "Status" },
+    },
   },
   NodeDocument: {
     key: "NodeDocument",
@@ -532,12 +605,18 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "DocumentSheetList",
     category: "document",
     description:
-      "List of document nodes; clicking a row opens a floating BlockNote sheet panel.",
+      "List of document nodes; clicking a row opens a floating BlockNote sheet panel. Wrap in Section for page headings and padding.",
     children: false,
     props: {
       binding: binding("A multi-node binding."),
-      sectionTitle: { type: "string", description: "Section heading above the list." },
-      sectionSubtitle: { type: "string", description: "Optional secondary line." },
+      sectionTitle: {
+        type: "string",
+        description: "Deprecated — use a parent Section title instead.",
+      },
+      sectionSubtitle: {
+        type: "string",
+        description: "Deprecated — use a parent Section subtitle instead.",
+      },
       title: { type: "string", description: "Optional list title." },
       field: { type: "string", description: 'Document property (default "content").' },
       subtitleField: { type: "string", description: 'Preview line property (default "summary").' },
@@ -550,7 +629,6 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       type: "DocumentSheetList",
       props: {
         binding: "rows",
-        sectionTitle: "Research notes",
         field: "content",
         editable: true,
         action: "saveDoc",
@@ -780,6 +858,25 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     example: {
       type: "FigmaEmbed",
       props: { binding: "designNode", urlField: "figmaUrl", embedType: "design", height: 480 },
+    },
+  },
+};
+
+/** Documented multi-element layouts (not standalone React registry entries). */
+export const PAGE_COMPOSITE_PATTERNS: Record<string, PageComponentDescriptor> = {
+  RoadmapSheetWorkspace: {
+    key: "RoadmapSheetWorkspace",
+    category: "document",
+    description:
+      "SplitPane + DocumentEditor (evergreen product roadmap) + DocumentSheetList (planning docs). See executive/roadmap in pages-tree.json.",
+    children: false,
+    props: {
+      editorBinding: binding("Single-node binding for the evergreen roadmap editor."),
+      listBinding: binding("Multi-node binding for roadmap planning documents."),
+    },
+    example: {
+      type: "SplitPane",
+      children: ["editorSection", "listSection"],
     },
   },
 };

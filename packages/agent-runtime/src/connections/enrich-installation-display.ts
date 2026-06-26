@@ -311,7 +311,7 @@ async function fetchDiscordGuild(
 async function fetchTwitterProfile(token: string): Promise<EnrichmentResult> {
   const data = await fetchJson<{
     data?: { id?: string; username?: string; name?: string };
-  }>("https://api.twitter.com/2/users/me?user.fields=username,name", {
+  }>("https://api.x.com/2/users/me?user.fields=username,name", {
     headers: {
       Authorization: `Bearer ${token}`,
     },

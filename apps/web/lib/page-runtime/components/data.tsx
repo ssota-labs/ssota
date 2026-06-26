@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { useBasePath } from "../context";
-import { boundNodes } from "../bindings";
+import { boundNode, boundNodes } from "../bindings";
+import { readNodeField } from "./roadmap-doc-card";
 import type { CatalogComponent, RenderNode } from "../types";
 
 function NodeTableEl({
@@ -106,12 +107,30 @@ export const dataComponents: Record<string, CatalogComponent> = {
       title={props.title ? String(props.title) : undefined}
     />
   ),
-  NodeField: ({ props }) => (
-    <div className="text-sm">
-      <span className="text-muted-foreground">{String(props.label)}: </span>
-      <span>{String(props.value ?? "—")}</span>
-    </div>
-  ),
+  NodeField: ({ props, bindingData }) => {
+    const field = typeof props.field === "string" ? props.field : undefined;
+    const label = String(props.label ?? "");
+    let value = props.value;
+    if (typeof props.binding === "string") {
+      const raw = bindingData[props.binding];
+      const node: RenderNode | undefined = Array.isArray(raw)
+        ? (raw[0] as RenderNode | undefined)
+        : raw && typeof raw === "object" && "id" in raw
+          ? (raw as RenderNode)
+          : boundNode(bindingData, props);
+      if (field && node) {
+        value = readNodeField(node, field);
+      } else if (node && !field) {
+        value = node.title;
+      }
+    }
+    return (
+      <div className="text-sm">
+        <span className="text-muted-foreground">{label}: </span>
+        <span>{String(value ?? "—")}</span>
+      </div>
+    );
+  },
   NodeDocument: () => (
     <div className="bg-muted/40 rounded-md border p-4 text-sm">
       Document preview (mock)

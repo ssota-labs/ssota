@@ -16,29 +16,43 @@
     "spec": {
       "root": "layout",
       "elements": {
-        "layout": { "type": "SplitPane", "children": ["product", "planning"] },
-        "product": {
+        "layout": {
+          "type": "Stack",
+          "props": { "gap": "lg", "padding": "none" },
+          "children": ["productSection", "planningSection"]
+        },
+        "productSection": {
           "type": "Section",
           "props": {
             "title": "Product roadmap",
             "subtitle": "Long-term strategic direction"
           },
-          "children": ["productDoc"]
+          "children": ["product"]
         },
-        "productDoc": {
-          "type": "DocumentEditor",
+        "product": {
+          "type": "DocumentSheetList",
           "props": {
             "binding": "productRoadmap",
             "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
             "action": "saveProductDoc"
           }
+        },
+        "planningSection": {
+          "type": "Section",
+          "props": {
+            "title": "Planning roadmaps",
+            "subtitle": "Annual and quarterly execution plans"
+          },
+          "children": ["planning"]
         },
         "planning": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "planningRoadmaps",
-            "sectionTitle": "Planning roadmaps",
-            "sectionSubtitle": "Annual and quarterly execution plans",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -56,7 +70,7 @@
     "actions": {
       "saveProductDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "productRoadmap.id" },
+        "nodeId": { "$input": "nodeId" },
         "properties": { "content": { "$input": "doc" } },
         "merge": true
       },
@@ -148,14 +162,20 @@
     "title": "Market research",
     "icon": "research_market",
     "spec": {
-      "root": "list",
+      "root": "section",
       "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Market research",
+            "subtitle": "Market sizing, competitors, and trend notes"
+          },
+          "children": ["list"]
+        },
         "list": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "rows",
-            "sectionTitle": "Market research",
-            "sectionSubtitle": "Market sizing, competitors, and trend notes",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -183,14 +203,20 @@
     "title": "User research",
     "icon": "research_user",
     "spec": {
-      "root": "list",
+      "root": "section",
       "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "User research",
+            "subtitle": "Interviews, surveys, and usability findings"
+          },
+          "children": ["list"]
+        },
         "list": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "rows",
-            "sectionTitle": "User research",
-            "sectionSubtitle": "Interviews, surveys, and usability findings",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -218,14 +244,20 @@
     "title": "Hypotheses",
     "icon": "research_hypotheses",
     "spec": {
-      "root": "list",
+      "root": "section",
       "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Hypotheses",
+            "subtitle": "Product bets to validate with research and delivery"
+          },
+          "children": ["list"]
+        },
         "list": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "rows",
-            "sectionTitle": "Hypotheses",
-            "sectionSubtitle": "Product bets to validate with research and delivery",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -260,8 +292,60 @@
     "appliesToNodeType": null,
     "title": "Initiatives",
     "icon": "manager_initiatives",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Initiatives", "rowHref": "n", "columns": [{ "key": "title", "header": "Initiative" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "initiative" } }
+    "spec": {
+      "root": "page",
+      "elements": {
+        "page": {
+          "type": "Section",
+          "props": { "title": "Initiatives" },
+          "children": ["createForm", "table"]
+        },
+        "createForm": {
+          "type": "Form",
+          "children": ["titleField", "versionField", "createBtn"]
+        },
+        "titleField": {
+          "type": "Field",
+          "props": {
+            "name": "initiativeTitle",
+            "label": "Initiative title",
+            "placeholder": "New initiative"
+          }
+        },
+        "versionField": {
+          "type": "Field",
+          "props": {
+            "name": "releaseVersion",
+            "label": "Release version",
+            "placeholder": "0.1.0"
+          }
+        },
+        "createBtn": {
+          "type": "Button",
+          "props": { "label": "Create initiative", "action": "createBundle" }
+        },
+        "table": {
+          "type": "NodeTable",
+          "props": {
+            "binding": "rows",
+            "title": "All initiatives",
+            "rowHref": "n",
+            "columns": [
+              { "key": "title", "header": "Initiative" },
+              { "key": "lifecycleStatus", "header": "Status" }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "initiative" } },
+    "actions": {
+      "createBundle": {
+        "kind": "create_initiative_bundle",
+        "initiativeTitle": { "$input": "initiativeTitle" },
+        "releaseVersion": { "$input": "releaseVersion" }
+      }
+    }
   },
   {
     "key": "development",
@@ -406,14 +490,20 @@
     "title": "Information architecture",
     "icon": "design_ia",
     "spec": {
-      "root": "list",
+      "root": "section",
       "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Information architecture",
+            "subtitle": "Site maps, navigation models, and content hierarchy"
+          },
+          "children": ["list"]
+        },
         "list": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "rows",
-            "sectionTitle": "Information architecture",
-            "sectionSubtitle": "Site maps, navigation models, and content hierarchy",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -541,7 +631,62 @@
     "appliesToNodeType": "initiative",
     "title": "Overview",
     "icon": "initiative_overview",
-    "spec": { "root": "h", "elements": { "h": { "type": "PageHeader", "props": { "title": "Overview", "subtitle": "Initiative overview" } } } }
+    "spec": {
+      "root": "layout",
+      "elements": {
+        "layout": {
+          "type": "Resizable",
+          "props": { "defaultSizes": [50, 50], "minSizes": [25, 25] },
+          "children": ["initiativeCol", "releaseCol"]
+        },
+        "initiativeCol": {
+          "type": "Section",
+          "props": {
+            "title": "Overview",
+            "subtitle": "Initiative summary and status"
+          },
+          "children": ["status", "summary"]
+        },
+        "status": {
+          "type": "NodeField",
+          "props": { "binding": "subject", "field": "lifecycleStatus", "label": "Status" }
+        },
+        "summary": {
+          "type": "NodeField",
+          "props": { "binding": "subject", "field": "summary", "label": "Summary" }
+        },
+        "releaseCol": {
+          "type": "Section",
+          "props": {
+            "title": "Release",
+            "subtitle": "Paired release for this initiative"
+          },
+          "children": ["releaseTitle", "releaseVersion", "releaseStatus"]
+        },
+        "releaseTitle": {
+          "type": "NodeField",
+          "props": { "binding": "release", "field": "title", "label": "Release" }
+        },
+        "releaseVersion": {
+          "type": "NodeField",
+          "props": { "binding": "release", "field": "version", "label": "Version" }
+        },
+        "releaseStatus": {
+          "type": "NodeField",
+          "props": { "binding": "release", "field": "lifecycleStatus", "label": "Release status" }
+        }
+      }
+    },
+    "bindings": {
+      "subject": { "kind": "subject" },
+      "release": {
+        "kind": "traverse",
+        "from": "subject",
+        "edgeCatalogKey": "paired_with",
+        "direction": "out",
+        "catalogKey": "release"
+      }
+    }
   },
   {
     "key": "tpl/initiative/planning",
@@ -728,7 +873,8 @@
       "root": "layout",
       "elements": {
         "layout": {
-          "type": "SplitPane",
+          "type": "Resizable",
+          "props": { "defaultSizes": [62, 38], "minSizes": [30, 25] },
           "children": ["canvas", "linkedTable"]
         },
         "canvas": {
@@ -787,20 +933,31 @@
     "spec": {
       "root": "section",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Flows" }, "children": ["editor"] },
-        "editor": {
-          "type": "DocumentEditor",
-          "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        "section": { "type": "Section", "props": { "title": "Flows" }, "children": ["canvas"] },
+        "canvas": {
+          "type": "FlowCanvas",
+          "props": {
+            "binding": "doc",
+            "property": "flow",
+            "height": 520,
+            "nodePresentation": [
+              { "match": { "nodeType": "section" }, "variant": "section", "color": "purple" },
+              { "match": { "nodeType": "page" }, "variant": "page", "color": "blue" },
+              { "match": { "nodeType": "action" }, "variant": "action", "color": "gray", "shape": "pill" }
+            ],
+            "editable": true,
+            "setAction": "saveFlowNode"
+          }
         }
       }
     },
     "bindings": { "doc": { "kind": "initiative_scope", "catalogKey": "user_flow", "limit": 1 } },
     "actions": {
-      "saveDoc": {
-        "kind": "update_node",
-        "nodeId": { "$binding": "doc.id" },
-        "properties": { "content": { "$input": "doc" } },
-        "merge": true
+      "saveFlowNode": {
+        "kind": "set_node_property",
+        "nodeId": { "$input": "nodeId" },
+        "field": { "$input": "field" },
+        "value": { "$input": "value" }
       }
     }
   },
@@ -819,12 +976,38 @@
     "title": "Architecture spec",
     "icon": "architecture_spec",
     "spec": {
-      "root": "section",
+      "root": "layout",
       "elements": {
-        "section": { "type": "Section", "props": { "title": "Architecture spec" }, "children": ["editor"] },
+        "layout": {
+          "type": "Resizable",
+          "props": { "defaultSizes": [62, 38], "minSizes": [30, 25] },
+          "children": ["editorCol", "metaCol"]
+        },
+        "editorCol": {
+          "type": "Section",
+          "props": { "title": "Architecture spec" },
+          "children": ["editor"]
+        },
         "editor": {
           "type": "DocumentEditor",
           "props": { "binding": "doc", "field": "content", "action": "saveDoc" }
+        },
+        "metaCol": {
+          "type": "Section",
+          "props": { "title": "Metadata" },
+          "children": ["status", "version", "owner"]
+        },
+        "status": {
+          "type": "NodeField",
+          "props": { "binding": "doc", "field": "lifecycleStatus", "label": "Status" }
+        },
+        "version": {
+          "type": "NodeField",
+          "props": { "binding": "doc", "field": "version", "label": "Version" }
+        },
+        "owner": {
+          "type": "NodeField",
+          "props": { "binding": "doc", "field": "owner", "label": "Owner" }
         }
       }
     },
@@ -1116,14 +1299,44 @@
     "title": "Launch docs",
     "icon": "launch_docs",
     "spec": {
-      "root": "list",
+      "root": "tabs",
       "elements": {
-        "list": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "release_notes",
+            "items": [
+              { "value": "release_notes", "label": "Release notes", "panel": "releasePanel" },
+              { "value": "runbooks", "label": "Runbooks", "panel": "runbookPanel" }
+            ]
+          }
+        },
+        "releasePanel": {
+          "type": "Section",
+          "props": { "title": "Release notes" },
+          "children": ["releaseList"]
+        },
+        "releaseList": {
           "type": "DocumentSheetList",
           "props": {
-            "binding": "rows",
-            "sectionTitle": "Launch docs",
-            "sectionSubtitle": "Release notes and runbooks",
+            "binding": "releaseNotes",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
+            "action": "saveDoc"
+          }
+        },
+        "runbookPanel": {
+          "type": "Section",
+          "props": { "title": "Runbooks" },
+          "children": ["runbookList"]
+        },
+        "runbookList": {
+          "type": "DocumentSheetList",
+          "props": {
+            "binding": "runbooks",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -1134,7 +1347,10 @@
         }
       }
     },
-    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "release_note" } },
+    "bindings": {
+      "releaseNotes": { "kind": "initiative_scope", "catalogKey": "release_note" },
+      "runbooks": { "kind": "initiative_scope", "catalogKey": "runbook" }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
@@ -1159,13 +1375,23 @@
     "title": "Metrics",
     "icon": "retro_metrics",
     "spec": {
-      "root": "table",
+      "root": "tabs",
       "elements": {
-        "table": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "kpis",
+            "items": [
+              { "value": "kpis", "label": "KPIs", "panel": "kpiPanel" },
+              { "value": "snapshots", "label": "Snapshots", "panel": "snapshotPanel" }
+            ]
+          }
+        },
+        "kpiPanel": {
           "type": "DataTable",
           "props": {
-            "binding": "rows",
-            "title": "Metrics",
+            "binding": "kpis",
+            "title": "KPIs",
             "setAction": "setCell",
             "columns": [
               { "key": "title", "header": "KPI", "type": "text", "editable": true, "width": 280 },
@@ -1180,10 +1406,33 @@
               }
             ]
           }
+        },
+        "snapshotPanel": {
+          "type": "DataTable",
+          "props": {
+            "binding": "snapshots",
+            "title": "Metric snapshots",
+            "setAction": "setCell",
+            "columns": [
+              { "key": "title", "header": "Snapshot", "type": "text", "editable": true, "width": 280 },
+              { "key": "recorded_at", "header": "Recorded", "type": "date", "editable": true },
+              { "key": "value", "header": "Value", "type": "number", "editable": true },
+              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "select",
+                "options": ["draft", "final"]
+              }
+            ]
+          }
         }
       }
     },
-    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "kpi" } },
+    "bindings": {
+      "kpis": { "kind": "initiative_scope", "catalogKey": "kpi" },
+      "snapshots": { "kind": "initiative_scope", "catalogKey": "metric_snapshot" }
+    },
     "actions": {
       "setCell": {
         "kind": "set_node_property",

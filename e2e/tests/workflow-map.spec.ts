@@ -22,7 +22,7 @@ test.describe("Workflow map", () => {
 
     await sheet.getByRole("button", { name: "Open table" }).click();
     await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/initiatives$`),
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/p/[0-9a-f-]+$`),
     );
   });
 
@@ -38,7 +38,7 @@ test.describe("Workflow map", () => {
     await sheet.locator(`a[href*="${initiativeId}"]`).click();
 
     await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/initiatives/${initiativeId}$`),
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/n/${initiativeId}/p/[0-9a-f-]+$`),
     );
   });
 });

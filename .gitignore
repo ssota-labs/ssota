@@ -81,3 +81,7 @@ supabase/.temp/
 .reference/
 .swc/
 .claude/launch.json
+
+# Sentry
+.sentryclirc
+.env.sentry-build-plugin

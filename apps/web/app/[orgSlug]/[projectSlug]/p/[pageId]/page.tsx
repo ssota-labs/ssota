@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { TableViewState } from "@ssota/contracts";
 import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
 import { resolvePageBindings } from "@ssota/core";
@@ -6,11 +6,12 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
-import { TreePageView } from "@/lib/page-runtime/tree-page-view";
+import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
 import {
-  pageUsesArtifactWorkbench,
-  pageUsesFillHeight,
-} from "@/lib/page-runtime/spec-utils";
+  isHubPage,
+  resolveHubRedirectPath,
+} from "@/lib/page-runtime/hub-redirect";
 import { normalizeSearchParams } from "@/lib/page-runtime/search-params";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
 import { savePageViewState } from "@/lib/page-runtime/save-page-view-state";
@@ -43,6 +44,16 @@ export default async function TreePage({
     notFound();
   }
 
+  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
+  if (isHubPage(page.spec)) {
+    const hubRedirect = await resolveHubRedirectPath(
+      getPagePort(project.id),
+      pageId,
+      routeCtx,
+    );
+    if (hubRedirect) redirect(hubRedirect);
+  }
+
   const graphRead = getGraphPorts(project.id).graphRead;
 
   const context: Record<string, unknown> = { searchParams: urlParams };
@@ -67,10 +78,8 @@ export default async function TreePage({
   );
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
 
-  const fillHeight = pageUsesFillHeight(page.spec);
   const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
   const basePath = `/${orgSlug}/${projectSlug}`;
-  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
   const pagePath = projectPath(routeCtx, "p", pageId);
   const previewBasePath = projectPath(routeCtx, "design", "preview");
 
@@ -85,6 +94,7 @@ export default async function TreePage({
       actionKey,
       input,
       subjectNodeId: page!.subjectNodeId ?? null,
+      routeCtx,
       revalidate: [pagePath],
     });
   }
@@ -138,31 +148,23 @@ export default async function TreePage({
   }
 
   return (
-    <div
-      className={
-        fillHeight
-          ? "flex min-h-0 flex-1 flex-col"
-          : "mx-auto max-w-5xl p-6"
+    <DynamicPageRenderer
+      spec={page.spec}
+      pageBindings={page.bindings}
+      bindingData={bindingData}
+      basePath={basePath}
+      onAction={onAction}
+      viewState={{ initial: initialViewStates, save: saveViewState }}
+      artifactWorkbench={
+        usesWorkbench
+          ? {
+              projectId: project.id,
+              previewBasePath,
+              onCreateComponent: onStudioCreateComponent,
+              onDeployComponent: onStudioDeployComponent,
+            }
+          : null
       }
-    >
-      <TreePageView
-        spec={page.spec}
-        bindings={page.bindings}
-        bindingData={bindingData}
-        basePath={basePath}
-        onAction={onAction}
-        viewState={{ initial: initialViewStates, save: saveViewState }}
-        artifactWorkbench={
-          usesWorkbench
-            ? {
-                projectId: project.id,
-                previewBasePath,
-                onCreateComponent: onStudioCreateComponent,
-                onDeployComponent: onStudioDeployComponent,
-              }
-            : null
-        }
-      />
-    </div>
+    />
   );
 }
