@@ -1,7 +1,10 @@
 // Import from the dependency-free subpath, NOT the package barrel: this module
 // is pulled into client components (connections-list.tsx), and the barrel would
 // drag the DB/runtime (Node built-ins) into the browser bundle.
-import { mcpScopesForConnector } from "@ssota/agent-runtime/connect-scopes";
+import {
+  mcpScopesForConnector,
+  TWITTER_REST_SCOPES,
+} from "@ssota/agent-runtime/connect-scopes";
 
 /**
  * The connectors the in-app Connections page can manage. Auth model per the
@@ -166,27 +169,7 @@ const AUTHORIZE_SCOPES: Partial<Record<ConnectorProvider, readonly string[]>> = 
   // Twitter uses provider-level OAuth (no hosted MCP), so all required scopes
   // must be declared here. Covers every tool in agent-runtime/tools/twitter.ts.
   // `offline.access` requests a refresh token.
-  twitter: [
-    "tweet.read",
-    "tweet.write",
-    "tweet.moderate.write",
-    "users.read",
-    "follows.read",
-    "follows.write",
-    "like.read",
-    "like.write",
-    "bookmark.read",
-    "bookmark.write",
-    "list.read",
-    "list.write",
-    "dm.read",
-    "dm.write",
-    "space.read",
-    "mute.read",
-    "mute.write",
-    "block.read",
-    "offline.access",
-  ],
+  twitter: [...TWITTER_REST_SCOPES],
 };
 
 /** Vercel Connect uids for X use the `x.com/...` host, not `twitter/...`. */

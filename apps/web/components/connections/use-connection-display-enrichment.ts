@@ -9,6 +9,7 @@ import {
 } from "@/lib/connections/display";
 
 const inflight = new Set<string>();
+const attempted = new Set<string>();
 
 export function useConnectionDisplayEnrichment(
   row: ConnectionDisplayRow & { id: string },
@@ -20,8 +21,19 @@ export function useConnectionDisplayEnrichment(
   const mountedRef = useRef(true);
 
   useEffect(() => {
-    setDisplayRow(row);
-  }, [row]);
+    setDisplayRow((current) => {
+      if (!needsConnectionDisplayEnrichment(row)) {
+        return row;
+      }
+      // Keep client-enriched fields until the server props catch up after save.
+      return {
+        ...row,
+        name: row.name?.trim() || current.name,
+        tenantId: row.tenantId ?? current.tenantId,
+        installationId: row.installationId || current.installationId,
+      };
+    });
+  }, [row.id, row.name, row.tenantId, row.installationId]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -32,7 +44,7 @@ export function useConnectionDisplayEnrichment(
 
   useEffect(() => {
     if (!needsConnectionDisplayEnrichment(row)) return;
-    if (inflight.has(row.id)) return;
+    if (inflight.has(row.id) || attempted.has(row.id)) return;
 
     inflight.add(row.id);
     setIsEnriching(true);
@@ -53,18 +65,15 @@ export function useConnectionDisplayEnrichment(
             : {}),
         }));
       })
+      .catch(() => {
+        // Best-effort enrichment — leave the generic label on failure.
+      })
       .finally(() => {
         inflight.delete(row.id);
+        attempted.add(row.id);
         if (mountedRef.current) setIsEnriching(false);
       });
-  }, [
-    accountId,
-    projectId,
-    row.id,
-    row.installationId,
-    row.name,
-    row.tenantId,
-  ]);
+  }, [accountId, projectId, row.id, row.name]);
 
   return {
     label: connectionDisplayLabel(displayRow),
