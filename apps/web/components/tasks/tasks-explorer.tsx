@@ -3,20 +3,16 @@ import {
   SpawnTaskDialog,
   type WorkflowOption,
 } from "@/components/tasks/spawn-task-dialog";
-import type { TaskTab, TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
+import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
 type TasksExplorerProps = {
   rows: TaskWorkspaceRow[];
-  activeTab: TaskTab;
-  baseHref: string;
   projectId: string;
   workflowOptions: WorkflowOption[];
 };
 
 export function TasksExplorer({
   rows,
-  activeTab,
-  baseHref,
   projectId,
   workflowOptions,
 }: TasksExplorerProps) {
@@ -34,8 +30,6 @@ export function TasksExplorer({
       </div>
       <TasksDetail
         rows={rows}
-        activeTab={activeTab}
-        baseHref={baseHref}
         projectId={projectId}
         workflowOptions={workflowOptions}
       />
