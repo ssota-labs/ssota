@@ -8,7 +8,7 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { resolveBuilderContext } from "@/lib/request-context";
 import { getConsolePort, getPagePort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { pageUsesFillHeight } from "@/lib/page-runtime/spec-utils";
+import { pageUsesFillHeight, fillHeightNodeLandingCatalogKeys } from "@/lib/page-runtime/spec-utils";
 
 export default async function ProjectLayout({
   children,
@@ -75,6 +75,8 @@ export default async function ProjectLayout({
     .filter((p) => pageUsesFillHeight(p.spec))
     .map((p) => p.id);
 
+  const fillHeightNodeLandingTypes = fillHeightNodeLandingCatalogKeys(pages);
+
   if (!organizations.some((item) => item.id === org.id)) {
     redirect(await getDefaultProjectPath(builder.userId));
   }
@@ -102,6 +104,7 @@ export default async function ProjectLayout({
       initiatives={initiatives}
       pageTree={pageTree}
       fillHeightPageIds={fillHeightPageIds}
+      fillHeightNodeLandingTypes={fillHeightNodeLandingTypes}
       templatesByType={templatesByType}
     >
       {children}

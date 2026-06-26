@@ -155,7 +155,7 @@ export default async function TreePage({
     <div
       className={
         fillHeight
-          ? "flex min-h-0 flex-1 flex-col"
+          ? "flex min-h-0 w-full flex-1 flex-col"
           : "mx-auto max-w-5xl p-6"
       }
     >

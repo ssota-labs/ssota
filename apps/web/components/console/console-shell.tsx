@@ -1,12 +1,11 @@
 "use client";
 
-import { Fragment } from "react";
 import { usePathname } from "next/navigation";
 import type { Organization, Project } from "@ssota/core";
 import { AppSidebar } from "./app-sidebar";
 import type { SidebarPage } from "./page-tree-nav";
 import { ConsoleTopBar } from "./console-top-bar";
-import { NodeDrillProvider } from "./node-drill-context";
+import { NodeDrillProvider, useNodeDrill } from "./node-drill-context";
 import {
   ProjectProvider,
   type ConsoleContextValue,
@@ -27,11 +26,61 @@ type ConsoleShellProps = {
   pageTree?: SidebarPage[];
   /** Page ids that render full-bleed (ComponentStudio, DocumentSheetList, …). */
   fillHeightPageIds?: string[];
+  /** Node catalog keys whose `/n/{id}` home template is full-bleed. */
+  fillHeightNodeLandingTypes?: string[];
   /** Node-type drill-in templates, grouped by catalogKey (static per project).
    * The active node is resolved client-side via NodeDrill context. */
   templatesByType?: Record<string, SidebarPage[]>;
   children: React.ReactNode;
 };
+
+function ConsoleMain({
+  ctx,
+  fillHeightPageIds,
+  fillHeightNodeLandingTypes,
+  children,
+}: {
+  ctx: ConsoleContextValue;
+  fillHeightPageIds: string[];
+  fillHeightNodeLandingTypes: string[];
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const drill = useNodeDrill();
+  const isTasksContext = pathname.includes(`/${ctx.projectSlug}/tasks`);
+  const isWorkflowInstructionsContext = pathname.includes(
+    `/${ctx.projectSlug}/workflow/instructions`,
+  );
+  const isChatContext = pathname.includes(`/${ctx.projectSlug}/c`);
+  const isFillHeightPage = fillHeightPageIds.some((pageId) =>
+    pathname.endsWith(`/p/${pageId}`),
+  );
+  const isNodeLandingFillHeight =
+    drill != null &&
+    fillHeightNodeLandingTypes.includes(drill.catalogKey) &&
+    pathname.endsWith(`/n/${drill.nodeId}`) &&
+    !pathname.includes("/p/");
+  const isDesignStudio = pathname.includes("/design/ui-components");
+  const isFullBleedContext =
+    isTasksContext ||
+    isWorkflowInstructionsContext ||
+    isChatContext ||
+    isDesignStudio ||
+    isFillHeightPage ||
+    isNodeLandingFillHeight;
+
+  return (
+    <main
+      className={
+        isFullBleedContext
+          ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+          : "flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-6"
+      }
+    >
+      {children}
+    </main>
+  );
+}
 
 export function ConsoleShell({
   ctx,
@@ -42,26 +91,10 @@ export function ConsoleShell({
   initiatives = [],
   pageTree,
   fillHeightPageIds = [],
+  fillHeightNodeLandingTypes = [],
   templatesByType,
   children,
 }: ConsoleShellProps) {
-  const pathname = usePathname();
-  const isTasksContext = pathname.includes(`/${ctx.projectSlug}/tasks`);
-  const isWorkflowInstructionsContext = pathname.includes(
-    `/${ctx.projectSlug}/workflow/instructions`,
-  );
-  const isChatContext = pathname.includes(`/${ctx.projectSlug}/c`);
-  const isFillHeightPage = fillHeightPageIds.some((pageId) =>
-    pathname.endsWith(`/p/${pageId}`),
-  );
-  const isDesignStudio = pathname.includes("/design/ui-components");
-  const isFullBleedContext =
-    isTasksContext ||
-    isWorkflowInstructionsContext ||
-    isChatContext ||
-    isDesignStudio ||
-    isFillHeightPage;
-
   return (
     <ProjectProvider value={ctx}>
       <NodeDrillProvider>
@@ -76,15 +109,13 @@ export function ConsoleShell({
           />
           <div className="flex min-w-0 flex-1 flex-col">
             <ConsoleTopBar projects={projects} />
-            <main
-              className={
-                isFullBleedContext
-                  ? "flex min-h-0 flex-1 flex-col overflow-hidden"
-                  : "flex min-h-0 flex-1 flex-col overflow-auto p-4 md:p-6"
-              }
+            <ConsoleMain
+              ctx={ctx}
+              fillHeightPageIds={fillHeightPageIds}
+              fillHeightNodeLandingTypes={fillHeightNodeLandingTypes}
             >
               {children}
-            </main>
+            </ConsoleMain>
           </div>
         </div>
       </NodeDrillProvider>
