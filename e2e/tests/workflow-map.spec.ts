@@ -38,7 +38,7 @@ test.describe("Workflow map", () => {
     await sheet.locator(`a[href*="${initiativeId}"]`).click();
 
     await expect(page).toHaveURL(
-      new RegExp(`${DEFAULT_CONSOLE_BASE}/n/${initiativeId}$`),
+      new RegExp(`${DEFAULT_CONSOLE_BASE}/n/${initiativeId}/p/[0-9a-f-]+$`),
     );
   });
 });

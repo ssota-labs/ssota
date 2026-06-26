@@ -4,11 +4,8 @@ import { resolveProject } from "@/lib/console/resolve-project";
 import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
-import { TreePageView } from "@/lib/page-runtime/tree-page-view";
-import {
-  pageUsesArtifactWorkbench,
-  pageUsesFillHeight,
-} from "@/lib/page-runtime/spec-utils";
+import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
 import {
   isHubPage,
   resolveHubRedirectPath,
@@ -77,7 +74,6 @@ export default async function NodeTemplatePage({
   );
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
 
-  const fillHeight = pageUsesFillHeight(page.spec);
   const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
   const basePath = `/${orgSlug}/${projectSlug}`;
   const pagePath = projectPath(routeCtx, "n", nodeId, "p", pageId);
@@ -99,22 +95,16 @@ export default async function NodeTemplatePage({
   }
 
   return (
-    <div
-      className={
-        fillHeight
-          ? "flex min-h-0 w-full flex-1 flex-col"
-          : "mx-auto max-w-5xl p-6"
-      }
-    >
+    <>
       <SetNodeDrill
         nodeId={subject.id}
         catalogKey={subject.catalogKey}
         nodeTitle={subject.title}
         pageTitle={page.title}
       />
-      <TreePageView
+      <DynamicPageRenderer
         spec={page.spec}
-        bindings={page.bindings}
+        pageBindings={page.bindings}
         bindingData={bindingData}
         basePath={basePath}
         onAction={onAction}
@@ -127,6 +117,6 @@ export default async function NodeTemplatePage({
             : null
         }
       />
-    </div>
+    </>
   );
 }

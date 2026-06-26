@@ -16,29 +16,43 @@
     "spec": {
       "root": "layout",
       "elements": {
-        "layout": { "type": "SplitPane", "children": ["product", "planning"] },
-        "product": {
+        "layout": {
+          "type": "Stack",
+          "props": { "gap": "lg", "padding": "none" },
+          "children": ["productSection", "planningSection"]
+        },
+        "productSection": {
           "type": "Section",
           "props": {
             "title": "Product roadmap",
             "subtitle": "Long-term strategic direction"
           },
-          "children": ["productDoc"]
+          "children": ["product"]
         },
-        "productDoc": {
-          "type": "DocumentEditor",
+        "product": {
+          "type": "DocumentSheetList",
           "props": {
             "binding": "productRoadmap",
             "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
             "action": "saveProductDoc"
           }
+        },
+        "planningSection": {
+          "type": "Section",
+          "props": {
+            "title": "Planning roadmaps",
+            "subtitle": "Annual and quarterly execution plans"
+          },
+          "children": ["planning"]
         },
         "planning": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "planningRoadmaps",
-            "sectionTitle": "Planning roadmaps",
-            "sectionSubtitle": "Annual and quarterly execution plans",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -56,7 +70,7 @@
     "actions": {
       "saveProductDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "productRoadmap.id" },
+        "nodeId": { "$input": "nodeId" },
         "properties": { "content": { "$input": "doc" } },
         "merge": true
       },
@@ -148,14 +162,20 @@
     "title": "Market research",
     "icon": "research_market",
     "spec": {
-      "root": "list",
+      "root": "section",
       "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Market research",
+            "subtitle": "Market sizing, competitors, and trend notes"
+          },
+          "children": ["list"]
+        },
         "list": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "rows",
-            "sectionTitle": "Market research",
-            "sectionSubtitle": "Market sizing, competitors, and trend notes",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -183,14 +203,20 @@
     "title": "User research",
     "icon": "research_user",
     "spec": {
-      "root": "list",
+      "root": "section",
       "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "User research",
+            "subtitle": "Interviews, surveys, and usability findings"
+          },
+          "children": ["list"]
+        },
         "list": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "rows",
-            "sectionTitle": "User research",
-            "sectionSubtitle": "Interviews, surveys, and usability findings",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -218,14 +244,20 @@
     "title": "Hypotheses",
     "icon": "research_hypotheses",
     "spec": {
-      "root": "list",
+      "root": "section",
       "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Hypotheses",
+            "subtitle": "Product bets to validate with research and delivery"
+          },
+          "children": ["list"]
+        },
         "list": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "rows",
-            "sectionTitle": "Hypotheses",
-            "sectionSubtitle": "Product bets to validate with research and delivery",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -458,14 +490,20 @@
     "title": "Information architecture",
     "icon": "design_ia",
     "spec": {
-      "root": "list",
+      "root": "section",
       "elements": {
+        "section": {
+          "type": "Section",
+          "props": {
+            "title": "Information architecture",
+            "subtitle": "Site maps, navigation models, and content hierarchy"
+          },
+          "children": ["list"]
+        },
         "list": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "rows",
-            "sectionTitle": "Information architecture",
-            "sectionSubtitle": "Site maps, navigation models, and content hierarchy",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -596,7 +634,11 @@
     "spec": {
       "root": "layout",
       "elements": {
-        "layout": { "type": "SplitPane", "children": ["initiativeCol", "releaseCol"] },
+        "layout": {
+          "type": "Resizable",
+          "props": { "defaultSizes": [50, 50], "minSizes": [25, 25] },
+          "children": ["initiativeCol", "releaseCol"]
+        },
         "initiativeCol": {
           "type": "Section",
           "props": {
@@ -831,7 +873,8 @@
       "root": "layout",
       "elements": {
         "layout": {
-          "type": "SplitPane",
+          "type": "Resizable",
+          "props": { "defaultSizes": [62, 38], "minSizes": [30, 25] },
           "children": ["workbench", "linkedTable"]
         },
         "workbench": {
@@ -935,7 +978,11 @@
     "spec": {
       "root": "layout",
       "elements": {
-        "layout": { "type": "SplitPane", "children": ["editorCol", "metaCol"] },
+        "layout": {
+          "type": "Resizable",
+          "props": { "defaultSizes": [62, 38], "minSizes": [30, 25] },
+          "children": ["editorCol", "metaCol"]
+        },
         "editorCol": {
           "type": "Section",
           "props": { "title": "Architecture spec" },
@@ -1265,10 +1312,14 @@
           }
         },
         "releasePanel": {
+          "type": "Section",
+          "props": { "title": "Release notes" },
+          "children": ["releaseList"]
+        },
+        "releaseList": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "releaseNotes",
-            "sectionTitle": "Release notes",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -1278,10 +1329,14 @@
           }
         },
         "runbookPanel": {
+          "type": "Section",
+          "props": { "title": "Runbooks" },
+          "children": ["runbookList"]
+        },
+        "runbookList": {
           "type": "DocumentSheetList",
           "props": {
             "binding": "runbooks",
-            "sectionTitle": "Runbooks",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",

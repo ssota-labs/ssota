@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useAction, useFillHeight } from "../context";
+import { useAction } from "../context";
 import { boundNode, boundNodes } from "../bindings";
 import { DocumentSheetListEl } from "./document-sheet-list";
 import type { CatalogComponent } from "../types";
@@ -54,19 +54,14 @@ export const documentComponents: Record<string, CatalogComponent> = {
       <DocumentViewEl content={docContent(bindingData, props)} />
     </div>
   ),
-  DocumentEditor: ({ props, bindingData }) => {
-    const fillHeight = useFillHeight();
-    return (
-      <div
-        className={fillHeight ? "min-h-0 flex-1 overflow-auto" : undefined}
-      >
-        <BoundDocumentEditor
-          actionKey={typeof props.action === "string" ? props.action : undefined}
-          content={docContent(bindingData, props)}
-        />
-      </div>
-    );
-  },
+  DocumentEditor: ({ props, bindingData }) => (
+    <div className="min-h-0 flex-1 overflow-auto">
+      <BoundDocumentEditor
+        actionKey={typeof props.action === "string" ? props.action : undefined}
+        content={docContent(bindingData, props)}
+      />
+    </div>
+  ),
   DocumentSheetList: ({ props, bindingData }) => (
     <div className="flex min-h-0 flex-1 flex-col">
       <DocumentSheetListEl

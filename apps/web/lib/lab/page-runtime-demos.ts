@@ -503,9 +503,9 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
   {
     id: "layout-split",
     category: "layout",
-    title: "Section · SplitPane",
+    title: "Section · Resizable",
     description: "Two-column section for spec + metadata patterns.",
-    components: ["Section", "SplitPane", "Card", "Text"],
+    components: ["Section", "Resizable", "Card", "Text"],
     spec: {
       root: "root",
       elements: {
@@ -518,7 +518,8 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           children: ["split"],
         },
         split: {
-          type: "SplitPane",
+          type: "Resizable",
+          props: { defaultSizes: [62, 38], minSizes: [30, 25] },
           children: ["left", "right"],
         },
         left: {
@@ -816,17 +817,23 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     title: "DocumentSheetList",
     description:
       "Card rows — click opens a floating in-panel sheet (border, shadow, no overlay dim).",
-    components: ["DocumentSheetList"],
+    components: ["Section", "DocumentSheetList"],
     spec: {
-      root: "list",
+      root: "section",
       elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Planning roadmaps",
+            subtitle:
+              "카드 행 클릭 → dim 없이 우측에 떠 있는 패널에서 BlockNote",
+          },
+          children: ["list"],
+        },
         list: {
           type: "DocumentSheetList",
           props: {
             binding: "roadmaps",
-            sectionTitle: "Planning roadmaps",
-            sectionSubtitle:
-              "카드 행 클릭 → dim 없이 우측에 떠 있는 패널에서 BlockNote",
             title: "Product roadmap documents",
             field: "content",
             subtitleField: "summary",

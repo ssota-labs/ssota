@@ -41,12 +41,10 @@ export default async function AppDynamicPage({
   await resolveArtifactBindings(ctx.projectId, page.bindings, bindingData);
 
   return (
-    <div className="mx-auto max-w-5xl p-6">
-      <DynamicPageRenderer
-        spec={page.spec}
-        bindingData={bindingData}
-        basePath={appProjectPath({ orgSlug, projectSlug })}
-      />
-    </div>
+    <DynamicPageRenderer
+      spec={page.spec}
+      bindingData={bindingData}
+      basePath={appProjectPath({ orgSlug, projectSlug })}
+    />
   );
 }
