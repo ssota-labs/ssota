@@ -7,7 +7,7 @@
  * how the right panel's metric toggles hide/show rows on every card.
  *
  * This keeps node cards fully catalog-defined and domain-agnostic: the card uses
- * the same Text/Badge/Card/SplitPane/NodeField vocabulary as a page.
+ * the same Text/Badge/Card/Resizable/NodeField vocabulary as a page.
  */
 
 import type { JsonRenderSpec } from "@ssota/contracts";

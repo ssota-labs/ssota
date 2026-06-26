@@ -868,14 +868,15 @@ export const PAGE_COMPOSITE_PATTERNS: Record<string, PageComponentDescriptor> = 
     key: "RoadmapSheetWorkspace",
     category: "document",
     description:
-      "SplitPane + DocumentEditor (evergreen product roadmap) + DocumentSheetList (planning docs). See executive/roadmap in pages-tree.json.",
+      "Resizable + DocumentEditor (evergreen product roadmap) + DocumentSheetList (planning docs). See executive/roadmap in pages-tree.json.",
     children: false,
     props: {
       editorBinding: binding("Single-node binding for the evergreen roadmap editor."),
       listBinding: binding("Multi-node binding for roadmap planning documents."),
     },
     example: {
-      type: "SplitPane",
+      type: "Resizable",
+      props: { defaultSizes: [62, 38], minSizes: [30, 25] },
       children: ["editorSection", "listSection"],
     },
   },

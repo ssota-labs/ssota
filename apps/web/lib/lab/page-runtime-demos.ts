@@ -975,11 +975,15 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     title: "FigmaEmbed",
     description:
       "Live Figma file via Embed Kit 2.0. The bound node supplies a Figma URL; embedType selects the surface. design = read-only; proto bridges the Embed API so prototype events (frame changes, clicks) dispatch a page action — watch the 'Last action' line as you click through the prototype. (Prototype events require NEXT_PUBLIC_FIGMA_CLIENT_ID.)",
-    components: ["Section", "FigmaEmbed"],
+    components: ["Resizable", "Section", "FigmaEmbed"],
     spec: {
       root: "wrap",
       elements: {
-        wrap: { type: "SplitPane", children: ["designPane", "protoPane"] },
+        wrap: {
+          type: "Resizable",
+          props: { defaultSizes: [50, 50], minSizes: [30, 30] },
+          children: ["designPane", "protoPane"],
+        },
         designPane: {
           type: "Section",
           props: { title: "Design", subtitle: "embedType: design (read-only)" },
