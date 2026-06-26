@@ -28,6 +28,9 @@ const LEGACY_CONNECTOR_ENV_KEYS: Record<string, string> = {
 
 const API_CONNECTOR_ENV_KEYS: Record<string, string> = {
   twitter: "TWITTER_API_CONNECTOR",
+  // Google (Gmail/Drive/Calendar) share one OAuth connector — all three REST
+  // connection defs use provider "google" and resolve to this single uid.
+  google: "GOOGLE_API_CONNECTOR",
 };
 
 export interface ConnectAuthBinding {

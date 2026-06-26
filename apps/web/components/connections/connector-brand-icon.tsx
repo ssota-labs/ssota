@@ -5,6 +5,7 @@ import {
   Discord,
   GitHubDark,
   GitHubLight,
+  Google,
   Linear,
   Notion,
   Slack,
@@ -28,6 +29,7 @@ const PROVIDER_SVGS: Record<
   discord: Discord,
   linear: Linear,
   twitter: XLight,
+  google: Google,
 };
 
 export function ConnectorBrandIcon({
