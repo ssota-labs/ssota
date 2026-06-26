@@ -631,6 +631,35 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     },
     example: { type: "Widget", props: { binding: "chartArtifact", height: 320 } },
   },
+  FigmaEmbed: {
+    key: "FigmaEmbed",
+    category: "widget",
+    description:
+      "Embeds a live Figma file via Embed Kit 2.0. The bound node supplies a Figma URL (share or embed.figma.com link) in a property field. `embedType` selects the surface: design/board/slides render read-only; proto additionally bridges the Embed API so prototype events (frame changes, clicks) dispatch a page action.",
+    children: false,
+    props: {
+      binding: binding(
+        "A single-node binding (node/ref/singleton) whose property field holds the Figma URL.",
+      ),
+      urlField: {
+        type: "string",
+        description: 'Node property field holding the Figma URL (default "figmaUrl").',
+      },
+      embedType: {
+        type: "string",
+        description:
+          'Figma surface: "design" (default) | "proto" | "board" | "slides". Only "proto" emits Embed API events.',
+      },
+      height: { type: "number", description: "Embed height in px (default 480)." },
+      onEvent: action(
+        "proto only: dispatched on each prototype event with input { type, ...payload }.",
+      ),
+    },
+    example: {
+      type: "FigmaEmbed",
+      props: { binding: "designNode", urlField: "figmaUrl", embedType: "design", height: 480 },
+    },
+  },
 };
 
 export const PAGE_COMPONENT_KEYS = Object.keys(PAGE_COMPONENT_CATALOG);
