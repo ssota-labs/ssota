@@ -7,6 +7,7 @@ import {
   needsConnectionDisplayEnrichment,
   type ConnectionDisplayRow,
 } from "@/lib/connections/display";
+import type { ConnectorProvider } from "@/lib/connect/connectors";
 
 const inflight = new Set<string>();
 const attempted = new Set<string>();
@@ -15,6 +16,7 @@ export function useConnectionDisplayEnrichment(
   row: ConnectionDisplayRow & { id: string },
   projectId: string,
   accountId: string,
+  provider: ConnectorProvider,
 ) {
   const [displayRow, setDisplayRow] = useState(row);
   const [isEnriching, setIsEnriching] = useState(false);
@@ -76,7 +78,7 @@ export function useConnectionDisplayEnrichment(
   }, [accountId, projectId, row.id, row.name]);
 
   return {
-    label: connectionDisplayLabel(displayRow),
+    label: connectionDisplayLabel(displayRow, provider),
     isEnriching,
     displayRow,
   };
