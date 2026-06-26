@@ -54,6 +54,7 @@ function NavigableSurface({
       type={Tag === "button" ? "button" : undefined}
       className={cn(
         "relative",
+        isMissing && "inline-flex flex-wrap items-center gap-1",
         isInteractive && "cursor-pointer",
         isHotspotSelected && "border-2 border-blue-500 bg-blue-500/10",
         isMissing && "border-amber-500/40 border border-dashed",
@@ -75,7 +76,7 @@ function NavigableSurface({
     >
       {children}
       {isMissing ? (
-        <span className="bg-amber-500/10 text-amber-700 absolute top-1 right-1 rounded px-1 py-0.5 text-[9px] font-medium">
+        <span className="bg-amber-500/10 text-amber-700 shrink-0 rounded px-1 py-0.5 text-[9px] font-medium">
           Missing page
         </span>
       ) : null}
