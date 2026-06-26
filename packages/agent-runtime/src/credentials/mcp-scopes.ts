@@ -22,6 +22,22 @@
  * installation permissions, self-hosted Discord) are omitted — Connect uses the
  * connector's configured defaults for those.
  */
+// Google (Gmail/Drive/Calendar). Read + write set: gmail.modify covers
+// read/label/draft, gmail.send covers sending, gmail.settings.basic covers
+// filters/vacation; drive/calendar are full scopes. These are
+// SENSITIVE/RESTRICTED scopes — the Google OAuth app needs verification before
+// non-test users can grant them.
+const GOOGLE_SCOPES = [
+  "https://www.googleapis.com/auth/gmail.modify",
+  "https://www.googleapis.com/auth/gmail.send",
+  "https://www.googleapis.com/auth/gmail.settings.basic",
+  "https://www.googleapis.com/auth/drive",
+  "https://www.googleapis.com/auth/calendar",
+  "openid",
+  "email",
+  "profile",
+];
+
 const MCP_CONNECT_SCOPES: Record<string, string[]> = {
   slack: [
     "channels:read",
@@ -54,20 +70,12 @@ const MCP_CONNECT_SCOPES: Record<string, string[]> = {
     "canvases:write",
   ],
   linear: ["read", "write", "issues:create", "comments:create"],
-  // Google (Gmail/Drive/Calendar). Read + write set. gmail.modify covers
-  // read/label/draft; gmail.send covers sending. drive/calendar are full scopes.
-  // These are SENSITIVE/RESTRICTED scopes — the Google OAuth app needs
-  // verification before non-test users can grant them.
-  google: [
-    "https://www.googleapis.com/auth/gmail.modify",
-    "https://www.googleapis.com/auth/gmail.send",
-    "https://www.googleapis.com/auth/gmail.settings.basic",
-    "https://www.googleapis.com/auth/drive",
-    "https://www.googleapis.com/auth/calendar",
-    "openid",
-    "email",
-    "profile",
-  ],
+  google: GOOGLE_SCOPES,
+  // The Vercel Connect connector for Google is named after its OAuth server
+  // host (`accounts.google.com/<config>`), so the provider segment parsed from
+  // the uid is `accounts.google.com`, not `google`. Alias it so consent
+  // (resolveAuthorizeScopes) requests the same scopes the token mint uses.
+  "accounts.google.com": GOOGLE_SCOPES,
 };
 
 /** X REST API scopes — shared by authorize consent and Connect token mint. */
