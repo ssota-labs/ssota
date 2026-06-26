@@ -50,7 +50,12 @@ export function ConsoleShell({
   const isWorkflowInstructionsContext = pathname.includes(
     `/${ctx.projectSlug}/workflow/instructions`,
   );
-  const isChatContext = pathname.includes(`/${ctx.projectSlug}/c`);
+  // Match the `/c` path segment exactly — a loose `includes("/c")` also matches
+  // sibling routes that merely start with "c" (e.g. `/connections`), wrongly
+  // flagging them as full-bleed chat and disabling page scroll.
+  const chatBase = `/${ctx.projectSlug}/c`;
+  const isChatContext =
+    pathname.endsWith(chatBase) || pathname.includes(`${chatBase}/`);
   const isFillHeightPage = fillHeightPageIds.some((pageId) =>
     pathname.endsWith(`/p/${pageId}`),
   );
