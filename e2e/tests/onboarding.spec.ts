@@ -58,7 +58,7 @@ test.describe("Console onboarding", () => {
       "Back Test Organization",
     );
 
-    await page.locator('button[type="submit"]').click();
+    await page.getByRole("button", { name: "Continue" }).click();
     await expect(page).toHaveURL(/\/onboarding\/project/, { timeout: 15_000 });
   });
 

@@ -3,7 +3,7 @@ import Highlight from "@tiptap/extension-highlight";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
 import NodeRange from "@tiptap/extension-node-range";
-import { BulletList, ListKeymap } from "@tiptap/extension-list";
+import { ListKeymap } from "@tiptap/extension-list";
 import Placeholder from "@tiptap/extension-placeholder";
 import { TableKit } from "@tiptap/extension-table";
 import TaskList from "@tiptap/extension-task-list";

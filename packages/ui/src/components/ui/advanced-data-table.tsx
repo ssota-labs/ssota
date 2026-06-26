@@ -180,13 +180,11 @@ function pinStyles<TData>(
 function SortableHeader<TData>({
   header,
   table,
-  sortableColumns,
   enableColumnResizing,
   enableColumnReorder,
 }: {
   header: Header<TData, unknown>
   table: ReturnType<typeof useReactTable<TData>>
-  sortableColumns: SortableColumn[]
   enableColumnResizing: boolean
   enableColumnReorder: boolean
 }) {
@@ -559,7 +557,8 @@ export function AdvancedDataTable<TData>({
       globalFilter,
       pagination,
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Intentionally excludes onViewStateChange to avoid re-emitting on every
+    // parent render; only table view state should trigger this effect.
   }, [
     sorting,
     columnOrder,
@@ -821,7 +820,6 @@ export function AdvancedDataTable<TData>({
                           key={header.id}
                           header={header}
                           table={table}
-                          sortableColumns={sortableColumns}
                           enableColumnResizing={enableColumnResizing}
                           enableColumnReorder={enableColumnReorder}
                         />

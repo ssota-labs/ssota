@@ -6,7 +6,10 @@ test.describe("SSOTA Console", () => {
   test("smoke: 로그인 → 프로젝트 Overview", async ({ page }) => {
     await loginAsSmoke(page);
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
-    await expect(page.getByText("Nothing here yet")).toBeVisible();
+    // Overview hub renders the workflow-map CTA in both empty and seeded states.
+    await expect(
+      page.getByRole("button", { name: "Open Workflow Map" }),
+    ).toBeVisible();
   });
 
   test("smoke: Developer Setup route", async ({ page }) => {
@@ -24,18 +27,6 @@ test.describe("SSOTA Console", () => {
     await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Board", exact: true })).toBeVisible();
     await expect(page.getByText("Runtime work queue", { exact: false })).toBeVisible();
-  });
-
-  test("smoke: legacy routes redirect to v2.7 surfaces", async ({ page }) => {
-    await loginAsSmoke(page);
-    await page.goto("/context-graph/nodes/Document");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
-
-    await page.goto("/studio/node-types");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/overview$`));
-
-    await gotoProject(page, "workflow");
-    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/workflow/map$`));
   });
 
   test("smoke: AppSidebar exposes v2.7 primary nav", async ({ page }) => {

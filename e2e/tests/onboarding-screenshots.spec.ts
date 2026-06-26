@@ -24,7 +24,7 @@ test.describe("Console onboarding screenshots", () => {
       fullPage: true,
     });
 
-    await page.locator('button[type="submit"]').click();
+    await page.getByRole("button", { name: "Continue" }).click();
     await expect(page).toHaveURL(/\/onboarding\/project/);
     await page.getByLabel("Project name").fill(projectName);
     await page.screenshot({

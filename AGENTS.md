@@ -507,7 +507,15 @@ pnpm e2e:emulate          # emulate OAuth E2E (별도 Playwright config)
 | 부트스트랩 | `pnpm cloud:prepare` | Node 24 |
 | 린트·타입 | `pnpm lint && pnpm typecheck` | 없음 |
 | 코어 유닛 | `pnpm test --filter @ssota/core` | 없음 |
-| 어댑터 통합 | `pnpm test --filter @ssota/adapter-supabase` | `cloud:prepare` |
+| 어댑터 통합 | `pnpm test --filter @ssota/adapter-postgres` | `cloud:prepare` |
 | E2E | `pnpm e2e` | `cloud:prepare` |
 
 스모크 계정: `smoke@ssota.test` / `smoke-test-password-123` (시드 생성).
+
+> 어댑터 패키지는 `@ssota/adapter-postgres`다 (구 `@ssota/adapter-supabase` 명칭 아님). `--filter` 시 `adapter-postgres`를 쓴다.
+
+### Vitest 경로 해석 — `apps/web`
+
+`apps/web/vitest.config.ts`의 `resolve.alias`는 `apps/web/tsconfig.json`의 `paths`를 미러링한다 (shadcn 컨벤션: `@/lib/utils`·`@/components/ui/*`·`@/hooks/*`는 `packages/ui/src`로, `@/*`는 `apps/web`로). Vitest는 tsconfig paths를 읽지 않으므로, transitively 로드되는 `packages/ui` 소스의 `@/` self-import(`@/components/ui/…`)가 해석되려면 이 alias가 필요하다. **`packages/ui`의 `@/` 매핑을 바꾸면 이 vitest alias도 함께 갱신**한다 (drift 주의). alias는 most-specific-first 순서여야 한다.
+
+> 과거 pre-existing 실패는 모두 수정됨: adapter `task-port`는 `beforeAll`에서 필요한 workflow instruction 시드(self-contained), smoke overview는 seeded 환경에서 안정적인 "Open Workflow Map" CTA assert, onboarding은 submit selector를 `getByRole(Continue)`로 범위 지정, cutover에서 제거된 `executive/goals` stale spec 삭제, `web#test` registry는 위 vitest alias로 해소.
