@@ -10,8 +10,8 @@ A page's `spec` is `{ root, elements }`:
 - `elements`: a map of `elementId -> { type, props?, children? }`.
 - `type`: a component key — call `list_page_components` for the catalog and
   `get_page_component(key)` for a component's props + a copy-paste example.
-- `children`: array of `elementId`s (only for container components like
-  Section, Card, SplitPane, Form).
+  - `children`: array of `elementId`s (only for container components like
+  Section, Card, Resizable, Grid, Form).
 - `root`: the top-level `elementId` to render.
 
 ## Bindings (load graph data)

@@ -2,11 +2,16 @@ import type { BindingContext, RenderNode } from "./types";
 
 /** Filter a binding value down to render nodes. */
 export function asNodes(value: unknown): RenderNode[] {
-  if (!Array.isArray(value)) return [];
-  return value.filter(
-    (item): item is RenderNode =>
-      !!item && typeof item === "object" && "id" in item && "title" in item,
-  );
+  if (Array.isArray(value)) {
+    return value.filter(
+      (item): item is RenderNode =>
+        !!item && typeof item === "object" && "id" in item && "title" in item,
+    );
+  }
+  if (value && typeof value === "object" && "id" in value && "title" in value) {
+    return [value as RenderNode];
+  }
+  return [];
 }
 
 /** Resolve `props.binding` to a single node from the binding context. */

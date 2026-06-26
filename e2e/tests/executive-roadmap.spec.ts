@@ -8,13 +8,18 @@ test.describe("Executive roadmap", () => {
     await gotoProject(page, "executive/roadmap");
   });
 
-  test("shows product editor and planning document list", async ({ page }) => {
+  test("shows product and planning document lists", async ({ page }) => {
     await expect(page.getByText("Planning roadmaps")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText("Product roadmap")).toBeVisible();
-    await expect(page.getByTestId("document-sheet-list")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Product roadmap" }),
+    ).toBeVisible();
+    await expect(page.getByTestId("document-sheet-list")).toHaveCount(2);
 
+    await expect(
+      page.getByRole("button", { name: "Product roadmap" }),
+    ).toBeVisible();
     const year = new Date().getFullYear();
     await expect(
       page.getByRole("button", { name: new RegExp(`${year} 연간 로드맵`) }),

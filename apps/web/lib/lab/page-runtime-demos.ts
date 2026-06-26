@@ -503,9 +503,9 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
   {
     id: "layout-split",
     category: "layout",
-    title: "Section · SplitPane",
+    title: "Section · Resizable",
     description: "Two-column section for spec + metadata patterns.",
-    components: ["Section", "SplitPane", "Card", "Text"],
+    components: ["Section", "Resizable", "Card", "Text"],
     spec: {
       root: "root",
       elements: {
@@ -518,7 +518,8 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           children: ["split"],
         },
         split: {
-          type: "SplitPane",
+          type: "Resizable",
+          props: { defaultSizes: [62, 38], minSizes: [30, 25] },
           children: ["left", "right"],
         },
         left: {

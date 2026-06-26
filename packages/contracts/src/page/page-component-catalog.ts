@@ -63,13 +63,86 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   Section: {
     key: "Section",
     category: "layout",
-    description: "Titled section container that groups child elements.",
+    description:
+      "Titled section container that groups child elements. Use padding:none inside Resizable/Grid panels when the parent already pads.",
     children: true,
     props: {
       title: { type: "string", description: "Section heading." },
       subtitle: { type: "string", description: "Optional secondary line." },
+      padding: {
+        type: "string",
+        description: '"default" (p-4 md:p-6) or "none". Default "default".',
+      },
     },
     example: { type: "Section", props: { title: "Overview" }, children: [] },
+  },
+  Grid: {
+    key: "Grid",
+    category: "layout",
+    description:
+      "CSS grid layout. Each child occupies one grid cell. Fills the page main area.",
+    children: true,
+    props: {
+      columns: {
+        type: "number | string",
+        description: '2, 3, or "sidebar" (2fr + 1fr). Default 2.',
+      },
+      gap: { type: "string", description: '"sm" or "md". Default "md".' },
+      padding: {
+        type: "string",
+        description: '"default" (p-4 md:p-6) or "none". Default "default".',
+      },
+    },
+    example: {
+      type: "Grid",
+      props: { columns: 2, gap: "md" },
+      children: [],
+    },
+  },
+  Resizable: {
+    key: "Resizable",
+    category: "layout",
+    description:
+      "Draggable split panels (horizontal or vertical). Each child is one panel. Fills the page main area.",
+    children: true,
+    props: {
+      orientation: {
+        type: "string",
+        description: '"horizontal" (default) or "vertical".',
+      },
+      defaultSizes: {
+        type: "number[]",
+        description: "Initial panel sizes as percentages (sum ~100).",
+      },
+      minSizes: {
+        type: "number[]",
+        description: "Minimum panel sizes as percentages.",
+      },
+    },
+    example: {
+      type: "Resizable",
+      props: { defaultSizes: [62, 38], minSizes: [30, 25] },
+      children: [],
+    },
+  },
+  Stack: {
+    key: "Stack",
+    category: "layout",
+    description:
+      "Vertical flex stack. Each child is a full-width row (e.g. product roadmap above planning periods).",
+    children: true,
+    props: {
+      gap: { type: "string", description: '"sm", "md" (default), or "lg".' },
+      padding: {
+        type: "string",
+        description: '"default" (p-4 md:p-6) or "none". Default "none".',
+      },
+    },
+    example: {
+      type: "Stack",
+      props: { gap: "lg" },
+      children: [],
+    },
   },
   Text: {
     key: "Text",
@@ -137,14 +210,6 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       type: "Toolbar",
       props: { title: "Invoices", actions: [{ label: "New", action: "createInvoice" }] },
     },
-  },
-  SplitPane: {
-    key: "SplitPane",
-    category: "layout",
-    description: "A two-column grid; place two children side by side.",
-    children: true,
-    props: {},
-    example: { type: "SplitPane", children: [] },
   },
   // ── data ─────────────────────────────────────────────────────────────────
   NodeList: {

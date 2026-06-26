@@ -6,7 +6,6 @@ import {
   ActionContext,
   ArtifactWorkbenchContext,
   BasePathContext,
-  FillHeightContext,
   JsonRenderContext,
   PageViewStateContext,
   WidgetBuildContext,
@@ -31,8 +30,6 @@ type RenderProps = {
   basePath?: string;
   /** Triggers a server-side build for an unbuilt buildable Widget node. */
   onBuildWidget?: (nodeId: string) => void | Promise<void>;
-  /** Stretch to fill a flex parent (DocumentSheetList pages). */
-  fillHeight?: boolean;
   /** Per-user table view-state persistence (omitted in the lab preview). */
   viewState?: PageViewStateRuntime;
   /** Artifact workbench callbacks (ArtifactWorkbench pages). */
@@ -100,7 +97,6 @@ export function DynamicPageRenderer({
   onAction,
   basePath = "",
   onBuildWidget,
-  fillHeight = false,
   viewState,
   artifactWorkbench = null,
 }: RenderProps) {
@@ -116,11 +112,7 @@ export function DynamicPageRenderer({
 
   const tree = (
     <div
-      className={
-        fillHeight
-          ? "relative flex min-h-0 flex-1 flex-col"
-          : "space-y-2"
-      }
+      className="relative flex min-h-0 w-full flex-1 flex-col"
       data-testid="dynamic-page-renderer"
     >
       {renderElement(spec.root, spec, bindingData)}
@@ -133,17 +125,15 @@ export function DynamicPageRenderer({
         <ArtifactWorkbenchContext.Provider value={artifactWorkbench}>
           <PageViewStateContext.Provider value={viewState ?? null}>
             <BasePathContext.Provider value={basePath}>
-              <FillHeightContext.Provider value={fillHeight}>
-                <JsonRenderContext.Provider value={runtime}>
-                  <SelectionWrappedTree
-                    spec={spec}
-                    bindingData={bindingData}
-                    selectionConfig={selectionConfig}
-                  >
-                    {tree}
-                  </SelectionWrappedTree>
-                </JsonRenderContext.Provider>
-              </FillHeightContext.Provider>
+              <JsonRenderContext.Provider value={runtime}>
+                <SelectionWrappedTree
+                  spec={spec}
+                  bindingData={bindingData}
+                  selectionConfig={selectionConfig}
+                >
+                  {tree}
+                </SelectionWrappedTree>
+              </JsonRenderContext.Provider>
             </BasePathContext.Provider>
           </PageViewStateContext.Provider>
         </ArtifactWorkbenchContext.Provider>

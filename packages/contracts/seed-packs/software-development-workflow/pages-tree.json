@@ -16,20 +16,22 @@
     "spec": {
       "root": "layout",
       "elements": {
-        "layout": { "type": "SplitPane", "children": ["product", "planning"] },
-        "product": {
-          "type": "Section",
-          "props": {
-            "title": "Product roadmap",
-            "subtitle": "Long-term strategic direction"
-          },
-          "children": ["productDoc"]
+        "layout": {
+          "type": "Stack",
+          "props": { "gap": "lg", "padding": "none" },
+          "children": ["product", "planning"]
         },
-        "productDoc": {
-          "type": "DocumentEditor",
+        "product": {
+          "type": "DocumentSheetList",
           "props": {
             "binding": "productRoadmap",
+            "sectionTitle": "Product roadmap",
+            "sectionSubtitle": "Long-term strategic direction",
             "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
             "action": "saveProductDoc"
           }
         },
@@ -56,7 +58,7 @@
     "actions": {
       "saveProductDoc": {
         "kind": "update_node",
-        "nodeId": { "$binding": "productRoadmap.id" },
+        "nodeId": { "$input": "nodeId" },
         "properties": { "content": { "$input": "doc" } },
         "merge": true
       },
@@ -596,7 +598,11 @@
     "spec": {
       "root": "layout",
       "elements": {
-        "layout": { "type": "SplitPane", "children": ["initiativeCol", "releaseCol"] },
+        "layout": {
+          "type": "Resizable",
+          "props": { "defaultSizes": [50, 50], "minSizes": [25, 25] },
+          "children": ["initiativeCol", "releaseCol"]
+        },
         "initiativeCol": {
           "type": "Section",
           "props": {
@@ -831,7 +837,8 @@
       "root": "layout",
       "elements": {
         "layout": {
-          "type": "SplitPane",
+          "type": "Resizable",
+          "props": { "defaultSizes": [62, 38], "minSizes": [30, 25] },
           "children": ["workbench", "linkedTable"]
         },
         "workbench": {
@@ -935,7 +942,11 @@
     "spec": {
       "root": "layout",
       "elements": {
-        "layout": { "type": "SplitPane", "children": ["editorCol", "metaCol"] },
+        "layout": {
+          "type": "Resizable",
+          "props": { "defaultSizes": [62, 38], "minSizes": [30, 25] },
+          "children": ["editorCol", "metaCol"]
+        },
         "editorCol": {
           "type": "Section",
           "props": { "title": "Architecture spec" },
