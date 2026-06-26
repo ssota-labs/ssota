@@ -14,6 +14,7 @@ import { artifactWorkbenchComponents } from "./components/artifact-workbench";
 import { flowComponents } from "./components/flow-canvas";
 import { erdDiagramComponents } from "./components/erd-diagram";
 import { widgetComponents } from "./components/widget";
+import { figmaEmbedComponents } from "./components/figma-embed";
 
 /**
  * The JSON-render catalog: a registry of component type → renderer. Adding a
@@ -36,6 +37,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...flowComponents,
   ...erdDiagramComponents,
   ...widgetComponents,
+  ...figmaEmbedComponents,
 };
 
 export const UI_CATALOG_COMPONENTS = Object.keys(CATALOG);

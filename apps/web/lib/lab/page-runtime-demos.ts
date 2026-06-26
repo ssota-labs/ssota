@@ -963,6 +963,71 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     },
   },
   {
+    id: "design-figma-embed",
+    category: "design",
+    title: "FigmaEmbed",
+    description:
+      "Live Figma file via Embed Kit 2.0. The bound node supplies a Figma URL; embedType selects the surface. design = read-only; proto bridges the Embed API so prototype events (frame changes, clicks) dispatch a page action — watch the 'Last action' line as you click through the prototype. (Prototype events require NEXT_PUBLIC_FIGMA_CLIENT_ID.)",
+    components: ["Section", "FigmaEmbed"],
+    spec: {
+      root: "wrap",
+      elements: {
+        wrap: { type: "SplitPane", children: ["designPane", "protoPane"] },
+        designPane: {
+          type: "Section",
+          props: { title: "Design", subtitle: "embedType: design (read-only)" },
+          children: ["designEmbed"],
+        },
+        designEmbed: {
+          type: "FigmaEmbed",
+          props: {
+            binding: "designNode",
+            urlField: "figmaUrl",
+            embedType: "design",
+            height: 360,
+          },
+        },
+        protoPane: {
+          type: "Section",
+          props: { title: "Prototype", subtitle: "embedType: proto (events → action)" },
+          children: ["protoEmbed"],
+        },
+        protoEmbed: {
+          type: "FigmaEmbed",
+          props: {
+            binding: "protoNode",
+            urlField: "figmaUrl",
+            embedType: "proto",
+            height: 360,
+            onEvent: "figmaProtoEvent",
+          },
+        },
+      },
+    },
+    bindingData: {
+      designNode: {
+        id: "99999999-9999-4999-8999-999999999901",
+        catalogKey: "design_file",
+        title: "Figma sample file",
+        properties: {
+          // Figma's public "Sample File" used throughout the REST API docs.
+          figmaUrl:
+            "https://www.figma.com/design/LKQ4FJ4bTnCSjedbRpk931/Sample-File",
+        },
+      },
+      protoNode: {
+        id: "99999999-9999-4999-8999-999999999902",
+        catalogKey: "design_file",
+        title: "Embed Kit 2.0 examples",
+        properties: {
+          // Figma's public Embed Kit 2.0 prototype (share = anyone with link).
+          figmaUrl:
+            "https://www.figma.com/proto/nrPSsILSYjesyc5UHjYYa4/Embed-Kit-2.0-examples?node-id=5-3",
+        },
+      },
+    },
+  },
+  {
     id: "spreadsheet",
     category: "data",
     title: "Spreadsheet (Google Sheets-style)",
