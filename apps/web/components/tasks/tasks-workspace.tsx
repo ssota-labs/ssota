@@ -1,7 +1,5 @@
 import type { TaskStatus } from "@ssota/contracts";
 
-export type TaskTab = "table" | "board";
-
 export type TaskWorkspaceRow = {
   id: string;
   title: string;

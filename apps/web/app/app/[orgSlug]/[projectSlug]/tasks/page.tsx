@@ -1,29 +1,18 @@
 import { TasksExplorer } from "@/components/tasks/tasks-explorer";
-import {
-  type TaskTab,
-  type TaskWorkspaceRow,
-} from "@/components/tasks/tasks-workspace";
-import { appProjectPath } from "@/lib/console/app-paths";
+import { type TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 import { resolveEndUserContext } from "@/lib/request-context";
 import { getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
 
-const taskTabs = new Set<TaskTab>(["table", "board"]);
-
 export default async function AppTasksPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
-  searchParams: Promise<{ tab?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const { tab } = await searchParams;
   const ctx = await resolveEndUserContext(orgSlug, projectSlug);
-  const routeCtx = { orgSlug, projectSlug };
   const tasks = await getTaskPort(ctx.projectId, ctx.accountId).queryTasks({
     limit: 200,
   });
-  const activeTab = taskTabs.has(tab as TaskTab) ? (tab as TaskTab) : "table";
 
   const rows: TaskWorkspaceRow[] = tasks.map((task) => ({
     id: task.id,
@@ -55,8 +44,6 @@ export default async function AppTasksPage({
   return (
     <TasksExplorer
       rows={rows}
-      activeTab={activeTab}
-      baseHref={appProjectPath(routeCtx, "tasks")}
       projectId={ctx.projectId}
       workflowOptions={workflowOptions}
     />
