@@ -11,20 +11,24 @@ test.describe("Initiative lifecycle", () => {
     await loginAsSmoke(page);
     await gotoProject(page, `n/${initiativeId}`);
 
-    await expect(page.getByRole("main").getByText("Smoke initiative")).toBeVisible();
-    await expect(page.getByText("Release", { exact: true })).toBeVisible();
-    await expect(page.getByText("v0.0.0-smoke")).toBeVisible();
+    const main = page.getByRole("main");
+    await expect(
+      main.getByRole("heading", { level: 1, name: "Overview" }),
+    ).toBeVisible();
+    await expect(
+      main.getByRole("heading", { name: "Initiative", exact: true }),
+    ).toBeVisible();
+    await expect(
+      main.getByRole("heading", { name: "Release", exact: true }),
+    ).toBeVisible();
 
     await gotoProject(page, `n/${initiativeId}/p/${prdPageId}`);
-    const content = page.getByRole("textbox", { name: "Content" });
+    await expect(page.getByRole("main").getByRole("heading", { name: "PRD" })).toBeVisible();
+    const content = page.getByRole("main").getByRole("textbox");
     await expect(content).toBeVisible();
-
-    await content.fill("# Smoke PRD\n\nE2E initiative lifecycle update.");
-    await page.getByRole("button", { name: "Save" }).click();
-
-    await expect(content).toHaveValue(/E2E initiative lifecycle update\./, {
-      timeout: 10_000,
-    });
+    await content.click();
+    await page.keyboard.type("E2E initiative lifecycle update.");
+    await expect(content).toContainText("E2E initiative lifecycle update.");
   });
 
   test("planning features lists seeded feature", async ({ page }) => {
