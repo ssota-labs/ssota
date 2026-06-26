@@ -516,7 +516,6 @@ pnpm e2e:emulate          # emulate OAuth E2E (별도 Playwright config)
 
 ### 알려진 pre-existing 테스트 실패 (환경 문제 아님)
 
-아래는 `main` 기준 **이미 실패하는** 테스트다. 환경 셋업이 깨진 게 아니라 시드·테스트 기대값 불일치이므로, 셋업 검증 중 이걸 보고 환경을 의심하지 말 것. 무관한 작업에서 고치지 말 것.
+- **`web#test` `lib/page-runtime/registry.test.ts`** — `apps/web/vitest.config.ts`가 `@` → `apps/web`만 alias하는데, 이 테스트가 transitively 로드하는 `packages/ui/src/.../advanced-data-table.tsx`도 자기 디렉터리를 `@/`로 import한다(`@/components/ui/advanced-data-table-selection`). 동일 `@/` alias 충돌로 vitest가 모듈을 못 찾는다(`Cannot find module`). lint/typecheck/build/Next 런타임은 패키지별 tsconfig·`transpilePackages`로 정상. `pnpm test --filter web`만 영향. 올바른 수정은 web vitest의 패키지별 path 해석(`vite-tsconfig-paths` 등) 도입이며 별도 인프라 작업이다.
 
-- **`@ssota/adapter-postgres` `task-port.integration.test.ts` (5 fail)** — `WORKFLOW_INSTRUCTION_SEEDS`가 의도적으로 비어 있어(프로젝트는 워크플로우 instruction 없이 시작, 에이전트가 `agent.setup`으로 on-demand 작성) DB에 `work.implement_feature`·`work.write_document`·`orchestrator.daily` row가 없다. `spawnTask`/Tasks UI의 "New task"는 DB workflow instruction row를 요구하므로 시드만으론 태스크 생성이 안 된다. 나머지 24/29 통합 테스트(graph CRUD·RLS·시드 무결성)는 통과한다.
-- **일부 E2E (`smoke` 일부, `onboarding`, `executive-goals`, `initiative-lifecycle` 등)** — 시드가 `ssota-dev`에 그래프 노드를 채워 넣어 "빈 상태"(`Nothing here yet`)를 기대하는 smoke assert가 깨지고, onboarding은 selector strict-mode 충돌(`button[type="submit"]`이 "Sign out"+"Continue" 둘 다 매칭)로 깨진다. 앱 자체는 정상 동작(로그인→Overview 렌더, 신규 가입→org/project 생성→Overview)한다.
+> 과거 여기 적혀 있던 adapter `task-port` 5건·smoke/onboarding·`executive-goals` 실패는 수정됨: adapter 테스트는 `beforeAll`에서 필요한 workflow instruction을 시드(self-contained), smoke overview는 seeded 환경에서 안정적인 "Open Workflow Map" CTA를 assert, onboarding은 submit selector를 `getByRole(Continue)`로 범위 지정, 그리고 cutover에서 제거된 `executive/goals` 라우트의 stale spec은 삭제했다.
