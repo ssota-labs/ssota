@@ -52,10 +52,10 @@ function NavigableSurface({
         "relative",
         isMissing && "inline-flex flex-wrap items-center gap-1",
         isInteractive && "cursor-pointer",
-        showHotspotCue &&
-          "ring-2 ring-inset ring-blue-500 bg-blue-500/10 transition-[box-shadow,background-color]",
         isMissing && !showHotspotCue && "border-amber-500/40 border border-dashed",
         className,
+        showHotspotCue &&
+          "border-2 border-solid border-blue-500 bg-blue-500/10 shadow-none",
       )}
       onClick={isInteractive ? handleClick : undefined}
       data-navigate-to={target || undefined}
@@ -82,10 +82,12 @@ function NavigableSurface({
 }
 
 export function Screen({ className, children }: WireframeBaseProps) {
+  const nav = useWireframeNavigation();
   return (
     <div
       className={cn(
-        "bg-background text-foreground flex h-full min-h-dvh flex-col md:flex-row overflow-hidden grayscale",
+        "bg-background text-foreground flex h-full min-h-dvh flex-col md:flex-row overflow-hidden",
+        !nav?.hotspotsVisible && "grayscale",
         className,
       )}
     >

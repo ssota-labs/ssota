@@ -7,7 +7,6 @@ import {
   JSXPreviewContent,
   JSXPreviewError,
 } from "@/components/ai-elements/jsx-preview";
-import { cn } from "@ssota/ui/lib/utils";
 import { WIREFRAME_JSX_COMPONENTS } from "@/lib/wireframe/primitives";
 import { readWireframeJsx } from "@/lib/wireframe/read-wireframe";
 import { useWireframeViewport } from "@/lib/wireframe/viewport-context";
@@ -26,10 +25,7 @@ function WireframeNodeComponent({ data, selected }: NodeProps) {
 
   return (
     <div
-      className={cn(
-        "nodrag nopan bg-background relative overflow-hidden rounded-xl border border-border shadow-lg shadow-black/5",
-        selected && "ring-2 ring-blue-500 ring-offset-2 ring-offset-background",
-      )}
+      className="nodrag nopan bg-background relative overflow-hidden rounded-xl border border-border shadow-lg shadow-black/5"
       style={{ width: size.width, height: size.height }}
       data-testid="wireframe-flow-node-shell"
       data-wireframe-node-focused={selected ? "true" : undefined}
