@@ -171,6 +171,12 @@ const AUTHORIZE_SCOPES: Partial<Record<ConnectorProvider, readonly string[]>> = 
     "users.read",
     "follows.read",
     "follows.write",
+    "like.read",
+    "like.write",
+    "bookmark.read",
+    "bookmark.write",
+    "dm.read",
+    "dm.write",
     "offline.access",
   ],
 };
