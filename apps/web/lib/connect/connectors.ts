@@ -164,10 +164,12 @@ const AUTHORIZE_SCOPES: Partial<Record<ConnectorProvider, readonly string[]>> = 
   // shows "No scopes were provided."
   discord: ["bot"],
   // Twitter uses provider-level OAuth (no hosted MCP), so all required scopes
-  // must be declared here. `offline.access` requests a refresh token.
+  // must be declared here. Covers every tool in agent-runtime/tools/twitter.ts.
+  // `offline.access` requests a refresh token.
   twitter: [
     "tweet.read",
     "tweet.write",
+    "tweet.moderate.write",
     "users.read",
     "follows.read",
     "follows.write",
@@ -175,15 +177,46 @@ const AUTHORIZE_SCOPES: Partial<Record<ConnectorProvider, readonly string[]>> = 
     "like.write",
     "bookmark.read",
     "bookmark.write",
+    "list.read",
+    "list.write",
     "dm.read",
     "dm.write",
+    "space.read",
+    "mute.read",
+    "mute.write",
+    "block.read",
     "offline.access",
   ],
+};
+
+/** Vercel Connect uids for X use the `x.com/...` host, not `twitter/...`. */
+const CONNECTOR_PROVIDER_ALIASES: Record<string, ConnectorProvider> = {
+  "x.com": "twitter",
 };
 
 /** Resolve the provider segment of a stored connector uid, e.g. "slack/acme" → "slack". */
 export function providerOf(connectorUid: string): string {
   return connectorUid.split("/")[0] ?? connectorUid;
+}
+
+/** Map a connector uid host to the registry provider for OAuth scope lookup. */
+export function connectorProviderForAuthorize(
+  connectorUid: string,
+): ConnectorProvider | undefined {
+  const segment = providerOf(connectorUid);
+  const aliased = CONNECTOR_PROVIDER_ALIASES[segment];
+  if (aliased) return aliased;
+  const providers: ConnectorProvider[] = [
+    "slack",
+    "notion",
+    "github",
+    "linear",
+    "discord",
+    "twitter",
+  ];
+  return providers.includes(segment as ConnectorProvider)
+    ? (segment as ConnectorProvider)
+    : undefined;
 }
 
 /**
@@ -205,9 +238,9 @@ export function resolveAuthorizeScopes(
   explicit?: string[],
 ): string[] | undefined {
   if (explicit && explicit.length > 0) return explicit;
-  const provider = providerOf(connectorUid) as ConnectorProvider;
+  const provider = connectorProviderForAuthorize(connectorUid);
   const merged = [
-    ...(AUTHORIZE_SCOPES[provider] ?? []),
+    ...(provider ? (AUTHORIZE_SCOPES[provider] ?? []) : []),
     ...(mcpScopesForConnector(connectorUid) ?? []),
   ];
   const deduped = [...new Set(merged)];
