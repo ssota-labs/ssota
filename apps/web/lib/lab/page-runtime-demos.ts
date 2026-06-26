@@ -1287,7 +1287,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           title: "Welcome Screen",
           properties: {
             slug: "welcome",
-            jsx: `<Screen title="Welcome">
+            jsx: `<Screen>
   <Main>
     <Title>Pet Health</Title>
     <Text>Track your pet wellness in one place.</Text>
@@ -1303,7 +1303,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           title: "Login",
           properties: {
             slug: "login",
-            jsx: `<Screen title="Login">
+            jsx: `<Screen>
   <Main>
     <Title>Welcome back</Title>
     <Input label="Email" placeholder="you@example.com" />
@@ -1320,7 +1320,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           title: "Media Timeline",
           properties: {
             slug: "media-timeline",
-            jsx: `<Screen title="Media Timeline">
+            jsx: `<Screen>
   <Sidebar>
     <NavItem navigateTo="home">Dashboard</NavItem>
     <NavItem active>Media</NavItem>

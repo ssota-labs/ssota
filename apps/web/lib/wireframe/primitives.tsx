@@ -78,24 +78,15 @@ function NavigableSurface({
   );
 }
 
-export function Screen({
-  title,
-  className,
-  children,
-}: WireframeBaseProps & { title?: string }) {
+export function Screen({ className, children }: WireframeBaseProps) {
   return (
     <div
       className={cn(
-        "bg-background text-foreground flex h-full min-h-[420px] flex-col overflow-hidden rounded-lg border shadow-sm grayscale",
+        "bg-background text-foreground flex h-full min-h-0 flex-col overflow-hidden grayscale",
         className,
       )}
     >
-      {title ? (
-        <header className="border-border border-b px-3 py-2 text-xs font-semibold">
-          {title}
-        </header>
-      ) : null}
-      <div className="flex min-h-0 flex-1">{children}</div>
+      {children}
     </div>
   );
 }

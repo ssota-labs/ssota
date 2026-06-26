@@ -10,18 +10,15 @@ import {
 } from "@/components/ai-elements/jsx-preview";
 import { WIREFRAME_JSX_COMPONENTS } from "@/lib/wireframe/primitives";
 import { readWireframeJsx } from "@/lib/wireframe/read-wireframe";
-
-export const WIREFRAME_NODE_WIDTH = 360;
-export const WIREFRAME_NODE_HEIGHT = 640;
+import { useWireframeViewport } from "@/lib/wireframe/viewport-context";
 
 export type WireframeNodePayload = {
-  title: string;
-  slug: string;
   properties: Record<string, unknown>;
 };
 
 function WireframeNodeComponent({ data }: NodeProps) {
   const payload = data as unknown as WireframeNodePayload;
+  const { size } = useWireframeViewport();
   const jsx = React.useMemo(
     () => readWireframeJsx(payload.properties),
     [payload.properties],
@@ -30,18 +27,14 @@ function WireframeNodeComponent({ data }: NodeProps) {
   return (
     <div
       className={cn(
-        "bg-card relative overflow-hidden rounded-xl border border-border shadow-md",
+        "bg-background relative overflow-hidden rounded-xl border border-border shadow-lg shadow-black/5",
       )}
-      style={{ width: WIREFRAME_NODE_WIDTH, height: WIREFRAME_NODE_HEIGHT }}
+      style={{ width: size.width, height: size.height }}
     >
-      <div className="border-border bg-muted/20 flex items-center justify-between border-b px-3 py-1.5">
-        <span className="truncate text-xs font-medium">{payload.title}</span>
-        <span className="text-muted-foreground text-[10px]">{payload.slug}</span>
-      </div>
-      <div className="nodrag nopan h-[calc(100%-2rem)] overflow-hidden p-2">
+      <div className="nodrag nopan h-full overflow-hidden">
         <JSXPreview jsx={jsx} components={WIREFRAME_JSX_COMPONENTS}>
           <JSXPreviewContent className="h-full overflow-auto text-xs" />
-          <JSXPreviewError className="m-2" />
+          <JSXPreviewError className="m-3" />
         </JSXPreview>
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { readNodeContent } from "@ssota/core";
 import { wireframeSlug } from "./slug";
 
-const DEFAULT_WIREFRAME_JSX = `<Screen title="Untitled screen">
+const DEFAULT_WIREFRAME_JSX = `<Screen>
   <Main>
     <Title>Wireframe</Title>
     <Text>Add JSX to properties.jsx to describe this screen.</Text>

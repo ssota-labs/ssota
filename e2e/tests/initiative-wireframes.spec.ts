@@ -28,6 +28,10 @@ test.describe("initiative wireframes", () => {
       page.getByPlaceholder("Search wireframes..."),
     ).toBeVisible();
     await expect(page.getByTestId("wireframe-canvas")).toBeVisible();
+    await expect(page.getByTestId("wireframe-viewport-toolbar")).toBeVisible();
+    await expect(page.getByTestId("wireframe-viewport-mobile")).toBeVisible();
+    await expect(page.getByTestId("wireframe-viewport-tablet")).toBeVisible();
+    await expect(page.getByTestId("wireframe-viewport-desktop")).toBeVisible();
     await expect(page.getByText("Linked UI components")).toBeVisible();
   });
 });

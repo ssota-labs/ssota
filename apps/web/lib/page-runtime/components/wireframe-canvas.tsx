@@ -12,27 +12,97 @@ import {
   type Node,
 } from "@xyflow/react";
 import { cn } from "@ssota/ui/lib/utils";
+import { WireframeViewportToolbar } from "@/components/console/wireframe/wireframe-viewport-toolbar";
 import { boundNodes } from "../bindings";
 import { useSelection } from "../selection-context";
 import { WireframeNavigationProvider } from "@/lib/wireframe/navigation-context";
 import { readWireframeJsx, wireframeSlug } from "@/lib/wireframe/read-wireframe";
+import type { WireframeViewport } from "@/lib/wireframe/viewport";
+import {
+  WireframeViewportProvider,
+  useWireframeViewport,
+} from "@/lib/wireframe/viewport-context";
 import type { CatalogComponent, RenderNode } from "../types";
 import { WireframeFlowNode } from "./wireframe-node";
 
 const NODE_TYPES = { wireframe: WireframeFlowNode };
 
-/** Fit the single centered wireframe card when it mounts or the selection changes. */
+/** Fit the single centered wireframe when selection or viewport changes. */
 function SingleWireframeViewport({ nodeId }: { nodeId: string | null }) {
   const initialized = useNodesInitialized();
   const { fitView } = useReactFlow();
+  const { viewport, size } = useWireframeViewport();
 
   React.useEffect(() => {
     if (initialized && nodeId) {
-      void fitView({ padding: 0.25, duration: 300 });
+      void fitView({ padding: 0.2, duration: 300 });
     }
-  }, [initialized, nodeId, fitView]);
+  }, [initialized, nodeId, viewport, size.width, size.height, fitView]);
 
   return null;
+}
+
+function WireframePreviewCanvas({
+  activeFrame,
+  onSelect,
+}: {
+  activeFrame: {
+    id: string;
+    slug: string;
+    title: string;
+    properties: Record<string, unknown>;
+  };
+  onSelect: (id: string) => void;
+}) {
+  const { viewport, setViewport } = useWireframeViewport();
+
+  const rfNodes = React.useMemo<Node[]>(
+    () => [
+      {
+        id: activeFrame.id,
+        type: "wireframe",
+        position: { x: 0, y: 0 },
+        data: { properties: activeFrame.properties },
+        draggable: false,
+        selectable: false,
+      },
+    ],
+    [activeFrame],
+  );
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <WireframeViewportToolbar
+        title={activeFrame.title}
+        slug={activeFrame.slug}
+        viewport={viewport}
+        onViewportChange={setViewport}
+      />
+      <div className="relative min-h-0 flex-1">
+        <ReactFlow
+          key={`${activeFrame.id}-${viewport}`}
+          nodes={rfNodes}
+          edges={[]}
+          nodeTypes={NODE_TYPES}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          elementsSelectable={false}
+          panOnDrag
+          zoomOnScroll
+          proOptions={{ hideAttribution: true }}
+          minZoom={0.2}
+          maxZoom={1.5}
+          fitView
+          fitViewOptions={{ padding: 0.2 }}
+          className="bg-muted/20"
+        >
+          <SingleWireframeViewport nodeId={activeFrame.id} />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+          <Controls showInteractive={false} position="bottom-left" />
+        </ReactFlow>
+      </div>
+    </div>
+  );
 }
 
 function WireframeCanvasEl({
@@ -46,6 +116,8 @@ function WireframeCanvasEl({
   onSelect: (id: string) => void;
   height: number;
 }) {
+  const [viewport, setViewport] = React.useState<WireframeViewport>("mobile");
+
   const frames = React.useMemo(
     () =>
       nodes.map((node) => ({
@@ -69,23 +141,9 @@ function WireframeCanvasEl({
   const activeFrame =
     frames.find((frame) => frame.id === selectedId) ?? frames[0] ?? null;
 
-  const rfNodes = React.useMemo<Node[]>(() => {
-    if (!activeFrame) return [];
-    return [
-      {
-        id: activeFrame.id,
-        type: "wireframe",
-        position: { x: 0, y: 0 },
-        data: {
-          title: activeFrame.title,
-          slug: activeFrame.slug,
-          properties: activeFrame.properties,
-        },
-        draggable: false,
-        selectable: false,
-      },
-    ];
-  }, [activeFrame]);
+  React.useEffect(() => {
+    setViewport("mobile");
+  }, [activeFrame?.id]);
 
   if (nodes.length === 0) {
     return (
@@ -114,32 +172,21 @@ function WireframeCanvasEl({
       slugToNodeId={slugToNodeId}
       onNavigate={(nodeId) => onSelect(nodeId)}
     >
-      <div
-        className="ssota-wireframe-flow border-border bg-card relative w-full overflow-hidden rounded-lg border"
-        style={{ height }}
-        data-testid="wireframe-canvas"
+      <WireframeViewportProvider
+        viewport={viewport}
+        onViewportChange={setViewport}
       >
-        <ReactFlow
-          key={activeFrame.id}
-          nodes={rfNodes}
-          edges={[]}
-          nodeTypes={NODE_TYPES}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable={false}
-          panOnDrag
-          zoomOnScroll
-          proOptions={{ hideAttribution: true }}
-          minZoom={0.4}
-          maxZoom={1.5}
-          fitView
-          fitViewOptions={{ padding: 0.25 }}
+        <div
+          className="ssota-wireframe-flow border-border bg-card relative w-full overflow-hidden rounded-lg border"
+          style={{ height }}
+          data-testid="wireframe-canvas"
         >
-          <SingleWireframeViewport nodeId={activeFrame.id} />
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-          <Controls showInteractive={false} />
-        </ReactFlow>
-      </div>
+          <WireframePreviewCanvas
+            activeFrame={activeFrame}
+            onSelect={onSelect}
+          />
+        </div>
+      </WireframeViewportProvider>
     </WireframeNavigationProvider>
   );
 }
