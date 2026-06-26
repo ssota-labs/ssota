@@ -98,6 +98,7 @@ export default async function TreePage({
       actionKey,
       input,
       subjectNodeId: page!.subjectNodeId ?? null,
+      routeCtx,
       revalidate: [pagePath],
     });
   }

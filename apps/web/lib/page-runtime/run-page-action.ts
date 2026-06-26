@@ -1,8 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import {
   createEdge,
+  createInitiativeBundle,
   createNode,
   deleteEdge,
   deleteNode,
@@ -19,6 +21,10 @@ import {
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { getPagePort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
+import {
+  projectPath,
+  type ProjectRouteContext,
+} from "@/lib/console/paths";
 
 /**
  * Server-side executor for the JSON-render action layer. The client never sends
@@ -37,6 +43,8 @@ export type RunPageActionInput = {
   input: Record<string, unknown>;
   /** The page's anchor node (page.subjectNodeId for /p; the URL node for /n). */
   subjectNodeId?: string | null;
+  /** When set, create_initiative_bundle redirects into the new initiative drill-in. */
+  routeCtx?: ProjectRouteContext;
   revalidate?: string[];
 };
 
@@ -229,6 +237,26 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
         nodeId: asString(resolveParam(descriptor.nodeId, scopes)),
       });
       await deleteNode(deps.graphWrite, parsed);
+      break;
+    }
+    case "create_initiative_bundle": {
+      const initiativeTitle = asString(
+        resolveParam(descriptor.initiativeTitle, scopes),
+      );
+      const releaseVersion = asString(
+        resolveParam(descriptor.releaseVersion, scopes),
+      );
+      if (!initiativeTitle || !releaseVersion) {
+        throw new Error("create_initiative_bundle: missing title or version");
+      }
+      const result = await createInitiativeBundle(deps, {
+        projectId: args.projectId,
+        initiativeTitle,
+        releaseVersion,
+      });
+      if (args.routeCtx) {
+        redirect(projectPath(args.routeCtx, "n", result.initiativeId));
+      }
       break;
     }
   }

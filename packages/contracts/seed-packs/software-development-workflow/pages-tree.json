@@ -260,8 +260,60 @@
     "appliesToNodeType": null,
     "title": "Initiatives",
     "icon": "manager_initiatives",
-    "spec": { "root": "t", "elements": { "t": { "type": "NodeTable", "props": { "binding": "rows", "title": "Initiatives", "rowHref": "n", "columns": [{ "key": "title", "header": "Initiative" }, { "key": "lifecycleStatus", "header": "Status" }] } } } },
-    "bindings": { "rows": { "kind": "query", "catalogKey": "initiative" } }
+    "spec": {
+      "root": "page",
+      "elements": {
+        "page": {
+          "type": "Section",
+          "props": { "title": "Initiatives" },
+          "children": ["createForm", "table"]
+        },
+        "createForm": {
+          "type": "Form",
+          "children": ["titleField", "versionField", "createBtn"]
+        },
+        "titleField": {
+          "type": "Field",
+          "props": {
+            "name": "initiativeTitle",
+            "label": "Initiative title",
+            "placeholder": "New initiative"
+          }
+        },
+        "versionField": {
+          "type": "Field",
+          "props": {
+            "name": "releaseVersion",
+            "label": "Release version",
+            "placeholder": "0.1.0"
+          }
+        },
+        "createBtn": {
+          "type": "Button",
+          "props": { "label": "Create initiative", "action": "createBundle" }
+        },
+        "table": {
+          "type": "NodeTable",
+          "props": {
+            "binding": "rows",
+            "title": "All initiatives",
+            "rowHref": "n",
+            "columns": [
+              { "key": "title", "header": "Initiative" },
+              { "key": "lifecycleStatus", "header": "Status" }
+            ]
+          }
+        }
+      }
+    },
+    "bindings": { "rows": { "kind": "query", "catalogKey": "initiative" } },
+    "actions": {
+      "createBundle": {
+        "kind": "create_initiative_bundle",
+        "initiativeTitle": { "$input": "initiativeTitle" },
+        "releaseVersion": { "$input": "releaseVersion" }
+      }
+    }
   },
   {
     "key": "development",
