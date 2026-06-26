@@ -2,8 +2,13 @@
 export interface RestCallContext {
   /** OAuth 2.0 access token for the provider. */
   token: string;
-  /** Subject user ID from account_connections (the authenticated user's provider ID). */
-  userId: string;
+  /**
+   * Provider-scoped user id for REST path params (e.g. X numeric user id).
+   * May be absent for legacy rows — REST handlers should resolve via the token.
+   */
+  userId?: string;
+  /** Connect subject user id (SSOTA profile id) used when minting the token. */
+  connectSubjectUserId: string;
 }
 
 /** A single tool exposed by a REST connection, described in JSON Schema. */

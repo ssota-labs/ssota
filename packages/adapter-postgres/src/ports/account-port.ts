@@ -127,6 +127,8 @@ export interface ConnectCredentialScope {
 export interface ConnectCredentialScopeRecord extends ConnectCredentialScope {
   connector: string;
   installationName: string | null;
+  /** Provider tenant/resource id (e.g. X numeric user id, Slack team id). */
+  tenantId: string | null;
 }
 
 function providerOfConnectorUid(connectorUid: string): string {
@@ -172,6 +174,7 @@ export function createAccountConnectionPort(db: Db) {
           : null,
       subjectUserId: row.subjectUserId ?? null,
       installationName: row.name ?? row.tenantId ?? null,
+      tenantId: row.tenantId ?? null,
     }));
   }
 

@@ -402,7 +402,8 @@ function buildConnectionCallTool(
         const rows = ctx.accountId
           ? await port.listConnectCredentialScopes(ctx.accountId, connectorUid)
           : [];
-        const subjectUserId = rows[0]?.subjectUserId ?? null;
+        const row = rows[0];
+        const subjectUserId = row?.subjectUserId ?? null;
         if (!subjectUserId) {
           return {
             ok: false as const,
@@ -425,7 +426,11 @@ function buildConnectionCallTool(
           };
         }
         return restConn
-          .execute(parsed.toolName, callInput.args, { token: cred.token, userId: subjectUserId })
+          .execute(parsed.toolName, callInput.args, {
+            token: cred.token,
+            userId: row?.tenantId ?? undefined,
+            connectSubjectUserId: subjectUserId,
+          })
           .catch((error: unknown) => ({
             ok: false as const,
             connection: parsed.connectionId,
