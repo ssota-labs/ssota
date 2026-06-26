@@ -2,6 +2,9 @@ packages:
   - "apps/*"
   - "packages/*"
   - "e2e"
+overrides:
+  "@types/react": "19.2.17"
+  "@types/react-dom": "19.2.3"
 allowBuilds:
   '@sentry/cli': true
   '@swc/core': true

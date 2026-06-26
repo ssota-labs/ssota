@@ -52,20 +52,13 @@ export function AppearanceSection({
   useEffect(() => {
     setPerCornerMode(hasPerCornerRadius(parsed));
     setPreferredRadiusUnit(getRadiusUnit(parsed));
-  }, [selectionKey]);
+  }, [selectionKey, parsed]);
 
   useEffect(() => {
     if (hasRadiusClass) {
       setPreferredRadiusUnit(getRadiusUnit(parsed));
     }
-  }, [
-    hasRadiusClass,
-    parsed.borderRadius,
-    parsed.borderRadiusTopLeft,
-    parsed.borderRadiusTopRight,
-    parsed.borderRadiusBottomLeft,
-    parsed.borderRadiusBottomRight,
-  ]);
+  }, [hasRadiusClass, parsed]);
 
   const usePerCornerRadius = perCornerMode && hasPerCornerRadius(parsed);
   const radiusUnit = hasRadiusClass

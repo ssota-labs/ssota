@@ -38,6 +38,14 @@ export function ComponentsPanel({
     );
   }, [components, searchQuery]);
 
+  const groups = useMemo(
+    () => groupUiComponents(filteredComponents),
+    [filteredComponents],
+  );
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(groups.map((group) => [group.id, true])),
+  );
+
   if (variant === "flat") {
     return (
       <div className="min-h-0 flex-1 overflow-auto p-2">
@@ -78,14 +86,6 @@ export function ComponentsPanel({
       </div>
     );
   }
-
-  const groups = useMemo(
-    () => groupUiComponents(filteredComponents),
-    [filteredComponents],
-  );
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(groups.map((group) => [group.id, true])),
-  );
 
   return (
     <div className="min-h-0 flex-1 overflow-auto p-2">

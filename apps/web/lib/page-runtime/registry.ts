@@ -12,6 +12,7 @@ import { documentComponents } from "./components/document";
 import { spreadsheetComponents } from "./components/spreadsheet";
 import { artifactWorkbenchComponents } from "./components/artifact-workbench";
 import { flowComponents } from "./components/flow-canvas";
+import { wireframeComponents } from "./components/wireframe-canvas";
 import { erdDiagramComponents } from "./components/erd-diagram";
 import { widgetComponents } from "./components/widget";
 import { figmaEmbedComponents } from "./components/figma-embed";
@@ -35,6 +36,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...spreadsheetComponents,
   ...artifactWorkbenchComponents,
   ...flowComponents,
+  ...wireframeComponents,
   ...erdDiagramComponents,
   ...widgetComponents,
   ...figmaEmbedComponents,

@@ -57,6 +57,57 @@ test.describe("Page Runtime Lab", () => {
     await expect(page).toHaveURL(/demo=document-view/);
     await expect(page.getByRole("heading", { name: "PRD" })).toBeVisible();
   });
+  test("wireframe canvas navigateTo switches sidebar selection inside preview", async ({
+    page,
+  }) => {
+    await page.goto("/labs/page-runtime?demo=wireframe-canvas");
+    await expect(page.getByTestId("wireframe-canvas-shell")).toBeVisible();
+    await expect(page.getByTestId("wireframe-flow-node-shell")).toBeVisible();
+
+    await expect(page.getByText("one-thumb onboarding")).toBeVisible();
+    await expect(page.getByTestId("wireframe-flow-node-shell")).toHaveAttribute(
+      "data-wireframe-node-focused",
+      "true",
+    );
+    await expect(page.getByTestId("wireframe-nav-login")).toHaveAttribute(
+      "data-hotspot-visible",
+      "true",
+    );
+
+    const loginHotspot = page.getByTestId("wireframe-nav-login");
+    await loginHotspot.scrollIntoViewIfNeeded();
+    await loginHotspot.click();
+    await expect(page.getByTestId("wireframe-viewport-toolbar")).toContainText("Login");
+    await expect(page.getByText("Welcome back")).toBeVisible();
+
+    await page.getByTestId("wireframe-nav-welcome").scrollIntoViewIfNeeded();
+    await page.getByTestId("wireframe-nav-welcome").click();
+    await expect(page.getByTestId("wireframe-viewport-toolbar")).toContainText(
+      "Welcome Screen",
+    );
+    await expect(page.getByTestId("wireframe-list-welcome")).toHaveClass(/bg-primary/);
+  });
+
+  test("wireframe canvas viewport toggles jsxByViewport content", async ({ page }) => {
+    await page.goto("/labs/page-runtime?demo=wireframe-canvas");
+    await expect(page.getByTestId("wireframe-canvas-shell")).toBeVisible();
+    await expect(page.getByText("one-thumb onboarding")).toBeVisible();
+
+    await page.getByTestId("wireframe-viewport-tablet").click();
+    await expect(page.getByText("split hero")).toBeVisible();
+
+    await page.getByTestId("wireframe-viewport-desktop").click();
+    await expect(page.getByText("full workspace")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open console" })).toHaveAttribute(
+      "data-hotspot-visible",
+      "true",
+    );
+    await expect(page.locator('[data-hotspot-visible="true"]')).toHaveCount(4);
+
+    await page.getByTestId("wireframe-viewport-mobile").click();
+    await expect(page.getByText("one-thumb onboarding")).toBeVisible();
+  });
+
   test("roadmap document sheet opens BlockNote on row click", async ({ page }) => {
     await page.goto("/labs/page-runtime?demo=roadmap-document-sheet");
     await expect(page.getByTestId("document-sheet-list")).toBeVisible();

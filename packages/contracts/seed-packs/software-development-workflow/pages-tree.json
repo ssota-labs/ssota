@@ -875,14 +875,14 @@
         "layout": {
           "type": "Resizable",
           "props": { "defaultSizes": [62, 38], "minSizes": [30, 25] },
-          "children": ["workbench", "linkedTable"]
+          "children": ["canvas", "linkedTable"]
         },
-        "workbench": {
-          "type": "ArtifactWorkbench",
+        "canvas": {
+          "type": "WireframeCanvas",
           "props": {
             "binding": "rows",
-            "themeBinding": "theme",
-            "listVariant": "flat"
+            "selectedBinding": "selected",
+            "height": 680
           }
         },
         "linkedTable": {

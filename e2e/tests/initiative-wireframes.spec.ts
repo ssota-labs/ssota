@@ -8,7 +8,7 @@ test.describe("initiative wireframes", () => {
     await loginAsSmoke(page);
   });
 
-  test("wireframes page uses ArtifactWorkbench explorer and linked DataTable", async ({
+  test("wireframes page uses WireframeCanvas explorer and linked DataTable", async ({
     page,
   }) => {
     const initiativeId = await getSmokeInitiativeId();
@@ -21,15 +21,17 @@ test.describe("initiative wireframes", () => {
     await expect(page).toHaveURL(/\/n\/[0-9a-f-]+\/p\/[0-9a-f-]+/, {
       timeout: 15_000,
     });
-    await expect(page.getByTestId("design-studio-shell")).toBeVisible({
+    await expect(page.getByTestId("wireframe-canvas-shell")).toBeVisible({
       timeout: 15_000,
     });
     await expect(
       page.getByPlaceholder("Search wireframes..."),
     ).toBeVisible();
+    await expect(page.getByTestId("wireframe-canvas")).toBeVisible();
+    await expect(page.getByTestId("wireframe-viewport-toolbar")).toBeVisible();
+    await expect(page.getByTestId("wireframe-viewport-mobile")).toBeVisible();
+    await expect(page.getByTestId("wireframe-viewport-tablet")).toBeVisible();
+    await expect(page.getByTestId("wireframe-viewport-desktop")).toBeVisible();
     await expect(page.getByText("Linked UI components")).toBeVisible();
-    await expect(
-      page.getByText(/No wireframes yet|Select a wireframe from the list/i),
-    ).toBeVisible();
   });
 });

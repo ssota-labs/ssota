@@ -810,11 +810,15 @@ function SpreadsheetEl({
                             }}
                           />
                           {formulaHints.length > 0 ? (
-                            <div className="absolute top-full left-0 z-30 mt-0.5 min-w-[200px] rounded-md border bg-popover p-1 text-left shadow-md">
+                            <div
+                              role="listbox"
+                              className="absolute top-full left-0 z-30 mt-0.5 min-w-[200px] rounded-md border bg-popover p-1 text-left shadow-md"
+                            >
                               {formulaHints.map((h, i) => (
                                 <button
                                   key={h.name}
                                   type="button"
+                                  role="option"
                                   // mousedown + preventDefault keeps the input
                                   // focused (no blur-commit before the insert).
                                   onMouseDown={(e) => {

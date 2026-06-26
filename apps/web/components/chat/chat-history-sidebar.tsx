@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import {
+  useCallback,
   useEffect,
   useMemo,
   useOptimistic,
@@ -148,11 +149,11 @@ export function ChatHistorySidebar({
     setPendingNewChat((current) => current ?? stored.thread);
   }, [chatBase]);
 
-  function clearPendingNewChat() {
+  const clearPendingNewChat = useCallback(() => {
     clearPendingNewChatState(chatBase);
     setPendingNewChat(null);
     refreshForPendingRef.current = null;
-  }
+  }, [chatBase]);
   const [optimisticThreads, dispatchOptimisticThreads] = useOptimistic(
     threads,
     (state, action: OptimisticThreadAction) => {
@@ -223,6 +224,7 @@ export function ChatHistorySidebar({
     chatBase,
     activeThreadId,
     router,
+    clearPendingNewChat,
   ]);
 
   useEffect(() => {

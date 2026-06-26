@@ -1324,6 +1324,167 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     },
   },
   {
+    id: "wireframe-canvas",
+    category: "canvas",
+    title: "WireframeCanvas (JSX preview)",
+    description:
+      "One wireframe at a time on a React Flow canvas. Sidebar selects the active page_wireframe; JSXPreview renders its grayscale JSX. navigateTo hotspots switch the selection (no flow graph between pages).",
+    components: ["Section", "WireframeCanvas"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: {
+            title: "Pet Health — Wireframes",
+            subtitle: "JSX preview · navigateTo hotspots",
+          },
+          children: ["canvas"],
+        },
+        canvas: {
+          type: "WireframeCanvas",
+          props: {
+            binding: "rows",
+            selectedBinding: "selected",
+            height: 640,
+          },
+        },
+      },
+    },
+    bindingData: {
+      rows: [
+        {
+          id: "wf-welcome",
+          catalogKey: "page_wireframe",
+          title: "Welcome Screen",
+          properties: {
+            slug: "welcome",
+            jsx: `<Screen>
+  <Main>
+    <Title>Pet Health</Title>
+    <Text>Track your pet wellness in one place.</Text>
+    <Button navigateTo="login">Log in</Button>
+    <Button navigateTo="signup">Sign up</Button>
+  </Main>
+</Screen>`,
+            jsxByViewport: {
+              mobile: `<Screen>
+  <Main>
+    <Title>Pet Health</Title>
+    <Text className="text-primary font-medium">📱 Mobile — one-thumb onboarding</Text>
+    <Image label="App icon" className="max-h-32" />
+    <Text>Swipe-friendly welcome with a single primary action.</Text>
+    <Button navigateTo="login">Get started</Button>
+    <Link navigateTo="media-timeline">Browse as guest</Link>
+  </Main>
+</Screen>`,
+              tablet: `<Screen>
+  <Main>
+    <Title>Pet Health</Title>
+    <Text className="text-primary font-medium">📲 Tablet — split hero + features</Text>
+    <Row>
+      <Card className="flex-1">
+        <Image label="Hero" />
+        <Text>Track walks, meals, and vet visits in one timeline.</Text>
+      </Card>
+      <Card className="flex-1">
+        <Title>Why owners love it</Title>
+        <List>
+          <ListItem>Shared family access</ListItem>
+          <ListItem>Smart reminders</ListItem>
+          <ListItem>Export for your vet</ListItem>
+        </List>
+      </Card>
+    </Row>
+    <Button navigateTo="login">Log in</Button>
+  </Main>
+</Screen>`,
+              desktop: `<Screen>
+  <Sidebar>
+    <NavItem active>Home</NavItem>
+    <NavItem navigateTo="login">Login</NavItem>
+    <NavItem navigateTo="media-timeline">Media</NavItem>
+  </Sidebar>
+  <Main>
+    <Title>Pet Health Dashboard</Title>
+    <Text className="text-primary font-medium">🖥 Desktop — full workspace with nav + metrics</Text>
+    <Row>
+      <Card className="flex-1">
+        <Image label="Analytics" />
+        <Text>Weekly activity up 12%</Text>
+      </Card>
+      <Card className="flex-1">
+        <Image label="Pets" />
+        <Text>3 active profiles</Text>
+      </Card>
+      <Card className="flex-1">
+        <Image label="Calendar" />
+        <Text>Next vet visit: Apr 12</Text>
+      </Card>
+    </Row>
+    <Button navigateTo="login">Open console</Button>
+    <Link navigateTo="media-timeline">View media timeline →</Link>
+  </Main>
+</Screen>`,
+            },
+          },
+        },
+        {
+          id: "wf-login",
+          catalogKey: "page_wireframe",
+          title: "Login",
+          properties: {
+            slug: "login",
+            jsx: `<Screen>
+  <Main>
+    <Title>Welcome back</Title>
+    <Input label="Email" placeholder="you@example.com" />
+    <Input label="Password" placeholder="••••••••" />
+    <Button navigateTo="home">Continue</Button>
+    <Link navigateTo="welcome">Back</Link>
+  </Main>
+</Screen>`,
+          },
+        },
+        {
+          id: "wf-timeline",
+          catalogKey: "page_wireframe",
+          title: "Media Timeline",
+          properties: {
+            slug: "media-timeline",
+            jsx: `<Screen>
+  <Sidebar>
+    <NavItem navigateTo="home">Dashboard</NavItem>
+    <NavItem active>Media</NavItem>
+  </Sidebar>
+  <Main>
+    <Title>Media Timeline</Title>
+    <Row>
+      <Card className="flex-1">
+        <Image label="Photo" />
+        <Text>Bella — Morning Walk</Text>
+      </Card>
+      <Card className="hidden flex-1 md:block">
+        <Image label="Photo" />
+        <Text>Evening feed</Text>
+      </Card>
+    </Row>
+    <Button navigateTo="upload-media">Upload Media</Button>
+    <Link navigateTo="missing-page">Broken link demo</Link>
+  </Main>
+</Screen>`,
+          },
+        },
+      ],
+      selected: {
+        id: "wf-welcome",
+        catalogKey: "page_wireframe",
+        title: "Welcome Screen",
+        properties: { slug: "welcome" },
+      },
+    },
+  },
+  {
     id: "erd-diagram",
     category: "canvas",
     title: "ErdDiagram (database schema)",

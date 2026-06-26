@@ -734,6 +734,30 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       },
     },
   },
+  WireframeCanvas: {
+    key: "WireframeCanvas",
+    category: "canvas",
+    description:
+      "Single-wireframe preview on a React Flow canvas (one page_wireframe at a time). Sidebar lists initiative wireframes; the selected card renders grayscale JSX via JSXPreview. Link/Button/NavItem navigateTo hotspots switch selection — missing targets show an amber badge. No multi-page flow graph.",
+    children: false,
+    props: {
+      binding: binding("Multi-node binding of page_wireframe nodes (initiative_scope)."),
+      selectedBinding: {
+        type: "binding",
+        description:
+          'url_selection binding key for the active wireframe (default "selected").',
+      },
+      height: { type: "number", description: "Canvas height in px (default 640)." },
+    },
+    example: {
+      type: "WireframeCanvas",
+      props: {
+        binding: "rows",
+        selectedBinding: "selected",
+        height: 640,
+      },
+    },
+  },
   ErdDiagram: {
     key: "ErdDiagram",
     category: "canvas",
