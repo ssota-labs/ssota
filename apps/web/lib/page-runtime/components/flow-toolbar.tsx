@@ -25,7 +25,7 @@ import { cn } from "@ssota/ui/lib/utils";
  * bordered pill holding square ghost icon buttons. `nodrag nowheel` + the wheel
  * stop keep canvas pan/zoom from firing while interacting with the toolbar.
  */
-function ToolbarContainer({
+export function ToolbarContainer({
   className,
   children,
 }: {
@@ -47,7 +47,7 @@ function ToolbarContainer({
 }
 
 /** Square ghost icon button + tooltip; `isActive` flips it to the secondary fill. */
-function ToolbarIconButton({
+export function ToolbarIconButton({
   icon,
   tooltip,
   onClick,

@@ -4,7 +4,6 @@ import * as React from "react";
 import {
   Background,
   BackgroundVariant,
-  Controls,
   ReactFlow,
   ReactFlowProvider,
   useNodesInitialized,
@@ -12,6 +11,7 @@ import {
   type Edge,
   type Node,
 } from "@xyflow/react";
+import { FlowTopToolbar, FlowViewportToolbar } from "./flow-toolbar";
 import { boundNode } from "../bindings";
 import {
   cardinalityEnds,
@@ -70,6 +70,9 @@ function ErdDiagramEl({
   }, [signature]);
 
   const ready = Object.keys(positions).length > 0;
+
+  // Pan/zoom lock, toggled from the top toolbar.
+  const [locked, setLocked] = React.useState(false);
 
   const rfNodes = React.useMemo<Node[]>(() => {
     if (!ready) return [];
@@ -138,10 +141,18 @@ function ErdDiagramEl({
           minZoom={0.2}
           fitView
           fitViewOptions={{ padding: 0.16 }}
+          panOnDrag={!locked}
+          zoomOnScroll={!locked}
+          zoomOnPinch={!locked}
+          zoomOnDoubleClick={!locked}
         >
           <ErdReady />
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-          <Controls showInteractive={false} />
+          <FlowTopToolbar
+            locked={locked}
+            onToggleLock={() => setLocked((v) => !v)}
+          />
+          <FlowViewportToolbar />
         </ReactFlow>
       ) : (
         <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
