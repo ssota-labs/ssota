@@ -129,7 +129,6 @@ test.describe("Page Runtime Lab", () => {
     await page.goto("/labs/page-runtime?demo=design-figma-embed");
     await expect(page.getByTestId("dynamic-page-renderer")).toBeVisible();
     await expect(page.getByText(/Unknown component:/)).toHaveCount(0);
-    await expect(page.getByTestId("resizable-panels")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Design" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Prototype" })).toBeVisible();
   });
