@@ -1203,14 +1203,36 @@
     "title": "Launch docs",
     "icon": "launch_docs",
     "spec": {
-      "root": "list",
+      "root": "tabs",
       "elements": {
-        "list": {
+        "tabs": {
+          "type": "Tabs",
+          "props": {
+            "defaultValue": "release_notes",
+            "items": [
+              { "value": "release_notes", "label": "Release notes", "panel": "releasePanel" },
+              { "value": "runbooks", "label": "Runbooks", "panel": "runbookPanel" }
+            ]
+          }
+        },
+        "releasePanel": {
           "type": "DocumentSheetList",
           "props": {
-            "binding": "rows",
-            "sectionTitle": "Launch docs",
-            "sectionSubtitle": "Release notes and runbooks",
+            "binding": "releaseNotes",
+            "sectionTitle": "Release notes",
+            "field": "content",
+            "subtitleField": "summary",
+            "statusField": "lifecycleStatus",
+            "sheetSize": "half",
+            "editable": true,
+            "action": "saveDoc"
+          }
+        },
+        "runbookPanel": {
+          "type": "DocumentSheetList",
+          "props": {
+            "binding": "runbooks",
+            "sectionTitle": "Runbooks",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
@@ -1221,7 +1243,10 @@
         }
       }
     },
-    "bindings": { "rows": { "kind": "initiative_scope", "catalogKey": "release_note" } },
+    "bindings": {
+      "releaseNotes": { "kind": "initiative_scope", "catalogKey": "release_note" },
+      "runbooks": { "kind": "initiative_scope", "catalogKey": "runbook" }
+    },
     "actions": {
       "saveDoc": {
         "kind": "update_node",
