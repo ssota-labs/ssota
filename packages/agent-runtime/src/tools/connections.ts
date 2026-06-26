@@ -11,9 +11,12 @@ import {
   resolveConnectorUid,
   resolveApiConnectorUid,
 } from "../connections/connect-credential.js";
-import { createTwitterRestTools } from "./twitter.js";
 import type { McpConnectionDef } from "../connections/define-mcp-connection.js";
 import { getConfiguredConnections } from "../connections/registry.js";
+import {
+  getConfiguredRestConnections,
+  getRestConnectionById,
+} from "../connections/rest-registry.js";
 import type { McpToolListing } from "../connections/filter-tools.js";
 import { McpSessionManager } from "../connections/mcp-session.js";
 import { inferConnectionIdFromQuery } from "../connections/tool-catalog.js";
@@ -77,7 +80,6 @@ export async function createConnectionTools(
     [CONNECTION_SEARCH_TOOL]: buildConnectionSearchTool(connections, input),
     [CONNECTION_CALL_TOOL]: buildConnectionCallTool(connections, input),
     [REQUEST_CONNECTION_TOOL]: buildRequestConnectionTool(),
-    ...(await buildRestTools(input)),
   };
 
   return {
@@ -85,35 +87,6 @@ export async function createConnectionTools(
     connectionState: input.connectionState,
     sessionManager: input.sessionManager,
   };
-}
-
-async function buildRestTools(
-  input: CreateConnectionToolsInput,
-): Promise<ToolSet> {
-  const tools: ToolSet = {};
-
-  // Twitter — REST-only provider with user-subject OAuth via Vercel Connect.
-  const twitterConnectorUid = resolveApiConnectorUid("twitter");
-  if (twitterConnectorUid && input.accountId) {
-    const port = createAccountConnectionPort(getDb());
-    const rows = await port.listConnectCredentialScopes(
-      input.accountId,
-      twitterConnectorUid,
-    );
-    const twitterUserId = rows[0]?.subjectUserId ?? undefined;
-    Object.assign(
-      tools,
-      createTwitterRestTools({
-        credentials: input.credentials,
-        connectorUid: twitterConnectorUid,
-        projectId: input.projectId,
-        accountId: input.accountId,
-        userId: twitterUserId,
-      }),
-    );
-  }
-
-  return tools;
 }
 
 async function listInstallScopes(
@@ -245,6 +218,61 @@ async function runConnectionSearch(
     }
   }
 
+  // ── REST connections (e.g. Twitter) ──────────────────────────────────────
+  // These have static tool listings — no MCP server to query.
+  for (const restConn of getConfiguredRestConnections()) {
+    if (connectionFilter && connectionFilter !== restConn.id) continue;
+
+    const connectorUid = resolveApiConnectorUid(restConn.provider);
+    if (!connectorUid || !input.accountId) {
+      result.connections.push({
+        connection: restConn.id,
+        description: restConn.description,
+        connected: false,
+        installationId: null,
+        installationName: null,
+        connectorUid,
+      });
+      continue;
+    }
+
+    const port = createAccountConnectionPort(getDb());
+    const rows = await port.listConnectCredentialScopes(input.accountId, connectorUid);
+    const subjectUserId = rows[0]?.subjectUserId ?? null;
+
+    const connected = subjectUserId
+      ? (await input.credentials.getToken(connectorUid, {
+          projectId: input.projectId,
+          accountId: input.accountId,
+          userId: subjectUserId,
+        })) !== null
+      : false;
+
+    result.connections.push({
+      connection: restConn.id,
+      description: restConn.description,
+      connected,
+      installationId: null,
+      installationName: null,
+      connectorUid,
+    });
+
+    if (!connected) continue;
+
+    for (const tool of restConn.tools) {
+      candidates.push({
+        qualifiedName: toQualifiedToolName(restConn.id, tool.name),
+        connection: restConn.id,
+        tool: tool.name,
+        description: tool.description,
+        connectionDescription: restConn.description,
+        installationName: "",
+        installationId: null,
+        argsSchema: tool.inputSchema as unknown as CompactArgsSchema,
+      });
+    }
+  }
+
   const ranked = rankToolsForQuery(candidates, query);
   const internalHits: SearchHitInternal[] = ranked.map((hit) => ({
     qualifiedName: hit.qualifiedName,
@@ -344,14 +372,14 @@ function buildConnectionCallTool(
 ) {
   return tool({
     description:
-      "Invoke an MCP tool by qualifiedName (e.g. slack__slack_send_message). Reuse qualifiedName from an earlier connection_search in this conversation. Pass args using the exact parameter names from argsSchema (e.g. channel_id and text for Slack messages).",
+      "Invoke a tool by qualifiedName (e.g. slack__slack_send_message, twitter__twitter_post_tweet). Reuse qualifiedName from an earlier connection_search in this conversation. Pass args using the exact parameter names from argsSchema.",
     inputSchema: z.object({
       qualifiedName: z
         .string()
         .describe("Qualified tool name from connection_search (connection__tool)."),
       args: z
         .record(z.unknown())
-        .describe("Arguments for the remote MCP tool."),
+        .describe("Arguments for the tool."),
     }),
     execute: async (callInput, { experimental_context }) => {
       const ctx = getRunContext(experimental_context);
@@ -363,6 +391,50 @@ function buildConnectionCallTool(
         );
       }
 
+      // ── REST connection dispatch ─────────────────────────────────────────
+      const restConn = getRestConnectionById(parsed.connectionId);
+      if (restConn) {
+        const connectorUid = resolveApiConnectorUid(restConn.provider);
+        if (!connectorUid) {
+          throw new Error(`REST connector not configured for provider: ${restConn.provider}`);
+        }
+        const port = createAccountConnectionPort(getDb());
+        const rows = ctx.accountId
+          ? await port.listConnectCredentialScopes(ctx.accountId, connectorUid)
+          : [];
+        const subjectUserId = rows[0]?.subjectUserId ?? null;
+        if (!subjectUserId) {
+          return {
+            ok: false as const,
+            connection: parsed.connectionId,
+            tool: parsed.toolName,
+            error: `No connected ${restConn.id} account found. Use request_connection to connect.`,
+          };
+        }
+        const cred = await input.credentials.getToken(connectorUid, {
+          projectId: ctx.projectId,
+          accountId: ctx.accountId,
+          userId: subjectUserId,
+        });
+        if (!cred) {
+          return {
+            ok: false as const,
+            connection: parsed.connectionId,
+            tool: parsed.toolName,
+            error: `${restConn.id} not authorized. Use request_connection to connect your account.`,
+          };
+        }
+        return restConn
+          .execute(parsed.toolName, callInput.args, { token: cred.token, userId: subjectUserId })
+          .catch((error: unknown) => ({
+            ok: false as const,
+            connection: parsed.connectionId,
+            tool: parsed.toolName,
+            error: error instanceof Error ? error.message : String(error),
+          }));
+      }
+
+      // ── MCP connection dispatch ──────────────────────────────────────────
       const connection = connections.find((c) => c.id === parsed.connectionId);
       if (!connection) {
         throw new Error(`Unknown connection: ${parsed.connectionId}`);
