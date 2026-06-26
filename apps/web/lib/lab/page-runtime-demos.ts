@@ -1256,7 +1256,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     category: "canvas",
     title: "WireframeCanvas (JSX preview)",
     description:
-      "Initiative wireframes on a React Flow canvas. Each page_wireframe node renders grayscale JSX via JSXPreview. Link/Button/NavItem navigateTo attributes create interactive hotspots (hover ring + click to focus another card) and navigation edges; missing targets show dashed amber edges.",
+      "One wireframe at a time on a React Flow canvas. Sidebar selects the active page_wireframe; JSXPreview renders its grayscale JSX. navigateTo hotspots switch the selection (no flow graph between pages).",
     components: ["Section", "WireframeCanvas"],
     spec: {
       root: "section",

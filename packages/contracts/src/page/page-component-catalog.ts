@@ -582,7 +582,7 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "WireframeCanvas",
     category: "canvas",
     description:
-      "React Flow canvas for initiative-scoped page_wireframe nodes. Each node renders grayscale JSX via JSXPreview (properties.jsx). Interactive Link/Button/NavItem elements use navigateTo to jump between wireframe cards; missing targets show a dashed border and edge label. Includes a searchable page sidebar and url_selection integration.",
+      "Single-wireframe preview on a React Flow canvas (one page_wireframe at a time). Sidebar lists initiative wireframes; the selected card renders grayscale JSX via JSXPreview. Link/Button/NavItem navigateTo hotspots switch selection — missing targets show an amber badge. No multi-page flow graph.",
     children: false,
     props: {
       binding: binding("Multi-node binding of page_wireframe nodes (initiative_scope)."),

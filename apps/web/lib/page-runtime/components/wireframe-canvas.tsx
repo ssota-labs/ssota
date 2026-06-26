@@ -9,58 +9,28 @@ import {
   ReactFlowProvider,
   useReactFlow,
   useNodesInitialized,
-  type Edge,
   type Node,
 } from "@xyflow/react";
 import { cn } from "@ssota/ui/lib/utils";
 import { boundNodes } from "../bindings";
 import { useSelection } from "../selection-context";
-import { deriveWireframeEdges } from "@/lib/wireframe/extract-links";
-import {
-  WireframeNavigationProvider,
-} from "@/lib/wireframe/navigation-context";
-import { readWireframeJsx, readWireframePosition, wireframeSlug } from "@/lib/wireframe/read-wireframe";
+import { WireframeNavigationProvider } from "@/lib/wireframe/navigation-context";
+import { readWireframeJsx, wireframeSlug } from "@/lib/wireframe/read-wireframe";
 import type { CatalogComponent, RenderNode } from "../types";
-import {
-  WIREFRAME_NODE_HEIGHT,
-  WIREFRAME_NODE_WIDTH,
-  WireframeFlowNode,
-} from "./wireframe-node";
+import { WireframeFlowNode } from "./wireframe-node";
 
 const NODE_TYPES = { wireframe: WireframeFlowNode };
 
-const GRID_GAP_X = 360;
-const GRID_GAP_Y = 560;
-
-function FlowViewportSync({
-  focusNodeId,
-  positions,
-}: {
-  focusNodeId: string | null;
-  positions: Record<string, { x: number; y: number }>;
-}) {
+/** Fit the single centered wireframe card when it mounts or the selection changes. */
+function SingleWireframeViewport({ nodeId }: { nodeId: string | null }) {
   const initialized = useNodesInitialized();
-  const { fitView, setCenter } = useReactFlow();
+  const { fitView } = useReactFlow();
 
   React.useEffect(() => {
-    if (initialized && Object.keys(positions).length > 0 && !focusNodeId) {
-      void fitView({ padding: 0.2, duration: 300 });
+    if (initialized && nodeId) {
+      void fitView({ padding: 0.25, duration: 300 });
     }
-  }, [initialized, positions, focusNodeId, fitView]);
-
-  React.useEffect(() => {
-    if (!focusNodeId || !initialized) return;
-    const pos = positions[focusNodeId];
-    if (!pos) return;
-    const timer = window.setTimeout(() => {
-      void setCenter(
-        pos.x + WIREFRAME_NODE_WIDTH / 2,
-        pos.y + WIREFRAME_NODE_HEIGHT / 2,
-        { zoom: 0.85, duration: 450 },
-      );
-    }, 50);
-    return () => window.clearTimeout(timer);
-  }, [focusNodeId, initialized, positions, setCenter]);
+  }, [initialized, nodeId, fitView]);
 
   return null;
 }
@@ -78,17 +48,13 @@ function WireframeCanvasEl({
 }) {
   const frames = React.useMemo(
     () =>
-      nodes.map((node) => {
-        const slug = wireframeSlug(node.title, node.properties ?? {});
-        return {
-          id: node.id,
-          slug,
-          title: node.title,
-          jsx: readWireframeJsx(node.properties ?? {}),
-          properties: node.properties ?? {},
-          position: readWireframePosition(node.properties ?? {}),
-        };
-      }),
+      nodes.map((node) => ({
+        id: node.id,
+        slug: wireframeSlug(node.title, node.properties ?? {}),
+        title: node.title,
+        jsx: readWireframeJsx(node.properties ?? {}),
+        properties: node.properties ?? {},
+      })),
     [nodes],
   );
 
@@ -100,76 +66,26 @@ function WireframeCanvasEl({
     return map;
   }, [frames]);
 
-  const navEdges = React.useMemo(
-    () =>
-      deriveWireframeEdges(
-        frames.map((frame) => ({ slug: frame.slug, jsx: frame.jsx })),
-      ),
-    [frames],
-  );
-
-  const positions = React.useMemo(() => {
-    const map: Record<string, { x: number; y: number }> = {};
-    frames.forEach((frame, index) => {
-      const col = index % 3;
-      const row = Math.floor(index / 3);
-      map[frame.id] = {
-        x: frame.position.x ?? col * GRID_GAP_X,
-        y: frame.position.y ?? row * GRID_GAP_Y,
-      };
-    });
-    return map;
-  }, [frames]);
+  const activeFrame =
+    frames.find((frame) => frame.id === selectedId) ?? frames[0] ?? null;
 
   const rfNodes = React.useMemo<Node[]>(() => {
-    return frames.map((frame) => {
-      const position = positions[frame.id] ?? { x: 0, y: 0 };
-      return {
-        id: frame.id,
+    if (!activeFrame) return [];
+    return [
+      {
+        id: activeFrame.id,
         type: "wireframe",
-        position,
+        position: { x: 0, y: 0 },
         data: {
-          title: frame.title,
-          slug: frame.slug,
-          properties: frame.properties,
-          selected: frame.id === selectedId,
+          title: activeFrame.title,
+          slug: activeFrame.slug,
+          properties: activeFrame.properties,
         },
-        selected: frame.id === selectedId,
-      };
-    });
-  }, [frames, positions, selectedId]);
-
-  const rfEdges = React.useMemo<Edge[]>(() => {
-    const slugToRfId = Object.fromEntries(frames.map((f) => [f.slug, f.id]));
-    const edges: Edge[] = [];
-    navEdges.forEach((edge, index) => {
-      const source = slugToRfId[edge.sourceSlug];
-      const target = slugToRfId[edge.targetSlug];
-      if (!source || !target) return;
-      const missing = !slugToNodeId[edge.targetSlug];
-      edges.push({
-        id: `nav-${index}-${edge.sourceSlug}-${edge.targetSlug}`,
-        source,
-        target,
-        animated: !missing,
-        label: missing ? "missing" : undefined,
-        style: missing
-          ? { stroke: "var(--color-amber-500)", strokeDasharray: "6 4" }
-          : { stroke: "var(--color-primary)" },
-        labelStyle: missing
-          ? { fill: "var(--color-amber-600)", fontSize: 10 }
-          : undefined,
-      });
-    });
-    return edges;
-  }, [frames, navEdges, slugToNodeId]);
-
-  const handleNavigate = React.useCallback(
-    (nodeId: string) => {
-      onSelect(nodeId);
-    },
-    [onSelect],
-  );
+        draggable: false,
+        selectable: false,
+      },
+    ];
+  }, [activeFrame]);
 
   if (nodes.length === 0) {
     return (
@@ -182,10 +98,21 @@ function WireframeCanvasEl({
     );
   }
 
+  if (!activeFrame) {
+    return (
+      <div
+        className="text-muted-foreground border-border flex h-full items-center justify-center rounded-lg border border-dashed p-6 text-sm"
+        data-testid="wireframe-canvas"
+      >
+        Select a wireframe from the list to preview.
+      </div>
+    );
+  }
+
   return (
     <WireframeNavigationProvider
       slugToNodeId={slugToNodeId}
-      onNavigate={(nodeId) => handleNavigate(nodeId)}
+      onNavigate={(nodeId) => onSelect(nodeId)}
     >
       <div
         className="ssota-wireframe-flow border-border bg-card relative w-full overflow-hidden rounded-lg border"
@@ -193,19 +120,22 @@ function WireframeCanvasEl({
         data-testid="wireframe-canvas"
       >
         <ReactFlow
+          key={activeFrame.id}
           nodes={rfNodes}
-          edges={rfEdges}
+          edges={[]}
           nodeTypes={NODE_TYPES}
           nodesDraggable={false}
-          elementsSelectable
+          nodesConnectable={false}
+          elementsSelectable={false}
+          panOnDrag
+          zoomOnScroll
           proOptions={{ hideAttribution: true }}
-          minZoom={0.15}
-          maxZoom={1.2}
+          minZoom={0.4}
+          maxZoom={1.5}
           fitView
-          fitViewOptions={{ padding: 0.2 }}
-          onNodeClick={(_, node) => onSelect(node.id)}
+          fitViewOptions={{ padding: 0.25 }}
         >
-          <FlowViewportSync focusNodeId={selectedId} positions={positions} />
+          <SingleWireframeViewport nodeId={activeFrame.id} />
           <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
           <Controls showInteractive={false} />
         </ReactFlow>
