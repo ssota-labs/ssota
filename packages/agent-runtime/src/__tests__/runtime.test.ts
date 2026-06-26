@@ -36,7 +36,9 @@ describe("createSsotaTools", () => {
         "create_node_type",
         "create_page",
         "delegate",
+        "get_edge_type",
         "get_node",
+        "get_node_type",
         "get_page_component",
         "get_task",
         "get_workflow_instruction",
@@ -49,6 +51,7 @@ describe("createSsotaTools", () => {
         "query_tasks",
         "read_page",
         "request_approval",
+        "search_catalog",
         "spawn_task",
         "traverse_edges",
         "update_node",
@@ -97,6 +100,8 @@ describe("buildRunInstructions", () => {
     const prompt = buildRunInstructions({
       runtimeKind: "task",
       projectId: "22222222-2222-2222-2222-222222222222",
+      // Legacy connector guidance names connection_search/connection_call.
+      connectorKind: "legacy",
       taskPlaybook: {
         id: "33333333-3333-3333-3333-333333333333",
         projectId: "22222222-2222-2222-2222-222222222222",

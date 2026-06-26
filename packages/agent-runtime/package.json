@@ -8,6 +8,10 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./composio-shared": {
+      "types": "./dist/composio/shared.d.ts",
+      "default": "./dist/composio/shared.js"
+    },
     "./connect-scopes": {
       "types": "./dist/credentials/mcp-scopes.d.ts",
       "default": "./dist/credentials/mcp-scopes.js"
@@ -22,6 +26,8 @@
   },
   "dependencies": {
     "@ai-sdk/mcp": "^0.0.1",
+    "@composio/core": "^0.12.0",
+    "@composio/vercel": "^0.10.0",
     "@ssota/adapter-postgres": "workspace:*",
     "@ssota/contracts": "workspace:*",
     "@ssota/core": "workspace:*",

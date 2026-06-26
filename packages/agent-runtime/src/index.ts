@@ -21,6 +21,32 @@ export {
 } from "./tools/index.js";
 export { createSandboxTools } from "./tools/sandbox.js";
 export { createConnectionTools } from "./tools/connections.js";
+// ── Connector adapter (Composio default / legacy Vercel Connect) ────────────
+export {
+  getConnectorAdapter,
+  type ConnectorAdapter,
+  type ConnectorAdapterKind,
+  type ConnectorToolsBundle,
+  type BuildConnectorToolsInput,
+} from "./connectors/adapter.js";
+export { isComposioEnabled, getComposioClient } from "./composio/client.js";
+export {
+  getToolRouterSession,
+  disconnectComposioAccount,
+  type ToolRouterSessionInput,
+} from "./composio/session.js";
+export {
+  createComposioTools,
+  type ComposioToolsInput,
+} from "./composio/tools.js";
+export {
+  composioUserId,
+  getComposioToolkitSlugs,
+  isComposioToolkit,
+  resolveComposioAuthConfigs,
+  COMPOSIO_TOOLKITS,
+  type ComposioToolkitDef,
+} from "./composio/shared.js";
 export {
   createSandboxSession,
   type SandboxSession,

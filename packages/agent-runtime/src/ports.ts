@@ -5,6 +5,7 @@ import {
   createTaskPort,
   createWorkflowInstructionPort,
   createPagePort,
+  createConsolePort,
 } from "@ssota/adapter-postgres";
 
 type Db = ReturnType<typeof createDb>["db"];
@@ -41,4 +42,16 @@ export function getWorkflowInstructionPort(projectId: string, accountId?: string
 
 export function getPagePort(projectId: string, accountId?: string) {
   return createPagePort(getDb(), { projectId, accountId });
+}
+
+export function getConsolePort() {
+  return createConsolePort(getDb());
+}
+
+/** Resolve the owning organization id for a project, or null if not found. */
+export async function resolveOrgIdForProject(
+  projectId: string,
+): Promise<string | null> {
+  const project = await getConsolePort().getProjectById(projectId);
+  return project?.organizationId ?? null;
 }

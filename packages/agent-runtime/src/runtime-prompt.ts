@@ -7,7 +7,20 @@ import {
 import type { WorkflowManifestEntry } from "@ssota/contracts/workflows";
 import type { SystemModelMessage } from "ai";
 
-const EXTERNAL_CONNECTIONS_GUIDANCE = `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` with a natural-language query to find matching tools. When the user names a service (e.g. "Slack"), pass \`connection: "slack"\` or include the service name in the query — only that connector is probed. Call \`connection_search\` once per user request or when you need a new capability; reuse \`qualifiedName\` and \`argsSchema\` from earlier results in this conversation instead of searching again before every \`connection_call\`. Invoke matched tools with \`connection_call\` using the returned \`qualifiedName\` and args that match \`argsSchema\` exactly (e.g. Slack \`slack_send_message\` uses \`channel_id\` and \`text\`, not \`channel\`/\`message\`). If a service is not connected, call \`request_connection\` and wait for the user. Never assume a connector the user did not ask for.`;
+/** Legacy (Vercel Connect MCP/REST) connector facade guidance. */
+const LEGACY_CONNECTIONS_GUIDANCE = `For third-party services (Linear, Slack, GitHub, Notion, etc.), call \`connection_search\` with a natural-language query to find matching tools. When the user names a service (e.g. "Slack"), pass \`connection: "slack"\` or include the service name in the query — only that connector is probed. Call \`connection_search\` once per user request or when you need a new capability; reuse \`qualifiedName\` and \`argsSchema\` from earlier results in this conversation instead of searching again before every \`connection_call\`. Invoke matched tools with \`connection_call\` using the returned \`qualifiedName\` and args that match \`argsSchema\` exactly (e.g. Slack \`slack_send_message\` uses \`channel_id\` and \`text\`, not \`channel\`/\`message\`). If a service is not connected, call \`request_connection\` and wait for the user. Never assume a connector the user did not ask for.`;
+
+/** Composio Tool Router guidance (native tool search + execute meta-tools). */
+const COMPOSIO_CONNECTIONS_GUIDANCE = `Third-party services (Gmail, Google Drive, Google Calendar, Slack, Notion, GitHub, Linear, X) are reachable through connector tools. Use the provided tool-search tool with a natural-language query to discover the right action for the task, then execute it with the returned tool. When the user names a service, include it in the query so only that toolkit is searched. If a required service is not yet connected, use the connection-management tool to get an authorization link, share it with the user, and wait for them to connect. Never assume a service the user did not ask for.`;
+
+/** Connector backend whose tools this run exposes (drives the prompt guidance). */
+export type ConnectorKind = "composio" | "legacy";
+
+function connectionsGuidance(connectorKind: ConnectorKind | undefined): string {
+  return connectorKind === "legacy"
+    ? LEGACY_CONNECTIONS_GUIDANCE
+    : COMPOSIO_CONNECTIONS_GUIDANCE;
+}
 
 /** User-facing tone for chat and task runtimes. */
 export const COMMUNICATION_STYLE = `Use a professional workplace tone — the voice of a capable colleague briefing stakeholders. Be direct, substantive, and respectful. Do not use emojis, emoticons, stickers, or decorative symbols. Avoid casual banter, slang, hype, or excessive exclamation marks. Prefer complete sentences and structured answers. When the user writes in Korean, respond in polite formal Korean (합니다/습니다체).`;
@@ -37,6 +50,8 @@ export interface BuildRunInstructionsParams {
   runtimeKind: AgentRuntimeKind;
   projectId: string;
   accountId?: string;
+  /** Connector backend active for this run — selects the connections guidance. */
+  connectorKind?: ConnectorKind;
   /** Skill-style routing manifest for the main runtime (key + when-to-use). */
   workflowManifest?: WorkflowManifestEntry[];
   mainInstruction?: WorkflowInstruction | null;
@@ -60,7 +75,10 @@ const EPHEMERAL_CACHE: SystemModelMessage["providerOptions"] = {
  * Kept first so it forms a stable, cacheable prefix (tools + this block) that is
  * reused across runs within Anthropic's cache TTL.
  */
-function buildStaticInstructionSegment(runtimeKind: AgentRuntimeKind): string {
+function buildStaticInstructionSegment(
+  runtimeKind: AgentRuntimeKind,
+  connectorKind: ConnectorKind | undefined,
+): string {
   const lines: string[] = [LAYER0_RUNTIME_PROMPTS[runtimeKind]];
 
   if (runtimeKind === "task") {
@@ -71,7 +89,10 @@ function buildStaticInstructionSegment(runtimeKind: AgentRuntimeKind): string {
   }
 
   if (runtimeKind === "main" || runtimeKind === "task") {
-    lines.push(`\n## External connections (MCP)`, EXTERNAL_CONNECTIONS_GUIDANCE);
+    lines.push(
+      `\n## External connections`,
+      connectionsGuidance(connectorKind),
+    );
     lines.push(`\n## Communication style`, COMMUNICATION_STYLE);
   }
 
@@ -176,7 +197,10 @@ export function buildRunInstructionMessages(
   const messages: SystemModelMessage[] = [
     {
       role: "system",
-      content: buildStaticInstructionSegment(params.runtimeKind),
+      content: buildStaticInstructionSegment(
+        params.runtimeKind,
+        params.connectorKind,
+      ),
       providerOptions: EPHEMERAL_CACHE,
     },
   ];
