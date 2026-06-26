@@ -106,6 +106,13 @@ const REGISTRY: Omit<
     multiWorkspace: true,
   },
   {
+    // One card grants Gmail + Drive + Calendar (provider-level OAuth, no hosted
+    // MCP). Multiple Google accounts can be connected.
+    provider: "google",
+    label: "Google",
+    multiWorkspace: true,
+  },
+  {
     provider: "github",
     label: "GitHub",
     multiWorkspace: true,
@@ -124,13 +131,6 @@ const REGISTRY: Omit<
     provider: "twitter",
     label: "X",
     multiWorkspace: false,
-  },
-  {
-    // One card grants Gmail + Drive + Calendar (provider-level OAuth, no hosted
-    // MCP). Multiple Google accounts can be connected.
-    provider: "google",
-    label: "Google",
-    multiWorkspace: true,
   },
 ];
 
