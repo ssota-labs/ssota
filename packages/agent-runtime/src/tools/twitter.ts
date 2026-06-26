@@ -1,5 +1,6 @@
 import { Client } from "@xdevplatform/xdk";
 import type { RestConnectionDef, RestCallContext } from "../connections/rest-connection-def.js";
+import { resolveTwitterUserId } from "./twitter-user-id.js";
 
 // ── JSON Schema helpers ──────────────────────────────────────────────────────
 
@@ -43,7 +44,7 @@ const MAX_RESULTS_OPT = n("Number of results (1–100, default 20).", 1, 100, 20
 async function execute(toolName: string, args: unknown, ctx: RestCallContext): Promise<unknown> {
   const client = new Client({ accessToken: ctx.token });
   const a = (args ?? {}) as Record<string, unknown>;
-  const uid = ctx.userId;
+  const uid = await resolveTwitterUserId(client, ctx.userId);
 
   switch (toolName) {
     // ── Posts ──────────────────────────────────────────────────────────────
