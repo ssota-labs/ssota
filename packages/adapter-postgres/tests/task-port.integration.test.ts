@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
 import { createNode, spawnTask, updateTask } from "@ssota/core";
+import { textToBlockNoteContent } from "@ssota/contracts";
 import {
   createConsolePort,
   createDb,
@@ -51,6 +52,22 @@ describe("task port integration", () => {
       workflowInstructions = createWorkflowInstructionPort(dbBundle.db, {
         projectId,
       });
+
+      // Projects start with no DB workflow_instructions rows by design
+      // (WORKFLOW_INSTRUCTION_SEEDS is empty; agents author them on demand).
+      // Seed the keys this suite spawns tasks with so it is self-contained.
+      for (const key of [
+        "work.implement_feature",
+        "work.write_document",
+        "orchestrator.daily",
+      ]) {
+        await workflowInstructions.upsertInstruction({
+          key,
+          name: key,
+          description: `Integration fixture for ${key}`,
+          content: textToBlockNoteContent(`Fixture instruction for ${key}.`),
+        });
+      }
 
       const [other] = await dbBundle.db
         .insert(schema.projects)
