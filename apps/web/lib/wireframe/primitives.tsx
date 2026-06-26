@@ -81,7 +81,12 @@ function NavigableSurface({
   if (isMissing) {
     return (
       <Popover open={missingOpen} onOpenChange={setMissingOpen}>
-        <PopoverTrigger render={<Tag {...surfaceProps} />}>{children}</PopoverTrigger>
+        <PopoverTrigger
+          nativeButton={Tag === "button"}
+          render={<Tag {...surfaceProps} />}
+        >
+          {children}
+        </PopoverTrigger>
         <PopoverContent side="top" align="start" className="w-56 text-xs">
           <PopoverHeader>
             <PopoverTitle>Missing page</PopoverTitle>
