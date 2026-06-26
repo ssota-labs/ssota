@@ -5,6 +5,7 @@ import {
   Background,
   BackgroundVariant,
   Controls,
+  PanOnScrollMode,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
@@ -110,7 +111,10 @@ function WireframePreviewCanvas({
           nodesConnectable={false}
           elementsSelectable
           panOnDrag={[1, 2]}
+          panOnScroll
+          panOnScrollMode={PanOnScrollMode.Free}
           zoomOnScroll
+          zoomOnPinch
           onNodeClick={handleNodeClick}
           onPaneClick={handlePaneClick}
           proOptions={{ hideAttribution: true }}
