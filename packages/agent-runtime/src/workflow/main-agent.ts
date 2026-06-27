@@ -15,7 +15,12 @@ import type { ModelMessage, SystemModelMessage } from "ai";
 import type { ZodTypeAny } from "zod";
 import { WorkflowAgent, type ModelCallStreamPart } from "@ai-sdk/workflow";
 import type { AgentRunContext } from "../engine/types.js";
-import { workflowToolSchemas, type WorkflowToolName } from "./tool-schemas.js";
+import {
+  workflowToolSchemas,
+  sandboxToolSchemas,
+  type WorkflowToolName,
+  type SandboxToolName,
+} from "./tool-schemas.js";
 
 /**
  * Local step-count stop condition. We cannot import `isStepCount` from `ai`
@@ -135,7 +140,20 @@ export interface BuildMainWorkflowAgentInput {
   instructions?: string | SystemModelMessage | SystemModelMessage[];
   modelId?: string;
   maxSteps?: number;
+  /**
+   * Expose the sandbox tools (dev-capable task runs). Requires `ssota.sandboxId`
+   * — the dispatcher re-attaches to it per step.
+   */
+  includeSandboxTools?: boolean;
 }
+
+/** LLM-facing descriptions for the sandbox tools (schemas in tool-schemas.ts). */
+const SANDBOX_TOOL_DESCRIPTIONS: Record<SandboxToolName, string> = {
+  sandbox_exec:
+    "Run a shell command inside the sandbox VM and return exit code, stdout, stderr.",
+  sandbox_write_file: "Write a file in the sandbox (creates or overwrites).",
+  sandbox_read_file: "Read a UTF-8 file from the sandbox.",
+};
 
 /**
  * Build a {@link WorkflowAgent} for the main chat agent. The agent loop and each
@@ -162,6 +180,16 @@ export function buildMainWorkflowAgent(
       inputSchema: def.inputSchema,
       execute: (i: unknown) => input.dispatch(name, i, ctx),
     };
+  }
+
+  if (input.includeSandboxTools) {
+    for (const name of Object.keys(sandboxToolSchemas) as SandboxToolName[]) {
+      tools[name] = {
+        description: SANDBOX_TOOL_DESCRIPTIONS[name],
+        inputSchema: sandboxToolSchemas[name],
+        execute: (i: unknown) => input.dispatch(name, i, ctx),
+      };
+    }
   }
 
   return new WorkflowAgent({

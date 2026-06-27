@@ -16,6 +16,7 @@ export {
 } from "./workflow/dispatch-step.js";
 export {
   createSandboxSession,
+  attachSandboxSession,
   type SandboxSession,
   type ExecResult,
   type CreateSandboxSessionOptions,

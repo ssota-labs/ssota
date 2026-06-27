@@ -156,3 +156,22 @@ export const workflowToolSchemas = {
 } as const;
 
 export type WorkflowToolName = keyof typeof workflowToolSchemas;
+
+/**
+ * Sandbox tool schemas — exposed to the agent only for dev-capable task runs
+ * (buildMainWorkflowAgent({ includeSandboxTools: true })). Dispatched via the
+ * re-attach branch in dispatch-step.ts.
+ */
+export const sandboxToolSchemas = {
+  sandbox_exec: z.object({
+    cmd: z.string().describe("Executable, e.g. 'pnpm', 'git', 'bash'."),
+    args: z.array(z.string()).optional().describe("Arguments."),
+  }),
+  sandbox_write_file: z.object({
+    path: z.string().describe("Sandbox path."),
+    content: z.string(),
+  }),
+  sandbox_read_file: z.object({ path: z.string() }),
+} as const;
+
+export type SandboxToolName = keyof typeof sandboxToolSchemas;

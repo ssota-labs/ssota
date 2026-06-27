@@ -12,9 +12,11 @@
  *   closed in a `finally`.
  */
 import { createSsotaTools } from "../tools/index.js";
+import { createSandboxTools } from "../tools/sandbox.js";
 import { createConnectionTools } from "../tools/connections.js";
 import { resolveCredentialProvider } from "../credentials/provider.js";
 import { McpSessionManager } from "../connections/mcp-session.js";
+import { attachSandboxSession } from "../sandbox/session.js";
 import {
   ConnectionRunState,
   CONNECTION_SEARCH_TOOL,
@@ -30,7 +32,15 @@ export const MAIN_WORKFLOW_CONNECTION_TOOL_NAMES = [
   REQUEST_CONNECTION_TOOL,
 ] as const;
 
+/** Sandbox tool names handled by the re-attach branch (dev-capable tasks). */
+export const MAIN_WORKFLOW_SANDBOX_TOOL_NAMES = [
+  "sandbox_exec",
+  "sandbox_write_file",
+  "sandbox_read_file",
+] as const;
+
 const CONNECTION_TOOLS = new Set<string>(MAIN_WORKFLOW_CONNECTION_TOOL_NAMES);
+const SANDBOX_TOOLS = new Set<string>(MAIN_WORKFLOW_SANDBOX_TOOL_NAMES);
 
 const toolCallId = (toolName: string) => `main-wf-${toolName}`;
 
@@ -73,6 +83,26 @@ export async function runMainAgentToolStep(
     } finally {
       await sessionManager.close();
     }
+  }
+
+  if (SANDBOX_TOOLS.has(toolName)) {
+    if (!ssota.sandboxId) {
+      throw new Error(
+        `Sandbox tool ${toolName} requires a sandbox, but none was provisioned for this run.`,
+      );
+    }
+    // Live sandbox sessions can't cross step boundaries; re-attach by id.
+    const sandbox = await attachSandboxSession(ssota.sandboxId);
+    const tools = createSandboxTools();
+    const t = tools[toolName];
+    if (!t?.execute) {
+      throw new Error(`Unknown sandbox tool: ${toolName}`);
+    }
+    return await t.execute(input as never, {
+      toolCallId: toolCallId(toolName),
+      messages: [],
+      context: { ssota, sandbox },
+    });
   }
 
   const tools = createSsotaTools();

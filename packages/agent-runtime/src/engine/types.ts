@@ -7,4 +7,9 @@ export interface AgentRunContext {
   taskId?: string;
   runId: string;
   accountId?: string;
+  /**
+   * Sandbox id for dev-capable task runs. The provisioning step stores it here
+   * (serializable); sandbox tool steps re-attach via `attachSandboxSession`.
+   */
+  sandboxId?: string;
 }
