@@ -62,6 +62,6 @@ test.describe("Console v2.7 navigation", () => {
     await expect(popover).toBeVisible();
     await expect(popover).not.toHaveClass(/cn-menu-translucent/);
     await expect(popover.getByText("Organization", { exact: true })).toBeVisible();
-    await expect(popover.getByRole("button").first()).toBeVisible();
+    await expect(popover.getByRole("link", { name: /SSOTA Labs/ })).toBeVisible();
   });
 });

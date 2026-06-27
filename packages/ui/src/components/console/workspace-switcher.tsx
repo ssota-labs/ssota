@@ -131,7 +131,7 @@ export function WorkspaceSwitcher({
       <PopoverContent
         align={align}
         side={side}
-        className="cn-popover-menu w-56"
+        className="cn-popover-menu w-56 bg-popover"
       >
         <div className="flex items-center gap-2 px-2 py-1 text-xs font-medium text-muted-foreground">
           <span className="flex size-4 shrink-0 items-center justify-center [&_svg]:size-3.5">
