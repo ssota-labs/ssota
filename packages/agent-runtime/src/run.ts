@@ -3,6 +3,7 @@ import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import { listBuiltinWorkflowIndex } from "@ssota/contracts/workflows";
 import { serializeTask, readWorkflowInstructionById } from "@ssota/core";
 import { getTaskPort, getWorkflowInstructionPort } from "./ports.js";
+import { getConnectorAdapter } from "./connectors/adapter.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
 import type { AgentRuntimeKind } from "@ssota/contracts";
 
@@ -19,6 +20,12 @@ export interface RunAgentInput {
   threadId?: string;
   scheduleId?: string;
   accountId?: string;
+  /**
+   * Signed-in user (Supabase `auth.users.id`) driving this run. With the org it
+   * forms the Composio entity for connector tools. Absent on scheduler /
+   * autonomous runs → Composio connectors fall back to the org-shared entity.
+   */
+  profileId?: string;
   modelId?: string;
   maxSteps?: number;
   /** Main-runtime chat transcript injected from the web chat route. */
@@ -59,13 +66,17 @@ function extractExecutionDirective(
  * Build the per-run instruction + message prompt for a runtime kind. Both
  * outputs are serializable (SystemModelMessage[] / ModelMessage[]), so the
  * WorkflowAgent path can produce them inside a `"use step"` and hand them to
- * the workflow-safe agent builder. Shared with the legacy {@link prepareRun}.
+ * the workflow-safe agent builder. The active connector adapter's kind drives
+ * the prompt's connections guidance (Composio vs legacy tool names).
  */
 export async function buildRunPrompt(
   input: RunAgentInput,
 ): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
   const { projectId, accountId, runtimeKind } = input;
   const instructionPort = getWorkflowInstructionPort(projectId, accountId);
+
+  const adapter = getConnectorAdapter();
+  const connectorKind = adapter?.kind;
 
   let instructions: SystemModelMessage[] = [];
   let messages: ModelMessage[] = [];
@@ -87,6 +98,7 @@ export async function buildRunPrompt(
       runtimeKind: "main",
       projectId,
       accountId,
+      connectorKind,
       workflowManifest,
     });
     const chatMessages = extractChatMessages(input.chatContext);
@@ -110,6 +122,7 @@ export async function buildRunPrompt(
       runtimeKind: "task",
       projectId,
       accountId,
+      connectorKind,
       taskPlaybook: playbook?.instruction ?? null,
       task: {
         id: task.id,
@@ -132,6 +145,7 @@ export async function buildRunPrompt(
       runtimeKind: "scheduler",
       projectId,
       accountId,
+      connectorKind,
       mainInstruction: scheduleInstruction,
     });
     messages = [
@@ -146,4 +160,3 @@ export async function buildRunPrompt(
 
   return { instructions, messages };
 }
-

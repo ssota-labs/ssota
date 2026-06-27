@@ -1,84 +1,100 @@
 import { NextResponse } from "next/server";
-import { resolveAuthorizeScopes } from "@/lib/connect/connectors";
-import { startConnectAuthorization } from "@ssota/agent-runtime";
+import {
+  authorizeOrgSharedToolkit,
+  composioUserId,
+  getToolRouterSession,
+  isComposioToolkit,
+} from "@ssota/agent-runtime";
 import { loginRedirect } from "@/lib/auth/login-redirect";
-import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
-import { apiScopeErrorResponse } from "@/lib/api/scope-error";
+import { getConsolePort, getOrgMembershipPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 
 /**
- * Start a Vercel Connect authorization. The end user hits this (from our own
- * UI) to connect a provider (Slack workspace install, GitHub install, OAuth
- * consent — the connector type decides). We ask Connect for a flow URL and
- * redirect the user to it; Connect returns them to `/api/connect/callback`.
+ * Start a Composio connection flow for a toolkit. The end user hits this from
+ * our Connections UI to connect a provider (Gmail, Slack, …). We create the
+ * entity's Tool Router session (keyed by org + signed-in profile), ask Composio
+ * to authorize the toolkit, and redirect the user to Composio's OAuth URL.
+ * Composio returns them to `returnTo` once the connection is established.
  *
- *   GET /api/connect/authorize?connector=slack/acme&accountId=<account>&returnTo=/settings
+ *   GET /api/connect/authorize?connector=gmail&projectId=<id>&returnTo=/connections
  *
- * Works for every connector type — no provider-specific branching.
+ * `connector` carries the Composio toolkit slug (the param name is kept for
+ * backward-compatible hrefs).
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const connector = url.searchParams.get("connector");
-  const accountId = url.searchParams.get("accountId") ?? undefined;
-  const installationId = url.searchParams.get("installationId") ?? undefined;
+  const toolkit = url.searchParams.get("connector");
   const projectId =
     url.searchParams.get("projectId") ?? process.env.CHAT_PROJECT_ID ?? "";
   const returnTo = url.searchParams.get("returnTo") ?? "/";
+  // "org" creates an org-shared (SHARED) connection; "user" (default) is personal.
+  const scope = url.searchParams.get("scope") === "org" ? "org" : "user";
 
-  if (!connector) {
+  if (!toolkit || !isComposioToolkit(toolkit)) {
     return NextResponse.json(
-      { error: "connector query param is required" },
+      { error: "connector must be a known Composio toolkit slug" },
       { status: 422 },
     );
   }
 
-  const scopes = resolveAuthorizeScopes(
-    connector,
-    url.searchParams.get("scopes")?.split(",").filter(Boolean),
-  );
-
   const user = await getCurrentUser();
   if (!user) {
-    loginRedirect(returnTo);
+    loginRedirect(returnTo); // never returns
   }
 
-  let resolvedAccountId = accountId;
-  if (projectId) {
-    try {
-      const scope = await resolveApiAccountScope(projectId, {
-        returnTo,
-        requestedAccountId: accountId,
-      });
-      resolvedAccountId = scope.accountId;
-    } catch (error) {
-      const response = apiScopeErrorResponse(error);
-      if (response) return response;
-      throw error;
-    }
+  if (!projectId) {
+    return NextResponse.json(
+      { error: "projectId is required" },
+      { status: 422 },
+    );
   }
 
-  // Connect returns the user here; we carry the context to record the link.
-  const callback = new URL("/api/connect/callback", url.origin);
-  callback.searchParams.set("connector", connector);
-  if (resolvedAccountId) callback.searchParams.set("accountId", resolvedAccountId);
-  if (projectId) callback.searchParams.set("projectId", projectId);
-  callback.searchParams.set("returnTo", returnTo);
-  callback.searchParams.set("userId", user.id);
+  const project = await getConsolePort().getProjectById(projectId);
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  // Composio returns the user straight back to where they started.
+  const callbackUrl = new URL(returnTo, url.origin).toString();
+  const orgId = project.organizationId;
 
   try {
-    const flowUrl = await startConnectAuthorization(
-      connector,
-      {
-        projectId,
-        accountId: resolvedAccountId,
-        userId: user.id,
-        ...(installationId ? { installationId } : {}),
-      },
-      { scopes, callbackUrl: callback.toString() },
-    );
-    return NextResponse.redirect(flowUrl);
+    if (scope === "org") {
+      // Org-shared: create the connection under the org entity as SHARED, with
+      // an ACL of every member's user entity so their sessions can use it.
+      const members = await getOrgMembershipPort().listMemberUserIds(orgId);
+      const memberUserIds = members.map((profileId) =>
+        composioUserId({ orgId, profileId }),
+      );
+      const { redirectUrl } = await authorizeOrgSharedToolkit({
+        orgId,
+        toolkit,
+        callbackUrl,
+        memberUserIds,
+      });
+      return NextResponse.redirect(redirectUrl ?? callbackUrl);
+    }
+
+    const session = await getToolRouterSession({
+      orgId,
+      profileId: user.id,
+      callbackUrl,
+    });
+    if (!session) {
+      return NextResponse.json(
+        { error: "Composio is not configured for this deployment" },
+        { status: 503 },
+      );
+    }
+
+    const connection = await session.authorize(toolkit, { callbackUrl });
+    if (!connection.redirectUrl) {
+      // No redirect → already connected / no-auth toolkit. Go back.
+      return NextResponse.redirect(callbackUrl);
+    }
+    return NextResponse.redirect(connection.redirectUrl);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : String(error) },

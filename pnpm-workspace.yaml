@@ -28,3 +28,4 @@ minimumReleaseAgeExclude:
   - '@ai-sdk/react@4.0.2'
   - '@ai-sdk/workflow@1.0.2'
   - ai@7.0.2
+  - '@composio/vercel@0.11.0'

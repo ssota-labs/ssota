@@ -1,8 +1,22 @@
-import { ConnectionsList } from "@/components/connections/connections-list";
+import {
+  composioUserId,
+  listComposioConnections,
+  type ComposioConnection,
+} from "@ssota/agent-runtime";
+import {
+  ConnectorsView,
+  type ConnectorConnection,
+} from "@/components/connectors/connectors-view";
 import { getConnectors } from "@/lib/connect/connectors";
 import { appProjectPath } from "@/lib/console/app-paths";
+import { resolveProject } from "@/lib/console/resolve-project";
 import { resolveEndUserContext } from "@/lib/request-context";
-import { getAccountConnectionPort } from "@/lib/ports";
+
+const toConnection = (c: ComposioConnection): ConnectorConnection => ({
+  id: c.connectedAccountId,
+  connector: c.toolkit,
+  name: null,
+});
 
 export default async function AppConnectionsPage({
   params,
@@ -11,28 +25,30 @@ export default async function AppConnectionsPage({
 }) {
   const { orgSlug, projectSlug } = await params;
   const ctx = await resolveEndUserContext(orgSlug, projectSlug);
+  const { org } = await resolveProject(orgSlug, projectSlug);
   const routeCtx = { orgSlug, projectSlug };
 
-  const [connectors, connections] = await Promise.all([
-    Promise.resolve(getConnectors()),
-    getAccountConnectionPort().list(ctx.accountId),
-  ]);
+  const connectors = getConnectors();
+
+  // End users manage their personal connections only; org-shared connections
+  // (managed by the builder) are used by the agent but not editable here.
+  const userConns = await listComposioConnections(
+    composioUserId({ orgId: org.id, profileId: ctx.userId }),
+  );
 
   const returnTo = appProjectPath(routeCtx, "connections");
 
   return (
-    <ConnectionsList
-        connectors={connectors}
-        connections={connections.map((c) => ({
-          id: c.id,
-          connector: c.connector,
-          installationId: c.installationId,
-          tenantId: c.tenantId,
-          name: c.name,
-        }))}
-        projectId={ctx.projectId}
-        accountId={ctx.accountId}
-        returnTo={returnTo}
-      />
+    <ConnectorsView
+      connectors={connectors}
+      connections={{
+        user: userConns.filter((c) => c.active).map(toConnection),
+        org: [],
+      }}
+      projectId={ctx.projectId}
+      accountId={ctx.accountId}
+      returnTo={returnTo}
+      allowOrgScope={false}
+    />
   );
 }

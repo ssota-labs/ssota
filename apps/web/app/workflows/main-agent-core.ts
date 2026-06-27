@@ -12,6 +12,8 @@ export interface RunMainAgentInput {
   projectId: string;
   threadId: string;
   accountId?: string;
+  /** Signed-in user (Composio acting entity for connector tools). */
+  profileId?: string;
   modelId?: string;
   maxSteps?: number;
   chatContext?: Record<string, unknown>;

@@ -1,27 +1,16 @@
 import { TasksExplorer } from "@/components/tasks/tasks-explorer";
-import {
-  type TaskTab,
-  type TaskWorkspaceRow,
-} from "@/components/tasks/tasks-workspace";
-import { projectPath } from "@/lib/console/paths";
+import { type TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
 
-const taskTabs = new Set<TaskTab>(["table", "board"]);
-
 export default async function TasksPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ orgSlug: string; projectSlug: string }>;
-  searchParams: Promise<{ tab?: string }>;
 }) {
   const { orgSlug, projectSlug } = await params;
-  const { tab } = await searchParams;
-  const ctx = { orgSlug, projectSlug };
   const { project } = await resolveProject(orgSlug, projectSlug);
   const tasks = await getTaskPort(project.id).queryTasks({ limit: 200 });
-  const activeTab = taskTabs.has(tab as TaskTab) ? (tab as TaskTab) : "table";
 
   const rows: TaskWorkspaceRow[] = tasks.map((task) => ({
     id: task.id,
@@ -53,8 +42,6 @@ export default async function TasksPage({
   return (
     <TasksExplorer
       rows={rows}
-      activeTab={activeTab}
-      baseHref={projectPath(ctx, "tasks")}
       projectId={project.id}
       workflowOptions={workflowOptions}
     />

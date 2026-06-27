@@ -27,13 +27,18 @@ function notLinkedReply(): string {
 
 function slackAdapter() {
   const signingSecret = process.env.SLACK_SIGNING_SECRET;
-  const botToken = process.env.SLACK_BOT_TOKEN;
-  if (botToken) {
-    return createSlackAdapter({ signingSecret, botToken });
-  }
+  // The bot's Slack transport token (used to receive + post messages) defaults
+  // to Vercel Connect: it is resolved per Slack installation from Connect. This
+  // is independent of the agent's Composio connector tools. Escape hatches:
+  //   - SLACK_BOT_TOKEN forces a single static bot token (single-workspace dev).
+  //   - SLACK_CONNECT=0 disables Connect (falls back to static/signing-secret).
+  //   - SLACK_CONNECT_CONNECTOR overrides the Connect connector uid (default "slack").
+  const staticToken = process.env.SLACK_BOT_TOKEN;
+  const connectDisabled =
+    process.env.SLACK_CONNECT === "0" || Boolean(staticToken);
 
-  const connector = process.env.SLACK_CONNECT_CONNECTOR;
-  if (connector) {
+  if (!connectDisabled) {
+    const connector = process.env.SLACK_CONNECT_CONNECTOR ?? "slack";
     const provider = createVercelConnectProvider();
     const projectId = process.env.CHAT_PROJECT_ID ?? "";
     const useIntake = process.env.SLACK_CONNECT_INTAKE !== "0";
@@ -53,6 +58,10 @@ function slackAdapter() {
         },
       },
     });
+  }
+
+  if (staticToken) {
+    return createSlackAdapter({ signingSecret, botToken: staticToken });
   }
 
   return createSlackAdapter({ signingSecret });

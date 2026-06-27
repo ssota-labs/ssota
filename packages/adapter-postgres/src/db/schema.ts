@@ -195,6 +195,44 @@ export const accountConnections = pgTable(
 );
 
 /**
+ * Per-(org, user, toolkit) connector tool restrictions. When a user disables
+ * specific tools for a connected toolkit in the Connectors sheet, those slugs
+ * are excluded from the Composio Tool Router session
+ * (`tools: { <toolkit>: { disable } }`). Keyed by the Composio entity
+ * (org + profile), so a setting applies across that org's projects.
+ */
+export const connectorToolSettings = pgTable(
+  "connector_tool_settings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    profileId: uuid("profile_id")
+      .notNull()
+      .references(() => profiles.id, { onDelete: "cascade" }),
+    /** Composio toolkit slug (e.g. "gmail", "slack"). */
+    toolkit: text("toolkit").notNull(),
+    /** Tool slugs the user has disabled for this toolkit. */
+    disabledTools: jsonb("disabled_tools")
+      .$type<string[]>()
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    uniqueScope: uniqueIndex(
+      "connector_tool_settings_org_profile_toolkit_unique",
+    ).on(table.orgId, table.profileId, table.toolkit),
+  }),
+);
+
+/**
  * Maps a chat workspace (Slack team, Discord guild, Telegram chat) to the
  * SSOTA project it belongs to (and optionally an account). Lets the creator
  * connect a workspace to one of their own projects without a separate tenant
@@ -347,6 +385,9 @@ export const schedules = pgTable(
       .notNull()
       .references(() => workflowInstructions.id, { onDelete: "cascade" }),
     cronExpression: text("cron_expression").notNull(),
+    // IANA timezone the cron expression is evaluated in (the heartbeat ticks in
+    // UTC, but each schedule's window/days are interpreted in this zone).
+    timezone: text("timezone").notNull().default("Asia/Seoul"),
     enabled: boolean("enabled").notNull().default(true),
     idempotencyPrefix: text("idempotency_prefix").notNull().default(""),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

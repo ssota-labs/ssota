@@ -95,11 +95,13 @@ export async function POST(request: Request) {
 
   // Durable WorkflowAgent run on the WDK — detached server-side (no completion
   // to await). Output streams as ModelCallStreamPart; transform to UI chunks.
+  // profileId = the signed-in user (the Composio acting entity for connectors).
   const run = await start(runMainWorkflowAgent, [
     {
       projectId,
       threadId,
       accountId,
+      profileId: user.id,
       modelId,
       chatContext: { chat: { messages: history } },
     },

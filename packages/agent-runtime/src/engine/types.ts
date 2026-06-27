@@ -7,6 +7,8 @@ export interface AgentRunContext {
   taskId?: string;
   runId: string;
   accountId?: string;
+  /** Signed-in user driving the run (Supabase `auth.users.id`), if any. */
+  profileId?: string;
   /**
    * Sandbox id for dev-capable task runs. The provisioning step stores it here
    * (serializable); sandbox tool steps re-attach via `attachSandboxSession`.

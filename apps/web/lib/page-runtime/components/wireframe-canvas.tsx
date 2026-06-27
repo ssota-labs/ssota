@@ -4,7 +4,6 @@ import * as React from "react";
 import {
   Background,
   BackgroundVariant,
-  Controls,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
@@ -13,6 +12,7 @@ import {
 } from "@xyflow/react";
 import { cn } from "@ssota/ui/lib/utils";
 import { WireframeViewportToolbar } from "@/components/console/wireframe/wireframe-viewport-toolbar";
+import { FlowViewportToolbar } from "./flow-toolbar";
 import { boundNodes } from "../bindings";
 import { useSelection } from "../selection-context";
 import { WireframeNavigationProvider } from "@/lib/wireframe/navigation-context";
@@ -93,38 +93,34 @@ function WireframePreviewCanvas({
   }, [onNodeFocusedChange]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <WireframeViewportToolbar
-        title={activeFrame.title}
-        slug={activeFrame.slug}
-        viewport={viewport}
-        onViewportChange={setViewport}
-      />
-      <div className="relative min-h-0 flex-1">
-        <ReactFlow
-          key={`${activeFrame.id}-${viewport}`}
-          nodes={rfNodes}
-          edges={[]}
-          nodeTypes={NODE_TYPES}
-          nodesDraggable={false}
-          nodesConnectable={false}
-          elementsSelectable
-          panOnDrag={[1, 2]}
-          zoomOnScroll
-          onNodeClick={handleNodeClick}
-          onPaneClick={handlePaneClick}
-          proOptions={{ hideAttribution: true }}
-          minZoom={0.2}
-          maxZoom={1.5}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-          className="bg-muted/20"
-        >
-          <SingleWireframeViewport nodeId={activeFrame.id} />
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
-          <Controls showInteractive={false} position="bottom-left" />
-        </ReactFlow>
-      </div>
+    <div className="relative h-full min-h-0">
+      <ReactFlow
+        key={`${activeFrame.id}-${viewport}`}
+        nodes={rfNodes}
+        edges={[]}
+        nodeTypes={NODE_TYPES}
+        nodesDraggable={false}
+        nodesConnectable={false}
+        elementsSelectable
+        panOnDrag={[1, 2]}
+        zoomOnScroll
+        onNodeClick={handleNodeClick}
+        onPaneClick={handlePaneClick}
+        proOptions={{ hideAttribution: true }}
+        minZoom={0.2}
+        maxZoom={1.5}
+        fitView
+        fitViewOptions={{ padding: 0.2 }}
+        className="bg-muted/20"
+      >
+        <SingleWireframeViewport nodeId={activeFrame.id} />
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
+        <WireframeViewportToolbar
+          viewport={viewport}
+          onViewportChange={setViewport}
+        />
+        <FlowViewportToolbar />
+      </ReactFlow>
     </div>
   );
 }
@@ -170,9 +166,6 @@ function WireframeCanvasEl({
   const activeFrame =
     frames.find((frame) => frame.id === selectedId) ?? frames[0] ?? null;
 
-  const toolbarTitle = activeFrame?.title ?? "Wireframes";
-  const toolbarSlug = activeFrame?.slug ?? "—";
-
   const handleNavigate = React.useCallback(
     (nodeId: string, _slug: string) => {
       onSelect(nodeId);
@@ -191,12 +184,6 @@ function WireframeCanvasEl({
           style={{ height }}
           data-testid="wireframe-canvas"
         >
-          <WireframeViewportToolbar
-            title={toolbarTitle}
-            slug={toolbarSlug}
-            viewport={viewport}
-            onViewportChange={setViewport}
-          />
           <div className="text-muted-foreground flex flex-1 items-center justify-center p-6 text-sm">
             No wireframes scoped to this initiative.
           </div>
@@ -216,12 +203,6 @@ function WireframeCanvasEl({
           style={{ height }}
           data-testid="wireframe-canvas"
         >
-          <WireframeViewportToolbar
-            title={toolbarTitle}
-            slug={toolbarSlug}
-            viewport={viewport}
-            onViewportChange={setViewport}
-          />
           <div className="text-muted-foreground flex flex-1 items-center justify-center p-6 text-sm">
             Select a wireframe from the list to preview.
           </div>

@@ -45,8 +45,8 @@ describe("createClient", () => {
         {
           id: "00000000-0000-4000-8000-000000000010",
           projectId: TEST_PROJECT_ID,
-          workflowKey: "development",
-          workflowId: null,
+          workflowInstructionId: null,
+          workflowInstructionKey: "development",
           title: "Ship task runtime",
           status: "ready",
           executorType: "Agent",

@@ -340,7 +340,7 @@ describe("applyListType", () => {
     expect(
       // Typed-schema getJSON() narrows nested nodes to a Node|Text union; Text
       // has no `content`. Cast for this structural assertion.
-      (editor.getJSON() as Record<string, any>).content?.[0]?.content?.[0]
+      (editor.getJSON() as JsonNode).content?.[0]?.content?.[0]
         ?.content?.[0]?.content?.[0]?.text,
     ).toBe("one");
     expect(hasMixedListNesting(editor.state.doc)).toBe(true);
