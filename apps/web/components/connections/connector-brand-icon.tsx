@@ -36,6 +36,16 @@ import {
   Zoom,
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@ssota/ui/lib/utils";
+import {
+  AirtableIcon,
+  BoxIcon,
+  CodaIcon,
+  HubSpotIcon,
+  IntercomIcon,
+  MiroIcon,
+  PipedriveIcon,
+  ZendeskIcon,
+} from "@/components/connections/additional-brand-icons";
 import { GoogleDocsIcon, GoogleTasksIcon } from "@/components/connections/google-workspace-icons";
 import type { ConnectorProvider } from "@/lib/connect/connectors";
 
@@ -51,8 +61,7 @@ type BrandIcon =
       dark: ComponentType<SVGProps<SVGSVGElement>>;
     };
 
-// svgl-react logos for every connector that exists in the svgl catalog.
-// Puzzle fallback when svgl has no logo yet (e.g. Airtable, Google Docs).
+// svgl-react logos where the svgl catalog has them; inline marks for the rest.
 const PROVIDER_BRANDS: Record<string, BrandIcon> = {
   notion: { kind: "component", Icon: Notion },
   slack: { kind: "component", Icon: Slack },
@@ -75,12 +84,20 @@ const PROVIDER_BRANDS: Record<string, BrandIcon> = {
   trello: { kind: "component", Icon: Trello },
   clickup: { kind: "component", Icon: ClickUp },
   todoist: { kind: "component", Icon: Todoist },
+  airtable: { kind: "component", Icon: AirtableIcon },
+  coda: { kind: "component", Icon: CodaIcon },
   calendly: { kind: "component", Icon: Calendly },
   dropbox: { kind: "component", Icon: Dropbox },
+  box: { kind: "component", Icon: BoxIcon },
   onedrive: { kind: "component", Icon: MicrosoftOneDrive },
+  hubspot: { kind: "component", Icon: HubSpotIcon },
   salesforce: { kind: "component", Icon: Salesforce },
+  pipedrive: { kind: "component", Icon: PipedriveIcon },
   figma: { kind: "component", Icon: Figma },
   canva: { kind: "component", Icon: Canva },
+  miro: { kind: "component", Icon: MiroIcon },
+  zendesk: { kind: "component", Icon: ZendeskIcon },
+  intercom: { kind: "component", Icon: IntercomIcon },
   twitter: { kind: "theme", light: XLight, dark: XDark },
   linkedin: { kind: "component", Icon: LinkedIn },
   youtube: { kind: "component", Icon: YouTube },
