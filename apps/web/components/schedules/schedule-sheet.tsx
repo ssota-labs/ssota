@@ -24,8 +24,8 @@ import {
   type Frequency,
   type Recurrence,
 } from "@/lib/schedules/recurrence";
-import { InstructionPickerList } from "./instruction-picker-list";
-import type { InstructionOption } from "./instruction-picker-list";
+import { InstructionPickerSelect } from "./instruction-picker-select";
+import type { InstructionOption } from "./instruction-picker-select";
 import { ScheduleSheetPanel } from "./schedule-sheet-panel";
 
 export type { InstructionOption };
@@ -274,7 +274,7 @@ export function ScheduleSheet({
       <form id="schedule-sheet-form" className="space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <Label>Agent</Label>
-          <InstructionPickerList
+          <InstructionPickerSelect
             instructions={instructions}
             selectedId={instructionId}
             onSelect={setInstructionId}

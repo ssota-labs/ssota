@@ -22,8 +22,12 @@ test.describe("Scheduler", () => {
     await expect(sheet).toBeVisible();
     await expect(sheet.getByRole("heading", { name: "Add trigger" })).toBeVisible();
     await expect(sheet.getByTestId("schedule-instruction-picker")).toBeVisible();
+
+    await sheet.getByTestId("schedule-instruction-picker").click();
+    const pickerContent = page.getByTestId("schedule-instruction-picker-content");
+    await expect(pickerContent).toBeVisible();
     await expect(
-      sheet.locator('[data-testid^="schedule-instruction-item-"]').first(),
+      pickerContent.locator('[data-testid^="schedule-instruction-item-"]').first(),
     ).toBeVisible();
 
     await page.getByTestId("schedule-sheet-close").click();
