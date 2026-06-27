@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createSsotaTools } from "../tools/index.js";
+import { MAIN_WORKFLOW_CONNECTION_TOOL_NAMES } from "../workflow/dispatch-step.js";
 import {
   MAIN_WORKFLOW_TOOL_NAMES,
   MAIN_WORKFLOW_TOOL_SCHEMAS,
@@ -7,9 +8,14 @@ import {
 } from "../workflow/main-agent.js";
 
 describe("main workflow-agent tool surface", () => {
-  it("every workflow tool name maps to a real SSOTA tool (no drift)", () => {
-    const real = new Set(Object.keys(createSsotaTools()));
-    const missing = MAIN_WORKFLOW_TOOL_NAMES.filter((n) => !real.has(n));
+  it("every workflow tool name maps to a dispatchable tool (no drift)", () => {
+    // Plain SSOTA tools come from createSsotaTools; the connection facade tools
+    // are dispatched via the credential/MCP-aware branch instead.
+    const dispatchable = new Set<string>([
+      ...Object.keys(createSsotaTools()),
+      ...MAIN_WORKFLOW_CONNECTION_TOOL_NAMES,
+    ]);
+    const missing = MAIN_WORKFLOW_TOOL_NAMES.filter((n) => !dispatchable.has(n));
     expect(missing).toEqual([]);
   });
 

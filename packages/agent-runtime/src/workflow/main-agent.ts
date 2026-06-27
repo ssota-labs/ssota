@@ -242,6 +242,43 @@ export const MAIN_WORKFLOW_TOOL_SCHEMAS = {
       "List all pages in the tree (id, title, parentId, position) for navigation/authoring.",
     inputSchema: z.object({}),
   },
+
+  // --- Connection facade (MCP / REST third-party tools) ---
+  connection_search: {
+    description:
+      "Discover MCP tools for connected third-party services. Pass a natural-language query; matched tools are invoked with connection_call (qualifiedName + args). Returns matched tool names and compact argsSchema hints. Call once per user request or new capability — reuse prior results in the same conversation.",
+    inputSchema: z.object({
+      query: z
+        .string()
+        .describe("Natural-language query describing the capability needed."),
+      connection: z
+        .string()
+        .optional()
+        .describe("Optional connection id to narrow search (e.g. linear, slack)."),
+    }),
+  },
+  connection_call: {
+    description:
+      "Invoke a tool by qualifiedName (e.g. slack__slack_send_message, twitter__twitter_post_tweet). Reuse qualifiedName from an earlier connection_search in this conversation. Pass args using the exact parameter names from argsSchema.",
+    inputSchema: z.object({
+      qualifiedName: z
+        .string()
+        .describe("Qualified tool name from connection_search (connection__tool)."),
+      args: z.record(z.unknown()).describe("Arguments for the tool."),
+    }),
+  },
+  request_connection: {
+    description:
+      "Ask the user to connect a third-party service when a connector is not yet authorized. The chat UI renders a connect card; stop and wait for the user to connect.",
+    inputSchema: z.object({
+      connector: z
+        .string()
+        .describe("Connector to request, e.g. slack, notion, github, linear, discord."),
+      reason: z
+        .string()
+        .describe("Short, user-facing reason this connection is needed."),
+    }),
+  },
 } as const;
 
 /** Tool names exposed to the workflow agent. */

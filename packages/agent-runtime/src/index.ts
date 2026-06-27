@@ -22,6 +22,10 @@ export {
 export { createSandboxTools } from "./tools/sandbox.js";
 export { createConnectionTools } from "./tools/connections.js";
 export {
+  runMainAgentToolStep,
+  MAIN_WORKFLOW_CONNECTION_TOOL_NAMES,
+} from "./workflow/dispatch-step.js";
+export {
   createSandboxSession,
   type SandboxSession,
   type ExecResult,
