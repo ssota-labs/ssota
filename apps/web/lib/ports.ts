@@ -9,6 +9,7 @@ import {
   createOnboardingPort,
   createTaskPort,
   createWorkflowInstructionPort,
+  createSchedulePort,
   createPagePort,
   createPageViewStatePort,
   type AccountRecord,
@@ -69,6 +70,10 @@ export async function getOrCreateProjectAccount(
 
 export function getWorkflowInstructionPort(projectId: string) {
   return createWorkflowInstructionPort(getDb(), { projectId });
+}
+
+export function getSchedulePort(projectId: string, accountId?: string | null) {
+  return createSchedulePort(getDb(), { projectId, accountId });
 }
 
 export function getPagePort(projectId: string) {
