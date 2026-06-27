@@ -229,7 +229,7 @@ main() {
   ensure_playwright
   log "Ready."
   log "Smoke: smoke@ssota.test / smoke-test-password-123"
-  log "Next: pnpm e2e  |  pnpm test --filter @ssota/adapter-supabase"
+  log "Next: pnpm e2e:ci  |  pnpm test --filter @ssota/adapter-supabase"
 }
 
 main "$@"
