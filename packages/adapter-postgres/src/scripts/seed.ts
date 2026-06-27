@@ -12,6 +12,7 @@ import {
   SMOKE_PASSWORD,
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
+import { seedScheduleFixtures } from "./seed/schedules.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
 
@@ -138,6 +139,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
   if (teamspaceId) {
     await seedGraphInstances(db, teamspaceId);
     await applyTemplate(db, teamspaceId, SOFTWARE_DEV_TEMPLATE);
+    await seedScheduleFixtures(db, teamspaceId);
 
     const implementFeature = await db
       .select({ id: schema.workflowInstructions.id })

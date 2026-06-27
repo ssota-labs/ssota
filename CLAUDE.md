@@ -150,13 +150,24 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 
 ## Frontend 작업 완료 정의 (에이전트·PR 공통)
 
-`apps/web`·`packages/ui` 등 **사용자에게 보이는 UI를 바꾸는 작업**은 코드 커밋만으로 끝나지 않는다. 아래 3단계를 모두 마쳐야 **완료**다. 사용자가 스크린샷·데모를 따로 요청하지 않아도 에이전트가 끝까지 수행한다.
+`apps/web`·`packages/ui` 등 **사용자에게 보이는 UI를 바꾸는 작업**은 코드 커밋만으로 끝나지 않는다. 아래 4단계를 모두 마쳐야 **완료**다. 사용자가 스크린샷·데모를 따로 요청하지 않아도 에이전트가 끝까지 수행한다.
 
 ```
 1. 구현 + 정적 검증
-2. E2E (해당 플로우)
-3. agent-browser로 시각 보고
+2. E2E (Playwright — 자동 스크린샷·비디오·HTML 리포트)
+3. 대화형 UI 검증 (agent-browser 또는 Computer Use)
+4. PR/요약에 산출물 첨부
 ```
+
+### UI 검증 우선순위
+
+| 순위 | 도구 | 역할 |
+|------|------|------|
+| **1** | **Playwright E2E** (`pnpm e2e`) | 기능·회귀 SSOT. 성공/실패 모두 스크린샷·비디오·trace 기록 + HTML 리포트 |
+| **2** | **agent-browser** | E2E 이후 탐색적 검증·스크린샷·녹화. dev 서버(:3000) 대상 |
+| **3** | **Computer Use** (`computerUse` 서브에이전트, `RecordScreen`) | E2E 이후 실제 화면 조작·스크롤·모달·네비 탐색·데모 녹화 |
+
+Playwright가 커버하지 못하는 **시각·탐색·인터랙션**은 agent-browser 또는 Computer Use로 보강한다. 둘 다 E2E를 대체하지 않는다.
 
 ### 1. 구현 + 정적 검증
 
@@ -169,28 +180,30 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 - 변경한 화면·플로우에 맞는 Playwright 스펙을 실행한다. 신규 UX면 **테스트 추가**를 우선 검토한다.
 - **사용자 UI 피드백(버그·UX 개선)은 같은 PR에 E2E를 반드시 추가한다.** 피드백 항목과 테스트명(`pnpm e2e --grep '<키워드>'`)을 PR 설명에 1:1로 적는다. Editor Lab·`@ssota/editor`는 `e2e/tests/editor-lab.spec.ts`.
 - 실행 전: Cloud는 `pnpm cloud:prepare`, 로컬은 `pnpm e2e:prepare` 또는 `supabase start` + migrate + seed.
-- `pnpm e2e`는 **3100/3101**에서 자체 `next dev`를 띄운다. `pnpm dev` tmux 세션이 3000/3001을 쓰면 E2E 전에 `tmux kill-session -t ssota-dev`로 내린다.
-- 관련 테스트만 돌릴 때: `pnpm e2e --grep '<키워드>'` (예: `--grep onboarding`).
+- **`pnpm e2e`** = Playwright 실행 → `scripts/e2e-artifacts.sh`로 `/opt/cursor/artifacts/e2e/latest`에 산출물 복사 → (로컬·DISPLAY 있을 때) HTML 리포트 자동 오픈. CI/Cloud 무인 실행은 `pnpm e2e:ci` (`--no-report`).
+- `pnpm e2e`는 **3100/3101**에서 자체 `next dev`를 띄운다. `pnpm dev` tmux 세션이 3000/3101을 쓰면 E2E 전에 `tmux kill-session -t ssota-dev`로 내린다.
+- 관련 테스트만 돌릴 때: `pnpm e2e -- --grep '<키워드>'` (예: `--grep onboarding`).
 - 실패 시 수정 후 재실행. E2E 산출물·리포트 규칙은 아래 **E2E 리포트** 절을 따른다.
 
-### 3. agent-browser 시각 보고
+### 3. 대화형 UI 검증 (agent-browser / Computer Use)
 
-E2E가 통과한 뒤, **실제 브라우저에서 변경 UI를 다시 열어** 사용자에게 보여준다. Playwright 산출물만으로 끝내지 않는다.
+E2E 통과 후, 변경 플로우를 **사람처럼** 다시 훑는다. 스크롤·호버·모달·사이드바 전환 등 E2E assertion 밖의 시각·UX 이슈를 잡는다.
 
-- 스킬: `.agents/skills/agent-browser/SKILL.md` — 실행 전 `agent-browser skills get core`로 워크플로 확인.
-- 설치: `npm i -g agent-browser && agent-browser install` (Cloud 세션에 없으면 설치).
-- dev 서버: `pnpm dev --filter web` (:3000). E2E 직후라면 tmux로 다시 기동.
-- **데스크탑 뷰포트**가 기본: `agent-browser set viewport 1440 900 2` (2x retina).
-- 변경된 화면·상태별로 스크린샷: `agent-browser screenshot --full /opt/cursor/artifacts/screenshots/<이름>.png`
-- 여러 단계(온보딩 1→2, 모달 열림 등)면 **상태마다 1장 이상** 캡처.
-- 플로우가 움직이는 경우 짧은 데모가 필요하면 `RecordScreen` 또는 agent-browser로 단계별 캡처.
+**agent-browser**
 
-**사용자 응답·PR 본문에 포함할 것**
+- 스킬: `.agents/skills/agent-browser/SKILL.md` — 실행 전 `agent-browser skills get core`.
+- 설치: `npm i -g agent-browser && agent-browser install`.
+- dev 서버: `pnpm dev --filter web` (:3000). E2E 직후 tmux로 재기동.
+- 뷰포트: `agent-browser set viewport 1440 900 2`.
+- 플로우별 스크린샷 + 필요 시 **녹화**(agent-browser video / 단계별 캡처).
+- 저장: `/opt/cursor/artifacts/screenshots/`, `/opt/cursor/artifacts/videos/`.
 
-- `/opt/cursor/artifacts/screenshots/` 등에 저장한 **스크린샷 2–4장** (markdown `<img>` 태그, 절대 경로).
-- 무엇을 바꿨는지 한 줄 요약 + 캡처가 보여주는 상태 설명.
-- E2E를 돌렸다면 통과한 스펙 이름(또는 `--grep` 키워드).
-- 실패했던 경우: 수정 내용과 재실행 결과.
+**Computer Use**
+
+- `Task` 서브에이전트 `subagent_type=computerUse`로 변경 화면을 실제 조작한다.
+- 네비게이션·스크롤·폼·모달 등 **탐색적** 검증에 적합. E2E 스펙에 넣기 애매한 UX도 여기서 확인.
+- 움직이는 플로우는 `RecordScreen`으로 데모 녹화 (`/opt/cursor/artifacts/`).
+- Cloud Agent에서도 사용 가능 (아래 `.cursor/CLOUD.md`).
 
 **agent-browser 최소 예시**
 
@@ -199,16 +212,23 @@ agent-browser set viewport 1440 900 2
 agent-browser open http://localhost:3000/onboarding/profile
 agent-browser wait --load networkidle
 agent-browser screenshot --full /opt/cursor/artifacts/screenshots/onboarding-step1.png
-# 플로우 진행 후 다음 상태도 동일하게 캡처
 agent-browser close
 ```
+
+### 4. PR/요약 시각 보고
+
+- `/opt/cursor/artifacts/e2e/latest/`(Playwright) + `/opt/cursor/artifacts/screenshots/`·`videos/`(agent-browser/Computer Use)에서 **스크린샷 2–4장**, **대표 비디오 1개**를 PR/요약에 첨부 (markdown `<img>` / `<video>`, 절대 경로).
+- 무엇을 바꿨는지 한 줄 요약 + 캡처가 보여주는 상태 설명.
+- E2E `--grep` 키워드, agent-browser/Computer Use로 확인한 항목.
+- 실패했던 경우: 수정 내용과 재실행 결과.
 
 ### 완료 체크리스트 (프론트 PR)
 
 - [ ] UI 구현 및 lint/typecheck 통과
-- [ ] 해당 플로우 E2E 통과 (필요 시 스펙 추가)
-- [ ] agent-browser 데스크탑 스크린샷으로 사용자/PR에 시각 보고
-- [ ] 커밋·푸시·PR 업데이트 (테스트 전·후 변경 반영)
+- [ ] `pnpm e2e` (또는 Cloud `pnpm e2e:ci`) — 산출물 `/opt/cursor/artifacts/e2e/latest`
+- [ ] agent-browser 또는 Computer Use로 변경 플로우 탐색·녹화
+- [ ] PR/요약에 스크린샷·비디오 첨부
+- [ ] 커밋·푸시·PR 업데이트
 
 ## Console v2.7 PR 순서 (graph foundation)
 
@@ -286,22 +306,25 @@ E2E를 실행한 턴(특히 web/studio/e2e 변경 PR)에서는 **스크린샷·�
 ```bash
 # dev 서버 tmux 세션이 3000/3001을 쓰면 e2e 전에 종료 (Playwright는 3100/3101 사용)
 cd e2e && pnpm exec playwright install chromium   # 최초 1회
-pnpm e2e                                          # 또는 pnpm e2e:report (HTML 뷰어)
+pnpm e2e              # 테스트 + artifacts 복사 + (로컬) HTML 리포트 오픈
+pnpm e2e:ci           # CI/Cloud: 리포트 오픈 생략, artifacts만
+pnpm e2e -- --grep onboarding
 ```
 
-**산출물 경로** (`e2e/playwright.config.ts` 기준)
+**산출물 경로** (`e2e/playwright.config.ts` + `scripts/e2e-artifacts.sh`)
 
 | 종류 | 경로 |
 |---|---|
-| HTML 리포트 | `e2e/report/html/index.html` |
-| 스크린샷 | `e2e/report/test-results/**/` |
-| 비디오 | `e2e/report/test-results/**/*.webm` |
-| trace | `e2e/report/test-results/**/trace.zip` |
-| JSON 요약 | `e2e/report/results.json` |
+| HTML 리포트 (원본) | `e2e/report/html/index.html` |
+| 에이전트 복사본 (latest) | `/opt/cursor/artifacts/e2e/latest/` |
+| 스크린샷 | `…/latest/screenshots/` |
+| 비디오 | `…/latest/videos/` |
+| trace | `…/latest/traces/` |
+| JSON 요약 | `…/latest/results.json` |
 
 **에이전트 응답 규칙**
 
-- E2E 실행 후 PR/작업 요약에 **주요 스크린샷 2–4장**과 **대표 플로우 비디오 1개**를 첨부한다 (`/opt/cursor/artifacts/`에 복사 후 markdown 이미지/비디오 태그로 참조).
+- E2E 실행 후 PR/작업 요약에 **주요 스크린샷 2–4장**과 **대표 플로우 비디오 1개**를 첨부한다. Playwright 산출물은 `pnpm e2e`가 `/opt/cursor/artifacts/e2e/latest/`에 자동 복사한다. agent-browser·Computer Use 산출물은 `screenshots/`·`videos/`에 저장.
 - 실패 시 HTML 리포트 경로와 실패 테스트명·스크린샷을 함께 남긴다.
 - `e2e/report/`는 `.gitignore` 대상 — 커밋하지 않는다.
 
@@ -508,7 +531,7 @@ pnpm e2e:emulate          # emulate OAuth E2E (별도 Playwright config)
 | 린트·타입 | `pnpm lint && pnpm typecheck` | 없음 |
 | 코어 유닛 | `pnpm test --filter @ssota/core` | 없음 |
 | 어댑터 통합 | `pnpm test --filter @ssota/adapter-postgres` | `cloud:prepare` |
-| E2E | `pnpm e2e` | `cloud:prepare` |
+| E2E + artifacts | `pnpm e2e:ci` | `cloud:prepare` |
 
 스모크 계정: `smoke@ssota.test` / `smoke-test-password-123` (시드 생성).
 

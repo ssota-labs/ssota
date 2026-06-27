@@ -1,18 +1,12 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ClockIcon, PencilSimpleIcon, TrashIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, ClockIcon, TrashIcon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@ssota/ui/components/ui/card";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import { cn } from "@ssota/ui/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,9 +24,12 @@ import {
   nextOccurrence,
 } from "@/lib/schedules/recurrence";
 import {
-  ScheduleDialog,
+  ScheduleSheet,
   type InstructionOption,
-} from "@/components/schedules/schedule-dialog";
+  type ScheduleEditTarget,
+} from "@/components/schedules/schedule-sheet";
+import { useLocale } from "@/components/i18n/locale-provider";
+import { BrowseWorkspace } from "@/components/console/browse-workspace";
 
 export interface ScheduleRow {
   id: string;
@@ -62,14 +59,35 @@ export function SchedulesList({
   teamspaceId,
   accountId,
 }: SchedulesListProps) {
+  const { t } = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<ScheduleEditTarget | null>(
+    null,
+  );
 
   const instructionName = useMemo(() => {
     const map = new Map(instructions.map((i) => [i.id, i.name]));
     return (id: string) => map.get(id) ?? "Unknown agent";
   }, [instructions]);
+
+  function openCreateSheet() {
+    setEditingSchedule(null);
+    setSheetOpen(true);
+  }
+
+  function openEditSheet(schedule: ScheduleRow) {
+    setEditingSchedule({
+      id: schedule.id,
+      workflowInstructionId: schedule.workflowInstructionId,
+      cronExpression: schedule.cronExpression,
+      timezone: schedule.timezone,
+      enabled: schedule.enabled,
+    });
+    setSheetOpen(true);
+  }
 
   function toggleEnabled(schedule: ScheduleRow, enabled: boolean) {
     setError(null);
@@ -104,87 +122,92 @@ export function SchedulesList({
     });
   }
 
+  useEffect(() => {
+    if (!sheetOpen) setEditingSchedule(null);
+  }, [sheetOpen]);
+
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 p-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold">Schedules</h1>
-          <p className="text-sm text-muted-foreground">
-            Run agents on a recurring schedule. Each schedule only runs inside
-            its window, so tokens aren&apos;t spent outside it.
-          </p>
-        </div>
-        <ScheduleDialog
-          teamspaceId={teamspaceId}
-          accountId={accountId}
-          instructions={instructions}
-          trigger={<Button size="sm">Add trigger</Button>}
+    <div
+      className="absolute inset-0 flex flex-col"
+      data-testid="schedules-workspace"
+    >
+      <BrowseWorkspace.Frame>
+        <BrowseWorkspace.Header
+          title={t("nav.schedules")}
+          description="Run agents on a recurring schedule. Each schedule only runs inside its window, so tokens aren't spent outside it."
+          actions={
+            <Button size="sm" onClick={openCreateSheet}>
+              Add trigger
+            </Button>
+          }
         />
-      </div>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      {schedules.length === 0 ? (
-        <Card>
-          <CardContent className="py-10 text-center text-sm text-muted-foreground">
+        {schedules.length === 0 ? (
+          <BrowseWorkspace.Empty>
             No schedules yet. Add a trigger to run an agent on a recurring
             schedule.
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {schedules.map((schedule) => {
-            const next = nextOccurrence(
-              schedule.cronExpression,
-              schedule.timezone,
-            );
-            return (
-              <Card key={schedule.id}>
-                <CardHeader className="flex-row items-start justify-between gap-2 space-y-0">
-                  <div className="space-y-1">
-                    <CardTitle className="text-base">
-                      {instructionName(schedule.workflowInstructionId)}
-                    </CardTitle>
-                    <CardDescription>
-                      {summarize(schedule.cronExpression, schedule.timezone)}
-                    </CardDescription>
-                  </div>
-                  <Switch
-                    checked={schedule.enabled}
-                    onCheckedChange={(value) => toggleEnabled(schedule, value)}
-                    disabled={isPending}
-                  />
-                </CardHeader>
-                <CardContent className="flex items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <Badge variant="outline" className="font-mono">
-                      {schedule.cronExpression}
-                    </Badge>
-                    <Badge variant="outline">{schedule.timezone}</Badge>
-                    <span className="flex items-center gap-1">
-                      <ClockIcon className="size-3.5" />
-                      {next
-                        ? next.toLocaleString("en-US", {
-                            timeZone: schedule.timezone,
-                          })
-                        : "—"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <ScheduleDialog
-                      teamspaceId={teamspaceId}
-                      accountId={accountId}
-                      instructions={instructions}
-                      schedule={schedule}
-                      trigger={
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          aria-label="Edit schedule"
-                        >
-                          <PencilSimpleIcon className="size-4" />
-                        </Button>
-                      }
+          </BrowseWorkspace.Empty>
+        ) : (
+          <div
+            className="divide-y divide-border overflow-hidden rounded-lg border border-border"
+            data-testid="schedule-list"
+          >
+            {schedules.map((schedule) => {
+              const next = nextOccurrence(
+                schedule.cronExpression,
+                schedule.timezone,
+              );
+              return (
+                <div
+                  key={schedule.id}
+                  className={cn(
+                    "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 transition-colors",
+                  )}
+                  data-testid={`schedule-list-item-${schedule.id}`}
+                >
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    onClick={() => openEditSheet(schedule)}
+                  >
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <span className="text-sm font-medium">
+                        {instructionName(schedule.workflowInstructionId)}
+                      </span>
+                      <p className="text-muted-foreground line-clamp-2 text-xs">
+                        {summarize(schedule.cronExpression, schedule.timezone)}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <Badge variant="outline" className="font-mono text-[10px]">
+                          {schedule.cronExpression}
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {schedule.timezone}
+                        </Badge>
+                        <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                          <ClockIcon className="size-3" />
+                          {next
+                            ? next.toLocaleString("en-US", {
+                                timeZone: schedule.timezone,
+                              })
+                            : "—"}
+                        </span>
+                      </div>
+                    </div>
+                    <CaretRightIcon
+                      className="text-muted-foreground size-4 shrink-0"
+                      aria-hidden
+                    />
+                  </button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Switch
+                      checked={schedule.enabled}
+                      onCheckedChange={(value) => toggleEnabled(schedule, value)}
+                      onClick={(event) => event.stopPropagation()}
+                      disabled={isPending}
+                      aria-label={`Toggle ${instructionName(schedule.workflowInstructionId)}`}
                     />
                     <AlertDialog>
                       <AlertDialogTrigger
@@ -193,6 +216,7 @@ export function SchedulesList({
                             size="icon"
                             variant="ghost"
                             aria-label="Delete schedule"
+                            onClick={(event) => event.stopPropagation()}
                           >
                             <TrashIcon className="size-4" />
                           </Button>
@@ -215,12 +239,21 @@ export function SchedulesList({
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </BrowseWorkspace.Frame>
+
+      <ScheduleSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        teamspaceId={teamspaceId}
+        accountId={accountId}
+        instructions={instructions}
+        schedule={editingSchedule ?? undefined}
+      />
     </div>
   );
 }

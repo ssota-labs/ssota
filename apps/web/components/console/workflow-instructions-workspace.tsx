@@ -6,6 +6,7 @@ import { CaretRightIcon } from "@phosphor-icons/react";
 import type { WorkflowInstruction } from "@ssota/contracts";
 import { cn } from "@ssota/ui/lib/utils";
 import { updateWorkflowInstructionAction } from "@/app/actions";
+import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import type { WorkflowInstructionGroup } from "@/lib/console/load-workflow-instructions-for-ui";
 import {
   DocumentSheetPanel,
@@ -92,63 +93,53 @@ export function WorkflowInstructionsWorkspace({
       className="absolute inset-0 flex flex-col"
       data-testid="workflow-instructions-workspace"
     >
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4">
-        <div className="space-y-6">
-          <header className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight">
-              Workflow instructions
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Agent playbooks for this project. Edits apply to the next agent or
-              MCP run.
-            </p>
-          </header>
+      <BrowseWorkspace.Frame>
+        <BrowseWorkspace.Header
+          title="Workflow instructions"
+          description="Agent playbooks for this project. Edits apply to the next agent or MCP run."
+        />
 
-          {groups.map((group) => (
-            <section key={group.key} className="space-y-2">
-              <h2 className="text-sm font-semibold">{group.label}</h2>
-              <div className="border-border divide-border divide-y overflow-hidden rounded-lg border">
-                {group.items.map((instruction) => (
-                  <button
-                    key={instruction.id}
-                    type="button"
-                    data-testid={`workflow-instruction-item-${instruction.key}`}
-                    className={cn(
-                      "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-                      activeId === instruction.id && "bg-muted/30",
-                    )}
-                    onClick={() => setActiveId(instruction.id)}
-                  >
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <span className="text-sm font-medium">
-                        {instruction.name}
-                      </span>
-                      <p className="text-muted-foreground font-mono text-xs">
-                        {instruction.key}
+        {groups.map((group) => (
+          <BrowseWorkspace.Section key={group.key} label={group.label}>
+            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+              {group.items.map((instruction) => (
+                <button
+                  key={instruction.id}
+                  type="button"
+                  data-testid={`workflow-instruction-item-${instruction.key}`}
+                  className={cn(
+                    "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
+                    activeId === instruction.id && "bg-muted/30",
+                  )}
+                  onClick={() => setActiveId(instruction.id)}
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <span className="text-sm font-medium">{instruction.name}</span>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {instruction.key}
+                    </p>
+                    {instruction.description ? (
+                      <p className="line-clamp-2 text-xs text-muted-foreground">
+                        {instruction.description}
                       </p>
-                      {instruction.description ? (
-                        <p className="text-muted-foreground line-clamp-2 text-xs">
-                          {instruction.description}
-                        </p>
-                      ) : null}
-                    </div>
-                    <CaretRightIcon
-                      className="text-muted-foreground size-4 shrink-0"
-                      aria-hidden
-                    />
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))}
+                    ) : null}
+                  </div>
+                  <CaretRightIcon
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                </button>
+              ))}
+            </div>
+          </BrowseWorkspace.Section>
+        ))}
 
-          {instructions.length === 0 ? (
-            <p className="text-muted-foreground rounded-lg border px-4 py-6 text-center text-sm">
-              No workflow instructions seeded for this project yet.
-            </p>
-          ) : null}
-        </div>
-      </div>
+        {instructions.length === 0 ? (
+          <BrowseWorkspace.Empty>
+            No workflow instructions seeded for this project yet.
+          </BrowseWorkspace.Empty>
+        ) : null}
+      </BrowseWorkspace.Frame>
 
       {open && activeInstruction ? (
         <DocumentSheetPanel
