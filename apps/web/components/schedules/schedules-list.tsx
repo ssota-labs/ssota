@@ -33,6 +33,7 @@ import {
   ScheduleDialog,
   type InstructionOption,
 } from "@/components/schedules/schedule-dialog";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 export interface ScheduleRow {
   id: string;
@@ -62,6 +63,7 @@ export function SchedulesList({
   projectId,
   accountId,
 }: SchedulesListProps) {
+  const { t } = useLocale();
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -108,7 +110,7 @@ export function SchedulesList({
     <div className="mx-auto w-full max-w-3xl space-y-4 p-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-semibold">Schedules</h1>
+          <h1 className="text-lg font-semibold">{t("nav.schedules")}</h1>
           <p className="text-sm text-muted-foreground">
             Run agents on a recurring schedule. Each schedule only runs inside
             its window, so tokens aren&apos;t spent outside it.
