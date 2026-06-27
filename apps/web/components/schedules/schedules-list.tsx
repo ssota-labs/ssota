@@ -29,6 +29,7 @@ import {
   type ScheduleEditTarget,
 } from "@/components/schedules/schedule-sheet";
 import { useLocale } from "@/components/i18n/locale-provider";
+import { BrowseWorkspace } from "@/components/console/browse-workspace";
 
 export interface ScheduleRow {
   id: string;
@@ -130,36 +131,30 @@ export function SchedulesList({
       className="absolute inset-0 flex flex-col"
       data-testid="schedules-workspace"
     >
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4">
-        <div className="mx-auto w-full max-w-3xl space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">
-                {t("nav.schedules")}
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Run agents on a recurring schedule. Each schedule only runs inside
-                its window, so tokens aren&apos;t spent outside it.
-              </p>
-            </div>
+      <BrowseWorkspace.Frame>
+        <BrowseWorkspace.Header
+          title={t("nav.schedules")}
+          description="Run agents on a recurring schedule. Each schedule only runs inside its window, so tokens aren't spent outside it."
+          actions={
             <Button size="sm" onClick={openCreateSheet}>
               Add trigger
             </Button>
-          </div>
+          }
+        />
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-          {schedules.length === 0 ? (
-            <p className="text-muted-foreground rounded-lg border px-4 py-10 text-center text-sm">
-              No schedules yet. Add a trigger to run an agent on a recurring
-              schedule.
-            </p>
-          ) : (
-            <div
-              className="border-border divide-border divide-y overflow-hidden rounded-lg border"
-              data-testid="schedule-list"
-            >
-              {schedules.map((schedule) => {
+        {schedules.length === 0 ? (
+          <BrowseWorkspace.Empty>
+            No schedules yet. Add a trigger to run an agent on a recurring
+            schedule.
+          </BrowseWorkspace.Empty>
+        ) : (
+          <div
+            className="divide-y divide-border overflow-hidden rounded-lg border border-border"
+            data-testid="schedule-list"
+          >
+            {schedules.map((schedule) => {
                 const next = nextOccurrence(
                   schedule.cronExpression,
                   schedule.timezone,
@@ -247,10 +242,9 @@ export function SchedulesList({
                   </div>
                 );
               })}
-            </div>
-          )}
-        </div>
-      </div>
+          </div>
+        )}
+      </BrowseWorkspace.Frame>
 
       <ScheduleSheet
         open={sheetOpen}
