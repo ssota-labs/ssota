@@ -73,13 +73,20 @@ function extractExecutionDirective(
   return parsed.success ? parsed.data : null;
 }
 
-async function prepareRun(input: RunAgentInput) {
-  const { projectId, runId, accountId, runtimeKind } = input;
+/**
+ * Build the per-run instruction + message prompt for a runtime kind. Both
+ * outputs are serializable (SystemModelMessage[] / ModelMessage[]), so the
+ * WorkflowAgent path can produce them inside a `"use step"` and hand them to
+ * the workflow-safe agent builder. Shared with the legacy {@link prepareRun}.
+ */
+export async function buildRunPrompt(
+  input: RunAgentInput,
+): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
+  const { projectId, accountId, runtimeKind } = input;
   const instructionPort = getWorkflowInstructionPort(projectId, accountId);
 
   let instructions: SystemModelMessage[] = [];
   let messages: ModelMessage[] = [];
-  let taskPort = getTaskPort(projectId, accountId);
 
   if (runtimeKind === "main") {
     const dbInstructions = await instructionPort.listInstructions();
@@ -108,6 +115,7 @@ async function prepareRun(input: RunAgentInput) {
       },
     ];
   } else if (runtimeKind === "task" && input.taskId) {
+    const taskPort = getTaskPort(projectId, accountId);
     const domainTask = await taskPort.getTask(input.taskId);
     if (!domainTask) {
       throw new Error(`Task ${input.taskId} not found in project ${projectId}`);
@@ -153,6 +161,14 @@ async function prepareRun(input: RunAgentInput) {
   } else {
     throw new Error(`Invalid run configuration for runtimeKind=${runtimeKind}`);
   }
+
+  return { instructions, messages };
+}
+
+async function prepareRun(input: RunAgentInput) {
+  const { projectId, runId, accountId, runtimeKind } = input;
+  const { instructions, messages } = await buildRunPrompt(input);
+  const taskPort = getTaskPort(projectId, accountId);
 
   const engine = input.engine ?? createAiSdkLoopEngine();
 

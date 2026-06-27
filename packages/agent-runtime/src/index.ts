@@ -4,6 +4,7 @@ export {
   streamAgent,
   runAgentForTask,
   streamAgentForTask,
+  buildRunPrompt,
 } from "./run.js";
 export type {
   RunAgentInput,
