@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { projectPath } from "@/lib/console/paths";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { orgPath } from "@/lib/console/paths";
+import { resolveOrg } from "@/lib/console/resolve-project";
 import { queryUiComponents } from "@/lib/graph/loaders/query-ui-components";
 import { getPagePort } from "@/lib/ports";
 
@@ -13,19 +13,19 @@ export default async function DesignUiComponentsRedirectPage({
 }: {
   params: Promise<{
     orgSlug: string;
-    projectSlug: string;
+    teamspaceSlug: string;
     componentId?: string[];
   }>;
 }) {
-  const { orgSlug, projectSlug, componentId: componentIdSegments } = await params;
+  const { orgSlug, teamspaceSlug, componentId: componentIdSegments } = await params;
 
   if (componentIdSegments && componentIdSegments.length > 1) {
     notFound();
   }
 
   const componentId = componentIdSegments?.[0];
-  const ctx = { orgSlug, projectSlug };
-  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ctx = { orgSlug, teamspaceSlug };
+  const { project } = await resolveOrg(orgSlug, teamspaceSlug);
   const page = await getPagePort(project.id).getPageBySlug("design/ui-components");
   if (!page) notFound();
 
@@ -39,7 +39,7 @@ export default async function DesignUiComponentsRedirectPage({
     }
   }
 
-  const base = projectPath(ctx, "p", page.id);
+  const base = orgPath(ctx, "p", page.id);
   redirect(
     targetComponentId ? `${base}?component=${targetComponentId}` : base,
   );

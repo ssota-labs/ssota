@@ -6,15 +6,15 @@ import { resolveEndUserContext } from "@/lib/request-context";
 export default async function AppProjectHome({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const ctx = await resolveEndUserContext(orgSlug, projectSlug);
-  const pageLinks = await listAppPageLinks(ctx.projectId);
+  const { orgSlug, teamspaceSlug } = await params;
+  const ctx = await resolveEndUserContext(orgSlug, teamspaceSlug);
+  const pageLinks = await listAppPageLinks(ctx.teamspaceId);
 
   if (pageLinks[0]) {
-    redirect(appProjectPath({ orgSlug, projectSlug }, "p", pageLinks[0].pageId));
+    redirect(appProjectPath({ orgSlug, teamspaceSlug }, "p", pageLinks[0].pageId));
   }
 
-  redirect(appProjectPath({ orgSlug, projectSlug }, "c"));
+  redirect(appProjectPath({ orgSlug, teamspaceSlug }, "c"));
 }

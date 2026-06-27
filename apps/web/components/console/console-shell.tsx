@@ -1,8 +1,9 @@
 "use client";
 
-import type { Organization, Project } from "@ssota/core";
+import type { Organization, Teamspace } from "@ssota/core";
 import { AppSidebar } from "./app-sidebar";
 import type { SidebarPage } from "./page-tree-nav";
+import type { TeamspaceNavGroup } from "./teamspace-nav";
 import { ConsoleTopBar } from "./console-top-bar";
 import { NodeDrillProvider } from "./node-drill-context";
 import {
@@ -18,11 +19,12 @@ type InitiativeOption = {
 type ConsoleShellProps = {
   ctx: ConsoleContextValue;
   organizations: Organization[];
-  projects: Project[];
+  projects: Teamspace[];
   userEmail: string;
   signOutAction: () => Promise<void>;
   initiatives?: InitiativeOption[];
   pageTree?: SidebarPage[];
+  teamspaceNavGroups?: TeamspaceNavGroup[];
   /** Node-type drill-in templates, grouped by catalogKey (static per project).
    * The active node is resolved client-side via NodeDrill context. */
   templatesByType?: Record<string, SidebarPage[]>;
@@ -45,6 +47,7 @@ export function ConsoleShell({
   signOutAction,
   initiatives = [],
   pageTree,
+  teamspaceNavGroups,
   templatesByType,
   children,
 }: ConsoleShellProps) {
@@ -58,6 +61,7 @@ export function ConsoleShell({
             userEmail={userEmail}
             signOutAction={signOutAction}
             pageTree={pageTree}
+            teamspaceNavGroups={teamspaceNavGroups}
             templatesByType={templatesByType}
           />
           <div className="flex min-w-0 flex-1 flex-col">

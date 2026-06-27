@@ -26,7 +26,7 @@ export function extractWorkspaceKey(raw: unknown): string | undefined {
 }
 
 export interface ResolvedChatTarget {
-  projectId: string;
+  teamspaceId: string;
   accountId?: string;
 }
 
@@ -44,7 +44,7 @@ export async function resolveChatTarget(
     const link = await createChatWorkspacePort(getDb()).resolve(workspaceKey);
     if (link) {
       return {
-        projectId: link.projectId,
+        teamspaceId: link.teamspaceId,
         accountId: link.accountId ?? undefined,
       };
     }
@@ -53,7 +53,7 @@ export async function resolveChatTarget(
   const fallback = process.env.CHAT_PROJECT_ID;
   if (fallback) {
     return {
-      projectId: fallback,
+      teamspaceId: fallback,
       accountId: process.env.CHAT_DEFAULT_ACCOUNT_ID || undefined,
     };
   }

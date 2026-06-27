@@ -7,11 +7,11 @@ export default async function ChatLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
   noStore();
-  const { orgSlug, projectSlug } = await params;
-  const scope = await loadBuilderChatScope(orgSlug, projectSlug);
+  const { orgSlug, teamspaceSlug } = await params;
+  const scope = await loadBuilderChatScope(orgSlug, teamspaceSlug);
   const threads = await scope.chat.listThreads();
   const threadSummaries = threads.map((t) => ({
     id: t.id,
@@ -24,7 +24,7 @@ export default async function ChatLayout({
       threads={threadSummaries}
       chatBase={scope.chatBase}
       orgSlug={orgSlug}
-      projectSlug={projectSlug}
+      teamspaceSlug={teamspaceSlug}
       appMode={false}
     >
       {children}

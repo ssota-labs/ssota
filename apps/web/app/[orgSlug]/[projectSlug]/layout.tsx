@@ -4,33 +4,55 @@ import { signOutAction } from "@/app/actions";
 import { ConsoleShell } from "@/components/console/console-shell";
 import { getDefaultProjectPath } from "@/lib/console/default-landing";
 import { listInitiatives } from "@/lib/console/initiatives";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { resolveOrg } from "@/lib/console/resolve-project";
 import { resolveBuilderContext } from "@/lib/request-context";
-import { getConsolePort, getPagePort } from "@/lib/ports";
+import { getConsolePort, getPagePort, registerTeamspaceOrganization } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 export default async function ProjectLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
+  const { orgSlug, teamspaceSlug } = await params;
   const requestHeaders = await headers();
   const returnTo =
-    requestHeaders.get("x-pathname") ?? `/${orgSlug}/${projectSlug}`;
+    requestHeaders.get("x-pathname") ?? `/${orgSlug}/${teamspaceSlug}`;
 
-  const builder = await resolveBuilderContext(orgSlug, projectSlug);
-  const { org, project } = await resolveProject(orgSlug, projectSlug);
+  const builder = await resolveBuilderContext(orgSlug, teamspaceSlug);
+  const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
+  registerTeamspaceOrganization(project.id, org.id);
   const user = await getCurrentUser();
 
   const consolePort = getConsolePort();
-  const [organizations, projects, initiatives, pages] = await Promise.all([
+  const [organizations, teamspaceList, initiatives] = await Promise.all([
     consolePort.listOrganizationsForUser(builder.userId),
-    consolePort.listProjectsForOrganization(org.id),
+    consolePort.listTeamspacesForOrganization(org.id),
     listInitiatives(project.id),
-    getPagePort(project.id).listPages(),
   ]);
+
+  const pagesByTeamspace = await Promise.all(
+    teamspaceList.map((ts) => getPagePort(ts.id).listPages()),
+  );
+
+  const pages = pagesByTeamspace.find((_, i) => teamspaceList[i]?.id === project.id) ?? [];
+
+  const teamspaceNavGroups = teamspaceList.map((teamspace, index) => {
+    const tsPages = pagesByTeamspace[index] ?? [];
+    return {
+      teamspace,
+      pages: tsPages
+        .filter((p) => !p.appliesToNodeType)
+        .map((p) => ({
+          id: p.id,
+          title: p.title,
+          parentId: p.parentId ?? null,
+          position: p.position,
+          icon: p.icon ?? null,
+        })),
+    };
+  });
 
   // Notion-style page tree for the sidebar (minimal serializable fields only).
   // L0 shows only project-level pages; node-type drill-in templates
@@ -83,18 +105,19 @@ export default async function ProjectLayout({
     <ConsoleShell
       ctx={{
         orgSlug,
-        projectSlug,
+        teamspaceSlug,
         orgId: org.id,
-        projectId: project.id,
+        teamspaceId: project.id,
         org,
         project,
       }}
       organizations={organizations}
-      projects={projects}
+      projects={teamspaceList}
       userEmail={user?.email ?? ""}
       signOutAction={signOutAction}
       initiatives={initiatives}
       pageTree={pageTree}
+      teamspaceNavGroups={teamspaceNavGroups}
       templatesByType={templatesByType}
     >
       {children}

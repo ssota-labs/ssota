@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
-import { resolveProject } from "@/lib/console/resolve-project";
-import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
+import { resolveOrg } from "@/lib/console/resolve-project";
+import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import {
   isHubPage,
@@ -18,14 +18,14 @@ import { SetNodeDrill } from "@/components/console/node-drill-context";
 export default async function NodeLandingPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string; nodeId: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string; nodeId: string }>;
 }) {
-  const { orgSlug, projectSlug, nodeId } = await params;
-  const { project } = await resolveProject(orgSlug, projectSlug);
+  const { orgSlug, teamspaceSlug, nodeId } = await params;
+  const { project } = await resolveOrg(orgSlug, teamspaceSlug);
 
   const graphRead = getGraphPorts(project.id).graphRead;
   const subject = await graphRead.getNodeById(nodeId);
-  if (!subject || subject.projectId !== project.id) notFound();
+  if (!subject || subject.teamspaceId !== project.id) notFound();
 
   const templates = await getPagePort(project.id).listTemplatesForNodeType(
     subject.catalogKey,
@@ -35,7 +35,7 @@ export default async function NodeLandingPage({
       .filter((p) => !p.parentId)
       .sort((a, b) => a.position - b.position)[0] ?? null;
 
-  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
+  const routeCtx: OrgRouteContext = { orgSlug, teamspaceSlug };
   if (home && isHubPage(home.spec)) {
     const hubRedirect = await resolveHubRedirectPath(
       getPagePort(project.id),
@@ -47,10 +47,10 @@ export default async function NodeLandingPage({
   }
 
   if (home) {
-    redirect(projectPath(routeCtx, "n", nodeId, "p", home.id));
+    redirect(orgPath(routeCtx, "n", nodeId, "p", home.id));
   }
 
-  const ctx = { orgSlug, projectSlug };
+  const ctx = { orgSlug, teamspaceSlug };
   const detail = await getNodeDetailView(ctx, project.id, nodeId);
   if (!detail) notFound();
   return (
@@ -61,10 +61,10 @@ export default async function NodeLandingPage({
         nodeTitle={subject.title}
       />
       <NodeDetailWorkspace
-        projectId={project.id}
+        teamspaceId={project.id}
         detail={detail}
-        nodesBasePath={projectPath(ctx, "n")}
-        revalidatePath={projectPath(ctx, "n", nodeId)}
+        nodesBasePath={orgPath(ctx, "n")}
+        revalidatePath={orgPath(ctx, "n", nodeId)}
       />
     </>
   );

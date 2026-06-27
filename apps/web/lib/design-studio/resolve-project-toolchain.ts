@@ -27,10 +27,10 @@ function extractUserToolchain(node: GraphNode): {
 }
 
 export async function resolveProjectToolchain(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<ResolvedProjectToolchain> {
   const node = await ensureEvergreenSingleton(
-    projectId,
+    teamspaceId,
     "design_toolchain",
     "Design toolchain",
   );

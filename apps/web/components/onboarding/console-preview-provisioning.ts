@@ -5,7 +5,7 @@ export type WorkflowPreviewNode = {
   children?: WorkflowPreviewNode[];
 };
 
-/** Project-level workflow pages from the software development seed template. */
+/** Teamspace-level workflow pages from the software development seed template. */
 export const SOFTWARE_DEV_WORKFLOW_PREVIEW: WorkflowPreviewNode[] = [
   {
     key: "executive",

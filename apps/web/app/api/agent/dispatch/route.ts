@@ -15,7 +15,7 @@ export const maxDuration = 300;
 const DEFAULT_CONCURRENCY = 3;
 
 const bodySchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().optional(),
   taskId: z.string().uuid().optional(),
   limit: z.number().int().positive().max(20).optional(),
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   let accountId = parsed.accountId;
   if (user) {
     try {
-      const scope = await resolveApiAccountScope(parsed.projectId, {
+      const scope = await resolveApiAccountScope(parsed.teamspaceId, {
         referer: request.headers.get("referer"),
         requestedAccountId: parsed.accountId,
       });
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     .from(schema.agentRuns)
     .where(
       and(
-        eq(schema.agentRuns.projectId, parsed.projectId),
+        eq(schema.agentRuns.teamspaceId, parsed.teamspaceId),
         eq(schema.agentRuns.status, "running"),
         eq(schema.agentRuns.runtimeKind, "task"),
       ),
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
   if (parsed.taskId) {
     taskIds = [parsed.taskId];
   } else {
-    const tasks = await getTaskPort(parsed.projectId, accountId).queryTasks({
+    const tasks = await getTaskPort(parsed.teamspaceId, accountId).queryTasks({
       status: "ready",
       executorType: "Agent",
       limit: Math.min(parsed.limit ?? slots, slots),
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
   for (const taskId of taskIds) {
     const run = await start(runTaskAgentWorkflow, [
       {
-        projectId: parsed.projectId,
+        teamspaceId: parsed.teamspaceId,
         taskId,
         accountId,
         modelId: parsed.modelId,

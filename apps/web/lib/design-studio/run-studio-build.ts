@@ -6,13 +6,13 @@ import type { StudioBuildInput } from "@ssota/studio-build";
 import { runStudioBuild } from "@ssota/studio-sandbox";
 
 export async function runStudioBuildAndCache(input: {
-  projectId: string;
+  teamspaceId: string;
   buildContext: StudioBuildInput;
 }) {
   const storage = createStudioBuildStorage();
   const build = await runStudioBuild(input.buildContext);
-  const paths = studioBuildArtifactPaths(input.projectId, build.buildHash);
-  const cacheHit = await storage.exists(input.projectId, build.buildHash);
+  const paths = studioBuildArtifactPaths(input.teamspaceId, build.buildHash);
+  const cacheHit = await storage.exists(input.teamspaceId, build.buildHash);
 
   if (!cacheHit) {
     const artifacts = [
@@ -36,7 +36,7 @@ export async function runStudioBuildAndCache(input: {
         contentType: "application/json",
       });
     }
-    await storage.upload(input.projectId, build.buildHash, artifacts);
+    await storage.upload(input.teamspaceId, build.buildHash, artifacts);
   }
 
   return { build, paths, cacheHit };

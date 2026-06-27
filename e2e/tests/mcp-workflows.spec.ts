@@ -12,7 +12,7 @@ const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
 const scope = {
   orgSlug: DEFAULT_MCP_ORG_SLUG,
-  projectSlug: DEFAULT_MCP_PROJECT_SLUG,
+  teamspaceSlug: DEFAULT_MCP_PROJECT_SLUG,
 };
 
 test.describe("MCP workflow tools", () => {

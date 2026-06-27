@@ -4,15 +4,15 @@ import { getGraphDeps } from "../graph-deps";
 
 /** Returns the project evergreen node for a type (no outgoing for_initiative edge). */
 export async function getEvergreenSingleton(
-  projectId: string,
+  teamspaceId: string,
   nodeType: NodeType,
 ): Promise<GraphNode | null> {
-  const { graphRead } = getGraphDeps(projectId);
-  const candidates = await graphRead.queryNodes({ projectId, catalogKey: nodeType, limit: 100 });
+  const { graphRead } = getGraphDeps(teamspaceId);
+  const candidates = await graphRead.queryNodes({ teamspaceId, catalogKey: nodeType, limit: 100 });
 
   for (const node of candidates) {
     const scopedEdges = await graphRead.traverseEdges({
-      projectId,
+      teamspaceId,
       nodeId: node.id,
       direction: "outgoing",
       catalogKey: "for_initiative",

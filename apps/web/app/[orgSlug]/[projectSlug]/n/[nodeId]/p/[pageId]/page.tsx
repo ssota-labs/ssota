@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { resolvePageBindings } from "@ssota/core";
-import { resolveProject } from "@/lib/console/resolve-project";
-import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
+import { resolveOrg } from "@/lib/console/resolve-project";
+import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
@@ -27,20 +27,20 @@ export default async function NodeTemplatePage({
 }: {
   params: Promise<{
     orgSlug: string;
-    projectSlug: string;
+    teamspaceSlug: string;
     nodeId: string;
     pageId: string;
   }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { orgSlug, projectSlug, nodeId, pageId } = await params;
+  const { orgSlug, teamspaceSlug, nodeId, pageId } = await params;
   const urlParams = normalizeSearchParams(await searchParams);
-  const { project } = await resolveProject(orgSlug, projectSlug);
+  const { project } = await resolveOrg(orgSlug, teamspaceSlug);
 
   const page = await getPagePort(project.id).getPage(pageId);
   if (!page) notFound();
 
-  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
+  const routeCtx: OrgRouteContext = { orgSlug, teamspaceSlug };
   if (isHubPage(page.spec)) {
     const hubRedirect = await resolveHubRedirectPath(
       getPagePort(project.id),
@@ -53,7 +53,7 @@ export default async function NodeTemplatePage({
 
   const graphRead = getGraphPorts(project.id).graphRead;
   const subject = await graphRead.getNodeById(nodeId);
-  if (!subject || subject.projectId !== project.id) notFound();
+  if (!subject || subject.teamspaceId !== project.id) notFound();
 
   const context: Record<string, unknown> = {
     searchParams: urlParams,
@@ -75,9 +75,9 @@ export default async function NodeTemplatePage({
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
 
   const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
-  const basePath = `/${orgSlug}/${projectSlug}`;
-  const pagePath = projectPath(routeCtx, "n", nodeId, "p", pageId);
-  const previewBasePath = projectPath(routeCtx, "design", "preview");
+  const basePath = `/${orgSlug}/${teamspaceSlug}`;
+  const pagePath = orgPath(routeCtx, "n", nodeId, "p", pageId);
+  const previewBasePath = orgPath(routeCtx, "design", "preview");
 
   async function onAction(
     actionKey: string,
@@ -85,7 +85,7 @@ export default async function NodeTemplatePage({
   ): Promise<void> {
     "use server";
     await runPageAction({
-      projectId: project.id,
+      teamspaceId: project.id,
       pageId,
       actionKey,
       input,
@@ -111,7 +111,7 @@ export default async function NodeTemplatePage({
         artifactWorkbench={
           usesWorkbench
             ? {
-                projectId: project.id,
+                teamspaceId: project.id,
                 previewBasePath,
               }
             : null

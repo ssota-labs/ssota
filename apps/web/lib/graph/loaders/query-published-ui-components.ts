@@ -9,11 +9,11 @@ export type PublishedUiComponentRow = {
 };
 
 export async function queryPublishedUiComponents(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<PublishedUiComponentRow[]> {
-  const { graphRead } = getGraphDeps(projectId);
+  const { graphRead } = getGraphDeps(teamspaceId);
   const nodes = await graphRead.queryNodes({
-    projectId,
+    teamspaceId,
     catalogKey: "ui_component",
     limit: 200,
   });

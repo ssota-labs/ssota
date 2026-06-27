@@ -9,11 +9,11 @@ export type RecentActivityItem = {
 };
 
 export async function getRecentGraphActivity(
-  projectId: string,
+  teamspaceId: string,
   limit = 8,
 ): Promise<RecentActivityItem[]> {
-  const { graphRead } = getGraphDeps(projectId);
-  const nodes = await graphRead.queryNodes({ projectId, limit: 50 });
+  const { graphRead } = getGraphDeps(teamspaceId);
+  const nodes = await graphRead.queryNodes({ teamspaceId, limit: 50 });
 
   return [...nodes]
     .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())

@@ -18,10 +18,10 @@ const WORKFLOW_KEY = "work.e2e_tasks_page";
 
 test.describe("Tasks page", () => {
   test.beforeAll(async ({ request }) => {
-    const projectId = await getDefaultProjectId();
+    const teamspaceId = await getDefaultProjectId();
     const { db, client } = createDb(process.env.DATABASE_URL);
     try {
-      await createWorkflowInstructionPort(db, { projectId }).upsertInstruction({
+      await createWorkflowInstructionPort(db, { teamspaceId }).upsertInstruction({
         key: WORKFLOW_KEY,
         name: "E2E tasks page workflow",
         description: "Workflow referenced by the tasks-page e2e fixture.",

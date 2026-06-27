@@ -33,7 +33,7 @@ export interface ConnectorOption {
 export interface ConnectionRequest {
   connector: string;
   reason?: string;
-  projectId: string;
+  teamspaceId: string;
   accountId: string | null;
 }
 
@@ -62,7 +62,7 @@ export function ConnectCard({
       ? `/api/connect/authorize?${new URLSearchParams({
           connector: connectorUid,
           accountId: request.accountId,
-          projectId: request.projectId,
+          teamspaceId: request.teamspaceId,
           returnTo,
         }).toString()}`
       : null;

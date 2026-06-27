@@ -11,7 +11,7 @@ export const maxDuration = 60;
 
 const bodySchema = z.object({
   taskId: z.string().uuid(),
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().optional(),
   approved: z.boolean(),
   note: z.string().optional(),
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   let accountId = body.accountId;
   if (user) {
     try {
-      const scope = await resolveApiAccountScope(body.projectId, {
+      const scope = await resolveApiAccountScope(body.teamspaceId, {
         referer: request.headers.get("referer"),
         requestedAccountId: body.accountId,
       });
@@ -69,9 +69,9 @@ export async function POST(request: Request) {
     }
   }
 
-  const tasks = getTaskPort(body.projectId, accountId);
+  const tasks = getTaskPort(body.teamspaceId, accountId);
   const task = await tasks.getTask(body.taskId);
-  if (!task || task.projectId !== body.projectId) {
+  if (!task || task.teamspaceId !== body.teamspaceId) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
   }
 
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
 
   const runner = await getJobRunner();
   const run = await runner.start({
-    projectId: body.projectId,
+    teamspaceId: body.teamspaceId,
     taskId: body.taskId,
     accountId,
   });

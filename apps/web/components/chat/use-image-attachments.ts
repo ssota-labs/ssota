@@ -35,7 +35,7 @@ export interface UseImageAttachments {
  * `/api/chat/upload` (Supabase Storage) and, once ready, contributes a
  * `FileUIPart` (remote URL) to the outgoing message.
  */
-export function useImageAttachments(projectId: string): UseImageAttachments {
+export function useImageAttachments(teamspaceId: string): UseImageAttachments {
   const [attachments, setAttachments] = useState<PendingAttachment[]>([]);
 
   const upload = useCallback(
@@ -43,7 +43,7 @@ export function useImageAttachments(projectId: string): UseImageAttachments {
       try {
         const form = new FormData();
         form.append("file", file);
-        form.append("projectId", projectId);
+        form.append("teamspaceId", teamspaceId);
         const res = await fetch("/api/chat/upload", {
           method: "POST",
           body: form,
@@ -74,7 +74,7 @@ export function useImageAttachments(projectId: string): UseImageAttachments {
         );
       }
     },
-    [projectId],
+    [teamspaceId],
   );
 
   const addFiles = useCallback(

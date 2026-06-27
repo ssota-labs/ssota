@@ -1,6 +1,6 @@
 # AGENTS.md
 
-## Project Overview
+## Teamspace Overview
 
 SSOTA는 더 이상 범용 컨텍스트 그래프 런타임을 active product로 구현하지 않는다. Active product는 개발 에이전트를 찾는 일반 사용자와 개발자를 위한 **개발 워크플로우 작업 공간**이다.
 
@@ -34,13 +34,13 @@ e2e/
 
 **의존 방향:** `apps/* → core ← adapter-supabase`. `packages/core`는 IO 의존 0.
 
-**Adapter 진입점 (active):** `createGraphPorts(db, { projectId, accountId? })` → `{ catalog, graphRead, graphWrite }`. `accountId`가 있으면 end-user scope(shared `account_id IS NULL` + own rows). `createDbAccountReadPort(db)` → `provisionForUser`, `assertAccountAccess`, `getOrCreateWorkspaceAccount`.
+**Adapter 진입점 (active):** `createGraphPorts(db, { teamspaceId, accountId? })` → `{ catalog, graphRead, graphWrite }`. `accountId`가 있으면 end-user scope(shared `account_id IS NULL` + own rows). `createDbAccountReadPort(db)` → `provisionForUser`, `assertAccountAccess`, `getOrCreateWorkspaceAccount`.
 
 ## Console v2.7 Graph Invariants — 협상 불가 (active)
 
 1. **4계층 catalog** — L1 `node_catalog`/`edge_catalog`(DB, project-scoped uuid PK + `key`); L2 `packages/contracts/ui-catalog`(code); L3 `page` graph nodes(`properties.spec` + `bindings`); L4 `workspace` singleton(`properties.nav` → page node ids). 출시 Console은 읽기 전용 + hardcoded nav fallback; catalog 편집은 lab only (`CATALOG_LAB_ENABLED`).
 2. **그래프 쓰기는 `GraphWritePort` (또는 core graph use-case)로만 한다.** apps/MCP에서 Drizzle·`nodes`/`edges` 직접 CRUD export 금지.
-3. **인스턴스는 `project_id`로 격리한다.** edge·update가 다른 project 노드를 참조하면 `PROJECT_MISMATCH`로 거부.
+3. **인스턴스는 `teamspace_id`로 격리한다.** edge·update가 다른 project 노드를 참조하면 `ORG_MISMATCH`로 거부.
 4. **인스턴스 → catalog FK only** — `nodes.node_catalog_id`, `edges.edge_catalog_id`. `node_type`/`edge_type` text 컬럼 없음. API는 `catalogKey`(또는 `nodeCatalogId`/`edgeCatalogId`)로 생성·조회.
 5. **타입·properties 검증은 API 동작이다.** catalog에 없는 `catalogKey`·`property_schema` 위반 properties는 커밋 전 reject. edge domain/range는 `edge_catalog.domain_catalog_ids`/`range_catalog_ids`로 검증.
 6. **노드 봉투 = `title` + `properties` only** — `content`·`lifecycle_status` DB 컬럼 없음. BlockNote 본문·lifecycle·ui_component spec 등은 dev-workflow convention으로 `properties.content`, `properties.lifecycleStatus`, `properties.spec`/`componentTree`에 저장. 읽기 헬퍼: `readNodeContent()`, `readLifecycleStatus()` (`packages/core`).
@@ -53,21 +53,21 @@ e2e/
 
 `archive/generic-runtime/`에 보존된 generic runtime의 불변식(`executeAction` 단일 쓰기, ActionCommitPort+log 단일 트랜잭션, 4대 강제, Gate)은 **active product에 적용하지 않는다**. 해당 코드를 복원·의존하지 말 것.
 
-## Tenancy & Security — Builder / End-user + `project_id`
+## Tenancy & Security — Builder / End-user + `teamspace_id`
 
-Active product는 **두 가지 Console 모드**를 지원한다. 격리 SSOT는 여전히 `project_id`이며, end-user 모드에서 추가로 **per-user `account_id`** 파티션이 적용된다.
+Active product는 **두 가지 Console 모드**를 지원한다. 격리 SSOT는 여전히 `teamspace_id`이며, end-user 모드에서 추가로 **per-user `account_id`** 파티션이 적용된다.
 
 | 모드 | URL | 인증 | Graph scope | Chat/Connect account |
 |------|-----|------|-------------|----------------------|
-| **Builder** | `/[orgSlug]/[projectSlug]/*` | `organization_memberships` | `accountId` 없음 (project 전체) | shared `workspace` (slug `workspace`) |
-| **End-user** | `/app/[orgSlug]/[projectSlug]/*` | Supabase 로그인 + `projects.app_enabled` | `accountId` = personal (`user-{userId}`) | personal account (동일) |
+| **Builder** | `/[orgSlug]/[teamspaceSlug]/*` | `organization_memberships` | `accountId` 없음 (project 전체) | shared `workspace` (slug `workspace`) |
+| **End-user** | `/app/[orgSlug]/[teamspaceSlug]/*` | Supabase 로그인 + `projects.app_enabled` | `accountId` = personal (`user-{userId}`) | personal account (동일) |
 
 ```plain text
 Organization (예: ssota-labs)
-├── Project: ssota-dev (app_enabled=true)
+├── Teamspace: ssota-dev (app_enabled=true)
 │   ├── Builder Console  → /ssota-labs/ssota-dev/...
 │   └── End-user App     → /app/ssota-labs/ssota-dev/...  (Pages / Chat / Tasks / Connections)
-└── Project: app-disabled (app_enabled=false) → /app/... 는 404
+└── Teamspace: app-disabled (app_enabled=false) → /app/... 는 404
 ```
 
 ### `projects.app_enabled` (end-user 진입 게이트)
@@ -75,7 +75,7 @@ Organization (예: ssota-labs)
 **한 줄**: 배포 UI 없이 `/app` end-user 진입을 project 단위로 열고 닫는 스위치.
 
 - 컬럼: `projects.app_enabled boolean NOT NULL DEFAULT false`
-- `false`: `/app/{orgSlug}/{projectSlug}` → **404** (Builder `/org/project`는 무관)
+- `false`: `/app/{orgSlug}/{teamspaceSlug}` → **404** (Builder `/org/project`는 무관)
 - `true`: 로그인 유저 → `AccountReadPort.provisionForUser` → personal account + AppShell
 - MVP: `pnpm db:seed`, admin script, E2E fixture만 `true` 설정 (Console UI 토글 없음)
 - 향후 “배포하기” 버튼이 이 플래그를 켠다
@@ -87,21 +87,21 @@ Organization (예: ssota-labs)
 - **D6 경로 분리**: org 멤버도 `/app`에서는 end-user scope (builder scope로 승격하지 않음).
 - **API**: Chat/Connect/Agent API는 `resolveApiAccountScope`로 서버가 `accountId` 재해석. 클라이언트 body `accountId` 단독 신뢰 금지.
 
-### `project_id` 규칙
+### `teamspace_id` 규칙
 
-- **project-scoped** — catalog·graph·tasks·accounts는 **`project_id` 필수**. adapter는 `createGraphPorts(db, { projectId, accountId? })` / `createTaskPort(db, { projectId, accountId? })`.
+- **project-scoped** — catalog·graph·tasks·accounts는 **`teamspace_id` 필수**. adapter는 `createGraphPorts(db, { teamspaceId, accountId? })` / `createTaskPort(db, { teamspaceId, accountId? })`.
 - **Builder Console** — `accountId` 생략 → project 전체 graph/tasks.
 - **End-user `/app`** — `accountId` 필수 → shared(null) + own partition.
 - **쓰기**: core graph use-case + `GraphWritePort` only.
 - **조회**: MCP·Builder는 org membership + project slug. End-user MCP는 **비범위** (builder-only).
 
-Console URL `[orgSlug]/[projectSlug]`와 MCP `orgSlug` + `projectSlug`가 **builder project 격리 SSOT**다. End-user는 `/app/[orgSlug]/[projectSlug]`. 레거시 `X-SSOTA-Project-Id` 헤더도 읽을 수 있다.
+Console URL `[orgSlug]/[teamspaceSlug]`와 MCP `orgSlug` + `teamspaceSlug`가 **builder project 격리 SSOT**다. End-user는 `/app/[orgSlug]/[teamspaceSlug]`. 레거시 `X-SSOTA-Teamspace-Id` 헤더도 읽을 수 있다.
 
 ### Postgres RLS — 전 테이블 deny-all (의도적)
 
 SSOTA 테이블(`profiles`, `organizations`, `projects`, `organization_memberships`, `accounts`, `account_memberships`, `tasks`, `node_catalog`, `edge_catalog`, `nodes`, `edges`, …) **전부 RLS deny-all**.
 
-1. **격리 SSOT**: core use-case + 서버 `projectId` (+ end-user `accountId`) + org/account membership 검증.
+1. **격리 SSOT**: core use-case + 서버 `teamspaceId` (+ end-user `accountId`) + org/account membership 검증.
 2. **서버만 DB 접근**: `DATABASE_URL` / `createAdminDb`, RLS bypass.
 
 ### Defense in depth (서버사이드)
@@ -267,7 +267,7 @@ Phase 1 구현 계획(`ssota_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0�
 
 | 층 | 명령 | 인증 | 대상 |
 |---|---|---|---|
-| Unit | `pnpm test --filter @ssota/core` | 없음 | catalog Zod, `PROJECT_MISMATCH`, graph use-case 거부 |
+| Unit | `pnpm test --filter @ssota/core` | 없음 | catalog Zod, `ORG_MISMATCH`, graph use-case 거부 |
 | Integration | `pnpm test --filter @ssota/adapter-supabase` | **smoke 계정** | graph CRUD, RLS deny-all, initiative bundle, seed 무결성 |
 | E2E | `pnpm e2e` | **smoke 계정** | Console onboarding·tasks (graph UI E2E는 PR 4+) |
 

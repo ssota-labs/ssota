@@ -3,8 +3,8 @@ import { redirect } from "next/navigation";
 export default async function LegacyAppChatRedirect({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  redirect(`/app/${orgSlug}/${projectSlug}/c`);
+  const { orgSlug, teamspaceSlug } = await params;
+  redirect(`/app/${orgSlug}/${teamspaceSlug}/c`);
 }

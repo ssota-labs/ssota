@@ -49,7 +49,7 @@ export async function completeProjectDraftOnboarding(
     page.getByRole("heading", { name: "Create your first project" }),
   ).toBeVisible();
 
-  await page.getByLabel("Project name").fill(projectName);
+  await page.getByLabel("Teamspace name").fill(projectName);
   await page.getByRole("button", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/onboarding\/template/, { timeout: 15_000 });
@@ -58,7 +58,7 @@ export async function completeProjectDraftOnboarding(
 
 export async function completeTemplateOnboarding(
   page: Page,
-): Promise<{ orgSlug: string; projectSlug: string }> {
+): Promise<{ orgSlug: string; teamspaceSlug: string }> {
   await expect(
     page.getByRole("heading", { name: "Choose a project template" }),
   ).toBeVisible();
@@ -71,18 +71,18 @@ export async function completeTemplateOnboarding(
   });
 
   const url = new URL(page.url());
-  const [, orgSlug, projectSlug] = url.pathname.split("/");
-  if (!orgSlug || !projectSlug) {
+  const [, orgSlug, teamspaceSlug] = url.pathname.split("/");
+  if (!orgSlug || !teamspaceSlug) {
     throw new Error(`Expected /{org}/{project} URL, got ${url.pathname}`);
   }
 
-  return { orgSlug, projectSlug };
+  return { orgSlug, teamspaceSlug };
 }
 
 export async function completeProjectOnboarding(
   page: Page,
   projectName: string,
-): Promise<{ orgSlug: string; projectSlug: string }> {
+): Promise<{ orgSlug: string; teamspaceSlug: string }> {
   await completeProjectDraftOnboarding(page, projectName);
   return completeTemplateOnboarding(page);
 }
@@ -93,20 +93,20 @@ export async function completeOnboardingFlow(
 ): Promise<{
   email: string;
   orgSlug: string;
-  projectSlug: string;
+  teamspaceSlug: string;
   organizationName: string;
   projectName: string;
 }> {
   const suffix = uniqueOnboardingSuffix();
   const organizationName = `E2E Organization ${suffix}`;
-  const projectName = `E2E Project ${suffix}`;
+  const projectName = `E2E Teamspace ${suffix}`;
 
   await signInOnLoginPage(page, email);
   await completeProfileOnboarding(page, organizationName);
-  const { orgSlug, projectSlug } = await completeProjectOnboarding(
+  const { orgSlug, teamspaceSlug } = await completeProjectOnboarding(
     page,
     projectName,
   );
 
-  return { email, orgSlug, projectSlug, organizationName, projectName };
+  return { email, orgSlug, teamspaceSlug, organizationName, projectName };
 }

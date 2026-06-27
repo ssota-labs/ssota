@@ -9,19 +9,19 @@ import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-bi
 export default async function AppDynamicPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string; pageId: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string; pageId: string }>;
 }) {
-  const { orgSlug, projectSlug, pageId } = await params;
-  const ctx = await resolveEndUserContext(orgSlug, projectSlug);
-  const { graphRead } = getGraphPorts(ctx.projectId, ctx.accountId);
+  const { orgSlug, teamspaceSlug, pageId } = await params;
+  const ctx = await resolveEndUserContext(orgSlug, teamspaceSlug);
+  const { graphRead } = getGraphPorts(ctx.teamspaceId, ctx.accountId);
 
-  const page = await getPagePort(ctx.projectId).getPage(pageId);
+  const page = await getPagePort(ctx.teamspaceId).getPage(pageId);
   if (!page) notFound();
 
   const context: Record<string, unknown> = {};
   if (page.subjectNodeId) {
     const subject = await graphRead.getNodeById(page.subjectNodeId);
-    if (subject && subject.projectId === ctx.projectId) {
+    if (subject && subject.teamspaceId === ctx.teamspaceId) {
       context.subject = {
         id: subject.id,
         catalogKey: subject.catalogKey,
@@ -34,17 +34,17 @@ export default async function AppDynamicPage({
 
   const bindingData = await resolvePageBindings(
     graphRead,
-    ctx.projectId,
+    ctx.teamspaceId,
     page.bindings,
     context,
   );
-  await resolveArtifactBindings(ctx.projectId, page.bindings, bindingData);
+  await resolveArtifactBindings(ctx.teamspaceId, page.bindings, bindingData);
 
   return (
     <DynamicPageRenderer
       spec={page.spec}
       bindingData={bindingData}
-      basePath={appProjectPath({ orgSlug, projectSlug })}
+      basePath={appProjectPath({ orgSlug, teamspaceSlug })}
     />
   );
 }

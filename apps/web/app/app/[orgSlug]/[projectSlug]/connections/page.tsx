@@ -9,7 +9,7 @@ import {
 } from "@/components/connectors/connectors-view";
 import { getConnectors } from "@/lib/connect/connectors";
 import { appProjectPath } from "@/lib/console/app-paths";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { resolveOrg } from "@/lib/console/resolve-project";
 import { resolveEndUserContext } from "@/lib/request-context";
 
 const toConnection = (c: ComposioConnection): ConnectorConnection => ({
@@ -21,12 +21,12 @@ const toConnection = (c: ComposioConnection): ConnectorConnection => ({
 export default async function AppConnectionsPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const ctx = await resolveEndUserContext(orgSlug, projectSlug);
-  const { org } = await resolveProject(orgSlug, projectSlug);
-  const routeCtx = { orgSlug, projectSlug };
+  const { orgSlug, teamspaceSlug } = await params;
+  const ctx = await resolveEndUserContext(orgSlug, teamspaceSlug);
+  const { org } = await resolveOrg(orgSlug, teamspaceSlug);
+  const routeCtx = { orgSlug, teamspaceSlug };
 
   const connectors = getConnectors();
 
@@ -45,7 +45,7 @@ export default async function AppConnectionsPage({
         user: userConns.filter((c) => c.active).map(toConnection),
         org: [],
       }}
-      projectId={ctx.projectId}
+      teamspaceId={ctx.teamspaceId}
       accountId={ctx.accountId}
       returnTo={returnTo}
       allowOrgScope={false}

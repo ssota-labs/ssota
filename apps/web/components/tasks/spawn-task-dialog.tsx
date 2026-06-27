@@ -28,12 +28,12 @@ export type WorkflowOption = {
 };
 
 type SpawnTaskDialogProps = {
-  projectId: string;
+  teamspaceId: string;
   workflowOptions: WorkflowOption[];
 };
 
 export function SpawnTaskDialog({
-  projectId,
+  teamspaceId,
   workflowOptions,
 }: SpawnTaskDialogProps) {
   const [open, setOpen] = useState(false);
@@ -63,7 +63,7 @@ export function SpawnTaskDialog({
     setError(null);
     startTransition(async () => {
       try {
-        await spawnTaskAction(projectId, {
+        await spawnTaskAction(teamspaceId, {
           title: title.trim(),
           workflowInstructionKey,
           assignee: assignee.trim() || undefined,

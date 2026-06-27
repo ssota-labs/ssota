@@ -43,8 +43,8 @@ type Story = StoryObj<FieldStoryArgs>;
 
 export const Default: Story = {
   args: {
-    legend: "Project settings",
-    slugLabel: "Project slug",
+    legend: "Teamspace settings",
+    slugLabel: "Teamspace slug",
     slugValue: "homepage-agent",
     slugDescription: "Used in console URL paths.",
     checkboxLabel: "Export audit trail",

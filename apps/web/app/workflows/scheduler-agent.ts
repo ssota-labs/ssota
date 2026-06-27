@@ -3,7 +3,7 @@ import { getDb, runAgent } from "@ssota/agent-runtime";
 import { createAgentRunPort } from "@ssota/adapter-postgres";
 
 export interface RunSchedulerAgentInput {
-  projectId: string;
+  teamspaceId: string;
   scheduleId: string;
   accountId?: string;
   modelId?: string;
@@ -27,7 +27,7 @@ async function claimRunning(
   "use step";
   const db = getDb();
   await createAgentRunPort(db).start({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runtimeKind: "scheduler",
     scheduleId: input.scheduleId,
     workflowRunId,
@@ -42,7 +42,7 @@ async function runAgentStep(
 ) {
   "use step";
   return runAgent({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     scheduleId: input.scheduleId,
     runId: workflowRunId,
     runtimeKind: "scheduler",

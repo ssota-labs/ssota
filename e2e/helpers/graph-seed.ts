@@ -3,7 +3,7 @@ import {
   createDb,
   createGraphPorts,
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
 } from "@ssota/adapter-postgres";
 
 let cachedInitiativeId: string | undefined;
@@ -21,12 +21,15 @@ export async function getSmokeInitiativeId(): Promise<string> {
   const org = await consolePort.getOrganizationBySlug(DEFAULT_ORG_SLUG);
   if (!org) throw new Error("Default org not found — run db:seed");
 
-  const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+  const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
   if (!project) throw new Error("Default project not found — run db:seed");
 
-  const { graphRead } = createGraphPorts(db, { projectId: project.id });
+  const { graphRead } = createGraphPorts(db, {
+    organizationId: org.id,
+    teamspaceId: project.id,
+  });
   const nodes = await graphRead.queryNodes({
-    projectId: project.id,
+    teamspaceId: project.id,
     catalogKey: "initiative",
     limit: 100,
   });
@@ -53,12 +56,15 @@ export async function getSmokeHypothesisId(): Promise<string> {
   const org = await consolePort.getOrganizationBySlug(DEFAULT_ORG_SLUG);
   if (!org) throw new Error("Default org not found — run db:seed");
 
-  const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+  const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
   if (!project) throw new Error("Default project not found — run db:seed");
 
-  const { graphRead } = createGraphPorts(db, { projectId: project.id });
+  const { graphRead } = createGraphPorts(db, {
+    organizationId: org.id,
+    teamspaceId: project.id,
+  });
   const nodes = await graphRead.queryNodes({
-    projectId: project.id,
+    teamspaceId: project.id,
     catalogKey: "hypothesis",
     limit: 100,
   });
@@ -86,12 +92,15 @@ export async function getSmokeUiComponentId(slug: string): Promise<string> {
   const org = await consolePort.getOrganizationBySlug(DEFAULT_ORG_SLUG);
   if (!org) throw new Error("Default org not found — run db:seed");
 
-  const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+  const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
   if (!project) throw new Error("Default project not found — run db:seed");
 
-  const { graphRead } = createGraphPorts(db, { projectId: project.id });
+  const { graphRead } = createGraphPorts(db, {
+    organizationId: org.id,
+    teamspaceId: project.id,
+  });
   const nodes = await graphRead.queryNodes({
-    projectId: project.id,
+    teamspaceId: project.id,
     nodeType: "ui_component",
     limit: 200,
   });

@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
-import { projectPath } from "@/lib/console/paths";
+import { orgPath } from "@/lib/console/paths";
 
 export default async function ProjectIndexPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  redirect(projectPath({ orgSlug, projectSlug }, "overview"));
+  const { orgSlug, teamspaceSlug } = await params;
+  redirect(orgPath({ orgSlug, teamspaceSlug }, "overview"));
 }

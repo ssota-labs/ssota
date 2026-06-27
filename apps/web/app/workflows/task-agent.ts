@@ -13,7 +13,7 @@ import { createAgentRunPort } from "@ssota/adapter-postgres";
 const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
 
 export interface RunTaskAgentInput {
-  projectId: string;
+  teamspaceId: string;
   taskId: string;
   accountId?: string;
   modelId?: string;
@@ -46,14 +46,14 @@ async function claimRunning(
   "use step";
   const db = getDb();
   await createAgentRunPort(db).start({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runtimeKind: "task",
     taskId: input.taskId,
     workflowRunId,
     accountId: input.accountId ?? null,
     model: input.modelId ?? null,
   });
-  await getTaskPort(input.projectId, input.accountId).updateTask(input.taskId, {
+  await getTaskPort(input.teamspaceId, input.accountId).updateTask(input.taskId, {
     status: "running",
   });
 }
@@ -64,7 +64,7 @@ async function runAgentStep(
 ): Promise<RunAgentResult> {
   "use step";
 
-  const task = await getTaskPort(input.projectId, input.accountId).getTask(
+  const task = await getTaskPort(input.teamspaceId, input.accountId).getTask(
     input.taskId,
   );
   let sandbox: SandboxSession | undefined;
@@ -84,7 +84,7 @@ async function runAgentStep(
   try {
     return await streamAgent(
       {
-        projectId: input.projectId,
+        teamspaceId: input.teamspaceId,
         taskId: input.taskId,
         runId: workflowRunId,
         runtimeKind: "task",
@@ -117,13 +117,13 @@ async function finalizeRun(
     ? TERMINAL_STATUSES.has(result.finalStatus)
     : false;
   if (!isTerminal) {
-    await getTaskPort(input.projectId, input.accountId).updateTask(input.taskId, {
+    await getTaskPort(input.teamspaceId, input.accountId).updateTask(input.taskId, {
       status: "failed",
       result: { reason: "Agent ended without completing the task", ...result },
     });
   }
 
-  const finalTask = await getTaskPort(input.projectId, input.accountId).getTask(
+  const finalTask = await getTaskPort(input.teamspaceId, input.accountId).getTask(
     input.taskId,
   );
   await createAgentRunPort(db).finish(workflowRunId, {

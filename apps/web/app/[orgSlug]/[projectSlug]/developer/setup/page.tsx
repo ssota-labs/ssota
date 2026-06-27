@@ -11,17 +11,17 @@ import {
 import { CopyButton } from "@/components/developer/copy-button";
 import { PageHeader } from "@/components/studio/page-header";
 import { getSiteUrl } from "@/lib/auth/config";
-import { projectPath } from "@/lib/console/paths";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { orgPath } from "@/lib/console/paths";
+import { resolveOrg } from "@/lib/console/resolve-project";
 
 export default async function DeveloperSetupPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const ctx = { orgSlug, projectSlug };
-  const { project } = await resolveProject(orgSlug, projectSlug);
+  const { orgSlug, teamspaceSlug } = await params;
+  const ctx = { orgSlug, teamspaceSlug };
+  const { project } = await resolveOrg(orgSlug, teamspaceSlug);
   const siteUrl = getSiteUrl();
   const hostedMcpUrl = `${siteUrl.replace(/\/$/, "")}/api/mcp`;
   const localMcpUrl = "http://127.0.0.1:3001/api/mcp";
@@ -31,7 +31,7 @@ export default async function DeveloperSetupPage({
         ssota: {
           url: hostedMcpUrl,
           headers: {
-            "X-SSOTA-Project-Id": project.id,
+            "X-SSOTA-Teamspace-Id": project.id,
           },
         },
       },
@@ -67,9 +67,9 @@ export default async function DeveloperSetupPage({
               description="Use this when `pnpm dev --filter mcp` is running locally."
             />
             <SetupValue
-              label="Project id"
+              label="Teamspace id"
               value={project.id}
-              description="Pass this in `X-SSOTA-Project-Id` or as the project context required by the tool."
+              description="Pass this in `X-SSOTA-Teamspace-Id` or as the project context required by the tool."
             />
           </CardContent>
         </Card>
@@ -138,7 +138,7 @@ export default async function DeveloperSetupPage({
       </Card>
 
       <div className="flex flex-wrap gap-2">
-        <Button render={<Link href={projectPath(ctx, "tasks")} />} nativeButton={false}>
+        <Button render={<Link href={orgPath(ctx, "tasks")} />} nativeButton={false}>
           Open Tasks
         </Button>
       </div>

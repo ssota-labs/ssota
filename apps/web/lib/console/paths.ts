@@ -1,36 +1,55 @@
-import { DEFAULT_ORG_SLUG, DEFAULT_PROJECT_SLUG } from "./constants";
+import { DEFAULT_ORG_SLUG, DEFAULT_TEAMSPACE_SLUG } from "./constants";
 
-export type ProjectRouteContext = {
+export type OrgRouteContext = {
   orgSlug: string;
-  projectSlug: string;
+  teamspaceSlug: string;
   orgId?: string;
-  projectId?: string;
+  teamspaceId?: string;
 };
 
-export const DEFAULT_PROJECT: ProjectRouteContext = {
+export const DEFAULT_ORG_ROUTE: OrgRouteContext = {
   orgSlug: DEFAULT_ORG_SLUG,
-  projectSlug: DEFAULT_PROJECT_SLUG,
+  teamspaceSlug: DEFAULT_TEAMSPACE_SLUG,
 };
 
-export function projectPath(
-  ctx: ProjectRouteContext,
+/** Builder console path — org-centric (teamspace is sidebar context, not a URL segment). */
+export function orgPath(
+  ctx: OrgRouteContext,
   ...segments: string[]
 ): string {
-  const base = `/${ctx.orgSlug}/${ctx.projectSlug}`;
+  const base = `/${ctx.orgSlug}`;
   return segments.length ? `${base}/${segments.join("/")}` : base;
 }
 
-export function graphPath(ctx: ProjectRouteContext, ...segments: string[]) {
-  return projectPath(ctx, "graph", ...segments);
+/** Legacy path including teamspace slug (redirect source). */
+export function legacyOrgTeamspacePath(
+  ctx: OrgRouteContext,
+  ...segments: string[]
+): string {
+  const base = `/${ctx.orgSlug}/${ctx.teamspaceSlug}`;
+  return segments.length ? `${base}/${segments.join("/")}` : base;
+}
+
+export function graphPath(ctx: OrgRouteContext, ...segments: string[]) {
+  return orgPath(ctx, "graph", ...segments);
 }
 
 /** 프로젝트/조직 전환 시 현재 화면 경로(query 포함)를 유지한 대상 URL */
 export function switchConsolePath(
   pathname: string,
-  from: ProjectRouteContext,
-  to: Pick<ProjectRouteContext, "orgSlug" | "projectSlug">,
+  from: OrgRouteContext,
+  to: Pick<OrgRouteContext, "orgSlug" | "teamspaceSlug">,
 ): string {
-  const prefix = `/${from.orgSlug}/${from.projectSlug}`;
-  const suffix = pathname.startsWith(prefix) ? pathname.slice(prefix.length) : "";
-  return `/${to.orgSlug}/${to.projectSlug}${suffix}`;
+  const flatPrefix = `/${from.orgSlug}`;
+  const legacyPrefix = `/${from.orgSlug}/${from.teamspaceSlug}`;
+  let suffix = "";
+  if (pathname.startsWith(legacyPrefix)) {
+    suffix = pathname.slice(legacyPrefix.length);
+  } else if (pathname.startsWith(flatPrefix)) {
+    suffix = pathname.slice(flatPrefix.length);
+  }
+  if (to.orgSlug !== from.orgSlug) {
+    return `/${to.orgSlug}${suffix}`;
+  }
+  return `/${to.orgSlug}${suffix}`;
 }

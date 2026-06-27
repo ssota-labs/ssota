@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LanguageForm } from "@/components/settings/language-form";
 import { PageHeader } from "@/components/studio/page-header";
-import { projectPath } from "@/lib/console/paths";
+import { orgPath } from "@/lib/console/paths";
 import { getTranslations } from "@/lib/i18n/server";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -15,9 +15,9 @@ import {
 export default async function SettingsGeneralPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
+  const { orgSlug, teamspaceSlug } = await params;
   const { locale, t } = await getTranslations();
 
   return (
@@ -30,7 +30,7 @@ export default async function SettingsGeneralPage({
         <CardHeader>
           <CardTitle className="text-base">{t("settings.general")}</CardTitle>
           <CardDescription>
-            {t("settings.orgProjectSlugs", { orgSlug, projectSlug })}
+            {t("settings.orgProjectSlugs", { orgSlug, teamspaceSlug })}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -41,7 +41,7 @@ export default async function SettingsGeneralPage({
               {t("settings.comingSoon")}
             </p>
             <Button
-              render={<Link href={projectPath({ orgSlug, projectSlug }, "developer/setup")} />}
+              render={<Link href={orgPath({ orgSlug, teamspaceSlug }, "developer/setup")} />}
               variant="outline"
               size="sm"
               nativeButton={false}

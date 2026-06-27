@@ -18,7 +18,7 @@ type PlanningRoadmapsSectionProps = {
   productRoadmapTitle: string;
   nodes: RoadmapNodeView[];
   currentYear: number;
-  projectId: string;
+  teamspaceId: string;
   onCreateAnnual: (year: number) => Promise<void>;
   onCreateQuarter: (year: number, quarter: RoadmapQuarter) => Promise<void>;
   onSave: (input: {
@@ -56,7 +56,7 @@ export function PlanningRoadmapsSection({
   productRoadmapTitle,
   nodes,
   currentYear,
-  projectId,
+  teamspaceId,
   onCreateAnnual,
   onCreateQuarter,
   onSave,
@@ -131,7 +131,7 @@ export function PlanningRoadmapsSection({
           year={year}
           node={findPlanningNode(nodes, year, period)}
           productRoadmapTitle={productRoadmapTitle}
-          projectId={projectId}
+          teamspaceId={teamspaceId}
           defaultOpen={period === "annual"}
           onCreate={() =>
             period === "annual"

@@ -6,17 +6,17 @@ import { getEvergreenSingleton } from "./get-evergreen-singleton";
 import { getGraphDeps } from "../graph-deps";
 
 export async function ensureEvergreenSingleton(
-  projectId: string,
+  teamspaceId: string,
   nodeType: NodeType,
   defaultTitle: string,
 ): Promise<GraphNode> {
-  const existing = await getEvergreenSingleton(projectId, nodeType);
+  const existing = await getEvergreenSingleton(teamspaceId, nodeType);
   if (existing) return existing;
 
-  await ensureProjectCatalog(projectId);
-  const deps = getGraphDeps(projectId);
+  await ensureProjectCatalog(teamspaceId);
+  const deps = getGraphDeps(teamspaceId);
   return createNode(deps, {
-    projectId,
+    teamspaceId,
     catalogKey: nodeType,
     title: defaultTitle,
     properties: { lifecycleStatus: "Draft" },

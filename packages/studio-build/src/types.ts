@@ -1,7 +1,7 @@
 import type { DesignToolchainPackageJson } from "@ssota/contracts/catalog";
 
 export type StudioBuildInput = {
-  projectId: string;
+  teamspaceId: string;
   entry: string;
   files: Record<string, string>;
   packageJson: DesignToolchainPackageJson;

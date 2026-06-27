@@ -10,7 +10,7 @@ import { isValidTimezone, validateCron } from "@/lib/schedules/recurrence";
 export const runtime = "nodejs";
 
 const createSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().optional(),
   workflowInstructionId: z.string().min(1),
   cronExpression: z.string().min(1),
@@ -30,14 +30,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const projectId = new URL(request.url).searchParams.get("projectId");
-  if (!projectId) {
-    return NextResponse.json({ error: "Missing projectId" }, { status: 422 });
+  const teamspaceId = new URL(request.url).searchParams.get("teamspaceId");
+  if (!teamspaceId) {
+    return NextResponse.json({ error: "Missing teamspaceId" }, { status: 422 });
   }
 
   let accountId: string | undefined;
   try {
-    const scope = await resolveApiAccountScope(projectId, {
+    const scope = await resolveApiAccountScope(teamspaceId, {
       referer: request.headers.get("referer"),
     });
     accountId = scope.accountId;
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     throw error;
   }
 
-  const schedules = await getSchedulePort(projectId, accountId).list();
+  const schedules = await getSchedulePort(teamspaceId, accountId).list();
   return NextResponse.json({ schedules });
 }
 
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 
   let accountId: string | undefined;
   try {
-    const scope = await resolveApiAccountScope(parsed.projectId, {
+    const scope = await resolveApiAccountScope(parsed.teamspaceId, {
       referer: request.headers.get("referer"),
       requestedAccountId: parsed.accountId,
     });
@@ -96,7 +96,7 @@ export async function POST(request: Request) {
   }
 
   const workflowInstructionId = await resolveWorkflowInstructionId(
-    parsed.projectId,
+    parsed.teamspaceId,
     parsed.workflowInstructionId,
   );
   if (!workflowInstructionId) {
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const schedule = await getSchedulePort(parsed.projectId, accountId).create({
+  const schedule = await getSchedulePort(parsed.teamspaceId, accountId).create({
     workflowInstructionId,
     cronExpression: parsed.cronExpression,
     timezone: parsed.timezone,

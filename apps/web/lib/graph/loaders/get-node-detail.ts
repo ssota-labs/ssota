@@ -1,6 +1,6 @@
 import type { GraphEdge, GraphNode } from "@ssota/core";
 import { getNodeTypeEntry } from "@ssota/contracts";
-import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
+import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphDeps } from "../graph-deps";
 
 export type NodeEdgeView = {
@@ -25,15 +25,15 @@ export type NodeDetailView = {
 async function mapEdges(
   edges: GraphEdge[],
   direction: "incoming" | "outgoing",
-  projectId: string,
+  teamspaceId: string,
 ): Promise<NodeEdgeView[]> {
-  const { graphRead } = getGraphDeps(projectId);
+  const { graphRead } = getGraphDeps(teamspaceId);
   const views: NodeEdgeView[] = [];
 
   for (const edge of edges) {
     const neighborId =
       direction === "incoming" ? edge.sourceNodeId : edge.targetNodeId;
-    const neighbor = await graphRead.getNode({ projectId, nodeId: neighborId });
+    const neighbor = await graphRead.getNode({ teamspaceId, nodeId: neighborId });
     views.push({
       id: edge.id,
       edgeType: edge.catalogKey,
@@ -48,22 +48,22 @@ async function mapEdges(
 }
 
 export async function getNodeDetailView(
-  ctx: ProjectRouteContext,
-  projectId: string,
+  ctx: OrgRouteContext,
+  teamspaceId: string,
   nodeId: string,
 ): Promise<NodeDetailView | null> {
-  const { graphRead } = getGraphDeps(projectId);
-  const node = await graphRead.getNode({ projectId, nodeId });
+  const { graphRead } = getGraphDeps(teamspaceId);
+  const node = await graphRead.getNode({ teamspaceId, nodeId });
   if (!node) return null;
 
   const [incoming, outgoing] = await Promise.all([
     graphRead.traverseEdges({
-      projectId,
+      teamspaceId,
       nodeId,
       direction: "incoming",
     }),
     graphRead.traverseEdges({
-      projectId,
+      teamspaceId,
       nodeId,
       direction: "outgoing",
     }),
@@ -73,14 +73,14 @@ export async function getNodeDetailView(
 
   // All nodes are addressed by the unified node route `/n/[id]` (template-or-
   // generic detail). Replaces the per-type resolveNodeRoute switch.
-  const nodePath = projectPath(ctx, "n", node.id);
+  const nodePath = orgPath(ctx, "n", node.id);
   return {
     node,
     typeLabel: entry?.label ?? node.catalogKey,
     mutability: entry?.mutability ?? "living",
     canonicalRoute: nodePath,
     detailPath: nodePath,
-    incomingEdges: await mapEdges(incoming, "incoming", projectId),
-    outgoingEdges: await mapEdges(outgoing, "outgoing", projectId),
+    incomingEdges: await mapEdges(incoming, "incoming", teamspaceId),
+    outgoingEdges: await mapEdges(outgoing, "outgoing", teamspaceId),
   };
 }

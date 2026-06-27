@@ -3,13 +3,13 @@ import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { diffComposedOfTargets } from "@/lib/design-studio/composition";
 
 export async function syncComposedOfEdges(input: {
-  projectId: string;
+  teamspaceId: string;
   sourceNodeId: string;
   targetNodeIds: string[];
 }) {
-  const deps = getGraphDeps(input.projectId);
+  const deps = getGraphDeps(input.teamspaceId);
   const existing = await deps.graphRead.traverseEdges({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     nodeId: input.sourceNodeId,
     direction: "outgoing",
     catalogKey: "composed_of",
@@ -25,14 +25,14 @@ export async function syncComposedOfEdges(input: {
     const edge = existing.find((item) => item.targetNodeId === targetNodeId);
     if (!edge) continue;
     await deleteEdge(deps.graphWrite, {
-      projectId: input.projectId,
+      teamspaceId: input.teamspaceId,
       edgeId: edge.id,
     });
   }
 
   for (const targetNodeId of toCreate) {
     await createEdge(deps, {
-      projectId: input.projectId,
+      teamspaceId: input.teamspaceId,
       catalogKey: "composed_of",
       sourceNodeId: input.sourceNodeId,
       targetNodeId,

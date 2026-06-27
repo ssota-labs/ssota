@@ -14,7 +14,7 @@ import {
 import type { RenderNode } from "@/lib/page-runtime/types";
 
 type WorkflowInstructionsWorkspaceProps = {
-  projectId: string;
+  teamspaceId: string;
   groups: WorkflowInstructionGroup[];
 };
 
@@ -31,7 +31,7 @@ function toRenderNode(instruction: WorkflowInstruction): RenderNode {
 }
 
 export function WorkflowInstructionsWorkspace({
-  projectId,
+  teamspaceId,
   groups: initialGroups,
 }: WorkflowInstructionsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
@@ -64,7 +64,7 @@ export function WorkflowInstructionsWorkspace({
     if (!activeInstruction) return;
 
     startTransition(async () => {
-      await updateWorkflowInstructionAction(projectId, {
+      await updateWorkflowInstructionAction(teamspaceId, {
         key: activeInstruction.key,
         name: activeInstruction.name,
         description: activeInstruction.description,

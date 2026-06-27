@@ -4,10 +4,10 @@ import { loadBuilderChatScope } from "@/lib/chat/server-scope";
 export default async function NewChatPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const scope = await loadBuilderChatScope(orgSlug, projectSlug);
+  const { orgSlug, teamspaceSlug } = await params;
+  const scope = await loadBuilderChatScope(orgSlug, teamspaceSlug);
   const thread = await scope.chat.createThread();
   redirect(`${scope.chatBase}/${thread.id}`);
 }

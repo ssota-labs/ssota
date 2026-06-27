@@ -25,7 +25,7 @@ test.describe("catalog lab", () => {
       data: {
         mode: "pages",
         json: '{"routeKey":""}',
-        projectId: "00000000-0000-4000-8000-000000000001",
+        teamspaceId: "00000000-0000-4000-8000-000000000001",
       },
     });
     expect(res.status()).toBeGreaterThanOrEqual(400);

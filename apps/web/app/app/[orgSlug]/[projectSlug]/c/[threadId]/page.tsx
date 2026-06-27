@@ -7,10 +7,10 @@ import { loadEndUserChatScope } from "@/lib/chat/server-scope";
 export default async function AppChatThreadPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string; threadId: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string; threadId: string }>;
 }) {
-  const { orgSlug, projectSlug, threadId } = await params;
-  const scope = await loadEndUserChatScope(orgSlug, projectSlug);
+  const { orgSlug, teamspaceSlug, threadId } = await params;
+  const scope = await loadEndUserChatScope(orgSlug, teamspaceSlug);
   const thread = await scope.chat.getThread(threadId);
   if (!thread) {
     notFound();
@@ -33,14 +33,14 @@ export default async function AppChatThreadPage({
   return (
     <ChatConversation
       key={thread.id}
-      projectId={scope.projectId}
+      teamspaceId={scope.teamspaceId}
       accountId={scope.accountId}
       threadId={thread.id}
       initialMessages={initialMessages}
       connectors={connectors}
       returnTo={scope.chatBase}
       orgSlug={orgSlug}
-      projectSlug={projectSlug}
+      teamspaceSlug={teamspaceSlug}
     />
   );
 }

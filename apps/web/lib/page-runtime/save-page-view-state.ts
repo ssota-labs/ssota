@@ -10,7 +10,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
  * upserts it keyed by (user, page, element). Validated server-side.
  */
 export async function savePageViewState(args: {
-  projectId: string;
+  teamspaceId: string;
   pageId: string;
   elementId: string;
   viewState: TableViewState;
@@ -19,7 +19,7 @@ export async function savePageViewState(args: {
   if (!user) throw new Error("Unauthorized");
 
   const viewState = tableViewStateSchema.parse(args.viewState);
-  await getPageViewStatePort(args.projectId).upsert({
+  await getPageViewStatePort(args.teamspaceId).upsert({
     userId: user.id,
     pageId: args.pageId,
     elementId: args.elementId,

@@ -9,7 +9,7 @@ const testToolchainDigest = "test-toolchain-digest";
 describe("computeBuildHash", () => {
   it("is stable for the same input", () => {
     const input = {
-      projectId: "00000000-0000-4000-8000-000000000001",
+      teamspaceId: "00000000-0000-4000-8000-000000000001",
       entry: "Component.tsx",
       files: { "Component.tsx": "export default function C() { return null; }" },
       packageJson: testPackageJson,
@@ -24,7 +24,7 @@ describe("computeBuildHash", () => {
 describe("buildStudioBundle", () => {
   it("builds a simple React component", async () => {
     const artifacts = await buildStudioBundle({
-      projectId: "00000000-0000-4000-8000-000000000001",
+      teamspaceId: "00000000-0000-4000-8000-000000000001",
       entry: "Component.tsx",
       files: {
         "Component.tsx": `
@@ -46,7 +46,7 @@ describe("buildStudioBundle", () => {
 
   it("resolves extensionless relative imports across virtual files", async () => {
     const artifacts = await buildStudioBundle({
-      projectId: "00000000-0000-4000-8000-000000000001",
+      teamspaceId: "00000000-0000-4000-8000-000000000001",
       entry: "Component.tsx",
       files: {
         "Component.tsx": `
@@ -74,7 +74,7 @@ describe("buildStudioBundle", () => {
   it("rejects empty files", async () => {
     await expect(
       buildStudioBundle({
-        projectId: "00000000-0000-4000-8000-000000000001",
+        teamspaceId: "00000000-0000-4000-8000-000000000001",
         entry: "Component.tsx",
         files: {},
         packageJson: testPackageJson,

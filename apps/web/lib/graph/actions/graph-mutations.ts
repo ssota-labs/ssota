@@ -15,7 +15,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { withConsolePaths } from "@/lib/console/revalidate";
-import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
+import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -49,7 +49,7 @@ function mergeNodeProperties(
 }
 
 export async function createGraphNodeAction(input: {
-  projectId: string;
+  teamspaceId: string;
   catalogKey: NodeType;
   title: string;
   properties?: Record<string, unknown>;
@@ -59,9 +59,9 @@ export async function createGraphNodeAction(input: {
   revalidatePaths?: string[];
 }) {
   await requireAuth();
-  const deps = getGraphDeps(input.projectId);
+  const deps = getGraphDeps(input.teamspaceId);
   const parsed = createNodeInputSchema.parse({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     catalogKey: input.catalogKey,
     title: input.title,
     properties: mergeNodeProperties(input.properties, {
@@ -77,7 +77,7 @@ export async function createGraphNodeAction(input: {
 }
 
 export async function updateGraphNodeAction(input: {
-  projectId: string;
+  teamspaceId: string;
   nodeId: string;
   title?: string;
   properties?: Record<string, unknown>;
@@ -86,12 +86,12 @@ export async function updateGraphNodeAction(input: {
   revalidatePaths?: string[];
 }) {
   await requireAuth();
-  const deps = getGraphDeps(input.projectId);
+  const deps = getGraphDeps(input.teamspaceId);
 
   let properties = input.properties;
   if (input.content !== undefined || input.lifecycleStatus !== undefined) {
     const existing = await deps.graphRead.getNode({
-      projectId: input.projectId,
+      teamspaceId: input.teamspaceId,
       nodeId: input.nodeId,
     });
     properties = mergeNodeProperties(
@@ -104,7 +104,7 @@ export async function updateGraphNodeAction(input: {
   }
 
   const parsed = updateNodeInputSchema.parse({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     nodeId: input.nodeId,
     title: input.title,
     properties,
@@ -116,30 +116,30 @@ export async function updateGraphNodeAction(input: {
 }
 
 export async function createInitiativeBundleAction(input: {
-  projectId: string;
+  teamspaceId: string;
   initiativeTitle: string;
   releaseVersion: string;
-  ctx: ProjectRouteContext;
+  ctx: OrgRouteContext;
   redirectToPrd?: boolean;
 }) {
   await requireAuth();
-  const deps = getGraphDeps(input.projectId);
+  const deps = getGraphDeps(input.teamspaceId);
   const parsed = createInitiativeBundleInputSchema.parse({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     initiativeTitle: input.initiativeTitle,
     releaseVersion: input.releaseVersion,
   });
 
   const result = await createInitiativeBundle(deps, parsed);
   revalidateConsole([
-    projectPath(input.ctx, "initiatives"),
-    projectPath(input.ctx, "overview"),
-    projectPath(input.ctx, "research", "hypotheses"),
+    orgPath(input.ctx, "initiatives"),
+    orgPath(input.ctx, "overview"),
+    orgPath(input.ctx, "research", "hypotheses"),
   ]);
 
   if (input.redirectToPrd) {
     redirect(
-      projectPath(
+      orgPath(
         input.ctx,
         "initiatives",
         result.initiativeId,
@@ -153,17 +153,17 @@ export async function createInitiativeBundleAction(input: {
 }
 
 export async function createInitiativeFromHypothesisAction(input: {
-  projectId: string;
+  teamspaceId: string;
   hypothesisId: string;
   initiativeTitle: string;
   releaseVersion: string;
-  ctx: ProjectRouteContext;
+  ctx: OrgRouteContext;
 }) {
   await requireAuth();
-  const deps = getGraphDeps(input.projectId);
+  const deps = getGraphDeps(input.teamspaceId);
 
   const hypothesis = await deps.graphRead.getNode({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     nodeId: input.hypothesisId,
   });
   if (!hypothesis || hypothesis.catalogKey !== "hypothesis") {
@@ -171,7 +171,7 @@ export async function createInitiativeFromHypothesisAction(input: {
   }
 
   await updateNode(deps, {
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     nodeId: input.hypothesisId,
     properties: {
       ...hypothesis.properties,
@@ -180,20 +180,20 @@ export async function createInitiativeFromHypothesisAction(input: {
   });
 
   const parsed = createInitiativeBundleInputSchema.parse({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     initiativeTitle: input.initiativeTitle,
     releaseVersion: input.releaseVersion,
   });
 
   const result = await createInitiativeBundle(deps, parsed);
   revalidateConsole([
-    projectPath(input.ctx, "initiatives"),
-    projectPath(input.ctx, "overview"),
-    projectPath(input.ctx, "research", "hypotheses"),
+    orgPath(input.ctx, "initiatives"),
+    orgPath(input.ctx, "overview"),
+    orgPath(input.ctx, "research", "hypotheses"),
   ]);
 
   redirect(
-    projectPath(
+    orgPath(
       input.ctx,
       "initiatives",
       result.initiativeId,

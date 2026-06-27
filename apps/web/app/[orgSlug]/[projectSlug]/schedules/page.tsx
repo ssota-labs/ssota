@@ -1,15 +1,15 @@
 import { SchedulesList } from "@/components/schedules/schedules-list";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { resolveOrg } from "@/lib/console/resolve-project";
 import { loadWorkflowInstructionsForUi } from "@/lib/console/load-workflow-instructions-for-ui";
 import { getOrCreateProjectAccount, getSchedulePort } from "@/lib/ports";
 
 export default async function SchedulesPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const { project } = await resolveProject(orgSlug, projectSlug);
+  const { orgSlug, teamspaceSlug } = await params;
+  const { project } = await resolveOrg(orgSlug, teamspaceSlug);
 
   const account = await getOrCreateProjectAccount(project.id);
   const [schedules, instructions] = await Promise.all([
@@ -25,7 +25,7 @@ export default async function SchedulesPage({
         name: i.name,
         description: i.description,
       }))}
-      projectId={project.id}
+      teamspaceId={project.id}
       accountId={account.id}
     />
   );

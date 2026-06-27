@@ -16,7 +16,7 @@ import { collectAssistantMessageParts } from "@/lib/chat/persist-assistant-messa
  */
 
 export interface RunMainAgentInput {
-  projectId: string;
+  teamspaceId: string;
   threadId: string;
   accountId?: string;
   /** Signed-in user (Supabase auth id) — entity for Composio connector tools. */
@@ -53,7 +53,7 @@ export async function claimMainRunning(
 ): Promise<void> {
   const db = getDb();
   await createAgentRunPort(db).start({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runtimeKind: "main",
     threadId: input.threadId,
     workflowRunId: runId,
@@ -75,7 +75,7 @@ export async function runMainAgentStepCore(
 
   const result = await streamAgent(
     {
-      projectId: input.projectId,
+      teamspaceId: input.teamspaceId,
       threadId: input.threadId,
       runId,
       runtimeKind: "main",
@@ -107,7 +107,7 @@ export async function persistMainAssistantMessage(
 
   const db = getDb();
   const chat = createChatPort(db, {
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     accountId: input.accountId ?? null,
   });
 

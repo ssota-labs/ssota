@@ -3,7 +3,7 @@ import {
   createDb,
   createPagePort,
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
 } from "@ssota/adapter-postgres";
 
 const pageIdBySlug = new Map<string, string>();
@@ -22,10 +22,10 @@ export async function getSmokePageIdBySlug(slug: string): Promise<string> {
   const org = await consolePort.getOrganizationBySlug(DEFAULT_ORG_SLUG);
   if (!org) throw new Error("Default org not found — run db:seed");
 
-  const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+  const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
   if (!project) throw new Error("Default project not found — run db:seed");
 
-  const page = await createPagePort(db, { projectId: project.id }).getPageBySlug(
+  const page = await createPagePort(db, { teamspaceId: project.id }).getPageBySlug(
     slug,
   );
   if (!page?.id) {

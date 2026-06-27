@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     }
     const runHandle = await start(runSchedulerAgentWorkflow, [
       {
-        projectId: schedule.projectId,
+        teamspaceId: schedule.teamspaceId,
         scheduleId: schedule.id,
         accountId: schedule.accountId ?? undefined,
       },

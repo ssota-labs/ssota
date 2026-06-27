@@ -14,7 +14,7 @@ function revalidateConsole(paths: string[]) {
 }
 
 export async function createObjectiveBundleAction(input: {
-  projectId: string;
+  teamspaceId: string;
   title: string;
   period?: string;
   priority?: "high" | "medium" | "low";
@@ -30,9 +30,9 @@ export async function createObjectiveBundleAction(input: {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const deps = getGraphDeps(input.projectId);
+  const deps = getGraphDeps(input.teamspaceId);
   const objective = await createNode(deps, {
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     catalogKey: "objective",
     title: input.title,
     properties: {
@@ -44,7 +44,7 @@ export async function createObjectiveBundleAction(input: {
 
   for (const kr of input.keyResults ?? []) {
     const keyResult = await createNode(deps, {
-      projectId: input.projectId,
+      teamspaceId: input.teamspaceId,
       catalogKey: "key_result",
       title: kr.title,
       properties: {
@@ -56,7 +56,7 @@ export async function createObjectiveBundleAction(input: {
       },
     });
     await createContributesToEdge({
-      projectId: input.projectId,
+      teamspaceId: input.teamspaceId,
       keyResultId: keyResult.id,
       objectiveId: objective.id,
     });

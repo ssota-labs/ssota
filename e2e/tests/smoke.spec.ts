@@ -17,7 +17,7 @@ test.describe("SSOTA Console", () => {
     await gotoProject(page, "developer/setup");
     await expect(page.getByRole("heading", { name: "Developer Setup" })).toBeVisible();
     await expect(page.getByText("Connect MCP")).toBeVisible();
-    await expect(page.getByText("X-SSOTA-Project-Id").first()).toBeVisible();
+    await expect(page.getByText("X-SSOTA-Teamspace-Id").first()).toBeVisible();
   });
 
   test("smoke: Tasks route", async ({ page }) => {

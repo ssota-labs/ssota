@@ -19,9 +19,9 @@ interface ChatInputProps {
   onSend: (text: string, files: FileUIPart[]) => void;
   onStop: () => void;
   isStreaming: boolean;
-  projectId: string;
+  teamspaceId: string;
   orgSlug: string;
-  projectSlug: string;
+  teamspaceSlug: string;
   model: string;
   onModelChange: (modelId: string) => void;
 }
@@ -35,9 +35,9 @@ export function ChatInput({
   onSend,
   onStop,
   isStreaming,
-  projectId,
+  teamspaceId,
   orgSlug,
-  projectSlug,
+  teamspaceSlug,
   model,
   onModelChange,
 }: ChatInputProps) {
@@ -49,8 +49,8 @@ export function ChatInput({
   /** Ignore stale IME onChange/compositionEnd briefly after send. */
   const ignoreStaleInputUntilRef = useRef(0);
 
-  const mention = useMentionSuggestions(orgSlug, projectSlug);
-  const attach = useImageAttachments(projectId);
+  const mention = useMentionSuggestions(orgSlug, teamspaceSlug);
+  const attach = useImageAttachments(teamspaceId);
 
   function resize() {
     const el = textareaRef.current;

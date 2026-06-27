@@ -6,11 +6,11 @@ import { getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
 export default async function AppTasksPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const ctx = await resolveEndUserContext(orgSlug, projectSlug);
-  const tasks = await getTaskPort(ctx.projectId, ctx.accountId).queryTasks({
+  const { orgSlug, teamspaceSlug } = await params;
+  const ctx = await resolveEndUserContext(orgSlug, teamspaceSlug);
+  const tasks = await getTaskPort(ctx.teamspaceId, ctx.accountId).queryTasks({
     limit: 200,
   });
 
@@ -35,7 +35,7 @@ export default async function AppTasksPage({
   }));
 
   const workflowInstructions =
-    await getWorkflowInstructionPort(ctx.projectId).listInstructions();
+    await getWorkflowInstructionPort(ctx.teamspaceId).listInstructions();
   const workflowOptions = workflowInstructions.map((entry) => ({
     workflowInstructionKey: entry.key,
     title: entry.name,
@@ -44,7 +44,7 @@ export default async function AppTasksPage({
   return (
     <TasksExplorer
       rows={rows}
-      projectId={ctx.projectId}
+      teamspaceId={ctx.teamspaceId}
       workflowOptions={workflowOptions}
     />
   );

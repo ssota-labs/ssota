@@ -10,13 +10,13 @@ import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
 type TasksDetailProps = {
   rows: TaskWorkspaceRow[];
-  projectId: string;
+  teamspaceId: string;
   workflowOptions: WorkflowOption[];
 };
 
 export function TasksDetail({
   rows,
-  projectId,
+  teamspaceId,
   workflowOptions,
 }: TasksDetailProps) {
   const [selected, setSelected] = useState<TaskWorkspaceRow | null>(null);
@@ -33,7 +33,7 @@ export function TasksDetail({
 
   async function handleStatusChange(taskId: string, status: TaskStatus) {
     startTransition(async () => {
-      await updateTaskStatusAction(projectId, taskId, status);
+      await updateTaskStatusAction(teamspaceId, taskId, status);
     });
   }
 
@@ -51,7 +51,7 @@ export function TasksDetail({
           </p>
           <div className="flex justify-center">
             <SpawnTaskDialog
-              projectId={projectId}
+              teamspaceId={teamspaceId}
               workflowOptions={workflowOptions}
             />
           </div>
@@ -60,7 +60,7 @@ export function TasksDetail({
         <div className="min-h-0 flex-1 overflow-auto p-4">
           <TasksKanbanBoard
             rows={rows}
-            projectId={projectId}
+            teamspaceId={teamspaceId}
             onOpenDetail={setSelected}
             onStatusChange={handleStatusChange}
             motionReduced={motionReduced || isPending}

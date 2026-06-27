@@ -1,4 +1,4 @@
-import { projectPath } from "./paths";
+import { orgPath } from "./paths";
 import { getConsolePort } from "@/lib/ports";
 
 export async function getDefaultProjectPath(userId: string): Promise<string> {
@@ -10,13 +10,13 @@ export async function getDefaultProjectPath(userId: string): Promise<string> {
   }
 
   const org = organizations[0]!;
-  const projects = await consolePort.listProjectsForOrganization(org.id);
+  const projects = await consolePort.listTeamspacesForOrganization(org.id);
   if (projects.length === 0) {
     return "/onboarding/project";
   }
 
-  return projectPath({
+  return orgPath({
     orgSlug: org.slug,
-    projectSlug: projects[0]!.slug,
+    teamspaceSlug: projects[0]!.slug,
   }, "overview");
 }

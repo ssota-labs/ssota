@@ -32,10 +32,10 @@ function extractUserTokens(node: GraphNode): DesignThemeTokenMap {
 }
 
 export async function resolveProjectTheme(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<ResolvedProjectTheme> {
   const node = await ensureEvergreenSingleton(
-    projectId,
+    teamspaceId,
     "design_theme",
     "Design theme",
   );

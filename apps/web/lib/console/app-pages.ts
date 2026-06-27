@@ -6,8 +6,8 @@ export type AppPageLink = {
 };
 
 /** Top-level project pages for the end-user sidebar (excludes node drill-in templates). */
-export async function listAppPageLinks(projectId: string): Promise<AppPageLink[]> {
-  const pages = await getPagePort(projectId).listPages();
+export async function listAppPageLinks(teamspaceId: string): Promise<AppPageLink[]> {
+  const pages = await getPagePort(teamspaceId).listPages();
 
   return pages
     .filter((p) => !p.appliesToNodeType && !p.parentId)

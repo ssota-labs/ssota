@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { Organization, Project } from "@ssota/core";
+import type { Organization, Teamspace } from "@ssota/core";
 import { CubeIcon, UsersThreeIcon } from "@phosphor-icons/react";
 import {
   WorkspaceSwitcher,
@@ -51,7 +51,7 @@ export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
                 <Link
                   href={switchConsolePath(pathname, ctx, {
                     orgSlug: org.slug,
-                    projectSlug: ctx.projectSlug,
+                    teamspaceSlug: ctx.teamspaceSlug,
                   })}
                   prefetch
                 />
@@ -65,7 +65,7 @@ export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
 }
 
 type ConsoleProjectSwitcherProps = {
-  projects: Project[];
+  projects: Teamspace[];
 };
 
 export function ConsoleProjectSwitcher({ projects }: ConsoleProjectSwitcherProps) {
@@ -99,7 +99,7 @@ export function ConsoleProjectSwitcher({ projects }: ConsoleProjectSwitcherProps
               <Link
                 href={switchConsolePath(pathname, ctx, {
                   orgSlug: ctx.org.slug,
-                  projectSlug: project.slug,
+                  teamspaceSlug: project.slug,
                 })}
                 prefetch
               />

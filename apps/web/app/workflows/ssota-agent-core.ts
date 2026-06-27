@@ -22,7 +22,7 @@ import { createAgentRunPort } from "@ssota/adapter-postgres";
 const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
 
 export interface RunSsotaAgentInput {
-  projectId: string;
+  teamspaceId: string;
   taskId: string;
   /** End-user data partition (Phase 5). Undefined = builder/shared scope. */
   accountId?: string;
@@ -39,14 +39,14 @@ export async function claimRunning(
   console.log(`[ssota-agent] claim running task=${input.taskId} run=${runId}`);
   const db = getDb();
   await createAgentRunPort(db).start({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runtimeKind: "task",
     taskId: input.taskId,
     workflowRunId: runId,
     accountId: input.accountId ?? null,
     model: input.modelId ?? null,
   });
-  await getTaskPort(input.projectId, input.accountId).updateTask(input.taskId, {
+  await getTaskPort(input.teamspaceId, input.accountId).updateTask(input.taskId, {
     status: "running",
   });
 }
@@ -64,7 +64,7 @@ export async function runAgentStepCore(
 ): Promise<RunAgentResult> {
   console.log(`[ssota-agent] run loop task=${input.taskId} run=${runId}`);
 
-  const task = await getTaskPort(input.projectId, input.accountId).getTask(
+  const task = await getTaskPort(input.teamspaceId, input.accountId).getTask(
     input.taskId,
   );
   let sandbox: SandboxSession | undefined;
@@ -83,7 +83,7 @@ export async function runAgentStepCore(
   try {
     return await streamAgent(
       {
-        projectId: input.projectId,
+        teamspaceId: input.teamspaceId,
         taskId: input.taskId,
         runId,
         runtimeKind: "task",
@@ -119,13 +119,13 @@ export async function finalizeRun(
     ? TERMINAL_STATUSES.has(result.finalStatus)
     : false;
   if (!isTerminal) {
-    await getTaskPort(input.projectId, input.accountId).updateTask(input.taskId, {
+    await getTaskPort(input.teamspaceId, input.accountId).updateTask(input.taskId, {
       status: "failed",
       result: { reason: "Agent ended without completing the task", ...result },
     });
   }
 
-  const finalTask = await getTaskPort(input.projectId, input.accountId).getTask(
+  const finalTask = await getTaskPort(input.teamspaceId, input.accountId).getTask(
     input.taskId,
   );
   await createAgentRunPort(db).finish(runId, {

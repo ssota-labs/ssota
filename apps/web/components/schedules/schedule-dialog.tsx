@@ -49,7 +49,7 @@ export interface ScheduleEditTarget {
 }
 
 interface ScheduleDialogProps {
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   instructions: InstructionOption[];
   trigger: ReactElement;
@@ -97,7 +97,7 @@ function defaultRecurrence(timezone: string): Recurrence {
 }
 
 export function ScheduleDialog({
-  projectId,
+  teamspaceId,
   accountId,
   instructions,
   trigger,
@@ -190,7 +190,7 @@ export function ScheduleDialog({
     startTransition(async () => {
       try {
         const body = {
-          projectId,
+          teamspaceId,
           accountId,
           workflowInstructionId: instructionId,
           cronExpression,

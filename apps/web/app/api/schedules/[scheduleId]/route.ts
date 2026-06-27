@@ -10,7 +10,7 @@ import { isValidTimezone, validateCron } from "@/lib/schedules/recurrence";
 export const runtime = "nodejs";
 
 const updateSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().optional(),
   workflowInstructionId: z.string().min(1).optional(),
   cronExpression: z.string().min(1).optional(),
@@ -24,12 +24,12 @@ async function requireUser() {
 }
 
 async function resolveAccountId(
-  projectId: string,
+  teamspaceId: string,
   request: Request,
   requestedAccountId?: string,
 ): Promise<{ accountId?: string; error?: NextResponse }> {
   try {
-    const scope = await resolveApiAccountScope(projectId, {
+    const scope = await resolveApiAccountScope(teamspaceId, {
       referer: request.headers.get("referer"),
       requestedAccountId,
     });
@@ -81,7 +81,7 @@ export async function PATCH(
   }
 
   const { accountId, error } = await resolveAccountId(
-    parsed.projectId,
+    parsed.teamspaceId,
     request,
     parsed.accountId,
   );
@@ -90,7 +90,7 @@ export async function PATCH(
   let workflowInstructionId: string | undefined;
   if (parsed.workflowInstructionId !== undefined) {
     const resolved = await resolveWorkflowInstructionId(
-      parsed.projectId,
+      parsed.teamspaceId,
       parsed.workflowInstructionId,
     );
     if (!resolved) {
@@ -102,7 +102,7 @@ export async function PATCH(
     workflowInstructionId = resolved;
   }
 
-  const schedule = await getSchedulePort(parsed.projectId, accountId).update(
+  const schedule = await getSchedulePort(parsed.teamspaceId, accountId).update(
     scheduleId,
     {
       workflowInstructionId,
@@ -119,7 +119,7 @@ export async function PATCH(
   return NextResponse.json({ schedule });
 }
 
-/** Delete a schedule. projectId is passed as a query param. */
+/** Delete a schedule. teamspaceId is passed as a query param. */
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ scheduleId: string }> },
@@ -130,15 +130,15 @@ export async function DELETE(
   }
 
   const { scheduleId } = await params;
-  const projectId = new URL(request.url).searchParams.get("projectId");
-  if (!projectId) {
-    return NextResponse.json({ error: "Missing projectId" }, { status: 422 });
+  const teamspaceId = new URL(request.url).searchParams.get("teamspaceId");
+  if (!teamspaceId) {
+    return NextResponse.json({ error: "Missing teamspaceId" }, { status: 422 });
   }
 
-  const { accountId, error } = await resolveAccountId(projectId, request);
+  const { accountId, error } = await resolveAccountId(teamspaceId, request);
   if (error) return error;
 
-  const deleted = await getSchedulePort(projectId, accountId).delete(
+  const deleted = await getSchedulePort(teamspaceId, accountId).delete(
     scheduleId,
   );
   if (!deleted) {

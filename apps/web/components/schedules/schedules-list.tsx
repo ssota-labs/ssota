@@ -47,7 +47,7 @@ export interface ScheduleRow {
 interface SchedulesListProps {
   schedules: ScheduleRow[];
   instructions: InstructionOption[];
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
 }
 
@@ -59,7 +59,7 @@ function summarize(cron: string, timezone: string): string {
 export function SchedulesList({
   schedules,
   instructions,
-  projectId,
+  teamspaceId,
   accountId,
 }: SchedulesListProps) {
   const router = useRouter();
@@ -78,7 +78,7 @@ export function SchedulesList({
         const res = await fetch(`/api/schedules/${schedule.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId, accountId, enabled }),
+          body: JSON.stringify({ teamspaceId, accountId, enabled }),
         });
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
         router.refresh();
@@ -93,7 +93,7 @@ export function SchedulesList({
     startTransition(async () => {
       try {
         const res = await fetch(
-          `/api/schedules/${schedule.id}?projectId=${projectId}`,
+          `/api/schedules/${schedule.id}?teamspaceId=${teamspaceId}`,
           { method: "DELETE" },
         );
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
@@ -115,7 +115,7 @@ export function SchedulesList({
           </p>
         </div>
         <ScheduleDialog
-          projectId={projectId}
+          teamspaceId={teamspaceId}
           accountId={accountId}
           instructions={instructions}
           trigger={<Button size="sm">Add trigger</Button>}
@@ -172,7 +172,7 @@ export function SchedulesList({
                   </div>
                   <div className="flex items-center gap-1">
                     <ScheduleDialog
-                      projectId={projectId}
+                      teamspaceId={teamspaceId}
                       accountId={accountId}
                       instructions={instructions}
                       schedule={schedule}

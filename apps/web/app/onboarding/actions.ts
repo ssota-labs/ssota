@@ -2,7 +2,7 @@
 
 import { isDisplayName, isEnglishDisplayName } from "@ssota/core";
 import { redirect } from "next/navigation";
-import { projectPath } from "@/lib/console/paths";
+import { orgPath } from "@/lib/console/paths";
 import { getOnboardingPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { getTemplateBundleById } from "@ssota/adapter-postgres";
@@ -43,7 +43,7 @@ export async function saveProjectDraftOnboardingAction(formData: FormData) {
 
   if (!isDisplayName(projectName)) {
     validationError(
-      "Project name must be 2–64 characters and may use letters, numbers, spaces, or hyphens.",
+      "Teamspace name must be 2–64 characters and may use letters, numbers, spaces, or hyphens.",
       "project",
     );
   }
@@ -73,9 +73,9 @@ export async function completeTemplateOnboardingAction(formData: FormData) {
   });
 
   redirect(
-    projectPath({
+    orgPath({
       orgSlug: organization.slug,
-      projectSlug: project.slug,
+      teamspaceSlug: project.slug,
     }),
   );
 }

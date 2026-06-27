@@ -7,8 +7,8 @@ export interface SsotaClientOptions {
   auth: {
     accessToken: string | (() => string | Promise<string>);
   };
-  /** Project scope sent as `X-SSOTA-Project-Id`; required for task APIs. */
-  projectId?: string | (() => string | undefined | Promise<string | undefined>);
+  /** Teamspace scope sent as `X-SSOTA-Teamspace-Id`; required for task APIs. */
+  teamspaceId?: string | (() => string | undefined | Promise<string | undefined>);
   fetch?: FetchLike;
 }
 
@@ -22,10 +22,10 @@ export function createClient(options: SsotaClientOptions): SsotaClient {
       ? options.auth.accessToken
       : () => options.auth.accessToken as string;
 
-  const getProjectId = options.projectId
-    ? typeof options.projectId === "function"
-      ? options.projectId
-      : () => options.projectId as string
+  const getProjectId = options.teamspaceId
+    ? typeof options.teamspaceId === "function"
+      ? options.teamspaceId
+      : () => options.teamspaceId as string
     : undefined;
 
   const http = new HttpClient({

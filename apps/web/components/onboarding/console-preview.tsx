@@ -267,7 +267,7 @@ export function ConsolePreview({
     provisionRevealCount,
   } = useProvisioningReveal(isProvisioning, templateId);
   const orgLabel = organizationName.trim() || "Your Organization";
-  const projectLabel = projectName?.trim() || "Your Project";
+  const projectLabel = projectName?.trim() || "Your Teamspace";
   const provisioningLabel = templateName?.trim() || "project template";
   const sidebarNavRef = useRef<HTMLDivElement>(null);
 

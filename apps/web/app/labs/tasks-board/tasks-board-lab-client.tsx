@@ -69,7 +69,7 @@ export function TasksBoardLabClient() {
       <div className="border-border bg-background relative min-h-[36rem] flex-1 overflow-auto rounded-lg border p-4">
         <TasksKanbanBoard
           rows={rows}
-          projectId="lab-preview"
+          teamspaceId="lab-preview"
           onOpenDetail={(task) =>
             setLastAction(`openDetail(${task.id.slice(0, 6)} · ${task.title})`)
           }

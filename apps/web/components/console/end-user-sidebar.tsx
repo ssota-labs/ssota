@@ -13,8 +13,8 @@ import { SidebarProfileMenu } from "./sidebar-profile-menu";
 
 export type AppShellContext = {
   orgSlug: string;
-  projectSlug: string;
-  projectId: string;
+  teamspaceSlug: string;
+  teamspaceId: string;
   accountId: string;
   userEmail: string;
   pageLinks: { pageId: string; label: string }[];
@@ -47,7 +47,7 @@ export function EndUserSidebar({ ctx }: EndUserSidebarProps) {
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r bg-sidebar">
       <div className="border-b px-3 py-3">
-        <p className="text-foreground truncate text-sm font-medium">{ctx.projectSlug}</p>
+        <p className="text-foreground truncate text-sm font-medium">{ctx.teamspaceSlug}</p>
         <p className="text-muted-foreground truncate text-xs">End-user app</p>
       </div>
 

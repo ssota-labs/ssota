@@ -92,7 +92,7 @@ interface ChatHistorySidebarProps {
   threads: ThreadSummary[];
   chatBase: string;
   orgSlug: string;
-  projectSlug: string;
+  teamspaceSlug: string;
   appMode: boolean;
 }
 
@@ -118,7 +118,7 @@ export function ChatHistorySidebar({
   threads,
   chatBase,
   orgSlug,
-  projectSlug,
+  teamspaceSlug,
   appMode,
 }: ChatHistorySidebarProps) {
   const { t } = useLocale();
@@ -282,7 +282,7 @@ export function ChatHistorySidebar({
       try {
         await deleteChatThreadAction({
           orgSlug,
-          projectSlug,
+          teamspaceSlug,
           threadId,
           appMode,
           chatBase,

@@ -13,12 +13,12 @@ export const runtime = "nodejs";
 export const maxDuration = 120;
 
 const inlineBuildBodySchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   properties: z.record(z.unknown()),
 });
 
 const componentBuildBodySchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   componentId: z.string().uuid(),
 });
 
@@ -52,14 +52,14 @@ export async function POST(request: Request) {
 
   try {
     const [{ themeCss }, toolchain] = await Promise.all([
-      resolveProjectTheme(body.projectId),
-      resolveProjectToolchain(body.projectId),
+      resolveProjectTheme(body.teamspaceId),
+      resolveProjectToolchain(body.teamspaceId),
     ]);
 
     if ("componentId" in body) {
-      const deps = getGraphDeps(body.projectId);
+      const deps = getGraphDeps(body.teamspaceId);
       const node = await deps.graphRead.getNode({
-        projectId: body.projectId,
+        teamspaceId: body.teamspaceId,
         nodeId: body.componentId,
       });
       if (!node || node.catalogKey !== "ui_component") {
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       }
 
       const buildContext = resolveBuildContext({
-        projectId: body.projectId,
+        teamspaceId: body.teamspaceId,
         node,
         packageJson: toolchain.packageJson,
         lockfile: toolchain.lockfile,
@@ -84,17 +84,17 @@ export async function POST(request: Request) {
       });
 
       const { build, cacheHit } = await runStudioBuildAndCache({
-        projectId: body.projectId,
+        teamspaceId: body.teamspaceId,
         buildContext,
       });
 
       const jsUrl = studioPreviewBundleUrl(
-        body.projectId,
+        body.teamspaceId,
         build.buildHash,
         "bundle.js",
       );
       const cssUrl = build.artifacts.css
-        ? studioPreviewBundleUrl(body.projectId, build.buildHash, "bundle.css")
+        ? studioPreviewBundleUrl(body.teamspaceId, build.buildHash, "bundle.css")
         : undefined;
 
       return NextResponse.json({
@@ -115,10 +115,10 @@ export async function POST(request: Request) {
         : "Component.tsx";
 
     const buildContext = resolveBuildContext({
-      projectId: body.projectId,
+      teamspaceId: body.teamspaceId,
       node: {
         id: "inline",
-        projectId: body.projectId,
+        teamspaceId: body.teamspaceId,
         nodeCatalogId: "inline",
         catalogKey: "ui_component",
         catalogLabel: "UI component",
@@ -140,17 +140,17 @@ export async function POST(request: Request) {
     });
 
     const { build, cacheHit } = await runStudioBuildAndCache({
-      projectId: body.projectId,
+      teamspaceId: body.teamspaceId,
       buildContext,
     });
 
     const jsUrl = studioPreviewBundleUrl(
-      body.projectId,
+      body.teamspaceId,
       build.buildHash,
       "bundle.js",
     );
     const cssUrl = build.artifacts.css
-      ? studioPreviewBundleUrl(body.projectId, build.buildHash, "bundle.css")
+      ? studioPreviewBundleUrl(body.teamspaceId, build.buildHash, "bundle.css")
       : undefined;
 
     return NextResponse.json({

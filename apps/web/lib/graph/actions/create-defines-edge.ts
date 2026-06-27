@@ -3,13 +3,13 @@ import { createGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 import { getGraphDeps } from "@/lib/graph/graph-deps";
 
 export async function createDefinesPageEdge(input: {
-  projectId: string;
+  teamspaceId: string;
   iaRootId: string;
   pageId: string;
 }) {
-  const deps = getGraphDeps(input.projectId);
+  const deps = getGraphDeps(input.teamspaceId);
   return createEdge(deps, {
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     catalogKey: "defines",
     sourceNodeId: input.iaRootId,
     targetNodeId: input.pageId,

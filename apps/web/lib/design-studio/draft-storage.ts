@@ -4,8 +4,8 @@ import {
   uiComponentContentSchemaV2,
 } from "@ssota/contracts/catalog";
 
-export function draftStorageKey(projectId: string, componentId: string): string {
-  return `studio:draft:${projectId}:${componentId}`;
+export function draftStorageKey(teamspaceId: string, componentId: string): string {
+  return `studio:draft:${teamspaceId}:${componentId}`;
 }
 
 export function readSessionContentV2(key: string): UiComponentContentV2 | null {

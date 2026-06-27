@@ -66,7 +66,7 @@ const SCOPE_META: Record<Scope, { title: string; subtitle: string; icon: Icon }>
 interface ConnectorsViewProps {
   connectors: ConnectorDef[];
   connections: ScopedConnections;
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   returnTo: string;
   /** Show the org-shared scope (builder console). End-user app shows personal only. */
@@ -75,7 +75,7 @@ interface ConnectorsViewProps {
 
 function authorizeHref(params: {
   slug: string;
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   returnTo: string;
   scope: Scope;
@@ -83,7 +83,7 @@ function authorizeHref(params: {
   const search = new URLSearchParams({
     connector: params.slug,
     accountId: params.accountId,
-    projectId: params.projectId,
+    teamspaceId: params.teamspaceId,
     returnTo: params.returnTo,
   });
   if (params.scope === "org") search.set("scope", "org");
@@ -93,7 +93,7 @@ function authorizeHref(params: {
 export function ConnectorsView({
   connectors,
   connections,
-  projectId,
+  teamspaceId,
   accountId,
   returnTo,
   allowOrgScope,
@@ -178,7 +178,7 @@ export function ConnectorsView({
               userConnections={selectedScoped.user}
               orgConnections={selectedScoped.org}
               allowOrgScope={allowOrgScope}
-              projectId={projectId}
+              teamspaceId={teamspaceId}
               accountId={accountId}
               returnTo={returnTo}
             />
@@ -240,7 +240,7 @@ function ConnectorSettings({
   userConnections,
   orgConnections,
   allowOrgScope,
-  projectId,
+  teamspaceId,
   accountId,
   returnTo,
 }: {
@@ -248,7 +248,7 @@ function ConnectorSettings({
   userConnections: ConnectorConnection[];
   orgConnections: ConnectorConnection[];
   allowOrgScope: boolean;
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   returnTo: string;
 }) {
@@ -290,7 +290,7 @@ function ConnectorSettings({
             scope={scope}
             connections={connectionsFor(scope)}
             onBack={scopes.length > 1 ? () => setScope(null) : undefined}
-            projectId={projectId}
+            teamspaceId={teamspaceId}
             accountId={accountId}
             returnTo={returnTo}
           />
@@ -362,7 +362,7 @@ function ScopeDetail({
   scope,
   connections,
   onBack,
-  projectId,
+  teamspaceId,
   accountId,
   returnTo,
 }: {
@@ -370,7 +370,7 @@ function ScopeDetail({
   scope: Scope;
   connections: ConnectorConnection[];
   onBack?: () => void;
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   returnTo: string;
 }) {
@@ -380,7 +380,7 @@ function ScopeDetail({
   const connected = connections.length > 0;
   const href = authorizeHref({
     slug: connector.provider,
-    projectId,
+    teamspaceId,
     accountId,
     returnTo,
     scope,
@@ -388,7 +388,7 @@ function ScopeDetail({
 
   function disconnect(connectionId: string) {
     startTransition(async () => {
-      await disconnectConnectionAction({ projectId, connectionId, revalidate: returnTo });
+      await disconnectConnectionAction({ teamspaceId, connectionId, revalidate: returnTo });
     });
   }
 
@@ -452,7 +452,7 @@ function ScopeDetail({
       {scope === "user" && connected ? (
         <ToolAccessSection
           toolkit={connector.provider}
-          projectId={projectId}
+          teamspaceId={teamspaceId}
           returnTo={returnTo}
         />
       ) : null}
@@ -472,11 +472,11 @@ interface ToolRow {
  */
 function ToolAccessSection({
   toolkit,
-  projectId,
+  teamspaceId,
   returnTo,
 }: {
   toolkit: string;
-  projectId: string;
+  teamspaceId: string;
   returnTo: string;
 }) {
   const [tools, setTools] = useState<ToolRow[] | null>(null);
@@ -487,7 +487,7 @@ function ToolAccessSection({
   useEffect(() => {
     let active = true;
     setLoading(true);
-    loadToolkitToolSettingsAction({ projectId, toolkit })
+    loadToolkitToolSettingsAction({ teamspaceId, toolkit })
       .then((res) => {
         if (!active) return;
         setTools(res.tools.map((t) => ({ slug: t.slug, name: t.name })));
@@ -502,7 +502,7 @@ function ToolAccessSection({
     return () => {
       active = false;
     };
-  }, [projectId, toolkit]);
+  }, [teamspaceId, toolkit]);
 
   function toggle(slug: string, enabled: boolean) {
     const next = new Set(disabled);
@@ -511,7 +511,7 @@ function ToolAccessSection({
     setDisabled(next);
     startTransition(async () => {
       await setToolkitDisabledAction({
-        projectId,
+        teamspaceId,
         toolkit,
         disabled: [...next],
         revalidate: returnTo,

@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Input } from "@ssota/ui/components/ui/input";
 import { ScrollArea } from "@ssota/ui/components/ui/scroll-area";
 import { cn } from "@ssota/ui/lib/utils";
-import { graphPath, type ProjectRouteContext } from "@/lib/console/paths";
+import { graphPath, type OrgRouteContext } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 import { useGraphCatalog } from "./graph-catalog-context";
 
@@ -60,7 +60,7 @@ function RegistryLinks({
   ctx,
 }: {
   pathname: string;
-  ctx: ProjectRouteContext;
+  ctx: OrgRouteContext;
 }) {
   const nodesHref = graphPath(ctx, "nodes");
   const edgesHref = graphPath(ctx, "edges");

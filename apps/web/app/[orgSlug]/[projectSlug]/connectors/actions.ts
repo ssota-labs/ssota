@@ -14,12 +14,12 @@ import { getCurrentUser } from "@/lib/supabase/server";
  * settings and connections are keyed by this pair.
  */
 async function resolveEntity(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<{ orgId: string; profileId: string }> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
-  const project = await getConsolePort().getProjectById(projectId);
-  if (!project) throw new Error("Project not found");
+  const project = await getConsolePort().getTeamspaceById(teamspaceId);
+  if (!project) throw new Error("Teamspace not found");
   return { orgId: project.organizationId, profileId: user.id };
 }
 
@@ -29,7 +29,7 @@ async function resolveEntity(
  * the credential, so deleting the connected account is the whole operation.
  */
 export async function disconnectConnectionAction(input: {
-  projectId: string;
+  teamspaceId: string;
   connectionId: string;
   revalidate: string;
 }): Promise<void> {
@@ -50,10 +50,10 @@ export interface ToolkitToolSettings {
  * for the Connectors settings sheet's tool-restriction list.
  */
 export async function loadToolkitToolSettingsAction(input: {
-  projectId: string;
+  teamspaceId: string;
   toolkit: string;
 }): Promise<ToolkitToolSettings> {
-  const { orgId, profileId } = await resolveEntity(input.projectId);
+  const { orgId, profileId } = await resolveEntity(input.teamspaceId);
   const [tools, disabled] = await Promise.all([
     listComposioToolkitTools(input.toolkit),
     getConnectorToolSettingsPort().getDisabled(orgId, profileId, input.toolkit),
@@ -66,12 +66,12 @@ export async function loadToolkitToolSettingsAction(input: {
  * Router session on its next run.
  */
 export async function setToolkitDisabledAction(input: {
-  projectId: string;
+  teamspaceId: string;
   toolkit: string;
   disabled: string[];
   revalidate: string;
 }): Promise<void> {
-  const { orgId, profileId } = await resolveEntity(input.projectId);
+  const { orgId, profileId } = await resolveEntity(input.teamspaceId);
   await getConnectorToolSettingsPort().setDisabled(
     orgId,
     profileId,

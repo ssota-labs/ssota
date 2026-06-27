@@ -1,15 +1,15 @@
 import { TasksExplorer } from "@/components/tasks/tasks-explorer";
 import { type TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { resolveOrg } from "@/lib/console/resolve-project";
 import { getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
 
 export default async function TasksPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const { project } = await resolveProject(orgSlug, projectSlug);
+  const { orgSlug, teamspaceSlug } = await params;
+  const { project } = await resolveOrg(orgSlug, teamspaceSlug);
   const tasks = await getTaskPort(project.id).queryTasks({ limit: 200 });
 
   const rows: TaskWorkspaceRow[] = tasks.map((task) => ({
@@ -42,7 +42,7 @@ export default async function TasksPage({
   return (
     <TasksExplorer
       rows={rows}
-      projectId={project.id}
+      teamspaceId={project.id}
       workflowOptions={workflowOptions}
     />
   );

@@ -23,7 +23,7 @@ export function isVirtualWorkflowInstructionId(id: string): boolean {
 }
 
 function virtualInstruction(
-  projectId: string,
+  teamspaceId: string,
   key: string,
   name: string,
   description: string,
@@ -32,7 +32,7 @@ function virtualInstruction(
   const now = new Date(0).toISOString();
   return {
     id: `${VIRTUAL_ID_PREFIX}${key}`,
-    projectId,
+    teamspaceId,
     accountId: null,
     key,
     name,
@@ -46,13 +46,13 @@ function virtualInstruction(
 }
 
 /**
- * Project DB rows plus code-defined builtins/registry entries not yet overridden
+ * Teamspace DB rows plus code-defined builtins/registry entries not yet overridden
  * in the DB. Virtual rows use ids `virtual:{key}` until the user saves.
  */
 export async function loadWorkflowInstructionsForUi(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<WorkflowInstruction[]> {
-  const port = getWorkflowInstructionPort(projectId);
+  const port = getWorkflowInstructionPort(teamspaceId);
   const indices = await port.listInstructions();
   const dbRows = (
     await Promise.all(indices.map((entry) => port.getById(entry.id)))
@@ -75,7 +75,7 @@ export async function loadWorkflowInstructionsForUi(
     byKey.set(
       builtin.key,
       virtualInstruction(
-        projectId,
+        teamspaceId,
         builtin.key,
         builtin.name,
         builtin.description,
@@ -91,7 +91,7 @@ export async function loadWorkflowInstructionsForUi(
     byKey.set(
       key,
       virtualInstruction(
-        projectId,
+        teamspaceId,
         key,
         definition.title,
         definition.description,
@@ -104,8 +104,8 @@ export async function loadWorkflowInstructionsForUi(
 }
 
 export async function loadWorkflowInstructionGroupsForUi(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<WorkflowInstructionGroup[]> {
-  const instructions = await loadWorkflowInstructionsForUi(projectId);
+  const instructions = await loadWorkflowInstructionsForUi(teamspaceId);
   return groupWorkflowInstructions(instructions);
 }

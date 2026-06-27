@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { Organization, Project } from "@ssota/core";
-import type { ProjectRouteContext } from "@/lib/console/paths";
+import type { Organization, Teamspace } from "@ssota/core";
+import type { OrgRouteContext } from "@/lib/console/paths";
 
-export type ConsoleContextValue = ProjectRouteContext & {
+export type ConsoleContextValue = OrgRouteContext & {
   org: Organization;
-  project: Project;
+  project: Teamspace;
 };
 
 const ProjectContext = createContext<ConsoleContextValue | null>(null);

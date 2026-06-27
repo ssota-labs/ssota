@@ -1,13 +1,13 @@
-import type { ProjectRouteContext } from "@/lib/console/paths";
+import type { OrgRouteContext } from "@/lib/console/paths";
 
-export type AppRouteContext = ProjectRouteContext & {
+export type AppRouteContext = OrgRouteContext & {
   accountId: string;
 };
 
 export function appProjectPath(
-  ctx: Pick<ProjectRouteContext, "orgSlug" | "projectSlug">,
+  ctx: Pick<OrgRouteContext, "orgSlug" | "teamspaceSlug">,
   ...segments: string[]
 ): string {
-  const base = `/app/${ctx.orgSlug}/${ctx.projectSlug}`;
+  const base = `/app/${ctx.orgSlug}/${ctx.teamspaceSlug}`;
   return segments.length ? `${base}/${segments.join("/")}` : base;
 }

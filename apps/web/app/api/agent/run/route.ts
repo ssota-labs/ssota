@@ -10,7 +10,7 @@ export const maxDuration = 300;
 
 const bodySchema = z.object({
   taskId: z.string().uuid(),
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().optional(),
   modelId: z.string().optional(),
   maxSteps: z.number().int().positive().max(100).optional(),
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   let accountId = parsed.accountId;
   if (user) {
     try {
-      const scope = await resolveApiAccountScope(parsed.projectId, {
+      const scope = await resolveApiAccountScope(parsed.teamspaceId, {
         referer: request.headers.get("referer"),
         requestedAccountId: parsed.accountId,
       });
@@ -67,7 +67,7 @@ export async function POST(request: Request) {
 
   const runner = await getJobRunner();
   const run = await runner.start({
-    projectId: parsed.projectId,
+    teamspaceId: parsed.teamspaceId,
     taskId: parsed.taskId,
     accountId,
     modelId: parsed.modelId,

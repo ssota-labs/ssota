@@ -5,7 +5,7 @@ import { createViteScaffold, studioBuildBackend } from "./vite-scaffold.js";
 describe("createViteScaffold", () => {
   it("materializes package.json and user source files", () => {
     const files = createViteScaffold({
-      projectId: "00000000-0000-4000-8000-000000000001",
+      teamspaceId: "00000000-0000-4000-8000-000000000001",
       entry: "Component.tsx",
       files: {
         "Component.tsx": "export default function C() { return null; }",

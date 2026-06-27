@@ -9,8 +9,8 @@ import {
   type ConnectorConnection,
 } from "@/components/connectors/connectors-view";
 import { getConnectors } from "@/lib/connect/connectors";
-import { projectPath } from "@/lib/console/paths";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { orgPath } from "@/lib/console/paths";
+import { resolveOrg } from "@/lib/console/resolve-project";
 import { getOrCreateProjectAccount } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
@@ -23,11 +23,11 @@ const toConnection = (c: ComposioConnection): ConnectorConnection => ({
 export default async function ConnectorsPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const ctx = { orgSlug, projectSlug };
-  const { org, project } = await resolveProject(orgSlug, projectSlug);
+  const { orgSlug, teamspaceSlug } = await params;
+  const ctx = { orgSlug, teamspaceSlug };
+  const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
   const user = await getCurrentUser();
 
   // accountId is threaded through hrefs but is no longer the connector tenancy
@@ -48,7 +48,7 @@ export default async function ConnectorsPage({
     ]);
   }
 
-  const returnTo = projectPath(ctx, "connectors");
+  const returnTo = orgPath(ctx, "connectors");
 
   return (
     <ConnectorsView
@@ -57,7 +57,7 @@ export default async function ConnectorsPage({
         user: userConns.filter((c) => c.active).map(toConnection),
         org: orgConns.filter((c) => c.active).map(toConnection),
       }}
-      projectId={project.id}
+      teamspaceId={project.id}
       accountId={account.id}
       returnTo={returnTo}
       allowOrgScope

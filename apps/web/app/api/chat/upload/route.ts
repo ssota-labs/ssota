@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
   const form = await request.formData().catch(() => null);
   const file = form?.get("file");
-  const projectId = String(form?.get("projectId") ?? "");
+  const teamspaceId = String(form?.get("teamspaceId") ?? "");
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "No file" }, { status: 422 });
   }
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
   const supabase = await createSupabaseServerClient();
   const ext = extensionFor(file.type, file.name);
-  const path = `${projectId || "shared"}/${crypto.randomUUID()}.${ext}`;
+  const path = `${teamspaceId || "shared"}/${crypto.randomUUID()}.${ext}`;
 
   const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
     contentType: file.type,

@@ -2,8 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import type { TableViewState } from "@ssota/contracts";
 import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
 import { resolvePageBindings } from "@ssota/core";
-import { resolveProject } from "@/lib/console/resolve-project";
-import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
+import { resolveOrgPage } from "@/lib/console/resolve-org-page";
+import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
@@ -32,19 +32,18 @@ export default async function TreePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string; pageId: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string; pageId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { orgSlug, projectSlug, pageId } = await params;
+  const { orgSlug, pageId } = await params;
   const urlParams = normalizeSearchParams(await searchParams);
-  const { project } = await resolveProject(orgSlug, projectSlug);
+  const { teamspace: project, page } = await resolveOrgPage(orgSlug, pageId);
 
-  const page = await getPagePort(project.id).getPage(pageId);
-  if (!page) {
-    notFound();
-  }
-
-  const routeCtx: ProjectRouteContext = { orgSlug, projectSlug };
+  const routeCtx: OrgRouteContext = {
+    orgSlug,
+    teamspaceSlug: project.slug,
+    teamspaceId: project.id,
+  };
   if (isHubPage(page.spec)) {
     const hubRedirect = await resolveHubRedirectPath(
       getPagePort(project.id),
@@ -59,7 +58,10 @@ export default async function TreePage({
   const context: Record<string, unknown> = { searchParams: urlParams };
   if (page.subjectNodeId) {
     const subject = await graphRead.getNodeById(page.subjectNodeId);
-    if (subject && subject.projectId === project.id) {
+    if (
+      subject &&
+      (subject.teamspaceId === null || subject.teamspaceId === project.id)
+    ) {
       context.subject = {
         id: subject.id,
         catalogKey: subject.catalogKey,
@@ -79,9 +81,9 @@ export default async function TreePage({
   await resolveArtifactBindings(project.id, page.bindings, bindingData);
 
   const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
-  const basePath = `/${orgSlug}/${projectSlug}`;
-  const pagePath = projectPath(routeCtx, "p", pageId);
-  const previewBasePath = projectPath(routeCtx, "design", "preview");
+  const basePath = orgPath(routeCtx);
+  const pagePath = orgPath(routeCtx, "p", pageId);
+  const previewBasePath = orgPath(routeCtx, "design", "preview");
 
   async function onAction(
     actionKey: string,
@@ -89,7 +91,7 @@ export default async function TreePage({
   ): Promise<void> {
     "use server";
     await runPageAction({
-      projectId: project.id,
+      teamspaceId: project.id,
       pageId,
       actionKey,
       input,
@@ -104,7 +106,7 @@ export default async function TreePage({
     const title = `Component ${new Date().toISOString().slice(0, 10)}`;
     const slug = `${slugifyComponentTitle(title)}-${Date.now().toString(36).slice(-4)}`;
     const node = await createGraphNodeAction({
-      projectId: project.id,
+      teamspaceId: project.id,
       catalogKey: "ui_component",
       title,
       properties: defaultSourceComponentProperties(slug),
@@ -119,7 +121,7 @@ export default async function TreePage({
   }): Promise<void> {
     "use server";
     await deployUiComponentAction({
-      projectId: project.id,
+      teamspaceId: project.id,
       nodeId: input.nodeId,
       contentV2: input.contentV2,
       revalidatePaths: [pagePath],
@@ -140,7 +142,7 @@ export default async function TreePage({
   ): Promise<void> {
     "use server";
     await savePageViewState({
-      projectId: project.id,
+      teamspaceId: project.id,
       pageId,
       elementId,
       viewState,
@@ -158,7 +160,7 @@ export default async function TreePage({
       artifactWorkbench={
         usesWorkbench
           ? {
-              projectId: project.id,
+              teamspaceId: project.id,
               previewBasePath,
               onCreateComponent: onStudioCreateComponent,
               onDeployComponent: onStudioDeployComponent,

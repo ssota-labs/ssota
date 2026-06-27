@@ -13,7 +13,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 type RouteParams = {
-  projectId: string;
+  teamspaceId: string;
   buildHash: string;
   fileName: string;
 };
@@ -22,14 +22,14 @@ export async function GET(
   request: Request,
   context: { params: Promise<RouteParams> },
 ) {
-  const { projectId, buildHash, fileName } = await context.params;
+  const { teamspaceId, buildHash, fileName } = await context.params;
   if (!isPreviewBundleFile(fileName)) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const access = new URL(request.url).searchParams.get("access");
   const hasAccessToken = verifyPreviewBundleAccessToken(access, {
-    projectId,
+    teamspaceId,
     buildHash,
     fileName,
   });
@@ -40,7 +40,7 @@ export async function GET(
     }
   }
 
-  const paths = studioBuildArtifactPaths(projectId, buildHash);
+  const paths = studioBuildArtifactPaths(teamspaceId, buildHash);
   const storagePath =
     fileName === "bundle.js"
       ? paths.jsPath

@@ -18,7 +18,7 @@ export const runtime = "nodejs";
  * to authorize the toolkit, and redirect the user to Composio's OAuth URL.
  * Composio returns them to `returnTo` once the connection is established.
  *
- *   GET /api/connect/authorize?connector=gmail&projectId=<id>&returnTo=/connections
+ *   GET /api/connect/authorize?connector=gmail&teamspaceId=<id>&returnTo=/connections
  *
  * `connector` carries the Composio toolkit slug (the param name is kept for
  * backward-compatible hrefs).
@@ -26,8 +26,8 @@ export const runtime = "nodejs";
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const toolkit = url.searchParams.get("connector");
-  const projectId =
-    url.searchParams.get("projectId") ?? process.env.CHAT_PROJECT_ID ?? "";
+  const teamspaceId =
+    url.searchParams.get("teamspaceId") ?? process.env.CHAT_PROJECT_ID ?? "";
   const returnTo = url.searchParams.get("returnTo") ?? "/";
   // "org" creates an org-shared (SHARED) connection; "user" (default) is personal.
   const scope = url.searchParams.get("scope") === "org" ? "org" : "user";
@@ -44,16 +44,16 @@ export async function GET(request: Request) {
     loginRedirect(returnTo); // never returns
   }
 
-  if (!projectId) {
+  if (!teamspaceId) {
     return NextResponse.json(
-      { error: "projectId is required" },
+      { error: "teamspaceId is required" },
       { status: 422 },
     );
   }
 
-  const project = await getConsolePort().getProjectById(projectId);
+  const project = await getConsolePort().getTeamspaceById(teamspaceId);
   if (!project) {
-    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+    return NextResponse.json({ error: "Teamspace not found" }, { status: 404 });
   }
 
   // Composio returns the user straight back to where they started.

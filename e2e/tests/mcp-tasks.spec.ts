@@ -16,10 +16,10 @@ const WORKFLOW_KEY = "work.e2e_task";
 
 test.describe("MCP task tools", () => {
   test.beforeAll(async () => {
-    const projectId = await getDefaultProjectId();
+    const teamspaceId = await getDefaultProjectId();
     const { db, client } = createDb(process.env.DATABASE_URL);
     try {
-      await createWorkflowInstructionPort(db, { projectId }).upsertInstruction({
+      await createWorkflowInstructionPort(db, { teamspaceId }).upsertInstruction({
         key: WORKFLOW_KEY,
         name: "E2E task workflow",
         description: "Workflow referenced by the MCP tasks e2e spec.",

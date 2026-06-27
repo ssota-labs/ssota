@@ -4,10 +4,10 @@ import { loadEndUserChatScope } from "@/lib/chat/server-scope";
 export default async function AppChatIndexPage({
   params,
 }: {
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const scope = await loadEndUserChatScope(orgSlug, projectSlug);
+  const { orgSlug, teamspaceSlug } = await params;
+  const scope = await loadEndUserChatScope(orgSlug, teamspaceSlug);
   const latest = await scope.chat.latestThread();
   if (latest) {
     redirect(`${scope.chatBase}/${latest.id}`);

@@ -34,7 +34,7 @@ async function resolvePostSignInPath(userId: string, next?: string | null) {
 }
 
 export async function updateWorkflowInstructionAction(
-  projectId: string,
+  teamspaceId: string,
   input: {
     key: string;
     name: string;
@@ -52,7 +52,7 @@ export async function updateWorkflowInstructionAction(
     content: BlockNoteContentSchema.parse(input.content),
   });
 
-  await getWorkflowInstructionPort(projectId).upsertInstruction(parsed);
+  await getWorkflowInstructionPort(teamspaceId).upsertInstruction(parsed);
 
   for (const path of withConsolePaths(["/workflow/instructions"])) {
     revalidatePath(path);
@@ -60,7 +60,7 @@ export async function updateWorkflowInstructionAction(
 }
 
 export async function updateTaskStatusAction(
-  projectId: string,
+  teamspaceId: string,
   taskId: string,
   status: TaskStatus,
 ) {
@@ -68,7 +68,7 @@ export async function updateTaskStatusAction(
   if (!user) throw new Error("Unauthorized");
 
   const parsed = UpdateTaskInputSchema.parse({ taskId, status });
-  const result = await getTaskPort(projectId).updateTask(parsed.taskId, {
+  const result = await getTaskPort(teamspaceId).updateTask(parsed.taskId, {
     status: parsed.status,
   });
 
@@ -79,7 +79,7 @@ export async function updateTaskStatusAction(
 }
 
 export async function spawnTaskAction(
-  projectId: string,
+  teamspaceId: string,
   input: {
     title: string;
     workflowInstructionKey: string;
@@ -113,14 +113,14 @@ export async function spawnTaskAction(
       },
     },
   });
-  const graphPorts = getGraphPorts(projectId);
+  const graphPorts = getGraphPorts(teamspaceId);
   await spawnTask(
     {
-      tasks: getTaskPort(projectId),
+      tasks: getTaskPort(teamspaceId),
       graphRead: graphPorts.graphRead,
-      workflowInstructions: getWorkflowInstructionPort(projectId),
+      workflowInstructions: getWorkflowInstructionPort(teamspaceId),
     },
-    projectId,
+    teamspaceId,
     parsed,
   );
 
@@ -225,7 +225,7 @@ export async function signOutAction() {
 }
 
 export async function searchMentionNodesAction(input: {
-  projectId: string;
+  teamspaceId: string;
   query: string;
 }): Promise<{
   ok: boolean;
@@ -236,8 +236,8 @@ export async function searchMentionNodesAction(input: {
   if (!user) return { ok: false, items: [], error: "Unauthorized" };
 
   const query = input.query.trim().toLowerCase();
-  const { graphRead } = getGraphPorts(input.projectId);
-  const nodes = await graphRead.queryNodes({ projectId: input.projectId, limit: 80 });
+  const { graphRead } = getGraphPorts(input.teamspaceId);
+  const nodes = await graphRead.queryNodes({ teamspaceId: input.teamspaceId, limit: 80 });
   const items = nodes
     .map((node) => {
       const title = String(
@@ -272,9 +272,9 @@ export async function uploadEditorImageAction(
   const user = await getCurrentUser();
   if (!user) return { ok: false, error: "Unauthorized" };
 
-  const projectId = String(formData.get("projectId") ?? "").trim();
+  const teamspaceId = String(formData.get("teamspaceId") ?? "").trim();
   const file = formData.get("file");
-  if (!projectId) return { ok: false, error: "projectId required" };
+  if (!teamspaceId) return { ok: false, error: "teamspaceId required" };
   if (!(file instanceof File)) return { ok: false, error: "file required" };
   if (!file.type.startsWith("image/")) {
     return { ok: false, error: "Only image uploads are supported" };
@@ -284,7 +284,7 @@ export async function uploadEditorImageAction(
   }
 
   try {
-    const url = await uploadEditorAsset(projectId, file);
+    const url = await uploadEditorAsset(teamspaceId, file);
     return { ok: true, url };
   } catch (error) {
     return {

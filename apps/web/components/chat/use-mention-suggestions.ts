@@ -67,7 +67,7 @@ export interface UseMentionSuggestions {
  */
 export function useMentionSuggestions(
   orgSlug: string,
-  projectSlug: string,
+  teamspaceSlug: string,
 ): UseMentionSuggestions {
   const [all, setAll] = useState<MentionCandidate[]>([]);
   const [mention, setMention] = useState<MentionInfo | null>(null);
@@ -79,14 +79,14 @@ export function useMentionSuggestions(
   const ensureLoaded = useCallback(() => {
     if (loadedRef.current) return;
     loadedRef.current = true;
-    const params = new URLSearchParams({ orgSlug, projectSlug });
+    const params = new URLSearchParams({ orgSlug, teamspaceSlug });
     fetch(`/api/chat/mentions?${params.toString()}`)
       .then((r) => (r.ok ? r.json() : { candidates: [] }))
       .then((d: { candidates?: MentionCandidate[] }) =>
         setAll(d.candidates ?? []),
       )
       .catch(() => setAll([]));
-  }, [orgSlug, projectSlug]);
+  }, [orgSlug, teamspaceSlug]);
 
   const suggestions = useMemo(() => {
     if (!mention) return [];

@@ -9,14 +9,14 @@ import {
   getWorkflowLensTableHref,
   getWorkflowLensTypeLabel,
 } from "@/lib/console/workflow-lens-config";
-import { projectPath, type ProjectRouteContext } from "@/lib/console/paths";
+import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphDeps } from "../graph-deps";
 
 export async function buildWorkflowLensPhases(
-  ctx: ProjectRouteContext,
-  projectId: string,
+  ctx: OrgRouteContext,
+  teamspaceId: string,
 ): Promise<WorkflowLensPhase[]> {
-  const { graphRead } = getGraphDeps(projectId);
+  const { graphRead } = getGraphDeps(teamspaceId);
 
   const phases: WorkflowLensPhase[] = [];
 
@@ -25,7 +25,7 @@ export async function buildWorkflowLensPhases(
 
     for (const typeConfig of phase.types) {
       const nodes = await graphRead.queryNodes({
-        projectId,
+        teamspaceId,
         catalogKey: typeConfig.nodeType,
         limit: 200,
       });
@@ -37,7 +37,7 @@ export async function buildWorkflowLensPhases(
             nodeType: node.catalogKey,
             title: node.title || "Untitled",
             lifecycleStatus: readLifecycleStatus(node.properties),
-            canonicalUrl: projectPath(ctx, "n", node.id),
+            canonicalUrl: orgPath(ctx, "n", node.id),
             content: readNodeContent(node.properties) ?? "",
             updatedAt: node.updatedAt.toISOString(),
             properties: node.properties,
@@ -68,8 +68,8 @@ export async function buildWorkflowLensPhases(
 
 /** Compact summary for overview hub — phases with total node counts. */
 export async function buildWorkflowLensSummary(
-  ctx: ProjectRouteContext,
-  projectId: string,
+  ctx: OrgRouteContext,
+  teamspaceId: string,
 ): Promise<
   Array<{
     key: string;
@@ -78,7 +78,7 @@ export async function buildWorkflowLensSummary(
     topTypes: Array<{ nodeType: string; label: string; count: number }>;
   }>
 > {
-  const phases = await buildWorkflowLensPhases(ctx, projectId);
+  const phases = await buildWorkflowLensPhases(ctx, teamspaceId);
 
   return phases.map((phase) => {
     const typeCounts = phase.types

@@ -13,7 +13,7 @@ const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
 const scope = {
   orgSlug: DEFAULT_MCP_ORG_SLUG,
-  projectSlug: DEFAULT_MCP_PROJECT_SLUG,
+  teamspaceSlug: DEFAULT_MCP_PROJECT_SLUG,
 };
 
 test.describe("MCP graph write tools", () => {
@@ -79,11 +79,11 @@ test.describe("MCP graph write tools", () => {
     expect(edge.targetNodeId).toBe(initiativeId);
   });
 
-  test("rejects cross-project edge with PROJECT_MISMATCH", async ({
+  test("rejects cross-project edge with ORG_MISMATCH", async ({
     request,
   }) => {
     const token = await getSmokeAccessToken();
-    const projectId = await getDefaultProjectId();
+    const teamspaceId = await getDefaultProjectId();
     const initiativeId = await getSmokeInitiativeId();
     const suffix = Date.now();
 
@@ -104,18 +104,18 @@ test.describe("MCP graph write tools", () => {
       `;
       await sql`
         insert into projects (id, organization_id, slug, name)
-        values (${otherProjectId}, ${otherProjectId}, 'e2e-other-project', 'E2E Other Project')
+        values (${otherProjectId}, ${otherProjectId}, 'e2e-other-project', 'E2E Other Teamspace')
         on conflict (id) do nothing
       `;
       const catalogRows = await sql<{ id: string }[]>`
-        insert into node_catalog (project_id, key, label, property_schema)
+        insert into node_catalog (teamspace_id, key, label, property_schema)
         values (${otherProjectId}, 'release', 'Release', '{}'::jsonb)
-        on conflict (project_id, key) do update set label = excluded.label
+        on conflict (teamspace_id, key) do update set label = excluded.label
         returning id
       `;
       const releaseCatalogId = catalogRows[0]!.id;
       const rows = await sql<{ id: string }[]>`
-        insert into nodes (project_id, node_catalog_id, title, properties)
+        insert into nodes (teamspace_id, node_catalog_id, title, properties)
         values (
           ${otherProjectId},
           ${releaseCatalogId},
@@ -154,9 +154,9 @@ test.describe("MCP graph write tools", () => {
       },
       scope,
     );
-    expect(errorText).toContain("PROJECT_MISMATCH");
+    expect(errorText).toContain("ORG_MISMATCH");
 
-    expect(projectId).toBeTruthy();
+    expect(teamspaceId).toBeTruthy();
     expect(initiativeId).toBeTruthy();
   });
 });

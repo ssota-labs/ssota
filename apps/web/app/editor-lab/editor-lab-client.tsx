@@ -59,11 +59,11 @@ const SAMPLE: JSONContent = {
   ],
 };
 
-export function EditorLabClient({ projectId }: { projectId: string | null }) {
+export function EditorLabClient({ teamspaceId }: { teamspaceId: string | null }) {
   const [doc, setDoc] = useState<JSONContent>(SAMPLE);
   const hostProps = useMemo(
-    () => (projectId ? createSsotaEditorHostProps(projectId) : {}),
-    [projectId],
+    () => (teamspaceId ? createSsotaEditorHostProps(teamspaceId) : {}),
+    [teamspaceId],
   );
 
   useEffect(() => {

@@ -9,18 +9,18 @@ export default async function AppProjectLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ orgSlug: string; projectSlug: string }>;
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, projectSlug } = await params;
-  const shell = await resolveEndUserShellContext(orgSlug, projectSlug);
-  const pageLinks = await listAppPageLinks(shell.projectId);
+  const { orgSlug, teamspaceSlug } = await params;
+  const shell = await resolveEndUserShellContext(orgSlug, teamspaceSlug);
+  const pageLinks = await listAppPageLinks(shell.teamspaceId);
 
   return (
     <AppShell
       ctx={{
         orgSlug,
-        projectSlug,
-        projectId: shell.projectId,
+        teamspaceSlug,
+        teamspaceId: shell.teamspaceId,
         accountId: shell.accountId,
         userEmail: shell.userEmail,
         pageLinks,

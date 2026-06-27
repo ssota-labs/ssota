@@ -11,7 +11,7 @@ import type { RoadmapNodeView } from "@/lib/roadmap/types";
 
 type ProductRoadmapCardProps = {
   node: RoadmapNodeView;
-  projectId: string;
+  teamspaceId: string;
   onSave: (input: {
     title: string;
     content: string;
@@ -23,7 +23,7 @@ type ProductRoadmapCardProps = {
 
 export function ProductRoadmapCard({
   node,
-  projectId,
+  teamspaceId,
   onSave,
   onSaveContent,
   onApplyTemplate,
@@ -93,7 +93,7 @@ export function ProductRoadmapCard({
         ) : (
           <RoadmapDocumentPanel
             content={node.content}
-            projectId={projectId}
+            teamspaceId={teamspaceId}
             expandTestId="product-roadmap-expand"
             onSave={onSaveContent}
           />

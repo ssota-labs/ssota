@@ -66,14 +66,14 @@ export class HttpClient {
     schema: T,
   ): Promise<z.infer<T>> {
     const token = await this.getAccessToken();
-    const projectId = this.getProjectId ? await this.getProjectId() : undefined;
+    const teamspaceId = this.getProjectId ? await this.getProjectId() : undefined;
     const headers: Record<string, string> = {
       ...(init.headers as Record<string, string> | undefined),
       Authorization: `Bearer ${token}`,
       Accept: "application/json",
     };
-    if (projectId) {
-      headers[PROJECT_ID_HEADER] = projectId;
+    if (teamspaceId) {
+      headers[PROJECT_ID_HEADER] = teamspaceId;
     }
 
     const response = await this.fetchImpl(String(url), {

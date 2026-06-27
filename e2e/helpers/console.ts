@@ -2,12 +2,12 @@ import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import {
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
 } from "@ssota/adapter-postgres";
 
-export const DEFAULT_CONSOLE_BASE = `/${DEFAULT_ORG_SLUG}/${DEFAULT_PROJECT_SLUG}`;
+export const DEFAULT_CONSOLE_BASE = `/${DEFAULT_ORG_SLUG}/${DEFAULT_TEAMSPACE_SLUG}`;
 
-export const DEFAULT_APP_BASE = `/app/${DEFAULT_ORG_SLUG}/${DEFAULT_PROJECT_SLUG}`;
+export const DEFAULT_APP_BASE = `/app/${DEFAULT_ORG_SLUG}/${DEFAULT_TEAMSPACE_SLUG}`;
 
 export async function gotoApp(page: Page, path = "") {
   const suffix = path.startsWith("/") ? path : path ? `/${path}` : "";

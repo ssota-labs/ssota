@@ -63,7 +63,7 @@ export function ProjectOnboardingForm({
       form={
         <form action={saveProjectDraftOnboardingAction} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="projectName">Project name</Label>
+            <Label htmlFor="projectName">Teamspace name</Label>
             <Input
               id="projectName"
               name="projectName"
@@ -85,7 +85,7 @@ export function ProjectOnboardingForm({
       preview={
         <ConsolePreview
           organizationName={organizationName}
-          projectName={projectName || "Your Project"}
+          projectName={projectName || "Your Teamspace"}
         />
       }
     />

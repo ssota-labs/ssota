@@ -6,7 +6,7 @@ This runbook sets up external scheduling for `orchestrator.*` workflows against 
 
 - SSOTA MCP app running and OAuth configured
 - Cursor Automations enabled on your account/team
-- Project scoped to `ssota-labs` / `ssota-dev`
+- Teamspace scoped to `ssota-labs` / `ssota-dev`
 
 ## MCP connection
 

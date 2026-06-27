@@ -15,13 +15,13 @@ function createSupabaseAdminClient() {
 }
 
 export async function uploadEditorAsset(
-  projectId: string,
+  teamspaceId: string,
   file: File,
 ): Promise<string> {
   const extension = file.name.includes(".")
     ? file.name.split(".").pop()!.toLowerCase()
     : "bin";
-  const objectPath = `${projectId}/${crypto.randomUUID()}.${extension}`;
+  const objectPath = `${teamspaceId}/${crypto.randomUUID()}.${extension}`;
   const supabase = createSupabaseAdminClient();
   const bytes = Buffer.from(await file.arrayBuffer());
 

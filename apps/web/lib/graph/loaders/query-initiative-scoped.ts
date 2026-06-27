@@ -4,13 +4,13 @@ import { getGraphDeps } from "../graph-deps";
 
 /** Nodes linked to an initiative via for_initiative (source → initiative). */
 export async function queryInitiativeScopedNodes(
-  projectId: string,
+  teamspaceId: string,
   initiativeId: string,
   nodeType?: NodeType,
 ): Promise<GraphNode[]> {
-  const { graphRead } = getGraphDeps(projectId);
+  const { graphRead } = getGraphDeps(teamspaceId);
   const edges = await graphRead.traverseEdges({
-    projectId,
+    teamspaceId,
     nodeId: initiativeId,
     direction: "incoming",
     catalogKey: "for_initiative",
@@ -18,7 +18,7 @@ export async function queryInitiativeScopedNodes(
   const scopedIds = new Set(edges.map((edge) => edge.sourceNodeId));
 
   const nodes = await graphRead.queryNodes({
-    projectId,
+    teamspaceId,
     catalogKey: nodeType,
     limit: 500,
   });
