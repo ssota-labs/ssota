@@ -9,7 +9,7 @@ describe("ConnectionRunState snapshot", () => {
         connection: "slack",
         installationId: "inst_slack_1",
         qualifiedName: "slack.send_message",
-        argsSchema: { channel: "string", text: "string" },
+        argsSchema: { properties: { channel: "string", text: "string" } },
       },
       {
         connection: "linear",
@@ -26,7 +26,7 @@ describe("ConnectionRunState snapshot", () => {
         linear: "inst_linear_1",
       },
       argsSchemaByQualifiedName: {
-        "slack.send_message": { channel: "string", text: "string" },
+        "slack.send_message": { properties: { channel: "string", text: "string" } },
       },
     });
 
@@ -38,8 +38,7 @@ describe("ConnectionRunState snapshot", () => {
     expect(restored.getInstallationId("linear")).toBe("inst_linear_1");
     expect(restored.getInstallationId("notion")).toBeNull();
     expect(restored.getArgsSchema("slack.send_message")).toEqual({
-      channel: "string",
-      text: "string",
+      properties: { channel: "string", text: "string" },
     });
   });
 

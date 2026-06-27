@@ -11,6 +11,10 @@
     "./connect-scopes": {
       "types": "./dist/credentials/mcp-scopes.d.ts",
       "default": "./dist/credentials/mcp-scopes.js"
+    },
+    "./workflow": {
+      "types": "./dist/workflow/main-agent.d.ts",
+      "default": "./dist/workflow/main-agent.js"
     }
   },
   "scripts": {
@@ -22,6 +26,7 @@
   },
   "dependencies": {
     "@ai-sdk/mcp": "^2.0.0",
+    "@ai-sdk/workflow": "^1.0.2",
     "@ssota/adapter-postgres": "workspace:*",
     "@ssota/contracts": "workspace:*",
     "@ssota/core": "workspace:*",
