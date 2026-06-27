@@ -54,6 +54,7 @@ export {
   isComposioToolkit,
   resolveComposioAuthConfigs,
   COMPOSIO_TOOLKITS,
+  COMPOSIO_THEME_ORDER,
   type ComposioToolkitDef,
   type ConnectorScope,
 } from "./composio/shared.js";

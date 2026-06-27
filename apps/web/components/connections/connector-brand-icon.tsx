@@ -1,6 +1,7 @@
 "use client";
 
 import type { ComponentType, SVGProps } from "react";
+import { PuzzlePieceIcon } from "@phosphor-icons/react";
 import {
   Discord,
   GitHubDark,
@@ -19,10 +20,8 @@ type ConnectorBrandIconProps = SVGProps<SVGSVGElement> & {
   provider: ConnectorProvider;
 };
 
-const PROVIDER_SVGS: Record<
-  ConnectorProvider,
-  ComponentType<SVGProps<SVGSVGElement>>
-> = {
+// Brand marks we have SVGs for; everything else falls back to a generic icon.
+const PROVIDER_SVGS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
   slack: Slack,
   notion: Notion,
   github: GitHubLight,
@@ -35,6 +34,8 @@ const PROVIDER_SVGS: Record<
   googlecalendar: Google,
   googledocs: Google,
   googlesheets: Google,
+  googletasks: Google,
+  googlemeet: Google,
 };
 
 export function ConnectorBrandIcon({
@@ -77,5 +78,13 @@ export function ConnectorBrandIcon({
   }
 
   const Logo = PROVIDER_SVGS[provider];
+  if (!Logo) {
+    return (
+      <PuzzlePieceIcon
+        aria-hidden
+        className={cn("text-muted-foreground", className)}
+      />
+    );
+  }
   return <Logo aria-hidden className={className} {...props} />;
 }
