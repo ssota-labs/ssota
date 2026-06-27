@@ -24,3 +24,8 @@ minimumReleaseAgeExclude:
   - '@supabase/supabase-js@2.108.1'
   - '@vercel/oidc@3.6.2'
   - emulate@0.8.0
+  - '@ai-sdk/gateway@4.0.2'
+  - '@ai-sdk/react@4.0.2'
+  - '@ai-sdk/workflow@1.0.2'
+  - ai@7.0.2
+  - '@composio/vercel@0.11.0'

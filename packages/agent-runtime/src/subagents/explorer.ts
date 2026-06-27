@@ -1,7 +1,8 @@
-import { ToolLoopAgent, stepCountIs, type LanguageModel, type ToolSet } from "ai";
+import { ToolLoopAgent, isStepCount, type LanguageModel, type ToolSet } from "ai";
 import { z } from "zod";
 import type { AgentRunContext } from "../engine/types.js";
 import { gateway } from "../models.js";
+import { buildToolsContext } from "../tools/context.js";
 import { createGraphTools } from "../tools/graph.js";
 import { createPageTools } from "../tools/pages.js";
 import { createTaskTools } from "../tools/tasks.js";
@@ -79,7 +80,7 @@ export const explorerSubagent = new ToolLoopAgent({
   model: gateway(SUBAGENT_MODEL_ID),
   instructions: EXPLORER_SYSTEM_PROMPT,
   tools: readOnlyWorkspaceTools(),
-  stopWhen: stepCountIs(SUBAGENT_STEP_LIMIT),
+  stopWhen: isStepCount(SUBAGENT_STEP_LIMIT),
   callOptionsSchema,
   prepareCall: ({ options, ...settings }) => {
     if (!options) {
@@ -100,8 +101,9 @@ ${options.instructions}
 - You CANNOT ask questions — no one will respond.
 - This is READ-ONLY.
 - Your final message MUST include both a **Summary** and an **Answer**.`,
-      // SSOTA scope so the read tools resolve projectId/accountId.
-      experimental_context: { ssota: options.context },
+      // SSOTA scope so the read tools resolve projectId/accountId. v7 delivers
+      // context per tool via `toolsContext[toolName]`.
+      toolsContext: buildToolsContext(settings.tools, { ssota: options.context }),
     };
   },
 });

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type FileUIPart, type UIMessage } from "ai";
+import type { FileUIPart, UIMessage } from "ai";
+import { WorkflowChatTransport } from "@ai-sdk/workflow";
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
 import type { ConnectorOption } from "./connect-card";
@@ -34,9 +35,14 @@ export function ChatConversation({
   const { messages, sendMessage, status, stop } = useChat({
     id: threadId,
     messages: initialMessages,
-    transport: new DefaultChatTransport({
+    // Durable WorkflowAgent run with resumable streaming: the POST returns an
+    // x-workflow-run-id and the transport reconnects to
+    // /api/chat/web/{runId}/stream if the connection drops.
+    transport: new WorkflowChatTransport<UIMessage>({
       api: "/api/chat/web",
-      body: { projectId, threadId, accountId },
+      prepareSendMessagesRequest: ({ body, messages: msgs }) => ({
+        body: { ...body, projectId, threadId, accountId, messages: msgs },
+      }),
     }),
   });
 

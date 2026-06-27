@@ -8,7 +8,12 @@ import {
   createVercelOidcVerifier,
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
-import { getMainAgentRunner } from "@/app/workflows/main-agent-job-runner";
+import { start } from "workflow/api";
+import {
+  createModelCallToUIChunkTransform,
+  type ModelCallStreamPart,
+} from "@ai-sdk/workflow";
+import { runMainWorkflowAgent } from "@/app/workflows/main-workflow-agent";
 import { getSiteUrl } from "@/lib/auth/config";
 import { extractWorkspaceKey, resolveChatTarget } from "./resolve-account";
 
@@ -97,22 +102,28 @@ async function runAgentStream(message: IncomingMessage) {
   const text = message.text;
   const threadId = message.threadId ?? `chat:${workspaceKey}`;
 
-  const runner = await getMainAgentRunner();
-  const run = await runner.start({
-    projectId,
-    threadId,
-    accountId,
-    chatContext: {
-      chat: {
-        messages: [{ role: "user", content: text }],
+  const run = await start(runMainWorkflowAgent, [
+    {
+      projectId,
+      threadId,
+      accountId,
+      chatContext: {
+        chat: {
+          messages: [{ role: "user", content: text }],
+        },
+        channel: "chat",
+        workspace: workspaceKey,
+        user: message.author?.userId,
       },
-      channel: "chat",
-      workspace: workspaceKey,
-      user: message.author?.userId,
     },
-  });
+  ]);
 
-  return uiChunksToText(run.getReadable() as ReadableStream<UIMessageChunk>);
+  const readable = run.getReadable() as ReadableStream<ModelCallStreamPart>;
+  return uiChunksToText(
+    readable.pipeThrough(
+      createModelCallToUIChunkTransform(),
+    ) as ReadableStream<UIMessageChunk>,
+  );
 }
 
 let cached: Chat | undefined;
