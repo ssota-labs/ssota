@@ -1,19 +1,11 @@
 import type { UIMessage } from "ai";
-import {
-  getDb,
-  resolveCredentialProvider,
-  streamAgent,
-  type RunAgentResult,
-  type UIMessageChunk,
-} from "@ssota/agent-runtime";
+import { getDb, type RunAgentResult } from "@ssota/agent-runtime";
 import { createAgentRunPort, createChatPort } from "@ssota/adapter-postgres";
-import { collectAssistantMessageParts } from "@/lib/chat/persist-assistant-message";
 
 /**
- * Pure main (chat) agent logic shared by every {@link MainAgentRunner}. Contains
- * no Vercel Workflow DevKit imports — the durable EE runner wraps these in
- * `"use step"` boundaries while the OSS inline runner calls
- * {@link runMainAgentCore} directly.
+ * Pure DB helpers for the main (chat) agent run lifecycle, wrapped in
+ * `"use step"` boundaries by the WorkflowAgent runner
+ * (main-workflow-agent-steps.ts). No Vercel Workflow DevKit imports here.
  */
 
 export interface RunMainAgentInput {
@@ -23,27 +15,6 @@ export interface RunMainAgentInput {
   modelId?: string;
   maxSteps?: number;
   chatContext?: Record<string, unknown>;
-}
-
-async function pipeReadableToWritable(
-  readable: ReadableStream<UIMessageChunk>,
-  writable: WritableStream<UIMessageChunk>,
-): Promise<void> {
-  const reader = readable.getReader();
-  const writer = writable.getWriter();
-  try {
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      await writer.write(value);
-    }
-  } finally {
-    try {
-      await writer.close();
-    } catch {
-      // Client may have already closed/cancelled the stream.
-    }
-  }
 }
 
 export async function claimMainRunning(
@@ -59,39 +30,6 @@ export async function claimMainRunning(
     accountId: input.accountId ?? null,
     model: input.modelId ?? null,
   });
-}
-
-export async function runMainAgentStepCore(
-  input: RunMainAgentInput,
-  runId: string,
-  clientWritable: WritableStream<UIMessageChunk>,
-): Promise<{ result: RunAgentResult; parts: UIMessage["parts"] | null }> {
-  const credentials = resolveCredentialProvider();
-  const { readable, writable } = new TransformStream<UIMessageChunk>();
-  const [toClient, toPersist] = readable.tee();
-
-  const forwardPromise = pipeReadableToWritable(toClient, clientWritable);
-  const collectPromise = collectAssistantMessageParts(toPersist);
-
-  const result = await streamAgent(
-    {
-      projectId: input.projectId,
-      threadId: input.threadId,
-      runId,
-      runtimeKind: "main",
-      accountId: input.accountId,
-      modelId: input.modelId,
-      credentials,
-      maxSteps: input.maxSteps,
-      chatContext: input.chatContext,
-    },
-    writable,
-  );
-
-  await forwardPromise;
-  const parts = await collectPromise;
-
-  return { result, parts };
 }
 
 /**
@@ -134,25 +72,4 @@ export async function finalizeMainRun(
     status: result.finalStatus ?? "done",
     usage: result.usage ?? {},
   });
-}
-
-/**
- * Inline (non-durable) sequence: claim → run → persist → finalize. The caller
- * owns `clientWritable` and must close it once this resolves so the readable
- * side terminates.
- */
-export async function runMainAgentCore(
-  input: RunMainAgentInput,
-  runId: string,
-  clientWritable: WritableStream<UIMessageChunk>,
-): Promise<RunAgentResult> {
-  await claimMainRunning(input, runId);
-  const { result, parts } = await runMainAgentStepCore(
-    input,
-    runId,
-    clientWritable,
-  );
-  await persistMainAssistantMessage(input, parts);
-  await finalizeMainRun(runId, result);
-  return result;
 }
