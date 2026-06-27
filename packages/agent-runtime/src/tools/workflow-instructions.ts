@@ -22,8 +22,8 @@ export function createWorkflowInstructionTools(): ToolSet {
       description:
         "List workflow instruction definitions for this project (metadata only).",
       inputSchema: z.object({}),
-      execute: async (_input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (_input, { context }) => {
+        const ctx = getRunContext(context);
         const items = await listWorkflowInstructions(
           getWorkflowInstructionPort(ctx.teamspaceId, ctx.accountId),
         );
@@ -49,8 +49,8 @@ export function createWorkflowInstructionTools(): ToolSet {
         id: z.string().uuid().optional(),
         key: z.string().optional(),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         const port = getWorkflowInstructionPort(ctx.teamspaceId, ctx.accountId);
         const result = input.id
           ? await readWorkflowInstructionById(port, input.id)
@@ -99,8 +99,8 @@ export function createWorkflowInstructionTools(): ToolSet {
           .string()
           .describe("The playbook as markdown / plain text."),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         try {
           const saved = await getWorkflowInstructionPort(
             ctx.teamspaceId,

@@ -3,39 +3,105 @@
 import type { ComponentType, SVGProps } from "react";
 import { PuzzlePieceIcon } from "@phosphor-icons/react";
 import {
+  Asana,
+  Atlassian,
+  Calendly,
+  Canva,
+  ClickUp,
   Discord,
+  Dropbox,
+  Figma,
   GitHubDark,
   GitHubLight,
-  Google,
+  GitLab,
+  Gmail,
+  GoogleCalendar,
+  GoogleDrive,
+  GoogleMeet,
+  GoogleSheets,
   Linear,
+  LinkedIn,
+  MicrosoftOneDrive,
+  MicrosoftOutlook,
   Notion,
+  Reddit,
+  Salesforce,
+  Sentry,
   Slack,
+  Todoist,
+  Trello,
   XDark,
   XLight,
+  YouTube,
+  Zoom,
 } from "@ridemountainpig/svgl-react";
 import { cn } from "@ssota/ui/lib/utils";
+import {
+  AirtableIcon,
+  BoxIcon,
+  CodaIcon,
+  HubSpotIcon,
+  IntercomIcon,
+  MiroIcon,
+  PipedriveIcon,
+  ZendeskIcon,
+} from "@/components/connections/additional-brand-icons";
+import { GoogleDocsIcon, GoogleTasksIcon } from "@/components/connections/google-workspace-icons";
 import type { ConnectorProvider } from "@/lib/connect/connectors";
 
 type ConnectorBrandIconProps = SVGProps<SVGSVGElement> & {
   provider: ConnectorProvider;
 };
 
-// Brand marks we have SVGs for; everything else falls back to a generic icon.
-const PROVIDER_SVGS: Record<string, ComponentType<SVGProps<SVGSVGElement>>> = {
-  slack: Slack,
-  notion: Notion,
-  github: GitHubLight,
-  discord: Discord,
-  linear: Linear,
-  twitter: XLight,
-  // The Composio Google toolkits share the Google mark.
-  gmail: Google,
-  googledrive: Google,
-  googlecalendar: Google,
-  googledocs: Google,
-  googlesheets: Google,
-  googletasks: Google,
-  googlemeet: Google,
+type BrandIcon =
+  | { kind: "component"; Icon: ComponentType<SVGProps<SVGSVGElement>> }
+  | {
+      kind: "theme";
+      light: ComponentType<SVGProps<SVGSVGElement>>;
+      dark: ComponentType<SVGProps<SVGSVGElement>>;
+    };
+
+// svgl-react logos where the svgl catalog has them; inline marks for the rest.
+const PROVIDER_BRANDS: Record<string, BrandIcon> = {
+  notion: { kind: "component", Icon: Notion },
+  slack: { kind: "component", Icon: Slack },
+  discord: { kind: "component", Icon: Discord },
+  outlook: { kind: "component", Icon: MicrosoftOutlook },
+  zoom: { kind: "component", Icon: Zoom },
+  github: { kind: "theme", light: GitHubLight, dark: GitHubDark },
+  linear: { kind: "component", Icon: Linear },
+  jira: { kind: "component", Icon: Atlassian },
+  gitlab: { kind: "component", Icon: GitLab },
+  sentry: { kind: "component", Icon: Sentry },
+  gmail: { kind: "component", Icon: Gmail },
+  googlecalendar: { kind: "component", Icon: GoogleCalendar },
+  googlesheets: { kind: "component", Icon: GoogleSheets },
+  googledocs: { kind: "component", Icon: GoogleDocsIcon },
+  googletasks: { kind: "component", Icon: GoogleTasksIcon },
+  googlemeet: { kind: "component", Icon: GoogleMeet },
+  googledrive: { kind: "component", Icon: GoogleDrive },
+  asana: { kind: "component", Icon: Asana },
+  trello: { kind: "component", Icon: Trello },
+  clickup: { kind: "component", Icon: ClickUp },
+  todoist: { kind: "component", Icon: Todoist },
+  airtable: { kind: "component", Icon: AirtableIcon },
+  coda: { kind: "component", Icon: CodaIcon },
+  calendly: { kind: "component", Icon: Calendly },
+  dropbox: { kind: "component", Icon: Dropbox },
+  box: { kind: "component", Icon: BoxIcon },
+  onedrive: { kind: "component", Icon: MicrosoftOneDrive },
+  hubspot: { kind: "component", Icon: HubSpotIcon },
+  salesforce: { kind: "component", Icon: Salesforce },
+  pipedrive: { kind: "component", Icon: PipedriveIcon },
+  figma: { kind: "component", Icon: Figma },
+  canva: { kind: "component", Icon: Canva },
+  miro: { kind: "component", Icon: MiroIcon },
+  zendesk: { kind: "component", Icon: ZendeskIcon },
+  intercom: { kind: "component", Icon: IntercomIcon },
+  twitter: { kind: "theme", light: XLight, dark: XDark },
+  linkedin: { kind: "component", Icon: LinkedIn },
+  youtube: { kind: "component", Icon: YouTube },
+  reddit: { kind: "component", Icon: Reddit },
 };
 
 export function ConnectorBrandIcon({
@@ -43,42 +109,8 @@ export function ConnectorBrandIcon({
   className,
   ...props
 }: ConnectorBrandIconProps) {
-  if (provider === "github") {
-    return (
-      <>
-        <GitHubLight
-          aria-hidden
-          className={cn("dark:hidden", className)}
-          {...props}
-        />
-        <GitHubDark
-          aria-hidden
-          className={cn("hidden dark:block", className)}
-          {...props}
-        />
-      </>
-    );
-  }
-
-  if (provider === "twitter") {
-    return (
-      <>
-        <XLight
-          aria-hidden
-          className={cn("dark:hidden", className)}
-          {...props}
-        />
-        <XDark
-          aria-hidden
-          className={cn("hidden dark:block", className)}
-          {...props}
-        />
-      </>
-    );
-  }
-
-  const Logo = PROVIDER_SVGS[provider];
-  if (!Logo) {
+  const brand = PROVIDER_BRANDS[provider];
+  if (!brand) {
     return (
       <PuzzlePieceIcon
         aria-hidden
@@ -86,5 +118,25 @@ export function ConnectorBrandIcon({
       />
     );
   }
-  return <Logo aria-hidden className={className} {...props} />;
+
+  if (brand.kind === "theme") {
+    const { light: Light, dark: Dark } = brand;
+    return (
+      <>
+        <Light
+          aria-hidden
+          className={cn("dark:hidden", className)}
+          {...props}
+        />
+        <Dark
+          aria-hidden
+          className={cn("hidden dark:block", className)}
+          {...props}
+        />
+      </>
+    );
+  }
+
+  const { Icon } = brand;
+  return <Icon aria-hidden className={className} {...props} />;
 }

@@ -5,147 +5,38 @@ import {
   createAccountPort,
   createConsolePort,
 } from "@ssota/adapter-postgres";
-import { createNode, resolvePageBindings, spawnTask } from "@ssota/core";
+import { createNode, resolvePageBindings } from "@ssota/core";
 import { createNodeInputSchema } from "@ssota/contracts/graph";
-import { runAgentForTask, streamAgentForTask } from "../run.js";
 import {
   getDb,
   getGraphPorts,
   getGraphReadPort,
   getPagePort,
-  getTaskPort,
-  getWorkflowInstructionPort,
+  registerTeamspaceOrganization,
 } from "../ports.js";
-
-const sampleDirective = {
-  goal: "Summarize project goals in a short note for integration test.",
-  background: "Automated agent-runtime integration smoke test.",
-  steps: ["Query graph if needed", "Write summary", "Complete task"],
-  constraints: ["Read-only unless updating task result"],
-  contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },
-};
 
 const DB_ONLY = Boolean(process.env.DATABASE_URL);
 
-async function defaultProjectId(): Promise<string> {
+async function defaultTeamspaceContext(): Promise<{
+  teamspaceId: string;
+  organizationId: string;
+}> {
   const console_ = createConsolePort(getDb());
   const org = await console_.getOrganizationBySlug(DEFAULT_ORG_SLUG);
   const project = org
     ? await console_.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG)
     : null;
-  if (!project) throw new Error("seed missing — run pnpm db:seed");
-  return project.id;
+  if (!project || !org) throw new Error("seed missing — run pnpm db:seed");
+  registerTeamspaceOrganization(project.id, org.id);
+  return { teamspaceId: project.id, organizationId: org.id };
 }
-
-/**
- * Live end-to-end run of the agent loop against a real DB + AI Gateway.
- * Skipped unless both DATABASE_URL and AI_GATEWAY_API_KEY are set — start
- * local Supabase (`pnpm e2e:prepare`) and export the gateway key to run it:
- *
- *   DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres \
- *   AI_GATEWAY_API_KEY=... \
- *   pnpm --filter @ssota/agent-runtime test
- */
-const SHOULD_RUN =
-  Boolean(process.env.DATABASE_URL) && Boolean(process.env.AI_GATEWAY_API_KEY);
-
-describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
-  it(
-    "runs an Agent task to a terminal status",
-    async () => {
-      const db = getDb();
-      const console_ = createConsolePort(db);
-      const org = await console_.getOrganizationBySlug(DEFAULT_ORG_SLUG);
-      expect(org, "seeded organization").toBeTruthy();
-      const project = await console_.getTeamspaceBySlug(
-        org!.id,
-        DEFAULT_TEAMSPACE_SLUG,
-      );
-      expect(project, "seeded project").toBeTruthy();
-      const teamspaceId = project!.id;
-
-      const task = await spawnTask(
-        {
-          tasks: getTaskPort(teamspaceId),
-          graphRead: getGraphReadPort(teamspaceId),
-          workflowInstructions: getWorkflowInstructionPort(teamspaceId),
-        },
-        teamspaceId,
-        {
-          title: "Integration smoke: summarize the current project's goals",
-          workflowInstructionKey: "work.write_document",
-          executorType: "Agent",
-          context: { executionDirective: sampleDirective },
-          acceptanceCriteria: [
-            "List the project's objectives (or note none exist)",
-          ],
-          idempotencyKey: `agent-runtime-integration-${Date.now()}`,
-        },
-      );
-
-      const result = await runAgentForTask({
-        teamspaceId,
-        taskId: task.id,
-        runId: `test-${task.id}`,
-        runtimeKind: "task",
-      });
-
-      expect(["done", "blocked"]).toContain(result.finalStatus);
-    },
-    180_000,
-  );
-
-  it(
-    "streams UI message chunks while completing a task",
-    async () => {
-      const teamspaceId = await defaultProjectId();
-      const task = await spawnTask(
-        {
-          tasks: getTaskPort(teamspaceId),
-          graphRead: getGraphReadPort(teamspaceId),
-          workflowInstructions: getWorkflowInstructionPort(teamspaceId),
-        },
-        teamspaceId,
-        {
-          title: "Streaming smoke: list the project's objectives",
-          workflowInstructionKey: "work.write_document",
-          executorType: "Agent",
-          context: { executionDirective: sampleDirective },
-          acceptanceCriteria: ["List objectives"],
-          idempotencyKey: `agent-stream-${Date.now()}`,
-        },
-      );
-
-      const chunks: unknown[] = [];
-      const writable = new WritableStream({
-        write(chunk) {
-          chunks.push(chunk);
-        },
-      });
-
-      const result = await streamAgentForTask(
-        {
-          teamspaceId,
-          taskId: task.id,
-          runId: `test-stream-${task.id}`,
-          runtimeKind: "task",
-        },
-        writable,
-      );
-
-      expect(chunks.length).toBeGreaterThan(0);
-      expect(["done", "blocked"]).toContain(result.finalStatus);
-    },
-    180_000,
-  );
-});
 
 // Deterministic (no LLM): persist a page definition on a `page` node and
 // resolve its bindings against the live graph — the Phase 3 pipeline that
 // backs the production render route. Needs only DATABASE_URL.
 describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
   it("persists a page and resolves its bindings", async () => {
-    const teamspaceId = await defaultProjectId();
+    const { teamspaceId } = await defaultTeamspaceContext();
     const pagePort = getPagePort(teamspaceId);
 
     const page = await pagePort.createPage({
@@ -183,7 +74,7 @@ describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
 // builder scope sees all. Needs only DATABASE_URL.
 describe.skipIf(!DB_ONLY)("account isolation", () => {
   it("isolates account data while sharing builder/null rows", async () => {
-    const teamspaceId = await defaultProjectId();
+    const { teamspaceId } = await defaultTeamspaceContext();
     const accounts = createAccountPort(getDb());
     const stamp = Date.now();
 

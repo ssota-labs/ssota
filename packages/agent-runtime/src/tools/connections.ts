@@ -317,10 +317,10 @@ function buildConnectionSearchTool(
           "Optional connection id to narrow search (e.g. linear, slack).",
         ),
     }),
-    execute: async (searchInput, { experimental_context }) => {
-      const ctx = getRunContext(experimental_context);
-      const state = getConnectionRunState(experimental_context);
-      const provider = getCredentialProvider(experimental_context);
+    execute: async (searchInput, { context }) => {
+      const ctx = getRunContext(context);
+      const state = getConnectionRunState(context);
+      const provider = getCredentialProvider(context);
 
       console.log(
         JSON.stringify({
@@ -381,9 +381,9 @@ function buildConnectionCallTool(
         .record(z.unknown())
         .describe("Arguments for the tool."),
     }),
-    execute: async (callInput, { experimental_context }) => {
-      const ctx = getRunContext(experimental_context);
-      const state = getConnectionRunState(experimental_context);
+    execute: async (callInput, { context }) => {
+      const ctx = getRunContext(context);
+      const state = getConnectionRunState(context);
       const parsed = parseQualifiedToolName(callInput.qualifiedName);
       if (!parsed) {
         throw new Error(
@@ -500,8 +500,8 @@ function buildRequestConnectionTool() {
         .string()
         .describe("Short, user-facing reason this connection is needed."),
     }),
-    execute: async (requestInput, { experimental_context }) => {
-      const ctx = getRunContext(experimental_context);
+    execute: async (requestInput, { context }) => {
+      const ctx = getRunContext(context);
       return {
         connectionRequired: true as const,
         connector: requestInput.connector,

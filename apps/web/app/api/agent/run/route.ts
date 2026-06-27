@@ -1,6 +1,7 @@
-import { after, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { z } from "zod";
-import { getJobRunner } from "@/app/workflows/job-runner";
+import { start } from "workflow/api";
+import { runSsotaAgentWorkflow } from "@/app/workflows/ssota-agent.ee";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -65,15 +66,16 @@ export async function POST(request: Request) {
     }
   }
 
-  const runner = await getJobRunner();
-  const run = await runner.start({
-    teamspaceId: parsed.teamspaceId,
-    taskId: parsed.taskId,
-    accountId,
-    modelId: parsed.modelId,
-    maxSteps: parsed.maxSteps,
-  });
-  after(run.completion);
+  // Durable WorkflowAgent run on the WDK — detached server-side.
+  const run = await start(runSsotaAgentWorkflow, [
+    {
+      teamspaceId: parsed.teamspaceId,
+      taskId: parsed.taskId,
+      accountId,
+      modelId: parsed.modelId,
+      maxSteps: parsed.maxSteps,
+    },
+  ]);
 
   return NextResponse.json({ runId: run.runId });
 }

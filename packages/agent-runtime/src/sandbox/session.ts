@@ -12,6 +12,8 @@ export interface ExecResult {
 }
 
 export interface SandboxSession {
+  /** Sandbox id — store it to re-attach across workflow step boundaries. */
+  readonly sandboxId: string;
   readonly workingDirectory: string;
   exec(cmd: string, args?: string[]): Promise<ExecResult>;
   writeFile(path: string, content: string): Promise<void>;
@@ -22,6 +24,7 @@ export interface SandboxSession {
 }
 
 type RawSandbox = {
+  sandboxId?: string;
   runCommand: (opts: {
     cmd: string;
     args?: string[];
@@ -36,8 +39,13 @@ type RawSandbox = {
   stop: () => Promise<void>;
 };
 
-function wrap(raw: RawSandbox, workingDirectory: string): SandboxSession {
+function wrap(
+  raw: RawSandbox,
+  sandboxId: string,
+  workingDirectory: string,
+): SandboxSession {
   return {
+    sandboxId,
     workingDirectory,
     async exec(cmd, args = []) {
       const result = await raw.runCommand({ cmd, args });
@@ -110,5 +118,37 @@ export async function createSandboxSession(
     timeout: options.timeoutMs ?? 120_000,
   })) as unknown as RawSandbox;
 
-  return wrap(raw, options.workingDirectory ?? "/vercel/sandbox");
+  return wrap(
+    raw,
+    raw.sandboxId ?? "",
+    options.workingDirectory ?? "/vercel/sandbox",
+  );
+}
+
+/**
+ * Re-attach to an existing sandbox by id (Sandbox.get). Used inside a durable
+ * tool step to reconnect to the sandbox provisioned earlier in the run — a live
+ * sandbox session cannot cross workflow step boundaries, but its id can.
+ */
+export async function attachSandboxSession(
+  sandboxId: string,
+  options: Pick<CreateSandboxSessionOptions, "workingDirectory"> = {},
+): Promise<SandboxSession> {
+  let Sandbox: typeof import("@vercel/sandbox").Sandbox;
+  try {
+    ({ Sandbox } = await import("@vercel/sandbox"));
+  } catch {
+    throw new Error("@vercel/sandbox is not installed");
+  }
+
+  const raw = (await Sandbox.get({
+    ...getSandboxCredentials(),
+    sandboxId,
+  })) as unknown as RawSandbox;
+
+  return wrap(
+    raw,
+    raw.sandboxId ?? sandboxId,
+    options.workingDirectory ?? "/vercel/sandbox",
+  );
 }

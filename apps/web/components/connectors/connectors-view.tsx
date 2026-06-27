@@ -24,6 +24,14 @@ import {
 import { cn } from "@ssota/ui/lib/utils";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import {
+  connectorCardDescriptionClassName,
+  connectorCardInteractiveClassName,
+  connectorCardTextClassName,
+  connectorCardTitleClassName,
+  connectorIconWrapClassName,
+} from "@/components/connectors/connector-card-styles";
+import { ConnectorsScrollShell } from "@/components/connectors/connectors-scroll-shell";
+import {
   disconnectConnectionAction,
   loadToolkitToolSettingsAction,
   setToolkitDisabledAction,
@@ -133,39 +141,40 @@ export function ConnectorsView({
   const connectedCount = byProvider.size;
 
   return (
-    // The console main is overflow-hidden, so the page owns its own scroll.
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Connectors</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Browse and manage the apps your agent can use. {connectedCount} connected.
-        </p>
-      </header>
+    <div className="flex h-full min-h-0 flex-col">
+      <ConnectorsScrollShell>
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8">
+          <header className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">Connectors</h1>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Browse and manage the apps your agent can use. {connectedCount} connected.
+            </p>
+          </header>
 
-      {groups.map((group) => (
-        <section key={group.theme} className="space-y-3">
-          <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {group.theme}
-          </h2>
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {group.items.map((connector) => {
-              const entry = byProvider.get(connector.provider);
-              const connected =
-                (entry?.user.length ?? 0) + (entry?.org.length ?? 0) > 0;
-              return (
-                <ConnectorCard
-                  key={connector.provider}
-                  connector={connector}
-                  connected={connected}
-                  onSelect={() => setSelected(connector.provider)}
-                />
-              );
-            })}
-          </div>
-        </section>
-      ))}
-      </div>
+          {groups.map((group) => (
+            <section key={group.theme} className="space-y-3">
+              <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {group.theme}
+              </h2>
+              <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                {group.items.map((connector) => {
+                  const entry = byProvider.get(connector.provider);
+                  const connected =
+                    (entry?.user.length ?? 0) + (entry?.org.length ?? 0) > 0;
+                  return (
+                    <ConnectorCard
+                      key={connector.provider}
+                      connector={connector}
+                      connected={connected}
+                      onSelect={() => setSelected(connector.provider)}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
+      </ConnectorsScrollShell>
 
       <Sheet
         open={selected !== null}
@@ -205,19 +214,16 @@ function ConnectorCard({
       onClick={onSelect}
       data-testid={`connector-${connector.provider}`}
       className={cn(
-        "group flex items-center gap-3 rounded-xl border bg-card px-3.5 py-3 text-left transition-colors",
-        "hover:border-primary/30 hover:bg-accent/40",
+        connectorCardInteractiveClassName,
         connected && "border-primary/20",
       )}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+      <span className={connectorIconWrapClassName}>
         <ConnectorBrandIcon provider={connector.provider} className="size-5" />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">
-          {connector.label}
-        </span>
-        <span className="block truncate text-xs text-muted-foreground">
+      <span className={connectorCardTextClassName}>
+        <span className={connectorCardTitleClassName}>{connector.label}</span>
+        <span className={connectorCardDescriptionClassName}>
           {connector.description}
         </span>
       </span>

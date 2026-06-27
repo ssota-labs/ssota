@@ -3,11 +3,53 @@
  */
 import type { CompactArgsSchema } from "./mcp-tool-schema.js";
 
+/**
+ * Plain, JSON-serializable form of {@link ConnectionRunState}. WorkflowAgent
+ * carries this in `runtimeContext` and re-hydrates a {@link ConnectionRunState}
+ * inside each tool step (live `Map`s cannot cross workflow step boundaries);
+ * `prepareStep` merges new `connection_search` hits back into the snapshot.
+ */
+export interface ConnectionRunStateSnapshot {
+  installationByConnection: Record<string, string>;
+  argsSchemaByQualifiedName: Record<string, CompactArgsSchema>;
+}
+
 export class ConnectionRunState {
   /** connection id → installation id chosen by the latest connection_search. */
   readonly installationByConnection = new Map<string, string>();
   /** qualified tool name → compact args schema from the latest connection_search. */
   readonly argsSchemaByQualifiedName = new Map<string, CompactArgsSchema>();
+
+  /** Rebuild a run state from its serializable snapshot (WorkflowAgent steps). */
+  static fromSnapshot(
+    snapshot: ConnectionRunStateSnapshot | undefined,
+  ): ConnectionRunState {
+    const state = new ConnectionRunState();
+    if (!snapshot) return state;
+    for (const [conn, inst] of Object.entries(
+      snapshot.installationByConnection,
+    )) {
+      state.installationByConnection.set(conn, inst);
+    }
+    for (const [name, schema] of Object.entries(
+      snapshot.argsSchemaByQualifiedName,
+    )) {
+      state.argsSchemaByQualifiedName.set(name, schema);
+    }
+    return state;
+  }
+
+  /** Serializable view for `runtimeContext` / `toolsContext` transport. */
+  toSnapshot(): ConnectionRunStateSnapshot {
+    return {
+      installationByConnection: Object.fromEntries(
+        this.installationByConnection,
+      ),
+      argsSchemaByQualifiedName: Object.fromEntries(
+        this.argsSchemaByQualifiedName,
+      ),
+    };
+  }
 
   recordInstallations(
     hits: Array<{

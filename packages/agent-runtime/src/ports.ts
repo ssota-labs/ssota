@@ -96,3 +96,17 @@ export async function resolveOrgIdForProject(
   const project = await getConsolePort().getTeamspaceById(teamspaceId);
   return project?.organizationId ?? null;
 }
+
+/** Register org scope for graph/catalog ports when not already cached. */
+export async function ensureTeamspaceOrganizationScope(
+  teamspaceId: string,
+): Promise<string> {
+  const cached = getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (cached) return cached;
+  const organizationId = await resolveOrganizationIdForTeamspace(
+    getDb(),
+    teamspaceId,
+  );
+  registerTeamspaceOrganization(teamspaceId, organizationId);
+  return organizationId;
+}
