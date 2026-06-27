@@ -56,7 +56,9 @@ test.describe("Console v2.7 navigation", () => {
 
   test("organization switcher opens opaque popover with options", async ({ page }) => {
     const sidebar = page.locator("aside");
-    await sidebar.getByRole("button", { name: "Organization", exact: true }).click();
+    const orgTrigger = sidebar.getByRole("button", { name: "Organization", exact: true });
+    await expect(orgTrigger.locator('[data-slot="avatar"]')).toBeVisible();
+    await orgTrigger.click();
 
     const popover = page.locator('[data-slot="popover-content"]');
     await expect(popover).toBeVisible();

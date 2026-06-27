@@ -102,6 +102,11 @@ export function WorkspaceSwitcher({
   side = "bottom",
   "aria-label": ariaLabel,
 }: WorkspaceSwitcherProps) {
+  const activeOption = options.find((option) => option.id === activeOptionId);
+  const triggerInitials = activeOption
+    ? (activeOption.initials ?? initialsFromWorkspaceLabel(activeOption.label))
+    : null;
+
   return (
     <Popover>
       <PopoverTrigger
@@ -119,9 +124,15 @@ export function WorkspaceSwitcher({
         }
       >
         <span className="flex min-w-0 flex-1 items-center gap-2">
-          <span className="flex size-6 shrink-0 items-center justify-center text-muted-foreground [&_svg]:size-5">
-            {icon}
-          </span>
+          {triggerInitials ? (
+            <Avatar size="sm" className="shrink-0">
+              <AvatarFallback>{triggerInitials}</AvatarFallback>
+            </Avatar>
+          ) : (
+            <span className="flex size-6 shrink-0 items-center justify-center text-muted-foreground [&_svg]:size-5">
+              {icon}
+            </span>
+          )}
           <span className={cn("truncate", fullWidth && "font-medium")}>
             {currentLabel}
           </span>
