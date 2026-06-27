@@ -1,10 +1,11 @@
-import { createSsotaTools, type AgentRunContext } from "@ssota/agent-runtime";
+import { runMainAgentToolStep, type AgentRunContext } from "@ssota/agent-runtime";
 
 /**
- * Durable `"use step"` that executes one real SSOTA tool. It imports
- * Node-dependent agent-runtime code freely — the WDK strips these imports from
- * the workflow bundle that references this step. `context` carries the
- * serializable `{ ssota }` bag the v7 tools read via `getRunContext`.
+ * Durable `"use step"` that executes one real SSOTA tool. The Node-dependent
+ * tool runtime is re-hydrated inside agent-runtime's `runMainAgentToolStep`
+ * (graph/task/page tools, plus credential/MCP-aware connection tools) — the
+ * WDK strips these imports from the workflow bundle that references this step.
+ * `context.ssota` is the serializable per-run scope.
  */
 export async function dispatchMainTool(
   toolName: string,
@@ -12,14 +13,5 @@ export async function dispatchMainTool(
   context: { ssota: AgentRunContext },
 ): Promise<unknown> {
   "use step";
-  const tools = createSsotaTools();
-  const t = tools[toolName];
-  if (!t?.execute) {
-    throw new Error(`dispatchMainTool: unknown or non-executable tool ${toolName}`);
-  }
-  return t.execute(input as never, {
-    toolCallId: `main-wf-${toolName}`,
-    messages: [],
-    context,
-  });
+  return runMainAgentToolStep(toolName, input, context.ssota);
 }
