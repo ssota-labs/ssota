@@ -5,15 +5,13 @@ import {
   serializeTask,
   readWorkflowInstructionById,
 } from "@ssota/core";
-import { McpSessionManager } from "./connections/mcp-session.js";
-import { ConnectionRunState } from "./connections/run-state.js";
 import {
   getTaskPort,
   getWorkflowInstructionPort,
 } from "./ports.js";
 import { createSsotaTools } from "./tools/index.js";
 import { createSandboxTools } from "./tools/sandbox.js";
-import { createConnectionTools } from "./tools/connections.js";
+import { getConnectorAdapter } from "./connectors/adapter.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
 import { DEFAULT_MODEL_ID } from "./models.js";
 import { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
@@ -30,9 +28,16 @@ export interface RunAgentInput {
   threadId?: string;
   scheduleId?: string;
   accountId?: string;
+  /**
+   * Signed-in user (Supabase `auth.users.id`) driving this run. With the org it
+   * forms the Composio entity for connector tools. Absent on scheduler /
+   * autonomous runs → Composio connectors are not attached.
+   */
+  profileId?: string;
   modelId?: string;
   engine?: LoopEngine;
   sandbox?: SandboxSession;
+  /** @deprecated Connector credentials are resolved by the connector adapter. */
   credentials?: CredentialProvider;
   maxSteps?: number;
   /** Main-runtime chat transcript injected from the web chat route. */
@@ -77,6 +82,11 @@ async function prepareRun(input: RunAgentInput) {
   const { projectId, runId, accountId, runtimeKind } = input;
   const instructionPort = getWorkflowInstructionPort(projectId, accountId);
 
+  // Resolve the connector adapter up front so its kind can drive the prompt's
+  // connections guidance (Composio vs legacy tool names).
+  const adapter = getConnectorAdapter();
+  const connectorKind = adapter?.kind;
+
   let instructions: SystemModelMessage[] = [];
   let messages: ModelMessage[] = [];
   const taskPort = getTaskPort(projectId, accountId);
@@ -98,6 +108,7 @@ async function prepareRun(input: RunAgentInput) {
       runtimeKind: "main",
       projectId,
       accountId,
+      connectorKind,
       workflowManifest,
     });
     const chatMessages = extractChatMessages(input.chatContext);
@@ -120,6 +131,7 @@ async function prepareRun(input: RunAgentInput) {
       runtimeKind: "task",
       projectId,
       accountId,
+      connectorKind,
       taskPlaybook: playbook?.instruction ?? null,
       task: {
         id: task.id,
@@ -142,6 +154,7 @@ async function prepareRun(input: RunAgentInput) {
       runtimeKind: "scheduler",
       projectId,
       accountId,
+      connectorKind,
       mainInstruction: scheduleInstruction,
     });
     messages = [
@@ -156,27 +169,17 @@ async function prepareRun(input: RunAgentInput) {
 
   const engine = input.engine ?? createAiSdkLoopEngine();
 
-  let connectionState: ConnectionRunState | undefined;
-  let connectionSessionManager: McpSessionManager | undefined;
-  let connectionTools = {};
-
-  if (input.credentials) {
-    connectionState = new ConnectionRunState();
-    connectionSessionManager = new McpSessionManager(input.credentials);
-    const bundle = await createConnectionTools({
-      credentials: input.credentials,
-      accountId,
-      projectId,
-      connectionState,
-      sessionManager: connectionSessionManager,
-    });
-    connectionTools = bundle.tools;
-  }
+  // Connector tools come from the active adapter (Composio by default, legacy
+  // Vercel Connect when `CONNECTORS=connect`). The adapter encapsulates which
+  // backend builds the tools and the per-run state the engine needs.
+  const connectorBundle = adapter
+    ? await adapter.buildTools({ projectId, accountId, profileId: input.profileId })
+    : { tools: {} };
 
   const tools = {
     ...createSsotaTools(),
     ...(input.sandbox ? createSandboxTools() : {}),
-    ...connectionTools,
+    ...connectorBundle.tools,
   };
 
   const runInput = {
@@ -189,11 +192,12 @@ async function prepareRun(input: RunAgentInput) {
       taskId: input.taskId,
       runId,
       accountId,
+      profileId: input.profileId,
     } satisfies AgentRunContext,
     sandbox: input.sandbox,
-    credentials: input.credentials,
-    connectionState,
-    connectionSessionManager,
+    credentials: connectorBundle.credentials,
+    connectionState: connectorBundle.connectionState,
+    connectionSessionManager: connectorBundle.connectionSessionManager,
     maxSteps: input.maxSteps,
   };
   return { taskPort, engine, runInput, runtimeKind };

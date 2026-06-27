@@ -29,6 +29,14 @@ export {
 } from "./ports/schedule-port.js";
 export { createDbAccountReadPort } from "./ports/account-read-port.js";
 export {
+  createConnectorToolSettingsPort,
+  type ConnectorToolSettingsPort,
+} from "./ports/connector-tool-settings-port.js";
+export {
+  createOrgMembershipPort,
+  type OrgMembershipPort,
+} from "./ports/org-membership-port.js";
+export {
   createAccountPort,
   createAccountConnectionPort,
   type ProvisionAccountInput,

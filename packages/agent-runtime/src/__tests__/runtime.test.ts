@@ -100,6 +100,8 @@ describe("buildRunInstructions", () => {
     const prompt = buildRunInstructions({
       runtimeKind: "task",
       projectId: "22222222-2222-2222-2222-222222222222",
+      // Legacy connector guidance names connection_search/connection_call.
+      connectorKind: "legacy",
       taskPlaybook: {
         id: "33333333-3333-3333-3333-333333333333",
         projectId: "22222222-2222-2222-2222-222222222222",

@@ -94,6 +94,7 @@ export async function POST(request: Request) {
     projectId,
     threadId,
     accountId,
+    profileId: user.id,
     modelId,
     chatContext: { chat: { messages: history } },
   });

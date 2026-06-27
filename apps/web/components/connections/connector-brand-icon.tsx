@@ -29,7 +29,10 @@ const PROVIDER_SVGS: Record<
   discord: Discord,
   linear: Linear,
   twitter: XLight,
-  google: Google,
+  // The three Composio Google toolkits share the Google mark.
+  gmail: Google,
+  googledrive: Google,
+  googlecalendar: Google,
 };
 
 export function ConnectorBrandIcon({

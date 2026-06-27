@@ -1,7 +1,6 @@
 import type { UIMessage } from "ai";
 import {
   getDb,
-  resolveCredentialProvider,
   streamAgent,
   type RunAgentResult,
   type UIMessageChunk,
@@ -20,6 +19,8 @@ export interface RunMainAgentInput {
   projectId: string;
   threadId: string;
   accountId?: string;
+  /** Signed-in user (Supabase auth id) — entity for Composio connector tools. */
+  profileId?: string;
   modelId?: string;
   maxSteps?: number;
   chatContext?: Record<string, unknown>;
@@ -66,7 +67,6 @@ export async function runMainAgentStepCore(
   runId: string,
   clientWritable: WritableStream<UIMessageChunk>,
 ): Promise<{ result: RunAgentResult; parts: UIMessage["parts"] | null }> {
-  const credentials = resolveCredentialProvider();
   const { readable, writable } = new TransformStream<UIMessageChunk>();
   const [toClient, toPersist] = readable.tee();
 
@@ -80,8 +80,8 @@ export async function runMainAgentStepCore(
       runId,
       runtimeKind: "main",
       accountId: input.accountId,
+      profileId: input.profileId,
       modelId: input.modelId,
-      credentials,
       maxSteps: input.maxSteps,
       chatContext: input.chatContext,
     },

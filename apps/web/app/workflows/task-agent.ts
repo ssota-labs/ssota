@@ -3,7 +3,6 @@ import {
   createSandboxSession,
   getDb,
   getTaskPort,
-  resolveCredentialProvider,
   streamAgent,
   type RunAgentResult,
   type SandboxSession,
@@ -80,7 +79,6 @@ async function runAgentStep(
     }
   }
 
-  const credentials = resolveCredentialProvider();
   const writable = getWritable<UIMessageChunk>();
 
   try {
@@ -93,7 +91,6 @@ async function runAgentStep(
         accountId: input.accountId,
         modelId: input.modelId,
         sandbox,
-        credentials,
         maxSteps: input.maxSteps,
       },
       writable,

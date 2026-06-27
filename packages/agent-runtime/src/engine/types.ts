@@ -13,6 +13,8 @@ export interface AgentRunContext {
   taskId?: string;
   runId: string;
   accountId?: string;
+  /** Signed-in user driving the run (Supabase `auth.users.id`), if any. */
+  profileId?: string;
 }
 
 /** Normalized event emitted by an engine as it runs (streaming engines). */
