@@ -133,7 +133,9 @@ export function ConnectorsView({
   const connectedCount = byProvider.size;
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8">
+    // The console main is overflow-hidden, so the page owns its own scroll.
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Connectors</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
@@ -163,6 +165,7 @@ export function ConnectorsView({
           </div>
         </section>
       ))}
+      </div>
 
       <Sheet
         open={selected !== null}
