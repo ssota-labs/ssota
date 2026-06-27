@@ -18,15 +18,17 @@ export default async function SchedulesPage({
   ]);
 
   return (
-    <SchedulesList
-      schedules={schedules}
-      instructions={instructions.map((i) => ({
-        id: i.id,
-        name: i.name,
-        description: i.description,
-      }))}
-      projectId={project.id}
-      accountId={account.id}
-    />
+    <div className="relative min-h-0 flex-1">
+      <SchedulesList
+        schedules={schedules}
+        instructions={instructions.map((i) => ({
+          id: i.id,
+          name: i.name,
+          description: i.description,
+        }))}
+        projectId={project.id}
+        accountId={account.id}
+      />
+    </div>
   );
 }
