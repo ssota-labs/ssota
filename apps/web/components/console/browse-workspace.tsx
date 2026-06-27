@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
 import { cn } from "@ssota/ui/lib/utils";
+import {
+  connectorCardDescriptionClassName,
+  connectorCardInteractiveClassName,
+  connectorCardTextClassName,
+  connectorCardTitleClassName,
+  connectorIconWrapClassName,
+} from "@/components/connectors/connector-card-styles";
 
 function Frame({
   children,
@@ -96,26 +103,16 @@ function Card({
       onClick={onSelect}
       data-testid={testId}
       className={cn(
-        "group flex items-center gap-3 rounded-xl border bg-card px-3.5 py-3 text-left transition-colors",
-        "hover:border-primary/30 hover:bg-accent/40",
+        connectorCardInteractiveClassName,
         (highlighted || selected) && "border-primary/20",
         selected && "bg-muted/30",
       )}
     >
-      {icon ? (
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
-          {icon}
-        </span>
-      ) : null}
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">{title}</span>
+      {icon ? <span className={connectorIconWrapClassName}>{icon}</span> : null}
+      <span className={connectorCardTextClassName}>
+        <span className={connectorCardTitleClassName}>{title}</span>
         {subtitle ? (
-          <span
-            className={cn(
-              "block truncate text-xs text-muted-foreground",
-              subtitleClassName,
-            )}
-          >
+          <span className={cn(connectorCardDescriptionClassName, subtitleClassName)}>
             {subtitle}
           </span>
         ) : null}

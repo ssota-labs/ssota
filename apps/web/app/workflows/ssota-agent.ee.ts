@@ -1,20 +1,21 @@
-import { getWorkflowMetadata, getWritable } from "workflow";
-import type { UIMessageChunk, RunAgentForTaskResult } from "@ssota/agent-runtime";
+import { getWorkflowMetadata } from "workflow";
+import { buildMainWorkflowAgent } from "@ssota/agent-runtime/workflow";
+import { dispatchMainTool } from "./main-workflow-agent-dispatch";
 import {
-  claimRunning,
-  finalizeRun,
-  runAgentStepCore,
-  type RunSsotaAgentInput,
-} from "./ssota-agent-core";
+  claimTaskRun,
+  buildTaskPromptStep,
+  provisionSandboxStep,
+  stopSandboxStep,
+  finalizeTaskRun,
+  sumStepUsage,
+} from "./task-agent-steps";
+import type { RunSsotaAgentInput } from "./ssota-agent-core";
 
 /**
- * ENTERPRISE (.ee) — Durable agent run on the Vercel Workflow DevKit.
- *
- * Licensed under LICENSE_EE.md. This file is the only place that imports the
- * `workflow` package; the OSS build runs the same logic in-process via the
- * inline runner (see `inline-job-runner.ts`). Each phase is wrapped in a
- * `"use step"` boundary so a crash resumes from the last completed step. The
- * shared, WDK-free bodies live in `ssota-agent-core.ts`.
+ * Durable task agent run reached via the agent run/gate routes and the chat
+ * bot (the JOB_RUNNER=workflow path, kept under this name + RunSsotaAgentInput
+ * so those callers are unchanged). Identical to runTaskAgentWorkflow — both
+ * share the runtimeKind="task" steps in task-agent-steps.
  */
 export type { RunSsotaAgentInput };
 
@@ -22,38 +23,35 @@ export async function runSsotaAgentWorkflow(input: RunSsotaAgentInput) {
   "use workflow";
 
   const { workflowRunId } = getWorkflowMetadata();
+  await claimTaskRun(input, workflowRunId);
 
-  await claimRunningStep(input, workflowRunId);
-  const result = await runAgentStep(input, workflowRunId);
-  await finalizeStep(input, workflowRunId, result);
+  const sandboxId = await provisionSandboxStep(input);
 
-  return result;
-}
+  const { instructions, messages } = await buildTaskPromptStep(
+    input,
+    workflowRunId,
+  );
 
-async function claimRunningStep(
-  input: RunSsotaAgentInput,
-  workflowRunId: string,
-): Promise<void> {
-  "use step";
-  await claimRunning(input, workflowRunId);
-}
+  const agent = buildMainWorkflowAgent({
+    ssota: {
+      projectId: input.projectId,
+      taskId: input.taskId,
+      runId: workflowRunId,
+      accountId: input.accountId,
+      sandboxId,
+    },
+    dispatch: dispatchMainTool,
+    includeSandboxTools: Boolean(sandboxId),
+    instructions,
+    modelId: input.modelId,
+    maxSteps: input.maxSteps,
+  });
 
-async function runAgentStep(
-  input: RunSsotaAgentInput,
-  workflowRunId: string,
-): Promise<RunAgentForTaskResult> {
-  "use step";
-  // The writable must be obtained inside the step (a WritableStream cannot
-  // cross WDK step boundaries — it is not serializable).
-  const writable = getWritable<UIMessageChunk>();
-  return runAgentStepCore(input, workflowRunId, writable);
-}
-
-async function finalizeStep(
-  input: RunSsotaAgentInput,
-  workflowRunId: string,
-  result: RunAgentForTaskResult,
-): Promise<void> {
-  "use step";
-  await finalizeRun(input, workflowRunId, result);
+  try {
+    const result = await agent.stream({ messages });
+    await finalizeTaskRun(input, workflowRunId, sumStepUsage(result.steps));
+    return result;
+  } finally {
+    if (sandboxId) await stopSandboxStep(sandboxId);
+  }
 }

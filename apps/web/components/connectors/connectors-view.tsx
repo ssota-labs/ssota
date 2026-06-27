@@ -133,7 +133,7 @@ export function ConnectorsView({
   const connectedCount = byProvider.size;
 
   return (
-    <>
+    <div className="flex h-full min-h-0 flex-col">
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Connectors"
@@ -179,7 +179,7 @@ export function ConnectorsView({
           ) : null}
         </SheetContent>
       </Sheet>
-    </>
+    </div>
   );
 }
 

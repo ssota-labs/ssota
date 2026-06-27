@@ -18,8 +18,8 @@ export function createTaskTools(): ToolSet {
     get_task: tool({
       description: "Fetch a task by id (defaults to the current run's task).",
       inputSchema: z.object({ taskId: z.string().uuid().optional() }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         const task = await getTaskPort(ctx.projectId, ctx.accountId).getTask(
           input.taskId ?? ctx.taskId ?? "",
         );
@@ -43,8 +43,8 @@ export function createTaskTools(): ToolSet {
           .optional(),
         limit: z.number().int().positive().max(100).optional(),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         const tasks = await getTaskPort(ctx.projectId, ctx.accountId).queryTasks(input);
         return tasks.map(serializeTask);
       },
@@ -65,8 +65,8 @@ export function createTaskTools(): ToolSet {
           .enum(["pending", "ready", "running", "blocked", "done", "cancelled", "failed"])
           .optional(),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         const parsed = SpawnTaskInputSchema.parse({
           title: input.title,
           workflowInstructionId: input.workflowInstructionId,
@@ -107,8 +107,8 @@ export function createTaskTools(): ToolSet {
         acceptanceCriteria: z.array(z.unknown()).optional(),
         result: z.record(z.unknown()).optional(),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         const { taskId, ...patch } = input;
         const resolvedTaskId = taskId ?? ctx.taskId;
         if (!resolvedTaskId) {
@@ -129,8 +129,8 @@ export function createTaskTools(): ToolSet {
         summary: z.string().describe("Short summary of what was accomplished."),
         result: z.record(z.unknown()).optional(),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         if (!ctx.taskId) {
           throw new Error("taskId is required for complete_task");
         }
@@ -149,8 +149,8 @@ export function createTaskTools(): ToolSet {
       inputSchema: z.object({
         reason: z.string().describe("Why the task is blocked."),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         if (!ctx.taskId) {
           throw new Error("taskId is required for block_task");
         }
@@ -170,8 +170,8 @@ export function createTaskTools(): ToolSet {
         reason: z.string().describe("What needs approval and why."),
         summary: z.string().optional(),
       }),
-      execute: async (input, { experimental_context }) => {
-        const ctx = getRunContext(experimental_context);
+      execute: async (input, { context }) => {
+        const ctx = getRunContext(context);
         if (!ctx.taskId) {
           throw new Error("taskId is required for request_approval");
         }

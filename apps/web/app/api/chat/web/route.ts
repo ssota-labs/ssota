@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { createUIMessageStreamResponse } from "ai";
 import type { UIMessage } from "ai";
 import { z } from "zod";
-import { after } from "next/server";
-import { getMainAgentRunner } from "@/app/workflows/main-agent-job-runner";
+import { start } from "workflow/api";
+import {
+  createModelCallToUIChunkTransform,
+  type ModelCallStreamPart,
+} from "@ai-sdk/workflow";
+import { runMainWorkflowAgent } from "@/app/workflows/main-workflow-agent";
 import { getChatPort } from "@/lib/ports";
 import { resolveModelId } from "@/lib/chat/models";
 import { toAgentHistory } from "@/lib/chat/to-agent-history";
@@ -89,18 +93,23 @@ export async function POST(request: Request) {
 
   const history = await toAgentHistory(messages);
 
-  const runner = await getMainAgentRunner();
-  const run = await runner.start({
-    projectId,
-    threadId,
-    accountId,
-    profileId: user.id,
-    modelId,
-    chatContext: { chat: { messages: history } },
+  // Durable WorkflowAgent run on the WDK — detached server-side (no completion
+  // to await). Output streams as ModelCallStreamPart; transform to UI chunks.
+  // profileId = the signed-in user (the Composio acting entity for connectors).
+  const run = await start(runMainWorkflowAgent, [
+    {
+      projectId,
+      threadId,
+      accountId,
+      profileId: user.id,
+      modelId,
+      chatContext: { chat: { messages: history } },
+    },
+  ]);
+
+  const readable = run.getReadable() as ReadableStream<ModelCallStreamPart>;
+  return createUIMessageStreamResponse({
+    stream: readable.pipeThrough(createModelCallToUIChunkTransform()),
+    headers: { "x-workflow-run-id": run.runId },
   });
-  after(run.completion);
-
-  const readable = run.getReadable();
-
-  return createUIMessageStreamResponse({ stream: readable });
 }

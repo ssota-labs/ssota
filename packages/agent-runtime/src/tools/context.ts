@@ -4,11 +4,41 @@ import {
   type GraphEdge,
   type GraphNode,
 } from "@ssota/core";
+import type { ToolSet } from "ai";
 import type { AgentRunContext } from "../engine/types.js";
 import type { SandboxSession } from "../sandbox/session.js";
 import type { ConnectionRunState } from "../connections/run-state.js";
 
-/** Pull the per-run SSOTA scope injected via `experimental_context`. */
+/**
+ * Shared per-run bag handed to every tool as its v7 `context`. AI SDK v7
+ * delivers `toolsContext[toolName]` as each tool's `context` and exposes no
+ * shared runtime-context channel into tool execution, so we replicate the same
+ * bag under every tool name via {@link buildToolsContext}.
+ */
+export interface AgentContextBag {
+  ssota?: AgentRunContext;
+  sandbox?: SandboxSession;
+  credentials?: import("../credentials/provider.js").CredentialProvider;
+  connectionState?: ConnectionRunState;
+}
+
+/**
+ * Build a v7 `toolsContext` that hands the same shared run context `bag` to
+ * every tool in `tools`. Tools with no `contextSchema` infer an empty
+ * (`{}`) tool-set context, so this populated record is assignable as their
+ * `toolsContext`/`prepareCall` return while the runtime forwards
+ * `toolsContext[toolName]` into each tool's `context`.
+ */
+export function buildToolsContext(
+  tools: ToolSet | undefined,
+  bag: AgentContextBag,
+): Record<string, AgentContextBag> {
+  const ctx: Record<string, AgentContextBag> = {};
+  for (const name of Object.keys(tools ?? {})) ctx[name] = bag;
+  return ctx;
+}
+
+/** Pull the per-run SSOTA scope injected via the tool `context`. */
 export function getRunContext(experimentalContext: unknown): AgentRunContext {
   const ctx = (experimentalContext as { ssota?: AgentRunContext } | undefined)
     ?.ssota;
