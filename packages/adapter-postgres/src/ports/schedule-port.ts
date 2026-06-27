@@ -16,6 +16,7 @@ export interface ScheduleRecord {
   timezone: string;
   enabled: boolean;
   idempotencyPrefix: string;
+  nextRunAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -26,6 +27,8 @@ export interface CreateScheduleInput {
   timezone: string;
   enabled?: boolean;
   idempotencyPrefix?: string;
+  /** Precomputed next fire time (caller computes via croner). */
+  nextRunAt?: Date | null;
 }
 
 export interface UpdateScheduleInput {
@@ -34,6 +37,7 @@ export interface UpdateScheduleInput {
   timezone?: string;
   enabled?: boolean;
   idempotencyPrefix?: string;
+  nextRunAt?: Date | null;
 }
 
 type ScheduleRow = typeof schedules.$inferSelect;
@@ -48,6 +52,7 @@ function mapSchedule(row: ScheduleRow): ScheduleRecord {
     timezone: row.timezone,
     enabled: row.enabled,
     idempotencyPrefix: row.idempotencyPrefix,
+    nextRunAt: row.nextRunAt ? row.nextRunAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -102,6 +107,7 @@ export function createSchedulePort(db: Db, scope: ScheduleScope) {
           timezone: input.timezone,
           enabled: input.enabled ?? true,
           idempotencyPrefix: input.idempotencyPrefix ?? "",
+          nextRunAt: input.nextRunAt ?? null,
         })
         .returning();
       return mapSchedule(row!);
@@ -120,6 +126,7 @@ export function createSchedulePort(db: Db, scope: ScheduleScope) {
       if (patch.enabled !== undefined) values.enabled = patch.enabled;
       if (patch.idempotencyPrefix !== undefined)
         values.idempotencyPrefix = patch.idempotencyPrefix;
+      if (patch.nextRunAt !== undefined) values.nextRunAt = patch.nextRunAt;
 
       const [row] = await db
         .update(schedules)

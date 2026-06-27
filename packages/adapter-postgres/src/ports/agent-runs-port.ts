@@ -1,4 +1,4 @@
-import { and, eq, gte } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import type { AgentRuntimeKind } from "@ssota/contracts";
 import type { Db } from "../db/client.js";
 import { agentRuns } from "../db/schema.js";
@@ -65,29 +65,6 @@ export function createAgentRunPort(db: Db) {
           finishedAt: new Date(),
         })
         .where(eq(agentRuns.workflowRunId, workflowRunId));
-    },
-
-    /**
-     * Has this schedule already produced a run at or after `since`? Used by the
-     * cron gate to dedupe: when the heartbeat ticks more often than buffer
-     * overlaps allow, a schedule whose previous fire already spawned a run must
-     * not spawn a second one for the same tick.
-     */
-    async hasRunForScheduleSince(
-      scheduleId: string,
-      since: Date,
-    ): Promise<boolean> {
-      const rows = await db
-        .select({ id: agentRuns.id })
-        .from(agentRuns)
-        .where(
-          and(
-            eq(agentRuns.scheduleId, scheduleId),
-            gte(agentRuns.startedAt, since),
-          ),
-        )
-        .limit(1);
-      return rows.length > 0;
     },
   };
 }

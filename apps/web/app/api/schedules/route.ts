@@ -5,7 +5,11 @@ import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { resolveWorkflowInstructionId } from "@/lib/schedules/resolve-instruction";
-import { isValidTimezone, validateCron } from "@/lib/schedules/recurrence";
+import {
+  isValidTimezone,
+  nextOccurrence,
+  validateCron,
+} from "@/lib/schedules/recurrence";
 
 export const runtime = "nodejs";
 
@@ -112,6 +116,7 @@ export async function POST(request: Request) {
     timezone: parsed.timezone,
     enabled: parsed.enabled,
     idempotencyPrefix: parsed.idempotencyPrefix,
+    nextRunAt: nextOccurrence(parsed.cronExpression, parsed.timezone),
   });
 
   return NextResponse.json({ schedule }, { status: 201 });
