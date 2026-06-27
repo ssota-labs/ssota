@@ -58,6 +58,13 @@ export const L0_NAV: NavEntry[] = [
     href: "connections",
     pattern: "L",
   },
+  {
+    type: "link",
+    key: "schedules",
+    labelKey: "nav.schedules",
+    href: "schedules",
+    pattern: "L",
+  },
   // The per-stage workflow nav (Executive/Research/Manager/Development/Design)
   // is now the Notion-style page tree (PageTreeNav, fed by the pages table), not
   // a static section here. L0 keeps only the always-on top links + Explore.
@@ -132,6 +139,9 @@ export function buildBreadcrumbSegments(
   }
   if (relative === "connections" || relative.startsWith("connections/")) {
     return [{ labelKey: "nav.connections" }];
+  }
+  if (relative === "schedules" || relative.startsWith("schedules/")) {
+    return [{ labelKey: "nav.schedules" }];
   }
   if (relative === "workflow/map") {
     return [{ labelKey: "nav.workflowMap" }];

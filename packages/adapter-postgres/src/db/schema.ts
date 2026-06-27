@@ -347,6 +347,9 @@ export const schedules = pgTable(
       .notNull()
       .references(() => workflowInstructions.id, { onDelete: "cascade" }),
     cronExpression: text("cron_expression").notNull(),
+    // IANA timezone the cron expression is evaluated in (the heartbeat ticks in
+    // UTC, but each schedule's window/days are interpreted in this zone).
+    timezone: text("timezone").notNull().default("Asia/Seoul"),
     enabled: boolean("enabled").notNull().default(true),
     idempotencyPrefix: text("idempotency_prefix").notNull().default(""),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
