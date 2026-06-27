@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { textToBlockNoteContent } from "@ssota/contracts";
-import { getBuiltinWorkflowByKey } from "@ssota/contracts/workflows";
+import { getWorkflowByKey } from "@ssota/contracts/workflows";
 import type { Db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { createDbAccountReadPort } from "../../ports/account-read-port.js";
@@ -35,14 +35,14 @@ export async function seedScheduleFixtures(
   const workflowPort = createWorkflowInstructionPort(db, { projectId });
 
   for (const seed of SCHEDULE_SEEDS) {
-    const builtin = getBuiltinWorkflowByKey(seed.workflowKey);
-    if (!builtin) continue;
+    const workflow = getWorkflowByKey(seed.workflowKey);
+    if (!workflow) continue;
 
     const instruction = await workflowPort.upsertInstruction({
-      key: builtin.workflowKey,
-      name: builtin.title,
-      description: builtin.description,
-      content: textToBlockNoteContent(builtin.instruction),
+      key: workflow.workflowKey,
+      name: workflow.title,
+      description: workflow.description,
+      content: textToBlockNoteContent(workflow.instruction),
     });
 
     const existing = await db
