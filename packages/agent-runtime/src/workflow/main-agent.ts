@@ -127,6 +127,121 @@ export const MAIN_WORKFLOW_TOOL_SCHEMAS = {
       properties: z.record(z.unknown()).optional(),
     }),
   },
+
+  // --- Tasks ---
+  get_task: {
+    description: "Fetch a task by id (defaults to the current run's task).",
+    inputSchema: z.object({ taskId: z.string().uuid().optional() }),
+  },
+  query_tasks: {
+    description: "List tasks in the project, optionally filtered by status.",
+    inputSchema: z.object({
+      status: z
+        .enum(["pending", "ready", "running", "blocked", "done", "cancelled", "failed"])
+        .optional(),
+      limit: z.number().int().positive().max(100).optional(),
+    }),
+  },
+  spawn_task: {
+    description:
+      "Create a follow-up task with a full delegation directive. Required: title, workflowInstructionKey (or id), executionDirective (goal, background, steps), acceptanceCriteria.",
+    inputSchema: z.object({
+      title: z.string(),
+      workflowInstructionId: z.string().uuid().optional(),
+      workflowInstructionKey: z.string().optional(),
+      targetNodeId: z.string().uuid().optional(),
+      executionDirective: z.record(z.unknown()),
+      acceptanceCriteria: z.array(z.unknown()).min(1),
+      idempotencyKey: z.string().optional(),
+      status: z
+        .enum(["pending", "ready", "running", "blocked", "done", "cancelled", "failed"])
+        .optional(),
+    }),
+  },
+  update_task: {
+    description: "Update fields on a task (defaults to current run's task).",
+    inputSchema: z.object({
+      taskId: z.string().uuid().optional(),
+      title: z.string().optional(),
+      status: z
+        .enum(["pending", "ready", "running", "blocked", "done", "cancelled", "failed"])
+        .optional(),
+      context: z.record(z.unknown()).optional(),
+      acceptanceCriteria: z.array(z.unknown()).optional(),
+      result: z.record(z.unknown()).optional(),
+    }),
+  },
+  complete_task: {
+    description:
+      "Mark the current run's task done. Call this once the task's goal and acceptance criteria are satisfied.",
+    inputSchema: z.object({
+      summary: z.string().describe("Short summary of what was accomplished."),
+      result: z.record(z.unknown()).optional(),
+    }),
+  },
+  block_task: {
+    description:
+      "Mark the current run's task blocked when a human decision or missing input prevents completion.",
+    inputSchema: z.object({
+      reason: z.string().describe("Why the task is blocked."),
+    }),
+  },
+  request_approval: {
+    description:
+      "Pause for a human approval gate before a risky or irreversible action.",
+    inputSchema: z.object({
+      reason: z.string().describe("What needs approval and why."),
+      summary: z.string().optional(),
+    }),
+  },
+
+  // --- Pages ---
+  list_page_components: {
+    description:
+      "List the page components available for building page specs (NodeTable, etc.).",
+    inputSchema: z.object({}),
+  },
+  get_page_component: {
+    description:
+      "Get a page component's full descriptor: props (name, type, required) and a copy-paste example element. Use when authoring a page spec.",
+    inputSchema: z.object({
+      key: z.string().describe("Component key, e.g. 'NodeTable'."),
+    }),
+  },
+  create_page: {
+    description:
+      "Create a page in the Notion-style page tree (pages table).",
+    inputSchema: z.object({
+      title: z.string().describe("Page title (shown in the sidebar tree)."),
+      parentId: z.string().uuid().nullable().optional(),
+      subjectNodeId: z.string().uuid().nullable().optional(),
+      spec: z.record(z.unknown()).describe("JSON-render spec { root, elements }."),
+      bindings: z.record(z.unknown()).optional(),
+      actions: z.record(z.unknown()).optional(),
+    }),
+  },
+  update_page: {
+    description:
+      "Update a page by id (title/parentId/subjectNodeId/spec/bindings/actions).",
+    inputSchema: z.object({
+      id: z.string().uuid(),
+      title: z.string().optional(),
+      parentId: z.string().uuid().nullable().optional(),
+      subjectNodeId: z.string().uuid().nullable().optional(),
+      spec: z.record(z.unknown()).optional(),
+      bindings: z.record(z.unknown()).optional(),
+      actions: z.record(z.unknown()).optional(),
+    }),
+  },
+  read_page: {
+    description: "Read a page by id (returns its full record, or found:false).",
+    inputSchema: z.object({ id: z.string().uuid() }),
+  },
+  list_pages: {
+    description:
+      "List all pages in the tree (id, title, parentId, position) for navigation/authoring.",
+    inputSchema: z.object({}),
+  },
 } as const;
 
 /** Tool names exposed to the workflow agent. */
