@@ -11,7 +11,7 @@
  * tool modules import Node-only code and cannot cross the workflow boundary;
  * the injected dispatcher re-validates against the real schemas inside the step.
  */
-import type { ModelMessage } from "ai";
+import type { ModelMessage, SystemModelMessage } from "ai";
 import { WorkflowAgent, type ModelCallStreamPart } from "@ai-sdk/workflow";
 import { z } from "zod";
 import type { AgentRunContext } from "../engine/types.js";
@@ -303,7 +303,11 @@ export interface BuildMainWorkflowAgentInput {
   ssota: AgentRunContext;
   /** `"use step"` dispatcher that executes the real Node-backed tool. */
   dispatch: MainWorkflowDispatch;
-  instructions?: string;
+  /**
+   * Run instructions. Pass the `SystemModelMessage[]` from `buildRunPrompt`
+   * (carries Anthropic cache breakpoints) or a plain string.
+   */
+  instructions?: string | SystemModelMessage | SystemModelMessage[];
   modelId?: string;
   maxSteps?: number;
 }
