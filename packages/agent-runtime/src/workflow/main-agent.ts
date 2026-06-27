@@ -46,6 +46,36 @@ export const MAIN_WORKFLOW_TOOL_SCHEMAS = {
       "List the project's node type catalog (the kinds of records that exist). Check this before creating nodes or defining new types.",
     inputSchema: z.object({}),
   },
+  list_edge_types: {
+    description:
+      "List the project's edge type catalog (the kinds of relationships).",
+    inputSchema: z.object({}),
+  },
+  search_catalog: {
+    description:
+      "Search the project's type catalog (node + edge types) by keyword. Returns lightweight hits {kind,key,label,snippet,score}; fetch full detail with get_node_type / get_edge_type. Prefer this over list_node_types when the catalog is large or you only need types matching an intent (e.g. 'billing', '회고', 'metric').",
+    inputSchema: z.object({
+      query: z
+        .string()
+        .min(1)
+        .describe("Search text — matches key, label, keywords, description."),
+      kind: z
+        .enum(["node", "edge"])
+        .optional()
+        .describe("Restrict to node types or edge types. Omit to search both."),
+      limit: z.number().int().positive().max(50).optional(),
+    }),
+  },
+  get_node_type: {
+    description:
+      "Fetch one node type's full detail (label, description, keywords, property schema) by key. Use after search_catalog / list_node_types to read the property schema before creating nodes.",
+    inputSchema: z.object({ key: z.string() }),
+  },
+  get_edge_type: {
+    description:
+      "Fetch one edge type's full detail (label, description, keywords) by key.",
+    inputSchema: z.object({ key: z.string() }),
+  },
   query_nodes: {
     description:
       "List nodes of a catalog type in the current project. Use to read planning context (objectives, prds, features, tasks, pages…).",
@@ -67,6 +97,34 @@ export const MAIN_WORKFLOW_TOOL_SCHEMAS = {
       nodeId: z.string().uuid(),
       direction: z.enum(["out", "in", "both"]).optional(),
       edgeType: z.string().optional(),
+    }),
+  },
+  create_node: {
+    description:
+      "Create a new node of a catalog type. Properties are validated against the type's schema.",
+    inputSchema: z.object({
+      catalogKey: z.string(),
+      title: z.string(),
+      properties: z.record(z.unknown()).optional(),
+      content: z.string().optional(),
+    }),
+  },
+  update_node: {
+    description: "Update a node's title, properties, or content body.",
+    inputSchema: z.object({
+      nodeId: z.string().uuid(),
+      title: z.string().optional(),
+      properties: z.record(z.unknown()).optional(),
+      content: z.string().optional(),
+    }),
+  },
+  create_edge: {
+    description: "Connect two nodes with a typed edge.",
+    inputSchema: z.object({
+      catalogKey: z.string(),
+      sourceNodeId: z.string().uuid(),
+      targetNodeId: z.string().uuid(),
+      properties: z.record(z.unknown()).optional(),
     }),
   },
 } as const;
