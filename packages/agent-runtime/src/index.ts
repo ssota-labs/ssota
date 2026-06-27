@@ -42,6 +42,7 @@ export {
 } from "./composio/session.js";
 export {
   createComposioTools,
+  createComposioOrgTools,
   listComposioToolkitTools,
   type ComposioToolsInput,
   type ComposioToolInfo,

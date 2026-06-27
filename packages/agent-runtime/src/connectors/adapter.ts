@@ -19,7 +19,7 @@ import { McpSessionManager as McpSessionManagerImpl } from "../connections/mcp-s
 import { createConnectionTools } from "../tools/connections.js";
 import { resolveCredentialProvider } from "../credentials/provider.js";
 import { isComposioEnabled } from "../composio/client.js";
-import { createComposioTools } from "../composio/tools.js";
+import { createComposioOrgTools, createComposioTools } from "../composio/tools.js";
 import { resolveOrgIdForProject } from "../ports.js";
 
 export interface ConnectorToolsBundle {
@@ -50,12 +50,15 @@ function composioAdapter(): ConnectorAdapter {
   return {
     kind: "composio",
     async buildTools({ projectId, profileId }) {
-      // Composio keys connectors by org+profile; runs without an acting profile
-      // (scheduler / autonomous) get no connector tools.
-      if (!profileId) return EMPTY;
       const orgId = await resolveOrgIdForProject(projectId);
       if (!orgId) return EMPTY;
-      const tools = await createComposioTools({ orgId, profileId });
+      // With an acting user → their personal entity (which also sees
+      // ACL-accessible org-shared connections). Without one (inbound chat,
+      // scheduler, task) → the org-shared entity, so the org's connections
+      // are still available.
+      const tools = profileId
+        ? await createComposioTools({ orgId, profileId })
+        : await createComposioOrgTools({ orgId });
       return { tools };
     },
   };

@@ -8,7 +8,7 @@
  */
 import type { ToolSet } from "ai";
 import { getComposioClient } from "./client.js";
-import { getToolRouterSession } from "./session.js";
+import { getOrgToolRouterSession, getToolRouterSession } from "./session.js";
 import { getConnectorToolSettingsPort } from "../ports.js";
 
 export interface ComposioToolsInput {
@@ -16,7 +16,8 @@ export interface ComposioToolsInput {
   profileId: string;
 }
 
-/** AI-SDK ToolSet from the entity's Tool Router session, or `{}` if Composio is off. */
+/** AI-SDK ToolSet from the user entity's Tool Router session (personal +
+ *  ACL-accessible org-shared connections), or `{}` if Composio is off. */
 export async function createComposioTools(
   input: ComposioToolsInput,
 ): Promise<ToolSet> {
@@ -25,6 +26,20 @@ export async function createComposioTools(
     .catch(() => ({}) as Record<string, string[]>);
 
   const session = await getToolRouterSession({ ...input, disabledTools });
+  if (!session) return {};
+  const tools = await session.tools();
+  return tools as ToolSet;
+}
+
+/**
+ * AI-SDK ToolSet from the org-shared entity (`org_<id>`). Used for runs with no
+ * acting user — inbound chat (Slack/Discord mentions), scheduler, and task
+ * runtimes — so they reach the organization's shared connections.
+ */
+export async function createComposioOrgTools(input: {
+  orgId: string;
+}): Promise<ToolSet> {
+  const session = await getOrgToolRouterSession({ orgId: input.orgId });
   if (!session) return {};
   const tools = await session.tools();
   return tools as ToolSet;
