@@ -1,5 +1,5 @@
 export type GraphErrorCode =
-  | "PROJECT_MISMATCH"
+  | "ORG_MISMATCH"
   | "UNKNOWN_NODE_TYPE"
   | "UNKNOWN_EDGE_TYPE"
   | "VALIDATION_FAILED"

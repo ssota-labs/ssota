@@ -6,10 +6,10 @@ import type { Node } from "./types.js";
 const PROJECT_A = "00000000-0000-4000-8000-000000000001";
 const PROJECT_B = "00000000-0000-4000-8000-000000000099";
 
-function node(id: string, projectId: string): Node {
+function node(id: string, teamspaceId: string): Node {
   return {
     id,
-    projectId,
+    teamspaceId,
     nodeType: "Note",
     lifecycleStatus: "Draft",
     properties: {},
@@ -22,11 +22,11 @@ function node(id: string, projectId: string): Node {
 }
 
 describe("project-scope", () => {
-  it("거부: 노드 projectId 불일치", async () => {
+  it("거부: 노드 teamspaceId 불일치", async () => {
     await expect(
       assertNodeInProjectScope(PROJECT_A, node("n1", PROJECT_B)),
     ).rejects.toMatchObject({
-      code: "PROJECT_MISMATCH",
+      code: "ORG_MISMATCH",
     } satisfies Partial<ActionRejectedError>);
   });
 
@@ -40,7 +40,7 @@ describe("project-scope", () => {
         async (id) => nodes.get(id) ?? null,
       ),
     ).rejects.toMatchObject({
-      code: "PROJECT_MISMATCH",
+      code: "ORG_MISMATCH",
     } satisfies Partial<ActionRejectedError>);
   });
 });

@@ -100,7 +100,7 @@ ${options.instructions}
 - You CANNOT ask questions — no one will respond.
 - This is READ-ONLY.
 - Your final message MUST include both a **Summary** and an **Answer**.`,
-      // SSOTA scope so the read tools resolve projectId/accountId.
+      // SSOTA scope so the read tools resolve teamspaceId/accountId.
       experimental_context: { ssota: options.context },
     };
   },

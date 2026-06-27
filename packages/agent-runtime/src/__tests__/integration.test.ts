@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
   createAccountPort,
   createConsolePort,
 } from "@ssota/adapter-postgres";
@@ -31,7 +31,7 @@ async function defaultProjectId(): Promise<string> {
   const console_ = createConsolePort(getDb());
   const org = await console_.getOrganizationBySlug(DEFAULT_ORG_SLUG);
   const project = org
-    ? await console_.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG)
+    ? await console_.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG)
     : null;
   if (!project) throw new Error("seed missing — run pnpm db:seed");
   return project.id;
@@ -57,20 +57,20 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
       const console_ = createConsolePort(db);
       const org = await console_.getOrganizationBySlug(DEFAULT_ORG_SLUG);
       expect(org, "seeded organization").toBeTruthy();
-      const project = await console_.getProjectBySlug(
+      const project = await console_.getTeamspaceBySlug(
         org!.id,
-        DEFAULT_PROJECT_SLUG,
+        DEFAULT_TEAMSPACE_SLUG,
       );
       expect(project, "seeded project").toBeTruthy();
-      const projectId = project!.id;
+      const teamspaceId = project!.id;
 
       const task = await spawnTask(
         {
-          tasks: getTaskPort(projectId),
-          graphRead: getGraphReadPort(projectId),
-          workflowInstructions: getWorkflowInstructionPort(projectId),
+          tasks: getTaskPort(teamspaceId),
+          graphRead: getGraphReadPort(teamspaceId),
+          workflowInstructions: getWorkflowInstructionPort(teamspaceId),
         },
-        projectId,
+        teamspaceId,
         {
           title: "Integration smoke: summarize the current project's goals",
           workflowInstructionKey: "work.write_document",
@@ -84,7 +84,7 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
       );
 
       const result = await runAgentForTask({
-        projectId,
+        teamspaceId,
         taskId: task.id,
         runId: `test-${task.id}`,
         runtimeKind: "task",
@@ -98,14 +98,14 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
   it(
     "streams UI message chunks while completing a task",
     async () => {
-      const projectId = await defaultProjectId();
+      const teamspaceId = await defaultProjectId();
       const task = await spawnTask(
         {
-          tasks: getTaskPort(projectId),
-          graphRead: getGraphReadPort(projectId),
-          workflowInstructions: getWorkflowInstructionPort(projectId),
+          tasks: getTaskPort(teamspaceId),
+          graphRead: getGraphReadPort(teamspaceId),
+          workflowInstructions: getWorkflowInstructionPort(teamspaceId),
         },
-        projectId,
+        teamspaceId,
         {
           title: "Streaming smoke: list the project's objectives",
           workflowInstructionKey: "work.write_document",
@@ -125,7 +125,7 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
 
       const result = await streamAgentForTask(
         {
-          projectId,
+          teamspaceId,
           taskId: task.id,
           runId: `test-stream-${task.id}`,
           runtimeKind: "task",
@@ -145,8 +145,8 @@ describe.skipIf(!SHOULD_RUN)("agent runtime live integration", () => {
 // backs the production render route. Needs only DATABASE_URL.
 describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
   it("persists a page and resolves its bindings", async () => {
-    const projectId = await defaultProjectId();
-    const pagePort = getPagePort(projectId);
+    const teamspaceId = await defaultProjectId();
+    const pagePort = getPagePort(teamspaceId);
 
     const page = await pagePort.createPage({
       title: "Agent Dashboard",
@@ -170,8 +170,8 @@ describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
     expect(read?.id).toBe(page.id);
 
     const data = await resolvePageBindings(
-      getGraphReadPort(projectId),
-      projectId,
+      getGraphReadPort(teamspaceId),
+      teamspaceId,
       read!.bindings,
     );
     expect(Array.isArray(data.objectives)).toBe(true);
@@ -183,17 +183,17 @@ describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
 // builder scope sees all. Needs only DATABASE_URL.
 describe.skipIf(!DB_ONLY)("account isolation", () => {
   it("isolates account data while sharing builder/null rows", async () => {
-    const projectId = await defaultProjectId();
+    const teamspaceId = await defaultProjectId();
     const accounts = createAccountPort(getDb());
     const stamp = Date.now();
 
     const a = await accounts.provision({
-      projectId,
+      teamspaceId,
       slug: `iso-a-${stamp}`,
       name: "Account A",
     });
     const b = await accounts.provision({
-      projectId,
+      teamspaceId,
       slug: `iso-b-${stamp}`,
       name: "Account B",
     });
@@ -204,9 +204,9 @@ describe.skipIf(!DB_ONLY)("account isolation", () => {
 
     const mk = (accountId: string | undefined, title: string) =>
       createNode(
-        getGraphPorts(projectId, accountId),
+        getGraphPorts(teamspaceId, accountId),
         createNodeInputSchema.parse({
-          projectId,
+          teamspaceId,
           catalogKey: "objective",
           title,
           properties: {},
@@ -218,8 +218,8 @@ describe.skipIf(!DB_ONLY)("account isolation", () => {
     await mk(undefined, titleShared); // builder/shared
 
     const titlesFor = async (accountId?: string) => {
-      const nodes = await getGraphReadPort(projectId, accountId).queryNodes({
-        projectId,
+      const nodes = await getGraphReadPort(teamspaceId, accountId).queryNodes({
+        teamspaceId,
         catalogKey: "objective",
         limit: 100,
       });

@@ -13,7 +13,7 @@ import {
 } from "./mcp-tool-schema.js";
 
 export interface McpSessionScope {
-  projectId: string;
+  teamspaceId: string;
   accountId?: string;
   installationId?: string | null;
   userId?: string | null;
@@ -127,7 +127,7 @@ export class McpSessionManager {
     scope: McpSessionScope,
   ): Promise<{ headers: Record<string, string> } | null> {
     const cred = await this.credentials.getToken(connectorUid, {
-      projectId: scope.projectId,
+      teamspaceId: scope.teamspaceId,
       accountId: scope.accountId,
       installationId: scope.installationId ?? undefined,
       userId: scope.userId ?? undefined,

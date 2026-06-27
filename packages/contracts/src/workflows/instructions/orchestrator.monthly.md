@@ -10,7 +10,7 @@ Monthly retrospective and backlog grooming at project level.
 
 ## Preconditions
 
-- Project context resolved
+- Teamspace context resolved
 
 ## Steps
 

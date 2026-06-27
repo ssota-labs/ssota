@@ -31,7 +31,7 @@ describe("createConnectionTools (MCP_STUB)", () => {
     const sessionManager = new McpSessionManager(credentials);
     const bundle = await createConnectionTools({
       credentials,
-      projectId: "project-1",
+      teamspaceId: "project-1",
       connectionState: new ConnectionRunState(),
       sessionManager,
     });

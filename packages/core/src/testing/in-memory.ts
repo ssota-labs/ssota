@@ -95,7 +95,7 @@ export function createInMemoryState(
 function applyEffect(
   state: InMemoryState,
   effect: Effect,
-  projectId: string,
+  teamspaceId: string,
 ): void {
   const now = new Date();
 
@@ -103,7 +103,7 @@ function applyEffect(
     const id = effect.node.id ?? randomUUID();
     state.nodes.set(id, {
       id,
-      projectId,
+      teamspaceId,
       nodeType: effect.node.nodeType,
       lifecycleStatus: effect.node.lifecycleStatus,
       properties: effect.node.properties,
@@ -136,7 +136,7 @@ function applyEffect(
     const id = effect.edge.id ?? randomUUID();
     state.edges.set(id, {
       id,
-      projectId,
+      teamspaceId,
       edgeType: effect.edge.edgeType,
       sourceNodeId: effect.edge.sourceNodeId,
       targetNodeId: effect.edge.targetNodeId,
@@ -146,7 +146,7 @@ function applyEffect(
   } else if (effect.kind === "delete_node") {
     for (const [edgeId, edge] of state.edges) {
       if (
-        edge.projectId === projectId &&
+        edge.teamspaceId === teamspaceId &&
         (edge.sourceNodeId === effect.nodeId || edge.targetNodeId === effect.nodeId)
       ) {
         state.edges.delete(edgeId);
@@ -154,7 +154,7 @@ function applyEffect(
     }
     for (const [queueId, item] of state.impactQueue) {
       if (
-        item.projectId === projectId &&
+        item.teamspaceId === teamspaceId &&
         (item.sourceNodeId === effect.nodeId || item.targetNodeId === effect.nodeId)
       ) {
         state.impactQueue.delete(queueId);
@@ -172,7 +172,7 @@ function applyEffect(
 
       if (effect.status === "approved") {
         for (const proposed of gate.proposedEffects) {
-          applyEffect(state, proposed, projectId);
+          applyEffect(state, proposed, teamspaceId);
         }
       }
     }
@@ -254,7 +254,7 @@ function applyEffect(
       );
       const next: Workflow = {
         id: effect.entry.workflowId,
-        projectId,
+        teamspaceId,
         slug,
         workflowKey: effect.entry.workflowKey ?? null,
         lifecycle: effect.entry.lifecycle,
@@ -271,7 +271,7 @@ function applyEffect(
     } else {
       state.workflows.push({
         id: randomUUID(),
-        projectId,
+        teamspaceId,
         slug,
         workflowKey: effect.entry.workflowKey ?? spec.workflowKey ?? null,
         lifecycle: effect.entry.lifecycle,
@@ -289,7 +289,7 @@ function applyEffect(
         : effect.task.workflowKey;
     state.tasks.set(id, {
       id,
-      projectId,
+      teamspaceId,
       workflowInstructionId:
         "workflowInstructionId" in effect.task
           ? ((effect.task as { workflowInstructionId?: string }).workflowInstructionId ??
@@ -358,7 +358,7 @@ export function createInMemoryPorts(
   state: InMemoryState,
   scope?: ActionPortsScope,
 ): ActionPorts {
-  const projectId = scope?.projectId ?? TEST_PROJECT_ID;
+  const teamspaceId = scope?.teamspaceId ?? TEST_PROJECT_ID;
 
   const catalog: CatalogPort = {
     async getNodeCatalogEntry(nodeType) {
@@ -450,11 +450,11 @@ export function createInMemoryPorts(
   const graph: LegacyGraphReadPort = {
     async getNode(nodeId) {
       const node = state.nodes.get(nodeId);
-      return node?.projectId === projectId ? node : null;
+      return node?.teamspaceId === teamspaceId ? node : null;
     },
     async queryNodes(params) {
       let results = [...state.nodes.values()].filter(
-        (n) => n.projectId === projectId,
+        (n) => n.teamspaceId === teamspaceId,
       );
       if (params.nodeType) {
         results = results.filter((n) => n.nodeType === params.nodeType);
@@ -471,7 +471,7 @@ export function createInMemoryPorts(
     async traverseEdges(params) {
       const results: Edge[] = [];
       for (const edge of state.edges.values()) {
-        if (edge.projectId !== projectId) continue;
+        if (edge.teamspaceId !== teamspaceId) continue;
         if (params.edgeType && edge.edgeType !== params.edgeType) continue;
         if (
           params.direction === "outgoing" ||
@@ -496,12 +496,12 @@ export function createInMemoryPorts(
   const gate: GatePort = {
     async listPendingGates() {
       return [...state.gates.values()].filter(
-        (g) => g.projectId === projectId && g.status === "pending",
+        (g) => g.teamspaceId === teamspaceId && g.status === "pending",
       );
     },
     async queryGates(params) {
       let results = [...state.gates.values()].filter(
-        (g) => g.projectId === projectId,
+        (g) => g.teamspaceId === teamspaceId,
       );
       if (params.status) {
         results = results.filter((g) => g.status === params.status);
@@ -512,13 +512,13 @@ export function createInMemoryPorts(
     },
     async getGate(gateId) {
       const gate = state.gates.get(gateId);
-      return gate?.projectId === projectId ? gate : null;
+      return gate?.teamspaceId === teamspaceId ? gate : null;
     },
     async createGate(g) {
       const id = randomUUID();
       const gate: Gate = {
         ...g,
-        projectId,
+        teamspaceId,
         id,
         createdAt: new Date(),
         decisionNote: null,
@@ -542,7 +542,7 @@ export function createInMemoryPorts(
             status: params.gateDecision.status,
             decisionNote: params.gateDecision.decisionNote,
           },
-          projectId,
+          teamspaceId,
         );
       }
 
@@ -556,16 +556,16 @@ export function createInMemoryPorts(
               kind: "create_task",
               task: { ...effect.task, id: taskId },
             },
-            projectId,
+            teamspaceId,
           );
         } else {
-          applyEffect(state, effect, projectId);
+          applyEffect(state, effect, teamspaceId);
         }
       }
 
       state.actionLog.push({
         id: logId,
-        projectId,
+        teamspaceId,
         actionType: params.logEntry.actionType,
         executorId: params.logEntry.executorId,
         executorType: params.logEntry.executorType,
@@ -594,7 +594,7 @@ export function createInMemoryPorts(
       return { logId, appliedEffects: params.effects };
     },
     async getActionLog(params) {
-      let results = state.actionLog.filter((r) => r.projectId === projectId);
+      let results = state.actionLog.filter((r) => r.teamspaceId === teamspaceId);
       if (params.actionType) {
         results = results.filter((r) => r.actionType === params.actionType);
       }
@@ -604,13 +604,13 @@ export function createInMemoryPorts(
     },
     async getActionLogEntry(logId) {
       const entry = state.actionLog.find((r) => r.id === logId);
-      return entry?.projectId === projectId ? entry : null;
+      return entry?.teamspaceId === teamspaceId ? entry : null;
     },
     async findByIdempotencyKey(key) {
       return (
         state.actionLog.find(
           (r) =>
-            r.projectId === projectId &&
+            r.teamspaceId === teamspaceId &&
             r.idempotencyKey === key &&
             r.outcome === "committed",
         ) ?? null
@@ -618,19 +618,19 @@ export function createInMemoryPorts(
     },
   };
 
-  const impactQueue = createInMemoryImpactQueuePort(state, projectId);
-  const tasks = createInMemoryTaskPort(state, projectId);
+  const impactQueue = createInMemoryImpactQueuePort(state, teamspaceId);
+  const tasks = createInMemoryTaskPort(state, teamspaceId);
 
   return { catalog, graph, gate, commit, impactQueue, tasks };
 }
 
 function createInMemoryTaskPort(
   state: InMemoryState,
-  projectId: string,
+  teamspaceId: string,
 ): TaskPort {
   function queryItems(params?: TaskQueryInput): Task[] {
     let items = [...state.tasks.values()].filter(
-      (task) => task.projectId === projectId,
+      (task) => task.teamspaceId === teamspaceId,
     );
     if (params?.status) {
       items = items.filter((task) => task.status === params.status);
@@ -672,12 +672,12 @@ function createInMemoryTaskPort(
     },
     async getTask(taskId) {
       const task = state.tasks.get(taskId);
-      return task?.projectId === projectId ? task : null;
+      return task?.teamspaceId === teamspaceId ? task : null;
     },
     async getTaskByIdempotencyKey(idempotencyKey) {
       for (const task of state.tasks.values()) {
         if (
-          task.projectId === projectId &&
+          task.teamspaceId === teamspaceId &&
           task.idempotencyKey === idempotencyKey
         ) {
           return task;
@@ -689,7 +689,7 @@ function createInMemoryTaskPort(
       const createdAt = new Date();
       const task: Task = {
         id: randomUUID(),
-        projectId,
+        teamspaceId,
         workflowInstructionId: input.workflowInstructionId ?? null,
         workflowInstructionKey: input.workflowInstructionKey ?? null,
         title: input.title,
@@ -713,7 +713,7 @@ function createInMemoryTaskPort(
     },
     async updateTask(taskId, patch) {
       const existing = state.tasks.get(taskId);
-      if (!existing || existing.projectId !== projectId) return null;
+      if (!existing || existing.teamspaceId !== teamspaceId) return null;
       const updated: Task = {
         ...existing,
         ...patch,
@@ -733,7 +733,7 @@ function createInMemoryTaskPort(
 
 function createInMemoryImpactQueuePort(
   state: InMemoryState,
-  projectId: string,
+  teamspaceId: string,
 ): ImpactQueuePort {
   function now(): Date {
     return new Date();
@@ -749,7 +749,7 @@ function createInMemoryImpactQueuePort(
 
   function queryItems(params?: ImpactQueueQueryInput): ImpactQueueItem[] {
     let items = [...state.impactQueue.values()].filter(
-      (item) => item.projectId === projectId,
+      (item) => item.teamspaceId === teamspaceId,
     );
     if (params?.status) {
       items = items.filter((item) => item.status === params.status);
@@ -764,7 +764,7 @@ function createInMemoryImpactQueuePort(
     async enqueueImpact(input: ImpactQueueCreateInput) {
       const existing = [...state.impactQueue.values()].find(
         (item) =>
-          item.projectId === projectId &&
+          item.teamspaceId === teamspaceId &&
           item.idempotencyKey === input.idempotencyKey,
       );
       if (existing) return existing;
@@ -772,7 +772,7 @@ function createInMemoryImpactQueuePort(
       const createdAt = now();
       const item: ImpactQueueItem = {
         id: randomUUID(),
-        projectId,
+        teamspaceId,
         sourceActionLogId: input.sourceActionLogId,
         sourceNodeId: input.sourceNodeId ?? null,
         targetNodeId: input.targetNodeId ?? null,
@@ -804,7 +804,7 @@ function createInMemoryImpactQueuePort(
       const limit = input.limit ?? 1;
       const available = [...state.impactQueue.values()]
         .filter((item) => {
-          if (item.projectId !== projectId) return false;
+          if (item.teamspaceId !== teamspaceId) return false;
           if (item.runAt > currentTime) return false;
           if (item.status === "pending" || item.status === "failed") return true;
           return (
@@ -832,7 +832,7 @@ function createInMemoryImpactQueuePort(
 
     async completeImpactQueue(queueId, result = {}) {
       const item = state.impactQueue.get(queueId);
-      if (!item || item.projectId !== projectId) return null;
+      if (!item || item.teamspaceId !== teamspaceId) return null;
       const updated: ImpactQueueItem = {
         ...item,
         status: "succeeded",
@@ -848,7 +848,7 @@ function createInMemoryImpactQueuePort(
 
     async failImpactQueue(queueId, error, retryAt) {
       const item = state.impactQueue.get(queueId);
-      if (!item || item.projectId !== projectId) return null;
+      if (!item || item.teamspaceId !== teamspaceId) return null;
       const currentTime = now();
       const willRetry = item.attemptCount < item.maxAttempts;
       const updated: ImpactQueueItem = {
@@ -867,7 +867,7 @@ function createInMemoryImpactQueuePort(
 
     async skipImpactQueue(queueId, result = {}) {
       const item = state.impactQueue.get(queueId);
-      if (!item || item.projectId !== projectId) return null;
+      if (!item || item.teamspaceId !== teamspaceId) return null;
       const currentTime = now();
       const updated: ImpactQueueItem = {
         ...item,
@@ -888,7 +888,7 @@ function createInMemoryImpactQueuePort(
 
     async getImpactQueueItem(queueId) {
       const item = state.impactQueue.get(queueId);
-      return item?.projectId === projectId ? item : null;
+      return item?.teamspaceId === teamspaceId ? item : null;
     },
   };
 }
@@ -958,7 +958,7 @@ export function createTestNode(
   const id = overrides?.id ?? randomUUID();
   return {
     id,
-    projectId: TEST_PROJECT_ID,
+    teamspaceId: TEST_PROJECT_ID,
     nodeType: "Note",
     lifecycleStatus: "Draft" as LifecycleStatus,
     properties: {},
@@ -976,7 +976,7 @@ export function createTestGate(
 ): Gate {
   return {
     id: overrides?.id ?? randomUUID(),
-    projectId: TEST_PROJECT_ID,
+    teamspaceId: TEST_PROJECT_ID,
     actionType: "promote_note",
     executorId: "agent-1",
     input: { nodeId: randomUUID() },
@@ -996,7 +996,7 @@ const TEST_WORKFLOW_INSTRUCTIONS = [
 ];
 
 export function createInMemoryWorkflowInstructionPort(
-  projectId: string = TEST_PROJECT_ID,
+  teamspaceId: string = TEST_PROJECT_ID,
 ): WorkflowInstructionReadPort {
   const rows = new Map<string, WorkflowInstruction>(
     TEST_WORKFLOW_INSTRUCTIONS.map((meta) => {
@@ -1005,7 +1005,7 @@ export function createInMemoryWorkflowInstructionPort(
         meta.key,
         {
           id,
-          projectId,
+          teamspaceId,
           accountId: null,
           key: meta.key,
           name: meta.name,

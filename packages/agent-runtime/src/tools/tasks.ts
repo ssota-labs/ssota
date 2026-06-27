@@ -5,11 +5,11 @@ import { serializeTask, spawnTask, updateTask } from "@ssota/core";
 import { getGraphReadPort, getTaskPort, getWorkflowInstructionPort } from "../ports.js";
 import { getRunContext } from "./context.js";
 
-function taskDeps(projectId: string, accountId?: string) {
+function taskDeps(teamspaceId: string, accountId?: string) {
   return {
-    tasks: getTaskPort(projectId, accountId),
-    graphRead: getGraphReadPort(projectId, accountId),
-    workflowInstructions: getWorkflowInstructionPort(projectId, accountId),
+    tasks: getTaskPort(teamspaceId, accountId),
+    graphRead: getGraphReadPort(teamspaceId, accountId),
+    workflowInstructions: getWorkflowInstructionPort(teamspaceId, accountId),
   };
 }
 
@@ -20,7 +20,7 @@ export function createTaskTools(): ToolSet {
       inputSchema: z.object({ taskId: z.string().uuid().optional() }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        const task = await getTaskPort(ctx.projectId, ctx.accountId).getTask(
+        const task = await getTaskPort(ctx.teamspaceId, ctx.accountId).getTask(
           input.taskId ?? ctx.taskId ?? "",
         );
         return task ? serializeTask(task) : null;
@@ -45,7 +45,7 @@ export function createTaskTools(): ToolSet {
       }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        const tasks = await getTaskPort(ctx.projectId, ctx.accountId).queryTasks(input);
+        const tasks = await getTaskPort(ctx.teamspaceId, ctx.accountId).queryTasks(input);
         return tasks.map(serializeTask);
       },
     }),
@@ -79,8 +79,8 @@ export function createTaskTools(): ToolSet {
           context: { executionDirective: input.executionDirective },
         });
         const task = await spawnTask(
-          taskDeps(ctx.projectId, ctx.accountId),
-          ctx.projectId,
+          taskDeps(ctx.teamspaceId, ctx.accountId),
+          ctx.teamspaceId,
           parsed,
         );
         return serializeTask(task);
@@ -114,7 +114,7 @@ export function createTaskTools(): ToolSet {
         if (!resolvedTaskId) {
           throw new Error("taskId is required");
         }
-        const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
+        const task = await updateTask(taskDeps(ctx.teamspaceId, ctx.accountId), ctx.teamspaceId, {
           taskId: resolvedTaskId,
           ...patch,
         });
@@ -134,7 +134,7 @@ export function createTaskTools(): ToolSet {
         if (!ctx.taskId) {
           throw new Error("taskId is required for complete_task");
         }
-        const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
+        const task = await updateTask(taskDeps(ctx.teamspaceId, ctx.accountId), ctx.teamspaceId, {
           taskId: ctx.taskId,
           status: "done",
           result: { summary: input.summary, ...(input.result ?? {}) },
@@ -154,7 +154,7 @@ export function createTaskTools(): ToolSet {
         if (!ctx.taskId) {
           throw new Error("taskId is required for block_task");
         }
-        const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
+        const task = await updateTask(taskDeps(ctx.teamspaceId, ctx.accountId), ctx.teamspaceId, {
           taskId: ctx.taskId,
           status: "blocked",
           context: { blockedReason: input.reason },
@@ -183,7 +183,7 @@ export function createTaskTools(): ToolSet {
           ...(input.summary ? { summary: input.summary } : {}),
           requestedAt: new Date().toISOString(),
         };
-        const task = await updateTask(taskDeps(ctx.projectId, ctx.accountId), ctx.projectId, {
+        const task = await updateTask(taskDeps(ctx.teamspaceId, ctx.accountId), ctx.teamspaceId, {
           taskId: ctx.taskId,
           status: "blocked",
           context: { gate },

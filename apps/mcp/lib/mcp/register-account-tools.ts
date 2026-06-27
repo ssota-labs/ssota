@@ -32,7 +32,7 @@ export function registerAccountTools(server: McpToolServer) {
     {
       title: "List Organizations",
       description:
-        "Discover: organizations the authenticated user can access. Use list_projects, then pass orgSlug + projectSlug to project tools.",
+        "Discover: organizations the authenticated user can access. Use list_projects, then pass orgSlug + teamspaceSlug to project tools.",
       inputSchema: {},
     },
     async (_args, extra) => {
@@ -46,7 +46,7 @@ export function registerAccountTools(server: McpToolServer) {
     {
       title: "List Projects",
       description:
-        "Discover: accessible projects. Pass returned orgSlug + projectSlug on every project-scoped tool call.",
+        "Discover: accessible projects. Pass returned orgSlug + teamspaceSlug on every project-scoped tool call.",
       inputSchema: {
         orgSlug: z.string().min(1).optional(),
       },
@@ -62,26 +62,26 @@ export function registerAccountTools(server: McpToolServer) {
   server.registerTool(
     "get_project",
     {
-      title: "Get Project",
+      title: "Get Teamspace",
       description:
-        "Fetch one accessible project by orgSlug + projectSlug for use in project tool params.",
+        "Fetch one accessible project by orgSlug + teamspaceSlug for use in project tool params.",
       inputSchema: {
         orgSlug: z.string().min(1),
-        projectSlug: z.string().min(1),
+        teamspaceSlug: z.string().min(1),
       },
     },
     async (args, extra) => {
       const user = requireUserFromExtra(extra);
       const orgSlug = String(args.orgSlug);
-      const projectSlug = String(args.projectSlug);
+      const teamspaceSlug = String(args.teamspaceSlug);
       const project = await getProjectForUser(
         user.id,
         orgSlug,
-        projectSlug,
+        teamspaceSlug,
       );
       if (!project) {
         return {
-          content: [{ type: "text", text: "Project not found or access denied" }],
+          content: [{ type: "text", text: "Teamspace not found or access denied" }],
           isError: true,
         };
       }

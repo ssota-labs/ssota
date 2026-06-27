@@ -55,7 +55,7 @@ function buildAgent(input: LoopEngineRunInput) {
  * Category-A loop engine backed by the AI SDK `ToolLoopAgent`, run in-process
  * and wrapped by Vercel Workflow for durability (decision: ToolLoopAgent +
  * "use workflow"). The per-run SSOTA scope rides in `experimental_context` so
- * every tool resolves its `projectId`/`accountId` without rebinding.
+ * every tool resolves its `teamspaceId`/`accountId` without rebinding.
  *
  * MCP tools use a stable facade (`connection_search`, `connection_call`) so the
  * tools prefix never changes between steps. `instructions` arrives as

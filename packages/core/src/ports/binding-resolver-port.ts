@@ -3,7 +3,7 @@ import type { BindingDef } from "@ssota/contracts";
 /** Resolves page bindings to a data context — implementation post-release (PR6). */
 export interface BindingResolverPort {
   resolveBindings(
-    projectId: string,
+    teamspaceId: string,
     bindings: Record<string, BindingDef>,
     context?: Record<string, unknown>,
   ): Promise<Record<string, unknown>>;

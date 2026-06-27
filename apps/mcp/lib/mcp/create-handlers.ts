@@ -36,7 +36,7 @@ const unifiedMcpHandler = createMcpHandler(
 
 /**
  * Single MCP auth path: JWT verification.
- * Project scope is resolved per tool call via orgSlug/projectSlug args
+ * Teamspace scope is resolved per tool call via orgSlug/teamspaceSlug args
  * (with optional URL query defaults for backward compatibility).
  */
 async function verifyMcpToken(
@@ -56,12 +56,12 @@ async function verifyMcpToken(
       const access = await resolveProjectAccess(
         user.id,
         urlScope.orgSlug,
-        urlScope.projectSlug,
+        urlScope.teamspaceSlug,
       );
       if (access) {
         extra.orgSlug = access.org.slug;
-        extra.projectSlug = access.project.slug;
-        extra.projectId = access.project.id;
+        extra.teamspaceSlug = access.project.slug;
+        extra.teamspaceId = access.project.id;
       }
     }
   } catch {
@@ -69,8 +69,8 @@ async function verifyMcpToken(
   }
 
   const headerProjectId = resolveProjectId(req);
-  if (headerProjectId && !extra.projectId) {
-    extra.projectId = headerProjectId;
+  if (headerProjectId && !extra.teamspaceId) {
+    extra.teamspaceId = headerProjectId;
   }
 
   return {

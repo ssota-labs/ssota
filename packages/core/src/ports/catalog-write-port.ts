@@ -3,12 +3,12 @@ import type { EdgeCatalogRow, NodeCatalogRow } from "@ssota/contracts";
 /** Search text (description/keywords) is optional on write — defaults to empty. */
 export type UpsertNodeCatalogInput = Omit<
   NodeCatalogRow,
-  "id" | "projectId" | "description" | "keywords"
+  "id" | "organizationId" | "description" | "keywords"
 > & { id?: string; description?: string; keywords?: string[] };
 
 export type UpsertEdgeCatalogInput = Omit<
   EdgeCatalogRow,
-  "id" | "projectId" | "description" | "keywords"
+  "id" | "organizationId" | "description" | "keywords"
 > & { id?: string; description?: string; keywords?: string[] };
 
 export interface CatalogWritePort {

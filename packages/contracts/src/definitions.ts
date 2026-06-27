@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** SSOTA project scope — one catalog/graph space per agent domain. */
-export const PROJECT_ID_HEADER = "X-SSOTA-Project-Id" as const;
+export const PROJECT_ID_HEADER = "X-SSOTA-Teamspace-Id" as const;
 
 export const LifecycleStatusSchema = z.enum([
   "Draft",
@@ -466,7 +466,7 @@ export const ExecuteActionInputSchema = z.object({
   executorType: ExecutorTypeSchema,
   idempotencyKey: z.string().optional(),
   /** Server-injected project scope — catalog and graph boundary. */
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
 });
 
 export type ExecuteActionInput = z.infer<typeof ExecuteActionInputSchema>;

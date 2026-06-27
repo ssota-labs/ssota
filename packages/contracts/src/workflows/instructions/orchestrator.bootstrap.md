@@ -12,7 +12,7 @@ One-time setup: document external automation hooks (Cursor/Claude/Codex) and ver
 ## Preconditions
 
 - MCP `list_projects` / `get_project` succeeds for the target project
-- Bearer auth and `X-SSOTA-Project-Id` (or OAuth project context) configured
+- Bearer auth and `X-SSOTA-Teamspace-Id` (or OAuth project context) configured
 
 ## Steps
 

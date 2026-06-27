@@ -190,7 +190,7 @@ export function isKnownWorkflowKey(
 const BUILTIN_WORKFLOW_META: WorkflowMeta[] = [
   {
     workflowKey: "agent.setup",
-    title: "Project setup",
+    title: "Teamspace setup",
     description:
       "Set up a project from scratch (or reconfigure it): interview the user about the domain and goals, then author workflows and build pages so the project can operate. Use when the project has no workflows yet, or the user wants to (re)configure how it works.",
     category: "orchestrator",

@@ -25,7 +25,7 @@ export interface GraphReadPort {
 
 /** Resolved catalog FK — produced by graph use-cases before adapter write. */
 export interface ResolvedCreateNodeInput {
-  projectId: string;
+  teamspaceId: string;
   nodeCatalogId: string;
   catalogKey: string;
   title: string;
@@ -36,7 +36,7 @@ export interface ResolvedCreateNodeInput {
 }
 
 export interface ResolvedCreateEdgeInput {
-  projectId: string;
+  teamspaceId: string;
   edgeCatalogId: string;
   catalogKey: string;
   sourceNodeId: string;

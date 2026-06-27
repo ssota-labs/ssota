@@ -6,7 +6,7 @@ export default function Home() {
         Account MCP: <code>/api/mcp</code> (list_organizations, list_projects)
       </p>
       <p className="text-neutral-600">
-        Project MCP: <code>/api/mcp?org=&#123;orgSlug&#125;&amp;project=&#123;projectSlug&#125;</code>{" "}
+        Teamspace MCP: <code>/api/mcp?org=&#123;orgSlug&#125;&amp;project=&#123;teamspaceSlug&#125;</code>{" "}
         (list_tasks, query_tasks, get_task)
       </p>
       <p className="text-neutral-600">

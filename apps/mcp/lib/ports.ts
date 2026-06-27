@@ -4,6 +4,9 @@ import {
   createDb,
   createTaskPort,
   createWorkflowInstructionPort,
+  registerTeamspaceOrganization,
+  resolveOrganizationIdForTeamspace,
+  getCachedOrganizationIdForTeamspace,
 } from "@ssota/adapter-postgres";
 
 type Db = ReturnType<typeof createDb>["db"];
@@ -17,20 +20,36 @@ export function getDb(): Db {
   return cachedDb;
 }
 
-export function getTaskPort(projectId: string) {
-  return createTaskPort(getDb(), { projectId });
+export function getTaskPort(teamspaceId: string) {
+  return createTaskPort(getDb(), { teamspaceId });
 }
 
-export function getWorkflowInstructionPort(projectId: string) {
-  return createWorkflowInstructionPort(getDb(), { projectId });
+export function getWorkflowInstructionPort(teamspaceId: string) {
+  return createWorkflowInstructionPort(getDb(), { teamspaceId });
 }
 
-export function getGraphPorts(projectId: string) {
-  return createGraphPorts(getDb(), { projectId });
+export function getGraphPorts(teamspaceId: string, organizationId?: string) {
+  const orgId =
+    organizationId ?? getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (!orgId) {
+    throw new Error(
+      `Organization scope not registered for teamspace '${teamspaceId}'`,
+    );
+  }
+  return createGraphPorts(getDb(), { organizationId: orgId, teamspaceId });
 }
 
-export function getGraphReadPort(projectId: string) {
-  return getGraphPorts(projectId).graphRead;
+export async function getGraphPortsForTeamspace(teamspaceId: string) {
+  let organizationId = getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (!organizationId) {
+    organizationId = await resolveOrganizationIdForTeamspace(getDb(), teamspaceId);
+    registerTeamspaceOrganization(teamspaceId, organizationId);
+  }
+  return createGraphPorts(getDb(), { organizationId, teamspaceId });
+}
+
+export function getGraphReadPort(teamspaceId: string, organizationId?: string) {
+  return getGraphPorts(teamspaceId, organizationId).graphRead;
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {
@@ -39,9 +58,10 @@ export async function resolveDefaultProjectId(): Promise<string> {
   if (!org) {
     throw new Error("Default organization not found — run db:seed");
   }
-  const project = await consolePort.getProjectBySlug(org.id, "ssota-dev");
+  const project = await consolePort.getTeamspaceBySlug(org.id, "ssota-dev");
   if (!project) {
-    throw new Error("Default project not found — run db:seed");
+    throw new Error("Default teamspace not found — run db:seed");
   }
+  registerTeamspaceOrganization(project.id, org.id);
   return project.id;
 }

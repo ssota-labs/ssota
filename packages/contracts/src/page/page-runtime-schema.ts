@@ -279,7 +279,7 @@ export type PageRecord = z.infer<typeof pageRecordSchema>;
 export const pageSchema = z
   .object({
     id: z.string().uuid(),
-    projectId: z.string().uuid(),
+    teamspaceId: z.string().uuid(),
     accountId: z.string().uuid().nullable().optional(),
     title: z.string().min(1),
     icon: z.string().nullable().optional(),

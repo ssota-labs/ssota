@@ -17,7 +17,7 @@ type McpToolServer = {
 };
 
 type ScopedToolContext = {
-  projectId: string;
+  teamspaceId: string;
   args: Record<string, unknown>;
   extra: { authInfo?: AuthInfo };
 };
@@ -42,9 +42,9 @@ export function registerScopedProjectTool(
       },
     },
     async (args, extra) => {
-      const projectId = await resolveProjectIdForTool(args, extra);
+      const teamspaceId = await resolveProjectIdForTool(args, extra);
       return handler({
-        projectId,
+        teamspaceId,
         args: stripProjectScope(args),
         extra,
       });

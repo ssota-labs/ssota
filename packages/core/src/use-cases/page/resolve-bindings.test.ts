@@ -15,7 +15,7 @@ describe("resolvePageBindings", () => {
     const graphRead = createInMemoryGraphReadPort(store);
 
     const initiative = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000009",
       catalogKey: "initiative",
       title: "Initiative",
@@ -23,7 +23,7 @@ describe("resolvePageBindings", () => {
       schemaVersion: 1,
     });
     const feature = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000011",
       catalogKey: "feature",
       title: "Feature A",
@@ -31,7 +31,7 @@ describe("resolvePageBindings", () => {
       schemaVersion: 1,
     });
     await graphWrite.createEdge({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       edgeCatalogId: "00000000-0000-4000-9000-000000000004",
       catalogKey: "for_initiative",
       sourceNodeId: feature.id,
@@ -66,7 +66,7 @@ describe("resolvePageBindings", () => {
     const graphRead = createInMemoryGraphReadPort(store);
 
     const initiative = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000009",
       catalogKey: "initiative",
       title: "Initiative",
@@ -74,7 +74,7 @@ describe("resolvePageBindings", () => {
       schemaVersion: 1,
     });
     const feature = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000011",
       catalogKey: "feature",
       title: "Feature A",
@@ -82,7 +82,7 @@ describe("resolvePageBindings", () => {
       schemaVersion: 1,
     });
     await graphWrite.createEdge({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       edgeCatalogId: "00000000-0000-4000-9000-000000000004",
       catalogKey: "for_initiative",
       sourceNodeId: feature.id,
@@ -90,7 +90,7 @@ describe("resolvePageBindings", () => {
       properties: {},
     });
     const story = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000012",
       catalogKey: "user_story",
       title: "Story 1",
@@ -98,7 +98,7 @@ describe("resolvePageBindings", () => {
       schemaVersion: 1,
     });
     await graphWrite.createEdge({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       edgeCatalogId: "00000000-0000-4000-9000-000000000004",
       catalogKey: "for_initiative",
       sourceNodeId: story.id,
@@ -106,7 +106,7 @@ describe("resolvePageBindings", () => {
       properties: {},
     });
     await graphWrite.createEdge({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       edgeCatalogId: "00000000-0000-4000-9000-000000000005",
       catalogKey: "spawns_story",
       sourceNodeId: feature.id,
@@ -155,7 +155,7 @@ describe("resolvePageBindings", () => {
     const graphRead = createInMemoryGraphReadPort(store);
 
     const initiative = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000009",
       catalogKey: "initiative",
       title: "Initiative",
@@ -163,7 +163,7 @@ describe("resolvePageBindings", () => {
       schemaVersion: 1,
     });
     const evergreen = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000013",
       catalogKey: "data_spec",
       title: "Evergreen data spec",
@@ -171,7 +171,7 @@ describe("resolvePageBindings", () => {
       schemaVersion: 1,
     });
     const scoped = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000013",
       catalogKey: "data_spec",
       title: "Scoped data spec",
@@ -179,7 +179,7 @@ describe("resolvePageBindings", () => {
       schemaVersion: 1,
     });
     await graphWrite.createEdge({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       edgeCatalogId: "00000000-0000-4000-9000-000000000004",
       catalogKey: "for_initiative",
       sourceNodeId: scoped.id,
@@ -202,7 +202,7 @@ describe("resolvePageBindings", () => {
     const graphRead = createInMemoryGraphReadPort(store);
 
     const wireframe = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000020",
       catalogKey: "page_wireframe",
       title: "Login wireframe",
@@ -210,7 +210,7 @@ describe("resolvePageBindings", () => {
       schemaVersion: 1,
     });
     const component = await graphWrite.createNode({
-      projectId: PROJECT_ID,
+      teamspaceId: PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000021",
       catalogKey: "ui_component",
       title: "Button",

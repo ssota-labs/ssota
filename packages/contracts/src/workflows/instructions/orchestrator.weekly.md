@@ -10,7 +10,7 @@ Weekly planning pass: align tasks with initiatives, schedule larger work chunks,
 
 ## Preconditions
 
-- Project context resolved
+- Teamspace context resolved
 
 ## Steps
 

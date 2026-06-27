@@ -83,7 +83,7 @@ function getSandboxCredentials(): Record<string, string> {
     return {
       token: VERCEL_TOKEN,
       teamId: VERCEL_TEAM_ID,
-      projectId: VERCEL_PROJECT_ID,
+      teamspaceId: VERCEL_PROJECT_ID,
     };
   }
   return {};

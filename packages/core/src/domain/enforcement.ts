@@ -413,7 +413,7 @@ export function resolveEffects(
 }
 
 export async function enforceTaskSpawnIntegrity(
-  projectId: string,
+  teamspaceId: string,
   effects: Effect[],
   deps: {
     getNode: (nodeId: string) => Promise<Node | null>;
@@ -432,9 +432,9 @@ export async function enforceTaskSpawnIntegrity(
           `Task '${effect.taskId}' does not exist`,
         );
       }
-      if (task.projectId !== projectId) {
+      if (task.teamspaceId !== teamspaceId) {
         throw new ActionRejectedError(
-          "PROJECT_MISMATCH",
+          "ORG_MISMATCH",
           `Task '${effect.taskId}' belongs to a different project`,
         );
       }
@@ -452,9 +452,9 @@ export async function enforceTaskSpawnIntegrity(
             `Node '${effect.patch.targetNodeId}' does not exist`,
           );
         }
-        if (node.projectId !== projectId) {
+        if (node.teamspaceId !== teamspaceId) {
           throw new ActionRejectedError(
-            "PROJECT_MISMATCH",
+            "ORG_MISMATCH",
             `Node '${effect.patch.targetNodeId}' belongs to a different project`,
           );
         }
@@ -490,9 +490,9 @@ export async function enforceTaskSpawnIntegrity(
           `Node '${effect.task.targetNodeId}' does not exist`,
         );
       }
-      if (node.projectId !== projectId) {
+      if (node.teamspaceId !== teamspaceId) {
         throw new ActionRejectedError(
-          "PROJECT_MISMATCH",
+          "ORG_MISMATCH",
           `Node '${effect.task.targetNodeId}' belongs to a different project`,
         );
       }
@@ -506,9 +506,9 @@ export async function enforceTaskSpawnIntegrity(
           `Parent task '${effect.task.parentTaskId}' does not exist`,
         );
       }
-      if (parent.projectId !== projectId) {
+      if (parent.teamspaceId !== teamspaceId) {
         throw new ActionRejectedError(
-          "PROJECT_MISMATCH",
+          "ORG_MISMATCH",
           `Parent task '${effect.task.parentTaskId}' belongs to a different project`,
         );
       }

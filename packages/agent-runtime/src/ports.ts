@@ -7,7 +7,12 @@ import {
   createPagePort,
   createConsolePort,
   createConnectorToolSettingsPort,
+  registerTeamspaceOrganization,
+  resolveOrganizationIdForTeamspace,
+  getCachedOrganizationIdForTeamspace,
 } from "@ssota/adapter-postgres";
+
+export { registerTeamspaceOrganization };
 
 type Db = ReturnType<typeof createDb>["db"];
 
@@ -20,29 +25,60 @@ export function getDb(): Db {
   return cachedDb;
 }
 
-export function getTaskPort(projectId: string, accountId?: string) {
-  return createTaskPort(getDb(), { projectId, accountId });
+export function getTaskPort(teamspaceId: string, accountId?: string) {
+  return createTaskPort(getDb(), { teamspaceId, accountId });
 }
 
-export function getGraphPorts(projectId: string, accountId?: string) {
-  return createGraphPorts(getDb(), { projectId, accountId });
+export function getGraphPorts(
+  teamspaceId: string,
+  accountId?: string,
+  organizationId?: string,
+) {
+  const orgId =
+    organizationId ?? getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (!orgId) {
+    throw new Error(
+      `Organization scope not registered for teamspace '${teamspaceId}'`,
+    );
+  }
+  return createGraphPorts(getDb(), { organizationId: orgId, teamspaceId, accountId });
 }
 
-export function getGraphReadPort(projectId: string, accountId?: string) {
-  return getGraphPorts(projectId, accountId).graphRead;
+export async function getGraphPortsForTeamspace(
+  teamspaceId: string,
+  accountId?: string,
+) {
+  let organizationId = getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (!organizationId) {
+    organizationId = await resolveOrganizationIdForTeamspace(getDb(), teamspaceId);
+    registerTeamspaceOrganization(teamspaceId, organizationId);
+  }
+  return createGraphPorts(getDb(), { organizationId, teamspaceId, accountId });
 }
 
-/** Catalog (node/edge type) write port. Catalog is project-wide (no account). */
-export function getCatalogWritePort(projectId: string) {
-  return createDbCatalogWritePort(getDb(), { projectId });
+export function getGraphReadPort(
+  teamspaceId: string,
+  accountId?: string,
+  organizationId?: string,
+) {
+  return getGraphPorts(teamspaceId, accountId, organizationId).graphRead;
 }
 
-export function getWorkflowInstructionPort(projectId: string, accountId?: string) {
-  return createWorkflowInstructionPort(getDb(), { projectId, accountId });
+/** Catalog (node/edge type) write port. Catalog is org-wide (no account). */
+export async function getCatalogWritePort(teamspaceId: string) {
+  const organizationId = await resolveOrganizationIdForTeamspace(
+    getDb(),
+    teamspaceId,
+  );
+  return createDbCatalogWritePort(getDb(), { organizationId });
 }
 
-export function getPagePort(projectId: string, accountId?: string) {
-  return createPagePort(getDb(), { projectId, accountId });
+export function getWorkflowInstructionPort(teamspaceId: string, accountId?: string) {
+  return createWorkflowInstructionPort(getDb(), { teamspaceId, accountId });
+}
+
+export function getPagePort(teamspaceId: string, accountId?: string) {
+  return createPagePort(getDb(), { teamspaceId, accountId });
 }
 
 export function getConsolePort() {
@@ -53,10 +89,10 @@ export function getConnectorToolSettingsPort() {
   return createConnectorToolSettingsPort(getDb());
 }
 
-/** Resolve the owning organization id for a project, or null if not found. */
+/** Resolve the owning organization id for a teamspace, or null if not found. */
 export async function resolveOrgIdForProject(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<string | null> {
-  const project = await getConsolePort().getProjectById(projectId);
+  const project = await getConsolePort().getTeamspaceById(teamspaceId);
   return project?.organizationId ?? null;
 }

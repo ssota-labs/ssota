@@ -3,7 +3,6 @@ import { GraphError } from "../../domain/graph-errors.js";
 import type { CatalogReadPort } from "../../ports/catalog-read-port.js";
 import type { GraphReadPort } from "../../ports/graph-read-port.js";
 import type { GraphWritePort } from "../../ports/graph-write-port.js";
-import { assertGraphNodeInProject } from "../../domain/graph-scope.js";
 
 async function resolveEdgeCatalog(
   catalog: CatalogReadPort,
@@ -50,8 +49,12 @@ export async function createEdge(
     deps.graphRead.getNodeById(input.targetNodeId),
   ]);
 
-  assertGraphNodeInProject(input.projectId, source, "Source node");
-  assertGraphNodeInProject(input.projectId, target, "Target node");
+  if (!source) {
+    throw new GraphError("NOT_FOUND", "Source node not found");
+  }
+  if (!target) {
+    throw new GraphError("NOT_FOUND", "Target node not found");
+  }
 
   let validatedProperties: Record<string, unknown>;
   try {
@@ -65,7 +68,7 @@ export async function createEdge(
   }
 
   return deps.graphWrite.createEdge({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     edgeCatalogId: catalogRef.id,
     catalogKey: catalogRef.key,
     sourceNodeId: input.sourceNodeId,

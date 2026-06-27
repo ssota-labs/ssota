@@ -14,13 +14,13 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const hasQuery = url.searchParams.size > 0;
     if (!hasQuery) {
-      const data = await listTasks(ctx.projectId);
+      const data = await listTasks(ctx.teamspaceId);
       return jsonOk(TaskListResponseSchema.parse({ data }).data);
     }
 
     const parsed = parseQuery(QueryTasksInputSchema, url.searchParams);
     if (!parsed.ok) return parsed.response;
-    const data = await queryTasks(ctx.projectId, parsed.data);
+    const data = await queryTasks(ctx.teamspaceId, parsed.data);
     return jsonOk(TaskListResponseSchema.parse({ data }).data);
   });
 }
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     const parsed = parseJsonBody(SpawnTaskInputSchema, body);
     if (!parsed.ok) return parsed.response;
     try {
-      const data = await spawnTask(ctx.projectId, parsed.data);
+      const data = await spawnTask(ctx.teamspaceId, parsed.data);
       return jsonOk(data, 201);
     } catch (error) {
       const mapped = mapTaskError(error);

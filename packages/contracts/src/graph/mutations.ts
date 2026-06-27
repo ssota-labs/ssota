@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createNodeInputSchema = z
   .object({
-    projectId: z.string().uuid(),
+    teamspaceId: z.string().uuid(),
     catalogKey: z.string().min(1).optional(),
     nodeCatalogId: z.string().uuid().optional(),
     title: z.string().min(1),
@@ -19,7 +19,7 @@ export const createNodeInputSchema = z
 export type CreateNodeInput = z.input<typeof createNodeInputSchema>;
 
 export const updateNodeInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   nodeId: z.string().uuid(),
   title: z.string().min(1).optional(),
   properties: z.record(z.unknown()).optional(),
@@ -29,7 +29,7 @@ export type UpdateNodeInput = z.infer<typeof updateNodeInputSchema>;
 
 export const createEdgeInputSchema = z
   .object({
-    projectId: z.string().uuid(),
+    teamspaceId: z.string().uuid(),
     catalogKey: z.string().min(1).optional(),
     edgeCatalogId: z.string().uuid().optional(),
     sourceNodeId: z.string().uuid(),
@@ -43,21 +43,21 @@ export const createEdgeInputSchema = z
 export type CreateEdgeInput = z.input<typeof createEdgeInputSchema>;
 
 export const deleteEdgeInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   edgeId: z.string().uuid(),
 });
 
 export type DeleteEdgeInput = z.infer<typeof deleteEdgeInputSchema>;
 
 export const deleteNodeInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   nodeId: z.string().uuid(),
 });
 
 export type DeleteNodeInput = z.infer<typeof deleteNodeInputSchema>;
 
 export const createInitiativeBundleInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   initiativeTitle: z.string().min(1),
   releaseVersion: z.string().min(1),
   initiativeProperties: z.record(z.unknown()).default({}),

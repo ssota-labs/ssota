@@ -30,7 +30,8 @@ describe("createAiSdkLoopEngine stream", () => {
         messages: [{ role: "user", content: "hello" }],
         modelId: "stub/echo",
         context: {
-          projectId: "00000000-0000-4000-8000-000000000001",
+          teamspaceId: "00000000-0000-4000-8000-000000000001",
+          organizationId: "00000000-0000-4000-8000-000000000002",
           runId: "test-run",
         },
       },

@@ -25,8 +25,8 @@ function serializeWorkflowSummary(entry: WorkflowInstruction): WorkflowSummary {
   };
 }
 
-export async function listWorkflowsForMcp(db: Db, projectId: string) {
-  const port = createWorkflowInstructionPort(db, { projectId });
+export async function listWorkflowsForMcp(db: Db, teamspaceId: string) {
+  const port = createWorkflowInstructionPort(db, { teamspaceId });
   const items = await port.listInstructions();
   const dbKeys = new Set(items.map((w) => w.key));
   // DB rows override code built-ins (e.g. agent.setup) with the same key.
@@ -38,10 +38,10 @@ export async function listWorkflowsForMcp(db: Db, projectId: string) {
 
 export async function getWorkflowForMcp(
   db: Db,
-  projectId: string,
+  teamspaceId: string,
   workflowKey: string,
 ): Promise<WorkflowSummary | null> {
-  const port = createWorkflowInstructionPort(db, { projectId });
+  const port = createWorkflowInstructionPort(db, { teamspaceId });
   const entry = await port.getByKey(workflowKey);
   if (entry) return serializeWorkflowSummary(entry);
   const builtin = getBuiltinWorkflowByKey(workflowKey);
@@ -56,10 +56,10 @@ export async function getWorkflowForMcp(
 
 export async function getWorkflowInstructionForMcp(
   db: Db,
-  projectId: string,
+  teamspaceId: string,
   workflowKey: string,
 ) {
-  const port = createWorkflowInstructionPort(db, { projectId });
+  const port = createWorkflowInstructionPort(db, { teamspaceId });
   const entry = await port.getByKey(workflowKey);
   if (entry) {
     return {

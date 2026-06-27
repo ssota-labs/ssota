@@ -16,7 +16,7 @@ export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 
 export const TaskSchema = z.object({
   id: z.string().uuid(),
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   workflowInstructionId: z.string().uuid().nullable(),
   workflowInstructionKey: z.string().nullable(),
   title: z.string().min(1),

@@ -8,6 +8,8 @@ import {
 import {
   getTaskPort,
   getWorkflowInstructionPort,
+  resolveOrgIdForProject,
+  registerTeamspaceOrganization,
 } from "./ports.js";
 import { createSsotaTools } from "./tools/index.js";
 import { createSandboxTools } from "./tools/sandbox.js";
@@ -21,7 +23,7 @@ import type { CredentialProvider } from "./credentials/provider.js";
 import type { AgentRuntimeKind } from "@ssota/contracts";
 
 export interface RunAgentInput {
-  projectId: string;
+  teamspaceId: string;
   runId: string;
   runtimeKind: AgentRuntimeKind;
   taskId?: string;
@@ -79,8 +81,8 @@ function extractExecutionDirective(
 }
 
 async function prepareRun(input: RunAgentInput) {
-  const { projectId, runId, accountId, runtimeKind } = input;
-  const instructionPort = getWorkflowInstructionPort(projectId, accountId);
+  const { teamspaceId, runId, accountId, runtimeKind } = input;
+  const instructionPort = getWorkflowInstructionPort(teamspaceId, accountId);
 
   // Resolve the connector adapter up front so its kind can drive the prompt's
   // connections guidance (Composio vs legacy tool names).
@@ -89,7 +91,7 @@ async function prepareRun(input: RunAgentInput) {
 
   let instructions: SystemModelMessage[] = [];
   let messages: ModelMessage[] = [];
-  const taskPort = getTaskPort(projectId, accountId);
+  const taskPort = getTaskPort(teamspaceId, accountId);
 
   if (runtimeKind === "main") {
     const dbInstructions = await instructionPort.listInstructions();
@@ -106,7 +108,7 @@ async function prepareRun(input: RunAgentInput) {
     ];
     instructions = buildRunInstructionMessages({
       runtimeKind: "main",
-      projectId,
+      teamspaceId,
       accountId,
       connectorKind,
       workflowManifest,
@@ -121,7 +123,7 @@ async function prepareRun(input: RunAgentInput) {
   } else if (runtimeKind === "task" && input.taskId) {
     const domainTask = await taskPort.getTask(input.taskId);
     if (!domainTask) {
-      throw new Error(`Task ${input.taskId} not found in project ${projectId}`);
+      throw new Error(`Task ${input.taskId} not found in project ${teamspaceId}`);
     }
     const task = serializeTask(domainTask);
     const playbook = task.workflowInstructionId
@@ -129,7 +131,7 @@ async function prepareRun(input: RunAgentInput) {
       : null;
     instructions = buildRunInstructionMessages({
       runtimeKind: "task",
-      projectId,
+      teamspaceId,
       accountId,
       connectorKind,
       taskPlaybook: playbook?.instruction ?? null,
@@ -152,7 +154,7 @@ async function prepareRun(input: RunAgentInput) {
     const scheduleInstruction = await instructionPort.getByKey("orchestrator.daily");
     instructions = buildRunInstructionMessages({
       runtimeKind: "scheduler",
-      projectId,
+      teamspaceId,
       accountId,
       connectorKind,
       mainInstruction: scheduleInstruction,
@@ -169,11 +171,17 @@ async function prepareRun(input: RunAgentInput) {
 
   const engine = input.engine ?? createAiSdkLoopEngine();
 
+  const organizationId = await resolveOrgIdForProject(teamspaceId);
+  if (!organizationId) {
+    throw new Error(`Teamspace '${teamspaceId}' not found`);
+  }
+  registerTeamspaceOrganization(teamspaceId, organizationId);
+
   // Connector tools come from the active adapter (Composio by default, legacy
   // Vercel Connect when `CONNECTORS=connect`). The adapter encapsulates which
   // backend builds the tools and the per-run state the engine needs.
   const connectorBundle = adapter
-    ? await adapter.buildTools({ projectId, accountId, profileId: input.profileId })
+    ? await adapter.buildTools({ teamspaceId, accountId, profileId: input.profileId })
     : { tools: {} };
 
   const tools = {
@@ -188,7 +196,8 @@ async function prepareRun(input: RunAgentInput) {
     tools,
     modelId: input.modelId ?? DEFAULT_MODEL_ID,
     context: {
-      projectId,
+      teamspaceId,
+      organizationId,
       taskId: input.taskId,
       runId,
       accountId,

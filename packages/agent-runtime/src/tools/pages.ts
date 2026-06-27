@@ -105,7 +105,7 @@ export function createPageTools(): ToolSet {
         const badComponents = unknownComponentError(input.spec);
         if (badComponents) return badComponents;
         try {
-          const page = await getPagePort(ctx.projectId, ctx.accountId).createPage({
+          const page = await getPagePort(ctx.teamspaceId, ctx.accountId).createPage({
             title: input.title,
             parentId: input.parentId ?? null,
             subjectNodeId: input.subjectNodeId ?? null,
@@ -147,7 +147,7 @@ export function createPageTools(): ToolSet {
         }
         try {
           const { id, ...patch } = input;
-          const page = await getPagePort(ctx.projectId, ctx.accountId).updatePage(
+          const page = await getPagePort(ctx.teamspaceId, ctx.accountId).updatePage(
             id,
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             patch as any,
@@ -168,7 +168,7 @@ export function createPageTools(): ToolSet {
       inputSchema: z.object({ id: z.string().uuid() }),
       execute: async (input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        const page = await getPagePort(ctx.projectId, ctx.accountId).getPage(
+        const page = await getPagePort(ctx.teamspaceId, ctx.accountId).getPage(
           input.id,
         );
         return page ?? { found: false };
@@ -181,7 +181,7 @@ export function createPageTools(): ToolSet {
       inputSchema: z.object({}),
       execute: async (_input, { experimental_context }) => {
         const ctx = getRunContext(experimental_context);
-        const pages = await getPagePort(ctx.projectId, ctx.accountId).listPages();
+        const pages = await getPagePort(ctx.teamspaceId, ctx.accountId).listPages();
         return {
           pages: pages.map((p) => ({
             id: p.id,

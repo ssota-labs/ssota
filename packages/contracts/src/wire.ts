@@ -162,7 +162,7 @@ export type ActionLogRecord = z.infer<typeof ActionLogRecordSchema>;
 
 export const ImpactQueueItemSchema = z.object({
   id: z.string().uuid(),
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   sourceActionLogId: z.string().uuid(),
   sourceNodeId: z.string().uuid().nullable(),
   targetNodeId: z.string().uuid().nullable(),

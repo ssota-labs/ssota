@@ -74,7 +74,7 @@ export async function createNode(
   });
 
   return deps.graphWrite.createNode({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     nodeCatalogId: catalogRef.id,
     catalogKey: catalogRef.key,
     title: input.title,

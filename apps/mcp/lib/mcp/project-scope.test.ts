@@ -31,12 +31,12 @@ describe("resolveProjectIdForTool", () => {
       },
     });
 
-    const projectId = await resolveProjectIdForTool(
-      { orgSlug: "ssota-labs", projectSlug: "ssota-dev" },
+    const teamspaceId = await resolveProjectIdForTool(
+      { orgSlug: "ssota-labs", teamspaceSlug: "ssota-dev" },
       extra(),
     );
 
-    expect(projectId).toBe("proj-1");
+    expect(teamspaceId).toBe("proj-1");
     expect(projectAccess.resolveProjectAccess).toHaveBeenCalledWith(
       "user-1",
       "ssota-labs",
@@ -56,12 +56,12 @@ describe("resolveProjectIdForTool", () => {
       },
     });
 
-    const projectId = await resolveProjectIdForTool(
+    const teamspaceId = await resolveProjectIdForTool(
       {},
-      extra({ orgSlug: "ssota-labs", projectSlug: "ssota-dev" }),
+      extra({ orgSlug: "ssota-labs", teamspaceSlug: "ssota-dev" }),
     );
 
-    expect(projectId).toBe("proj-1");
+    expect(teamspaceId).toBe("proj-1");
   });
 
   it("rejects when membership check fails", async () => {
@@ -69,34 +69,34 @@ describe("resolveProjectIdForTool", () => {
 
     await expect(
       resolveProjectIdForTool(
-        { orgSlug: "ssota-labs", projectSlug: "other" },
+        { orgSlug: "ssota-labs", teamspaceSlug: "other" },
         extra(),
       ),
-    ).rejects.toThrow("Project not found or access denied");
+    ).rejects.toThrow("Teamspace not found or access denied");
   });
 
-  it("uses legacy projectId from auth extra when slugs absent", async () => {
-    const projectId = await resolveProjectIdForTool(
+  it("uses legacy teamspaceId from auth extra when slugs absent", async () => {
+    const teamspaceId = await resolveProjectIdForTool(
       {},
-      extra({ projectId: "legacy-proj-uuid" }),
+      extra({ teamspaceId: "legacy-proj-uuid" }),
     );
 
-    expect(projectId).toBe("legacy-proj-uuid");
+    expect(teamspaceId).toBe("legacy-proj-uuid");
   });
 
   it("requires scope when nothing is provided", async () => {
     await expect(resolveProjectIdForTool({}, extra())).rejects.toThrow(
-      "orgSlug and projectSlug are required",
+      "orgSlug and teamspaceSlug are required",
     );
   });
 });
 
 describe("stripProjectScope", () => {
-  it("removes orgSlug and projectSlug from args", () => {
+  it("removes orgSlug and teamspaceSlug from args", () => {
     expect(
       stripProjectScope({
         orgSlug: "ssota-labs",
-        projectSlug: "ssota-dev",
+        teamspaceSlug: "ssota-dev",
         nodeType: "Document",
       }),
     ).toEqual({ nodeType: "Document" });
