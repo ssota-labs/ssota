@@ -12,6 +12,8 @@ export default async function WorkflowInstructionsPage({
   const groups = await loadWorkflowInstructionGroupsForUi(project.id);
 
   return (
-    <WorkflowInstructionsWorkspace projectId={project.id} groups={groups} />
+    <div className="relative min-h-0 flex-1">
+      <WorkflowInstructionsWorkspace projectId={project.id} groups={groups} />
+    </div>
   );
 }

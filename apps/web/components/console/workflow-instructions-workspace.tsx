@@ -89,8 +89,11 @@ export function WorkflowInstructionsWorkspace({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <BrowseWorkspace.Frame testId="workflow-instructions-workspace">
+    <div
+      className="absolute inset-0 flex flex-col"
+      data-testid="workflow-instructions-workspace"
+    >
+      <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Workflow instructions"
           description="Agent playbooks for this project. Edits apply to the next agent or MCP run."
