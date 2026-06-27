@@ -1,36 +1,33 @@
 import { getWorkflowMetadata, getWritable } from "workflow";
-import type { ModelMessage } from "ai";
 import {
   buildMainWorkflowAgent,
   type ModelCallStreamPart,
 } from "@ssota/agent-runtime/workflow";
 import { dispatchMainTool } from "./main-workflow-agent-dispatch";
 import {
+  buildMainPrompt,
   claimMainWorkflowRun,
   persistMainWorkflowAssistant,
   finalizeMainWorkflowRun,
 } from "./main-workflow-agent-steps";
 import type { RunMainAgentInput } from "./main-agent-core";
 
-export interface RunMainWorkflowAgentInput extends RunMainAgentInput {
-  /** Conversation history in AI SDK ModelMessage format. */
-  messages: ModelMessage[];
-  /** Optional system instructions override. */
-  instructions?: string;
-}
+export type { RunMainAgentInput };
 
 /**
- * WorkflowAgent-backed main (chat) agent run. Durable shape mirrors the legacy
- * runner: claim → stream (agent loop + per-tool steps) → persist → finalize.
- * Output streams as ModelCallStreamPart to the run's default stream; the route
- * transforms it to a UI message stream. This module imports only workflow-safe
- * code plus `"use step"` boundaries.
+ * WorkflowAgent-backed main (chat) agent run. Durable shape: claim → build
+ * prompt (chat history) → stream (agent loop + per-tool steps) → persist →
+ * finalize. Output streams as ModelCallStreamPart to the run's default stream;
+ * the route transforms it to a UI message stream. Workflow-safe imports only,
+ * plus `"use step"` boundaries.
  */
-export async function runMainWorkflowAgent(input: RunMainWorkflowAgentInput) {
+export async function runMainWorkflowAgent(input: RunMainAgentInput) {
   "use workflow";
 
   const { workflowRunId } = getWorkflowMetadata();
   await claimMainWorkflowRun(input, workflowRunId);
+
+  const { instructions, messages } = await buildMainPrompt(input, workflowRunId);
 
   const agent = buildMainWorkflowAgent({
     ssota: {
@@ -39,17 +36,17 @@ export async function runMainWorkflowAgent(input: RunMainWorkflowAgentInput) {
       accountId: input.accountId,
     },
     dispatch: dispatchMainTool,
-    instructions: input.instructions,
+    instructions,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
   });
 
   const result = await agent.stream({
-    messages: input.messages,
+    messages,
     writable: getWritable<ModelCallStreamPart>(),
   });
 
-  await persistMainWorkflowAssistant(input, result.messages, input.messages.length);
+  await persistMainWorkflowAssistant(input, result.messages, messages.length);
 
   const usage = result.steps.reduce(
     (acc, step) => ({

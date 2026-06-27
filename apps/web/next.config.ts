@@ -49,19 +49,15 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
 };
 
-// The Vercel Workflow DevKit build transform is only needed for the Enterprise
-// durable runner (JOB_RUNNER=workflow). The OSS inline default builds without
-// it — and without requiring the `workflow` package's Next plugin.
+// The agents run exclusively on the Vercel Workflow DevKit (WorkflowAgent), so
+// the workflow build transform is always applied. Locally this uses the WDK
+// "Local World" — no Vercel deployment required.
 export default async function config(
   phase: string,
   ctx: { defaultConfig: NextConfig },
 ): Promise<NextConfig> {
-  let result: NextConfig | typeof config = nextConfig;
-
-  if (process.env.JOB_RUNNER === "workflow") {
-    const { withWorkflow } = await import("workflow/next");
-    result = withWorkflow(nextConfig);
-  }
+  const { withWorkflow } = await import("workflow/next");
+  let result: NextConfig | typeof config = withWorkflow(nextConfig);
 
   if (typeof result === "function") {
     result = await result(phase, ctx);

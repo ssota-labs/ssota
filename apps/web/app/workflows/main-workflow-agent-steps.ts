@@ -1,10 +1,29 @@
-import type { ModelMessage, UIMessage } from "ai";
+import type { ModelMessage, SystemModelMessage, UIMessage } from "ai";
+import { buildRunPrompt } from "@ssota/agent-runtime";
 import {
   claimMainRunning,
   persistMainAssistantMessage,
   finalizeMainRun,
   type RunMainAgentInput,
 } from "./main-agent-core";
+
+/** Build the main-agent instructions + messages (chat history) in a step. */
+export async function buildMainPrompt(
+  input: RunMainAgentInput,
+  workflowRunId: string,
+): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
+  "use step";
+  return buildRunPrompt({
+    projectId: input.projectId,
+    runId: workflowRunId,
+    runtimeKind: "main",
+    threadId: input.threadId,
+    accountId: input.accountId,
+    modelId: input.modelId,
+    maxSteps: input.maxSteps,
+    chatContext: input.chatContext,
+  });
+}
 
 /**
  * Durable persistence steps for the WorkflowAgent main agent. Each is a
