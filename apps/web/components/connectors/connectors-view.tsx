@@ -24,6 +24,13 @@ import {
 import { cn } from "@ssota/ui/lib/utils";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import {
+  connectorCardDescriptionClassName,
+  connectorCardInteractiveClassName,
+  connectorCardTextClassName,
+  connectorCardTitleClassName,
+  connectorIconWrapClassName,
+} from "@/components/connectors/connector-card-styles";
+import {
   disconnectConnectionAction,
   loadToolkitToolSettingsAction,
   setToolkitDisabledAction,
@@ -205,19 +212,16 @@ function ConnectorCard({
       onClick={onSelect}
       data-testid={`connector-${connector.provider}`}
       className={cn(
-        "group flex items-center gap-3 rounded-xl border bg-card px-3.5 py-3 text-left transition-colors",
-        "hover:border-primary/30 hover:bg-accent/40",
+        connectorCardInteractiveClassName,
         connected && "border-primary/20",
       )}
     >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+      <span className={connectorIconWrapClassName}>
         <ConnectorBrandIcon provider={connector.provider} className="size-5" />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">
-          {connector.label}
-        </span>
-        <span className="block truncate text-xs text-muted-foreground">
+      <span className={connectorCardTextClassName}>
+        <span className={connectorCardTitleClassName}>{connector.label}</span>
+        <span className={connectorCardDescriptionClassName}>
           {connector.description}
         </span>
       </span>
