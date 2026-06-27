@@ -89,7 +89,7 @@ async function prepareRun(input: RunAgentInput) {
 
   let instructions: SystemModelMessage[] = [];
   let messages: ModelMessage[] = [];
-  let taskPort = getTaskPort(projectId, accountId);
+  const taskPort = getTaskPort(projectId, accountId);
 
   if (runtimeKind === "main") {
     const dbInstructions = await instructionPort.listInstructions();

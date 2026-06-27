@@ -278,6 +278,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      croner:
+        specifier: ^9.0.0
+        version: 9.1.0
       drizzle-orm:
         specifier: ^0.44.7
         version: 0.44.7(@opentelemetry/api@1.9.1)(pg@8.22.0)(postgres@3.4.9)
@@ -5896,6 +5899,10 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  croner@9.1.0:
+    resolution: {integrity: sha512-p9nwwR4qyT5W996vBZhdvBCnMhicY5ytZkR4D1Xj0wuTDEiMnjwR57Q3RXYY/s0EpX6Ay3vgIcfaR+ewGHsi+g==}
+    engines: {node: '>=18.0'}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -15081,6 +15088,8 @@ snapshots:
       parse-json: 5.2.0
     optionalDependencies:
       typescript: 5.9.3
+
+  croner@9.1.0: {}
 
   cross-spawn@7.0.6:
     dependencies:
