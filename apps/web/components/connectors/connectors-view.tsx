@@ -21,7 +21,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@ssota/ui/components/ui/sheet";
-import { cn } from "@ssota/ui/lib/utils";
+import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import {
   disconnectConnectionAction,
@@ -133,39 +133,33 @@ export function ConnectorsView({
   const connectedCount = byProvider.size;
 
   return (
-    // The console main is overflow-hidden, so the page owns its own scroll.
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Connectors</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Browse and manage the apps your agent can use. {connectedCount} connected.
-        </p>
-      </header>
+    <>
+      <BrowseWorkspace.Frame>
+        <BrowseWorkspace.Header
+          title="Connectors"
+          description={`Browse and manage the apps your agent can use. ${connectedCount} connected.`}
+        />
 
-      {groups.map((group) => (
-        <section key={group.theme} className="space-y-3">
-          <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            {group.theme}
-          </h2>
-          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            {group.items.map((connector) => {
-              const entry = byProvider.get(connector.provider);
-              const connected =
-                (entry?.user.length ?? 0) + (entry?.org.length ?? 0) > 0;
-              return (
-                <ConnectorCard
-                  key={connector.provider}
-                  connector={connector}
-                  connected={connected}
-                  onSelect={() => setSelected(connector.provider)}
-                />
-              );
-            })}
-          </div>
-        </section>
-      ))}
-      </div>
+        {groups.map((group) => (
+          <BrowseWorkspace.Section key={group.theme} label={group.theme}>
+            <BrowseWorkspace.Grid>
+              {group.items.map((connector) => {
+                const entry = byProvider.get(connector.provider);
+                const connected =
+                  (entry?.user.length ?? 0) + (entry?.org.length ?? 0) > 0;
+                return (
+                  <ConnectorCard
+                    key={connector.provider}
+                    connector={connector}
+                    connected={connected}
+                    onSelect={() => setSelected(connector.provider)}
+                  />
+                );
+              })}
+            </BrowseWorkspace.Grid>
+          </BrowseWorkspace.Section>
+        ))}
+      </BrowseWorkspace.Frame>
 
       <Sheet
         open={selected !== null}
@@ -185,7 +179,7 @@ export function ConnectorsView({
           ) : null}
         </SheetContent>
       </Sheet>
-    </div>
+    </>
   );
 }
 
@@ -200,38 +194,28 @@ function ConnectorCard({
 }) {
   const configured = Boolean(connector.connectorUid);
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      data-testid={`connector-${connector.provider}`}
-      className={cn(
-        "group flex items-center gap-3 rounded-xl border bg-card px-3.5 py-3 text-left transition-colors",
-        "hover:border-primary/30 hover:bg-accent/40",
-        connected && "border-primary/20",
-      )}
-    >
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+    <BrowseWorkspace.Card
+      title={connector.label}
+      subtitle={connector.description}
+      highlighted={connected}
+      onSelect={onSelect}
+      testId={`connector-${connector.provider}`}
+      icon={
         <ConnectorBrandIcon provider={connector.provider} className="size-5" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium">
-          {connector.label}
-        </span>
-        <span className="block truncate text-xs text-muted-foreground">
-          {connector.description}
-        </span>
-      </span>
-      {connected ? (
-        <Badge variant="secondary" className="shrink-0 gap-1 font-normal">
-          <CheckCircleIcon weight="fill" className="size-3 text-primary" />
-          Connected
-        </Badge>
-      ) : !configured ? (
-        <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">
-          Off
-        </Badge>
-      ) : null}
-    </button>
+      }
+      badge={
+        connected ? (
+          <Badge variant="secondary" className="shrink-0 gap-1 font-normal">
+            <CheckCircleIcon weight="fill" className="size-3 text-primary" />
+            Connected
+          </Badge>
+        ) : !configured ? (
+          <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">
+            Off
+          </Badge>
+        ) : null
+      }
+    />
   );
 }
 
