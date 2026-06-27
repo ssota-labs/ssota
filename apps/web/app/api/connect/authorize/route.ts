@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
-import { getToolRouterSession, isComposioToolkit } from "@ssota/agent-runtime";
+import {
+  authorizeOrgSharedToolkit,
+  composioUserId,
+  getToolRouterSession,
+  isComposioToolkit,
+} from "@ssota/agent-runtime";
 import { loginRedirect } from "@/lib/auth/login-redirect";
-import { getConsolePort } from "@/lib/ports";
+import { getConsolePort, getOrgMembershipPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -24,6 +29,8 @@ export async function GET(request: Request) {
   const projectId =
     url.searchParams.get("projectId") ?? process.env.CHAT_PROJECT_ID ?? "";
   const returnTo = url.searchParams.get("returnTo") ?? "/";
+  // "org" creates an org-shared (SHARED) connection; "user" (default) is personal.
+  const scope = url.searchParams.get("scope") === "org" ? "org" : "user";
 
   if (!toolkit || !isComposioToolkit(toolkit)) {
     return NextResponse.json(
@@ -51,10 +58,27 @@ export async function GET(request: Request) {
 
   // Composio returns the user straight back to where they started.
   const callbackUrl = new URL(returnTo, url.origin).toString();
+  const orgId = project.organizationId;
 
   try {
+    if (scope === "org") {
+      // Org-shared: create the connection under the org entity as SHARED, with
+      // an ACL of every member's user entity so their sessions can use it.
+      const members = await getOrgMembershipPort().listMemberUserIds(orgId);
+      const memberUserIds = members.map((profileId) =>
+        composioUserId({ orgId, profileId }),
+      );
+      const { redirectUrl } = await authorizeOrgSharedToolkit({
+        orgId,
+        toolkit,
+        callbackUrl,
+        memberUserIds,
+      });
+      return NextResponse.redirect(redirectUrl ?? callbackUrl);
+    }
+
     const session = await getToolRouterSession({
-      orgId: project.organizationId,
+      orgId,
       profileId: user.id,
       callbackUrl,
     });

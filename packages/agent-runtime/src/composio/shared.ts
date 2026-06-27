@@ -14,6 +14,19 @@ export function composioUserId(input: { orgId: string; profileId: string }): str
   return `org_${input.orgId}__user_${input.profileId}`;
 }
 
+/**
+ * Org-shared Composio entity. Connections created under this entity as
+ * `accountType: SHARED` (with an ACL of the org's member user entities) are
+ * usable by every member's personal session — the basis of the "Organization"
+ * connection scope.
+ */
+export function composioOrgUserId(orgId: string): string {
+  return `org_${orgId}`;
+}
+
+/** Connection scope shown in the Connectors sheet accordion. */
+export type ConnectorScope = "user" | "org";
+
 export interface ComposioToolkitDef {
   /** Composio toolkit slug (lowercase), passed to toolRouter `toolkits`. */
   slug: string;

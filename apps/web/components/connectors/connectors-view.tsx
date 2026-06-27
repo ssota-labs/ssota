@@ -6,7 +6,9 @@ import {
   CheckCircleIcon,
   LinkBreakIcon,
   PlusIcon,
+  UserIcon,
 } from "@phosphor-icons/react";
+import type { Icon } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
 import { Switch } from "@ssota/ui/components/ui/switch";
@@ -42,12 +44,22 @@ export interface ConnectorConnection {
   name: string | null;
 }
 
+/** Connections bucketed by scope. */
+export interface ScopedConnections {
+  user: ConnectorConnection[];
+  org: ConnectorConnection[];
+}
+
+type Scope = "user" | "org";
+
 interface ConnectorsViewProps {
   connectors: ConnectorDef[];
-  connections: ConnectorConnection[];
+  connections: ScopedConnections;
   projectId: string;
   accountId: string;
   returnTo: string;
+  /** Show the org-shared scope (builder console). End-user app shows personal only. */
+  allowOrgScope: boolean;
 }
 
 function authorizeHref(params: {
@@ -55,6 +67,7 @@ function authorizeHref(params: {
   projectId: string;
   accountId: string;
   returnTo: string;
+  scope: Scope;
 }): string {
   const search = new URLSearchParams({
     connector: params.slug,
@@ -62,6 +75,7 @@ function authorizeHref(params: {
     projectId: params.projectId,
     returnTo: params.returnTo,
   });
+  if (params.scope === "org") search.set("scope", "org");
   return `/api/connect/authorize?${search.toString()}`;
 }
 
@@ -71,16 +85,21 @@ export function ConnectorsView({
   projectId,
   accountId,
   returnTo,
+  allowOrgScope,
 }: ConnectorsViewProps) {
   const [selected, setSelected] = useState<ConnectorProvider | null>(null);
 
-  const connectedByProvider = useMemo(() => {
-    const map = new Map<string, ConnectorConnection[]>();
-    for (const c of connections) {
-      const list = map.get(c.connector) ?? [];
-      list.push(c);
-      map.set(c.connector, list);
-    }
+  const byProvider = useMemo(() => {
+    const map = new Map<string, { user: ConnectorConnection[]; org: ConnectorConnection[] }>();
+    const add = (scope: Scope, list: ConnectorConnection[]) => {
+      for (const c of list) {
+        const entry = map.get(c.connector) ?? { user: [], org: [] };
+        entry[scope].push(c);
+        map.set(c.connector, entry);
+      }
+    };
+    add("user", connections.user);
+    add("org", connections.org);
     return map;
   }, [connections]);
 
@@ -96,11 +115,11 @@ export function ConnectorsView({
   const selectedConnector = selected
     ? (connectors.find((c) => c.provider === selected) ?? null)
     : null;
-  const selectedConnections = selected
-    ? (connectedByProvider.get(selected) ?? [])
-    : [];
+  const selectedScoped = selected
+    ? (byProvider.get(selected) ?? { user: [], org: [] })
+    : { user: [], org: [] };
 
-  const connectedCount = connectedByProvider.size;
+  const connectedCount = byProvider.size;
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
@@ -118,8 +137,9 @@ export function ConnectorsView({
           </h2>
           <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             {group.items.map((connector) => {
+              const entry = byProvider.get(connector.provider);
               const connected =
-                (connectedByProvider.get(connector.provider)?.length ?? 0) > 0;
+                (entry?.user.length ?? 0) + (entry?.org.length ?? 0) > 0;
               return (
                 <ConnectorCard
                   key={connector.provider}
@@ -141,7 +161,9 @@ export function ConnectorsView({
           {selectedConnector ? (
             <ConnectorSettings
               connector={selectedConnector}
-              connections={selectedConnections}
+              userConnections={selectedScoped.user}
+              orgConnections={selectedScoped.org}
+              allowOrgScope={allowOrgScope}
               projectId={projectId}
               accountId={accountId}
               returnTo={returnTo}
@@ -201,37 +223,22 @@ function ConnectorCard({
 
 function ConnectorSettings({
   connector,
-  connections,
+  userConnections,
+  orgConnections,
+  allowOrgScope,
   projectId,
   accountId,
   returnTo,
 }: {
   connector: ConnectorDef;
-  connections: ConnectorConnection[];
+  userConnections: ConnectorConnection[];
+  orgConnections: ConnectorConnection[];
+  allowOrgScope: boolean;
   projectId: string;
   accountId: string;
   returnTo: string;
 }) {
-  const [expanded, setExpanded] = useState(true);
-  const [isPending, startTransition] = useTransition();
   const configured = Boolean(connector.connectorUid);
-  const connected = connections.length > 0;
-  const href = authorizeHref({
-    slug: connector.provider,
-    projectId,
-    accountId,
-    returnTo,
-  });
-
-  function disconnect(connectionId: string) {
-    startTransition(async () => {
-      await disconnectConnectionAction({
-        projectId,
-        connectionId,
-        revalidate: returnTo,
-      });
-    });
-  }
 
   return (
     <>
@@ -261,62 +268,138 @@ function ConnectorSettings({
             addLabel=""
             hasItems
           >
-            <ExpandableListItem
-              icon={BuildingsIcon}
-              title="Organization workspace"
-              description={
-                connected ? `${connections.length} connected` : "Not connected"
-              }
-              expanded={expanded}
-              onExpandedChange={setExpanded}
-              removeLabel="Disconnect"
-            >
-              <div className="space-y-3">
-                {connections.map((conn) => (
-                  <div
-                    key={conn.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
-                    data-testid="connection-row"
-                  >
-                    <span className="truncate text-sm">
-                      {conn.name ?? connector.label}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={isPending}
-                      className="shrink-0 text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
-                      onClick={() => disconnect(conn.id)}
-                    >
-                      <LinkBreakIcon className="size-4" />
-                      Disconnect
-                    </Button>
-                  </div>
-                ))}
-
-                <a
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
-                  href={href}
-                  data-testid={`connect-${connector.provider}`}
-                >
-                  <PlusIcon className="size-4" />
-                  {connected ? "Add account" : "Connect"}
-                </a>
-
-                {connected ? (
-                  <ToolAccessSection
-                    toolkit={connector.provider}
-                    projectId={projectId}
-                    returnTo={returnTo}
-                  />
-                ) : null}
-              </div>
-            </ExpandableListItem>
+            <ScopeItem
+              scope="user"
+              icon={UserIcon}
+              title="You"
+              subtitle="Personal — only your runs use this connection."
+              connector={connector}
+              connections={userConnections}
+              projectId={projectId}
+              accountId={accountId}
+              returnTo={returnTo}
+              showTools
+              defaultExpanded={!allowOrgScope}
+            />
+            {allowOrgScope ? (
+              <ScopeItem
+                scope="org"
+                icon={BuildingsIcon}
+                title="Organization"
+                subtitle="Shared — everyone in the org can use this connection."
+                connector={connector}
+                connections={orgConnections}
+                projectId={projectId}
+                accountId={accountId}
+                returnTo={returnTo}
+                showTools={false}
+                defaultExpanded={false}
+              />
+            ) : null}
           </ExpandableListSection>
         )}
       </div>
     </>
+  );
+}
+
+function ScopeItem({
+  scope,
+  icon,
+  title,
+  subtitle,
+  connector,
+  connections,
+  projectId,
+  accountId,
+  returnTo,
+  showTools,
+  defaultExpanded,
+}: {
+  scope: Scope;
+  icon: Icon;
+  title: string;
+  subtitle: string;
+  connector: ConnectorDef;
+  connections: ConnectorConnection[];
+  projectId: string;
+  accountId: string;
+  returnTo: string;
+  showTools: boolean;
+  defaultExpanded: boolean;
+}) {
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [isPending, startTransition] = useTransition();
+  const connected = connections.length > 0;
+  const href = authorizeHref({
+    slug: connector.provider,
+    projectId,
+    accountId,
+    returnTo,
+    scope,
+  });
+
+  function disconnect(connectionId: string) {
+    startTransition(async () => {
+      await disconnectConnectionAction({
+        projectId,
+        connectionId,
+        revalidate: returnTo,
+      });
+    });
+  }
+
+  return (
+    <ExpandableListItem
+      icon={icon}
+      title={title}
+      description={connected ? `${connections.length} connected` : subtitle}
+      expanded={expanded}
+      onExpandedChange={setExpanded}
+      removeLabel="Disconnect"
+    >
+      <div className="space-y-3">
+        {connections.map((conn) => (
+          <div
+            key={conn.id}
+            className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
+            data-testid="connection-row"
+          >
+            <span className="truncate text-sm">
+              {conn.name ?? connector.label}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={isPending}
+              className="shrink-0 text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+              onClick={() => disconnect(conn.id)}
+            >
+              <LinkBreakIcon className="size-4" />
+              Disconnect
+            </Button>
+          </div>
+        ))}
+
+        <a
+          className={buttonVariants({ variant: "outline", size: "sm" })}
+          href={href}
+          data-testid={`connect-${scope}-${connector.provider}`}
+        >
+          <PlusIcon className="size-4" />
+          {connected ? "Add account" : "Connect"}
+        </a>
+
+        {showTools && connected ? (
+          <ToolAccessSection
+            toolkit={connector.provider}
+            projectId={projectId}
+            returnTo={returnTo}
+          />
+        ) : null}
+      </div>
+    </ExpandableListItem>
   );
 }
 

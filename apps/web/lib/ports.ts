@@ -12,6 +12,7 @@ import {
   createPagePort,
   createPageViewStatePort,
   createConnectorToolSettingsPort,
+  createOrgMembershipPort,
   type AccountRecord,
 } from "@ssota/adapter-postgres";
 
@@ -36,6 +37,10 @@ export function getConsolePort() {
 
 export function getConnectorToolSettingsPort() {
   return createConnectorToolSettingsPort(getDb());
+}
+
+export function getOrgMembershipPort() {
+  return createOrgMembershipPort(getDb());
 }
 
 export function getOnboardingPort() {

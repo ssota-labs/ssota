@@ -1,4 +1,9 @@
-import { getToolRouterSession } from "@ssota/agent-runtime";
+import {
+  composioOrgUserId,
+  composioUserId,
+  listComposioConnections,
+  type ComposioConnection,
+} from "@ssota/agent-runtime";
 import {
   ConnectorsView,
   type ConnectorConnection,
@@ -8,6 +13,12 @@ import { projectPath } from "@/lib/console/paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { getOrCreateProjectAccount } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
+
+const toConnection = (c: ComposioConnection): ConnectorConnection => ({
+  id: c.connectedAccountId,
+  connector: c.toolkit,
+  name: null,
+});
 
 export default async function ConnectorsPage({
   params,
@@ -20,27 +31,21 @@ export default async function ConnectorsPage({
   const user = await getCurrentUser();
 
   // accountId is threaded through hrefs but is no longer the connector tenancy
-  // key — Composio keys connectors by org + profile.
+  // key — Composio keys connectors by org + profile (personal) or org (shared).
   const account = await getOrCreateProjectAccount(project.id);
   const connectors = getConnectors();
 
-  // Live connection state from the entity's Composio Tool Router session.
-  let connections: ConnectorConnection[] = [];
+  // Live connection state for both scopes: personal (org+profile) and the
+  // org-shared entity.
+  let userConns: ComposioConnection[] = [];
+  let orgConns: ComposioConnection[] = [];
   if (user) {
-    const session = await getToolRouterSession({
-      orgId: org.id,
-      profileId: user.id,
-    });
-    if (session) {
-      const { items } = await session.toolkits();
-      connections = items
-        .filter((item) => item.connection?.isActive)
-        .map((item) => ({
-          id: item.connection?.connectedAccount?.id ?? item.slug,
-          connector: item.slug,
-          name: item.name ?? null,
-        }));
-    }
+    [userConns, orgConns] = await Promise.all([
+      listComposioConnections(
+        composioUserId({ orgId: org.id, profileId: user.id }),
+      ),
+      listComposioConnections(composioOrgUserId(org.id)),
+    ]);
   }
 
   const returnTo = projectPath(ctx, "connectors");
@@ -48,10 +53,14 @@ export default async function ConnectorsPage({
   return (
     <ConnectorsView
       connectors={connectors}
-      connections={connections}
+      connections={{
+        user: userConns.filter((c) => c.active).map(toConnection),
+        org: orgConns.filter((c) => c.active).map(toConnection),
+      }}
       projectId={project.id}
       accountId={account.id}
       returnTo={returnTo}
+      allowOrgScope
     />
   );
 }

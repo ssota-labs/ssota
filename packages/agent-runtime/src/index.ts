@@ -32,8 +32,13 @@ export {
 export { isComposioEnabled, getComposioClient } from "./composio/client.js";
 export {
   getToolRouterSession,
+  getOrgToolRouterSession,
+  authorizeOrgSharedToolkit,
+  listComposioConnections,
   disconnectComposioAccount,
   type ToolRouterSessionInput,
+  type OrgToolRouterSessionInput,
+  type ComposioConnection,
 } from "./composio/session.js";
 export {
   createComposioTools,
@@ -43,11 +48,13 @@ export {
 } from "./composio/tools.js";
 export {
   composioUserId,
+  composioOrgUserId,
   getComposioToolkitSlugs,
   isComposioToolkit,
   resolveComposioAuthConfigs,
   COMPOSIO_TOOLKITS,
   type ComposioToolkitDef,
+  type ConnectorScope,
 } from "./composio/shared.js";
 export {
   createSandboxSession,

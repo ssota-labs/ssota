@@ -1,4 +1,8 @@
-import { getToolRouterSession } from "@ssota/agent-runtime";
+import {
+  composioUserId,
+  listComposioConnections,
+  type ComposioConnection,
+} from "@ssota/agent-runtime";
 import {
   ConnectorsView,
   type ConnectorConnection,
@@ -7,6 +11,12 @@ import { getConnectors } from "@/lib/connect/connectors";
 import { appProjectPath } from "@/lib/console/app-paths";
 import { resolveProject } from "@/lib/console/resolve-project";
 import { resolveEndUserContext } from "@/lib/request-context";
+
+const toConnection = (c: ComposioConnection): ConnectorConnection => ({
+  id: c.connectedAccountId,
+  connector: c.toolkit,
+  name: null,
+});
 
 export default async function AppConnectionsPage({
   params,
@@ -20,32 +30,25 @@ export default async function AppConnectionsPage({
 
   const connectors = getConnectors();
 
-  // Live per-end-user connections (Composio entity = org + this user).
-  let connections: ConnectorConnection[] = [];
-  const session = await getToolRouterSession({
-    orgId: org.id,
-    profileId: ctx.userId,
-  });
-  if (session) {
-    const { items } = await session.toolkits();
-    connections = items
-      .filter((item) => item.connection?.isActive)
-      .map((item) => ({
-        id: item.connection?.connectedAccount?.id ?? item.slug,
-        connector: item.slug,
-        name: item.name ?? null,
-      }));
-  }
+  // End users manage their personal connections only; org-shared connections
+  // (managed by the builder) are used by the agent but not editable here.
+  const userConns = await listComposioConnections(
+    composioUserId({ orgId: org.id, profileId: ctx.userId }),
+  );
 
   const returnTo = appProjectPath(routeCtx, "connections");
 
   return (
     <ConnectorsView
       connectors={connectors}
-      connections={connections}
+      connections={{
+        user: userConns.filter((c) => c.active).map(toConnection),
+        org: [],
+      }}
       projectId={ctx.projectId}
       accountId={ctx.accountId}
       returnTo={returnTo}
+      allowOrgScope={false}
     />
   );
 }
