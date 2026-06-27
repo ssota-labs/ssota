@@ -2,10 +2,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CaretRightIcon } from "@phosphor-icons/react";
+import { BookOpenIcon } from "@phosphor-icons/react";
 import type { WorkflowInstruction } from "@ssota/contracts";
-import { cn } from "@ssota/ui/lib/utils";
 import { updateWorkflowInstructionAction } from "@/app/actions";
+import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import type { WorkflowInstructionGroup } from "@/lib/console/load-workflow-instructions-for-ui";
 import {
   DocumentSheetPanel,
@@ -88,67 +88,44 @@ export function WorkflowInstructionsWorkspace({
   };
 
   return (
-    <div
-      className="absolute inset-0 flex flex-col"
-      data-testid="workflow-instructions-workspace"
-    >
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 md:p-4">
-        <div className="space-y-6">
-          <header className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight">
-              Workflow instructions
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Agent playbooks for this project. Edits apply to the next agent or
-              MCP run.
-            </p>
-          </header>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <BrowseWorkspace.Frame testId="workflow-instructions-workspace">
+        <BrowseWorkspace.Header
+          title="Workflow instructions"
+          description="Agent playbooks for this project. Edits apply to the next agent or MCP run."
+        />
 
-          {groups.map((group) => (
-            <section key={group.key} className="space-y-2">
-              <h2 className="text-sm font-semibold">{group.label}</h2>
-              <div className="border-border divide-border divide-y overflow-hidden rounded-lg border">
-                {group.items.map((instruction) => (
-                  <button
-                    key={instruction.id}
-                    type="button"
-                    data-testid={`workflow-instruction-item-${instruction.key}`}
-                    className={cn(
-                      "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-                      activeId === instruction.id && "bg-muted/30",
-                    )}
-                    onClick={() => setActiveId(instruction.id)}
-                  >
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <span className="text-sm font-medium">
-                        {instruction.name}
-                      </span>
-                      <p className="text-muted-foreground font-mono text-xs">
-                        {instruction.key}
-                      </p>
-                      {instruction.description ? (
-                        <p className="text-muted-foreground line-clamp-2 text-xs">
-                          {instruction.description}
-                        </p>
-                      ) : null}
-                    </div>
-                    <CaretRightIcon
-                      className="text-muted-foreground size-4 shrink-0"
+        {groups.map((group) => (
+          <BrowseWorkspace.Section key={group.key} label={group.label}>
+            <BrowseWorkspace.Grid>
+              {group.items.map((instruction) => (
+                <BrowseWorkspace.Card
+                  key={instruction.id}
+                  title={instruction.name}
+                  subtitle={instruction.key}
+                  subtitleClassName="font-mono"
+                  description={instruction.description ?? undefined}
+                  selected={activeId === instruction.id}
+                  onSelect={() => setActiveId(instruction.id)}
+                  testId={`workflow-instruction-item-${instruction.key}`}
+                  icon={
+                    <BookOpenIcon
+                      className="size-5 text-muted-foreground"
                       aria-hidden
                     />
-                  </button>
-                ))}
-              </div>
-            </section>
-          ))}
+                  }
+                />
+              ))}
+            </BrowseWorkspace.Grid>
+          </BrowseWorkspace.Section>
+        ))}
 
-          {instructions.length === 0 ? (
-            <p className="text-muted-foreground rounded-lg border px-4 py-6 text-center text-sm">
-              No workflow instructions seeded for this project yet.
-            </p>
-          ) : null}
-        </div>
-      </div>
+        {instructions.length === 0 ? (
+          <BrowseWorkspace.Empty>
+            No workflow instructions seeded for this project yet.
+          </BrowseWorkspace.Empty>
+        ) : null}
+      </BrowseWorkspace.Frame>
 
       {open && activeInstruction ? (
         <DocumentSheetPanel
