@@ -14,6 +14,8 @@ export type ConnectorProvider =
   | "gmail"
   | "googledrive"
   | "googlecalendar"
+  | "googledocs"
+  | "googlesheets"
   | "github"
   | "linear"
   | "discord"
@@ -33,6 +35,8 @@ const THEMES: Record<ConnectorProvider, ConnectorTheme> = {
   notion: "Productivity",
   gmail: "Productivity",
   googlecalendar: "Productivity",
+  googledocs: "Productivity",
+  googlesheets: "Productivity",
   slack: "Communication",
   discord: "Communication",
   github: "Developer",
@@ -71,6 +75,8 @@ const DESCRIPTIONS: Record<ConnectorProvider, string> = {
   gmail: "Read, search, draft, and send email in Gmail.",
   googledrive: "Browse, search, and manage files and folders in Google Drive.",
   googlecalendar: "Read and manage events on your Google Calendar.",
+  googledocs: "Create, read, and edit documents in Google Docs.",
+  googlesheets: "Read and write spreadsheets in Google Sheets.",
   github: "Manage issues, pull requests, and repositories on GitHub.",
   linear: "Create and update issues and comments in Linear.",
   discord: "Send messages and manage channels in your Discord server.",

@@ -57,6 +57,8 @@ export const COMPOSIO_TOOLKITS: ComposioToolkitDef[] = [
   { slug: "gmail", label: "Gmail", group: "google", multiWorkspace: true },
   { slug: "googledrive", label: "Google Drive", group: "google", multiWorkspace: true },
   { slug: "googlecalendar", label: "Google Calendar", group: "google", multiWorkspace: true },
+  { slug: "googledocs", label: "Google Docs", group: "google", multiWorkspace: true },
+  { slug: "googlesheets", label: "Google Sheets", group: "google", multiWorkspace: true },
   { slug: "github", label: "GitHub", multiWorkspace: true },
   { slug: "linear", label: "Linear", multiWorkspace: false },
   {
