@@ -4,6 +4,8 @@ import { dispatchMainTool } from "./main-workflow-agent-dispatch";
 import {
   claimTaskRun,
   buildTaskPromptStep,
+  provisionSandboxStep,
+  stopSandboxStep,
   finalizeTaskRun,
   sumStepUsage,
   type RunTaskAgentInput,
@@ -13,17 +15,17 @@ export type { RunTaskAgentInput };
 
 /**
  * WorkflowAgent-backed task agent (dispatch/cron entry). Durable shape: claim
- * (+ mark running) → build prompt → agent loop (per-tool durable steps) →
- * finalize (resolve task status). Background run — no client stream consumer.
- *
- * NOTE: sandbox (dev-capable) tools are wired via the dispatcher's sandbox
- * re-attach branch; see main-workflow-agent-dispatch.
+ * (+ mark running) → provision sandbox (dev-capable) → build prompt → agent
+ * loop (per-tool durable steps; sandbox tools re-attach by id) → finalize +
+ * stop sandbox. Background run — no client stream consumer.
  */
 export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
   "use workflow";
 
   const { workflowRunId } = getWorkflowMetadata();
   await claimTaskRun(input, workflowRunId);
+
+  const sandboxId = await provisionSandboxStep(input);
 
   const { instructions, messages } = await buildTaskPromptStep(
     input,
@@ -36,16 +38,23 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
       taskId: input.taskId,
       runId: workflowRunId,
       accountId: input.accountId,
+      sandboxId,
     },
     dispatch: dispatchMainTool,
+    includeSandboxTools: Boolean(sandboxId),
     instructions,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
   });
 
-  const result = await agent.stream({ messages });
-
-  await finalizeTaskRun(input, workflowRunId, sumStepUsage(result.steps));
-
-  return { messageCount: result.messages.length, stepCount: result.steps.length };
+  try {
+    const result = await agent.stream({ messages });
+    await finalizeTaskRun(input, workflowRunId, sumStepUsage(result.steps));
+    return {
+      messageCount: result.messages.length,
+      stepCount: result.steps.length,
+    };
+  } finally {
+    if (sandboxId) await stopSandboxStep(sandboxId);
+  }
 }

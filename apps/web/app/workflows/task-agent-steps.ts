@@ -1,6 +1,15 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
-import { getDb, getTaskPort, buildRunPrompt } from "@ssota/agent-runtime";
+import {
+  getDb,
+  getTaskPort,
+  buildRunPrompt,
+  createSandboxSession,
+  attachSandboxSession,
+} from "@ssota/agent-runtime";
 import { createAgentRunPort } from "@ssota/adapter-postgres";
+
+/** Workflow instruction keys whose runs get a sandbox for code/build tools. */
+const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
 
 /**
  * Durable steps shared by the two task-runtime entry points: runTaskAgentWorkflow
@@ -74,6 +83,44 @@ export async function finalizeTaskRun(
     status: finalTask?.status ?? "failed",
     usage,
   });
+}
+
+/**
+ * Provision a sandbox for dev-capable task runs and return its id (serializable,
+ * carried in the run scope). Returns undefined when the task is not dev-capable
+ * or provisioning fails (sandbox tools simply stay unavailable). Done in its own
+ * `"use step"` so the live session is never carried across step boundaries.
+ */
+export async function provisionSandboxStep(
+  input: RunTaskAgentInput,
+): Promise<string | undefined> {
+  "use step";
+  const task = await getTaskPort(input.projectId, input.accountId).getTask(
+    input.taskId,
+  );
+  if (
+    !task?.workflowInstructionKey ||
+    !DEV_CAPABLE_WORKFLOW_KEYS.has(task.workflowInstructionKey)
+  ) {
+    return undefined;
+  }
+  try {
+    const sandbox = await createSandboxSession();
+    return sandbox.sandboxId || undefined;
+  } catch {
+    return undefined; // sandbox optional — run continues without it
+  }
+}
+
+/** Stop a provisioned sandbox (best-effort) at the end of the run. */
+export async function stopSandboxStep(sandboxId: string): Promise<void> {
+  "use step";
+  try {
+    const sandbox = await attachSandboxSession(sandboxId);
+    await sandbox.stop();
+  } catch {
+    // best-effort teardown
+  }
 }
 
 /** Sum per-step token usage into a single record. */

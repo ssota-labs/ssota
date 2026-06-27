@@ -4,6 +4,8 @@ import { dispatchMainTool } from "./main-workflow-agent-dispatch";
 import {
   claimTaskRun,
   buildTaskPromptStep,
+  provisionSandboxStep,
+  stopSandboxStep,
   finalizeTaskRun,
   sumStepUsage,
 } from "./task-agent-steps";
@@ -23,6 +25,8 @@ export async function runSsotaAgentWorkflow(input: RunSsotaAgentInput) {
   const { workflowRunId } = getWorkflowMetadata();
   await claimTaskRun(input, workflowRunId);
 
+  const sandboxId = await provisionSandboxStep(input);
+
   const { instructions, messages } = await buildTaskPromptStep(
     input,
     workflowRunId,
@@ -34,16 +38,20 @@ export async function runSsotaAgentWorkflow(input: RunSsotaAgentInput) {
       taskId: input.taskId,
       runId: workflowRunId,
       accountId: input.accountId,
+      sandboxId,
     },
     dispatch: dispatchMainTool,
+    includeSandboxTools: Boolean(sandboxId),
     instructions,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
   });
 
-  const result = await agent.stream({ messages });
-
-  await finalizeTaskRun(input, workflowRunId, sumStepUsage(result.steps));
-
-  return result;
+  try {
+    const result = await agent.stream({ messages });
+    await finalizeTaskRun(input, workflowRunId, sumStepUsage(result.steps));
+    return result;
+  } finally {
+    if (sandboxId) await stopSandboxStep(sandboxId);
+  }
 }
