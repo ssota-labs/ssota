@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpenIcon } from "@phosphor-icons/react";
+import { CaretRightIcon } from "@phosphor-icons/react";
 import type { WorkflowInstruction } from "@ssota/contracts";
+import { cn } from "@ssota/ui/lib/utils";
 import { updateWorkflowInstructionAction } from "@/app/actions";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import type { WorkflowInstructionGroup } from "@/lib/console/load-workflow-instructions-for-ui";
@@ -97,26 +98,36 @@ export function WorkflowInstructionsWorkspace({
 
         {groups.map((group) => (
           <BrowseWorkspace.Section key={group.key} label={group.label}>
-            <BrowseWorkspace.Grid>
+            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
               {group.items.map((instruction) => (
-                <BrowseWorkspace.Card
+                <button
                   key={instruction.id}
-                  title={instruction.name}
-                  subtitle={instruction.key}
-                  subtitleClassName="font-mono"
-                  description={instruction.description ?? undefined}
-                  selected={activeId === instruction.id}
-                  onSelect={() => setActiveId(instruction.id)}
-                  testId={`workflow-instruction-item-${instruction.key}`}
-                  icon={
-                    <BookOpenIcon
-                      className="size-5 text-muted-foreground"
-                      aria-hidden
-                    />
-                  }
-                />
+                  type="button"
+                  data-testid={`workflow-instruction-item-${instruction.key}`}
+                  className={cn(
+                    "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
+                    activeId === instruction.id && "bg-muted/30",
+                  )}
+                  onClick={() => setActiveId(instruction.id)}
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <span className="text-sm font-medium">{instruction.name}</span>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {instruction.key}
+                    </p>
+                    {instruction.description ? (
+                      <p className="line-clamp-2 text-xs text-muted-foreground">
+                        {instruction.description}
+                      </p>
+                    ) : null}
+                  </div>
+                  <CaretRightIcon
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden
+                  />
+                </button>
               ))}
-            </BrowseWorkspace.Grid>
+            </div>
           </BrowseWorkspace.Section>
         ))}
 
