@@ -32,6 +32,8 @@ export interface ComposioToolkitDef {
   slug: string;
   /** UI label for the Connections card. */
   label: string;
+  /** Theme group the card is bucketed under (see {@link COMPOSIO_THEME_ORDER}). */
+  theme: string;
   /** Optional display grouping (e.g. the three Google toolkits). */
   group?: string;
   /** Whether the card hints multiple accounts can be connected (cosmetic). */
@@ -45,28 +47,80 @@ export interface ComposioToolkitDef {
   requiresAuthConfig?: boolean;
 }
 
+/** Theme groups, in display order. */
+export const COMPOSIO_THEME_ORDER = [
+  "Productivity",
+  "Communication",
+  "Developer",
+  "Storage",
+  "CRM & Sales",
+  "Design",
+  "Support",
+  "Social",
+] as const;
+
 /**
- * Toolkits the agent + Connections page expose. Slugs are Composio's canonical
+ * Toolkits the agent + Connectors page expose. Slugs are Composio's canonical
  * toolkit ids — verify against the catalog (composio.dev/toolkits) if a connect
- * call 404s. Google is three separate Composio toolkits (each its own OAuth),
- * grouped under "google" for the UI.
+ * call 404s. Most use Composio-managed auth (no BYOA needed); a toolkit that
+ * can't be managed (X) is flagged `requiresAuthConfig`. The Tool Router session
+ * is resilient — any toolkit Composio can't auto-create is dropped at runtime,
+ * so listing extras here is safe.
  */
 export const COMPOSIO_TOOLKITS: ComposioToolkitDef[] = [
-  { slug: "slack", label: "Slack", multiWorkspace: true },
-  { slug: "notion", label: "Notion", multiWorkspace: true },
-  { slug: "gmail", label: "Gmail", group: "google", multiWorkspace: true },
-  { slug: "googledrive", label: "Google Drive", group: "google", multiWorkspace: true },
-  { slug: "googlecalendar", label: "Google Calendar", group: "google", multiWorkspace: true },
-  { slug: "googledocs", label: "Google Docs", group: "google", multiWorkspace: true },
-  { slug: "googlesheets", label: "Google Sheets", group: "google", multiWorkspace: true },
-  { slug: "github", label: "GitHub", multiWorkspace: true },
-  { slug: "linear", label: "Linear", multiWorkspace: false },
+  // Productivity
+  { slug: "notion", label: "Notion", theme: "Productivity", multiWorkspace: true },
+  { slug: "gmail", label: "Gmail", theme: "Productivity", group: "google", multiWorkspace: true },
+  { slug: "googlecalendar", label: "Google Calendar", theme: "Productivity", group: "google", multiWorkspace: true },
+  { slug: "googledocs", label: "Google Docs", theme: "Productivity", group: "google", multiWorkspace: true },
+  { slug: "googlesheets", label: "Google Sheets", theme: "Productivity", group: "google", multiWorkspace: true },
+  { slug: "googletasks", label: "Google Tasks", theme: "Productivity", group: "google", multiWorkspace: true },
+  { slug: "asana", label: "Asana", theme: "Productivity", multiWorkspace: true },
+  { slug: "trello", label: "Trello", theme: "Productivity", multiWorkspace: true },
+  { slug: "clickup", label: "ClickUp", theme: "Productivity", multiWorkspace: true },
+  { slug: "todoist", label: "Todoist", theme: "Productivity", multiWorkspace: true },
+  { slug: "airtable", label: "Airtable", theme: "Productivity", multiWorkspace: true },
+  { slug: "calendly", label: "Calendly", theme: "Productivity", multiWorkspace: true },
+  { slug: "coda", label: "Coda", theme: "Productivity", multiWorkspace: true },
+  // Communication
+  { slug: "slack", label: "Slack", theme: "Communication", multiWorkspace: true },
+  { slug: "discord", label: "Discord", theme: "Communication", multiWorkspace: true },
+  { slug: "outlook", label: "Outlook", theme: "Communication", multiWorkspace: true },
+  { slug: "googlemeet", label: "Google Meet", theme: "Communication", group: "google", multiWorkspace: true },
+  { slug: "zoom", label: "Zoom", theme: "Communication", multiWorkspace: true },
+  // Developer
+  { slug: "github", label: "GitHub", theme: "Developer", multiWorkspace: true },
+  { slug: "linear", label: "Linear", theme: "Developer", multiWorkspace: false },
+  { slug: "jira", label: "Jira", theme: "Developer", multiWorkspace: true },
+  { slug: "gitlab", label: "GitLab", theme: "Developer", multiWorkspace: true },
+  { slug: "sentry", label: "Sentry", theme: "Developer", multiWorkspace: true },
+  // Storage
+  { slug: "googledrive", label: "Google Drive", theme: "Storage", group: "google", multiWorkspace: true },
+  { slug: "dropbox", label: "Dropbox", theme: "Storage", multiWorkspace: true },
+  { slug: "box", label: "Box", theme: "Storage", multiWorkspace: true },
+  { slug: "onedrive", label: "OneDrive", theme: "Storage", multiWorkspace: true },
+  // CRM & Sales
+  { slug: "hubspot", label: "HubSpot", theme: "CRM & Sales", multiWorkspace: true },
+  { slug: "salesforce", label: "Salesforce", theme: "CRM & Sales", multiWorkspace: true },
+  { slug: "pipedrive", label: "Pipedrive", theme: "CRM & Sales", multiWorkspace: true },
+  // Design
+  { slug: "figma", label: "Figma", theme: "Design", multiWorkspace: true },
+  { slug: "canva", label: "Canva", theme: "Design", multiWorkspace: true },
+  { slug: "miro", label: "Miro", theme: "Design", multiWorkspace: true },
+  // Support
+  { slug: "zendesk", label: "Zendesk", theme: "Support", multiWorkspace: true },
+  { slug: "intercom", label: "Intercom", theme: "Support", multiWorkspace: true },
+  // Social
   {
     slug: "twitter",
     label: "X",
+    theme: "Social",
     multiWorkspace: false,
     requiresAuthConfig: true,
   },
+  { slug: "linkedin", label: "LinkedIn", theme: "Social", multiWorkspace: true },
+  { slug: "youtube", label: "YouTube", theme: "Social", multiWorkspace: true },
+  { slug: "reddit", label: "Reddit", theme: "Social", multiWorkspace: true },
 ];
 
 export function getComposioToolkitSlugs(): string[] {

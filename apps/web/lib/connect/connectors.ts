@@ -4,46 +4,16 @@
 // (connectors-view.tsx) without dragging Node/DB code into the browser bundle.
 import {
   COMPOSIO_TOOLKITS,
+  COMPOSIO_THEME_ORDER,
   resolveComposioAuthConfigs,
 } from "@ssota/agent-runtime/composio-shared";
 
-/** Provider id == Composio toolkit slug. */
-export type ConnectorProvider =
-  | "slack"
-  | "notion"
-  | "gmail"
-  | "googledrive"
-  | "googlecalendar"
-  | "googledocs"
-  | "googlesheets"
-  | "github"
-  | "linear"
-  | "discord"
-  | "twitter";
+/** Provider id == Composio toolkit slug. Open-ended (many toolkits). */
+export type ConnectorProvider = string;
 
-/** Theme groups for the connectors grid, in display order. */
-export const CONNECTOR_THEMES = [
-  "Productivity",
-  "Communication",
-  "Developer",
-  "Storage",
-  "Social",
-] as const;
-export type ConnectorTheme = (typeof CONNECTOR_THEMES)[number];
-
-const THEMES: Record<ConnectorProvider, ConnectorTheme> = {
-  notion: "Productivity",
-  gmail: "Productivity",
-  googlecalendar: "Productivity",
-  googledocs: "Productivity",
-  googlesheets: "Productivity",
-  slack: "Communication",
-  discord: "Communication",
-  github: "Developer",
-  linear: "Developer",
-  googledrive: "Storage",
-  twitter: "Social",
-};
+/** Theme groups for the connectors grid, in display order (from the registry). */
+export const CONNECTOR_THEMES = COMPOSIO_THEME_ORDER;
+export type ConnectorTheme = string;
 
 export interface ConnectorDef {
   /** Composio toolkit slug (also the value passed to /api/connect/authorize). */
@@ -69,7 +39,8 @@ export interface ConnectorDef {
   isMcp: boolean;
 }
 
-const DESCRIPTIONS: Record<ConnectorProvider, string> = {
+// Curated blurbs for the common toolkits; others fall back to a generic line.
+const DESCRIPTIONS: Record<string, string> = {
   slack: "Post messages, search channels, and read threads in your Slack workspace.",
   notion: "Search, read, and update pages and databases in Notion.",
   gmail: "Read, search, draft, and send email in Gmail.",
@@ -77,10 +48,37 @@ const DESCRIPTIONS: Record<ConnectorProvider, string> = {
   googlecalendar: "Read and manage events on your Google Calendar.",
   googledocs: "Create, read, and edit documents in Google Docs.",
   googlesheets: "Read and write spreadsheets in Google Sheets.",
+  googletasks: "Create and track tasks in Google Tasks.",
   github: "Manage issues, pull requests, and repositories on GitHub.",
   linear: "Create and update issues and comments in Linear.",
+  jira: "Track issues and sprints in Jira.",
+  gitlab: "Manage merge requests, issues, and repositories in GitLab.",
   discord: "Send messages and manage channels in your Discord server.",
+  outlook: "Read and send email and manage calendar in Outlook.",
+  zoom: "Schedule and manage Zoom meetings.",
+  googlemeet: "Create and manage Google Meet calls.",
+  dropbox: "Browse and manage files in Dropbox.",
+  box: "Browse and manage files in Box.",
+  onedrive: "Browse and manage files in OneDrive.",
+  asana: "Create and update tasks and projects in Asana.",
+  trello: "Manage boards, lists, and cards in Trello.",
+  clickup: "Manage tasks and docs in ClickUp.",
+  todoist: "Manage tasks and projects in Todoist.",
+  airtable: "Read and write records in Airtable.",
+  calendly: "Manage scheduling and events in Calendly.",
+  coda: "Read and edit docs and tables in Coda.",
+  hubspot: "Manage contacts, deals, and companies in HubSpot.",
+  salesforce: "Work with leads, opportunities, and accounts in Salesforce.",
+  pipedrive: "Manage deals and contacts in Pipedrive.",
+  figma: "Read files, comments, and components in Figma.",
+  canva: "Create and manage designs in Canva.",
+  miro: "Work with boards and items in Miro.",
+  zendesk: "Manage tickets and users in Zendesk.",
+  intercom: "Manage conversations and contacts in Intercom.",
   twitter: "Post, search, and engage on X (Twitter).",
+  linkedin: "Share posts and manage your LinkedIn presence.",
+  youtube: "Manage videos and channel data on YouTube.",
+  reddit: "Read and post to Reddit.",
 };
 
 /** Resolve the connector registry from the shared Composio toolkit list. */
@@ -90,16 +88,15 @@ export function getConnectors(): ConnectorDef[] {
   const composioOn = Boolean(process.env.COMPOSIO_API_KEY);
   const authConfigs = resolveComposioAuthConfigs();
   return COMPOSIO_TOOLKITS.map((tk) => {
-    const provider = tk.slug as ConnectorProvider;
     // BYOA-only toolkits (e.g. X) can't be connected without their auth config,
     // and Composio won't even create a session for them — show as not configured.
     const usable =
       composioOn && (!tk.requiresAuthConfig || Boolean(authConfigs[tk.slug]));
     return {
-      provider,
+      provider: tk.slug,
       label: tk.label,
-      description: DESCRIPTIONS[provider] ?? tk.label,
-      theme: THEMES[provider] ?? "Productivity",
+      description: DESCRIPTIONS[tk.slug] ?? `Use ${tk.label} from your agent.`,
+      theme: tk.theme,
       multiWorkspace: tk.multiWorkspace,
       connectorUid: usable ? tk.slug : null,
       isMcp: false,

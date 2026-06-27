@@ -48,23 +48,61 @@ function toolsConfig(
   );
 }
 
-function createSessionForEntity(
+/**
+ * Toolkit slugs Composio reports as un-auto-creatable in a 400, e.g.
+ * "...cannot be auto-created: twitter, foo." So we can drop them and retry
+ * instead of failing the whole session (and losing every connector).
+ */
+function parseUnconfigurableToolkits(error: unknown): string[] {
+  const text = error instanceof Error ? error.message : String(error);
+  const match = text.match(/cannot be auto-created:\s*([a-z0-9_,\s]+)/i);
+  const list = match?.[1];
+  if (!list) return [];
+  return list
+    .split(/[\s,]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+async function createSessionForEntity(
   userId: string,
   opts: { callbackUrl?: string; disabledTools?: Record<string, string[]> },
 ) {
   const composio = getComposioClient();
   if (!composio) return null;
   const tools = toolsConfig(opts.disabledTools);
-  return composio.toolRouter.create(userId, {
-    toolkits: getSessionToolkitSlugs(),
-    // Per-toolkit BYOA: slugs present here use our own auth config; absent
-    // slugs fall back to Composio-managed auth.
-    authConfigs: resolveComposioAuthConfigs(),
-    ...(tools ? { tools } : {}),
-    manageConnections: opts.callbackUrl
-      ? { enable: true, callbackUrl: opts.callbackUrl }
-      : true,
-  });
+  // Per-toolkit BYOA: slugs present here use our own auth config; absent
+  // slugs fall back to Composio-managed auth.
+  const authConfigs = resolveComposioAuthConfigs();
+  const manageConnections = opts.callbackUrl
+    ? { enable: true, callbackUrl: opts.callbackUrl }
+    : true;
+  let toolkits = getSessionToolkitSlugs();
+
+  // Resilient: if Composio 400s because a toolkit has no managed auth config and
+  // can't auto-create one, drop those toolkits and retry so the rest still work.
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await composio.toolRouter.create(userId, {
+        toolkits,
+        authConfigs,
+        ...(tools ? { tools } : {}),
+        manageConnections,
+      });
+    } catch (error) {
+      const bad = parseUnconfigurableToolkits(error);
+      const next = toolkits.filter((t) => !bad.includes(t));
+      if (
+        bad.length === 0 ||
+        next.length === toolkits.length ||
+        next.length === 0 ||
+        attempt >= 2
+      ) {
+        throw error;
+      }
+      toolkits = next;
+    }
+  }
 }
 
 /**
