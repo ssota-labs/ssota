@@ -12,7 +12,7 @@ import { getComposioClient } from "./client.js";
 import {
   composioOrgUserId,
   composioUserId,
-  getComposioToolkitSlugs,
+  getSessionToolkitSlugs,
   resolveComposioAuthConfigs,
 } from "./shared.js";
 
@@ -56,7 +56,7 @@ function createSessionForEntity(
   if (!composio) return null;
   const tools = toolsConfig(opts.disabledTools);
   return composio.toolRouter.create(userId, {
-    toolkits: getComposioToolkitSlugs(),
+    toolkits: getSessionToolkitSlugs(),
     // Per-toolkit BYOA: slugs present here use our own auth config; absent
     // slugs fall back to Composio-managed auth.
     authConfigs: resolveComposioAuthConfigs(),

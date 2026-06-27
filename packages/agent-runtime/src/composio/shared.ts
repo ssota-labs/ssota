@@ -36,6 +36,13 @@ export interface ComposioToolkitDef {
   group?: string;
   /** Whether the card hints multiple accounts can be connected (cosmetic). */
   multiWorkspace: boolean;
+  /**
+   * Toolkit Composio cannot auto-create a managed auth config for — it MUST be
+   * BYOA (e.g. X/twitter needs your own OAuth app + paid API tier). Such a
+   * toolkit is excluded from sessions unless `COMPOSIO_AUTHCONFIG_<SLUG>` is set,
+   * so it can't 400 the whole Tool Router session.
+   */
+  requiresAuthConfig?: boolean;
 }
 
 /**
@@ -50,13 +57,35 @@ export const COMPOSIO_TOOLKITS: ComposioToolkitDef[] = [
   { slug: "gmail", label: "Gmail", group: "google", multiWorkspace: true },
   { slug: "googledrive", label: "Google Drive", group: "google", multiWorkspace: true },
   { slug: "googlecalendar", label: "Google Calendar", group: "google", multiWorkspace: true },
+  { slug: "googledocs", label: "Google Docs", group: "google", multiWorkspace: true },
+  { slug: "googlesheets", label: "Google Sheets", group: "google", multiWorkspace: true },
   { slug: "github", label: "GitHub", multiWorkspace: true },
   { slug: "linear", label: "Linear", multiWorkspace: false },
-  { slug: "twitter", label: "X", multiWorkspace: false },
+  {
+    slug: "twitter",
+    label: "X",
+    multiWorkspace: false,
+    requiresAuthConfig: true,
+  },
 ];
 
 export function getComposioToolkitSlugs(): string[] {
   return COMPOSIO_TOOLKITS.map((t) => t.slug);
+}
+
+/**
+ * Toolkit slugs safe to put in a Tool Router session: every toolkit except
+ * BYOA-only ones (`requiresAuthConfig`) that have no `COMPOSIO_AUTHCONFIG_<SLUG>`
+ * configured. Composio fails session creation (400) for a BYOA-only toolkit with
+ * no auth config, so excluding it lets the rest of the session work.
+ *
+ * Server-only (reads env via {@link resolveComposioAuthConfigs}).
+ */
+export function getSessionToolkitSlugs(): string[] {
+  const authConfigs = resolveComposioAuthConfigs();
+  return COMPOSIO_TOOLKITS.filter(
+    (t) => !t.requiresAuthConfig || Boolean(authConfigs[t.slug]),
+  ).map((t) => t.slug);
 }
 
 export function isComposioToolkit(slug: string): boolean {
