@@ -1,17 +1,9 @@
-import { getWorkflowMetadata, getWritable } from "workflow";
-import {
-  createSandboxSession,
-  getDb,
-  getTaskPort,
-  resolveCredentialProvider,
-  streamAgent,
-  type RunAgentResult,
-  type SandboxSession,
-  type UIMessageChunk,
-} from "@ssota/agent-runtime";
+import { getWorkflowMetadata } from "workflow";
+import type { ModelMessage, SystemModelMessage } from "ai";
+import { getDb, getTaskPort, buildRunPrompt } from "@ssota/agent-runtime";
+import { buildMainWorkflowAgent } from "@ssota/agent-runtime/workflow";
 import { createAgentRunPort } from "@ssota/adapter-postgres";
-
-const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
+import { dispatchMainTool } from "./main-workflow-agent-dispatch";
 
 export interface RunTaskAgentInput {
   projectId: string;
@@ -21,23 +13,51 @@ export interface RunTaskAgentInput {
   maxSteps?: number;
 }
 
-const TERMINAL_STATUSES = new Set([
-  "done",
-  "blocked",
-  "cancelled",
-  "failed",
-]);
+const TERMINAL_STATUSES = new Set(["done", "blocked", "cancelled", "failed"]);
 
+/**
+ * WorkflowAgent-backed task agent. Durable shape: claim (+ mark running) →
+ * build prompt → agent loop (per-tool durable steps) → finalize (resolve task
+ * status). Background run — the stream is not consumed by a client.
+ *
+ * NOTE: sandbox (dev-capable) tools are not yet wired into the WorkflowAgent
+ * task path; that needs per-step `Sandbox.get` re-attach (follow-up R4). Most
+ * tasks do not provision a sandbox.
+ */
 export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
   "use workflow";
 
   const { workflowRunId } = getWorkflowMetadata();
-
   await claimRunning(input, workflowRunId);
-  const result = await runAgentStep(input, workflowRunId);
-  await finalizeRun(input, workflowRunId, result);
 
-  return result;
+  const { instructions, messages } = await buildTaskPrompt(input, workflowRunId);
+
+  const agent = buildMainWorkflowAgent({
+    ssota: {
+      projectId: input.projectId,
+      taskId: input.taskId,
+      runId: workflowRunId,
+      accountId: input.accountId,
+    },
+    dispatch: dispatchMainTool,
+    instructions,
+    modelId: input.modelId,
+    maxSteps: input.maxSteps,
+  });
+
+  const result = await agent.stream({ messages });
+
+  const usage = result.steps.reduce(
+    (acc, step) => ({
+      inputTokens: (acc.inputTokens ?? 0) + (step.usage?.inputTokens ?? 0),
+      outputTokens: (acc.outputTokens ?? 0) + (step.usage?.outputTokens ?? 0),
+      totalTokens: (acc.totalTokens ?? 0) + (step.usage?.totalTokens ?? 0),
+    }),
+    { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+  );
+  await finalizeRun(input, workflowRunId, usage);
+
+  return { messageCount: result.messages.length, stepCount: result.steps.length };
 }
 
 async function claimRunning(
@@ -45,8 +65,7 @@ async function claimRunning(
   workflowRunId: string,
 ): Promise<void> {
   "use step";
-  const db = getDb();
-  await createAgentRunPort(db).start({
+  await createAgentRunPort(getDb()).start({
     projectId: input.projectId,
     runtimeKind: "task",
     taskId: input.taskId,
@@ -59,78 +78,42 @@ async function claimRunning(
   });
 }
 
-async function runAgentStep(
+async function buildTaskPrompt(
   input: RunTaskAgentInput,
   workflowRunId: string,
-): Promise<RunAgentResult> {
+): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
   "use step";
-
-  const task = await getTaskPort(input.projectId, input.accountId).getTask(
-    input.taskId,
-  );
-  let sandbox: SandboxSession | undefined;
-  if (
-    task?.workflowInstructionKey &&
-    DEV_CAPABLE_WORKFLOW_KEYS.has(task.workflowInstructionKey)
-  ) {
-    try {
-      sandbox = await createSandboxSession();
-    } catch {
-      // sandbox optional
-    }
-  }
-
-  const credentials = resolveCredentialProvider();
-  const writable = getWritable<UIMessageChunk>();
-
-  try {
-    return await streamAgent(
-      {
-        projectId: input.projectId,
-        taskId: input.taskId,
-        runId: workflowRunId,
-        runtimeKind: "task",
-        accountId: input.accountId,
-        modelId: input.modelId,
-        sandbox,
-        credentials,
-        maxSteps: input.maxSteps,
-      },
-      writable,
-    );
-  } finally {
-    if (sandbox) {
-      try {
-        await sandbox.stop();
-      } catch {
-        // best-effort
-      }
-    }
-  }
+  return buildRunPrompt({
+    projectId: input.projectId,
+    runId: workflowRunId,
+    runtimeKind: "task",
+    taskId: input.taskId,
+    accountId: input.accountId,
+    modelId: input.modelId,
+    maxSteps: input.maxSteps,
+  });
 }
 
 async function finalizeRun(
   input: RunTaskAgentInput,
   workflowRunId: string,
-  result: RunAgentResult,
+  usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number },
 ): Promise<void> {
   "use step";
-  const db = getDb();
-  const isTerminal = result.finalStatus
-    ? TERMINAL_STATUSES.has(result.finalStatus)
+  const taskPort = getTaskPort(input.projectId, input.accountId);
+  const current = await taskPort.getTask(input.taskId);
+  const isTerminal = current?.status
+    ? TERMINAL_STATUSES.has(current.status)
     : false;
   if (!isTerminal) {
-    await getTaskPort(input.projectId, input.accountId).updateTask(input.taskId, {
+    await taskPort.updateTask(input.taskId, {
       status: "failed",
-      result: { reason: "Agent ended without completing the task", ...result },
+      result: { reason: "Agent ended without completing the task" },
     });
   }
-
-  const finalTask = await getTaskPort(input.projectId, input.accountId).getTask(
-    input.taskId,
-  );
-  await createAgentRunPort(db).finish(workflowRunId, {
+  const finalTask = await taskPort.getTask(input.taskId);
+  await createAgentRunPort(getDb()).finish(workflowRunId, {
     status: finalTask?.status ?? "failed",
-    usage: result.usage ?? {},
+    usage,
   });
 }
