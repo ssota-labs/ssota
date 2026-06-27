@@ -2,7 +2,10 @@
 // toolkits. Imports ONLY the dependency-free Composio shared surface (no
 // `@composio/core`) so this module can be pulled into client components
 // (connectors-view.tsx) without dragging Node/DB code into the browser bundle.
-import { COMPOSIO_TOOLKITS } from "@ssota/agent-runtime/composio-shared";
+import {
+  COMPOSIO_TOOLKITS,
+  resolveComposioAuthConfigs,
+} from "@ssota/agent-runtime/composio-shared";
 
 /** Provider id == Composio toolkit slug. */
 export type ConnectorProvider =
@@ -78,16 +81,21 @@ const DESCRIPTIONS: Record<ConnectorProvider, string> = {
 export function getConnectors(): ConnectorDef[] {
   // Server-only env read (this function is called from the server page). When
   // Composio is unconfigured every card renders as "not configured".
-  const configured = Boolean(process.env.COMPOSIO_API_KEY);
+  const composioOn = Boolean(process.env.COMPOSIO_API_KEY);
+  const authConfigs = resolveComposioAuthConfigs();
   return COMPOSIO_TOOLKITS.map((tk) => {
     const provider = tk.slug as ConnectorProvider;
+    // BYOA-only toolkits (e.g. X) can't be connected without their auth config,
+    // and Composio won't even create a session for them — show as not configured.
+    const usable =
+      composioOn && (!tk.requiresAuthConfig || Boolean(authConfigs[tk.slug]));
     return {
       provider,
       label: tk.label,
       description: DESCRIPTIONS[provider] ?? tk.label,
       theme: THEMES[provider] ?? "Productivity",
       multiWorkspace: tk.multiWorkspace,
-      connectorUid: configured ? tk.slug : null,
+      connectorUid: usable ? tk.slug : null,
       isMcp: false,
     };
   });
