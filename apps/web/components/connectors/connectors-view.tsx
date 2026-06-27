@@ -35,7 +35,7 @@ import {
   disconnectConnectionAction,
   loadToolkitToolSettingsAction,
   setToolkitDisabledAction,
-} from "@/app/[orgSlug]/[projectSlug]/connectors/actions";
+} from "@/app/[orgSlug]/[teamspaceSlug]/connectors/actions";
 import {
   CONNECTOR_THEMES,
   type ConnectorDef,

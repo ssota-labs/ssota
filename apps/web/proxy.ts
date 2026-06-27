@@ -1,18 +1,122 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/auth/provider";
 
+/** First URL segment after org that is a console route (not a teamspace slug). */
+const CONSOLE_ROUTE_SEGMENTS = new Set([
+  "p",
+  "tasks",
+  "chat",
+  "c",
+  "overview",
+  "settings",
+  "developer",
+  "workflow",
+  "research",
+  "executive",
+  "manager",
+  "connectors",
+  "schedules",
+  "design",
+  "graph",
+  "n",
+]);
+
+const GLOBAL_PREFIXES = [
+  "api",
+  "app",
+  "auth",
+  "login",
+  "oauth",
+  "onboarding",
+  "editor-lab",
+  "editor-lab-blocknote",
+  "labs",
+  "settings",
+  "emulate",
+  "_next",
+  "favicon.ico",
+];
+
+const DEFAULT_TEAMSPACE_SLUG = "ssota-dev";
+const TEAMSPACE_COOKIE = "ssota-active-teamspace";
+
+function isGlobalPath(pathname: string): boolean {
+  const segment = pathname.split("/").filter(Boolean)[0];
+  return segment ? GLOBAL_PREFIXES.some((p) => segment === p || segment.startsWith(p)) : false;
+}
+
+/** Org-scoped flat URL routing (legacy teamspace segment redirect + internal rewrite). */
+function orgUrlResponse(request: NextRequest): NextResponse | null {
+  const { pathname } = request.nextUrl;
+  if (isGlobalPath(pathname)) {
+    return null;
+  }
+
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts.length === 0) {
+    return null;
+  }
+
+  const [orgSlug, second, ...rest] = parts;
+
+  if (parts.length === 1) {
+    const teamspaceSlug =
+      request.cookies.get(TEAMSPACE_COOKIE)?.value ?? DEFAULT_TEAMSPACE_SLUG;
+    const url = request.nextUrl.clone();
+    url.pathname = `/${orgSlug}/${teamspaceSlug}/overview`;
+    return NextResponse.rewrite(url);
+  }
+
+  if (!second) {
+    return null;
+  }
+
+  const isFlatConsoleRoute = CONSOLE_ROUTE_SEGMENTS.has(second);
+
+  if (!isFlatConsoleRoute && parts.length >= 2) {
+    const suffix = rest.length ? `/${rest.join("/")}` : "";
+    const url = request.nextUrl.clone();
+    url.pathname = `/${orgSlug}${suffix}`;
+    return NextResponse.redirect(url, 308);
+  }
+
+  if (isFlatConsoleRoute) {
+    const teamspaceSlug =
+      request.cookies.get(TEAMSPACE_COOKIE)?.value ?? DEFAULT_TEAMSPACE_SLUG;
+    const url = request.nextUrl.clone();
+    url.pathname = `/${orgSlug}/${teamspaceSlug}/${second}${rest.length ? `/${rest.join("/")}` : ""}`;
+    return NextResponse.rewrite(url);
+  }
+
+  return null;
+}
+
 export async function proxy(request: NextRequest) {
-  // Session refresh + x-pathname header, delegated to the configured auth
-  // provider (no-op refresh for local, Supabase cookie rotation for Enterprise).
-  return updateSession(request);
+  const orgResponse = orgUrlResponse(request);
+  if (orgResponse?.status === 308) {
+    return orgResponse;
+  }
+
+  const sessionResponse = await updateSession(request);
+
+  if (orgResponse) {
+    const requestHeaders = new Headers(request.headers);
+    const pathname = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    requestHeaders.set("x-pathname", pathname);
+    const rewriteTarget = orgResponse.headers.get("x-middleware-rewrite");
+    if (rewriteTarget) {
+      return NextResponse.rewrite(new URL(rewriteTarget), {
+        request: { headers: requestHeaders },
+      });
+    }
+    return orgResponse;
+  }
+
+  return sessionResponse;
 }
 
 export const config = {
   matcher: [
-    // Exclude the public Vercel Connect entry/return routes: they are
-    // unauthenticated top-level redirects keyed on the `accountId` query (not
-    // the user session). Running the session-refresh proxy on them rotates the
-    // auth cookie mid-redirect and can drop it, bouncing the user to /login.
     "/((?!api/connect|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
