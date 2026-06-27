@@ -3,7 +3,10 @@ import {
   buildMainWorkflowAgent,
   type ModelCallStreamPart,
 } from "@ssota/agent-runtime/workflow";
-import { dispatchMainTool } from "./main-workflow-agent-dispatch";
+import {
+  dispatchMainTool,
+  fetchMainConnectorToolDefs,
+} from "./main-workflow-agent-dispatch";
 import {
   buildMainPrompt,
   claimMainWorkflowRun,
@@ -29,13 +32,23 @@ export async function runMainWorkflowAgent(input: RunMainAgentInput) {
 
   const { instructions, messages } = await buildMainPrompt(input, workflowRunId);
 
+  // Serializable per-run scope; `profileId` is the connector acting entity
+  // (Composio signed-in user) and is threaded into every tool's context.
+  const ssota = {
+    projectId: input.projectId,
+    runId: workflowRunId,
+    accountId: input.accountId,
+    profileId: input.profileId,
+  };
+
+  // Connector tools (Composio meta-tools / legacy facade) are resolved at run
+  // time from the active adapter and declared dynamically on the agent.
+  const connectorToolDefs = await fetchMainConnectorToolDefs(ssota);
+
   const agent = buildMainWorkflowAgent({
-    ssota: {
-      projectId: input.projectId,
-      runId: workflowRunId,
-      accountId: input.accountId,
-    },
+    ssota,
     dispatch: dispatchMainTool,
+    connectorToolDefs,
     instructions,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
