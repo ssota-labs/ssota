@@ -16,7 +16,7 @@ test.describe("landing page", () => {
     await expect(page.getByText("Intent control loop")).toBeVisible();
     await expect(page.getByText("Approval queue")).toBeVisible();
 
-    await page.getByRole("link", { name: "See the loop" }).click();
+    await page.getByRole("button", { name: "See the loop" }).click();
     await expect(
       page.getByRole("heading", {
         name: "작업 전에는 맥락을 읽고, 작업 후에는 근거를 남깁니다.",
@@ -29,7 +29,7 @@ test.describe("landing page", () => {
   }) => {
     await page.goto("/");
 
-    await page.getByRole("link", { name: "Connect your agents" }).click();
+    await page.getByRole("button", { name: "Connect your agents" }).click();
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByLabel("Email")).toBeVisible();
   });
