@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
+  ArrowLeftIcon,
   BuildingsIcon,
+  CaretRightIcon,
   CheckCircleIcon,
   LinkBreakIcon,
   PlusIcon,
@@ -19,10 +21,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@ssota/ui/components/ui/sheet";
-import {
-  ExpandableListSection,
-  ExpandableListItem,
-} from "@ssota/ui/components/ui/expandable-list-section";
 import { cn } from "@ssota/ui/lib/utils";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import {
@@ -51,6 +49,19 @@ export interface ScopedConnections {
 }
 
 type Scope = "user" | "org";
+
+const SCOPE_META: Record<Scope, { title: string; subtitle: string; icon: Icon }> = {
+  user: {
+    title: "You",
+    subtitle: "Personal — only your runs use this connection.",
+    icon: UserIcon,
+  },
+  org: {
+    title: "Organization",
+    subtitle: "Shared — everyone in the org can use this connection.",
+    icon: BuildingsIcon,
+  },
+};
 
 interface ConnectorsViewProps {
   connectors: ConnectorDef[];
@@ -122,7 +133,7 @@ export function ConnectorsView({
   const connectedCount = byProvider.size;
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8">
       <header className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">Connectors</h1>
         <p className="max-w-2xl text-sm text-muted-foreground">
@@ -239,6 +250,13 @@ function ConnectorSettings({
   returnTo: string;
 }) {
   const configured = Boolean(connector.connectorUid);
+  const scopes: Scope[] = allowOrgScope ? ["user", "org"] : ["user"];
+  // Single scope → open it directly; multiple → show the scope list first.
+  const [scope, setScope] = useState<Scope | null>(
+    scopes.length === 1 ? "user" : null,
+  );
+  const connectionsFor = (s: Scope) =>
+    s === "user" ? userConnections : orgConnections;
 
   return (
     <>
@@ -261,75 +279,101 @@ function ConnectorSettings({
           <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
             This connector is not configured for this deployment.
           </p>
+        ) : scope === null ? (
+          <ScopeList scopes={scopes} connectionsFor={connectionsFor} onSelect={setScope} />
         ) : (
-          <ExpandableListSection
-            title="Access scope"
-            description="Who this connection applies to and which tools the agent may use."
-            addLabel=""
-            hasItems
-          >
-            <ScopeItem
-              scope="user"
-              icon={UserIcon}
-              title="You"
-              subtitle="Personal — only your runs use this connection."
-              connector={connector}
-              connections={userConnections}
-              projectId={projectId}
-              accountId={accountId}
-              returnTo={returnTo}
-              showTools
-              defaultExpanded={!allowOrgScope}
-            />
-            {allowOrgScope ? (
-              <ScopeItem
-                scope="org"
-                icon={BuildingsIcon}
-                title="Organization"
-                subtitle="Shared — everyone in the org can use this connection."
-                connector={connector}
-                connections={orgConnections}
-                projectId={projectId}
-                accountId={accountId}
-                returnTo={returnTo}
-                showTools={false}
-                defaultExpanded={false}
-              />
-            ) : null}
-          </ExpandableListSection>
+          <ScopeDetail
+            connector={connector}
+            scope={scope}
+            connections={connectionsFor(scope)}
+            onBack={scopes.length > 1 ? () => setScope(null) : undefined}
+            projectId={projectId}
+            accountId={accountId}
+            returnTo={returnTo}
+          />
         )}
       </div>
     </>
   );
 }
 
-function ScopeItem({
-  scope,
-  icon,
-  title,
-  subtitle,
+/** Card-list of access scopes (document-list-sheet style: divided rows → detail). */
+function ScopeList({
+  scopes,
+  connectionsFor,
+  onSelect,
+}: {
+  scopes: Scope[];
+  connectionsFor: (s: Scope) => ConnectorConnection[];
+  onSelect: (s: Scope) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <h3 className="text-sm font-medium">Access scope</h3>
+        <p className="text-xs text-muted-foreground">
+          Who this connection applies to and which tools the agent may use.
+        </p>
+      </div>
+
+      <div className="divide-y divide-border overflow-hidden rounded-lg border">
+        {scopes.map((s) => {
+          const meta = SCOPE_META[s];
+          const ScopeIcon = meta.icon;
+          const count = connectionsFor(s).length;
+          return (
+            <button
+              key={s}
+              type="button"
+              data-testid={`scope-${s}`}
+              onClick={() => onSelect(s)}
+              className="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+                <ScopeIcon className="size-4 text-muted-foreground" />
+              </span>
+              <div className="min-w-0 flex-1 space-y-0.5">
+                <span className="block text-sm font-medium">{meta.title}</span>
+                <p className="line-clamp-1 text-xs text-muted-foreground">
+                  {meta.subtitle}
+                </p>
+              </div>
+              {count > 0 ? (
+                <Badge variant="secondary" className="shrink-0 gap-1 font-normal">
+                  <CheckCircleIcon weight="fill" className="size-3 text-primary" />
+                  {count}
+                </Badge>
+              ) : null}
+              <CaretRightIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Detail for one scope: connected accounts + connect + tool access. */
+function ScopeDetail({
   connector,
+  scope,
   connections,
+  onBack,
   projectId,
   accountId,
   returnTo,
-  showTools,
-  defaultExpanded,
 }: {
-  scope: Scope;
-  icon: Icon;
-  title: string;
-  subtitle: string;
   connector: ConnectorDef;
+  scope: Scope;
   connections: ConnectorConnection[];
+  onBack?: () => void;
   projectId: string;
   accountId: string;
   returnTo: string;
-  showTools: boolean;
-  defaultExpanded: boolean;
 }) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
   const [isPending, startTransition] = useTransition();
+  const meta = SCOPE_META[scope];
+  const ScopeIcon = meta.icon;
   const connected = connections.length > 0;
   const href = authorizeHref({
     slug: connector.provider,
@@ -341,33 +385,42 @@ function ScopeItem({
 
   function disconnect(connectionId: string) {
     startTransition(async () => {
-      await disconnectConnectionAction({
-        projectId,
-        connectionId,
-        revalidate: returnTo,
-      });
+      await disconnectConnectionAction({ projectId, connectionId, revalidate: returnTo });
     });
   }
 
   return (
-    <ExpandableListItem
-      icon={icon}
-      title={title}
-      description={connected ? `${connections.length} connected` : subtitle}
-      expanded={expanded}
-      onExpandedChange={setExpanded}
-      removeLabel="Disconnect"
-    >
-      <div className="space-y-3">
+    <div className="space-y-4">
+      <div className="flex items-center gap-2">
+        {onBack ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Back"
+            onClick={onBack}
+            className="shrink-0"
+          >
+            <ArrowLeftIcon className="size-4" />
+          </Button>
+        ) : null}
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+          <ScopeIcon className="size-4 text-muted-foreground" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm font-medium">{meta.title}</p>
+          <p className="text-xs text-muted-foreground">{meta.subtitle}</p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
         {connections.map((conn) => (
           <div
             key={conn.id}
             className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
             data-testid="connection-row"
           >
-            <span className="truncate text-sm">
-              {conn.name ?? connector.label}
-            </span>
+            <span className="truncate text-sm">{conn.name ?? connector.label}</span>
             <Button
               type="button"
               variant="ghost"
@@ -390,16 +443,17 @@ function ScopeItem({
           <PlusIcon className="size-4" />
           {connected ? "Add account" : "Connect"}
         </a>
-
-        {showTools && connected ? (
-          <ToolAccessSection
-            toolkit={connector.provider}
-            projectId={projectId}
-            returnTo={returnTo}
-          />
-        ) : null}
       </div>
-    </ExpandableListItem>
+
+      {/* Per-tool restrictions apply to the personal (user) scope. */}
+      {scope === "user" && connected ? (
+        <ToolAccessSection
+          toolkit={connector.provider}
+          projectId={projectId}
+          returnTo={returnTo}
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -410,9 +464,8 @@ interface ToolRow {
 
 /**
  * Per-toolkit tool restrictions. Lazily loads the toolkit's available tools and
- * the entity's disabled set when the accordion is open; toggling a tool off
- * persists it (connector_tool_settings) and excludes it from the agent's next
- * Tool Router session.
+ * the entity's disabled set; toggling a tool off persists it
+ * (connector_tool_settings) and excludes it from the agent's next session.
  */
 function ToolAccessSection({
   toolkit,
