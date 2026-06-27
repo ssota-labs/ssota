@@ -128,31 +128,8 @@ export const workflowToolSchemas = {
   }),
   read_page: z.object({ id: z.string().uuid() }),
   list_pages: z.object({}),
-
-  // --- Connection facade (MCP / REST) ---
-  connection_search: z.object({
-    query: z
-      .string()
-      .describe("Natural-language query describing the capability needed."),
-    connection: z
-      .string()
-      .optional()
-      .describe("Optional connection id to narrow search (e.g. linear, slack)."),
-  }),
-  connection_call: z.object({
-    qualifiedName: z
-      .string()
-      .describe("Qualified tool name from connection_search (connection__tool)."),
-    args: z.record(z.unknown()).describe("Arguments for the tool."),
-  }),
-  request_connection: z.object({
-    connector: z
-      .string()
-      .describe("Connector to request, e.g. slack, notion, github, linear, discord."),
-    reason: z
-      .string()
-      .describe("Short, user-facing reason this connection is needed."),
-  }),
+  // Connector tools (Composio / legacy) are declared dynamically from the
+  // active adapter at run time — see fetchConnectorToolDefs / buildMainWorkflowAgent.
 } as const;
 
 export type WorkflowToolName = keyof typeof workflowToolSchemas;

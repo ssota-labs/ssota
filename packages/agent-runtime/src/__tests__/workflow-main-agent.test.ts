@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { asSchema } from "ai";
 import { createSsotaTools } from "../tools/index.js";
-import { MAIN_WORKFLOW_CONNECTION_TOOL_NAMES } from "../workflow/dispatch-step.js";
 import { workflowToolSchemas } from "../workflow/tool-schemas.js";
 import {
   MAIN_WORKFLOW_TOOL_NAMES,
@@ -29,13 +28,11 @@ function structureOf(schema: unknown): unknown {
 }
 
 describe("main workflow-agent tool surface", () => {
-  it("every workflow tool name maps to a dispatchable tool (no drift)", () => {
-    // Plain SSOTA tools come from createSsotaTools; the connection facade tools
-    // are dispatched via the credential/MCP-aware branch instead.
-    const dispatchable = new Set<string>([
-      ...Object.keys(createSsotaTools()),
-      ...MAIN_WORKFLOW_CONNECTION_TOOL_NAMES,
-    ]);
+  it("every static workflow tool name maps to a dispatchable SSOTA tool (no drift)", () => {
+    // Connector tools (Composio / legacy) are declared dynamically from the
+    // active adapter (see fetchConnectorToolDefs) — they are NOT in this static
+    // set, so the static surface must map 1:1 onto createSsotaTools.
+    const dispatchable = new Set<string>(Object.keys(createSsotaTools()));
     const missing = MAIN_WORKFLOW_TOOL_NAMES.filter((n) => !dispatchable.has(n));
     expect(missing).toEqual([]);
   });
@@ -50,8 +47,6 @@ describe("main workflow-agent tool surface", () => {
   });
 
   it("workflow schema matches the real SSOTA tool's inputSchema (drift guard)", () => {
-    // The connection facade tools are not in createSsotaTools (built per-step
-    // with credentials), so they are validated by the manual copy only.
     const tools = createSsotaTools();
     for (const [name, schema] of Object.entries(workflowToolSchemas)) {
       const real = tools[name];
@@ -62,17 +57,42 @@ describe("main workflow-agent tool surface", () => {
     }
   });
 
-  it("builds a WorkflowAgent exposing exactly the declared tools", () => {
+  it("builds a WorkflowAgent exposing exactly the declared static tools", () => {
+    const agent = buildMainWorkflowAgent({
+      ssota: { projectId: "p", runId: "r" },
+      dispatch: async () => null,
+    });
+    expect(Object.keys(agent.tools).sort()).toEqual(
+      [...MAIN_WORKFLOW_TOOL_NAMES].sort(),
+    );
+  });
+
+  it("declares dynamic connector tools from connectorToolDefs", async () => {
     const calls: string[] = [];
     const agent = buildMainWorkflowAgent({
       ssota: { projectId: "p", runId: "r" },
       dispatch: async (toolName) => {
         calls.push(toolName);
-        return null;
+        return { ok: true };
       },
+      connectorToolDefs: [
+        {
+          name: "COMPOSIO_SEARCH_TOOLS",
+          description: "Search connected toolkits.",
+          jsonSchema: {
+            type: "object",
+            properties: { query: { type: "string" } },
+            required: ["query"],
+          },
+        },
+      ],
     });
-    expect(Object.keys(agent.tools).sort()).toEqual(
-      [...MAIN_WORKFLOW_TOOL_NAMES].sort(),
-    );
+    expect(Object.keys(agent.tools)).toContain("COMPOSIO_SEARCH_TOOLS");
+    // The dynamic tool dispatches through the same injected dispatcher.
+    const tool = agent.tools["COMPOSIO_SEARCH_TOOLS"] as {
+      execute: (i: unknown, opts: unknown) => Promise<unknown>;
+    };
+    await tool.execute({ query: "slack" }, {});
+    expect(calls).toContain("COMPOSIO_SEARCH_TOOLS");
   });
 });

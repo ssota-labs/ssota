@@ -30,6 +30,7 @@
   },
   "dependencies": {
     "@ai-sdk/mcp": "^2.0.0",
+    "@ai-sdk/provider-utils": "^5.0.0",
     "@ai-sdk/workflow": "^1.0.2",
     "@composio/core": "^0.12.0",
     "@composio/vercel": "^0.11.0",

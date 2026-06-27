@@ -49,7 +49,9 @@ export {
 } from "./composio/shared.js";
 export {
   runMainAgentToolStep,
-  MAIN_WORKFLOW_CONNECTION_TOOL_NAMES,
+  fetchConnectorToolDefs,
+  MAIN_WORKFLOW_SANDBOX_TOOL_NAMES,
+  type ConnectorToolDef,
 } from "./workflow/dispatch-step.js";
 export {
   createSandboxSession,

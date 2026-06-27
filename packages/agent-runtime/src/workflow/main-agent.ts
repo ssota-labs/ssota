@@ -13,8 +13,13 @@
  */
 import type { ModelMessage, SystemModelMessage } from "ai";
 import type { ZodTypeAny } from "zod";
+// `jsonSchema` is the same workflow-safe helper @ai-sdk/workflow uses internally
+// to serialize tool schemas; it lets us declare connector tools whose schemas
+// are only known at run time (JSON, not zod) — see ConnectorToolDef.
+import { jsonSchema, type Schema } from "@ai-sdk/provider-utils";
 import { WorkflowAgent, type ModelCallStreamPart } from "@ai-sdk/workflow";
 import type { AgentRunContext } from "../engine/types.js";
+import type { ConnectorToolDef } from "./dispatch-step.js";
 import {
   workflowToolSchemas,
   sandboxToolSchemas,
@@ -87,12 +92,6 @@ const MAIN_WORKFLOW_TOOL_DESCRIPTIONS: Record<WorkflowToolName, string> = {
   read_page: "Read a page by id (returns its full record, or found:false).",
   list_pages:
     "List all pages in the tree (id, title, parentId, position) for navigation/authoring.",
-  connection_search:
-    "Discover MCP tools for connected third-party services. Pass a natural-language query; matched tools are invoked with connection_call (qualifiedName + args). Returns matched tool names and compact argsSchema hints. Call once per user request or new capability — reuse prior results in the same conversation.",
-  connection_call:
-    "Invoke a tool by qualifiedName (e.g. slack__slack_send_message, twitter__twitter_post_tweet). Reuse qualifiedName from an earlier connection_search in this conversation. Pass args using the exact parameter names from argsSchema.",
-  request_connection:
-    "Ask the user to connect a third-party service when a connector is not yet authorized. The chat UI renders a connect card; stop and wait for the user to connect.",
 };
 
 /** Tool names exposed to the workflow agent. */
@@ -145,6 +144,13 @@ export interface BuildMainWorkflowAgentInput {
    * — the dispatcher re-attaches to it per step.
    */
   includeSandboxTools?: boolean;
+  /**
+   * Connector tools (Composio meta-tools or legacy Vercel Connect facade) for
+   * the active adapter, fetched via `fetchConnectorToolDefs` in a `"use step"`.
+   * Declared dynamically because their names/schemas are only known at run time.
+   * Dispatched through the same injected `dispatch` (connector branch).
+   */
+  connectorToolDefs?: ConnectorToolDef[];
 }
 
 /** LLM-facing descriptions for the sandbox tools (schemas in tool-schemas.ts). */
@@ -170,7 +176,11 @@ export function buildMainWorkflowAgent(
   const ctx = { ssota: input.ssota };
   const tools: Record<
     string,
-    { description: string; inputSchema: ZodTypeAny; execute: (i: unknown) => Promise<unknown> }
+    {
+      description: string;
+      inputSchema: ZodTypeAny | Schema;
+      execute: (i: unknown) => Promise<unknown>;
+    }
   > = {};
 
   for (const name of MAIN_WORKFLOW_TOOL_NAMES) {
@@ -190,6 +200,17 @@ export function buildMainWorkflowAgent(
         execute: (i: unknown) => input.dispatch(name, i, ctx),
       };
     }
+  }
+
+  // Connector tools (Composio / legacy) — names + JSON schemas resolved at run
+  // time by fetchConnectorToolDefs. Their static names (graph/task/page/sandbox)
+  // can't collide because the adapter namespaces them (e.g. COMPOSIO_*).
+  for (const def of input.connectorToolDefs ?? []) {
+    tools[def.name] = {
+      description: def.description,
+      inputSchema: jsonSchema(def.jsonSchema as Parameters<typeof jsonSchema>[0]),
+      execute: (i: unknown) => input.dispatch(def.name, i, ctx),
+    };
   }
 
   return new WorkflowAgent({
