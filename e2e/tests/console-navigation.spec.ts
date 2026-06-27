@@ -53,4 +53,17 @@ test.describe("Console v2.7 navigation", () => {
     await expect(page.getByText("Appearance", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
   });
+
+  test("organization switcher opens opaque popover with options", async ({ page }) => {
+    const sidebar = page.locator("aside");
+    const orgTrigger = sidebar.getByRole("button", { name: "Organization", exact: true });
+    await expect(orgTrigger.locator('[data-slot="avatar"]')).toBeVisible();
+    await orgTrigger.click();
+
+    const popover = page.locator('[data-slot="popover-content"]');
+    await expect(popover).toBeVisible();
+    await expect(popover).not.toHaveClass(/cn-menu-translucent/);
+    await expect(popover.getByText("Organization", { exact: true })).toBeVisible();
+    await expect(popover.getByRole("link", { name: /SSOTA Labs/ })).toBeVisible();
+  });
 });
