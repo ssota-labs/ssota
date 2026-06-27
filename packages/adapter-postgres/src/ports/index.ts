@@ -29,7 +29,7 @@ export {
 function mapTask(row: typeof schema.tasks.$inferSelect): Task {
   return {
     id: row.id,
-    projectId: row.projectId,
+    teamspaceId: row.teamspaceId,
     workflowInstructionId: row.workflowInstructionId,
     workflowInstructionKey: null,
     title: row.title,
@@ -69,7 +69,7 @@ async function hydrateWorkflowInstructionKey(
 }
 
 export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
-  const { projectId, accountId } = scope;
+  const { teamspaceId, accountId } = scope;
   const accountIdValue = accountId ?? null;
   const taskAccountConds = (): SQL[] =>
     accountId
@@ -83,7 +83,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
 
   function buildQuery(params?: TaskQueryInput) {
     const conditions = [
-      eq(schema.tasks.projectId, projectId),
+      eq(schema.tasks.teamspaceId, teamspaceId),
       ...taskAccountConds(),
     ];
     if (params?.status) conditions.push(eq(schema.tasks.status, params.status));
@@ -108,7 +108,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
       const rows = await db
         .select()
         .from(schema.tasks)
-        .where(and(eq(schema.tasks.projectId, projectId), ...taskAccountConds()))
+        .where(and(eq(schema.tasks.teamspaceId, teamspaceId), ...taskAccountConds()))
         .orderBy(desc(schema.tasks.updatedAt))
         .limit(params?.limit ?? 20);
       return rows.map(mapTask);
@@ -131,7 +131,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
         .from(schema.tasks)
         .where(
           and(
-            eq(schema.tasks.projectId, projectId),
+            eq(schema.tasks.teamspaceId, teamspaceId),
             eq(schema.tasks.id, taskId),
             ...taskAccountConds(),
           ),
@@ -148,7 +148,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
         .from(schema.tasks)
         .where(
           and(
-            eq(schema.tasks.projectId, projectId),
+            eq(schema.tasks.teamspaceId, teamspaceId),
             eq(schema.tasks.idempotencyKey, idempotencyKey),
           ),
         )
@@ -160,7 +160,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
       const [row] = await db
         .insert(schema.tasks)
         .values({
-          projectId,
+          teamspaceId,
           accountId: accountIdValue,
           title: input.title,
           workflowInstructionId: input.workflowInstructionId ?? null,
@@ -203,7 +203,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
         .set(set)
         .where(
           and(
-            eq(schema.tasks.projectId, projectId),
+            eq(schema.tasks.teamspaceId, teamspaceId),
             eq(schema.tasks.id, taskId),
           ),
         )

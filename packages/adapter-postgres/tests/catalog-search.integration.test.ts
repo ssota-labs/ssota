@@ -17,7 +17,7 @@ let skip = false;
  * the generated tsvector column, ts_rank ordering, and the ILIKE fallback.
  */
 describe("catalog search integration (FTS)", () => {
-  let projectId: string;
+  let teamspaceId: string;
   let client: ReturnType<typeof createDb>["client"] | undefined;
   let ports: ReturnType<typeof createGraphPorts>;
 
@@ -32,16 +32,19 @@ describe("catalog search integration (FTS)", () => {
         return;
       }
       const [project] = await dbBundle.db
-        .insert(schema.projects)
+        .insert(schema.teamspaces)
         .values({
           organizationId: org.id,
           slug: `catalog-search-${randomUUID().slice(0, 8)}`,
           name: "Catalog Search Test",
         })
         .returning();
-      projectId = project!.id;
-      await seedDomainCatalog(dbBundle.db, projectId);
-      ports = createGraphPorts(dbBundle.db, { projectId });
+      teamspaceId = project!.id;
+      await seedDomainCatalog(dbBundle.db, org.id);
+      ports = createGraphPorts(dbBundle.db, {
+        organizationId: org.id,
+        teamspaceId,
+      });
     } catch {
       skip = true;
     }

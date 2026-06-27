@@ -19,10 +19,9 @@ import {
 import type { CatalogReadPort } from "@ssota/core";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
+import type { GraphPortsScope } from "./graph-read-port.js";
 
-export interface DbCatalogScope {
-  projectId: string;
-}
+export type DbCatalogScope = Pick<GraphPortsScope, "organizationId">;
 
 type EdgeCatalogSeedEntry = {
   key: string;
@@ -54,7 +53,7 @@ function mapNodeCatalogRow(
 ): NodeCatalogRow {
   return {
     id: row.id,
-    projectId: row.projectId,
+    organizationId: row.organizationId,
     key: row.key,
     label: row.label,
     description: row.description ?? "",
@@ -68,7 +67,7 @@ function mapEdgeCatalogRow(
 ): EdgeCatalogRow {
   return {
     id: row.id,
-    projectId: row.projectId,
+    organizationId: row.organizationId,
     key: row.key,
     label: row.label,
     description: row.description ?? "",
@@ -79,17 +78,11 @@ function mapEdgeCatalogRow(
   };
 }
 
-/**
- * Phase 2 (FTS): rank one catalog table with `ts_rank` over the generated
- * `search_tsv` column (GIN-indexed), with an ILIKE substring OR-clause so
- * prefix/partial queries that don't tokenize (e.g. "retro" → "retrospective")
- * still match. ILIKE-only rows score 0 and sort after FTS hits.
- */
 async function searchCatalogTable(
   db: Db,
   tableName: string,
   kind: CatalogKind,
-  projectId: string,
+  organizationId: string,
   query: string,
   limit: number,
 ): Promise<CatalogSearchHit[]> {
@@ -99,7 +92,7 @@ async function searchCatalogTable(
     select key, label, description,
       ts_rank(search_tsv, websearch_to_tsquery('simple', ${query})) as rank
     from ${table}
-    where project_id = ${projectId}
+    where organization_id = ${organizationId}
       and (
         search_tsv @@ websearch_to_tsquery('simple', ${query})
         or key ilike ${like}
@@ -128,14 +121,14 @@ export function createDbCatalogReadPort(
   db: Db,
   scope: DbCatalogScope,
 ): CatalogReadPort {
-  const { projectId } = scope;
+  const { organizationId } = scope;
 
   return {
     async listNodeCatalog() {
       const rows = await db
         .select()
         .from(schema.nodeCatalog)
-        .where(eq(schema.nodeCatalog.projectId, projectId));
+        .where(eq(schema.nodeCatalog.organizationId, organizationId));
       return rows.map(mapNodeCatalogRow);
     },
     async getNodeCatalogById(id) {
@@ -144,7 +137,7 @@ export function createDbCatalogReadPort(
         .from(schema.nodeCatalog)
         .where(
           and(
-            eq(schema.nodeCatalog.projectId, projectId),
+            eq(schema.nodeCatalog.organizationId, organizationId),
             eq(schema.nodeCatalog.id, id),
           ),
         )
@@ -157,7 +150,7 @@ export function createDbCatalogReadPort(
         .from(schema.nodeCatalog)
         .where(
           and(
-            eq(schema.nodeCatalog.projectId, projectId),
+            eq(schema.nodeCatalog.organizationId, organizationId),
             eq(schema.nodeCatalog.key, key),
           ),
         )
@@ -168,7 +161,7 @@ export function createDbCatalogReadPort(
       const rows = await db
         .select()
         .from(schema.edgeCatalog)
-        .where(eq(schema.edgeCatalog.projectId, projectId));
+        .where(eq(schema.edgeCatalog.organizationId, organizationId));
       return rows.map(mapEdgeCatalogRow);
     },
     async getEdgeCatalogById(id) {
@@ -177,7 +170,7 @@ export function createDbCatalogReadPort(
         .from(schema.edgeCatalog)
         .where(
           and(
-            eq(schema.edgeCatalog.projectId, projectId),
+            eq(schema.edgeCatalog.organizationId, organizationId),
             eq(schema.edgeCatalog.id, id),
           ),
         )
@@ -190,7 +183,7 @@ export function createDbCatalogReadPort(
         .from(schema.edgeCatalog)
         .where(
           and(
-            eq(schema.edgeCatalog.projectId, projectId),
+            eq(schema.edgeCatalog.organizationId, organizationId),
             eq(schema.edgeCatalog.key, key),
           ),
         )
@@ -198,9 +191,6 @@ export function createDbCatalogReadPort(
       return rows[0] ? mapEdgeCatalogRow(rows[0]) : null;
     },
     async searchCatalog(input) {
-      // Phase 2 (FTS): rank in SQL via ts_rank over the GIN-indexed search_tsv
-      // (see searchCatalogTable). The port contract and hit shape are unchanged
-      // from Phase 1, so Phase 3 can layer vector cosine on the same surface.
       const hits: CatalogSearchHit[] = [];
       if (input.kind !== "edge") {
         hits.push(
@@ -208,7 +198,7 @@ export function createDbCatalogReadPort(
             db,
             "node_catalog",
             "node",
-            projectId,
+            organizationId,
             input.query,
             input.limit,
           )),
@@ -220,7 +210,7 @@ export function createDbCatalogReadPort(
             db,
             "edge_catalog",
             "edge",
-            projectId,
+            organizationId,
             input.query,
             input.limit,
           )),
@@ -243,14 +233,12 @@ export function createDbCatalogReadPort(
 }
 
 /**
- * Seed a project's catalog rows (idempotent). `opts.nodeTypeKeys`/`edgeTypeKeys`
- * let a template select which types to seed; defaults to the full embedded
- * catalog. Type labels/schemas are still resolved from the embedded catalog
- * (inlining per-template definitions is a later step).
+ * Seed an organization's catalog rows (idempotent). Type labels/schemas are
+ * resolved from the embedded catalog pack.
  */
 export async function seedDomainCatalog(
   db: Db,
-  projectId: string,
+  organizationId: string,
   opts?: { nodeTypeKeys?: string[]; edgeTypeKeys?: string[] },
 ): Promise<{ nodeKeyToId: Map<string, string>; edgeKeyToId: Map<string, string> }> {
   const nodeKeyToId = new Map<string, string>();
@@ -265,14 +253,12 @@ export async function seedDomainCatalog(
       .from(schema.nodeCatalog)
       .where(
         and(
-          eq(schema.nodeCatalog.projectId, projectId),
+          eq(schema.nodeCatalog.organizationId, organizationId),
           eq(schema.nodeCatalog.key, key),
         ),
       )
       .limit(1);
     if (existing[0]) {
-      // Backfill search text on pre-existing rows so older projects pick up
-      // description/keywords without a reseed-from-scratch.
       await db
         .update(schema.nodeCatalog)
         .set({ description: entry.description, keywords: entry.keywords })
@@ -283,7 +269,7 @@ export async function seedDomainCatalog(
     const [row] = await db
       .insert(schema.nodeCatalog)
       .values({
-        projectId,
+        organizationId,
         key,
         label: entry.label,
         description: entry.description,
@@ -310,7 +296,7 @@ export async function seedDomainCatalog(
       .from(schema.edgeCatalog)
       .where(
         and(
-          eq(schema.edgeCatalog.projectId, projectId),
+          eq(schema.edgeCatalog.organizationId, organizationId),
           eq(schema.edgeCatalog.key, key),
         ),
       )
@@ -332,7 +318,7 @@ export async function seedDomainCatalog(
     const [row] = await db
       .insert(schema.edgeCatalog)
       .values({
-        projectId,
+        organizationId,
         key,
         label: entry.label,
         description: entry.description,
@@ -354,7 +340,7 @@ export async function seedDomainCatalog(
       .from(schema.nodeCatalog)
       .where(
         and(
-          eq(schema.nodeCatalog.projectId, projectId),
+          eq(schema.nodeCatalog.organizationId, organizationId),
           eq(schema.nodeCatalog.key, reserved.key),
         ),
       )
@@ -366,7 +352,7 @@ export async function seedDomainCatalog(
     const [row] = await db
       .insert(schema.nodeCatalog)
       .values({
-        projectId,
+        organizationId,
         key: reserved.key,
         label: reserved.label,
         propertySchema: { type: "object" },

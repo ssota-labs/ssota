@@ -12,7 +12,7 @@ export function createDbAccountReadPort(db: Db): AccountReadPort {
   const accountPort = createAccountPort(db);
 
   return {
-    async provisionForUser(projectId: string, userId: string): Promise<AccountRecord> {
+    async provisionForUser(teamspaceId: string, userId: string): Promise<AccountRecord> {
       const slug = userAccountSlug(userId);
       const [profile] = await db
         .select({ displayName: profiles.displayName })
@@ -22,7 +22,7 @@ export function createDbAccountReadPort(db: Db): AccountReadPort {
       const name = profile?.displayName?.trim() || "My workspace";
 
       const account = await accountPort.provision({
-        projectId,
+        teamspaceId,
         slug,
         name,
         ownerUserId: userId,
@@ -32,11 +32,11 @@ export function createDbAccountReadPort(db: Db): AccountReadPort {
     },
 
     async getAccountForUser(
-      projectId: string,
+      teamspaceId: string,
       userId: string,
     ): Promise<AccountRecord | null> {
       const slug = userAccountSlug(userId);
-      const account = await accountPort.getBySlug(projectId, slug);
+      const account = await accountPort.getBySlug(teamspaceId, slug);
       if (!account) return null;
 
       const [membership] = await db
@@ -80,9 +80,9 @@ export function createDbAccountReadPort(db: Db): AccountReadPort {
       }
     },
 
-    async getOrCreateWorkspaceAccount(projectId: string): Promise<AccountRecord> {
+    async getOrCreateWorkspaceAccount(teamspaceId: string): Promise<AccountRecord> {
       return accountPort.provision({
-        projectId,
+        teamspaceId,
         slug: "workspace",
         name: "Workspace",
       });

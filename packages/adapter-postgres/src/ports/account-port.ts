@@ -7,7 +7,7 @@ import {
 } from "../db/schema.js";
 
 export interface ProvisionAccountInput {
-  projectId: string;
+  teamspaceId: string;
   slug: string;
   name: string;
   ownerUserId?: string | null;
@@ -15,14 +15,14 @@ export interface ProvisionAccountInput {
 
 export interface AccountRecord {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   slug: string;
   name: string;
 }
 
 /**
  * Account registry writer (Phase 5). `provision` creates an end-user account
- * within a project and is idempotent on (projectId, slug) — re-provisioning
+ * within a project and is idempotent on (teamspaceId, slug) — re-provisioning
  * returns the existing account. Because the catalog/pages are shared, this is
  * cheap (no per-tenant catalog clone).
  */
@@ -32,20 +32,20 @@ export function createAccountPort(db: Db) {
       const [row] = await db
         .insert(accounts)
         .values({
-          projectId: input.projectId,
+          teamspaceId: input.teamspaceId,
           slug: input.slug,
           name: input.name,
           ownerUserId: input.ownerUserId ?? null,
         })
         .onConflictDoNothing({
-          target: [accounts.projectId, accounts.slug],
+          target: [accounts.teamspaceId, accounts.slug],
         })
         .returning();
 
       if (row) {
         return {
           id: row.id,
-          projectId: row.projectId,
+          teamspaceId: row.teamspaceId,
           slug: row.slug,
           name: row.name,
         };
@@ -56,14 +56,14 @@ export function createAccountPort(db: Db) {
         .from(accounts)
         .where(
           and(
-            eq(accounts.projectId, input.projectId),
+            eq(accounts.teamspaceId, input.teamspaceId),
             eq(accounts.slug, input.slug),
           ),
         )
         .limit(1);
       return {
         id: existing!.id,
-        projectId: existing!.projectId,
+        teamspaceId: existing!.teamspaceId,
         slug: existing!.slug,
         name: existing!.name,
       };
@@ -83,23 +83,23 @@ export function createAccountPort(db: Db) {
     },
 
     async getBySlug(
-      projectId: string,
+      teamspaceId: string,
       slug: string,
     ): Promise<AccountRecord | null> {
       const [row] = await db
         .select()
         .from(accounts)
-        .where(and(eq(accounts.projectId, projectId), eq(accounts.slug, slug)))
+        .where(and(eq(accounts.teamspaceId, teamspaceId), eq(accounts.slug, slug)))
         .limit(1);
       return row
-        ? { id: row.id, projectId: row.projectId, slug: row.slug, name: row.name }
+        ? { id: row.id, teamspaceId: row.teamspaceId, slug: row.slug, name: row.name }
         : null;
     },
   };
 }
 
 export interface RecordAccountConnectionInput {
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   connector: string;
   installationId?: string | null;
@@ -216,7 +216,7 @@ export function createAccountConnectionPort(db: Db) {
       await db
         .insert(accountConnections)
         .values({
-          projectId: input.projectId,
+          teamspaceId: input.teamspaceId,
           accountId: input.accountId,
           connector: input.connector,
           installationId,
@@ -261,11 +261,11 @@ export function createAccountConnectionPort(db: Db) {
     async getById(
       id: string,
       accountId: string,
-    ): Promise<(AccountConnectionRecord & { projectId: string }) | null> {
+    ): Promise<(AccountConnectionRecord & { teamspaceId: string }) | null> {
       const [row] = await db
         .select({
           id: accountConnections.id,
-          projectId: accountConnections.projectId,
+          teamspaceId: accountConnections.teamspaceId,
           connector: accountConnections.connector,
           installationId: accountConnections.installationId,
           tenantId: accountConnections.tenantId,

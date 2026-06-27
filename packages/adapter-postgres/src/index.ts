@@ -63,12 +63,18 @@ export {
   seedDomainCatalog,
   createDbCatalogReadPort,
 } from "./ports/db-catalog-read-port.js";
+export {
+  registerTeamspaceOrganization,
+  getCachedOrganizationIdForTeamspace,
+  requireCachedOrganizationIdForTeamspace,
+  resolveOrganizationIdForTeamspace,
+} from "./teamspace-org-scope.js";
 export { createDbCatalogWritePort } from "./ports/db-catalog-write-port.js";
 export {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
 } from "./constants.js";
 export {
   createStudioBuildStorage,

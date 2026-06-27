@@ -14,7 +14,7 @@ export function createPageViewStatePort(
   db: Db,
   scope: ActionPortsScope,
 ): PageViewStatePort {
-  const { projectId } = scope;
+  const { teamspaceId } = scope;
   return {
     async getForPage(userId, pageId) {
       const rows = await db
@@ -22,7 +22,7 @@ export function createPageViewStatePort(
         .from(schema.pageViewStates)
         .where(
           and(
-            eq(schema.pageViewStates.projectId, projectId),
+            eq(schema.pageViewStates.teamspaceId, teamspaceId),
             eq(schema.pageViewStates.userId, userId),
             eq(schema.pageViewStates.pageId, pageId),
           ),
@@ -39,7 +39,7 @@ export function createPageViewStatePort(
       const value = tableViewStateSchema.parse(viewState);
       await db
         .insert(schema.pageViewStates)
-        .values({ projectId, userId, pageId, elementId, viewState: value })
+        .values({ teamspaceId, userId, pageId, elementId, viewState: value })
         .onConflictDoUpdate({
           target: [
             schema.pageViewStates.userId,

@@ -10,6 +10,7 @@ import { and, eq } from "drizzle-orm";
 import type { createDb } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { seedDomainCatalog } from "../../ports/db-catalog-read-port.js";
+import { resolveOrganizationIdForTeamspace } from "../../teamspace-org-scope.js";
 
 /** One evergreen container per project — dev track (Console v2.7). */
 export const EVERGREEN_DEV_SINGLETON_TYPES = [
@@ -42,7 +43,7 @@ type CatalogMaps = {
 
 async function findNodeByCatalogKey(
   db: ReturnType<typeof createDb>["db"],
-  projectId: string,
+  teamspaceId: string,
   catalogKey: string,
   nodeCatalogId: string,
 ) {
@@ -51,7 +52,7 @@ async function findNodeByCatalogKey(
     .from(schema.nodes)
     .where(
       and(
-        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.teamspaceId, teamspaceId),
         eq(schema.nodes.nodeCatalogId, nodeCatalogId),
       ),
     )
@@ -61,9 +62,10 @@ async function findNodeByCatalogKey(
 
 export async function seedGraphInstances(
   db: ReturnType<typeof createDb>["db"],
-  projectId: string,
+  teamspaceId: string,
 ) {
-  const { nodeKeyToId, edgeKeyToId } = await seedDomainCatalog(db, projectId);
+  const organizationId = await resolveOrganizationIdForTeamspace(db, teamspaceId);
+  const { nodeKeyToId, edgeKeyToId } = await seedDomainCatalog(db, organizationId);
   const maps: CatalogMaps = { nodeKeyToId, edgeKeyToId };
 
   const singletonTypes = [
@@ -78,7 +80,7 @@ export async function seedGraphInstances(
 
     const existing = await findNodeByCatalogKey(
       db,
-      projectId,
+      teamspaceId,
       catalogKey,
       nodeCatalogId,
     );
@@ -137,7 +139,7 @@ export async function seedGraphInstances(
               };
 
     await db.insert(schema.nodes).values({
-      projectId,
+      teamspaceId,
       nodeCatalogId,
       title:
         catalogKey === "design_theme"
@@ -152,11 +154,11 @@ export async function seedGraphInstances(
     });
   }
 
-  await migrateLegacyRoadmapSingletons(db, projectId, maps);
-  await seedProductRoadmapDoc(db, projectId, maps);
-  await seedRoadmapPlanningDocs(db, projectId, maps);
+  await migrateLegacyRoadmapSingletons(db, teamspaceId, maps);
+  await seedProductRoadmapDoc(db, teamspaceId, maps);
+  await seedRoadmapPlanningDocs(db, teamspaceId, maps);
 
-  const hypothesisId = await seedResearchDocs(db, projectId, maps);
+  const hypothesisId = await seedResearchDocs(db, teamspaceId, maps);
 
   const initiativeCatalogId = nodeKeyToId.get("initiative");
   const bundleExisting = initiativeCatalogId
@@ -165,7 +167,7 @@ export async function seedGraphInstances(
         .from(schema.nodes)
         .where(
           and(
-            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.teamspaceId, teamspaceId),
             eq(schema.nodes.nodeCatalogId, initiativeCatalogId),
             eq(schema.nodes.title, "Smoke initiative"),
           ),
@@ -180,7 +182,7 @@ export async function seedGraphInstances(
       const [initiative] = await db
         .insert(schema.nodes)
         .values({
-          projectId,
+          teamspaceId,
           nodeCatalogId: initiativeCatalogId,
           title: "Smoke initiative",
           properties: {
@@ -193,7 +195,7 @@ export async function seedGraphInstances(
       const [release] = await db
         .insert(schema.nodes)
         .values({
-          projectId,
+          teamspaceId,
           nodeCatalogId: releaseCatalogId,
           title: "v0.0.0-smoke",
           properties: {
@@ -206,34 +208,34 @@ export async function seedGraphInstances(
 
       if (initiative?.id && release?.id) {
         await db.insert(schema.edges).values({
-          projectId,
+          teamspaceId,
           edgeCatalogId: pairedCatalogId,
           sourceNodeId: initiative.id,
           targetNodeId: release.id,
           properties: { seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}paired_with` },
         });
 
-        await seedInitiativeScopedNodes(db, projectId, initiative.id, maps);
+        await seedInitiativeScopedNodes(db, teamspaceId, initiative.id, maps);
       }
     }
   } else if (bundleExisting?.[0]?.id) {
     await seedInitiativeScopedNodes(
       db,
-      projectId,
+      teamspaceId,
       bundleExisting[0].id,
       maps,
     );
   }
 
-  await seedDemoOkr(db, projectId, maps);
-  await seedDemoUiComponents(db, projectId, maps);
+  await seedDemoOkr(db, teamspaceId, maps);
+  await seedDemoUiComponents(db, teamspaceId, maps);
 
   return { hypothesisId };
 }
 
 async function migrateLegacyRoadmapSingletons(
   db: ReturnType<typeof createDb>["db"],
-  projectId: string,
+  teamspaceId: string,
   maps: CatalogMaps,
 ) {
   const roadmapCatalogId = maps.nodeKeyToId.get("roadmap");
@@ -247,7 +249,7 @@ async function migrateLegacyRoadmapSingletons(
     .from(schema.nodes)
     .where(
       and(
-        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.teamspaceId, teamspaceId),
         eq(schema.nodes.nodeCatalogId, roadmapCatalogId),
       ),
     );
@@ -266,7 +268,7 @@ const PRODUCT_ROADMAP_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}product_roadma
 
 async function seedProductRoadmapDoc(
   db: ReturnType<typeof createDb>["db"],
-  projectId: string,
+  teamspaceId: string,
   maps: CatalogMaps,
 ) {
   const catalogId = maps.nodeKeyToId.get("product_roadmap");
@@ -281,7 +283,7 @@ async function seedProductRoadmapDoc(
     .from(schema.nodes)
     .where(
       and(
-        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.teamspaceId, teamspaceId),
         eq(schema.nodes.nodeCatalogId, catalogId),
       ),
     )
@@ -346,7 +348,7 @@ type RoadmapDocSeed = {
 
 async function seedRoadmapPlanningDocs(
   db: ReturnType<typeof createDb>["db"],
-  projectId: string,
+  teamspaceId: string,
   maps: CatalogMaps,
 ) {
   const roadmapCatalogId = maps.nodeKeyToId.get("roadmap");
@@ -444,7 +446,7 @@ async function seedRoadmapPlanningDocs(
       .from(schema.nodes)
       .where(
         and(
-          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.teamspaceId, teamspaceId),
           eq(schema.nodes.nodeCatalogId, roadmapCatalogId),
           eq(schema.nodes.title, doc.title),
         ),
@@ -453,7 +455,7 @@ async function seedRoadmapPlanningDocs(
     if (existing[0]) continue;
 
     await db.insert(schema.nodes).values({
-      projectId,
+      teamspaceId,
       nodeCatalogId: roadmapCatalogId,
       title: doc.title,
       properties: {
@@ -484,7 +486,7 @@ const RESEARCH_DOC_SEED_PREFIX = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}research_doc:`
 
 async function seedResearchDocs(
   db: ReturnType<typeof createDb>["db"],
-  projectId: string,
+  teamspaceId: string,
   maps: CatalogMaps,
 ): Promise<string | undefined> {
   const docs: ResearchDocSeed[] = [
@@ -594,7 +596,7 @@ async function seedResearchDocs(
       .from(schema.nodes)
       .where(
         and(
-          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.teamspaceId, teamspaceId),
           eq(schema.nodes.nodeCatalogId, catalogId),
           eq(schema.nodes.title, doc.title),
         ),
@@ -627,7 +629,7 @@ async function seedResearchDocs(
     const [inserted] = await db
       .insert(schema.nodes)
       .values({
-        projectId,
+        teamspaceId,
         nodeCatalogId: catalogId,
         title: doc.title,
         properties: {
@@ -651,7 +653,7 @@ async function seedResearchDocs(
 
 async function seedDemoOkr(
   db: ReturnType<typeof createDb>["db"],
-  projectId: string,
+  teamspaceId: string,
   maps: CatalogMaps,
 ) {
   const objectiveCatalogId = maps.nodeKeyToId.get("objective");
@@ -662,7 +664,7 @@ async function seedDemoOkr(
     .from(schema.nodes)
     .where(
       and(
-        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.teamspaceId, teamspaceId),
         eq(schema.nodes.nodeCatalogId, objectiveCatalogId),
         eq(schema.nodes.title, DEMO_OKR_SEED_TITLE),
       ),
@@ -678,7 +680,7 @@ async function seedDemoOkr(
         .from(schema.nodes)
         .where(
           and(
-            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.teamspaceId, teamspaceId),
             eq(schema.nodes.nodeCatalogId, roadmapCatalogId),
           ),
         )
@@ -688,7 +690,7 @@ async function seedDemoOkr(
   const [objective] = await db
     .insert(schema.nodes)
     .values({
-      projectId,
+      teamspaceId,
       nodeCatalogId: objectiveCatalogId,
       title: DEMO_OKR_SEED_TITLE,
       properties: {
@@ -706,7 +708,7 @@ async function seedDemoOkr(
   const informsId = maps.edgeKeyToId.get("informs");
   if (roadmap?.id && informsId) {
     await db.insert(schema.edges).values({
-      projectId,
+      teamspaceId,
       edgeCatalogId: informsId,
       sourceNodeId: roadmap.id,
       targetNodeId: objective.id,
@@ -722,7 +724,7 @@ async function seedDemoOkr(
   const [kr1] = await db
     .insert(schema.nodes)
     .values({
-      projectId,
+      teamspaceId,
       nodeCatalogId: krCatalogId,
       title: "Pilot workspaces complete first Release with retrospective",
       properties: {
@@ -741,7 +743,7 @@ async function seedDemoOkr(
   const [kr2] = await db
     .insert(schema.nodes)
     .values({
-      projectId,
+      teamspaceId,
       nodeCatalogId: krCatalogId,
       title: "Onboarding completion rate improvement",
       properties: {
@@ -760,7 +762,7 @@ async function seedDemoOkr(
   const [kpi] = await db
     .insert(schema.nodes)
     .values({
-      projectId,
+      teamspaceId,
       nodeCatalogId: kpiCatalogId,
       title: "Workspace creation rate",
       properties: {
@@ -781,7 +783,7 @@ async function seedDemoOkr(
     for (const kr of [kr1, kr2]) {
       if (!kr?.id) continue;
       await db.insert(schema.edges).values({
-        projectId,
+        teamspaceId,
         edgeCatalogId: contributesId,
         sourceNodeId: kr.id,
         targetNodeId: objective.id,
@@ -793,7 +795,7 @@ async function seedDemoOkr(
   const measuredById = maps.edgeKeyToId.get("measured_by");
   if (kr1?.id && kpi?.id && measuredById) {
     await db.insert(schema.edges).values({
-      projectId,
+      teamspaceId,
       edgeCatalogId: measuredById,
       sourceNodeId: kr1.id,
       targetNodeId: kpi.id,
@@ -805,7 +807,7 @@ async function seedDemoOkr(
   const snapshottedId = maps.edgeKeyToId.get("snapshotted_from");
   if (kpi?.id && trackedById) {
     await db.insert(schema.edges).values({
-      projectId,
+      teamspaceId,
       edgeCatalogId: trackedById,
       sourceNodeId: objective.id,
       targetNodeId: kpi.id,
@@ -816,7 +818,7 @@ async function seedDemoOkr(
       const [snapshot] = await db
         .insert(schema.nodes)
         .values({
-          projectId,
+          teamspaceId,
           nodeCatalogId: snapshotCatalogId,
           title: "Workspace creation rate baseline",
           properties: {
@@ -832,7 +834,7 @@ async function seedDemoOkr(
 
       if (snapshot?.id) {
         await db.insert(schema.edges).values({
-          projectId,
+          teamspaceId,
           edgeCatalogId: snapshottedId,
           sourceNodeId: snapshot.id,
           targetNodeId: kpi.id,
@@ -845,7 +847,7 @@ async function seedDemoOkr(
 
 async function seedDemoUiComponents(
   db: ReturnType<typeof createDb>["db"],
-  projectId: string,
+  teamspaceId: string,
   maps: CatalogMaps,
 ) {
   const uiCatalogId = maps.nodeKeyToId.get("ui_component");
@@ -902,7 +904,7 @@ export function cn(...inputs: ClassValue[]) {
     .from(schema.nodes)
     .where(
       and(
-        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.teamspaceId, teamspaceId),
         eq(schema.nodes.nodeCatalogId, uiCatalogId),
         eq(schema.nodes.title, "Demo Button"),
       ),
@@ -915,7 +917,7 @@ export function cn(...inputs: ClassValue[]) {
     const [button] = await db
       .insert(schema.nodes)
       .values({
-        projectId,
+        teamspaceId,
         nodeCatalogId: uiCatalogId,
         title: "Demo Button",
         properties: buttonProperties,
@@ -978,7 +980,7 @@ export default function Component() {
     .from(schema.nodes)
     .where(
       and(
-        eq(schema.nodes.projectId, projectId),
+        eq(schema.nodes.teamspaceId, teamspaceId),
         eq(schema.nodes.nodeCatalogId, uiCatalogId),
         eq(schema.nodes.title, "Demo Card"),
       ),
@@ -991,7 +993,7 @@ export default function Component() {
     const [card] = await db
       .insert(schema.nodes)
       .values({
-        projectId,
+        teamspaceId,
         nodeCatalogId: uiCatalogId,
         title: "Demo Card",
         properties: cardProperties,
@@ -1025,7 +1027,7 @@ export default function Component() {
     .from(schema.edges)
     .where(
       and(
-        eq(schema.edges.projectId, projectId),
+        eq(schema.edges.teamspaceId, teamspaceId),
         eq(schema.edges.edgeCatalogId, composedOfId),
         eq(schema.edges.sourceNodeId, cardId),
         eq(schema.edges.targetNodeId, buttonId),
@@ -1035,7 +1037,7 @@ export default function Component() {
 
   if (existingEdge.length === 0) {
     await db.insert(schema.edges).values({
-      projectId,
+      teamspaceId,
       edgeCatalogId: composedOfId,
       sourceNodeId: cardId,
       targetNodeId: buttonId,
@@ -1046,7 +1048,7 @@ export default function Component() {
 
 async function seedInitiativeScopedNodes(
   db: ReturnType<typeof createDb>["db"],
-  projectId: string,
+  teamspaceId: string,
   initiativeId: string,
   maps: CatalogMaps,
 ) {
@@ -1065,7 +1067,7 @@ async function seedInitiativeScopedNodes(
       .from(schema.nodes)
       .where(
         and(
-          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.teamspaceId, teamspaceId),
           eq(schema.nodes.nodeCatalogId, nodeCatalogId),
           eq(schema.nodes.title, seed.title),
         ),
@@ -1077,7 +1079,7 @@ async function seedInitiativeScopedNodes(
       const [row] = await db
         .insert(schema.nodes)
         .values({
-          projectId,
+          teamspaceId,
           nodeCatalogId,
           title: seed.title,
           properties: {
@@ -1096,7 +1098,7 @@ async function seedInitiativeScopedNodes(
       .from(schema.edges)
       .where(
         and(
-          eq(schema.edges.projectId, projectId),
+          eq(schema.edges.teamspaceId, teamspaceId),
           eq(schema.edges.edgeCatalogId, forInitiativeId),
           eq(schema.edges.sourceNodeId, nodeId),
           eq(schema.edges.targetNodeId, initiativeId),
@@ -1106,7 +1108,7 @@ async function seedInitiativeScopedNodes(
 
     if (edgeExisting.length === 0) {
       await db.insert(schema.edges).values({
-        projectId,
+        teamspaceId,
         edgeCatalogId: forInitiativeId,
         sourceNodeId: nodeId,
         targetNodeId: initiativeId,

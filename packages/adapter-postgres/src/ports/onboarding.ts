@@ -7,7 +7,7 @@ import {
   type OnboardingPort,
   type Organization,
   type Profile,
-  type Project,
+  type Teamspace,
 } from "@ssota/core";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "../db/client.js";
@@ -41,7 +41,7 @@ function mapOrganization(row: typeof schema.organizations.$inferSelect): Organiz
   };
 }
 
-function mapProject(row: typeof schema.projects.$inferSelect): Project {
+function mapProject(row: typeof schema.teamspaces.$inferSelect): Teamspace {
   return {
     id: row.id,
     organizationId: row.organizationId,
@@ -79,12 +79,12 @@ async function allocateUniqueProjectSlug(
 
   while (true) {
     const existing = await db
-      .select({ id: schema.projects.id })
-      .from(schema.projects)
+      .select({ id: schema.teamspaces.id })
+      .from(schema.teamspaces)
       .where(
         and(
-          eq(schema.projects.organizationId, organizationId),
-          eq(schema.projects.slug, candidate),
+          eq(schema.teamspaces.organizationId, organizationId),
+          eq(schema.teamspaces.slug, candidate),
         ),
       )
       .limit(1);
@@ -224,7 +224,7 @@ export function createOnboardingPort(db: Db): OnboardingPort {
 
         const projectName = profile.onboardingDraftProjectName?.trim();
         if (!projectName) {
-          throw new Error("Project name draft is required before choosing a template");
+          throw new Error("Teamspace name draft is required before choosing a template");
         }
 
         const organization = await getPersonalOrganization(tx, userId);
@@ -239,7 +239,7 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         );
 
         const [projectRow] = await tx
-          .insert(schema.projects)
+          .insert(schema.teamspaces)
           .values({
             organizationId: organization.id,
             slug,

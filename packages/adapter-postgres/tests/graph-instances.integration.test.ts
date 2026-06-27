@@ -5,7 +5,7 @@ import {
   createConsolePort,
   createDb,
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
 } from "../src/index.js";
@@ -19,7 +19,7 @@ const supabaseAnonKey =
 let skip = false;
 
 describe("graph instances integration", () => {
-  let projectId: string;
+  let teamspaceId: string;
   let client: ReturnType<typeof createDb>["client"] | undefined;
   let db: ReturnType<typeof createDb>["db"] | undefined;
 
@@ -36,13 +36,13 @@ describe("graph instances integration", () => {
         console.warn("Skipping graph integration tests: default org not found");
         return;
       }
-      const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+      const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
       if (!project) {
         skip = true;
         console.warn("Skipping graph integration tests: default project not found");
         return;
       }
-      projectId = project.id;
+      teamspaceId = project.id;
     } catch (err) {
       skip = true;
       console.warn("Skipping graph integration tests — Supabase unavailable:", err);
@@ -91,7 +91,7 @@ describe("graph instances integration", () => {
       )
       .where(
         and(
-          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.teamspaceId, teamspaceId),
           eq(schema.nodeCatalog.key, "hypothesis"),
         ),
       );
@@ -108,7 +108,7 @@ describe("graph instances integration", () => {
       )
       .where(
         and(
-          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.teamspaceId, teamspaceId),
           eq(schema.nodeCatalog.key, "initiative"),
           eq(schema.nodes.title, "Smoke initiative"),
         ),
@@ -124,7 +124,7 @@ describe("graph instances integration", () => {
       )
       .where(
         and(
-          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.teamspaceId, teamspaceId),
           eq(schema.nodeCatalog.key, "release"),
         ),
       );
@@ -139,7 +139,7 @@ describe("graph instances integration", () => {
       )
       .where(
         and(
-          eq(schema.edges.projectId, projectId),
+          eq(schema.edges.teamspaceId, teamspaceId),
           eq(schema.edgeCatalog.key, "paired_with"),
         ),
       );
@@ -156,7 +156,7 @@ describe("graph instances integration", () => {
       )
       .where(
         and(
-          eq(schema.nodes.projectId, projectId),
+          eq(schema.nodes.teamspaceId, teamspaceId),
           eq(schema.nodeCatalog.key, "objective"),
         ),
       );
@@ -171,7 +171,7 @@ describe("graph instances integration", () => {
       )
       .where(
         and(
-          eq(schema.edges.projectId, projectId),
+          eq(schema.edges.teamspaceId, teamspaceId),
           eq(schema.edgeCatalog.key, "contributes_to"),
         ),
       );
