@@ -1,27 +1,16 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import { listBuiltinWorkflowIndex } from "@ssota/contracts/workflows";
-import {
-  serializeTask,
-  readWorkflowInstructionById,
-} from "@ssota/core";
-import { McpSessionManager } from "./connections/mcp-session.js";
-import { ConnectionRunState } from "./connections/run-state.js";
-import {
-  getTaskPort,
-  getWorkflowInstructionPort,
-} from "./ports.js";
-import { createSsotaTools } from "./tools/index.js";
-import { createSandboxTools } from "./tools/sandbox.js";
-import { createConnectionTools } from "./tools/connections.js";
+import { serializeTask, readWorkflowInstructionById } from "@ssota/core";
+import { getTaskPort, getWorkflowInstructionPort } from "./ports.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
-import { DEFAULT_MODEL_ID } from "./models.js";
-import { createAiSdkLoopEngine } from "./engine/ai-sdk.js";
-import type { AgentRunContext, LoopEngine } from "./engine/types.js";
-import type { SandboxSession } from "./sandbox/session.js";
-import type { CredentialProvider } from "./credentials/provider.js";
 import type { AgentRuntimeKind } from "@ssota/contracts";
 
+/**
+ * Per-run scope used to build the agent prompt. The actual agent loop now runs
+ * on the WorkflowAgent (apps/web); this module only produces the serializable
+ * instructions + messages via {@link buildRunPrompt}.
+ */
 export interface RunAgentInput {
   projectId: string;
   runId: string;
@@ -31,19 +20,12 @@ export interface RunAgentInput {
   scheduleId?: string;
   accountId?: string;
   modelId?: string;
-  engine?: LoopEngine;
-  sandbox?: SandboxSession;
-  credentials?: CredentialProvider;
   maxSteps?: number;
   /** Main-runtime chat transcript injected from the web chat route. */
   chatContext?: Record<string, unknown>;
 }
 
-export interface RunAgentForTaskInput extends RunAgentInput {
-  runtimeKind: "task";
-  taskId: string;
-}
-
+/** Result shape persisted by the run finalizers. */
 export interface RunAgentResult {
   finishReason: string;
   text: string;
@@ -165,107 +147,3 @@ export async function buildRunPrompt(
   return { instructions, messages };
 }
 
-async function prepareRun(input: RunAgentInput) {
-  const { projectId, runId, accountId, runtimeKind } = input;
-  const { instructions, messages } = await buildRunPrompt(input);
-  const taskPort = getTaskPort(projectId, accountId);
-
-  const engine = input.engine ?? createAiSdkLoopEngine();
-
-  let connectionState: ConnectionRunState | undefined;
-  let connectionSessionManager: McpSessionManager | undefined;
-  let connectionTools = {};
-
-  if (input.credentials) {
-    connectionState = new ConnectionRunState();
-    connectionSessionManager = new McpSessionManager(input.credentials);
-    const bundle = await createConnectionTools({
-      credentials: input.credentials,
-      accountId,
-      projectId,
-      connectionState,
-      sessionManager: connectionSessionManager,
-    });
-    connectionTools = bundle.tools;
-  }
-
-  const tools = {
-    ...createSsotaTools(),
-    ...(input.sandbox ? createSandboxTools() : {}),
-    ...connectionTools,
-  };
-
-  const runInput = {
-    instructions,
-    messages,
-    tools,
-    modelId: input.modelId ?? DEFAULT_MODEL_ID,
-    context: {
-      projectId,
-      taskId: input.taskId,
-      runId,
-      accountId,
-    } satisfies AgentRunContext,
-    sandbox: input.sandbox,
-    credentials: input.credentials,
-    connectionState,
-    connectionSessionManager,
-    maxSteps: input.maxSteps,
-  };
-  return { taskPort, engine, runInput, runtimeKind };
-}
-
-function buildResult(
-  result: { finishReason: string; text: string; usage?: RunAgentResult["usage"] },
-  finalStatus: string | null,
-): RunAgentResult {
-  return {
-    finishReason: result.finishReason,
-    text: result.text,
-    finalStatus,
-    usage: result.usage,
-  };
-}
-
-export async function runAgent(input: RunAgentInput): Promise<RunAgentResult> {
-  const { taskPort, engine, runInput, runtimeKind } = await prepareRun(input);
-  const result = await engine.run(runInput);
-  let finalStatus: string | null = null;
-  if (runtimeKind === "task" && input.taskId) {
-    const finalTask = await taskPort.getTask(input.taskId);
-    finalStatus = finalTask?.status ?? null;
-  }
-  return buildResult(result, finalStatus);
-}
-
-export async function streamAgent(
-  input: RunAgentInput,
-  writable: WritableStream,
-): Promise<RunAgentResult> {
-  const { taskPort, engine, runInput, runtimeKind } = await prepareRun(input);
-  if (!engine.stream) {
-    throw new Error("The configured engine does not support streaming");
-  }
-  const result = await engine.stream(runInput, writable);
-  let finalStatus: string | null = null;
-  if (runtimeKind === "task" && input.taskId) {
-    const finalTask = await taskPort.getTask(input.taskId);
-    finalStatus = finalTask?.status ?? null;
-  }
-  return buildResult(result, finalStatus);
-}
-
-/** @deprecated Use runAgent with runtimeKind=task */
-export async function runAgentForTask(
-  input: RunAgentForTaskInput,
-): Promise<RunAgentResult> {
-  return runAgent(input);
-}
-
-/** @deprecated Use streamAgent with runtimeKind=task */
-export async function streamAgentForTask(
-  input: RunAgentForTaskInput,
-  writable: WritableStream,
-): Promise<RunAgentResult> {
-  return streamAgent(input, writable);
-}
