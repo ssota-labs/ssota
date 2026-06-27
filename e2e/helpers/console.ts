@@ -5,7 +5,8 @@ import {
   DEFAULT_TEAMSPACE_SLUG,
 } from "@ssota/adapter-postgres";
 
-export const DEFAULT_CONSOLE_BASE = `/${DEFAULT_ORG_SLUG}/${DEFAULT_TEAMSPACE_SLUG}`;
+/** Builder console base path (org-centric flat URLs; teamspace is sidebar context). */
+export const DEFAULT_CONSOLE_BASE = `/${DEFAULT_ORG_SLUG}`;
 
 export const DEFAULT_APP_BASE = `/app/${DEFAULT_ORG_SLUG}/${DEFAULT_TEAMSPACE_SLUG}`;
 

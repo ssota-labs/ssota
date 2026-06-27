@@ -24,8 +24,7 @@ test.describe("SSOTA Console", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "tasks");
     await expect(page.getByRole("heading", { name: "Tasks" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Table", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Board", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "New task" })).toBeVisible();
     await expect(page.getByText("Runtime work queue", { exact: false })).toBeVisible();
   });
 

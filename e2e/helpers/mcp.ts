@@ -54,10 +54,10 @@ export async function getDefaultProjectId(): Promise<string> {
   const sql = postgres(defaultDatabaseUrl, { max: 1 });
   try {
     const rows = await sql<{ id: string }[]>`
-      select p.id
-      from projects p
-      join organizations o on o.id = p.organization_id
-      where o.slug = 'ssota-labs' and p.slug = 'ssota-dev'
+      select ts.id
+      from teamspaces ts
+      join organizations o on o.id = ts.organization_id
+      where o.slug = 'ssota-labs' and ts.slug = 'ssota-dev'
       limit 1
     `;
     const teamspaceId = rows[0]?.id;
