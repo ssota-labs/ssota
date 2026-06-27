@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 
 /** Routes that render without guest header / padded main (e.g. bare embeds). */
-const BARE_ROUTE_PREFIXES: string[] = [];
+const BARE_ROUTE_PREFIXES: string[] = ["/labs/pitch-deck"];
 
 type RootAppChromeProps = {
   children: React.ReactNode;
