@@ -14,17 +14,18 @@ export const maxDuration = 300;
 export async function POST(request: Request) {
   const body = (await request.json()) as {
     projectId: string;
+    threadId: string;
     accountId?: string;
-    messages?: { role: "user" | "assistant"; content: string }[];
+    modelId?: string;
+    messages: { role: "user" | "assistant"; content: string }[];
   };
 
   const run = await start(runMainWorkflowAgent, [
     {
-      ssota: {
-        projectId: body.projectId,
-        runId: crypto.randomUUID(),
-        accountId: body.accountId,
-      },
+      projectId: body.projectId,
+      threadId: body.threadId,
+      accountId: body.accountId,
+      modelId: body.modelId,
       messages: body.messages ?? [{ role: "user", content: "hello" }],
     },
   ]);
