@@ -352,11 +352,20 @@ export const schedules = pgTable(
     timezone: text("timezone").notNull().default("Asia/Seoul"),
     enabled: boolean("enabled").notNull().default(true),
     idempotencyPrefix: text("idempotency_prefix").notNull().default(""),
+    // Precomputed next fire time (UTC). The heartbeat selects only rows where
+    // this is due (`<= now`) instead of scanning every enabled row each minute.
+    // Recomputed from the cron expression whenever the schedule fires or its
+    // cron/timezone changes; null means "never fires again" or "needs repair".
+    nextRunAt: timestamp("next_run_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
     projectIdx: index("schedules_project_id_idx").on(table.projectId),
+    // Partial index drives the heartbeat's due-schedule lookup.
+    nextRunIdx: index("schedules_next_run_at_idx")
+      .on(table.nextRunAt)
+      .where(sql`${table.enabled}`),
   }),
 );
 

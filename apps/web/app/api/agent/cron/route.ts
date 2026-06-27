@@ -1,19 +1,13 @@
 import { NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, lte, or } from "drizzle-orm";
 import { start } from "workflow/api";
 import { getDb } from "@/lib/ports";
-import { schema, createAgentRunPort } from "@ssota/adapter-postgres";
+import { schema } from "@ssota/adapter-postgres";
 import { runSchedulerAgentWorkflow } from "@/app/workflows/scheduler-agent";
-import { shouldRunNow } from "@/lib/schedules/should-run-now";
+import { nextOccurrence } from "@/lib/schedules/recurrence";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
-
-/**
- * Heartbeat interval. The heartbeat (Supabase pg_cron) ticks every minute and
- * each schedule's own cron_expression decides whether it is actually due now.
- */
-const TICK_MS = 60_000;
 
 async function authorize(request: Request): Promise<boolean> {
   const secret = process.env.AGENT_RUN_SECRET ?? process.env.CRON_SECRET;
@@ -24,10 +18,15 @@ async function authorize(request: Request): Promise<boolean> {
 }
 
 /**
- * Cron entrypoint: a single heartbeat that fans out to every enabled schedule
- * and runs only those whose cron_expression (evaluated in the schedule's own
- * timezone) is due in the current tick. Schedules outside their window/days are
- * skipped without invoking the agent — that is the token gate.
+ * Cron entrypoint (Supabase pg_cron heartbeat, ~1/min).
+ *
+ * Instead of scanning every enabled schedule each tick, we select only rows the
+ * index says are due (`next_run_at <= now`), plus rows that still need their
+ * next_run_at computed (`next_run_at IS NULL` — fresh after the column was
+ * added). For a due row we claim it with an atomic compare-and-advance of
+ * next_run_at (concurrency-safe against overlapping heartbeats) and only then
+ * start the agent. Everything outside a schedule's window/days simply has a
+ * future next_run_at, so it is never selected and no tokens are spent.
  */
 export async function GET(request: Request) {
   if (!(await authorize(request))) {
@@ -35,34 +34,60 @@ export async function GET(request: Request) {
   }
 
   const db = getDb();
-  const agentRunPort = createAgentRunPort(db);
   const now = new Date();
 
-  const schedules = await db
+  const candidates = await db
     .select()
     .from(schema.schedules)
-    .where(eq(schema.schedules.enabled, true));
+    .where(
+      and(
+        eq(schema.schedules.enabled, true),
+        or(
+          isNull(schema.schedules.nextRunAt),
+          lte(schema.schedules.nextRunAt, now),
+        ),
+      ),
+    );
 
   const started: string[] = [];
   const skipped: string[] = [];
+  const repaired: string[] = [];
 
-  for (const schedule of schedules) {
-    const { run, fire } = shouldRunNow(
-      schedule.cronExpression,
-      schedule.timezone,
-      now,
-      TICK_MS,
-    );
-    if (!run || !fire) {
+  for (const schedule of candidates) {
+    const next = nextOccurrence(schedule.cronExpression, schedule.timezone, now);
+
+    // Newly-migrated row with no next_run_at yet: schedule it forward without
+    // firing (we can't know whether it was due in the past).
+    if (schedule.nextRunAt === null) {
+      await db
+        .update(schema.schedules)
+        .set({ nextRunAt: next })
+        .where(eq(schema.schedules.id, schedule.id));
+      repaired.push(schedule.id);
+      continue;
+    }
+
+    // Claim this fire: advance next_run_at, but only while the row is still due.
+    // A concurrent heartbeat that already advanced it past `now` makes this
+    // update match 0 rows, so the agent is dispatched exactly once. Using
+    // `<= now` (not exact-equality) keeps the claim robust to timestamp
+    // precision differences.
+    const claimed = await db
+      .update(schema.schedules)
+      .set({ nextRunAt: next })
+      .where(
+        and(
+          eq(schema.schedules.id, schedule.id),
+          eq(schema.schedules.enabled, true),
+          lte(schema.schedules.nextRunAt, now),
+        ),
+      )
+      .returning({ id: schema.schedules.id });
+    if (claimed.length === 0) {
       skipped.push(schedule.id);
       continue;
     }
-    // Dedupe: if this schedule already produced a run for this fire (e.g. a
-    // double heartbeat or overlapping buffer), do not spawn another.
-    if (await agentRunPort.hasRunForScheduleSince(schedule.id, fire)) {
-      skipped.push(schedule.id);
-      continue;
-    }
+
     const runHandle = await start(runSchedulerAgentWorkflow, [
       {
         projectId: schedule.projectId,
@@ -76,7 +101,8 @@ export async function GET(request: Request) {
   return NextResponse.json({
     started,
     skipped,
-    evaluated: schedules.length,
+    repaired,
+    evaluated: candidates.length,
   });
 }
 

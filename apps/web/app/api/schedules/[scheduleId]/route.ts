@@ -5,7 +5,11 @@ import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { resolveWorkflowInstructionId } from "@/lib/schedules/resolve-instruction";
-import { isValidTimezone, validateCron } from "@/lib/schedules/recurrence";
+import {
+  isValidTimezone,
+  nextOccurrence,
+  validateCron,
+} from "@/lib/schedules/recurrence";
 
 export const runtime = "nodejs";
 
@@ -102,16 +106,29 @@ export async function PATCH(
     workflowInstructionId = resolved;
   }
 
-  const schedule = await getSchedulePort(parsed.projectId, accountId).update(
-    scheduleId,
-    {
-      workflowInstructionId,
-      cronExpression: parsed.cronExpression,
-      timezone: parsed.timezone,
-      enabled: parsed.enabled,
-      idempotencyPrefix: parsed.idempotencyPrefix,
-    },
-  );
+  const port = getSchedulePort(parsed.projectId, accountId);
+
+  // Recompute the precomputed next fire time when the cron or timezone changes.
+  let nextRunAt: Date | null | undefined;
+  if (parsed.cronExpression !== undefined || parsed.timezone !== undefined) {
+    const existing = await port.get(scheduleId);
+    if (!existing) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    nextRunAt = nextOccurrence(
+      parsed.cronExpression ?? existing.cronExpression,
+      parsed.timezone ?? existing.timezone,
+    );
+  }
+
+  const schedule = await port.update(scheduleId, {
+    workflowInstructionId,
+    cronExpression: parsed.cronExpression,
+    timezone: parsed.timezone,
+    enabled: parsed.enabled,
+    idempotencyPrefix: parsed.idempotencyPrefix,
+    nextRunAt,
+  });
 
   if (!schedule) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
