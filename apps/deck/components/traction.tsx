@@ -59,7 +59,8 @@ export function TractionMedAIRow({ className }: { className?: string }) {
         </div>
 
         <p className="mt-5 text-[16px] leading-[1.6] text-muted-foreground">
-          현장에서 검증한 <Hl>에이전트 팀 네이티브 워크플로우</Hl>를 그대로 오픈소스 제품으로 옮겼습니다.
+          현장에서 검증한 <Hl>에이전트 팀 네이티브 워크플로우</Hl>를 그대로 오픈소스 제품으로 옮기고
+          있습니다:
         </p>
       </div>
 
