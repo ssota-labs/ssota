@@ -45,7 +45,7 @@ const cloudPlans = [
   },
   {
     name: "Cloud Business",
-    price: "$100",
+    price: "$50",
     period: "/ user / month",
     description: "조직 단위 운영 레이어",
     features: [
