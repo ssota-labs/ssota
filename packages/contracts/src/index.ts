@@ -1,4 +1,5 @@
 export * from "./definitions.js";
+export * from "./beta-signup.js";
 export * from "./wire.js";
 export * from "./workflow-context.js";
 export * from "./workflow-trigger-event.js";

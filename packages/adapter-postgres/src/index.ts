@@ -29,6 +29,11 @@ export {
 } from "./ports/schedule-port.js";
 export { createDbAccountReadPort } from "./ports/account-read-port.js";
 export {
+  createBetaSignupPort,
+  type BetaSignupPort,
+  type BetaSignupRecord,
+} from "./ports/beta-signup-port.js";
+export {
   createConnectorToolSettingsPort,
   type ConnectorToolSettingsPort,
 } from "./ports/connector-tool-settings-port.js";

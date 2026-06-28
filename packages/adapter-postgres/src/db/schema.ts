@@ -714,6 +714,26 @@ export const chatThreads = pgTable(
   }),
 );
 
+export const betaSignups = pgTable(
+  "beta_signups",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    source: text("source").notNull().default("landing"),
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => ({
+    emailUnique: uniqueIndex("beta_signups_email_unique").on(table.email),
+    statusIdx: index("beta_signups_status_idx").on(table.status),
+  }),
+);
+
 export const chatMessages = pgTable(
   "chat_messages",
   {
