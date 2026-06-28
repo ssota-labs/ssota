@@ -101,7 +101,7 @@ function TierCard({ title, price, priceNote, icon: IconComponent, tone, points, 
         </div>
       </div>
 
-      <ul className="mt-4 space-y-2">
+      <ul className="mt-4 mb-5 space-y-2">
         {points.map((p) => (
           <li key={p} className="flex items-start gap-2 text-[13px] leading-snug text-muted-foreground">
             <span
