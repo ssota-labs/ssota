@@ -285,6 +285,9 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <LandingPricing />
+      <LandingFaq />
+
       <section className="mx-auto max-w-4xl px-6 py-20 text-center">
         <div className="rounded-2xl border bg-card p-8 shadow-sm md:p-12">
           <Badge variant="secondary">SaaS + partner setup</Badge>
@@ -316,9 +319,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      <LandingPricing />
-      <LandingFaq />
     </main>
   );
 }
