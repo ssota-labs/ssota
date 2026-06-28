@@ -138,7 +138,7 @@ function AgentTeamMock() {
 export function AgentEvolutionRow({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-stretch gap-2", className)}>
-      <EvolutionCard title="페어" titleEn="Pair" caption="같이 작업한다">
+      <EvolutionCard title="페어" titleEn="Pair" caption="코드를 보며 1:1로 같이 작업한다">
         <PairMock />
       </EvolutionCard>
       <EvolutionArrow />
