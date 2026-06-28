@@ -6,6 +6,7 @@ import { getTranslations } from "@/lib/i18n/server";
 import { getCurrentUser } from "@/lib/supabase/server";
 import "@xyflow/react/dist/style.css";
 import "./globals.css";
+import { MixpanelAnalytics } from "@/components/analytics/mixpanel-analytics-lazy";
 import { VercelAnalytics } from "@/components/analytics/vercel-analytics";
 import { VercelSpeedInsights } from "@/components/analytics/vercel-speed-insights";
 import { AppToaster } from "@/components/app-toaster";
@@ -41,6 +42,7 @@ export default async function RootLayout({
             <AppToaster />
           </LocaleProvider>
         </ThemeProvider>
+        <MixpanelAnalytics userId={user?.id ?? null} userEmail={user?.email ?? null} />
         <VercelAnalytics />
         <VercelSpeedInsights />
       </body>

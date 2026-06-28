@@ -13,6 +13,8 @@ import {
 } from "@ssota/ui/components/ui/dialog";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
+import { AnalyticsEvents } from "@/lib/analytics/events";
+import { track } from "@/lib/analytics/mixpanel";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
@@ -38,6 +40,7 @@ export function LandingBetaSignup({
     event.preventDefault();
     setSubmitState("loading");
     setMessage(null);
+    track(AnalyticsEvents.betaSignupSubmitted, { source: "landing" });
 
     try {
       const response = await fetch("/api/beta-signup", {
@@ -52,21 +55,36 @@ export function LandingBetaSignup({
       };
 
       if (!response.ok || !data.ok) {
+        const errorMessage =
+          data.error ?? "신청에 실패했습니다. 다시 시도해 주세요.";
         setSubmitState("error");
-        setMessage(data.error ?? "신청에 실패했습니다. 다시 시도해 주세요.");
+        setMessage(errorMessage);
+        track(AnalyticsEvents.betaSignupFailed, {
+          source: "landing",
+          error: errorMessage,
+        });
         return;
       }
 
+      track(AnalyticsEvents.betaSignupCompleted, { source: "landing" });
       setSubmitState("success");
       setMessage(data.message ?? "베타 알림 신청이 완료되었습니다.");
       setEmail("");
     } catch {
+      const errorMessage = "네트워크 오류가 발생했습니다. 다시 시도해 주세요.";
       setSubmitState("error");
-      setMessage("네트워크 오류가 발생했습니다. 다시 시도해 주세요.");
+      setMessage(errorMessage);
+      track(AnalyticsEvents.betaSignupFailed, {
+        source: "landing",
+        error: errorMessage,
+      });
     }
   }
 
   function handleOpenChange(nextOpen: boolean) {
+    if (nextOpen) {
+      track(AnalyticsEvents.betaSignupDialogOpened, { source: "landing" });
+    }
     setOpen(nextOpen);
     if (!nextOpen) {
       setSubmitState("idle");
