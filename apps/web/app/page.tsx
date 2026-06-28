@@ -172,7 +172,7 @@ export default async function HomePage() {
               분명히 코딩 에이전트를 늘렸는데,
             </span>
             <span className="mt-4 block text-foreground">
-              왜 우리 팀은 같은 제품 실수를 반복하죠?
+              왜 에이전트는 제품 맥락을 놓치고, 맞춰 주는 일이 병목이 됐죠?
             </span>
           </h2>
           <LandingProblemWave />
@@ -183,12 +183,12 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
           <div className="max-w-md space-y-4">
             <h2 className="text-3xl font-semibold tracking-tight">
-              맥락이 흩어지면, 에이전트도 각자 다르게 움직입니다.
+              맥락이 흩어지면, 에이전트는 제품 의도에서 멀어집니다.
             </h2>
             <p className="leading-7 text-muted-foreground">
-              PRD, 정책, 디자인 결정, API 설계가 서로 다른 도구에 흩어져 있으면
-              병렬 에이전트는 빠르게 잘못된 방향으로 갑니다. SSOTA는 승인된
-              제품 맥락을 한곳에 모읍니다.
+              PRD, 정책, 디자인 결정, API 설계가 제각각이면 에이전트는 빠르게
+              틀린 방향으로 갑니다. 결국 사람이 다시 의도를 맞춰 주는 일이
+              병목이 됩니다. SSOTA는 승인된 제품 맥락을 한곳에 모읍니다.
             </p>
           </div>
 
