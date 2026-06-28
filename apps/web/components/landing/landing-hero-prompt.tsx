@@ -29,9 +29,10 @@ const PROMPTS = [
 ] as const;
 
 const TYPE_MS = 46;
+const EMPHASIS_DELAY_MS = 700;
 const PAUSE_MS = 2400;
 
-type Phase = "typing" | "pausing";
+type Phase = "typing" | "holding" | "pausing";
 
 function renderVisibleText(
   text: string,
@@ -97,8 +98,8 @@ export function LandingHeroPrompt({ href }: { href: string }) {
   const [reducedMotion, setReducedMotion] = useState(false);
 
   const currentPrompt = PROMPTS[promptIndex] ?? PROMPTS[0];
-  const isComplete =
-    reducedMotion || (phase === "pausing" && charIndex === currentPrompt.text.length);
+  const isEmphasized =
+    reducedMotion || phase === "pausing";
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -138,7 +139,12 @@ export function LandingHeroPrompt({ href }: { href: string }) {
         return () => window.clearTimeout(timer);
       }
 
-      const timer = window.setTimeout(() => setPhase("pausing"), 0);
+      const timer = window.setTimeout(() => setPhase("holding"), 0);
+      return () => window.clearTimeout(timer);
+    }
+
+    if (phase === "holding") {
+      const timer = window.setTimeout(() => setPhase("pausing"), EMPHASIS_DELAY_MS);
       return () => window.clearTimeout(timer);
     }
 
@@ -171,7 +177,7 @@ export function LandingHeroPrompt({ href }: { href: string }) {
       <span
         className={cn(
           "min-w-0 text-sm leading-6 whitespace-nowrap md:text-base",
-          isComplete ? "text-muted-foreground" : "text-foreground/90",
+          isEmphasized ? "text-muted-foreground" : "text-foreground/90",
         )}
       >
         <span aria-hidden="true">
@@ -179,9 +185,9 @@ export function LandingHeroPrompt({ href }: { href: string }) {
             currentPrompt.text,
             visibleLength,
             currentPrompt.highlights,
-            isComplete,
+            isEmphasized,
           )}
-          {!isComplete && showCursor ? (
+          {phase === "typing" && showCursor ? (
             <span className="text-muted-foreground">|</span>
           ) : null}
         </span>
