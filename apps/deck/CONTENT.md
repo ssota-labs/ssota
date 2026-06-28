@@ -1,7 +1,7 @@
 # SSOTA Seed Deck — 콘텐츠 정리
 
 > 구조 SSOT: YC Seed Deck Template (Aaron Harris, 10슬라이드)
-> 디자인 원칙(Kevin Hale): Legible · Simple · Obvious — 큰 글씨, 1슬라이드 1아이디어, **헤드라인은 결론(주장형)**
+> 디자인 원칙(Kevin Hale): Legible · Simple · Obvious — 큰 글씨, 1슬라이드 1아이디어, **헤드라인은 결론(주장형)·마침표로 끝** (`DeckTitle`이 자동 보정)
 
 ## 0. 한 줄 정의 / North Star
 

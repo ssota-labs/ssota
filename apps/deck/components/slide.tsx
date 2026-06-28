@@ -84,7 +84,18 @@ export function DeckSlideHeader({
   );
 }
 
-/** 슬라이드 제목 — 결론을 말하는 주장형 헤드라인. */
+/** 슬라이드 제목 — 결론을 말하는 주장형 헤드라인. 항상 마침표로 끝난다. */
+function withDeckTitlePeriod(children: React.ReactNode): React.ReactNode {
+  if (typeof children !== "string") {
+    return children;
+  }
+  const trimmed = children.trimEnd();
+  if (trimmed.endsWith(".") || trimmed.endsWith("。")) {
+    return trimmed;
+  }
+  return `${trimmed}.`;
+}
+
 export function DeckTitle({
   children,
   align = "center",
@@ -102,7 +113,7 @@ export function DeckTitle({
         className,
       )}
     >
-      {children}
+      {withDeckTitlePeriod(children)}
     </h2>
   );
 }
