@@ -20,6 +20,24 @@ export const metadata: Metadata = {
     "코딩 에이전트가 제품 맥락을 이해하고 움직이게 하는 AI CPO 레이어.",
 };
 
+const problemCards = [
+  {
+    title: "뭐가 맞는지 모릅니다",
+    detail:
+      "PRD, 슬랙, Notion, 레포… 다 있는데, 뭐가 최신인지 모릅니다. 이 작업에 뭘 참고해야 하는지도 정해져 있지 않습니다.",
+  },
+  {
+    title: "에이전트는 엇갈립니다",
+    detail:
+      "에이전트마다 다른 조각만 읽습니다. 그래서 비슷한 일을 시켜도 결과가 엇갈립니다.",
+  },
+  {
+    title: "맞춰 주는 일이 늘었습니다",
+    detail:
+      "프롬프트 보강, 리뷰, 재설명. 코딩 대신 의도를 맞추느라 바빠집니다.",
+  },
+] as const;
+
 const workflowLayers = [
   {
     label: "Executive",
@@ -164,8 +182,8 @@ export default async function HomePage() {
       </section>
 
       <section id="problem" className="bg-background">
-        <div className="mx-auto flex min-h-[min(72vh,44rem)] max-w-5xl flex-col items-center justify-center px-6 py-24 text-center">
-          <h2 className="text-3xl font-semibold leading-[1.25] tracking-tight text-balance md:text-5xl md:leading-[1.2] lg:text-[3.25rem]">
+        <div className="mx-auto flex max-w-5xl flex-col items-center px-6 py-24 md:py-28">
+          <h2 className="text-center text-3xl font-semibold leading-[1.25] tracking-tight text-balance md:text-5xl md:leading-[1.2] lg:text-[3.25rem]">
             <span className="block text-muted-foreground">
               분명히 코딩 에이전트를 늘렸는데,
             </span>
@@ -173,6 +191,22 @@ export default async function HomePage() {
               우리 팀은 왜 똑같이 일하죠?
             </span>
           </h2>
+
+          <div className="mt-14 grid w-full gap-4 md:mt-16 md:grid-cols-3 md:gap-5">
+            {problemCards.map((card) => (
+              <Card
+                key={card.title}
+                className="border-border/60 bg-card/50 text-left shadow-none"
+              >
+                <CardHeader className="gap-2">
+                  <CardTitle className="text-base">{card.title}</CardTitle>
+                  <CardDescription className="text-sm leading-6">
+                    {card.detail}
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -180,13 +214,11 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
           <div className="max-w-md space-y-4">
             <h2 className="text-3xl font-semibold tracking-tight">
-              정보가 흩어지면, 에이전트는 자꾸 틀립니다.
+              합의된 제품 정보가 있으면, 에이전트가 같은 기준으로 움직입니다.
             </h2>
             <p className="leading-7 text-muted-foreground">
-              PRD, 정책, 디자인, API 문서가 제각각이면 에이전트는 빠르게
-              엉뚱한 방향으로 갑니다. 그때마다 사람이 다시 설명하고 고쳐 줘야
-              해서, 코딩만큼이나 시간이 듭니다. SSOTA는 팀이 합의한 제품 정보를
-              한곳에 모읍니다.
+              PRD, 정책, 디자인, API를 팀이 합의한 한곳에 모읍니다. 에이전트는
+              작업마다 무엇을 읽어야 하는지 알고, 사람은 맞춰 주는 대신 검토합니다.
             </p>
           </div>
 
