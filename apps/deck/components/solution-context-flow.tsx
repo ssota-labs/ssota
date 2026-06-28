@@ -9,9 +9,9 @@ import {
   Position,
   ReactFlow,
   getBezierPath,
+  useInternalNode,
   useNodesInitialized,
   useReactFlow,
-  useUpdateNodeInternals,
   type Edge,
   type EdgeProps,
   type Node,
@@ -25,13 +25,19 @@ type ContextNodeData = {
   phase?: "direction" | "execution" | "verify";
 };
 
+// 노드 크기를 고정한다. 덱은 .deck-scaler의 CSS transform: scale() 안에서 렌더되므로
+// React Flow의 getBoundingClientRect 기반 핸들 측정이 부모 scale만큼 왜곡된다.
+// → 측정에 의존하지 않고, 고정 geometry로 엣지 앵커를 직접 계산해 핸들에 정확히 붙인다.
+const NODE_W = 116;
+const NODE_H = 46;
+
 const PHASE_LABELS = [
   { label: "방향", flex: 1 },
   { label: "실행", flex: 1 },
   { label: "검증·배포", flex: 1 },
 ] as const;
 
-// 핸들 id — 멀티 핸들 노드에서 엣지가 어느 핸들에 붙을지 명시하기 위해 모두 id를 둔다.
+// 핸들 id — 어느 변에 붙는지 명시.
 const HANDLE = {
   targetLeft: "t-l",
   targetTop: "t-t",
@@ -44,8 +50,9 @@ function ContextNode({ data }: NodeProps) {
   const handleClass = "!h-1.5 !w-1.5 !border-0 !bg-primary/40";
   return (
     <div
+      style={{ width: NODE_W, height: NODE_H }}
       className={cn(
-        "min-w-[104px] rounded-xl border px-3.5 py-3 text-center text-[14px] font-semibold leading-tight shadow-sm",
+        "flex items-center justify-center rounded-xl border text-center text-[14px] font-semibold leading-tight shadow-sm",
         phase === "execution"
           ? "border-primary/35 bg-primary/10 text-foreground"
           : "border-primary/25 bg-primary/5 text-foreground",
@@ -60,51 +67,72 @@ function ContextNode({ data }: NodeProps) {
   );
 }
 
+type HandleId = (typeof HANDLE)[keyof typeof HANDLE];
+
+/** 핸들 id별 앵커(flow 좌표) — 고정 노드 크기 기준. position은 측정값이 아닌 prop이라 scale 영향 없음. */
+function handleAnchor(x: number, y: number, handle: HandleId): { x: number; y: number; position: Position } {
+  switch (handle) {
+    case HANDLE.sourceRight:
+      return { x: x + NODE_W, y: y + NODE_H / 2, position: Position.Right };
+    case HANDLE.sourceBottom:
+      return { x: x + NODE_W / 2, y: y + NODE_H, position: Position.Bottom };
+    case HANDLE.targetLeft:
+      return { x, y: y + NODE_H / 2, position: Position.Left };
+    case HANDLE.targetTop:
+      return { x: x + NODE_W / 2, y, position: Position.Top };
+    default:
+      return { x, y, position: Position.Left };
+  }
+}
+
+/** 측정 대신 노드 position + 고정 geometry로 경로를 그려, 부모 CSS scale에도 핸들에 정확히 붙는다. */
 function ContextEdge({
   id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
+  source,
+  target,
+  sourceHandleId,
+  targetHandleId,
   style,
   markerEnd,
 }: EdgeProps) {
+  const sourceNode = useInternalNode(source);
+  const targetNode = useInternalNode(target);
+
+  if (!sourceNode || !targetNode) return null;
+
+  const sp = sourceNode.internals.positionAbsolute;
+  const tp = targetNode.internals.positionAbsolute;
+  const s = handleAnchor(sp.x, sp.y, (sourceHandleId as HandleId) ?? HANDLE.sourceRight);
+  const t = handleAnchor(tp.x, tp.y, (targetHandleId as HandleId) ?? HANDLE.targetLeft);
+
   const [path] = getBezierPath({
-    sourceX,
-    sourceY,
-    targetX,
-    targetY,
-    sourcePosition,
-    targetPosition,
+    sourceX: s.x,
+    sourceY: s.y,
+    sourcePosition: s.position,
+    targetX: t.x,
+    targetY: t.y,
+    targetPosition: t.position,
   });
 
   return (
-    <BaseEdge
-      id={id}
-      path={path}
-      style={style}
-      markerEnd={markerEnd}
-      interactionWidth={0}
-    />
+    <BaseEdge id={id} path={path} style={style} markerEnd={markerEnd} interactionWidth={0} />
   );
 }
 
 const NODE_TYPES = { context: ContextNode };
 const EDGE_TYPES = { context: ContextEdge };
 
-// 3컬럼 세로 배치: 방향(좌)·실행(중)·검증배포(우). 컨테이너(좁고 세로로 긴) 비율을 채운다.
-const COL_X = [0, 180, 360] as const;
+// 3컬럼 세로 배치: 방향(좌)·실행(중)·검증배포(우).
+const COL_X = [0, 176, 352] as const;
 
 const INITIAL_NODES: Node<ContextNodeData>[] = [
-  { id: "okr", type: "context", position: { x: COL_X[0], y: 20 }, data: { label: "OKR", phase: "direction" } },
-  { id: "roadmap", type: "context", position: { x: COL_X[0], y: 110 }, data: { label: "로드맵", phase: "direction" } },
-  { id: "research", type: "context", position: { x: COL_X[0], y: 200 }, data: { label: "리서치", phase: "direction" } },
-  { id: "initiative", type: "context", position: { x: COL_X[1], y: 65 }, data: { label: "이니셔티브", phase: "execution" } },
-  { id: "design", type: "context", position: { x: COL_X[1], y: 155 }, data: { label: "설계결정", phase: "execution" } },
-  { id: "test", type: "context", position: { x: COL_X[2], y: 65 }, data: { label: "테스트", phase: "verify" } },
-  { id: "deploy", type: "context", position: { x: COL_X[2], y: 155 }, data: { label: "배포", phase: "verify" } },
+  { id: "okr", type: "context", position: { x: COL_X[0], y: 20 }, data: { label: "OKR", phase: "direction" }, width: NODE_W, height: NODE_H },
+  { id: "roadmap", type: "context", position: { x: COL_X[0], y: 110 }, data: { label: "로드맵", phase: "direction" }, width: NODE_W, height: NODE_H },
+  { id: "research", type: "context", position: { x: COL_X[0], y: 200 }, data: { label: "리서치", phase: "direction" }, width: NODE_W, height: NODE_H },
+  { id: "initiative", type: "context", position: { x: COL_X[1], y: 65 }, data: { label: "이니셔티브", phase: "execution" }, width: NODE_W, height: NODE_H },
+  { id: "design", type: "context", position: { x: COL_X[1], y: 155 }, data: { label: "설계결정", phase: "execution" }, width: NODE_W, height: NODE_H },
+  { id: "test", type: "context", position: { x: COL_X[2], y: 65 }, data: { label: "테스트", phase: "verify" }, width: NODE_W, height: NODE_H },
+  { id: "deploy", type: "context", position: { x: COL_X[2], y: 155 }, data: { label: "배포", phase: "verify" }, width: NODE_W, height: NODE_H },
 ];
 
 const edgeStroke = "var(--color-primary, oklch(0.62 0.12 223))";
@@ -154,59 +182,36 @@ const INITIAL_EDGES: Edge[] = [
 ];
 
 const FIT_OPTIONS = {
-  padding: 0.1,
+  padding: 0.12,
   maxZoom: 1.6,
   minZoom: 0.4,
   duration: 0,
 } as const;
 
-/** 컨테이너 크기·노드 측정 후 그래프를 pane에 맞게 확대 + 핸들 위치 재측정. */
-function ContextFlowFit({
-  containerRef,
-  nodeIds,
-}: {
-  containerRef: React.RefObject<HTMLDivElement | null>;
-  nodeIds: string[];
-}) {
+/** 컨테이너 리사이즈/측정 후 그래프를 pane 중앙에 맞춘다. */
+function ContextFlowFit({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) {
   const { fitView } = useReactFlow();
-  const updateNodeInternals = useUpdateNodeInternals();
   const ready = useNodesInitialized();
-  const key = nodeIds.join(",");
 
   const refit = React.useCallback(() => {
     void fitView(FIT_OPTIONS);
   }, [fitView]);
 
-  // 핸들 bounds 재측정 — 엣지가 핸들에 정확히 붙도록(web FlowReady 패턴).
-  React.useEffect(() => {
-    if (nodeIds.length > 0) updateNodeInternals(nodeIds);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key, updateNodeInternals]);
-
   React.useEffect(() => {
     if (!ready) return;
-    // 노드 측정 완료 직후 + 약간의 지연 후 재맞춤(초기 좌측 치우침 방지).
     const rafs: number[] = [];
-    const raf1 = requestAnimationFrame(() => {
-      updateNodeInternals(nodeIds);
-      rafs.push(requestAnimationFrame(refit));
-    });
-    rafs.push(raf1);
+    rafs.push(requestAnimationFrame(() => rafs.push(requestAnimationFrame(refit))));
     const t = setTimeout(refit, 120);
     return () => {
       rafs.forEach(cancelAnimationFrame);
       clearTimeout(t);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, key, refit]);
+  }, [ready, refit]);
 
   React.useEffect(() => {
     const el = containerRef.current;
     if (!el || !ready) return;
-
-    const observer = new ResizeObserver(() => {
-      requestAnimationFrame(refit);
-    });
+    const observer = new ResizeObserver(() => requestAnimationFrame(refit));
     observer.observe(el);
     return () => observer.disconnect();
   }, [containerRef, ready, refit]);
@@ -219,7 +224,6 @@ export function SolutionContextFlow({ className }: { className?: string }) {
   const [nodes] = React.useState(INITIAL_NODES);
   const [edges] = React.useState(INITIAL_EDGES);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const nodeIds = React.useMemo(() => nodes.map((n) => n.id), [nodes]);
 
   return (
     <div className={cn("deck-context-flow flex h-full min-h-[300px] flex-col", className)}>
@@ -253,7 +257,7 @@ export function SolutionContextFlow({ className }: { className?: string }) {
           proOptions={{ hideAttribution: true }}
           className="!bg-transparent"
         >
-          <ContextFlowFit containerRef={containerRef} nodeIds={nodeIds} />
+          <ContextFlowFit containerRef={containerRef} />
           <Background
             variant={BackgroundVariant.Dots}
             gap={20}
