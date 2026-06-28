@@ -247,8 +247,8 @@ export default async function HomePage() {
                       weight="light"
                       aria-hidden
                     />
-                    <CardTitle className="text-base">{card.title}</CardTitle>
-                    <CardDescription className="text-sm leading-6">
+                    <CardTitle className="text-lg">{card.title}</CardTitle>
+                    <CardDescription className="text-base leading-7">
                       {renderHighlightedDetailLines(
                         card.detailLines,
                         card.highlights,
