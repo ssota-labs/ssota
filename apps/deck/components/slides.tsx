@@ -18,9 +18,10 @@ import { BusinessModelRow } from "./business-model";
 import { MarketRow } from "./market";
 import { RoadmapRow } from "./roadmap";
 import { TeamFounderRow } from "./team";
+import { VisionRow } from "./vision";
 
 /**
- * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 11슬라이드.
+ * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 12슬라이드.
  * https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck
  *
  * 콘텐츠 슬라이드(2–11) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
@@ -226,6 +227,20 @@ const SLIDES: SlideDef[] = [
           창업·AI 경진대회부터 80건 실전 개발까지 — 같은 병목을 반복 확인했다.
         </p>
         <TeamFounderRow className="mt-6 min-h-0 flex-1" />
+      </>
+    ),
+  },
+
+  /* 12 — Vision */
+  {
+    id: "vision",
+    render: () => (
+      <>
+        <DeckSlideHeader section="Vision">인간과 AI가 조화롭게 일하는 환경을 만든다</DeckSlideHeader>
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          Pax Humana — 인간과 인공지능이 조화를 이루며 인류의 황금기를 만들자
+        </p>
+        <VisionRow className="mt-7 min-h-0 flex-1" />
       </>
     ),
   },

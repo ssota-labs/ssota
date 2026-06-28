@@ -6,7 +6,7 @@ import { cn } from "@ssota/ui/lib/utils";
 import { Hl } from "./slide";
 
 /** 프로필 사진 — `apps/deck/public/team/profile.jpg` 등, 비우면 dashed 플레이스홀더 */
-const FOUNDER_IMAGE_SRC: string | undefined = undefined;
+const FOUNDER_IMAGE_SRC: string | undefined = "/team/profile.jpg";
 
 type CareerHighlight = {
   year: string;
