@@ -13,14 +13,15 @@ import { AgentEvolutionRow } from "./agent-evolution";
 import { SolutionContextRow } from "./solution-context";
 import { TractionMedAIRow, TractionTrackRecord } from "./traction";
 import { InsightContrast } from "./unique-insight";
+import { BusinessModelRow } from "./business-model";
 import { MarketRow } from "./market";
 import { TeamFounderRow } from "./team";
 
 /**
- * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 8슬라이드.
+ * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 9슬라이드.
  * https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck
  *
- * 콘텐츠 슬라이드(2–8) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
+ * 콘텐츠 슬라이드(2–9) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
  * 디자인 토큰: @ssota/ui (cyan primary · Geist/Pretendard).
  *
  * North Star: 목표는 "무인(無人) 에이전트 개발팀"을 만들어내는 것.
@@ -157,7 +158,21 @@ const SLIDES: SlideDef[] = [
     ),
   },
 
-  /* 07 — Market */
+  /* 07 — Business Model */
+  {
+    id: "business",
+    render: () => (
+      <>
+        <DeckSlideHeader section="Business Model">맥락 그래프에서 돈을 번다</DeckSlideHeader>
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          오픈소스 코어 + 클라우드 호스팅 + 엔터프라이즈 구축
+        </p>
+        <BusinessModelRow className="mt-6" />
+      </>
+    ),
+  },
+
+  /* 08 — Market */
   {
     id: "market",
     render: () => (
@@ -171,7 +186,7 @@ const SLIDES: SlideDef[] = [
     ),
   },
 
-  /* 08 — Team */
+  /* 09 — Team */
   {
     id: "team",
     render: () => (
