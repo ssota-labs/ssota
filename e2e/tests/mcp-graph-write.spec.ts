@@ -103,7 +103,7 @@ test.describe("MCP graph write tools", () => {
         on conflict (id) do nothing
       `;
       await sql`
-        insert into projects (id, organization_id, slug, name)
+        insert into teamspaces (id, organization_id, slug, name)
         values (${otherProjectId}, ${otherProjectId}, 'e2e-other-project', 'E2E Other Teamspace')
         on conflict (id) do nothing
       `;
