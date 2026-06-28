@@ -121,7 +121,7 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <section className="relative isolate overflow-hidden border-b">
+      <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 overflow-hidden" aria-hidden>
           <Image
             src="/landing/hero-background.png"
