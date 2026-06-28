@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Fragment } from "react";
 import type { Icon } from "@phosphor-icons/react";
 import {
   ArrowsClockwiseIcon,
@@ -33,28 +34,35 @@ export const metadata: Metadata = {
 
 const problemCards: ReadonlyArray<{
   title: string;
-  detail: string;
+  detailLines: readonly string[];
   highlights: readonly string[];
   icon: Icon;
 }> = [
   {
     title: "뭐가 맞는지 모릅니다",
-    detail:
-      "PRD, 슬랙, Notion, 레포… 다 있는데, 뭐가 최신인지 모릅니다. 이 작업에 뭘 참고해야 하는지도 정해져 있지 않습니다.",
+    detailLines: [
+      "PRD, 슬랙, Notion, 레포… 다 있는데,",
+      "뭐가 최신인지 모릅니다.",
+      "이 작업에 뭘 참고해야 하는지도 정해져 있지 않습니다.",
+    ],
     highlights: ["뭐가 최신인지", "뭘 참고해야 하는지"],
     icon: FileDashedIcon,
   },
   {
     title: "에이전트는 엇갈립니다",
-    detail:
-      "에이전트마다 다른 조각만 읽습니다. 그래서 비슷한 일을 시켜도 결과가 엇갈립니다.",
+    detailLines: [
+      "에이전트마다 다른 조각만 읽습니다.",
+      "그래서 비슷한 일을 시켜도 결과가 엇갈립니다.",
+    ],
     highlights: ["다른 조각만", "엇갈립니다"],
     icon: TreeStructureIcon,
   },
   {
     title: "맞춰 주는 일이 늘었습니다",
-    detail:
-      "프롬프트 보강, 리뷰, 재설명. 코딩 대신 의도를 맞추느라 바빠집니다.",
+    detailLines: [
+      "프롬프트 보강, 리뷰, 재설명.",
+      "코딩 대신 의도를 맞추느라 바빠집니다.",
+    ],
     highlights: ["프롬프트 보강", "의도를 맞추느라"],
     icon: ArrowsClockwiseIcon,
   },
@@ -106,6 +114,23 @@ function renderHighlightedDetail(
   }
 
   return parts;
+}
+
+function renderHighlightedDetailLines(
+  lines: readonly string[],
+  highlights: readonly string[],
+): ReactNode {
+  return lines.map((line, index) => (
+    <Fragment key={index}>
+      {index > 0 ? (
+        <>
+          <br className="md:hidden" />
+          <span className="hidden md:inline"> </span>
+        </>
+      ) : null}
+      {renderHighlightedDetail(line, highlights)}
+    </Fragment>
+  ));
 }
 
 function renderTitleHighlight(title: string, highlight: string): ReactNode {
@@ -282,7 +307,10 @@ export default async function HomePage() {
                     />
                     <CardTitle className="text-base">{card.title}</CardTitle>
                     <CardDescription className="text-sm leading-6">
-                      {renderHighlightedDetail(card.detail, card.highlights)}
+                      {renderHighlightedDetailLines(
+                        card.detailLines,
+                        card.highlights,
+                      )}
                     </CardDescription>
                   </CardHeader>
                 </Card>
