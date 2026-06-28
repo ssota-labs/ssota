@@ -183,12 +183,13 @@ export default async function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
           <div className="max-w-md space-y-4">
             <h2 className="text-3xl font-semibold tracking-tight">
-              맥락이 흩어지면, 에이전트는 제품 의도에서 멀어집니다.
+              정보가 흩어지면, 에이전트는 자꾸 틀립니다.
             </h2>
             <p className="leading-7 text-muted-foreground">
-              PRD, 정책, 디자인 결정, API 설계가 제각각이면 에이전트는 빠르게
-              틀린 방향으로 갑니다. 결국 사람이 다시 의도를 맞춰 주는 일이
-              병목이 됩니다. SSOTA는 승인된 제품 맥락을 한곳에 모읍니다.
+              PRD, 정책, 디자인, API 문서가 제각각이면 에이전트는 빠르게
+              엉뚱한 방향으로 갑니다. 그때마다 사람이 다시 설명하고 고쳐 줘야
+              해서, 코딩만큼이나 시간이 듭니다. SSOTA는 팀이 합의한 제품 정보를
+              한곳에 모읍니다.
             </p>
           </div>
 
