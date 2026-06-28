@@ -25,10 +25,10 @@ const MEDAI_SCREENSHOT_SRC: string | undefined = undefined;
 function TimelineStep({ date, label, accent }: { date: string; label: string; accent?: boolean }) {
   return (
     <div className="flex flex-col">
-      <span className={cn("text-[13px] font-semibold", accent ? "text-primary" : "text-foreground")}>
+      <span className={cn("text-[15px] font-semibold", accent ? "text-primary" : "text-foreground")}>
         {date}
       </span>
-      <span className="text-[13px] text-muted-foreground">{label}</span>
+      <span className="text-[14px] text-muted-foreground">{label}</span>
     </div>
   );
 }
@@ -44,7 +44,7 @@ export function TractionMedAIRow({ className }: { className?: string }) {
           <TimelineStep date="2026.06.10" label="오픈소스 제품화" />
         </div>
 
-        <p className="mt-5 text-[18px] leading-[1.6] text-muted-foreground">
+        <p className="mt-5 text-[20px] leading-[1.6] text-muted-foreground">
           <Hl>MedAI 신장종양진단 AI 개발팀</Hl>과 별도 프로젝트를 진행하며, 요구사항·모델/제품 스펙·개발
           태스크·테스트 기준·의사결정 기록을 <Hl>어떤 순서·구조로 에이전트에 전달</Hl>해야 하는지
           검증했습니다.
@@ -54,14 +54,14 @@ export function TractionMedAIRow({ className }: { className?: string }) {
           {MEDAI_ARTIFACTS.map((a) => (
             <span
               key={a}
-              className="rounded-full border border-primary/25 bg-primary/5 px-3 py-1 text-[13px] font-medium text-foreground"
+              className="rounded-full border border-primary/25 bg-primary/5 px-3 py-1.5 text-[14px] font-medium text-foreground"
             >
               {a}
             </span>
           ))}
         </div>
 
-        <p className="mt-5 text-[16px] leading-[1.6] text-muted-foreground">
+        <p className="mt-5 text-[18px] leading-[1.6] text-muted-foreground">
           현장에서 검증한 <Hl>에이전트 팀 네이티브 워크플로우</Hl>를 그대로 오픈소스 제품으로 옮기고
           있습니다:
         </p>
