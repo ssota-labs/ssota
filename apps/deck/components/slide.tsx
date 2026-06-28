@@ -1,22 +1,11 @@
 import * as React from "react";
 import { cn } from "@ssota/ui/lib/utils";
 
-/** SSOTA 워드마크 — 사이드바 워크스페이스 스위처와 동일한 시각 언어(cyan 사각형 + 라벨). */
-export function Wordmark({
-  className,
-  subtle,
-}: {
-  className?: string;
-  subtle?: boolean;
-}) {
+/** SSOTA 워드마크 — cyan 사각형 + 라벨. */
+export function Wordmark({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <div
-        className={cn(
-          "flex h-6 w-6 items-center justify-center rounded-md bg-primary text-[11px] font-bold tracking-tight text-primary-foreground",
-          subtle && "opacity-90",
-        )}
-      >
+      <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-[11px] font-bold tracking-tight text-primary-foreground">
         S
       </div>
       <span className="text-sm font-semibold tracking-tight">SSOTA</span>
@@ -24,26 +13,36 @@ export function Wordmark({
   );
 }
 
-export function Eyebrow({
+/**
+ * 슬라이드 프레임 — YC Seed 템플릿 레이아웃을 그대로 따른다.
+ * 제목은 상단 중앙, 본문(bullet)은 좌측. center=true 면 전체 수직 중앙(타이틀용).
+ * 디자인 토큰은 @ssota/ui (cyan primary · Geist/Pretendard).
+ */
+export function Slide({
   children,
+  center,
   className,
 }: {
   children: React.ReactNode;
+  center?: boolean;
   className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "text-[12px] font-semibold uppercase tracking-[0.22em] text-primary",
-        className,
-      )}
-    >
-      {children}
-    </div>
+    <section className={cn("deck-slide flex flex-col bg-background text-foreground", className)}>
+      <div
+        className={cn(
+          "flex flex-1 flex-col px-20 py-16",
+          center && "items-center justify-center text-center",
+        )}
+      >
+        {children}
+      </div>
+    </section>
   );
 }
 
-export function SlideHeading({
+/** 슬라이드 제목 — 결론을 말하는 주장형 헤드라인 (상단 중앙). */
+export function DeckTitle({
   children,
   className,
 }: {
@@ -53,7 +52,7 @@ export function SlideHeading({
   return (
     <h2
       className={cn(
-        "text-pretty text-[44px] font-semibold leading-[1.2] tracking-tight",
+        "text-center text-[44px] font-semibold leading-[1.3] tracking-tight",
         className,
       )}
     >
@@ -62,149 +61,30 @@ export function SlideHeading({
   );
 }
 
-export function Lead({
-  children,
+/** 강조 — 본문 bullet 안의 핵심 어구. */
+export function Hl({ children }: { children: React.ReactNode }) {
+  return <span className="font-semibold text-primary">{children}</span>;
+}
+
+/** Bullet 리스트 — YC 템플릿의 디스크 마커 + 좌측 정렬. */
+export function Bullets({
+  items,
   className,
 }: {
-  children: React.ReactNode;
+  items: React.ReactNode[];
   className?: string;
 }) {
   return (
-    <p className={cn("max-w-[58ch] text-[19px] leading-relaxed text-muted-foreground", className)}>
-      {children}
-    </p>
-  );
-}
-
-/** 큰 강조 숫자/지표 */
-export function StatBig({
-  value,
-  label,
-  accent,
-}: {
-  value: React.ReactNode;
-  label: React.ReactNode;
-  accent?: boolean;
-}) {
-  return (
-    <div>
-      <div
-        className={cn(
-          "tabular text-[52px] font-semibold leading-none tracking-tight",
-          accent ? "text-primary" : "text-foreground",
-        )}
-      >
-        {value}
-      </div>
-      <div className="mt-2 text-[14px] text-muted-foreground">{label}</div>
-    </div>
-  );
-}
-
-/* ============================ 템플릿 헬퍼 ============================ */
-
-/**
- * 콘텐츠 자리 표시 박스 — 점선 테두리 + 라벨.
- * YC 템플릿 원칙(Legible·Simple·Obvious)에 맞춰 "무엇을 넣을지"만 안내한다.
- */
-export function Placeholder({
-  label,
-  hint,
-  className,
-}: {
-  label: React.ReactNode;
-  hint?: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center",
-        className,
-      )}
-    >
-      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
-      {hint && <span className="max-w-[40ch] text-[11px] text-muted-foreground/70">{hint}</span>}
-    </div>
-  );
-}
-
-/** 작성 가이드 문구 — 실제 카피가 들어갈 자리에 회색 안내 텍스트. */
-export function Guide({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <p className={cn("max-w-[60ch] text-[18px] leading-relaxed text-muted-foreground/70", className)}>
-      {children}
-    </p>
-  );
-}
-
-/** 슬라이드 세트 규칙 배지 (YC: 1슬라이드 권장, 필요 시 ≤3). */
-export function SetHint({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="rounded-full border border-border bg-muted/30 px-3 py-1 text-[11px] font-medium text-muted-foreground">
-      {children}
-    </span>
-  );
-}
-
-/**
- * 슬라이드 프레임. 1280x720, 디자인 시스템 토큰 기반.
- * tone="dark" 는 `.dark` 클래스로 @ssota/ui 토큰 전체를 다크로 반전시킨다.
- */
-export function Slide({
-  children,
-  n,
-  total,
-  tone = "light",
-  pad = true,
-  className,
-}: {
-  children: React.ReactNode;
-  n: number;
-  total: number;
-  tone?: "light" | "dark";
-  pad?: boolean;
-  className?: string;
-}) {
-  return (
-    <section
-      className={cn(
-        "deck-slide flex flex-col",
-        tone === "dark" && "dark",
-        className,
-      )}
-      style={
-        tone === "dark"
-          ? {
-              background:
-                "radial-gradient(120% 90% at 85% -10%, oklch(0.35 0.09 223 / 0.55), transparent 60%), radial-gradient(90% 80% at -10% 110%, oklch(0.3 0.07 223 / 0.45), transparent 55%), var(--background)",
-            }
-          : undefined
-      }
-    >
-      <div className={cn("flex flex-1 flex-col", pad && "px-16 py-12")}>{children}</div>
-      <SlideFooter n={n} total={total} />
-    </section>
-  );
-}
-
-function SlideFooter({ n, total }: { n: number; total: number }) {
-  return (
-    <div className="flex items-center justify-between border-t border-border/70 px-16 py-3.5">
-      <Wordmark subtle />
-      <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        <span>Seed Deck</span>
-        <span className="text-border">/</span>
-        <span className="tabular">
-          {String(n).padStart(2, "0")} — {String(total).padStart(2, "0")}
-        </span>
-      </div>
-    </div>
+    <ul className={cn("mt-14 space-y-6", className)}>
+      {items.map((node, i) => (
+        <li
+          key={i}
+          className="flex items-start gap-4 text-[23px] leading-relaxed text-muted-foreground"
+        >
+          <span className="mt-[0.72em] h-[7px] w-[7px] shrink-0 rounded-full bg-foreground/70" />
+          <span>{node}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
