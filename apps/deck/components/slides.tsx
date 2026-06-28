@@ -62,7 +62,7 @@ const SLIDES: SlideDef[] = [
     id: "problem",
     render: () => (
       <>
-        <DeckSlideHeader section="Problem">무인 에이전트 개발팀은 아직 안 된다</DeckSlideHeader>
+        <DeckSlideHeader section="Problem">에이전트 팀의 병목은 아직 사람이다</DeckSlideHeader>
         <AgentEvolutionRow className="mt-8" />
         <div className="ml-auto mt-7 max-w-[62ch] space-y-3 text-right text-[19px] leading-[1.65] text-muted-foreground">
           <p>에이전트 하나의 과업 작업은 가능합니다.</p>

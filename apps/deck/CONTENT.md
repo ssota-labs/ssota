@@ -27,7 +27,7 @@
 | # | 섹션 라벨 | 헤드라인 | 역할 |
 |---|---|---|---|
 | 1 | — | SSOTA — Single Source of Truth for Agents | Title |
-| 2 | Problem | 무인 에이전트 개발팀은 아직 안 된다 | Problem |
+| 2 | Problem | 에이전트 팀의 병목은 아직 사람이다 | Problem |
 | 3 | Solution | 의사결정 맥락을 그래프로 관리한다 | Solution (어떻게) |
 | 4 | Traction | 우리가 직접 무인으로 돌리고 있다 | Traction ① 사용량 |
 | 5 | Traction | 사람 개입이 줄어든다 | Traction ② 임팩트 |
@@ -45,7 +45,7 @@
 - *무인 에이전트 팀을 위한 소프트웨어 개발 맥락 관리 도구*
 - 푸터: 연주환 · Paxhumana / joo@ssota.ai / 2026
 
-## 2. Problem — "무인 에이전트 개발팀은 아직 안 된다"
+## 2. Problem — "에이전트 팀의 병목은 아직 사람이다"
 
 **UX 진화 카드 (Pair → Agent → 에이전트 팀)**
 
