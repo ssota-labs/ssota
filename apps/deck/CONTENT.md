@@ -49,7 +49,7 @@
 
 | 단계 | UX | 한 줄 |
 |------|-----|--------|
-| Pair | 초기 Cursor — VS Code 사이드바 채팅 | 코드를 보며 1:1 |
+| Pair | 초기 Cursor — VS Code 사이드바 채팅 | 같이 작업한다 |
 | Agent | CLI 에이전트 (Claude Code 느낌) | 개발자는 코드 없이 과업 단위로 맡긴다 |
 | 에이전트 팀 | 병렬 에이전트 | deprecated vs 최신 스펙, UI 컴포넌트 깨짐 → 사람 재개입 |
 
