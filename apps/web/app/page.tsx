@@ -17,16 +17,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@ssota/ui/components/ui/card";
-import { cn } from "@/lib/utils";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { LandingDarkMode } from "@/components/landing/landing-dark-mode";
+import { LandingFeatureShowcase } from "@/components/landing/landing-feature-showcase";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
-import {
-  LandingLifecycleFlow,
-  LandingMcpConnections,
-  LandingProductScreenPlaceholder,
-} from "@/components/landing/landing-solution-visuals";
 
 export const metadata: Metadata = {
   title: "SSOTA - 제품을 완벽히 아는 AI CPO",
@@ -134,61 +129,6 @@ function renderHighlightedDetailLines(
     </Fragment>
   ));
 }
-
-function renderTitleHighlight(title: string, highlight: string): ReactNode {
-  const index = title.indexOf(highlight);
-  if (index === -1) {
-    return title;
-  }
-
-  return (
-    <>
-      {title.slice(0, index)}
-      <span className="text-primary">{highlight}</span>
-      {title.slice(index + highlight.length)}
-    </>
-  );
-}
-
-const solutionChapters: ReadonlyArray<{
-  title: string;
-  highlight: string;
-  lead: readonly string[];
-  detail: string;
-  detailClassName?: string;
-  visual: ReactNode;
-}> = [
-  {
-    title: "지금 무엇이 진실인지 아는 AI",
-    highlight: "진실",
-    lead: ["흩어진 문서 더미가 아니라", "그래프로 연결된 단 하나의 최신 맥락"],
-    detail:
-      "OKR, 로드맵, 유저 리서치, PRD, 설계 결정, 테스트, 배포 런북을 관계로 잇고, 작업에 필요한 최신 승인본만 가져옵니다.",
-    detailClassName: "md:max-w-none md:whitespace-nowrap",
-    visual: (
-      <LandingProductScreenPlaceholder
-        label="context graph"
-        caption="제품 맥락 그래프 뷰"
-      />
-    ),
-  },
-  {
-    title: "흐름에 따라서 일하는 AI",
-    highlight: "흐름",
-    lead: ["리서치 → 기획 → 설계 → 개발 → 배포로 이어지는 과정"],
-    detail:
-      "제품은 한 번에 끝나지 않습니다. OKR에서 시작해 이니셔티브, 설계 결정, 테스트, 배포 런북까지 — SSOTA는 각 단계의 맥락을 다음 단계로 넘깁니다.",
-    visual: <LandingLifecycleFlow />,
-  },
-  {
-    title: "외부 데이터도 모두 연결하는 AI",
-    highlight: "모두",
-    lead: ["새 도구로 갈아타지 않고", "쓰던 에이전트가 MCP로 읽고 씁니다"],
-    detail:
-      "Cursor, Claude Code, Codex가 MCP로 제품 맥락을 읽고 결과를 다시 기록합니다. GitHub, Slack, Linear 같은 외부 데이터도 같은 그래프에 연결됩니다.",
-    visual: <LandingMcpConnections />,
-  },
-];
 
 export default async function HomePage() {
   const user = await getCurrentUser();
@@ -325,40 +265,10 @@ export default async function HomePage() {
       <section id="solution" className="border-y bg-muted/30">
         <div className="mx-auto max-w-6xl px-6 py-24 md:py-32">
           <h2 className="mx-auto max-w-3xl text-center text-3xl font-semibold leading-[1.25] tracking-tight text-balance md:text-5xl md:leading-[1.2]">
-            제품을 완벽히 아는 AI CPO,
-            <br />
-            과연 무엇이 다를까요?
+            AI 시대의 새로운 제품 개발 방식.
           </h2>
 
-          <div className="mt-20 flex flex-col gap-28 md:mt-28 md:gap-40">
-            {solutionChapters.map((chapter, index) => (
-              <div key={chapter.title} className="flex flex-col items-center">
-                <span className="flex size-9 items-center justify-center rounded-full border border-border/70 bg-background text-sm font-semibold text-muted-foreground">
-                  {index + 1}
-                </span>
-                <h3 className="mt-6 max-w-2xl text-center text-2xl font-semibold tracking-tight text-balance md:text-4xl">
-                  {renderTitleHighlight(chapter.title, chapter.highlight)}
-                </h3>
-                <p className="mt-5 text-center text-base leading-7 text-muted-foreground md:text-lg">
-                  {chapter.lead.map((line) => (
-                    <span key={line} className="block">
-                      {line}
-                    </span>
-                  ))}
-                </p>
-                <p
-                  className={cn(
-                    "mt-4 max-w-xl text-center text-sm leading-6 text-muted-foreground/80",
-                    chapter.detailClassName,
-                  )}
-                >
-                  {chapter.detail}
-                </p>
-
-                <div className="mt-12 w-full max-w-4xl">{chapter.visual}</div>
-              </div>
-            ))}
-          </div>
+          <LandingFeatureShowcase />
         </div>
       </section>
 

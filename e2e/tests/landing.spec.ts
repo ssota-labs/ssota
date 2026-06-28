@@ -23,15 +23,21 @@ test.describe("landing page", () => {
     await expect(page.getByText("뭐가 맞는지 모릅니다")).toBeVisible();
     await expect(page.getByText("맞춰 주는 일이 늘었습니다")).toBeVisible();
 
-    await page.getByRole("link", { name: "무엇이 다른가" }).click();
-    await expect(
-      page.getByRole("heading", {
-        name: /지금 무엇이 진실인지 아는 AI/,
-      }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "AI 시대의 새로운 제품 개발 방식." })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "제품 맥락" })).toBeVisible();
+
+    await page.getByRole("tab", { name: "MCP 연결" }).click();
     await expect(
       page.getByRole("heading", {
         name: /외부 데이터도 모두 연결하는 AI/,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("MCP connections")).toBeVisible();
+
+    await page.getByRole("tab", { name: "라이프사이클" }).click();
+    await expect(
+      page.getByRole("heading", {
+        name: /흐름에 따라서 일하는 AI/,
       }),
     ).toBeVisible();
   });
