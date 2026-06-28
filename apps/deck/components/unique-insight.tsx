@@ -116,8 +116,7 @@ export function InsightContrast({ className }: { className?: string }) {
       </div>
 
       <p className="text-center text-[17px] leading-relaxed text-muted-foreground">
-        이 문제는 사람이 곁에 있을 땐 안 보이고, <Hl>무인 병렬일 때만</Hl> 드러난다 — 그래서 지금,
-        우리가.
+        이 문제는 사람이 곁에 있을 땐 안 보이고, <Hl>무인 병렬일 때만</Hl> 드러난다.
       </p>
     </div>
   );
