@@ -91,9 +91,7 @@ export function StatBig({
       <div
         className={cn(
           "tabular text-[52px] font-semibold leading-none tracking-tight",
-          accent
-            ? "text-primary dark:text-[var(--deck-stat-accent)]"
-            : "text-foreground",
+          accent ? "text-primary" : "text-foreground",
         )}
       >
         {value}

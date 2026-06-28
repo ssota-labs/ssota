@@ -9,8 +9,11 @@
 :root {
   --deck-w: 1280px;
   --deck-h: 720px;
-  /* 다크 슬라이드: brand primary(223°)와 동일 chroma, L만 0.45→0.62 */
-  --deck-stat-accent: oklch(0.62 0.105 223.128);
+}
+
+/* 다크 슬라이드: brand primary(223°) 동일 chroma, L만 0.45→0.62 */
+.deck-slide.dark {
+  --primary: oklch(0.62 0.105 223.128);
 }
 
 html,
