@@ -1,0 +1,80 @@
+@import "@ssota/ui/styles/globals.css";
+@source "../**/*.{ts,tsx}";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Deck — 16:9 슬라이드 프레임
+   화면(interactive)에서는 JS transform 으로 뷰포트에 맞춰 스케일하고,
+   인쇄(PDF)에서는 1280x720px 한 장씩 페이지로 끊는다.
+   ────────────────────────────────────────────────────────────────────────── */
+:root {
+  --deck-w: 1280px;
+  --deck-h: 720px;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.deck-slide {
+  position: relative;
+  width: var(--deck-w);
+  height: var(--deck-h);
+  overflow: hidden;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* 인터랙티브 뷰: 한 장만 보여주고 가운데 정렬 */
+.deck-stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: oklch(0.13 0.012 248);
+  overflow: hidden;
+}
+
+.deck-scaler {
+  transform-origin: center center;
+  box-shadow:
+    0 40px 80px -20px rgb(0 0 0 / 0.55),
+    0 0 0 1px rgb(255 255 255 / 0.06);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+/* 인쇄용: 모든 슬라이드를 쌓고 페이지 단위로 분리 */
+.deck-print {
+  background: #fff;
+}
+.deck-print .deck-slide {
+  break-after: page;
+  page-break-after: always;
+}
+.deck-print .deck-slide:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+@media print {
+  @page {
+    size: 1280px 720px;
+    margin: 0;
+  }
+  html,
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .deck-no-print {
+    display: none !important;
+  }
+}
+
+/* 작은 화면용 helper */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
