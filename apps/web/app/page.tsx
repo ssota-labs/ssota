@@ -13,9 +13,9 @@ import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
-  title: "SSOTA - The AI CPO for your Agent Team",
+  title: "SSOTA - 제품을 제대로 아는 AI",
   description:
-    "A product intent and decision context layer for teams running parallel coding agents.",
+    "코딩 에이전트가 제품 맥락을 이해하고 움직이게 하는 AI CPO 레이어.",
 };
 
 const workflowLayers = [
@@ -120,16 +120,15 @@ export default async function HomePage() {
           <div className="max-w-xl space-y-8">
             <div className="space-y-4">
               <Badge variant="outline" className="bg-background">
-                AI 개발 에이전트의 CPO
+                AI CPO for coding agents
               </Badge>
               <div className="space-y-4">
                 <h1 className="text-4xl font-semibold tracking-tight text-balance md:text-6xl">
-                  The AI CPO for your Agent Team
+                  제품을 제대로 아는 AI
                 </h1>
                 <p className="max-w-lg text-base leading-7 text-muted-foreground md:text-lg">
-                  SSOTA는 24시간 7일 돌아가는 Claude Code, Cursor, Codex
-                  같은 개발 에이전트팀이 제품 의도와 스펙에서 벗어나지 않게
-                  만드는 맥락 시스템입니다.
+                  코딩 에이전트가 제품 맥락을 이해해야, 24시간 믿고 맡길 수
+                  있습니다.
                 </p>
               </div>
             </div>
@@ -141,7 +140,7 @@ export default async function HomePage() {
                 nativeButton={false}
                 className="h-10 px-5 text-sm"
               >
-                {user ? "Open console" : "Connect your agents"}
+                {user ? "Open console" : "제품 맥락 정리하기"}
               </Button>
               <Button
                 render={<a href="#loop" />}

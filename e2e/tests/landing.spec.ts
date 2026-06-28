@@ -8,10 +8,10 @@ test.describe("landing page", () => {
 
     await expect(
       page.getByRole("heading", {
-        name: "The AI CPO for your Agent Team",
+        name: "제품을 제대로 아는 AI",
       }),
     ).toBeVisible();
-    await expect(page.getByText("AI 개발 에이전트의 CPO")).toBeVisible();
+    await expect(page.getByText("AI CPO for coding agents")).toBeVisible();
     await expect(page.getByLabel("SSOTA workspace preview")).toBeVisible();
     await expect(page.getByText("Intent control loop")).toBeVisible();
     await expect(page.getByText("Approval queue")).toBeVisible();
@@ -29,7 +29,7 @@ test.describe("landing page", () => {
   }) => {
     await page.goto("/");
 
-    await page.getByRole("button", { name: "Connect your agents" }).click();
+    await page.getByRole("button", { name: "제품 맥락 정리하기" }).click();
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByLabel("Email")).toBeVisible();
   });
