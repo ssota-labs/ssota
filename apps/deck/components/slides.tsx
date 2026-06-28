@@ -90,18 +90,22 @@ const SLIDES: SlideDef[] = [
         <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
           로드맵 · 리서치 · 이니셔티브 · 설계 · 테스트 · 런북 — 끊기지 않게.
         </p>
-        <SolutionContextRow className="mt-5" />
-        <div className="ml-auto mt-6 max-w-[62ch] space-y-2.5 text-right text-[19px] leading-[1.65] text-muted-foreground">
-          <p>
-            병렬 에이전트가 <Hl>같은 제품 맥락</Hl>을 봅니다.
-          </p>
-          <p>
-            구현이 <Hl>OKR과 설계 의도</Hl>에서 벗어나지 않습니다.
-          </p>
-          <p>
-            사람은 <Hl>방향과 승인</Hl>만 하면, 무인 에이전트 팀이 돌아갑니다.
-          </p>
-        </div>
+        <SolutionContextRow
+          className="mt-5"
+          conclusion={
+            <>
+              <p>
+                병렬 에이전트가 <Hl>같은 제품 맥락</Hl>을 봅니다.
+              </p>
+              <p>
+                구현이 <Hl>OKR과 설계 의도</Hl>에서 벗어나지 않습니다.
+              </p>
+              <p>
+                사람은 <Hl>방향과 승인</Hl>만 하면, 무인 에이전트 팀이 돌아갑니다.
+              </p>
+            </>
+          }
+        />
       </>
     ),
   },
