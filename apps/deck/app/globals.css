@@ -9,6 +9,7 @@
 :root {
   --deck-w: 1280px;
   --deck-h: 720px;
+  --deck-stat-accent: oklch(0.82 0.14 215);
 }
 
 html,
