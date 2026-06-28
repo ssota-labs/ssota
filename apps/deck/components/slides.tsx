@@ -56,7 +56,7 @@ const SLIDES: SlideDef[] = [
     render: () => (
       <>
         <DeckSectionLabel>Problem</DeckSectionLabel>
-        <DeckTitle align="left" className="mt-2 text-[40px]">
+        <DeckTitle align="center" className="mt-2 text-[40px]">
           무인 에이전트 개발팀은 아직 안 된다
         </DeckTitle>
         <AgentEvolutionRow className="mt-8" />
