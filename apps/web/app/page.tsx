@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@ssota/ui/components/ui/card";
+import { cn } from "@/lib/utils";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
@@ -153,6 +154,7 @@ const solutionChapters: ReadonlyArray<{
   highlight: string;
   lead: readonly string[];
   detail: string;
+  detailClassName?: string;
   visual: ReactNode;
 }> = [
   {
@@ -161,6 +163,7 @@ const solutionChapters: ReadonlyArray<{
     lead: ["흩어진 문서 더미가 아니라", "그래프로 연결된 단 하나의 최신 맥락"],
     detail:
       "OKR, 로드맵, 유저 리서치, PRD, 설계 결정, 테스트, 배포 런북을 관계로 잇고, 작업에 필요한 최신 승인본만 가져옵니다.",
+    detailClassName: "md:max-w-none md:whitespace-nowrap",
     visual: (
       <LandingProductScreenPlaceholder
         label="context graph"
@@ -344,7 +347,12 @@ export default async function HomePage() {
                     </span>
                   ))}
                 </p>
-                <p className="mt-4 max-w-xl text-center text-sm leading-6 text-muted-foreground/80">
+                <p
+                  className={cn(
+                    "mt-4 max-w-xl text-center text-sm leading-6 text-muted-foreground/80",
+                    chapter.detailClassName,
+                  )}
+                >
                   {chapter.detail}
                 </p>
 
