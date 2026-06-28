@@ -15,10 +15,10 @@ export async function updateNode(
   input: UpdateNodeInput,
 ) {
   const existing = await deps.graphRead.getNode({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     nodeId: input.nodeId,
   });
-  assertGraphNodeInProject(input.projectId, existing);
+  assertGraphNodeInProject(input.teamspaceId, existing);
 
   if (input.properties !== undefined) {
     try {

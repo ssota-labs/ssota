@@ -26,7 +26,7 @@ import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
 type TasksKanbanBoardProps = {
   rows: TaskWorkspaceRow[];
-  projectId: string;
+  teamspaceId: string;
   onOpenDetail: (row: TaskWorkspaceRow) => void;
   onStatusChange: (taskId: string, status: TaskStatus) => Promise<void>;
   motionReduced?: boolean;

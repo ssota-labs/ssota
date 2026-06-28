@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const edgeInstanceSchema = z.object({
   id: z.string().uuid(),
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   edgeCatalogId: z.string().uuid(),
   catalogKey: z.string().min(1).optional(),
   catalogLabel: z.string().min(1).optional(),

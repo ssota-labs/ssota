@@ -41,7 +41,7 @@ import { usePreviewBridge, useStudioNodeMeasure } from "./preview-bridge";
 type StudioShellProps = {
   readOnly?: boolean;
   listVariant?: "grouped" | "flat";
-  projectId: string;
+  teamspaceId: string;
   component: GraphNode | null;
   /** Row id highlighted in the left explorer. */
   activeListItemId?: string | null;
@@ -51,7 +51,7 @@ type StudioShellProps = {
   themeCss: string;
   previewBasePath: string;
   onDeploy: (input: {
-    projectId: string;
+    teamspaceId: string;
     nodeId: string;
     contentV2?: UiComponentContentV2;
   }) => Promise<void>;
@@ -177,7 +177,7 @@ function StudioShellEmpty({
 function StudioShellEditor({
   readOnly = false,
   listVariant = "grouped",
-  projectId,
+  teamspaceId,
   component,
   activeListItemId,
   components,
@@ -196,7 +196,7 @@ function StudioShellEditor({
   };
 
   const storageKey = component
-    ? draftStorageKey(projectId, component.id)
+    ? draftStorageKey(teamspaceId, component.id)
     : null;
 
   const previewUrl = `${previewBasePath}?mode=bundle`;
@@ -210,7 +210,7 @@ function StudioShellEditor({
         fallback: createEmptyUiComponentContentV2(),
       });
     }
-    const key = draftStorageKey(projectId, component.id);
+    const key = draftStorageKey(teamspaceId, component.id);
     return resolveInitialContentV2({
       sessionContent: readSessionContentV2(key),
       publishedProperties: component.properties,
@@ -303,7 +303,7 @@ function StudioShellEditor({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              projectId,
+              teamspaceId,
               properties: {
                 ...component.properties,
                 files: contentV2Ref.current.files,
@@ -338,7 +338,7 @@ function StudioShellEditor({
       })();
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [component, structureHash, projectId]);
+  }, [component, structureHash, teamspaceId]);
 
   useEffect(() => {
     if (!component || !ready || !buildPreview) return;
@@ -385,7 +385,7 @@ function StudioShellEditor({
     if (!component) return;
     startTransition(async () => {
       await onDeploy({
-        projectId,
+        teamspaceId,
         nodeId: component.id,
         contentV2,
       });

@@ -11,7 +11,7 @@ export interface UpdateTaskDeps {
 
 export async function updateTask(
   deps: UpdateTaskDeps,
-  projectId: string,
+  teamspaceId: string,
   input: UpdateTaskInput,
 ): Promise<Task> {
   const { taskId, ...patch } = input;
@@ -27,9 +27,9 @@ export async function updateTask(
   if (!existing) {
     throw new TaskError("NOT_FOUND", `Task '${taskId}' not found`);
   }
-  if (existing.projectId !== projectId) {
+  if (existing.teamspaceId !== teamspaceId) {
     throw new TaskError(
-      "PROJECT_MISMATCH",
+      "ORG_MISMATCH",
       `Task '${taskId}' belongs to a different project`,
     );
   }
@@ -42,7 +42,7 @@ export async function updateTask(
       );
     }
     const node = await deps.graphRead.getNodeById(patch.targetNodeId);
-    assertGraphNodeInProject(projectId, node, "Target node");
+    assertGraphNodeInProject(teamspaceId, node, "Target node");
   }
 
   const updated = await deps.tasks.updateTask(taskId, patch);

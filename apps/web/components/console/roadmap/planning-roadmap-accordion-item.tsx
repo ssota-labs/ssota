@@ -20,7 +20,7 @@ type PlanningRoadmapAccordionItemProps = {
   year: number;
   node?: RoadmapNodeView;
   productRoadmapTitle: string;
-  projectId: string;
+  teamspaceId: string;
   defaultOpen?: boolean;
   onCreate: () => Promise<void>;
   onSave: (input: {
@@ -61,7 +61,7 @@ export function PlanningRoadmapAccordionItem({
   year,
   node,
   productRoadmapTitle,
-  projectId,
+  teamspaceId,
   defaultOpen = false,
   onCreate,
   onSave,
@@ -173,7 +173,7 @@ export function PlanningRoadmapAccordionItem({
             <div className="px-4 py-4 md:px-6 md:py-6">
               <RoadmapDocumentPanel
                 content={node.content}
-                projectId={projectId}
+                teamspaceId={teamspaceId}
                 expandTestId={`planning-roadmap-expand-${cardTestId}`}
                 onSave={async (input) => {
                   await onSaveContent({

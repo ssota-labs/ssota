@@ -14,7 +14,7 @@ export async function buildMainPrompt(
 ): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
   "use step";
   return buildRunPrompt({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runId: workflowRunId,
     runtimeKind: "main",
     threadId: input.threadId,

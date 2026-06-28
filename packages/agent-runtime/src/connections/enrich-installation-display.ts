@@ -107,7 +107,7 @@ async function mintConnectToken(
     normalizeConnectInstallationId(installation.tenantId);
 
   const tokenScope = {
-    projectId: scope.projectId,
+    teamspaceId: scope.teamspaceId,
     accountId: scope.accountId,
     ...(installationKey ? { installationId: installationKey } : {}),
   };

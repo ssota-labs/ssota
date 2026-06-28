@@ -14,6 +14,10 @@ import {
   createPageViewStatePort,
   createConnectorToolSettingsPort,
   createOrgMembershipPort,
+  registerTeamspaceOrganization,
+  requireCachedOrganizationIdForTeamspace,
+  resolveOrganizationIdForTeamspace,
+  getCachedOrganizationIdForTeamspace,
   type AccountRecord,
 } from "@ssota/adapter-postgres";
 
@@ -28,8 +32,10 @@ export function getDb(): Db {
   return cachedDb;
 }
 
-export function getTaskPort(projectId: string, accountId?: string) {
-  return createTaskPort(getDb(), { projectId, accountId });
+export { registerTeamspaceOrganization };
+
+export function getTaskPort(teamspaceId: string, accountId?: string) {
+  return createTaskPort(getDb(), { teamspaceId, accountId });
 }
 
 export function getConsolePort() {
@@ -52,12 +58,25 @@ export function getAccountReadPort() {
   return createDbAccountReadPort(getDb());
 }
 
-export function getGraphPorts(projectId: string, accountId?: string) {
-  return createGraphPorts(getDb(), { projectId, accountId });
+export function getGraphPorts(teamspaceId: string, accountId?: string) {
+  const organizationId = requireCachedOrganizationIdForTeamspace(teamspaceId);
+  return createGraphPorts(getDb(), { organizationId, teamspaceId, accountId });
 }
 
-export function getChatPort(projectId: string, accountId?: string | null) {
-  return createChatPort(getDb(), { projectId, accountId });
+export async function getGraphPortsForTeamspace(
+  teamspaceId: string,
+  accountId?: string,
+) {
+  let organizationId = getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (!organizationId) {
+    organizationId = await resolveOrganizationIdForTeamspace(getDb(), teamspaceId);
+    registerTeamspaceOrganization(teamspaceId, organizationId);
+  }
+  return createGraphPorts(getDb(), { organizationId, teamspaceId, accountId });
+}
+
+export function getChatPort(teamspaceId: string, accountId?: string | null) {
+  return createChatPort(getDb(), { teamspaceId, accountId });
 }
 
 export function getAccountConnectionPort() {
@@ -69,29 +88,29 @@ export function getChatWorkspacePort() {
 }
 
 /**
- * The shared, per-project account the builder console binds chat + connections to.
+ * The shared, per-teamspace account the builder console binds chat + connections to.
  * End-user surfaces use per-user accounts via AccountReadPort.provisionForUser.
  */
 export async function getOrCreateProjectAccount(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<AccountRecord> {
-  return getAccountReadPort().getOrCreateWorkspaceAccount(projectId);
+  return getAccountReadPort().getOrCreateWorkspaceAccount(teamspaceId);
 }
 
-export function getWorkflowInstructionPort(projectId: string) {
-  return createWorkflowInstructionPort(getDb(), { projectId });
+export function getWorkflowInstructionPort(teamspaceId: string) {
+  return createWorkflowInstructionPort(getDb(), { teamspaceId });
 }
 
-export function getSchedulePort(projectId: string, accountId?: string | null) {
-  return createSchedulePort(getDb(), { projectId, accountId });
+export function getSchedulePort(teamspaceId: string, accountId?: string | null) {
+  return createSchedulePort(getDb(), { teamspaceId, accountId });
 }
 
-export function getPagePort(projectId: string) {
-  return createPagePort(getDb(), { projectId });
+export function getPagePort(teamspaceId: string) {
+  return createPagePort(getDb(), { teamspaceId });
 }
 
-export function getPageViewStatePort(projectId: string) {
-  return createPageViewStatePort(getDb(), { projectId });
+export function getPageViewStatePort(teamspaceId: string) {
+  return createPageViewStatePort(getDb(), { teamspaceId });
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {
@@ -100,9 +119,10 @@ export async function resolveDefaultProjectId(): Promise<string> {
   if (!org) {
     throw new Error("Default organization not found — run db:seed");
   }
-  const project = await consolePort.getProjectBySlug(org.id, "ssota-dev");
+  const project = await consolePort.getTeamspaceBySlug(org.id, "ssota-dev");
   if (!project) {
-    throw new Error("Default project not found — run db:seed");
+    throw new Error("Default teamspace not found — run db:seed");
   }
+  registerTeamspaceOrganization(project.id, org.id);
   return project.id;
 }

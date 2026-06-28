@@ -14,7 +14,7 @@ export async function GET(
   const { taskId } = await params;
   return withAuth(request, async (ctx) => {
     const input = GetTaskInputSchema.parse({ taskId });
-    const data = await getTask(ctx.projectId, input);
+    const data = await getTask(ctx.teamspaceId, input);
     return jsonOk(TaskResponseSchema.parse({ data }).data);
   });
 }
@@ -37,7 +37,7 @@ export async function PATCH(
     );
     if (!parsed.ok) return parsed.response;
     try {
-      const data = await updateTask(ctx.projectId, parsed.data);
+      const data = await updateTask(ctx.teamspaceId, parsed.data);
       return jsonOk(TaskResponseSchema.parse({ data }).data);
     } catch (error) {
       const mapped = mapTaskError(error);

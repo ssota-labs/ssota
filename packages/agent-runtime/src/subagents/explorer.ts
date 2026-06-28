@@ -101,8 +101,6 @@ ${options.instructions}
 - You CANNOT ask questions — no one will respond.
 - This is READ-ONLY.
 - Your final message MUST include both a **Summary** and an **Answer**.`,
-      // SSOTA scope so the read tools resolve projectId/accountId. v7 delivers
-      // context per tool via `toolsContext[toolName]`.
       toolsContext: buildToolsContext(settings.tools, { ssota: options.context }),
     };
   },

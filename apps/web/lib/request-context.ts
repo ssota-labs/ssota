@@ -2,7 +2,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { getDefaultProjectPath } from "@/lib/console/default-landing";
 import { resolveOnboardingPath } from "@/lib/onboarding/resolve";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { resolveOrg } from "@/lib/console/resolve-project";
 import { loginRedirect } from "@/lib/auth/login-redirect";
 import {
   getAccountReadPort,
@@ -12,8 +12,8 @@ import {
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export type RequestContext =
-  | { mode: "builder"; userId: string; orgId: string; projectId: string }
-  | { mode: "end_user"; userId: string; projectId: string; accountId: string };
+  | { mode: "builder"; userId: string; orgId: string; teamspaceId: string }
+  | { mode: "end_user"; userId: string; teamspaceId: string; accountId: string };
 
 async function requireAuthenticatedUser(returnTo: string) {
   const user = await getCurrentUser();
@@ -31,16 +31,16 @@ async function requireOnboardingCompleted(userId: string) {
 
 export async function resolveBuilderContext(
   orgSlug: string,
-  projectSlug: string,
+  teamspaceSlug: string,
 ): Promise<RequestContext & { mode: "builder" }> {
   const requestHeaders = await headers();
   const returnTo =
-    requestHeaders.get("x-pathname") ?? `/${orgSlug}/${projectSlug}`;
+    requestHeaders.get("x-pathname") ?? `/${orgSlug}/${teamspaceSlug}`;
 
   const user = await requireAuthenticatedUser(returnTo);
   await requireOnboardingCompleted(user.id);
 
-  const { org, project } = await resolveProject(orgSlug, projectSlug);
+  const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
   const consolePort = getConsolePort();
   const organizations = await consolePort.listOrganizationsForUser(user.id);
   if (!organizations.some((item) => item.id === org.id)) {
@@ -51,16 +51,16 @@ export async function resolveBuilderContext(
     mode: "builder",
     userId: user.id,
     orgId: org.id,
-    projectId: project.id,
+    teamspaceId: project.id,
   };
 }
 
 export async function resolveEndUserContext(
   orgSlug: string,
-  projectSlug: string,
+  teamspaceSlug: string,
 ): Promise<RequestContext & { mode: "end_user" }> {
-  const returnTo = `/app/${orgSlug}/${projectSlug}`;
-  const { org, project } = await resolveProject(orgSlug, projectSlug);
+  const returnTo = `/app/${orgSlug}/${teamspaceSlug}`;
+  const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
 
   if (!project.appEnabled) {
     notFound();
@@ -74,33 +74,33 @@ export async function resolveEndUserContext(
   return {
     mode: "end_user",
     userId: user.id,
-    projectId: project.id,
+    teamspaceId: project.id,
     accountId: account.id,
   };
 }
 
 export type EndUserShellContext = {
   orgSlug: string;
-  projectSlug: string;
+  teamspaceSlug: string;
   orgId: string;
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   userEmail: string;
 };
 
 export async function resolveEndUserShellContext(
   orgSlug: string,
-  projectSlug: string,
+  teamspaceSlug: string,
 ): Promise<EndUserShellContext> {
-  const ctx = await resolveEndUserContext(orgSlug, projectSlug);
-  const { org, project } = await resolveProject(orgSlug, projectSlug);
+  const ctx = await resolveEndUserContext(orgSlug, teamspaceSlug);
+  const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
   const user = await getCurrentUser();
 
   return {
     orgSlug,
-    projectSlug,
+    teamspaceSlug,
     orgId: org.id,
-    projectId: project.id,
+    teamspaceId: project.id,
     accountId: ctx.accountId,
     userEmail: user?.email ?? "",
   };

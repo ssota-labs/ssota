@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { ConsolePort, Organization, Project } from "@ssota/core";
+import type { ConsolePort, Organization, Teamspace } from "@ssota/core";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
@@ -46,14 +46,14 @@ export function createConsolePort(db: Db): ConsolePort {
       );
     },
 
-    async getProjectBySlug(organizationId, projectSlug) {
+    async getTeamspaceBySlug(organizationId, teamspaceSlug) {
       const rows = await db
         .select()
-        .from(schema.projects)
+        .from(schema.teamspaces)
         .where(
           and(
-            eq(schema.projects.organizationId, organizationId),
-            eq(schema.projects.slug, projectSlug),
+            eq(schema.teamspaces.organizationId, organizationId),
+            eq(schema.teamspaces.slug, teamspaceSlug),
           ),
         )
         .limit(1);
@@ -65,14 +65,14 @@ export function createConsolePort(db: Db): ConsolePort {
         slug: row.slug,
         name: row.name,
         appEnabled: row.appEnabled,
-      } satisfies Project;
+      } satisfies Teamspace;
     },
 
-    async getProjectById(projectId) {
+    async getTeamspaceById(teamspaceId) {
       const rows = await db
         .select()
-        .from(schema.projects)
-        .where(eq(schema.projects.id, projectId))
+        .from(schema.teamspaces)
+        .where(eq(schema.teamspaces.id, teamspaceId))
         .limit(1);
       const row = rows[0];
       if (!row) return null;
@@ -82,14 +82,14 @@ export function createConsolePort(db: Db): ConsolePort {
         slug: row.slug,
         name: row.name,
         appEnabled: row.appEnabled,
-      } satisfies Project;
+      } satisfies Teamspace;
     },
 
-    async listProjectsForOrganization(organizationId) {
+    async listTeamspacesForOrganization(organizationId) {
       const rows = await db
         .select()
-        .from(schema.projects)
-        .where(eq(schema.projects.organizationId, organizationId));
+        .from(schema.teamspaces)
+        .where(eq(schema.teamspaces.organizationId, organizationId));
       return rows.map(
         (row) =>
           ({
@@ -98,7 +98,7 @@ export function createConsolePort(db: Db): ConsolePort {
             slug: row.slug,
             name: row.name,
             appEnabled: row.appEnabled,
-          }) satisfies Project,
+          }) satisfies Teamspace,
       );
     },
   };

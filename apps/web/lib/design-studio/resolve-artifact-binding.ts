@@ -32,7 +32,7 @@ function isBuiltMarker(
  * not in core's domain-neutral resolver.
  */
 export async function resolveArtifactBindings(
-  projectId: string,
+  teamspaceId: string,
   bindings: Record<string, BindingDef>,
   bindingData: Record<string, unknown>,
 ): Promise<void> {
@@ -42,7 +42,7 @@ export async function resolveArtifactBindings(
   if (artifactKeys.length === 0) return;
 
   const hasBuilt = artifactKeys.some((key) => isBuiltMarker(bindingData[key]));
-  const themeCss = hasBuilt ? (await resolveProjectTheme(projectId)).themeCss : "";
+  const themeCss = hasBuilt ? (await resolveProjectTheme(teamspaceId)).themeCss : "";
 
   for (const key of artifactKeys) {
     const marker = bindingData[key];
@@ -51,8 +51,8 @@ export async function resolveArtifactBindings(
       status: "built",
       nodeId: marker.nodeId,
       buildId: marker.buildId,
-      jsUrl: studioPreviewBundleUrl(projectId, marker.buildId, "bundle.js"),
-      cssUrl: studioPreviewBundleUrl(projectId, marker.buildId, "bundle.css"),
+      jsUrl: studioPreviewBundleUrl(teamspaceId, marker.buildId, "bundle.js"),
+      cssUrl: studioPreviewBundleUrl(teamspaceId, marker.buildId, "bundle.css"),
       themeCss,
     } satisfies ResolvedArtifact;
   }

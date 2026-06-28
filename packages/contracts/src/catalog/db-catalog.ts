@@ -1,9 +1,9 @@
 import { z } from "zod";
 
-/** L1 data catalog row — project-scoped node type definition. */
+/** L1 data catalog row — org-scoped node type definition. */
 export const nodeCatalogRowSchema = z.object({
   id: z.string().uuid(),
-  projectId: z.string().uuid(),
+  organizationId: z.string().uuid(),
   key: z.string().min(1),
   label: z.string().min(1),
   /** Search-facing one-line description (empty when not authored). */
@@ -15,10 +15,10 @@ export const nodeCatalogRowSchema = z.object({
 
 export type NodeCatalogRow = z.infer<typeof nodeCatalogRowSchema>;
 
-/** L1 data catalog row — project-scoped edge type definition. */
+/** L1 data catalog row — org-scoped edge type definition. */
 export const edgeCatalogRowSchema = z.object({
   id: z.string().uuid(),
-  projectId: z.string().uuid(),
+  organizationId: z.string().uuid(),
   key: z.string().min(1),
   label: z.string().min(1),
   /** Search-facing one-line description (empty when not authored). */

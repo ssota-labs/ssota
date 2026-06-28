@@ -19,7 +19,7 @@ export function safeNextPath(next: string | null | undefined): string | null {
     return path;
   }
 
-  // Console routes: /{orgSlug}/{projectSlug}/...
+  // Console routes: /{orgSlug}/{teamspaceSlug}/...
   if (/^\/[^/]+\/[^/]+(\/.*)?$/.test(url.pathname)) {
     return path;
   }

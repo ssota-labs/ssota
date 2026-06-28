@@ -14,7 +14,7 @@ export interface SpawnTaskDeps {
 
 export async function spawnTask(
   deps: SpawnTaskDeps,
-  projectId: string,
+  teamspaceId: string,
   input: SpawnTaskInput,
 ): Promise<Task> {
   let workflowInstructionId = input.workflowInstructionId ?? null;
@@ -22,7 +22,7 @@ export async function spawnTask(
 
   if (workflowInstructionId) {
     const row = await deps.workflowInstructions.getById(workflowInstructionId);
-    if (!row || row.projectId !== projectId) {
+    if (!row || row.teamspaceId !== teamspaceId) {
       throw new TaskError(
         "UNKNOWN_WORKFLOW_INSTRUCTION",
         `Workflow instruction '${workflowInstructionId}' not found in project`,
@@ -66,7 +66,7 @@ export async function spawnTask(
       );
     }
     const node = await deps.graphRead.getNodeById(input.targetNodeId);
-    assertGraphNodeInProject(projectId, node, "Target node");
+    assertGraphNodeInProject(teamspaceId, node, "Target node");
   }
 
   if (input.parentTaskId) {
@@ -74,9 +74,9 @@ export async function spawnTask(
     if (!parent) {
       throw new TaskError("NOT_FOUND", `Parent task '${input.parentTaskId}' not found`);
     }
-    if (parent.projectId !== projectId) {
+    if (parent.teamspaceId !== teamspaceId) {
       throw new TaskError(
-        "PROJECT_MISMATCH",
+        "ORG_MISMATCH",
         `Parent task '${input.parentTaskId}' belongs to a different project`,
       );
     }

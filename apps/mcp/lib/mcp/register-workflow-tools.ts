@@ -32,8 +32,8 @@ export function registerWorkflowTools(server: McpToolServer) {
         "List workflow instruction definitions for this project (metadata only).",
       inputSchema: {},
     },
-    async ({ projectId }) =>
-      jsonContent(await listWorkflowsForMcp(getDb(), projectId)),
+    async ({ teamspaceId }) =>
+      jsonContent(await listWorkflowsForMcp(getDb(), teamspaceId)),
   );
 
   registerScopedProjectTool(
@@ -45,9 +45,9 @@ export function registerWorkflowTools(server: McpToolServer) {
         "Fetch workflow instruction metadata by key. Use get_workflow_instruction for the full body.",
       inputSchema: { workflowKey: z.string().min(1) },
     },
-    async ({ args, projectId }) => {
+    async ({ args, teamspaceId }) => {
       const workflowKey = String(args.workflowKey);
-      const workflow = await getWorkflowForMcp(getDb(), projectId, workflowKey);
+      const workflow = await getWorkflowForMcp(getDb(), teamspaceId, workflowKey);
       if (!workflow) {
         throwUnknownWorkflowKey(workflowKey);
       }
@@ -64,11 +64,11 @@ export function registerWorkflowTools(server: McpToolServer) {
         "Fetch the full instruction text for a workflow key from the project DB.",
       inputSchema: { workflowKey: z.string().min(1) },
     },
-    async ({ args, projectId }) => {
+    async ({ args, teamspaceId }) => {
       const workflowKey = String(args.workflowKey);
       const instruction = await getWorkflowInstructionForMcp(
         getDb(),
-        projectId,
+        teamspaceId,
         workflowKey,
       );
       if (!instruction) {

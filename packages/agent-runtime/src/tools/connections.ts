@@ -48,7 +48,7 @@ import {
 export interface CreateConnectionToolsInput {
   credentials: CredentialProvider;
   accountId?: string;
-  projectId: string;
+  teamspaceId: string;
   connectionState: ConnectionRunState;
   sessionManager: McpSessionManager;
 }
@@ -119,7 +119,7 @@ async function runConnectionSearch(
   input: {
     query: string;
     connection?: string;
-    projectId: string;
+    teamspaceId: string;
     accountId?: string;
     credentials: CredentialProvider;
     sessionManager: McpSessionManager;
@@ -159,7 +159,7 @@ async function runConnectionSearch(
     for (const install of installs) {
       const connected =
         (await input.credentials.getToken(install.connectorUid, {
-          projectId: input.projectId,
+          teamspaceId: input.teamspaceId,
           accountId: input.accountId,
           installationId: install.installationId ?? undefined,
           userId: install.subjectUserId ?? undefined,
@@ -180,7 +180,7 @@ async function runConnectionSearch(
       let listError: string | undefined;
       try {
         const listed = await input.sessionManager.listTools(connection, {
-          projectId: input.projectId,
+          teamspaceId: input.teamspaceId,
           accountId: input.accountId,
           installationId: install.installationId,
           userId: install.subjectUserId,
@@ -242,7 +242,7 @@ async function runConnectionSearch(
 
     const connected = subjectUserId
       ? (await input.credentials.getToken(connectorUid, {
-          projectId: input.projectId,
+          teamspaceId: input.teamspaceId,
           accountId: input.accountId,
           userId: subjectUserId,
         })) !== null
@@ -327,7 +327,7 @@ function buildConnectionSearchTool(
           component: "connection_search",
           query: searchInput.query,
           connectionFilter: searchInput.connection ?? null,
-          projectId: ctx.projectId,
+          teamspaceId: ctx.teamspaceId,
           accountId: ctx.accountId ?? null,
         }),
       );
@@ -337,7 +337,7 @@ function buildConnectionSearchTool(
         {
           query: searchInput.query,
           connection: searchInput.connection,
-          projectId: ctx.projectId,
+          teamspaceId: ctx.teamspaceId,
           accountId: ctx.accountId,
           credentials: provider ?? input.credentials,
           sessionManager: input.sessionManager,
@@ -413,7 +413,7 @@ function buildConnectionCallTool(
           };
         }
         const cred = await input.credentials.getToken(connectorUid, {
-          projectId: ctx.projectId,
+          teamspaceId: ctx.teamspaceId,
           accountId: ctx.accountId,
           userId: subjectUserId,
         });
@@ -466,7 +466,7 @@ function buildConnectionCallTool(
       return input.sessionManager.callTool(
         connection,
         {
-          projectId: ctx.projectId,
+          teamspaceId: ctx.teamspaceId,
           accountId: ctx.accountId,
           installationId,
           userId: subjectUserId,
@@ -506,7 +506,7 @@ function buildRequestConnectionTool() {
         connectionRequired: true as const,
         connector: requestInput.connector,
         reason: requestInput.reason,
-        projectId: ctx.projectId,
+        teamspaceId: ctx.teamspaceId,
         accountId: ctx.accountId ?? null,
       };
     },

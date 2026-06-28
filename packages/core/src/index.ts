@@ -56,7 +56,7 @@ async function prepareAction(
   ports: ActionPorts,
   params: ExecuteActionInput,
 ): Promise<PreparedAction | { rejected: ExecuteActionResult }> {
-  const { actionType, input, projectId } = params;
+  const { actionType, input, teamspaceId } = params;
   const actionEntry = await ports.catalog.getActionCatalogEntry(actionType);
 
   let resolvedInput = input;
@@ -267,7 +267,7 @@ async function prepareAction(
   }
 
   try {
-    await enforceProjectScope(projectId, effects, (nodeId) =>
+    await enforceProjectScope(teamspaceId, effects, (nodeId) =>
       ports.graph.getNode(nodeId),
     );
   } catch (err) {
@@ -280,7 +280,7 @@ async function prepareAction(
   }
 
   try {
-    effects = await enforceTaskSpawnIntegrity(projectId, effects, {
+    effects = await enforceTaskSpawnIntegrity(teamspaceId, effects, {
       getNode: (nodeId) => ports.graph.getNode(nodeId),
       getTask: (taskId) => ports.tasks.getTask(taskId),
       getWorkflowByKey: (workflowKey) =>
@@ -370,7 +370,7 @@ export async function executeAction(
   ports: ActionPorts,
   params: ExecuteActionInput,
 ): Promise<ExecuteActionResult> {
-  const { actionType, input, executorId, executorType, idempotencyKey, projectId } =
+  const { actionType, input, executorId, executorType, idempotencyKey, teamspaceId } =
     params;
 
   if (idempotencyKey) {
@@ -457,7 +457,7 @@ export async function executeAction(
       proposedEffects: effects,
       status: "pending",
       reason: gateReason,
-      projectId,
+      teamspaceId,
     });
 
     await ports.commit.commit({
@@ -553,7 +553,7 @@ export async function approveGate(
   ports: ActionPorts,
   params: {
     gateId: string;
-    projectId: string;
+    teamspaceId: string;
     executorId: string;
     executorType: "Human";
     approved: boolean;
@@ -569,7 +569,7 @@ export async function approveGate(
     },
     executorId: params.executorId,
     executorType: params.executorType,
-    projectId: params.projectId,
+    teamspaceId: params.teamspaceId,
   });
 }
 

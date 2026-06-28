@@ -13,7 +13,7 @@ import { readLifecycleStatus, readNodeContent } from "@ssota/core";
 import { updateGraphNodeAction } from "@/lib/graph/actions/graph-mutations";
 
 type NodeDetailWorkspaceProps = {
-  projectId: string;
+  teamspaceId: string;
   detail: NodeDetailView;
   nodesBasePath: string;
   revalidatePath: string;
@@ -74,7 +74,7 @@ function EdgeTable({
 }
 
 export function NodeDetailWorkspace({
-  projectId,
+  teamspaceId,
   detail,
   nodesBasePath,
   revalidatePath,
@@ -95,7 +95,7 @@ export function NodeDetailWorkspace({
   const handleSave = () => {
     startTransition(async () => {
       await updateGraphNodeAction({
-        projectId,
+        teamspaceId,
         nodeId: detail.node.id,
         title: draftTitle,
         content: draftContent,

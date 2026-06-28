@@ -15,7 +15,7 @@ type PageRow = typeof schema.pages.$inferSelect;
 function mapPage(row: PageRow): Page {
   return pageSchema.parse({
     id: row.id,
-    projectId: row.projectId,
+    teamspaceId: row.teamspaceId,
     accountId: row.accountId ?? null,
     title: row.title,
     icon: row.icon ?? null,
@@ -36,13 +36,13 @@ function mapPage(row: PageRow): Page {
  * page-as-graph-node reads/writes (`queryNodes({catalogKey:"page"})`).
  */
 export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
-  const { projectId } = scope;
+  const { teamspaceId } = scope;
   return {
     async listPages() {
       const rows = await db
         .select()
         .from(schema.pages)
-        .where(eq(schema.pages.projectId, projectId))
+        .where(eq(schema.pages.teamspaceId, teamspaceId))
         .orderBy(asc(schema.pages.position));
       return rows.map(mapPage);
     },
@@ -52,7 +52,7 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
         .from(schema.pages)
         .where(
           and(
-            eq(schema.pages.projectId, projectId),
+            eq(schema.pages.teamspaceId, teamspaceId),
             parentId === null
               ? isNull(schema.pages.parentId)
               : eq(schema.pages.parentId, parentId),
@@ -67,7 +67,7 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
         .from(schema.pages)
         .where(
           and(
-            eq(schema.pages.projectId, projectId),
+            eq(schema.pages.teamspaceId, teamspaceId),
             eq(schema.pages.appliesToNodeType, catalogKey),
           ),
         )
@@ -79,7 +79,7 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
         .select()
         .from(schema.pages)
         .where(
-          and(eq(schema.pages.projectId, projectId), eq(schema.pages.id, id)),
+          and(eq(schema.pages.teamspaceId, teamspaceId), eq(schema.pages.id, id)),
         )
         .limit(1);
       return rows[0] ? mapPage(rows[0]) : null;
@@ -90,7 +90,7 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
         .from(schema.pages)
         .where(
           and(
-            eq(schema.pages.projectId, projectId),
+            eq(schema.pages.teamspaceId, teamspaceId),
             eq(schema.pages.slug, slug),
           ),
         )
@@ -102,7 +102,7 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
       const [row] = await db
         .insert(schema.pages)
         .values({
-          projectId,
+          teamspaceId,
           parentId: parsed.parentId ?? null,
           position: parsed.position ?? 0,
           title: parsed.title,
@@ -137,7 +137,7 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
         .update(schema.pages)
         .set(set)
         .where(
-          and(eq(schema.pages.projectId, projectId), eq(schema.pages.id, id)),
+          and(eq(schema.pages.teamspaceId, teamspaceId), eq(schema.pages.id, id)),
         )
         .returning();
       return row ? mapPage(row) : null;
@@ -147,7 +147,7 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
         .update(schema.pages)
         .set({ parentId: parentId ?? null, position, updatedAt: new Date() })
         .where(
-          and(eq(schema.pages.projectId, projectId), eq(schema.pages.id, id)),
+          and(eq(schema.pages.teamspaceId, teamspaceId), eq(schema.pages.id, id)),
         )
         .returning();
       return row ? mapPage(row) : null;
@@ -156,7 +156,7 @@ export function createPagePort(db: Db, scope: ActionPortsScope): PagePort {
       await db
         .delete(schema.pages)
         .where(
-          and(eq(schema.pages.projectId, projectId), eq(schema.pages.id, id)),
+          and(eq(schema.pages.teamspaceId, teamspaceId), eq(schema.pages.id, id)),
         );
     },
   };
@@ -191,7 +191,7 @@ const SEED_SPEC_SYNC_SLUGS = new Set([
  */
 export async function seedPages(
   db: Db,
-  projectId: string,
+  teamspaceId: string,
   pages: PageTreeSeedEntry[] = pagesTreeSeed as unknown as PageTreeSeedEntry[],
 ): Promise<void> {
   const entries = pages;
@@ -208,7 +208,7 @@ export async function seedPages(
       .from(schema.pages)
       .where(
         and(
-          eq(schema.pages.projectId, projectId),
+          eq(schema.pages.teamspaceId, teamspaceId),
           eq(schema.pages.slug, entry.key),
         ),
       )
@@ -264,7 +264,7 @@ export async function seedPages(
     const [row] = await db
       .insert(schema.pages)
       .values({
-        projectId,
+        teamspaceId,
         parentId,
         position,
         title: parsed.title,

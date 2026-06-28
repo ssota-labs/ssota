@@ -47,7 +47,7 @@ export async function assertRoadmapCreateAllowed(
   }
 
   const existing = await graphRead.queryNodes({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     catalogKey: "roadmap",
     limit: 200,
   });

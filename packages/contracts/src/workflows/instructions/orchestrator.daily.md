@@ -11,7 +11,7 @@ Review project task backlog and spawn today's work items for agents or humans.
 
 ## Preconditions
 
-- Project context resolved
+- Teamspace context resolved
 - No duplicate run for same calendar day (`idempotencyKey=daily:{YYYY-MM-DD}` on orchestrator summary task optional)
 
 ## Steps

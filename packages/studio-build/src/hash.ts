@@ -3,7 +3,7 @@ import type { StudioBuildInput } from "./types.js";
 
 export function computeBuildHash(input: StudioBuildInput): string {
   const payload = JSON.stringify({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     entry: input.entry,
     files: input.files,
     toolchainDigest: input.toolchainDigest,

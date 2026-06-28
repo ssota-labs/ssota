@@ -20,7 +20,7 @@ type SaveStatus = "idle" | "pending" | "saving" | "saved" | "error";
 
 type RoadmapDocumentPanelProps = {
   content: string;
-  projectId: string;
+  teamspaceId: string;
   onSave: (input: { content: string }) => Promise<void>;
   expandTestId?: string;
   className?: string;
@@ -28,7 +28,7 @@ type RoadmapDocumentPanelProps = {
 
 export function RoadmapDocumentPanel({
   content,
-  projectId,
+  teamspaceId,
   onSave,
   expandTestId = "roadmap-expand",
   className,
@@ -53,8 +53,8 @@ export function RoadmapDocumentPanel({
   onSaveRef.current = onSave;
 
   const editorHostProps = useMemo(
-    () => createSsotaEditorHostProps(projectId),
-    [projectId],
+    () => createSsotaEditorHostProps(teamspaceId),
+    [teamspaceId],
   );
 
   useEffect(() => {

@@ -7,11 +7,11 @@ export const metadata = {
 };
 
 export default async function EditorLabBlockNotePage() {
-  let projectId: string | null = null;
+  let teamspaceId: string | null = null;
   try {
-    projectId = await resolveDefaultProjectId();
+    teamspaceId = await resolveDefaultProjectId();
   } catch {
-    projectId = null;
+    teamspaceId = null;
   }
 
   return (
@@ -25,13 +25,13 @@ export default async function EditorLabBlockNotePage() {
           </Link>
           와 나란히 검증합니다.
         </p>
-        {!projectId ? (
+        {!teamspaceId ? (
           <p className="text-sm text-amber-600">
             이미지 업로드는 시드된 프로젝트가 필요합니다. `pnpm db:seed` 후 새로고침하세요.
           </p>
         ) : null}
       </div>
-      <EditorLabBlockNoteClient projectId={projectId} />
+      <EditorLabBlockNoteClient teamspaceId={teamspaceId} />
     </main>
   );
 }

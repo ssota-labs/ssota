@@ -4,7 +4,7 @@
  * WorkflowAgent workflow; only the input shape is shared here.
  */
 export interface RunSsotaAgentInput {
-  projectId: string;
+  teamspaceId: string;
   taskId: string;
   /** End-user data partition (Phase 5). Undefined = builder/shared scope. */
   accountId?: string;

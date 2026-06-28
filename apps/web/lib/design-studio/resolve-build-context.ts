@@ -21,7 +21,7 @@ export function hashToolchainDigest(input: {
 }
 
 export function resolveBuildContext(input: {
-  projectId: string;
+  teamspaceId: string;
   node: GraphNode;
   packageJson: DesignToolchainPackageJson;
   lockfile: string;
@@ -48,7 +48,7 @@ export function resolveBuildContext(input: {
   });
 
   return {
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     entry,
     files: content.files,
     packageJson: input.packageJson,

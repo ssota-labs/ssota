@@ -18,7 +18,7 @@ function mockFetch(
 }
 
 describe("createClient", () => {
-  it("sends X-SSOTA-Project-Id when projectId is configured", async () => {
+  it("sends X-SSOTA-Teamspace-Id when teamspaceId is configured", async () => {
     const payload = TaskListResponseSchema.parse({ data: [] });
     let capturedProjectId: string | undefined;
 
@@ -31,7 +31,7 @@ describe("createClient", () => {
     const ssota = createClient({
       url: "http://localhost:3001/api/v1",
       auth: { accessToken: "test-token" },
-      projectId: TEST_PROJECT_ID,
+      teamspaceId: TEST_PROJECT_ID,
       fetch,
     });
 
@@ -44,7 +44,7 @@ describe("createClient", () => {
       data: [
         {
           id: "00000000-0000-4000-8000-000000000010",
-          projectId: TEST_PROJECT_ID,
+          teamspaceId: TEST_PROJECT_ID,
           workflowInstructionId: null,
           workflowInstructionKey: "development",
           title: "Ship task runtime",

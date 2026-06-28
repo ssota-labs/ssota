@@ -12,7 +12,7 @@ import { connectTokenScopesForConnector } from "./mcp-scopes.js";
 import { resolveEmulateSlackOAuthAuthorizeUrl } from "../connections/provider-api-base.js";
 
 export interface CredentialScope {
-  projectId: string;
+  teamspaceId: string;
   accountId?: string;
   /**
    * Provider installation to scope the token to (Slack team id, GitHub org id).

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const listNodesByTypeInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   catalogKey: z.string().min(1).optional(),
   nodeCatalogId: z.string().uuid().optional(),
   /** Filter on properties.lifecycleStatus (dev-workflow convention). */
@@ -13,7 +13,7 @@ export const listNodesByTypeInputSchema = z.object({
 export type ListNodesByTypeInput = z.input<typeof listNodesByTypeInputSchema>;
 
 export const traverseEdgesInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   nodeId: z.string().uuid(),
   direction: z.enum(["outgoing", "incoming", "both"]).default("both"),
   catalogKey: z.string().min(1).optional(),
@@ -23,7 +23,7 @@ export const traverseEdgesInputSchema = z.object({
 export type TraverseEdgesInput = z.input<typeof traverseEdgesInputSchema>;
 
 export const listEdgesInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   catalogKey: z.string().min(1).optional(),
   edgeCatalogId: z.string().uuid().optional(),
   limit: z.number().int().positive().max(500).default(100),
@@ -33,14 +33,14 @@ export const listEdgesInputSchema = z.object({
 export type ListEdgesInput = z.input<typeof listEdgesInputSchema>;
 
 export const getNodeInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   nodeId: z.string().uuid(),
 });
 
 export type GetNodeInput = z.infer<typeof getNodeInputSchema>;
 
 export const traverseFromInitiativeInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   initiativeId: z.string().uuid(),
   catalogKey: z.string().min(1).optional(),
   edgeCatalogId: z.string().uuid().optional(),
@@ -52,7 +52,7 @@ export type TraverseFromInitiativeInput = z.infer<
 >;
 
 export const getEvergreenSingletonInputSchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   catalogKey: z.string().min(1),
 });
 

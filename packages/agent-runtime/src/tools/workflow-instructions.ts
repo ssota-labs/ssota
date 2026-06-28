@@ -25,7 +25,7 @@ export function createWorkflowInstructionTools(): ToolSet {
       execute: async (_input, { context }) => {
         const ctx = getRunContext(context);
         const items = await listWorkflowInstructions(
-          getWorkflowInstructionPort(ctx.projectId, ctx.accountId),
+          getWorkflowInstructionPort(ctx.teamspaceId, ctx.accountId),
         );
         const dbRows = items.map(({ instruction }) => ({
           id: instruction.id as string | null,
@@ -51,7 +51,7 @@ export function createWorkflowInstructionTools(): ToolSet {
       }),
       execute: async (input, { context }) => {
         const ctx = getRunContext(context);
-        const port = getWorkflowInstructionPort(ctx.projectId, ctx.accountId);
+        const port = getWorkflowInstructionPort(ctx.teamspaceId, ctx.accountId);
         const result = input.id
           ? await readWorkflowInstructionById(port, input.id)
           : input.key
@@ -103,7 +103,7 @@ export function createWorkflowInstructionTools(): ToolSet {
         const ctx = getRunContext(context);
         try {
           const saved = await getWorkflowInstructionPort(
-            ctx.projectId,
+            ctx.teamspaceId,
             ctx.accountId,
           ).upsertInstruction({
             key: input.key,

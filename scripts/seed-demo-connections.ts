@@ -14,18 +14,18 @@ async function main() {
   const { db, client } = createDb(databaseUrl);
 
   const [row] = (await db.execute(sql`
-    SELECT p.id AS project_id, a.id AS account_id
+    SELECT p.id AS teamspace_id, a.id AS account_id
     FROM projects p
-    JOIN accounts a ON a.project_id = p.id AND a.slug = 'workspace'
+    JOIN accounts a ON a.teamspace_id = p.id AND a.slug = 'workspace'
     WHERE p.slug = 'ssota-dev'
     LIMIT 1
-  `)) as { project_id: string; account_id: string }[];
+  `)) as { teamspace_id: string; account_id: string }[];
 
   if (!row) {
     throw new Error("ssota-dev workspace account not found — run pnpm db:seed");
   }
 
-  const { project_id: projectId, account_id: accountId } = row;
+  const { teamspace_id: teamspaceId, account_id: accountId } = row;
 
   await db.execute(sql`DELETE FROM account_connections WHERE account_id = ${accountId}`);
 
@@ -71,9 +71,9 @@ async function main() {
   for (const c of demoConnections) {
     await db.execute(sql`
       INSERT INTO account_connections (
-        project_id, account_id, connector, installation_id, tenant_id, name
+        teamspace_id, account_id, connector, installation_id, tenant_id, name
       ) VALUES (
-        ${projectId}, ${accountId}, ${c.connector}, ${c.installationId},
+        ${teamspaceId}, ${accountId}, ${c.connector}, ${c.installationId},
         ${c.tenantId}, ${c.name}
       )
       ON CONFLICT (account_id, connector, installation_id) DO UPDATE

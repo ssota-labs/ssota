@@ -6,15 +6,15 @@ import {
   uploadEditorImageAction,
 } from "@/app/actions";
 
-export function createSsotaEditorHostProps(projectId: string) {
+export function createSsotaEditorHostProps(teamspaceId: string) {
   return {
     mentionSearch: async (query: string): Promise<SsotaMentionItem[]> => {
-      const result = await searchMentionNodesAction({ projectId, query });
+      const result = await searchMentionNodesAction({ teamspaceId, query });
       return result.ok ? result.items : [];
     },
     uploadImage: async (file: File): Promise<string> => {
       const formData = new FormData();
-      formData.set("projectId", projectId);
+      formData.set("teamspaceId", teamspaceId);
       formData.set("file", file);
       const result = await uploadEditorImageAction(formData);
       if (!result.ok || !result.url) {

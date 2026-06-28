@@ -41,7 +41,7 @@ export interface ScheduleEditTarget {
 interface ScheduleSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   instructions: InstructionOption[];
   schedule?: ScheduleEditTarget;
@@ -89,7 +89,7 @@ function defaultRecurrence(timezone: string): Recurrence {
 export function ScheduleSheet({
   open,
   onOpenChange,
-  projectId,
+  teamspaceId,
   accountId,
   instructions,
   schedule,
@@ -216,7 +216,7 @@ export function ScheduleSheet({
     startTransition(async () => {
       try {
         const body = {
-          projectId,
+          teamspaceId,
           accountId,
           workflowInstructionId: instructionId,
           cronExpression,

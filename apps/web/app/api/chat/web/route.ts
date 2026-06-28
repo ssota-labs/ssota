@@ -19,7 +19,7 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const bodySchema = z.object({
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   threadId: z.string().uuid(),
   accountId: z.string().uuid(),
   modelId: z.string().optional(),
@@ -54,10 +54,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const { projectId, threadId } = body;
+  const { teamspaceId, threadId } = body;
   let scope;
   try {
-    scope = await resolveApiAccountScope(projectId, {
+    scope = await resolveApiAccountScope(teamspaceId, {
       referer: request.headers.get("referer"),
       requestedAccountId: body.accountId,
     });
@@ -69,10 +69,10 @@ export async function POST(request: Request) {
   const accountId = scope.accountId;
   const modelId = resolveModelId(body.modelId);
   const messages = body.messages as UIMessage[];
-  const chat = getChatPort(projectId, accountId);
+  const chat = getChatPort(teamspaceId, accountId);
 
   const thread = await chat.getThread(threadId);
-  if (!thread || thread.projectId !== projectId) {
+  if (!thread || thread.teamspaceId !== teamspaceId) {
     return NextResponse.json({ error: "Thread not found" }, { status: 404 });
   }
   if (thread.accountId && thread.accountId !== accountId) {
@@ -98,7 +98,7 @@ export async function POST(request: Request) {
   // profileId = the signed-in user (the Composio acting entity for connectors).
   const run = await start(runMainWorkflowAgent, [
     {
-      projectId,
+      teamspaceId,
       threadId,
       accountId,
       profileId: user.id,

@@ -92,7 +92,7 @@ async function buildInSandbox(input: StudioBuildInput): Promise<StudioBuildOutpu
     return {
       buildHash,
       artifacts,
-      paths: buildArtifactPaths(input.projectId, buildHash),
+      paths: buildArtifactPaths(input.teamspaceId, buildHash),
     };
   } finally {
     await sandbox.stop();

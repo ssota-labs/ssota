@@ -18,15 +18,6 @@ import type { GraphPortsScope } from "./graph-read-port.js";
 
 export type { ResolvedCreateNodeInput, ResolvedCreateEdgeInput };
 
-function assertSameProject(projectId: string, actual: string, label: string) {
-  if (actual !== projectId) {
-    throw new GraphError(
-      "PROJECT_MISMATCH",
-      `${label} belongs to a different project`,
-    );
-  }
-}
-
 function assertEndUserWritableRow(
   accountId: string | undefined,
   rowAccountId: string | null,
@@ -47,6 +38,38 @@ function assertEndUserWritableRow(
   }
 }
 
+async function resolveTeamspaceOrg(
+  db: Db,
+  teamspaceId: string | null,
+  scopeOrganizationId: string,
+): Promise<string | null> {
+  if (teamspaceId === null) return scopeOrganizationId;
+  const [row] = await db
+    .select({ organizationId: schema.teamspaces.organizationId })
+    .from(schema.teamspaces)
+    .where(eq(schema.teamspaces.id, teamspaceId))
+    .limit(1);
+  return row?.organizationId ?? null;
+}
+
+async function assertEndpointsSameOrg(
+  db: Db,
+  organizationId: string,
+  sourceTeamspaceId: string | null,
+  targetTeamspaceId: string | null,
+) {
+  const [sourceOrg, targetOrg] = await Promise.all([
+    resolveTeamspaceOrg(db, sourceTeamspaceId, organizationId),
+    resolveTeamspaceOrg(db, targetTeamspaceId, organizationId),
+  ]);
+  if (sourceOrg !== organizationId || targetOrg !== organizationId) {
+    throw new GraphError(
+      "ORG_MISMATCH",
+      "Edge endpoints must belong to the same organization",
+    );
+  }
+}
+
 async function mapNodeRow(
   db: Db,
   row: typeof schema.nodes.$inferSelect,
@@ -62,7 +85,7 @@ async function mapNodeRow(
 
   return {
     id: row.id,
-    projectId: row.projectId,
+    teamspaceId: row.teamspaceId,
     nodeCatalogId: row.nodeCatalogId,
     catalogKey: catalog[0]?.key ?? "",
     catalogLabel: catalog[0]?.label ?? "",
@@ -78,22 +101,22 @@ export function createGraphWritePort(
   db: Db,
   scope: GraphPortsScope,
 ): GraphWritePort {
-  const { projectId, accountId } = scope;
+  const { organizationId, teamspaceId, accountId } = scope;
   const accountIdValue = accountId ?? null;
 
   return {
     async createNode(input: ResolvedCreateNodeInput) {
-      if (input.projectId !== projectId) {
+      if (input.teamspaceId !== teamspaceId) {
         throw new GraphError(
-          "PROJECT_MISMATCH",
-          "Input projectId does not match port scope",
+          "ORG_MISMATCH",
+          "Input teamspaceId does not match port scope",
         );
       }
 
       const [row] = await db
         .insert(schema.nodes)
         .values({
-          projectId,
+          teamspaceId,
           accountId: accountIdValue,
           nodeCatalogId: input.nodeCatalogId,
           title: input.title,
@@ -110,7 +133,7 @@ export function createGraphWritePort(
           .from(schema.nodes)
           .where(
             and(
-              eq(schema.nodes.projectId, projectId),
+              eq(schema.nodes.teamspaceId, teamspaceId),
               eq(schema.nodes.id, input.initiativeId),
             ),
           )
@@ -124,7 +147,7 @@ export function createGraphWritePort(
           .from(schema.edgeCatalog)
           .where(
             and(
-              eq(schema.edgeCatalog.projectId, projectId),
+              eq(schema.edgeCatalog.organizationId, organizationId),
               eq(schema.edgeCatalog.key, "for_initiative"),
             ),
           )
@@ -137,7 +160,7 @@ export function createGraphWritePort(
         }
 
         await db.insert(schema.edges).values({
-          projectId,
+          teamspaceId,
           accountId: accountIdValue,
           edgeCatalogId: edgeCatalog.id,
           sourceNodeId: node.id,
@@ -150,10 +173,10 @@ export function createGraphWritePort(
     },
 
     async updateNode(input: UpdateNodeInput) {
-      if (input.projectId !== projectId) {
+      if (input.teamspaceId !== teamspaceId) {
         throw new GraphError(
-          "PROJECT_MISMATCH",
-          "Input projectId does not match port scope",
+          "ORG_MISMATCH",
+          "Input teamspaceId does not match port scope",
         );
       }
 
@@ -162,7 +185,7 @@ export function createGraphWritePort(
         .from(schema.nodes)
         .where(
           and(
-            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.teamspaceId, teamspaceId),
             eq(schema.nodes.id, input.nodeId),
           ),
         )
@@ -183,7 +206,7 @@ export function createGraphWritePort(
         .set(set)
         .where(
           and(
-            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.teamspaceId, teamspaceId),
             eq(schema.nodes.id, input.nodeId),
           ),
         )
@@ -197,16 +220,16 @@ export function createGraphWritePort(
     },
 
     async createEdge(input: ResolvedCreateEdgeInput) {
-      if (input.projectId !== projectId) {
+      if (input.teamspaceId !== teamspaceId) {
         throw new GraphError(
-          "PROJECT_MISMATCH",
-          "Input projectId does not match port scope",
+          "ORG_MISMATCH",
+          "Input teamspaceId does not match port scope",
         );
       }
 
       const [source] = await db
         .select({
-          projectId: schema.nodes.projectId,
+          teamspaceId: schema.nodes.teamspaceId,
           nodeCatalogId: schema.nodes.nodeCatalogId,
         })
         .from(schema.nodes)
@@ -214,7 +237,7 @@ export function createGraphWritePort(
         .limit(1);
       const [target] = await db
         .select({
-          projectId: schema.nodes.projectId,
+          teamspaceId: schema.nodes.teamspaceId,
           nodeCatalogId: schema.nodes.nodeCatalogId,
         })
         .from(schema.nodes)
@@ -224,15 +247,19 @@ export function createGraphWritePort(
       if (!source || !target) {
         throw new GraphError("NOT_FOUND", "Source or target node not found");
       }
-      assertSameProject(projectId, source.projectId, "Source node");
-      assertSameProject(projectId, target.projectId, "Target node");
+      await assertEndpointsSameOrg(
+        db,
+        organizationId,
+        source.teamspaceId,
+        target.teamspaceId,
+      );
 
       const [edgeCatalog] = await db
         .select()
         .from(schema.edgeCatalog)
         .where(
           and(
-            eq(schema.edgeCatalog.projectId, projectId),
+            eq(schema.edgeCatalog.organizationId, organizationId),
             eq(schema.edgeCatalog.id, input.edgeCatalogId),
           ),
         )
@@ -265,7 +292,7 @@ export function createGraphWritePort(
       const [row] = await db
         .insert(schema.edges)
         .values({
-          projectId,
+          teamspaceId,
           accountId: accountIdValue,
           edgeCatalogId: input.edgeCatalogId,
           sourceNodeId: input.sourceNodeId,
@@ -285,7 +312,7 @@ export function createGraphWritePort(
 
       return {
         id: row!.id,
-        projectId: row!.projectId,
+        teamspaceId: row!.teamspaceId,
         edgeCatalogId: row!.edgeCatalogId,
         catalogKey: edgeCatalogMeta?.key ?? "",
         catalogLabel: edgeCatalogMeta?.label ?? "",
@@ -297,10 +324,10 @@ export function createGraphWritePort(
     },
 
     async deleteEdge(input: DeleteEdgeInput) {
-      if (input.projectId !== projectId) {
+      if (input.teamspaceId !== teamspaceId) {
         throw new GraphError(
-          "PROJECT_MISMATCH",
-          "Input projectId does not match port scope",
+          "ORG_MISMATCH",
+          "Input teamspaceId does not match port scope",
         );
       }
 
@@ -309,7 +336,7 @@ export function createGraphWritePort(
         .from(schema.edges)
         .where(
           and(
-            eq(schema.edges.projectId, projectId),
+            eq(schema.edges.teamspaceId, teamspaceId),
             eq(schema.edges.id, input.edgeId),
           ),
         )
@@ -323,7 +350,7 @@ export function createGraphWritePort(
         .delete(schema.edges)
         .where(
           and(
-            eq(schema.edges.projectId, projectId),
+            eq(schema.edges.teamspaceId, teamspaceId),
             eq(schema.edges.id, input.edgeId),
           ),
         )
@@ -335,10 +362,10 @@ export function createGraphWritePort(
     },
 
     async deleteNode(input: DeleteNodeInput) {
-      if (input.projectId !== projectId) {
+      if (input.teamspaceId !== teamspaceId) {
         throw new GraphError(
-          "PROJECT_MISMATCH",
-          "Input projectId does not match port scope",
+          "ORG_MISMATCH",
+          "Input teamspaceId does not match port scope",
         );
       }
 
@@ -347,7 +374,7 @@ export function createGraphWritePort(
         .from(schema.nodes)
         .where(
           and(
-            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.teamspaceId, teamspaceId),
             eq(schema.nodes.id, input.nodeId),
           ),
         )
@@ -362,7 +389,7 @@ export function createGraphWritePort(
         .delete(schema.edges)
         .where(
           and(
-            eq(schema.edges.projectId, projectId),
+            eq(schema.edges.teamspaceId, teamspaceId),
             or(
               eq(schema.edges.sourceNodeId, input.nodeId),
               eq(schema.edges.targetNodeId, input.nodeId),
@@ -374,7 +401,7 @@ export function createGraphWritePort(
         .delete(schema.nodes)
         .where(
           and(
-            eq(schema.nodes.projectId, projectId),
+            eq(schema.nodes.teamspaceId, teamspaceId),
             eq(schema.nodes.id, input.nodeId),
           ),
         )
@@ -388,10 +415,10 @@ export function createGraphWritePort(
     async createInitiativeBundle(
       input: CreateInitiativeBundleInput,
     ): Promise<CreateInitiativeBundleResult> {
-      if (input.projectId !== projectId) {
+      if (input.teamspaceId !== teamspaceId) {
         throw new GraphError(
-          "PROJECT_MISMATCH",
-          "Input projectId does not match port scope",
+          "ORG_MISMATCH",
+          "Input teamspaceId does not match port scope",
         );
       }
 
@@ -400,7 +427,7 @@ export function createGraphWritePort(
         .from(schema.nodeCatalog)
         .where(
           and(
-            eq(schema.nodeCatalog.projectId, projectId),
+            eq(schema.nodeCatalog.organizationId, organizationId),
             eq(schema.nodeCatalog.key, "initiative"),
           ),
         )
@@ -410,7 +437,7 @@ export function createGraphWritePort(
         .from(schema.nodeCatalog)
         .where(
           and(
-            eq(schema.nodeCatalog.projectId, projectId),
+            eq(schema.nodeCatalog.organizationId, organizationId),
             eq(schema.nodeCatalog.key, "release"),
           ),
         )
@@ -420,7 +447,7 @@ export function createGraphWritePort(
         .from(schema.edgeCatalog)
         .where(
           and(
-            eq(schema.edgeCatalog.projectId, projectId),
+            eq(schema.edgeCatalog.organizationId, organizationId),
             eq(schema.edgeCatalog.key, "paired_with"),
           ),
         )
@@ -446,7 +473,7 @@ export function createGraphWritePort(
         const [initiativeRow] = await tx
           .insert(schema.nodes)
           .values({
-            projectId,
+            teamspaceId,
             nodeCatalogId: initiativeCatalog.id,
             title: input.initiativeTitle,
             properties: initiativeProps,
@@ -457,7 +484,7 @@ export function createGraphWritePort(
         const [releaseRow] = await tx
           .insert(schema.nodes)
           .values({
-            projectId,
+            teamspaceId,
             nodeCatalogId: releaseCatalog.id,
             title: input.releaseVersion,
             properties: releaseProps,
@@ -468,7 +495,7 @@ export function createGraphWritePort(
         const [edgeRow] = await tx
           .insert(schema.edges)
           .values({
-            projectId,
+            teamspaceId,
             edgeCatalogId: pairedCatalog.id,
             sourceNodeId: initiativeRow!.id,
             targetNodeId: releaseRow!.id,

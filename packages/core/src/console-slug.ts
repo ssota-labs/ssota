@@ -22,7 +22,7 @@ export function isEnglishDisplayName(name: string): boolean {
 
 const DISPLAY_NAME_PATTERN = /^[\p{L}\p{M}\p{N}][\p{L}\p{M}\p{N} '\-_.]*$/u;
 
-/** Project names: letters and numbers from any language, plus spaces and hyphens. */
+/** Teamspace names: letters and numbers from any language, plus spaces and hyphens. */
 export function isDisplayName(name: string): boolean {
   const trimmed = name.trim();
   if (trimmed.length < 2 || trimmed.length > 64) return false;

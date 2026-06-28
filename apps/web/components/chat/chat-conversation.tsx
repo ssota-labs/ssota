@@ -10,25 +10,25 @@ import type { ConnectorOption } from "./connect-card";
 import { DEFAULT_MODEL_ID } from "@/lib/chat/models";
 
 interface ChatConversationProps {
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   threadId: string;
   initialMessages: UIMessage[];
   connectors: ConnectorOption[];
   returnTo: string;
   orgSlug: string;
-  projectSlug: string;
+  teamspaceSlug: string;
 }
 
 export function ChatConversation({
-  projectId,
+  teamspaceId,
   accountId,
   threadId,
   initialMessages,
   connectors,
   returnTo,
   orgSlug,
-  projectSlug,
+  teamspaceSlug,
 }: ChatConversationProps) {
   const [model, setModel] = useState<string>(DEFAULT_MODEL_ID);
 
@@ -41,7 +41,7 @@ export function ChatConversation({
     transport: new WorkflowChatTransport<UIMessage>({
       api: "/api/chat/web",
       prepareSendMessagesRequest: ({ body, messages: msgs }) => ({
-        body: { ...body, projectId, threadId, accountId, messages: msgs },
+        body: { ...body, teamspaceId, threadId, accountId, messages: msgs },
       }),
     }),
   });
@@ -95,9 +95,9 @@ export function ChatConversation({
             isStreaming={isStreaming}
             onStop={stop}
             onSend={send}
-            projectId={projectId}
+            teamspaceId={teamspaceId}
             orgSlug={orgSlug}
-            projectSlug={projectSlug}
+            teamspaceSlug={teamspaceSlug}
             model={model}
             onModelChange={setModel}
           />

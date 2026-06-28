@@ -48,7 +48,7 @@ export async function fetchConnectorToolDefs(
   const adapter = getConnectorAdapter();
   if (!adapter) return [];
   const bundle = await adapter.buildTools({
-    projectId: ssota.projectId,
+    teamspaceId: ssota.teamspaceId,
     accountId: ssota.accountId,
     profileId: ssota.profileId,
   });
@@ -108,7 +108,7 @@ export async function runMainAgentToolStep(
   const adapter = getConnectorAdapter();
   if (adapter) {
     const bundle = await adapter.buildTools({
-      projectId: ssota.projectId,
+      teamspaceId: ssota.teamspaceId,
       accountId: ssota.accountId,
       profileId: ssota.profileId,
     });

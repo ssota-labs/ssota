@@ -4,9 +4,10 @@ import { getDb, buildRunPrompt } from "@ssota/agent-runtime";
 import { buildMainWorkflowAgent } from "@ssota/agent-runtime/workflow";
 import { createAgentRunPort } from "@ssota/adapter-postgres";
 import { dispatchMainTool } from "./main-workflow-agent-dispatch";
+import { resolveTeamspaceOrgScopeStep } from "./teamspace-org-scope-step";
 
 export interface RunSchedulerAgentInput {
-  projectId: string;
+  teamspaceId: string;
   scheduleId: string;
   accountId?: string;
   modelId?: string;
@@ -29,9 +30,12 @@ export async function runSchedulerAgentWorkflow(input: RunSchedulerAgentInput) {
     workflowRunId,
   );
 
+  const organizationId = await resolveTeamspaceOrgScopeStep(input.teamspaceId);
+
   const agent = buildMainWorkflowAgent({
     ssota: {
-      projectId: input.projectId,
+      teamspaceId: input.teamspaceId,
+      organizationId,
       runId: workflowRunId,
       accountId: input.accountId,
     },
@@ -62,7 +66,7 @@ async function claimRunning(
 ): Promise<void> {
   "use step";
   await createAgentRunPort(getDb()).start({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runtimeKind: "scheduler",
     scheduleId: input.scheduleId,
     workflowRunId,
@@ -77,7 +81,7 @@ async function buildSchedulerPrompt(
 ): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
   "use step";
   return buildRunPrompt({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runId: workflowRunId,
     runtimeKind: "scheduler",
     scheduleId: input.scheduleId,

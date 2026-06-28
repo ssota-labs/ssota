@@ -1,50 +1,50 @@
 import { appProjectPath } from "@/lib/console/app-paths";
-import { projectPath } from "@/lib/console/paths";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { orgPath } from "@/lib/console/paths";
+import { resolveOrg } from "@/lib/console/resolve-project";
 import { resolveEndUserContext } from "@/lib/request-context";
 import { getChatPort, getOrCreateProjectAccount } from "@/lib/ports";
 
 export type ChatScope = {
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   chat: ReturnType<typeof getChatPort>;
   chatBase: string;
   orgSlug: string;
-  projectSlug: string;
+  teamspaceSlug: string;
   appMode: boolean;
 };
 
 export async function loadBuilderChatScope(
   orgSlug: string,
-  projectSlug: string,
+  teamspaceSlug: string,
 ): Promise<ChatScope> {
-  const ctx = { orgSlug, projectSlug };
-  const { project } = await resolveProject(orgSlug, projectSlug);
+  const ctx = { orgSlug, teamspaceSlug };
+  const { project } = await resolveOrg(orgSlug, teamspaceSlug);
   const account = await getOrCreateProjectAccount(project.id);
   return {
-    projectId: project.id,
+    teamspaceId: project.id,
     accountId: account.id,
     chat: getChatPort(project.id, account.id),
-    chatBase: projectPath(ctx, "c"),
+    chatBase: orgPath(ctx, "c"),
     orgSlug,
-    projectSlug,
+    teamspaceSlug,
     appMode: false,
   };
 }
 
 export async function loadEndUserChatScope(
   orgSlug: string,
-  projectSlug: string,
+  teamspaceSlug: string,
 ): Promise<ChatScope> {
-  const ctx = await resolveEndUserContext(orgSlug, projectSlug);
-  const routeCtx = { orgSlug, projectSlug };
+  const ctx = await resolveEndUserContext(orgSlug, teamspaceSlug);
+  const routeCtx = { orgSlug, teamspaceSlug };
   return {
-    projectId: ctx.projectId,
+    teamspaceId: ctx.teamspaceId,
     accountId: ctx.accountId,
-    chat: getChatPort(ctx.projectId, ctx.accountId),
+    chat: getChatPort(ctx.teamspaceId, ctx.accountId),
     chatBase: appProjectPath(routeCtx, "c"),
     orgSlug,
-    projectSlug,
+    teamspaceSlug,
     appMode: true,
   };
 }

@@ -4,7 +4,7 @@ import type { Db } from "../db/client.js";
 import { agentRuns } from "../db/schema.js";
 
 export interface StartAgentRunInput {
-  projectId: string;
+  teamspaceId: string;
   workflowRunId: string;
   runtimeKind: AgentRuntimeKind;
   taskId?: string | null;
@@ -30,7 +30,7 @@ export function createAgentRunPort(db: Db) {
       const [row] = await db
         .insert(agentRuns)
         .values({
-          projectId: input.projectId,
+          teamspaceId: input.teamspaceId,
           runtimeKind: input.runtimeKind,
           taskId: input.taskId ?? null,
           threadId: input.threadId ?? null,

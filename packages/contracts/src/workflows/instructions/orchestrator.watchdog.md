@@ -11,7 +11,7 @@ Detect stalled tasks and spawn recovery or nudge work items.
 
 ## Preconditions
 
-- Project context resolved
+- Teamspace context resolved
 
 ## Steps
 

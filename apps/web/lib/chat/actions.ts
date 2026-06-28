@@ -10,7 +10,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 
 const deleteChatThreadInputSchema = z.object({
   orgSlug: z.string().min(1),
-  projectSlug: z.string().min(1),
+  teamspaceSlug: z.string().min(1),
   threadId: z.string().uuid(),
   appMode: z.boolean(),
   chatBase: z.string().min(1),
@@ -18,7 +18,7 @@ const deleteChatThreadInputSchema = z.object({
 
 const createChatThreadInputSchema = z.object({
   orgSlug: z.string().min(1),
-  projectSlug: z.string().min(1),
+  teamspaceSlug: z.string().min(1),
   appMode: z.boolean(),
   chatBase: z.string().min(1),
   title: z.string().max(120).optional(),
@@ -33,8 +33,8 @@ export async function deleteChatThreadAction(
 
   const parsed = deleteChatThreadInputSchema.parse(input);
   const scope = parsed.appMode
-    ? await loadEndUserChatScope(parsed.orgSlug, parsed.projectSlug)
-    : await loadBuilderChatScope(parsed.orgSlug, parsed.projectSlug);
+    ? await loadEndUserChatScope(parsed.orgSlug, parsed.teamspaceSlug)
+    : await loadBuilderChatScope(parsed.orgSlug, parsed.teamspaceSlug);
 
   const deleted = await scope.chat.deleteThread(parsed.threadId);
   if (!deleted) throw new Error("Thread not found");
@@ -51,8 +51,8 @@ export async function createChatThreadAction(
 
   const parsed = createChatThreadInputSchema.parse(input);
   const scope = parsed.appMode
-    ? await loadEndUserChatScope(parsed.orgSlug, parsed.projectSlug)
-    : await loadBuilderChatScope(parsed.orgSlug, parsed.projectSlug);
+    ? await loadEndUserChatScope(parsed.orgSlug, parsed.teamspaceSlug)
+    : await loadBuilderChatScope(parsed.orgSlug, parsed.teamspaceSlug);
 
   const thread = await scope.chat.createThread(parsed.title);
   revalidatePath(parsed.chatBase, "layout");

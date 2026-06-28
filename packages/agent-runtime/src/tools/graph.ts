@@ -23,6 +23,15 @@ import {
   getCatalogWritePort,
 } from "../ports.js";
 import { getRunContext, serializeEdge, serializeNode } from "./context.js";
+import type { AgentRunContext } from "../engine/types.js";
+
+function graphPorts(ctx: AgentRunContext) {
+  return getGraphPorts(ctx.teamspaceId, ctx.accountId, ctx.organizationId);
+}
+
+function graphRead(ctx: AgentRunContext) {
+  return getGraphReadPort(ctx.teamspaceId, ctx.accountId, ctx.organizationId);
+}
 
 export function createGraphTools(): ToolSet {
   return {
@@ -31,8 +40,8 @@ export function createGraphTools(): ToolSet {
         "List the project's node type catalog (the kinds of records that exist). Check this before creating nodes or defining new types.",
       inputSchema: z.object({}),
       execute: async (_input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
-        return getGraphPorts(projectId, accountId).catalog.listNodeCatalog();
+        const ctx = getRunContext(context);
+        return graphPorts(ctx).catalog.listNodeCatalog();
       },
     }),
 
@@ -40,8 +49,8 @@ export function createGraphTools(): ToolSet {
       description: "List the project's edge type catalog (the kinds of relationships).",
       inputSchema: z.object({}),
       execute: async (_input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
-        return getGraphPorts(projectId, accountId).catalog.listEdgeCatalog();
+        const ctx = getRunContext(context);
+        return graphPorts(ctx).catalog.listEdgeCatalog();
       },
     }),
 
@@ -57,9 +66,9 @@ export function createGraphTools(): ToolSet {
         limit: z.number().int().positive().max(50).optional(),
       }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
+        const ctx = getRunContext(context);
         const parsed = catalogSearchInputSchema.parse(input);
-        return getGraphPorts(projectId, accountId).catalog.searchCatalog(parsed);
+        return graphPorts(ctx).catalog.searchCatalog(parsed);
       },
     }),
 
@@ -68,10 +77,8 @@ export function createGraphTools(): ToolSet {
         "Fetch one node type's full detail (label, description, keywords, property schema) by key. Use after search_catalog / list_node_types to read the property schema before creating nodes.",
       inputSchema: z.object({ key: z.string() }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
-        return getGraphPorts(projectId, accountId).catalog.getNodeCatalogByKey(
-          input.key,
-        );
+        const ctx = getRunContext(context);
+        return graphPorts(ctx).catalog.getNodeCatalogByKey(input.key);
       },
     }),
 
@@ -80,10 +87,8 @@ export function createGraphTools(): ToolSet {
         "Fetch one edge type's full detail (label, description, keywords, domain/range constraints) by key.",
       inputSchema: z.object({ key: z.string() }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
-        return getGraphPorts(projectId, accountId).catalog.getEdgeCatalogByKey(
-          input.key,
-        );
+        const ctx = getRunContext(context);
+        return graphPorts(ctx).catalog.getEdgeCatalogByKey(input.key);
       },
     }),
 
@@ -106,8 +111,9 @@ export function createGraphTools(): ToolSet {
         propertySchema: z.record(z.unknown()).optional(),
       }),
       execute: async (input, { context }) => {
-        const { projectId } = getRunContext(context);
-        return getCatalogWritePort(projectId).upsertNodeCatalog({
+        const ctx = getRunContext(context);
+        const writePort = await getCatalogWritePort(ctx.teamspaceId);
+        return writePort.upsertNodeCatalog({
           key: input.key,
           label: input.label,
           description: input.description,
@@ -142,8 +148,8 @@ export function createGraphTools(): ToolSet {
         propertySchema: z.record(z.unknown()).optional(),
       }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
-        const catalog = getGraphPorts(projectId, accountId).catalog;
+        const ctx = getRunContext(context);
+        const catalog = graphPorts(ctx).catalog;
         const resolveKeys = async (keys?: string[]) => {
           const ids: string[] = [];
           for (const key of keys ?? []) {
@@ -157,7 +163,8 @@ export function createGraphTools(): ToolSet {
           }
           return ids;
         };
-        return getCatalogWritePort(projectId).upsertEdgeCatalog({
+        const writePort = await getCatalogWritePort(ctx.teamspaceId);
+        return writePort.upsertEdgeCatalog({
           key: input.key,
           label: input.label,
           description: input.description,
@@ -179,9 +186,9 @@ export function createGraphTools(): ToolSet {
         limit: z.number().int().positive().max(100).optional(),
       }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
-        const parsed = listNodesByTypeInputSchema.parse({ projectId, ...input });
-        const nodes = await queryNodes(getGraphReadPort(projectId, accountId), parsed);
+        const ctx = getRunContext(context);
+        const parsed = listNodesByTypeInputSchema.parse({ teamspaceId: ctx.teamspaceId, ...input });
+        const nodes = await queryNodes(graphRead(ctx), parsed);
         return nodes.map(serializeNode);
       },
     }),
@@ -190,9 +197,9 @@ export function createGraphTools(): ToolSet {
       description: "Fetch a single node by id, including its content body.",
       inputSchema: z.object({ nodeId: z.string().uuid() }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
-        const parsed = getNodeInputSchema.parse({ projectId, ...input });
-        const node = await getNode(getGraphReadPort(projectId, accountId), parsed);
+        const ctx = getRunContext(context);
+        const parsed = getNodeInputSchema.parse({ teamspaceId: ctx.teamspaceId, ...input });
+        const node = await getNode(graphRead(ctx), parsed);
         return node ? serializeNode(node) : null;
       },
     }),
@@ -206,9 +213,9 @@ export function createGraphTools(): ToolSet {
         edgeType: z.string().optional(),
       }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
-        const parsed = traverseEdgesInputSchema.parse({ projectId, ...input });
-        const edges = await traverseEdges(getGraphReadPort(projectId, accountId), parsed);
+        const ctx = getRunContext(context);
+        const parsed = traverseEdgesInputSchema.parse({ teamspaceId: ctx.teamspaceId, ...input });
+        const edges = await traverseEdges(graphRead(ctx), parsed);
         return edges.map(serializeEdge);
       },
     }),
@@ -223,18 +230,18 @@ export function createGraphTools(): ToolSet {
         content: z.string().optional(),
       }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
+        const ctx = getRunContext(context);
         const properties = {
           ...(input.properties ?? {}),
           ...(input.content !== undefined ? { content: input.content } : {}),
         };
         const parsed = createNodeInputSchema.parse({
-          projectId,
+          teamspaceId: ctx.teamspaceId,
           catalogKey: input.catalogKey,
           title: input.title,
           properties,
         });
-        const node = await createNode(getGraphPorts(projectId, accountId), parsed);
+        const node = await createNode(graphPorts(ctx), parsed);
         return serializeNode(node);
       },
     }),
@@ -248,7 +255,7 @@ export function createGraphTools(): ToolSet {
         content: z.string().optional(),
       }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
+        const ctx = getRunContext(context);
         const properties =
           input.properties !== undefined || input.content !== undefined
             ? {
@@ -259,12 +266,12 @@ export function createGraphTools(): ToolSet {
               }
             : undefined;
         const parsed = updateNodeInputSchema.parse({
-          projectId,
+          teamspaceId: ctx.teamspaceId,
           nodeId: input.nodeId,
           title: input.title,
           properties,
         });
-        const node = await updateNode(getGraphPorts(projectId, accountId), parsed);
+        const node = await updateNode(graphPorts(ctx), parsed);
         return serializeNode(node);
       },
     }),
@@ -278,9 +285,9 @@ export function createGraphTools(): ToolSet {
         properties: z.record(z.unknown()).optional(),
       }),
       execute: async (input, { context }) => {
-        const { projectId, accountId } = getRunContext(context);
-        const parsed = createEdgeInputSchema.parse({ projectId, ...input });
-        const edge = await createEdge(getGraphPorts(projectId, accountId), parsed);
+        const ctx = getRunContext(context);
+        const parsed = createEdgeInputSchema.parse({ teamspaceId: ctx.teamspaceId, ...input });
+        const edge = await createEdge(graphPorts(ctx), parsed);
         return serializeEdge(edge);
       },
     }),

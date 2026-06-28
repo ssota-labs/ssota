@@ -53,15 +53,15 @@ const SAMPLE: PartialBlock[] = [
 ];
 
 export function EditorLabBlockNoteClient({
-  projectId,
+  teamspaceId,
 }: {
-  projectId: string | null;
+  teamspaceId: string | null;
 }) {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const uploadImage = useMemo(() => {
-    if (!projectId) return undefined;
-    return createSsotaEditorHostProps(projectId).uploadImage;
-  }, [projectId]);
+    if (!teamspaceId) return undefined;
+    return createSsotaEditorHostProps(teamspaceId).uploadImage;
+  }, [teamspaceId]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-2" data-testid="editor-lab-blocknote">

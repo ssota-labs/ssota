@@ -21,14 +21,14 @@ function revalidateConsole(paths: string[]) {
 }
 
 export async function deployUiComponentAction(input: {
-  projectId: string;
+  teamspaceId: string;
   nodeId: string;
   contentV2?: UiComponentContentV2;
   revalidatePaths: string[];
 }) {
-  const deps = getGraphDeps(input.projectId);
+  const deps = getGraphDeps(input.teamspaceId);
   const existing = await deps.graphRead.getNode({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     nodeId: input.nodeId,
   });
 
@@ -38,12 +38,12 @@ export async function deployUiComponentAction(input: {
 
   const content = uiComponentContentSchemaV2.parse(input.contentV2);
   const [{ themeCss }, { packageJson, lockfile }] = await Promise.all([
-    resolveProjectTheme(input.projectId),
-    resolveProjectToolchain(input.projectId),
+    resolveProjectTheme(input.teamspaceId),
+    resolveProjectToolchain(input.teamspaceId),
   ]);
 
   const buildContext = resolveBuildContext({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     node: existing,
     packageJson,
     lockfile,
@@ -52,7 +52,7 @@ export async function deployUiComponentAction(input: {
   });
 
   const { build, paths } = await runStudioBuildAndCache({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     buildContext,
   });
 
@@ -81,7 +81,7 @@ export async function deployUiComponentAction(input: {
   delete nextProperties.content;
 
   await updateGraphNodeAction({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     nodeId: input.nodeId,
     properties: nextProperties,
     revalidatePaths: input.revalidatePaths,

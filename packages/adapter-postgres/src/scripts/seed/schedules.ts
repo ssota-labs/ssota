@@ -27,12 +27,12 @@ const SCHEDULE_SEEDS = [
  */
 export async function seedScheduleFixtures(
   db: Db,
-  projectId: string,
+  teamspaceId: string,
 ): Promise<void> {
   const account = await createDbAccountReadPort(db).getOrCreateWorkspaceAccount(
-    projectId,
+    teamspaceId,
   );
-  const workflowPort = createWorkflowInstructionPort(db, { projectId });
+  const workflowPort = createWorkflowInstructionPort(db, { teamspaceId });
 
   for (const seed of SCHEDULE_SEEDS) {
     const workflow = getWorkflowByKey(seed.workflowKey);
@@ -50,7 +50,7 @@ export async function seedScheduleFixtures(
       .from(schema.schedules)
       .where(
         and(
-          eq(schema.schedules.projectId, projectId),
+          eq(schema.schedules.teamspaceId, teamspaceId),
           eq(schema.schedules.accountId, account.id),
           eq(schema.schedules.workflowInstructionId, instruction.id),
         ),
@@ -60,7 +60,7 @@ export async function seedScheduleFixtures(
     if (existing[0]) continue;
 
     await db.insert(schema.schedules).values({
-      projectId,
+      teamspaceId,
       accountId: account.id,
       workflowInstructionId: instruction.id,
       cronExpression: seed.cronExpression,

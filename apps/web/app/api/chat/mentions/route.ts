@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { MentionCandidate } from "@/lib/chat/mentions";
 import { getConnectors } from "@/lib/connect/connectors";
 import { getGraphPorts } from "@/lib/ports";
-import { resolveProject } from "@/lib/console/resolve-project";
+import { resolveOrg } from "@/lib/console/resolve-project";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -12,7 +12,7 @@ export type { MentionCandidate };
 
 const querySchema = z.object({
   orgSlug: z.string().min(1),
-  projectSlug: z.string().min(1),
+  teamspaceSlug: z.string().min(1),
 });
 
 function nodeDisplayTitle(title: string, catalogLabel: string): string | null {
@@ -35,15 +35,15 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const parsed = querySchema.safeParse({
     orgSlug: url.searchParams.get("orgSlug"),
-    projectSlug: url.searchParams.get("projectSlug"),
+    teamspaceSlug: url.searchParams.get("teamspaceSlug"),
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid query" }, { status: 422 });
   }
 
-  const { project } = await resolveProject(
+  const { project } = await resolveOrg(
     parsed.data.orgSlug,
-    parsed.data.projectSlug,
+    parsed.data.teamspaceSlug,
   );
 
   const connectors: MentionCandidate[] = getConnectors()
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
 
   const { graphRead } = getGraphPorts(project.id);
   const nodes = await graphRead
-    .queryNodes({ projectId: project.id, limit: 100 })
+    .queryNodes({ teamspaceId: project.id, limit: 100 })
     .catch(() => []);
 
   const titleById = new Map<string, string>();
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
   }
 
   const edges = await graphRead
-    .queryEdges({ projectId: project.id, limit: 50 })
+    .queryEdges({ teamspaceId: project.id, limit: 50 })
     .catch(() => []);
 
   const edgeCandidates: MentionCandidate[] = [];

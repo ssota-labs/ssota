@@ -31,7 +31,7 @@ export interface ConnectorToolsBundle {
 }
 
 export interface BuildConnectorToolsInput {
-  projectId: string;
+  teamspaceId: string;
   accountId?: string;
   /** Composio entity profile (acting user); absent → Composio attaches nothing. */
   profileId?: string;
@@ -49,8 +49,8 @@ const EMPTY: ConnectorToolsBundle = { tools: {} };
 function composioAdapter(): ConnectorAdapter {
   return {
     kind: "composio",
-    async buildTools({ projectId, profileId }) {
-      const orgId = await resolveOrgIdForProject(projectId);
+    async buildTools({ teamspaceId, profileId }) {
+      const orgId = await resolveOrgIdForProject(teamspaceId);
       if (!orgId) return EMPTY;
       // With an acting user → their personal entity (which also sees
       // ACL-accessible org-shared connections). Without one (inbound chat,
@@ -67,7 +67,7 @@ function composioAdapter(): ConnectorAdapter {
 function legacyAdapter(): ConnectorAdapter {
   return {
     kind: "legacy",
-    async buildTools({ projectId, accountId }) {
+    async buildTools({ teamspaceId, accountId }) {
       const credentials = resolveCredentialProvider();
       if (!credentials) return EMPTY;
       const connectionState = new ConnectionRunStateImpl();
@@ -75,7 +75,7 @@ function legacyAdapter(): ConnectorAdapter {
       const bundle = await createConnectionTools({
         credentials,
         accountId,
-        projectId,
+        teamspaceId,
         connectionState,
         sessionManager: connectionSessionManager,
       });

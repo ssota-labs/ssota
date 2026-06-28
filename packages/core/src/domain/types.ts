@@ -40,7 +40,7 @@ export type { PropertySchema, PropertySchemaField };
 
 export interface Node {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   nodeType: string;
   lifecycleStatus: LifecycleStatus;
   properties: Record<string, unknown>;
@@ -63,7 +63,7 @@ export interface EdgeCatalogEntry {
 
 export interface Edge {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   edgeType: string;
   sourceNodeId: string;
   targetNodeId: string;
@@ -100,7 +100,7 @@ export interface ActionPropertyPermission {
 
 export interface Workflow {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   slug: string;
   workflowKey: string | null;
   lifecycle: LifecycleStatus;
@@ -112,7 +112,7 @@ export interface Workflow {
 
 export interface Gate {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   actionType: string;
   executorId: string;
   input: Record<string, unknown>;
@@ -125,7 +125,7 @@ export interface Gate {
 
 export interface ActionLogRecord {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   actionType: string;
   executorId: string;
   executorType: ExecutorType;
@@ -141,7 +141,7 @@ export interface ActionLogRecord {
 
 export interface ImpactQueueItem {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   sourceActionLogId: string;
   sourceNodeId: string | null;
   targetNodeId: string | null;
@@ -194,7 +194,7 @@ export interface ImpactQueueQueryInput {
 
 export interface Task {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   workflowInstructionId: string | null;
   workflowInstructionKey: string | null;
   title: string;
@@ -316,7 +316,7 @@ export interface Organization {
   name: string;
 }
 
-export interface Project {
+export interface Teamspace {
   id: string;
   organizationId: string;
   slug: string;
@@ -355,12 +355,12 @@ export interface ConsolePort {
   getOrganizationBySlug(slug: string): Promise<Organization | null>;
   getPersonalOrganizationForUser(userId: string): Promise<Organization | null>;
   listOrganizationsForUser(userId: string): Promise<Organization[]>;
-  getProjectBySlug(
+  getTeamspaceBySlug(
     organizationId: string,
-    projectSlug: string,
-  ): Promise<Project | null>;
-  getProjectById(projectId: string): Promise<Project | null>;
-  listProjectsForOrganization(organizationId: string): Promise<Project[]>;
+    teamspaceSlug: string,
+  ): Promise<Teamspace | null>;
+  getTeamspaceById(teamspaceId: string): Promise<Teamspace | null>;
+  listTeamspacesForOrganization(organizationId: string): Promise<Teamspace[]>;
 }
 
 export interface OnboardingPort {
@@ -379,7 +379,7 @@ export interface OnboardingPort {
   completeTemplateStep(input: {
     userId: string;
     templateId: string;
-  }): Promise<{ organization: Organization; project: Project }>;
+  }): Promise<{ organization: Organization; project: Teamspace }>;
 }
 
 export interface LegacyGraphReadPort {
@@ -451,7 +451,7 @@ export interface ActionPorts {
 
 /** Resolved once per request — scopes catalog/graph IO to one SSOTA project. */
 export interface ActionPortsScope {
-  projectId: string;
+  teamspaceId: string;
   /** End-user data partition (Phase 5). Undefined = builder/admin scope. */
   accountId?: string;
 }

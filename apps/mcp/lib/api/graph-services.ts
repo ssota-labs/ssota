@@ -31,7 +31,7 @@ const catalog = createContractsCatalogReadPort();
 function serializeNode(node: GraphNode) {
   return {
     id: node.id,
-    projectId: node.projectId,
+    teamspaceId: node.teamspaceId,
     catalogKey: node.catalogKey,
     nodeCatalogId: node.nodeCatalogId,
     catalogLabel: node.catalogLabel,
@@ -48,7 +48,7 @@ function serializeNode(node: GraphNode) {
 function serializeEdge(edge: GraphEdge) {
   return {
     id: edge.id,
-    projectId: edge.projectId,
+    teamspaceId: edge.teamspaceId,
     catalogKey: edge.catalogKey,
     edgeCatalogId: edge.edgeCatalogId,
     catalogLabel: edge.catalogLabel,
@@ -151,64 +151,64 @@ export function listEdgeTypesForMcp() {
  * get_node_type / get_edge_type.
  */
 export async function searchCatalogForMcp(
-  projectId: string,
+  teamspaceId: string,
   input: Record<string, unknown>,
 ) {
   const parsed = catalogSearchInputSchema.parse(input);
-  const { catalog: projectCatalog } = getGraphPorts(projectId);
+  const { catalog: projectCatalog } = getGraphPorts(teamspaceId);
   return projectCatalog.searchCatalog(parsed);
 }
 
 export async function queryNodesForMcp(
-  projectId: string,
+  teamspaceId: string,
   input: Record<string, unknown>,
 ) {
   const parsed = listNodesByTypeInputSchema.parse({
-    projectId,
+    teamspaceId,
     ...normalizeNodeQueryInput(input),
   });
-  const { graphRead } = getGraphPorts(projectId);
+  const { graphRead } = getGraphPorts(teamspaceId);
   const nodes = await queryNodes(graphRead, parsed);
   return nodes.map(serializeNode);
 }
 
 export async function getNodeForMcp(
-  projectId: string,
+  teamspaceId: string,
   input: Record<string, unknown>,
 ) {
   const parsed = getNodeInputSchema.parse({
-    projectId,
+    teamspaceId,
     ...input,
   });
-  const { graphRead } = getGraphPorts(projectId);
+  const { graphRead } = getGraphPorts(teamspaceId);
   const node = await getNode(graphRead, parsed);
   return node ? serializeNode(node) : null;
 }
 
 export async function traverseEdgesForMcp(
-  projectId: string,
+  teamspaceId: string,
   input: Record<string, unknown>,
 ) {
   const parsed = traverseEdgesInputSchema.parse({
-    projectId,
+    teamspaceId,
     ...normalizeEdgeInput(input),
   });
-  const { graphRead } = getGraphPorts(projectId);
+  const { graphRead } = getGraphPorts(teamspaceId);
   const edges = await traverseEdges(graphRead, parsed);
   return edges.map(serializeEdge);
 }
 
-function graphDeps(projectId: string) {
-  return getGraphPorts(projectId);
+function graphDeps(teamspaceId: string) {
+  return getGraphPorts(teamspaceId);
 }
 
 export async function createNodeForMcp(
-  projectId: string,
+  teamspaceId: string,
   input: Record<string, unknown>,
 ) {
   const normalized = normalizeNodeQueryInput(input);
   const parsed = createNodeInputSchema.parse({
-    projectId,
+    teamspaceId,
     ...normalized,
     properties: mergeNodePropertiesForWrite(
       (normalized.properties as Record<string, unknown> | undefined) ?? {},
@@ -218,17 +218,17 @@ export async function createNodeForMcp(
       },
     ),
   });
-  const node = await createNode(graphDeps(projectId), parsed);
+  const node = await createNode(graphDeps(teamspaceId), parsed);
   return serializeNode(node);
 }
 
 export async function updateNodeForMcp(
-  projectId: string,
+  teamspaceId: string,
   input: Record<string, unknown>,
 ) {
   const normalized = normalizeNodeQueryInput(input);
   const parsed = updateNodeInputSchema.parse({
-    projectId,
+    teamspaceId,
     nodeId: normalized.nodeId,
     title: normalized.title,
     properties: mergeNodePropertiesForWrite(
@@ -239,18 +239,18 @@ export async function updateNodeForMcp(
       },
     ),
   });
-  const node = await updateNode(graphDeps(projectId), parsed);
+  const node = await updateNode(graphDeps(teamspaceId), parsed);
   return serializeNode(node);
 }
 
 export async function createEdgeForMcp(
-  projectId: string,
+  teamspaceId: string,
   input: Record<string, unknown>,
 ) {
   const parsed = createEdgeInputSchema.parse({
-    projectId,
+    teamspaceId,
     ...normalizeEdgeInput(input),
   });
-  const edge = await createEdge(graphDeps(projectId), parsed);
+  const edge = await createEdge(graphDeps(teamspaceId), parsed);
   return serializeEdge(edge);
 }

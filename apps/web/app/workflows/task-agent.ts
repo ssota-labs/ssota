@@ -10,6 +10,7 @@ import {
   sumStepUsage,
   type RunTaskAgentInput,
 } from "./task-agent-steps";
+import { resolveTeamspaceOrgScopeStep } from "./teamspace-org-scope-step";
 
 export type { RunTaskAgentInput };
 
@@ -32,9 +33,12 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
     workflowRunId,
   );
 
+  const organizationId = await resolveTeamspaceOrgScopeStep(input.teamspaceId);
+
   const agent = buildMainWorkflowAgent({
     ssota: {
-      projectId: input.projectId,
+      teamspaceId: input.teamspaceId,
+      organizationId,
       taskId: input.taskId,
       runId: workflowRunId,
       accountId: input.accountId,

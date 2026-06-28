@@ -21,11 +21,12 @@ import {
   type NavLink,
   type NavSection,
 } from "@/lib/console/navigation";
-import { projectPath } from "@/lib/console/paths";
+import { orgPath } from "@/lib/console/paths";
 import { ConsoleOrgSwitcher } from "./console-workspace-switcher";
 import { SidebarProfileMenu } from "./sidebar-profile-menu";
 import { useProjectContext } from "./project-context";
 import { PageTreeNav, type SidebarPage } from "./page-tree-nav";
+import { TeamspaceNav, type TeamspaceNavGroup } from "./teamspace-nav";
 import { useNodeDrill } from "./node-drill-context";
 
 type InitiativeOption = {
@@ -40,6 +41,8 @@ type AppSidebarProps = {
   signOutAction: () => Promise<void>;
   /** Notion-style page tree from the `pages` table, rendered below the static nav. */
   pageTree?: SidebarPage[];
+  /** Teamspace-grouped page trees (Notion teamspace sidebar). */
+  teamspaceNavGroups?: TeamspaceNavGroup[];
   /** Node-type drill-in templates grouped by catalogKey (static per project). */
   templatesByType?: Record<string, SidebarPage[]>;
 };
@@ -62,12 +65,13 @@ export function AppSidebar({
   userEmail,
   signOutAction,
   pageTree = [],
+  teamspaceNavGroups = [],
   templatesByType = {},
 }: AppSidebarProps) {
   const ctx = useProjectContext();
   const pathname = usePathname();
   const { t } = useLocale();
-  const projectBase = projectPath(ctx);
+  const projectBase = orgPath(ctx);
   const relativePath = getRelativeProjectPath(pathname, projectBase);
 
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(() =>
@@ -166,7 +170,7 @@ export function AppSidebar({
     return (
       <>
         <Link
-          href={projectPath(ctx, "overview")}
+          href={orgPath(ctx, "overview")}
           className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
@@ -202,7 +206,15 @@ export function AppSidebar({
                 aria-hidden={mode === "l1"}
               >
                 {renderL0Nav()}
-                <PageTreeNav pages={pageTree} basePath={projectBase} />
+                {teamspaceNavGroups.length > 0 ? (
+                  <TeamspaceNav
+                    ctx={ctx}
+                    groups={teamspaceNavGroups}
+                    activeTeamspaceId={ctx.teamspaceId ?? ctx.project.id}
+                  />
+                ) : (
+                  <PageTreeNav pages={pageTree} basePath={projectBase} />
+                )}
               </div>
               <div
                 className={cn(
@@ -220,7 +232,7 @@ export function AppSidebar({
 
       <div className="space-y-0.5 border-t p-2">
         <Link
-          href={projectPath(ctx, "developer/setup")}
+          href={orgPath(ctx, "developer/setup")}
           prefetch
           className={cn(
             "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -232,7 +244,7 @@ export function AppSidebar({
           {t("nav.developerSetup")}
         </Link>
         <Link
-          href={projectPath(ctx, "settings/general")}
+          href={orgPath(ctx, "settings/general")}
           prefetch
           className={cn(
             "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

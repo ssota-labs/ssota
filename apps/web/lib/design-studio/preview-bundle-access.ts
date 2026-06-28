@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 const ACCESS_TTL_SECONDS = 3600;
 
 type PreviewBundleAccessPayload = {
-  projectId: string;
+  teamspaceId: string;
   buildHash: string;
   fileName: string;
   exp: number;
@@ -47,7 +47,7 @@ function decodeToken(token: string): PreviewBundleAccessPayload | null {
       Buffer.from(body, "base64url").toString("utf8"),
     ) as PreviewBundleAccessPayload;
     if (
-      typeof parsed.projectId !== "string" ||
+      typeof parsed.teamspaceId !== "string" ||
       typeof parsed.buildHash !== "string" ||
       typeof parsed.fileName !== "string" ||
       typeof parsed.exp !== "number"
@@ -62,12 +62,12 @@ function decodeToken(token: string): PreviewBundleAccessPayload | null {
 }
 
 export function createPreviewBundleAccessToken(input: {
-  projectId: string;
+  teamspaceId: string;
   buildHash: string;
   fileName: string;
 }): string {
   return encodeToken({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     buildHash: input.buildHash,
     fileName: input.fileName,
     exp: Math.floor(Date.now() / 1000) + ACCESS_TTL_SECONDS,
@@ -76,13 +76,13 @@ export function createPreviewBundleAccessToken(input: {
 
 export function verifyPreviewBundleAccessToken(
   token: string | null | undefined,
-  expected: { projectId: string; buildHash: string; fileName: string },
+  expected: { teamspaceId: string; buildHash: string; fileName: string },
 ): boolean {
   if (!token) return false;
   const payload = decodeToken(token);
   if (!payload) return false;
   return (
-    payload.projectId === expected.projectId &&
+    payload.teamspaceId === expected.teamspaceId &&
     payload.buildHash === expected.buildHash &&
     payload.fileName === expected.fileName
   );

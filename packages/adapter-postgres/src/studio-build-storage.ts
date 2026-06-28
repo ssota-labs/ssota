@@ -9,9 +9,9 @@ export type StudioBuildStorageArtifact = {
 };
 
 export type StudioBuildStorage = {
-  exists(projectId: string, buildHash: string): Promise<boolean>;
+  exists(teamspaceId: string, buildHash: string): Promise<boolean>;
   upload(
-    projectId: string,
+    teamspaceId: string,
     buildHash: string,
     artifacts: StudioBuildStorageArtifact[],
   ): Promise<void>;
@@ -19,8 +19,8 @@ export type StudioBuildStorage = {
   getSignedPreviewUrl(storagePath: string, ttlSeconds: number): Promise<string>;
 };
 
-function artifactPaths(projectId: string, buildHash: string) {
-  const base = `${projectId}/studio-builds/${buildHash}`;
+function artifactPaths(teamspaceId: string, buildHash: string) {
+  const base = `${teamspaceId}/studio-builds/${buildHash}`;
   return {
     jsPath: `${base}/bundle.js`,
     cssPath: `${base}/bundle.css`,
@@ -31,14 +31,14 @@ function artifactPaths(projectId: string, buildHash: string) {
 export class LocalStudioBuildStorage implements StudioBuildStorage {
   constructor(private readonly rootDir: string) {}
 
-  private buildDir(projectId: string, buildHash: string) {
-    return path.join(this.rootDir, projectId, "studio-builds", buildHash);
+  private buildDir(teamspaceId: string, buildHash: string) {
+    return path.join(this.rootDir, teamspaceId, "studio-builds", buildHash);
   }
 
-  async exists(projectId: string, buildHash: string): Promise<boolean> {
+  async exists(teamspaceId: string, buildHash: string): Promise<boolean> {
     try {
       await readFile(
-        path.join(this.buildDir(projectId, buildHash), "bundle.js"),
+        path.join(this.buildDir(teamspaceId, buildHash), "bundle.js"),
       );
       return true;
     } catch {
@@ -47,11 +47,11 @@ export class LocalStudioBuildStorage implements StudioBuildStorage {
   }
 
   async upload(
-    projectId: string,
+    teamspaceId: string,
     buildHash: string,
     artifacts: StudioBuildStorageArtifact[],
   ): Promise<void> {
-    const dir = this.buildDir(projectId, buildHash);
+    const dir = this.buildDir(teamspaceId, buildHash);
     await mkdir(dir, { recursive: true });
     for (const artifact of artifacts) {
       const fileName = path.basename(artifact.path);
@@ -83,10 +83,10 @@ export class SupabaseStudioBuildStorage implements StudioBuildStorage {
 
   constructor(private readonly client: SupabaseClient) {}
 
-  async exists(projectId: string, buildHash: string): Promise<boolean> {
+  async exists(teamspaceId: string, buildHash: string): Promise<boolean> {
     const { data, error } = await this.client.storage
       .from(this.bucket)
-      .list(`${projectId}/studio-builds/${buildHash}`, {
+      .list(`${teamspaceId}/studio-builds/${buildHash}`, {
         search: "bundle.js",
       });
     if (error) {
@@ -96,7 +96,7 @@ export class SupabaseStudioBuildStorage implements StudioBuildStorage {
   }
 
   async upload(
-    projectId: string,
+    teamspaceId: string,
     buildHash: string,
     artifacts: StudioBuildStorageArtifact[],
   ): Promise<void> {
@@ -202,8 +202,8 @@ export class S3StudioBuildStorage implements StudioBuildStorage {
     };
   }
 
-  async exists(projectId: string, buildHash: string): Promise<boolean> {
-    const { jsPath } = artifactPaths(projectId, buildHash);
+  async exists(teamspaceId: string, buildHash: string): Promise<boolean> {
+    const { jsPath } = artifactPaths(teamspaceId, buildHash);
     const client = await this.getClient();
     const { HeadObjectCommand } = await this.commands();
     try {

@@ -3,13 +3,13 @@ import type { Db } from "../db/client.js";
 import { chatMessages, chatThreads } from "../db/schema.js";
 
 export interface ChatScope {
-  projectId: string;
+  teamspaceId: string;
   accountId?: string | null;
 }
 
 export interface ChatThreadRecord {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   accountId: string | null;
   title: string;
   createdAt: Date;
@@ -37,7 +37,7 @@ export interface AppendChatMessageInput {
  * turn when the durable run finishes.
  */
 export function createChatPort(db: Db, scope: ChatScope) {
-  const { projectId } = scope;
+  const { teamspaceId } = scope;
   const accountId = scope.accountId ?? null;
 
   function toThread(row: ChatThreadRecord): ChatThreadRecord {
@@ -48,7 +48,7 @@ export function createChatPort(db: Db, scope: ChatScope) {
     async createThread(title?: string): Promise<ChatThreadRecord> {
       const [row] = await db
         .insert(chatThreads)
-        .values({ projectId, accountId, title: title ?? "New chat" })
+        .values({ teamspaceId, accountId, title: title ?? "New chat" })
         .returning();
       return toThread(row!);
     },
@@ -58,7 +58,7 @@ export function createChatPort(db: Db, scope: ChatScope) {
         .select()
         .from(chatThreads)
         .where(
-          and(eq(chatThreads.id, threadId), eq(chatThreads.projectId, projectId)),
+          and(eq(chatThreads.id, threadId), eq(chatThreads.teamspaceId, teamspaceId)),
         )
         .limit(1);
       return row ?? null;
@@ -68,10 +68,10 @@ export function createChatPort(db: Db, scope: ChatScope) {
     async listThreads(limit = 50): Promise<ChatThreadRecord[]> {
       const where = accountId
         ? and(
-            eq(chatThreads.projectId, projectId),
+            eq(chatThreads.teamspaceId, teamspaceId),
             eq(chatThreads.accountId, accountId),
           )
-        : eq(chatThreads.projectId, projectId);
+        : eq(chatThreads.teamspaceId, teamspaceId);
       return db
         .select()
         .from(chatThreads)
@@ -84,10 +84,10 @@ export function createChatPort(db: Db, scope: ChatScope) {
     async latestThread(): Promise<ChatThreadRecord | null> {
       const where = accountId
         ? and(
-            eq(chatThreads.projectId, projectId),
+            eq(chatThreads.teamspaceId, teamspaceId),
             eq(chatThreads.accountId, accountId),
           )
-        : eq(chatThreads.projectId, projectId);
+        : eq(chatThreads.teamspaceId, teamspaceId);
       const [row] = await db
         .select()
         .from(chatThreads)
@@ -117,7 +117,7 @@ export function createChatPort(db: Db, scope: ChatScope) {
         .select()
         .from(chatThreads)
         .where(
-          and(eq(chatThreads.id, threadId), eq(chatThreads.projectId, projectId)),
+          and(eq(chatThreads.id, threadId), eq(chatThreads.teamspaceId, teamspaceId)),
         )
         .limit(1)
         .then((rows) => rows[0] ?? null);
@@ -128,7 +128,7 @@ export function createChatPort(db: Db, scope: ChatScope) {
       const result = await db
         .delete(chatThreads)
         .where(
-          and(eq(chatThreads.id, threadId), eq(chatThreads.projectId, projectId)),
+          and(eq(chatThreads.id, threadId), eq(chatThreads.teamspaceId, teamspaceId)),
         )
         .returning({ id: chatThreads.id });
       return result.length > 0;

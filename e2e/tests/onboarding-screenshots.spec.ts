@@ -26,7 +26,7 @@ test.describe("Console onboarding screenshots", () => {
 
     await page.getByRole("button", { name: "Continue" }).click();
     await expect(page).toHaveURL(/\/onboarding\/project/);
-    await page.getByLabel("Project name").fill(projectName);
+    await page.getByLabel("Teamspace name").fill(projectName);
     await page.screenshot({
       path: "report/screenshots/onboarding-02-project.png",
       fullPage: true,

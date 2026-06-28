@@ -11,21 +11,21 @@ import {
  * Returns null if the id resolves to nothing.
  */
 export async function resolveWorkflowInstructionId(
-  projectId: string,
+  teamspaceId: string,
   instructionId: string,
 ): Promise<string | null> {
   if (!isVirtualWorkflowInstructionId(instructionId)) {
-    const existing = await getWorkflowInstructionPort(projectId).getById(
+    const existing = await getWorkflowInstructionPort(teamspaceId).getById(
       instructionId,
     );
     return existing ? existing.id : null;
   }
 
-  const all = await loadWorkflowInstructionsForUi(projectId);
+  const all = await loadWorkflowInstructionsForUi(teamspaceId);
   const virtual = all.find((entry) => entry.id === instructionId);
   if (!virtual) return null;
 
-  const saved = await getWorkflowInstructionPort(projectId).upsertInstruction({
+  const saved = await getWorkflowInstructionPort(teamspaceId).upsertInstruction({
     key: virtual.key,
     name: virtual.name,
     description: virtual.description,

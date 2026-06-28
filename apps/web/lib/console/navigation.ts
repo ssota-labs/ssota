@@ -1,5 +1,5 @@
-import type { ProjectRouteContext } from "./paths";
-import { projectPath } from "./paths";
+import type { OrgRouteContext } from "./paths";
+import { orgPath } from "./paths";
 
 export type PagePatternCode = "H" | "D" | "L" | "T" | "canvas";
 
@@ -103,9 +103,9 @@ export function getExpandedGroupsFromPath(
   return {};
 }
 
-export function resolveNavHref(ctx: ProjectRouteContext, href: string): string {
-  if (!href) return projectPath(ctx);
-  return projectPath(ctx, ...href.split("/"));
+export function resolveNavHref(ctx: OrgRouteContext, href: string): string {
+  if (!href) return orgPath(ctx);
+  return orgPath(ctx, ...href.split("/"));
 }
 
 export function isNavLinkActive(

@@ -18,7 +18,7 @@ type InstructionRow = typeof schema.workflowInstructions.$inferSelect;
 function mapInstruction(row: InstructionRow): WorkflowInstruction {
   return WorkflowInstructionSchema.parse({
     id: row.id,
-    projectId: row.projectId,
+    teamspaceId: row.teamspaceId,
     accountId: row.accountId,
     key: row.key,
     name: row.name,
@@ -48,7 +48,7 @@ export function createWorkflowInstructionPort(
   db: Db,
   scope: ActionPortsScope,
 ): WorkflowInstructionPort {
-  const { projectId } = scope;
+  const { teamspaceId } = scope;
 
   return {
     async listInstructions() {
@@ -57,7 +57,7 @@ export function createWorkflowInstructionPort(
         .from(schema.workflowInstructions)
         .where(
           and(
-            eq(schema.workflowInstructions.projectId, projectId),
+            eq(schema.workflowInstructions.teamspaceId, teamspaceId),
             isNull(schema.workflowInstructions.accountId),
           ),
         );
@@ -70,7 +70,7 @@ export function createWorkflowInstructionPort(
         .from(schema.workflowInstructions)
         .where(
           and(
-            eq(schema.workflowInstructions.projectId, projectId),
+            eq(schema.workflowInstructions.teamspaceId, teamspaceId),
             eq(schema.workflowInstructions.id, id),
           ),
         )
@@ -84,7 +84,7 @@ export function createWorkflowInstructionPort(
         .from(schema.workflowInstructions)
         .where(
           and(
-            eq(schema.workflowInstructions.projectId, projectId),
+            eq(schema.workflowInstructions.teamspaceId, teamspaceId),
             eq(schema.workflowInstructions.key, key),
             accountCondition(accountId),
           ),
@@ -101,7 +101,7 @@ export function createWorkflowInstructionPort(
         .from(schema.workflowInstructions)
         .where(
           and(
-            eq(schema.workflowInstructions.projectId, projectId),
+            eq(schema.workflowInstructions.teamspaceId, teamspaceId),
             eq(schema.workflowInstructions.key, parsed.key),
             accountCondition(accountId),
           ),
@@ -123,7 +123,7 @@ export function createWorkflowInstructionPort(
       const [row] = await db
         .insert(schema.workflowInstructions)
         .values({
-          projectId,
+          teamspaceId,
           accountId,
           key: parsed.key,
           name: parsed.name,
@@ -139,7 +139,7 @@ export function createWorkflowInstructionPort(
         .delete(schema.workflowInstructions)
         .where(
           and(
-            eq(schema.workflowInstructions.projectId, projectId),
+            eq(schema.workflowInstructions.teamspaceId, teamspaceId),
             eq(schema.workflowInstructions.key, key),
             accountCondition(accountId),
           ),
@@ -153,7 +153,7 @@ export function createWorkflowInstructionPort(
  */
 export async function seedWorkflowInstructions(
   db: Db,
-  projectId: string,
+  teamspaceId: string,
   seeds: UpsertWorkflowInstructionInput[],
 ): Promise<void> {
   for (const seed of seeds) {
@@ -163,7 +163,7 @@ export async function seedWorkflowInstructions(
       .from(schema.workflowInstructions)
       .where(
         and(
-          eq(schema.workflowInstructions.projectId, projectId),
+          eq(schema.workflowInstructions.teamspaceId, teamspaceId),
           eq(schema.workflowInstructions.key, parsed.key),
           isNull(schema.workflowInstructions.accountId),
         ),
@@ -181,7 +181,7 @@ export async function seedWorkflowInstructions(
         .where(eq(schema.workflowInstructions.id, existing[0].id));
     } else {
       await db.insert(schema.workflowInstructions).values({
-        projectId,
+        teamspaceId,
         accountId: null,
         key: parsed.key,
         name: parsed.name,

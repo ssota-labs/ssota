@@ -18,7 +18,7 @@ const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
  */
 
 export interface RunTaskAgentInput {
-  projectId: string;
+  teamspaceId: string;
   taskId: string;
   accountId?: string;
   modelId?: string;
@@ -33,14 +33,14 @@ export async function claimTaskRun(
 ): Promise<void> {
   "use step";
   await createAgentRunPort(getDb()).start({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runtimeKind: "task",
     taskId: input.taskId,
     workflowRunId,
     accountId: input.accountId ?? null,
     model: input.modelId ?? null,
   });
-  await getTaskPort(input.projectId, input.accountId).updateTask(input.taskId, {
+  await getTaskPort(input.teamspaceId, input.accountId).updateTask(input.taskId, {
     status: "running",
   });
 }
@@ -51,7 +51,7 @@ export async function buildTaskPromptStep(
 ): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
   "use step";
   return buildRunPrompt({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runId: workflowRunId,
     runtimeKind: "task",
     taskId: input.taskId,
@@ -67,7 +67,7 @@ export async function finalizeTaskRun(
   usage: { inputTokens?: number; outputTokens?: number; totalTokens?: number },
 ): Promise<void> {
   "use step";
-  const taskPort = getTaskPort(input.projectId, input.accountId);
+  const taskPort = getTaskPort(input.teamspaceId, input.accountId);
   const current = await taskPort.getTask(input.taskId);
   const isTerminal = current?.status
     ? TERMINAL_STATUSES.has(current.status)
@@ -95,7 +95,7 @@ export async function provisionSandboxStep(
   input: RunTaskAgentInput,
 ): Promise<string | undefined> {
   "use step";
-  const task = await getTaskPort(input.projectId, input.accountId).getTask(
+  const task = await getTaskPort(input.teamspaceId, input.accountId).getTask(
     input.taskId,
   );
   if (

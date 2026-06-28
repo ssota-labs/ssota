@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
   createAccountPort,
   createConsolePort,
 } from "@ssota/adapter-postgres";
@@ -12,18 +12,23 @@ import {
   getGraphPorts,
   getGraphReadPort,
   getPagePort,
+  registerTeamspaceOrganization,
 } from "../ports.js";
 
 const DB_ONLY = Boolean(process.env.DATABASE_URL);
 
-async function defaultProjectId(): Promise<string> {
+async function defaultTeamspaceContext(): Promise<{
+  teamspaceId: string;
+  organizationId: string;
+}> {
   const console_ = createConsolePort(getDb());
   const org = await console_.getOrganizationBySlug(DEFAULT_ORG_SLUG);
   const project = org
-    ? await console_.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG)
+    ? await console_.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG)
     : null;
-  if (!project) throw new Error("seed missing — run pnpm db:seed");
-  return project.id;
+  if (!project || !org) throw new Error("seed missing — run pnpm db:seed");
+  registerTeamspaceOrganization(project.id, org.id);
+  return { teamspaceId: project.id, organizationId: org.id };
 }
 
 // Deterministic (no LLM): persist a page definition on a `page` node and
@@ -31,8 +36,8 @@ async function defaultProjectId(): Promise<string> {
 // backs the production render route. Needs only DATABASE_URL.
 describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
   it("persists a page and resolves its bindings", async () => {
-    const projectId = await defaultProjectId();
-    const pagePort = getPagePort(projectId);
+    const { teamspaceId } = await defaultTeamspaceContext();
+    const pagePort = getPagePort(teamspaceId);
 
     const page = await pagePort.createPage({
       title: "Agent Dashboard",
@@ -56,8 +61,8 @@ describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
     expect(read?.id).toBe(page.id);
 
     const data = await resolvePageBindings(
-      getGraphReadPort(projectId),
-      projectId,
+      getGraphReadPort(teamspaceId),
+      teamspaceId,
       read!.bindings,
     );
     expect(Array.isArray(data.objectives)).toBe(true);
@@ -69,17 +74,17 @@ describe.skipIf(!DB_ONLY)("page tree pipeline", () => {
 // builder scope sees all. Needs only DATABASE_URL.
 describe.skipIf(!DB_ONLY)("account isolation", () => {
   it("isolates account data while sharing builder/null rows", async () => {
-    const projectId = await defaultProjectId();
+    const { teamspaceId } = await defaultTeamspaceContext();
     const accounts = createAccountPort(getDb());
     const stamp = Date.now();
 
     const a = await accounts.provision({
-      projectId,
+      teamspaceId,
       slug: `iso-a-${stamp}`,
       name: "Account A",
     });
     const b = await accounts.provision({
-      projectId,
+      teamspaceId,
       slug: `iso-b-${stamp}`,
       name: "Account B",
     });
@@ -90,9 +95,9 @@ describe.skipIf(!DB_ONLY)("account isolation", () => {
 
     const mk = (accountId: string | undefined, title: string) =>
       createNode(
-        getGraphPorts(projectId, accountId),
+        getGraphPorts(teamspaceId, accountId),
         createNodeInputSchema.parse({
-          projectId,
+          teamspaceId,
           catalogKey: "objective",
           title,
           properties: {},
@@ -104,8 +109,8 @@ describe.skipIf(!DB_ONLY)("account isolation", () => {
     await mk(undefined, titleShared); // builder/shared
 
     const titlesFor = async (accountId?: string) => {
-      const nodes = await getGraphReadPort(projectId, accountId).queryNodes({
-        projectId,
+      const nodes = await getGraphReadPort(teamspaceId, accountId).queryNodes({
+        teamspaceId,
         catalogKey: "objective",
         limit: 100,
       });

@@ -4,7 +4,7 @@ import {
   createDb,
   createWorkflowInstructionPort,
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
 } from "@ssota/adapter-postgres";
 import {
   getWorkflowForMcp,
@@ -16,7 +16,7 @@ let skip = false;
 
 describe("workflow-services", () => {
   let db: ReturnType<typeof createDb>["db"];
-  let projectId: string;
+  let teamspaceId: string;
   let client: ReturnType<typeof createDb>["client"] | undefined;
 
   beforeAll(async () => {
@@ -30,13 +30,13 @@ describe("workflow-services", () => {
         skip = true;
         return;
       }
-      const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+      const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
       if (!project) {
         skip = true;
         return;
       }
-      projectId = project.id;
-      await createWorkflowInstructionPort(db, { projectId }).listInstructions();
+      teamspaceId = project.id;
+      await createWorkflowInstructionPort(db, { teamspaceId }).listInstructions();
     } catch {
       skip = true;
     }
@@ -51,7 +51,7 @@ describe("workflow-services", () => {
   });
 
   it("lists workflow instructions without bodies (incl. code built-ins)", async () => {
-    const result = await listWorkflowsForMcp(db, projectId);
+    const result = await listWorkflowsForMcp(db, teamspaceId);
     // Nothing is seeded; the agent.setup built-in is always present.
     expect(result.workflows.some((w) => w.key === "agent.setup")).toBe(true);
     for (const workflow of result.workflows) {
@@ -61,22 +61,22 @@ describe("workflow-services", () => {
   });
 
   it("returns workflow instruction metadata by key (built-in)", async () => {
-    const workflow = await getWorkflowForMcp(db, projectId, "agent.setup");
+    const workflow = await getWorkflowForMcp(db, teamspaceId, "agent.setup");
     expect(workflow?.key).toBe("agent.setup");
     expect(workflow).not.toHaveProperty("content");
   });
 
   it("returns null for unknown workflow keys", async () => {
-    expect(await getWorkflowForMcp(db, projectId, "not.a.workflow")).toBeNull();
+    expect(await getWorkflowForMcp(db, teamspaceId, "not.a.workflow")).toBeNull();
     expect(
-      await getWorkflowInstructionForMcp(db, projectId, "not.a.workflow"),
+      await getWorkflowInstructionForMcp(db, teamspaceId, "not.a.workflow"),
     ).toBeNull();
   });
 
   it("returns instruction body by key (built-in)", async () => {
     const result = await getWorkflowInstructionForMcp(
       db,
-      projectId,
+      teamspaceId,
       "agent.setup",
     );
     expect(result?.workflowKey).toBe("agent.setup");

@@ -48,7 +48,7 @@ Graph context: read with query_nodes / get_node / traverse_edges, write with cre
 
 export interface BuildRunInstructionsParams {
   runtimeKind: AgentRuntimeKind;
-  projectId: string;
+  teamspaceId: string;
   accountId?: string;
   /** Connector backend active for this run — selects the connections guidance. */
   connectorKind?: ConnectorKind;
@@ -109,7 +109,7 @@ function buildDynamicInstructionSegment(
 ): string {
   const {
     runtimeKind,
-    projectId,
+    teamspaceId,
     accountId,
     workflowManifest,
     mainInstruction,
@@ -139,7 +139,7 @@ function buildDynamicInstructionSegment(
   if (runtimeKind === "task" && task) {
     lines.push(
       `## Current task`,
-      `- projectId: ${projectId}`,
+      `- teamspaceId: ${teamspaceId}`,
       accountId
         ? `- accountId: ${accountId}`
         : `- accountId: (shared / builder scope)`,

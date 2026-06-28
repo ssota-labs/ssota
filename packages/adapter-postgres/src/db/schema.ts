@@ -56,8 +56,8 @@ export const organizations = pgTable("organizations", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const projects = pgTable(
-  "projects",
+export const teamspaces = pgTable(
+  "teamspaces",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     organizationId: uuid("organization_id")
@@ -69,12 +69,15 @@ export const projects = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    orgSlugUnique: uniqueIndex("projects_org_slug_unique").on(
+    orgSlugUnique: uniqueIndex("teamspaces_org_slug_unique").on(
       table.organizationId,
       table.slug,
     ),
   }),
 );
+
+/** @deprecated Use `teamspaces` — alias for transitional imports. */
+export const projects = teamspaces;
 
 export const organizationMemberships = pgTable(
   "organization_memberships",
@@ -98,7 +101,7 @@ export const organizationMemberships = pgTable(
 );
 
 /**
- * End-user data partition within a deployed tenant SaaS (Phase 5). A Project is
+ * End-user data partition within a deployed tenant SaaS (Phase 5). A Teamspace is
  * the builder's agent-SaaS definition; accounts are the isolated spaces
  * SSOTA-naive end users work in. Instance rows carry `account_id` (null =
  * shared/builder). No recursive org/project for end users — sub-structure is
@@ -108,9 +111,9 @@ export const accounts = pgTable(
   "accounts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     ownerUserId: uuid("owner_user_id").references(() => profiles.id),
@@ -120,10 +123,10 @@ export const accounts = pgTable(
   },
   (table) => ({
     projectSlugUnique: uniqueIndex("accounts_project_slug_unique").on(
-      table.projectId,
+      table.teamspaceId,
       table.slug,
     ),
-    projectIdx: index("accounts_project_id_idx").on(table.projectId),
+    projectIdx: index("accounts_project_id_idx").on(table.teamspaceId),
   }),
 );
 
@@ -160,9 +163,9 @@ export const accountConnections = pgTable(
   "account_connections",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
     accountId: uuid("account_id")
       .notNull()
       .references(() => accounts.id, { onDelete: "cascade" }),
@@ -190,7 +193,7 @@ export const accountConnections = pgTable(
     accountConnectorInstallationUnique: uniqueIndex(
       "account_connections_account_connector_installation_unique",
     ).on(table.accountId, table.connector, table.installationId),
-    projectIdx: index("account_connections_project_id_idx").on(table.projectId),
+    projectIdx: index("account_connections_project_id_idx").on(table.teamspaceId),
   }),
 );
 
@@ -242,9 +245,9 @@ export const chatWorkspaces = pgTable(
   "chat_workspaces",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
     /** Optional data partition; null = the whole project (builder scope). */
     accountId: uuid("account_id").references(() => accounts.id, {
       onDelete: "set null",
@@ -265,7 +268,7 @@ export const chatWorkspaces = pgTable(
     workspaceKeyUnique: uniqueIndex("chat_workspaces_workspace_key_unique").on(
       table.workspaceKey,
     ),
-    projectIdx: index("chat_workspaces_project_id_idx").on(table.projectId),
+    projectIdx: index("chat_workspaces_project_id_idx").on(table.teamspaceId),
   }),
 );
 
@@ -273,9 +276,9 @@ export const nodeCatalog = pgTable(
   "node_catalog",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    organizationId: uuid("organization_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => organizations.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
     label: text("label").notNull(),
     description: text("description").notNull().default(""),
@@ -291,11 +294,11 @@ export const nodeCatalog = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    projectKeyUnique: uniqueIndex("node_catalog_project_key_unique").on(
-      table.projectId,
+    orgKeyUnique: uniqueIndex("node_catalog_organization_key_unique").on(
+      table.organizationId,
       table.key,
     ),
-    projectIdx: index("node_catalog_project_id_idx").on(table.projectId),
+    orgIdx: index("node_catalog_organization_id_idx").on(table.organizationId),
   }),
 );
 
@@ -303,9 +306,9 @@ export const edgeCatalog = pgTable(
   "edge_catalog",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    organizationId: uuid("organization_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => organizations.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
     label: text("label").notNull(),
     description: text("description").notNull().default(""),
@@ -326,11 +329,11 @@ export const edgeCatalog = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    projectKeyUnique: uniqueIndex("edge_catalog_project_key_unique").on(
-      table.projectId,
+    orgKeyUnique: uniqueIndex("edge_catalog_organization_key_unique").on(
+      table.organizationId,
       table.key,
     ),
-    projectIdx: index("edge_catalog_project_id_idx").on(table.projectId),
+    orgIdx: index("edge_catalog_organization_id_idx").on(table.organizationId),
   }),
 );
 
@@ -342,9 +345,9 @@ export const workflowInstructions = pgTable(
   "workflow_instructions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
     accountId: uuid("account_id").references(() => accounts.id, {
       onDelete: "cascade",
     }),
@@ -360,14 +363,14 @@ export const workflowInstructions = pgTable(
   },
   (table) => ({
     projectKeyUnique: uniqueIndex("workflow_instructions_project_key_unique")
-      .on(table.projectId, table.key)
+      .on(table.teamspaceId, table.key)
       .where(sql`${table.accountId} IS NULL`),
     projectAccountKeyUnique: uniqueIndex(
       "workflow_instructions_project_account_key_unique",
     )
-      .on(table.projectId, table.accountId, table.key)
+      .on(table.teamspaceId, table.accountId, table.key)
       .where(sql`${table.accountId} IS NOT NULL`),
-    projectIdx: index("workflow_instructions_project_id_idx").on(table.projectId),
+    projectIdx: index("workflow_instructions_project_id_idx").on(table.teamspaceId),
   }),
 );
 
@@ -375,9 +378,9 @@ export const schedules = pgTable(
   "schedules",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
     accountId: uuid("account_id").references(() => accounts.id, {
       onDelete: "cascade",
     }),
@@ -394,7 +397,7 @@ export const schedules = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    projectIdx: index("schedules_project_id_idx").on(table.projectId),
+    projectIdx: index("schedules_project_id_idx").on(table.teamspaceId),
   }),
 );
 
@@ -402,9 +405,9 @@ export const tasks = pgTable(
   "tasks",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id),
+      .references(() => teamspaces.id),
     // End-user data partition (Phase 5). Null = builder/shared scope.
     accountId: uuid("account_id"),
     workflowInstructionId: uuid("workflow_instruction_id").references(
@@ -433,26 +436,26 @@ export const tasks = pgTable(
   },
   (table) => ({
     idempotencyUnique: uniqueIndex("tasks_project_idempotency_unique")
-      .on(table.projectId, table.idempotencyKey)
+      .on(table.teamspaceId, table.idempotencyKey)
       .where(sql`${table.idempotencyKey} IS NOT NULL`),
     projectStatusIdx: index("tasks_project_status_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.status,
     ),
     projectWorkflowInstructionIdx: index("tasks_project_workflow_instruction_id_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.workflowInstructionId,
     ),
     projectAssigneeIdx: index("tasks_project_assignee_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.assignee,
     ),
     projectSubjectIdIdx: index("tasks_project_subject_id_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.subjectId,
     ),
     projectTargetNodeIdx: index("tasks_project_target_node_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.targetNodeId,
     ),
   }),
@@ -462,9 +465,9 @@ export const nodes = pgTable(
   "nodes",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+    teamspaceId: uuid("teamspace_id").references(() => teamspaces.id, {
+      onDelete: "cascade",
+    }),
     nodeCatalogId: uuid("node_catalog_id")
       .notNull()
       .references(() => nodeCatalog.id, { onDelete: "restrict" }),
@@ -481,11 +484,11 @@ export const nodes = pgTable(
   },
   (table) => ({
     projectCatalogIdx: index("nodes_project_node_catalog_id_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.nodeCatalogId,
     ),
     projectLifecycleIdx: index("nodes_project_lifecycle_status_idx").on(
-      table.projectId,
+      table.teamspaceId,
       sql`(properties->>'lifecycleStatus')`,
     ),
   }),
@@ -495,9 +498,9 @@ export const edges = pgTable(
   "edges",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+    teamspaceId: uuid("teamspace_id").references(() => teamspaces.id, {
+      onDelete: "cascade",
+    }),
     edgeCatalogId: uuid("edge_catalog_id")
       .notNull()
       .references(() => edgeCatalog.id, { onDelete: "restrict" }),
@@ -517,15 +520,15 @@ export const edges = pgTable(
   },
   (table) => ({
     projectSourceIdx: index("edges_project_source_node_id_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.sourceNodeId,
     ),
     projectTargetIdx: index("edges_project_target_node_id_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.targetNodeId,
     ),
     projectCatalogIdx: index("edges_project_edge_catalog_id_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.edgeCatalogId,
     ),
   }),
@@ -544,9 +547,9 @@ export const pages = pgTable(
   "pages",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
     // End-user data partition (Phase 5). Null = builder/shared scope.
     accountId: uuid("account_id"),
     // Notion-style tree parent. Null = top-level page.
@@ -577,20 +580,20 @@ export const pages = pgTable(
   },
   (table) => ({
     projectParentIdx: index("pages_project_parent_id_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.parentId,
     ),
-    projectIdx: index("pages_project_id_idx").on(table.projectId),
+    projectIdx: index("pages_project_id_idx").on(table.teamspaceId),
     projectAppliesToIdx: index("pages_project_applies_to_node_type_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.appliesToNodeType,
     ),
     projectSubjectIdx: index("pages_project_subject_node_id_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.subjectNodeId,
     ),
     projectSlugUnique: uniqueIndex("pages_project_slug_unique")
-      .on(table.projectId, table.slug)
+      .on(table.teamspaceId, table.slug)
       .where(sql`${table.slug} IS NOT NULL`),
   }),
 );
@@ -606,9 +609,9 @@ export const pageViewStates = pgTable(
   "page_view_states",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
     userId: uuid("user_id")
       .notNull()
       .references(() => profiles.id, { onDelete: "cascade" }),
@@ -647,9 +650,9 @@ export const agentRuns = pgTable(
   "agent_runs",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
     // End-user data partition (Phase 5). Null = builder/shared scope.
     accountId: uuid("account_id"),
     runtimeKind: agentRuntimeKindEnum("runtime_kind").notNull().default("task"),
@@ -670,7 +673,7 @@ export const agentRuns = pgTable(
     finishedAt: timestamp("finished_at", { withTimezone: true }),
   },
   (table) => ({
-    projectIdx: index("agent_runs_project_id_idx").on(table.projectId),
+    projectIdx: index("agent_runs_project_id_idx").on(table.teamspaceId),
     taskIdx: index("agent_runs_task_id_idx").on(table.taskId),
     threadIdx: index("agent_runs_thread_id_idx").on(table.threadId),
     scheduleIdx: index("agent_runs_schedule_id_idx").on(table.scheduleId),
@@ -690,9 +693,9 @@ export const chatThreads = pgTable(
   "chat_threads",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    projectId: uuid("project_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
     // End-user data partition (Phase 5). Null = builder/shared scope.
     accountId: uuid("account_id"),
     title: text("title").notNull().default("New chat"),
@@ -705,7 +708,7 @@ export const chatThreads = pgTable(
   },
   (table) => ({
     projectAccountIdx: index("chat_threads_project_account_id_idx").on(
-      table.projectId,
+      table.teamspaceId,
       table.accountId,
     ),
   }),

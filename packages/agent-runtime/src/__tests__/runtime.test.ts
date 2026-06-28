@@ -99,12 +99,12 @@ describe("buildRunInstructions", () => {
   it("embeds task runtime scope and execution directive", () => {
     const prompt = buildRunInstructions({
       runtimeKind: "task",
-      projectId: "22222222-2222-2222-2222-222222222222",
+      teamspaceId: "22222222-2222-2222-2222-222222222222",
       // Legacy connector guidance names connection_search/connection_call.
       connectorKind: "legacy",
       taskPlaybook: {
         id: "33333333-3333-3333-3333-333333333333",
-        projectId: "22222222-2222-2222-2222-222222222222",
+        teamspaceId: "22222222-2222-2222-2222-222222222222",
         accountId: null,
         key: "work.write_document",
         name: "Write document",
@@ -145,7 +145,7 @@ describe("buildRunInstructions", () => {
   it("notes shared scope when no accountId is given", () => {
     const prompt = buildRunInstructions({
       runtimeKind: "main",
-      projectId: "22222222-2222-2222-2222-222222222222",
+      teamspaceId: "22222222-2222-2222-2222-222222222222",
       mainInstruction: null,
     });
     expect(prompt).toMatch(/persistent chat thread/i);
@@ -154,7 +154,7 @@ describe("buildRunInstructions", () => {
   it("requires professional communication style for user-facing runtimes", () => {
     const main = buildRunInstructions({
       runtimeKind: "main",
-      projectId: "22222222-2222-2222-2222-222222222222",
+      teamspaceId: "22222222-2222-2222-2222-222222222222",
     });
     expect(main).toContain("professional workplace tone");
     expect(main).toContain("Do not use emojis");
@@ -162,7 +162,7 @@ describe("buildRunInstructions", () => {
 
     const task = buildRunInstructions({
       runtimeKind: "task",
-      projectId: "22222222-2222-2222-2222-222222222222",
+      teamspaceId: "22222222-2222-2222-2222-222222222222",
       task: {
         id: "11111111-1111-1111-1111-111111111111",
         title: "Example",
@@ -181,7 +181,7 @@ describe("buildRunInstructionMessages", () => {
   it("emits a cache-marked static block and dynamic block for task runtime", () => {
     const messages = buildRunInstructionMessages({
       runtimeKind: "task",
-      projectId: "22222222-2222-2222-2222-222222222222",
+      teamspaceId: "22222222-2222-2222-2222-222222222222",
       task: {
         id: "11111111-1111-1111-1111-111111111111",
         title: "Draft the onboarding PRD",
@@ -212,7 +212,7 @@ describe("buildRunInstructionMessages", () => {
   it("returns only the static block when there is no dynamic content", () => {
     const messages = buildRunInstructionMessages({
       runtimeKind: "scheduler",
-      projectId: "22222222-2222-2222-2222-222222222222",
+      teamspaceId: "22222222-2222-2222-2222-222222222222",
       mainInstruction: null,
     });
     expect(messages).toHaveLength(1);
@@ -223,7 +223,7 @@ describe("buildRunInstructionMessages", () => {
 describe("env credential provider", () => {
   it("resolves CONNECTOR_<NAME>_TOKEN and returns null otherwise", async () => {
     const provider = createEnvCredentialProvider();
-    const scope = { projectId: "p" };
+    const scope = { teamspaceId: "p" };
     process.env.CONNECTOR_TESTHUB_TOKEN = "tok-123";
     const found = await provider.getToken("testhub", scope);
     expect(found?.token).toBe("tok-123");
@@ -266,7 +266,7 @@ describe("resolveConnectTokenSubject", () => {
   it("uses user subject for Slack MCP when userId is present", () => {
     expect(
       resolveConnectTokenSubject("slack/dev", {
-        projectId: "p",
+        teamspaceId: "p",
         userId: "user-42",
         installationId: "T0914DV7GA0",
       }),
@@ -276,7 +276,7 @@ describe("resolveConnectTokenSubject", () => {
   it("uses app subject for Slack when userId is absent (bot / server flows)", () => {
     expect(
       resolveConnectTokenSubject("slack/dev", {
-        projectId: "p",
+        teamspaceId: "p",
         installationId: "T0914DV7GA0",
       }),
     ).toEqual({ type: "app" });
@@ -287,13 +287,13 @@ describe("resolveConnectCallbackSubject", () => {
   it("uses user subject when userId is present (post-authorize callback)", () => {
     expect(
       resolveConnectCallbackSubject("discord/ssota", {
-        projectId: "p",
+        teamspaceId: "p",
         userId: "user-42",
       }),
     ).toEqual({ type: "user", id: "user-42" });
     expect(
       resolveConnectCallbackSubject("slack/dev", {
-        projectId: "p",
+        teamspaceId: "p",
         userId: "user-42",
       }),
     ).toEqual({ type: "user", id: "user-42" });
@@ -301,10 +301,10 @@ describe("resolveConnectCallbackSubject", () => {
 
   it("falls back to runtime subject mapping when userId is absent", () => {
     expect(
-      resolveConnectCallbackSubject("discord/ssota", { projectId: "p" }),
+      resolveConnectCallbackSubject("discord/ssota", { teamspaceId: "p" }),
     ).toEqual({ type: "app" });
     expect(() =>
-      resolveConnectCallbackSubject("oauth/notion", { projectId: "p" }),
+      resolveConnectCallbackSubject("oauth/notion", { teamspaceId: "p" }),
     ).toThrow(/userId is required/);
   });
 });
@@ -330,7 +330,7 @@ describe("normalizeConnectInstallationId", () => {
 describe("getConnectInstallation", () => {
   it("requires userId for oauth connectors outside CONNECT_STUB", async () => {
     await expect(
-      getConnectInstallation("oauth/ssota-notion", { projectId: "p" }),
+      getConnectInstallation("oauth/ssota-notion", { teamspaceId: "p" }),
     ).rejects.toThrow(/userId is required/);
   });
 
@@ -338,7 +338,7 @@ describe("getConnectInstallation", () => {
     process.env.CONNECT_STUB = "1";
     try {
       const installation = await getConnectInstallation("oauth/ssota-notion", {
-        projectId: "p",
+        teamspaceId: "p",
         userId: "user-42",
         installationId: "stub-oauth-notion-abc123",
       });
@@ -355,7 +355,7 @@ describe("startConnectAuthorization", () => {
     await expect(
       startConnectAuthorization(
         "slack/dev",
-        { projectId: "p", userId: "" },
+        { teamspaceId: "p", userId: "" },
         { callbackUrl: "http://localhost/api/connect/callback" },
       ),
     ).rejects.toThrow(/userId is required/);
@@ -366,7 +366,7 @@ describe("startConnectAuthorization", () => {
     try {
       const url = await startConnectAuthorization(
         "slack/dev",
-        { projectId: "p", accountId: "acc", userId: "user-1" },
+        { teamspaceId: "p", accountId: "acc", userId: "user-1" },
         { callbackUrl: "http://localhost/api/connect/callback" },
       );
       const parsed = new URL(url);
@@ -383,7 +383,7 @@ describe("startConnectAuthorization", () => {
     try {
       const url = await startConnectAuthorization(
         "slack/dev",
-        { projectId: "p", accountId: "acc", userId: "user-1" },
+        { teamspaceId: "p", accountId: "acc", userId: "user-1" },
         {
           callbackUrl: "http://localhost:3100/api/connect/callback",
           scopes: ["team:read"],

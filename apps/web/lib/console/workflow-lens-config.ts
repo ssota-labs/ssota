@@ -1,6 +1,6 @@
 import type { NodeType } from "@ssota/contracts";
 import { getNodeTypeEntry } from "@ssota/contracts";
-import { projectPath, type ProjectRouteContext } from "./paths";
+import { orgPath, type OrgRouteContext } from "./paths";
 
 export type WorkflowLensPhaseKey =
   | "execution"
@@ -117,10 +117,10 @@ export const WORKFLOW_LENS_PHASES: WorkflowLensPhaseConfig[] = [
 ];
 
 export function getWorkflowLensTableHref(
-  ctx: ProjectRouteContext,
+  ctx: OrgRouteContext,
   tablePath: string,
 ): string {
-  return projectPath(ctx, ...tablePath.split("/"));
+  return orgPath(ctx, ...tablePath.split("/"));
 }
 
 export function getWorkflowLensTypeLabel(nodeType: NodeType): string {

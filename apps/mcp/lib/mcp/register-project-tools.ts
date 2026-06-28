@@ -39,9 +39,9 @@ export function registerProjectTools(server: McpToolServer) {
         "Discover: list development workflow tasks for the current project. Fetch details with get_task or filter via query_tasks.",
       inputSchema: { limit: z.number().int().positive().max(100).optional() },
     },
-    async ({ projectId, args }) => {
+    async ({ teamspaceId, args }) => {
       const limit = typeof args.limit === "number" ? args.limit : undefined;
-      return jsonContent(await listTasks(projectId, limit));
+      return jsonContent(await listTasks(teamspaceId, limit));
     },
   );
 
@@ -53,9 +53,9 @@ export function registerProjectTools(server: McpToolServer) {
       description: "Fetch one development workflow task by taskId",
       inputSchema: { taskId: z.string().uuid() },
     },
-    async ({ projectId, args }) => {
+    async ({ teamspaceId, args }) => {
       const parsed = GetTaskInputSchema.parse(args);
-      return jsonContent(await getTask(projectId, parsed));
+      return jsonContent(await getTask(teamspaceId, parsed));
     },
   );
 
@@ -79,9 +79,9 @@ export function registerProjectTools(server: McpToolServer) {
         offset: z.number().int().nonnegative().optional(),
       },
     },
-    async ({ projectId, args }) => {
+    async ({ teamspaceId, args }) => {
       const parsed = QueryTasksInputSchema.parse(args);
-      return jsonContent(await queryTasks(projectId, parsed));
+      return jsonContent(await queryTasks(teamspaceId, parsed));
     },
   );
 
@@ -109,7 +109,7 @@ export function registerProjectTools(server: McpToolServer) {
           .optional(),
       },
     },
-    async ({ projectId, args }) => {
+    async ({ teamspaceId, args }) => {
       try {
         const parsed = SpawnTaskInputSchema.parse({
           ...args,
@@ -117,7 +117,7 @@ export function registerProjectTools(server: McpToolServer) {
             ? { executionDirective: args.executionDirective }
             : undefined,
         });
-        return jsonContent(await spawnTask(projectId, parsed));
+        return jsonContent(await spawnTask(teamspaceId, parsed));
       } catch (error) {
         const mapped = mapTaskError(error);
         if (mapped) {
@@ -150,10 +150,10 @@ export function registerProjectTools(server: McpToolServer) {
         result: z.record(z.unknown()).optional(),
       },
     },
-    async ({ projectId, args }) => {
+    async ({ teamspaceId, args }) => {
       try {
         const parsed = UpdateTaskInputSchema.parse(args);
-        return jsonContent(await updateTask(projectId, parsed));
+        return jsonContent(await updateTask(teamspaceId, parsed));
       } catch (error) {
         const mapped = mapTaskError(error);
         if (mapped) {

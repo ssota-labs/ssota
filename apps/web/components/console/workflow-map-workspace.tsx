@@ -13,7 +13,7 @@ export function WorkflowMapWorkspace({ phases }: WorkflowMapWorkspaceProps) {
       <header className="space-y-1">
         <h1 className="text-xl font-semibold tracking-tight">Workflow Map</h1>
         <p className="text-sm text-muted-foreground">
-          Project graph by workflow phase. Click a type card to inspect nodes.
+          Teamspace graph by workflow phase. Click a type card to inspect nodes.
         </p>
       </header>
       <WorkflowLens phases={phases} />

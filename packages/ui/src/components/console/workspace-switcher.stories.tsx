@@ -48,7 +48,7 @@ export const ProjectTopBar: Story = {
   render: () => (
     <WorkspaceSwitcher
       currentLabel="ssota-dev"
-      sectionLabel="Project"
+      sectionLabel="Teamspace"
       icon={<CubeIcon />}
       options={projects}
       activeOptionId="ssota-dev"
@@ -61,7 +61,7 @@ export const WithCustomItems: Story = {
   render: () => (
     <WorkspaceSwitcher
       currentLabel="homepage-agent"
-      sectionLabel="Project"
+      sectionLabel="Teamspace"
       icon={<CubeIcon />}
       options={projects}
       activeOptionId="homepage-agent"

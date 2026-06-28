@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const nodeInstanceSchema = z.object({
   id: z.string().uuid(),
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   nodeCatalogId: z.string().uuid(),
   catalogKey: z.string().min(1).optional(),
   catalogLabel: z.string().min(1).optional(),

@@ -13,7 +13,7 @@ import type { AgentRuntimeKind } from "@ssota/contracts";
  * instructions + messages via {@link buildRunPrompt}.
  */
 export interface RunAgentInput {
-  projectId: string;
+  teamspaceId: string;
   runId: string;
   runtimeKind: AgentRuntimeKind;
   taskId?: string;
@@ -72,8 +72,8 @@ function extractExecutionDirective(
 export async function buildRunPrompt(
   input: RunAgentInput,
 ): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
-  const { projectId, accountId, runtimeKind } = input;
-  const instructionPort = getWorkflowInstructionPort(projectId, accountId);
+  const { teamspaceId, accountId, runtimeKind } = input;
+  const instructionPort = getWorkflowInstructionPort(teamspaceId, accountId);
 
   const adapter = getConnectorAdapter();
   const connectorKind = adapter?.kind;
@@ -96,7 +96,7 @@ export async function buildRunPrompt(
     ];
     instructions = buildRunInstructionMessages({
       runtimeKind: "main",
-      projectId,
+      teamspaceId,
       accountId,
       connectorKind,
       workflowManifest,
@@ -109,10 +109,10 @@ export async function buildRunPrompt(
       },
     ];
   } else if (runtimeKind === "task" && input.taskId) {
-    const taskPort = getTaskPort(projectId, accountId);
+    const taskPort = getTaskPort(teamspaceId, accountId);
     const domainTask = await taskPort.getTask(input.taskId);
     if (!domainTask) {
-      throw new Error(`Task ${input.taskId} not found in project ${projectId}`);
+      throw new Error(`Task ${input.taskId} not found in teamspace ${teamspaceId}`);
     }
     const task = serializeTask(domainTask);
     const playbook = task.workflowInstructionId
@@ -120,7 +120,7 @@ export async function buildRunPrompt(
       : null;
     instructions = buildRunInstructionMessages({
       runtimeKind: "task",
-      projectId,
+      teamspaceId,
       accountId,
       connectorKind,
       taskPlaybook: playbook?.instruction ?? null,
@@ -143,7 +143,7 @@ export async function buildRunPrompt(
     const scheduleInstruction = await instructionPort.getByKey("orchestrator.daily");
     instructions = buildRunInstructionMessages({
       runtimeKind: "scheduler",
-      projectId,
+      teamspaceId,
       accountId,
       connectorKind,
       mainInstruction: scheduleInstruction,

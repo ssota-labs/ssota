@@ -11,7 +11,7 @@ interface ChatRouteShellProps {
   threads: ThreadSummary[];
   chatBase: string;
   orgSlug: string;
-  projectSlug: string;
+  teamspaceSlug: string;
   appMode: boolean;
 }
 
@@ -20,7 +20,7 @@ export function ChatRouteShell({
   threads,
   chatBase,
   orgSlug,
-  projectSlug,
+  teamspaceSlug,
   appMode,
 }: ChatRouteShellProps) {
   return (
@@ -29,7 +29,7 @@ export function ChatRouteShell({
         threads={threads}
         chatBase={chatBase}
         orgSlug={orgSlug}
-        projectSlug={projectSlug}
+        teamspaceSlug={teamspaceSlug}
         appMode={appMode}
       />
       <div className="flex min-h-0 flex-1 flex-col">{children}</div>

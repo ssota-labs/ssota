@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 export type ApiAccountScope = {
   mode: "builder" | "end_user";
   userId: string;
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
 };
 
@@ -47,7 +47,7 @@ function isEndUserPath(path: string | null): boolean {
  * End-user mode is selected when Referer or returnTo path starts with `/app/`.
  */
 export async function resolveApiAccountScope(
-  projectId: string,
+  teamspaceId: string,
   opts?: {
     referer?: string | null;
     returnTo?: string | null;
@@ -66,9 +66,9 @@ export async function resolveApiAccountScope(
 
   const accountRead = getAccountReadPort();
   const consolePort = getConsolePort();
-  const project = await consolePort.getProjectById(projectId);
+  const project = await consolePort.getTeamspaceById(teamspaceId);
   if (!project) {
-    throw new ApiAccountScopeError(404, "Project not found");
+    throw new ApiAccountScopeError(404, "Teamspace not found");
   }
 
   if (endUser) {
@@ -76,7 +76,7 @@ export async function resolveApiAccountScope(
       throw new ApiAccountScopeError(404, "App is not enabled for this project");
     }
 
-    const account = await accountRead.provisionForUser(projectId, user.id);
+    const account = await accountRead.provisionForUser(teamspaceId, user.id);
     if (opts?.requestedAccountId && opts.requestedAccountId !== account.id) {
       throw new ApiAccountScopeError(403, "Account mismatch");
     }
@@ -85,7 +85,7 @@ export async function resolveApiAccountScope(
     return {
       mode: "end_user",
       userId: user.id,
-      projectId,
+      teamspaceId,
       accountId: account.id,
     };
   }
@@ -95,7 +95,7 @@ export async function resolveApiAccountScope(
     throw new ApiAccountScopeError(403, "Not a member of this organization");
   }
 
-  const account = await accountRead.getOrCreateWorkspaceAccount(projectId);
+  const account = await accountRead.getOrCreateWorkspaceAccount(teamspaceId);
   if (opts?.requestedAccountId && opts.requestedAccountId !== account.id) {
     throw new ApiAccountScopeError(403, "Account mismatch");
   }
@@ -103,7 +103,7 @@ export async function resolveApiAccountScope(
   return {
     mode: "builder",
     userId: user.id,
-    projectId,
+    teamspaceId,
     accountId: account.id,
   };
 }

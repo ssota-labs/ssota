@@ -17,11 +17,11 @@ import { updateTask } from "./update-task.js";
 const PROJECT_ID = TEST_PROJECT_ID;
 const OTHER_PROJECT_ID = "00000000-0000-4000-8000-000000000099";
 
-function spawnDeps(state: ReturnType<typeof createInMemoryState>, projectId: string) {
-  const { tasks } = createInMemoryPorts(state, { projectId });
+function spawnDeps(state: ReturnType<typeof createInMemoryState>, teamspaceId: string) {
+  const { tasks } = createInMemoryPorts(state, { teamspaceId });
   return {
     tasks,
-    workflowInstructions: createInMemoryWorkflowInstructionPort(projectId),
+    workflowInstructions: createInMemoryWorkflowInstructionPort(teamspaceId),
   };
 }
 
@@ -37,7 +37,7 @@ describe("spawnTask", () => {
 
     expect(task.workflowInstructionKey).toBe("orchestrator.daily");
     expect(task.status).toBe("pending");
-    expect(task.projectId).toBe(PROJECT_ID);
+    expect(task.teamspaceId).toBe(PROJECT_ID);
   });
 
   it("rejects unknown workflow instruction keys", async () => {
@@ -85,7 +85,7 @@ describe("spawnTask", () => {
     const nodeId = randomUUID();
     graphStore.nodes.set(nodeId, {
       id: nodeId,
-      projectId: OTHER_PROJECT_ID,
+      teamspaceId: OTHER_PROJECT_ID,
       nodeCatalogId: "00000000-0000-4000-8000-000000000015",
       catalogKey: "feature",
       catalogLabel: "feature",
@@ -109,7 +109,7 @@ describe("spawnTask", () => {
       }),
     ).rejects.toMatchObject({
       name: "GraphError",
-      code: "PROJECT_MISMATCH",
+      code: "ORG_MISMATCH",
     });
   });
 });
@@ -156,7 +156,7 @@ describe("updateTask", () => {
 
   it("rejects update for missing task", async () => {
     const state = createInMemoryState();
-    const { tasks } = createInMemoryPorts(state, { projectId: PROJECT_ID });
+    const { tasks } = createInMemoryPorts(state, { teamspaceId: PROJECT_ID });
 
     await expect(
       updateTask({ tasks }, PROJECT_ID, {

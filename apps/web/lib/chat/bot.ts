@@ -40,7 +40,7 @@ function slackAdapter() {
   if (!connectDisabled) {
     const connector = process.env.SLACK_CONNECT_CONNECTOR ?? "slack";
     const provider = createVercelConnectProvider();
-    const projectId = process.env.CHAT_PROJECT_ID ?? "";
+    const teamspaceId = process.env.CHAT_PROJECT_ID ?? "";
     const useIntake = process.env.SLACK_CONNECT_INTAKE !== "0";
     return createSlackAdapter({
       ...(useIntake
@@ -51,7 +51,7 @@ function slackAdapter() {
       installationProvider: {
         getInstallation: async (installationId: string) => {
           const cred = await provider.getToken(connector, {
-            projectId,
+            teamspaceId,
             installationId,
           });
           return cred ? { botToken: cred.token } : null;
@@ -98,13 +98,13 @@ async function runAgentStream(message: IncomingMessage) {
   if (!target) {
     return notLinkedReply();
   }
-  const { projectId, accountId } = target;
+  const { teamspaceId, accountId } = target;
   const text = message.text;
   const threadId = message.threadId ?? `chat:${workspaceKey}`;
 
   const run = await start(runMainWorkflowAgent, [
     {
-      projectId,
+      teamspaceId,
       threadId,
       accountId,
       chatContext: {

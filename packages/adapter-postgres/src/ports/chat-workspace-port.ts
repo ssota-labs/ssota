@@ -3,7 +3,7 @@ import type { Db } from "../db/client.js";
 import { chatWorkspaces } from "../db/schema.js";
 
 export interface ChatWorkspaceTarget {
-  projectId: string;
+  teamspaceId: string;
   accountId: string | null;
 }
 
@@ -16,7 +16,7 @@ export interface ChatWorkspaceRow {
 }
 
 export interface LinkChatWorkspaceInput {
-  projectId: string;
+  teamspaceId: string;
   accountId?: string | null;
   platform: string;
   workspaceKey: string;
@@ -34,14 +34,14 @@ export function createChatWorkspacePort(db: Db) {
     async resolve(workspaceKey: string): Promise<ChatWorkspaceTarget | null> {
       const [row] = await db
         .select({
-          projectId: chatWorkspaces.projectId,
+          teamspaceId: chatWorkspaces.teamspaceId,
           accountId: chatWorkspaces.accountId,
         })
         .from(chatWorkspaces)
         .where(eq(chatWorkspaces.workspaceKey, workspaceKey))
         .limit(1);
       return row
-        ? { projectId: row.projectId, accountId: row.accountId }
+        ? { teamspaceId: row.teamspaceId, accountId: row.accountId }
         : null;
     },
 
@@ -49,7 +49,7 @@ export function createChatWorkspacePort(db: Db) {
       await db
         .insert(chatWorkspaces)
         .values({
-          projectId: input.projectId,
+          teamspaceId: input.teamspaceId,
           accountId: input.accountId ?? null,
           platform: input.platform,
           workspaceKey: input.workspaceKey,
@@ -58,7 +58,7 @@ export function createChatWorkspacePort(db: Db) {
         .onConflictDoUpdate({
           target: chatWorkspaces.workspaceKey,
           set: {
-            projectId: input.projectId,
+            teamspaceId: input.teamspaceId,
             accountId: input.accountId ?? null,
             platform: input.platform,
             name: input.name ?? null,
@@ -67,7 +67,7 @@ export function createChatWorkspacePort(db: Db) {
         });
     },
 
-    async list(projectId: string): Promise<ChatWorkspaceRow[]> {
+    async list(teamspaceId: string): Promise<ChatWorkspaceRow[]> {
       return db
         .select({
           id: chatWorkspaces.id,
@@ -77,18 +77,18 @@ export function createChatWorkspacePort(db: Db) {
           name: chatWorkspaces.name,
         })
         .from(chatWorkspaces)
-        .where(eq(chatWorkspaces.projectId, projectId))
+        .where(eq(chatWorkspaces.teamspaceId, teamspaceId))
         .orderBy(desc(chatWorkspaces.createdAt));
     },
 
-    /** Scoped by projectId so a client can't unlink another project's row. */
-    async unlink(id: string, projectId: string): Promise<void> {
+    /** Scoped by teamspaceId so a client can't unlink another project's row. */
+    async unlink(id: string, teamspaceId: string): Promise<void> {
       await db
         .delete(chatWorkspaces)
         .where(
           and(
             eq(chatWorkspaces.id, id),
-            eq(chatWorkspaces.projectId, projectId),
+            eq(chatWorkspaces.teamspaceId, teamspaceId),
           ),
         );
     },

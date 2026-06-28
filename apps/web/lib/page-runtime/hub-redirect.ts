@@ -1,8 +1,8 @@
 import type { JsonRenderSpec } from "@ssota/contracts";
 import type { PagePort } from "@ssota/core";
 import {
-  projectPath,
-  type ProjectRouteContext,
+  orgPath,
+  type OrgRouteContext,
 } from "@/lib/console/paths";
 
 /** True when the spec is a lone PageHeader placeholder (hub shell). */
@@ -20,14 +20,14 @@ export function isHubPage(spec: JsonRenderSpec): boolean {
 export async function resolveHubRedirectPath(
   pagePort: PagePort,
   pageId: string,
-  routeCtx: ProjectRouteContext,
+  routeCtx: OrgRouteContext,
   nodeId?: string,
 ): Promise<string | null> {
   const children = await pagePort.listChildren(pageId);
   const first = children[0];
   if (!first) return null;
   if (nodeId) {
-    return projectPath(routeCtx, "n", nodeId, "p", first.id);
+    return orgPath(routeCtx, "n", nodeId, "p", first.id);
   }
-  return projectPath(routeCtx, "p", first.id);
+  return orgPath(routeCtx, "p", first.id);
 }

@@ -42,7 +42,7 @@ export const useWidgetBuild = () => useContext(WidgetBuildContext);
 
 /** Artifact workbench runtime (ui_component / page_wireframe pages). */
 export type ArtifactWorkbenchRuntime = {
-  projectId: string;
+  teamspaceId: string;
   previewBasePath: string;
   onCreateComponent?: () => Promise<string>;
   onDeployComponent?: (input: {

@@ -9,7 +9,7 @@ import {
 import type { ConnectorOption } from "./connect-card";
 
 interface ChatWindowProps {
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
   threadId: string;
   initialMessages: UIMessage[];
@@ -17,13 +17,13 @@ interface ChatWindowProps {
   returnTo: string;
   threads: ThreadSummary[];
   orgSlug: string;
-  projectSlug: string;
+  teamspaceSlug: string;
   chatPath: string;
 }
 
 /** @deprecated Use ChatRouteShell layout + ChatConversation page instead. */
 export function ChatWindow({
-  projectId,
+  teamspaceId,
   accountId,
   threadId,
   initialMessages,
@@ -31,7 +31,7 @@ export function ChatWindow({
   returnTo,
   threads,
   orgSlug,
-  projectSlug,
+  teamspaceSlug,
   chatPath,
 }: ChatWindowProps) {
   return (
@@ -40,18 +40,18 @@ export function ChatWindow({
         threads={threads}
         chatBase={chatPath}
         orgSlug={orgSlug}
-        projectSlug={projectSlug}
+        teamspaceSlug={teamspaceSlug}
         appMode={chatPath.startsWith("/app/")}
       />
       <ChatConversation
-        projectId={projectId}
+        teamspaceId={teamspaceId}
         accountId={accountId}
         threadId={threadId}
         initialMessages={initialMessages}
         connectors={connectors}
         returnTo={returnTo}
         orgSlug={orgSlug}
-        projectSlug={projectSlug}
+        teamspaceSlug={teamspaceSlug}
       />
     </div>
   );

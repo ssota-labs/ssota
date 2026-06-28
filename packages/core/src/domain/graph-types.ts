@@ -2,7 +2,7 @@ import { nodeContentToMarkdown } from "@ssota/contracts";
 
 export interface GraphNode {
   id: string;
-  projectId: string;
+  teamspaceId: string | null;
   nodeCatalogId: string;
   catalogKey: string;
   catalogLabel: string;
@@ -15,7 +15,7 @@ export interface GraphNode {
 
 export interface GraphEdge {
   id: string;
-  projectId: string;
+  teamspaceId: string | null;
   edgeCatalogId: string;
   catalogKey: string;
   catalogLabel: string;

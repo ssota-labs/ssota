@@ -19,6 +19,11 @@ function serialize(node: GraphNode): ResolvedNode {
   };
 }
 
+/** Page context: same teamspace or org-shared (teamspace_id null). */
+function canReadNodeInTeamspace(node: GraphNode, pageTeamspaceId: string): boolean {
+  return node.teamspaceId === null || node.teamspaceId === pageTeamspaceId;
+}
+
 type QueryFilter = NonNullable<Extract<BindingDef, { kind: "query" }>["filter"]>;
 
 function matchesFilter(node: GraphNode, filter: QueryFilter): boolean {
@@ -44,14 +49,14 @@ function filterByCatalogKey(
 
 async function attachChildrenToNodes(
   graph: GraphReadPort,
-  projectId: string,
+  teamspaceId: string,
   nodes: GraphNode[],
   attach: AttachChildren,
 ): Promise<ResolvedNode[]> {
   return Promise.all(
     nodes.map(async (node) => {
       const edges = await graph.traverseEdges({
-        projectId,
+        teamspaceId,
         nodeId: node.id,
         catalogKey: attach.edgeCatalogKey,
         direction: attach.direction === "in" ? "incoming" : "outgoing",
@@ -65,7 +70,7 @@ async function attachChildrenToNodes(
       const serializedChildren = filterByCatalogKey(
         children.filter(
           (child): child is GraphNode =>
-            child !== null && child.projectId === projectId,
+            child !== null && canReadNodeInTeamspace(child, teamspaceId),
         ),
         attach.catalogKey,
       ).map(serialize);
@@ -83,20 +88,20 @@ async function attachChildrenToNodes(
 
 async function resolveInitiativeScopedNodes(
   graph: GraphReadPort,
-  projectId: string,
+  teamspaceId: string,
   subjectId: string,
   catalogKey: string,
   limit?: number,
 ): Promise<GraphNode[]> {
   const edges = await graph.traverseEdges({
-    projectId,
+    teamspaceId,
     nodeId: subjectId,
     catalogKey: "for_initiative",
     direction: "incoming",
   });
   const scopedIds = new Set(edges.map((edge) => edge.sourceNodeId));
   const nodes = await graph.queryNodes({
-    projectId,
+    teamspaceId,
     catalogKey,
     limit: limit ?? 500,
   });
@@ -106,17 +111,17 @@ async function resolveInitiativeScopedNodes(
 
 async function resolveEvergreenSingleton(
   graph: GraphReadPort,
-  projectId: string,
+  teamspaceId: string,
   catalogKey: string,
 ): Promise<GraphNode | null> {
   const candidates = await graph.queryNodes({
-    projectId,
+    teamspaceId,
     catalogKey,
     limit: 100,
   });
   for (const node of candidates) {
     const scopedEdges = await graph.traverseEdges({
-      projectId,
+      teamspaceId,
       nodeId: node.id,
       direction: "outgoing",
       catalogKey: "for_initiative",
@@ -137,7 +142,7 @@ async function resolveEvergreenSingleton(
  */
 export async function resolvePageBindings(
   graph: GraphReadPort,
-  projectId: string,
+  teamspaceId: string,
   bindings: Record<string, BindingDef>,
   context: Record<string, unknown> = {},
 ): Promise<Record<string, unknown>> {
@@ -158,7 +163,7 @@ export async function resolvePageBindings(
     switch (def.kind) {
       case "query": {
         const nodes = await graph.queryNodes({
-          projectId,
+          teamspaceId,
           catalogKey: def.catalogKey,
         });
         const filtered = def.filter?.length
@@ -167,7 +172,7 @@ export async function resolvePageBindings(
         if (def.attachChildren) {
           value = await attachChildrenToNodes(
             graph,
-            projectId,
+            teamspaceId,
             filtered,
             def.attachChildren,
           );
@@ -178,7 +183,7 @@ export async function resolvePageBindings(
       }
       case "singleton": {
         const nodes = await graph.queryNodes({
-          projectId,
+          teamspaceId,
           catalogKey: def.catalogKey,
           limit: 1,
         });
@@ -188,7 +193,7 @@ export async function resolvePageBindings(
       case "evergreen": {
         const node = await resolveEvergreenSingleton(
           graph,
-          projectId,
+          teamspaceId,
           def.catalogKey,
         );
         value = node ? serialize(node) : null;
@@ -206,7 +211,7 @@ export async function resolvePageBindings(
         }
         const scoped = await resolveInitiativeScopedNodes(
           graph,
-          projectId,
+          teamspaceId,
           subjectId,
           def.catalogKey,
           def.limit,
@@ -214,7 +219,7 @@ export async function resolvePageBindings(
         if (def.attachChildren) {
           const enriched = await attachChildrenToNodes(
             graph,
-            projectId,
+            teamspaceId,
             scoped,
             def.attachChildren,
           );
@@ -228,7 +233,8 @@ export async function resolvePageBindings(
       }
       case "node": {
         const node = await graph.getNodeById(def.nodeId);
-        value = node && node.projectId === projectId ? serialize(node) : null;
+        value =
+          node && canReadNodeInTeamspace(node, teamspaceId) ? serialize(node) : null;
         break;
       }
       case "subject": {
@@ -253,7 +259,7 @@ export async function resolvePageBindings(
           break;
         }
         const edges = await graph.traverseEdges({
-          projectId,
+          teamspaceId,
           nodeId: sourceId,
           catalogKey: def.edgeCatalogKey,
           direction: def.direction === "in" ? "incoming" : "outgoing",
@@ -266,14 +272,15 @@ export async function resolvePageBindings(
         );
         const nodes = filterByCatalogKey(
           targets.filter(
-            (n): n is GraphNode => n !== null && n.projectId === projectId,
+            (n): n is GraphNode =>
+              n !== null && canReadNodeInTeamspace(n, teamspaceId),
           ),
           def.catalogKey,
         );
         if (def.attachChildren) {
           value = await attachChildrenToNodes(
             graph,
-            projectId,
+            teamspaceId,
             nodes,
             def.attachChildren,
           );
@@ -302,7 +309,7 @@ export async function resolvePageBindings(
               : null;
           node = id ? await graph.getNodeById(id) : null;
         }
-        if (!node || node.projectId !== projectId) {
+        if (!node || !canReadNodeInTeamspace(node, teamspaceId)) {
           value = { status: "unbuilt" as const };
           break;
         }
@@ -332,7 +339,7 @@ export async function resolvePageBindings(
         const node = await graph.getNodeById(rawId);
         if (
           !node ||
-          node.projectId !== projectId ||
+          !canReadNodeInTeamspace(node, teamspaceId) ||
           node.catalogKey !== def.catalogKey
         ) {
           value = null;

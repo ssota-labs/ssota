@@ -11,7 +11,7 @@ import {
 } from "@ssota/ui/components/ui/breadcrumb";
 import { useLocale } from "@/components/i18n/locale-provider";
 import { buildBreadcrumbSegments } from "@/lib/console/navigation";
-import { projectPath } from "@/lib/console/paths";
+import { orgPath } from "@/lib/console/paths";
 import { useProjectContext } from "./project-context";
 import { useNodeDrill } from "./node-drill-context";
 
@@ -19,7 +19,7 @@ export function ConsoleBreadcrumb() {
   const ctx = useProjectContext();
   const pathname = usePathname();
   const { t } = useLocale();
-  const projectBase = projectPath(ctx);
+  const projectBase = orgPath(ctx);
   const drill = useNodeDrill();
 
   // Inside a node drill-in (/n/[id]...), show the node title + active page title

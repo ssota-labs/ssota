@@ -46,7 +46,7 @@ export async function getSmokeAccessToken(): Promise<string> {
   return data.session.access_token;
 }
 
-/** REST v1 tests still use X-SSOTA-Project-Id header. */
+/** REST v1 tests still use X-SSOTA-Teamspace-Id header. */
 export async function getDefaultProjectId(): Promise<string> {
   if (cachedDefaultProjectId) return cachedDefaultProjectId;
 
@@ -54,25 +54,25 @@ export async function getDefaultProjectId(): Promise<string> {
   const sql = postgres(defaultDatabaseUrl, { max: 1 });
   try {
     const rows = await sql<{ id: string }[]>`
-      select p.id
-      from projects p
-      join organizations o on o.id = p.organization_id
-      where o.slug = 'ssota-labs' and p.slug = 'ssota-dev'
+      select ts.id
+      from teamspaces ts
+      join organizations o on o.id = ts.organization_id
+      where o.slug = 'ssota-labs' and ts.slug = 'ssota-dev'
       limit 1
     `;
-    const projectId = rows[0]?.id;
-    if (!projectId) {
+    const teamspaceId = rows[0]?.id;
+    if (!teamspaceId) {
       throw new Error("Default project not found — run db:seed");
     }
-    cachedDefaultProjectId = projectId;
-    return projectId;
+    cachedDefaultProjectId = teamspaceId;
+    return teamspaceId;
   } finally {
     await sql.end({ timeout: 1 });
   }
 }
 
-export function projectIdHeaders(projectId: string): Record<string, string> {
-  return { [PROJECT_ID_HEADER]: projectId };
+export function projectIdHeaders(teamspaceId: string): Record<string, string> {
+  return { [PROJECT_ID_HEADER]: teamspaceId };
 }
 
 export function mcpEndpoint(mcpUrl: string): string {
@@ -84,10 +84,10 @@ export function mcpEndpoint(mcpUrl: string): string {
 export function projectScopedMcpUrl(
   mcpUrl: string,
   orgSlug = DEFAULT_MCP_ORG_SLUG,
-  projectSlug = DEFAULT_MCP_PROJECT_SLUG,
+  teamspaceSlug = DEFAULT_MCP_PROJECT_SLUG,
 ): string {
   const endpoint = mcpEndpoint(mcpUrl);
-  const params = new URLSearchParams({ org: orgSlug, project: projectSlug });
+  const params = new URLSearchParams({ org: orgSlug, project: teamspaceSlug });
   return `${endpoint}?${params.toString()}`;
 }
 
@@ -107,7 +107,7 @@ export async function mcpToolCall(
   args: Record<string, unknown> = {},
   options?: {
     orgSlug?: string;
-    projectSlug?: string;
+    teamspaceSlug?: string;
   },
 ): Promise<unknown> {
   const endpoint = mcpEndpoint(mcpUrl);
@@ -115,7 +115,7 @@ export async function mcpToolCall(
 
   if (!ACCOUNT_MCP_TOOLS.has(toolName)) {
     toolArgs.orgSlug ??= options?.orgSlug ?? DEFAULT_MCP_ORG_SLUG;
-    toolArgs.projectSlug ??= options?.projectSlug ?? DEFAULT_MCP_PROJECT_SLUG;
+    toolArgs.teamspaceSlug ??= options?.teamspaceSlug ?? DEFAULT_MCP_PROJECT_SLUG;
   }
 
   const headers: Record<string, string> = {
@@ -169,7 +169,7 @@ export async function mcpToolCallExpectError(
   args: Record<string, unknown> = {},
   options?: {
     orgSlug?: string;
-    projectSlug?: string;
+    teamspaceSlug?: string;
   },
 ): Promise<string> {
   const endpoint = mcpEndpoint(mcpUrl);
@@ -177,7 +177,7 @@ export async function mcpToolCallExpectError(
 
   if (!ACCOUNT_MCP_TOOLS.has(toolName)) {
     toolArgs.orgSlug ??= options?.orgSlug ?? DEFAULT_MCP_ORG_SLUG;
-    toolArgs.projectSlug ??= options?.projectSlug ?? DEFAULT_MCP_PROJECT_SLUG;
+    toolArgs.teamspaceSlug ??= options?.teamspaceSlug ?? DEFAULT_MCP_PROJECT_SLUG;
   }
 
   const headers: Record<string, string> = {

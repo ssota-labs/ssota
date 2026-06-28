@@ -1,6 +1,6 @@
 export interface AccountRecord {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   slug: string;
   name: string;
 }
@@ -11,10 +11,10 @@ export interface AccountRecord {
  */
 export interface AccountReadPort {
   /** slug = `user-${userId}`, idempotent provision + owner membership */
-  provisionForUser(projectId: string, userId: string): Promise<AccountRecord>;
+  provisionForUser(teamspaceId: string, userId: string): Promise<AccountRecord>;
 
   getAccountForUser(
-    projectId: string,
+    teamspaceId: string,
     userId: string,
   ): Promise<AccountRecord | null>;
 
@@ -22,5 +22,5 @@ export interface AccountReadPort {
   assertAccountAccess(userId: string, accountId: string): Promise<void>;
 
   /** Shared per-project account for builder Chat/Connect (slug "workspace") */
-  getOrCreateWorkspaceAccount(projectId: string): Promise<AccountRecord>;
+  getOrCreateWorkspaceAccount(teamspaceId: string): Promise<AccountRecord>;
 }

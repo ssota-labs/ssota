@@ -3,7 +3,8 @@
  * partition (Phase 5). It is optional in Phase 1 (always undefined / shared).
  */
 export interface AgentRunContext {
-  projectId: string;
+  teamspaceId: string;
+  organizationId: string;
   taskId?: string;
   runId: string;
   accountId?: string;

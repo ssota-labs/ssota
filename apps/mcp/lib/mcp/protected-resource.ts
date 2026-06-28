@@ -13,12 +13,12 @@ import { buildMcpResourceUrl, mcpPublicOrigin } from "@/lib/mcp/resource-url";
 export async function handleProtectedResource(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const orgSlug = url.searchParams.get("org")?.trim();
-  const projectSlug = url.searchParams.get("project")?.trim();
+  const teamspaceSlug = url.searchParams.get("project")?.trim();
   const origin = mcpPublicOrigin();
 
   const resourceUrl =
-    orgSlug && projectSlug
-      ? buildMcpResourceUrl({ origin, orgSlug, projectSlug })
+    orgSlug && teamspaceSlug
+      ? buildMcpResourceUrl({ origin, orgSlug, teamspaceSlug })
       : (process.env.MCP_RESOURCE_URL ?? buildMcpResourceUrl({ origin }));
 
   const handler = protectedResourceHandler({

@@ -10,6 +10,7 @@ import {
   sumStepUsage,
 } from "./task-agent-steps";
 import type { RunSsotaAgentInput } from "./ssota-agent-core";
+import { resolveTeamspaceOrgScopeStep } from "./teamspace-org-scope-step";
 
 /**
  * Durable task agent run reached via the agent run/gate routes and the chat
@@ -32,9 +33,12 @@ export async function runSsotaAgentWorkflow(input: RunSsotaAgentInput) {
     workflowRunId,
   );
 
+  const organizationId = await resolveTeamspaceOrgScopeStep(input.teamspaceId);
+
   const agent = buildMainWorkflowAgent({
     ssota: {
-      projectId: input.projectId,
+      teamspaceId: input.teamspaceId,
+      organizationId,
       taskId: input.taskId,
       runId: workflowRunId,
       accountId: input.accountId,

@@ -14,6 +14,7 @@ import {
   finalizeMainWorkflowRun,
 } from "./main-workflow-agent-steps";
 import type { RunMainAgentInput } from "./main-agent-core";
+import { resolveTeamspaceOrgScopeStep } from "./teamspace-org-scope-step";
 
 export type { RunMainAgentInput };
 
@@ -32,10 +33,13 @@ export async function runMainWorkflowAgent(input: RunMainAgentInput) {
 
   const { instructions, messages } = await buildMainPrompt(input, workflowRunId);
 
+  const organizationId = await resolveTeamspaceOrgScopeStep(input.teamspaceId);
+
   // Serializable per-run scope; `profileId` is the connector acting entity
   // (Composio signed-in user) and is threaded into every tool's context.
   const ssota = {
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
+    organizationId,
     runId: workflowRunId,
     accountId: input.accountId,
     profileId: input.profileId,

@@ -27,7 +27,7 @@ describe("enrichConnectInstallationDisplay", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "slack/ssota",
       installation,
-      scope: { projectId: "p", userId: "u" },
+      scope: { teamspaceId: "p", userId: "u" },
     });
 
     expect(result).toEqual(installation);
@@ -42,7 +42,7 @@ describe("enrichConnectInstallationDisplay", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "slack/ssota",
       installation: baseInstallation,
-      scope: { projectId: "p", userId: "u" },
+      scope: { teamspaceId: "p", userId: "u" },
     });
 
     expect(result).toEqual(baseInstallation);
@@ -65,7 +65,7 @@ describe("enrichConnectInstallationDisplay", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "slack/ssota",
       installation: baseInstallation,
-      scope: { projectId: "p", userId: "u" },
+      scope: { teamspaceId: "p", userId: "u" },
     });
 
     expect(result.name).toBe("Pax Humana");
@@ -85,7 +85,7 @@ describe("enrichConnectInstallationDisplay", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "slack/ssota",
       installation: baseInstallation,
-      scope: { projectId: "p", userId: "user-1" },
+      scope: { teamspaceId: "p", userId: "user-1" },
     });
 
     expect(result.name).toBe("SSOTA Labs");
@@ -114,7 +114,7 @@ describe("enrichConnectInstallationDisplay", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "slack/ssota",
       installation: baseInstallation,
-      scope: { projectId: "p", userId: "u" },
+      scope: { teamspaceId: "p", userId: "u" },
     });
 
     expect(result).toEqual(baseInstallation);
@@ -136,7 +136,7 @@ describe("enrichConnectInstallationDisplay", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "oauth/ssota-notion",
       installation: { installationId: "" },
-      scope: { projectId: "p", userId: "u" },
+      scope: { teamspaceId: "p", userId: "u" },
     });
 
     expect(result.name).toBe("SSOTA Docs");
@@ -167,7 +167,7 @@ describe("enrichConnectInstallationDisplay", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "github/ssota",
       installation: {},
-      scope: { projectId: "p", userId: "u" },
+      scope: { teamspaceId: "p", userId: "u" },
     });
 
     expect(result.name).toBe("ssota-labs");
@@ -192,7 +192,7 @@ describe("enrichConnectInstallationDisplay", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "discord/ssota",
       installation: {},
-      scope: { projectId: "p", userId: "u" },
+      scope: { teamspaceId: "p", userId: "u" },
     });
 
     expect(result.name).toBe("SSOTA Community");
@@ -219,7 +219,7 @@ describe("enrichConnectInstallationDisplay", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "x.com/ssota",
       installation: {},
-      scope: { projectId: "p", userId: "u" },
+      scope: { teamspaceId: "p", userId: "u" },
     });
 
     expect(result.name).toBe("Felix Yeon (@felixyeon)");

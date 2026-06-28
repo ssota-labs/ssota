@@ -6,7 +6,7 @@ import { resolveProjectId } from "@/lib/project-context";
 export interface AuthContext {
   user: AuthUser;
   executorType: ExecutorType;
-  projectId: string;
+  teamspaceId: string;
 }
 
 /** JWT 클레임에서 executorType을 서버가 도출한다 (클라이언트 주장 무시). */
@@ -30,8 +30,8 @@ export async function requireAuthContext(
   const user = await verifyBearerToken(request.headers.get("authorization"));
   if (!user) return null;
 
-  const projectId = resolveProjectId(request);
-  if (!projectId) return null;
+  const teamspaceId = resolveProjectId(request);
+  if (!teamspaceId) return null;
 
   const token = request.headers.get("authorization")?.slice("Bearer ".length);
   let executorType: ExecutorType = "Human";
@@ -47,5 +47,5 @@ export async function requireAuthContext(
     }
   }
 
-  return { user, executorType, projectId };
+  return { user, executorType, teamspaceId };
 }

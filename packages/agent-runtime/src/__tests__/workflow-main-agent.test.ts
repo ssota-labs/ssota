@@ -59,7 +59,7 @@ describe("main workflow-agent tool surface", () => {
 
   it("builds a WorkflowAgent exposing exactly the declared static tools", () => {
     const agent = buildMainWorkflowAgent({
-      ssota: { projectId: "p", runId: "r" },
+      ssota: { teamspaceId: "p", organizationId: "o", runId: "r" },
       dispatch: async () => null,
     });
     expect(Object.keys(agent.tools).sort()).toEqual(
@@ -70,7 +70,7 @@ describe("main workflow-agent tool surface", () => {
   it("declares dynamic connector tools from connectorToolDefs", async () => {
     const calls: string[] = [];
     const agent = buildMainWorkflowAgent({
-      ssota: { projectId: "p", runId: "r" },
+      ssota: { teamspaceId: "p", organizationId: "o", runId: "r" },
       dispatch: async (toolName) => {
         calls.push(toolName);
         return { ok: true };

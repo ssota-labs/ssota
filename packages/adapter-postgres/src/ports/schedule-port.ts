@@ -3,13 +3,13 @@ import type { Db } from "../db/client.js";
 import { schedules } from "../db/schema.js";
 
 export interface ScheduleScope {
-  projectId: string;
+  teamspaceId: string;
   accountId?: string | null;
 }
 
 export interface ScheduleRecord {
   id: string;
-  projectId: string;
+  teamspaceId: string;
   accountId: string | null;
   workflowInstructionId: string;
   cronExpression: string;
@@ -41,7 +41,7 @@ type ScheduleRow = typeof schedules.$inferSelect;
 function mapSchedule(row: ScheduleRow): ScheduleRecord {
   return {
     id: row.id,
-    projectId: row.projectId,
+    teamspaceId: row.teamspaceId,
     accountId: row.accountId,
     workflowInstructionId: row.workflowInstructionId,
     cronExpression: row.cronExpression,
@@ -60,15 +60,15 @@ function accountCondition(accountId?: string | null) {
 }
 
 /**
- * Project/account-scoped CRUD for user-defined schedules. Self-contained (no
+ * Teamspace/account-scoped CRUD for user-defined schedules. Self-contained (no
  * core interface) like the agent-run telemetry port — schedules are a thin
  * config row, not a domain aggregate.
  */
 export function createSchedulePort(db: Db, scope: ScheduleScope) {
-  const { projectId } = scope;
+  const { teamspaceId } = scope;
   const accountId = scope.accountId ?? null;
   const scopeCondition = and(
-    eq(schedules.projectId, projectId),
+    eq(schedules.teamspaceId, teamspaceId),
     accountCondition(accountId),
   );
 
@@ -95,7 +95,7 @@ export function createSchedulePort(db: Db, scope: ScheduleScope) {
       const [row] = await db
         .insert(schedules)
         .values({
-          projectId,
+          teamspaceId,
           accountId,
           workflowInstructionId: input.workflowInstructionId,
           cronExpression: input.cronExpression,

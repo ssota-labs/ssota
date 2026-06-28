@@ -15,7 +15,7 @@ test.describe("Console v2.7 navigation", () => {
     await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Chat", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Connections", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Connectors", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Executive", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Research", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Manager", exact: true })).toBeVisible();

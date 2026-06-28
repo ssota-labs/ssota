@@ -7,7 +7,7 @@ import {
   createDb,
   createDbAccountReadPort,
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
 } from "../src/index.js";
 import { createTestAuthUser } from "./helpers/create-test-auth-user.js";
 
@@ -17,7 +17,7 @@ loadEnv({ path: new URL("../../../apps/web/.env.local", import.meta.url).pathnam
 let skip = false;
 
 describe("account read port integration", () => {
-  let projectId: string;
+  let teamspaceId: string;
   let accountRead: ReturnType<typeof createDbAccountReadPort>;
   let db: ReturnType<typeof createDb>["db"] | undefined;
   let client: ReturnType<typeof createDb>["client"] | undefined;
@@ -37,12 +37,12 @@ describe("account read port integration", () => {
         skip = true;
         return;
       }
-      const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+      const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
       if (!project) {
         skip = true;
         return;
       }
-      projectId = project.id;
+      teamspaceId = project.id;
 
       userA = await createTestAuthUser(dbBundle.db, "Account Test A");
       userB = await createTestAuthUser(dbBundle.db, "Account Test B");
@@ -60,26 +60,26 @@ describe("account read port integration", () => {
   });
 
   it("provisionForUser is idempotent", async () => {
-    const first = await accountRead.provisionForUser(projectId, userA);
-    const second = await accountRead.provisionForUser(projectId, userA);
+    const first = await accountRead.provisionForUser(teamspaceId, userA);
+    const second = await accountRead.provisionForUser(teamspaceId, userA);
     expect(second.id).toBe(first.id);
     expect(second.slug).toBe(`user-${userA}`);
   });
 
   it("provisions distinct accounts per user in the same project", async () => {
-    const accountA = await accountRead.provisionForUser(projectId, userA);
-    const accountB = await accountRead.provisionForUser(projectId, userB);
+    const accountA = await accountRead.provisionForUser(teamspaceId, userA);
+    const accountB = await accountRead.provisionForUser(teamspaceId, userB);
     expect(accountA.id).not.toBe(accountB.id);
   });
 
   it("getAccountForUser returns null before provision", async () => {
     const freshUser = await createTestAuthUser(db!, "Account Fresh");
-    const account = await accountRead.getAccountForUser(projectId, freshUser);
+    const account = await accountRead.getAccountForUser(teamspaceId, freshUser);
     expect(account).toBeNull();
   });
 
   it("assertAccountAccess rejects foreign account", async () => {
-    const accountA = await accountRead.provisionForUser(projectId, userA);
+    const accountA = await accountRead.provisionForUser(teamspaceId, userA);
     await expect(
       accountRead.assertAccountAccess(userB, accountA.id),
     ).rejects.toMatchObject({
@@ -89,7 +89,7 @@ describe("account read port integration", () => {
   });
 
   it("assertAccountAccess allows owner membership", async () => {
-    const account = await accountRead.provisionForUser(projectId, userA);
+    const account = await accountRead.provisionForUser(teamspaceId, userA);
     await expect(
       accountRead.assertAccountAccess(userA, account.id),
     ).resolves.toBeUndefined();
@@ -102,8 +102,8 @@ describe("account read port integration", () => {
   });
 
   it("getOrCreateWorkspaceAccount is idempotent", async () => {
-    const first = await accountRead.getOrCreateWorkspaceAccount(projectId);
-    const second = await accountRead.getOrCreateWorkspaceAccount(projectId);
+    const first = await accountRead.getOrCreateWorkspaceAccount(teamspaceId);
+    const second = await accountRead.getOrCreateWorkspaceAccount(teamspaceId);
     expect(second.id).toBe(first.id);
     expect(second.slug).toBe("workspace");
   });

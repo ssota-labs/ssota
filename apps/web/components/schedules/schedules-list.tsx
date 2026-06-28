@@ -44,7 +44,7 @@ export interface ScheduleRow {
 interface SchedulesListProps {
   schedules: ScheduleRow[];
   instructions: InstructionOption[];
-  projectId: string;
+  teamspaceId: string;
   accountId: string;
 }
 
@@ -56,7 +56,7 @@ function summarize(cron: string, timezone: string): string {
 export function SchedulesList({
   schedules,
   instructions,
-  projectId,
+  teamspaceId,
   accountId,
 }: SchedulesListProps) {
   const { t } = useLocale();
@@ -96,7 +96,7 @@ export function SchedulesList({
         const res = await fetch(`/api/schedules/${schedule.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ projectId, accountId, enabled }),
+          body: JSON.stringify({ teamspaceId, accountId, enabled }),
         });
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
         router.refresh();
@@ -111,7 +111,7 @@ export function SchedulesList({
     startTransition(async () => {
       try {
         const res = await fetch(
-          `/api/schedules/${schedule.id}?projectId=${projectId}`,
+          `/api/schedules/${schedule.id}?teamspaceId=${teamspaceId}`,
           { method: "DELETE" },
         );
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
@@ -155,93 +155,93 @@ export function SchedulesList({
             data-testid="schedule-list"
           >
             {schedules.map((schedule) => {
-                const next = nextOccurrence(
-                  schedule.cronExpression,
-                  schedule.timezone,
-                );
-                return (
-                  <div
-                    key={schedule.id}
-                    className={cn(
-                      "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 transition-colors",
-                    )}
-                    data-testid={`schedule-list-item-${schedule.id}`}
+              const next = nextOccurrence(
+                schedule.cronExpression,
+                schedule.timezone,
+              );
+              return (
+                <div
+                  key={schedule.id}
+                  className={cn(
+                    "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 transition-colors",
+                  )}
+                  data-testid={`schedule-list-item-${schedule.id}`}
+                >
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    onClick={() => openEditSheet(schedule)}
                   >
-                    <button
-                      type="button"
-                      className="flex min-w-0 flex-1 items-center gap-3 text-left"
-                      onClick={() => openEditSheet(schedule)}
-                    >
-                      <div className="min-w-0 flex-1 space-y-1">
-                        <span className="text-sm font-medium">
-                          {instructionName(schedule.workflowInstructionId)}
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <span className="text-sm font-medium">
+                        {instructionName(schedule.workflowInstructionId)}
+                      </span>
+                      <p className="text-muted-foreground line-clamp-2 text-xs">
+                        {summarize(schedule.cronExpression, schedule.timezone)}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <Badge variant="outline" className="font-mono text-[10px]">
+                          {schedule.cronExpression}
+                        </Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {schedule.timezone}
+                        </Badge>
+                        <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
+                          <ClockIcon className="size-3" />
+                          {next
+                            ? next.toLocaleString("en-US", {
+                                timeZone: schedule.timezone,
+                              })
+                            : "—"}
                         </span>
-                        <p className="text-muted-foreground line-clamp-2 text-xs">
-                          {summarize(schedule.cronExpression, schedule.timezone)}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <Badge variant="outline" className="font-mono text-[10px]">
-                            {schedule.cronExpression}
-                          </Badge>
-                          <Badge variant="outline" className="text-[10px]">
-                            {schedule.timezone}
-                          </Badge>
-                          <span className="text-muted-foreground flex items-center gap-1 text-[10px]">
-                            <ClockIcon className="size-3" />
-                            {next
-                              ? next.toLocaleString("en-US", {
-                                  timeZone: schedule.timezone,
-                                })
-                              : "—"}
-                          </span>
-                        </div>
                       </div>
-                      <CaretRightIcon
-                        className="text-muted-foreground size-4 shrink-0"
-                        aria-hidden
-                      />
-                    </button>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Switch
-                        checked={schedule.enabled}
-                        onCheckedChange={(value) => toggleEnabled(schedule, value)}
-                        onClick={(event) => event.stopPropagation()}
-                        disabled={isPending}
-                        aria-label={`Toggle ${instructionName(schedule.workflowInstructionId)}`}
-                      />
-                      <AlertDialog>
-                        <AlertDialogTrigger
-                          render={
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              aria-label="Delete schedule"
-                              onClick={(event) => event.stopPropagation()}
-                            >
-                              <TrashIcon className="size-4" />
-                            </Button>
-                          }
-                        />
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete schedule?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This stops the recurring run. This can&apos;t be
-                              undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => remove(schedule)}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
                     </div>
+                    <CaretRightIcon
+                      className="text-muted-foreground size-4 shrink-0"
+                      aria-hidden
+                    />
+                  </button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Switch
+                      checked={schedule.enabled}
+                      onCheckedChange={(value) => toggleEnabled(schedule, value)}
+                      onClick={(event) => event.stopPropagation()}
+                      disabled={isPending}
+                      aria-label={`Toggle ${instructionName(schedule.workflowInstructionId)}`}
+                    />
+                    <AlertDialog>
+                      <AlertDialogTrigger
+                        render={
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Delete schedule"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <TrashIcon className="size-4" />
+                          </Button>
+                        }
+                      />
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete schedule?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This stops the recurring run. This can&apos;t be
+                            undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => remove(schedule)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
           </div>
         )}
       </BrowseWorkspace.Frame>
@@ -249,7 +249,7 @@ export function SchedulesList({
       <ScheduleSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        projectId={projectId}
+        teamspaceId={teamspaceId}
         accountId={accountId}
         instructions={instructions}
         schedule={editingSchedule ?? undefined}

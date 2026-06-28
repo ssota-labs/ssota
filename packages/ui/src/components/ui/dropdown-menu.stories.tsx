@@ -38,7 +38,7 @@ export const Preview: Story = {
     catalogLabel: "Catalog",
     logLabel: "Action log",
     destructiveLabel: "Leave project",
-    triggerLabel: "Project menu",
+    triggerLabel: "Teamspace menu",
   },
   render: (args) => (
     <div className="cn-dropdown-menu-content cn-menu-translucent w-56 rounded-md border border-border bg-popover p-1 shadow-md">
@@ -65,7 +65,7 @@ export const Default: Story = {
     catalogLabel: "Catalog",
     logLabel: "Action log",
     destructiveLabel: "Leave project",
-    triggerLabel: "Project menu",
+    triggerLabel: "Teamspace menu",
   },
   render: (args) => (
     <DropdownMenu>

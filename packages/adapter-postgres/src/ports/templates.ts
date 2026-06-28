@@ -7,6 +7,7 @@ import { WORKFLOW_INSTRUCTION_SEEDS } from "@ssota/contracts/workflows";
 import pagesTreeSeed from "@ssota/contracts/seed-packs/software-development-workflow/pages-tree.json" with { type: "json" };
 import type { Db } from "../db/client.js";
 import { seedDomainCatalog } from "./db-catalog-read-port.js";
+import { resolveOrganizationIdForTeamspace } from "../teamspace-org-scope.js";
 import { seedWorkflowInstructions } from "./workflow-instruction-port.js";
 import { seedPages } from "./page-port.js";
 
@@ -34,13 +35,14 @@ export function getTemplateBundleById(templateId: string): TemplateBundle | null
 
 export async function applyTemplate(
   db: Db,
-  projectId: string,
+  teamspaceId: string,
   bundle: TemplateBundle,
 ): Promise<void> {
-  await seedDomainCatalog(db, projectId, {
+  const organizationId = await resolveOrganizationIdForTeamspace(db, teamspaceId);
+  await seedDomainCatalog(db, organizationId, {
     nodeTypeKeys: bundle.catalog.nodeTypeKeys,
     edgeTypeKeys: bundle.catalog.edgeTypeKeys,
   });
-  await seedWorkflowInstructions(db, projectId, bundle.workflowInstructions);
-  await seedPages(db, projectId, bundle.pages);
+  await seedWorkflowInstructions(db, teamspaceId, bundle.workflowInstructions);
+  await seedPages(db, teamspaceId, bundle.pages);
 }

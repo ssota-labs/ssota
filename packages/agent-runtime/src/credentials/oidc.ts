@@ -7,7 +7,7 @@
  * trigger destination with a Vercel OIDC bearer token. So our job shifts from
  * "is this really from Slack?" (signing secret) to "is this really from our
  * Connect deployment?" (OIDC) — `verifyVercelOidcToken` checks the JWT against
- * Vercel's JWKS and, by default, matches project_id + environment.
+ * Vercel's JWKS and, by default, matches teamspace_id + environment.
  *
  * This is the seam the `@chat-adapter/slack` adapter exposes via `webhookVerifier`
  * (which takes precedence over `signingSecret`). Resolved through a dynamic import

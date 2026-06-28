@@ -10,16 +10,16 @@ export function isPreviewBundleFile(name: string): boolean {
 
 /** Same-origin URL for iframe preview (avoids cross-origin module load from storage). */
 export function studioPreviewBundleUrl(
-  projectId: string,
+  teamspaceId: string,
   buildHash: string,
   fileName: PreviewBundleFileName,
 ): string {
   const access = createPreviewBundleAccessToken({
-    projectId,
+    teamspaceId,
     buildHash,
     fileName,
   });
-  return `/api/studio/bundle/${projectId}/${buildHash}/${fileName}?access=${encodeURIComponent(access)}`;
+  return `/api/studio/bundle/${teamspaceId}/${buildHash}/${fileName}?access=${encodeURIComponent(access)}`;
 }
 
 export function contentTypeForPreviewBundleFile(fileName: string): string {

@@ -88,10 +88,10 @@ function buildKeyResultRow(
 }
 
 async function buildLatestSnapshotByKpi(
-  projectId: string,
+  teamspaceId: string,
   snapshots: GraphNode[],
 ): Promise<Map<string, number>> {
-  const { graphRead } = getGraphDeps(projectId);
+  const { graphRead } = getGraphDeps(teamspaceId);
   const latest = new Map<string, { value: number; capturedAt: string }>();
 
   for (const snapshot of snapshots) {
@@ -99,7 +99,7 @@ async function buildLatestSnapshotByKpi(
     if (value === null) continue;
 
     const edges = await graphRead.traverseEdges({
-      projectId,
+      teamspaceId,
       nodeId: snapshot.id,
       direction: "outgoing",
       catalogKey: "snapshotted_from",
@@ -122,19 +122,19 @@ async function buildLatestSnapshotByKpi(
 }
 
 export async function loadGoalsDashboard(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<GoalsDashboardDTO> {
-  const { graphRead } = getGraphDeps(projectId);
+  const { graphRead } = getGraphDeps(teamspaceId);
 
   const [objectives, keyResults, kpis, snapshots, roadmaps] = await Promise.all([
-    graphRead.queryNodes({ projectId, catalogKey: "objective", limit: 200 }),
-    graphRead.queryNodes({ projectId, catalogKey: "key_result", limit: 200 }),
-    graphRead.queryNodes({ projectId, catalogKey: "kpi", limit: 200 }),
-    graphRead.queryNodes({ projectId, catalogKey: "metric_snapshot", limit: 500 }),
-    graphRead.queryNodes({ projectId, catalogKey: "roadmap", limit: 10 }),
+    graphRead.queryNodes({ teamspaceId, catalogKey: "objective", limit: 200 }),
+    graphRead.queryNodes({ teamspaceId, catalogKey: "key_result", limit: 200 }),
+    graphRead.queryNodes({ teamspaceId, catalogKey: "kpi", limit: 200 }),
+    graphRead.queryNodes({ teamspaceId, catalogKey: "metric_snapshot", limit: 500 }),
+    graphRead.queryNodes({ teamspaceId, catalogKey: "roadmap", limit: 10 }),
   ]);
 
-  const latestSnapshotByKpi = await buildLatestSnapshotByKpi(projectId, snapshots);
+  const latestSnapshotByKpi = await buildLatestSnapshotByKpi(teamspaceId, snapshots);
   const kpiById = new Map(kpis.map((k) => [k.id, k]));
   const krById = new Map(keyResults.map((kr) => [kr.id, kr]));
 
@@ -147,13 +147,13 @@ export async function loadGoalsDashboard(
     keyResults.map(async (kr) => {
       const [contribEdges, measureEdges] = await Promise.all([
         graphRead.traverseEdges({
-          projectId,
+          teamspaceId,
           nodeId: kr.id,
           direction: "outgoing",
           catalogKey: "contributes_to",
         }),
         graphRead.traverseEdges({
-          projectId,
+          teamspaceId,
           nodeId: kr.id,
           direction: "outgoing",
           catalogKey: "measured_by",
@@ -172,13 +172,13 @@ export async function loadGoalsDashboard(
     objectives.map(async (objective) => {
       const [trackEdges, informEdges] = await Promise.all([
         graphRead.traverseEdges({
-          projectId,
+          teamspaceId,
           nodeId: objective.id,
           direction: "outgoing",
           catalogKey: "tracked_by",
         }),
         graphRead.traverseEdges({
-          projectId,
+          teamspaceId,
           nodeId: objective.id,
           direction: "incoming",
           catalogKey: "informs",

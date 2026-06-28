@@ -12,7 +12,7 @@ import {
   createDb,
   createGraphPorts,
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
   seedDomainCatalog,
 } from "../src/index.js";
 import * as schema from "../src/db/schema.js";
@@ -20,7 +20,8 @@ import * as schema from "../src/db/schema.js";
 let skip = false;
 
 describe("graph ports integration", () => {
-  let projectId: string;
+  let organizationId: string;
+  let teamspaceId: string;
   let otherProjectId: string;
   let ports: ReturnType<typeof createGraphPorts>;
   let client: ReturnType<typeof createDb>["client"] | undefined;
@@ -37,15 +38,16 @@ describe("graph ports integration", () => {
         skip = true;
         return;
       }
-      const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+      const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
       if (!project) {
         skip = true;
         return;
       }
-      projectId = project.id;
+      teamspaceId = project.id;
+      organizationId = org.id;
 
       const [otherProject] = await dbBundle.db
-        .insert(schema.projects)
+        .insert(schema.teamspaces)
         .values({
           organizationId: org.id,
           slug: `graph-test-${randomUUID().slice(0, 8)}`,
@@ -54,8 +56,7 @@ describe("graph ports integration", () => {
         .returning();
       otherProjectId = otherProject!.id;
 
-      await seedDomainCatalog(dbBundle.db, otherProjectId);
-      ports = createGraphPorts(dbBundle.db, { projectId });
+      ports = createGraphPorts(dbBundle.db, { organizationId, teamspaceId });
     } catch {
       skip = true;
     }
@@ -73,7 +74,7 @@ describe("graph ports integration", () => {
     const node = await createNode(
       { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
       {
-        projectId,
+        teamspaceId,
         catalogKey: "feature",
         title: `Feature ${randomUUID()}`,
         properties: {},
@@ -88,7 +89,7 @@ describe("graph ports integration", () => {
       createNode(
         { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
         {
-          projectId,
+          teamspaceId,
           catalogKey: "not_real" as "task",
           title: "x",
         },
@@ -97,30 +98,40 @@ describe("graph ports integration", () => {
   });
 
   it("backfills missing catalog keys such as design_theme", async () => {
-    await db!
-      .delete(schema.nodeCatalog)
-      .where(
-        and(
-          eq(schema.nodeCatalog.projectId, otherProjectId),
-          eq(schema.nodeCatalog.key, "design_theme"),
-        ),
-      );
+    const designThemeCatalog = await ports.catalog.getNodeCatalogByKey("design_theme");
+    if (designThemeCatalog) {
+      await db!
+        .delete(schema.nodes)
+        .where(eq(schema.nodes.nodeCatalogId, designThemeCatalog.id));
+      await db!
+        .delete(schema.nodeCatalog)
+        .where(
+          and(
+            eq(schema.nodeCatalog.organizationId, organizationId),
+            eq(schema.nodeCatalog.key, "design_theme"),
+          ),
+        );
+    }
 
-    const before = await createGraphPorts(db!, { projectId: otherProjectId }).catalog.getNodeCatalogByKey(
-      "design_theme",
-    );
+    const before = await createGraphPorts(db!, {
+      organizationId,
+      teamspaceId: otherProjectId,
+    }).catalog.getNodeCatalogByKey("design_theme");
     expect(before).toBeNull();
 
-    await seedDomainCatalog(db!, otherProjectId);
+    await seedDomainCatalog(db!, organizationId);
 
-    const otherPorts = createGraphPorts(db!, { projectId: otherProjectId });
+    const otherPorts = createGraphPorts(db!, {
+      organizationId,
+      teamspaceId: otherProjectId,
+    });
     const restored = await otherPorts.catalog.getNodeCatalogByKey("design_theme");
     expect(restored?.key).toBe("design_theme");
 
     const node = await createNode(
       { catalog: otherPorts.catalog, graphRead: otherPorts.graphRead, graphWrite: otherPorts.graphWrite },
       {
-        projectId: otherProjectId,
+        teamspaceId: otherProjectId,
         catalogKey: "design_theme",
         title: "Design theme",
         properties: { lifecycleStatus: "Draft" },
@@ -129,8 +140,11 @@ describe("graph ports integration", () => {
     expect(node.catalogKey).toBe("design_theme");
   });
 
-  it("rejects edge across projects", async () => {
-    const otherPorts = createGraphPorts(db!, { projectId: otherProjectId });
+  it("allows cross-teamspace edges within the same organization", async () => {
+    const otherPorts = createGraphPorts(db!, {
+      organizationId,
+      teamspaceId: otherProjectId,
+    });
     const releaseCatalog = await otherPorts.catalog.getNodeCatalogByKey("release");
     const initiativeCatalog = await ports.catalog.getNodeCatalogByKey("initiative");
     if (!releaseCatalog || !initiativeCatalog) {
@@ -138,55 +152,54 @@ describe("graph ports integration", () => {
     }
 
     const source = await otherPorts.graphWrite.createNode({
-      projectId: otherProjectId,
-      nodeCatalogId: releaseCatalog.id,
-      catalogKey: "release",
-      title: "Other project initiative",
+      teamspaceId: otherProjectId,
+      nodeCatalogId: initiativeCatalog.id,
+      catalogKey: "initiative",
+      title: "Other teamspace initiative",
       properties: { lifecycleStatus: "Draft" },
       schemaVersion: 1,
     });
     const target = await ports.graphWrite.createNode({
-      projectId,
-      nodeCatalogId: initiativeCatalog.id,
-      catalogKey: "initiative",
+      teamspaceId,
+      nodeCatalogId: releaseCatalog.id,
+      catalogKey: "release",
       title: "Local release",
       properties: { lifecycleStatus: "Draft" },
       schemaVersion: 1,
     });
 
-    await expect(
-      createEdge(
-        { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
-        {
-          projectId,
-          catalogKey: "paired_with",
-          sourceNodeId: source.id,
-          targetNodeId: target.id,
-        },
-      ),
-    ).rejects.toMatchObject({ code: "PROJECT_MISMATCH" });
+    const edge = await createEdge(
+      { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
+      {
+        teamspaceId,
+        catalogKey: "paired_with",
+        sourceNodeId: source.id,
+        targetNodeId: target.id,
+      },
+    );
+    expect(edge.catalogKey).toBe("paired_with");
   });
 
   it("creates initiative bundle atomically", async () => {
     const result = await createInitiativeBundle(
       { catalog: ports.catalog, graphWrite: ports.graphWrite },
       {
-        projectId,
+        teamspaceId,
         initiativeTitle: `Bundle ${randomUUID()}`,
         releaseVersion: "9.9.9-test",
       },
     );
 
     const initiative = await ports.graphRead.getNode({
-      projectId,
+      teamspaceId,
       nodeId: result.initiativeId,
     });
     const release = await ports.graphRead.getNode({
-      projectId,
+      teamspaceId,
       nodeId: result.releaseId,
     });
     const edges = await ports.graphRead.traverseEdges({
-      projectId,
+      teamspaceId,
       nodeId: result.initiativeId,
       direction: "outgoing",
       catalogKey: "paired_with",
@@ -201,7 +214,7 @@ describe("graph ports integration", () => {
     const composite = await createNode(
       { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
       {
-        projectId,
+        teamspaceId,
         catalogKey: "ui_component",
         title: `Composite ${randomUUID()}`,
         properties: {
@@ -219,7 +232,7 @@ describe("graph ports integration", () => {
     const child = await createNode(
       { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
       {
-        projectId,
+        teamspaceId,
         catalogKey: "ui_component",
         title: `Child ${randomUUID()}`,
         properties: {
@@ -238,7 +251,7 @@ describe("graph ports integration", () => {
     const edge = await createEdge(
       { catalog: ports.catalog, graphRead: ports.graphRead, graphWrite: ports.graphWrite },
       {
-        projectId,
+        teamspaceId,
         catalogKey: "composed_of",
         sourceNodeId: composite.id,
         targetNodeId: child.id,
@@ -248,7 +261,7 @@ describe("graph ports integration", () => {
     expect(edge.catalogKey).toBe("composed_of");
 
     const outgoing = await ports.graphRead.traverseEdges({
-      projectId,
+      teamspaceId,
       nodeId: composite.id,
       direction: "outgoing",
       catalogKey: "composed_of",

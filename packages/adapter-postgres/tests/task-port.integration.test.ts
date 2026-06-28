@@ -9,7 +9,7 @@ import {
   createTaskPort,
   createWorkflowInstructionPort,
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
 } from "../src/index.js";
 import * as schema from "../src/db/schema.js";
 
@@ -24,7 +24,7 @@ const sampleExecutionDirective = {
 };
 
 describe("task port integration", () => {
-  let projectId: string;
+  let teamspaceId: string;
   let otherProjectId: string;
   let taskPort: ReturnType<typeof createTaskPort>;
   let graphPorts: ReturnType<typeof createGraphPorts>;
@@ -41,16 +41,19 @@ describe("task port integration", () => {
         skip = true;
         return;
       }
-      const project = await consolePort.getProjectBySlug(org.id, DEFAULT_PROJECT_SLUG);
+      const project = await consolePort.getTeamspaceBySlug(org.id, DEFAULT_TEAMSPACE_SLUG);
       if (!project) {
         skip = true;
         return;
       }
-      projectId = project.id;
-      taskPort = createTaskPort(dbBundle.db, { projectId });
-      graphPorts = createGraphPorts(dbBundle.db, { projectId });
+      teamspaceId = project.id;
+      taskPort = createTaskPort(dbBundle.db, { teamspaceId });
+      graphPorts = createGraphPorts(dbBundle.db, {
+        organizationId: org.id,
+        teamspaceId,
+      });
       workflowInstructions = createWorkflowInstructionPort(dbBundle.db, {
-        projectId,
+        teamspaceId,
       });
 
       // Projects start with no DB workflow_instructions rows by design
@@ -70,7 +73,7 @@ describe("task port integration", () => {
       }
 
       const [other] = await dbBundle.db
-        .insert(schema.projects)
+        .insert(schema.teamspaces)
         .values({
           organizationId: org.id,
           slug: `task-test-${randomUUID().slice(0, 8)}`,
@@ -100,7 +103,7 @@ describe("task port integration", () => {
   }
 
   it("spawnTask persists task with workflow instruction defaults", async () => {
-    const task = await spawnTask(spawnDeps(), projectId, {
+    const task = await spawnTask(spawnDeps(), teamspaceId, {
       title: `Integration ${randomUUID()}`,
       workflowInstructionKey: "work.implement_feature",
       context: { executionDirective: sampleExecutionDirective },
@@ -113,14 +116,14 @@ describe("task port integration", () => {
 
   it("spawnTask dedupes by idempotencyKey", async () => {
     const key = `integration:${randomUUID()}`;
-    const first = await spawnTask(spawnDeps(), projectId, {
+    const first = await spawnTask(spawnDeps(), teamspaceId, {
       title: "First",
       workflowInstructionKey: "orchestrator.daily",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: key,
     });
-    const second = await spawnTask(spawnDeps(), projectId, {
+    const second = await spawnTask(spawnDeps(), teamspaceId, {
       title: "Second",
       workflowInstructionKey: "orchestrator.daily",
       context: { executionDirective: sampleExecutionDirective },
@@ -134,14 +137,14 @@ describe("task port integration", () => {
     const node = await createNode(
       { catalog: graphPorts.catalog, graphWrite: graphPorts.graphWrite },
       {
-        projectId,
+        teamspaceId,
         catalogKey: "feature",
         title: `Feature ${randomUUID()}`,
         properties: {},
       },
     );
 
-    const task = await spawnTask(spawnDeps(), projectId, {
+    const task = await spawnTask(spawnDeps(), teamspaceId, {
       title: "Linked task",
       workflowInstructionKey: "work.implement_feature",
       targetNodeId: node.id,
@@ -152,21 +155,21 @@ describe("task port integration", () => {
   });
 
   it("updateTask patches status and result", async () => {
-    const created = await spawnTask(spawnDeps(), projectId, {
+    const created = await spawnTask(spawnDeps(), teamspaceId, {
       title: `Patch ${randomUUID()}`,
       workflowInstructionKey: "work.write_document",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["document updated"],
     });
 
-    const updated = await updateTask({ tasks: taskPort }, projectId, {
+    const updated = await updateTask({ tasks: taskPort }, teamspaceId, {
       taskId: created.id,
       status: "running",
       result: { step: "drafting" },
     });
     expect(updated.status).toBe("running");
 
-    const done = await updateTask({ tasks: taskPort }, projectId, {
+    const done = await updateTask({ tasks: taskPort }, teamspaceId, {
       taskId: created.id,
       status: "done",
     });
@@ -178,14 +181,14 @@ describe("task port integration", () => {
     const node = await createNode(
       { catalog: graphPorts.catalog, graphWrite: graphPorts.graphWrite },
       {
-        projectId,
+        teamspaceId,
         catalogKey: "initiative",
         title: `Initiative ${randomUUID()}`,
         properties: {},
       },
     );
 
-    await spawnTask(spawnDeps(), projectId, {
+    await spawnTask(spawnDeps(), teamspaceId, {
       title: "Filtered",
       workflowInstructionKey: "work.implement_feature",
       targetNodeId: node.id,

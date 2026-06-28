@@ -60,7 +60,7 @@ describe("enrichConnectInstallationDisplay (emulate)", () => {
     const result = await enrichConnectInstallationDisplay({
       connector: "slack/dev",
       installation: { installationId: "TEMULATE1" },
-      scope: { projectId: "proj-1", accountId: "acct-1" },
+      scope: { teamspaceId: "proj-1", accountId: "acct-1" },
     });
     expect(result.name).toBe("Emulate");
   });

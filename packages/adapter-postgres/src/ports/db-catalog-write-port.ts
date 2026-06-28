@@ -3,17 +3,14 @@ import type { EdgeCatalogRow, NodeCatalogRow } from "@ssota/contracts";
 import type { CatalogWritePort } from "@ssota/core";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-
-export interface DbCatalogWriteScope {
-  projectId: string;
-}
+import type { DbCatalogScope } from "./db-catalog-read-port.js";
 
 function mapNodeCatalogRow(
   row: typeof schema.nodeCatalog.$inferSelect,
 ): NodeCatalogRow {
   return {
     id: row.id,
-    projectId: row.projectId,
+    organizationId: row.organizationId,
     key: row.key,
     label: row.label,
     description: row.description ?? "",
@@ -27,7 +24,7 @@ function mapEdgeCatalogRow(
 ): EdgeCatalogRow {
   return {
     id: row.id,
-    projectId: row.projectId,
+    organizationId: row.organizationId,
     key: row.key,
     label: row.label,
     description: row.description ?? "",
@@ -40,9 +37,9 @@ function mapEdgeCatalogRow(
 
 export function createDbCatalogWritePort(
   db: Db,
-  scope: DbCatalogWriteScope,
+  scope: DbCatalogScope,
 ): CatalogWritePort {
-  const { projectId } = scope;
+  const { organizationId } = scope;
 
   return {
     async upsertNodeCatalog(entry) {
@@ -61,7 +58,7 @@ export function createDbCatalogWritePort(
           })
           .where(
             and(
-              eq(schema.nodeCatalog.projectId, projectId),
+              eq(schema.nodeCatalog.organizationId, organizationId),
               eq(schema.nodeCatalog.id, entry.id),
             ),
           )
@@ -72,7 +69,7 @@ export function createDbCatalogWritePort(
       const [row] = await db
         .insert(schema.nodeCatalog)
         .values({
-          projectId,
+          organizationId,
           key: entry.key,
           label: entry.label,
           description,
@@ -80,7 +77,7 @@ export function createDbCatalogWritePort(
           propertySchema: entry.propertySchema ?? {},
         })
         .onConflictDoUpdate({
-          target: [schema.nodeCatalog.projectId, schema.nodeCatalog.key],
+          target: [schema.nodeCatalog.organizationId, schema.nodeCatalog.key],
           set: {
             label: entry.label,
             description,
@@ -111,7 +108,7 @@ export function createDbCatalogWritePort(
           })
           .where(
             and(
-              eq(schema.edgeCatalog.projectId, projectId),
+              eq(schema.edgeCatalog.organizationId, organizationId),
               eq(schema.edgeCatalog.id, entry.id),
             ),
           )
@@ -122,7 +119,7 @@ export function createDbCatalogWritePort(
       const [row] = await db
         .insert(schema.edgeCatalog)
         .values({
-          projectId,
+          organizationId,
           key: entry.key,
           label: entry.label,
           description,
@@ -132,7 +129,7 @@ export function createDbCatalogWritePort(
           propertySchema: entry.propertySchema ?? null,
         })
         .onConflictDoUpdate({
-          target: [schema.edgeCatalog.projectId, schema.edgeCatalog.key],
+          target: [schema.edgeCatalog.organizationId, schema.edgeCatalog.key],
           set: {
             label: entry.label,
             description,
@@ -153,7 +150,7 @@ export function createDbCatalogWritePort(
         .delete(schema.nodeCatalog)
         .where(
           and(
-            eq(schema.nodeCatalog.projectId, projectId),
+            eq(schema.nodeCatalog.organizationId, organizationId),
             eq(schema.nodeCatalog.id, id),
           ),
         );
@@ -164,7 +161,7 @@ export function createDbCatalogWritePort(
         .delete(schema.edgeCatalog)
         .where(
           and(
-            eq(schema.edgeCatalog.projectId, projectId),
+            eq(schema.edgeCatalog.organizationId, organizationId),
             eq(schema.edgeCatalog.id, id),
           ),
         );

@@ -41,10 +41,10 @@ function toListRows(nodes: RenderNode[]): UiComponentListRow[] {
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
-function toGraphNode(node: RenderNode, projectId: string): GraphNode {
+function toGraphNode(node: RenderNode, teamspaceId: string): GraphNode {
   return {
     id: node.id,
-    projectId,
+    teamspaceId,
     nodeCatalogId: "",
     catalogKey: node.catalogKey,
     catalogLabel: node.catalogKey,
@@ -149,7 +149,7 @@ function ArtifactWorkbenchEl({
 
   const activeRow = nodes.find((n) => n.id === selectedId) ?? null;
   const previewComponent = activeRow
-    ? toGraphNode(activeRow, studio.projectId)
+    ? toGraphNode(activeRow, studio.teamspaceId)
     : null;
 
   const handleCreate = async () => {
@@ -160,7 +160,7 @@ function ArtifactWorkbenchEl({
   };
 
   const handleDeploy = async (input: {
-    projectId: string;
+    teamspaceId: string;
     nodeId: string;
     contentV2?: import("@ssota/contracts/catalog").UiComponentContentV2;
   }) => {
@@ -177,7 +177,7 @@ function ArtifactWorkbenchEl({
       <StudioShell
       readOnly={readOnly}
       listVariant={isWireframeList ? "flat" : "grouped"}
-      projectId={studio.projectId}
+      teamspaceId={studio.teamspaceId}
       component={previewComponent}
       activeListItemId={selectedId}
       components={listItems}

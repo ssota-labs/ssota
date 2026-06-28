@@ -5,10 +5,10 @@ export type InitiativeOption = {
   title: string;
 };
 
-export async function listInitiatives(projectId: string): Promise<InitiativeOption[]> {
-  const { graphRead } = getGraphPorts(projectId);
+export async function listInitiatives(teamspaceId: string): Promise<InitiativeOption[]> {
+  const { graphRead } = getGraphPorts(teamspaceId);
   const nodes = await graphRead.queryNodes({
-    projectId,
+    teamspaceId,
     catalogKey: "initiative",
     limit: 100,
   });
@@ -22,12 +22,12 @@ export async function listInitiatives(projectId: string): Promise<InitiativeOpti
 }
 
 export async function initiativeExists(
-  projectId: string,
+  teamspaceId: string,
   initiativeId: string,
 ): Promise<boolean> {
-  const { graphRead } = getGraphPorts(projectId);
+  const { graphRead } = getGraphPorts(teamspaceId);
   const nodes = await graphRead.queryNodes({
-    projectId,
+    teamspaceId,
     catalogKey: "initiative",
     limit: 100,
   });

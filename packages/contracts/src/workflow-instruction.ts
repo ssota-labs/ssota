@@ -7,7 +7,7 @@ export type BlockNoteContent = z.infer<typeof BlockNoteContentSchema>;
 
 export const WorkflowInstructionSchema = z.object({
   id: z.string().uuid(),
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().nullable(),
   key: z.string().min(1),
   name: z.string().min(1),

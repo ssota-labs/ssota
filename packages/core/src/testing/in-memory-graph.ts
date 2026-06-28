@@ -37,7 +37,7 @@ function filterNodes(
   params: ListNodesByTypeInput,
 ): GraphNode[] {
   const rows = [...store.nodes.values()].filter(
-    (node) => node.projectId === params.projectId,
+    (node) => node.teamspaceId === params.teamspaceId,
   );
   return rows
     .filter(
@@ -64,7 +64,7 @@ export function createInMemoryGraphReadPort(
     },
     async getNode(params: GetNodeInput) {
       const node = store.nodes.get(params.nodeId) ?? null;
-      if (!node || node.projectId !== params.projectId) return null;
+      if (!node || node.teamspaceId !== params.teamspaceId) return null;
       return node;
     },
     async getNodeById(nodeId: string) {
@@ -72,7 +72,7 @@ export function createInMemoryGraphReadPort(
     },
     async traverseEdges(params: TraverseEdgesInput) {
       const edges = [...store.edges.values()].filter(
-        (edge) => edge.projectId === params.projectId,
+        (edge) => edge.teamspaceId === params.teamspaceId,
       );
       return edges.filter((edge) => {
         if (
@@ -99,7 +99,7 @@ export function createInMemoryGraphReadPort(
 
     async queryEdges(params) {
       const rows = [...store.edges.values()].filter(
-        (edge) => edge.projectId === params.projectId,
+        (edge) => edge.teamspaceId === params.teamspaceId,
       );
       return rows
         .filter(
@@ -122,7 +122,7 @@ export function createInMemoryGraphWritePort(
       const now = new Date();
       const node: GraphNode = {
         id: randomUUID(),
-        projectId: input.projectId,
+        teamspaceId: input.teamspaceId,
         nodeCatalogId: input.nodeCatalogId,
         catalogKey: input.catalogKey,
         catalogLabel: input.catalogKey,
@@ -138,7 +138,7 @@ export function createInMemoryGraphWritePort(
 
     async updateNode(input: UpdateNodeInput) {
       const existing = store.nodes.get(input.nodeId);
-      assertGraphNodeInProject(input.projectId, existing ?? null);
+      assertGraphNodeInProject(input.teamspaceId, existing ?? null);
       const updated: GraphNode = {
         ...existing!,
         title: input.title ?? existing!.title,
@@ -153,7 +153,7 @@ export function createInMemoryGraphWritePort(
       const now = new Date();
       const edge: GraphEdge = {
         id: randomUUID(),
-        projectId: input.projectId,
+        teamspaceId: input.teamspaceId,
         edgeCatalogId: input.edgeCatalogId,
         catalogKey: input.catalogKey,
         catalogLabel: input.catalogKey,
@@ -168,7 +168,7 @@ export function createInMemoryGraphWritePort(
 
     async deleteEdge(input: DeleteEdgeInput) {
       const edge = store.edges.get(input.edgeId);
-      if (!edge || edge.projectId !== input.projectId) {
+      if (!edge || edge.teamspaceId !== input.teamspaceId) {
         throw new GraphError("NOT_FOUND", `Edge '${input.edgeId}' not found`);
       }
       store.edges.delete(input.edgeId);
@@ -176,7 +176,7 @@ export function createInMemoryGraphWritePort(
 
     async deleteNode(input: DeleteNodeInput) {
       const node = store.nodes.get(input.nodeId);
-      if (!node || node.projectId !== input.projectId) {
+      if (!node || node.teamspaceId !== input.teamspaceId) {
         throw new GraphError("NOT_FOUND", `Node '${input.nodeId}' not found`);
       }
       for (const [edgeId, edge] of store.edges) {
@@ -195,7 +195,7 @@ export function createInMemoryGraphWritePort(
     ): Promise<CreateInitiativeBundleResult> {
       const write = createInMemoryGraphWritePort(store);
       const initiative = await write.createNode({
-        projectId: input.projectId,
+        teamspaceId: input.teamspaceId,
         nodeCatalogId: "00000000-0000-4000-8000-000000000009",
         catalogKey: "initiative",
         title: input.initiativeTitle,
@@ -206,7 +206,7 @@ export function createInMemoryGraphWritePort(
         schemaVersion: 1,
       });
       const release = await write.createNode({
-        projectId: input.projectId,
+        teamspaceId: input.teamspaceId,
         nodeCatalogId: "00000000-0000-4000-8000-000000000010",
         catalogKey: "release",
         title: input.releaseVersion,
@@ -217,7 +217,7 @@ export function createInMemoryGraphWritePort(
         schemaVersion: 1,
       });
       const pairedEdge = await write.createEdge({
-        projectId: input.projectId,
+        teamspaceId: input.teamspaceId,
         edgeCatalogId: "00000000-0000-4000-9000-000000000003",
         catalogKey: "paired_with",
         sourceNodeId: initiative.id,

@@ -10,19 +10,19 @@ import {
 
 test.describe("Console onboarding", () => {
   test("신규 로그인(자동 가입) → profile → project → Overview", async ({ page }) => {
-    const { orgSlug, projectSlug, organizationName, projectName } =
+    const { orgSlug, teamspaceSlug, organizationName, projectName } =
       await completeOnboardingFlow(page);
 
     expect(orgSlug).toMatch(/^e2e-organization-/);
-    expect(projectSlug).toMatch(/^e2e-project-/);
-    await expect(page).toHaveURL(new RegExp(`/${orgSlug}/${projectSlug}/overview$`));
+    expect(teamspaceSlug).toMatch(/^e2e-project-/);
+    await expect(page).toHaveURL(new RegExp(`/${orgSlug}/${teamspaceSlug}/overview$`));
     await expect(page.getByText("No graph nodes yet")).toBeVisible();
     await expect(page.getByText(projectName).first()).toBeVisible();
   });
 
   test("template 스텝에서 project로 돌아가기", async ({ page }) => {
     const email = uniqueOnboardingEmail();
-    const projectName = "Back Test Project";
+    const projectName = "Back Test Teamspace";
 
     await signInOnLoginPage(page, email);
     await completeProfileOnboarding(page, "Back Test Organization");
@@ -32,7 +32,7 @@ test.describe("Console onboarding", () => {
 
     await expect(page).toHaveURL(/\/onboarding\/project/);
     await expect(page.getByText("Step 2 of 3")).toBeVisible();
-    await expect(page.getByLabel("Project name")).toHaveValue(projectName);
+    await expect(page.getByLabel("Teamspace name")).toHaveValue(projectName);
     await expect(
       page.locator("[data-sonner-toast]").getByText(/organization created/i),
     ).toHaveCount(0);

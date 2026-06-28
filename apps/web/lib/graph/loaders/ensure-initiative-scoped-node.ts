@@ -5,21 +5,21 @@ import { queryInitiativeScopedNodes } from "./query-initiative-scoped";
 import { getGraphDeps } from "../graph-deps";
 
 export async function ensureInitiativeScopedNode(
-  projectId: string,
+  teamspaceId: string,
   initiativeId: string,
   nodeType: NodeType,
   defaultTitle: string,
 ): Promise<GraphNode> {
   const existing = await queryInitiativeScopedNodes(
-    projectId,
+    teamspaceId,
     initiativeId,
     nodeType,
   );
   if (existing[0]) return existing[0];
 
-  const deps = getGraphDeps(projectId);
+  const deps = getGraphDeps(teamspaceId);
   return createNode(deps, {
-    projectId,
+    teamspaceId,
     catalogKey: nodeType,
     title: defaultTitle,
     properties: { lifecycleStatus: "Draft" },

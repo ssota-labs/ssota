@@ -9,7 +9,7 @@ import { createAgentRunPort, createChatPort } from "@ssota/adapter-postgres";
  */
 
 export interface RunMainAgentInput {
-  projectId: string;
+  teamspaceId: string;
   threadId: string;
   accountId?: string;
   /** Signed-in user (Composio acting entity for connector tools). */
@@ -25,7 +25,7 @@ export async function claimMainRunning(
 ): Promise<void> {
   const db = getDb();
   await createAgentRunPort(db).start({
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     runtimeKind: "main",
     threadId: input.threadId,
     workflowRunId: runId,
@@ -47,7 +47,7 @@ export async function persistMainAssistantMessage(
 
   const db = getDb();
   const chat = createChatPort(db, {
-    projectId: input.projectId,
+    teamspaceId: input.teamspaceId,
     accountId: input.accountId ?? null,
   });
 

@@ -5,7 +5,7 @@ import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
   DEFAULT_ORG_SLUG,
-  DEFAULT_PROJECT_SLUG,
+  DEFAULT_TEAMSPACE_SLUG,
   LOCAL_AUTH_USER_EMAIL,
   LOCAL_AUTH_USER_ID,
   SMOKE_EMAIL,
@@ -68,35 +68,35 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
   if (!organizationId) return null;
 
   const [project] = await db
-    .insert(schema.projects)
+    .insert(schema.teamspaces)
     .values({
       organizationId,
-      slug: DEFAULT_PROJECT_SLUG,
+      slug: DEFAULT_TEAMSPACE_SLUG,
       name: "SSOTA Dev",
       appEnabled: true,
     })
     .onConflictDoNothing()
     .returning();
 
-  let projectId = project?.id;
-  if (!projectId) {
+  let teamspaceId = project?.id;
+  if (!teamspaceId) {
     const rows = await db
-      .select({ id: schema.projects.id })
-      .from(schema.projects)
-      .where(eq(schema.projects.slug, DEFAULT_PROJECT_SLUG))
+      .select({ id: schema.teamspaces.id })
+      .from(schema.teamspaces)
+      .where(eq(schema.teamspaces.slug, DEFAULT_TEAMSPACE_SLUG))
       .limit(1);
-    projectId = rows[0]?.id;
+    teamspaceId = rows[0]?.id;
   }
 
-  if (projectId) {
+  if (teamspaceId) {
     await db
-      .update(schema.projects)
+      .update(schema.teamspaces)
       .set({ appEnabled: true })
-      .where(eq(schema.projects.id, projectId));
+      .where(eq(schema.teamspaces.id, teamspaceId));
   }
 
   await db
-    .insert(schema.projects)
+    .insert(schema.teamspaces)
     .values({
       organizationId,
       slug: "app-disabled",
@@ -136,17 +136,17 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .onConflictDoNothing();
   }
 
-  if (projectId) {
-    await seedGraphInstances(db, projectId);
-    await applyTemplate(db, projectId, SOFTWARE_DEV_TEMPLATE);
-    await seedScheduleFixtures(db, projectId);
+  if (teamspaceId) {
+    await seedGraphInstances(db, teamspaceId);
+    await applyTemplate(db, teamspaceId, SOFTWARE_DEV_TEMPLATE);
+    await seedScheduleFixtures(db, teamspaceId);
 
     const implementFeature = await db
       .select({ id: schema.workflowInstructions.id })
       .from(schema.workflowInstructions)
       .where(
         and(
-          eq(schema.workflowInstructions.projectId, projectId),
+          eq(schema.workflowInstructions.teamspaceId, teamspaceId),
           eq(schema.workflowInstructions.key, "work.implement_feature"),
         ),
       )
@@ -156,7 +156,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .from(schema.workflowInstructions)
       .where(
         and(
-          eq(schema.workflowInstructions.projectId, projectId),
+          eq(schema.workflowInstructions.teamspaceId, teamspaceId),
           eq(schema.workflowInstructions.key, "orchestrator.bootstrap"),
         ),
       )
@@ -165,7 +165,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await db
       .insert(schema.tasks)
       .values({
-        projectId,
+        teamspaceId,
         workflowInstructionId: implementFeature[0]?.id ?? null,
         title: "Archive generic runtime and focus active product on development workflow",
         status: "ready",
@@ -183,7 +183,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await db
       .insert(schema.tasks)
       .values({
-        projectId,
+        teamspaceId,
         workflowInstructionId: bootstrap[0]?.id ?? null,
         title: "Configure Cursor Automations for ssota-dev orchestrators",
         status: "ready",
@@ -199,7 +199,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .onConflictDoNothing();
   }
 
-  return { organizationId, projectId };
+  return { organizationId, teamspaceId };
 }
 
 /**
@@ -252,8 +252,8 @@ async function seedSmokeUser(
 
 async function seedAllProjectCatalogs(db: ReturnType<typeof createDb>["db"]) {
   const projects = await db
-    .select({ id: schema.projects.id })
-    .from(schema.projects);
+    .select({ id: schema.teamspaces.id })
+    .from(schema.teamspaces);
   for (const { id } of projects) {
     await applyTemplate(db, id, SOFTWARE_DEV_TEMPLATE);
   }

@@ -9,11 +9,11 @@ export type UiComponentListRow = {
 };
 
 export async function queryUiComponents(
-  projectId: string,
+  teamspaceId: string,
 ): Promise<UiComponentListRow[]> {
-  const { graphRead } = getGraphDeps(projectId);
+  const { graphRead } = getGraphDeps(teamspaceId);
   const nodes = await graphRead.queryNodes({
-    projectId,
+    teamspaceId,
     catalogKey: "ui_component",
     limit: 200,
   });

@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 const bodySchema = z.object({
   platform: z.string().min(1),
   workspaceKey: z.string().min(1),
-  projectId: z.string().uuid(),
+  teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().optional(),
   name: z.string().optional(),
 });
@@ -33,7 +33,7 @@ async function authorize(request: Request): Promise<boolean> {
  * replaces the global CHAT_PROJECT_ID env for the creator's own orgs.
  *
  *   POST /api/chat/link
- *   { platform, workspaceKey, projectId, accountId?, name? }
+ *   { platform, workspaceKey, teamspaceId, accountId?, name? }
  */
 export async function POST(request: Request) {
   if (!(await authorize(request))) {
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
   }
 
   await createChatWorkspacePort(getDb()).link({
-    projectId: body.projectId,
+    teamspaceId: body.teamspaceId,
     accountId: body.accountId ?? null,
     platform: body.platform,
     workspaceKey: body.workspaceKey,

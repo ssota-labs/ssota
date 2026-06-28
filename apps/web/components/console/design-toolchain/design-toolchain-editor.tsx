@@ -78,7 +78,7 @@ export function DesignToolchainEditor({
             placeholder="Design toolchain"
           />
           <p className="text-sm text-muted-foreground">
-            Project-level package.json and lockfile for user component builds.
+            Teamspace-level package.json and lockfile for user component builds.
           </p>
         </header>
 

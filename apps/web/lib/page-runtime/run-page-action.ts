@@ -22,8 +22,8 @@ import { getGraphDeps } from "@/lib/graph/graph-deps";
 import { getPagePort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 import {
-  projectPath,
-  type ProjectRouteContext,
+  orgPath,
+  type OrgRouteContext,
 } from "@/lib/console/paths";
 
 /**
@@ -36,7 +36,7 @@ import {
  * `subjectNodeId` + the paths to revalidate).
  */
 export type RunPageActionInput = {
-  projectId: string;
+  teamspaceId: string;
   pageId: string;
   actionKey: string;
   /** Client-collected form payload — only ever read through `$input` refs. */
@@ -44,7 +44,7 @@ export type RunPageActionInput = {
   /** The page's anchor node (page.subjectNodeId for /p; the URL node for /n). */
   subjectNodeId?: string | null;
   /** When set, create_initiative_bundle redirects into the new initiative drill-in. */
-  routeCtx?: ProjectRouteContext;
+  routeCtx?: OrgRouteContext;
   revalidate?: string[];
 };
 
@@ -102,13 +102,13 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const page = await getPagePort(args.projectId).getPage(args.pageId);
+  const page = await getPagePort(args.teamspaceId).getPage(args.pageId);
   if (!page) throw new Error(`Page not found: ${args.pageId}`);
 
   const descriptor = page.actions[args.actionKey];
   if (!descriptor) throw new Error(`Unknown action: ${args.actionKey}`);
 
-  const deps = getGraphDeps(args.projectId);
+  const deps = getGraphDeps(args.teamspaceId);
 
   // Build interpolation scopes. `subject` is the page's anchor node (generic
   // replacement for initiative-scoping), exposed to `$ctx` and to `traverse`
@@ -117,7 +117,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
   const subjectId = args.subjectNodeId ?? page.subjectNodeId ?? null;
   if (subjectId) {
     const subject = await deps.graphRead.getNodeById(subjectId);
-    if (subject && subject.projectId === args.projectId) {
+    if (subject && subject.teamspaceId === args.teamspaceId) {
       ctx.subjectNodeId = subject.id;
       ctx.subjectId = subject.id;
       ctx.subject = {
@@ -130,7 +130,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
   }
   const bindingData = await resolvePageBindings(
     deps.graphRead,
-    args.projectId,
+    args.teamspaceId,
     page.bindings,
     ctx,
   );
@@ -149,7 +149,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
           ? String((subject as { id: string }).id)
           : undefined;
       const parsed = createNodeInputSchema.parse({
-        projectId: args.projectId,
+        teamspaceId: args.teamspaceId,
         catalogKey: descriptor.catalogKey,
         title: asString(resolveParam(descriptor.title, scopes)) ?? "Untitled",
         properties: resolveProps(descriptor.properties, scopes),
@@ -166,7 +166,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
         : undefined;
       if (descriptor.merge && properties) {
         const existing = await deps.graphRead.getNode({
-          projectId: args.projectId,
+          teamspaceId: args.teamspaceId,
           nodeId,
         });
         properties = { ...(existing?.properties ?? {}), ...properties };
@@ -176,7 +176,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
           ? asString(resolveParam(descriptor.title, scopes))
           : undefined;
       const parsed = updateNodeInputSchema.parse({
-        projectId: args.projectId,
+        teamspaceId: args.teamspaceId,
         nodeId,
         title,
         properties,
@@ -186,7 +186,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
     }
     case "create_edge": {
       const parsed = createEdgeInputSchema.parse({
-        projectId: args.projectId,
+        teamspaceId: args.teamspaceId,
         catalogKey: descriptor.catalogKey,
         sourceNodeId: asString(resolveParam(descriptor.sourceNodeId, scopes)),
         targetNodeId: asString(resolveParam(descriptor.targetNodeId, scopes)),
@@ -196,7 +196,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
     }
     case "delete_edge": {
       const parsed = deleteEdgeInputSchema.parse({
-        projectId: args.projectId,
+        teamspaceId: args.teamspaceId,
         edgeId: asString(resolveParam(descriptor.edgeId, scopes)),
       });
       await deleteEdge(deps.graphWrite, parsed);
@@ -212,18 +212,18 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
       // single-field edit never clobbers the node's other properties.
       if (field === "title") {
         const parsed = updateNodeInputSchema.parse({
-          projectId: args.projectId,
+          teamspaceId: args.teamspaceId,
           nodeId,
           title: asString(value),
         });
         await updateNode(deps, parsed);
       } else {
         const existing = await deps.graphRead.getNode({
-          projectId: args.projectId,
+          teamspaceId: args.teamspaceId,
           nodeId,
         });
         const parsed = updateNodeInputSchema.parse({
-          projectId: args.projectId,
+          teamspaceId: args.teamspaceId,
           nodeId,
           properties: { ...(existing?.properties ?? {}), [field]: value },
         });
@@ -233,7 +233,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
     }
     case "delete_node": {
       const parsed = deleteNodeInputSchema.parse({
-        projectId: args.projectId,
+        teamspaceId: args.teamspaceId,
         nodeId: asString(resolveParam(descriptor.nodeId, scopes)),
       });
       await deleteNode(deps.graphWrite, parsed);
@@ -250,12 +250,12 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
         throw new Error("create_initiative_bundle: missing title or version");
       }
       const result = await createInitiativeBundle(deps, {
-        projectId: args.projectId,
+        teamspaceId: args.teamspaceId,
         initiativeTitle,
         releaseVersion,
       });
       if (args.routeCtx) {
-        redirect(projectPath(args.routeCtx, "n", result.initiativeId));
+        redirect(orgPath(args.routeCtx, "n", result.initiativeId));
       }
       break;
     }

@@ -7,13 +7,13 @@ import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
 type TasksExplorerProps = {
   rows: TaskWorkspaceRow[];
-  projectId: string;
+  teamspaceId: string;
   workflowOptions: WorkflowOption[];
 };
 
 export function TasksExplorer({
   rows,
-  projectId,
+  teamspaceId,
   workflowOptions,
 }: TasksExplorerProps) {
   return (
@@ -26,11 +26,11 @@ export function TasksExplorer({
             through update_task.
           </p>
         </div>
-        <SpawnTaskDialog projectId={projectId} workflowOptions={workflowOptions} />
+        <SpawnTaskDialog teamspaceId={teamspaceId} workflowOptions={workflowOptions} />
       </div>
       <TasksDetail
         rows={rows}
-        projectId={projectId}
+        teamspaceId={teamspaceId}
         workflowOptions={workflowOptions}
       />
     </div>

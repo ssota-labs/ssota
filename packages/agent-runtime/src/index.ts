@@ -101,6 +101,8 @@ export {
   getTaskPort,
   getGraphReadPort,
   getWorkflowInstructionPort,
+  ensureTeamspaceOrganizationScope,
+  registerTeamspaceOrganization,
 } from "./ports.js";
 
 export type { AgentRunContext } from "./engine/types.js";

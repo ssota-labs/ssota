@@ -82,18 +82,18 @@ export function ChatMessage({
             | {
                 connector?: string;
                 reason?: string;
-                projectId?: string;
+                teamspaceId?: string;
                 accountId?: string | null;
               }
             | undefined;
-          if (output?.connector && output.projectId) {
+          if (output?.connector && output.teamspaceId) {
             return (
               <ConnectCard
                 key={index}
                 request={{
                   connector: output.connector,
                   reason: output.reason,
-                  projectId: output.projectId,
+                  teamspaceId: output.teamspaceId,
                   accountId: output.accountId ?? null,
                 }}
                 connectors={connectors}

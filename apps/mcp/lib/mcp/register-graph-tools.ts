@@ -101,8 +101,8 @@ export function registerGraphTools(server: McpToolServer) {
         limit: z.number().int().positive().max(50).optional(),
       },
     },
-    async ({ projectId, args }) =>
-      jsonContent(await searchCatalogForMcp(projectId, args)),
+    async ({ teamspaceId, args }) =>
+      jsonContent(await searchCatalogForMcp(teamspaceId, args)),
   );
 
   registerScopedProjectTool(
@@ -119,8 +119,8 @@ export function registerGraphTools(server: McpToolServer) {
         offset: z.number().int().nonnegative().optional(),
       },
     },
-    async ({ projectId, args }) =>
-      jsonContent(await queryNodesForMcp(projectId, args)),
+    async ({ teamspaceId, args }) =>
+      jsonContent(await queryNodesForMcp(teamspaceId, args)),
   );
 
   registerScopedProjectTool(
@@ -131,8 +131,8 @@ export function registerGraphTools(server: McpToolServer) {
       description: "Fetch one graph node by id in the current project.",
       inputSchema: { nodeId: z.string().uuid() },
     },
-    async ({ projectId, args }) =>
-      jsonContent(await getNodeForMcp(projectId, args)),
+    async ({ teamspaceId, args }) =>
+      jsonContent(await getNodeForMcp(teamspaceId, args)),
   );
 
   registerScopedProjectTool(
@@ -148,8 +148,8 @@ export function registerGraphTools(server: McpToolServer) {
         catalogKey: edgeCatalogKeySchema.optional(),
       },
     },
-    async ({ projectId, args }) =>
-      jsonContent(await traverseEdgesForMcp(projectId, args)),
+    async ({ teamspaceId, args }) =>
+      jsonContent(await traverseEdgesForMcp(teamspaceId, args)),
   );
 
   registerScopedProjectTool(
@@ -169,9 +169,9 @@ export function registerGraphTools(server: McpToolServer) {
         releaseId: z.string().uuid().optional(),
       },
     },
-    async ({ projectId, args }) => {
+    async ({ teamspaceId, args }) => {
       try {
-        return jsonContent(await createNodeForMcp(projectId, args));
+        return jsonContent(await createNodeForMcp(teamspaceId, args));
       } catch (error) {
         throwMcpToolError(error);
       }
@@ -193,9 +193,9 @@ export function registerGraphTools(server: McpToolServer) {
         lifecycleStatus: LifecycleStatusSchema.optional(),
       },
     },
-    async ({ projectId, args }) => {
+    async ({ teamspaceId, args }) => {
       try {
-        return jsonContent(await updateNodeForMcp(projectId, args));
+        return jsonContent(await updateNodeForMcp(teamspaceId, args));
       } catch (error) {
         throwMcpToolError(error);
       }
@@ -216,9 +216,9 @@ export function registerGraphTools(server: McpToolServer) {
         properties: z.record(z.unknown()).optional(),
       },
     },
-    async ({ projectId, args }) => {
+    async ({ teamspaceId, args }) => {
       try {
-        return jsonContent(await createEdgeForMcp(projectId, args));
+        return jsonContent(await createEdgeForMcp(teamspaceId, args));
       } catch (error) {
         throwMcpToolError(error);
       }

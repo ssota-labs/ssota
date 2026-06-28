@@ -10,7 +10,8 @@ import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
 export interface GraphPortsScope {
-  projectId: string;
+  organizationId: string;
+  teamspaceId: string;
   /**
    * End-user data partition (Phase 5). When set, reads see shared
    * (account_id IS NULL) + own rows, and writes are tagged with it. When
@@ -32,7 +33,7 @@ type EdgeRow = typeof schema.edges.$inferSelect & {
 function mapNode(row: NodeRow): GraphNode {
   return {
     id: row.id,
-    projectId: row.projectId,
+    teamspaceId: row.teamspaceId,
     nodeCatalogId: row.nodeCatalogId,
     catalogKey: row.catalogKey,
     catalogLabel: row.catalogLabel,
@@ -47,7 +48,7 @@ function mapNode(row: NodeRow): GraphNode {
 function mapEdge(row: EdgeRow): GraphEdge {
   return {
     id: row.id,
-    projectId: row.projectId,
+    teamspaceId: row.teamspaceId,
     edgeCatalogId: row.edgeCatalogId,
     catalogKey: row.catalogKey,
     catalogLabel: row.catalogLabel,
@@ -62,7 +63,7 @@ function nodeSelect(db: Db) {
   return db
     .select({
       id: schema.nodes.id,
-      projectId: schema.nodes.projectId,
+      teamspaceId: schema.nodes.teamspaceId,
       accountId: schema.nodes.accountId,
       nodeCatalogId: schema.nodes.nodeCatalogId,
       catalogKey: schema.nodeCatalog.key,
@@ -84,7 +85,7 @@ function edgeSelect(db: Db) {
   return db
     .select({
       id: schema.edges.id,
-      projectId: schema.edges.projectId,
+      teamspaceId: schema.edges.teamspaceId,
       accountId: schema.edges.accountId,
       edgeCatalogId: schema.edges.edgeCatalogId,
       catalogKey: schema.edgeCatalog.key,
@@ -105,7 +106,19 @@ export function createGraphReadPort(
   db: Db,
   scope: GraphPortsScope,
 ): GraphReadPort {
-  const { projectId, accountId } = scope;
+  const { organizationId, teamspaceId, accountId } = scope;
+
+  /** Teamspace-scoped reads include org-shared rows (teamspace_id IS NULL). */
+  const teamspaceScopeCond = () =>
+    or(
+      eq(schema.nodes.teamspaceId, teamspaceId),
+      isNull(schema.nodes.teamspaceId),
+    )!;
+  const edgeTeamspaceScopeCond = () =>
+    or(
+      eq(schema.edges.teamspaceId, teamspaceId),
+      isNull(schema.edges.teamspaceId),
+    )!;
 
   const nodeAccountConds = (): SQL[] =>
     accountId
@@ -128,10 +141,7 @@ export function createGraphReadPort(
 
   return {
     async queryNodes(params: ListNodesByTypeInput) {
-      const conditions = [
-        eq(schema.nodes.projectId, projectId),
-        ...nodeAccountConds(),
-      ];
+      const conditions = [teamspaceScopeCond(), ...nodeAccountConds()];
       if (params.nodeCatalogId) {
         conditions.push(eq(schema.nodes.nodeCatalogId, params.nodeCatalogId));
       }
@@ -153,10 +163,7 @@ export function createGraphReadPort(
     },
 
     async queryEdges(params: ListEdgesInput) {
-      const conditions = [
-        eq(schema.edges.projectId, projectId),
-        ...edgeAccountConds(),
-      ];
+      const conditions = [edgeTeamspaceScopeCond(), ...edgeAccountConds()];
       if (params.edgeCatalogId) {
         conditions.push(eq(schema.edges.edgeCatalogId, params.edgeCatalogId));
       }
@@ -176,7 +183,7 @@ export function createGraphReadPort(
       const rows = await nodeSelect(db)
         .where(
           and(
-            eq(schema.nodes.projectId, projectId),
+            teamspaceScopeCond(),
             eq(schema.nodes.id, params.nodeId),
             ...nodeAccountConds(),
           ),
@@ -194,10 +201,7 @@ export function createGraphReadPort(
 
     async traverseEdges(params: TraverseEdgesInput) {
       const direction = params.direction ?? "both";
-      const conditions = [
-        eq(schema.edges.projectId, projectId),
-        ...edgeAccountConds(),
-      ];
+      const conditions = [edgeTeamspaceScopeCond(), ...edgeAccountConds()];
 
       if (params.edgeCatalogId) {
         conditions.push(eq(schema.edges.edgeCatalogId, params.edgeCatalogId));

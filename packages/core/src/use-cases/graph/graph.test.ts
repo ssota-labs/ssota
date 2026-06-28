@@ -18,7 +18,7 @@ describe("v2.7 graph use cases", () => {
       createNode(
         { catalog, graphRead, graphWrite },
         {
-          projectId: "00000000-0000-4000-8000-000000000001",
+          teamspaceId: "00000000-0000-4000-8000-000000000001",
           catalogKey: "not_real" as "task",
           title: "x",
         },
@@ -34,7 +34,7 @@ describe("v2.7 graph use cases", () => {
       createNode(
         { catalog, graphRead, graphWrite },
         {
-          projectId: "00000000-0000-4000-8000-000000000001",
+          teamspaceId: "00000000-0000-4000-8000-000000000001",
           catalogKey: "hypothesis",
           title: "Bad",
           properties: { status: "invalid" },
@@ -43,15 +43,15 @@ describe("v2.7 graph use cases", () => {
     ).rejects.toMatchObject({ code: "VALIDATION_FAILED" });
   });
 
-  it("rejects edge across projects with PROJECT_MISMATCH", async () => {
+  it("allows cross-teamspace edge within same org store", async () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
-    const projectA = "00000000-0000-4000-8000-000000000001";
-    const projectB = "00000000-0000-4000-8000-000000000002";
+    const teamspaceA = "00000000-0000-4000-8000-000000000001";
+    const teamspaceB = "00000000-0000-4000-8000-000000000002";
 
     const source = await graphWrite.createNode({
-      projectId: projectA,
+      teamspaceId: teamspaceA,
       nodeCatalogId: "00000000-0000-4000-8000-000000000009",
       catalogKey: "initiative",
       title: "A",
@@ -59,7 +59,7 @@ describe("v2.7 graph use cases", () => {
       schemaVersion: 1,
     });
     const target = await graphWrite.createNode({
-      projectId: projectB,
+      teamspaceId: teamspaceB,
       nodeCatalogId: "00000000-0000-4000-8000-000000000010",
       catalogKey: "release",
       title: "B",
@@ -67,44 +67,44 @@ describe("v2.7 graph use cases", () => {
       schemaVersion: 1,
     });
 
-    await expect(
-      createEdge(
-        { catalog, graphRead, graphWrite },
-        {
-          projectId: projectA,
-          catalogKey: "paired_with",
-          sourceNodeId: source.id,
-          targetNodeId: target.id,
-        },
-      ),
-    ).rejects.toMatchObject({ code: "PROJECT_MISMATCH" });
+    const edge = await createEdge(
+      { catalog, graphRead, graphWrite },
+      {
+        teamspaceId: teamspaceA,
+        catalogKey: "paired_with",
+        sourceNodeId: source.id,
+        targetNodeId: target.id,
+      },
+    );
+    expect(edge.sourceNodeId).toBe(source.id);
+    expect(edge.targetNodeId).toBe(target.id);
   });
 
   it("creates initiative bundle with paired_with edge", async () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
-    const projectId = "00000000-0000-4000-8000-000000000099";
+    const teamspaceId = "00000000-0000-4000-8000-000000000099";
 
     const result = await createInitiativeBundle(
       { catalog, graphWrite },
       {
-        projectId,
+        teamspaceId,
         initiativeTitle: "Bundle initiative",
         releaseVersion: "1.0.0",
       },
     );
 
     const initiative = await graphRead.getNode({
-      projectId,
+      teamspaceId,
       nodeId: result.initiativeId,
     });
     const release = await graphRead.getNode({
-      projectId,
+      teamspaceId,
       nodeId: result.releaseId,
     });
     const edges = await graphRead.traverseEdges({
-      projectId,
+      teamspaceId,
       nodeId: result.initiativeId,
       direction: "outgoing",
       catalogKey: "paired_with",
@@ -120,9 +120,9 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
-    const projectId = "00000000-0000-4000-8000-000000000010";
+    const teamspaceId = "00000000-0000-4000-8000-000000000010";
     const base = {
-      projectId,
+      teamspaceId,
       catalogKey: "roadmap" as const,
       title: "2026 연간 로드맵",
       properties: {
@@ -152,7 +152,7 @@ describe("v2.7 graph use cases", () => {
       createNode(
         { catalog, graphRead, graphWrite },
         {
-          projectId: "00000000-0000-4000-8000-000000000011",
+          teamspaceId: "00000000-0000-4000-8000-000000000011",
           catalogKey: "roadmap",
           title: "2026 Q1",
           properties: { kind: "quarter", year: 2026, content: "# Quarter" },
@@ -165,9 +165,9 @@ describe("v2.7 graph use cases", () => {
     const store = createInMemoryGraphStore();
     const graphRead = createInMemoryGraphReadPort(store);
     const graphWrite = createInMemoryGraphWritePort(store);
-    const projectId = "00000000-0000-4000-8000-000000000012";
+    const teamspaceId = "00000000-0000-4000-8000-000000000012";
     const base = {
-      projectId,
+      teamspaceId,
       catalogKey: "roadmap" as const,
       title: "2026 Q1 분기 로드맵",
       properties: {
@@ -196,7 +196,7 @@ describe("v2.7 graph use cases", () => {
     const node = await createNode(
       { catalog, graphRead, graphWrite },
       {
-        projectId: "00000000-0000-4000-8000-000000000023",
+        teamspaceId: "00000000-0000-4000-8000-000000000023",
         catalogKey: "ui_component",
         title: "Source component",
         properties: {

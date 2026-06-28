@@ -1,17 +1,17 @@
-import type { Organization, Project } from "@ssota/core";
+import type { Organization, Teamspace } from "@ssota/core";
 import { createConsolePort } from "@ssota/adapter-postgres";
 import { getDb } from "@/lib/ports";
 
 export type ResolvedProjectAccess = {
   org: Organization;
-  project: Project;
+  project: Teamspace;
 };
 
 /** org/project slug → project row + membership check (Console과 동일 규칙). */
 export async function resolveProjectAccess(
   userId: string,
   orgSlug: string,
-  projectSlug: string,
+  teamspaceSlug: string,
 ): Promise<ResolvedProjectAccess | null> {
   const consolePort = createConsolePort(getDb());
   const org = await consolePort.getOrganizationBySlug(orgSlug);
@@ -22,7 +22,7 @@ export async function resolveProjectAccess(
     return null;
   }
 
-  const project = await consolePort.getProjectBySlug(org.id, projectSlug);
+  const project = await consolePort.getTeamspaceBySlug(org.id, teamspaceSlug);
   if (!project) return null;
 
   return { org, project };
