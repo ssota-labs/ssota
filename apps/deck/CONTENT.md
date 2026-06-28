@@ -34,7 +34,7 @@
 | 5 | Traction | 지금 지표는 매출이 아니라 검증된 실행이다 | Traction ② 80건 트랙레코드 + 핵심 지표 |
 | 6 | Unique Insight | 무인의 조건은 속도가 아니라 공통 판단 기준 | Unique Insight |
 | 7 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model |
-| 8 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market |
+| 8 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market (TAM/SAM/SOM) |
 | 9 | Team | 이 문제를 가장 오래, 가장 많이 겪었다 | Team (프로필 + 학력·수상) |
 
 > **The Ask (What we need)** 슬라이드는 덱에서 제외.
@@ -157,10 +157,23 @@
 
 ## 8. Market — "무인 에이전트 개발팀 수요가 시장을 만든다"
 
-- 가장 절실한 고객: 사람 없이 병렬 에이전트로 개발하려는 기술 창업자·소규모 팀·외주사
-- 에이전트가 늘수록 "무인 운영"이 필수가 된다
-- Wedge: Agent Development Control Plane (월 구독 + 파트너 세팅)
-- ⚠️ 채울 자리: Bottom-up 시장 규모 (타깃 팀 수 × ARPU)
+> 자율 에이전트 → AI 개발 에이전트 도구 → 무인·병렬 에이전트 개발팀 (`MarketRow`)
+
+**TAM / SAM / SOM (퍼널)**
+
+| 단계 | 규모 | 정의 |
+|---|---|---|
+| **TAM** | **$48B+** (2030, CAGR ~43%) | 자율 AI 에이전트 시장 (전 산업) |
+| **SAM** | **$36B** (2030, CAGR ~35%) | AI 코딩·소프트웨어 엔지니어링 에이전트 도구 |
+| **SOM** | **~$700M** (3–5년) | 무인·병렬 에이전트 개발팀 beachhead |
+
+- **Bottom-up (SOM):** 병렬 에이전트 개발팀 수 × Cloud $50/seat/mo — AI-네이티브 스타트업·소규모 팀·개발 외주사
+- **Why now:**
+  - 자율 에이전트 시장 CAGR ~43% (2025→2030)
+  - Gartner: 2026년 엔터프라이즈 앱 40%에 AI 에이전트 탑재
+  - 전 세계 개발자 47.2M · GitHub 518M 계정 (Octoverse 2025)
+- 출처: BCC·MarketsandMarkets(자율 에이전트), Alora·Mordor(AI 코딩), SlashData·GitHub 2025
+- ⚠️ 후속: 자체 ARPU·전환 데이터로 SOM 정교화
 
 ## 9. Team — "이 문제를 가장 오래, 가장 많이 겪었다"
 

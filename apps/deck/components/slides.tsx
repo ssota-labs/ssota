@@ -7,7 +7,6 @@ import {
   DeckSlideHeader,
   DeckFooter,
   DeckFooterSep,
-  Bullets,
   Hl,
 } from "./slide";
 import { AgentEvolutionRow } from "./agent-evolution";
@@ -15,6 +14,7 @@ import { SolutionContextRow } from "./solution-context";
 import { TractionMedAIRow, TractionTrackRecord } from "./traction";
 import { InsightContrast } from "./unique-insight";
 import { BusinessModelRow } from "./business-model";
+import { MarketRow } from "./market";
 import { TeamFounderRow } from "./team";
 
 /**
@@ -178,19 +178,10 @@ const SLIDES: SlideDef[] = [
     render: () => (
       <>
         <DeckSlideHeader section="Market">무인 에이전트 개발팀 수요가 시장을 만든다</DeckSlideHeader>
-        <Bullets
-          items={[
-            <>
-              사람 없이 병렬 에이전트로 개발하려는 <Hl>기술 창업자·소규모 팀·개발 외주사</Hl>
-            </>,
-            <>
-              에이전트가 늘수록 <Hl>무인 운영</Hl>이 선택이 아니라 필수가 된다
-            </>,
-            <span className="text-muted-foreground/50">
-              [ 채울 자리: Bottom-up 시장 규모 (타깃 팀 수 × ARPU) ]
-            </span>,
-          ]}
-        />
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          자율 에이전트 → AI 개발 에이전트 도구 → 무인·병렬 에이전트 개발팀
+        </p>
+        <MarketRow className="mt-6 min-h-0 flex-1" />
       </>
     ),
   },
