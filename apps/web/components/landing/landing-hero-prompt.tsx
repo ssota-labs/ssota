@@ -169,7 +169,7 @@ export function LandingHeroPrompt() {
     <div
       aria-label="SSOTA prompt preview"
       className={cn(
-        "group relative inline-grid max-w-[calc(100vw-3rem)] cursor-default rounded-full py-3.5 pr-14 pl-5 text-left transition-[background-color] duration-200 ease-out",
+        "group relative inline-grid max-w-[calc(100vw-3rem)] cursor-default rounded-full py-5 pr-14 pl-5 text-left transition-[background-color] duration-200 ease-out md:py-6",
         "bg-primary/15 shadow-lg shadow-black/5",
       )}
     >
@@ -195,7 +195,7 @@ export function LandingHeroPrompt() {
       </span>
       <span
         aria-hidden="true"
-        className="text-muted-foreground/70 absolute top-1/2 right-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-background/30 transition-colors group-hover:text-foreground"
+        className="text-muted-foreground/70 absolute top-1/2 right-4 flex size-9 -translate-y-1/2 items-center justify-center rounded-full bg-background/30 transition-colors group-hover:text-foreground"
       >
         <ArrowBendDownLeft className="size-4" weight="bold" />
       </span>

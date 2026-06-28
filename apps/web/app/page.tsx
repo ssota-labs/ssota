@@ -142,7 +142,7 @@ export default async function HomePage() {
         />
 
         <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
-          <div className="mx-auto flex w-full flex-col items-center gap-8">
+          <div className="mx-auto flex w-full flex-col items-center gap-12 md:gap-16">
             <div className="max-w-2xl space-y-4 text-center">
               <Badge variant="outline" className="border-border/50 bg-background/50 backdrop-blur-sm">
                 AI CPO for coding agents
@@ -158,7 +158,7 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <div className="flex min-h-14 w-full items-center justify-center">
+            <div className="flex w-full items-center justify-center pt-2 md:pt-4">
               <LandingHeroPrompt />
             </div>
           </div>
@@ -172,7 +172,7 @@ export default async function HomePage() {
               분명히 코딩 에이전트를 늘렸는데,
             </span>
             <span className="mt-4 block text-foreground">
-              왜 에이전트는 제품 맥락을 놓치고, 맞춰 주는 일이 병목이 됐죠?
+              왜 에이전트는 자꾸 틀리고, 다시 맞춰 주느라 바빠졌죠?
             </span>
           </h2>
           <LandingProblemWave />
