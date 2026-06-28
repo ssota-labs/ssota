@@ -101,6 +101,58 @@ export function StatBig({
   );
 }
 
+/* ============================ 템플릿 헬퍼 ============================ */
+
+/**
+ * 콘텐츠 자리 표시 박스 — 점선 테두리 + 라벨.
+ * YC 템플릿 원칙(Legible·Simple·Obvious)에 맞춰 "무엇을 넣을지"만 안내한다.
+ */
+export function Placeholder({
+  label,
+  hint,
+  className,
+}: {
+  label: React.ReactNode;
+  hint?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center gap-1 rounded-2xl border border-dashed border-border bg-muted/20 p-6 text-center",
+        className,
+      )}
+    >
+      <span className="text-[13px] font-medium text-muted-foreground">{label}</span>
+      {hint && <span className="max-w-[40ch] text-[11px] text-muted-foreground/70">{hint}</span>}
+    </div>
+  );
+}
+
+/** 작성 가이드 문구 — 실제 카피가 들어갈 자리에 회색 안내 텍스트. */
+export function Guide({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <p className={cn("max-w-[60ch] text-[18px] leading-relaxed text-muted-foreground/70", className)}>
+      {children}
+    </p>
+  );
+}
+
+/** 슬라이드 세트 규칙 배지 (YC: 1슬라이드 권장, 필요 시 ≤3). */
+export function SetHint({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="rounded-full border border-border bg-muted/30 px-3 py-1 text-[11px] font-medium text-muted-foreground">
+      {children}
+    </span>
+  );
+}
+
 /**
  * 슬라이드 프레임. 1280x720, 디자인 시스템 토큰 기반.
  * tone="dark" 는 `.dark` 클래스로 @ssota/ui 토큰 전체를 다크로 반전시킨다.
@@ -147,7 +199,7 @@ function SlideFooter({ n, total }: { n: number; total: number }) {
     <div className="flex items-center justify-between border-t border-border/70 px-16 py-3.5">
       <Wordmark subtle />
       <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        <span>Paxhumana · Investor Deck</span>
+        <span>Seed Deck</span>
         <span className="text-border">/</span>
         <span className="tabular">
           {String(n).padStart(2, "0")} — {String(total).padStart(2, "0")}
