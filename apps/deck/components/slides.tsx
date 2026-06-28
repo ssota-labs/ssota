@@ -2,15 +2,22 @@
 
 import * as React from "react";
 
-import { Slide, DeckTitle, DeckSectionLabel, DeckFooter, DeckFooterSep, Bullets, Hl } from "./slide";
+import {
+  Slide,
+  DeckSlideHeader,
+  DeckFooter,
+  DeckFooterSep,
+  Bullets,
+  Hl,
+} from "./slide";
 import { AgentEvolutionRow } from "./agent-evolution";
 
 /**
  * SSOTA Seed Round Pitch Deck — YC Seed 템플릿(Aaron Harris) 10슬라이드.
  * https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck
  *
- * 레이아웃은 YC 예시와 동일(제목 상단 + bullet, 다이어그램 없음),
- * 디자인 토큰만 @ssota/ui(cyan primary · Geist/Pretendard).
+ * 콘텐츠 슬라이드(2–10) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
+ * 디자인 토큰: @ssota/ui (cyan primary · Geist/Pretendard).
  *
  * North Star: 목표는 "무인(無人) 에이전트 개발팀"을 만들어내는 것.
  * 콘텐츠 SSOT: apps/deck/CONTENT.md
@@ -55,10 +62,7 @@ const SLIDES: SlideDef[] = [
     id: "problem",
     render: () => (
       <>
-        <DeckSectionLabel align="center">Problem</DeckSectionLabel>
-        <DeckTitle align="center" className="mt-2 text-[40px]">
-          무인 에이전트 개발팀은 아직 안 된다
-        </DeckTitle>
+        <DeckSlideHeader section="Problem">무인 에이전트 개발팀은 아직 안 된다</DeckSlideHeader>
         <AgentEvolutionRow className="mt-8" />
         <div className="ml-auto mt-7 max-w-[62ch] space-y-3 text-right text-[19px] leading-[1.65] text-muted-foreground">
           <p>에이전트 하나의 과업 작업은 가능합니다.</p>
@@ -79,7 +83,7 @@ const SLIDES: SlideDef[] = [
     id: "solution",
     render: () => (
       <>
-        <DeckTitle>의사결정 맥락을 그래프로 관리한다</DeckTitle>
+        <DeckSlideHeader section="Solution">의사결정 맥락을 그래프로 관리한다</DeckSlideHeader>
         <Bullets
           items={[
             <>
@@ -105,7 +109,7 @@ const SLIDES: SlideDef[] = [
     id: "traction-usage",
     render: () => (
       <>
-        <DeckTitle>우리가 직접 무인으로 돌리고 있다</DeckTitle>
+        <DeckSlideHeader section="Traction">우리가 직접 무인으로 돌리고 있다</DeckSlideHeader>
         <Bullets
           items={[
             <>
@@ -126,7 +130,7 @@ const SLIDES: SlideDef[] = [
     id: "traction-impact",
     render: () => (
       <>
-        <DeckTitle>사람 개입이 줄어든다</DeckTitle>
+        <DeckSlideHeader section="Traction">사람 개입이 줄어든다</DeckSlideHeader>
         <Bullets
           items={[
             <>
@@ -149,7 +153,9 @@ const SLIDES: SlideDef[] = [
     id: "insight",
     render: () => (
       <>
-        <DeckTitle>무인의 조건은 속도가 아니라 공통 판단 기준</DeckTitle>
+        <DeckSlideHeader section="Unique Insight">
+          무인의 조건은 속도가 아니라 공통 판단 기준
+        </DeckSlideHeader>
         <Bullets
           items={[
             <>
@@ -172,7 +178,7 @@ const SLIDES: SlideDef[] = [
     id: "business",
     render: () => (
       <>
-        <DeckTitle>맥락 그래프에서 돈을 번다</DeckTitle>
+        <DeckSlideHeader section="Business Model">맥락 그래프에서 돈을 번다</DeckSlideHeader>
         <Bullets
           items={[
             <>
@@ -195,7 +201,7 @@ const SLIDES: SlideDef[] = [
     id: "market",
     render: () => (
       <>
-        <DeckTitle>무인 에이전트 개발팀 수요가 시장을 만든다</DeckTitle>
+        <DeckSlideHeader section="Market">무인 에이전트 개발팀 수요가 시장을 만든다</DeckSlideHeader>
         <Bullets
           items={[
             <>
@@ -218,7 +224,7 @@ const SLIDES: SlideDef[] = [
     id: "team",
     render: () => (
       <>
-        <DeckTitle>Team</DeckTitle>
+        <DeckSlideHeader section="Team">Team</DeckSlideHeader>
         <Bullets
           items={[
             <>
@@ -238,7 +244,7 @@ const SLIDES: SlideDef[] = [
     id: "ask",
     render: () => (
       <>
-        <DeckTitle>What we need</DeckTitle>
+        <DeckSlideHeader section="The Ask">What we need</DeckSlideHeader>
         <Bullets
           items={[
             <>

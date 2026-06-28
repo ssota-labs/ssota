@@ -22,18 +22,20 @@
 
 ## 슬라이드 한눈에 (헤드라인 = 주장)
 
-| # | 헤드라인 | 역할 |
-|---|---|---|
-| 1 | SSOTA — Single Source of Truth for Agents | Title |
-| 2 | 무인 에이전트 개발팀은 아직 안 된다 | Problem |
-| 3 | 의사결정 맥락을 그래프로 관리한다 | Solution (어떻게) |
-| 4 | 우리가 직접 무인으로 돌리고 있다 | Traction ① 사용량 |
-| 5 | 사람 개입이 줄어든다 | Traction ② 임팩트 |
-| 6 | 무인의 조건은 속도가 아니라 공통 판단 기준 | Unique Insight |
-| 7 | 맥락 그래프에서 돈을 번다 | Business Model |
-| 8 | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market |
-| 9 | Team | Team |
-| 10 | What we need | The Ask |
+**레이아웃 (2–10):** `DeckSlideHeader` — 섹션 라벨(center, muted) + 헤드라인(center, 40px) + 본문.
+
+| # | 섹션 라벨 | 헤드라인 | 역할 |
+|---|---|---|---|
+| 1 | — | SSOTA — Single Source of Truth for Agents | Title |
+| 2 | Problem | 무인 에이전트 개발팀은 아직 안 된다 | Problem |
+| 3 | Solution | 의사결정 맥락을 그래프로 관리한다 | Solution (어떻게) |
+| 4 | Traction | 우리가 직접 무인으로 돌리고 있다 | Traction ① 사용량 |
+| 5 | Traction | 사람 개입이 줄어든다 | Traction ② 임팩트 |
+| 6 | Unique Insight | 무인의 조건은 속도가 아니라 공통 판단 기준 | Unique Insight |
+| 7 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model |
+| 8 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market |
+| 9 | Team | Team | Team |
+| 10 | The Ask | What we need | The Ask |
 
 ---
 

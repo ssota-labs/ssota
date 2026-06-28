@@ -64,6 +64,26 @@ export function DeckSectionLabel({
   );
 }
 
+/** YC 섹션 슬라이드 헤더 — muted 라벨 + 중앙 주장형 제목. */
+export function DeckSlideHeader({
+  section,
+  children,
+  className,
+}: {
+  section: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <>
+      <DeckSectionLabel align="center">{section}</DeckSectionLabel>
+      <DeckTitle align="center" className={cn("mt-2 text-[40px]", className)}>
+        {children}
+      </DeckTitle>
+    </>
+  );
+}
+
 /** 슬라이드 제목 — 결론을 말하는 주장형 헤드라인. */
 export function DeckTitle({
   children,
@@ -114,7 +134,7 @@ export function Bullets({
   className?: string;
 }) {
   return (
-    <ul className={cn("mt-14 space-y-6", className)}>
+    <ul className={cn("mt-8 space-y-5", className)}>
       {items.map((node, i) => (
         <li
           key={i}
