@@ -61,8 +61,17 @@ test.describe("landing page", () => {
     ).toBeVisible();
   });
 
-  test("landing: root redirects to /home", async ({ page }) => {
+  test("landing: root and /home both render marketing page", async ({ page }) => {
     await page.goto("/");
+    await expect(page).toHaveURL(/\/$/);
+    await expect(
+      page.getByRole("heading", {
+        name: "제품을 완벽히 아는 AI CPO",
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    await page.goto("/home");
     await expect(page).toHaveURL(/\/home$/);
     await expect(
       page.getByRole("heading", {
