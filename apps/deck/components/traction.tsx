@@ -99,6 +99,74 @@ const DOMAINS = [
   "홈페이지 개발",
 ];
 
+/** 트랙레코드 하단 작업 카드 — `WORK_CARDS`에 채워 넣기 */
+export type TrackRecordWorkCard = {
+  /** 카드 제목 (예: "MEDAI 신장암 CT 예측") */
+  title: string;
+  /** 기간 (예: "2024.03–2024.08") */
+  period?: string;
+  /** 한 줄 요약 — 무엇을 했는지 */
+  summary?: string;
+  /** SSOTA 관점 인사이트 한 줄 (선택) */
+  insight?: string;
+  /** 스크린샷 — `public/` 기준 경로 (예: "/traction/medai.png") */
+  imageSrc?: string;
+  /** 보조 태그 1–2개 (예: ["의료 AI", "PoC"]) */
+  tags?: string[];
+};
+
+/** 5슬롯 — `null`이면 dashed 플레이스홀더 */
+const WORK_CARDS: (TrackRecordWorkCard | null)[] = [null, null, null, null, null];
+
+function WorkCardPlaceholder({ index }: { index: number }) {
+  return (
+    <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-card/30 p-4 text-center">
+      <ImageIcon size={28} weight="duotone" className="text-muted-foreground/40" aria-hidden />
+      <span className="text-[13px] font-medium text-muted-foreground">프로젝트 카드 {index + 1}</span>
+      <span className="text-[11px] text-muted-foreground/55">WORK_CARDS[{index}]</span>
+    </div>
+  );
+}
+
+function WorkCard({ card }: { card: TrackRecordWorkCard }) {
+  return (
+    <div className="flex min-h-[148px] flex-col overflow-hidden rounded-xl border border-border bg-card/50">
+      {card.imageSrc ? (
+        <div className="relative h-[72px] shrink-0 overflow-hidden border-b border-border bg-muted/30">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={card.imageSrc} alt="" className="h-full w-full object-cover object-top" />
+        </div>
+      ) : null}
+      <div className="flex flex-1 flex-col p-3.5">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-[14px] font-semibold leading-tight text-foreground">{card.title}</span>
+          {card.period ? (
+            <span className="shrink-0 text-[11px] text-muted-foreground">{card.period}</span>
+          ) : null}
+        </div>
+        {card.summary ? (
+          <p className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-muted-foreground">{card.summary}</p>
+        ) : null}
+        {card.insight ? (
+          <p className="mt-1 line-clamp-1 text-[11px] font-medium text-primary/85">{card.insight}</p>
+        ) : null}
+        {card.tags && card.tags.length > 0 ? (
+          <div className="mt-auto flex flex-wrap gap-1 pt-2">
+            {card.tags.map((t) => (
+              <span
+                key={t}
+                className="rounded-full border border-border bg-background/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function MetricTile({ icon: IconComponent, value, label, sub }: (typeof METRICS)[number]) {
   return (
     <div className="flex flex-col rounded-xl border border-border bg-card/50 p-4">
@@ -135,6 +203,12 @@ export function TractionTrackRecord({ className }: { className?: string }) {
               {d}
             </span>
           ))}
+        </div>
+
+        <div className="mt-5 grid grid-cols-5 gap-3">
+          {WORK_CARDS.map((card, i) =>
+            card ? <WorkCard key={card.title} card={card} /> : <WorkCardPlaceholder key={i} index={i} />,
+          )}
         </div>
       </div>
     </div>
