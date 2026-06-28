@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import type { Icon } from "@phosphor-icons/react";
+import {
+  ArrowsClockwiseIcon,
+  FileDashedIcon,
+  TreeStructureIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -14,10 +20,6 @@ import {
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
-import {
-  LandingProblemIllustration,
-  type ProblemIllustrationVariant,
-} from "@/components/landing/landing-problem-illustrations";
 
 export const metadata: Metadata = {
   title: "SSOTA - 제품을 완벽히 아는 AI CPO",
@@ -29,28 +31,28 @@ const problemCards: ReadonlyArray<{
   title: string;
   detail: string;
   highlights: readonly string[];
-  illustration: ProblemIllustrationVariant;
+  icon: Icon;
 }> = [
   {
     title: "뭐가 맞는지 모릅니다",
     detail:
       "PRD, 슬랙, Notion, 레포… 다 있는데, 뭐가 최신인지 모릅니다. 이 작업에 뭘 참고해야 하는지도 정해져 있지 않습니다.",
     highlights: ["뭐가 최신인지", "뭘 참고해야 하는지"],
-    illustration: "sources",
+    icon: FileDashedIcon,
   },
   {
     title: "에이전트는 엇갈립니다",
     detail:
       "에이전트마다 다른 조각만 읽습니다. 그래서 비슷한 일을 시켜도 결과가 엇갈립니다.",
     highlights: ["다른 조각만", "엇갈립니다"],
-    illustration: "diverge",
+    icon: TreeStructureIcon,
   },
   {
     title: "맞춰 주는 일이 늘었습니다",
     detail:
       "프롬프트 보강, 리뷰, 재설명. 코딩 대신 의도를 맞추느라 바빠집니다.",
     highlights: ["프롬프트 보강", "의도를 맞추느라"],
-    illustration: "align",
+    icon: ArrowsClockwiseIcon,
   },
 ];
 
@@ -257,20 +259,27 @@ export default async function HomePage() {
           </h2>
 
           <div className="mt-14 grid w-full gap-4 md:mt-16 md:grid-cols-3 md:gap-5">
-            {problemCards.map((card) => (
-              <Card
-                key={card.title}
-                className="relative min-h-[15.5rem] overflow-hidden border-border/60 bg-card/50 text-left shadow-none"
-              >
-                <CardHeader className="relative z-10 gap-2 pb-28">
-                  <CardTitle className="text-base">{card.title}</CardTitle>
-                  <CardDescription className="text-sm leading-6">
-                    {renderHighlightedDetail(card.detail, card.highlights)}
-                  </CardDescription>
-                </CardHeader>
-                <LandingProblemIllustration variant={card.illustration} />
-              </Card>
-            ))}
+            {problemCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <Card
+                  key={card.title}
+                  className="border-border/60 bg-card/50 text-left shadow-none"
+                >
+                  <CardHeader className="gap-3">
+                    <Icon
+                      className="size-7 text-muted-foreground"
+                      weight="light"
+                      aria-hidden
+                    />
+                    <CardTitle className="text-base">{card.title}</CardTitle>
+                    <CardDescription className="text-sm leading-6">
+                      {renderHighlightedDetail(card.detail, card.highlights)}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
