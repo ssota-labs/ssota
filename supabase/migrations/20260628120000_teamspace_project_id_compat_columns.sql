@@ -73,7 +73,18 @@ BEGIN
       tbl
     );
 
-    IF tbl = 'schedules' THEN
+    -- Restore indexes old app builds expect on project_id (mirrors pre-rename names).
+    IF tbl = 'nodes' THEN
+      EXECUTE 'CREATE INDEX IF NOT EXISTS nodes_project_id_idx ON nodes (project_id)';
+      EXECUTE 'CREATE INDEX IF NOT EXISTS nodes_project_node_catalog_id_idx ON nodes (project_id, node_catalog_id)';
+    ELSIF tbl = 'edges' THEN
+      EXECUTE 'CREATE INDEX IF NOT EXISTS edges_project_id_idx ON edges (project_id)';
+      EXECUTE 'CREATE INDEX IF NOT EXISTS edges_project_edge_catalog_id_idx ON edges (project_id, edge_catalog_id)';
+    ELSIF tbl = 'pages' THEN
+      EXECUTE 'CREATE INDEX IF NOT EXISTS pages_project_id_idx ON pages (project_id)';
+    ELSIF tbl = 'tasks' THEN
+      EXECUTE 'CREATE INDEX IF NOT EXISTS tasks_project_id_idx ON tasks (project_id)';
+    ELSIF tbl = 'schedules' THEN
       EXECUTE 'CREATE INDEX IF NOT EXISTS schedules_project_id_idx ON schedules (project_id)';
     END IF;
   END LOOP;
