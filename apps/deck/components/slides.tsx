@@ -61,7 +61,7 @@ const SLIDES: SlideDef[] = [
         <div className="flex items-center gap-4 text-[14px] text-muted-foreground">
           <span className="font-medium text-foreground">연주환 · Paxhumana</span>
           <span className="text-border">|</span>
-          <span>prime@medai.im</span>
+          <span>joo@ssota.ai</span>
           <span className="text-border">|</span>
           <span>2026</span>
         </div>
@@ -586,7 +586,7 @@ const SLIDES: SlideDef[] = [
         </div>
         <div className="flex items-center justify-between border-t border-border pt-5 text-[14px]">
           <span className="font-medium">The AI CPO for your Agent Team</span>
-          <span className="text-muted-foreground">prime@medai.im · Paxhumana</span>
+          <span className="text-muted-foreground">joo@ssota.ai · Paxhumana</span>
         </div>
       </div>
     ),

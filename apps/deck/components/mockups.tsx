@@ -134,7 +134,7 @@ export function ConsoleWorkspace() {
           <div className="flex h-6 w-6 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold">
             JY
           </div>
-          <span className="truncate text-[11px] text-muted-foreground">prime@medai.im</span>
+          <span className="truncate text-[11px] text-muted-foreground">joo@ssota.ai</span>
         </div>
       </aside>
 
