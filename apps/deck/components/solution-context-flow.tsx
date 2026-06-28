@@ -23,9 +23,9 @@ type ContextNodeData = {
 };
 
 const PHASE_LABELS = [
-  { label: "방향", x: 0, width: 320 },
-  { label: "실행", x: 320, width: 220 },
-  { label: "검증·배포", x: 540, width: 240 },
+  { label: "방향", flex: 3 },
+  { label: "실행", flex: 2 },
+  { label: "검증·배포", flex: 2 },
 ] as const;
 
 function ContextNode({ data }: NodeProps) {
@@ -143,11 +143,11 @@ export function SolutionContextFlow({ className }: { className?: string }) {
   const [edges] = React.useState(INITIAL_EDGES);
 
   return (
-    <div className={cn("deck-context-flow", className)}>
-      <div className="relative h-[168px] w-full rounded-xl border border-border bg-card/30">
+    <div className={cn("deck-context-flow flex h-full min-h-[300px] flex-col", className)}>
+      <div className="relative min-h-0 flex-1 rounded-xl border border-border bg-card/30">
         <div className="pointer-events-none absolute inset-x-4 top-2.5 z-10 flex text-[9px] font-medium uppercase tracking-wider text-muted-foreground/70">
           {PHASE_LABELS.map((phase) => (
-            <span key={phase.label} style={{ width: phase.width }} className="text-center">
+            <span key={phase.label} style={{ flex: phase.flex }} className="text-center">
               {phase.label}
             </span>
           ))}

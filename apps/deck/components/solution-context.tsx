@@ -43,7 +43,7 @@ function ProductStackCard({
   );
 }
 
-/** 맥락 그래프(상단) / 결론(좌) + 4구성 2×2(우) 하단 행. */
+/** 맥락 그래프(좌 50%) / 4구성 2×2 + 결론(우 50% 스택). */
 export function SolutionContextRow({
   className,
   conclusion,
@@ -52,19 +52,19 @@ export function SolutionContextRow({
   conclusion: React.ReactNode;
 }) {
   return (
-    <div className={cn("flex flex-col gap-6", className)}>
-      <SolutionContextFlow />
+    <div className={cn("flex min-h-0 flex-1 items-stretch gap-7", className)}>
+      <SolutionContextFlow className="h-full w-1/2 shrink-0" />
 
-      <div className="flex items-center gap-8">
-        <div className="min-w-0 flex-1 space-y-2 text-[16px] leading-[1.6] text-muted-foreground">
-          {conclusion}
-        </div>
-        <div className="grid w-[min(100%,380px)] shrink-0 grid-cols-2 gap-2.5">
+      <aside className="flex w-1/2 shrink-0 flex-col justify-center gap-5">
+        <div className="grid grid-cols-2 gap-2.5">
           {PRODUCT_STACK.map((item) => (
             <ProductStackCard key={item.en} {...item} />
           ))}
         </div>
-      </div>
+        <div className="space-y-2 text-[15px] leading-[1.55] text-muted-foreground">
+          {conclusion}
+        </div>
+      </aside>
     </div>
   );
 }
