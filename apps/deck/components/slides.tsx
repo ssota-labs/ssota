@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { Slide, DeckTitle, DeckFooter, DeckFooterSep, Bullets, Hl } from "./slide";
+import { AgentEvolutionRow } from "./agent-evolution";
 
 /**
  * SSOTA Seed Round Pitch Deck — YC Seed 템플릿(Aaron Harris) 10슬라이드.
@@ -54,20 +55,12 @@ const SLIDES: SlideDef[] = [
     id: "problem",
     render: () => (
       <>
-        <DeckTitle>무인 에이전트 개발팀은 아직 안 된다</DeckTitle>
-        <Bullets
-          items={[
-            <>
-              코딩 에이전트를 팀으로 병렬로 돌려 <Hl>사람 없이</Hl> 개발하려는 순간, 판단이 어긋난다
-            </>,
-            <>
-              무엇을·왜·어떤 최신 기준으로 가져올지 정해진 게 없어 <Hl>잘못된 의사결정</Hl>이 쌓인다
-            </>,
-            <>
-              결국 사람이 매번 다시 개입 → 무인이 안 되고, <Hl>사람의 시간에 묶인다</Hl>
-            </>,
-          ]}
-        />
+        <DeckTitle className="text-[40px]">무인 에이전트 개발팀은 아직 안 된다</DeckTitle>
+        <AgentEvolutionRow className="mt-8" />
+        <p className="mt-7 text-center text-[21px] leading-relaxed text-muted-foreground">
+          에이전트 하나의 과업 루프는 된다.{" "}
+          <Hl>팀으로 병렬</Hl>하면 판단이 갈라지고, 사람이 다시 끼어든다.
+        </p>
       </>
     ),
   },
