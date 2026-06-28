@@ -26,6 +26,13 @@ test.describe("landing page", () => {
     await expect(page.getByRole("heading", { name: "AI 시대의 새로운 제품 개발 방식." })).toBeVisible();
     await expect(page.getByRole("tab", { name: "제품 맥락" })).toBeVisible();
 
+    // 제품 맥락 패널은 UI 카탈로그 FlowCanvas로 제품 맥락 그래프를 렌더한다.
+    await page.getByRole("tab", { name: "제품 맥락" }).click();
+    await expect(page.getByText("context graph")).toBeVisible();
+    await expect(
+      page.locator('[data-testid="dynamic-page-renderer"]').first(),
+    ).toBeVisible();
+
     await page.getByRole("tab", { name: "MCP 연결" }).click();
     await expect(
       page.getByRole("heading", {
