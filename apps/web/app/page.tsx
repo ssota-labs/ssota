@@ -122,18 +122,19 @@ export default async function HomePage() {
       </header>
 
       <section className="relative isolate overflow-hidden border-b">
-        <Image
-          src="/landing/hero-background.png"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-          aria-hidden
-        />
+        <div className="absolute inset-0 overflow-hidden" aria-hidden>
+          <Image
+            src="/landing/hero-background.png"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="scale-105 object-cover object-center blur-sm"
+          />
+        </div>
         <div
           aria-hidden
-          className="absolute inset-0 bg-background/40"
+          className="absolute inset-0 bg-background/40 backdrop-blur-sm"
         />
         <div
           aria-hidden
