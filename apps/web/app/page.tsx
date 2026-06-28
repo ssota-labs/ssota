@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -80,7 +81,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
-      <header className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-border/30 bg-background/20 backdrop-blur-xl supports-backdrop-filter:bg-background/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link href="/" className="text-lg font-semibold tracking-tight">
             SSOTA
@@ -116,11 +117,29 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <section className="relative border-b">
-        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
+      <section className="relative isolate overflow-hidden border-b">
+        <Image
+          src="/landing/hero-background.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+          aria-hidden
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-background/50 supports-backdrop-filter:backdrop-blur-[2px]"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/55 to-background"
+        />
+
+        <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
           <div className="mx-auto flex w-full flex-col items-center gap-8">
             <div className="max-w-2xl space-y-4 text-center">
-              <Badge variant="outline" className="bg-background">
+              <Badge variant="outline" className="border-border/50 bg-background/50 backdrop-blur-sm">
                 AI CPO for coding agents
               </Badge>
               <div className="space-y-4">
