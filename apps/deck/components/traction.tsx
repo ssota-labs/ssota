@@ -19,6 +19,9 @@ import { Hl } from "./slide";
 
 const MEDAI_ARTIFACTS = ["요구사항", "모델·제품 스펙", "개발 태스크", "테스트 기준", "의사결정 기록"];
 
+/** MedAI 우측 스크린샷 — `apps/deck/public/traction/medai-screenshot.png` 등 */
+const MEDAI_SCREENSHOT_SRC: string | undefined = undefined;
+
 function TimelineStep({ date, label, accent }: { date: string; label: string; accent?: boolean }) {
   return (
     <div className="flex flex-col">
@@ -64,15 +67,28 @@ export function TractionMedAIRow({ className }: { className?: string }) {
         </p>
       </div>
 
-      {/* 우: MedAI 실제 화면 자리 (이미지 비움 — 사용자 입력) */}
+      {/* 우: MedAI 실제 화면 */}
       <div className="flex w-1/2 shrink-0 flex-col">
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card/30 p-6 text-center">
-          <ImageIcon size={40} weight="duotone" className="text-muted-foreground/45" aria-hidden />
-          <span className="text-[14px] font-medium text-muted-foreground">
-            MedAI 신장종양진단 AI — 실제 화면
-          </span>
-          <span className="text-[12px] text-muted-foreground/55">스크린샷 추가 예정</span>
-        </div>
+        {MEDAI_SCREENSHOT_SRC ? (
+          <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card/50">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={MEDAI_SCREENSHOT_SRC}
+              alt=""
+              className="h-full w-full object-cover object-top"
+            />
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card/30 p-6 text-center">
+            <ImageIcon size={40} weight="duotone" className="text-muted-foreground/45" aria-hidden />
+            <span className="text-[14px] font-medium text-muted-foreground">
+              MedAI 신장종양진단 AI — 실제 화면
+            </span>
+            <span className="text-[12px] text-muted-foreground/55">
+              public/traction/medai-screenshot.png → MEDAI_SCREENSHOT_SRC
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

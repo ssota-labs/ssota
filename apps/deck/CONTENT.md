@@ -1,6 +1,7 @@
 # SSOTA Seed Deck — 콘텐츠 정리
 
-> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **9슬라이드** (The Ask 제외)
+> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **9슬라이드** (The Ask 제외)  
+> **이미지 assets:** [IMAGES.md](./IMAGES.md)
 > 디자인 원칙(Kevin Hale): Legible · Simple · Obvious — 큰 글씨, 1슬라이드 1아이디어, **헤드라인은 결론(주장형)·마침표로 끝** (`DeckTitle`이 자동 보정)
 
 ## 0. 한 줄 정의 / North Star
@@ -103,7 +104,7 @@
 - 타임라인: **2026.04 MedAI 개발팀 PoC → 2026.06.10 오픈소스 제품화**
 - MedAI(신장종양진단 AI 소프트웨어 개발팀)와 별도 프로젝트 — 요구사항·모델/제품 스펙·개발 태스크·테스트 기준·의사결정 기록을 **어떤 순서·구조로 에이전트에 전달**할지 검증
 - 현장에서 검증한 **에이전트 팀 네이티브 워크플로우**를 그대로 오픈소스 제품으로 옮기고 있습니다:
-- 🖼️ **MedAI 실제 화면 자리 (스크린샷 추가 예정 — 사용자 입력)** — `TractionMedAIRow` 우측 dashed 박스
+- 🖼️ **MedAI 실제 화면** — `traction.tsx` → `MEDAI_SCREENSHOT_SRC` ([IMAGES.md](./IMAGES.md))
 
 ## 5. Traction ② — "지금 지표는 매출이 아니라 검증된 실행이다" (트랙레코드 + 지표)
 
@@ -173,12 +174,13 @@
   - 2024 SW중심대학 디지털 경진대회 AI서비스 **최우수상** — 코히 코딩교육 에이전트
   - 서연고카포 개발동아리 연합 AI 경진대회 **대상** — Fynd 여행 비서 에이전트
 - **경력:** 크날 PM&개발 · 노벨라 스튜디오 · MedAI PoC
-- 🖼️ **프로필 사진** — `team.tsx` → `FOUNDER_IMAGE_SRC` (`public/team/profile.jpg`)
+- 🖼️ **프로필 사진** — `team.tsx` → `FOUNDER_IMAGE_SRC` ([IMAGES.md](./IMAGES.md))
 
 ---
 
 ## 채울 자리 (사용자 입력 필요)
 
+> 이미지 넣는 방법 전체: **[IMAGES.md](./IMAGES.md)**
+
 1. Bottom-up 시장 규모 (타깃 팀 수 × ARPU)
-2. **Traction ① MedAI 실제 화면 스크린샷** (slide 4 우측 dashed 박스)
-3. **Team 프로필 사진** (`public/team/profile.jpg` → `FOUNDER_IMAGE_SRC`)
+2. Traction ① MedAI 스크린샷 · ⑤ 작업 카드 · Team 프로필 (경로·상수는 IMAGES.md)
