@@ -132,26 +132,6 @@ export default async function HomePage() {
                 </p>
               </div>
             </div>
-
-            <div className="flex flex-col justify-center gap-3 sm:flex-row">
-              <Button
-                render={<Link href={appHref} />}
-                size="lg"
-                nativeButton={false}
-                className="h-10 px-5 text-sm"
-              >
-                {user ? "Open console" : "제품 맥락 정리하기"}
-              </Button>
-              <Button
-                render={<a href="#loop" />}
-                variant="outline"
-                size="lg"
-                nativeButton={false}
-                className="h-10 px-5 text-sm"
-              >
-                See the loop
-              </Button>
-            </div>
           </div>
         </div>
       </section>
