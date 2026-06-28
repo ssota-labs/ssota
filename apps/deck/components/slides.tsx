@@ -15,13 +15,14 @@ import { TractionMedAIRow, TractionTrackRecord } from "./traction";
 import { InsightContrast } from "./unique-insight";
 import { BusinessModelRow } from "./business-model";
 import { MarketRow } from "./market";
+import { RoadmapRow } from "./roadmap";
 import { TeamFounderRow } from "./team";
 
 /**
- * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 9슬라이드.
+ * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 10슬라이드.
  * https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck
  *
- * 콘텐츠 슬라이드(2–9) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
+ * 콘텐츠 슬라이드(2–10) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
  * 디자인 토큰: @ssota/ui (cyan primary · Geist/Pretendard).
  *
  * North Star: 목표는 "무인(無人) 에이전트 개발팀"을 만들어내는 것.
@@ -186,7 +187,21 @@ const SLIDES: SlideDef[] = [
     ),
   },
 
-  /* 09 — Team */
+  /* 09 — Roadmap */
+  {
+    id: "roadmap",
+    render: () => (
+      <>
+        <DeckSlideHeader section="Roadmap">소프트웨어 개발에서 시작해 모든 지식노동으로</DeckSlideHeader>
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          SW 개발 전 과정 자율운영 → 타 도메인 확장 → 멀티테넌트 에이전트 마켓
+        </p>
+        <RoadmapRow className="mt-7 min-h-0 flex-1" />
+      </>
+    ),
+  },
+
+  /* 10 — Team */
   {
     id: "team",
     render: () => (

@@ -1,6 +1,6 @@
 # SSOTA Seed Deck — 콘텐츠 정리
 
-> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **9슬라이드** (The Ask 제외)  
+> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **10슬라이드** (The Ask 제외)  
 > **이미지 assets:** [IMAGES.md](./IMAGES.md)
 > 디자인 원칙(Kevin Hale): Legible · Simple · Obvious — 큰 글씨, 1슬라이드 1아이디어, **헤드라인은 결론(주장형)·마침표로 끝** (`DeckTitle`이 자동 보정)
 
@@ -23,7 +23,7 @@
 
 ## 슬라이드 한눈에 (헤드라인 = 주장)
 
-**레이아웃 (2–9):** `DeckSlideHeader` — 섹션 라벨(center, muted) + 헤드라인(center, 40px) + 본문.
+**레이아웃 (2–10):** `DeckSlideHeader` — 섹션 라벨(center, muted) + 헤드라인(center, 40px) + 본문.
 
 | # | 섹션 라벨 | 헤드라인 | 역할 |
 |---|---|---|---|
@@ -35,7 +35,8 @@
 | 6 | Unique Insight | 무인의 조건은 속도가 아니라 공통 판단 기준 | Unique Insight |
 | 7 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model (OSS + SaaS + Enterprise) |
 | 8 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market (TAM/SAM/SOM) |
-| 9 | Team | 이 문제를 오래, 많이 겪었다 | Team (프로필 + 학력·수상) |
+| 9 | Roadmap | 소프트웨어 개발에서 시작해 모든 지식노동으로 | Roadmap (도메인 확장 3단계) |
+| 10 | Team | 이 문제를 오래, 많이 겪었다 | Team (프로필 + 학력·수상) |
 
 > **The Ask (What we need)** 슬라이드는 덱에서 제외.
 
@@ -178,7 +179,22 @@
 - 출처: BCC·MarketsandMarkets(자율 에이전트), Alora·Mordor(AI 코딩), SlashData·GitHub 2025
 - ⚠️ 후속: 자체 ARPU·전환 데이터로 SOM 정교화
 
-## 9. Team — "이 문제를 오래, 많이 겪었다"
+## 9. Roadmap — "소프트웨어 개발에서 시작해 모든 지식노동으로"
+
+> SW 개발 전 과정 자율운영 → 타 도메인 확장 → 멀티테넌트 에이전트 마켓 (`RoadmapRow`)
+
+**도메인 확장 3단계**
+
+| 단계 | 시점 | 범위 | 핵심 |
+|---|---|---|---|
+| **① SW 개발 전 과정 자율운영** | 2026 H2 | 소프트웨어 개발 도메인 | Q3 클라우드 SaaS 출시 · Q4 자체 에이전트 + 도메인 템플릿 |
+| **② 타 도메인으로 확장** | 2027 H1 | 지식노동 전반 | HR·마케팅·콘텐츠·교육·전문직 + 자체 에이전트 온전 구축 |
+| **③ 멀티테넌트 에이전트 마켓** | 이후 | 에이전트 생태계 | 검증된 워크플로우·에이전트 거래, 운영 표준 레이어 |
+
+- **North Star 지표:** 자율 운영 중인 **활성 워크스페이스 수**
+- 내러티브: SW 개발 도메인에서 무인 운영을 먼저 완성하고, 같은 맥락 그래프 구조를 타 지식노동 도메인으로 확장.
+
+## 10. Team — "이 문제를 오래, 많이 겪었다"
 
 > 창업·AI 경진대회부터 80건 실전 개발까지 — 같은 병목을 반복 확인했다.
 
