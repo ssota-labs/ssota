@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/auth/provider";
 
-/** When true, only `/` and beta signup API are public; other routes redirect home. */
+/** When true, only `/`, `/home`, and beta signup API are public; other routes redirect home. */
 function isMarketingOnly(): boolean {
   return process.env.MARKETING_ONLY === "true";
 }
@@ -18,7 +18,7 @@ function marketingGateResponse(request: NextRequest): NextResponse | null {
   }
 
   const { pathname } = request.nextUrl;
-  if (pathname === "/") {
+  if (pathname === "/" || pathname === "/home") {
     return null;
   }
 
@@ -35,7 +35,7 @@ function marketingGateResponse(request: NextRequest): NextResponse | null {
   }
 
   const url = request.nextUrl.clone();
-  url.pathname = "/";
+  url.pathname = "/home";
   url.search = "";
   return NextResponse.redirect(url);
 }
@@ -64,6 +64,7 @@ const GLOBAL_PREFIXES = [
   "api",
   "app",
   "auth",
+  "home",
   "login",
   "oauth",
   "onboarding",

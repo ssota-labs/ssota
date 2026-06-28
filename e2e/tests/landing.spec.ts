@@ -4,7 +4,7 @@ test.describe("landing page", () => {
   test("landing: renders hero, narrative sections, pricing, and FAQ", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/home");
 
     await expect(page.locator("main.dark")).toBeVisible();
     await expect(
@@ -61,8 +61,19 @@ test.describe("landing page", () => {
     ).toBeVisible();
   });
 
-  test("landing: beta signup dialog saves email", async ({ page }) => {
+  test("landing: root redirects to /home", async ({ page }) => {
     await page.goto("/");
+    await expect(page).toHaveURL(/\/home$/);
+    await expect(
+      page.getByRole("heading", {
+        name: "제품을 완벽히 아는 AI CPO",
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
+
+  test("landing: beta signup dialog saves email", async ({ page }) => {
+    await page.goto("/home");
 
     const uniqueEmail = `beta-e2e-${Date.now()}@ssota.test`;
 
@@ -86,7 +97,7 @@ test.describe("landing page", () => {
   test("landing: primary CTA sends unauthenticated visitors to login", async ({
     page,
   }) => {
-    await page.goto("/");
+    await page.goto("/home");
 
     await page
       .locator("header")

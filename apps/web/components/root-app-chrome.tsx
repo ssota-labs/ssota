@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 
 /** Routes that render without guest header / padded main (e.g. bare embeds). */
-const BARE_ROUTES = ["/"];
+const BARE_ROUTES = ["/", "/home"];
 const BARE_ROUTE_PREFIXES: string[] = [];
 
 type RootAppChromeProps = {
@@ -33,7 +33,7 @@ export function RootAppChrome({
       {!user ? (
         <header className="border-b bg-card">
           <div className="flex items-center justify-between px-6 py-4">
-            <Link href="/" className="text-lg font-semibold">
+            <Link href="/home" className="text-lg font-semibold">
               SSOTA
             </Link>
             <Button
