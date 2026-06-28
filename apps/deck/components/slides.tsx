@@ -206,7 +206,6 @@ const SLIDES: SlideDef[] = [
               <Hl>연주환 · Paxhumana</Hl> — 2023–2026 약 80건 개발에서 “사람 시간에 묶이는” 문제를
               직접 반복 경험
             </>,
-            <>축구선수 → 엔지니어 (화랑대기 우승·MVP, 전국소년체전 우승)</>,
             <span className="text-muted-foreground/50">[ 확인: 공동창업자 · 합류 예정 ]</span>,
           ]}
         />
