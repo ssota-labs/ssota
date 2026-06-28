@@ -267,7 +267,7 @@ export default async function HomePage() {
                 >
                   <CardHeader className="gap-3">
                     <Icon
-                      className="size-7 text-muted-foreground"
+                      className="mb-4 size-7 text-muted-foreground"
                       weight="light"
                       aria-hidden
                     />
