@@ -60,10 +60,16 @@ const SLIDES: SlideDef[] = [
           무인 에이전트 개발팀은 아직 안 된다
         </DeckTitle>
         <AgentEvolutionRow className="mt-8" />
-        <p className="mt-7 text-center text-[21px] leading-relaxed text-muted-foreground">
-          에이전트 하나의 과업 루프는 된다.{" "}
-          <Hl>팀으로 병렬</Hl>하면 판단이 갈라지고, 사람이 다시 끼어든다.
-        </p>
+        <div className="mt-7 max-w-[62ch] space-y-3 text-[19px] leading-[1.65] text-muted-foreground">
+          <p>에이전트 하나의 과업 작업은 가능합니다.</p>
+          <p>
+            그러나 <Hl>팀으로 병렬</Hl> 실행하면 판단이 갈라지고, 제품의 의도와 멀어지게 됩니다.
+          </p>
+          <p>
+            다시 사람의 개입이 들어가게 되고, 에이전트를 사람이 직접 관리하게 됩니다. 즉,{" "}
+            <Hl>사람이 병목</Hl>이 됩니다.
+          </p>
+        </div>
       </>
     ),
   },
