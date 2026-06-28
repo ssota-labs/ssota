@@ -66,7 +66,7 @@ const NAV = [
   { icon: FileTextIcon, label: "Pages", active: true },
   { icon: KanbanIcon, label: "Tasks" },
   { icon: ChatCircleDotsIcon, label: "Chat" },
-  { icon: PlugsConnectedIcon, label: "Connections" },
+  { icon: PlugsConnectedIcon, label: "Connectors" },
   { icon: ClockCountdownIcon, label: "Schedules" },
 ];
 
@@ -473,7 +473,7 @@ export function ChatConnections() {
       {/* Connections (MCP) */}
       <aside className="flex w-72 shrink-0 flex-col bg-muted/30">
         <div className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          MCP Connections
+          MCP Connectors
         </div>
         <div className="space-y-2 px-3">
           {[

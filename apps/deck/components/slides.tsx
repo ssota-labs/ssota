@@ -269,7 +269,7 @@ const SLIDES: SlideDef[] = [
     id: "p-console",
     title: "Workspace Console",
     caption: "워크플로우 트리 · 문서 에디터 · 의사결정 그래프 레일 — 사람은 검토하고 승인한다.",
-    url: "app.ssota.dev/ssota-labs/ssota-dev/pm/onboarding-prd",
+    url: "app.ssota.dev/ssota-labs/ssota-dev/p/onboarding-prd",
     screen: <ConsoleWorkspace />,
   }),
 
