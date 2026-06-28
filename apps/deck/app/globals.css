@@ -9,7 +9,8 @@
 :root {
   --deck-w: 1280px;
   --deck-h: 720px;
-  --deck-stat-accent: oklch(0.82 0.14 215);
+  /* 다크 슬라이드: brand primary(223°)와 동일 chroma, L만 0.45→0.62 */
+  --deck-stat-accent: oklch(0.62 0.105 223.128);
 }
 
 html,
