@@ -44,7 +44,7 @@ apps/deck/public/
 | 4 | Traction ① MedAI | **있음** | `TractionMedAIRow` | `traction.tsx` | `MEDAI_SCREENSHOT_SRC` |
 | 5 | Traction ② 트랙레코드 | **있음 (5슬롯)** | `TractionTrackRecord` | `traction.tsx` | `WORK_CARDS[n].imageSrc` |
 | 6 | Unique Insight | 없음 | `InsightContrast` | `unique-insight.tsx` | 아이콘만 |
-| 7 | Moat | 없음 | `PageRenderRow` | `page-render.tsx` | json-render 파이프라인 + 강점 (텍스트) |
+| 7 | Moat | 없음 | `PageRenderRow` | `page-render.tsx` | 팀별 개발 워크플로우 + 맞춤형 강점 (텍스트) |
 | 8 | Business Model | 없음 | `BusinessModelRow` | `business-model.tsx` | 3티어 카드 + 클라우드 요금표 |
 | 9 | Market | 없음 | `MarketRow` | `market.tsx` | TAM/SAM/SOM 퍼널 (텍스트) |
 | 10 | Roadmap | 없음 | `RoadmapRow` | `roadmap.tsx` | 3단계 확장 카드 (텍스트) |

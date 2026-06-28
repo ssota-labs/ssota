@@ -160,14 +160,14 @@ const SLIDES: SlideDef[] = [
     ),
   },
 
-  /* 07 — Moat (페이지 JSON 렌더) */
+  /* 07 — Moat (개발 도메인 맞춤형 워크플로우) */
   {
     id: "moat",
     render: () => (
       <>
-        <DeckSlideHeader section="Moat">에이전트가 화면까지 조립한다</DeckSlideHeader>
+        <DeckSlideHeader section="Moat">개발 팀마다 워크플로우가 다르다</DeckSlideHeader>
         <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
-          페이지를 JSON 스펙으로 동적 렌더 — SaaS의 UX/UI 레이어를 그래프가 대체한다.
+          요구사항·설계·테스트·배포 순서가 팀마다 다르다 — 고정 SaaS 화면으로는 맞출 수 없다.
         </p>
         <PageRenderRow className="mt-6" />
       </>
