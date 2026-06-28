@@ -57,10 +57,8 @@ function buildFeaturePanels(connectors: ConnectorDef[]): readonly FeaturePanel[]
         "리서치 → 기획 → 설계 → 개발 → 배포로 이어지는 과정에서 각 단계의 맥락을 다음 단계의 입력으로 넘깁니다.",
       icon: TreeStructureIcon,
       visual: (
-        <div className="h-full">
-          <VisualFrame label="data model">
-            <LandingWorkflowSidebarPreview />
-          </VisualFrame>
+        <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-xl">
+          <LandingWorkflowSidebarPreview />
         </div>
       ),
     },
