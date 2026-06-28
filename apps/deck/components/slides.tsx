@@ -13,6 +13,7 @@ import {
 import { AgentEvolutionRow } from "./agent-evolution";
 import { SolutionContextRow } from "./solution-context";
 import { TractionMedAIRow, TractionTrackRecord } from "./traction";
+import { InsightContrast } from "./unique-insight";
 
 /**
  * SSOTA Seed Round Pitch Deck — YC Seed 템플릿(Aaron Harris) 10슬라이드.
@@ -147,19 +148,10 @@ const SLIDES: SlideDef[] = [
         <DeckSlideHeader section="Unique Insight">
           무인의 조건은 속도가 아니라 공통 판단 기준
         </DeckSlideHeader>
-        <Bullets
-          items={[
-            <>
-              더 빨리 짜는 게 아니라, <Hl>같은 기준으로 판단</Hl>해야 사람이 빠질 수 있다
-            </>,
-            <>
-              그 기준은 흩어진 문서가 아니라 <Hl>관계·우선순위·최신성을 가진 그래프</Hl>여야 한다
-            </>,
-            <>
-              이 문제는 사람이 곁에 있을 땐 안 보이고, <Hl>무인 병렬일 때만</Hl> 드러난다
-            </>,
-          ]}
-        />
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          같은 기준으로 판단해야 사람이 빠질 수 있다.
+        </p>
+        <InsightContrast className="mt-8" />
       </>
     ),
   },
