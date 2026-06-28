@@ -172,7 +172,16 @@ export default async function HomePage() {
     <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <header className="sticky top-0 z-20 border-b border-border/30 bg-background/20 backdrop-blur-xl supports-backdrop-filter:bg-background/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link href="/" className="text-lg font-semibold tracking-tight">
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 text-lg font-semibold tracking-tight"
+          >
+            <span
+              className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md"
+              aria-hidden
+            >
+              {/* 로고: public/landing/logo.svg 등으로 교체 */}
+            </span>
             SSOTA
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
