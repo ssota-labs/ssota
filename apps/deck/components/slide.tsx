@@ -53,7 +53,7 @@ export function SlideHeading({
   return (
     <h2
       className={cn(
-        "text-pretty text-[44px] font-semibold leading-[1.05] tracking-tight",
+        "text-pretty text-[44px] font-semibold leading-[1.2] tracking-tight",
         className,
       )}
     >
