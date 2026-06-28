@@ -101,3 +101,18 @@ body {
 .tabular {
   font-variant-numeric: tabular-nums;
 }
+
+/* Solution 슬라이드 — 정적 react-flow 그래프 */
+.deck-context-flow .react-flow__pane {
+  cursor: default;
+}
+.deck-context-flow .react-flow__controls,
+.deck-context-flow .react-flow__attribution {
+  display: none;
+}
+.deck-context-flow .react-flow__node {
+  pointer-events: none;
+}
+.deck-context-flow .react-flow__edge {
+  pointer-events: none;
+}

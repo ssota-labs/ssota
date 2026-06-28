@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  ArrowRightIcon,
   BrowserIcon,
   FlowArrowIcon,
   GraphIcon,
@@ -10,22 +9,7 @@ import {
   type Icon,
 } from "@phosphor-icons/react";
 import { cn } from "@ssota/ui/lib/utils";
-
-const CHAIN_NODES = [
-  "OKR",
-  "로드맵",
-  "리서치",
-  "이니셔티브",
-  "설계결정",
-  "테스트",
-  "배포",
-] as const;
-
-const PHASES = [
-  { label: "방향", span: 3 },
-  { label: "실행", span: 2 },
-  { label: "검증·배포", span: 2 },
-] as const;
+import { SolutionContextFlow } from "./solution-context-flow";
 
 const PRODUCT_STACK: {
   ko: string;
@@ -38,22 +22,6 @@ const PRODUCT_STACK: {
   { ko: "MCP", en: "Read/Write", cap: "체인을 항상 최신", icon: PlugsConnectedIcon },
   { ko: "콘솔", en: "Console", cap: "방향·승인만", icon: BrowserIcon },
 ];
-
-function ChainArrow() {
-  return (
-    <div className="flex shrink-0 items-center self-center px-0.5 text-primary/35" aria-hidden>
-      <ArrowRightIcon size={14} weight="bold" />
-    </div>
-  );
-}
-
-function ChainNode({ label }: { label: string }) {
-  return (
-    <div className="min-w-0 flex-1 rounded-md border border-primary/20 bg-primary/5 px-1 py-2 text-center text-[10px] font-medium leading-tight text-foreground">
-      {label}
-    </div>
-  );
-}
 
 function ProductStackCard({
   ko,
@@ -75,7 +43,7 @@ function ProductStackCard({
   );
 }
 
-/** OKR → 배포 체인 + 에이전트(상단) / 결론(좌) + 4구성 2×2(우) 하단 행. */
+/** 맥락 그래프(상단) / 결론(좌) + 4구성 2×2(우) 하단 행. */
 export function SolutionContextRow({
   className,
   conclusion,
@@ -85,58 +53,8 @@ export function SolutionContextRow({
 }) {
   return (
     <div className={cn("flex flex-col gap-6", className)}>
-      {/* 상단: 맥락 체인 + 에이전트 팀 */}
-      <div className="min-w-0">
-        <div className="grid grid-cols-7 gap-1">
-          {PHASES.map((phase) => (
-            <div
-              key={phase.label}
-              className="text-center text-[9px] font-medium uppercase tracking-wider text-muted-foreground/70"
-              style={{ gridColumn: `span ${phase.span}` }}
-            >
-              {phase.label}
-            </div>
-          ))}
-        </div>
+      <SolutionContextFlow />
 
-        <div className="mt-1.5 flex items-stretch rounded-xl border border-border bg-card/30 p-3">
-          <GraphIcon size={18} weight="duotone" className="mr-2 shrink-0 self-center text-primary" />
-          <div className="flex min-w-0 flex-1 items-center">
-            {CHAIN_NODES.map((label, i) => (
-              <React.Fragment key={label}>
-                {i > 0 ? <ChainArrow /> : null}
-                <ChainNode label={label} />
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        {/* 체인 → 에이전트 버스 */}
-        <div className="mt-4 flex justify-center" aria-hidden>
-          <div className="h-6 w-0.5 rounded-full bg-primary/40" />
-        </div>
-
-        <div className="relative mt-0 rounded-xl border border-border/60 bg-card/25 px-12 py-6">
-          <div
-            className="pointer-events-none absolute inset-x-[6%] top-7 h-1 rounded-full bg-primary/30"
-            aria-hidden
-          />
-          <div className="flex justify-center gap-20">
-            {["API", "UI", "Infra"].map((task) => (
-              <div key={task} className="flex flex-col items-center">
-                <div className="h-8 w-0.5 rounded-full bg-primary/55" aria-hidden />
-                <div className="min-w-[104px] rounded-lg border border-primary/40 bg-zinc-950 px-4 py-3 font-mono shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
-                  <div className="text-[11px] leading-none text-zinc-500">agent</div>
-                  <div className="mt-1.5 text-[15px] font-semibold leading-none text-zinc-100">{task}</div>
-                </div>
-                <p className="mt-2.5 text-[12px] font-medium text-primary">동일 맥락</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* 하단: 결론(좌) + 4구성 2×2(우) */}
       <div className="flex items-center gap-8">
         <div className="min-w-0 flex-1 space-y-2 text-[16px] leading-[1.6] text-muted-foreground">
           {conclusion}
