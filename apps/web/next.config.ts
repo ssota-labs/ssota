@@ -40,6 +40,13 @@ const nextConfig: NextConfig = {
     "lightningcss",
     "esbuild",
     "@ssota/studio-build",
+    // Workflow step bundle: keep CJS-only deps external so esbuild does not
+    // emit dynamic require stubs Turbopack cannot evaluate at collect-page-data.
+    "@vercel/oidc",
+    "@vercel/connect",
+    "semver",
+    "pusher-js",
+    "ajv",
     // Optional native deps of chat adapters (used only in gateway/socket mode,
     // not our webhook mode) — leave them external so Turbopack doesn't bundle.
     "zlib-sync",
