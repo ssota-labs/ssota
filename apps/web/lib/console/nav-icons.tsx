@@ -40,7 +40,7 @@ import {
 export const NAV_ICONS: Record<string, Icon> = {
   home: HouseIcon,
   tasks: ListChecksIcon,
-  workflow_instructions: ClipboardTextIcon,
+  workflow_instructions: FlowArrowIcon,
   chat: ChatCircleIcon,
   connections: PlugIcon,
   schedules: ClockIcon,

@@ -1,3 +1,4 @@
+@import "pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css";
 @import "@ssota/ui/styles/globals.css";
 @import "@xyflow/react/dist/style.css";
 @source "../**/*.{ts,tsx}";
@@ -6,6 +7,18 @@
 @source "../../../node_modules/@blocknote/shadcn";
 /* BlockNote shadcn uses these as literal class names; @ssota/ui only @apply's them. */
 @source inline("text-popover-foreground text-accent-foreground bg-accent hover:bg-accent focus:bg-accent aria-selected:bg-accent bg-popover text-muted-foreground");
+
+:root {
+  --font-sans:
+    "Pretendard Variable",
+    Pretendard,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
 
 /* Graph instance table — Supabase-like grid (light theme) */
 .instance-grid-table .instance-grid-table-inner .cn-table-head {
@@ -80,8 +93,27 @@
 }
 
 /* Sidebar L0↔L1 drill-down slide */
+@keyframes landing-feature-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.landing-feature-progress {
+  animation-name: landing-feature-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .sidebar-nav-slider-track {
     transition: none !important;
+  }
+
+  .landing-feature-progress {
+    animation: none !important;
   }
 }

@@ -29,7 +29,7 @@ test.describe("Workflow instructions", () => {
     await gotoProject(page, "overview");
 
     await page
-      .getByRole("link", { name: /Workflow instructions|워크플로우 지침/i })
+      .getByRole("link", { name: /^Workflow$|^워크플로우$/i })
       .click();
 
     await expect(page).toHaveURL(

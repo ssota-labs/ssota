@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Button } from "@ssota/ui/components/ui/button";
 
 /** Routes that render without guest header / padded main (e.g. bare embeds). */
+const BARE_ROUTES = ["/"];
 const BARE_ROUTE_PREFIXES: string[] = [];
 
 type RootAppChromeProps = {
@@ -19,9 +20,9 @@ export function RootAppChrome({
   signInLabel,
 }: RootAppChromeProps) {
   const pathname = usePathname();
-  const isBare = BARE_ROUTE_PREFIXES.some((prefix) =>
-    pathname?.startsWith(prefix),
-  );
+  const isBare =
+    (pathname ? BARE_ROUTES.includes(pathname) : false) ||
+    BARE_ROUTE_PREFIXES.some((prefix) => pathname?.startsWith(prefix));
 
   if (isBare) {
     return <>{children}</>;
