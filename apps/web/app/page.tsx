@@ -153,21 +153,6 @@ export default async function HomePage() {
                 See the loop
               </Button>
             </div>
-
-            <div className="mx-auto grid max-w-lg gap-3 border-t pt-6 text-sm text-muted-foreground sm:grid-cols-3">
-              <div>
-                <p className="text-lg font-semibold text-foreground">80+</p>
-                <p>software projects observed</p>
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-foreground">2x</p>
-                <p>more aligned agent output</p>
-              </div>
-              <div>
-                <p className="text-lg font-semibold text-foreground">24/7</p>
-                <p>safe development operations</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
