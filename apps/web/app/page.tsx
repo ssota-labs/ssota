@@ -170,7 +170,7 @@ export default async function HomePage() {
               분명히 코딩 에이전트를 늘렸는데,
             </span>
             <span className="mt-4 block text-foreground">
-              똑같이 일하죠?
+              우리 팀은 왜 똑같이 일하죠?
             </span>
           </h2>
         </div>
