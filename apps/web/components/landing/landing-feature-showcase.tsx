@@ -10,10 +10,10 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import {
   LandingMcpConnections,
-  LandingProductScreenPlaceholder,
   LANDING_FEATURE_VISUAL_HEIGHT_CLASS,
   VisualFrame,
 } from "@/components/landing/landing-solution-visuals";
+import { LandingContextGraphPreview } from "@/components/landing/landing-context-graph-preview";
 import { LandingWorkflowSidebarPreview } from "@/components/landing/landing-workflow-sidebar-preview";
 
 const AUTO_ADVANCE_MS = 6_500;
@@ -40,10 +40,9 @@ const FEATURE_PANELS: readonly FeaturePanel[] = [
     icon: GraphIcon,
     visual: (
       <div className="h-full">
-        <LandingProductScreenPlaceholder
-          label="context graph"
-          caption="제품 맥락 그래프 뷰"
-        />
+        <VisualFrame label="context graph">
+          <LandingContextGraphPreview />
+        </VisualFrame>
       </div>
     ),
   },
