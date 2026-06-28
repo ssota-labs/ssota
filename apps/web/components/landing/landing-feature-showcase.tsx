@@ -9,10 +9,11 @@ import type { Icon } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import {
-  LandingLifecycleFlow,
   LandingMcpConnections,
   LandingProductScreenPlaceholder,
+  VisualFrame,
 } from "@/components/landing/landing-solution-visuals";
+import { LandingWorkflowSidebarPreview } from "@/components/landing/landing-workflow-sidebar-preview";
 
 const AUTO_ADVANCE_MS = 6_500;
 
@@ -50,7 +51,11 @@ const FEATURE_PANELS: readonly FeaturePanel[] = [
     description:
       "리서치 → 기획 → 설계 → 개발 → 배포로 이어지는 과정에서 각 단계의 맥락을 다음 단계의 입력으로 넘깁니다.",
     icon: TreeStructureIcon,
-    visual: <LandingLifecycleFlow />,
+    visual: (
+      <VisualFrame label="workflow pages">
+        <LandingWorkflowSidebarPreview />
+      </VisualFrame>
+    ),
   },
   {
     id: "mcp",

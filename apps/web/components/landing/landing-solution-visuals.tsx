@@ -1,7 +1,5 @@
-import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
-
 /** 공통 비주얼 프레임 — 상단 브라우저 크롬 + 본문 */
-function VisualFrame({
+export function VisualFrame({
   label,
   children,
 }: {
@@ -46,53 +44,6 @@ export function LandingProductScreenPlaceholder({
             실제 화면 연결 예정
           </p>
         </div>
-      </div>
-    </VisualFrame>
-  );
-}
-
-const lifecycleStages: ReadonlyArray<{
-  stage: string;
-  artifacts: string;
-}> = [
-  { stage: "Executive", artifacts: "OKR · 로드맵" },
-  { stage: "Research", artifacts: "유저 리서치 · 가설" },
-  { stage: "PM", artifacts: "PRD · 이니셔티브" },
-  { stage: "Design", artifacts: "설계 결정 · 플로우" },
-  { stage: "Development", artifacts: "테스트 · 배포 런북" },
-];
-
-/** ② 흐름 — 제품 생애주기 단계가 다음 단계로 이어지는 플로우 다이어그램 */
-export function LandingLifecycleFlow() {
-  return (
-    <VisualFrame label="product lifecycle graph">
-      <div className="bg-muted/10 p-6 md:p-8">
-        <div className="flex flex-col gap-3 md:flex-row md:items-stretch md:gap-0">
-          {lifecycleStages.map((item, index) => (
-            <div
-              key={item.stage}
-              className="flex items-center gap-3 md:flex-1 md:flex-col md:items-stretch md:gap-0"
-            >
-              <div className="flex-1 rounded-xl border bg-background p-4 md:flex md:flex-col md:gap-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-primary" />
-                  <span className="text-sm font-semibold">{item.stage}</span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {item.artifacts}
-                </p>
-              </div>
-              {index < lifecycleStages.length - 1 ? (
-                <div className="flex shrink-0 items-center justify-center text-primary/60 max-md:rotate-90 md:px-1">
-                  <ArrowRightIcon className="size-4" weight="bold" aria-hidden />
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
-        <p className="mt-5 text-center text-xs text-muted-foreground">
-          각 단계의 맥락이 다음 단계의 입력으로 이어집니다.
-        </p>
       </div>
     </VisualFrame>
   );

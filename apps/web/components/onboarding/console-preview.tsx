@@ -30,6 +30,8 @@ type ConsolePreviewProps = {
   templateId?: string | null;
   templateName?: string | null;
   isProvisioning?: boolean;
+  /** 랜딩 등 정적 미리보기 — SWDL 워크플로우 트리를 즉시 전체 표시 */
+  forceWorkflowComplete?: boolean;
 };
 
 function isNavLink(entry: NavEntry): entry is NavLink {
@@ -257,15 +259,23 @@ export function ConsolePreview({
   templateId = null,
   templateName = null,
   isProvisioning = false,
+  forceWorkflowComplete = false,
 }: ConsolePreviewProps) {
   const { t } = useLocale();
+  const provisioningReveal = useProvisioningReveal(isProvisioning, templateId);
   const {
-    visibleKeys,
-    lastRevealedKey,
-    revealMode,
-    showWorkflowSection,
+    visibleKeys: hookVisibleKeys,
+    lastRevealedKey: hookLastRevealedKey,
+    revealMode: hookRevealMode,
+    showWorkflowSection: hookShowWorkflowSection,
     provisionRevealCount,
-  } = useProvisioningReveal(isProvisioning, templateId);
+  } = provisioningReveal;
+
+  const revealMode = forceWorkflowComplete ? "complete" : hookRevealMode;
+  const visibleKeys = forceWorkflowComplete ? null : hookVisibleKeys;
+  const lastRevealedKey = forceWorkflowComplete ? null : hookLastRevealedKey;
+  const showWorkflowSection =
+    forceWorkflowComplete && templateId ? true : hookShowWorkflowSection;
   const orgLabel = organizationName.trim() || "Your Organization";
   const projectLabel = projectName?.trim() || "Your Project";
   const provisioningLabel = templateName?.trim() || "project template";

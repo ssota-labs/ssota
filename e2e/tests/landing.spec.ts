@@ -40,6 +40,8 @@ test.describe("landing page", () => {
         name: /흐름에 따라서 일하는 AI/,
       }),
     ).toBeVisible();
+    await expect(page.getByText("Workflow", { exact: true })).toBeVisible();
+    await expect(page.getByText("Executive", { exact: true })).toBeVisible();
   });
 
   test("landing: primary CTA sends unauthenticated visitors to login", async ({
