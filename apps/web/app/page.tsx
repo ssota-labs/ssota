@@ -116,8 +116,8 @@ export default async function HomePage() {
       </header>
 
       <section className="relative border-b">
-        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center px-6 py-16 lg:py-20">
-          <div className="max-w-2xl space-y-8">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
+          <div className="mx-auto max-w-2xl space-y-8 text-center">
             <div className="space-y-4">
               <Badge variant="outline" className="bg-background">
                 AI CPO for coding agents
@@ -127,14 +127,14 @@ export default async function HomePage() {
                   <span className="block">제품을 제대로</span>
                   <span className="block">아는 AI</span>
                 </h1>
-                <p className="max-w-lg text-base leading-7 text-muted-foreground md:text-lg">
+                <p className="mx-auto max-w-lg text-base leading-7 text-muted-foreground md:text-lg">
                   코딩 에이전트가 제품 맥락을 이해해야, 24시간 믿고 맡길 수
                   있습니다.
                 </p>
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col justify-center gap-3 sm:flex-row">
               <Button
                 render={<Link href={appHref} />}
                 size="lg"
@@ -154,7 +154,7 @@ export default async function HomePage() {
               </Button>
             </div>
 
-            <div className="grid gap-3 border-t pt-6 text-sm text-muted-foreground sm:grid-cols-3">
+            <div className="mx-auto grid max-w-lg gap-3 border-t pt-6 text-sm text-muted-foreground sm:grid-cols-3">
               <div>
                 <p className="text-lg font-semibold text-foreground">80+</p>
                 <p>software projects observed</p>
