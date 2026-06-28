@@ -21,7 +21,7 @@
 ```text
 apps/deck/public/
 ├── team/
-│   └── profile.jpg              # 슬라이드 10 — 창업자 프로필
+│   └── profile.jpg              # 슬라이드 11 — 창업자 프로필
 └── traction/
     ├── medai-screenshot.png     # 슬라이드 4 — MedAI 실제 화면
     └── work/                    # 슬라이드 5 — 작업 카드 썸네일 (선택)
@@ -34,7 +34,7 @@ apps/deck/public/
 
 ---
 
-## 2. 슬라이드별 이미지 슬롯 (전체 10장)
+## 2. 슬라이드별 이미지 슬롯 (전체 11장)
 
 | # | 슬라이드 | 이미지 여부 | 컴포넌트 | 코드 위치 | 연결 방법 |
 |---|----------|-------------|----------|-----------|-----------|
@@ -44,12 +44,13 @@ apps/deck/public/
 | 4 | Traction ① MedAI | **있음** | `TractionMedAIRow` | `traction.tsx` | `MEDAI_SCREENSHOT_SRC` |
 | 5 | Traction ② 트랙레코드 | **있음 (5슬롯)** | `TractionTrackRecord` | `traction.tsx` | `WORK_CARDS[n].imageSrc` |
 | 6 | Unique Insight | 없음 | `InsightContrast` | `unique-insight.tsx` | 아이콘만 |
-| 7 | Business Model | 없음 | `BusinessModelRow` | `business-model.tsx` | 3티어 카드 + 클라우드 요금표 |
-| 8 | Market | 없음 | `MarketRow` | `market.tsx` | TAM/SAM/SOM 퍼널 (텍스트) |
-| 9 | Roadmap | 없음 | `RoadmapRow` | `roadmap.tsx` | 3단계 확장 카드 (텍스트) |
-| 10 | Team | **있음** | `TeamFounderRow` | `team.tsx` | `FOUNDER_IMAGE_SRC` |
+| 7 | Moat | 없음 | `PageRenderRow` | `page-render.tsx` | json-render 파이프라인 + 강점 (텍스트) |
+| 8 | Business Model | 없음 | `BusinessModelRow` | `business-model.tsx` | 3티어 카드 + 클라우드 요금표 |
+| 9 | Market | 없음 | `MarketRow` | `market.tsx` | TAM/SAM/SOM 퍼널 (텍스트) |
+| 10 | Roadmap | 없음 | `RoadmapRow` | `roadmap.tsx` | 3단계 확장 카드 (텍스트) |
+| 11 | Team | **있음** | `TeamFounderRow` | `team.tsx` | `FOUNDER_IMAGE_SRC` |
 
-**현재 이미지를 넣을 수 있는 곳은 3곳** (슬라이드 4, 5, 10).
+**현재 이미지를 넣을 수 있는 곳은 3곳** (슬라이드 4, 5, 11).
 
 ---
 
@@ -112,7 +113,7 @@ apps/deck/public/
 
 ---
 
-### 3.3 슬라이드 10 — 창업자 프로필 사진
+### 3.3 슬라이드 11 — 창업자 프로필 사진
 
 **용도:** Team 슬라이드 좌측 세로형 프로필.
 

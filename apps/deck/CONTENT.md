@@ -1,6 +1,6 @@
 # SSOTA Seed Deck — 콘텐츠 정리
 
-> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **10슬라이드** (The Ask 제외)  
+> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **11슬라이드** (The Ask 제외)  
 > **이미지 assets:** [IMAGES.md](./IMAGES.md)
 > 디자인 원칙(Kevin Hale): Legible · Simple · Obvious — 큰 글씨, 1슬라이드 1아이디어, **헤드라인은 결론(주장형)·마침표로 끝** (`DeckTitle`이 자동 보정)
 
@@ -23,7 +23,7 @@
 
 ## 슬라이드 한눈에 (헤드라인 = 주장)
 
-**레이아웃 (2–10):** `DeckSlideHeader` — 섹션 라벨(center, muted) + 헤드라인(center, 40px) + 본문.
+**레이아웃 (2–11):** `DeckSlideHeader` — 섹션 라벨(center, muted) + 헤드라인(center, 40px) + 본문.
 
 | # | 섹션 라벨 | 헤드라인 | 역할 |
 |---|---|---|---|
@@ -33,10 +33,11 @@
 | 4 | Traction | 오픈소스 이전에, 현장에서 먼저 검증했다 | Traction ① MedAI PoC (+스크린샷 자리) |
 | 5 | Traction | 지금 지표는 매출이 아니라 검증된 실행이다 | Traction ② 80건 트랙레코드 + 핵심 지표 |
 | 6 | Unique Insight | 무인의 조건은 속도가 아니라 공통 판단 기준 | Unique Insight |
-| 7 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model (OSS + SaaS + Enterprise) |
-| 8 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market (TAM/SAM/SOM) |
-| 9 | Roadmap | 소프트웨어 개발에서 시작해 모든 지식노동으로 | Roadmap (도메인 확장 3단계) |
-| 10 | Team | 이 문제를 오래, 많이 겪었다 | Team (프로필 + 학력·수상) |
+| 7 | Moat | 에이전트가 화면까지 조립한다 | Moat (페이지 JSON 렌더 → SaaS UX/UI 대체) |
+| 8 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model (OSS + SaaS + Enterprise) |
+| 9 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market (TAM/SAM/SOM) |
+| 10 | Roadmap | 소프트웨어 개발에서 시작해 모든 지식노동으로 | Roadmap (도메인 확장 3단계) |
+| 11 | Team | 이 문제를 오래, 많이 겪었다 | Team (프로필 + 학력·수상) |
 
 > **The Ask (What we need)** 슬라이드는 덱에서 제외.
 
@@ -136,7 +137,27 @@
 
 **클로징:** 이 문제는 사람이 곁에 있을 땐 안 보이고, **무인 병렬일 때만** 드러난다 — 그래서 지금, 우리가.
 
-## 7. Business Model — "맥락 그래프에서 돈을 번다"
+## 7. Moat — "에이전트가 화면까지 조립한다"
+
+> 페이지를 JSON 스펙으로 동적 렌더 — SaaS의 UX/UI 레이어를 그래프가 대체한다 (`PageRenderRow`)
+
+**메커니즘 (json-render 파이프라인)**
+
+| 단계 | 내용 |
+|---|---|
+| **L3 페이지 스펙 (JSON)** | `page.properties.spec` — 카탈로그 컴포넌트를 `bindings`·`actions`와 선언적 조합 |
+| **L2 UI 카탈로그** | `DocumentEditor` · `DataTable` · `ArtifactWorkbench` … 재사용 컴포넌트 풀 |
+| **동적 렌더된 화면** | 도메인 전용 React 페이지 없이 스펙만으로 화면 생성 |
+
+**강점 3가지**
+
+1. **코드 없는 화면** — 도메인 전용 프론트엔드를 새로 짜지 않는다. JSON 스펙으로 카탈로그 컴포넌트 조립.
+2. **에이전트가 UI까지 진화** — 사람·에이전트가 같은 그래프 위에서 화면을 생성·수정 (맥락과 UI가 따로 놀지 않음).
+3. **SaaS UX/UI 레이어 대체** — 버티컬마다 UI를 다시 만들 필요 없음 → 우리가 애플리케이션 레이어 그 자체.
+
+**클로징:** 도메인이 늘어도 화면을 새로 코딩하지 않는다 — **확장이 거의 무료**가 된다 (→ 10. Roadmap 도메인 확장의 근거).
+
+## 8. Business Model — "맥락 그래프에서 돈을 번다"
 
 > 오픈소스 코어 + 클라우드 호스팅 + 엔터프라이즈 구축 (`BusinessModelRow`)
 
@@ -159,7 +180,7 @@
 
 **클로징:** 오픈소스로 확산하고, **클라우드 호스팅과 기업용 맞춤 구축**에서 수익을 만듭니다.
 
-## 8. Market — "무인 에이전트 개발팀 수요가 시장을 만든다"
+## 9. Market — "무인 에이전트 개발팀 수요가 시장을 만든다"
 
 > 자율 에이전트 → AI 개발 에이전트 도구 → 무인·병렬 에이전트 개발팀 (`MarketRow`)
 
@@ -179,7 +200,7 @@
 - 출처: BCC·MarketsandMarkets(자율 에이전트), Alora·Mordor(AI 코딩), SlashData·GitHub 2025
 - ⚠️ 후속: 자체 ARPU·전환 데이터로 SOM 정교화
 
-## 9. Roadmap — "소프트웨어 개발에서 시작해 모든 지식노동으로"
+## 10. Roadmap — "소프트웨어 개발에서 시작해 모든 지식노동으로"
 
 > SW 개발 전 과정 자율운영 → 타 도메인 확장 → 멀티테넌트 에이전트 마켓 (`RoadmapRow`)
 
@@ -194,7 +215,7 @@
 - **North Star 지표:** 자율 운영 중인 **활성 워크스페이스 수**
 - 내러티브: SW 개발 도메인에서 무인 운영을 먼저 완성하고, 같은 맥락 그래프 구조를 타 지식노동 도메인으로 확장.
 
-## 10. Team — "이 문제를 오래, 많이 겪었다"
+## 11. Team — "이 문제를 오래, 많이 겪었다"
 
 > 창업·AI 경진대회부터 80건 실전 개발까지 — 같은 병목을 반복 확인했다.
 

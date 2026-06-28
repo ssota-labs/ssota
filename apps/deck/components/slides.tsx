@@ -13,16 +13,17 @@ import { AgentEvolutionRow } from "./agent-evolution";
 import { SolutionContextRow } from "./solution-context";
 import { TractionMedAIRow, TractionTrackRecord } from "./traction";
 import { InsightContrast } from "./unique-insight";
+import { PageRenderRow } from "./page-render";
 import { BusinessModelRow } from "./business-model";
 import { MarketRow } from "./market";
 import { RoadmapRow } from "./roadmap";
 import { TeamFounderRow } from "./team";
 
 /**
- * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 10슬라이드.
+ * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 11슬라이드.
  * https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck
  *
- * 콘텐츠 슬라이드(2–10) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
+ * 콘텐츠 슬라이드(2–11) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
  * 디자인 토큰: @ssota/ui (cyan primary · Geist/Pretendard).
  *
  * North Star: 목표는 "무인(無人) 에이전트 개발팀"을 만들어내는 것.
@@ -159,7 +160,21 @@ const SLIDES: SlideDef[] = [
     ),
   },
 
-  /* 07 — Business Model */
+  /* 07 — Moat (페이지 JSON 렌더) */
+  {
+    id: "moat",
+    render: () => (
+      <>
+        <DeckSlideHeader section="Moat">에이전트가 화면까지 조립한다</DeckSlideHeader>
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          페이지를 JSON 스펙으로 동적 렌더 — SaaS의 UX/UI 레이어를 그래프가 대체한다.
+        </p>
+        <PageRenderRow className="mt-6" />
+      </>
+    ),
+  },
+
+  /* 08 — Business Model */
   {
     id: "business",
     render: () => (
@@ -173,7 +188,7 @@ const SLIDES: SlideDef[] = [
     ),
   },
 
-  /* 08 — Market */
+  /* 09 — Market */
   {
     id: "market",
     render: () => (
@@ -187,7 +202,7 @@ const SLIDES: SlideDef[] = [
     ),
   },
 
-  /* 09 — Roadmap */
+  /* 10 — Roadmap */
   {
     id: "roadmap",
     render: () => (
@@ -201,7 +216,7 @@ const SLIDES: SlideDef[] = [
     ),
   },
 
-  /* 10 — Team */
+  /* 11 — Team */
   {
     id: "team",
     render: () => (
