@@ -174,7 +174,6 @@
 | Free / Open Source | $0 |
 | Cloud Starter | $20/user/mo |
 | Cloud Team | $50/user/mo (주력) |
-| Cloud Business | $100/user/mo |
 
 **클로징:** 오픈소스로 확산하고, **클라우드 호스팅과 기업용 맞춤 구축**에서 수익을 만듭니다.
 

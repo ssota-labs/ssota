@@ -65,7 +65,6 @@ const CLOUD_PLANS = [
   { name: "Free / Open Source", price: "$0", highlight: false },
   { name: "Cloud Starter", price: "$20", unit: "/user/mo", highlight: false },
   { name: "Cloud Team", price: "$50", unit: "/user/mo", highlight: true },
-  { name: "Cloud Business", price: "$100", unit: "/user/mo", highlight: false },
 ] as const;
 
 function TierCard({ title, price, priceNote, icon: IconComponent, tone, points, footer }: RevenueTier) {
@@ -134,7 +133,7 @@ function CloudPricingStrip() {
         <span className="text-[13px] font-semibold text-foreground">클라우드 요금 (B2B SaaS)</span>
         <span className="text-[12px] text-muted-foreground">초기 가격 — 일반 B2B SaaS 수준</span>
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-2.5">
+      <div className="mt-3 grid grid-cols-3 gap-2.5">
         {CLOUD_PLANS.map((plan) => (
           <div
             key={plan.name}
