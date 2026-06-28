@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowBendDownLeft } from "@phosphor-icons/react";
-import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -95,7 +94,7 @@ function renderVisibleText(
   return parts;
 }
 
-export function LandingHeroPrompt({ href }: { href: string }) {
+export function LandingHeroPrompt() {
   const [promptIndex, setPromptIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("typing");
@@ -167,13 +166,11 @@ export function LandingHeroPrompt({ href }: { href: string }) {
     : charIndex;
 
   return (
-    <Link
-      href={href}
+    <div
       aria-label="SSOTA prompt preview"
       className={cn(
-        "group relative inline-grid max-w-[calc(100vw-3rem)] rounded-full border border-border/80 py-3.5 pr-14 pl-5 text-left transition-[background-color] duration-200 ease-out",
+        "group relative inline-grid max-w-[calc(100vw-3rem)] cursor-default rounded-full border border-border/80 py-3.5 pr-14 pl-5 text-left transition-[background-color] duration-200 ease-out",
         "bg-primary/15 shadow-lg shadow-black/5",
-        "hover:bg-primary/20",
       )}
     >
       <span
@@ -202,6 +199,6 @@ export function LandingHeroPrompt({ href }: { href: string }) {
       >
         <ArrowBendDownLeft className="size-4" weight="bold" />
       </span>
-    </Link>
+    </div>
   );
 }
