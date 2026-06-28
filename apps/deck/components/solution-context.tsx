@@ -111,21 +111,28 @@ export function SolutionContextRow({
           </div>
         </div>
 
-        <div className="relative mt-3 flex justify-center gap-10">
+        {/* 체인 → 에이전트 버스 */}
+        <div className="mt-4 flex justify-center" aria-hidden>
+          <div className="h-6 w-0.5 rounded-full bg-primary/40" />
+        </div>
+
+        <div className="relative mt-0 rounded-xl border border-border/60 bg-card/25 px-12 py-6">
           <div
-            className="pointer-events-none absolute left-[10%] right-[10%] top-0 h-px bg-primary/25"
+            className="pointer-events-none absolute inset-x-[6%] top-7 h-1 rounded-full bg-primary/30"
             aria-hidden
           />
-          {["API", "UI", "Infra"].map((task) => (
-            <div key={task} className="flex flex-col items-center">
-              <div className="h-3 w-px bg-primary/40" aria-hidden />
-              <div className="rounded border border-primary/30 bg-zinc-950 px-2 py-1.5 font-mono text-[9px] text-zinc-200">
-                <div className="text-zinc-500">agent</div>
-                <div>{task}</div>
+          <div className="flex justify-center gap-20">
+            {["API", "UI", "Infra"].map((task) => (
+              <div key={task} className="flex flex-col items-center">
+                <div className="h-8 w-0.5 rounded-full bg-primary/55" aria-hidden />
+                <div className="min-w-[104px] rounded-lg border border-primary/40 bg-zinc-950 px-4 py-3 font-mono shadow-[inset_0_1px_0_0_rgba(255,255,255,0.05)]">
+                  <div className="text-[11px] leading-none text-zinc-500">agent</div>
+                  <div className="mt-1.5 text-[15px] font-semibold leading-none text-zinc-100">{task}</div>
+                </div>
+                <p className="mt-2.5 text-[12px] font-medium text-primary">동일 맥락</p>
               </div>
-              <p className="mt-1 text-[9px] text-primary/80">동일 맥락</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
