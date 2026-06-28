@@ -35,7 +35,7 @@
 | 6 | Unique Insight | 무인의 조건은 속도가 아니라 공통 판단 기준 | Unique Insight |
 | 7 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model (OSS + SaaS + Enterprise) |
 | 8 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market (TAM/SAM/SOM) |
-| 9 | Team | 이 문제를 가장 오래, 가장 많이 겪었다 | Team (프로필 + 학력·수상) |
+| 9 | Team | 이 문제를 오래, 많이 겪었다 | Team (프로필 + 학력·수상) |
 
 > **The Ask (What we need)** 슬라이드는 덱에서 제외.
 
@@ -178,7 +178,7 @@
 - 출처: BCC·MarketsandMarkets(자율 에이전트), Alora·Mordor(AI 코딩), SlashData·GitHub 2025
 - ⚠️ 후속: 자체 ARPU·전환 데이터로 SOM 정교화
 
-## 9. Team — "이 문제를 가장 오래, 가장 많이 겪었다"
+## 9. Team — "이 문제를 오래, 많이 겪었다"
 
 > 창업·AI 경진대회부터 80건 실전 개발까지 — 같은 병목을 반복 확인했다.
 

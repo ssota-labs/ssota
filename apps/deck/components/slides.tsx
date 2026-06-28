@@ -191,7 +191,7 @@ const SLIDES: SlideDef[] = [
     id: "team",
     render: () => (
       <>
-        <DeckSlideHeader section="Team">이 문제를 가장 오래, 가장 많이 겪었다</DeckSlideHeader>
+        <DeckSlideHeader section="Team">이 문제를 오래, 많이 겪었다</DeckSlideHeader>
         <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
           창업·AI 경진대회부터 80건 실전 개발까지 — 같은 병목을 반복 확인했다.
         </p>
