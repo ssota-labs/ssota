@@ -16,7 +16,19 @@ import { Label } from "@ssota/ui/components/ui/label";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
-export function LandingBetaSignup() {
+type LandingBetaSignupProps = {
+  triggerLabel?: string;
+  triggerVariant?: "default" | "outline" | "ghost" | "secondary";
+  triggerSize?: "default" | "sm" | "lg";
+  triggerClassName?: string;
+};
+
+export function LandingBetaSignup({
+  triggerLabel = "베타 알림 받기",
+  triggerVariant = "default",
+  triggerSize = "lg",
+  triggerClassName,
+}: LandingBetaSignupProps) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
@@ -66,10 +78,14 @@ export function LandingBetaSignup() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
-          <Button size="lg" className="h-11 px-6 text-sm" />
+          <Button
+            variant={triggerVariant}
+            size={triggerSize}
+            className={triggerClassName}
+          />
         }
       >
-        베타 알림 받기
+        {triggerLabel}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

@@ -5,6 +5,7 @@ import { Badge } from "@ssota/ui/components/ui/badge";
 import { LandingBetaSignup } from "@/components/landing/landing-beta-signup";
 import { LandingDarkMode } from "@/components/landing/landing-dark-mode";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
+import { LandingPricing } from "@/components/landing/landing-pricing";
 
 export const metadata: Metadata = {
   title: "SSOTA - 제품을 완벽히 아는 AI CPO",
@@ -69,7 +70,7 @@ export default function HomePage() {
                 </p>
               </div>
               <div className="flex justify-center pt-2">
-                <LandingBetaSignup />
+                <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
               </div>
             </div>
 
@@ -79,6 +80,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <LandingPricing />
     </main>
   );
 }
