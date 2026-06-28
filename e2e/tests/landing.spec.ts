@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("landing page", () => {
-  test("landing: renders hero with July launch badge and beta signup", async ({
+  test("landing: renders hero, narrative sections, pricing, and FAQ", async ({
     page,
   }) => {
     await page.goto("/");
@@ -21,6 +21,26 @@ test.describe("landing page", () => {
         .first()
         .getByRole("button", { name: "베타 알림 받기" }),
     ).toBeVisible();
+
+    await expect(
+      page.getByRole("heading", {
+        name: /우리 팀은 왜 똑같이 일하죠/,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("뭐가 맞는지 모릅니다")).toBeVisible();
+    await expect(page.getByText("맞춰 주는 일이 늘었습니다")).toBeVisible();
+
+    await expect(
+      page.getByRole("heading", { name: "AI 시대의 새로운 제품 개발 방식." }),
+    ).toBeVisible();
+    await expect(page.getByRole("tab", { name: "제품 맥락" })).toBeVisible();
+
+    await page.getByRole("tab", { name: "제품 맥락" }).click();
+    await expect(page.getByText("context graph")).toBeVisible();
+    await expect(
+      page.locator('[data-testid="dynamic-page-renderer"]').first(),
+    ).toBeVisible();
+
     await expect(
       page.getByRole("heading", { name: "부담 없이 시작하세요" }),
     ).toBeVisible();
@@ -56,5 +76,18 @@ test.describe("landing page", () => {
     await expect(
       page.getByText("베타 알림 신청이 완료되었습니다."),
     ).toBeVisible();
+  });
+
+  test("landing: primary CTA sends unauthenticated visitors to login", async ({
+    page,
+  }) => {
+    await page.goto("/");
+
+    await page
+      .locator("header")
+      .getByRole("button", { name: "Start", exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/login$/);
+    await expect(page.getByLabel("Email")).toBeVisible();
   });
 });
