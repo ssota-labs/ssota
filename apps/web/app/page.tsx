@@ -124,8 +124,7 @@ export default async function HomePage() {
               </Badge>
               <div className="space-y-4">
                 <h1 className="text-4xl font-semibold tracking-tight text-balance md:text-6xl">
-                  <span className="block">제품을 제대로</span>
-                  <span className="block">아는 AI</span>
+                  제품을 제대로 아는 AI
                 </h1>
                 <p className="mx-auto max-w-lg text-base leading-7 text-muted-foreground md:text-lg">
                   코딩 에이전트가 제품 맥락을 이해해야, 24시간 믿고 맡길 수
