@@ -116,7 +116,7 @@ export default async function HomePage() {
       </header>
 
       <section className="relative border-b">
-        <div className="mx-auto flex min-h-[calc(82vh-4rem)] max-w-7xl items-center px-6 py-16 lg:py-20">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center px-6 py-16 lg:py-20">
           <div className="max-w-2xl space-y-8">
             <div className="space-y-4">
               <Badge variant="outline" className="bg-background">
