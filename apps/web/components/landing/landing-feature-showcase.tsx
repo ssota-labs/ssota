@@ -150,7 +150,7 @@ export function LandingFeatureShowcase() {
       <div className="mt-6 overflow-hidden rounded-2xl border border-border/60 bg-card/40 shadow-xl md:mt-8">
         <div className="grid md:grid-cols-[minmax(0,20rem)_1fr] lg:grid-cols-[minmax(0,22rem)_1fr]">
           <div
-            className="border-b border-border/50 p-6 md:border-r md:border-b-0 md:p-8"
+            className="border-b border-border/50 md:border-r md:border-b-0"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
             onFocusCapture={() => setPaused(true)}
@@ -160,7 +160,7 @@ export function LandingFeatureShowcase() {
               }
             }}
           >
-            <nav className="space-y-2" aria-label="기능 목록">
+            <nav className="flex flex-col" aria-label="기능 목록">
               {FEATURE_PANELS.map((panel, index) => {
                 const isActive = index === activeIndex;
                 const PanelIcon = panel.icon;
@@ -169,10 +169,8 @@ export function LandingFeatureShowcase() {
                   <div
                     key={panel.id}
                     className={cn(
-                      "overflow-hidden rounded-xl border transition-[border-color,background-color,box-shadow] duration-500 ease-out motion-reduce:transition-none",
-                      isActive
-                        ? "border-border/70 bg-muted/35 shadow-sm"
-                        : "border-border/25 bg-transparent",
+                      "overflow-hidden border-b border-border/50 transition-[background-color] duration-500 ease-out last:border-b-0 motion-reduce:transition-none",
+                      isActive ? "bg-muted/35" : "bg-transparent",
                     )}
                   >
                     <button
