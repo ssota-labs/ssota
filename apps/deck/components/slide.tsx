@@ -44,15 +44,18 @@ export function Slide({
 /** 슬라이드 섹션 라벨 — Problem / Solution 등 (좌측 상단, muted). */
 export function DeckSectionLabel({
   children,
+  align = "left",
   className,
 }: {
   children: React.ReactNode;
+  align?: "center" | "left";
   className?: string;
 }) {
   return (
     <span
       className={cn(
-        "text-[13px] font-medium uppercase tracking-[0.22em] text-muted-foreground",
+        "block text-[13px] font-medium uppercase tracking-[0.22em] text-muted-foreground",
+        align === "center" ? "text-center" : "text-left",
         className,
       )}
     >

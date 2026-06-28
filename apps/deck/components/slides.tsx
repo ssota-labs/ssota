@@ -55,7 +55,7 @@ const SLIDES: SlideDef[] = [
     id: "problem",
     render: () => (
       <>
-        <DeckSectionLabel>Problem</DeckSectionLabel>
+        <DeckSectionLabel align="center">Problem</DeckSectionLabel>
         <DeckTitle align="center" className="mt-2 text-[40px]">
           무인 에이전트 개발팀은 아직 안 된다
         </DeckTitle>
