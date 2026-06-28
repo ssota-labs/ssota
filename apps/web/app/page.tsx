@@ -129,11 +129,11 @@ export default async function HomePage() {
         />
         <div
           aria-hidden
-          className="absolute inset-0 bg-background/50 supports-backdrop-filter:backdrop-blur-[2px]"
+          className="absolute inset-0 bg-background/40"
         />
         <div
           aria-hidden
-          className="absolute inset-0 bg-gradient-to-b from-background/25 via-background/55 to-background"
+          className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/45 to-background"
         />
 
         <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
