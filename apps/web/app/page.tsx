@@ -55,27 +55,23 @@ export default function HomePage() {
         <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
           <div className="mx-auto flex w-full flex-col items-center gap-12 md:gap-16">
             <div className="max-w-2xl space-y-4 text-center">
+              <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-5xl">
+                제품을 완벽히 아는 AI CPO
+              </h1>
+              <p className="mx-auto text-base leading-7 text-muted-foreground md:text-lg md:whitespace-nowrap">
+                코딩 에이전트에게 제품 맥락을 이해시켜야, 24시간 믿고 맡길 수 있습니다.
+              </p>
+            </div>
+
+            <div className="flex w-full flex-col items-center gap-6">
+              <LandingHeroPrompt />
               <Badge
                 variant="outline"
                 className="border-border/50 bg-background/50 backdrop-blur-sm"
               >
                 7월 중 오픈 예정
               </Badge>
-              <div className="space-y-4">
-                <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-5xl">
-                  제품을 완벽히 아는 AI CPO
-                </h1>
-                <p className="mx-auto text-base leading-7 text-muted-foreground md:text-lg md:whitespace-nowrap">
-                  코딩 에이전트에게 제품 맥락을 이해시켜야, 24시간 믿고 맡길 수 있습니다.
-                </p>
-              </div>
-              <div className="flex justify-center pt-2">
-                <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
-              </div>
-            </div>
-
-            <div className="flex w-full items-center justify-center pt-2 md:pt-4">
-              <LandingHeroPrompt />
+              <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
             </div>
           </div>
         </div>
