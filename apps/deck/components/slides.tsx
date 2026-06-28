@@ -12,6 +12,7 @@ import {
 } from "./slide";
 import { AgentEvolutionRow } from "./agent-evolution";
 import { SolutionContextRow } from "./solution-context";
+import { TractionMedAIRow, TractionTrackRecord } from "./traction";
 
 /**
  * SSOTA Seed Round Pitch Deck — YC Seed 템플릿(Aaron Harris) 10슬라이드.
@@ -110,46 +111,30 @@ const SLIDES: SlideDef[] = [
     ),
   },
 
-  /* 04 — Traction ① 사용량 */
+  /* 04 — Traction ① MedAI PoC (현장 검증) */
   {
-    id: "traction-usage",
+    id: "traction-medai",
     render: () => (
       <>
-        <DeckSlideHeader section="Traction">우리가 직접 무인으로 돌리고 있다</DeckSlideHeader>
-        <Bullets
-          items={[
-            <>
-              그래프에 쌓인 의사결정 노드·관계, <Hl>사람 개입 없이</Hl> 처리된 에이전트 작업
-            </>,
-            <>
-              2026.06 오픈소스 개발 시작 — 제품을 직접 도그푸딩하며 만든다
-            </>,
-            <span className="text-muted-foreground/50">[ 채울 자리: 실제 사용량 추이 ]</span>,
-          ]}
-        />
+        <DeckSlideHeader section="Traction">오픈소스 이전에, 현장에서 먼저 검증했다</DeckSlideHeader>
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          실제 의료 AI 개발팀과의 PoC가 SSOTA를 시작하게 했다.
+        </p>
+        <TractionMedAIRow className="mt-6 min-h-0 flex-1" />
       </>
     ),
   },
 
-  /* 05 — Traction ② 임팩트 */
+  /* 05 — Traction ② 2년·80건 트랙레코드 + 핵심 지표 */
   {
-    id: "traction-impact",
+    id: "traction-track-record",
     render: () => (
       <>
-        <DeckSlideHeader section="Traction">사람 개입이 줄어든다</DeckSlideHeader>
-        <Bullets
-          items={[
-            <>
-              핵심 지표는 <Hl>사람 재개입률 감소</Hl>와 무인 처리 비율
-            </>,
-            <>
-              <Hl>80건</Hl> — 2023–2026 실제 프로젝트에서 검증한 문제
-            </>,
-            <span className="text-muted-foreground/50">
-              [ 채울 자리: 무인 처리 비율 · 재작업률 감소 ]
-            </span>,
-          ]}
-        />
+        <DeckSlideHeader section="Traction">지금 지표는 매출이 아니라 검증된 실행이다</DeckSlideHeader>
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          2년 · 80건의 실전 개발에서 같은 병목을 반복 확인했다.
+        </p>
+        <TractionTrackRecord className="mt-7" />
       </>
     ),
   },
