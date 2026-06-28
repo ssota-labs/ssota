@@ -114,7 +114,7 @@ const SLIDES: SlideDef[] = [
     render: () => (
       <div className="flex flex-1 flex-col justify-center">
         <Eyebrow>관찰한 것</Eyebrow>
-        <p className="mt-5 max-w-[26ch] text-[52px] font-semibold leading-[1.08] tracking-tight">
+        <p className="mt-5 max-w-[26ch] text-[52px] font-semibold leading-[1.2] tracking-tight">
           문제는 에이전트가 <span className="text-muted-foreground">못 짜서</span>가 아니라,
           <br />
           <span className="text-primary">너무 잘, 너무 빨리</span> 짜기 때문이다.
