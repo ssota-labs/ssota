@@ -28,6 +28,12 @@ test.describe("landing page", () => {
     await expect(
       page.locator("#pricing").getByText("Enterprise", { exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "궁금한 점들이 더 있나요?" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "SSOTA MCP로 무엇을 할 수 있나요?" }),
+    ).toBeVisible();
   });
 
   test("landing: beta signup dialog saves email", async ({ page }) => {

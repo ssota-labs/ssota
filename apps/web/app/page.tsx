@@ -5,6 +5,7 @@ import { Badge } from "@ssota/ui/components/ui/badge";
 import { LandingBetaSignup } from "@/components/landing/landing-beta-signup";
 import { LandingDarkMode } from "@/components/landing/landing-dark-mode";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
+import { LandingFaq } from "@/components/landing/landing-faq";
 import { LandingPricing } from "@/components/landing/landing-pricing";
 
 export const metadata: Metadata = {
@@ -78,6 +79,7 @@ export default function HomePage() {
       </section>
 
       <LandingPricing />
+      <LandingFaq />
     </main>
   );
 }
