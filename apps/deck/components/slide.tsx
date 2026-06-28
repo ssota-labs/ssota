@@ -66,6 +66,19 @@ export function Hl({ children }: { children: React.ReactNode }) {
   return <span className="font-semibold text-primary">{children}</span>;
 }
 
+/** 타이틀 슬라이드 하단 푸터 — 연락처·연도. */
+export function DeckFooter({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-center gap-4 text-[14px] text-muted-foreground">
+      {children}
+    </div>
+  );
+}
+
+export function DeckFooterSep() {
+  return <span className="text-border">|</span>;
+}
+
 /** Bullet 리스트 — YC 템플릿의 디스크 마커 + 좌측 정렬. */
 export function Bullets({
   items,

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { Slide, DeckTitle, Bullets, Hl } from "./slide";
+import { Slide, DeckTitle, DeckFooter, DeckFooterSep, Bullets, Hl } from "./slide";
 
 /**
  * SSOTA Seed Round Pitch Deck — YC Seed 템플릿(Aaron Harris) 10슬라이드.
@@ -25,19 +25,27 @@ const SLIDES: SlideDef[] = [
   /* 01 — Title */
   {
     id: "title",
-    center: true,
     render: () => (
-      <>
-        <span className="text-[15px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
-          Single Source of Truth for Agents
-        </span>
-        <h1 className="mt-5 text-[92px] font-bold leading-none tracking-tight text-primary">
-          SSOTA
-        </h1>
-        <p className="mt-6 text-[25px] leading-relaxed text-muted-foreground">
-          무인 에이전트 팀을 위한 소프트웨어 개발 맥락 관리 도구
-        </p>
-      </>
+      <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <span className="text-[15px] font-medium uppercase tracking-[0.28em] text-muted-foreground">
+            Single Source of Truth for Agents
+          </span>
+          <h1 className="mt-5 text-[92px] font-bold leading-none tracking-tight text-primary">
+            SSOTA
+          </h1>
+          <p className="mt-6 text-[25px] leading-relaxed text-muted-foreground">
+            무인 에이전트 팀을 위한 소프트웨어 개발 맥락 관리 도구
+          </p>
+        </div>
+        <DeckFooter>
+          <span className="font-medium text-foreground">연주환 · Paxhumana</span>
+          <DeckFooterSep />
+          <span>joo@ssota.ai</span>
+          <DeckFooterSep />
+          <span>2026</span>
+        </DeckFooter>
+      </div>
     ),
   },
 
