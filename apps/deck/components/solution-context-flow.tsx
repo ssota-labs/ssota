@@ -9,6 +9,8 @@ import {
   Position,
   ReactFlow,
   getBezierPath,
+  useNodesInitialized,
+  useReactFlow,
   type Edge,
   type EdgeProps,
   type Node,
@@ -33,7 +35,7 @@ function ContextNode({ data }: NodeProps) {
   return (
     <div
       className={cn(
-        "min-w-[76px] rounded-lg border px-2.5 py-2 text-center text-[11px] font-semibold leading-tight shadow-sm",
+        "min-w-[104px] rounded-xl border px-3.5 py-3 text-center text-[14px] font-semibold leading-tight shadow-sm",
         phase === "execution"
           ? "border-primary/35 bg-primary/10 text-foreground"
           : "border-primary/25 bg-primary/5 text-foreground",
@@ -101,51 +103,83 @@ const NODE_TYPES = { context: ContextNode };
 const EDGE_TYPES = { context: ContextEdge };
 
 const INITIAL_NODES: Node<ContextNodeData>[] = [
-  { id: "okr", type: "context", position: { x: 0, y: 72 }, data: { label: "OKR", phase: "direction" } },
-  { id: "roadmap", type: "context", position: { x: 108, y: 72 }, data: { label: "로드맵", phase: "direction" } },
-  { id: "research", type: "context", position: { x: 216, y: 72 }, data: { label: "리서치", phase: "direction" } },
-  { id: "initiative", type: "context", position: { x: 340, y: 8 }, data: { label: "이니셔티브", phase: "execution" } },
-  { id: "design", type: "context", position: { x: 452, y: 8 }, data: { label: "설계결정", phase: "execution" } },
-  { id: "test", type: "context", position: { x: 564, y: 72 }, data: { label: "테스트", phase: "verify" } },
-  { id: "deploy", type: "context", position: { x: 672, y: 72 }, data: { label: "배포", phase: "verify" } },
+  { id: "okr", type: "context", position: { x: 0, y: 108 }, data: { label: "OKR", phase: "direction" } },
+  { id: "roadmap", type: "context", position: { x: 58, y: 108 }, data: { label: "로드맵", phase: "direction" } },
+  { id: "research", type: "context", position: { x: 116, y: 108 }, data: { label: "리서치", phase: "direction" } },
+  { id: "initiative", type: "context", position: { x: 186, y: 16 }, data: { label: "이니셔티브", phase: "execution" } },
+  { id: "design", type: "context", position: { x: 244, y: 16 }, data: { label: "설계결정", phase: "execution" } },
+  { id: "test", type: "context", position: { x: 314, y: 108 }, data: { label: "테스트", phase: "verify" } },
+  { id: "deploy", type: "context", position: { x: 372, y: 108 }, data: { label: "배포", phase: "verify" } },
 ];
 
 const edgeStroke = "var(--color-primary, oklch(0.62 0.12 223))";
 
 const INITIAL_EDGES: Edge[] = [
-  { id: "e-okr-roadmap", source: "okr", target: "roadmap", type: "context", style: { stroke: edgeStroke, strokeWidth: 1.5, opacity: 0.45 } },
-  { id: "e-roadmap-research", source: "roadmap", target: "research", type: "context", style: { stroke: edgeStroke, strokeWidth: 1.5, opacity: 0.45 } },
-  { id: "e-research-initiative", source: "research", target: "initiative", targetHandle: "top", type: "context", style: { stroke: edgeStroke, strokeWidth: 1.5, opacity: 0.5 } },
-  { id: "e-initiative-design", source: "initiative", target: "design", type: "context", style: { stroke: edgeStroke, strokeWidth: 1.5, opacity: 0.5 } },
-  { id: "e-design-test", source: "design", sourceHandle: "bottom", target: "test", targetHandle: "top", type: "context", style: { stroke: edgeStroke, strokeWidth: 1.5, opacity: 0.5 } },
-  { id: "e-test-deploy", source: "test", target: "deploy", type: "context", style: { stroke: edgeStroke, strokeWidth: 1.5, opacity: 0.45 } },
+  { id: "e-okr-roadmap", source: "okr", target: "roadmap", type: "context", style: { stroke: edgeStroke, strokeWidth: 2, opacity: 0.45 } },
+  { id: "e-roadmap-research", source: "roadmap", target: "research", type: "context", style: { stroke: edgeStroke, strokeWidth: 2, opacity: 0.45 } },
+  { id: "e-research-initiative", source: "research", target: "initiative", targetHandle: "top", type: "context", style: { stroke: edgeStroke, strokeWidth: 2, opacity: 0.5 } },
+  { id: "e-initiative-design", source: "initiative", target: "design", type: "context", style: { stroke: edgeStroke, strokeWidth: 2, opacity: 0.5 } },
+  { id: "e-design-test", source: "design", sourceHandle: "bottom", target: "test", targetHandle: "top", type: "context", style: { stroke: edgeStroke, strokeWidth: 2, opacity: 0.5 } },
+  { id: "e-test-deploy", source: "test", target: "deploy", type: "context", style: { stroke: edgeStroke, strokeWidth: 2, opacity: 0.45 } },
   {
     id: "e-research-design",
     source: "research",
     target: "design",
     targetHandle: "top",
     type: "context",
-    style: { stroke: edgeStroke, strokeWidth: 1, opacity: 0.28, strokeDasharray: "4 4" },
-  },
-  {
-    id: "e-okr-deploy",
-    source: "okr",
-    target: "deploy",
-    targetHandle: "top",
-    type: "context",
-    style: { stroke: edgeStroke, strokeWidth: 1, opacity: 0.2, strokeDasharray: "5 5" },
+    style: { stroke: edgeStroke, strokeWidth: 1.5, opacity: 0.28, strokeDasharray: "4 4" },
   },
 ];
+
+const FIT_OPTIONS = {
+  padding: 0.04,
+  maxZoom: 2.5,
+  minZoom: 1,
+  duration: 0,
+} as const;
+
+/** 컨테이너 크기·노드 측정 후 그래프를 pane에 맞게 확대. */
+function ContextFlowFit({ containerRef }: { containerRef: React.RefObject<HTMLDivElement | null> }) {
+  const { fitView } = useReactFlow();
+  const ready = useNodesInitialized();
+
+  const refit = React.useCallback(() => {
+    void fitView(FIT_OPTIONS);
+  }, [fitView]);
+
+  React.useEffect(() => {
+    if (!ready) return;
+    const id = requestAnimationFrame(refit);
+    return () => cancelAnimationFrame(id);
+  }, [ready, refit]);
+
+  React.useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !ready) return;
+
+    const observer = new ResizeObserver(() => {
+      requestAnimationFrame(refit);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [containerRef, ready, refit]);
+
+  return null;
+}
 
 /** 제품 맥락 체인 — react-flow 기반 정적 그래프. */
 export function SolutionContextFlow({ className }: { className?: string }) {
   const [nodes] = React.useState(INITIAL_NODES);
   const [edges] = React.useState(INITIAL_EDGES);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   return (
     <div className={cn("deck-context-flow flex h-full min-h-[300px] flex-col", className)}>
-      <div className="relative min-h-0 flex-1 rounded-xl border border-border bg-card/30">
-        <div className="pointer-events-none absolute inset-x-4 top-2.5 z-10 flex text-[9px] font-medium uppercase tracking-wider text-muted-foreground/70">
+      <div
+        ref={containerRef}
+        className="relative min-h-0 flex-1 rounded-xl border border-border bg-card/30"
+      >
+        <div className="pointer-events-none absolute inset-x-4 top-3 z-10 flex text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
           {PHASE_LABELS.map((phase) => (
             <span key={phase.label} style={{ flex: phase.flex }} className="text-center">
               {phase.label}
@@ -166,15 +200,14 @@ export function SolutionContextFlow({ className }: { className?: string }) {
           zoomOnPinch={false}
           zoomOnDoubleClick={false}
           preventScrolling={false}
-          fitView
-          fitViewOptions={{ padding: { top: 28, right: 16, bottom: 12, left: 16 } }}
           proOptions={{ hideAttribution: true }}
           className="!bg-transparent"
         >
+          <ContextFlowFit containerRef={containerRef} />
           <Background
             variant={BackgroundVariant.Dots}
-            gap={18}
-            size={1}
+            gap={20}
+            size={1.2}
             color="color-mix(in oklch, var(--color-primary) 18%, transparent)"
           />
         </ReactFlow>
