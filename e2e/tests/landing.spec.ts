@@ -6,6 +6,7 @@ test.describe("landing page", () => {
   }) => {
     await page.goto("/");
 
+    await expect(page.locator("main.dark")).toBeVisible();
     await expect(
       page.getByRole("heading", {
         name: "제품을 완벽히 아는 AI CPO",

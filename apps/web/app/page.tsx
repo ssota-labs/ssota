@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { LandingDarkMode } from "@/components/landing/landing-dark-mode";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
 import {
   LandingLifecycleFlow,
@@ -194,7 +195,8 @@ export default async function HomePage() {
   const appHref = user ? await resolvePostAuthPath(user.id) : "/login";
 
   return (
-    <main className="min-h-screen overflow-hidden bg-background text-foreground">
+    <main className="dark min-h-screen overflow-hidden bg-background text-foreground">
+      <LandingDarkMode />
       <header className="sticky top-0 z-20 border-b border-border/30 bg-background/20 backdrop-blur-xl supports-backdrop-filter:bg-background/10">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link
