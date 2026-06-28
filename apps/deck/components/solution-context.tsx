@@ -30,15 +30,15 @@ function ProductStackCard({
   icon: IconComponent,
 }: (typeof PRODUCT_STACK)[number]) {
   return (
-    <div className="flex flex-col rounded-xl border border-border bg-card/50 p-3">
-      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <IconComponent size={18} weight="duotone" />
+    <div className="flex flex-col rounded-xl border border-border bg-card/50 p-3.5">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <IconComponent size={20} weight="duotone" />
       </div>
-      <div className="mt-2 flex items-baseline gap-1.5">
-        <span className="text-[13px] font-semibold leading-tight">{ko}</span>
-        <span className="text-[10px] text-muted-foreground">{en}</span>
+      <div className="mt-2.5 flex items-baseline gap-1.5">
+        <span className="text-[15px] font-semibold leading-tight">{ko}</span>
+        <span className="text-[11px] text-muted-foreground">{en}</span>
       </div>
-      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">{cap}</p>
+      <p className="mt-1 text-[12px] leading-snug text-muted-foreground">{cap}</p>
     </div>
   );
 }
