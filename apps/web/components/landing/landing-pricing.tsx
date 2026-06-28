@@ -44,27 +44,12 @@ const cloudPlans = [
     action: "beta" as const,
   },
   {
-    name: "Cloud Team",
-    price: "$50",
-    period: "/ user / month",
-    description: "협업 팀을 위한 클라우드",
-    features: [
-      "Starter의 모든 기능",
-      "팀 단위 워크스페이스·권한",
-      "워크플로우·지침 공유",
-      "확장된 MCP·연동 한도",
-    ],
-    cta: "베타 알림 받기",
-    highlighted: false,
-    action: "beta" as const,
-  },
-  {
     name: "Cloud Business",
     price: "$100",
     period: "/ user / month",
     description: "조직 단위 운영 레이어",
     features: [
-      "Team의 모든 기능",
+      "Starter의 모든 기능",
       "조직 전체 거버넌스·감사",
       "고급 승인·데이터 보존 정책",
       "우선 지원·안정적 SLA",
@@ -97,7 +82,7 @@ export function LandingPricing() {
           </p>
         </div>
 
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {cloudPlans.map((plan) => (
             <Card
               key={plan.name}
