@@ -118,8 +118,8 @@ export default async function HomePage() {
 
       <section className="relative border-b">
         <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
-          <div className="mx-auto max-w-2xl space-y-8 text-center">
-            <div className="space-y-4">
+          <div className="mx-auto flex w-full flex-col items-center gap-8">
+            <div className="max-w-2xl space-y-4 text-center">
               <Badge variant="outline" className="bg-background">
                 AI CPO for coding agents
               </Badge>
