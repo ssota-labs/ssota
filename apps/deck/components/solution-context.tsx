@@ -75,7 +75,7 @@ function ProductStackCard({
   );
 }
 
-/** OKR → 배포 체인(좌) + 4구성 2×2·결론(우). */
+/** OKR → 배포 체인 + 에이전트(상단) / 결론(좌) + 4구성 2×2(우) 하단 행. */
 export function SolutionContextRow({
   className,
   conclusion,
@@ -84,9 +84,9 @@ export function SolutionContextRow({
   conclusion: React.ReactNode;
 }) {
   return (
-    <div className={cn("flex items-start gap-7", className)}>
-      {/* 좌: 맥락 체인 + 에이전트 팀 */}
-      <div className="min-w-0 flex-1">
+    <div className={cn("flex flex-col gap-6", className)}>
+      {/* 상단: 맥락 체인 + 에이전트 팀 */}
+      <div className="min-w-0">
         <div className="grid grid-cols-7 gap-1">
           {PHASES.map((phase) => (
             <div
@@ -136,17 +136,17 @@ export function SolutionContextRow({
         </div>
       </div>
 
-      {/* 우: 4구성 2×2 + 결론 */}
-      <aside className="flex w-[42%] max-w-[420px] shrink-0 flex-col items-end">
-        <div className="grid w-full grid-cols-2 gap-2.5">
+      {/* 하단: 결론(좌) + 4구성 2×2(우) */}
+      <div className="flex items-center gap-8">
+        <div className="min-w-0 flex-1 space-y-2 text-[16px] leading-[1.6] text-muted-foreground">
+          {conclusion}
+        </div>
+        <div className="grid w-[min(100%,380px)] shrink-0 grid-cols-2 gap-2.5">
           {PRODUCT_STACK.map((item) => (
             <ProductStackCard key={item.en} {...item} />
           ))}
         </div>
-        <div className="mt-5 w-full space-y-2 text-right text-[16px] leading-[1.6] text-muted-foreground">
-          {conclusion}
-        </div>
-      </aside>
+      </div>
     </div>
   );
 }
