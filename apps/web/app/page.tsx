@@ -11,6 +11,7 @@ import {
 } from "@ssota/ui/components/ui/card";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
 
 export const metadata: Metadata = {
   title: "SSOTA - 제품을 제대로 아는 AI",
@@ -132,6 +133,8 @@ export default async function HomePage() {
                 </p>
               </div>
             </div>
+
+            <LandingHeroPrompt href={appHref} />
           </div>
         </div>
       </section>
