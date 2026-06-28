@@ -34,7 +34,7 @@
 | 6 | Unique Insight | 무인의 조건은 속도가 아니라 공통 판단 기준 | Unique Insight |
 | 7 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model |
 | 8 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market |
-| 9 | Team | Team | Team |
+| 9 | Team | 이 문제를 가장 오래, 가장 많이 겪었다 | Team (프로필 + 학력·수상) |
 
 > **The Ask (What we need)** 슬라이드는 덱에서 제외.
 
@@ -161,10 +161,18 @@
 - Wedge: Agent Development Control Plane (월 구독 + 파트너 세팅)
 - ⚠️ 채울 자리: Bottom-up 시장 규모 (타깃 팀 수 × ARPU)
 
-## 9. Team
+## 9. Team — "이 문제를 가장 오래, 가장 많이 겪었다"
 
-- **연주환 · Paxhumana** — 2023–2026 약 80건 개발에서 "사람 시간에 묶이는" 문제를 직접 반복 경험
-- ⚠️ 확인: 1인 창업 / 공동창업자·합류 예정 여부
+> 창업·AI 경진대회부터 80건 실전 개발까지 — 같은 병목을 반복 확인했다.
+
+- **연주환 · JooWhan Yohn** — Paxhumana · SSOTA Labs
+- **학력:** 고려대학교 전기전자공학부 · 소프트웨어벤처융합전공 (16학번)
+- **트랙레코드:** 2023–2026 약 80건 실전 개발 → 무인 에이전트 개발팀을 위해 SSOTA 시작
+- **수상·경력:**
+  - 2022 고려대 스타트업 스테이션 창업경진대회 **대상**
+  - 2024 SW중심대학 디지털 경진대회 AI서비스 **최우수상** — 코히 코딩교육 에이전트
+  - 서연고카포 개발동아리 연합 AI 경진대회 **대상** — Fynd 여행 비서 에이전트
+- 🖼️ **프로필 사진** — `team.tsx` → `FOUNDER_IMAGE_SRC` (`public/team/profile.jpg`)
 
 ---
 
@@ -172,4 +180,4 @@
 
 1. Bottom-up 시장 규모 (타깃 팀 수 × ARPU)
 2. **Traction ① MedAI 실제 화면 스크린샷** (slide 4 우측 dashed 박스)
-3. Team 인원 구성 (1인 / 공동창업자)
+3. **Team 프로필 사진** (`public/team/profile.jpg` → `FOUNDER_IMAGE_SRC`)

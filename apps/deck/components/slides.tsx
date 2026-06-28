@@ -15,6 +15,7 @@ import { SolutionContextRow } from "./solution-context";
 import { TractionMedAIRow, TractionTrackRecord } from "./traction";
 import { InsightContrast } from "./unique-insight";
 import { BusinessModelRow } from "./business-model";
+import { TeamFounderRow } from "./team";
 
 /**
  * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 9슬라이드.
@@ -199,16 +200,11 @@ const SLIDES: SlideDef[] = [
     id: "team",
     render: () => (
       <>
-        <DeckSlideHeader section="Team">Team</DeckSlideHeader>
-        <Bullets
-          items={[
-            <>
-              <Hl>연주환 · Paxhumana</Hl> — 2023–2026 약 80건 개발에서 “사람 시간에 묶이는” 문제를
-              직접 반복 경험
-            </>,
-            <span className="text-muted-foreground/50">[ 확인: 공동창업자 · 합류 예정 ]</span>,
-          ]}
-        />
+        <DeckSlideHeader section="Team">이 문제를 가장 오래, 가장 많이 겪었다</DeckSlideHeader>
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          창업·AI 경진대회부터 80건 실전 개발까지 — 같은 병목을 반복 확인했다.
+        </p>
+        <TeamFounderRow className="mt-6 min-h-0 flex-1" />
       </>
     ),
   },
