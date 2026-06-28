@@ -15,7 +15,7 @@ async function main() {
 
   const [row] = (await db.execute(sql`
     SELECT p.id AS teamspace_id, a.id AS account_id
-    FROM projects p
+    FROM teamspaces p
     JOIN accounts a ON a.teamspace_id = p.id AND a.slug = 'workspace'
     WHERE p.slug = 'ssota-dev'
     LIMIT 1
