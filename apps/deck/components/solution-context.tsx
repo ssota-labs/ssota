@@ -20,7 +20,7 @@ const PRODUCT_STACK: {
   { ko: "지식그래프", en: "Graph", cap: "맥락을 관계로 연결", icon: GraphIcon },
   { ko: "워크플로우", en: "Workflow", cap: "같은 절차로 일함", icon: FlowArrowIcon },
   { ko: "MCP", en: "Read/Write", cap: "외부 컨텍스트 주입", icon: PlugsConnectedIcon },
-  { ko: "콘솔", en: "Console", cap: "방향·승인만", icon: BrowserIcon },
+  { ko: "콘솔", en: "Console", cap: "사람은 방향승인만", icon: BrowserIcon },
 ];
 
 function ProductStackCard({
