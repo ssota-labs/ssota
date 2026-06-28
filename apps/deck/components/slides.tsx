@@ -17,10 +17,10 @@ import { InsightContrast } from "./unique-insight";
 import { BusinessModelRow } from "./business-model";
 
 /**
- * SSOTA Seed Round Pitch Deck — YC Seed 템플릿(Aaron Harris) 10슬라이드.
+ * SSOTA Seed Round Pitch Deck — YC Seed 템플릿 기반 9슬라이드.
  * https://www.ycombinator.com/library/2u-how-to-build-your-seed-round-pitch-deck
  *
- * 콘텐츠 슬라이드(2–10) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
+ * 콘텐츠 슬라이드(2–9) 공통 레이아웃: 섹션 라벨(center) + 헤드라인(center) + 본문.
  * 디자인 토큰: @ssota/ui (cyan primary · Geist/Pretendard).
  *
  * North Star: 목표는 "무인(無人) 에이전트 개발팀"을 만들어내는 것.
@@ -208,28 +208,6 @@ const SLIDES: SlideDef[] = [
             </>,
             <>축구선수 → 엔지니어 (화랑대기 우승·MVP, 전국소년체전 우승)</>,
             <span className="text-muted-foreground/50">[ 확인: 공동창업자 · 합류 예정 ]</span>,
-          ]}
-        />
-      </>
-    ),
-  },
-
-  /* 10 — The Ask */
-  {
-    id: "ask",
-    render: () => (
-      <>
-        <DeckSlideHeader section="The Ask">What we need</DeckSlideHeader>
-        <Bullets
-          items={[
-            <>
-              <Hl>$—</Hl> <span className="text-muted-foreground/50">[ 채울 자리 ]</span>
-            </>,
-            <>엔지니어 채용 + Cloud 출시 + OSS 커뮤니티</>,
-            <>이 자금으로 1년 안에 Series A 마일스톤에 도달한다</>,
-            <>
-              사람이 방향만 정하면, 나머지는 <Hl>무인 에이전트 개발팀</Hl>이 돌린다
-            </>,
           ]}
         />
       </>

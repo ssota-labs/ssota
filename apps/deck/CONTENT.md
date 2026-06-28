@@ -1,6 +1,6 @@
 # SSOTA Seed Deck — 콘텐츠 정리
 
-> 구조 SSOT: YC Seed Deck Template (Aaron Harris, 10슬라이드)
+> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **9슬라이드** (The Ask 제외)
 > 디자인 원칙(Kevin Hale): Legible · Simple · Obvious — 큰 글씨, 1슬라이드 1아이디어, **헤드라인은 결론(주장형)·마침표로 끝** (`DeckTitle`이 자동 보정)
 
 ## 0. 한 줄 정의 / North Star
@@ -22,7 +22,7 @@
 
 ## 슬라이드 한눈에 (헤드라인 = 주장)
 
-**레이아웃 (2–10):** `DeckSlideHeader` — 섹션 라벨(center, muted) + 헤드라인(center, 40px) + 본문.
+**레이아웃 (2–9):** `DeckSlideHeader` — 섹션 라벨(center, muted) + 헤드라인(center, 40px) + 본문.
 
 | # | 섹션 라벨 | 헤드라인 | 역할 |
 |---|---|---|---|
@@ -35,7 +35,8 @@
 | 7 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model |
 | 8 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market |
 | 9 | Team | Team | Team |
-| 10 | The Ask | What we need | The Ask |
+
+> **The Ask (What we need)** 슬라이드는 덱에서 제외.
 
 ---
 
@@ -166,18 +167,10 @@
 - 축구선수 → 엔지니어 (화랑대기 우승·MVP, 전국소년체전 우승)
 - ⚠️ 확인: 1인 창업 / 공동창업자·합류 예정 여부
 
-## 10. The Ask — "What we need"
-
-- `$—` ⚠️ 채울 자리
-- 용도: 엔지니어 채용 + Cloud 출시 + OSS 커뮤니티
-- 1년 안에 Series A 마일스톤 도달
-- 클로징: **"사람이 방향만 정하면, 나머지는 무인 에이전트 개발팀이 돌린다."**
-
 ---
 
 ## 채울 자리 (사용자 입력 필요)
 
-1. The Ask 모금액 + 자금 배분 비율
-2. Bottom-up 시장 규모 (타깃 팀 수 × ARPU)
-3. **Traction ① MedAI 실제 화면 스크린샷** (slide 4 우측 dashed 박스)
-4. Team 인원 구성 (1인 / 공동창업자)
+1. Bottom-up 시장 규모 (타깃 팀 수 × ARPU)
+2. **Traction ① MedAI 실제 화면 스크린샷** (slide 4 우측 dashed 박스)
+3. Team 인원 구성 (1인 / 공동창업자)
