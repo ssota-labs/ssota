@@ -36,8 +36,15 @@ body {
   overflow: hidden;
 }
 
+.deck-scaler-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .deck-scaler {
-  transform-origin: center center;
+  position: absolute;
+  top: 0;
+  left: 0;
   box-shadow:
     0 40px 80px -20px rgb(0 0 0 / 0.55),
     0 0 0 1px rgb(255 255 255 / 0.06);

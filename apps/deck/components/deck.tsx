@@ -45,25 +45,44 @@ export function Deck({ slides }: { slides: React.ReactNode[] }) {
 
   React.useEffect(() => {
     function fit() {
-      const pad = 48;
+      const padX = 32;
+      const padY = 56; // 하단 컨트롤 바 여유
+      const padRight = window.innerWidth >= 1024 ? padX + 28 : padX; // 진행 도트
+      const vw = window.visualViewport?.width ?? window.innerWidth;
+      const vh = window.visualViewport?.height ?? window.innerHeight;
       const s = Math.min(
-        (window.innerWidth - pad) / 1280,
-        (window.innerHeight - pad) / 720,
+        (vw - padX - padRight) / 1280,
+        (vh - padY) / 720,
       );
       setScale(Math.max(0.2, s));
     }
     fit();
     window.addEventListener("resize", fit);
-    return () => window.removeEventListener("resize", fit);
+    window.visualViewport?.addEventListener("resize", fit);
+    return () => {
+      window.removeEventListener("resize", fit);
+      window.visualViewport?.removeEventListener("resize", fit);
+    };
   }, []);
+
+  const scaledW = 1280 * scale;
+  const scaledH = 720 * scale;
 
   return (
     <div className="deck-stage">
-      <div
-        className="deck-scaler"
-        style={{ width: 1280, height: 720, transform: `scale(${scale})` }}
-      >
-        {slides[index]}
+      {/* scale()은 레이아웃 박스를 줄이지 않아 좁은 화면에서 잘림 → 래퍼에 시각적 크기 반영 */}
+      <div className="deck-scaler-wrap" style={{ width: scaledW, height: scaledH }}>
+        <div
+          className="deck-scaler"
+          style={{
+            width: 1280,
+            height: 720,
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+          }}
+        >
+          {slides[index]}
+        </div>
       </div>
 
       {/* 좌우 클릭 영역 */}
