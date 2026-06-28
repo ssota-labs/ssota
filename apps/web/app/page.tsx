@@ -13,7 +13,6 @@ import {
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
-import { LandingProblemWave } from "@/components/landing/landing-problem-wave";
 
 export const metadata: Metadata = {
   title: "SSOTA - 제품을 제대로 아는 AI",
@@ -175,7 +174,6 @@ export default async function HomePage() {
               왜 우리 팀은 달라지지 않죠?
             </span>
           </h2>
-          <LandingProblemWave />
         </div>
       </section>
 
