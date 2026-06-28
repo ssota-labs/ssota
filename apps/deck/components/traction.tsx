@@ -20,7 +20,7 @@ import { Hl } from "./slide";
 const MEDAI_ARTIFACTS = ["요구사항", "모델·제품 스펙", "개발 태스크", "테스트 기준", "의사결정 기록"];
 
 /** MedAI 우측 스크린샷 — `apps/deck/public/traction/medai-screenshot.png` 등 */
-const MEDAI_SCREENSHOT_SRC: string | undefined = undefined;
+const MEDAI_SCREENSHOT_SRC: string | undefined = "/traction/medai-screenshot.png";
 
 function TimelineStep({ date, label, accent }: { date: string; label: string; accent?: boolean }) {
   return (
@@ -29,6 +29,29 @@ function TimelineStep({ date, label, accent }: { date: string; label: string; ac
         {date}
       </span>
       <span className="text-[14px] text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+/** 비율 유지 fit + 동일 이미지 블러 백드롭. */
+function ScreenshotFrame({ src }: { src: string }) {
+  return (
+    <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-muted/30">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-45 blur-2xl saturate-125"
+      />
+      <div className="relative flex h-full w-full items-center justify-center p-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt=""
+          className="max-h-full max-w-full object-contain drop-shadow-md"
+        />
+      </div>
     </div>
   );
 }
@@ -70,14 +93,7 @@ export function TractionMedAIRow({ className }: { className?: string }) {
       {/* 우: MedAI 실제 화면 */}
       <div className="flex w-1/2 shrink-0 flex-col">
         {MEDAI_SCREENSHOT_SRC ? (
-          <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-border bg-card/50">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={MEDAI_SCREENSHOT_SRC}
-              alt=""
-              className="h-full w-full object-cover object-top"
-            />
-          </div>
+          <ScreenshotFrame src={MEDAI_SCREENSHOT_SRC} />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border bg-card/30 p-6 text-center">
             <ImageIcon size={40} weight="duotone" className="text-muted-foreground/45" aria-hidden />
@@ -115,70 +131,19 @@ const DOMAINS = [
   "홈페이지 개발",
 ];
 
-/** 트랙레코드 하단 작업 카드 — `WORK_CARDS`에 채워 넣기 */
-export type TrackRecordWorkCard = {
-  /** 카드 제목 (예: "MEDAI 신장암 CT 예측") */
-  title: string;
-  /** 기간 (예: "2024.03–2024.08") */
-  period?: string;
-  /** 한 줄 요약 — 무엇을 했는지 */
-  summary?: string;
-  /** SSOTA 관점 인사이트 한 줄 (선택) */
-  insight?: string;
-  /** 스크린샷 — `public/` 기준 경로 (예: "/traction/medai.png") */
-  imageSrc?: string;
-  /** 보조 태그 1–2개 (예: ["의료 AI", "PoC"]) */
-  tags?: string[];
-};
+/** 트랙레코드 하단 작업 스크린샷 — `apps/deck/public/traction/work/` */
+const WORK_CARD_IMAGES = [
+  "/traction/work/work1.png",
+  "/traction/work/work2.png",
+  "/traction/work/work3.png",
+  "/traction/work/work4.png",
+];
 
-/** 5슬롯 — `null`이면 dashed 플레이스홀더 */
-const WORK_CARDS: (TrackRecordWorkCard | null)[] = [null, null, null, null, null];
-
-function WorkCardPlaceholder({ index }: { index: number }) {
+function WorkImageCard({ src }: { src: string }) {
   return (
-    <div className="flex min-h-[148px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-card/30 p-4 text-center">
-      <ImageIcon size={28} weight="duotone" className="text-muted-foreground/40" aria-hidden />
-      <span className="text-[13px] font-medium text-muted-foreground">프로젝트 카드 {index + 1}</span>
-      <span className="text-[11px] text-muted-foreground/55">WORK_CARDS[{index}]</span>
-    </div>
-  );
-}
-
-function WorkCard({ card }: { card: TrackRecordWorkCard }) {
-  return (
-    <div className="flex min-h-[148px] flex-col overflow-hidden rounded-xl border border-border bg-card/50">
-      {card.imageSrc ? (
-        <div className="relative h-[72px] shrink-0 overflow-hidden border-b border-border bg-muted/30">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={card.imageSrc} alt="" className="h-full w-full object-cover object-top" />
-        </div>
-      ) : null}
-      <div className="flex flex-1 flex-col p-3.5">
-        <div className="flex items-baseline justify-between gap-2">
-          <span className="text-[14px] font-semibold leading-tight text-foreground">{card.title}</span>
-          {card.period ? (
-            <span className="shrink-0 text-[11px] text-muted-foreground">{card.period}</span>
-          ) : null}
-        </div>
-        {card.summary ? (
-          <p className="mt-1.5 line-clamp-2 text-[12px] leading-snug text-muted-foreground">{card.summary}</p>
-        ) : null}
-        {card.insight ? (
-          <p className="mt-1 line-clamp-1 text-[11px] font-medium text-primary/85">{card.insight}</p>
-        ) : null}
-        {card.tags && card.tags.length > 0 ? (
-          <div className="mt-auto flex flex-wrap gap-1 pt-2">
-            {card.tags.map((t) => (
-              <span
-                key={t}
-                className="rounded-full border border-border bg-background/60 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
-              >
-                {t}
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </div>
+    <div className="overflow-hidden rounded-xl border border-border bg-card/50">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={src} alt="" className="aspect-[16/10] w-full object-cover object-top" />
     </div>
   );
 }
@@ -221,10 +186,10 @@ export function TractionTrackRecord({ className }: { className?: string }) {
           ))}
         </div>
 
-        <div className="mt-5 grid grid-cols-5 gap-3">
-          {WORK_CARDS.map((card, i) =>
-            card ? <WorkCard key={card.title} card={card} /> : <WorkCardPlaceholder key={i} index={i} />,
-          )}
+        <div className="mt-5 grid grid-cols-4 gap-3">
+          {WORK_CARD_IMAGES.map((src) => (
+            <WorkImageCard key={src} src={src} />
+          ))}
         </div>
       </div>
     </div>

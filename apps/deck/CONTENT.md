@@ -1,6 +1,6 @@
 # SSOTA Seed Deck — 콘텐츠 정리
 
-> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **11슬라이드** (The Ask 제외)  
+> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **12슬라이드** (The Ask 제외, Vision 클로징 추가)  
 > **이미지 assets:** [IMAGES.md](./IMAGES.md)
 > 디자인 원칙(Kevin Hale): Legible · Simple · Obvious — 큰 글씨, 1슬라이드 1아이디어, **헤드라인은 결론(주장형)·마침표로 끝** (`DeckTitle`이 자동 보정)
 
@@ -38,6 +38,7 @@
 | 9 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market (TAM/SAM/SOM) |
 | 10 | Roadmap | 소프트웨어 개발에서 시작해 모든 지식노동으로 | Roadmap (도메인 확장 3단계) |
 | 11 | Team | 이 문제를 오래, 많이 겪었다 | Team (프로필 + 학력·수상) |
+| 12 | Vision | 인간과 AI가 조화롭게 일하는 환경을 만든다 | Vision (Pax Humana 3막 + 미션) |
 
 > **The Ask (What we need)** 슬라이드는 덱에서 제외.
 
@@ -225,6 +226,14 @@
   - 서연고카포 개발동아리 연합 AI 경진대회 **대상** — Fynd 여행 비서 에이전트
 - **경력:** 크날 PM&개발 · 노벨라 스튜디오 · MedAI PoC · 버디파이 여행 챗봇
 - 🖼️ **프로필 사진** — `team.tsx` → `FOUNDER_IMAGE_SRC` ([IMAGES.md](./IMAGES.md))
+
+## 12. Vision — "인간과 AI가 조화롭게 일하는 환경을 만든다"
+
+> Pax Humana 라틴어 비전 → 2023 KG 에이전트 → 멈춤 → SSOTA. Team(실행력) 뒤 클로징.
+
+- **브릿지:** Pax Humana — 인간과 인공지능이 조화를 이루며 인류의 황금기를 만들자
+- **3막:** 2023 Pax Humana 시작 → 첫 파도(여행비서·수상·VC → LLM 한계·팀 접음) → 2026 SSOTA(AI CPO, 80건 실전, 무인 에이전트 개발팀)
+- **클로징:** SW 개발에서 먼저 증명 → 모든 지식노동 조직으로 확장 (Roadmap과 연결, 상세 반복 X)
 
 ---
 
