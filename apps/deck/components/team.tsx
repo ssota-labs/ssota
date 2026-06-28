@@ -54,6 +54,11 @@ const EXPERIENCE: CareerHighlight[] = [
     title: "MedAI",
     detail: "신장종양진단 AI 개발팀 PoC",
   },
+  {
+    year: "2023",
+    title: "버디파이",
+    detail: "여행 챗봇 · AI Full Stack Engineer",
+  },
 ];
 
 function ProfilePhoto({ src }: { src?: string }) {
