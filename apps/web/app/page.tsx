@@ -123,7 +123,7 @@ export default async function HomePage() {
                 AI CPO for coding agents
               </Badge>
               <div className="space-y-4">
-                <h1 className="text-4xl font-semibold tracking-tight text-balance md:text-6xl">
+                <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-5xl">
                   제품을 제대로 아는 AI
                 </h1>
                 <p className="mx-auto max-w-lg text-base leading-7 text-muted-foreground md:text-lg">
