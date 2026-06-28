@@ -15,7 +15,7 @@ test.describe("landing page", () => {
     await expect(page.getByLabel("SSOTA prompt preview")).toBeVisible();
     await expect(
       page.getByRole("heading", {
-        name: /다시 맞춰 주느라 바빠졌죠/,
+        name: /왜 우리 팀은 달라지지 않죠/,
       }),
     ).toBeVisible();
     await expect(page.getByLabel("SSOTA workspace preview")).toBeVisible();

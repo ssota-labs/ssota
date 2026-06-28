@@ -165,21 +165,21 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="problem" className="border-b bg-background">
+      <section id="problem" className="bg-background">
         <div className="mx-auto flex min-h-[min(72vh,44rem)] max-w-5xl flex-col items-center justify-center px-6 py-24 text-center">
           <h2 className="text-3xl font-semibold leading-[1.25] tracking-tight text-balance md:text-5xl md:leading-[1.2] lg:text-[3.25rem]">
             <span className="block text-muted-foreground">
               분명히 코딩 에이전트를 늘렸는데,
             </span>
             <span className="mt-4 block text-foreground">
-              왜 에이전트는 자꾸 틀리고, 다시 맞춰 주느라 바빠졌죠?
+              왜 우리 팀은 달라지지 않죠?
             </span>
           </h2>
           <LandingProblemWave />
         </div>
       </section>
 
-      <section id="workspace" className="border-b bg-muted/30">
+      <section id="workspace" className="bg-muted/30">
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
           <div className="max-w-md space-y-4">
             <h2 className="text-3xl font-semibold tracking-tight">
