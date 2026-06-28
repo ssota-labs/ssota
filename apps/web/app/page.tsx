@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -25,18 +26,69 @@ const problemCards = [
     title: "뭐가 맞는지 모릅니다",
     detail:
       "PRD, 슬랙, Notion, 레포… 다 있는데, 뭐가 최신인지 모릅니다. 이 작업에 뭘 참고해야 하는지도 정해져 있지 않습니다.",
+    highlights: ["뭐가 최신인지 모릅니다", "뭘 참고해야 하는지도 정해져 있지 않습니다"],
   },
   {
     title: "에이전트는 엇갈립니다",
     detail:
       "에이전트마다 다른 조각만 읽습니다. 그래서 비슷한 일을 시켜도 결과가 엇갈립니다.",
+    highlights: ["다른 조각만 읽습니다", "결과가 엇갈립니다"],
   },
   {
     title: "맞춰 주는 일이 늘었습니다",
     detail:
       "프롬프트 보강, 리뷰, 재설명. 코딩 대신 의도를 맞추느라 바빠집니다.",
+    highlights: ["프롬프트 보강, 리뷰, 재설명", "의도를 맞추느라 바빠집니다"],
   },
 ] as const;
+
+function renderHighlightedDetail(
+  text: string,
+  highlights: readonly string[],
+): ReactNode {
+  const parts: ReactNode[] = [];
+  let remaining = text;
+  let key = 0;
+
+  while (remaining.length > 0) {
+    let earliestIndex = -1;
+    let matchedHighlight = "";
+
+    for (const highlight of highlights) {
+      const index = remaining.indexOf(highlight);
+      if (index !== -1 && (earliestIndex === -1 || index < earliestIndex)) {
+        earliestIndex = index;
+        matchedHighlight = highlight;
+      }
+    }
+
+    if (earliestIndex === -1) {
+      parts.push(
+        <span key={key++} className="text-muted-foreground">
+          {remaining}
+        </span>,
+      );
+      break;
+    }
+
+    if (earliestIndex > 0) {
+      parts.push(
+        <span key={key++} className="text-muted-foreground">
+          {remaining.slice(0, earliestIndex)}
+        </span>,
+      );
+    }
+
+    parts.push(
+      <span key={key++} className="font-semibold text-foreground">
+        {matchedHighlight}
+      </span>,
+    );
+    remaining = remaining.slice(earliestIndex + matchedHighlight.length);
+  }
+
+  return parts;
+}
 
 const workflowLayers = [
   {
@@ -201,7 +253,7 @@ export default async function HomePage() {
                 <CardHeader className="gap-2">
                   <CardTitle className="text-base">{card.title}</CardTitle>
                   <CardDescription className="text-sm leading-6">
-                    {card.detail}
+                    {renderHighlightedDetail(card.detail, card.highlights)}
                   </CardDescription>
                 </CardHeader>
               </Card>
