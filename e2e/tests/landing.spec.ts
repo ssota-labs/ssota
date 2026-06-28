@@ -47,8 +47,10 @@ test.describe("landing page", () => {
         name: /흐름에 따라서 일하는 AI/,
       }),
     ).toBeVisible();
-    await expect(page.getByText("Workflow", { exact: true })).toBeVisible();
+    // 라이프사이클 패널: 워크플로우 사이드바 + Data model 페이지의 DB 스키마(ErdDiagram)
+    await expect(page.getByText("data model", { exact: true })).toBeVisible();
     await expect(page.getByText("Executive", { exact: true })).toBeVisible();
+    await expect(page.getByText("node_catalog", { exact: true }).first()).toBeVisible();
   });
 
   test("landing: primary CTA sends unauthenticated visitors to login", async ({
