@@ -7,7 +7,7 @@ export async function syncComposedOfEdges(input: {
   sourceNodeId: string;
   targetNodeIds: string[];
 }) {
-  const deps = getGraphDeps(input.teamspaceId);
+  const deps = await getGraphDeps(input.teamspaceId);
   const existing = await deps.graphRead.traverseEdges({
     teamspaceId: input.teamspaceId,
     nodeId: input.sourceNodeId,

@@ -57,7 +57,7 @@ export async function POST(request: Request) {
     ]);
 
     if ("componentId" in body) {
-      const deps = getGraphDeps(body.teamspaceId);
+      const deps = await getGraphDeps(body.teamspaceId);
       const node = await deps.graphRead.getNode({
         teamspaceId: body.teamspaceId,
         nodeId: body.componentId,

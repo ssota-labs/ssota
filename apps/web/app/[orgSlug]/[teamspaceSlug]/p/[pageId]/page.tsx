@@ -53,7 +53,7 @@ export default async function TreePage({
     if (hubRedirect) redirect(hubRedirect);
   }
 
-  const graphRead = getGraphPorts(project.id).graphRead;
+  const graphRead = (await getGraphPorts(project.id)).graphRead;
 
   const context: Record<string, unknown> = { searchParams: urlParams };
   if (page.subjectNodeId) {

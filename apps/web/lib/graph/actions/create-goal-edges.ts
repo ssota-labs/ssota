@@ -8,7 +8,7 @@ async function createGoalEdge(input: {
   sourceNodeId: string;
   targetNodeId: string;
 }) {
-  const deps = getGraphDeps(input.teamspaceId);
+  const deps = await getGraphDeps(input.teamspaceId);
   return createEdge(deps, {
     teamspaceId: input.teamspaceId,
     catalogKey: input.catalogKey,

@@ -2,18 +2,18 @@ import { createNode, createInitiativeBundle, updateNode, createEdge } from "@sso
 import type { NodeType } from "@ssota/contracts";
 import { getGraphPorts } from "@/lib/ports";
 
-export function getGraphDeps(teamspaceId: string, accountId?: string) {
-  const { catalog, graphRead, graphWrite } = getGraphPorts(teamspaceId, accountId);
+export async function getGraphDeps(teamspaceId: string, accountId?: string) {
+  const { catalog, graphRead, graphWrite } = await getGraphPorts(teamspaceId, accountId);
   return { catalog, graphRead, graphWrite, teamspaceId, accountId };
 }
 
 /** Builder console graph scope — full project visibility (no account filter). */
-export function getBuilderGraphDeps(teamspaceId: string) {
+export async function getBuilderGraphDeps(teamspaceId: string) {
   return getGraphDeps(teamspaceId);
 }
 
 export async function queryNodesByType(teamspaceId: string, catalogKey: NodeType) {
-  const { graphRead } = getBuilderGraphDeps(teamspaceId);
+  const { graphRead } = await getBuilderGraphDeps(teamspaceId);
   return graphRead.queryNodes({ teamspaceId, catalogKey, limit: 200 });
 }
 

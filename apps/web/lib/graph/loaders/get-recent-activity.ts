@@ -12,7 +12,7 @@ export async function getRecentGraphActivity(
   teamspaceId: string,
   limit = 8,
 ): Promise<RecentActivityItem[]> {
-  const { graphRead } = getGraphDeps(teamspaceId);
+  const { graphRead } = await getGraphDeps(teamspaceId);
   const nodes = await graphRead.queryNodes({ teamspaceId, limit: 50 });
 
   return [...nodes]

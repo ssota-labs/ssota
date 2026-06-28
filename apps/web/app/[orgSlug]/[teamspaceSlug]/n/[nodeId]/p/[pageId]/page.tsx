@@ -51,7 +51,7 @@ export default async function NodeTemplatePage({
     if (hubRedirect) redirect(hubRedirect);
   }
 
-  const graphRead = getGraphPorts(project.id).graphRead;
+  const graphRead = (await getGraphPorts(project.id)).graphRead;
   const subject = await graphRead.getNodeById(nodeId);
   if (!subject || subject.teamspaceId !== project.id) notFound();
 

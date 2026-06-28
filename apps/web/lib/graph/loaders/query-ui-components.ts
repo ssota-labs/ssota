@@ -11,7 +11,7 @@ export type UiComponentListRow = {
 export async function queryUiComponents(
   teamspaceId: string,
 ): Promise<UiComponentListRow[]> {
-  const { graphRead } = getGraphDeps(teamspaceId);
+  const { graphRead } = await getGraphDeps(teamspaceId);
   const nodes = await graphRead.queryNodes({
     teamspaceId,
     catalogKey: "ui_component",

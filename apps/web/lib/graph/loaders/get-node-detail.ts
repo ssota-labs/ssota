@@ -27,7 +27,7 @@ async function mapEdges(
   direction: "incoming" | "outgoing",
   teamspaceId: string,
 ): Promise<NodeEdgeView[]> {
-  const { graphRead } = getGraphDeps(teamspaceId);
+  const { graphRead } = await getGraphDeps(teamspaceId);
   const views: NodeEdgeView[] = [];
 
   for (const edge of edges) {
@@ -52,7 +52,7 @@ export async function getNodeDetailView(
   teamspaceId: string,
   nodeId: string,
 ): Promise<NodeDetailView | null> {
-  const { graphRead } = getGraphDeps(teamspaceId);
+  const { graphRead } = await getGraphDeps(teamspaceId);
   const node = await graphRead.getNode({ teamspaceId, nodeId });
   if (!node) return null;
 

@@ -13,7 +13,7 @@ export default async function AppDynamicPage({
 }) {
   const { orgSlug, teamspaceSlug, pageId } = await params;
   const ctx = await resolveEndUserContext(orgSlug, teamspaceSlug);
-  const { graphRead } = getGraphPorts(ctx.teamspaceId, ctx.accountId);
+  const { graphRead } = await getGraphPorts(ctx.teamspaceId, ctx.accountId);
 
   const page = await getPagePort(ctx.teamspaceId).getPage(pageId);
   if (!page) notFound();

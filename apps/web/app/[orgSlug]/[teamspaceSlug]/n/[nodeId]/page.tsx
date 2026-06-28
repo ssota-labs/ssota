@@ -23,7 +23,7 @@ export default async function NodeLandingPage({
   const { orgSlug, teamspaceSlug, nodeId } = await params;
   const { project } = await resolveOrg(orgSlug, teamspaceSlug);
 
-  const graphRead = getGraphPorts(project.id).graphRead;
+  const graphRead = (await getGraphPorts(project.id)).graphRead;
   const subject = await graphRead.getNodeById(nodeId);
   if (!subject || subject.teamspaceId !== project.id) notFound();
 
