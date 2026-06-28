@@ -8,7 +8,6 @@ import { Hl } from "./slide";
 type TierTone = "muted" | "primary";
 
 type RevenueTier = {
-  step: string;
   title: string;
   price: string;
   priceNote?: string;
@@ -20,7 +19,6 @@ type RevenueTier = {
 
 const REVENUE_TIERS: RevenueTier[] = [
   {
-    step: "1",
     title: "오픈소스 코어",
     price: "$0",
     icon: CodeIcon,
@@ -33,7 +31,6 @@ const REVENUE_TIERS: RevenueTier[] = [
     footer: "오픈소스로 확산",
   },
   {
-    step: "2",
     title: "클라우드 호스팅 SaaS",
     price: "주력 매출",
     icon: CloudIcon,
@@ -50,7 +47,6 @@ const REVENUE_TIERS: RevenueTier[] = [
     ),
   },
   {
-    step: "3",
     title: "엔터프라이즈 구축",
     price: "협의",
     priceNote: "규모·요구사항별",
@@ -72,7 +68,7 @@ const CLOUD_PLANS = [
   { name: "Cloud Business", price: "$100", unit: "/user/mo", highlight: false },
 ] as const;
 
-function TierCard({ step, title, price, priceNote, icon: IconComponent, tone, points, footer }: RevenueTier) {
+function TierCard({ title, price, priceNote, icon: IconComponent, tone, points, footer }: RevenueTier) {
   const primary = tone === "primary";
   return (
     <div
@@ -94,14 +90,6 @@ function TierCard({ step, title, price, priceNote, icon: IconComponent, tone, po
             <IconComponent size={22} weight="duotone" />
           </div>
           <div>
-            <div
-              className={cn(
-                "text-[11px] font-medium uppercase tracking-wider",
-                primary ? "text-primary" : "text-muted-foreground/70",
-              )}
-            >
-              {step}
-            </div>
             <div className="text-[17px] font-semibold leading-tight tracking-tight">{title}</div>
           </div>
         </div>
