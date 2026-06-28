@@ -22,11 +22,13 @@ function EvolutionArrow() {
 
 function EvolutionCard({
   title,
+  titleEn,
   caption,
   highlight,
   children,
 }: {
   title: string;
+  titleEn: string;
   caption: React.ReactNode;
   highlight?: boolean;
   children: React.ReactNode;
@@ -38,7 +40,10 @@ function EvolutionCard({
         highlight ? "border-primary shadow-[0_0_0_1px] shadow-primary/25" : "border-border",
       )}
     >
-      <h3 className="text-[18px] font-semibold tracking-tight">{title}</h3>
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-[18px] font-semibold tracking-tight">{title}</h3>
+        <span className="shrink-0 text-[14px] font-medium text-muted-foreground">{titleEn}</span>
+      </div>
       <div className="mt-3 flex min-h-[168px] flex-1 items-center justify-center">{children}</div>
       <p className="mt-3 text-[13px] leading-snug text-muted-foreground">{caption}</p>
     </div>
@@ -133,12 +138,13 @@ function AgentTeamMock() {
 export function AgentEvolutionRow({ className }: { className?: string }) {
   return (
     <div className={cn("flex items-stretch gap-2", className)}>
-      <EvolutionCard title="Pair" caption="같이 작업한다">
+      <EvolutionCard title="페어" titleEn="Pair" caption="같이 작업한다">
         <PairMock />
       </EvolutionCard>
       <EvolutionArrow />
       <EvolutionCard
-        title="Agent"
+        title="에이전트"
+        titleEn="Agent"
         caption="개발자는 코드 없이 과업 단위로 맡긴다"
       >
         <AgentMock />
@@ -146,6 +152,7 @@ export function AgentEvolutionRow({ className }: { className?: string }) {
       <EvolutionArrow />
       <EvolutionCard
         title="에이전트 팀"
+        titleEn="Agent Team"
         caption={
           <>
             병렬로 돌리면 스펙·UI가 어긋나고, 사람이 다시 끼어든다
