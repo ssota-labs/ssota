@@ -260,9 +260,9 @@ export default async function HomePage() {
             {problemCards.map((card) => (
               <Card
                 key={card.title}
-                className="relative min-h-[13.5rem] overflow-hidden border-border/60 bg-card/50 text-left shadow-none"
+                className="relative min-h-[15.5rem] overflow-hidden border-border/60 bg-card/50 text-left shadow-none"
               >
-                <CardHeader className="relative z-10 gap-2 pb-24">
+                <CardHeader className="relative z-10 gap-2 pb-28">
                   <CardTitle className="text-base">{card.title}</CardTitle>
                   <CardDescription className="text-sm leading-6">
                     {renderHighlightedDetail(card.detail, card.highlights)}
