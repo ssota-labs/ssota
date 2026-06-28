@@ -14,6 +14,7 @@ import { AgentEvolutionRow } from "./agent-evolution";
 import { SolutionContextRow } from "./solution-context";
 import { TractionMedAIRow, TractionTrackRecord } from "./traction";
 import { InsightContrast } from "./unique-insight";
+import { BusinessModelRow } from "./business-model";
 
 /**
  * SSOTA Seed Round Pitch Deck — YC Seed 템플릿(Aaron Harris) 10슬라이드.
@@ -162,19 +163,10 @@ const SLIDES: SlideDef[] = [
     render: () => (
       <>
         <DeckSlideHeader section="Business Model">맥락 그래프에서 돈을 번다</DeckSlideHeader>
-        <Bullets
-          items={[
-            <>
-              <Hl>Open Source · $0</Hl> — 핵심 그래프·워크플로우·MCP, 생태계 확산
-            </>,
-            <>
-              <Hl>Cloud SaaS · $20–199</Hl> user/mo — 협업·승인·버전·권한 (주력)
-            </>,
-            <>
-              <Hl>Enterprise · $20K–100K+</Hl> /yr — 맞춤 워크플로우, SSO·감사로그·VPC·SLA
-            </>,
-          ]}
-        />
+        <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
+          오픈소스 코어 + 클라우드 호스팅 + 엔터프라이즈 구축
+        </p>
+        <BusinessModelRow className="mt-6" />
       </>
     ),
   },
