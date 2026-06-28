@@ -2,7 +2,7 @@
 
 import * as React from "react";
 
-import { Slide, DeckTitle, DeckFooter, DeckFooterSep, Bullets, Hl } from "./slide";
+import { Slide, DeckTitle, DeckSectionLabel, DeckFooter, DeckFooterSep, Bullets, Hl } from "./slide";
 import { AgentEvolutionRow } from "./agent-evolution";
 
 /**
@@ -55,7 +55,10 @@ const SLIDES: SlideDef[] = [
     id: "problem",
     render: () => (
       <>
-        <DeckTitle className="text-[40px]">무인 에이전트 개발팀은 아직 안 된다</DeckTitle>
+        <DeckSectionLabel>Problem</DeckSectionLabel>
+        <DeckTitle align="left" className="mt-2 text-[40px]">
+          무인 에이전트 개발팀은 아직 안 된다
+        </DeckTitle>
         <AgentEvolutionRow className="mt-8" />
         <p className="mt-7 text-center text-[21px] leading-relaxed text-muted-foreground">
           에이전트 하나의 과업 루프는 된다.{" "}

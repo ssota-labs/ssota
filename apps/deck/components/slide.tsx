@@ -41,8 +41,8 @@ export function Slide({
   );
 }
 
-/** 슬라이드 제목 — 결론을 말하는 주장형 헤드라인 (상단 중앙). */
-export function DeckTitle({
+/** 슬라이드 섹션 라벨 — Problem / Solution 등 (좌측 상단, muted). */
+export function DeckSectionLabel({
   children,
   className,
 }: {
@@ -50,9 +50,32 @@ export function DeckTitle({
   className?: string;
 }) {
   return (
+    <span
+      className={cn(
+        "text-[13px] font-medium uppercase tracking-[0.22em] text-muted-foreground",
+        className,
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** 슬라이드 제목 — 결론을 말하는 주장형 헤드라인. */
+export function DeckTitle({
+  children,
+  align = "center",
+  className,
+}: {
+  children: React.ReactNode;
+  align?: "center" | "left";
+  className?: string;
+}) {
+  return (
     <h2
       className={cn(
-        "text-center text-[44px] font-semibold leading-[1.3] tracking-tight",
+        "text-[44px] font-semibold leading-[1.3] tracking-tight",
+        align === "center" ? "text-center" : "text-left",
         className,
       )}
     >
