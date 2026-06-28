@@ -32,9 +32,18 @@ const LONGEST_PROMPT_TEXT = PROMPTS.map((prompt) => prompt.text).reduce(
   PROMPTS[0].text,
 );
 
-const TYPE_MS = 46;
+const TYPE_MS = 28;
+const TYPE_MS_RAMP_CHARS = 8;
 const EMPHASIS_DELAY_MS = 700;
 const PAUSE_MS = 2400;
+
+function typeDelayMs(charIndex: number): number {
+  if (charIndex < TYPE_MS_RAMP_CHARS) {
+    return 12 + charIndex * 2;
+  }
+
+  return TYPE_MS;
+}
 
 type Phase = "typing" | "holding" | "pausing";
 
@@ -96,7 +105,7 @@ function renderVisibleText(
 
 export function LandingHeroPrompt() {
   const [promptIndex, setPromptIndex] = useState(0);
-  const [charIndex, setCharIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(1);
   const [phase, setPhase] = useState<Phase>("typing");
   const [showCursor, setShowCursor] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
