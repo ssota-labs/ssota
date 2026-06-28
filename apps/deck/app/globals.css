@@ -11,9 +11,15 @@
   --deck-h: 720px;
 }
 
-/* 다크 슬라이드: brand primary(223°) 동일 chroma, L만 0.45→0.62 */
+/* 다크 슬라이드: brand primary(223°) 동일 계열, L 상향 — text-primary 직접 지정 */
 .deck-slide.dark {
-  --primary: oklch(0.62 0.105 223.128);
+  --deck-primary-bright: oklch(0.72 0.11 223.128);
+  --primary: var(--deck-primary-bright);
+  --color-primary: var(--deck-primary-bright);
+}
+
+.deck-slide.dark .text-primary {
+  color: var(--deck-primary-bright);
 }
 
 html,
