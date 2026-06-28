@@ -174,10 +174,7 @@ const solutionChapters: ReadonlyArray<{
   {
     title: "흐름에 따라서 일하는 AI",
     highlight: "흐름",
-    lead: [
-      "한 번 쓰고 버리는 산출물이 아니라",
-      "리서치 → 기획 → 설계 → 개발 → 배포로 이어지는 과정",
-    ],
+    lead: ["리서치 → 기획 → 설계 → 개발 → 배포로 이어지는 과정"],
     detail:
       "제품은 한 번에 끝나지 않습니다. OKR에서 시작해 이니셔티브, 설계 결정, 테스트, 배포 런북까지 — SSOTA는 각 단계의 맥락을 다음 단계로 넘깁니다.",
     visual: <LandingLifecycleFlow />,
