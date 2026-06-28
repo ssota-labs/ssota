@@ -63,7 +63,13 @@ const FLOW_STYLES = `
  * `useNodesInitialized` flips true when React Flow has measured every node, which
  * is the right moment to fit and the point at which edges can render.
  */
-function FlowReady({ nodeIds }: { nodeIds: string[] }) {
+function FlowReady({
+  nodeIds,
+  fitViewPadding,
+}: {
+  nodeIds: string[];
+  fitViewPadding: number;
+}) {
   const initialized = useNodesInitialized();
   const { fitView } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
@@ -76,10 +82,10 @@ function FlowReady({ nodeIds }: { nodeIds: string[] }) {
 
   React.useEffect(() => {
     if (initialized && nodeIds.length > 0) {
-      void fitView({ padding: 0.15, duration: 250 });
+      void fitView({ padding: fitViewPadding, duration: 250 });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialized, key, fitView]);
+  }, [initialized, key, fitView, fitViewPadding]);
 
   return null;
 }
@@ -106,6 +112,7 @@ function FlowCanvasEl({
   sheet,
   panel,
   viewAction,
+  fitViewPadding,
 }: {
   mode: "jsonb" | "graph";
   node: RenderNode | undefined;
@@ -119,6 +126,7 @@ function FlowCanvasEl({
   sheet: SheetConfig;
   panel: JsonRenderSpec | null;
   viewAction: string;
+  fitViewPadding: number;
 }) {
   const onAction = useAction();
   const { setCenter } = useReactFlow();
@@ -385,7 +393,7 @@ function FlowCanvasEl({
           proOptions={{ hideAttribution: true }}
           minZoom={0.2}
           fitView
-          fitViewOptions={{ padding: 0.15 }}
+          fitViewOptions={{ padding: fitViewPadding }}
           panOnDrag={!locked}
           zoomOnScroll={!locked}
           zoomOnPinch={!locked}
@@ -393,7 +401,10 @@ function FlowCanvasEl({
           onNodeClick={(_, n) => setActiveId(n.id)}
           onPaneClick={() => setActiveId(null)}
         >
-          <FlowReady nodeIds={rfNodes.map((n) => n.id)} />
+          <FlowReady
+            nodeIds={rfNodes.map((n) => n.id)}
+            fitViewPadding={fitViewPadding}
+          />
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
           <FlowTopToolbar
             locked={locked}
@@ -480,6 +491,10 @@ export const flowComponents: Record<string, CatalogComponent> = {
         : null;
     const viewAction =
       typeof props.viewAction === "string" ? props.viewAction : "setView";
+    const fitViewPadding =
+      typeof props.fitViewPadding === "number" && props.fitViewPadding >= 0
+        ? props.fitViewPadding
+        : 0.15;
     return (
       <ReactFlowProvider>
         <FlowCanvasEl
@@ -495,6 +510,7 @@ export const flowComponents: Record<string, CatalogComponent> = {
           sheet={sheet}
           panel={panel}
           viewAction={viewAction}
+          fitViewPadding={fitViewPadding}
         />
       </ReactFlowProvider>
     );

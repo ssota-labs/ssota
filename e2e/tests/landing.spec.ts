@@ -41,6 +41,11 @@ test.describe("landing page", () => {
       page.locator('[data-testid="dynamic-page-renderer"]').first(),
     ).toBeVisible();
 
+    await page.getByRole("tab", { name: "MCP 연결" }).click();
+    await expect(page.getByTestId("landing-mcp-connectors")).toBeVisible();
+    await expect(page.getByTestId("connector-github")).toBeVisible();
+    await expect(page.getByTestId("connector-slack")).toBeVisible();
+
     await expect(
       page.getByRole("heading", { name: "부담 없이 시작하세요" }),
     ).toBeVisible();

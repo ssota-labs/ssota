@@ -6,14 +6,15 @@ import {
   TreeStructureIcon,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { ConnectorDef } from "@/lib/connect/connectors";
 import { cn } from "@/lib/utils";
+import { LandingContextGraphPreview } from "@/components/landing/landing-context-graph-preview";
+import { LandingMcpConnectorsPreview } from "@/components/landing/landing-mcp-connectors-preview";
 import {
-  LandingMcpConnections,
   LANDING_FEATURE_VISUAL_HEIGHT_CLASS,
   VisualFrame,
 } from "@/components/landing/landing-solution-visuals";
-import { LandingContextGraphPreview } from "@/components/landing/landing-context-graph-preview";
 import { LandingWorkflowSidebarPreview } from "@/components/landing/landing-workflow-sidebar-preview";
 
 const AUTO_ADVANCE_MS = 6_500;
@@ -29,54 +30,56 @@ type FeaturePanel = {
   visual: ReactNode;
 };
 
-const FEATURE_PANELS: readonly FeaturePanel[] = [
-  {
-    id: "context",
-    tab: "제품 맥락",
-    title: "지금 무엇이 진실인지 아는 AI",
-    highlight: "진실",
-    description:
-      "흩어진 문서 더미가 아니라, OKR·로드맵·PRD·설계 결정을 그래프로 연결해 작업에 필요한 최신 승인본만 가져옵니다.",
-    icon: GraphIcon,
-    visual: (
-      <div className="h-full">
-        <VisualFrame label="context graph">
-          <LandingContextGraphPreview />
-        </VisualFrame>
-      </div>
-    ),
-  },
-  {
-    id: "lifecycle",
-    tab: "라이프사이클",
-    title: "흐름에 따라서 일하는 AI",
-    highlight: "흐름",
-    description:
-      "리서치 → 기획 → 설계 → 개발 → 배포로 이어지는 과정에서 각 단계의 맥락을 다음 단계의 입력으로 넘깁니다.",
-    icon: TreeStructureIcon,
-    visual: (
-      <div className="h-full">
-        <VisualFrame label="data model">
-          <LandingWorkflowSidebarPreview />
-        </VisualFrame>
-      </div>
-    ),
-  },
-  {
-    id: "mcp",
-    tab: "MCP 연결",
-    title: "외부 데이터도 모두 연결하는 AI",
-    highlight: "모두",
-    description:
-      "새 도구로 갈아타지 않고, Cursor·Claude Code·Codex가 MCP로 제품 맥락을 읽고 GitHub·Slack·Linear에 다시 기록합니다.",
-    icon: PlugsConnectedIcon,
-    visual: (
-      <div className="h-full">
-        <LandingMcpConnections />
-      </div>
-    ),
-  },
-];
+function buildFeaturePanels(connectors: ConnectorDef[]): readonly FeaturePanel[] {
+  return [
+    {
+      id: "context",
+      tab: "제품 맥락",
+      title: "지금 무엇이 진실인지 아는 AI",
+      highlight: "진실",
+      description:
+        "흩어진 문서 더미가 아니라, OKR·로드맵·PRD·설계 결정을 그래프로 연결해 작업에 필요한 최신 승인본만 가져옵니다.",
+      icon: GraphIcon,
+      visual: (
+        <div className="h-full">
+          <VisualFrame label="context graph">
+            <LandingContextGraphPreview />
+          </VisualFrame>
+        </div>
+      ),
+    },
+    {
+      id: "lifecycle",
+      tab: "라이프사이클",
+      title: "흐름에 따라서 일하는 AI",
+      highlight: "흐름",
+      description:
+        "리서치 → 기획 → 설계 → 개발 → 배포로 이어지는 과정에서 각 단계의 맥락을 다음 단계의 입력으로 넘깁니다.",
+      icon: TreeStructureIcon,
+      visual: (
+        <div className="h-full">
+          <VisualFrame label="data model">
+            <LandingWorkflowSidebarPreview />
+          </VisualFrame>
+        </div>
+      ),
+    },
+    {
+      id: "mcp",
+      tab: "MCP 연결",
+      title: "외부 데이터도 모두 연결하는 AI",
+      highlight: "모두",
+      description:
+        "새 도구로 갈아타지 않고, Cursor·Claude Code·Codex가 MCP로 제품 맥락을 읽고 GitHub·Slack·Linear에 다시 기록합니다.",
+      icon: PlugsConnectedIcon,
+      visual: (
+        <div className="h-full">
+          <LandingMcpConnectorsPreview connectors={connectors} />
+        </div>
+      ),
+    },
+  ];
+}
 
 function renderTitleHighlight(title: string, highlight: string): ReactNode {
   const index = title.indexOf(highlight);
@@ -93,12 +96,20 @@ function renderTitleHighlight(title: string, highlight: string): ReactNode {
   );
 }
 
-export function LandingFeatureShowcase() {
+export function LandingFeatureShowcase({
+  connectors,
+}: {
+  connectors: ConnectorDef[];
+}) {
+  const featurePanels = useMemo(
+    () => buildFeaturePanels(connectors),
+    [connectors],
+  );
   const [activeIndex, setActiveIndex] = useState(0);
   const [cycleKey, setCycleKey] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [paused, setPaused] = useState(false);
-  const active = FEATURE_PANELS[activeIndex] ?? FEATURE_PANELS[0]!;
+  const active = featurePanels[activeIndex] ?? featurePanels[0]!;
 
   const selectPanel = useCallback((index: number) => {
     setActiveIndex(index);
@@ -119,12 +130,12 @@ export function LandingFeatureShowcase() {
     }
 
     const timer = window.setTimeout(() => {
-      setActiveIndex((current) => (current + 1) % FEATURE_PANELS.length);
+      setActiveIndex((current) => (current + 1) % featurePanels.length);
       setCycleKey((key) => key + 1);
     }, AUTO_ADVANCE_MS);
 
     return () => window.clearTimeout(timer);
-  }, [activeIndex, cycleKey, paused, reduceMotion]);
+  }, [activeIndex, cycleKey, featurePanels.length, paused, reduceMotion]);
 
   return (
     <div className="mt-14 md:mt-16">
@@ -134,7 +145,7 @@ export function LandingFeatureShowcase() {
           role="tablist"
           aria-label="제품 개발 방식"
         >
-          {FEATURE_PANELS.map((panel, index) => (
+          {featurePanels.map((panel, index) => (
             <button
               key={panel.id}
               type="button"
@@ -175,7 +186,7 @@ export function LandingFeatureShowcase() {
             }}
           >
             <nav className="flex flex-col" aria-label="기능 목록">
-              {FEATURE_PANELS.map((panel, index) => {
+              {featurePanels.map((panel, index) => {
                 const isActive = index === activeIndex;
                 const PanelIcon = panel.icon;
 

@@ -148,7 +148,7 @@ export function ConnectorsView({
                 const connected =
                   (entry?.user.length ?? 0) + (entry?.org.length ?? 0) > 0;
                 return (
-                  <ConnectorCard
+                  <ConnectorBrowseCard
                     key={connector.provider}
                     connector={connector}
                     connected={connected}
@@ -183,14 +183,16 @@ export function ConnectorsView({
   );
 }
 
-function ConnectorCard({
+export function ConnectorBrowseCard({
   connector,
   connected,
   onSelect,
+  interactive = true,
 }: {
   connector: ConnectorDef;
   connected: boolean;
   onSelect: () => void;
+  interactive?: boolean;
 }) {
   const configured = Boolean(connector.connectorUid);
   return (
@@ -200,6 +202,7 @@ function ConnectorCard({
       highlighted={connected}
       onSelect={onSelect}
       testId={`connector-${connector.provider}`}
+      className={interactive ? undefined : "pointer-events-none"}
       icon={
         <ConnectorBrandIcon provider={connector.provider} className="size-5" />
       }

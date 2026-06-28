@@ -156,7 +156,7 @@ function buildSchemaSpec(height: number): JsonRenderSpec {
     elements: {
       erd: {
         type: "ErdDiagram",
-        props: { binding: "schema", property: "erd", height },
+        props: { binding: "schema", property: "erd", height, fitViewPadding: 0.03 },
       },
     },
   };

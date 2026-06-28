@@ -162,6 +162,7 @@ function buildSpec(height: number): JsonRenderSpec {
           property: "flow",
           layout: "LR",
           height,
+          fitViewPadding: 0.02,
           nodePresentation: NODE_PRESENTATION,
         },
       },

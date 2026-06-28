@@ -17,6 +17,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@ssota/ui/components/ui/card";
+import { getConnectors } from "@/lib/connect/connectors";
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { LandingBetaSignup } from "@/components/landing/landing-beta-signup";
@@ -135,6 +136,7 @@ function renderHighlightedDetailLines(
 
 export default async function HomePage() {
   const user = await getCurrentUser();
+  const connectors = getConnectors();
   const appHref = user ? await resolvePostAuthPath(user.id) : "/login";
 
   return (
@@ -279,7 +281,7 @@ export default async function HomePage() {
             AI 시대의 새로운 제품 개발 방식.
           </h2>
 
-          <LandingFeatureShowcase />
+          <LandingFeatureShowcase connectors={connectors} />
         </div>
       </section>
 
