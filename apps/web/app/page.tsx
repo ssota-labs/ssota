@@ -182,7 +182,7 @@ export default async function HomePage() {
       </section>
 
       <section id="problem" className="bg-background">
-        <div className="mx-auto flex max-w-5xl flex-col items-center px-6 py-24 md:py-28">
+        <div className="mx-auto flex max-w-5xl flex-col items-center px-6 py-32 md:py-40">
           <h2 className="text-center text-3xl font-semibold leading-[1.25] tracking-tight text-balance md:text-5xl md:leading-[1.2] lg:text-[3.25rem]">
             <span className="block text-muted-foreground">
               분명히 코딩 에이전트를 늘렸는데,
