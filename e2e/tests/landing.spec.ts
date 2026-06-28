@@ -13,6 +13,11 @@ test.describe("landing page", () => {
     ).toBeVisible();
     await expect(page.getByText("AI CPO for coding agents")).toBeVisible();
     await expect(page.getByLabel("SSOTA prompt preview")).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: /왜 우리 팀은 같은 제품 실수를 반복하죠/,
+      }),
+    ).toBeVisible();
     await expect(page.getByLabel("SSOTA workspace preview")).toBeVisible();
     await expect(page.getByText("Intent control loop")).toBeVisible();
     await expect(page.getByText("Approval queue")).toBeVisible();

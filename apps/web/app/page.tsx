@@ -13,6 +13,7 @@ import {
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
+import { LandingProblemWave } from "@/components/landing/landing-problem-wave";
 
 export const metadata: Metadata = {
   title: "SSOTA - 제품을 제대로 아는 AI",
@@ -87,6 +88,9 @@ export default async function HomePage() {
             SSOTA
           </Link>
           <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
+            <a href="#problem" className="transition-colors hover:text-foreground">
+              Problem
+            </a>
             <a href="#loop" className="transition-colors hover:text-foreground">
               Agent loop
             </a>
@@ -160,49 +164,34 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-b bg-muted/30">
+      <section id="problem" className="border-b bg-background">
+        <div className="mx-auto flex min-h-[min(72vh,44rem)] max-w-5xl flex-col items-center justify-center px-6 py-24 text-center">
+          <h2 className="text-3xl font-semibold leading-[1.25] tracking-tight text-balance md:text-5xl md:leading-[1.2] lg:text-[3.25rem]">
+            <span className="block text-muted-foreground">
+              분명히 코딩 에이전트를 늘렸는데,
+            </span>
+            <span className="mt-4 block text-foreground">
+              왜 우리 팀은 같은 제품 실수를 반복하죠?
+            </span>
+          </h2>
+          <LandingProblemWave />
+        </div>
+      </section>
+
+      <section id="workspace" className="border-b bg-muted/30">
         <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
           <div className="max-w-md space-y-4">
-            <Badge variant="secondary">Product workspace</Badge>
             <h2 className="text-3xl font-semibold tracking-tight">
-              제품 맥락을 한 화면에서 운영합니다.
+              맥락이 흩어지면, 에이전트도 각자 다르게 움직입니다.
             </h2>
             <p className="leading-7 text-muted-foreground">
-              에이전트가 읽어야 할 스펙, 승인 대기 중인 결정, 다시 사용할 수
-              있는 제품 맥락을 워크스페이스에서 관리합니다.
+              PRD, 정책, 디자인 결정, API 설계가 서로 다른 도구에 흩어져 있으면
+              병렬 에이전트는 빠르게 잘못된 방향으로 갑니다. SSOTA는 승인된
+              제품 맥락을 한곳에 모읍니다.
             </p>
           </div>
 
           <LandingProductPreview appHref={appHref} />
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-7xl gap-8 px-6 py-20 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="space-y-4">
-          <Badge variant="secondary">Why now</Badge>
-          <h2 className="text-3xl font-semibold tracking-tight">
-            코딩 속도가 아니라 의도 정렬이 병목입니다.
-          </h2>
-          <p className="leading-7 text-muted-foreground">
-            병렬 에이전트는 기능 구현, 리팩토링, 테스트, 문서화, 배포 준비를
-            동시에 밀어냅니다. 그러나 잘못 이해한 요구사항과 불명확한 정책도
-            같은 속도로 코드에 반영됩니다.
-          </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          {[
-            ["Status quo", "문서, 프롬프트, MCP, 레포, 태스크 도구를 팀마다 직접 엮습니다."],
-            ["New bottleneck", "여러 에이전트가 같은 제품 의도 위에서 판단하는지 검증해야 합니다."],
-            ["Initial wedge", "이미 병렬 코딩 에이전트를 쓰는 기술 창업자와 소규모 제품팀입니다."],
-            ["What they buy", "코드 생성기가 아니라 에이전트 개발 운영 레이어입니다."],
-          ].map(([title, detail]) => (
-            <Card key={title} className="bg-card/70">
-              <CardHeader>
-                <CardTitle>{title}</CardTitle>
-                <CardDescription>{detail}</CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
         </div>
       </section>
 
