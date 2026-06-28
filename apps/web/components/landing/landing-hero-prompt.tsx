@@ -80,7 +80,7 @@ function renderVisibleText(
     }
 
     parts.push(
-      <span key={key++} className="font-semibold text-primary">
+      <span key={key++} className="font-semibold text-foreground">
         {matchedHighlight}
       </span>,
     );
@@ -166,20 +166,13 @@ export function LandingHeroPrompt({ href }: { href: string }) {
       href={href}
       aria-label="SSOTA prompt preview"
       className={cn(
-        "group inline-flex w-max min-w-[18rem] max-w-[calc(100vw-3rem)] items-center gap-3 rounded-full border border-primary/35 px-5 py-3.5 text-left transition-[width,border-color,background-color,box-shadow] duration-200 ease-out",
-        "bg-primary/10 shadow-lg shadow-primary/10",
-        "supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150",
-        "supports-backdrop-filter:bg-primary/8",
-        "hover:border-primary/50 hover:bg-primary/15 hover:shadow-primary/15",
+        "group relative inline-flex w-max min-w-[18rem] max-w-[calc(100vw-3rem)] items-center rounded-full border border-border/50 py-3.5 pr-14 pl-5 text-left transition-[width,background-color] duration-200 ease-out",
+        "bg-primary/10 shadow-lg shadow-black/5",
+        "hover:border-border/80 hover:bg-primary/15",
         "md:min-w-[22rem]",
       )}
     >
-      <span
-        className={cn(
-          "min-w-0 text-sm leading-6 whitespace-nowrap md:text-base",
-          isEmphasized ? "text-muted-foreground" : "text-foreground/90",
-        )}
-      >
+      <span className="min-w-0 text-sm leading-6 whitespace-nowrap text-foreground/90 md:text-base">
         <span aria-hidden="true">
           {renderVisibleText(
             currentPrompt.text,
@@ -188,14 +181,14 @@ export function LandingHeroPrompt({ href }: { href: string }) {
             isEmphasized,
           )}
           {phase === "typing" && showCursor ? (
-            <span className="text-primary/70">|</span>
+            <span className="text-muted-foreground">|</span>
           ) : null}
         </span>
         <span className="sr-only">{currentPrompt.text}</span>
       </span>
       <span
         aria-hidden="true"
-        className="text-primary/80 flex size-8 shrink-0 items-center justify-center rounded-full border border-primary/30 bg-primary/15 transition-colors group-hover:border-primary/45 group-hover:bg-primary/25 group-hover:text-primary"
+        className="text-muted-foreground/70 absolute top-1/2 right-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full border border-border/40 bg-background/30 transition-colors group-hover:text-foreground"
       >
         <ArrowBendDownLeft className="size-4" weight="bold" />
       </span>
