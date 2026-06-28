@@ -31,7 +31,7 @@
 | 2 | Problem | 에이전트 팀의 병목은 아직 사람이다 | Problem |
 | 3 | Solution | OKR부터 배포까지, 제품 맥락을 한 그래프로 관리한다 | Solution (어떻게) |
 | 4 | Traction | 오픈소스 이전에, 현장에서 먼저 검증했다 | Traction ① MedAI PoC (+스크린샷 자리) |
-| 5 | Traction | 지금 지표는 매출이 아니라 검증된 실행이다 | Traction ② 80건 트랙레코드 + 핵심 지표 |
+| 5 | Traction | 오픈소스 이전에, 현장에서 먼저 검증했다 | Traction ② 80건 트랙레코드 + 핵심 지표 |
 | 6 | Unique Insight | 무인의 조건은 속도가 아니라 공통 판단 기준 | Unique Insight |
 | 7 | Moat | 에이전트가 화면까지 조립한다 | Moat (페이지 JSON 렌더 → SaaS UX/UI 대체) |
 | 8 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model (OSS + SaaS + Enterprise) |
@@ -108,11 +108,9 @@
 - 현장에서 검증한 **에이전트 팀 네이티브 워크플로우**를 그대로 오픈소스 제품으로 옮기고 있습니다:
 - 🖼️ **MedAI 실제 화면** — `traction.tsx` → `MEDAI_SCREENSHOT_SRC` ([IMAGES.md](./IMAGES.md))
 
-## 5. Traction ② — "지금 지표는 매출이 아니라 검증된 실행이다" (트랙레코드 + 지표)
+## 5. Traction ② — "오픈소스 이전에, 현장에서 먼저 검증했다" (트랙레코드 + 지표)
 
-> 매출 전 단계 — 핵심 지표는 검증된 실행력으로 제시.
-
-- 브릿지: 2년 · 80건의 실전 개발에서 같은 병목을 반복 확인했다.
+> 브릿지: 2년 · 80건의 실전 개발에서 같은 병목을 반복 확인했다.
 - 핵심 지표 4타일:
   - **80건** 실전 개발 프로젝트 (2023–2026 외주·파트타임)
   - **PoC** MedAI 개발팀 (의료 AI 워크플로우 검증)

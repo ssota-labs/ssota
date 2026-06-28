@@ -135,7 +135,7 @@ const SLIDES: SlideDef[] = [
     id: "traction-track-record",
     render: () => (
       <>
-        <DeckSlideHeader section="Traction">지금 지표는 매출이 아니라 검증된 실행이다</DeckSlideHeader>
+        <DeckSlideHeader section="Traction">오픈소스 이전에, 현장에서 먼저 검증했다</DeckSlideHeader>
         <p className="mt-4 text-center text-[15px] tracking-tight text-muted-foreground">
           2년 · 80건의 실전 개발에서 같은 병목을 반복 확인했다.
         </p>
