@@ -12,7 +12,6 @@ import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -20,6 +19,11 @@ import {
 import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
+import {
+  LandingLifecycleFlow,
+  LandingMcpConnections,
+  LandingProductScreenPlaceholder,
+} from "@/components/landing/landing-solution-visuals";
 
 export const metadata: Metadata = {
   title: "SSOTA - 제품을 완벽히 아는 AI CPO",
@@ -104,60 +108,61 @@ function renderHighlightedDetail(
   return parts;
 }
 
-const workflowLayers = [
+function renderTitleHighlight(title: string, highlight: string): ReactNode {
+  const index = title.indexOf(highlight);
+  if (index === -1) {
+    return title;
+  }
+
+  return (
+    <>
+      {title.slice(0, index)}
+      <span className="text-primary">{highlight}</span>
+      {title.slice(index + highlight.length)}
+    </>
+  );
+}
+
+const solutionChapters: ReadonlyArray<{
+  title: string;
+  highlight: string;
+  lead: readonly string[];
+  detail: string;
+  visual: ReactNode;
+}> = [
   {
-    label: "Executive",
-    title: "목표와 우선순위",
-    detail: "로드맵, OKR, 핵심 지표, 사업 의사결정을 에이전트가 읽는 기준으로 만듭니다.",
+    title: "지금 무엇이 진실인지 아는 AI",
+    highlight: "진실",
+    lead: ["흩어진 문서 더미가 아니라", "그래프로 연결된 단 하나의 최신 맥락"],
+    detail:
+      "OKR, 로드맵, 유저 리서치, PRD, 설계 결정, 테스트, 배포 런북을 관계로 잇고, 작업에 필요한 최신 승인본만 가져옵니다.",
+    visual: (
+      <LandingProductScreenPlaceholder
+        label="context graph"
+        caption="제품 맥락 그래프 뷰"
+      />
+    ),
   },
   {
-    label: "Research",
-    title: "고객 요구와 가설",
-    detail: "유저 보이스와 시장 리서치를 제품 가설과 문제 정의로 연결합니다.",
+    title: "흐름에 따라서 일하는 AI",
+    highlight: "흐름",
+    lead: [
+      "한 번 쓰고 버리는 산출물이 아니라",
+      "리서치 → 기획 → 설계 → 개발 → 배포로 이어지는 과정",
+    ],
+    detail:
+      "제품은 한 번에 끝나지 않습니다. OKR에서 시작해 이니셔티브, 설계 결정, 테스트, 배포 런북까지 — SSOTA는 각 단계의 맥락을 다음 단계로 넘깁니다.",
+    visual: <LandingLifecycleFlow />,
   },
   {
-    label: "PM",
-    title: "스펙과 정책",
-    detail: "PRD, 기능 정책, 성공 지표, 승인 기준을 다음 작업의 SSOT로 관리합니다.",
-  },
-  {
-    label: "Design",
-    title: "흐름과 화면 결정",
-    detail: "IA, 유저 플로우, 화면 정책, 컴포넌트 기준을 구현 맥락으로 남깁니다.",
-  },
-  {
-    label: "Development",
-    title: "설계와 검증",
-    detail: "기술 설계, API, 테스트 결과, 운영 판단을 다시 제품 결정에 연결합니다.",
+    title: "외부 데이터도 모두 연결하는 AI",
+    highlight: "모두",
+    lead: ["새 도구로 갈아타지 않고", "쓰던 에이전트가 MCP로 읽고 씁니다"],
+    detail:
+      "Cursor, Claude Code, Codex가 MCP로 제품 맥락을 읽고 결과를 다시 기록합니다. GitHub, Slack, Linear 같은 외부 데이터도 같은 그래프에 연결됩니다.",
+    visual: <LandingMcpConnections />,
   },
 ];
-
-const loopSteps = [
-  "작업 전 관련 스펙과 결정 읽기",
-  "Claude Code, Cursor, Codex가 구현 수행",
-  "테스트 결과와 판단 근거 기록",
-  "사람이 승인한 맥락만 다음 에이전트가 재사용",
-];
-
-const differentiators = [
-  {
-    title: "PRD 생성기가 아닙니다",
-    detail:
-      "산출물 생성 이후에도 요구사항, 정책, 구현, 테스트 결과의 관계와 유효성을 유지합니다.",
-  },
-  {
-    title: "태스크 트래커가 아닙니다",
-    detail:
-      "태스크 상태가 아니라 그 태스크가 따라야 할 제품 의도와 승인 기준을 관리합니다.",
-  },
-  {
-    title: "코딩 에이전트를 대체하지 않습니다",
-    detail:
-      "기존 Claude Code, Cursor, Codex가 MCP로 읽고 쓸 수 있는 CPO 레이어가 됩니다.",
-  },
-];
-
-const previewNav = ["Executive", "Research", "PM", "Design", "Development"];
 
 export default async function HomePage() {
   const user = await getCurrentUser();
@@ -174,14 +179,8 @@ export default async function HomePage() {
             <a href="#problem" className="transition-colors hover:text-foreground">
               Problem
             </a>
-            <a href="#loop" className="transition-colors hover:text-foreground">
-              Agent loop
-            </a>
-            <a href="#workflow" className="transition-colors hover:text-foreground">
-              Workflow
-            </a>
-            <a href="#difference" className="transition-colors hover:text-foreground">
-              Difference
+            <a href="#solution" className="transition-colors hover:text-foreground">
+              무엇이 다른가
             </a>
           </nav>
           <div className="flex items-center gap-2">
@@ -284,110 +283,36 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section id="workspace" className="bg-muted/30">
-        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
-          <div className="max-w-md space-y-4">
-            <h2 className="text-3xl font-semibold tracking-tight">
-              합의된 제품 정보가 있으면, 에이전트가 같은 기준으로 움직입니다.
-            </h2>
-            <p className="leading-7 text-muted-foreground">
-              PRD, 정책, 디자인, API를 팀이 합의한 한곳에 모읍니다. 에이전트는
-              작업마다 무엇을 읽어야 하는지 알고, 사람은 맞춰 주는 대신 검토합니다.
-            </p>
-          </div>
+      <section id="solution" className="border-y bg-muted/30">
+        <div className="mx-auto max-w-6xl px-6 py-24 md:py-32">
+          <h2 className="mx-auto max-w-3xl text-center text-3xl font-semibold leading-[1.25] tracking-tight text-balance md:text-5xl md:leading-[1.2]">
+            제품을 완벽히 아는 AI CPO,
+            <br />
+            과연 무엇이 다를까요?
+          </h2>
 
-          <LandingProductPreview appHref={appHref} />
-        </div>
-      </section>
+          <div className="mt-20 flex flex-col gap-28 md:mt-28 md:gap-40">
+            {solutionChapters.map((chapter, index) => (
+              <div key={chapter.title} className="flex flex-col items-center">
+                <span className="flex size-9 items-center justify-center rounded-full border border-border/70 bg-background text-sm font-semibold text-muted-foreground">
+                  {index + 1}
+                </span>
+                <h3 className="mt-6 max-w-2xl text-center text-2xl font-semibold tracking-tight text-balance md:text-4xl">
+                  {renderTitleHighlight(chapter.title, chapter.highlight)}
+                </h3>
+                <p className="mt-5 text-center text-base leading-7 text-muted-foreground md:text-lg">
+                  {chapter.lead.map((line) => (
+                    <span key={line} className="block">
+                      {line}
+                    </span>
+                  ))}
+                </p>
+                <p className="mt-4 max-w-xl text-center text-sm leading-6 text-muted-foreground/80">
+                  {chapter.detail}
+                </p>
 
-      <section id="loop" className="border-y bg-muted/30">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="mx-auto max-w-2xl space-y-4 text-center">
-            <Badge variant="outline" className="bg-background">
-              Closed loop
-            </Badge>
-            <h2 className="text-3xl font-semibold tracking-tight">
-              작업 전에는 맥락을 읽고, 작업 후에는 근거를 남깁니다.
-            </h2>
-            <p className="leading-7 text-muted-foreground">
-              사람은 모든 문서를 직접 쓰는 사람이 아니라 최종 승인권자가
-              됩니다. 승인된 근거만 다음 에이전트의 유효한 맥락이 됩니다.
-            </p>
-          </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-4">
-            {loopSteps.map((step, index) => (
-              <Card key={step} className="relative overflow-hidden bg-background">
-                <CardHeader>
-                  <div className="mb-6 flex h-9 w-9 items-center justify-center rounded-full border bg-primary/10 text-sm font-semibold text-primary">
-                    {index + 1}
-                  </div>
-                  <CardTitle>{step}</CardTitle>
-                  <CardDescription>
-                    {index === 0
-                      ? "요구사항, PRD, 정책, 디자인 결정, 기술 설계를 관계 엣지로 추적합니다."
-                      : index === 1
-                        ? "기존 개발 환경의 에이전트가 MCP로 필요한 맥락을 가져갑니다."
-                        : index === 2
-                          ? "코드 변경뿐 아니라 어떤 기준을 반영했는지 함께 기록합니다."
-                          : "웹 화면에서 승인된 결과만 다음 작업의 기준으로 이어집니다."}
-                  </CardDescription>
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="workflow" className="mx-auto max-w-7xl px-6 py-20">
-        <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr]">
-          <div className="space-y-4">
-            <Badge variant="secondary">Workflow graph</Badge>
-            <h2 className="text-3xl font-semibold tracking-tight">
-              제품 생애주기 전체를 하나의 의사결정 그래프로 연결합니다.
-            </h2>
-            <p className="leading-7 text-muted-foreground">
-              SSOTA는 문서를 폴더처럼 쌓지 않습니다. 고객 요구, 제품 가설,
-              PRD, 정책, 디자인 결정, 기술 설계, 테스트 결과를 의미 있는
-              관계로 연결합니다.
-            </p>
-          </div>
-          <div className="grid gap-3">
-            {workflowLayers.map((layer) => (
-              <Card key={layer.label} className="bg-card/70">
-                <CardContent className="grid gap-3 p-4 md:grid-cols-[10rem_1fr] md:items-center">
-                  <div className="flex items-center gap-3">
-                    <span className="h-2 w-2 rounded-full bg-primary" />
-                    <span className="text-sm font-semibold">{layer.label}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">{layer.title}</p>
-                    <p className="text-sm text-muted-foreground">{layer.detail}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section id="difference" className="border-y bg-muted/30">
-        <div className="mx-auto max-w-7xl px-6 py-20">
-          <div className="max-w-2xl space-y-4">
-            <Badge variant="outline" className="bg-background">
-              Difference
-            </Badge>
-            <h2 className="text-3xl font-semibold tracking-tight">
-              더 많은 에이전트가 아니라, 같은 기준으로 움직이는 에이전트팀.
-            </h2>
-          </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {differentiators.map((item) => (
-              <Card key={item.title} className="bg-background">
-                <CardHeader>
-                  <CardTitle>{item.title}</CardTitle>
-                  <CardDescription>{item.detail}</CardDescription>
-                </CardHeader>
-              </Card>
+                <div className="mt-12 w-full max-w-4xl">{chapter.visual}</div>
+              </div>
             ))}
           </div>
         </div>
@@ -425,157 +350,5 @@ export default async function HomePage() {
         </div>
       </section>
     </main>
-  );
-}
-
-function LandingProductPreview({ appHref }: { appHref: string }) {
-  return (
-    <section
-      aria-label="SSOTA workspace preview"
-      className="relative hidden items-center lg:flex"
-    >
-      <div className="w-[118%] min-w-[46rem] origin-left scale-[1.02] rounded-2xl border bg-card shadow-xl">
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-destructive" />
-            <span className="h-2.5 w-2.5 rounded-full bg-primary/50" />
-            <span className="h-2.5 w-2.5 rounded-full bg-primary" />
-          </div>
-          <Badge variant="secondary">agent team control plane</Badge>
-        </div>
-        <div className="grid min-h-[34rem] grid-cols-[13rem_1fr] overflow-hidden rounded-b-2xl">
-          <aside className="border-r bg-muted/40 p-4">
-            <div className="mb-6">
-              <p className="text-xs font-medium text-muted-foreground">Workspace</p>
-              <p className="mt-1 font-semibold">ssota-dev</p>
-            </div>
-            <div className="space-y-1">
-              {previewNav.map((item, index) => (
-                <div
-                  key={item}
-                  className={
-                    index === 2
-                      ? "rounded-lg border bg-background px-3 py-2 text-sm font-medium shadow-sm"
-                      : "rounded-lg px-3 py-2 text-sm text-muted-foreground"
-                  }
-                >
-                  {item}
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 rounded-lg border bg-background p-3">
-              <p className="text-xs font-medium text-muted-foreground">MCP agents</p>
-              <div className="mt-3 space-y-2 text-xs">
-                <div className="flex items-center justify-between">
-                  <span>Cursor</span>
-                  <span className="text-primary">reading</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Claude Code</span>
-                  <span className="text-primary">writing</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Codex</span>
-                  <span className="text-muted-foreground">queued</span>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-          <div className="space-y-4 bg-background p-5">
-            <div className="flex items-start justify-between gap-6">
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  PM workflow
-                </p>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight">
-                  Onboarding activation initiative
-                </h2>
-              </div>
-              <Button
-                render={<Link href={appHref} />}
-                size="sm"
-                nativeButton={false}
-              >
-                Review
-              </Button>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
-              <Card className="bg-muted/30">
-                <CardHeader>
-                  <CardTitle>Intent control loop</CardTitle>
-                  <CardDescription>
-                    Every agent run starts from approved product context and ends
-                    with reviewable evidence.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {[
-                    ["Read", "User voice -> PRD -> policy -> API design"],
-                    ["Build", "Parallel agents implement against approved spec"],
-                    ["Write back", "Tests, decisions, and tradeoffs update graph"],
-                    ["Approve", "Human CPO accepts or asks for revision"],
-                  ].map(([label, detail]) => (
-                    <div key={label} className="rounded-lg border bg-background p-3">
-                      <p className="text-sm font-semibold">{label}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Approval queue</CardTitle>
-                    <CardDescription>
-                      Only approved decisions become reusable context.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-xs">
-                    <div className="rounded-lg border bg-primary/10 p-3">
-                      <p className="font-medium text-primary">Needs review</p>
-                      <p className="mt-1 text-muted-foreground">
-                        Email verification flow policy changed after test failure.
-                      </p>
-                    </div>
-                    <div className="rounded-lg border p-3">
-                      <p className="font-medium">Approved context</p>
-                      <p className="mt-1 text-muted-foreground">
-                        First project creation is the activation moment.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Decision graph</CardTitle>
-                    <CardDescription>
-                      User voice, spec, design, code, and tests stay connected.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      {["Voice", "Hypothesis", "PRD", "Design", "API", "Tests"].map(
-                        (node) => (
-                          <div
-                            key={node}
-                            className="rounded-md border bg-muted/30 px-2 py-2 text-center"
-                          >
-                            {node}
-                          </div>
-                        ),
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
   );
 }

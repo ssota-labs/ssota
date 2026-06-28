@@ -9,6 +9,7 @@ test.describe("landing page", () => {
     await expect(
       page.getByRole("heading", {
         name: "제품을 완벽히 아는 AI CPO",
+        exact: true,
       }),
     ).toBeVisible();
     await expect(page.getByText("AI CPO for coding agents")).toBeVisible();
@@ -20,19 +21,16 @@ test.describe("landing page", () => {
     ).toBeVisible();
     await expect(page.getByText("뭐가 맞는지 모릅니다")).toBeVisible();
     await expect(page.getByText("맞춰 주는 일이 늘었습니다")).toBeVisible();
+
+    await page.getByRole("link", { name: "무엇이 다른가" }).click();
     await expect(
       page.getByRole("heading", {
-        name: /합의된 제품 정보가 있으면/,
+        name: /지금 무엇이 진실인지 아는 AI/,
       }),
     ).toBeVisible();
-    await expect(page.getByLabel("SSOTA workspace preview")).toBeVisible();
-    await expect(page.getByText("Intent control loop")).toBeVisible();
-    await expect(page.getByText("Approval queue")).toBeVisible();
-
-    await page.getByRole("link", { name: "Agent loop" }).click();
     await expect(
       page.getByRole("heading", {
-        name: "작업 전에는 맥락을 읽고, 작업 후에는 근거를 남깁니다.",
+        name: /외부 데이터도 모두 연결하는 AI/,
       }),
     ).toBeVisible();
   });
