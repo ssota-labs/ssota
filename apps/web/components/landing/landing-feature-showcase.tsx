@@ -11,11 +11,13 @@ import { cn } from "@/lib/utils";
 import {
   LandingMcpConnections,
   LandingProductScreenPlaceholder,
+  LANDING_FEATURE_VISUAL_HEIGHT_CLASS,
   VisualFrame,
 } from "@/components/landing/landing-solution-visuals";
 import { LandingWorkflowSidebarPreview } from "@/components/landing/landing-workflow-sidebar-preview";
 
 const AUTO_ADVANCE_MS = 6_500;
+const SHOWCASE_GRID_HEIGHT_CLASS = "md:h-[34rem]";
 
 type FeaturePanel = {
   id: string;
@@ -37,10 +39,12 @@ const FEATURE_PANELS: readonly FeaturePanel[] = [
       "흩어진 문서 더미가 아니라, OKR·로드맵·PRD·설계 결정을 그래프로 연결해 작업에 필요한 최신 승인본만 가져옵니다.",
     icon: GraphIcon,
     visual: (
-      <LandingProductScreenPlaceholder
-        label="context graph"
-        caption="제품 맥락 그래프 뷰"
-      />
+      <div className="h-full">
+        <LandingProductScreenPlaceholder
+          label="context graph"
+          caption="제품 맥락 그래프 뷰"
+        />
+      </div>
     ),
   },
   {
@@ -52,9 +56,11 @@ const FEATURE_PANELS: readonly FeaturePanel[] = [
       "리서치 → 기획 → 설계 → 개발 → 배포로 이어지는 과정에서 각 단계의 맥락을 다음 단계의 입력으로 넘깁니다.",
     icon: TreeStructureIcon,
     visual: (
-      <VisualFrame label="workflow pages">
-        <LandingWorkflowSidebarPreview />
-      </VisualFrame>
+      <div className="h-full">
+        <VisualFrame label="workflow pages">
+          <LandingWorkflowSidebarPreview />
+        </VisualFrame>
+      </div>
     ),
   },
   {
@@ -65,7 +71,11 @@ const FEATURE_PANELS: readonly FeaturePanel[] = [
     description:
       "새 도구로 갈아타지 않고, Cursor·Claude Code·Codex가 MCP로 제품 맥락을 읽고 GitHub·Slack·Linear에 다시 기록합니다.",
     icon: PlugsConnectedIcon,
-    visual: <LandingMcpConnections />,
+    visual: (
+      <div className="h-full">
+        <LandingMcpConnections />
+      </div>
+    ),
   },
 ];
 
@@ -148,9 +158,14 @@ export function LandingFeatureShowcase() {
       </div>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-border/60 bg-card/40 shadow-xl md:mt-8">
-        <div className="grid md:grid-cols-[minmax(0,20rem)_1fr] lg:grid-cols-[minmax(0,22rem)_1fr]">
+        <div
+          className={cn(
+            "grid md:grid-cols-[minmax(0,20rem)_1fr] lg:grid-cols-[minmax(0,22rem)_1fr]",
+            SHOWCASE_GRID_HEIGHT_CLASS,
+          )}
+        >
           <div
-            className="border-b border-border/50 md:border-r md:border-b-0"
+            className="min-h-0 border-b border-border/50 md:border-r md:border-b-0 md:overflow-y-auto"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
             onFocusCapture={() => setPaused(true)}
@@ -247,11 +262,14 @@ export function LandingFeatureShowcase() {
             id={`feature-panel-${active.id}`}
             role="tabpanel"
             aria-labelledby={`feature-tab-${active.id}`}
-            className="bg-muted/10 p-4 md:p-6"
+            className="min-h-0 bg-muted/10 p-4 md:p-6"
           >
             <div
               key={active.id}
-              className="animate-in fade-in duration-500 motion-reduce:animate-none"
+              className={cn(
+                "animate-in fade-in duration-500 motion-reduce:animate-none",
+                LANDING_FEATURE_VISUAL_HEIGHT_CLASS,
+              )}
             >
               {active.visual}
             </div>

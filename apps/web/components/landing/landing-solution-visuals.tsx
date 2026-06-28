@@ -1,13 +1,25 @@
+import { cn } from "@/lib/utils";
+
+/** 솔루션 쇼케이스 우측 비주얼 슬롯 — 패널 전환 시 카드 높이 고정 */
+export const LANDING_FEATURE_VISUAL_HEIGHT_CLASS = "h-[22rem] md:h-[28rem]";
+
 /** 공통 비주얼 프레임 — 상단 브라우저 크롬 + 본문 */
 export function VisualFrame({
   label,
   children,
+  className,
 }: {
   label: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border bg-card shadow-xl">
+    <div
+      className={cn(
+        "flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-card shadow-xl",
+        className,
+      )}
+    >
       <div className="flex items-center justify-between border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <span className="h-2.5 w-2.5 rounded-full bg-destructive" />
@@ -34,7 +46,7 @@ export function LandingProductScreenPlaceholder({
 }) {
   return (
     <VisualFrame label={label}>
-      <div className="flex min-h-[20rem] items-center justify-center bg-muted/20 p-6">
+      <div className="flex min-h-0 flex-1 items-center justify-center bg-muted/20 p-6">
         <div className="flex w-full max-w-md flex-col items-center gap-3 rounded-xl border border-dashed border-border/70 bg-background/40 px-6 py-12 text-center">
           <span className="rounded-full border border-border/60 bg-background px-3 py-1 text-xs font-medium text-muted-foreground">
             제품 화면
@@ -61,7 +73,7 @@ const externalSources = ["GitHub", "Slack", "Linear", "Notion"];
 export function LandingMcpConnections() {
   return (
     <VisualFrame label="MCP connections">
-      <div className="grid gap-4 bg-muted/10 p-6 md:grid-cols-[1fr_auto_1fr] md:items-center md:p-8">
+      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden bg-muted/10 p-6 md:grid-cols-[1fr_auto_1fr] md:items-center md:p-8">
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">
             Coding agents
