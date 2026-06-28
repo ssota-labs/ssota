@@ -116,15 +116,16 @@ export default async function HomePage() {
       </header>
 
       <section className="relative border-b">
-        <div className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-10 px-6 py-16 lg:grid-cols-[0.86fr_1.14fr] lg:py-20">
-          <div className="max-w-xl space-y-8">
+        <div className="mx-auto flex min-h-[calc(82vh-4rem)] max-w-7xl items-center px-6 py-16 lg:py-20">
+          <div className="max-w-2xl space-y-8">
             <div className="space-y-4">
               <Badge variant="outline" className="bg-background">
                 AI CPO for coding agents
               </Badge>
               <div className="space-y-4">
                 <h1 className="text-4xl font-semibold tracking-tight text-balance md:text-6xl">
-                  제품을 제대로 아는 AI
+                  <span className="block">제품을 제대로</span>
+                  <span className="block">아는 AI</span>
                 </h1>
                 <p className="max-w-lg text-base leading-7 text-muted-foreground md:text-lg">
                   코딩 에이전트가 제품 맥락을 이해해야, 24시간 믿고 맡길 수
@@ -167,6 +168,21 @@ export default async function HomePage() {
                 <p>safe development operations</p>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b bg-muted/30">
+        <div className="mx-auto grid max-w-7xl gap-10 px-6 py-16 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
+          <div className="max-w-md space-y-4">
+            <Badge variant="secondary">Product workspace</Badge>
+            <h2 className="text-3xl font-semibold tracking-tight">
+              제품 맥락을 한 화면에서 운영합니다.
+            </h2>
+            <p className="leading-7 text-muted-foreground">
+              에이전트가 읽어야 할 스펙, 승인 대기 중인 결정, 다시 사용할 수
+              있는 제품 맥락을 워크스페이스에서 관리합니다.
+            </p>
           </div>
 
           <LandingProductPreview appHref={appHref} />
