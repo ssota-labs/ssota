@@ -151,7 +151,7 @@ export default async function HomePage() {
                   제품을 완벽히 아는 AI CPO
                 </h1>
                 <p className="mx-auto max-w-lg text-base leading-7 text-muted-foreground md:text-lg">
-                  코딩 에이전트가 제품 맥락을 이해해야, 24시간 믿고 맡길 수
+                  코딩 에이전트에게 제품 맥락을 이해시켜야, 24시간 믿고 맡길 수
                   있습니다.
                 </p>
               </div>
