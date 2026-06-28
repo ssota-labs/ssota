@@ -6,13 +6,15 @@ import {
   TreeStructureIcon,
 } from "@phosphor-icons/react";
 import type { Icon } from "@phosphor-icons/react";
-import { useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import {
   LandingLifecycleFlow,
   LandingMcpConnections,
   LandingProductScreenPlaceholder,
 } from "@/components/landing/landing-solution-visuals";
+
+const AUTO_ADVANCE_MS = 6_500;
 
 type FeaturePanel = {
   id: string;
@@ -79,8 +81,36 @@ function renderTitleHighlight(title: string, highlight: string): ReactNode {
 
 export function LandingFeatureShowcase() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [cycleKey, setCycleKey] = useState(0);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [paused, setPaused] = useState(false);
   const active = FEATURE_PANELS[activeIndex] ?? FEATURE_PANELS[0]!;
-  const ActiveIcon = active.icon;
+
+  const selectPanel = useCallback((index: number) => {
+    setActiveIndex(index);
+    setCycleKey((key) => key + 1);
+  }, []);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduceMotion(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion || paused) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setActiveIndex((current) => (current + 1) % FEATURE_PANELS.length);
+      setCycleKey((key) => key + 1);
+    }, AUTO_ADVANCE_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [activeIndex, cycleKey, paused, reduceMotion]);
 
   return (
     <div className="mt-14 md:mt-16">
@@ -98,7 +128,7 @@ export function LandingFeatureShowcase() {
               aria-selected={index === activeIndex}
               aria-controls={`feature-panel-${panel.id}`}
               id={`feature-tab-${panel.id}`}
-              onClick={() => setActiveIndex(index)}
+              onClick={() => selectPanel(index)}
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                 index === activeIndex
@@ -114,44 +144,99 @@ export function LandingFeatureShowcase() {
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-border/60 bg-card/40 shadow-xl md:mt-8">
         <div className="grid md:grid-cols-[minmax(0,20rem)_1fr] lg:grid-cols-[minmax(0,22rem)_1fr]">
-          <div className="border-b border-border/50 p-6 md:border-r md:border-b-0 md:p-8">
-            <ActiveIcon
-              className="size-8 text-muted-foreground"
-              weight="light"
-              aria-hidden
-            />
-            <h3 className="mt-5 text-xl font-semibold tracking-tight text-balance md:text-2xl">
-              {renderTitleHighlight(active.title, active.highlight)}
-            </h3>
-            <p className="mt-3 text-sm leading-6 text-muted-foreground">
-              {active.description}
-            </p>
+          <div
+            className="border-b border-border/50 p-6 md:border-r md:border-b-0 md:p-8"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocusCapture={() => setPaused(true)}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) {
+                setPaused(false);
+              }
+            }}
+          >
+            <nav className="space-y-2" aria-label="기능 목록">
+              {FEATURE_PANELS.map((panel, index) => {
+                const isActive = index === activeIndex;
+                const PanelIcon = panel.icon;
 
-            <nav
-              className="mt-8 space-y-1"
-              aria-label="기능 목록"
-            >
-              {FEATURE_PANELS.map((panel, index) => (
-                <button
-                  key={panel.id}
-                  type="button"
-                  onClick={() => setActiveIndex(index)}
-                  className={cn(
-                    "relative w-full rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
-                    index === activeIndex
-                      ? "bg-muted/50 font-medium text-foreground"
-                      : "text-muted-foreground/70 hover:bg-muted/30 hover:text-muted-foreground",
-                  )}
-                >
-                  {index === activeIndex ? (
-                    <span
-                      className="absolute inset-x-3 top-0 h-px bg-primary"
-                      aria-hidden
-                    />
-                  ) : null}
-                  {panel.tab}
-                </button>
-              ))}
+                return (
+                  <div
+                    key={panel.id}
+                    className={cn(
+                      "overflow-hidden rounded-xl border transition-[border-color,background-color,box-shadow] duration-500 ease-out motion-reduce:transition-none",
+                      isActive
+                        ? "border-border/70 bg-muted/35 shadow-sm"
+                        : "border-border/25 bg-transparent",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      aria-expanded={isActive}
+                      aria-controls={`feature-accordion-${panel.id}`}
+                      onClick={() => selectPanel(index)}
+                      className={cn(
+                        "flex w-full items-center gap-3 px-3 py-3 text-left transition-colors",
+                        isActive
+                          ? "text-foreground"
+                          : "text-muted-foreground/75 hover:text-muted-foreground",
+                      )}
+                    >
+                      <PanelIcon
+                        className={cn(
+                          "size-5 shrink-0 transition-colors duration-500",
+                          isActive ? "text-foreground" : "text-muted-foreground",
+                        )}
+                        weight="light"
+                        aria-hidden
+                      />
+                      <span
+                        className={cn(
+                          "text-sm transition-[font-weight,color] duration-500",
+                          isActive ? "font-semibold" : "font-medium",
+                        )}
+                      >
+                        {panel.tab}
+                      </span>
+                    </button>
+
+                    <div
+                      id={`feature-accordion-${panel.id}`}
+                      className={cn(
+                        "grid transition-[grid-template-rows,opacity] duration-500 ease-out motion-reduce:transition-none",
+                        isActive
+                          ? "grid-rows-[1fr] opacity-100"
+                          : "grid-rows-[0fr] opacity-0",
+                      )}
+                    >
+                      <div className="overflow-hidden">
+                        <div className="space-y-3 px-3 pb-4">
+                          {isActive && !reduceMotion ? (
+                            <div
+                              className="h-0.5 overflow-hidden rounded-full bg-border/50"
+                              aria-hidden
+                            >
+                              <div
+                                key={cycleKey}
+                                className="landing-feature-progress h-full w-full origin-left rounded-full bg-primary"
+                                style={{
+                                  animationDuration: `${AUTO_ADVANCE_MS}ms`,
+                                }}
+                              />
+                            </div>
+                          ) : null}
+                          <h3 className="text-base font-semibold tracking-tight text-balance">
+                            {renderTitleHighlight(panel.title, panel.highlight)}
+                          </h3>
+                          <p className="text-sm leading-6 text-muted-foreground">
+                            {panel.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </nav>
           </div>
 
@@ -161,7 +246,10 @@ export function LandingFeatureShowcase() {
             aria-labelledby={`feature-tab-${active.id}`}
             className="bg-muted/10 p-4 md:p-6"
           >
-            <div key={active.id} className="animate-in fade-in duration-300">
+            <div
+              key={active.id}
+              className="animate-in fade-in duration-500 motion-reduce:animate-none"
+            >
               {active.visual}
             </div>
           </div>
