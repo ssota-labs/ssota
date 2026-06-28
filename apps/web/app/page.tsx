@@ -153,7 +153,9 @@ export default async function HomePage() {
               </div>
             </div>
 
-            <LandingHeroPrompt href={appHref} />
+            <div className="flex min-h-14 w-full items-center justify-center">
+              <LandingHeroPrompt href={appHref} />
+            </div>
           </div>
         </div>
       </section>

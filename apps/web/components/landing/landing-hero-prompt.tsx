@@ -28,6 +28,11 @@ const PROMPTS = [
   },
 ] as const;
 
+const LONGEST_PROMPT_TEXT = PROMPTS.map((prompt) => prompt.text).reduce(
+  (longest, text) => (text.length > longest.length ? text : longest),
+  PROMPTS[0].text,
+);
+
 const TYPE_MS = 46;
 const EMPHASIS_DELAY_MS = 700;
 const PAUSE_MS = 2400;
@@ -166,13 +171,18 @@ export function LandingHeroPrompt({ href }: { href: string }) {
       href={href}
       aria-label="SSOTA prompt preview"
       className={cn(
-        "group relative inline-flex w-max min-w-[18rem] max-w-[calc(100vw-3rem)] items-center rounded-full border border-border/50 py-3.5 pr-14 pl-5 text-left transition-[width,background-color] duration-200 ease-out",
-        "bg-primary/10 shadow-lg shadow-black/5",
-        "hover:border-border/80 hover:bg-primary/15",
-        "md:min-w-[22rem]",
+        "group relative inline-grid max-w-[calc(100vw-3rem)] rounded-full border border-border/80 py-3.5 pr-14 pl-5 text-left transition-[background-color] duration-200 ease-out",
+        "bg-primary/15 shadow-lg shadow-black/5",
+        "hover:bg-primary/20",
       )}
     >
-      <span className="min-w-0 text-sm leading-6 whitespace-nowrap text-foreground/90 md:text-base">
+      <span
+        aria-hidden
+        className="invisible col-start-1 row-start-1 whitespace-nowrap text-sm leading-6 md:text-base"
+      >
+        {LONGEST_PROMPT_TEXT}
+      </span>
+      <span className="col-start-1 row-start-1 min-w-0 text-sm leading-6 whitespace-nowrap text-foreground/90 md:text-base">
         <span aria-hidden="true">
           {renderVisibleText(
             currentPrompt.text,
