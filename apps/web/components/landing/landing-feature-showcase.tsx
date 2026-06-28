@@ -56,7 +56,7 @@ const FEATURE_PANELS: readonly FeaturePanel[] = [
     icon: TreeStructureIcon,
     visual: (
       <div className="h-full">
-        <VisualFrame label="workflow pages">
+        <VisualFrame label="data model">
           <LandingWorkflowSidebarPreview />
         </VisualFrame>
       </div>
