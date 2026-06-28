@@ -8,7 +8,7 @@ test.describe("landing page", () => {
 
     await expect(
       page.getByRole("heading", {
-        name: "제품을 제대로 아는 AI",
+        name: "제품을 완벽히 아는 AI CPO",
       }),
     ).toBeVisible();
     await expect(page.getByText("AI CPO for coding agents")).toBeVisible();

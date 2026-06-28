@@ -15,7 +15,7 @@ import { getCurrentUser } from "@/lib/supabase/server";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
 
 export const metadata: Metadata = {
-  title: "SSOTA - 제품을 제대로 아는 AI",
+  title: "SSOTA - 제품을 완벽히 아는 AI CPO",
   description:
     "코딩 에이전트가 제품 맥락을 이해하고 움직이게 하는 AI CPO 레이어.",
 };
@@ -148,7 +148,7 @@ export default async function HomePage() {
               </Badge>
               <div className="space-y-4">
                 <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-5xl">
-                  제품을 제대로 아는 AI
+                  제품을 완벽히 아는 AI CPO
                 </h1>
                 <p className="mx-auto max-w-lg text-base leading-7 text-muted-foreground md:text-lg">
                   코딩 에이전트가 제품 맥락을 이해해야, 24시간 믿고 맡길 수
