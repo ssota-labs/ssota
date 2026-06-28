@@ -21,7 +21,7 @@
 ```text
 apps/deck/public/
 ├── team/
-│   └── profile.jpg              # 슬라이드 9 — 창업자 프로필
+│   └── profile.jpg              # 슬라이드 8 — 창업자 프로필
 └── traction/
     ├── medai-screenshot.png     # 슬라이드 4 — MedAI 실제 화면
     └── work/                    # 슬라이드 5 — 작업 카드 썸네일 (선택)
@@ -34,7 +34,7 @@ apps/deck/public/
 
 ---
 
-## 2. 슬라이드별 이미지 슬롯 (전체 9장)
+## 2. 슬라이드별 이미지 슬롯 (전체 8장)
 
 | # | 슬라이드 | 이미지 여부 | 컴포넌트 | 코드 위치 | 연결 방법 |
 |---|----------|-------------|----------|-----------|-----------|
@@ -44,11 +44,10 @@ apps/deck/public/
 | 4 | Traction ① MedAI | **있음** | `TractionMedAIRow` | `traction.tsx` | `MEDAI_SCREENSHOT_SRC` |
 | 5 | Traction ② 트랙레코드 | **있음 (5슬롯)** | `TractionTrackRecord` | `traction.tsx` | `WORK_CARDS[n].imageSrc` |
 | 6 | Unique Insight | 없음 | `InsightContrast` | `unique-insight.tsx` | 아이콘만 |
-| 7 | Business Model | 없음 | `BusinessModelRow` | `business-model.tsx` | 아이콘만 |
-| 8 | Market | 없음 | `Bullets` | `slides.tsx` | 텍스트만 |
-| 9 | Team | **있음** | `TeamFounderRow` | `team.tsx` | `FOUNDER_IMAGE_SRC` |
+| 7 | Market | 없음 | `MarketRow` | `market.tsx` | TAM/SAM/SOM 퍼널 (텍스트) |
+| 8 | Team | **있음** | `TeamFounderRow` | `team.tsx` | `FOUNDER_IMAGE_SRC` |
 
-**현재 이미지를 넣을 수 있는 곳은 3곳** (슬라이드 4, 5, 9).
+**현재 이미지를 넣을 수 있는 곳은 3곳** (슬라이드 4, 5, 8).
 
 ---
 
@@ -111,7 +110,7 @@ apps/deck/public/
 
 ---
 
-### 3.3 슬라이드 9 — 창업자 프로필 사진
+### 3.3 슬라이드 8 — 창업자 프로필 사진
 
 **용도:** Team 슬라이드 좌측 세로형 프로필.
 

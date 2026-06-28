@@ -1,6 +1,6 @@
 # SSOTA Seed Deck — 콘텐츠 정리
 
-> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **9슬라이드** (The Ask 제외)  
+> 구조 SSOT: YC Seed Deck Template (Aaron Harris) — **8슬라이드** (Business Model·The Ask 제외)  
 > **이미지 assets:** [IMAGES.md](./IMAGES.md)
 > 디자인 원칙(Kevin Hale): Legible · Simple · Obvious — 큰 글씨, 1슬라이드 1아이디어, **헤드라인은 결론(주장형)·마침표로 끝** (`DeckTitle`이 자동 보정)
 
@@ -23,7 +23,7 @@
 
 ## 슬라이드 한눈에 (헤드라인 = 주장)
 
-**레이아웃 (2–9):** `DeckSlideHeader` — 섹션 라벨(center, muted) + 헤드라인(center, 40px) + 본문.
+**레이아웃 (2–8):** `DeckSlideHeader` — 섹션 라벨(center, muted) + 헤드라인(center, 40px) + 본문.
 
 | # | 섹션 라벨 | 헤드라인 | 역할 |
 |---|---|---|---|
@@ -33,11 +33,10 @@
 | 4 | Traction | 오픈소스 이전에, 현장에서 먼저 검증했다 | Traction ① MedAI PoC (+스크린샷 자리) |
 | 5 | Traction | 지금 지표는 매출이 아니라 검증된 실행이다 | Traction ② 80건 트랙레코드 + 핵심 지표 |
 | 6 | Unique Insight | 무인의 조건은 속도가 아니라 공통 판단 기준 | Unique Insight |
-| 7 | Business Model | 맥락 그래프에서 돈을 번다 | Business Model |
-| 8 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market (TAM/SAM/SOM) |
-| 9 | Team | 이 문제를 가장 오래, 가장 많이 겪었다 | Team (프로필 + 학력·수상) |
+| 7 | Market | 무인 에이전트 개발팀 수요가 시장을 만든다 | Market (TAM/SAM/SOM) |
+| 8 | Team | 이 문제를 가장 오래, 가장 많이 겪었다 | Team (프로필 + 학력·수상) |
 
-> **The Ask (What we need)** 슬라이드는 덱에서 제외.
+> **Business Model**, **The Ask (What we need)** 슬라이드는 덱에서 제외.
 
 ---
 
@@ -135,27 +134,7 @@
 
 **클로징:** 이 문제는 사람이 곁에 있을 땐 안 보이고, **무인 병렬일 때만** 드러난다 — 그래서 지금, 우리가.
 
-## 7. Business Model — "맥락 그래프에서 돈을 번다"
-
-> **오픈소스 코어 + 클라우드 호스팅 + 엔터프라이즈 구축**
-
-**1. 오픈소스 코어 · $0**
-- 개인·초기 팀 직접 설치·무료 — 핵심 그래프·워크플로우·MCP 공개
-- 배포·운영·업데이트·보안은 직접 담당 → 생태계 확산
-
-**2. 클라우드 호스팅 SaaS (주력 매출)**
-- 관리형 클라우드: 의사결정 그래프, 워크플로우 지침, MCP, 에이전트 작업 로그, 승인 플로우
-- 요금 (B2B SaaS): Free $0 · Starter $20/user/mo · Team $50 · Business $100
-- 고객이 지불하는 것: **AI 에이전트팀 운영 레이어** (단순 문서 도구 아님)
-
-**3. 엔터프라이즈 맞춤형 구축 · 협의**
-- 맞춤 워크플로우·문서 구조·에이전트 지침·사내 도구 연동 플러그인
-- SSO·권한·감사 로그·데이터 보존·VPC·SLA·전담 지원
-- 클라우드 외 맞춤 구축 비용
-
-**클로징:** 오픈소스로 확산 → **클라우드 호스팅 + 기업용 맞춤 구축**에서 수익
-
-## 8. Market — "무인 에이전트 개발팀 수요가 시장을 만든다"
+## 7. Market — "무인 에이전트 개발팀 수요가 시장을 만든다"
 
 > 자율 에이전트 → AI 개발 에이전트 도구 → 무인·병렬 에이전트 개발팀 (`MarketRow`)
 
@@ -175,7 +154,7 @@
 - 출처: BCC·MarketsandMarkets(자율 에이전트), Alora·Mordor(AI 코딩), SlashData·GitHub 2025
 - ⚠️ 후속: 자체 ARPU·전환 데이터로 SOM 정교화
 
-## 9. Team — "이 문제를 가장 오래, 가장 많이 겪었다"
+## 8. Team — "이 문제를 가장 오래, 가장 많이 겪었다"
 
 > 창업·AI 경진대회부터 80건 실전 개발까지 — 같은 병목을 반복 확인했다.
 
