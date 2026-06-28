@@ -17,7 +17,7 @@ export async function ensureInitiativeScopedNode(
   );
   if (existing[0]) return existing[0];
 
-  const deps = getGraphDeps(teamspaceId);
+  const deps = await getGraphDeps(teamspaceId);
   return createNode(deps, {
     teamspaceId,
     catalogKey: nodeType,

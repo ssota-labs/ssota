@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { notFound } from "next/navigation";
 import type { Organization, Teamspace } from "@ssota/core";
-import { getConsolePort } from "@/lib/ports";
+import { getConsolePort, registerTeamspaceOrganization } from "@/lib/ports";
 
 export type ResolvedProject = {
   org: Organization;
@@ -18,6 +18,8 @@ export const resolveOrg = cache(async (
 
   const project = await consolePort.getTeamspaceBySlug(org.id, teamspaceSlug);
   if (!project) notFound();
+
+  registerTeamspaceOrganization(project.id, org.id);
 
   return { org, project };
 });

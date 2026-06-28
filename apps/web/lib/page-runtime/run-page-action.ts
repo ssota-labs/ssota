@@ -108,7 +108,7 @@ export async function runPageAction(args: RunPageActionInput): Promise<void> {
   const descriptor = page.actions[args.actionKey];
   if (!descriptor) throw new Error(`Unknown action: ${args.actionKey}`);
 
-  const deps = getGraphDeps(args.teamspaceId);
+  const deps = await getGraphDeps(args.teamspaceId);
 
   // Build interpolation scopes. `subject` is the page's anchor node (generic
   // replacement for initiative-scoping), exposed to `$ctx` and to `traverse`

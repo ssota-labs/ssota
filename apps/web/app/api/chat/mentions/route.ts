@@ -55,7 +55,7 @@ export async function GET(request: Request) {
       kind: "connector" as const,
     }));
 
-  const { graphRead } = getGraphPorts(project.id);
+  const { graphRead } = await getGraphPorts(project.id);
   const nodes = await graphRead
     .queryNodes({ teamspaceId: project.id, limit: 100 })
     .catch(() => []);

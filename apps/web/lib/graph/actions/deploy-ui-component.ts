@@ -26,7 +26,7 @@ export async function deployUiComponentAction(input: {
   contentV2?: UiComponentContentV2;
   revalidatePaths: string[];
 }) {
-  const deps = getGraphDeps(input.teamspaceId);
+  const deps = await getGraphDeps(input.teamspaceId);
   const existing = await deps.graphRead.getNode({
     teamspaceId: input.teamspaceId,
     nodeId: input.nodeId,

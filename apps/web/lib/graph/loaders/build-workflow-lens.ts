@@ -16,7 +16,7 @@ export async function buildWorkflowLensPhases(
   ctx: OrgRouteContext,
   teamspaceId: string,
 ): Promise<WorkflowLensPhase[]> {
-  const { graphRead } = getGraphDeps(teamspaceId);
+  const { graphRead } = await getGraphDeps(teamspaceId);
 
   const phases: WorkflowLensPhase[] = [];
 

@@ -91,7 +91,7 @@ async function buildLatestSnapshotByKpi(
   teamspaceId: string,
   snapshots: GraphNode[],
 ): Promise<Map<string, number>> {
-  const { graphRead } = getGraphDeps(teamspaceId);
+  const { graphRead } = await getGraphDeps(teamspaceId);
   const latest = new Map<string, { value: number; capturedAt: string }>();
 
   for (const snapshot of snapshots) {
@@ -124,7 +124,7 @@ async function buildLatestSnapshotByKpi(
 export async function loadGoalsDashboard(
   teamspaceId: string,
 ): Promise<GoalsDashboardDTO> {
-  const { graphRead } = getGraphDeps(teamspaceId);
+  const { graphRead } = await getGraphDeps(teamspaceId);
 
   const [objectives, keyResults, kpis, snapshots, roadmaps] = await Promise.all([
     graphRead.queryNodes({ teamspaceId, catalogKey: "objective", limit: 200 }),

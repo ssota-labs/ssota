@@ -8,7 +8,7 @@ export async function queryInitiativeScopedNodes(
   initiativeId: string,
   nodeType?: NodeType,
 ): Promise<GraphNode[]> {
-  const { graphRead } = getGraphDeps(teamspaceId);
+  const { graphRead } = await getGraphDeps(teamspaceId);
   const edges = await graphRead.traverseEdges({
     teamspaceId,
     nodeId: initiativeId,

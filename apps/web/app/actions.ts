@@ -113,7 +113,7 @@ export async function spawnTaskAction(
       },
     },
   });
-  const graphPorts = getGraphPorts(teamspaceId);
+  const graphPorts = await getGraphPorts(teamspaceId);
   await spawnTask(
     {
       tasks: getTaskPort(teamspaceId),
@@ -236,7 +236,7 @@ export async function searchMentionNodesAction(input: {
   if (!user) return { ok: false, items: [], error: "Unauthorized" };
 
   const query = input.query.trim().toLowerCase();
-  const { graphRead } = getGraphPorts(input.teamspaceId);
+  const { graphRead } = await getGraphPorts(input.teamspaceId);
   const nodes = await graphRead.queryNodes({ teamspaceId: input.teamspaceId, limit: 80 });
   const items = nodes
     .map((node) => {

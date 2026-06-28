@@ -7,7 +7,7 @@ export async function createDefinesPageEdge(input: {
   iaRootId: string;
   pageId: string;
 }) {
-  const deps = getGraphDeps(input.teamspaceId);
+  const deps = await getGraphDeps(input.teamspaceId);
   return createEdge(deps, {
     teamspaceId: input.teamspaceId,
     catalogKey: "defines",

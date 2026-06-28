@@ -15,7 +15,6 @@ import {
   createConnectorToolSettingsPort,
   createOrgMembershipPort,
   registerTeamspaceOrganization,
-  requireCachedOrganizationIdForTeamspace,
   resolveOrganizationIdForTeamspace,
   getCachedOrganizationIdForTeamspace,
   type AccountRecord,
@@ -58,15 +57,7 @@ export function getAccountReadPort() {
   return createDbAccountReadPort(getDb());
 }
 
-export function getGraphPorts(teamspaceId: string, accountId?: string) {
-  const organizationId = requireCachedOrganizationIdForTeamspace(teamspaceId);
-  return createGraphPorts(getDb(), { organizationId, teamspaceId, accountId });
-}
-
-export async function getGraphPortsForTeamspace(
-  teamspaceId: string,
-  accountId?: string,
-) {
+export async function getGraphPorts(teamspaceId: string, accountId?: string) {
   let organizationId = getCachedOrganizationIdForTeamspace(teamspaceId);
   if (!organizationId) {
     organizationId = await resolveOrganizationIdForTeamspace(getDb(), teamspaceId);
@@ -74,6 +65,9 @@ export async function getGraphPortsForTeamspace(
   }
   return createGraphPorts(getDb(), { organizationId, teamspaceId, accountId });
 }
+
+/** @deprecated Use getGraphPorts — same behavior after async org resolution. */
+export const getGraphPortsForTeamspace = getGraphPorts;
 
 export function getChatPort(teamspaceId: string, accountId?: string | null) {
   return createChatPort(getDb(), { teamspaceId, accountId });

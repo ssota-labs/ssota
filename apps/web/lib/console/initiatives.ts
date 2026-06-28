@@ -6,7 +6,7 @@ export type InitiativeOption = {
 };
 
 export async function listInitiatives(teamspaceId: string): Promise<InitiativeOption[]> {
-  const { graphRead } = getGraphPorts(teamspaceId);
+  const { graphRead } = await getGraphPorts(teamspaceId);
   const nodes = await graphRead.queryNodes({
     teamspaceId,
     catalogKey: "initiative",
@@ -25,7 +25,7 @@ export async function initiativeExists(
   teamspaceId: string,
   initiativeId: string,
 ): Promise<boolean> {
-  const { graphRead } = getGraphPorts(teamspaceId);
+  const { graphRead } = await getGraphPorts(teamspaceId);
   const nodes = await graphRead.queryNodes({
     teamspaceId,
     catalogKey: "initiative",

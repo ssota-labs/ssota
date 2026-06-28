@@ -7,7 +7,7 @@ export async function getEvergreenSingleton(
   teamspaceId: string,
   nodeType: NodeType,
 ): Promise<GraphNode | null> {
-  const { graphRead } = getGraphDeps(teamspaceId);
+  const { graphRead } = await getGraphDeps(teamspaceId);
   const candidates = await graphRead.queryNodes({ teamspaceId, catalogKey: nodeType, limit: 100 });
 
   for (const node of candidates) {

@@ -59,7 +59,7 @@ export async function createGraphNodeAction(input: {
   revalidatePaths?: string[];
 }) {
   await requireAuth();
-  const deps = getGraphDeps(input.teamspaceId);
+  const deps = await getGraphDeps(input.teamspaceId);
   const parsed = createNodeInputSchema.parse({
     teamspaceId: input.teamspaceId,
     catalogKey: input.catalogKey,
@@ -86,7 +86,7 @@ export async function updateGraphNodeAction(input: {
   revalidatePaths?: string[];
 }) {
   await requireAuth();
-  const deps = getGraphDeps(input.teamspaceId);
+  const deps = await getGraphDeps(input.teamspaceId);
 
   let properties = input.properties;
   if (input.content !== undefined || input.lifecycleStatus !== undefined) {
@@ -123,7 +123,7 @@ export async function createInitiativeBundleAction(input: {
   redirectToPrd?: boolean;
 }) {
   await requireAuth();
-  const deps = getGraphDeps(input.teamspaceId);
+  const deps = await getGraphDeps(input.teamspaceId);
   const parsed = createInitiativeBundleInputSchema.parse({
     teamspaceId: input.teamspaceId,
     initiativeTitle: input.initiativeTitle,
@@ -160,7 +160,7 @@ export async function createInitiativeFromHypothesisAction(input: {
   ctx: OrgRouteContext;
 }) {
   await requireAuth();
-  const deps = getGraphDeps(input.teamspaceId);
+  const deps = await getGraphDeps(input.teamspaceId);
 
   const hypothesis = await deps.graphRead.getNode({
     teamspaceId: input.teamspaceId,

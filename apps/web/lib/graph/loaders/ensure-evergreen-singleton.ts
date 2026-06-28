@@ -14,7 +14,7 @@ export async function ensureEvergreenSingleton(
   if (existing) return existing;
 
   await ensureProjectCatalog(teamspaceId);
-  const deps = getGraphDeps(teamspaceId);
+  const deps = await getGraphDeps(teamspaceId);
   return createNode(deps, {
     teamspaceId,
     catalogKey: nodeType,

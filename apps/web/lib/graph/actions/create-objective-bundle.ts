@@ -30,7 +30,7 @@ export async function createObjectiveBundleAction(input: {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const deps = getGraphDeps(input.teamspaceId);
+  const deps = await getGraphDeps(input.teamspaceId);
   const objective = await createNode(deps, {
     teamspaceId: input.teamspaceId,
     catalogKey: "objective",
