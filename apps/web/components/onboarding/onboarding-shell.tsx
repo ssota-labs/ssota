@@ -32,7 +32,7 @@ export function OnboardingShell({
   return (
     <div className="min-h-screen overflow-x-hidden bg-muted/30">
       <header className="flex items-center justify-between border-b bg-background px-6 py-4">
-        <Link href="/" className="text-lg font-semibold">
+        <Link href="/home" className="text-lg font-semibold">
           SSOTA
         </Link>
         <form action={signOutAction}>

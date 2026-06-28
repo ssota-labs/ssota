@@ -90,6 +90,7 @@ type CardProps = {
   selected?: boolean;
   onSelect: () => void;
   testId?: string;
+  className?: string;
 };
 
 function Card({
@@ -103,6 +104,7 @@ function Card({
   selected = false,
   onSelect,
   testId,
+  className,
 }: CardProps) {
   return (
     <button
@@ -113,6 +115,7 @@ function Card({
         connectorCardInteractiveClassName,
         (highlighted || selected) && "border-primary/20",
         selected && "bg-muted/30",
+        className,
       )}
     >
       {icon ? <span className={connectorIconWrapClassName}>{icon}</span> : null}

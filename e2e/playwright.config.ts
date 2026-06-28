@@ -69,6 +69,7 @@ export default defineConfig({
         ...process.env,
         ...defaultSupabaseEnv,
         ...chatStubWebEnv,
+        MARKETING_ONLY: "false",
         PORT: webPort,
       },
     },

@@ -15,7 +15,11 @@ export function safeNextPath(next: string | null | undefined): string | null {
     return path;
   }
 
-  if (url.pathname === "/" || url.pathname.startsWith("/onboarding/")) {
+  if (
+    url.pathname === "/" ||
+    url.pathname === "/home" ||
+    url.pathname.startsWith("/onboarding/")
+  ) {
     return path;
   }
 

@@ -38,21 +38,23 @@ const FLOW_STYLES = `
 `;
 
 /** Re-fits the viewport once React Flow has measured every table node. */
-function ErdReady() {
+function ErdReady({ fitViewPadding }: { fitViewPadding: number }) {
   const initialized = useNodesInitialized();
   const { fitView } = useReactFlow();
   React.useEffect(() => {
-    if (initialized) void fitView({ padding: 0.16, duration: 250 });
-  }, [initialized, fitView]);
+    if (initialized) void fitView({ padding: fitViewPadding, duration: 250 });
+  }, [initialized, fitView, fitViewPadding]);
   return null;
 }
 
 function ErdDiagramEl({
   model,
   height,
+  fitViewPadding,
 }: {
   model: ErdModel;
   height: number;
+  fitViewPadding: number;
 }) {
   const signature = React.useMemo(() => JSON.stringify(model), [model]);
 
@@ -140,13 +142,13 @@ function ErdDiagramEl({
           proOptions={{ hideAttribution: true }}
           minZoom={0.2}
           fitView
-          fitViewOptions={{ padding: 0.16 }}
+          fitViewOptions={{ padding: fitViewPadding }}
           panOnDrag={!locked}
           zoomOnScroll={!locked}
           zoomOnPinch={!locked}
           zoomOnDoubleClick={!locked}
         >
-          <ErdReady />
+          <ErdReady fitViewPadding={fitViewPadding} />
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
           <FlowTopToolbar
             locked={locked}
@@ -170,6 +172,10 @@ export const erdDiagramComponents: Record<string, CatalogComponent> = {
       typeof props.property === "string" ? props.property : "erd";
     const height =
       typeof props.height === "number" && props.height > 0 ? props.height : 480;
+    const fitViewPadding =
+      typeof props.fitViewPadding === "number" && props.fitViewPadding >= 0
+        ? props.fitViewPadding
+        : 0.16;
     const model = coerceErd(node?.properties?.[property]);
 
     if (!node) {
@@ -189,7 +195,11 @@ export const erdDiagramComponents: Record<string, CatalogComponent> = {
 
     return (
       <ReactFlowProvider>
-        <ErdDiagramEl model={model} height={height} />
+        <ErdDiagramEl
+          model={model}
+          height={height}
+          fitViewPadding={fitViewPadding}
+        />
       </ReactFlowProvider>
     );
   },

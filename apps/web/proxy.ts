@@ -1,6 +1,45 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/auth/provider";
 
+/** When true, only `/`, `/home`, and beta signup API are public; other routes redirect home. */
+function isMarketingOnly(): boolean {
+  return process.env.MARKETING_ONLY === "true";
+}
+
+const MARKETING_ALLOWED_PREFIXES = [
+  "/api/beta-signup",
+  "/_next",
+  "/favicon.ico",
+];
+
+function marketingGateResponse(request: NextRequest): NextResponse | null {
+  if (!isMarketingOnly()) {
+    return null;
+  }
+
+  const { pathname } = request.nextUrl;
+  if (pathname === "/" || pathname === "/home") {
+    return null;
+  }
+
+  if (
+    MARKETING_ALLOWED_PREFIXES.some(
+      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    )
+  ) {
+    return null;
+  }
+
+  if (/\.(?:svg|png|jpg|jpeg|gif|webp|ico)$/.test(pathname)) {
+    return null;
+  }
+
+  const url = request.nextUrl.clone();
+  url.pathname = "/home";
+  url.search = "";
+  return NextResponse.redirect(url);
+}
+
 /** First URL segment after org that is a console route (not a teamspace slug). */
 const CONSOLE_ROUTE_SEGMENTS = new Set([
   "p",
@@ -25,6 +64,7 @@ const GLOBAL_PREFIXES = [
   "api",
   "app",
   "auth",
+  "home",
   "login",
   "oauth",
   "onboarding",
@@ -92,6 +132,11 @@ function orgUrlResponse(request: NextRequest): NextResponse | null {
 }
 
 export async function proxy(request: NextRequest) {
+  const marketingResponse = marketingGateResponse(request);
+  if (marketingResponse) {
+    return marketingResponse;
+  }
+
   const orgResponse = orgUrlResponse(request);
   if (orgResponse?.status === 308) {
     return orgResponse;
