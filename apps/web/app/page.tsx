@@ -150,9 +150,8 @@ export default async function HomePage() {
                 <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-5xl">
                   제품을 완벽히 아는 AI CPO
                 </h1>
-                <p className="mx-auto max-w-lg text-base leading-7 text-muted-foreground md:text-lg">
-                  코딩 에이전트에게 제품 맥락을 이해시켜야, 24시간 믿고 맡길 수
-                  있습니다.
+                <p className="mx-auto text-base leading-7 text-muted-foreground md:text-lg md:whitespace-nowrap">
+                  코딩 에이전트에게 제품 맥락을 이해시켜야, 24시간 믿고 맡길 수 있습니다.
                 </p>
               </div>
             </div>
