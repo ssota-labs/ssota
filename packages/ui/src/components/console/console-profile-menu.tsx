@@ -92,7 +92,7 @@ export function ConsoleProfileMenu({
         align="end"
         sideOffset={8}
         alignOffset={0}
-        className="cn-menu-translucent cn-popover-menu w-60 overflow-hidden"
+        className="cn-popover-menu cn-popover-menu-solid w-60 overflow-hidden"
       >
         <section className={profileSectionClass}>
           <p className="text-xs text-muted-foreground">{signedInAsLabel}</p>

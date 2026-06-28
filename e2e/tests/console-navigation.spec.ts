@@ -62,8 +62,31 @@ test.describe("Console v2.7 navigation", () => {
 
     const popover = page.locator('[data-slot="popover-content"]');
     await expect(popover).toBeVisible();
+    await expect(popover).toHaveClass(/cn-popover-menu-solid/);
     await expect(popover).not.toHaveClass(/cn-menu-translucent/);
     await expect(popover.getByText("Organization", { exact: true })).toBeVisible();
     await expect(popover.getByRole("link", { name: /SSOTA Labs/ })).toBeVisible();
+  });
+
+  test("teamspace switcher opens opaque popover with options", async ({ page }) => {
+    const teamspaceTrigger = page.getByRole("button", { name: "Teamspace", exact: true });
+    await expect(teamspaceTrigger.locator('[data-slot="avatar"]')).toBeVisible();
+    await teamspaceTrigger.click();
+
+    const popover = page.locator('[data-slot="popover-content"]');
+    await expect(popover).toBeVisible();
+    await expect(popover).toHaveClass(/cn-popover-menu-solid/);
+    await expect(popover).not.toHaveClass(/cn-menu-translucent/);
+    await expect(popover.getByText("Teamspace", { exact: true })).toBeVisible();
+  });
+
+  test("profile menu opens opaque popover", async ({ page }) => {
+    const sidebar = page.locator("aside");
+    await sidebar.getByRole("button", { name: "Signed in as" }).click();
+
+    const popover = page.locator('[data-slot="popover-content"]');
+    await expect(popover).toBeVisible();
+    await expect(popover).toHaveClass(/cn-popover-menu-solid/);
+    await expect(popover).not.toHaveClass(/cn-menu-translucent/);
   });
 });
