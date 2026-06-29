@@ -149,7 +149,7 @@ test.describe("landing page", () => {
 
     await page
       .locator("section")
-      .filter({ hasText: "기존 코딩 에이전트에 AI CPO를 연결하세요" })
+      .filter({ hasText: "기존 코딩 에이전트에 AI CPO를 연결하세요." })
       .getByRole("button", { name: "베타 신청하기" })
       .click();
     await expect(

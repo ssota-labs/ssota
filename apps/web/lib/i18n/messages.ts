@@ -696,7 +696,7 @@ export const en = {
     },
     cta: {
       badge: "SaaS + partner setup",
-      heading: "Connect an AI CPO to your existing coding agents",
+      heading: "Connect an AI CPO to your existing coding agents.",
     },
     faq: {
       heading: "Got more questions?",
