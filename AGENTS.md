@@ -379,6 +379,7 @@ pnpm e2e -- --grep onboarding
 
 **PR과의 관계**
 
+- **`main` 직접 커밋 금지** — 커밋은 feature 브랜치에서만; `main` 반영은 PR 머지뿐 ([`main` 직접 커밋·푸시 금지](#main-직접-커밋푸시-금지-에이전트-필수)).
 - **한 PR 안에 커밋 여러 개는 권장**한다 (기능별 히스토리·리뷰·revert 용이).
 - **한 PR = 기능 슬라이스 하나**는 [기능별 PR 분리](#기능별-pr-분리-에이전트-필수)와 동일 — 커밋을 쪼갠다고 서로 다른 PR 범위를 한 브랜치에 섞어도 된다는 뜻이 아니다.
 
@@ -395,6 +396,26 @@ MVP 마일스톤(M0–M6)의 “마일스톤당 1커밋”은 이 정책의 **�
 - 제목: `[core|adapter|mcp|web|e2e|infra] 요약` — Console UI는 `[web] Console v2.7 PR N — …` 형식 권장.
 - 머지 전 필수: `pnpm lint`, `pnpm typecheck`, `pnpm test` 그린.
 - 도메인 불변식(Console v2.7 Graph Invariants)을 건드리는 변경은 PR 설명에 근거를 명시한다.
+
+### `main` 직접 커밋·푸시 금지 (에이전트 필수)
+
+**`main`에 직접 커밋하거나 푸시하지 않는다.** 모든 변경은 feature 브랜치 → GitHub PR → CI·리뷰 후 `main` 머지로만 반영한다. 로컬 `main`에 작업 커밋이 쌓이면 PR 없이 배포 경로에 들어간 것으로 오해하기 쉽다.
+
+| 해야 할 것 | 하지 말 것 |
+|---|---|
+| `origin/main` 기준 `cursor/<기능-요약>` 브랜치 생성 후 그 브랜치에서만 커밋 | `main` 체크아웃 상태에서 기능 커밋 |
+| `git push -u origin <branch>` 후 `gh pr create --base main` | `git push origin main` |
+| PR 전 `git fetch origin && git rebase origin/main` (충돌 시 해결) | main에만 커밋하고 PR 생략 |
+| 로컬 `main`은 `git pull origin main`으로 동기화만 | 에이전트가 main을 작업 브랜치로 사용 |
+
+**에이전트 기본 절차**
+
+1. `git fetch origin main && git checkout -b cursor/<요약> origin/main` (이미 브랜치가 있으면 그 브랜치 유지)
+2. 구현·검증 후 **해당 브랜치에만** 커밋 (`git add`는 PR 범위 파일만)
+3. `git push -u origin HEAD` → PR 생성 (`base: main`)
+4. 머지된 뒤 다음 작업은 **업데이트된 `origin/main`에서** 새 브랜치 분기
+
+브랜치 생성·커밋 직후 `SetActiveBranch`로 활성 브랜치 메타데이터를 맞춘다.
 
 ### 기능별 PR 분리 (에이전트 필수)
 
