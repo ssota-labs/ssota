@@ -6,33 +6,30 @@ import { useLocale } from "@/components/i18n/locale-provider";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
+import { toast } from "@ssota/ui/components/ui/sonner";
 
 export function AccountPasswordForm() {
   const { t } = useLocale();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
-    setError(null);
 
     if (password !== confirmPassword) {
-      setError(t("settings.passwordMismatch"));
+      toast.error(t("settings.passwordMismatch"));
       return;
     }
 
     startTransition(async () => {
       const result = await updatePasswordAction(password);
       if (result.ok) {
-        setMessage(t("settings.passwordSaved"));
+        toast.success(t("settings.passwordSaved"));
         setPassword("");
         setConfirmPassword("");
       } else {
-        setError(result.error);
+        toast.error(result.error);
       }
     });
   }
@@ -64,8 +61,6 @@ export function AccountPasswordForm() {
       <Button type="submit" size="sm" disabled={isPending || password.length < 8}>
         {t("settings.updatePassword")}
       </Button>
-      {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </form>
   );
 }

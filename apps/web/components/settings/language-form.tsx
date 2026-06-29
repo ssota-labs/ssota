@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@ssota/ui/components/ui/select";
+import { toast } from "@ssota/ui/components/ui/sonner";
 
 const localeLabels: Record<Locale, string> = {
   en: "English",
@@ -29,35 +30,35 @@ export function LanguageForm({ currentLocale }: LanguageFormProps) {
   function handleChange(value: string | null) {
     if (!value || value === currentLocale) return;
     startTransition(async () => {
-      await updateLocaleAction(value as Locale);
+      try {
+        await updateLocaleAction(value as Locale);
+        toast.success(t("settings.languageSaved"));
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to save language");
+      }
     });
   }
 
   return (
-    <div className="space-y-2">
-      <Select
-        value={currentLocale}
-        onValueChange={handleChange}
-        disabled={isPending}
-        items={LOCALES.map((locale) => ({
-          value: locale,
-          label: localeLabels[locale],
-        }))}
-      >
-        <SelectTrigger id="locale" className="w-full" aria-label={t("settings.languageTitle")}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {LOCALES.map((locale) => (
-            <SelectItem key={locale} value={locale}>
-              {localeLabels[locale]}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {isPending ? (
-        <p className="text-xs text-muted-foreground">{t("settings.languageSaved")}</p>
-      ) : null}
-    </div>
+    <Select
+      value={currentLocale}
+      onValueChange={handleChange}
+      disabled={isPending}
+      items={LOCALES.map((locale) => ({
+        value: locale,
+        label: localeLabels[locale],
+      }))}
+    >
+      <SelectTrigger id="locale" className="w-full" aria-label={t("settings.languageTitle")}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {LOCALES.map((locale) => (
+          <SelectItem key={locale} value={locale}>
+            {localeLabels[locale]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

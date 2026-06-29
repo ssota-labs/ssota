@@ -6,6 +6,7 @@ import { useLocale } from "@/components/i18n/locale-provider";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
+import { toast } from "@ssota/ui/components/ui/sonner";
 
 type OrgTransferFormProps = {
   organizationId: string;
@@ -15,14 +16,10 @@ type OrgTransferFormProps = {
 export function OrgTransferForm({ organizationId, orgSlug }: OrgTransferFormProps) {
   const { t } = useLocale();
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
-    setError(null);
 
     startTransition(async () => {
       const result = await transferOrganizationOwnershipAction({
@@ -31,10 +28,10 @@ export function OrgTransferForm({ organizationId, orgSlug }: OrgTransferFormProp
         newOwnerEmail: email,
       });
       if (result.ok) {
-        setMessage(t("settings.orgTransferSuccess"));
+        toast.success(t("settings.orgTransferSuccess"));
         setEmail("");
       } else {
-        setError(result.error);
+        toast.error(result.error);
       }
     });
   }
@@ -55,8 +52,6 @@ export function OrgTransferForm({ organizationId, orgSlug }: OrgTransferFormProp
       <Button type="submit" size="sm" variant="outline" disabled={isPending || !email.trim()}>
         {t("settings.orgTransferAction")}
       </Button>
-      {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </form>
   );
 }
