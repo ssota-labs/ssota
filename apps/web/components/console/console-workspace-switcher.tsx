@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { Organization, Teamspace } from "@ssota/core";
-import { CubeIcon, UsersThreeIcon } from "@phosphor-icons/react";
+import type { Organization } from "@ssota/core";
+import { UsersThreeIcon } from "@phosphor-icons/react";
 import {
   WorkspaceSwitcher,
   WorkspaceSwitcherItem,
@@ -64,49 +64,3 @@ export function ConsoleOrgSwitcher({ organizations }: ConsoleOrgSwitcherProps) {
   );
 }
 
-type ConsoleProjectSwitcherProps = {
-  projects: Teamspace[];
-};
-
-export function ConsoleProjectSwitcher({ projects }: ConsoleProjectSwitcherProps) {
-  const ctx = useProjectContext();
-  const pathname = usePathname();
-  const { t } = useLocale();
-
-  const options: WorkspaceSwitcherOption[] = projects.map((project) => ({
-    id: project.id,
-    label: project.name,
-  }));
-
-  return (
-    <WorkspaceSwitcher
-      currentLabel={ctx.project.name}
-      sectionLabel={t("nav.project")}
-      icon={<CubeIcon />}
-      options={options}
-      activeOptionId={ctx.project.id}
-      side="bottom"
-      aria-label={t("nav.project")}
-      renderOption={(option, { active }) => {
-        const project = projects.find((item) => item.id === option.id);
-        if (!project) return <></>;
-        return (
-          <WorkspaceSwitcherItem
-            key={option.id}
-            option={option}
-            active={active}
-            render={
-              <Link
-                href={switchConsolePath(pathname, ctx, {
-                  orgSlug: ctx.org.slug,
-                  teamspaceSlug: project.slug,
-                })}
-                prefetch
-              />
-            }
-          />
-        );
-      }}
-    />
-  );
-}
