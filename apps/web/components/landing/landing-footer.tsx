@@ -1,7 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { GitHubDark } from "@ridemountainpig/svgl-react";
-import { Button } from "@ssota/ui/components/ui/button";
 import { getLandingTranslations } from "@/lib/i18n/server";
 import { LandingBetaSignup } from "@/components/landing/landing-beta-signup";
 
@@ -96,14 +95,6 @@ export async function LandingFooter() {
                 triggerSize="sm"
                 triggerClassName="h-9 rounded-full px-4"
               />
-              <Button
-                render={<Link href="/login" />}
-                size="sm"
-                nativeButton={false}
-                className="h-9 rounded-full px-4"
-              >
-                {t("landing.footer.getStarted")}
-              </Button>
             </div>
           </div>
 
