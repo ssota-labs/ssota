@@ -7,6 +7,7 @@ import {
   CheckSquareIcon,
   ClipboardTextIcon,
   ClockIcon,
+  CreditCardIcon,
   CubeIcon,
   DatabaseIcon,
   FileTextIcon,
@@ -85,6 +86,7 @@ export const NAV_ICONS: Record<string, Icon> = {
   retro_review: GitBranchIcon,
   developer_setup: WrenchIcon,
   settings: GearIcon,
+  billing: CreditCardIcon,
 };
 
 export function NavItemIcon({

@@ -244,6 +244,18 @@ export function AppSidebar({
           {t("nav.developerSetup")}
         </Link>
         <Link
+          href={orgPath(ctx, "settings/billing")}
+          prefetch
+          className={cn(
+            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            pathname.includes("/settings/billing") &&
+              "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
+          )}
+        >
+          <NavItemIcon iconKey="billing" className="size-4 shrink-0" />
+          {t("nav.billing")}
+        </Link>
+        <Link
           href={orgPath(ctx, "settings/general")}
           prefetch
           className={cn(
