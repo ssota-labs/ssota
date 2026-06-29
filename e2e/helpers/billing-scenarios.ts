@@ -7,7 +7,7 @@
  * Tiers:
  * - unit / integration — Vitest (`pnpm test:billing`)
  * - e2e-oss — default `pnpm e2e` (BILLING=none)
- * - e2e-stripe — `pnpm e2e:billing` (BILLING=stripe, DB + webhook API)
+ * - e2e-stripe — `pnpm e2e:billing` or `pnpm e2e:billing:record` (per-test video in HTML report)
  * - e2e-live — `STRIPE_E2E_LIVE=1` (real Checkout / Portal; agent-browser)
  * - cli — `pnpm stripe:smoke`
  * - manual — documented only (agent-browser / Dashboard)

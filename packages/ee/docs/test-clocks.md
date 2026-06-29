@@ -41,6 +41,10 @@ pnpm stripe:smoke              # summary + manual checklist
 pnpm stripe:smoke --run all    # unit + integration + e2e-oss + e2e-stripe
 pnpm e2e -- --grep billing     # OSS mode (BILLING=none)
 pnpm e2e:billing               # Stripe mode gate + webhook specs
+pnpm e2e:billing:record        # Both suites + per-test video in HTML reports
+pnpm e2e:billing:open oss      # Local server: OSS report with Video tab per test
+pnpm e2e:billing:open stripe   # Local server: Stripe report
+pnpm e2e:billing:open hub      # Hub linking both reports
 ```
 
 Live Checkout/Portal and Test Clock flows are `manual` / `cli` tier — use `stripe listen` and agent-browser as documented in the smoke script output.
