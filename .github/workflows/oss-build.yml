@@ -18,6 +18,7 @@ jobs:
       AUTH: local
       CREDENTIALS: own-app
       STUDIO_BUILD_STORAGE: local
+      BILLING: none
       # Intentionally no SUPABASE_* / NEXT_PUBLIC_SUPABASE_* / workflow env.
     steps:
       - uses: actions/checkout@v4
