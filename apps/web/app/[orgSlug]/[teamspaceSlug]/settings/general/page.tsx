@@ -1,57 +1,97 @@
-import Link from "next/link";
-import { LanguageForm } from "@/components/settings/language-form";
-import { PageHeader } from "@/components/studio/page-header";
-import { orgPath } from "@/lib/console/paths";
-import { getTranslations } from "@/lib/i18n/server";
-import { Button } from "@ssota/ui/components/ui/button";
+import { OrgDeleteForm } from "@/components/settings/org-delete-form";
+import { OrgNameForm } from "@/components/settings/org-name-form";
+import { OrgTransferForm } from "@/components/settings/org-transfer-form";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@ssota/ui/components/ui/card";
+  SettingsDangerCard,
+  SettingsPanel,
+  SettingsRow,
+  SettingsSection,
+} from "@/components/settings/settings-panel";
+import { getConsolePort, getOrganizationSettingsPort } from "@/lib/ports";
+import { getTranslations } from "@/lib/i18n/server";
+import { getCurrentUser } from "@/lib/supabase/server";
+import { notFound, redirect } from "next/navigation";
+import { Input } from "@ssota/ui/components/ui/input";
+import { Label } from "@ssota/ui/components/ui/label";
 
 export default async function SettingsGeneralPage({
   params,
 }: {
   params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
 }) {
-  const { orgSlug, teamspaceSlug } = await params;
-  const { locale, t } = await getTranslations();
+  const { orgSlug } = await params;
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const org = await getConsolePort().getOrganizationBySlug(orgSlug);
+  if (!org) notFound();
+
+  const context = await getOrganizationSettingsPort().getContext(org.id, user.id);
+  if (!context) notFound();
+
+  const { t } = await getTranslations();
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={t("settings.title")}
-        description={t("settings.description")}
-      />
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t("settings.general")}</CardTitle>
-          <CardDescription>
-            {t("settings.orgProjectSlugs", { orgSlug, teamspaceSlug })}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <LanguageForm currentLocale={locale} />
-          <div className="rounded-lg border bg-muted/30 p-4">
-            <div className="text-sm font-medium">Developer setup</div>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {t("settings.comingSoon")}
-            </p>
-            <Button
-              render={<Link href={orgPath({ orgSlug, teamspaceSlug }, "developer/setup")} />}
-              variant="outline"
-              size="sm"
-              nativeButton={false}
-              className="mt-3"
-            >
-              Open MCP setup
-            </Button>
+    <SettingsPanel
+      title={t("settings.general")}
+      description={t("settings.generalDescription")}
+    >
+      <SettingsSection
+        title={t("settings.organizationSection")}
+        description={t("settings.organizationSectionDescription")}
+      >
+        <SettingsRow
+          title={t("settings.orgNameLabel")}
+          description={t("settings.orgNameDescription")}
+        >
+          <OrgNameForm
+            organizationId={org.id}
+            orgSlug={org.slug}
+            initialName={context.organization.name}
+            canEdit={context.isOwner}
+          />
+        </SettingsRow>
+        <SettingsRow
+          title={t("settings.orgSlugLabel")}
+          description={t("settings.orgSlugDescription")}
+        >
+          <div className="space-y-2">
+            <Label htmlFor="org-slug" className="sr-only">
+              {t("settings.orgSlugLabel")}
+            </Label>
+            <Input id="org-slug" value={org.slug} readOnly disabled />
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </SettingsRow>
+      </SettingsSection>
+
+      {context.isOwner ? (
+        <section className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-sm font-semibold">{t("settings.dangerZone")}</h2>
+            <p className="text-sm text-muted-foreground">
+              {t("settings.dangerZoneDescription")}
+            </p>
+          </div>
+          <div className="space-y-4">
+            <SettingsDangerCard
+              title={t("settings.orgTransferTitle")}
+              description={t("settings.orgTransferDescription")}
+            >
+              <OrgTransferForm organizationId={org.id} orgSlug={org.slug} />
+            </SettingsDangerCard>
+            <SettingsDangerCard
+              title={t("settings.orgDeleteTitle")}
+              description={t("settings.orgDeleteDescription")}
+            >
+              <OrgDeleteForm
+                organizationId={org.id}
+                orgSlug={org.slug}
+                teamspaceCount={context.teamspaceCount}
+              />
+            </SettingsDangerCard>
+          </div>
+        </section>
+      ) : null}
+    </SettingsPanel>
   );
 }

@@ -120,7 +120,6 @@ export default async function ProjectLayout({
         project,
       }}
       organizations={organizations}
-      projects={teamspaceList}
       userEmail={user?.email ?? ""}
       signOutAction={signOutAction}
       initiatives={initiatives}

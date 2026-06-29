@@ -5,7 +5,6 @@ import type { Locale } from "@ssota/core";
 import { LOCALES } from "@ssota/core";
 import { updateLocaleAction } from "@/app/settings/actions";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { Label } from "@ssota/ui/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -35,8 +34,7 @@ export function LanguageForm({ currentLocale }: LanguageFormProps) {
   }
 
   return (
-    <div className="flex max-w-sm flex-col gap-3">
-      <Label htmlFor="locale">{t("settings.languageTitle")}</Label>
+    <div className="space-y-2">
       <Select
         value={currentLocale}
         onValueChange={handleChange}
@@ -46,7 +44,7 @@ export function LanguageForm({ currentLocale }: LanguageFormProps) {
           label: localeLabels[locale],
         }))}
       >
-        <SelectTrigger id="locale" className="w-full">
+        <SelectTrigger id="locale" className="w-full" aria-label={t("settings.languageTitle")}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -57,9 +55,6 @@ export function LanguageForm({ currentLocale }: LanguageFormProps) {
           ))}
         </SelectContent>
       </Select>
-      <p className="text-xs text-muted-foreground">
-        {t("settings.languageDescription")}
-      </p>
       {isPending ? (
         <p className="text-xs text-muted-foreground">{t("settings.languageSaved")}</p>
       ) : null}

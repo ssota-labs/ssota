@@ -41,6 +41,30 @@ test.describe("Console v2.7 navigation", () => {
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/[^/]+$`));
   });
 
+  test("dynamic page: sibling nav shows large tab row for page siblings", async ({ page }) => {
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await nav.getByRole("button", { name: "Executive", exact: true }).click();
+    await nav.getByRole("link", { name: "Roadmap", exact: true }).click();
+
+    const siblingNav = page.getByTestId("page-sibling-nav");
+    await expect(siblingNav).toBeVisible({ timeout: 15_000 });
+
+    const tabs = siblingNav.getByRole("navigation", { name: "Page tabs" });
+    await expect(tabs.getByRole("link", { name: "Executive", exact: true })).toHaveCount(0);
+    await expect(tabs.getByRole("link", { name: "Roadmap", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    await expect(tabs.getByRole("link", { name: "Goals", exact: true })).toBeVisible();
+
+    await tabs.getByRole("link", { name: "Goals", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/[^/]+$`));
+    await expect(tabs.getByRole("link", { name: "Goals", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
   test("sidebar footer: developer setup and settings links", async ({ page }) => {
     const sidebar = page.locator("aside");
     await expect(sidebar.getByRole("link", { name: "Developer setup", exact: true })).toBeVisible();
@@ -68,16 +92,12 @@ test.describe("Console v2.7 navigation", () => {
     await expect(popover.getByRole("link", { name: /SSOTA Labs/ })).toBeVisible();
   });
 
-  test("teamspace switcher opens opaque popover with options", async ({ page }) => {
-    const teamspaceTrigger = page.getByRole("button", { name: "Teamspace", exact: true });
-    await expect(teamspaceTrigger.locator('[data-slot="avatar"]')).toBeVisible();
-    await teamspaceTrigger.click();
+  test("sidebar: teamspace nav lists org teamspaces (no top-bar switcher)", async ({ page }) => {
+    await expect(page.getByRole("button", { name: "Teamspace", exact: true })).toHaveCount(0);
 
-    const popover = page.locator('[data-slot="popover-content"]');
-    await expect(popover).toBeVisible();
-    await expect(popover).toHaveClass(/cn-popover-menu-solid/);
-    await expect(popover).not.toHaveClass(/cn-menu-translucent/);
-    await expect(popover.getByText("Teamspace", { exact: true })).toBeVisible();
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await expect(nav.getByRole("button", { name: "SSOTA Dev", exact: true })).toBeVisible();
+    await expect(nav.getByRole("button", { name: "App Disabled (E2E)", exact: true })).toBeVisible();
   });
 
   test("profile menu opens opaque popover", async ({ page }) => {
