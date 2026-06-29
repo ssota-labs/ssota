@@ -41,6 +41,31 @@ test.describe("Console v2.7 navigation", () => {
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/[^/]+$`));
   });
 
+  test("dynamic page: sibling nav shows section and tab rows", async ({ page }) => {
+    await gotoProject(page, "executive/roadmap");
+
+    const siblingNav = page.getByTestId("page-sibling-nav");
+    await expect(siblingNav).toBeVisible();
+
+    const sections = siblingNav.getByRole("navigation", { name: "Page sections" });
+    await expect(sections.getByRole("link", { name: "Executive", exact: true })).toHaveClass(
+      /font-semibold/,
+    );
+    await expect(sections.getByRole("link", { name: "Research", exact: true })).toBeVisible();
+
+    const tabs = siblingNav.getByRole("navigation", { name: "Page tabs" });
+    await expect(tabs.getByRole("link", { name: "Roadmap", exact: true })).toHaveClass(
+      /font-semibold/,
+    );
+    await expect(tabs.getByRole("link", { name: "Goals", exact: true })).toBeVisible();
+
+    await tabs.getByRole("link", { name: "Goals", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/[^/]+$`));
+    await expect(tabs.getByRole("link", { name: "Goals", exact: true })).toHaveClass(
+      /font-semibold/,
+    );
+  });
+
   test("sidebar footer: developer setup and settings links", async ({ page }) => {
     const sidebar = page.locator("aside");
     await expect(sidebar.getByRole("link", { name: "Developer setup", exact: true })).toBeVisible();
