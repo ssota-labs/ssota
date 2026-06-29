@@ -232,11 +232,11 @@ export function AppSidebar({
 
       <div className="space-y-0.5 border-t p-2">
         <Link
-          href={orgPath(ctx, "developer/setup")}
+          href={orgPath(ctx, "settings/developer")}
           prefetch
           className={cn(
             "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            pathname.includes("/developer/") &&
+            (pathname.includes("/developer/") || pathname.includes("/settings/developer")) &&
               "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
           )}
         >
@@ -244,7 +244,7 @@ export function AppSidebar({
           {t("nav.developerSetup")}
         </Link>
         <Link
-          href={orgPath(ctx, "settings/general")}
+          href={orgPath(ctx, "settings")}
           prefetch
           className={cn(
             "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",

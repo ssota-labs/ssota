@@ -85,6 +85,10 @@ export const NAV_ICONS: Record<string, Icon> = {
   retro_review: GitBranchIcon,
   developer_setup: WrenchIcon,
   settings: GearIcon,
+  settings_general: GearIcon,
+  settings_appearance: PaintBrushIcon,
+  settings_members: UsersThreeIcon,
+  settings_teamspace: CubeIcon,
 };
 
 export function NavItemIcon({
