@@ -366,6 +366,8 @@ export interface ConsolePort {
 export interface OnboardingPort {
   getProfile(userId: string): Promise<Profile | null>;
   updateLocale(userId: string, locale: Locale): Promise<void>;
+  updateDisplayName(userId: string, displayName: string): Promise<Profile>;
+  updateProfileEmail(userId: string, email: string): Promise<void>;
   completeProfileStep(input: {
     userId: string;
     email: string;
