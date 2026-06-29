@@ -283,23 +283,25 @@ export default async function HomePage() {
       </section>
 
       <LandingPricing />
-      <LandingFaq />
 
-      <section className="relative isolate overflow-hidden px-6 py-20">
-        <LandingBlurredBackground />
-        <div className="relative z-10 mx-auto max-w-4xl text-center">
-          <div className={landingGlassPanelClassName("p-8 md:p-12")}>
-            <Badge
-              variant="outline"
-              className="border-border/50 bg-background/50 backdrop-blur-sm"
-            >
-              {t("landing.cta.badge")}
-            </Badge>
-            <h2 className="mt-4 text-3xl font-semibold tracking-tight">
-              {t("landing.cta.heading")}
-            </h2>
-            <div className="mt-8 flex justify-center">
-              <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
+      <section className="relative isolate overflow-hidden border-t border-border/40">
+        <LandingBlurredBackground gradientClassName="bg-gradient-to-b from-background from-[0%] via-background/90 via-[28%] via-background/55 via-[52%] to-background/15 to-[100%]" />
+        <LandingFaq embedded />
+        <div className="relative z-10 px-6 pb-20 pt-4 md:pb-24 md:pt-6">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className={landingGlassPanelClassName("p-8 md:p-12")}>
+              <Badge
+                variant="outline"
+                className="border-border/50 bg-background/50 backdrop-blur-sm"
+              >
+                {t("landing.cta.badge")}
+              </Badge>
+              <h2 className="mt-4 text-3xl font-semibold tracking-tight">
+                {t("landing.cta.heading")}
+              </h2>
+              <div className="mt-8 flex justify-center">
+                <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
+              </div>
             </div>
           </div>
         </div>
