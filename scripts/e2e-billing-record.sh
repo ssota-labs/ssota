@@ -16,6 +16,7 @@ cd "$ROOT/e2e"
 
 mkdir -p report
 cp "$ROOT/e2e/billing-hub.html" report/billing-hub.html
+tsx "$ROOT/scripts/patch-playwright-report-theme.ts" || true
 
 echo "═══ Billing OSS E2E (video per test) ═══"
 pnpm exec playwright test -c playwright.billing-oss.config.ts

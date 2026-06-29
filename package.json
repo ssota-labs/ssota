@@ -34,6 +34,7 @@
     "e2e:billing:live": "STRIPE_E2E_LIVE=1 pnpm e2e:billing -- tests/billing-stripe/ui-live.spec.ts",
     "e2e:billing:record": "bash scripts/e2e-billing-record.sh",
     "e2e:billing:open": "bash scripts/e2e-billing-open-report.sh",
+    "e2e:billing:patch-theme": "tsx scripts/patch-playwright-report-theme.ts",
     "test:billing": "pnpm --filter @ssota/core test -- assert-cloud-entitlement && pnpm --filter @ssota/ee test -- sync-subscription && pnpm --filter @ssota/adapter-postgres test -- billing-port",
     "stripe:smoke": "tsx scripts/stripe-billing-smoke.ts"
   },

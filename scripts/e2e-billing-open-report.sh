@@ -10,6 +10,9 @@ PORT_HUB="${BILLING_REPORT_PORT_HUB:-9323}"
 
 cd "$ROOT/e2e"
 
+tsx "$ROOT/scripts/patch-playwright-report-theme.ts" 2>/dev/null || true
+cp "$ROOT/e2e/billing-hub.html" report/billing-hub.html 2>/dev/null || true
+
 case "$TARGET" in
   hub)
     echo "Billing hub: http://127.0.0.1:$PORT_HUB/billing-hub.html"
