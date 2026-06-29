@@ -1,36 +1,17 @@
 "use client";
 
 import { ArrowBendDownLeft } from "@phosphor-icons/react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/components/i18n/locale-provider";
+import { landingGlassPillClassName } from "@/components/landing/landing-glass-surface";
 
-const PROMPTS = [
-  {
-    text: "최근 가장 많이 들어온 CS로 기능 기획하겠습니다.",
-    highlights: ["CS", "기능 기획"],
-  },
-  {
-    text: "이번 로드맵 OKR에 맞는 이니셔티브를 계획하겠습니다.",
-    highlights: ["OKR", "이니셔티브"],
-  },
-  {
-    text: "유저 행동 데이터를 기반으로 유저플로우를 수정 제안합니다.",
-    highlights: ["유저 행동 데이터", "유저플로우"],
-  },
-  {
-    text: "이번 설계 변경을 API 문서에 적용하겠습니다.",
-    highlights: ["설계 변경", "API 문서"],
-  },
-  {
-    text: "고객 인터뷰 노트에서 이번 분기 가설을 추출하겠습니다.",
-    highlights: ["고객 인터뷰", "가설"],
-  },
-] as const;
+type Prompt = {
+  text: string;
+  highlights: readonly string[];
+};
 
-const LONGEST_PROMPT_TEXT = PROMPTS.map((prompt) => prompt.text).reduce(
-  (longest, text) => (text.length > longest.length ? text : longest),
-  PROMPTS[0].text,
-);
+const PROMPT_COUNT = 5;
 
 const TYPE_MS = 28;
 const TYPE_MS_RAMP_CHARS = 8;
@@ -104,13 +85,30 @@ function renderVisibleText(
 }
 
 export function LandingHeroPrompt() {
+  const { t } = useLocale();
+  const prompts = useMemo<readonly Prompt[]>(() => {
+    return Array.from({ length: PROMPT_COUNT }, (_, index) => ({
+      text: t(`landing.hero.prompt${index}Text`),
+      highlights: t(`landing.hero.prompt${index}Highlights`).split("|"),
+    }));
+  }, [t]);
+  const longestPromptText = useMemo(
+    () =>
+      prompts.reduce(
+        (longest, prompt) =>
+          prompt.text.length > longest.length ? prompt.text : longest,
+        prompts[0]?.text ?? "",
+      ),
+    [prompts],
+  );
+
   const [promptIndex, setPromptIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(1);
   const [phase, setPhase] = useState<Phase>("typing");
   const [showCursor, setShowCursor] = useState(true);
   const [reducedMotion, setReducedMotion] = useState(false);
 
-  const currentPrompt = PROMPTS[promptIndex] ?? PROMPTS[0];
+  const currentPrompt = prompts[promptIndex] ?? prompts[0]!;
   const isEmphasized =
     reducedMotion || phase === "pausing";
 
@@ -136,7 +134,7 @@ export function LandingHeroPrompt() {
   useEffect(() => {
     if (reducedMotion) {
       const timer = window.setInterval(() => {
-        setPromptIndex((index) => (index + 1) % PROMPTS.length);
+        setPromptIndex((index) => (index + 1) % prompts.length);
         setCharIndex(0);
         setPhase("typing");
       }, PAUSE_MS + 800);
@@ -163,12 +161,12 @@ export function LandingHeroPrompt() {
 
     const timer = window.setTimeout(() => {
       setCharIndex(0);
-      setPromptIndex((index) => (index + 1) % PROMPTS.length);
+      setPromptIndex((index) => (index + 1) % prompts.length);
       setPhase("typing");
     }, PAUSE_MS);
 
     return () => window.clearTimeout(timer);
-  }, [charIndex, currentPrompt.text, phase, reducedMotion]);
+  }, [charIndex, currentPrompt.text, phase, prompts.length, reducedMotion]);
 
   const visibleLength = reducedMotion
     ? currentPrompt.text.length
@@ -176,17 +174,17 @@ export function LandingHeroPrompt() {
 
   return (
     <div
-      aria-label="SSOTA prompt preview"
+      aria-label={t("landing.hero.promptLabel")}
       className={cn(
-        "group relative inline-grid max-w-[calc(100vw-3rem)] cursor-default rounded-full border border-white/20 py-5 pr-14 pl-5 text-left ring-1 ring-inset ring-primary/15 backdrop-blur-lg transition-[background-color,box-shadow] duration-200 ease-out md:py-6",
-        "bg-primary/15 shadow-lg shadow-black/15 supports-backdrop-filter:bg-primary/10",
+        "group relative inline-grid max-w-[calc(100vw-3rem)] cursor-default py-5 pr-14 pl-5 text-left transition-[background-color,box-shadow] duration-200 ease-out md:py-6",
+        landingGlassPillClassName(),
       )}
     >
       <span
         aria-hidden
         className="invisible col-start-1 row-start-1 whitespace-nowrap text-sm leading-6 md:text-base"
       >
-        {LONGEST_PROMPT_TEXT}
+        {longestPromptText}
       </span>
       <span className="col-start-1 row-start-1 min-w-0 text-sm leading-6 whitespace-nowrap text-foreground/90 md:text-base">
         <span aria-hidden="true">
