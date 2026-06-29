@@ -591,6 +591,8 @@ export * from "./ports/graph-write-port.js";
 export * from "./domain/graph-errors.js";
 export * from "./domain/settings-errors.js";
 export * from "./ports/organization-settings-port.js";
+export * from "./ports/organization-members-port.js";
+export * from "./domain/normalize-email.js";
 export * from "./domain/graph-types.js";
 export * from "./use-cases/graph/index.js";
 export * from "./ports/binding-resolver-port.js";

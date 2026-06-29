@@ -9,7 +9,7 @@ export function SettingsPanel({ title, description, children }: {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto bg-background">
       <div className="@container/settings mx-auto flex w-full max-w-4xl flex-col px-6 py-8">
-        <header className="mb-8 space-y-1 border-b pb-6">
+        <header className="mb-8 space-y-1 pb-6">
           <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
           {description ? (
             <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
