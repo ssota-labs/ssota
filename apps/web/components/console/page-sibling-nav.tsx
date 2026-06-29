@@ -19,14 +19,26 @@ export function PageSiblingNav({ items, activeId }: PageSiblingNavData) {
               key={item.id}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
-              className={cn(
-                "whitespace-nowrap text-lg transition-colors hover:text-foreground md:text-xl",
-                isActive
-                  ? "font-semibold text-foreground"
-                  : "font-normal text-muted-foreground",
-              )}
+              className="whitespace-nowrap text-lg transition-colors hover:text-foreground md:text-xl"
             >
-              {item.title}
+              <span className="inline-grid">
+                <span
+                  aria-hidden
+                  className="invisible col-start-1 row-start-1 font-semibold"
+                >
+                  {item.title}
+                </span>
+                <span
+                  className={cn(
+                    "col-start-1 row-start-1",
+                    isActive
+                      ? "font-semibold text-foreground"
+                      : "font-normal text-muted-foreground",
+                  )}
+                >
+                  {item.title}
+                </span>
+              </span>
             </Link>
           );
         })}

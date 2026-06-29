@@ -51,15 +51,17 @@ test.describe("Console v2.7 navigation", () => {
 
     const tabs = siblingNav.getByRole("navigation", { name: "Page tabs" });
     await expect(tabs.getByRole("link", { name: "Executive", exact: true })).toHaveCount(0);
-    await expect(tabs.getByRole("link", { name: "Roadmap", exact: true })).toHaveClass(
-      /font-semibold/,
+    await expect(tabs.getByRole("link", { name: "Roadmap", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
     await expect(tabs.getByRole("link", { name: "Goals", exact: true })).toBeVisible();
 
     await tabs.getByRole("link", { name: "Goals", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/[^/]+$`));
-    await expect(tabs.getByRole("link", { name: "Goals", exact: true })).toHaveClass(
-      /font-semibold/,
+    await expect(tabs.getByRole("link", { name: "Goals", exact: true })).toHaveAttribute(
+      "aria-current",
+      "page",
     );
   });
 
