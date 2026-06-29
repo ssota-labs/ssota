@@ -159,6 +159,7 @@ export function OrgMemberListTable({
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                         disabled={isPending || actionPending}
                         onClick={() => handleRemove(row.userId!)}
                       >
