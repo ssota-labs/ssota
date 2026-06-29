@@ -18,34 +18,53 @@
       "elements": {
         "layout": {
           "type": "Stack",
-          "props": { "gap": "lg", "padding": "none" },
-          "children": ["productSection", "planningSection"]
+          "props": { "gap": "md", "padding": "none" },
+          "children": ["pageBar", "productSection", "planningSection"]
+        },
+        "pageBar": {
+          "type": "PageHeader",
+          "props": {
+            "variant": "compact",
+            "title": "Roadmap",
+            "subtitle": "Product direction and planning documents"
+          }
         },
         "productSection": {
           "type": "Section",
           "props": {
             "title": "Product roadmap",
-            "subtitle": "Long-term strategic direction"
+            "subtitle": "Long-term strategic direction",
+            "padding": "none"
           },
           "children": ["product"]
         },
         "product": {
           "type": "DocumentSheetList",
           "props": {
-            "binding": "productRoadmap",
+            "binding": "productRoadmaps",
             "field": "content",
             "subtitleField": "summary",
-            "statusField": "lifecycleStatus",
+            "statusField": "doc_status",
             "sheetSize": "half",
             "editable": true,
-            "action": "saveProductDoc"
+            "action": "saveProductDoc",
+            "filters": [
+              {
+                "type": "toggle",
+                "field": "doc_status",
+                "value": "archived",
+                "label": "Show archived",
+                "defaultHidden": true
+              }
+            ]
           }
         },
         "planningSection": {
           "type": "Section",
           "props": {
             "title": "Planning roadmaps",
-            "subtitle": "Annual and quarterly execution plans"
+            "subtitle": "Annual and quarterly execution plans",
+            "padding": "none"
           },
           "children": ["planning"]
         },
@@ -55,16 +74,23 @@
             "binding": "planningRoadmaps",
             "field": "content",
             "subtitleField": "summary",
-            "statusField": "lifecycleStatus",
+            "statusField": "doc_status",
             "sheetSize": "half",
             "editable": true,
-            "action": "savePlanningDoc"
+            "action": "savePlanningDoc",
+            "filters": [
+              {
+                "type": "select",
+                "field": "year",
+                "label": "Year"
+              }
+            ]
           }
         }
       }
     },
     "bindings": {
-      "productRoadmap": { "kind": "singleton", "catalogKey": "product_roadmap" },
+      "productRoadmaps": { "kind": "query", "catalogKey": "product_roadmap" },
       "planningRoadmaps": { "kind": "query", "catalogKey": "roadmap" }
     },
     "actions": {

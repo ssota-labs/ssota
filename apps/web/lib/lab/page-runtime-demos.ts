@@ -237,7 +237,7 @@ const mockRoadmapDocs = [
     properties: {
       kind: "annual",
       year: 2026,
-      lifecycleStatus: "active",
+      doc_status: "active",
       summary: "Console v2.7 출시, end-user app, Design Studio 파이프라인",
       content: [
         {
@@ -273,7 +273,7 @@ const mockRoadmapDocs = [
       kind: "quarter",
       year: 2026,
       quarter: 1,
-      lifecycleStatus: "draft",
+      doc_status: "draft",
       summary: "Page runtime catalog, Labs, roadmap document sheet pattern",
       content: [
         {
@@ -305,7 +305,7 @@ const mockRoadmapDocs = [
       kind: "quarter",
       year: 2026,
       quarter: 2,
-      lifecycleStatus: "review",
+      doc_status: "review",
       summary: "Initiative drill-in, scoped bindings, 18 L2 screens",
       content: [
         {
@@ -837,7 +837,7 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
             title: "Product roadmap documents",
             field: "content",
             subtitleField: "summary",
-            statusField: "lifecycleStatus",
+            statusField: "doc_status",
             sheetSize: "half",
             editable: true,
             action: "saveRoadmapDoc",

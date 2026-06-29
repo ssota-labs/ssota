@@ -12,7 +12,9 @@ import {
   ResizablePanelGroup,
 } from "@ssota/ui/components/ui/resizable";
 import { cn } from "@ssota/ui/lib/utils";
+import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import type { CatalogComponent } from "../types";
+import { SectionEl } from "./section";
 import { TabsEl, type TabItemDef } from "./layout-tabs";
 import { ToolbarEl, type ToolbarActionDef } from "./layout-toolbar";
 
@@ -96,31 +98,41 @@ function stackGapClass(gap: unknown): string {
 
 /** Structural / static display components. */
 export const layoutComponents: Record<string, CatalogComponent> = {
-  PageHeader: ({ props }) => (
-    <header className="shrink-0 space-y-1 px-4 pt-4 md:px-6 md:pt-6">
-      <h1 className="text-2xl font-semibold">{String(props.title ?? "Page")}</h1>
-      {props.subtitle ? (
-        <p className="text-muted-foreground text-sm">{String(props.subtitle)}</p>
-      ) : null}
-    </header>
-  ),
-  Section: ({ props, children }) => (
-    <section
-      className={cn(
-        "flex min-h-0 flex-1 flex-col gap-4",
-        paddingClass(props.padding),
-      )}
-    >
-      <header className="shrink-0 space-y-1">
-        <h2 className="text-lg font-semibold">{String(props.title ?? "Section")}</h2>
-        {props.subtitle ? (
-          <p className="text-muted-foreground text-sm">{String(props.subtitle)}</p>
+  PageHeader: ({ props }) => {
+    const compact = props.variant === "compact";
+    const title = String(props.title ?? "Page");
+    const subtitle = props.subtitle ? String(props.subtitle) : undefined;
+
+    if (compact) {
+      return (
+        <header className="flex shrink-0 items-start gap-2 border-b py-2">
+          <div className="min-w-0 flex-1 space-y-1">
+            <h1 className="text-sm font-semibold">{title}</h1>
+            {subtitle ? (
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
+            ) : null}
+          </div>
+        </header>
+      );
+    }
+
+    return (
+      <header className="shrink-0 space-y-1 px-4 pt-4 md:px-6 md:pt-6">
+        <h1 className="text-2xl font-semibold">{title}</h1>
+        {subtitle ? (
+          <p className="text-muted-foreground text-sm">{subtitle}</p>
         ) : null}
       </header>
-      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto">
-        {children}
-      </div>
-    </section>
+    );
+  },
+  Section: ({ props, children }) => (
+    <SectionEl
+      title={props.title ? String(props.title) : undefined}
+      subtitle={props.subtitle ? String(props.subtitle) : undefined}
+      padding={props.padding}
+    >
+      {children}
+    </SectionEl>
   ),
   Grid: ({ props, children }) => (
     <div

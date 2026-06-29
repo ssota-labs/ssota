@@ -95,6 +95,7 @@ export const documentComponents: Record<string, CatalogComponent> = {
           ? props.sheetSize
           : "half"
       }
+      filters={props.filters}
       />
     </div>
   ),

@@ -9,6 +9,7 @@ import {
   connectorCardTextClassName,
   connectorIconWrapClassName,
 } from "@/components/connectors/connector-card-styles";
+import { ConsolePageFrame } from "@/components/console/console-page-frame";
 import { ConnectorsScrollShell } from "@/components/connectors/connectors-scroll-shell";
 
 function ConnectorCardSkeleton() {
@@ -34,7 +35,7 @@ export function ConnectorsLoading() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <ConnectorsScrollShell>
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8">
+        <ConsolePageFrame contentClassName="gap-8">
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Connectors</h1>
           <div className="max-w-2xl">
@@ -54,7 +55,7 @@ export function ConnectorsLoading() {
             </div>
           </section>
         ))}
-      </div>
+        </ConsolePageFrame>
       </ConnectorsScrollShell>
     </div>
   );
