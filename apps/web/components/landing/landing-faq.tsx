@@ -53,7 +53,7 @@ export function LandingFaq({ embedded = false }: LandingFaqProps) {
       <div
         className={cn(
           "mx-auto max-w-6xl px-6",
-          embedded ? "pt-24 pb-10 md:pt-32 md:pb-14" : "py-24 md:py-32",
+          embedded ? "pt-24 pb-6 md:pt-32 md:pb-8" : "py-24 md:py-32",
         )}
       >
         <h2 className="text-center text-3xl font-semibold tracking-tight text-balance md:text-4xl">

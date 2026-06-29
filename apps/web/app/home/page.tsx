@@ -285,9 +285,12 @@ export default async function HomePage() {
       <LandingPricing />
 
       <section className="relative isolate overflow-hidden border-t border-border/40">
-        <LandingBlurredBackground gradientClassName="bg-gradient-to-b from-background from-[0%] via-background/90 via-[28%] via-background/55 via-[52%] to-background/15 to-[100%]" />
+        <LandingBlurredBackground
+          gradientClassName="bg-gradient-to-b from-background from-[0%] via-background/85 via-[20%] via-background/45 via-[45%] via-background/15 via-[70%] to-transparent to-[100%]"
+          overlayClassName="bg-gradient-to-b from-background/35 from-[0%] via-background/22 via-[35%] to-background/5 to-[100%]"
+        />
         <LandingFaq embedded />
-        <div className="relative z-10 px-6 pb-20 pt-4 md:pb-24 md:pt-6">
+        <div className="relative z-10 px-6 pb-20 pt-0 md:pb-24">
           <div className="mx-auto max-w-4xl text-center">
             <div className={landingGlassPanelClassName("p-8 md:p-12")}>
               <Badge
