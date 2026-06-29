@@ -32,6 +32,39 @@ test.describe("Executive roadmap", () => {
     ).toBeVisible();
   });
 
+  test("hides archived product roadmap until show-archived toggle is enabled", async ({
+    page,
+  }) => {
+    await expect(
+      page.getByRole("button", { name: "Product roadmap (2025 archive)" }),
+    ).not.toBeVisible();
+
+    const productList = page.getByTestId("document-sheet-list").first();
+    await productList.getByTestId("document-sheet-filter-archived").click();
+
+    await expect(
+      page.getByRole("button", { name: "Product roadmap (2025 archive)" }),
+    ).toBeVisible();
+  });
+
+  test("filters planning roadmaps by year", async ({ page }) => {
+    const year = new Date().getFullYear();
+    const planningList = page.getByTestId("document-sheet-list").nth(1);
+    await expect(
+      page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }),
+    ).toBeVisible();
+
+    await planningList.getByTestId("document-sheet-filter-year").click();
+    await page.getByRole("option", { name: String(year - 1) }).click();
+
+    await expect(
+      page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }),
+    ).not.toBeVisible();
+    await expect(
+      page.getByRole("button", { name: new RegExp(`${year - 1} 연간 로드맵`) }),
+    ).toBeVisible();
+  });
+
   test("shows differentiated status badge colors in planning list", async ({
     page,
   }) => {
