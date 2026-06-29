@@ -351,10 +351,26 @@ export interface CatalogPort {
   getWorkflowByKey(workflowKey: string): Promise<Workflow | null>;
 }
 
+export type OrganizationMembershipRole = "owner" | "member" | string;
+
+export interface OrganizationMembership {
+  organizationId: string;
+  userId: string;
+  role: OrganizationMembershipRole;
+}
+
 export interface ConsolePort {
   getOrganizationBySlug(slug: string): Promise<Organization | null>;
   getPersonalOrganizationForUser(userId: string): Promise<Organization | null>;
   listOrganizationsForUser(userId: string): Promise<Organization[]>;
+  getOrgMembership(
+    organizationId: string,
+    userId: string,
+  ): Promise<OrganizationMembership | null>;
+  isOrgBillingAdmin(
+    organizationId: string,
+    userId: string,
+  ): Promise<boolean>;
   getTeamspaceBySlug(
     organizationId: string,
     teamspaceSlug: string,
