@@ -177,6 +177,7 @@ interface PageTreeSeedEntry {
 /** Seed slugs whose spec/bindings/actions are refreshed on re-seed (dogfood pack updates). */
 const SEED_SPEC_SYNC_SLUGS = new Set([
   "executive/roadmap",
+  "executive/goals",
   "research/market",
   "research/user",
   "research/hypotheses",

@@ -17,7 +17,8 @@ export type PageComponentCategory =
   | "tokens"
   | "document"
   | "canvas"
-  | "widget";
+  | "widget"
+  | "chart";
 
 export interface PageComponentPropDescriptor {
   /** Rough type: string | number | boolean | object | {a,b}[] | binding | action. */
@@ -147,6 +148,29 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       type: "Stack",
       props: { gap: "lg" },
       children: [],
+    },
+  },
+  PeriodSelect: {
+    key: "PeriodSelect",
+    category: "layout",
+    description:
+      "URL-synced period preset filter derived from a multi-node binding. Renders in the parent Section header when nested under Section.",
+    children: false,
+    props: {
+      binding: binding("Multi-node binding (e.g. objectives query)."),
+      field: {
+        type: "string",
+        description: 'Property field to derive presets from (default "period").',
+      },
+      label: { type: "string", description: "Optional label before the select." },
+      param: {
+        type: "string",
+        description: 'URL search param (default "period").',
+      },
+    },
+    example: {
+      type: "PeriodSelect",
+      props: { binding: "objectives", field: "period", label: "Period" },
     },
   },
   Text: {
@@ -292,7 +316,7 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     children: false,
     props: {
       binding: binding("A multi-node binding."),
-      columns: { type: "object[]", description: "Parent column schema.", required: true },
+      columns: { type: "object[]", description: "Parent column schema (optional labels/colors on select|badge columns).", required: true },
       childColumns: { type: "object[]", description: "Child column schema.", required: true },
       childProperty: {
         type: "string",
@@ -839,7 +863,101 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       height: { type: "number", description: "Embed height in px." },
       componentProps: { type: "object", description: "Free-form props for the embedded component." },
     },
-    example: { type: "Widget", props: { binding: "chartArtifact", height: 320 } },
+    example: { type: "Widget", props: { binding: "chartArtifact", height: 320 }     },
+  },
+  ChartLine: {
+    key: "ChartLine",
+    category: "chart",
+    description:
+      "Mini line chart for a KPI node with attached metric_snapshot series (snapshots[] on the binding row).",
+    children: false,
+    props: {
+      binding: binding("Query binding resolving to one KPI row with snapshots attached."),
+      height: { type: "number", description: "Chart height in px (default 128)." },
+      title: { type: "string", description: "Card title above the chart." },
+      snapshotProperty: {
+        type: "string",
+        description: 'Array property holding snapshots (default "snapshots").',
+      },
+      respectPeriodFilter: {
+        type: "boolean",
+        description: "When true, slice snapshots by URL ?period= preset (default true).",
+      },
+    },
+    example: {
+      type: "ChartLine",
+      props: { binding: "kpiWorkspace", height: 128, title: "Workspace creation rate" },
+    },
+  },
+  ChartBar: {
+    key: "ChartBar",
+    category: "chart",
+    description: "Bar chart variant sharing the KPI snapshot binding contract.",
+    children: false,
+    props: {
+      binding: binding("Query binding resolving to one KPI row with snapshots attached."),
+      height: { type: "number", description: "Chart height in px (default 128)." },
+      title: { type: "string", description: "Card title above the chart." },
+      snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
+      respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+    },
+    example: { type: "ChartBar", props: { binding: "kpiWorkspace", height: 128 } },
+  },
+  ChartArea: {
+    key: "ChartArea",
+    category: "chart",
+    description: "Area chart variant sharing the KPI snapshot binding contract.",
+    children: false,
+    props: {
+      binding: binding("Query binding resolving to one KPI row with snapshots attached."),
+      height: { type: "number", description: "Chart height in px (default 128)." },
+      title: { type: "string", description: "Card title above the chart." },
+      snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
+      respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+    },
+    example: { type: "ChartArea", props: { binding: "kpiWorkspace", height: 128 } },
+  },
+  ChartPie: {
+    key: "ChartPie",
+    category: "chart",
+    description: "Pie chart variant sharing the KPI snapshot binding contract.",
+    children: false,
+    props: {
+      binding: binding("Query binding resolving to one KPI row with snapshots attached."),
+      height: { type: "number", description: "Chart height in px (default 128)." },
+      title: { type: "string", description: "Card title above the chart." },
+      snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
+      respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+    },
+    example: { type: "ChartPie", props: { binding: "kpiWorkspace", height: 128 } },
+  },
+  ChartRadar: {
+    key: "ChartRadar",
+    category: "chart",
+    description: "Radar chart variant sharing the KPI snapshot binding contract.",
+    children: false,
+    props: {
+      binding: binding("Query binding resolving to one KPI row with snapshots attached."),
+      height: { type: "number", description: "Chart height in px (default 128)." },
+      title: { type: "string", description: "Card title above the chart." },
+      snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
+      respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+    },
+    example: { type: "ChartRadar", props: { binding: "kpiWorkspace", height: 128 } },
+  },
+  ChartRadial: {
+    key: "ChartRadial",
+    category: "chart",
+    description: "Radial bar chart variant sharing the KPI snapshot binding contract.",
+    children: false,
+    props: {
+      binding: binding("Query binding resolving to one KPI row with snapshots attached."),
+      height: { type: "number", description: "Chart height in px (default 128)." },
+      title: { type: "string", description: "Card title above the chart." },
+      snapshotProperty: { type: "string", description: 'Snapshots property (default "snapshots").' },
+      respectPeriodFilter: { type: "boolean", description: "Respect URL period filter (default true)." },
+    },
+    example: { type: "ChartRadial", props: { binding: "kpiWorkspace", height: 128 } },
   },
   FigmaEmbed: {
     key: "FigmaEmbed",

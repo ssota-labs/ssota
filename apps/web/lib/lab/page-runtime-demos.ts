@@ -7,7 +7,8 @@ export type PageRuntimeDemoCategory =
   | "forms"
   | "document"
   | "canvas"
-  | "design";
+  | "design"
+  | "chart";
 
 export type PageRuntimeDemo = {
   id: string;
@@ -347,6 +348,7 @@ export const PAGE_RUNTIME_DEMO_CATEGORIES: {
   { id: "document", label: "Document" },
   { id: "canvas", label: "Canvas" },
   { id: "design", label: "Design" },
+  { id: "chart", label: "Charts" },
 ];
 
 export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
@@ -1160,6 +1162,132 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
       },
     },
     bindingData: { objectives: mockObjectives },
+  },
+  {
+    id: "chart-line",
+    category: "chart",
+    title: "ChartLine (KPI snapshots)",
+    description:
+      "Atomic line chart bound to a KPI node with metric_snapshot series in snapshots[].",
+    components: ["Section", "ChartLine"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "KPI pulse", subtitle: "Mini line chart from snapshot checkpoints" },
+          children: ["chart"],
+        },
+        chart: {
+          type: "ChartLine",
+          props: {
+            binding: "kpiWorkspace",
+            height: 160,
+            title: "Workspace creation rate",
+            respectPeriodFilter: false,
+          },
+        },
+      },
+    },
+    bindingData: {
+      kpiWorkspace: [
+        {
+          id: "kpi-workspace-demo",
+          catalogKey: "kpi",
+          title: "Workspace creation rate",
+          properties: {
+            snapshots: [
+              {
+                id: "snap-1",
+                catalogKey: "metric_snapshot",
+                title: "Apr",
+                properties: { value: 10, captured_at: "2026-04-05T00:00:00.000Z" },
+              },
+              {
+                id: "snap-2",
+                catalogKey: "metric_snapshot",
+                title: "May",
+                properties: { value: 14, captured_at: "2026-05-12T00:00:00.000Z" },
+              },
+              {
+                id: "snap-3",
+                catalogKey: "metric_snapshot",
+                title: "Jun",
+                properties: { value: 18, captured_at: "2026-06-18T00:00:00.000Z" },
+              },
+            ],
+          },
+        },
+      ],
+    },
+  },
+  {
+    id: "chart-primitives",
+    category: "chart",
+    title: "Chart primitives (bar, area, pie, radar, radial)",
+    description: "All atomic shadcn/recharts catalog chart types sharing the KPI snapshot contract.",
+    components: ["Grid", "ChartBar", "ChartArea", "ChartPie", "ChartRadar", "ChartRadial"],
+    spec: {
+      root: "grid",
+      elements: {
+        grid: {
+          type: "Grid",
+          props: { columns: 2, gap: "sm", padding: "none" },
+          children: ["bar", "area", "pie", "radar", "radial"],
+        },
+        bar: {
+          type: "ChartBar",
+          props: { binding: "kpiWorkspace", height: 140, title: "Bar" },
+        },
+        area: {
+          type: "ChartArea",
+          props: { binding: "kpiWorkspace", height: 140, title: "Area" },
+        },
+        pie: {
+          type: "ChartPie",
+          props: { binding: "kpiWorkspace", height: 140, title: "Pie" },
+        },
+        radar: {
+          type: "ChartRadar",
+          props: { binding: "kpiWorkspace", height: 140, title: "Radar" },
+        },
+        radial: {
+          type: "ChartRadial",
+          props: { binding: "kpiWorkspace", height: 140, title: "Radial" },
+        },
+      },
+    },
+    bindingData: {
+      kpiWorkspace: [
+        {
+          id: "kpi-workspace-demo",
+          catalogKey: "kpi",
+          title: "Workspace creation rate",
+          properties: {
+            snapshots: [
+              {
+                id: "snap-1",
+                catalogKey: "metric_snapshot",
+                title: "Apr",
+                properties: { value: 10, captured_at: "2026-04-05T00:00:00.000Z" },
+              },
+              {
+                id: "snap-2",
+                catalogKey: "metric_snapshot",
+                title: "May",
+                properties: { value: 14, captured_at: "2026-05-12T00:00:00.000Z" },
+              },
+              {
+                id: "snap-3",
+                catalogKey: "metric_snapshot",
+                title: "Jun",
+                properties: { value: 18, captured_at: "2026-06-18T00:00:00.000Z" },
+              },
+            ],
+          },
+        },
+      ],
+    },
   },
   {
     id: "flow-canvas",
