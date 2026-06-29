@@ -21,6 +21,10 @@ test.describe("Settings sidebar", () => {
   test("navigates between settings sections", async ({ page }) => {
     const primaryNav = page.getByRole("navigation", { name: "Primary" });
 
+    await primaryNav.getByRole("link", { name: "Members", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/settings/members$`));
+    await expect(page.getByRole("heading", { name: "Members", level: 1 })).toBeVisible();
+
     await primaryNav.getByRole("link", { name: "Account", exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/settings/account$`));
     await expect(page.getByRole("heading", { name: "Account", level: 1 })).toBeVisible();
