@@ -28,7 +28,7 @@ export function VisualFrame({
         </div>
         <span className="text-xs font-medium text-muted-foreground">{label}</span>
       </div>
-      {children}
+      <div className="min-h-0 flex-1 overflow-hidden">{children}</div>
     </div>
   );
 }
