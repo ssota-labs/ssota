@@ -25,7 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 
-const profileSectionClass = "px-2.5 py-2";
+const profileSectionClass = "px-3 py-3";
 
 export type ConsoleProfileLanguageOption = {
   value: string;
@@ -89,20 +89,20 @@ export function ConsoleProfileMenu({
       </PopoverTrigger>
       <PopoverContent
         side="right"
-        align="end"
+        align="start"
         sideOffset={8}
         alignOffset={0}
         className="cn-popover-menu cn-popover-menu-solid w-60 overflow-hidden"
       >
-        <section className={profileSectionClass}>
+        <section className={cn(profileSectionClass, "space-y-1")}>
           <p className="text-xs text-muted-foreground">{signedInAsLabel}</p>
           <p className="truncate text-sm font-medium">{userEmail}</p>
         </section>
 
         <div className="border-t border-border" />
 
-        <section className={cn(profileSectionClass, "space-y-px")}>
-          <div className="space-y-1">
+        <section className={cn(profileSectionClass, "space-y-4")}>
+          <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">{themeLabel}</Label>
             <ToggleGroup
               variant="outline"
@@ -135,7 +135,7 @@ export function ConsoleProfileMenu({
             </ToggleGroup>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Label htmlFor="profile-locale" className="text-xs text-muted-foreground">
               {languageLabel}
             </Label>
