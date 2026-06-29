@@ -22,8 +22,6 @@ function page(
     subjectNodeId: null,
     appliesToNodeType: null,
     icon: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
   };
 }
 
