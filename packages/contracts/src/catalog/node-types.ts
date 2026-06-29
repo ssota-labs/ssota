@@ -25,6 +25,7 @@ export const docStatusSchema = z.enum([
   "review",
   "approved",
   "active",
+  "archived",
 ]);
 
 export const hypothesisStatusSchema = z.enum([

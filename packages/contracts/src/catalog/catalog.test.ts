@@ -65,6 +65,13 @@ describe("v2.7 catalog SSOT", () => {
     expect(parsed.quarter).toBe(1);
   });
 
+  it("parses archived roadmap doc_status", () => {
+    const parsed = parseNodeProperties("product_roadmap", {
+      doc_status: "archived",
+    });
+    expect(parsed.doc_status).toBe("archived");
+  });
+
   it("rejects annual roadmap with quarter set", () => {
     expect(() =>
       parseNodeProperties("roadmap", {

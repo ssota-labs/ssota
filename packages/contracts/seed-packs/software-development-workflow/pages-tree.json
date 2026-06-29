@@ -32,13 +32,22 @@
         "product": {
           "type": "DocumentSheetList",
           "props": {
-            "binding": "productRoadmap",
+            "binding": "productRoadmaps",
             "field": "content",
             "subtitleField": "summary",
-            "statusField": "lifecycleStatus",
+            "statusField": "doc_status",
             "sheetSize": "half",
             "editable": true,
-            "action": "saveProductDoc"
+            "action": "saveProductDoc",
+            "filters": [
+              {
+                "type": "toggle",
+                "field": "doc_status",
+                "value": "archived",
+                "label": "Show archived",
+                "defaultHidden": true
+              }
+            ]
           }
         },
         "planningSection": {
@@ -55,16 +64,23 @@
             "binding": "planningRoadmaps",
             "field": "content",
             "subtitleField": "summary",
-            "statusField": "lifecycleStatus",
+            "statusField": "doc_status",
             "sheetSize": "half",
             "editable": true,
-            "action": "savePlanningDoc"
+            "action": "savePlanningDoc",
+            "filters": [
+              {
+                "type": "select",
+                "field": "year",
+                "label": "Year"
+              }
+            ]
           }
         }
       }
     },
     "bindings": {
-      "productRoadmap": { "kind": "singleton", "catalogKey": "product_roadmap" },
+      "productRoadmaps": { "kind": "query", "catalogKey": "product_roadmap" },
       "planningRoadmaps": { "kind": "query", "catalogKey": "roadmap" }
     },
     "actions": {

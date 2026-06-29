@@ -624,6 +624,11 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       editable: { type: "boolean", description: "Enable in-sheet editing." },
       action: action("Dispatched on save with { nodeId, doc }."),
       sheetSize: { type: "string", description: '"default"|"half"|"inspector"|"wide"|"full".' },
+      filters: {
+        type: '{ type:"toggle", field, value, label, defaultHidden? }[] | { type:"select", field, label }[]',
+        description:
+          "Optional list filters. Toggle hides rows where field === value until enabled (e.g. archived). Select filters by a property such as year.",
+      },
     },
     example: {
       type: "DocumentSheetList",
