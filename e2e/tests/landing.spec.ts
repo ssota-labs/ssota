@@ -16,10 +16,13 @@ test.describe("landing page", () => {
     await expect(page.getByText("7월 중 오픈 예정")).toBeVisible();
     await expect(page.getByLabel("SSOTA prompt preview")).toBeVisible();
     await expect(
+      page.getByRole("link", { name: /GitHub/i }),
+    ).toHaveAttribute("href", "https://github.com/ssota-labs/loopos");
+    await expect(
       page
         .locator("section")
         .first()
-        .getByRole("button", { name: "베타 알림 받기" }),
+        .getByRole("button", { name: "베타 신청하기" }),
     ).toBeVisible();
 
     await expect(
@@ -89,7 +92,7 @@ test.describe("landing page", () => {
     await page
       .locator("section")
       .first()
-      .getByRole("button", { name: "베타 알림 받기" })
+      .getByRole("button", { name: "베타 신청하기" })
       .click();
     await expect(
       page.getByRole("heading", { name: "베타 오픈 알림 받기" }),
@@ -103,16 +106,54 @@ test.describe("landing page", () => {
     ).toBeVisible();
   });
 
-  test("landing: primary CTA sends unauthenticated visitors to login", async ({
+  test("landing: language switcher toggles Korean ↔ English", async ({
     page,
   }) => {
     await page.goto("/home");
 
+    // 기본(쿠키 없음)은 한국어
+    await expect(
+      page.getByRole("heading", {
+        name: "제품을 완벽히 아는 AI CPO",
+        exact: true,
+      }),
+    ).toBeVisible();
+
+    // 헤더 스위처로 영어 전환
+    const switcher = page.getByTestId("landing-locale-switcher");
+    await switcher.click();
+    await page.getByRole("option", { name: "English" }).click();
+
+    await expect(
+      page.getByRole("heading", {
+        name: "The AI CPO that truly knows your product",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.getByText("Opening this July")).toBeVisible();
+
+    // 다시 한국어로 전환
+    await switcher.click();
+    await page.getByRole("option", { name: "한국어" }).click();
+
+    await expect(
+      page.getByRole("heading", {
+        name: "제품을 완벽히 아는 AI CPO",
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
+
+  test("landing: bottom CTA opens beta signup dialog", async ({ page }) => {
+    await page.goto("/home");
+
     await page
-      .locator("header")
-      .getByRole("button", { name: "Start", exact: true })
+      .locator("section")
+      .filter({ hasText: "기존 코딩 에이전트에 AI CPO를 연결하세요" })
+      .getByRole("button", { name: "베타 신청하기" })
       .click();
-    await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByLabel("Email")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "베타 오픈 알림 받기" }),
+    ).toBeVisible();
   });
 });

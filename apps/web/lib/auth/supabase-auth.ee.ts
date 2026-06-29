@@ -63,7 +63,16 @@ export function createSupabaseAuthProvider(): AuthProvider {
         },
       );
 
-      await supabase.auth.getUser();
+      try {
+        await supabase.auth.getUser();
+      } catch (error) {
+        if (process.env.NODE_ENV === "development") {
+          console.warn(
+            "[auth] updateSession getUser failed; continuing without refresh:",
+            error,
+          );
+        }
+      }
 
       return supabaseResponse;
     },

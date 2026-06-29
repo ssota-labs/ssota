@@ -73,9 +73,22 @@ function Section({
   );
 }
 
-function Grid({ children }: { children: ReactNode }) {
+function Grid({
+  children,
+  columns = "three",
+}: {
+  children: ReactNode;
+  columns?: "two" | "three";
+}) {
   return (
-    <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+    <div
+      className={cn(
+        "grid gap-2.5",
+        columns === "two" ? "grid-cols-1 sm:grid-cols-2" : "sm:grid-cols-2 lg:grid-cols-3",
+      )}
+    >
+      {children}
+    </div>
   );
 }
 
