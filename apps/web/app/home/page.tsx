@@ -203,7 +203,10 @@ export default async function HomePage() {
       </LandingHeader>
 
       <section className="relative isolate overflow-hidden">
-        <LandingBlurredBackground priority />
+        <LandingBlurredBackground
+          priority
+          bottomFadeClassName="h-[38%] bg-gradient-to-b from-transparent via-background/70 to-background"
+        />
 
         <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
           <div className="mx-auto flex w-full flex-col items-center gap-12 md:gap-16">

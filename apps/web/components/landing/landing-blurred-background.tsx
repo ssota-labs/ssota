@@ -7,11 +7,14 @@ export const LANDING_HERO_BACKGROUND_BLUR_DATA_URL =
 type LandingBlurredBackgroundProps = {
   priority?: boolean;
   gradientClassName?: string;
+  /** 히어로 등 하단을 다음 섹션 배경과 이어 줄 때 사용 */
+  bottomFadeClassName?: string;
 };
 
 export function LandingBlurredBackground({
   priority = false,
   gradientClassName = "bg-gradient-to-b from-background/5 via-background/25 to-background/90",
+  bottomFadeClassName,
 }: LandingBlurredBackgroundProps) {
   return (
     <>
@@ -33,6 +36,12 @@ export function LandingBlurredBackground({
         className="absolute inset-0 bg-background/25 backdrop-blur-xl"
       />
       <div aria-hidden className={cn("absolute inset-0", gradientClassName)} />
+      {bottomFadeClassName ? (
+        <div
+          aria-hidden
+          className={cn("absolute inset-x-0 bottom-0", bottomFadeClassName)}
+        />
+      ) : null}
     </>
   );
 }
