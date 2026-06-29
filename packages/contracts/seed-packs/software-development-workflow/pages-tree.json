@@ -33,7 +33,8 @@
           "type": "Section",
           "props": {
             "title": "Product roadmap",
-            "subtitle": "Long-term strategic direction"
+            "subtitle": "Long-term strategic direction",
+            "padding": "none"
           },
           "children": ["product"]
         },
@@ -62,7 +63,8 @@
           "type": "Section",
           "props": {
             "title": "Planning roadmaps",
-            "subtitle": "Annual and quarterly execution plans"
+            "subtitle": "Annual and quarterly execution plans",
+            "padding": "none"
           },
           "children": ["planning"]
         },

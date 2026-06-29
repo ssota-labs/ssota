@@ -6,6 +6,7 @@ import { resolveOrgPage } from "@/lib/console/resolve-org-page";
 import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
+import { ConsolePageFrame } from "@/components/console/console-page-frame";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
 import {
@@ -150,23 +151,25 @@ export default async function TreePage({
   }
 
   return (
-    <DynamicPageRenderer
-      spec={page.spec}
-      pageBindings={page.bindings}
-      bindingData={bindingData}
-      basePath={basePath}
-      onAction={onAction}
-      viewState={{ initial: initialViewStates, save: saveViewState }}
-      artifactWorkbench={
-        usesWorkbench
-          ? {
-              teamspaceId: project.id,
-              previewBasePath,
-              onCreateComponent: onStudioCreateComponent,
-              onDeployComponent: onStudioDeployComponent,
-            }
-          : null
-      }
-    />
+    <ConsolePageFrame fullWidth={usesWorkbench} fillHeight={!usesWorkbench}>
+      <DynamicPageRenderer
+        spec={page.spec}
+        pageBindings={page.bindings}
+        bindingData={bindingData}
+        basePath={basePath}
+        onAction={onAction}
+        viewState={{ initial: initialViewStates, save: saveViewState }}
+        artifactWorkbench={
+          usesWorkbench
+            ? {
+                teamspaceId: project.id,
+                previewBasePath,
+                onCreateComponent: onStudioCreateComponent,
+                onDeployComponent: onStudioDeployComponent,
+              }
+            : null
+        }
+      />
+    </ConsolePageFrame>
   );
 }

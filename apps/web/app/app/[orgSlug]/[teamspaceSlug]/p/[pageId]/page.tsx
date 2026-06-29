@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { resolvePageBindings } from "@ssota/core";
+import { ConsolePageFrame } from "@/components/console/console-page-frame";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
 import { appProjectPath } from "@/lib/console/app-paths";
 import { resolveEndUserContext } from "@/lib/request-context";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
@@ -40,11 +42,15 @@ export default async function AppDynamicPage({
   );
   await resolveArtifactBindings(ctx.teamspaceId, page.bindings, bindingData);
 
+  const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
+
   return (
-    <DynamicPageRenderer
-      spec={page.spec}
-      bindingData={bindingData}
-      basePath={appProjectPath({ orgSlug, teamspaceSlug })}
-    />
+    <ConsolePageFrame fullWidth={usesWorkbench} fillHeight={!usesWorkbench}>
+      <DynamicPageRenderer
+        spec={page.spec}
+        bindingData={bindingData}
+        basePath={appProjectPath({ orgSlug, teamspaceSlug })}
+      />
+    </ConsolePageFrame>
   );
 }

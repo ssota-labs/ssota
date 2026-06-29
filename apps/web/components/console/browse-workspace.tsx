@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@ssota/ui/lib/utils";
+import { ConsolePageFrame } from "@/components/console/console-page-frame";
 import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import {
   connectorCardDescriptionClassName,
@@ -19,14 +20,13 @@ function Frame({
   testId?: string;
 }) {
   return (
-    <div
-      className={cn("min-h-0 flex-1 overflow-y-auto", className)}
-      data-testid={testId}
+    <ConsolePageFrame
+      className={className}
+      testId={testId}
+      contentClassName="gap-8"
     >
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-8">
-        {children}
-      </div>
-    </div>
+      {children}
+    </ConsolePageFrame>
   );
 }
 

@@ -105,7 +105,7 @@ export const layoutComponents: Record<string, CatalogComponent> = {
 
     if (compact) {
       return (
-        <header className="flex shrink-0 items-start gap-2 border-b px-4 py-2">
+        <header className="flex shrink-0 items-start gap-2 border-b py-2">
           <div className="min-w-0 flex-1 space-y-1">
             <h1 className="text-sm font-semibold">{title}</h1>
             {subtitle ? (
