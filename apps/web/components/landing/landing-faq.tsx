@@ -39,7 +39,7 @@ export function LandingFaq() {
   };
 
   return (
-    <section id="faq" className="border-t border-border/40 bg-background">
+    <section id="faq" className="border-t border-border/40 bg-muted/30">
       <div className="mx-auto max-w-6xl px-6 py-24 md:py-32">
         <h2 className="text-center text-3xl font-semibold tracking-tight text-balance md:text-4xl">
           {t("landing.faq.heading")}
