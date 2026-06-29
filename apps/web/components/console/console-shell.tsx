@@ -1,6 +1,6 @@
 "use client";
 
-import type { Organization, Teamspace } from "@ssota/core";
+import type { Organization } from "@ssota/core";
 import { AppSidebar } from "./app-sidebar";
 import type { SidebarPage } from "./page-tree-nav";
 import type { TeamspaceNavGroup } from "./teamspace-nav";
@@ -19,7 +19,6 @@ type InitiativeOption = {
 type ConsoleShellProps = {
   ctx: ConsoleContextValue;
   organizations: Organization[];
-  projects: Teamspace[];
   userEmail: string;
   signOutAction: () => Promise<void>;
   initiatives?: InitiativeOption[];
@@ -42,7 +41,6 @@ function ConsoleMain({ children }: { children: React.ReactNode }) {
 export function ConsoleShell({
   ctx,
   organizations,
-  projects,
   userEmail,
   signOutAction,
   initiatives = [],
@@ -65,7 +63,7 @@ export function ConsoleShell({
             templatesByType={templatesByType}
           />
           <div className="flex min-w-0 flex-1 flex-col">
-            <ConsoleTopBar projects={projects} />
+            <ConsoleTopBar />
             <ConsoleMain>{children}</ConsoleMain>
           </div>
         </div>
