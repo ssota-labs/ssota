@@ -15,6 +15,12 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
     iconKey: "settings_general",
   },
   {
+    key: "billing",
+    labelKey: "settings.billingTitle",
+    href: "settings/billing",
+    iconKey: "billing",
+  },
+  {
     key: "account",
     labelKey: "settings.account",
     href: "settings/account",
