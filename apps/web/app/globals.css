@@ -93,27 +93,9 @@
 }
 
 /* Sidebar L0↔L1 drill-down slide */
-@keyframes landing-feature-progress {
-  from {
-    transform: scaleX(0);
-  }
-  to {
-    transform: scaleX(1);
-  }
-}
-
-.landing-feature-progress {
-  animation-name: landing-feature-progress;
-  animation-timing-function: linear;
-  animation-fill-mode: forwards;
-}
 
 @media (prefers-reduced-motion: reduce) {
   .sidebar-nav-slider-track {
     transition: none !important;
-  }
-
-  .landing-feature-progress {
-    animation: none !important;
   }
 }

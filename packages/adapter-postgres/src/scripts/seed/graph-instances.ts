@@ -104,7 +104,7 @@ export async function seedGraphInstances(
             }
           : catalogKey === "product_roadmap"
             ? {
-                lifecycleStatus: "active",
+                doc_status: "active",
                 summary:
                   "Graph-first Console, end-user app partition, and catalog-driven page runtime",
                 seed: `${GRAPH_SEED_IDEMPOTENCY_PREFIX}${catalogKey}`,
@@ -156,6 +156,7 @@ export async function seedGraphInstances(
 
   await migrateLegacyRoadmapSingletons(db, teamspaceId, maps);
   await seedProductRoadmapDoc(db, teamspaceId, maps);
+  await seedProductRoadmapArchivedDoc(db, teamspaceId, maps);
   await seedRoadmapPlanningDocs(db, teamspaceId, maps);
 
   const hypothesisId = await seedResearchDocs(db, teamspaceId, maps);
@@ -317,29 +318,89 @@ async function seedProductRoadmapDoc(
   if (!existing) return;
 
   const props = existing.properties as Record<string, unknown>;
-  if (props.seed === PRODUCT_ROADMAP_SEED_KEY) return;
+  const docStatus =
+    typeof props.doc_status === "string"
+      ? props.doc_status.toLowerCase()
+      : undefined;
+  const needsDocStatus = docStatus !== "active";
+  const needsContent = props.seed !== PRODUCT_ROADMAP_SEED_KEY;
+  if (!needsDocStatus && !needsContent) return;
 
+  const { lifecycleStatus: _legacy, ...rest } = props;
   await db
     .update(schema.nodes)
     .set({
       title: existing.title || "Product roadmap",
       properties: {
-        ...props,
-        lifecycleStatus: "active",
-        summary:
-          "Graph-first Console, end-user app partition, and catalog-driven page runtime",
-        content,
-        seed: PRODUCT_ROADMAP_SEED_KEY,
+        ...rest,
+        doc_status: "active",
+        ...(needsContent
+          ? {
+              summary:
+                "Graph-first Console, end-user app partition, and catalog-driven page runtime",
+              content,
+              seed: PRODUCT_ROADMAP_SEED_KEY,
+            }
+          : {}),
       },
     })
     .where(eq(schema.nodes.id, existing.id));
+}
+
+const PRODUCT_ROADMAP_ARCHIVED_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}product_roadmap_archived`;
+
+async function seedProductRoadmapArchivedDoc(
+  db: ReturnType<typeof createDb>["db"],
+  teamspaceId: string,
+  maps: CatalogMaps,
+) {
+  const catalogId = maps.nodeKeyToId.get("product_roadmap");
+  if (!catalogId) return;
+
+  const title = "Product roadmap (2025 archive)";
+  const [existing] = await db
+    .select({ id: schema.nodes.id })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.teamspaceId, teamspaceId),
+        eq(schema.nodes.nodeCatalogId, catalogId),
+        eq(schema.nodes.title, title),
+      ),
+    )
+    .limit(1);
+  if (existing) return;
+
+  await db.insert(schema.nodes).values({
+    teamspaceId,
+    nodeCatalogId: catalogId,
+    title,
+    properties: {
+      doc_status: "archived",
+      summary: "Pre graph-first pivot themes retained for reference",
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "2025 direction (archived)",
+        },
+        {
+          type: "paragraph",
+          content:
+            "Earlier strategic focus before Console v2.7 graph runtime became the builder SSOT.",
+        },
+      ],
+      seed: PRODUCT_ROADMAP_ARCHIVED_SEED_KEY,
+    },
+    schemaVersion: 1,
+  });
 }
 
 type RoadmapDocSeed = {
   seedSuffix: string;
   title: string;
   summary: string;
-  lifecycleStatus: string;
+  docStatus: "draft" | "review" | "approved" | "active" | "archived";
   kind: "annual" | "quarter";
   year: number;
   quarter?: 1 | 2 | 3 | 4;
@@ -357,10 +418,29 @@ async function seedRoadmapPlanningDocs(
   const year = new Date().getFullYear();
   const docs: RoadmapDocSeed[] = [
     {
+      seedSuffix: "annual-prev",
+      title: `${year - 1} 연간 로드맵`,
+      summary: "Prior-year planning baseline",
+      docStatus: "archived",
+      kind: "annual",
+      year: year - 1,
+      content: [
+        {
+          type: "heading",
+          props: { level: 2 },
+          content: "Prior year themes",
+        },
+        {
+          type: "paragraph",
+          content: "Archived annual roadmap kept for year-over-year comparison.",
+        },
+      ],
+    },
+    {
       seedSuffix: "annual",
       title: `${year} 연간 로드맵`,
       summary: "Console v2.7 출시, end-user app, Design Studio 파이프라인",
-      lifecycleStatus: "active",
+      docStatus: "active",
       kind: "annual",
       year,
       content: [
@@ -392,7 +472,7 @@ async function seedRoadmapPlanningDocs(
       seedSuffix: "q1",
       title: `${year} Q1 분기 로드맵`,
       summary: "Page runtime catalog, Labs, roadmap document sheet pattern",
-      lifecycleStatus: "draft",
+      docStatus: "draft",
       kind: "quarter",
       year,
       quarter: 1,
@@ -421,7 +501,7 @@ async function seedRoadmapPlanningDocs(
       seedSuffix: "q2",
       title: `${year} Q2 분기 로드맵`,
       summary: "Initiative drill-in, scoped bindings, 18 L2 screens",
-      lifecycleStatus: "review",
+      docStatus: "review",
       kind: "quarter",
       year,
       quarter: 2,
@@ -442,7 +522,10 @@ async function seedRoadmapPlanningDocs(
   for (const doc of docs) {
     const seedKey = `${ROADMAP_DOC_SEED_PREFIX}${doc.seedSuffix}:${year}`;
     const existing = await db
-      .select({ id: schema.nodes.id })
+      .select({
+        id: schema.nodes.id,
+        properties: schema.nodes.properties,
+      })
       .from(schema.nodes)
       .where(
         and(
@@ -452,7 +535,27 @@ async function seedRoadmapPlanningDocs(
         ),
       )
       .limit(1);
-    if (existing[0]) continue;
+    if (existing[0]) {
+      const props = existing[0].properties as Record<string, unknown>;
+      const docStatus = props.doc_status;
+      const needsDocStatus =
+        typeof docStatus !== "string" ||
+        docStatus.toLowerCase() !== doc.docStatus;
+      if (needsDocStatus) {
+        const { lifecycleStatus: _legacy, ...rest } = props;
+        await db
+          .update(schema.nodes)
+          .set({
+            properties: {
+              ...rest,
+              doc_status: doc.docStatus,
+              seed: seedKey,
+            },
+          })
+          .where(eq(schema.nodes.id, existing[0].id));
+      }
+      continue;
+    }
 
     await db.insert(schema.nodes).values({
       teamspaceId,
@@ -462,7 +565,7 @@ async function seedRoadmapPlanningDocs(
         kind: doc.kind,
         year: doc.year,
         ...(doc.quarter != null ? { quarter: doc.quarter } : {}),
-        lifecycleStatus: doc.lifecycleStatus,
+        doc_status: doc.docStatus,
         summary: doc.summary,
         content: doc.content,
         seed: seedKey,

@@ -10,6 +10,8 @@ const STATUS_STYLES: Record<string, string> = {
     "!border-sky-500/50 !bg-sky-500/25 !text-sky-950 dark:!text-sky-100",
   active:
     "!border-emerald-500/50 !bg-emerald-500/25 !text-emerald-950 dark:!text-emerald-100",
+  archived:
+    "!border-border !bg-muted/60 !text-muted-foreground",
 };
 
 function normalizeStatus(value: string): string {

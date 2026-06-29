@@ -14,6 +14,7 @@ import {
 } from "@/lib/page-runtime/hub-redirect";
 import { normalizeSearchParams } from "@/lib/page-runtime/search-params";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
+import { ConsolePageFrame } from "@/components/console/console-page-frame";
 import { SetNodeDrill } from "@/components/console/node-drill-context";
 
 /**
@@ -110,21 +111,23 @@ export default async function NodeTemplatePage({
         nodeTitle={subject.title}
         pageTitle={page.title}
       />
-      <DynamicPageRenderer
-        spec={page.spec}
-        pageBindings={page.bindings}
-        bindingData={bindingData}
-        basePath={basePath}
-        onAction={onAction}
-        artifactWorkbench={
-          usesWorkbench
-            ? {
-                teamspaceId: project.id,
-                previewBasePath,
-              }
-            : null
-        }
-      />
+      <ConsolePageFrame fullWidth={usesWorkbench} fillHeight={!usesWorkbench}>
+        <DynamicPageRenderer
+          spec={page.spec}
+          pageBindings={page.bindings}
+          bindingData={bindingData}
+          basePath={basePath}
+          onAction={onAction}
+          artifactWorkbench={
+            usesWorkbench
+              ? {
+                  teamspaceId: project.id,
+                  previewBasePath,
+                }
+              : null
+          }
+        />
+      </ConsolePageFrame>
     </>
   );
 }

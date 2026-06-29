@@ -188,11 +188,15 @@ export function ConnectorBrowseCard({
   connected,
   onSelect,
   interactive = true,
+  connectedBadgeLabel = "Connected",
+  offBadgeLabel = "Off",
 }: {
   connector: ConnectorDef;
   connected: boolean;
   onSelect: () => void;
   interactive?: boolean;
+  connectedBadgeLabel?: string;
+  offBadgeLabel?: string;
 }) {
   const configured = Boolean(connector.connectorUid);
   return (
@@ -210,11 +214,11 @@ export function ConnectorBrowseCard({
         connected ? (
           <Badge variant="secondary" className="shrink-0 gap-1 font-normal">
             <CheckCircleIcon weight="fill" className="size-3 text-primary" />
-            Connected
+            {connectedBadgeLabel}
           </Badge>
         ) : !configured ? (
           <Badge variant="outline" className="shrink-0 font-normal text-muted-foreground">
-            Off
+            {offBadgeLabel}
           </Badge>
         ) : null
       }

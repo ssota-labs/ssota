@@ -37,7 +37,6 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
     labelKey: "settings.members",
     href: "settings/members",
     iconKey: "settings_members",
-    comingSoon: true,
   },
   {
     key: "teamspace",

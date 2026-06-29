@@ -3,11 +3,12 @@ import { redirect } from "next/navigation";
 import { signOutAction } from "@/app/actions";
 import { ConsoleShell } from "@/components/console/console-shell";
 import { enforceBuilderEntitlement, getConsoleRelativePath } from "@/lib/billing/entitlement-gate";
+import { PendingInvitationsBanner } from "@/components/settings/members/pending-invitations-banner";
 import { getDefaultProjectPath } from "@/lib/console/default-landing";
 import { listInitiatives } from "@/lib/console/initiatives";
 import { resolveOrg } from "@/lib/console/resolve-project";
 import { resolveBuilderContext } from "@/lib/request-context";
-import { getConsolePort, getPagePort, registerTeamspaceOrganization } from "@/lib/ports";
+import { getConsolePort, getPagePort, getOrganizationMembersPort, registerTeamspaceOrganization } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 export default async function ProjectLayout({
   children,
@@ -34,10 +35,14 @@ export default async function ProjectLayout({
   });
 
   const consolePort = getConsolePort();
-  const [organizations, teamspaceList, initiatives] = await Promise.all([
+  const [organizations, teamspaceList, initiatives, pendingInvites] =
+    await Promise.all([
     consolePort.listOrganizationsForUser(builder.userId),
     consolePort.listTeamspacesForOrganization(org.id),
     listInitiatives(project.id),
+    user
+      ? getOrganizationMembersPort().listPendingInvitesForUser(user.id)
+      : Promise.resolve([]),
   ]);
 
   const pagesByTeamspace = await Promise.all(
@@ -127,6 +132,10 @@ export default async function ProjectLayout({
       teamspaceNavGroups={teamspaceNavGroups}
       templatesByType={templatesByType}
     >
+      <PendingInvitationsBanner
+        invitations={pendingInvites}
+        defaultTeamspaceSlug={teamspaceSlug}
+      />
       {children}
     </ConsoleShell>
   );
