@@ -249,16 +249,16 @@ export default async function HomePage() {
               return (
                 <Card
                   key={card.title}
-                  className="border-border/60 bg-card/50 text-left shadow-none"
+                  className="border-border/60 bg-card/50 text-left shadow-none [--card-spacing:--spacing(5)] md:[--card-spacing:--spacing(6)]"
                 >
-                  <CardHeader className="gap-3">
+                  <CardHeader className="gap-5 md:gap-6">
                     <Icon
-                      className="mb-4 size-7 text-muted-foreground"
+                      className="mb-6 size-7 text-muted-foreground md:mb-8"
                       weight="light"
                       aria-hidden
                     />
                     <CardTitle className="text-lg">{card.title}</CardTitle>
-                    <CardDescription className="text-base leading-7">
+                    <CardDescription className="text-base leading-7 md:leading-8">
                       {renderHighlightedDetailLines(
                         card.detailLines,
                         card.highlights,
