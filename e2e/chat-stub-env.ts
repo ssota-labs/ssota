@@ -1,5 +1,6 @@
 /** Shared web-server env for chat + connections Playwright suites. */
 export const chatStubWebEnv = {
+  BILLING: "none",
   CONNECT_STUB: "1",
   MCP_STUB: "1",
   STUB_MODEL: "1",

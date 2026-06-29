@@ -589,6 +589,8 @@ export { createContractsCatalogReadPort } from "./adapters/contracts-catalog-rea
 export * from "./ports/graph-read-port.js";
 export * from "./ports/graph-write-port.js";
 export * from "./domain/graph-errors.js";
+export * from "./domain/settings-errors.js";
+export * from "./ports/organization-settings-port.js";
 export * from "./domain/graph-types.js";
 export * from "./use-cases/graph/index.js";
 export * from "./ports/binding-resolver-port.js";
@@ -596,6 +598,9 @@ export * from "./ports/catalog-write-port.js";
 export * from "./domain/task-errors.js";
 export * from "./domain/account-errors.js";
 export * from "./ports/account-read-port.js";
+export * from "./ports/billing-port.js";
+export * from "./domain/billing-errors.js";
+export * from "./use-cases/billing/index.js";
 export * from "./ports/workflow-read-port.js";
 export * from "./ports/workflow-instruction-port.js";
 export * from "./ports/page-port.js";

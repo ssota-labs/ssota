@@ -10,7 +10,6 @@ import {
   TreeStructureIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "@ssota/ui/components/ui/badge";
-import { Button } from "@ssota/ui/components/ui/button";
 import {
   Card,
   CardDescription,
@@ -18,56 +17,59 @@ import {
   CardTitle,
 } from "@ssota/ui/components/ui/card";
 import { getConnectors } from "@/lib/connect/connectors";
-import { resolvePostAuthPath } from "@/lib/onboarding/resolve";
-import { getCurrentUser } from "@/lib/supabase/server";
+import { getLandingTranslations } from "@/lib/i18n/server";
+import type { createTranslator } from "@/lib/i18n";
+import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { LandingBetaSignup } from "@/components/landing/landing-beta-signup";
+import { LandingBlurredBackground } from "@/components/landing/landing-blurred-background";
 import { LandingDarkMode } from "@/components/landing/landing-dark-mode";
 import { LandingFaq } from "@/components/landing/landing-faq";
+import { LandingFooter } from "@/components/landing/landing-footer";
+import { landingGlassPanelClassName } from "@/components/landing/landing-glass-surface";
+import { LandingGithubButton } from "@/components/landing/landing-github-button";
+import { LandingHeader } from "@/components/landing/landing-header";
+import { LandingLocaleSwitcher } from "@/components/landing/landing-locale-switcher";
 import { LandingFeatureShowcase } from "@/components/landing/landing-feature-showcase";
 import { LandingHeroPrompt } from "@/components/landing/landing-hero-prompt";
 import { LandingPricing } from "@/components/landing/landing-pricing";
 
-export const metadata: Metadata = {
-  title: "SSOTA - 제품을 완벽히 아는 AI CPO",
-  description:
-    "코딩 에이전트가 제품 맥락을 이해하고 움직이게 하는 AI CPO 레이어.",
-};
+type Translator = ReturnType<typeof createTranslator>;
 
-const problemCards: ReadonlyArray<{
+export async function generateMetadata(): Promise<Metadata> {
+  const { t } = await getLandingTranslations();
+  return {
+    title: t("landing.meta.title"),
+    description: t("landing.meta.description"),
+  };
+}
+
+function buildProblemCards(t: Translator): ReadonlyArray<{
   title: string;
   detailLines: readonly string[];
   highlights: readonly string[];
   icon: Icon;
-}> = [
-  {
-    title: "뭐가 맞는지 모릅니다",
-    detailLines: [
-      "PRD, 슬랙, Notion, 레포… 다 있는데,",
-      "뭐가 최신인지 모릅니다.",
-      "이 작업에 뭘 참고해야 하는지도 정해져 있지 않습니다.",
-    ],
-    highlights: ["뭐가 최신인지", "뭘 참고해야 하는지"],
-    icon: FileDashedIcon,
-  },
-  {
-    title: "에이전트는 엇갈립니다",
-    detailLines: [
-      "에이전트마다 다른 조각만 읽습니다.",
-      "그래서 비슷한 일을 시켜도 결과가 엇갈립니다.",
-    ],
-    highlights: ["다른 조각만", "엇갈립니다"],
-    icon: TreeStructureIcon,
-  },
-  {
-    title: "맞춰 주는 일이 늘었습니다",
-    detailLines: [
-      "프롬프트 보강, 리뷰, 재설명.",
-      "코딩 대신 의도를 맞추느라 바빠집니다.",
-    ],
-    highlights: ["프롬프트 보강", "의도를 맞추느라"],
-    icon: ArrowsClockwiseIcon,
-  },
-];
+}> {
+  return [
+    {
+      title: t("landing.problem.card1Title"),
+      detailLines: t("landing.problem.card1Lines").split("|"),
+      highlights: t("landing.problem.card1Highlights").split("|"),
+      icon: FileDashedIcon,
+    },
+    {
+      title: t("landing.problem.card2Title"),
+      detailLines: t("landing.problem.card2Lines").split("|"),
+      highlights: t("landing.problem.card2Highlights").split("|"),
+      icon: TreeStructureIcon,
+    },
+    {
+      title: t("landing.problem.card3Title"),
+      detailLines: t("landing.problem.card3Lines").split("|"),
+      highlights: t("landing.problem.card3Highlights").split("|"),
+      icon: ArrowsClockwiseIcon,
+    },
+  ];
+}
 
 function renderHighlightedDetail(
   text: string,
@@ -135,101 +137,96 @@ function renderHighlightedDetailLines(
 }
 
 export default async function HomePage() {
-  const user = await getCurrentUser();
   const connectors = getConnectors();
-  const appHref = user ? await resolvePostAuthPath(user.id) : "/login";
+  const { locale, messages, t } = await getLandingTranslations();
+  const problemCards = buildProblemCards(t);
 
   return (
-    <main className="dark min-h-screen overflow-hidden bg-background text-foreground">
+    <LocaleProvider locale={locale} messages={messages}>
+    <main className="dark min-h-screen overflow-x-hidden bg-background text-foreground">
       <LandingDarkMode />
-      <header className="sticky top-0 z-20 border-b border-border/30 bg-background/20 backdrop-blur-xl supports-backdrop-filter:bg-background/10">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link
-            href="/home"
-            className="flex items-center gap-2.5 text-lg font-semibold tracking-tight"
-          >
-            <span
-              className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-md"
-              aria-hidden
+
+      <LandingHeader>
+        <div className="mx-auto flex max-w-7xl items-center px-6 py-4">
+          <div className="flex flex-1 items-center justify-start">
+            <Link
+              href="/home"
+              className="flex items-center gap-2.5 text-lg font-semibold tracking-tight"
             >
-              {/* 로고: public/landing/logo.svg 등으로 교체 */}
-            </span>
-            SSOTA
-          </Link>
-          <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
-            <a href="#problem" className="transition-colors hover:text-foreground">
-              Problem
+              <span
+                className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md"
+                aria-hidden
+              >
+                <Image
+                  src="/landing/logo.png"
+                  alt=""
+                  width={28}
+                  height={28}
+                  priority
+                  className="size-7 object-contain mix-blend-screen"
+                />
+              </span>
+              SSOTA
+            </Link>
+          </div>
+          <nav className="hidden shrink-0 items-center gap-6 text-sm text-white/85 group-data-[scrolled=true]:text-muted-foreground md:flex">
+            <a
+              href="#problem"
+              className="transition-colors hover:text-white group-data-[scrolled=true]:hover:text-foreground"
+            >
+              {t("landing.nav.problem")}
             </a>
-            <a href="#solution" className="transition-colors hover:text-foreground">
-              무엇이 다른가
+            <a
+              href="#solution"
+              className="transition-colors hover:text-white group-data-[scrolled=true]:hover:text-foreground"
+            >
+              {t("landing.nav.solution")}
             </a>
-            <a href="#pricing" className="transition-colors hover:text-foreground">
-              가격
+            <a
+              href="#pricing"
+              className="transition-colors hover:text-white group-data-[scrolled=true]:hover:text-foreground"
+            >
+              {t("landing.nav.pricing")}
             </a>
-            <a href="#faq" className="transition-colors hover:text-foreground">
-              FAQ
+            <a
+              href="#faq"
+              className="transition-colors hover:text-white group-data-[scrolled=true]:hover:text-foreground"
+            >
+              {t("landing.nav.faq")}
             </a>
           </nav>
-          <div className="flex items-center gap-2">
-            <Button
-              render={<Link href="/login" />}
-              variant="ghost"
-              size="sm"
-              nativeButton={false}
-            >
-              Sign in
-            </Button>
-            <Button
-              render={<Link href={appHref} />}
-              size="sm"
-              nativeButton={false}
-            >
-              {user ? "Open console" : "Start"}
-            </Button>
+          <div className="flex flex-1 items-center justify-end gap-3">
+            <LandingLocaleSwitcher />
+            <LandingGithubButton />
           </div>
         </div>
-      </header>
+      </LandingHeader>
 
       <section className="relative isolate overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden>
-          <Image
-            src="/landing/hero-background.png"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="scale-105 object-cover object-center blur-sm"
-          />
-        </div>
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-background/40 backdrop-blur-sm"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-gradient-to-b from-background/15 via-background/45 to-background"
-        />
+        <LandingBlurredBackground priority />
 
-        <div className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
+        <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
           <div className="mx-auto flex w-full flex-col items-center gap-12 md:gap-16">
             <div className="max-w-2xl space-y-4 text-center">
               <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-5xl">
-                제품을 완벽히 아는 AI CPO
+                {t("landing.hero.title")}
               </h1>
-              <p className="mx-auto text-base leading-7 text-muted-foreground md:text-lg md:whitespace-nowrap">
-                코딩 에이전트에게 제품 맥락을 이해시켜야, 24시간 믿고 맡길 수 있습니다.
+              <p className="mx-auto text-base leading-7 text-foreground/90 text-balance md:text-lg">
+                {t("landing.hero.subtitle")}
               </p>
             </div>
 
-            <div className="flex w-full flex-col items-center gap-6">
+            <div className="flex w-full flex-col items-center">
               <LandingHeroPrompt />
-              <Badge
-                variant="outline"
-                className="border-border/50 bg-background/50 backdrop-blur-sm"
-              >
-                7월 중 오픈 예정
-              </Badge>
-              <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
+              <div className="mt-10 flex flex-col items-center gap-2 md:mt-12">
+                <Badge
+                  variant="outline"
+                  className="border-border/50 bg-background/50 backdrop-blur-sm"
+                >
+                  {t("landing.hero.badge")}
+                </Badge>
+                <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
+              </div>
             </div>
           </div>
         </div>
@@ -239,10 +236,10 @@ export default async function HomePage() {
         <div className="mx-auto flex max-w-5xl flex-col items-center px-6 py-32 md:py-40">
           <h2 className="text-center text-3xl font-semibold leading-[1.25] tracking-tight text-balance md:text-5xl md:leading-[1.2] lg:text-[3.25rem]">
             <span className="block text-muted-foreground">
-              분명히 코딩 에이전트를 늘렸는데,
+              {t("landing.problem.headingTop")}
             </span>
             <span className="mt-4 block text-foreground">
-              우리 팀은 왜 똑같이 일하죠?
+              {t("landing.problem.headingBottom")}
             </span>
           </h2>
 
@@ -252,16 +249,16 @@ export default async function HomePage() {
               return (
                 <Card
                   key={card.title}
-                  className="border-border/60 bg-card/50 text-left shadow-none"
+                  className="border-border/60 bg-card/50 text-left shadow-none [--card-spacing:--spacing(5)] md:[--card-spacing:--spacing(6)]"
                 >
-                  <CardHeader className="gap-3">
+                  <CardHeader className="gap-5 md:gap-6">
                     <Icon
-                      className="mb-4 size-7 text-muted-foreground"
+                      className="mb-6 size-7 text-muted-foreground md:mb-8"
                       weight="light"
                       aria-hidden
                     />
                     <CardTitle className="text-lg">{card.title}</CardTitle>
-                    <CardDescription className="text-base leading-7">
+                    <CardDescription className="text-base leading-7 md:leading-8">
                       {renderHighlightedDetailLines(
                         card.detailLines,
                         card.highlights,
@@ -278,7 +275,7 @@ export default async function HomePage() {
       <section id="solution" className="border-y bg-muted/30">
         <div className="mx-auto max-w-6xl px-6 py-24 md:py-32">
           <h2 className="mx-auto max-w-3xl text-center text-3xl font-semibold leading-[1.25] tracking-tight text-balance md:text-5xl md:leading-[1.2]">
-            AI 시대의 새로운 제품 개발 방식.
+            {t("landing.solution.heading")}
           </h2>
 
           <LandingFeatureShowcase connectors={connectors} />
@@ -288,37 +285,28 @@ export default async function HomePage() {
       <LandingPricing />
       <LandingFaq />
 
-      <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <div className="rounded-2xl border bg-card p-8 shadow-sm md:p-12">
-          <Badge variant="secondary">SaaS + partner setup</Badge>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight">
-            기존 에이전트 개발 워크플로우 위에 AI CPO 레이어를 연결하세요.
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl leading-7 text-muted-foreground">
-            초기에는 팀의 문서 구조와 승인 프로세스를 함께 세팅하고, 반복되는
-            워크플로우와 지침을 클라우드 SaaS 기능으로 표준화합니다.
-          </p>
-          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-            <Button
-              render={<Link href={appHref} />}
-              size="lg"
-              nativeButton={false}
-              className="h-10 px-5 text-sm"
-            >
-              {user ? "Open console" : "Start with SSOTA"}
-            </Button>
-            <Button
-              render={<Link href="/login" />}
+      <section className="relative isolate overflow-hidden px-6 py-20">
+        <LandingBlurredBackground />
+        <div className="relative z-10 mx-auto max-w-4xl text-center">
+          <div className={landingGlassPanelClassName("p-8 md:p-12")}>
+            <Badge
               variant="outline"
-              size="lg"
-              nativeButton={false}
-              className="h-10 px-5 text-sm"
+              className="border-border/50 bg-background/50 backdrop-blur-sm"
             >
-              Sign in
-            </Button>
+              {t("landing.cta.badge")}
+            </Badge>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight">
+              {t("landing.cta.heading")}
+            </h2>
+            <div className="mt-8 flex justify-center">
+              <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
+            </div>
           </div>
         </div>
       </section>
+
+      <LandingFooter />
     </main>
+    </LocaleProvider>
   );
 }

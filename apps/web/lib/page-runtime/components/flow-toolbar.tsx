@@ -133,11 +133,36 @@ export function FlowTopToolbar({
  * Bottom-right viewport control toolbar: zoom out / current zoom % / zoom in,
  * with a fit-to-view shortcut. Replaces React Flow's default `<Controls>`.
  */
-export function FlowViewportToolbar() {
+export function FlowViewportToolbar({
+  fitViewPadding = 0.15,
+  fitViewMinZoom,
+  fitViewMaxZoom,
+  position = "bottom-right",
+}: {
+  fitViewPadding?: number;
+  fitViewMinZoom?: number;
+  fitViewMaxZoom?: number;
+  position?: "bottom-right" | "top-right";
+} = {}) {
   const { zoomIn, zoomOut, fitView } = useReactFlow();
   const { zoom } = useViewport();
+  const fitOptions = {
+    padding: fitViewPadding,
+    duration: 250,
+    ...(fitViewMinZoom !== undefined ? { minZoom: fitViewMinZoom } : {}),
+    ...(fitViewMaxZoom !== undefined ? { maxZoom: fitViewMaxZoom } : {}),
+  };
   return (
-    <Panel position="bottom-right" className="pointer-events-auto! mr-3! mb-3!">
+    <Panel
+      position={position}
+      className={cn(
+        "pointer-events-auto! z-20",
+        position === "top-right"
+          ? "mt-2! mr-2! md:mt-3! md:mr-3!"
+          : "mb-2! mr-2! md:mb-3! md:mr-3!",
+      )}
+      data-testid="flow-viewport-toolbar"
+    >
       <ToolbarContainer>
         <TooltipProvider delay={0}>
           <ToolbarIconButton
@@ -160,7 +185,7 @@ export function FlowViewportToolbar() {
             icon={<ArrowsOutIcon className="size-4" />}
             tooltip="Fit to View"
             ariaLabel="Fit to View"
-            onClick={() => void fitView({ padding: 0.15, duration: 250 })}
+            onClick={() => void fitView(fitOptions)}
           />
         </TooltipProvider>
       </ToolbarContainer>

@@ -126,6 +126,35 @@ export function createOnboardingPort(db: Db): OnboardingPort {
         .where(eq(schema.profiles.id, userId));
     },
 
+    async updateDisplayName(userId, displayName) {
+      const trimmed = displayName.trim();
+      if (!trimmed) {
+        throw new Error("Display name is required");
+      }
+      const now = new Date();
+      const [row] = await db
+        .update(schema.profiles)
+        .set({ displayName: trimmed, updatedAt: now })
+        .where(eq(schema.profiles.id, userId))
+        .returning();
+      if (!row) {
+        throw new Error("Profile not found");
+      }
+      return mapProfile(row);
+    },
+
+    async updateProfileEmail(userId, email) {
+      const trimmed = email.trim().toLowerCase();
+      if (!trimmed) {
+        throw new Error("Email is required");
+      }
+      const now = new Date();
+      await db
+        .update(schema.profiles)
+        .set({ email: trimmed, updatedAt: now })
+        .where(eq(schema.profiles.id, userId));
+    },
+
     async completeProfileStep({ userId, email, displayName, organizationName }) {
       return db.transaction(async (tx) => {
         await ensureAuthUserRow(tx as unknown as Db, userId, email);

@@ -7,6 +7,7 @@ import {
   CheckSquareIcon,
   ClipboardTextIcon,
   ClockIcon,
+  CreditCardIcon,
   CubeIcon,
   DatabaseIcon,
   FileTextIcon,
@@ -33,6 +34,7 @@ import {
   TargetIcon,
   TestTubeIcon,
   TreeStructureIcon,
+  UserIcon,
   UsersThreeIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
@@ -85,6 +87,12 @@ export const NAV_ICONS: Record<string, Icon> = {
   retro_review: GitBranchIcon,
   developer_setup: WrenchIcon,
   settings: GearIcon,
+  billing: CreditCardIcon,
+  settings_general: GearIcon,
+  settings_account: UserIcon,
+  settings_appearance: PaintBrushIcon,
+  settings_members: UsersThreeIcon,
+  settings_teamspace: CubeIcon,
 };
 
 export function NavItemIcon({

@@ -15,6 +15,7 @@ import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { AnalyticsEvents } from "@/lib/analytics/events";
 import { track } from "@/lib/analytics/mixpanel";
+import { useLocale } from "@/components/i18n/locale-provider";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
@@ -26,11 +27,13 @@ type LandingBetaSignupProps = {
 };
 
 export function LandingBetaSignup({
-  triggerLabel = "베타 알림 받기",
+  triggerLabel,
   triggerVariant = "default",
   triggerSize = "lg",
   triggerClassName,
 }: LandingBetaSignupProps) {
+  const { t } = useLocale();
+  const resolvedTriggerLabel = triggerLabel ?? t("landing.beta.defaultTrigger");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
@@ -55,8 +58,7 @@ export function LandingBetaSignup({
       };
 
       if (!response.ok || !data.ok) {
-        const errorMessage =
-          data.error ?? "신청에 실패했습니다. 다시 시도해 주세요.";
+        const errorMessage = data.error ?? t("landing.beta.errorFallback");
         setSubmitState("error");
         setMessage(errorMessage);
         track(AnalyticsEvents.betaSignupFailed, {
@@ -68,10 +70,10 @@ export function LandingBetaSignup({
 
       track(AnalyticsEvents.betaSignupCompleted, { source: "landing" });
       setSubmitState("success");
-      setMessage(data.message ?? "베타 알림 신청이 완료되었습니다.");
+      setMessage(t("landing.beta.success"));
       setEmail("");
     } catch {
-      const errorMessage = "네트워크 오류가 발생했습니다. 다시 시도해 주세요.";
+      const errorMessage = t("landing.beta.networkError");
       setSubmitState("error");
       setMessage(errorMessage);
       track(AnalyticsEvents.betaSignupFailed, {
@@ -103,13 +105,13 @@ export function LandingBetaSignup({
           />
         }
       >
-        {triggerLabel}
+        {resolvedTriggerLabel}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>베타 오픈 알림 받기</DialogTitle>
+          <DialogTitle>{t("landing.beta.dialogTitle")}</DialogTitle>
           <DialogDescription>
-            7월 중 SSOTA 베타가 오픈되면 이메일로 가장 먼저 알려드립니다.
+            {t("landing.beta.dialogDescription")}
           </DialogDescription>
         </DialogHeader>
 
@@ -118,13 +120,13 @@ export function LandingBetaSignup({
         ) : (
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <Label htmlFor="beta-email">이메일</Label>
+              <Label htmlFor="beta-email">{t("landing.beta.emailLabel")}</Label>
               <Input
                 id="beta-email"
                 type="email"
                 name="email"
                 autoComplete="email"
-                placeholder="you@company.com"
+                placeholder={t("landing.beta.emailPlaceholder")}
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
@@ -139,7 +141,9 @@ export function LandingBetaSignup({
                 type="submit"
                 disabled={submitState === "loading" || email.trim().length === 0}
               >
-                {submitState === "loading" ? "신청 중…" : "알림 신청"}
+                {submitState === "loading"
+                  ? t("landing.beta.submitting")
+                  : t("landing.beta.submit")}
               </Button>
             </DialogFooter>
           </form>

@@ -7,6 +7,7 @@ import {
   createDbAccountReadPort,
   createGraphPorts,
   createOnboardingPort,
+  createOrganizationSettingsPort,
   createTaskPort,
   createWorkflowInstructionPort,
   createSchedulePort,
@@ -51,6 +52,10 @@ export function getOrgMembershipPort() {
 
 export function getOnboardingPort() {
   return createOnboardingPort(getDb());
+}
+
+export function getOrganizationSettingsPort() {
+  return createOrganizationSettingsPort(getDb());
 }
 
 export function getAccountReadPort() {

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { signOutAction } from "@/app/actions";
 import { ConsoleShell } from "@/components/console/console-shell";
+import { enforceBuilderEntitlement, getConsoleRelativePath } from "@/lib/billing/entitlement-gate";
 import { getDefaultProjectPath } from "@/lib/console/default-landing";
 import { listInitiatives } from "@/lib/console/initiatives";
 import { resolveOrg } from "@/lib/console/resolve-project";
@@ -24,6 +25,13 @@ export default async function ProjectLayout({
   const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
   registerTeamspaceOrganization(project.id, org.id);
   const user = await getCurrentUser();
+
+  const relativePath = getConsoleRelativePath(returnTo, orgSlug, teamspaceSlug);
+  await enforceBuilderEntitlement({
+    organizationId: org.id,
+    orgSlug,
+    relativePath,
+  });
 
   const consolePort = getConsolePort();
   const [organizations, teamspaceList, initiatives] = await Promise.all([
@@ -112,7 +120,6 @@ export default async function ProjectLayout({
         project,
       }}
       organizations={organizations}
-      projects={teamspaceList}
       userEmail={user?.email ?? ""}
       signOutAction={signOutAction}
       initiatives={initiatives}

@@ -1,5 +1,6 @@
 import type { OrgRouteContext } from "./paths";
 import { orgPath } from "./paths";
+import { getSettingsSectionLabelKey } from "../settings/navigation";
 
 export type PagePatternCode = "H" | "D" | "L" | "T" | "canvas";
 
@@ -159,9 +160,19 @@ export function buildBreadcrumbSegments(
     ];
   }
   if (relative.startsWith("developer/")) {
-    return [{ labelKey: "nav.developer" }];
+    return [
+      { labelKey: "nav.settings", href: "settings/general" },
+      { labelKey: "settings.developer" },
+    ];
   }
   if (relative.startsWith("settings/")) {
+    const sectionKey = getSettingsSectionLabelKey(relative);
+    if (sectionKey && sectionKey !== "settings.general") {
+      return [
+        { labelKey: "nav.settings", href: "settings/general" },
+        { labelKey: sectionKey },
+      ];
+    }
     return [{ labelKey: "nav.settings" }];
   }
 

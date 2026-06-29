@@ -4,6 +4,8 @@ import { resolveOrg } from "@/lib/console/resolve-project";
 import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
+import { PageSiblingNav } from "@/components/console/page-sibling-nav";
+import { loadPageSiblingNav } from "@/lib/console/page-sibling-nav";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
 import {
@@ -95,8 +97,14 @@ export default async function NodeTemplatePage({
     });
   }
 
+  const pagePort = getPagePort(project.id);
+  const siblingNav = await loadPageSiblingNav(pagePort, page, (id) =>
+    orgPath(routeCtx, "n", nodeId, "p", id),
+  );
+
   return (
     <>
+      {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
       <SetNodeDrill
         nodeId={subject.id}
         catalogKey={subject.catalogKey}

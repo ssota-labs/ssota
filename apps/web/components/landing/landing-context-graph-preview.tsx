@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { JsonRenderSpec } from "@ssota/contracts";
+import { useLocale } from "@/components/i18n/locale-provider";
+import type { createTranslator } from "@/lib/i18n";
+import { useMobileViewport } from "@/lib/hooks/use-mobile-viewport";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 
 /**
@@ -25,133 +28,126 @@ const NODE_PRESENTATION = [
   },
 ];
 
-const CONTEXT_FLOW = {
-  nodes: [
-    { id: "exec", nodeType: "section", title: "Executive" },
-    {
-      id: "okr",
-      nodeType: "page",
-      title: "OKR",
-      props: {
-        status: "approved",
-        subtitle: "분기 목표",
-        content: "이번 분기 핵심 목표와 핵심 결과. 모든 이니셔티브의 기준점.",
-      },
-    },
-    {
-      id: "roadmap",
-      nodeType: "page",
-      title: "로드맵",
-      props: {
-        status: "active",
-        subtitle: "분기 우선순위",
-        content: "OKR을 분기 우선순위로 풀어낸 제품 로드맵.",
-      },
-    },
-    { id: "research", nodeType: "section", title: "Research" },
-    {
-      id: "user-research",
-      nodeType: "page",
-      title: "유저 리서치",
-      props: {
-        status: "active",
-        subtitle: "인터뷰 · 데이터",
-        content: "타깃 유저 인터뷰와 행동 데이터에서 도출한 인사이트.",
-      },
-    },
-    {
-      id: "hypothesis",
-      nodeType: "page",
-      title: "가설",
-      props: {
-        status: "review",
-        subtitle: "검증 대기",
-        content: "리서치에서 세운 제품 가설. 실험으로 검증한다.",
-      },
-    },
-    { id: "pm", nodeType: "section", title: "PM" },
-    {
-      id: "prd",
-      nodeType: "page",
-      title: "PRD",
-      props: {
-        status: "approved",
-        subtitle: "제품 요구사항",
-        content: "승인된 제품 요구사항 문서. 설계·개발의 단일 진실원.",
-      },
-    },
-    {
-      id: "initiative",
-      nodeType: "page",
-      title: "이니셔티브",
-      props: {
-        status: "active",
-        subtitle: "실행 단위",
-        content: "PRD를 실행 가능한 작업 묶음으로 분해한 이니셔티브.",
-      },
-    },
-    { id: "design", nodeType: "section", title: "Design" },
-    {
-      id: "decision",
-      nodeType: "page",
-      title: "설계 결정",
-      props: {
-        status: "review",
-        subtitle: "ADR",
-        content: "주요 설계 결정과 근거 기록. 트레이드오프를 남긴다.",
-      },
-    },
-    {
-      id: "flow",
-      nodeType: "page",
-      title: "플로우",
-      props: {
-        status: "draft",
-        subtitle: "유저 플로우",
-        content: "화면 전환과 상태를 정의한 유저 플로우.",
-      },
-    },
-    { id: "dev", nodeType: "section", title: "Development" },
-    {
-      id: "runbook",
-      nodeType: "page",
-      title: "배포 런북",
-      props: {
-        status: "active",
-        subtitle: "테스트 · 배포",
-        content: "테스트 시나리오와 배포 절차를 묶은 런북.",
-      },
-    },
-  ],
-  edges: [
-    // 단계(섹션) 척추 — 맥락이 다음 단계로 이어진다
-    { source: "exec", target: "research", animated: true },
-    { source: "research", target: "pm", animated: true },
-    { source: "pm", target: "design", animated: true },
-    { source: "design", target: "dev", animated: true },
-    // 각 단계의 문서 — 척추에서 가지로 분기 (깊이를 얕게 유지)
-    { source: "exec", target: "okr" },
-    { source: "exec", target: "roadmap" },
-    { source: "research", target: "user-research" },
-    { source: "research", target: "hypothesis" },
-    { source: "pm", target: "prd" },
-    { source: "pm", target: "initiative" },
-    { source: "design", target: "decision" },
-    { source: "design", target: "flow" },
-    { source: "dev", target: "runbook" },
-  ],
-};
+function buildContextFlow(t: ReturnType<typeof createTranslator>) {
+  const p = (key: string) => t(`landing.preview.${key}`);
 
-const CONTEXT_GRAPH_DATA = {
-  contextGraph: {
-    id: "cccccccc-cccc-4ccc-8ccc-cccccccccc01",
-    catalogKey: "user_flow",
-    title: "Product Context Graph",
-    properties: { flow: CONTEXT_FLOW },
-  },
-};
+  return {
+    nodes: [
+      { id: "exec", nodeType: "section", title: p("contextSectionExec") },
+      {
+        id: "okr",
+        nodeType: "page",
+        title: p("contextOkrTitle"),
+        props: {
+          status: p("contextStatusApproved"),
+          subtitle: p("contextOkrSubtitle"),
+          content: p("contextOkrContent"),
+        },
+      },
+      {
+        id: "roadmap",
+        nodeType: "page",
+        title: p("contextRoadmapTitle"),
+        props: {
+          status: p("contextStatusActive"),
+          subtitle: p("contextRoadmapSubtitle"),
+          content: p("contextRoadmapContent"),
+        },
+      },
+      { id: "research", nodeType: "section", title: p("contextSectionResearch") },
+      {
+        id: "user-research",
+        nodeType: "page",
+        title: p("contextUserResearchTitle"),
+        props: {
+          status: p("contextStatusActive"),
+          subtitle: p("contextUserResearchSubtitle"),
+          content: p("contextUserResearchContent"),
+        },
+      },
+      {
+        id: "hypothesis",
+        nodeType: "page",
+        title: p("contextHypothesisTitle"),
+        props: {
+          status: p("contextStatusReview"),
+          subtitle: p("contextHypothesisSubtitle"),
+          content: p("contextHypothesisContent"),
+        },
+      },
+      { id: "pm", nodeType: "section", title: p("contextSectionPm") },
+      {
+        id: "prd",
+        nodeType: "page",
+        title: p("contextPrdTitle"),
+        props: {
+          status: p("contextStatusApproved"),
+          subtitle: p("contextPrdSubtitle"),
+          content: p("contextPrdContent"),
+        },
+      },
+      {
+        id: "initiative",
+        nodeType: "page",
+        title: p("contextInitiativeTitle"),
+        props: {
+          status: p("contextStatusActive"),
+          subtitle: p("contextInitiativeSubtitle"),
+          content: p("contextInitiativeContent"),
+        },
+      },
+      { id: "design", nodeType: "section", title: p("contextSectionDesign") },
+      {
+        id: "decision",
+        nodeType: "page",
+        title: p("contextDecisionTitle"),
+        props: {
+          status: p("contextStatusReview"),
+          subtitle: p("contextDecisionSubtitle"),
+          content: p("contextDecisionContent"),
+        },
+      },
+      {
+        id: "flow",
+        nodeType: "page",
+        title: p("contextFlowTitle"),
+        props: {
+          status: p("contextStatusDraft"),
+          subtitle: p("contextFlowSubtitle"),
+          content: p("contextFlowContent"),
+        },
+      },
+      { id: "dev", nodeType: "section", title: p("contextSectionDev") },
+      {
+        id: "runbook",
+        nodeType: "page",
+        title: p("contextRunbookTitle"),
+        props: {
+          status: p("contextStatusActive"),
+          subtitle: p("contextRunbookSubtitle"),
+          content: p("contextRunbookContent"),
+        },
+      },
+    ],
+    edges: [
+      { source: "exec", target: "research", animated: true },
+      { source: "research", target: "pm", animated: true },
+      { source: "pm", target: "design", animated: true },
+      { source: "design", target: "dev", animated: true },
+      { source: "exec", target: "okr" },
+      { source: "exec", target: "roadmap" },
+      { source: "research", target: "user-research" },
+      { source: "research", target: "hypothesis" },
+      { source: "pm", target: "prd" },
+      { source: "pm", target: "initiative" },
+      { source: "design", target: "decision" },
+      { source: "design", target: "flow" },
+      { source: "dev", target: "runbook" },
+    ],
+  };
+}
 
-function buildSpec(height: number): JsonRenderSpec {
+function buildSpec(height: number, isMobile: boolean): JsonRenderSpec {
   return {
     root: "flow",
     elements: {
@@ -162,7 +158,14 @@ function buildSpec(height: number): JsonRenderSpec {
           property: "flow",
           layout: "LR",
           height,
-          fitViewPadding: 0.02,
+          fitViewPadding: isMobile ? 0.03 : 0,
+          fitViewMinZoom: isMobile ? 0.52 : 0.9,
+          fitViewMaxZoom: isMobile ? 1.15 : 2.4,
+          fitViewOffsetY: isMobile ? -40 : -28,
+          showTopToolbar: false,
+          showViewportToolbar: true,
+          viewportToolbarPosition: "bottom-right",
+          interactionLocked: true,
           nodePresentation: NODE_PRESENTATION,
         },
       },
@@ -171,8 +174,27 @@ function buildSpec(height: number): JsonRenderSpec {
 }
 
 export function LandingContextGraphPreview() {
+  const { locale, t } = useLocale();
+  const isMobile = useMobileViewport();
   const ref = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(400);
+  const [height, setHeight] = useState(0);
+
+  const spec = useMemo(
+    () => buildSpec(height, isMobile),
+    [height, isMobile],
+  );
+
+  const bindingData = useMemo(
+    () => ({
+      contextGraph: {
+        id: "cccccccc-cccc-4ccc-8ccc-cccccccccc01",
+        catalogKey: "user_flow",
+        title: t("landing.preview.contextGraphTitle"),
+        properties: { flow: buildContextFlow(t) },
+      },
+    }),
+    [t],
+  );
 
   useEffect(() => {
     const el = ref.current;
@@ -188,8 +210,14 @@ export function LandingContextGraphPreview() {
   }, []);
 
   return (
-    <div ref={ref} className="min-h-0 w-full flex-1">
-      <DynamicPageRenderer spec={buildSpec(height)} bindingData={CONTEXT_GRAPH_DATA} />
+    <div
+      key={`${locale}-${isMobile ? "m" : "d"}`}
+      ref={ref}
+      className="flex h-full min-h-0 w-full flex-col"
+    >
+      {height > 0 ? (
+        <DynamicPageRenderer spec={spec} bindingData={bindingData} />
+      ) : null}
     </div>
   );
 }

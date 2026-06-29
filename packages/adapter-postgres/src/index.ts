@@ -1,4 +1,5 @@
 export { createAdminDb, createDb, schema } from "./db/client.js";
+export type { Db } from "./db/client.js";
 export {
   createConsolePort,
   createOnboardingPort,
@@ -34,6 +35,15 @@ export {
   type BetaSignupRecord,
 } from "./ports/beta-signup-port.js";
 export {
+  createDbBillingPort,
+  createDbBillingReadPort,
+  createDbBillingWritePort,
+  createNoopBillingPort,
+  ensureOrganizationBillingRow,
+  getOrganizationIdByStripeCustomerId,
+  BILLABLE_ROLES,
+} from "./ports/billing-port.js";
+export {
   createConnectorToolSettingsPort,
   type ConnectorToolSettingsPort,
 } from "./ports/connector-tool-settings-port.js";
@@ -41,6 +51,7 @@ export {
   createOrgMembershipPort,
   type OrgMembershipPort,
 } from "./ports/org-membership-port.js";
+export { createOrganizationSettingsPort } from "./ports/organization-settings-port.js";
 export {
   createAccountPort,
   createAccountConnectionPort,

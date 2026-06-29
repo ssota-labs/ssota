@@ -100,7 +100,7 @@ export function EndUserSidebar({ ctx }: EndUserSidebarProps) {
         </nav>
       </ScrollArea>
 
-      <div className="border-t p-2">
+      <div className="shrink-0 border-t p-2">
         <SidebarProfileMenu userEmail={ctx.userEmail} signOutAction={signOutAction} />
       </div>
     </aside>
