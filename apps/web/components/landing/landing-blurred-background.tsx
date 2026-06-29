@@ -7,13 +7,11 @@ export const LANDING_HERO_BACKGROUND_BLUR_DATA_URL =
 type LandingBlurredBackgroundProps = {
   priority?: boolean;
   gradientClassName?: string;
-  overlayClassName?: string;
 };
 
 export function LandingBlurredBackground({
   priority = false,
   gradientClassName = "bg-gradient-to-b from-background/5 via-background/25 to-background/90",
-  overlayClassName = "bg-background/25 backdrop-blur-xl",
 }: LandingBlurredBackgroundProps) {
   return (
     <>
@@ -32,7 +30,7 @@ export function LandingBlurredBackground({
       </div>
       <div
         aria-hidden
-        className={cn("absolute inset-0 backdrop-blur-xl", overlayClassName)}
+        className="absolute inset-0 bg-background/25 backdrop-blur-xl"
       />
       <div aria-hidden className={cn("absolute inset-0", gradientClassName)} />
     </>

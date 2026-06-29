@@ -9,12 +9,7 @@ import { useLocale } from "@/components/i18n/locale-provider";
 const FAQ_COUNT = 13;
 const FAQ_VISIBLE_COUNT = 5;
 
-type LandingFaqProps = {
-  /** FAQ+CTA 공유 섹션 안에 넣을 때 상단 border·단색 배경을 제거합니다. */
-  embedded?: boolean;
-};
-
-export function LandingFaq({ embedded = false }: LandingFaqProps) {
+export function LandingFaq() {
   const { t } = useLocale();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -44,18 +39,8 @@ export function LandingFaq({ embedded = false }: LandingFaqProps) {
   };
 
   return (
-    <section
-      id="faq"
-      className={cn(
-        embedded ? "relative z-10" : "border-t border-border/40 bg-background",
-      )}
-    >
-      <div
-        className={cn(
-          "mx-auto max-w-6xl px-6",
-          embedded ? "pt-24 pb-6 md:pt-32 md:pb-8" : "py-24 md:py-32",
-        )}
-      >
+    <section id="faq" className="border-t border-border/40 bg-background">
+      <div className="mx-auto max-w-6xl px-6 py-24 md:py-32">
         <h2 className="text-center text-3xl font-semibold tracking-tight text-balance md:text-4xl">
           {t("landing.faq.heading")}
         </h2>
