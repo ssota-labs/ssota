@@ -3,6 +3,8 @@ import { expect } from "@playwright/test";
 import {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
+  SMOKE_MEMBER_EMAIL,
+  SMOKE_MEMBER_PASSWORD,
 } from "@ssota/adapter-postgres";
 
 export type LoginAsSmokeOptions = {
@@ -28,4 +30,23 @@ export async function loginAsSmoke(
   await expect(page.getByText("Open tasks")).toBeVisible({
     timeout: 15_000,
   });
+}
+
+export async function loginAsSmokeMember(
+  page: Page,
+  options: LoginAsSmokeOptions = {},
+): Promise<void> {
+  await page.goto("/login");
+  const form = page.locator("main form");
+  await form.getByLabel("Email").fill(SMOKE_MEMBER_EMAIL);
+  await form.getByLabel("Password").fill(SMOKE_MEMBER_PASSWORD);
+  await form.locator('button[type="submit"]').click();
+
+  if (options.skipOverviewAssert) {
+    await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 15_000 });
+  } else {
+    await expect(page.getByText("Open tasks")).toBeVisible({
+      timeout: 15_000,
+    });
+  }
 }

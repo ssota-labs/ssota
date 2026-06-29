@@ -65,6 +65,17 @@
     </div>
 
     <div class="card">
+      <h2>CLI / manual (Test Clock, Portal, Checkout)</h2>
+      <ul>
+        <li><code>pnpm stripe:smoke</code> — scenario catalog + checklist</li>
+        <li><code>pnpm stripe:smoke --clock</code> — E1–E7 Test Clock steps</li>
+        <li><code>pnpm stripe:smoke --run all</code> — unit + integration + billing E2E</li>
+        <li><code>STRIPE_E2E_LIVE=1 pnpm e2e:billing:live</code> — Checkout redirect (real sk_test_)</li>
+      </ul>
+      <p>Docs: <code>packages/ee/docs/test-clocks.md</code></p>
+    </div>
+
+    <div class="card">
       <h2>Local dev server</h2>
       <ul>
         <li><code>pnpm e2e:billing:open hub</code> — hub + reports on localhost</li>

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
-import { loginAsSmoke } from "../../helpers/auth";
+import { loginAsSmoke, loginAsSmokeMember } from "../../helpers/auth";
 import { gotoProject } from "../../helpers/console";
 import {
   getSmokeOrganizationId,
@@ -110,6 +110,37 @@ test.describe("billing entitlement gate @billing @stripe @gate", () => {
   test("unauthenticated user is redirected to login from billing", async ({ page }) => {
     await page.goto("/ssota-labs/settings/billing");
     await expect(page).toHaveURL(/\/login/);
+  });
+});
+
+test.describe("billing member access @billing @stripe @auth", () => {
+  let organizationId: string;
+
+  test.beforeAll(async () => {
+    organizationId = await getSmokeOrganizationId();
+  });
+
+  test.beforeEach(async () => {
+    await resetOrganizationBilling(organizationId);
+  });
+
+  // @billing-scenario B7
+  test("non-owner sees owner-only billing message", async ({ page }) => {
+    await loginAsSmokeMember(page, { skipOverviewAssert: true });
+    await gotoProject(page, "settings/billing");
+    await expect(
+      page.getByText(/only organization owners can start or manage a subscription/i),
+    ).toBeVisible();
+  });
+
+  // @billing-scenario G2
+  test("member cannot start Checkout from billing UI", async ({ page }) => {
+    await loginAsSmokeMember(page, { skipOverviewAssert: true });
+    await gotoProject(page, "settings/billing");
+    await expect(page.getByRole("button", { name: /subscribe/i })).toHaveCount(0);
+    await expect(
+      page.getByText(/only organization owners can start or manage a subscription/i),
+    ).toBeVisible();
   });
 });
 

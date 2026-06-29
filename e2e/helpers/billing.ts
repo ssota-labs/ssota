@@ -74,6 +74,12 @@ export async function readBillingStatus(
   return record?.status ?? "missing";
 }
 
+export async function readOrganizationBilling(organizationId: string) {
+  const { db } = openDb();
+  const read = createDbBillingReadPort(db);
+  return read.getOrganizationBilling(organizationId);
+}
+
 export function stripePriceStarter(): string {
   return process.env.STRIPE_PRICE_STARTER ?? "price_starter_e2e";
 }
@@ -91,8 +97,11 @@ export function buildSubscriptionWebhookPayload(input: {
   priceId?: string;
   quantity?: number;
   cancelAtPeriodEnd?: boolean;
+  currentPeriodEnd?: Date;
 }) {
-  const periodEnd = Math.floor(new Date("2026-12-01T00:00:00.000Z").getTime() / 1000);
+  const periodEnd = Math.floor(
+    (input.currentPeriodEnd ?? new Date("2026-12-01T00:00:00.000Z")).getTime() / 1000,
+  );
   return {
     id: input.eventId,
     object: "event",
