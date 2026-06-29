@@ -9,12 +9,9 @@ export type PageNavItem = {
 };
 
 export type PageSiblingNavData = {
-  /** Parent section row — siblings of the current page's parent. */
-  primary: PageNavItem[];
-  activePrimaryId: string | null;
-  /** Current section row — siblings of the active page. */
-  secondary: PageNavItem[];
-  activeSecondaryId: string;
+  /** Sibling pages under the same sidebar parent. */
+  items: PageNavItem[];
+  activeId: string;
 };
 
 function sameNavScope(a: Page, b: Page): boolean {
@@ -50,11 +47,7 @@ async function toNavItems(
   );
 }
 
-/**
- * Builds two-tier sibling navigation for dynamic pages:
- * - primary: siblings of the page's parent (section row)
- * - secondary: siblings of the current page (tab row)
- */
+/** Sibling pages of the current page (same parent in the page tree). */
 export async function loadPageSiblingNav(
   pagePort: PagePort,
   page: Page,
@@ -62,35 +55,9 @@ export async function loadPageSiblingNav(
 ): Promise<PageSiblingNavData | null> {
   if (!page.parentId) return null;
 
-  const parent = await pagePort.getPage(page.parentId);
-  if (!parent) return null;
+  const siblingPages = await pagePort.listChildren(page.parentId);
+  const items = await toNavItems(pagePort, siblingPages, page, buildHref);
+  if (items.length <= 1) return null;
 
-  const [secondaryPages, primaryPages] = await Promise.all([
-    pagePort.listChildren(page.parentId),
-    pagePort.listChildren(parent.parentId ?? null),
-  ]);
-
-  const secondary = await toNavItems(
-    pagePort,
-    secondaryPages,
-    page,
-    buildHref,
-  );
-  const primary = await toNavItems(
-    pagePort,
-    primaryPages,
-    page,
-    buildHref,
-  );
-
-  const showPrimary = primary.length > 1;
-  const showSecondary = secondary.length > 1;
-  if (!showPrimary && !showSecondary) return null;
-
-  return {
-    primary: showPrimary ? primary : [],
-    activePrimaryId: showPrimary ? parent.id : null,
-    secondary: showSecondary ? secondary : [],
-    activeSecondaryId: page.id,
-  };
+  return { items, activeId: page.id };
 }

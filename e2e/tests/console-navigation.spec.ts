@@ -41,7 +41,7 @@ test.describe("Console v2.7 navigation", () => {
     await expect(page).toHaveURL(new RegExp(`${DEFAULT_CONSOLE_BASE}/p/[^/]+$`));
   });
 
-  test("dynamic page: sibling nav shows section and tab rows", async ({ page }) => {
+  test("dynamic page: sibling nav shows large tab row for page siblings", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
     await nav.getByRole("button", { name: "Executive", exact: true }).click();
     await nav.getByRole("link", { name: "Roadmap", exact: true }).click();
@@ -49,13 +49,8 @@ test.describe("Console v2.7 navigation", () => {
     const siblingNav = page.getByTestId("page-sibling-nav");
     await expect(siblingNav).toBeVisible({ timeout: 15_000 });
 
-    const sections = siblingNav.getByRole("navigation", { name: "Page sections" });
-    await expect(sections.getByRole("link", { name: "Executive", exact: true })).toHaveClass(
-      /font-semibold/,
-    );
-    await expect(sections.getByRole("link", { name: "Research", exact: true })).toBeVisible();
-
     const tabs = siblingNav.getByRole("navigation", { name: "Page tabs" });
+    await expect(tabs.getByRole("link", { name: "Executive", exact: true })).toHaveCount(0);
     await expect(tabs.getByRole("link", { name: "Roadmap", exact: true })).toHaveClass(
       /font-semibold/,
     );

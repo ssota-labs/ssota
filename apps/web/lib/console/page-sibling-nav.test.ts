@@ -25,20 +25,9 @@ function page(
   };
 }
 
-function hubPage(id: string, title: string, parentId: string | null): Page {
-  return {
-    ...page(id, title, parentId),
-    spec: {
-      root: "header",
-      elements: { header: { type: "PageHeader", props: { title } } },
-    },
-  };
-}
-
 describe("loadPageSiblingNav", () => {
   it("returns null for root pages", async () => {
     const port = {
-      getPage: vi.fn(),
       listChildren: vi.fn(),
     } as unknown as PagePort;
 
@@ -51,19 +40,12 @@ describe("loadPageSiblingNav", () => {
     expect(result).toBeNull();
   });
 
-  it("builds primary and secondary rows for nested pages", async () => {
-    const executive = hubPage("exec", "Executive", null);
-    const research = hubPage("research", "Research", null);
+  it("builds sibling tab row for nested pages", async () => {
     const roadmap = page("roadmap", "Roadmap", "exec", 0);
     const goals = page("goals", "Goals", "exec", 1);
 
     const port = {
-      getPage: vi.fn(async (id: string) => {
-        if (id === "exec") return executive;
-        return null;
-      }),
       listChildren: vi.fn(async (parentId: string | null) => {
-        if (parentId === null) return [executive, research];
         if (parentId === "exec") return [roadmap, goals];
         return [];
       }),
@@ -76,27 +58,19 @@ describe("loadPageSiblingNav", () => {
     );
 
     expect(result).toEqual({
-      primary: [
-        { id: "exec", title: "Executive", href: "/p/roadmap" },
-        { id: "research", title: "Research", href: "/p/research" },
-      ],
-      activePrimaryId: "exec",
-      secondary: [
+      items: [
         { id: "roadmap", title: "Roadmap", href: "/p/roadmap" },
         { id: "goals", title: "Goals", href: "/p/goals" },
       ],
-      activeSecondaryId: "roadmap",
+      activeId: "roadmap",
     });
   });
 
   it("returns null when there is only one sibling", async () => {
-    const executive = hubPage("exec", "Executive", null);
     const roadmap = page("roadmap", "Roadmap", "exec");
 
     const port = {
-      getPage: vi.fn(async () => executive),
       listChildren: vi.fn(async (parentId: string | null) => {
-        if (parentId === null) return [executive];
         if (parentId === "exec") return [roadmap];
         return [];
       }),
