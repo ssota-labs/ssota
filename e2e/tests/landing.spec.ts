@@ -151,7 +151,7 @@ test.describe("landing page", () => {
       .locator("section")
       .filter({
         hasText:
-          "코딩 에이전트에 AI CPO를 연결하고 24시간 무인 개발팀을 운영하세요.",
+          "코딩 에이전트에 AI CPO를 연결하고 24시간 믿고 맡기세요.",
       })
       .getByRole("button", { name: "베타 신청하기" })
       .click();

@@ -697,7 +697,7 @@ export const en = {
     cta: {
       badge: "SaaS + partner setup",
       heading:
-        "Connect an AI CPO to your coding agents and run a 24/7 autonomous dev team.",
+        "Connect an AI CPO to your coding agents and trust it around the clock.",
     },
     faq: {
       heading: "Got more questions?",
@@ -1472,7 +1472,8 @@ export const ko = {
     },
     cta: {
       badge: "SaaS + partner setup",
-      heading: "기존 코딩 에이전트에 AI CPO를 연결하세요.",
+      heading:
+        "코딩 에이전트에 AI CPO를 연결하고 24시간 무인 개발팀을 운영하세요.",
     },
     faq: {
       heading: "궁금한 점들이 더 있나요?",
