@@ -1,10 +1,11 @@
-export type DocStatus = "draft" | "review" | "approved" | "active";
+export type DocStatus = "draft" | "review" | "approved" | "active" | "archived";
 
 export const DOC_STATUS_OPTIONS: DocStatus[] = [
   "draft",
   "review",
   "approved",
   "active",
+  "archived",
 ];
 
 export const DOC_STATUS_LABELS: Record<DocStatus, string> = {
@@ -12,6 +13,7 @@ export const DOC_STATUS_LABELS: Record<DocStatus, string> = {
   review: "Review",
   approved: "Approved",
   active: "Active",
+  archived: "Archived",
 };
 
 export function parseDocStatus(value: unknown): DocStatus | undefined {
