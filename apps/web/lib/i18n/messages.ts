@@ -1473,7 +1473,7 @@ export const ko = {
     cta: {
       badge: "SaaS + partner setup",
       heading:
-        "코딩 에이전트에 AI CPO를 연결하고 24시간 무인 개발팀을 운영하세요.",
+        "코딩 에이전트에 AI CPO를 연결하고 24시간 믿고 맡기세요.",
     },
     faq: {
       heading: "궁금한 점들이 더 있나요?",
