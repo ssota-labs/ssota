@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useLocale } from "@/components/i18n/locale-provider";
-import { Label } from "@ssota/ui/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -30,28 +29,24 @@ export function AppearanceForm() {
   const currentTheme = mounted ? (theme ?? "system") : "system";
 
   return (
-    <div className="flex max-w-sm flex-col gap-3">
-      <Label htmlFor="theme">{t("settings.appearanceTitle")}</Label>
-      <Select
-        value={currentTheme}
-        onValueChange={(value) => value && setTheme(value)}
-        items={THEME_OPTIONS.map((opt) => ({
-          value: opt.value,
-          label: t(opt.labelKey),
-        }))}
-      >
-        <SelectTrigger id="theme" className="w-full">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {THEME_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {t(opt.labelKey)}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <p className="text-xs text-muted-foreground">{t("settings.appearanceDescription")}</p>
-    </div>
+    <Select
+      value={currentTheme}
+      onValueChange={(value) => value && setTheme(value)}
+      items={THEME_OPTIONS.map((opt) => ({
+        value: opt.value,
+        label: t(opt.labelKey),
+      }))}
+    >
+      <SelectTrigger id="theme" className="w-full" aria-label={t("settings.appearanceTitle")}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {THEME_OPTIONS.map((opt) => (
+          <SelectItem key={opt.value} value={opt.value}>
+            {t(opt.labelKey)}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
