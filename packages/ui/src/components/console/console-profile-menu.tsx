@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
@@ -66,7 +67,7 @@ export function ConsoleProfileMenu({
   className,
 }: ConsoleProfileMenuProps) {
   return (
-    <Popover>
+    <Popover modal="trap-focus">
       <PopoverTrigger
         aria-label={signedInAsLabel}
         render={
@@ -94,6 +95,8 @@ export function ConsoleProfileMenu({
         alignOffset={0}
         className="cn-popover-menu cn-popover-menu-solid w-60 overflow-hidden"
       >
+        <PopoverClose className="sr-only">Close profile menu</PopoverClose>
+
         <section className={cn(profileSectionClass, "space-y-1")}>
           <p className="text-xs text-muted-foreground">{signedInAsLabel}</p>
           <p className="truncate text-sm font-medium">{userEmail}</p>

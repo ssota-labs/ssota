@@ -230,7 +230,7 @@ export function AppSidebar({
         </nav>
       </ScrollArea>
 
-      <div className="space-y-0.5 border-t p-2">
+      <div className="shrink-0 space-y-0.5 border-t p-2">
         <Link
           href={orgPath(ctx, "developer/setup")}
           prefetch
