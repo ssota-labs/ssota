@@ -15,6 +15,7 @@ import {
 } from "./context";
 import { CATALOG } from "./registry";
 import type { BindingContext } from "./types";
+import { PeriodFilterProvider } from "./period-filter-context";
 import {
   extractUrlSelectionBindings,
   SelectionProvider,
@@ -79,13 +80,19 @@ function SelectionWrappedTree({
   selectionConfig: ReturnType<typeof extractUrlSelectionBindings>[number] | null;
   children: ReactNode;
 }) {
-  if (!selectionConfig) return <>{children}</>;
-
-  return (
+  const selectionTree = selectionConfig ? (
     <Suspense fallback={children}>
       <SelectionProvider config={selectionConfig} bindingData={bindingData}>
         {children}
       </SelectionProvider>
+    </Suspense>
+  ) : (
+    children
+  );
+
+  return (
+    <Suspense fallback={selectionTree}>
+      <PeriodFilterProvider>{selectionTree}</PeriodFilterProvider>
     </Suspense>
   );
 }
