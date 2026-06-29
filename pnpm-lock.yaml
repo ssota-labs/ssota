@@ -484,6 +484,9 @@ importers:
       postgres:
         specifier: ^3.4.9
         version: 3.4.9
+      stripe:
+        specifier: ^18.0.0
+        version: 18.5.0(@types/node@22.19.20)
 
   packages/adapter-postgres:
     dependencies:
@@ -859,6 +862,46 @@ importers:
       vitest:
         specifier: ^3.2.4
         version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
+
+  packages/ee:
+    dependencies:
+      '@ssota/adapter-postgres':
+        specifier: workspace:*
+        version: link:../adapter-postgres
+      '@ssota/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      '@ssota/core':
+        specifier: workspace:*
+        version: link:../core
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
+      stripe:
+        specifier: ^18.5.0
+        version: 18.5.0(@types/node@22.19.20)
+    devDependencies:
+      '@ssota/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/node':
+        specifier: ^22.15.30
+        version: 22.19.20
+      '@typescript-eslint/eslint-plugin':
+        specifier: ^8.34.0
+        version: 8.61.0(@typescript-eslint/parser@8.61.0(eslint@9.39.4(jiti@2.7.0))(supports-color@8.1.1)(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
+      '@typescript-eslint/parser':
+        specifier: ^8.34.0
+        version: 8.61.0(eslint@9.39.4(jiti@2.7.0))(supports-color@8.1.1)(typescript@5.9.3)
+      eslint:
+        specifier: ^9.28.0
+        version: 9.39.4(jiti@2.7.0)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.6(@types/debug@4.1.13)(@types/node@22.19.20)(happy-dom@20.10.4(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.7.0)(lightningcss@1.32.0)(supports-color@8.1.1)(terser@5.48.0)(tsx@4.22.4)(yaml@2.9.0)
 
   packages/studio-build:
     dependencies:
