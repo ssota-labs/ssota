@@ -44,6 +44,7 @@ type OrgMemberListTableProps = {
   orgSlug: string;
   teamspaceSlug: string;
   onChanged: () => void;
+  onRemoveOptimistic: (userId: string) => void;
   isMobile: boolean;
 };
 
@@ -55,6 +56,7 @@ export function OrgMemberListTable({
   orgSlug,
   teamspaceSlug,
   onChanged,
+  onRemoveOptimistic,
 }: OrgMemberListTableProps) {
   const { t } = useLocale();
   const [actionPending, startAction] = useTransition();
@@ -77,6 +79,9 @@ export function OrgMemberListTable({
   };
 
   const handleRemove = (target: RemoveTarget) => {
+    setRemoveTarget(null);
+    onRemoveOptimistic(target.userId);
+
     startAction(async () => {
       const result = await removeMemberAction({
         organizationId,
@@ -86,10 +91,10 @@ export function OrgMemberListTable({
       });
       if (result.ok) {
         toast.success(t("settings.membersRemoveSuccess"));
-        setRemoveTarget(null);
         onChanged();
       } else {
         toast.error(result.error);
+        onChanged();
       }
     });
   };
