@@ -15,6 +15,12 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
     iconKey: "settings_general",
   },
   {
+    key: "account",
+    labelKey: "settings.account",
+    href: "settings/account",
+    iconKey: "settings_account",
+  },
+  {
     key: "appearance",
     labelKey: "settings.appearance",
     href: "settings/appearance",

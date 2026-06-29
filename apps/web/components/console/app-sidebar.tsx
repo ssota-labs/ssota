@@ -28,6 +28,7 @@ import { useProjectContext } from "./project-context";
 import { PageTreeNav, type SidebarPage } from "./page-tree-nav";
 import { TeamspaceNav, type TeamspaceNavGroup } from "./teamspace-nav";
 import { useNodeDrill } from "./node-drill-context";
+import { SettingsNavLinks } from "@/components/settings/settings-nav-links";
 
 type InitiativeOption = {
   id: string;
@@ -84,7 +85,9 @@ export function AppSidebar({
   const nodeNav = drill
     ? { nodeId: drill.nodeId, pages: templatesByType[drill.catalogKey] ?? [] }
     : null;
-  const mode = nodeNav ? "l1" : "l0";
+  const inSettings = pathname.includes("/settings");
+  const showL1 = Boolean(nodeNav) || inSettings;
+  const mode = showL1 ? "l1" : "l0";
 
   function toggleGroup(key: string) {
     setExpandedGroups((prev) => ({
@@ -166,21 +169,36 @@ export function AppSidebar({
     });
   }
 
+  function renderL1BackLink(labelKey: string) {
+    return (
+      <Link
+        href={orgPath(ctx, "overview")}
+        className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+      >
+        <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
+        <span className="truncate">{t(labelKey)}</span>
+      </Link>
+    );
+  }
+
   function renderNodeNav(nav: { nodeId: string; pages: SidebarPage[] }) {
     return (
       <>
-        <Link
-          href={orgPath(ctx, "overview")}
-          className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-        >
-          <CaretLeftIcon className="size-4 shrink-0" aria-hidden />
-          <span className="truncate">{t("nav.home")}</span>
-        </Link>
+        {renderL1BackLink("nav.home")}
         <PageTreeNav
           pages={nav.pages}
           basePath={`${projectBase}/n/${nav.nodeId}`}
           heading={null}
         />
+      </>
+    );
+  }
+
+  function renderSettingsNav() {
+    return (
+      <>
+        {renderL1BackLink("nav.home")}
+        <SettingsNavLinks />
       </>
     );
   }
@@ -223,7 +241,11 @@ export function AppSidebar({
                 )}
                 aria-hidden={mode === "l0"}
               >
-                {nodeNav ? renderNodeNav(nodeNav) : null}
+                {nodeNav
+                  ? renderNodeNav(nodeNav)
+                  : inSettings
+                    ? renderSettingsNav()
+                    : null}
               </div>
             </div>
           </div>
@@ -232,23 +254,11 @@ export function AppSidebar({
 
       <div className="space-y-0.5 border-t p-2">
         <Link
-          href={orgPath(ctx, "settings/developer")}
-          prefetch
-          className={cn(
-            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            (pathname.includes("/developer/") || pathname.includes("/settings/developer")) &&
-              "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
-          )}
-        >
-          <NavItemIcon iconKey="developer_setup" className="size-4 shrink-0" />
-          {t("nav.developerSetup")}
-        </Link>
-        <Link
           href={orgPath(ctx, "settings")}
           prefetch
           className={cn(
             "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            pathname.includes("/settings/") &&
+            pathname.includes("/settings") &&
               "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
           )}
         >
