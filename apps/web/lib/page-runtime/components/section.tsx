@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@ssota/ui/lib/utils";
+import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import {
   SectionHeaderActionsContext,
   useSectionHeaderEndState,
@@ -35,26 +36,18 @@ export function SectionEl({
     <SectionHeaderActionsContext value={{ setHeaderEnd }}>
       <section
         className={cn(
-          "flex min-h-0 flex-1 flex-col gap-4",
+          "flex min-h-0 flex-1 flex-col gap-3",
           paddingClass(padding),
         )}
       >
-        {showHeader ? (
-          <header className="flex shrink-0 items-center justify-between gap-4">
-            <div className="min-w-0 flex-1 space-y-1">
-              {hasTitle ? (
-                <h2 className="text-lg font-semibold">{title}</h2>
-              ) : null}
-              {hasSubtitle ? (
-                <p className="text-muted-foreground text-sm">{subtitle}</p>
-              ) : null}
-            </div>
-            {headerEnd ? (
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
-                {headerEnd}
-              </div>
-            ) : null}
-          </header>
+        {showHeader && hasTitle ? (
+          <WorkspaceHeader
+            as="h2"
+            density="section"
+            title={title!}
+            description={hasSubtitle ? subtitle : undefined}
+            actions={headerEnd}
+          />
         ) : null}
         <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto">
           {children}

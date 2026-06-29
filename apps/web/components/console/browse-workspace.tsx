@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@ssota/ui/lib/utils";
+import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import {
   connectorCardDescriptionClassName,
   connectorCardInteractiveClassName,
@@ -41,18 +42,16 @@ function Header({
   children?: ReactNode;
 }) {
   return (
-    <header className="space-y-1">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {description ? (
-            <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
-          ) : null}
-        </div>
-        {actions ? <div className="shrink-0 pt-1">{actions}</div> : null}
-      </div>
+    <div className="space-y-1">
+      <WorkspaceHeader
+        as="h1"
+        density="page"
+        title={title}
+        description={description}
+        actions={actions}
+      />
       {children}
-    </header>
+    </div>
   );
 }
 

@@ -9,16 +9,18 @@ test.describe("Executive roadmap", () => {
   });
 
   test("shows product and planning document lists", async ({ page }) => {
-    await expect(page.getByText("Planning roadmaps")).toBeVisible({
+    await expect(page.getByRole("heading", { name: "Roadmap", level: 1 })).toBeVisible({
       timeout: 15_000,
     });
+    await expect(page.getByText("Planning roadmaps")).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Product roadmap" }),
     ).toBeVisible();
     await expect(page.getByTestId("document-sheet-list")).toHaveCount(2);
 
+    const productList = page.getByTestId("document-sheet-list").first();
     await expect(
-      page.getByRole("button", { name: "Product roadmap" }),
+      productList.getByRole("button", { name: "Product roadmap" }).first(),
     ).toBeVisible();
     const year = new Date().getFullYear();
     await expect(
@@ -39,8 +41,7 @@ test.describe("Executive roadmap", () => {
       page.getByRole("button", { name: "Product roadmap (2025 archive)" }),
     ).not.toBeVisible();
 
-    const productList = page.getByTestId("document-sheet-list").first();
-    await productList.getByTestId("document-sheet-filter-archived").click();
+    await page.getByRole("switch", { name: "Show archived" }).click();
 
     await expect(
       page.getByRole("button", { name: "Product roadmap (2025 archive)" }),
@@ -49,12 +50,11 @@ test.describe("Executive roadmap", () => {
 
   test("filters planning roadmaps by year", async ({ page }) => {
     const year = new Date().getFullYear();
-    const planningList = page.getByTestId("document-sheet-list").nth(1);
     await expect(
       page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }),
     ).toBeVisible();
 
-    await planningList.getByTestId("document-sheet-filter-year").click();
+    await page.getByRole("combobox", { name: "Year" }).click();
     await page.getByRole("option", { name: String(year - 1) }).click();
 
     await expect(
@@ -150,10 +150,15 @@ test.describe("Executive roadmap", () => {
     await editor.press("End");
     await editor.type(` ${marker}`);
     await saveResponse;
+    await page.waitForTimeout(500);
 
     await page.reload();
     await gotoProject(page, "executive/roadmap");
     await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
-    await expect(editor).toContainText(marker, { timeout: 15_000 });
+    const reloadedEditor = page
+      .getByTestId("document-sheet-editor")
+      .locator(".ProseMirror");
+    await expect(reloadedEditor).toBeVisible({ timeout: 15_000 });
+    await expect(reloadedEditor).toContainText(marker, { timeout: 15_000 });
   });
 });

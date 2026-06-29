@@ -18,8 +18,16 @@
       "elements": {
         "layout": {
           "type": "Stack",
-          "props": { "gap": "lg", "padding": "none" },
-          "children": ["productSection", "planningSection"]
+          "props": { "gap": "md", "padding": "none" },
+          "children": ["pageBar", "productSection", "planningSection"]
+        },
+        "pageBar": {
+          "type": "PageHeader",
+          "props": {
+            "variant": "compact",
+            "title": "Roadmap",
+            "subtitle": "Product direction and planning documents"
+          }
         },
         "productSection": {
           "type": "Section",

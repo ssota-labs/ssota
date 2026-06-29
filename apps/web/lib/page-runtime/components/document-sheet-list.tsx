@@ -12,6 +12,7 @@ import {
 import { Switch } from "@ssota/ui/components/ui/switch";
 import { Label } from "@ssota/ui/components/ui/label";
 import { cn } from "@ssota/ui/lib/utils";
+import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import { useAction } from "../context";
 import type { RenderNode } from "../types";
 import { DocumentStatusBadge } from "./document-status-badge";
@@ -129,21 +130,13 @@ export function DocumentSheetListEl({
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-3">
         {sectionTitle || sectionSubtitle ? (
-          <header className="flex items-center justify-between gap-4">
-            <div className="min-w-0 flex-1 space-y-1">
-              {sectionTitle ? (
-                <h2 className="text-lg font-semibold">{sectionTitle}</h2>
-              ) : null}
-              {sectionSubtitle ? (
-                <p className="text-muted-foreground text-sm">{sectionSubtitle}</p>
-              ) : null}
-            </div>
-            {filterBar && !inSection ? (
-              <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
-                {filterBar}
-              </div>
-            ) : null}
-          </header>
+          <WorkspaceHeader
+            as="h2"
+            density="section"
+            title={sectionTitle ?? ""}
+            description={sectionSubtitle}
+            actions={filterBar && !inSection ? filterBar : undefined}
+          />
         ) : null}
 
         {title ? <h3 className="text-sm font-medium">{title}</h3> : null}
@@ -257,7 +250,7 @@ function DocumentSheetListFilterBar({
                   onChange({ ...state, [key]: next });
                 }}
               />
-              <Label htmlFor={key} className="text-sm font-normal">
+              <Label htmlFor={key} className="text-xs font-normal">
                 {filter.label}
               </Label>
             </div>
@@ -268,7 +261,7 @@ function DocumentSheetListFilterBar({
         const selected = String(state[key] ?? years[0] ?? currentYear);
         return (
           <div key={key} className="flex items-center gap-2">
-            <span className="text-muted-foreground text-sm">{filter.label}</span>
+            <span className="text-xs text-muted-foreground">{filter.label}</span>
             <Select
               value={selected}
               onValueChange={(value) => {
