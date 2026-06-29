@@ -204,7 +204,7 @@ export default async function HomePage() {
       <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 overflow-hidden" aria-hidden>
           <Image
-            src="/landing/hero-background.jpg"
+            src="/landing/hero-background-2.jpg"
             alt=""
             fill
             priority
