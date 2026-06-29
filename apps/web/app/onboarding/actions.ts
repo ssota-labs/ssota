@@ -25,12 +25,15 @@ export async function completeProfileOnboardingAction(formData: FormData) {
   }
 
   const onboardingPort = getOnboardingPort();
-  await onboardingPort.completeProfileStep({
+  const { organization } = await onboardingPort.completeProfileStep({
     userId: user.id,
     email: user.email ?? "",
     displayName: organizationName,
     organizationName,
   });
+
+  const { syncOrgBillingSeats } = await import("@/lib/billing/sync-seats");
+  await syncOrgBillingSeats(organization.id);
 
   redirect("/onboarding/project");
 }

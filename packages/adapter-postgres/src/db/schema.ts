@@ -100,6 +100,27 @@ export const organizationMemberships = pgTable(
   }),
 );
 
+export const organizationBilling = pgTable("organization_billing", {
+  organizationId: uuid("organization_id")
+    .primaryKey()
+    .references(() => organizations.id, { onDelete: "cascade" }),
+  stripeCustomerId: text("stripe_customer_id").unique(),
+  stripeSubscriptionId: text("stripe_subscription_id"),
+  plan: text("plan").notNull().default("none"),
+  status: text("status").notNull().default("none"),
+  seatQuantity: integer("seat_quantity").notNull().default(1),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const stripeWebhookEvents = pgTable("stripe_webhook_events", {
+  eventId: text("event_id").primaryKey(),
+  processedAt: timestamp("processed_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
 /**
  * End-user data partition within a deployed tenant SaaS (Phase 5). A Teamspace is
  * the builder's agent-SaaS definition; accounts are the isolated spaces
