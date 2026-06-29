@@ -92,6 +92,15 @@ export function LandingHeroPrompt() {
       highlights: t(`landing.hero.prompt${index}Highlights`).split("|"),
     }));
   }, [t]);
+  const longestPromptText = useMemo(
+    () =>
+      prompts.reduce(
+        (longest, prompt) =>
+          prompt.text.length > longest.length ? prompt.text : longest,
+        prompts[0]?.text ?? "",
+      ),
+    [prompts],
+  );
 
   const [promptIndex, setPromptIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(1);
@@ -126,7 +135,7 @@ export function LandingHeroPrompt() {
     if (reducedMotion) {
       const timer = window.setInterval(() => {
         setPromptIndex((index) => (index + 1) % prompts.length);
-        setCharIndex(0);
+        setCharIndex(1);
         setPhase("typing");
       }, PAUSE_MS + 800);
       return () => window.clearInterval(timer);
@@ -151,7 +160,7 @@ export function LandingHeroPrompt() {
     }
 
     const timer = window.setTimeout(() => {
-      setCharIndex(0);
+      setCharIndex(1);
       setPromptIndex((index) => (index + 1) % prompts.length);
       setPhase("typing");
     }, PAUSE_MS);
@@ -163,34 +172,62 @@ export function LandingHeroPrompt() {
     ? currentPrompt.text.length
     : charIndex;
 
+  const showSizingCursor = !reducedMotion && phase === "typing" && showCursor;
+  // 강조(bold) 시 글자 폭이 달라지므로 sizer는 항상 emphasized로 맞춘다.
+  const sizingEmphasized = true;
+
   return (
-    <div
-      aria-label={t("landing.hero.promptLabel")}
-      className={cn(
-        "group flex w-full max-w-2xl items-center gap-3 px-4 py-5 text-left transition-[background-color,box-shadow] duration-200 ease-out md:gap-4 md:px-5 md:py-6",
-        landingGlassPillClassName(),
-      )}
-    >
-      <span className="min-w-0 flex-1 overflow-hidden text-sm leading-6 text-ellipsis whitespace-nowrap text-foreground/90 md:text-base">
-        <span aria-hidden="true">
-          {renderVisibleText(
-            currentPrompt.text,
-            visibleLength,
-            currentPrompt.highlights,
-            isEmphasized,
-          )}
-          {phase === "typing" && showCursor ? (
-            <span className="text-muted-foreground">|</span>
-          ) : null}
+    <div className="flex w-full justify-center">
+      <div className="relative inline-block max-w-full">
+        <span
+          aria-hidden
+          className="invisible block max-w-[calc(100vw-3rem)] px-5 py-5 pr-14 text-sm leading-6 whitespace-nowrap md:max-w-2xl md:py-6 md:text-base"
+        >
+          {longestPromptText}
         </span>
-        <span className="sr-only">{currentPrompt.text}</span>
-      </span>
-      <span
-        aria-hidden="true"
-        className="text-foreground flex size-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-primary/10 ring-1 ring-inset ring-primary/10 backdrop-blur-sm"
-      >
-        <ArrowBendDownLeft className="size-4" weight="bold" />
-      </span>
+        <div
+          aria-label={t("landing.hero.promptLabel")}
+          className={cn(
+            "group absolute top-1/2 left-1/2 inline-grid min-w-[18rem] max-w-[calc(100vw-3rem)] -translate-x-1/2 -translate-y-1/2 cursor-default py-5 pr-14 pl-5 text-left transition-[width,background-color,box-shadow] duration-200 ease-out md:min-w-[22rem] md:max-w-2xl md:py-6",
+            landingGlassPillClassName(),
+          )}
+        >
+          <span
+            aria-hidden
+            className="invisible col-start-1 row-start-1 whitespace-nowrap text-sm leading-6 md:text-base"
+          >
+            {renderVisibleText(
+              currentPrompt.text,
+              visibleLength,
+              currentPrompt.highlights,
+              sizingEmphasized,
+            )}
+            {showSizingCursor ? (
+              <span className="text-muted-foreground">|</span>
+            ) : null}
+          </span>
+          <span className="col-start-1 row-start-1 min-w-0 text-sm leading-6 whitespace-nowrap text-foreground/90 md:text-base">
+            <span aria-hidden="true">
+              {renderVisibleText(
+                currentPrompt.text,
+                visibleLength,
+                currentPrompt.highlights,
+                isEmphasized,
+              )}
+              {phase === "typing" && showCursor ? (
+                <span className="text-muted-foreground">|</span>
+              ) : null}
+            </span>
+            <span className="sr-only">{currentPrompt.text}</span>
+          </span>
+          <span
+            aria-hidden="true"
+            className="text-foreground absolute top-1/2 right-4 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-primary/10 ring-1 ring-inset ring-primary/10 backdrop-blur-sm"
+          >
+            <ArrowBendDownLeft className="size-4" weight="bold" />
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
