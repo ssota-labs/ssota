@@ -107,6 +107,8 @@ export function LandingFaq() {
             <Button
               type="button"
               variant="outline"
+              size="lg"
+              className="h-11 min-h-11 px-6 text-sm"
               data-testid="landing-faq-show-more"
               aria-expanded={showAll}
               onClick={toggleShowAll}
