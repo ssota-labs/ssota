@@ -80,7 +80,7 @@ export function ConsoleProfileMenu({
           />
         }
       >
-        <Avatar size="sm">
+        <Avatar size="sm" className="shrink-0">
           <AvatarFallback>{userInitials}</AvatarFallback>
         </Avatar>
         <span className="min-w-0 flex-1 truncate text-left text-sm">

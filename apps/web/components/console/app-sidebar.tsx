@@ -30,6 +30,10 @@ import { TeamspaceNav, type TeamspaceNavGroup } from "./teamspace-nav";
 import { useNodeDrill } from "./node-drill-context";
 import { SettingsNavLinks } from "@/components/settings/settings-nav-links";
 
+const SIDEBAR_FOOTER_ROW_CLASS =
+  "flex h-9 min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors";
+const SIDEBAR_FOOTER_LEADING_CLASS = "flex size-6 shrink-0 items-center justify-center";
+
 type InitiativeOption = {
   id: string;
   title: string;
@@ -257,12 +261,15 @@ export function AppSidebar({
           href={orgPath(ctx, "settings")}
           prefetch
           className={cn(
-            "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            SIDEBAR_FOOTER_ROW_CLASS,
+            "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             pathname.includes("/settings") &&
               "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
           )}
         >
-          <NavItemIcon iconKey="settings" className="size-4 shrink-0" />
+          <span className={SIDEBAR_FOOTER_LEADING_CLASS}>
+            <NavItemIcon iconKey="settings" className="size-4 shrink-0" />
+          </span>
           {t("nav.settings")}
         </Link>
         <SidebarProfileMenu userEmail={userEmail} signOutAction={signOutAction} />
