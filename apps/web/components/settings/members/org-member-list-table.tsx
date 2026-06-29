@@ -8,6 +8,16 @@ import {
   TableHeader,
   TableRow,
 } from "@ssota/ui/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@ssota/ui/components/ui/alert-dialog";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { useLocale } from "@/components/i18n/locale-provider";
@@ -18,7 +28,13 @@ import {
 import { toast } from "@ssota/ui/components/ui/sonner";
 import { cn } from "@ssota/ui/lib/utils";
 import { getRoleIcon, getRoleLabel, type MemberRow } from "./org-member-list.types";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
+
+type RemoveTarget = {
+  userId: string;
+  name: string;
+  email: string;
+};
 
 type OrgMemberListTableProps = {
   rows: MemberRow[];
@@ -42,6 +58,7 @@ export function OrgMemberListTable({
 }: OrgMemberListTableProps) {
   const { t } = useLocale();
   const [actionPending, startAction] = useTransition();
+  const [removeTarget, setRemoveTarget] = useState<RemoveTarget | null>(null);
 
   const handleRevoke = (invitationId: string) => {
     startAction(async () => {
@@ -59,16 +76,17 @@ export function OrgMemberListTable({
     });
   };
 
-  const handleRemove = (targetUserId: string) => {
+  const handleRemove = (target: RemoveTarget) => {
     startAction(async () => {
       const result = await removeMemberAction({
         organizationId,
         orgSlug,
         teamspaceSlug,
-        targetUserId,
+        targetUserId: target.userId,
       });
       if (result.ok) {
         toast.success(t("settings.membersRemoveSuccess"));
+        setRemoveTarget(null);
         onChanged();
       } else {
         toast.error(result.error);
@@ -85,6 +103,7 @@ export function OrgMemberListTable({
   }
 
   return (
+    <>
     <div className="min-w-0 overflow-x-auto [scrollbar-width:thin]">
       <div className="min-w-[640px] rounded-md border bg-card">
         <Table>
@@ -161,7 +180,13 @@ export function OrgMemberListTable({
                         size="sm"
                         className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                         disabled={isPending || actionPending}
-                        onClick={() => handleRemove(row.userId!)}
+                        onClick={() =>
+                          setRemoveTarget({
+                            userId: row.userId!,
+                            name: row.name,
+                            email: row.email,
+                          })
+                        }
                       >
                         {t("settings.membersRemove")}
                       </Button>
@@ -174,5 +199,45 @@ export function OrgMemberListTable({
         </Table>
       </div>
     </div>
+
+    <AlertDialog
+      open={removeTarget !== null}
+      onOpenChange={(open) => {
+        if (!open && !actionPending) setRemoveTarget(null);
+      }}
+    >
+      <AlertDialogContent>
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+          <AlertDialogHeader className="space-y-1 text-left">
+            <AlertDialogTitle className="text-sm font-semibold text-destructive">
+              {t("settings.membersRemoveDialogTitle")}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground">
+              {removeTarget
+                ? t("settings.membersRemoveDialogDescription", {
+                    name: removeTarget.name,
+                    email: removeTarget.email,
+                  })
+                : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={actionPending}>
+            {t("common.cancel")}
+          </AlertDialogCancel>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={actionPending || !removeTarget}
+            onClick={() => {
+              if (removeTarget) handleRemove(removeTarget);
+            }}
+          >
+            {t("settings.membersRemoveConfirm")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

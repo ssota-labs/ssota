@@ -304,6 +304,10 @@ export const en = {
     membersInvitedBy: "Invited by {name}",
     membersRevoke: "Revoke",
     membersRemove: "Remove",
+    membersRemoveDialogTitle: "Remove member?",
+    membersRemoveDialogDescription:
+      "{name} ({email}) will lose access to this organization immediately. This can't be undone.",
+    membersRemoveConfirm: "Remove member",
     membersRevokeSuccess: "Invitation revoked.",
     membersRemoveSuccess: "Member removed.",
     membersAlreadyMember: "Member",
@@ -1124,6 +1128,10 @@ export const ko = {
     membersInvitedBy: "{name}님이 초대",
     membersRevoke: "취소",
     membersRemove: "제거",
+    membersRemoveDialogTitle: "멤버를 제거할까요?",
+    membersRemoveDialogDescription:
+      "{name}({email})님은 이 조직에 대한 접근 권한을 즉시 잃습니다. 되돌릴 수 없습니다.",
+    membersRemoveConfirm: "멤버 제거",
     membersRevokeSuccess: "초대를 취소했습니다.",
     membersRemoveSuccess: "멤버를 제거했습니다.",
     membersAlreadyMember: "멤버",
