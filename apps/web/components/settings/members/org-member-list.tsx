@@ -46,6 +46,15 @@ export function OrgMemberList({
     });
   };
 
+  const removeMemberOptimistic = (userId: string) => {
+    setView((prev) => ({
+      ...prev,
+      currentMembers: prev.currentMembers.filter(
+        (member) => member.userId !== userId,
+      ),
+    }));
+  };
+
   const rows: MemberRow[] = [
     ...view.currentMembers.map((member) => ({
       id: member.userId,
@@ -86,6 +95,7 @@ export function OrgMemberList({
         orgSlug={orgSlug}
         teamspaceSlug={teamspaceSlug}
         onChanged={refresh}
+        onRemoveOptimistic={removeMemberOptimistic}
         isMobile={isMobile}
       />
 
