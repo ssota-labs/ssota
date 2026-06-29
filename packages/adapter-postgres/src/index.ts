@@ -52,6 +52,7 @@ export {
   type OrgMembershipPort,
 } from "./ports/org-membership-port.js";
 export { createOrganizationSettingsPort } from "./ports/organization-settings-port.js";
+export { createOrganizationMembersPort } from "./ports/organization-members-port.js";
 export {
   createAccountPort,
   createAccountConnectionPort,

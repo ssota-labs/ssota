@@ -100,6 +100,31 @@ export const organizationMemberships = pgTable(
   }),
 );
 
+export const organizationInvitations = pgTable(
+  "organization_invitations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    inviterUserId: uuid("inviter_user_id")
+      .notNull()
+      .references(() => profiles.id),
+    inviteeEmail: text("invitee_email").notNull(),
+    inviteeUserId: uuid("invitee_user_id").references(() => profiles.id),
+    role: text("role").notNull().default("member"),
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  },
+  (table) => ({
+    orgIdIdx: index("organization_invitations_organization_id_idx").on(
+      table.organizationId,
+    ),
+  }),
+);
+
 export const organizationBilling = pgTable("organization_billing", {
   organizationId: uuid("organization_id")
     .primaryKey()
