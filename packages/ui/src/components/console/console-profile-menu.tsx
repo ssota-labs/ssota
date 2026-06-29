@@ -88,7 +88,7 @@ export function ConsoleProfileMenu({
         </span>
       </PopoverTrigger>
       <PopoverContent
-        side="right"
+        side="top"
         align="start"
         sideOffset={8}
         alignOffset={0}
