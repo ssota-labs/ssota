@@ -5,6 +5,7 @@ import { updateOrganizationNameAction } from "@/app/settings/organization-action
 import { useLocale } from "@/components/i18n/locale-provider";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
+import { toast } from "@ssota/ui/components/ui/sonner";
 
 type OrgNameFormProps = {
   organizationId: string;
@@ -21,14 +22,10 @@ export function OrgNameForm({
 }: OrgNameFormProps) {
   const { t } = useLocale();
   const [name, setName] = useState(initialName);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setMessage(null);
-    setError(null);
 
     startTransition(async () => {
       const result = await updateOrganizationNameAction({
@@ -37,9 +34,9 @@ export function OrgNameForm({
         name,
       });
       if (result.ok) {
-        setMessage(t("settings.orgNameSaved"));
+        toast.success(t("settings.orgNameSaved"));
       } else {
-        setError(result.error);
+        toast.error(result.error);
       }
     });
   }
@@ -62,8 +59,6 @@ export function OrgNameForm({
       ) : (
         <p className="text-xs text-muted-foreground">{t("settings.ownerOnly")}</p>
       )}
-      {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </form>
   );
 }

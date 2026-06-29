@@ -6,6 +6,7 @@ import { useLocale } from "@/components/i18n/locale-provider";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
+import { toast } from "@ssota/ui/components/ui/sonner";
 
 type OrgDeleteFormProps = {
   organizationId: string;
@@ -20,12 +21,10 @@ export function OrgDeleteForm({
 }: OrgDeleteFormProps) {
   const { t } = useLocale();
   const [confirmSlug, setConfirmSlug] = useState("");
-  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setError(null);
 
     startTransition(async () => {
       const result = await deleteOrganizationAction({
@@ -34,7 +33,7 @@ export function OrgDeleteForm({
         confirmSlug,
       });
       if (result && !result.ok) {
-        setError(result.error);
+        toast.error(result.error);
       }
     });
   }
@@ -71,7 +70,6 @@ export function OrgDeleteForm({
           </Button>
         </>
       )}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
     </form>
   );
 }

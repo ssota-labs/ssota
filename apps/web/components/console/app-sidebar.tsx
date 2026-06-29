@@ -211,7 +211,7 @@ export function AppSidebar({
     <aside className="flex h-full w-60 shrink-0 flex-col border-r bg-sidebar">
       <ConsoleOrgSwitcher organizations={organizations} />
 
-      <ScrollArea className="min-h-0 flex-1">
+      <ScrollArea className="min-h-0 flex-1" hideScrollbar>
         <nav aria-label={t("nav.primary")} className="p-2">
           <div className="sidebar-nav-slider overflow-hidden">
             <div
