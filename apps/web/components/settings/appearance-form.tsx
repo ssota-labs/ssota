@@ -1,52 +1,102 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  CaretDownIcon,
+  CheckIcon,
+  DesktopIcon,
+  MoonIcon,
+  SunIcon,
+} from "@phosphor-icons/react";
 import { useTheme } from "next-themes";
 import { useLocale } from "@/components/i18n/locale-provider";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ssota/ui/components/ui/select";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@ssota/ui/components/ui/popover";
+import { cn } from "@ssota/ui/lib/utils";
 
-const THEME_OPTIONS = [
-  { value: "light", labelKey: "settings.themeLight" as const },
-  { value: "dark", labelKey: "settings.themeDark" as const },
-  { value: "system", labelKey: "settings.themeSystem" as const },
+type ThemeValue = "light" | "dark" | "system";
+
+const THEME_OPTIONS: {
+  value: ThemeValue;
+  labelKey: "settings.themeLight" | "settings.themeDark" | "settings.themeSystem";
+  Icon: typeof SunIcon;
+}[] = [
+  { value: "light", labelKey: "settings.themeLight", Icon: SunIcon },
+  { value: "dark", labelKey: "settings.themeDark", Icon: MoonIcon },
+  { value: "system", labelKey: "settings.themeSystem", Icon: DesktopIcon },
 ];
 
 export function AppearanceForm() {
   const { t } = useLocale();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const currentTheme = mounted ? (theme ?? "system") : "system";
+  const currentTheme: ThemeValue = mounted ? ((theme as ThemeValue) ?? "system") : "system";
+  const selected =
+    THEME_OPTIONS.find((option) => option.value === currentTheme) ?? THEME_OPTIONS[2]!;
+  const SelectedIcon = selected.Icon;
+
+  function handleSelect(value: ThemeValue) {
+    setTheme(value);
+    setOpen(false);
+  }
 
   return (
-    <Select
-      value={currentTheme}
-      onValueChange={(value) => value && setTheme(value)}
-      items={THEME_OPTIONS.map((opt) => ({
-        value: opt.value,
-        label: t(opt.labelKey),
-      }))}
-    >
-      <SelectTrigger id="theme" className="w-full" aria-label={t("settings.appearanceTitle")}>
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {THEME_OPTIONS.map((opt) => (
-          <SelectItem key={opt.value} value={opt.value}>
-            {t(opt.labelKey)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        id="theme"
+        aria-label={t("settings.appearanceTitle")}
+        render={
+          <Button
+            type="button"
+            variant="outline"
+            className="h-9 w-full justify-between gap-2 px-3 font-normal"
+          />
+        }
+      >
+        <span className="flex min-w-0 items-center gap-2">
+          <SelectedIcon className="text-muted-foreground size-4 shrink-0" aria-hidden />
+          <span className="truncate text-sm">{t(selected.labelKey)}</span>
+        </span>
+        <CaretDownIcon className="text-muted-foreground size-4 shrink-0" aria-hidden />
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        className="w-[var(--anchor-width)] !flex-col !gap-0 !p-1"
+      >
+        {THEME_OPTIONS.map(({ value, labelKey, Icon }) => {
+          const isSelected = value === currentTheme;
+          return (
+            <button
+              key={value}
+              type="button"
+              className={cn(
+                "flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted",
+                isSelected && "bg-muted/60",
+              )}
+              onClick={() => handleSelect(value)}
+            >
+              <Icon className="text-muted-foreground size-4 shrink-0" aria-hidden />
+              <span className="min-w-0 flex-1">{t(labelKey)}</span>
+              {isSelected ? (
+                <CheckIcon className="text-primary size-4 shrink-0" aria-hidden />
+              ) : (
+                <span className="size-4 shrink-0" aria-hidden />
+              )}
+            </button>
+          );
+        })}
+      </PopoverContent>
+    </Popover>
   );
 }
