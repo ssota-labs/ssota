@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { resolvePageBindings } from "@ssota/core";
-import { DynamicPageRenderer } from "@/lib/page-runtime";
+import { PageSiblingNav } from "@/components/console/page-sibling-nav";
 import { appProjectPath } from "@/lib/console/app-paths";
+import { loadPageSiblingNav } from "@/lib/console/page-sibling-nav";
+import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { resolveEndUserContext } from "@/lib/request-context";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
@@ -40,11 +42,21 @@ export default async function AppDynamicPage({
   );
   await resolveArtifactBindings(ctx.teamspaceId, page.bindings, bindingData);
 
+  const basePath = appProjectPath({ orgSlug, teamspaceSlug });
+  const siblingNav = await loadPageSiblingNav(
+    getPagePort(ctx.teamspaceId),
+    page,
+    (id) => `${basePath}/p/${id}`,
+  );
+
   return (
-    <DynamicPageRenderer
-      spec={page.spec}
-      bindingData={bindingData}
-      basePath={appProjectPath({ orgSlug, teamspaceSlug })}
-    />
+    <>
+      {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
+      <DynamicPageRenderer
+        spec={page.spec}
+        bindingData={bindingData}
+        basePath={basePath}
+      />
+    </>
   );
 }
