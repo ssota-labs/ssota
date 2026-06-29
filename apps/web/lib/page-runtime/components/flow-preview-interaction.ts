@@ -1,6 +1,6 @@
 /**
- * Landing read-only previews: hand-tool pan (drag + trackpad scroll), no zoom,
- * no selection. Wheel events stay on the canvas so the page does not scroll.
+ * Landing read-only previews: hand-tool pan on drag only (no trackpad pan/zoom),
+ * no selection. Trackpad/wheel scroll passes through so the page can scroll.
  */
 export function getFlowInteractionProps(
   interactionLocked: boolean,
@@ -9,11 +9,11 @@ export function getFlowInteractionProps(
   if (interactionLocked) {
     return {
       panOnDrag: true,
-      panOnScroll: true,
+      panOnScroll: false,
       zoomOnScroll: false,
       zoomOnPinch: false,
       zoomOnDoubleClick: false,
-      preventScrolling: true,
+      preventScrolling: false,
       selectionOnDrag: false,
       elementsSelectable: false,
     };

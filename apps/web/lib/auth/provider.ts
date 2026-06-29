@@ -35,8 +35,19 @@ export async function getAuthProvider(): Promise<AuthProvider> {
  * callers should not import a provider-specific client.
  */
 export const getCurrentUser = cache(async (): Promise<AuthUser | null> => {
-  const provider = await getAuthProvider();
-  return provider.getCurrentUser();
+  try {
+    const provider = await getAuthProvider();
+    return await provider.getCurrentUser();
+  } catch (error) {
+    // Supabase docker 미기동·일시적 네트워크 장애 시 랜딩/레이아웃이 죽지 않게 한다.
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "[auth] getCurrentUser failed; treating request as signed out:",
+        error,
+      );
+    }
+    return null;
+  }
 });
 
 /** Proxy/middleware session refresh, delegated to the configured provider. */

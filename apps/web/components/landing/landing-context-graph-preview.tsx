@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { JsonRenderSpec } from "@ssota/contracts";
 import { useLocale } from "@/components/i18n/locale-provider";
 import type { createTranslator } from "@/lib/i18n";
+import { useMobileViewport } from "@/lib/hooks/use-mobile-viewport";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 
 /**
@@ -146,7 +147,7 @@ function buildContextFlow(t: ReturnType<typeof createTranslator>) {
   };
 }
 
-function buildSpec(height: number): JsonRenderSpec {
+function buildSpec(height: number, isMobile: boolean): JsonRenderSpec {
   return {
     root: "flow",
     elements: {
@@ -157,10 +158,13 @@ function buildSpec(height: number): JsonRenderSpec {
           property: "flow",
           layout: "LR",
           height,
-          fitViewPadding: 0,
-          fitViewMinZoom: 0.9,
-          fitViewMaxZoom: 2.4,
+          fitViewPadding: isMobile ? 0.03 : 0,
+          fitViewMinZoom: isMobile ? 0.52 : 0.9,
+          fitViewMaxZoom: isMobile ? 1.15 : 2.4,
+          fitViewOffsetY: isMobile ? -40 : -28,
           showTopToolbar: false,
+          showViewportToolbar: true,
+          viewportToolbarPosition: "bottom-right",
           interactionLocked: true,
           nodePresentation: NODE_PRESENTATION,
         },
@@ -171,8 +175,14 @@ function buildSpec(height: number): JsonRenderSpec {
 
 export function LandingContextGraphPreview() {
   const { locale, t } = useLocale();
+  const isMobile = useMobileViewport();
   const ref = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(400);
+  const [height, setHeight] = useState(0);
+
+  const spec = useMemo(
+    () => buildSpec(height, isMobile),
+    [height, isMobile],
+  );
 
   const bindingData = useMemo(
     () => ({
@@ -200,11 +210,14 @@ export function LandingContextGraphPreview() {
   }, []);
 
   return (
-    <div key={locale} ref={ref} className="min-h-0 w-full flex-1">
-      <DynamicPageRenderer
-        spec={buildSpec(height)}
-        bindingData={bindingData}
-      />
+    <div
+      key={`${locale}-${isMobile ? "m" : "d"}`}
+      ref={ref}
+      className="flex h-full min-h-0 w-full flex-col"
+    >
+      {height > 0 ? (
+        <DynamicPageRenderer spec={spec} bindingData={bindingData} />
+      ) : null}
     </div>
   );
 }

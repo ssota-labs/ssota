@@ -139,6 +139,7 @@ function ErdDiagramEl({
   fitViewMaxZoom,
   fitViewMode = "contain",
   showTopToolbar = true,
+  showViewportToolbar,
   interactionLocked = false,
 }: {
   model: ErdModel;
@@ -148,6 +149,7 @@ function ErdDiagramEl({
   fitViewMaxZoom?: number;
   fitViewMode?: "contain" | "cover";
   showTopToolbar?: boolean;
+  showViewportToolbar?: boolean;
   interactionLocked?: boolean;
 }) {
   const signature = React.useMemo(() => JSON.stringify(model), [model]);
@@ -169,6 +171,9 @@ function ErdDiagramEl({
 
   const [locked, setLocked] = React.useState(false);
   const flowInteraction = getFlowInteractionProps(interactionLocked, locked);
+  const viewportToolbarVisible =
+    showViewportToolbar === true ||
+    (showViewportToolbar !== false && !interactionLocked);
 
   const rfNodes = React.useMemo<Node[]>(() => {
     if (!ready) return [];
@@ -261,7 +266,13 @@ function ErdDiagramEl({
               onToggleLock={() => setLocked((v) => !v)}
             />
           ) : null}
-          {!interactionLocked ? <FlowViewportToolbar /> : null}
+          {viewportToolbarVisible ? (
+            <FlowViewportToolbar
+              fitViewPadding={fitViewPadding}
+              fitViewMinZoom={fitViewMinZoom}
+              fitViewMaxZoom={fitViewMaxZoom}
+            />
+          ) : null}
         </ReactFlow>
       ) : (
         <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
@@ -294,6 +305,8 @@ export const erdDiagramComponents: Record<string, CatalogComponent> = {
     const fitViewMode =
       props.fitViewMode === "cover" ? "cover" : "contain";
     const showTopToolbar = props.showTopToolbar !== false;
+    const showViewportToolbar =
+      props.showViewportToolbar === true ? true : undefined;
     const interactionLocked = props.interactionLocked === true;
     const model = coerceErd(node?.properties?.[property]);
 
@@ -322,6 +335,7 @@ export const erdDiagramComponents: Record<string, CatalogComponent> = {
           fitViewMaxZoom={fitViewMaxZoom}
           fitViewMode={fitViewMode}
           showTopToolbar={showTopToolbar}
+          showViewportToolbar={showViewportToolbar}
           interactionLocked={interactionLocked}
         />
       </ReactFlowProvider>

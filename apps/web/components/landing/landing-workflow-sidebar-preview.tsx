@@ -13,6 +13,7 @@ import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
 import type { createTranslator } from "@/lib/i18n";
 import { NavItemIcon } from "@/lib/console/nav-icons";
+import { useMobileViewport } from "@/lib/hooks/use-mobile-viewport";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 
 type SidebarPreviewNode = {
@@ -261,7 +262,7 @@ function buildGraphSchema(t: ReturnType<typeof createTranslator>) {
   };
 }
 
-function buildSchemaSpec(height: number): JsonRenderSpec {
+function buildSchemaSpec(height: number, isMobile: boolean): JsonRenderSpec {
   return {
     root: "erd",
     elements: {
@@ -271,11 +272,12 @@ function buildSchemaSpec(height: number): JsonRenderSpec {
           binding: "schema",
           property: "erd",
           height,
-          fitViewPadding: 0,
-          fitViewMinZoom: 0.4,
-          fitViewMaxZoom: 4,
-          fitViewMode: "cover",
+          fitViewPadding: isMobile ? 0.04 : 0,
+          fitViewMinZoom: isMobile ? 0.34 : 0.4,
+          fitViewMaxZoom: isMobile ? 0.72 : 4,
+          fitViewMode: isMobile ? "contain" : "cover",
           showTopToolbar: false,
+          showViewportToolbar: true,
           interactionLocked: true,
         },
       },
@@ -284,10 +286,15 @@ function buildSchemaSpec(height: number): JsonRenderSpec {
 }
 
 /** main 영역을 채우는 ERD — 부모 높이를 측정해 ErdDiagram numeric height에 전달 */
-function LandingSchemaPreview() {
+function LandingSchemaPreview({ isMobile }: { isMobile: boolean }) {
   const { t } = useLocale();
   const ref = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(360);
+
+  const spec = useMemo(
+    () => buildSchemaSpec(height, isMobile),
+    [height, isMobile],
+  );
 
   const bindingData = useMemo(
     () => ({
@@ -315,11 +322,12 @@ function LandingSchemaPreview() {
   }, []);
 
   return (
-    <div ref={ref} className="flex min-h-0 h-full w-full flex-1 flex-col">
-      <DynamicPageRenderer
-        spec={buildSchemaSpec(height)}
-        bindingData={bindingData}
-      />
+    <div
+      key={isMobile ? "erd-mobile" : "erd-desktop"}
+      ref={ref}
+      className="flex min-h-0 h-full w-full flex-1 flex-col"
+    >
+      <DynamicPageRenderer spec={spec} bindingData={bindingData} />
     </div>
   );
 }
@@ -372,7 +380,7 @@ function WorkflowSidebar() {
   }, []);
 
   return (
-    <aside className="flex h-full w-56 shrink-0 flex-col border-r bg-sidebar">
+    <aside className="hidden h-full w-56 shrink-0 flex-col border-r bg-sidebar md:flex">
       <div className="flex h-12 shrink-0 items-center gap-2 border-b px-3">
         <UsersThreeIcon className="size-4 shrink-0 text-muted-foreground" />
         <span className="truncate text-sm font-medium">SSOTA Labs</span>
@@ -429,29 +437,30 @@ function WorkflowSidebar() {
 
 export function LandingWorkflowSidebarPreview() {
   const { locale, t } = useLocale();
+  const isMobile = useMobileViewport();
 
   return (
     <div
-      key={locale}
+      key={`${locale}-${isMobile ? "m" : "d"}`}
       className="flex min-h-0 w-full flex-1 select-none bg-background"
       aria-hidden
     >
       <WorkflowSidebar />
 
       <div className="flex min-w-0 flex-1 flex-col bg-background">
-        <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-b px-4">
-          <div className="flex min-w-0 items-center gap-2">
+        <header className="grid h-10 shrink-0 grid-cols-1 items-center border-b px-3 md:h-12 md:grid-cols-[1fr_auto_1fr] md:gap-3 md:px-4">
+          <div className="hidden min-w-0 items-center gap-2 md:flex">
             <CubeIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className="truncate text-sm font-medium">ssota-dev</span>
           </div>
-          <span className="truncate text-sm text-muted-foreground">
+          <span className="truncate text-center text-sm font-medium md:font-normal md:text-muted-foreground">
             {t("landing.preview.sidebarDevDataModel")}
           </span>
-          <span aria-hidden />
+          <span aria-hidden className="hidden md:block" />
         </header>
 
         <main className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <LandingSchemaPreview />
+          <LandingSchemaPreview isMobile={isMobile} />
         </main>
       </div>
     </div>

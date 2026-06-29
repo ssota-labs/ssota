@@ -28,6 +28,7 @@ import {
   VisualFrame,
 } from "@/components/landing/landing-solution-visuals";
 import { LandingWorkflowSidebarPreview } from "@/components/landing/landing-workflow-sidebar-preview";
+import { useMobileViewport } from "@/lib/hooks/use-mobile-viewport";
 
 const AUTO_ADVANCE_MS = 6_500;
 const SHOWCASE_GRID_HEIGHT_CLASS = "md:h-[34rem]";
@@ -112,10 +113,10 @@ function buildFeaturePanels(
       description: t("landing.feature.contextDescription"),
       icon: GraphIcon,
       visual: (
-        <div className="h-full">
+        <div className="flex h-full min-h-0 flex-col">
           <VisualFrame
             label={t("landing.preview.contextVisualLabel")}
-            className="rounded-none shadow-none"
+            className="h-full min-h-0 rounded-none shadow-none"
           >
             <LandingContextGraphPreview />
           </VisualFrame>
@@ -261,6 +262,7 @@ export function LandingFeatureShowcase({
   });
   const { tablistRef, tabRefs, indicator } =
     useSlidingTabIndicator(activeIndex);
+  const isMobile = useMobileViewport();
 
   const selectPanel = useCallback((index: number) => {
     setActiveIndex(index);
@@ -437,6 +439,19 @@ export function LandingFeatureShowcase({
                             {panel.description}
                           </p>
                         </div>
+                        {isMobile && isActive ? (
+                          <div
+                            id={`feature-panel-${panel.id}`}
+                            role="tabpanel"
+                            aria-labelledby={`feature-tab-${panel.id}`}
+                            className={cn(
+                              "animate-in fade-in border-t border-border/50 bg-muted/10 duration-500 motion-reduce:animate-none md:hidden",
+                              LANDING_FEATURE_VISUAL_HEIGHT_CLASS,
+                            )}
+                          >
+                            {panel.visual}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -449,7 +464,7 @@ export function LandingFeatureShowcase({
             id={`feature-panel-${active.id}`}
             role="tabpanel"
             aria-labelledby={`feature-tab-${active.id}`}
-            className="min-h-0 bg-muted/10 p-0"
+            className="hidden min-h-0 bg-muted/10 p-0 md:block"
           >
             <div
               key={active.id}

@@ -2,14 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { CaretRightIcon } from "@phosphor-icons/react";
+import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
 import { useLocale } from "@/components/i18n/locale-provider";
 
 const FAQ_COUNT = 13;
+const FAQ_VISIBLE_COUNT = 5;
 
 export function LandingFaq() {
   const { t } = useLocale();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
   const faqItems = useMemo(
     () =>
@@ -20,6 +23,20 @@ export function LandingFaq() {
       })),
     [t],
   );
+
+  const visibleItems = showAll
+    ? faqItems
+    : faqItems.slice(0, FAQ_VISIBLE_COUNT);
+  const hasMore = faqItems.length > FAQ_VISIBLE_COUNT;
+
+  const toggleShowAll = () => {
+    setShowAll((current) => {
+      if (current && openIndex !== null && openIndex >= FAQ_VISIBLE_COUNT) {
+        setOpenIndex(null);
+      }
+      return !current;
+    });
+  };
 
   return (
     <section id="faq" className="border-t border-border/40 bg-background">
@@ -32,7 +49,7 @@ export function LandingFaq() {
           className="border-border divide-border mt-12 divide-y overflow-hidden rounded-lg border md:mt-16"
           data-testid="landing-faq-list"
         >
-          {faqItems.map((item, index) => {
+          {visibleItems.map((item, index) => {
             const isOpen = openIndex === index;
 
             return (
@@ -84,6 +101,20 @@ export function LandingFaq() {
             );
           })}
         </div>
+
+        {hasMore ? (
+          <div className="mt-4 flex justify-center md:mt-6">
+            <Button
+              type="button"
+              variant="outline"
+              data-testid="landing-faq-show-more"
+              aria-expanded={showAll}
+              onClick={toggleShowAll}
+            >
+              {showAll ? t("landing.faq.showLess") : t("landing.faq.showMore")}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </section>
   );

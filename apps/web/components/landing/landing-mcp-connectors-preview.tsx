@@ -67,23 +67,13 @@ export function LandingMcpConnectorsPreview({
     [connectors, t],
   );
 
-  const connectedCount = useMemo(() => {
-    let count = 0;
-    for (const connector of connectors) {
-      if (LANDING_CONNECTED.has(connector.provider)) count += 1;
-    }
-    return count;
-  }, [connectors]);
-
   return (
     <VisualFrame label={t("landing.preview.mcpVisualLabel")}>
-      <BrowseWorkspace.Frame className="bg-muted/10" testId="landing-mcp-connectors">
-        <BrowseWorkspace.Header
-          title={t("landing.solution.mcpTitle")}
-          description={t("landing.solution.mcpDescription", {
-            count: connectedCount,
-          })}
-        />
+      <BrowseWorkspace.Frame
+        className="bg-muted/10 [&>div]:gap-5 [&>div]:px-4 [&>div]:py-4"
+        testId="landing-mcp-connectors"
+      >
+        <BrowseWorkspace.Header title={t("landing.solution.mcpTitle")} />
 
         {groups.map((group) => (
           <BrowseWorkspace.Section key={group.theme} label={group.themeLabel}>

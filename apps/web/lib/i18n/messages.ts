@@ -618,6 +618,8 @@ export const en = {
     },
     faq: {
       heading: "Got more questions?",
+      showMore: "Show more",
+      showLess: "Show less",
       q0Question: "How is this different from using coding agents directly?",
       q0Summary: "A context layer that tells your agents what's true right now.",
       q0Answer:
@@ -1311,6 +1313,8 @@ export const ko = {
     },
     faq: {
       heading: "궁금한 점들이 더 있나요?",
+      showMore: "더보기",
+      showLess: "접기",
       q0Question: "그냥 코딩 에이전트를 직접 쓰는 것과 무엇이 다른가요?",
       q0Summary: "지금 무엇이 진실인지 에이전트에게 알려주는 맥락 레이어입니다.",
       q0Answer:

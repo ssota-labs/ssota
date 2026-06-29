@@ -92,15 +92,6 @@ export function LandingHeroPrompt() {
       highlights: t(`landing.hero.prompt${index}Highlights`).split("|"),
     }));
   }, [t]);
-  const longestPromptText = useMemo(
-    () =>
-      prompts.reduce(
-        (longest, prompt) =>
-          prompt.text.length > longest.length ? prompt.text : longest,
-        prompts[0]?.text ?? "",
-      ),
-    [prompts],
-  );
 
   const [promptIndex, setPromptIndex] = useState(0);
   const [charIndex, setCharIndex] = useState(1);
@@ -176,17 +167,11 @@ export function LandingHeroPrompt() {
     <div
       aria-label={t("landing.hero.promptLabel")}
       className={cn(
-        "group relative inline-grid max-w-[calc(100vw-3rem)] cursor-default py-5 pr-14 pl-5 text-left transition-[background-color,box-shadow] duration-200 ease-out md:py-6",
+        "group flex w-full max-w-2xl items-center gap-3 px-4 py-5 text-left transition-[background-color,box-shadow] duration-200 ease-out md:gap-4 md:px-5 md:py-6",
         landingGlassPillClassName(),
       )}
     >
-      <span
-        aria-hidden
-        className="invisible col-start-1 row-start-1 whitespace-nowrap text-sm leading-6 md:text-base"
-      >
-        {longestPromptText}
-      </span>
-      <span className="col-start-1 row-start-1 min-w-0 text-sm leading-6 whitespace-nowrap text-foreground/90 md:text-base">
+      <span className="min-w-0 flex-1 overflow-hidden text-sm leading-6 text-ellipsis whitespace-nowrap text-foreground/90 md:text-base">
         <span aria-hidden="true">
           {renderVisibleText(
             currentPrompt.text,
@@ -202,7 +187,7 @@ export function LandingHeroPrompt() {
       </span>
       <span
         aria-hidden="true"
-        className="text-foreground absolute top-1/2 right-4 flex size-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-primary/10 ring-1 ring-inset ring-primary/10 backdrop-blur-sm"
+        className="text-foreground flex size-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-primary/10 ring-1 ring-inset ring-primary/10 backdrop-blur-sm"
       >
         <ArrowBendDownLeft className="size-4" weight="bold" />
       </span>

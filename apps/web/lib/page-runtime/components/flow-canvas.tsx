@@ -73,14 +73,16 @@ function FlowReady({
   fitViewPadding,
   fitViewMinZoom,
   fitViewMaxZoom,
+  fitViewOffsetY = 0,
 }: {
   nodeIds: string[];
   fitViewPadding: number;
   fitViewMinZoom?: number;
   fitViewMaxZoom?: number;
+  fitViewOffsetY?: number;
 }) {
   const initialized = useNodesInitialized();
-  const { fitView } = useReactFlow();
+  const { fitView, getViewport, setViewport } = useReactFlow();
   const updateNodeInternals = useUpdateNodeInternals();
   const key = nodeIds.join(",");
 
@@ -98,8 +100,19 @@ function FlowReady({
       ...(fitViewMinZoom !== undefined ? { minZoom: fitViewMinZoom } : {}),
       ...(fitViewMaxZoom !== undefined ? { maxZoom: fitViewMaxZoom } : {}),
     };
+    const applyOffset = () => {
+      if (fitViewOffsetY === 0) return;
+      const vp = getViewport();
+      setViewport(
+        { x: vp.x, y: vp.y + fitViewOffsetY, zoom: vp.zoom },
+        { duration: 0 },
+      );
+    };
     const refit = () => {
       void fitView(options);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(applyOffset);
+      });
     };
 
     refit();
@@ -115,7 +128,7 @@ function FlowReady({
       window.clearTimeout(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialized, key, fitView, fitViewPadding, fitViewMinZoom, fitViewMaxZoom]);
+  }, [initialized, key, fitView, getViewport, setViewport, fitViewPadding, fitViewMinZoom, fitViewMaxZoom, fitViewOffsetY]);
 
   return null;
 }
@@ -145,7 +158,10 @@ function FlowCanvasEl({
   fitViewPadding,
   fitViewMinZoom,
   fitViewMaxZoom,
+  fitViewOffsetY = 0,
   showTopToolbar = true,
+  showViewportToolbar,
+  viewportToolbarPosition = "bottom-right",
   interactionLocked = false,
 }: {
   mode: "jsonb" | "graph";
@@ -163,7 +179,10 @@ function FlowCanvasEl({
   fitViewPadding: number;
   fitViewMinZoom?: number;
   fitViewMaxZoom?: number;
+  fitViewOffsetY?: number;
   showTopToolbar?: boolean;
+  showViewportToolbar?: boolean;
+  viewportToolbarPosition?: "bottom-right" | "top-right";
   interactionLocked?: boolean;
 }) {
   const onAction = useAction();
@@ -203,6 +222,9 @@ function FlowCanvasEl({
   // Toolbar lock toggles zoom/pan in product canvases; landing previews use hand-pan only.
   const [locked, setLocked] = React.useState(false);
   const flowInteraction = getFlowInteractionProps(interactionLocked, locked);
+  const viewportToolbarVisible =
+    showViewportToolbar === true ||
+    (showViewportToolbar !== false && !interactionLocked);
 
   // ── Detail sheet ────────────────────────────────────────────────────────
   const [activeId, setActiveId] = React.useState<string | null>(null);
@@ -417,9 +439,9 @@ function FlowCanvasEl({
       ref={containerRef}
       className={cn(
         "ssota-flow border-border bg-card relative w-full overflow-hidden border",
-        interactionLocked ? "ssota-flow--hand-pan rounded-none" : "rounded-lg",
+        interactionLocked ? "ssota-flow--hand-pan h-full rounded-none" : "rounded-lg",
       )}
-      style={{ height }}
+      style={interactionLocked ? undefined : { height }}
     >
       <style>{FLOW_STYLES}</style>
       <style>{FLOW_HAND_PAN_STYLES}</style>
@@ -451,6 +473,7 @@ function FlowCanvasEl({
             fitViewPadding={fitViewPadding}
             fitViewMinZoom={fitViewMinZoom}
             fitViewMaxZoom={fitViewMaxZoom}
+            fitViewOffsetY={fitViewOffsetY}
           />
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
           {showTopToolbar ? (
@@ -459,7 +482,14 @@ function FlowCanvasEl({
               onToggleLock={() => setLocked((v) => !v)}
             />
           ) : null}
-          {!interactionLocked ? <FlowViewportToolbar /> : null}
+          {viewportToolbarVisible ? (
+            <FlowViewportToolbar
+              position={viewportToolbarPosition}
+              fitViewPadding={fitViewPadding}
+              fitViewMinZoom={fitViewMinZoom}
+              fitViewMaxZoom={fitViewMaxZoom}
+            />
+          ) : null}
         </ReactFlow>
       ) : (
         <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
@@ -552,7 +582,15 @@ export const flowComponents: Record<string, CatalogComponent> = {
       typeof props.fitViewMaxZoom === "number" && props.fitViewMaxZoom > 0
         ? props.fitViewMaxZoom
         : undefined;
+    const fitViewOffsetY =
+      typeof props.fitViewOffsetY === "number" ? props.fitViewOffsetY : 0;
+    const viewportToolbarPosition =
+      props.viewportToolbarPosition === "top-right"
+        ? "top-right"
+        : "bottom-right";
     const showTopToolbar = props.showTopToolbar !== false;
+    const showViewportToolbar =
+      props.showViewportToolbar === true ? true : undefined;
     const interactionLocked = props.interactionLocked === true;
     return (
       <ReactFlowProvider>
@@ -572,7 +610,10 @@ export const flowComponents: Record<string, CatalogComponent> = {
           fitViewPadding={fitViewPadding}
           fitViewMinZoom={fitViewMinZoom}
           fitViewMaxZoom={fitViewMaxZoom}
+          fitViewOffsetY={fitViewOffsetY}
           showTopToolbar={showTopToolbar}
+          showViewportToolbar={showViewportToolbar}
+          viewportToolbarPosition={viewportToolbarPosition}
           interactionLocked={interactionLocked}
         />
       </ReactFlowProvider>
