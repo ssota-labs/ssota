@@ -14,7 +14,7 @@ export default async function SettingsAppearancePage() {
       title={t("settings.appearance")}
       description={t("settings.appearancePageDescription")}
     >
-      <SettingsSection title={t("settings.appearance")}>
+      <SettingsSection>
         <SettingsRow
           title={t("settings.appearanceTitle")}
           description={t("settings.appearanceDescription")}

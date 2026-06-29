@@ -26,18 +26,20 @@ export function SettingsSection({
   description,
   children,
 }: {
-  title: string;
+  title?: string;
   description?: string;
   children: ReactNode;
 }) {
   return (
     <section className="space-y-4">
-      <div className="space-y-1">
-        <h2 className="text-sm font-semibold">{title}</h2>
-        {description ? (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        ) : null}
-      </div>
+      {title || description ? (
+        <div className="space-y-1">
+          {title ? <h2 className="text-sm font-semibold">{title}</h2> : null}
+          {description ? (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          ) : null}
+        </div>
+      ) : null}
       <div className="divide-y rounded-lg border bg-card">{children}</div>
     </section>
   );
@@ -57,17 +59,17 @@ export function SettingsRow({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between",
+        "grid grid-cols-1 gap-4 p-5 sm:grid-cols-[minmax(0,1fr)_min(100%,20rem)] sm:items-start sm:gap-6",
         className,
       )}
     >
-      <div className="min-w-0 space-y-1 sm:max-w-md">
+      <div className="min-w-0 space-y-1">
         <div className="text-sm font-medium">{title}</div>
         {description ? (
           <p className="text-sm text-muted-foreground">{description}</p>
         ) : null}
       </div>
-      <div className="w-full shrink-0 sm:max-w-sm">{children}</div>
+      <div className="min-w-0 w-full sm:justify-self-end">{children}</div>
     </div>
   );
 }

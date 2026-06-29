@@ -256,7 +256,7 @@ export function AppSidebar({
         </nav>
       </ScrollArea>
 
-      <div className="space-y-0.5 border-t p-2">
+      <div className="shrink-0 space-y-0.5 border-t p-2">
         <Link
           href={orgPath(ctx, "settings")}
           prefetch
@@ -270,7 +270,7 @@ export function AppSidebar({
           <span className={SIDEBAR_FOOTER_LEADING_CLASS}>
             <NavItemIcon iconKey="settings" className="size-4 shrink-0" />
           </span>
-          {t("nav.settings")}
+          <span className="min-w-0 truncate">{t("nav.settings")}</span>
         </Link>
         <SidebarProfileMenu userEmail={userEmail} signOutAction={signOutAction} />
       </div>
