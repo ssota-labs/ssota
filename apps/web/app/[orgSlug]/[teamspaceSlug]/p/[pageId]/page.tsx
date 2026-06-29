@@ -6,6 +6,8 @@ import { resolveOrgPage } from "@/lib/console/resolve-org-page";
 import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
+import { PageSiblingNav } from "@/components/console/page-sibling-nav";
+import { loadPageSiblingNav } from "@/lib/console/page-sibling-nav";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
 import {
@@ -149,8 +151,15 @@ export default async function TreePage({
     });
   }
 
+  const pagePort = getPagePort(project.id);
+  const siblingNav = await loadPageSiblingNav(pagePort, page, (id) =>
+    orgPath(routeCtx, "p", id),
+  );
+
   return (
-    <DynamicPageRenderer
+    <>
+      {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
+      <DynamicPageRenderer
       spec={page.spec}
       pageBindings={page.bindings}
       bindingData={bindingData}
@@ -168,5 +177,6 @@ export default async function TreePage({
           : null
       }
     />
+    </>
   );
 }
