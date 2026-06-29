@@ -50,7 +50,7 @@ test.describe("landing page", () => {
     await expect(page.getByTestId("connector-slack")).toBeVisible();
 
     await expect(
-      page.getByRole("heading", { name: "부담 없이 시작하세요" }),
+      page.getByRole("heading", { name: "부담 없이 시작하세요." }),
     ).toBeVisible();
     await expect(page.getByText("Cloud Starter", { exact: true })).toBeVisible();
     await expect(

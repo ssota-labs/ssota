@@ -660,7 +660,7 @@ export const en = {
       },
     },
     pricing: {
-      heading: "Start without the pressure",
+      heading: "Start without the pressure.",
       subtitle:
         "Core features are free and open source. If running servers is a burden, subscribe to SSOTA Cloud — the operations layer that makes your AI agent team work to your product's intent.",
       recommended: "Popular",
@@ -1435,7 +1435,7 @@ export const ko = {
       },
     },
     pricing: {
-      heading: "부담 없이 시작하세요",
+      heading: "부담 없이 시작하세요.",
       subtitle:
         "핵심 기능은 오픈소스로 무료. 서버 운영이 부담되면 SSOTA 클라우드로 AI 에이전트팀이 제품 의도에 맞게 일하도록 만드는 운영 레이어를 구독하세요.",
       recommended: "추천",
