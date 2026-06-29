@@ -209,12 +209,12 @@ export default async function HomePage() {
             fill
             priority
             sizes="100vw"
-            className="scale-105 object-cover object-center blur-[2px]"
+            className="scale-110 object-cover object-center blur-3xl"
           />
         </div>
         <div
           aria-hidden
-          className="absolute inset-0 bg-background/15 backdrop-blur-[2px]"
+          className="absolute inset-0 bg-background/30 backdrop-blur-2xl"
         />
         <div
           aria-hidden
