@@ -1,20 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 import { chatStubWebEnv } from "./chat-stub-env";
+import { E2E_STRIPE_WEBHOOK_SECRET } from "./helpers/billing";
 
 const webPort = process.env.WEB_PORT ?? "3100";
 const mcpPort = process.env.MCP_PORT ?? "3101";
-const designLabPort = process.env.DESIGN_LAB_PORT ?? "6107";
-// Use localhost consistently: connect OAuth derives redirect origin from the
-// request host; browser cookies must match redirect targets.
 const webUrl = process.env.WEB_URL ?? `http://localhost:${webPort}`;
 const mcpUrl = process.env.MCP_URL ?? `http://127.0.0.1:${mcpPort}`;
-const designLabUrl =
-  process.env.DESIGN_LAB_URL ?? `http://127.0.0.1:${designLabPort}`;
-
-process.env.MCP_URL ??= mcpUrl;
-process.env.DATABASE_URL ??=
-  process.env.DATABASE_URL ??
-  "postgresql://postgres:postgres@127.0.0.1:54322/postgres";
 
 const defaultSupabaseEnv = {
   NEXT_PUBLIC_SUPABASE_URL:
@@ -31,34 +22,39 @@ const defaultSupabaseEnv = {
     "postgresql://postgres:postgres@127.0.0.1:54322/postgres",
 };
 
+/** Stripe-mode web env for billing gate + webhook API specs. */
+const billingStripeWebEnv = {
+  ...chatStubWebEnv,
+  BILLING: "stripe",
+  STRIPE_SECRET_KEY:
+    process.env.STRIPE_SECRET_KEY ??
+    "sk_test_e2e000000000000000000000000000000000000000000000000000000000000",
+  STRIPE_WEBHOOK_SECRET: E2E_STRIPE_WEBHOOK_SECRET,
+  STRIPE_PRICE_STARTER: process.env.STRIPE_PRICE_STARTER ?? "price_starter_e2e",
+  STRIPE_PRICE_BUSINESS: process.env.STRIPE_PRICE_BUSINESS ?? "price_business_e2e",
+  STRIPE_TRIAL_DAYS: process.env.STRIPE_TRIAL_DAYS ?? "0",
+};
+
 export default defineConfig({
   testDir: "./tests",
-  testIgnore: "**/billing-stripe/**",
+  testMatch: "**/billing-stripe/**/*.spec.ts",
   globalSetup: "./global-setup.ts",
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
-  outputDir: "./report/test-results",
+  outputDir: "./report/billing-stripe-results",
   reporter: [
     ["list"],
-    ["html", { outputFolder: "./report/html", open: "never" }],
-    ["json", { outputFile: "./report/results.json" }],
+    ["html", { outputFolder: "./report/billing-stripe-html", open: "never" }],
+    ["json", { outputFile: "./report/billing-stripe-results.json" }],
   ],
   use: {
     baseURL: webUrl,
-    trace: "on",
-    screenshot: "on",
-    video: "on",
+    trace: "on-first-retry",
+    screenshot: "only-on-failure",
+    video: "retain-on-failure",
   },
-  expect: {
-    toHaveScreenshot: {
-      animations: "disabled",
-      maxDiffPixelRatio: 0.01,
-    },
-  },
-  snapshotPathTemplate:
-    "{testDir}/../design-lab/snapshots/{testFilePath}/{arg}{ext}",
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {
@@ -69,7 +65,7 @@ export default defineConfig({
       env: {
         ...process.env,
         ...defaultSupabaseEnv,
-        ...chatStubWebEnv,
+        ...billingStripeWebEnv,
         MARKETING_ONLY: "false",
         PORT: webPort,
       },
@@ -84,12 +80,6 @@ export default defineConfig({
         ...defaultSupabaseEnv,
         PORT: mcpPort,
       },
-    },
-    {
-      command: `pnpm --filter design-lab exec vite --port ${designLabPort} --host 127.0.0.1`,
-      url: designLabUrl,
-      reuseExistingServer: !!process.env.REUSE_SERVERS,
-      timeout: 120_000,
     },
   ],
 });
