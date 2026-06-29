@@ -86,7 +86,7 @@ export function OrgMemberListTable({
 
   return (
     <div className="min-w-0 overflow-x-auto [scrollbar-width:thin]">
-      <div className="min-w-[640px] rounded-md border">
+      <div className="min-w-[640px] rounded-md border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
