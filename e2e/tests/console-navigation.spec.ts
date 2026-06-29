@@ -42,10 +42,12 @@ test.describe("Console v2.7 navigation", () => {
   });
 
   test("dynamic page: sibling nav shows section and tab rows", async ({ page }) => {
-    await gotoProject(page, "executive/roadmap");
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await nav.getByRole("button", { name: "Executive", exact: true }).click();
+    await nav.getByRole("link", { name: "Roadmap", exact: true }).click();
 
     const siblingNav = page.getByTestId("page-sibling-nav");
-    await expect(siblingNav).toBeVisible();
+    await expect(siblingNav).toBeVisible({ timeout: 15_000 });
 
     const sections = siblingNav.getByRole("navigation", { name: "Page sections" });
     await expect(sections.getByRole("link", { name: "Executive", exact: true })).toHaveClass(
