@@ -21,6 +21,7 @@ import { getLandingTranslations } from "@/lib/i18n/server";
 import type { createTranslator } from "@/lib/i18n";
 import { LocaleProvider } from "@/components/i18n/locale-provider";
 import { LandingBetaSignup } from "@/components/landing/landing-beta-signup";
+import { LandingBlurredBackground } from "@/components/landing/landing-blurred-background";
 import { LandingDarkMode } from "@/components/landing/landing-dark-mode";
 import { LandingFaq } from "@/components/landing/landing-faq";
 import { LandingFooter } from "@/components/landing/landing-footer";
@@ -202,24 +203,7 @@ export default async function HomePage() {
       </LandingHeader>
 
       <section className="relative isolate overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden" aria-hidden>
-          <Image
-            src="/landing/hero-background.jpg"
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-            className="scale-110 object-cover object-center blur-3xl"
-          />
-        </div>
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-background/30 backdrop-blur-2xl"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-gradient-to-b from-background/5 via-background/25 to-background/90"
-        />
+        <LandingBlurredBackground priority />
 
         <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl items-center justify-center px-6 py-16 lg:py-20">
           <div className="mx-auto flex w-full flex-col items-center gap-12 md:gap-16">
@@ -265,16 +249,16 @@ export default async function HomePage() {
               return (
                 <Card
                   key={card.title}
-                  className="border-border/60 bg-card/50 text-left shadow-none"
+                  className="border-border/60 bg-card/50 text-left shadow-none [--card-spacing:--spacing(5)] md:[--card-spacing:--spacing(6)]"
                 >
-                  <CardHeader className="gap-3">
+                  <CardHeader className="gap-5 md:gap-6">
                     <Icon
-                      className="mb-4 size-7 text-muted-foreground"
+                      className="mb-6 size-7 text-muted-foreground md:mb-8"
                       weight="light"
                       aria-hidden
                     />
                     <CardTitle className="text-lg">{card.title}</CardTitle>
-                    <CardDescription className="text-base leading-7">
+                    <CardDescription className="text-base leading-7 md:leading-8">
                       {renderHighlightedDetailLines(
                         card.detailLines,
                         card.highlights,
@@ -301,19 +285,22 @@ export default async function HomePage() {
       <LandingPricing />
       <LandingFaq />
 
-      <section className="mx-auto max-w-4xl px-6 py-20 text-center">
-        <div className={landingGlassPanelClassName("p-8 md:p-12")}>
-          <Badge
-            variant="outline"
-            className="border-border/50 bg-background/50 backdrop-blur-sm"
-          >
-            {t("landing.cta.badge")}
-          </Badge>
-          <h2 className="mt-4 text-3xl font-semibold tracking-tight">
-            {t("landing.cta.heading")}
-          </h2>
-          <div className="mt-8 flex justify-center">
-            <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
+      <section className="relative isolate overflow-hidden px-6 py-20">
+        <LandingBlurredBackground />
+        <div className="relative z-10 mx-auto max-w-4xl text-center">
+          <div className={landingGlassPanelClassName("p-8 md:p-12")}>
+            <Badge
+              variant="outline"
+              className="border-border/50 bg-background/50 backdrop-blur-sm"
+            >
+              {t("landing.cta.badge")}
+            </Badge>
+            <h2 className="mt-4 text-3xl font-semibold tracking-tight">
+              {t("landing.cta.heading")}
+            </h2>
+            <div className="mt-8 flex justify-center">
+              <LandingBetaSignup triggerClassName="h-11 px-6 text-sm" />
+            </div>
           </div>
         </div>
       </section>

@@ -492,15 +492,15 @@ export const en = {
     problem: {
       headingTop: "We kept adding coding agents,",
       headingBottom: "so why does our team work the same?",
-      card1Title: "We don't know what's right",
+      card1Title: "We don't know what's right.",
       card1Lines:
         "PRD, Slack, Notion, the repo… it's all there,|but we don't know what's current.|And what to reference for a task isn't even decided.",
       card1Highlights: "what's current|what to reference",
-      card2Title: "The agents diverge",
+      card2Title: "The agents diverge.",
       card2Lines:
         "Each agent reads only its own fragment.|So similar tasks produce diverging results.",
       card2Highlights: "its own fragment|diverging results",
-      card3Title: "More work just keeping up",
+      card3Title: "More work just keeping up.",
       card3Lines:
         "Prompt tweaks, reviews, re-explaining.|We're busy aligning intent instead of coding.",
       card3Highlights: "Prompt tweaks|aligning intent",
@@ -660,7 +660,7 @@ export const en = {
       },
     },
     pricing: {
-      heading: "Start without the pressure",
+      heading: "Start without the pressure.",
       subtitle:
         "Core features are free and open source. If running servers is a burden, subscribe to SSOTA Cloud — the operations layer that makes your AI agent team work to your product's intent.",
       recommended: "Popular",
@@ -696,7 +696,8 @@ export const en = {
     },
     cta: {
       badge: "SaaS + partner setup",
-      heading: "Connect an AI CPO to your existing coding agents",
+      heading:
+        "Connect an AI CPO to your coding agents and trust it around the clock.",
     },
     faq: {
       heading: "Got more questions?",
@@ -1269,15 +1270,15 @@ export const ko = {
     problem: {
       headingTop: "분명히 코딩 에이전트를 늘렸는데,",
       headingBottom: "우리 팀은 왜 똑같이 일하죠?",
-      card1Title: "뭐가 맞는지 모릅니다",
+      card1Title: "뭐가 맞는지 모릅니다.",
       card1Lines:
         "PRD, 슬랙, Notion, 레포… 다 있는데,|뭐가 최신인지 모릅니다.|이 작업에 뭘 참고해야 하는지도 정해져 있지 않습니다.",
       card1Highlights: "뭐가 최신인지|뭘 참고해야 하는지",
-      card2Title: "에이전트는 엇갈립니다",
+      card2Title: "에이전트는 엇갈립니다.",
       card2Lines:
         "에이전트마다 다른 조각만 읽습니다.|그래서 비슷한 일을 시켜도 결과가 엇갈립니다.",
       card2Highlights: "다른 조각만|엇갈립니다",
-      card3Title: "맞춰 주는 일이 늘었습니다",
+      card3Title: "맞춰 주는 일이 늘었습니다.",
       card3Lines:
         "프롬프트 보강, 리뷰, 재설명.|코딩 대신 의도를 맞추느라 바빠집니다.",
       card3Highlights: "프롬프트 보강|의도를 맞추느라",
@@ -1435,7 +1436,7 @@ export const ko = {
       },
     },
     pricing: {
-      heading: "부담 없이 시작하세요",
+      heading: "부담 없이 시작하세요.",
       subtitle:
         "핵심 기능은 오픈소스로 무료. 서버 운영이 부담되면 SSOTA 클라우드로 AI 에이전트팀이 제품 의도에 맞게 일하도록 만드는 운영 레이어를 구독하세요.",
       recommended: "추천",
@@ -1471,7 +1472,8 @@ export const ko = {
     },
     cta: {
       badge: "SaaS + partner setup",
-      heading: "기존 코딩 에이전트에 AI CPO를 연결하세요",
+      heading:
+        "코딩 에이전트에 AI CPO를 연결하고 24시간 무인 개발팀을 운영하세요.",
     },
     faq: {
       heading: "궁금한 점들이 더 있나요?",

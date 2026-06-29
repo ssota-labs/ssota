@@ -30,7 +30,7 @@ test.describe("landing page", () => {
         name: /우리 팀은 왜 똑같이 일하죠/,
       }),
     ).toBeVisible();
-    await expect(page.getByText("뭐가 맞는지 모릅니다")).toBeVisible();
+    await expect(page.getByText("뭐가 맞는지 모릅니다.")).toBeVisible();
     await expect(page.getByText("맞춰 주는 일이 늘었습니다")).toBeVisible();
 
     await expect(
@@ -50,7 +50,7 @@ test.describe("landing page", () => {
     await expect(page.getByTestId("connector-slack")).toBeVisible();
 
     await expect(
-      page.getByRole("heading", { name: "부담 없이 시작하세요" }),
+      page.getByRole("heading", { name: "부담 없이 시작하세요." }),
     ).toBeVisible();
     await expect(page.getByText("Cloud Starter", { exact: true })).toBeVisible();
     await expect(
@@ -149,7 +149,10 @@ test.describe("landing page", () => {
 
     await page
       .locator("section")
-      .filter({ hasText: "기존 코딩 에이전트에 AI CPO를 연결하세요" })
+      .filter({
+        hasText:
+          "코딩 에이전트에 AI CPO를 연결하고 24시간 믿고 맡기세요.",
+      })
       .getByRole("button", { name: "베타 신청하기" })
       .click();
     await expect(
