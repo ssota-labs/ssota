@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { ConsolePort, Organization, Teamspace } from "@ssota/core";
+import type { ConsolePort, Organization, OrganizationMembership, Teamspace } from "@ssota/core";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
@@ -44,6 +44,53 @@ export function createConsolePort(db: Db): ConsolePort {
         (row) =>
           ({ id: row.id, slug: row.slug, name: row.name }) satisfies Organization,
       );
+    },
+
+    async getOrgMembership(organizationId, userId) {
+      const rows = await db
+        .select({
+          organizationId: schema.organizationMemberships.organizationId,
+          userId: schema.organizationMemberships.userId,
+          role: schema.organizationMemberships.role,
+        })
+        .from(schema.organizationMemberships)
+        .where(
+          and(
+            eq(schema.organizationMemberships.organizationId, organizationId),
+            eq(schema.organizationMemberships.userId, userId),
+          ),
+        )
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return {
+        organizationId: row.organizationId,
+        userId: row.userId,
+        role: row.role,
+      } satisfies OrganizationMembership;
+    },
+
+    async isOrgBillingAdmin(organizationId, userId) {
+      const [membership, orgRows] = await Promise.all([
+        db
+          .select({ role: schema.organizationMemberships.role })
+          .from(schema.organizationMemberships)
+          .where(
+            and(
+              eq(schema.organizationMemberships.organizationId, organizationId),
+              eq(schema.organizationMemberships.userId, userId),
+            ),
+          )
+          .limit(1),
+        db
+          .select({ ownerUserId: schema.organizations.ownerUserId })
+          .from(schema.organizations)
+          .where(eq(schema.organizations.id, organizationId))
+          .limit(1),
+      ]);
+      const org = orgRows[0];
+      if (org?.ownerUserId === userId) return true;
+      return membership[0]?.role === "owner";
     },
 
     async getTeamspaceBySlug(organizationId, teamspaceSlug) {
