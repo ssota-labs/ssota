@@ -1,17 +1,22 @@
 #!/usr/bin/env tsx
 /**
- * Stripe billing scenario runner — lists the SSOT catalog and runs automated tiers.
+ * Stripe billing scenario runner — SSOT catalog, automated tiers, CLI/manual checklists.
  *
  * Usage:
- *   pnpm stripe:smoke              # print catalog summary + manual/cli checklist
- *   pnpm stripe:smoke --list       # full scenario table
+ *   pnpm stripe:smoke              # summary + CLI/agent-browser checklist
+ *   pnpm stripe:smoke --list       # TSV of all scenarios
+ *   pnpm stripe:smoke --clock      # Test Clock runbook (E1–E4, E6, E7)
  *   pnpm stripe:smoke --run unit   # Vitest: core + ee
  *   pnpm stripe:smoke --run integration
  *   pnpm stripe:smoke --run e2e-oss
  *   pnpm stripe:smoke --run e2e-stripe
  *   pnpm stripe:smoke --run all    # unit + integration + e2e-oss + e2e-stripe
+ *
+ * @see e2e/helpers/billing-scenarios.ts
+ * @see packages/ee/docs/test-clocks.md
  */
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import {
@@ -31,7 +36,77 @@ function printHeader(title: string) {
 function scenarioRow(s: BillingScenario): string {
   const auto = s.automation.padEnd(8);
   const tier = s.tier.padEnd(12);
-  return `  ${s.id.padEnd(6)} ${auto} ${tier} ${s.title}`;
+  const note = s.notes ? ` — ${s.notes}` : "";
+  return `  ${s.id.padEnd(6)} ${auto} ${tier} ${s.title}${note}`;
+}
+
+function printTestClockRunbook() {
+  const docPath = join(root, "packages/ee/docs/test-clocks.md");
+  printHeader("Test Clock runbook (E1–E4, E6, E7)");
+  console.log(`Full doc: ${docPath}\n`);
+  console.log(`
+Prerequisites
+  • Stripe CLI logged in (test mode): stripe login
+  • Web on :3000 with BILLING=stripe and sk_test_ keys in apps/web/.env.local
+  • Terminal A: pnpm dev --filter web
+  • Terminal B: stripe listen --forward-to http://localhost:3000/api/webhooks/stripe
+    (copy whsec_… into STRIPE_WEBHOOK_SECRET)
+
+Setup (once per clock run)
+  1. Stripe Dashboard → Developers → Test clocks → Create clock
+  2. Create Customer attached to the clock
+  3. Console → unpaid org → Subscribe (customer must use clock-backed customer)
+     Or create subscription via API with trial if testing E1
+
+Verify DB after each step (optional):
+  psql "$DATABASE_URL" -c \\
+    "SELECT status, cancel_at_period_end, current_period_end FROM organization_billing WHERE organization_id = '<org-uuid>';"
+
+| Step | Scenario | Action | Expect in DB / UI |
+|------|----------|--------|-------------------|
+| E1   | Trial start | Checkout with trial (STRIPE_TRIAL_DAYS>0) or subscription.created | status = trialing |
+| E2   | Trial → active | Advance clock past trial end (card 4242…) | status = active |
+| E3   | Renewal | Advance one billing period | active, current_period_end moved forward |
+| E4   | Payment fail | Attach failing card 4000000000000341, advance period | status = past_due; gate → billing |
+| E6   | Cancel schedule | Portal → cancel at period end | active + cancel_at_period_end = true |
+| E7   | Period end cancel | Advance clock past cancel date | status = canceled (or deleted webhook) |
+
+Playwright webhook fixtures (CI, no clock): pnpm e2e:billing -- tests/billing-stripe/webhook.spec.ts
+Gate past_due (E5): pnpm e2e:billing -- tests/billing-stripe/gate.spec.ts --grep past_due
+`);
+  try {
+    const doc = readFileSync(docPath, "utf8");
+    const scenarios = doc.match(/\| Trial start[\s\S]*?\| Subscription deleted[\s\S]*?\|/);
+    if (scenarios) {
+      printHeader("Reference table (from test-clocks.md)");
+      console.log(scenarios[0]);
+    }
+  } catch {
+    /* doc optional at read time */
+  }
+}
+
+function printManualChecklist() {
+  printHeader("CLI / agent-browser checklist");
+  console.log(`
+1. Webhooks (F1, live paths):
+   stripe listen --forward-to http://localhost:3000/api/webhooks/stripe
+
+2. Live Checkout (B8, C1–C3, C5, G1):
+   STRIPE_E2E_LIVE=1 pnpm e2e:billing:live
+   agent-browser on checkout.stripe.com — card 4242 4242 4242 4242
+
+3. Customer Portal (D1–D3, D6):
+   Settings → Billing → Manage in Stripe Portal
+
+4. Test Clock (E1–E4, E6, E7):
+   pnpm stripe:smoke --clock
+
+5. Declined card (C5): 4000 0000 0000 0002
+
+6. Reports + per-test video:
+   pnpm e2e:billing:record && pnpm e2e:billing:open hub
+`);
 }
 
 function printSummary() {
@@ -58,20 +133,7 @@ function printSummary() {
     for (const s of items) console.log(scenarioRow(s));
   }
 
-  printHeader("CLI / agent-browser checklist (manual)");
-  console.log(`
-1. Forward webhooks:
-   stripe listen --forward-to http://localhost:3000/api/webhooks/stripe
-
-2. Live Checkout (C1, B8) — agent-browser on checkout.stripe.com:
-   card 4242 4242 4242 4242, any future expiry/CVC
-
-3. Customer Portal (D1–D3) — Settings → Manage in Stripe Portal
-
-4. Test Clock (E1–E4, E7) — see packages/ee/docs/test-clocks.md
-
-5. Declined card (C5): 4000 0000 0000 0002
-`);
+  printManualChecklist();
 }
 
 function run(cmd: string, args: string[], env?: NodeJS.ProcessEnv): number {
@@ -97,17 +159,27 @@ function runUnit(): number {
 }
 
 function runIntegration(): number {
-  return run("pnpm", [
+  let code = run("pnpm", [
     "--filter",
     "@ssota/adapter-postgres",
     "test",
     "--",
     "billing-port",
   ]);
+  if (code !== 0) return code;
+  return run("pnpm", ["--filter", "web", "test", "--", "sync-seats"]);
 }
 
 function runE2eOss(): number {
-  return run("pnpm", ["e2e:ci", "--", "--grep", "billing"]);
+  return run("pnpm", [
+    "--filter",
+    "e2e",
+    "exec",
+    "playwright",
+    "test",
+    "-c",
+    "playwright.billing-oss.config.ts",
+  ]);
 }
 
 function runE2eStripe(): number {
@@ -146,13 +218,13 @@ function runTier(tier: RunTier): number {
 }
 
 const args = process.argv.slice(2);
-const listOnly = args.includes("--list");
-const runArg = args.find((a) => a.startsWith("--run"));
-const runValue = runArg?.includes("=")
-  ? runArg.split("=")[1]
-  : args[args.indexOf("--run") + 1];
 
-if (listOnly) {
+if (args.includes("--clock")) {
+  printTestClockRunbook();
+  process.exit(0);
+}
+
+if (args.includes("--list")) {
   for (const s of BILLING_SCENARIOS) {
     console.log(
       [s.id, s.tier, s.automation, s.spec ?? "", s.title].join("\t"),
@@ -163,9 +235,16 @@ if (listOnly) {
 
 printSummary();
 
+const runArg = args.find((a) => a.startsWith("--run"));
+const runValue = runArg?.includes("=")
+  ? runArg.split("=")[1]
+  : args[args.indexOf("--run") + 1];
+
 if (runValue) {
   const code = runTier(runValue as RunTier);
   process.exit(code);
 }
 
-console.log("\nTip: pnpm stripe:smoke --run all\n");
+console.log("\nTips:");
+console.log("  pnpm stripe:smoke --clock     # Test Clock steps E1–E7");
+console.log("  pnpm stripe:smoke --run all   # automated tiers only\n");

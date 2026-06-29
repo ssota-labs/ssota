@@ -90,6 +90,8 @@ export { createDbCatalogWritePort } from "./ports/db-catalog-write-port.js";
 export {
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
+  SMOKE_MEMBER_EMAIL,
+  SMOKE_MEMBER_PASSWORD,
   DEFAULT_ORG_SLUG,
   DEFAULT_TEAMSPACE_SLUG,
 } from "./constants.js";

@@ -36,4 +36,56 @@ describe("subscriptionToBillingRecord", () => {
     expect(record.seatQuantity).toBe(3);
     expect(record.stripeSubscriptionId).toBe("sub_test");
   });
+
+  it("maps trialing and cancel_at_period_end", () => {
+    process.env.STRIPE_PRICE_STARTER = "price_starter_test";
+
+    const subscription = {
+      id: "sub_trial",
+      status: "trialing",
+      cancel_at_period_end: true,
+      customer: "cus_test",
+      metadata: { organizationId: "00000000-0000-0000-0000-000000000001" },
+      items: {
+        data: [
+          {
+            id: "si_test",
+            quantity: 1,
+            current_period_end: 1_900_000_000,
+            price: { id: "price_starter_test" },
+          },
+        ],
+      },
+    } as unknown as Stripe.Subscription;
+
+    const record = subscriptionToBillingRecord({
+      organizationId: "00000000-0000-0000-0000-000000000001",
+      subscription,
+      stripeCustomerId: "cus_test",
+    });
+
+    expect(record.status).toBe("trialing");
+    expect(record.cancelAtPeriodEnd).toBe(true);
+  });
+
+  it("maps past_due status", () => {
+    process.env.STRIPE_PRICE_STARTER = "price_starter_test";
+
+    const subscription = {
+      id: "sub_past_due",
+      status: "past_due",
+      cancel_at_period_end: false,
+      customer: "cus_test",
+      metadata: { organizationId: "00000000-0000-0000-0000-000000000001" },
+      items: { data: [{ id: "si_test", quantity: 1, price: { id: "price_starter_test" } }] },
+    } as unknown as Stripe.Subscription;
+
+    const record = subscriptionToBillingRecord({
+      organizationId: "00000000-0000-0000-0000-000000000001",
+      subscription,
+      stripeCustomerId: "cus_test",
+    });
+
+    expect(record.status).toBe("past_due");
+  });
 });
