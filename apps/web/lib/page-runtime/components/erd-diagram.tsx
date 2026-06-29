@@ -6,12 +6,18 @@ import {
   BackgroundVariant,
   ReactFlow,
   ReactFlowProvider,
+  getNodesBounds,
   useNodesInitialized,
   useReactFlow,
+  useStore,
   type Edge,
   type Node,
 } from "@xyflow/react";
 import { FlowTopToolbar, FlowViewportToolbar } from "./flow-toolbar";
+import {
+  FLOW_HAND_PAN_STYLES,
+  getFlowInteractionProps,
+} from "./flow-preview-interaction";
 import { boundNode } from "../bindings";
 import {
   cardinalityEnds,
@@ -27,6 +33,7 @@ import { layoutFlow, type Positioned } from "../flow-layout";
 import { ErdTableNode } from "./erd-table-node";
 import { ErdRelationEdge } from "./erd-relation-edge";
 import type { CatalogComponent, RenderNode } from "../types";
+import { cn } from "@/lib/utils";
 
 const NODE_TYPES = { table: ErdTableNode };
 const EDGE_TYPES = { relation: ErdRelationEdge };
@@ -38,12 +45,89 @@ const FLOW_STYLES = `
 `;
 
 /** Re-fits the viewport once React Flow has measured every table node. */
-function ErdReady({ fitViewPadding }: { fitViewPadding: number }) {
+function ErdReady({
+  fitViewPadding,
+  fitViewMinZoom,
+  fitViewMaxZoom,
+  fitViewMode = "contain",
+}: {
+  fitViewPadding: number;
+  fitViewMinZoom?: number;
+  fitViewMaxZoom?: number;
+  fitViewMode?: "contain" | "cover";
+}) {
   const initialized = useNodesInitialized();
-  const { fitView } = useReactFlow();
+  const { fitView, getNodes, setViewport } = useReactFlow();
+  const width = useStore((state) => state.width);
+  const height = useStore((state) => state.height);
   React.useEffect(() => {
-    if (initialized) void fitView({ padding: fitViewPadding, duration: 250 });
-  }, [initialized, fitView, fitViewPadding]);
+    if (!initialized || width <= 0 || height <= 0) return;
+
+    const minZoom = fitViewMinZoom ?? 0.2;
+    const maxZoom = fitViewMaxZoom ?? 2;
+    const options = {
+      padding: fitViewPadding,
+      duration: 250,
+      minZoom,
+      maxZoom,
+    };
+
+    const refit = () => {
+      if (fitViewMode === "cover") {
+        const nodes = getNodes();
+        if (nodes.length === 0) return;
+        const bounds = getNodesBounds(nodes);
+        if (bounds.width <= 0 || bounds.height <= 0) return;
+
+        const padX = width * fitViewPadding;
+        const padY = height * fitViewPadding;
+        const availW = width - padX * 2;
+        const availH = height - padY * 2;
+        const zoom = Math.min(
+          maxZoom,
+          Math.max(
+            minZoom,
+            Math.max(availW / bounds.width, availH / bounds.height),
+          ),
+        );
+        setViewport(
+          {
+            x: width / 2 - (bounds.x + bounds.width / 2) * zoom,
+            y: height / 2 - (bounds.y + bounds.height / 2) * zoom,
+            zoom,
+          },
+          { duration: 250 },
+        );
+        return;
+      }
+
+      void fitView(options);
+    };
+
+    refit();
+    let innerRaf = 0;
+    const outerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(refit);
+    });
+    const timer = window.setTimeout(refit, 120);
+
+    return () => {
+      cancelAnimationFrame(outerRaf);
+      cancelAnimationFrame(innerRaf);
+      window.clearTimeout(timer);
+    };
+  }, [
+    initialized,
+    fitView,
+    getNodes,
+    setViewport,
+    fitViewPadding,
+    fitViewMinZoom,
+    fitViewMaxZoom,
+    fitViewMode,
+    width,
+    height,
+  ]);
   return null;
 }
 
@@ -51,10 +135,20 @@ function ErdDiagramEl({
   model,
   height,
   fitViewPadding,
+  fitViewMinZoom,
+  fitViewMaxZoom,
+  fitViewMode = "contain",
+  showTopToolbar = true,
+  interactionLocked = false,
 }: {
   model: ErdModel;
   height: number;
   fitViewPadding: number;
+  fitViewMinZoom?: number;
+  fitViewMaxZoom?: number;
+  fitViewMode?: "contain" | "cover";
+  showTopToolbar?: boolean;
+  interactionLocked?: boolean;
 }) {
   const signature = React.useMemo(() => JSON.stringify(model), [model]);
 
@@ -73,8 +167,8 @@ function ErdDiagramEl({
 
   const ready = Object.keys(positions).length > 0;
 
-  // Pan/zoom lock, toggled from the top toolbar.
   const [locked, setLocked] = React.useState(false);
+  const flowInteraction = getFlowInteractionProps(interactionLocked, locked);
 
   const rfNodes = React.useMemo<Node[]>(() => {
     if (!ready) return [];
@@ -127,10 +221,16 @@ function ErdDiagramEl({
 
   return (
     <div
-      className="ssota-erd border-border bg-muted/20 relative w-full overflow-hidden rounded-lg border"
+      className={cn(
+        "ssota-erd border-border bg-muted/20 relative w-full overflow-hidden border",
+        interactionLocked
+          ? "ssota-erd--hand-pan h-full rounded-none"
+          : "rounded-lg",
+      )}
       style={{ height }}
     >
       <style>{FLOW_STYLES}</style>
+      <style>{FLOW_HAND_PAN_STYLES}</style>
       {ready ? (
         <ReactFlow
           nodes={rfNodes}
@@ -138,23 +238,30 @@ function ErdDiagramEl({
           nodeTypes={NODE_TYPES}
           edgeTypes={EDGE_TYPES}
           nodesDraggable={false}
-          elementsSelectable
+          {...flowInteraction}
           proOptions={{ hideAttribution: true }}
-          minZoom={0.2}
-          fitView
-          fitViewOptions={{ padding: fitViewPadding }}
-          panOnDrag={!locked}
-          zoomOnScroll={!locked}
-          zoomOnPinch={!locked}
-          zoomOnDoubleClick={!locked}
+          minZoom={fitViewMinZoom ?? 0.2}
+          fitView={fitViewMode !== "cover"}
+          fitViewOptions={{
+            padding: fitViewPadding,
+            ...(fitViewMinZoom !== undefined ? { minZoom: fitViewMinZoom } : {}),
+            ...(fitViewMaxZoom !== undefined ? { maxZoom: fitViewMaxZoom } : {}),
+          }}
         >
-          <ErdReady fitViewPadding={fitViewPadding} />
-          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-          <FlowTopToolbar
-            locked={locked}
-            onToggleLock={() => setLocked((v) => !v)}
+          <ErdReady
+            fitViewPadding={fitViewPadding}
+            fitViewMinZoom={fitViewMinZoom}
+            fitViewMaxZoom={fitViewMaxZoom}
+            fitViewMode={fitViewMode}
           />
-          <FlowViewportToolbar />
+          <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
+          {showTopToolbar ? (
+            <FlowTopToolbar
+              locked={locked}
+              onToggleLock={() => setLocked((v) => !v)}
+            />
+          ) : null}
+          {!interactionLocked ? <FlowViewportToolbar /> : null}
         </ReactFlow>
       ) : (
         <div className="text-muted-foreground flex h-full items-center justify-center text-xs">
@@ -176,6 +283,18 @@ export const erdDiagramComponents: Record<string, CatalogComponent> = {
       typeof props.fitViewPadding === "number" && props.fitViewPadding >= 0
         ? props.fitViewPadding
         : 0.16;
+    const fitViewMinZoom =
+      typeof props.fitViewMinZoom === "number" && props.fitViewMinZoom > 0
+        ? props.fitViewMinZoom
+        : undefined;
+    const fitViewMaxZoom =
+      typeof props.fitViewMaxZoom === "number" && props.fitViewMaxZoom > 0
+        ? props.fitViewMaxZoom
+        : undefined;
+    const fitViewMode =
+      props.fitViewMode === "cover" ? "cover" : "contain";
+    const showTopToolbar = props.showTopToolbar !== false;
+    const interactionLocked = props.interactionLocked === true;
     const model = coerceErd(node?.properties?.[property]);
 
     if (!node) {
@@ -199,6 +318,11 @@ export const erdDiagramComponents: Record<string, CatalogComponent> = {
           model={model}
           height={height}
           fitViewPadding={fitViewPadding}
+          fitViewMinZoom={fitViewMinZoom}
+          fitViewMaxZoom={fitViewMaxZoom}
+          fitViewMode={fitViewMode}
+          showTopToolbar={showTopToolbar}
+          interactionLocked={interactionLocked}
         />
       </ReactFlowProvider>
     );
