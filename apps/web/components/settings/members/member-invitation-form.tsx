@@ -4,7 +4,11 @@ import type { OrganizationMembersView } from "@ssota/contracts";
 import { useState, useEffect, useTransition } from "react";
 import { MagnifyingGlassIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
-import { Input } from "@ssota/ui/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@ssota/ui/components/ui/input-group";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Card } from "@ssota/ui/components/ui/card";
@@ -130,19 +134,20 @@ export function MemberInvitationForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
         <Label htmlFor="invite-email">{t("settings.membersSearchLabel")}</Label>
-        <div className="relative flex gap-2">
-          <div className="relative flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
+        <div className="flex gap-2">
+          <InputGroup className="flex-1">
+            <InputGroupAddon align="inline-start">
+              <MagnifyingGlassIcon />
+            </InputGroupAddon>
+            <InputGroupInput
               id="invite-email"
               type="email"
               placeholder={t("settings.membersSearchPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="pl-9"
               disabled={isPending}
             />
-          </div>
+          </InputGroup>
           <Button
             type="button"
             variant="outline"
