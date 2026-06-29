@@ -24,6 +24,10 @@ import {
   parseDocumentSheetListFilters,
   type DocumentSheetListFilter,
 } from "./document-sheet-list-filters";
+import {
+  SectionHeaderEnd,
+  useSectionHeaderActions,
+} from "./section-header-actions";
 
 export type DocumentSheetListProps = {
   nodes: RenderNode[];
@@ -101,33 +105,48 @@ export function DocumentSheetListEl({
 
   const close = () => setActiveId(null);
 
+  const inSection = useSectionHeaderActions() !== null;
+  const filterBar =
+    filterDefs.length > 0 ? (
+      <DocumentSheetListFilterBar
+        nodes={nodes}
+        filters={filterDefs}
+        state={filterState}
+        currentYear={currentYear}
+        onChange={setFilterState}
+      />
+    ) : null;
+
   return (
     <div
       className="relative flex min-h-0 flex-1 flex-col"
       data-testid="document-sheet-list"
     >
+      {filterBar && inSection ? (
+        <SectionHeaderEnd>{filterBar}</SectionHeaderEnd>
+      ) : null}
+
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="space-y-3">
-        {sectionTitle ? (
-          <header className="space-y-1">
-            <h2 className="text-lg font-semibold">{sectionTitle}</h2>
-            {sectionSubtitle ? (
-              <p className="text-muted-foreground text-sm">{sectionSubtitle}</p>
+        {sectionTitle || sectionSubtitle ? (
+          <header className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1 space-y-1">
+              {sectionTitle ? (
+                <h2 className="text-lg font-semibold">{sectionTitle}</h2>
+              ) : null}
+              {sectionSubtitle ? (
+                <p className="text-muted-foreground text-sm">{sectionSubtitle}</p>
+              ) : null}
+            </div>
+            {filterBar && !inSection ? (
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-3">
+                {filterBar}
+              </div>
             ) : null}
           </header>
         ) : null}
 
         {title ? <h3 className="text-sm font-medium">{title}</h3> : null}
-
-        {filterDefs.length > 0 ? (
-          <DocumentSheetListFilterBar
-            nodes={nodes}
-            filters={filterDefs}
-            state={filterState}
-            currentYear={currentYear}
-            onChange={setFilterState}
-          />
-        ) : null}
 
         <div className="border-border divide-border divide-y overflow-hidden rounded-lg border">
           {visibleNodes.map((node) => {
@@ -221,7 +240,7 @@ function DocumentSheetListFilterBar({
 }) {
   return (
     <div
-      className="flex flex-wrap items-center gap-4"
+      className="flex flex-wrap items-center justify-end gap-3"
       data-testid="document-sheet-list-filters"
     >
       {filters.map((filter, index) => {
