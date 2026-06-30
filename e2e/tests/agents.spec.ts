@@ -29,6 +29,7 @@ test.describe("Agents", () => {
     await expect(
       page.getByTestId("agent-settings-instructions-card"),
     ).toBeVisible();
+    await expect(page.getByTestId("agent-instructions-editor")).toBeVisible();
     await expect(page.getByTestId("agent-settings-tools-card")).toBeVisible();
     await expect(page.getByTestId("agent-settings-model-card")).toBeVisible();
   });

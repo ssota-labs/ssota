@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarBlankIcon,
   ChatsCircleIcon,
   ClockIcon,
   CpuIcon,
-  FileTextIcon,
   ListChecksIcon,
   PlusIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
+import type { Block } from "@blocknote/core";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
-import { blockNoteContentToText } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import { updateAgentDefinitionAction } from "@/app/actions";
@@ -39,6 +39,14 @@ import {
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
+
+const DocumentEditorEl = dynamic(
+  () =>
+    import("@/lib/page-runtime/catalog-document").then(
+      (m) => m.DocumentEditorEl,
+    ),
+  { ssr: false },
+);
 
 type AgentSettingsSheetProps = {
   definition: AgentDefinition;
@@ -113,11 +121,16 @@ export function AgentSettingsSheet({
     (s) => s.agentDefinitionId === definition.id,
   );
 
-  const instructionPreview = useMemo(() => {
-    const text = blockNoteContentToText(draft.instructions).trim();
-    if (!text) return null;
-    return text.length > 200 ? `${text.slice(0, 200)}…` : text;
-  }, [draft.instructions]);
+  const patchDraft = (patch: Partial<AgentSettingsDraft>) => {
+    setDraft((current) => ({ ...current, ...patch }));
+  };
+
+  const handleInstructionsSave = useCallback((blocks: Block[]) => {
+    setDraft((current) => ({
+      ...current,
+      instructions: blocks as AgentDefinition["instructions"],
+    }));
+  }, []);
 
   const toggleTrigger = (trigger: AgentTrigger, enabled: boolean) => {
     const next = new Set(draft.allowedTriggers);
@@ -163,10 +176,6 @@ export function AgentSettingsSheet({
   const enabledConnectors = connectors.filter((c) =>
     draft.enabledConnectorProviders.includes(c.provider),
   );
-
-  const patchDraft = (patch: Partial<AgentSettingsDraft>) => {
-    setDraft((current) => ({ ...current, ...patch }));
-  };
 
   const handleSave = () => {
     startTransition(async () => {
@@ -322,21 +331,17 @@ export function AgentSettingsSheet({
             title="Instructions"
             description="What should the agent do every time it runs?"
             testId="agent-settings-instructions-card"
-            onOpen={() => setOpenDialog("instructions")}
           >
-            {instructionPreview ? (
-              <AgentSettingItems>
-                <AgentSettingItem
-                  icon={
-                    <FileTextIcon className="size-3.5 text-muted-foreground" />
-                  }
-                  title="Current instructions"
-                  subtitle={instructionPreview}
-                />
-              </AgentSettingItems>
-            ) : (
-              <AgentSettingEmpty>No instructions yet</AgentSettingEmpty>
-            )}
+            <div
+              className="min-h-[200px] overflow-y-auto rounded-md border border-border/60 bg-background/40 p-2"
+              data-testid="agent-instructions-editor"
+            >
+              <DocumentEditorEl
+                compact
+                content={draft.instructions}
+                onSave={handleInstructionsSave}
+              />
+            </div>
           </AgentSettingCard>
 
           <AgentSettingCard

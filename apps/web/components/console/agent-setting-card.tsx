@@ -7,7 +7,8 @@ import { cn } from "@ssota/ui/lib/utils";
 type AgentSettingCardProps = {
   title: string;
   description: string;
-  onOpen: () => void;
+  /** Omit when the card body is self-contained (e.g. inline editor). */
+  onOpen?: () => void;
   testId?: string;
   children?: ReactNode;
   /** Bottom action row (e.g. “Add schedule”). */
@@ -22,25 +23,33 @@ export function AgentSettingCard({
   children,
   footer,
 }: AgentSettingCardProps) {
+  const header = (
+    <div className="min-w-0 flex-1 space-y-0.5">
+      <h3 className="text-sm font-medium">{title}</h3>
+      <p className="text-muted-foreground text-xs">{description}</p>
+    </div>
+  );
+
   return (
     <section
       className="overflow-hidden rounded-lg border border-border bg-card"
       data-testid={testId}
     >
-      <button
-        type="button"
-        className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40"
-        onClick={onOpen}
-      >
-        <div className="min-w-0 flex-1 space-y-0.5">
-          <h3 className="text-sm font-medium">{title}</h3>
-          <p className="text-muted-foreground text-xs">{description}</p>
-        </div>
-        <CaretRightIcon
-          className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-          aria-hidden
-        />
-      </button>
+      {onOpen ? (
+        <button
+          type="button"
+          className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40"
+          onClick={onOpen}
+        >
+          {header}
+          <CaretRightIcon
+            className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+        </button>
+      ) : (
+        <div className="px-4 py-3">{header}</div>
+      )}
       {children ? <div className="px-3 pb-2">{children}</div> : null}
       {footer ? (
         <div className="border-border/60 border-t px-3 py-2">{footer}</div>

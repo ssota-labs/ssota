@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useState } from "react";
 import type { AgentDefinition, AgentTrigger, ToolBundle } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -36,11 +35,6 @@ import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-con
 import { ScheduleSheet } from "@/components/schedules/schedule-sheet";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
 
-const DocumentEditorEl = dynamic(
-  () => import("@/lib/page-runtime/catalog-document").then((m) => m.DocumentEditorEl),
-  { ssr: false },
-);
-
 export type AgentSettingsDraft = {
   instructions: AgentDefinition["instructions"];
   toolBundles: ToolBundle[];
@@ -69,7 +63,6 @@ type AgentSettingsDialogsProps = {
 
 export type AgentSettingsDialogKind =
   | "triggers"
-  | "instructions"
   | "tools"
   | "model"
   | "add-schedule";
@@ -88,14 +81,7 @@ export function AgentSettingsDialogs({
   openDialog,
   onOpenDialogChange,
 }: AgentSettingsDialogsProps) {
-  const [instructionDraft, setInstructionDraft] = useState(draft.instructions);
   const [scheduleOpen, setScheduleOpen] = useState(false);
-
-  useEffect(() => {
-    if (openDialog === "instructions") {
-      setInstructionDraft(draft.instructions);
-    }
-  }, [openDialog, draft.instructions]);
 
   useEffect(() => {
     if (openDialog === "add-schedule") {
@@ -262,48 +248,6 @@ export function AgentSettingsDialogs({
           <DialogFooter>
             <Button type="button" onClick={() => onOpenDialogChange(null)}>
               Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={openDialog === "instructions"}
-        onOpenChange={(open) => !open && onOpenDialogChange(null)}
-      >
-        <DialogContent className="max-h-[85vh] max-w-4xl overflow-hidden" forceBackdrop>
-          <DialogHeader>
-            <DialogTitle>Instructions</DialogTitle>
-            <DialogDescription>
-              What should this agent do every time it runs?
-            </DialogDescription>
-          </DialogHeader>
-          <div
-            className="max-h-[50vh] min-h-[240px] overflow-y-auto rounded-md border p-2"
-            data-testid="agent-instructions-editor"
-          >
-            <DocumentEditorEl
-              compact
-              content={instructionDraft}
-              onSave={(blocks) => setInstructionDraft(blocks as typeof instructionDraft)}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenDialogChange(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                onDraftChange({ instructions: instructionDraft });
-                onOpenDialogChange(null);
-              }}
-            >
-              Apply
             </Button>
           </DialogFooter>
         </DialogContent>
