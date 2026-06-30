@@ -10,6 +10,8 @@ test.describe("sandbox environments settings", () => {
     await expect(
       page.getByRole("heading", { name: /sandbox environments/i }),
     ).toBeVisible();
-    await expect(page.getByText(/reusable vm templates/i)).toBeVisible();
+    await expect(
+      page.getByText("Manage reusable VM templates for coding agent task runs."),
+    ).toBeVisible();
   });
 });
