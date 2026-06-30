@@ -482,4 +482,3 @@ to a Coding Agent.
   Sandbox.
 - Private repo credentials are brokered outside the sandbox and cleaned up after
   checkout.
-
