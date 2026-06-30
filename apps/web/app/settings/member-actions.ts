@@ -11,8 +11,9 @@ import {
 import { SettingsError } from "@ssota/core";
 import { syncOrgBillingSeats, getOrgBillableSeats } from "@/lib/billing/sync-seats";
 import { sendOrganizationInviteEmail } from "@/lib/email/organization-invite-email";
-import { getConsolePort, getOrganizationMembersPort } from "@/lib/ports";
+import { getConsolePort, getDb, getOrganizationMembersPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
+import { createDbBillingReadPort } from "@ssota/adapter-postgres";
 
 function revalidateOrgPaths(orgSlug: string) {
   revalidatePath(`/${orgSlug}`, "layout");
@@ -236,5 +237,8 @@ export async function refreshMembersViewAction(organizationId: string) {
   if (!view) {
     return { ok: false as const, error: "Not found" };
   }
-  return { ok: true as const, view };
+  const billableSeats = await createDbBillingReadPort(getDb()).countBillableSeats(
+    organizationId,
+  );
+  return { ok: true as const, view, billableSeats };
 }

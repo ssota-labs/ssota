@@ -278,6 +278,11 @@ export const en = {
     appearancePageDescription: "Theme and display preferences for the console UI.",
     members: "Members",
     membersDescription: "Invite teammates and manage organization roles.",
+    membersBillableSeatsLabel: "Billable members: {count}",
+    membersBillableSeatsDescriptionBilling:
+      "Each organization owner or member counts as one billable seat. Adding or removing members updates your subscription.",
+    membersBillableSeatsDescriptionSelfHost:
+      "Each organization owner or member counts as one seat in this organization.",
     membersComingSoon:
       "Invite members, assign roles, and manage organization memberships.",
     membersInviteButton: "Invite member",
@@ -1114,6 +1119,11 @@ export const ko = {
     appearancePageDescription: "콘솔 UI의 테마 및 표시 설정.",
     members: "멤버",
     membersDescription: "팀원 초대 및 조직 역할 관리.",
+    membersBillableSeatsLabel: "과금 대상 멤버: {count}명",
+    membersBillableSeatsDescriptionBilling:
+      "조직 소유자·멤버 1명당 좌석 1개가 청구됩니다. 멤버 추가·제거 시 구독 좌석이 업데이트됩니다.",
+    membersBillableSeatsDescriptionSelfHost:
+      "조직 소유자·멤버 1명당 좌석 1개로 계산됩니다.",
     membersComingSoon: "멤버 초대, 역할 할당, 조직 멤버십 관리.",
     membersInviteButton: "멤버 초대",
     membersInviteTitle: "멤버 초대",

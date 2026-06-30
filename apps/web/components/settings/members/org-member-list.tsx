@@ -5,6 +5,7 @@ import { useLocale } from "@/components/i18n/locale-provider";
 import { useMobileViewport } from "@/lib/hooks/use-mobile-viewport";
 import { OrgMemberListTable } from "./org-member-list-table";
 import { InviteMemberDialog } from "./invite-member-dialog";
+import { MembersBillableSeatsSummary } from "./members-billable-seats-summary";
 import { Button } from "@ssota/ui/components/ui/button";
 import { UserPlusIcon } from "@phosphor-icons/react";
 import { useState, useTransition } from "react";
@@ -17,6 +18,8 @@ type OrgMemberListProps = {
   organizationId: string;
   orgSlug: string;
   teamspaceSlug: string;
+  billableSeats: number;
+  billingEnabled: boolean;
 };
 
 export function OrgMemberList({
@@ -25,10 +28,13 @@ export function OrgMemberList({
   organizationId,
   orgSlug,
   teamspaceSlug,
+  billableSeats: initialBillableSeats,
+  billingEnabled,
 }: OrgMemberListProps) {
   const { t } = useLocale();
   const isMobile = useMobileViewport();
   const [view, setView] = useState(initialView);
+  const [billableSeats, setBillableSeats] = useState(initialBillableSeats);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -42,6 +48,9 @@ export function OrgMemberList({
       const result = await refreshMembersViewAction(organizationId);
       if (result.ok) {
         setView(result.view);
+        if (result.billableSeats != null) {
+          setBillableSeats(result.billableSeats);
+        }
       }
     });
   };
@@ -78,6 +87,13 @@ export function OrgMemberList({
 
   return (
     <div className="space-y-4">
+      {isOwner ? (
+        <MembersBillableSeatsSummary
+          billableSeats={billableSeats}
+          billingEnabled={billingEnabled}
+        />
+      ) : null}
+
       {isOwner ? (
         <div className="flex justify-end">
           <Button onClick={() => setInviteOpen(true)} disabled={isPending}>
