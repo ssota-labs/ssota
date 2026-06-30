@@ -8,6 +8,8 @@ export {
   createAgentDefinitionPort,
   createScriptToolPort,
   createSkillPort,
+  createSandboxEnvironmentPort,
+  createSandboxSessionRecordPort,
   seedAgentDefinitions,
   createWorkflowInstructionPort,
   seedWorkflowInstructions,

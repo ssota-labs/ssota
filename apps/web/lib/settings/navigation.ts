@@ -51,6 +51,12 @@ export const SETTINGS_NAV: SettingsNavItem[] = [
     href: "settings/developer",
     iconKey: "developer_setup",
   },
+  {
+    key: "sandbox-environments",
+    labelKey: "settings.sandboxEnvironments",
+    href: "settings/sandbox-environments",
+    iconKey: "developer_setup",
+  },
 ];
 
 const SECTION_LABEL_KEYS: Record<string, string> = Object.fromEntries(

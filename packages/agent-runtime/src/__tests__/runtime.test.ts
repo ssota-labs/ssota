@@ -68,12 +68,18 @@ describe("createSsotaTools", () => {
 
   it("sandbox tools are a separate set (attached only for dev runs)", () => {
     const base = createSsotaTools();
-    expect(base).not.toHaveProperty("sandbox_exec");
+    expect(base).not.toHaveProperty("sandbox_shell");
     const sandbox = createSandboxTools();
     expect(Object.keys(sandbox).sort()).toEqual([
-      "sandbox_exec",
-      "sandbox_read_file",
-      "sandbox_write_file",
+      "sandbox_await",
+      "sandbox_delete",
+      "sandbox_glob",
+      "sandbox_grep",
+      "sandbox_read",
+      "sandbox_read_lints",
+      "sandbox_shell",
+      "sandbox_str_replace",
+      "sandbox_write",
     ]);
   });
 

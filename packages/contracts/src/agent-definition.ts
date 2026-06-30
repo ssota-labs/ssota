@@ -43,6 +43,7 @@ export const RunPolicySchema = z.object({
   model: z.string().optional(),
   maxSteps: z.number().int().positive().optional(),
   sandboxPolicy: z.enum(["none", "optional", "required"]).optional(),
+  sandboxAccess: z.enum(["none", "inspect", "code"]).optional(),
   allowedTriggers: z.array(AgentTriggerSchema).optional(),
   approvalPolicy: z.enum(["none", "gate", "human"]).optional(),
   timeoutMs: z.number().int().positive().optional(),

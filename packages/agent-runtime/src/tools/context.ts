@@ -6,7 +6,7 @@ import {
 } from "@ssota/core";
 import type { ToolSet } from "ai";
 import type { AgentRunContext } from "../engine/types.js";
-import type { SandboxSession } from "../sandbox/session.js";
+import type { SandboxHandle } from "@ssota/core";
 import type { ConnectionRunState } from "../connections/run-state.js";
 
 /**
@@ -17,7 +17,7 @@ import type { ConnectionRunState } from "../connections/run-state.js";
  */
 export interface AgentContextBag {
   ssota?: AgentRunContext;
-  sandbox?: SandboxSession;
+  sandbox?: SandboxHandle;
   credentials?: import("../credentials/provider.js").CredentialProvider;
   connectionState?: ConnectionRunState;
 }
@@ -68,10 +68,10 @@ export function getConnectionRunState(
   )?.connectionState;
 }
 
-/** Pull the sandbox session, if this run provisioned one. */
-export function getSandbox(experimentalContext: unknown): SandboxSession {
+/** Pull the sandbox handle, if this run provisioned one. */
+export function getSandbox(experimentalContext: unknown): SandboxHandle {
   const sandbox = (
-    experimentalContext as { sandbox?: SandboxSession } | undefined
+    experimentalContext as { sandbox?: SandboxHandle } | undefined
   )?.sandbox;
   if (!sandbox) {
     throw new Error(

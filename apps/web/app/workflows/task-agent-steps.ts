@@ -1,5 +1,5 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
-import type { ToolBundle } from "@ssota/contracts";
+import type { SandboxAccessTier, ToolBundle } from "@ssota/contracts";
 import {
   BUILTIN_AGENT_IDS,
   getAgentDefinitionById,
@@ -8,19 +8,32 @@ import {
   getDb,
   getTaskPort,
   resolveRunAgent,
-  createSandboxSession,
-  attachSandboxSession,
   getAgentDefinitionPort,
+  getSandboxEnvironmentPort,
+  getSandboxSessionPort,
 } from "@ssota/agent-runtime";
 import { createAgentRunPort } from "@ssota/adapter-postgres";
 
-function agentNeedsSandbox(
-  agentDefinitionId: string | null | undefined,
+const DEFAULT_SANDBOX_ENV_KEY = "sandbox.dev_node24";
+
+function resolveSandboxAccess(
   toolBundles: ToolBundle[],
+  runPolicy: { sandboxAccess?: SandboxAccessTier } | undefined,
+): SandboxAccessTier {
+  if (runPolicy?.sandboxAccess) return runPolicy.sandboxAccess;
+  if (toolBundles.includes("sandbox.code")) return "code";
+  return "none";
+}
+
+function agentNeedsSandbox(
+  toolBundles: ToolBundle[],
+  sandboxPolicy: "none" | "optional" | "required" | undefined,
 ): boolean {
-  if (!agentDefinitionId) return false;
-  if (agentDefinitionId === BUILTIN_AGENT_IDS.implementFeature) return true;
-  return toolBundles.includes("sandbox.code");
+  if (sandboxPolicy === "required" || sandboxPolicy === "optional") return true;
+  if (!sandboxPolicy || sandboxPolicy === "none") {
+    return toolBundles.includes("sandbox.code");
+  }
+  return false;
 }
 
 async function resolveAgentToolBundles(
@@ -35,6 +48,41 @@ async function resolveAgentToolBundles(
     agentDefinitionId,
   );
   return row?.toolBundles ?? [];
+}
+
+async function resolveAgentRunPolicy(
+  teamspaceId: string,
+  accountId: string | undefined,
+  agentDefinitionId: string | null | undefined,
+) {
+  if (!agentDefinitionId) return {};
+  const builtin = getAgentDefinitionById(agentDefinitionId);
+  if (builtin) return builtin.runPolicy ?? {};
+  const row = await getAgentDefinitionPort(teamspaceId, accountId).getById(
+    agentDefinitionId,
+  );
+  return row?.runPolicy ?? {};
+}
+
+async function resolveSandboxEnvironmentId(
+  teamspaceId: string,
+  taskSandboxEnvironmentId: string | null | undefined,
+): Promise<string> {
+  const envPort = getSandboxEnvironmentPort(teamspaceId);
+  if (taskSandboxEnvironmentId) {
+    const env = await envPort.getById(taskSandboxEnvironmentId);
+    if (env) return env.id;
+  }
+  const defaultEnv = await envPort.getByKey(DEFAULT_SANDBOX_ENV_KEY);
+  if (defaultEnv) return defaultEnv.id;
+  const created = await envPort.upsertEnvironment({
+    key: DEFAULT_SANDBOX_ENV_KEY,
+    name: "Dev Node 24",
+    description: "Default empty Node 24 sandbox for coding agents",
+    runtime: "node24",
+    workingRoot: "/vercel/sandbox",
+  });
+  return created.id;
 }
 
 /**
@@ -126,15 +174,19 @@ export async function finalizeTaskRun(
   });
 }
 
+export interface ProvisionSandboxResult {
+  sandboxSessionId?: string;
+  sandboxAccess: SandboxAccessTier;
+}
+
 /**
- * Provision a sandbox for dev-capable task runs and return its id (serializable,
- * carried in the run scope). Returns undefined when the task is not dev-capable
- * or provisioning fails (sandbox tools simply stay unavailable). Done in its own
- * `"use step"` so the live session is never carried across step boundaries.
+ * Provision a sandbox session for dev-capable task runs. Returns the DB session
+ * id (serializable) and access tier for tool filtering.
  */
 export async function provisionSandboxStep(
   input: RunTaskAgentInput,
-): Promise<string | undefined> {
+  workflowRunId: string,
+): Promise<ProvisionSandboxResult> {
   "use step";
   const task = await getTaskPort(input.teamspaceId, input.accountId).getTask(
     input.taskId,
@@ -144,26 +196,46 @@ export async function provisionSandboxStep(
     input.accountId,
     task?.agentDefinitionId,
   );
-  if (
-    !task?.agentDefinitionId ||
-    !agentNeedsSandbox(task.agentDefinitionId, toolBundles)
-  ) {
-    return undefined;
+  const runPolicy = await resolveAgentRunPolicy(
+    input.teamspaceId,
+    input.accountId,
+    task?.agentDefinitionId,
+  );
+  const sandboxAccess = resolveSandboxAccess(toolBundles, runPolicy);
+  const needsSandbox = agentNeedsSandbox(toolBundles, runPolicy.sandboxPolicy);
+
+  if (!task?.agentDefinitionId || !needsSandbox) {
+    return { sandboxAccess };
   }
+
   try {
-    const sandbox = await createSandboxSession();
-    return sandbox.sandboxId || undefined;
-  } catch {
-    return undefined; // sandbox optional — run continues without it
+    const environmentId = await resolveSandboxEnvironmentId(
+      input.teamspaceId,
+      task.sandboxEnvironmentId ?? undefined,
+    );
+    const sessionPort = getSandboxSessionPort(input.teamspaceId);
+    const session = await sessionPort.provision({
+      sandboxEnvironmentId: environmentId,
+      ownerAgentRunId: null,
+      ownerTaskId: input.taskId,
+    });
+    return {
+      sandboxSessionId: session.id,
+      sandboxAccess,
+    };
+  } catch (error) {
+    if (runPolicy.sandboxPolicy === "required") {
+      throw error;
+    }
+    return { sandboxAccess };
   }
 }
 
-/** Stop a provisioned sandbox (best-effort) at the end of the run. */
-export async function stopSandboxStep(sandboxId: string): Promise<void> {
+/** Stop a provisioned sandbox session (best-effort) at the end of the run. */
+export async function stopSandboxStep(sandboxSessionId: string, teamspaceId: string): Promise<void> {
   "use step";
   try {
-    const sandbox = await attachSandboxSession(sandboxId);
-    await sandbox.stop();
+    await getSandboxSessionPort(teamspaceId).stop(sandboxSessionId);
   } catch {
     // best-effort teardown
   }

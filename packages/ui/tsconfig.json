@@ -5,7 +5,12 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "noEmit": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@ssota/ui/components": ["./src/components"],
+      "@ssota/ui/components/*": ["./src/components/*"],
+      "@ssota/ui/lib": ["./src/lib"],
+      "@ssota/ui/lib/utils": ["./src/lib/utils.ts"],
+      "@ssota/ui/lib/*": ["./src/lib/*"]
     }
   },
   "include": ["src"]
