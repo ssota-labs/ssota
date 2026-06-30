@@ -374,89 +374,20 @@ Scheduler route responsibilities:
 
 The scheduler should not build a prompt or call model APIs directly.
 
-### Runtime Workspaces
-
-Runtime Workspaces are the execution environments agents use when work needs a
-real filesystem, shell, dependency installation, dev server, tests, or git
-state.
-
-They are not limited to coding. A workspace can be a Node app, Python data
-environment, documentation build, integration-test harness, or any other runtime
-profile Vercel Sandbox can support.
-
-Recommended model:
-
-- `runtime_workspaces`: named workspace definitions for a teamspace.
-- `workspace_sources`: one or more git repositories mounted into the workspace.
-- `workspace_snapshots`: base, project, and run snapshots for fast resume.
-- `workspace_sessions`: live or resumable sandbox sessions.
-
-A workspace can have multiple repo sources:
-
-```text
-workspace.dev_node24
-  runtime: node24
-  primarySource: app
-  sources:
-    - key: app
-      url: https://github.com/org/app
-      path: /vercel/sandbox/app
-      branch: main
-    - key: contracts
-      url: https://github.com/org/contracts
-      path: /vercel/sandbox/contracts
-      branch: main
-  setupScript: pnpm install
-  ports: [3000, 5173]
-  baseSnapshotId: ...
-```
-
-The agent should run outside the sandbox. The sandbox provides the isolated
-Linux VM, shell, filesystem, repo checkout, dev servers, and snapshots.
-
 ### Tool exposure
 
-Prefer low-level, general-purpose primitives over many high-level product
-actions. Cursor-style agents work well because the model receives a small set of
-composable tools and decides how to combine them.
-
-`tool_bundles` should be treated as permissions and scopes, not as a reason to
-invent one tool per workflow step.
-
-Recommended workspace primitive surface:
-
-- `workspace_shell`
-- `workspace_await`
-- `workspace_read_file`
-- `workspace_write_file`
-- `workspace_edit`
-- `workspace_delete`
-- `workspace_glob`
-- `workspace_search`
-- `workspace_snapshot`
-- `workspace_restore`
-
-Do not add separate model-facing tools for `git_status`, `git_diff`,
-`run_tests`, `start_dev_server`, or `install_dependencies` unless there is a
-clear safety or UX reason. Those should usually be shell commands. Product code
-can still provide broker services outside the model-facing tool surface, such as
-private repo checkout, credential injection, commit collection, push, and PR
-creation.
-
-Replace the global "all tools for all agents" approach with an
-agent-definition-aware tool builder:
+Replace the global "all tools for all agents" approach with an agent-definition
+tool builder:
 
 ```text
 buildAgentTools(agentDefinition)
-  -> core graph/task/page primitives filtered by policy
-  -> connector primitive surface if connectors is enabled
-  -> script tool primitive surface if script_tools is enabled
-  -> workspace primitive surface if workspace access is enabled
+  -> graph tools filtered by nodeScopes
+  -> task tools if tasks.manage is enabled
+  -> page tools if pages.author is enabled
+  -> connector tools if connectors is enabled
+  -> script tool executor if script_tools is enabled
+  -> sandbox code tools if sandbox.code is enabled
 ```
-
-Main Agent may receive read/probe workspace primitives for diagnosis and task
-planning. Full write/test/git work should normally be delegated to a Specialist
-Coding Agent with broader workspace permissions.
 
 ### Script Tool execution surface
 
@@ -577,7 +508,6 @@ Schedule creation should choose a trigger target:
 - Add agent definition metadata columns.
 - Add `script_tools`.
 - Add `agent_definition_script_tools`.
-- Add runtime workspace, source, snapshot, and session tables.
 - Rename task and schedule FK columns.
 - Update adapter ports.
 - Update seed scripts to create new built-in agent definitions.
@@ -590,8 +520,6 @@ Schedule creation should choose a trigger target:
 - Update Main Agent prompt and manifest from workflows to agents.
 - Update task runtime to load assigned agent definition.
 - Build tools from agent definition tool bundles and node scopes.
-- Add low-level workspace primitives and keep high-level git/test/dev-server
-  behavior as shell commands or server-side broker services.
 
 ### Phase 4: Script Tool runner
 
@@ -610,10 +538,8 @@ Schedule creation should choose a trigger target:
 ### Phase 6: Tests and fixtures
 
 - Contract tests for agent definitions and script tools.
-- Contract tests for runtime workspace definitions and multi-repo sources.
 - Adapter integration tests for renamed FKs and script tool permissions.
 - Runtime tests for Main Agent delegation and Specialist Agent task execution.
-- Runtime tests for workspace shell/read/edit/search/snapshot primitives.
 - Scheduler tests for heartbeat, scheduled specialist runs, and ready task dispatch.
 - E2E for Agents workspace, task assignment, and schedule trigger setup.
 
@@ -627,10 +553,6 @@ Schedule creation should choose a trigger target:
 - Tasks are work orders and reference assigned agents.
 - Specialist and Worker Agents are first-class definitions.
 - Agents expose only tools allowed by their definition.
-- Coding/runtime workspaces can mount multiple repositories and persist
-  snapshots.
-- Model-facing workspace tools stay low-level and composable, not one tool per
-  product action.
 - Script Tools are stored, versioned, linked to agents, and executed through a
   generic runner.
 - The old scheduler hardcode to daily orchestration is impossible because
