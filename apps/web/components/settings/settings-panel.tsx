@@ -1,21 +1,25 @@
 import type { ReactNode } from "react";
 import { cn } from "@ssota/ui/lib/utils";
 
-export function SettingsPanel({ title, description, children }: {
+export function SettingsPanel({ title, description, actions, children }: {
   title: string;
   description?: string;
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <div className="min-h-0 flex-1 overflow-y-auto bg-background">
-      <div className="@container/settings mx-auto flex w-full max-w-4xl flex-col px-6 py-8">
-        <header className="mb-8 space-y-1 pb-6">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-          {description ? (
-            <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
-          ) : null}
+      <div className="@container/settings mx-auto flex w-full max-w-4xl flex-col px-6 py-6">
+        <header className="mb-3 flex items-start justify-between gap-4">
+          <div className="min-w-0 space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+            {description ? (
+              <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
+            ) : null}
+          </div>
+          {actions ? <div className="shrink-0 pt-1">{actions}</div> : null}
         </header>
-        <div className="space-y-10">{children}</div>
+        <div className="space-y-6">{children}</div>
       </div>
     </div>
   );

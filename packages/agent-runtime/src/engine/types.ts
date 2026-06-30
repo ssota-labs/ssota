@@ -19,8 +19,10 @@ export interface AgentRunContext {
   /** Trigger that started this run (for policy checks). */
   trigger?: AgentTrigger;
   /**
-   * Sandbox id for dev-capable task runs. The provisioning step stores it here
-   * (serializable); sandbox tool steps re-attach via `attachSandboxSession`.
+   * DB sandbox session id for dev-capable task runs. Provisioning stores it here
+   * (serializable); sandbox tool steps re-attach via SandboxSessionPort.
    */
-  sandboxId?: string;
+  sandboxSessionId?: string;
+  /** Sandbox access tier for tool subset filtering. */
+  sandboxAccess?: "none" | "inspect" | "code";
 }

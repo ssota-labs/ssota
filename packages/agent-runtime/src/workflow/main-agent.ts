@@ -105,15 +105,24 @@ export interface BuildMainWorkflowAgentInput {
   modelId?: string;
   maxSteps?: number;
   includeSandboxTools?: boolean;
+  sandboxAccess?: import("@ssota/contracts").SandboxAccessTier;
   /** Override Composio availability (defaults to env check at build time). */
   includeComposioTools?: boolean;
 }
 
 const SANDBOX_TOOL_DESCRIPTIONS: Record<SandboxToolName, string> = {
-  sandbox_exec:
-    "Run a shell command inside the sandbox VM and return exit code, stdout, stderr.",
-  sandbox_write_file: "Write a file in the sandbox (creates or overwrites).",
-  sandbox_read_file: "Read a UTF-8 file from the sandbox.",
+  sandbox_shell:
+    "Run a shell command inside the sandbox VM. Use detached mode for long-running processes.",
+  sandbox_await:
+    "Wait for a detached sandbox_shell process and return its output.",
+  sandbox_read: "Read a UTF-8 file from the sandbox.",
+  sandbox_write: "Write a file in the sandbox (creates or overwrites).",
+  sandbox_str_replace: "Replace a unique string inside a sandbox file.",
+  sandbox_delete: "Delete a file in the sandbox.",
+  sandbox_glob: "Find files in the sandbox matching a glob pattern.",
+  sandbox_grep: "Search file contents in the sandbox with ripgrep or grep.",
+  sandbox_read_lints:
+    "Run a lightweight lint check on paths in the sandbox (best-effort).",
 };
 
 export function buildMainWorkflowAgent(
@@ -126,7 +135,10 @@ export function buildMainWorkflowAgent(
     includeComposioTools: input.includeComposioTools,
   });
 
-  const sandboxNames = resolveSandboxToolNames(input.includeSandboxTools);
+  const sandboxNames = resolveSandboxToolNames(
+    input.includeSandboxTools,
+    input.sandboxAccess ?? input.ssota.sandboxAccess ?? "code",
+  );
 
   const tools: Record<
     string,

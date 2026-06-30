@@ -15,6 +15,7 @@ import {
   createPagePort,
   createPageViewStatePort,
   createConnectorToolSettingsPort,
+  createSandboxEnvironmentPort,
   createOrgMembershipPort,
   registerTeamspaceOrganization,
   resolveOrganizationIdForTeamspace,
@@ -118,6 +119,10 @@ export function getPagePort(teamspaceId: string) {
 
 export function getPageViewStatePort(teamspaceId: string) {
   return createPageViewStatePort(getDb(), { teamspaceId });
+}
+
+export function getSandboxEnvironmentPort(teamspaceId: string) {
+  return createSandboxEnvironmentPort(getDb(), { teamspaceId });
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {
