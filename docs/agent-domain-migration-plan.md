@@ -557,4 +557,3 @@ Schedule creation should choose a trigger target:
   generic runner.
 - The old scheduler hardcode to daily orchestration is impossible because
   schedules target agents or task dispatch explicitly.
-
