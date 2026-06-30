@@ -214,7 +214,6 @@ export function SkillsPageWorkspace({
                       {sourceLabel(skill.source)}
                     </span>
                   </div>
-                  <p className="font-mono text-xs text-muted-foreground">{skill.key}</p>
                   {skill.description ? (
                     <p className="line-clamp-2 text-xs text-muted-foreground">
                       {skill.description}
@@ -602,7 +601,6 @@ export function SkillsCatalogPanel({ teamspaceId }: { teamspaceId: string }) {
                 {skill.source}
               </span>
             </div>
-            <p className="font-mono text-xs text-muted-foreground">{skill.key}</p>
             {skill.description ? (
               <p className="line-clamp-2 text-xs text-muted-foreground">
                 {skill.description}
