@@ -223,7 +223,7 @@ export function SkillsPageWorkspace({
               </button>
             ))}
             {skills.length === 0 && !isPending ? (
-              <p className="rounded-lg border border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
                 No skills yet. Run db:seed for platform builtins or add a custom skill.
               </p>
             ) : null}
