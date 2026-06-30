@@ -1,13 +1,13 @@
-# Runtime workspace and sandbox plan
+# Sandbox environment plan
 
 ## Summary
 
-SSOTA needs a first-class Runtime Workspace model for work that requires a real
-execution environment: shell commands, files, dependency installation, dev
+SSOTA needs a first-class Sandbox Environment model for work that requires a
+real execution environment: shell commands, files, dependency installation, dev
 servers, tests, git state, generated artifacts, and environment snapshots.
 
 This plan is separate from the agent-domain migration. Agents are the actors.
-Runtime Workspaces are the isolated environments those actors can use.
+Sandbox Environments are the isolated environments those actors can use.
 
 The design should follow the open-agents principle:
 
@@ -20,10 +20,10 @@ The design should follow the open-agents principle:
 ## Goals
 
 - Support multiple runtime profiles, not just software development.
-- Support multiple git repositories in one workspace.
+- Support multiple git repositories in one sandbox environment.
 - Use Vercel Sandbox as the default isolated execution backend.
 - Persist and resume environments with named sandboxes and snapshots.
-- Expose a small set of low-level primitives to agents.
+- Expose a small set of low-level `sandbox_*` primitives to agents.
 - Avoid a large list of high-level model-facing tools.
 - Keep private repository credentials and write permissions out of the sandbox
   whenever possible.
@@ -40,19 +40,19 @@ The design should follow the open-agents principle:
 
 ## Product concepts
 
-### Runtime Workspace
+### Sandbox Environment
 
-A Runtime Workspace is a named execution environment for a teamspace.
+A Sandbox Environment is a named execution environment for a teamspace.
 
 Examples:
 
-- `workspace.dev_node24`
-- `workspace.python_data`
-- `workspace.docs_build`
-- `workspace.integration_test`
-- `workspace.customer_repro`
+- `sandbox.dev_node24`
+- `sandbox.python_data`
+- `sandbox.docs_build`
+- `sandbox.integration_test`
+- `sandbox.customer_repro`
 
-Each workspace defines:
+Each sandbox environment defines:
 
 - runtime (`node24`, `node26`, `python3.13`, etc.),
 - one or more git sources,
@@ -64,14 +64,14 @@ Each workspace defines:
 - latest project snapshot,
 - persistence policy.
 
-### Workspace Source
+### Sandbox Source
 
-A workspace may contain multiple repositories.
+A sandbox environment may contain multiple repositories.
 
 Example:
 
 ```text
-workspace.dev_node24
+sandbox.dev_node24
   runtime: node24
   primarySource: app
   workingRoot: /vercel/sandbox
@@ -96,15 +96,15 @@ workspace.dev_node24
 This intentionally differs from Cursor's "one local workspace folder" model.
 The sandbox is a Linux VM, so multi-repo layouts should be first-class.
 
-### Workspace Session
+### Sandbox Session
 
-A Workspace Session is a live or resumable Vercel Sandbox session for a Runtime
-Workspace.
+A Sandbox Session is a live or resumable Vercel Sandbox session for a Sandbox
+Environment.
 
 It records:
 
 - sandbox id or name,
-- runtime workspace id,
+- sandbox environment id,
 - active source revisions,
 - current snapshot id,
 - exposed port URLs,
@@ -112,7 +112,7 @@ It records:
 - last activity,
 - owning agent run or task.
 
-### Workspace Snapshot
+### Sandbox Snapshot
 
 Snapshots are product assets.
 
@@ -129,20 +129,19 @@ Snapshots should reduce cold-start cost and make long-running work resumable.
 Prefer low-level, composable primitives.
 
 Cursor exposes a small set of general tools and lets the model decide how to
-combine them. SSOTA should do the same for Runtime Workspaces.
+combine them. SSOTA should do the same for Sandbox Environments.
 
 Recommended model-facing tool surface:
 
-- `workspace_shell`
-- `workspace_await`
-- `workspace_read_file`
-- `workspace_write_file`
-- `workspace_edit`
-- `workspace_delete`
-- `workspace_glob`
-- `workspace_search`
-- `workspace_snapshot`
-- `workspace_restore`
+- `sandbox_shell`
+- `sandbox_await`
+- `sandbox_read`
+- `sandbox_write`
+- `sandbox_str_replace`
+- `sandbox_delete`
+- `sandbox_glob`
+- `sandbox_grep`
+- `sandbox_read_lints`
 
 Avoid separate model-facing tools for:
 
@@ -152,21 +151,26 @@ Avoid separate model-facing tools for:
 - `run_tests`
 - `install_dependencies`
 - `start_dev_server`
+- `snapshot`
+- `restore`
 - `preview_url`
 
-These should usually be shell commands or server-side broker behaviors. If a
-high-level tool is added later, it should exist for safety, authorization, or UX
-reasons, not because the model cannot compose shell commands.
+These should usually be shell commands or server-side broker behaviors. Snapshot
+and restore are environment lifecycle actions and should be invoked by product
+code or a brokered setup flow, not by the model as general-purpose editing
+tools. If a high-level tool is added later, it should exist for safety,
+authorization, or UX reasons, not because the model cannot compose shell
+commands.
 
 ## Tool details
 
-### `workspace_shell`
+### `sandbox_shell`
 
-Runs a shell command in a workspace session.
+Runs a shell command in a sandbox session.
 
 Inputs:
 
-- `workspaceId`
+- `sandboxId`
 - `cmd`
 - `args`
 - `cwd`
@@ -176,11 +180,11 @@ Inputs:
 
 Notes:
 
-- `cwd` should be restricted to allowed workspace roots.
+- `cwd` should be restricted to allowed sandbox roots.
 - Output should be capped and resumable through logs.
 - Detached commands should return a process handle.
 
-### `workspace_await`
+### `sandbox_await`
 
 Polls a detached process, command log, or port readiness check.
 
@@ -190,63 +194,59 @@ Inputs:
 - `pattern`
 - `timeoutMs`
 
-### `workspace_read_file`
+### `sandbox_read`
 
-Reads a text file from an allowed workspace path.
+Reads a text file from an allowed sandbox path.
 
 Inputs:
 
-- `workspaceId`
+- `sandboxId`
 - `path`
 - `offset`
 - `limit`
 
-### `workspace_write_file`
+### `sandbox_write`
 
-Writes a file in an allowed workspace path.
+Writes a file in an allowed sandbox path.
 
 Inputs:
 
-- `workspaceId`
+- `sandboxId`
 - `path`
 - `content`
 
-### `workspace_edit`
+### `sandbox_str_replace`
 
-Applies a bounded patch or string replacement.
+Replaces a unique string in a file.
 
 Inputs:
 
-- `workspaceId`
+- `sandboxId`
 - `path`
-- `patch` or `oldString/newString`
+- `oldString`
+- `newString`
 
-### `workspace_delete`
+Prefer `sandbox_str_replace` for targeted edits and `sandbox_write` for new
+files or full-file rewrites. Avoid a separate patch dialect unless string
+replacement proves insufficient.
 
-Deletes a file in an allowed workspace path.
+### `sandbox_delete`
 
-### `workspace_glob`
+Deletes a file in an allowed sandbox path.
 
-Lists files by glob pattern inside allowed workspace roots.
+### `sandbox_glob`
 
-### `workspace_search`
+Lists files by glob pattern inside allowed sandbox roots.
 
-Runs fast text search inside allowed workspace roots.
+### `sandbox_grep`
 
-### `workspace_snapshot`
+Runs fast text search inside allowed sandbox roots.
 
-Saves the current filesystem state.
+### `sandbox_read_lints`
 
-Inputs:
-
-- `workspaceId`
-- `sessionId`
-- `label`
-- `kind`: `base`, `project`, or `run`
-
-### `workspace_restore`
-
-Creates or resumes a session from a named sandbox or snapshot.
+Reads structured lint/typecheck/build diagnostics captured by the sandbox
+session. This is a read-only helper so agents do not need to scrape long shell
+logs for diagnostics.
 
 ## Server-side broker responsibilities
 
@@ -272,7 +272,7 @@ Credentials should not be written permanently into the sandbox filesystem.
 
 ## Data model
 
-### `runtime_workspaces`
+### `sandbox_environments`
 
 Recommended fields:
 
@@ -294,12 +294,12 @@ Recommended fields:
 - `created_at`
 - `updated_at`
 
-### `workspace_sources`
+### `sandbox_sources`
 
 Recommended fields:
 
 - `id`
-- `runtime_workspace_id`
+- `sandbox_environment_id`
 - `key`
 - `url`
 - `provider`
@@ -311,12 +311,12 @@ Recommended fields:
 - `primary`
 - `auth_policy`
 
-### `workspace_sessions`
+### `sandbox_sessions`
 
 Recommended fields:
 
 - `id`
-- `runtime_workspace_id`
+- `sandbox_environment_id`
 - `sandbox_id`
 - `sandbox_name`
 - `status`
@@ -329,12 +329,12 @@ Recommended fields:
 - `created_at`
 - `updated_at`
 
-### `workspace_snapshots`
+### `sandbox_snapshots`
 
 Recommended fields:
 
 - `id`
-- `runtime_workspace_id`
+- `sandbox_environment_id`
 - `sandbox_snapshot_id`
 - `kind`
 - `label`
@@ -344,7 +344,7 @@ Recommended fields:
 
 ## Agent access model
 
-Main Agent may receive restricted workspace primitives for inspection and
+Main Agent may receive restricted sandbox primitives for inspection and
 planning:
 
 - shell with short timeouts,
@@ -352,7 +352,7 @@ planning:
 - no write by default,
 - no commit/push by default.
 
-Specialist Coding Agents may receive broader workspace permissions:
+Specialist Coding Agents may receive broader sandbox permissions:
 
 - read/write/edit/delete,
 - shell with longer timeouts,
@@ -365,10 +365,10 @@ specialists to perform long-running implementation work.
 
 ## Runtime flow
 
-### Provision workspace
+### Provision sandbox environment
 
-1. Resolve Runtime Workspace definition.
-2. Resolve workspace sources and access policy.
+1. Resolve Sandbox Environment definition.
+2. Resolve sandbox sources and access policy.
 3. Create or resume named Vercel Sandbox.
 4. Clone or update each source into its configured path.
 5. Run setup script if needed.
@@ -377,7 +377,7 @@ specialists to perform long-running implementation work.
 
 ### Agent run
 
-1. Agent receives workspace session id and allowed roots.
+1. Agent receives sandbox session id and allowed roots.
 2. Agent uses low-level primitives to inspect, edit, and run commands.
 3. Product captures logs and artifacts.
 4. Agent snapshots useful checkpoints.
@@ -406,40 +406,40 @@ Missing:
 - snapshot registry,
 - brokered commit/push/PR flow,
 - credential injection and cleanup,
-- runtime workspace UI.
+- sandbox environment UI.
 
 Sandbox provisioning is currently tied to one development workflow key. That
-should become workspace/run-policy driven.
+should become sandbox/run-policy driven.
 
 ## UI changes
 
-Add a Runtime Workspaces area.
+Add a Sandbox Environments area.
 
 Views:
 
-- Workspace definitions
+- Sandbox Environment definitions
 - Sources
 - Sessions
 - Snapshots
 - Logs and artifacts
 
-Agent/task UI should let a user select a Runtime Workspace when assigning work
+Agent/task UI should let a user select a Sandbox Environment when assigning work
 to a Coding Agent.
 
 ## Implementation phases
 
 ### Phase 1: Contracts
 
-- Add Runtime Workspace schemas.
-- Add Workspace Source schemas.
-- Add Workspace Session and Snapshot schemas.
-- Add low-level workspace tool schemas.
+- Add Sandbox Environment schemas.
+- Add Sandbox Source schemas.
+- Add Sandbox Session and Snapshot schemas.
+- Add low-level sandbox tool schemas.
 
 ### Phase 2: Database and adapter
 
-- Add runtime workspace tables.
+- Add sandbox environment tables.
 - Add source/session/snapshot tables.
-- Add ports for workspace CRUD and session state.
+- Add ports for sandbox environment CRUD and session state.
 
 ### Phase 3: Sandbox provider
 
@@ -448,36 +448,36 @@ to a Coding Agent.
 - Add source checkout broker.
 - Add credential injection and cleanup.
 
-### Phase 4: Workspace primitive tools
+### Phase 4: Sandbox primitive tools
 
-- Implement shell, await, read, write, edit, delete, glob, search, snapshot, and
-  restore.
+- Implement shell, await, read, write, string replacement, delete, glob, grep,
+  and read-lints.
 - Enforce allowed roots and output caps.
 - Persist command logs.
 
 ### Phase 5: Agent integration
 
-- Add workspace access policy to agent definitions.
+- Add sandbox access policy to agent definitions.
 - Give Main Agent restricted inspect/probe tools.
-- Give Coding Agents broader runtime workspace tools.
+- Give Coding Agents broader sandbox tools.
 
 ### Phase 6: UI and E2E
 
-- Add Runtime Workspaces UI.
+- Add Sandbox Environments UI.
 - Add source/session/snapshot management.
-- Add task assignment to Runtime Workspace.
-- E2E a multi-repo workspace setup and a Coding Agent task.
+- Add task assignment to Sandbox Environment.
+- E2E a multi-repo sandbox setup and a Coding Agent task.
 
 ## Acceptance criteria
 
-- Runtime Workspace is a first-class product concept separate from Agent and
+- Sandbox Environment is a first-class product concept separate from Agent and
   Script Tool.
-- One workspace can mount multiple repositories.
-- Workspace sessions can be named, resumed, snapshotted, and restored.
+- One sandbox environment can mount multiple repositories.
+- Sandbox sessions can be named, resumed, snapshotted, and restored.
 - Model-facing tools are low-level and composable.
 - High-level git/test/dev-server behavior is handled through shell commands or
   server-side broker services.
-- Main Agent can inspect workspaces without becoming a coding-only agent.
+- Main Agent can inspect sandboxes without becoming a coding-only agent.
 - Specialist Coding Agents can perform real implementation work in Vercel
   Sandbox.
 - Private repo credentials are brokered outside the sandbox and cleaned up after
