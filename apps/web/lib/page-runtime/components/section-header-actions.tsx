@@ -3,7 +3,8 @@
 import {
   createContext,
   use,
-  useEffect,
+  useLayoutEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -22,11 +23,19 @@ export function useSectionHeaderActions(): SectionHeaderActionsContextValue | nu
 /** Renders filter/toolbar controls in the parent Section header (right side). */
 export function SectionHeaderEnd({ children }: { children: ReactNode }) {
   const ctx = use(SectionHeaderActionsContext);
-  useEffect(() => {
+  const registered = useRef<ReactNode>(undefined);
+
+  useLayoutEffect(() => {
     if (!ctx) return;
+    if (registered.current === children) return;
+    registered.current = children;
     ctx.setHeaderEnd(children);
-    return () => ctx.setHeaderEnd(null);
+    return () => {
+      registered.current = undefined;
+      ctx.setHeaderEnd(null);
+    };
   }, [ctx, children]);
+
   return null;
 }
 
