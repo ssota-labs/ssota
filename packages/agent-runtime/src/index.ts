@@ -75,12 +75,11 @@ export {
   NodeScopeViolation,
 } from "./node-scopes.js";
 export {
-  createSandboxSession,
-  attachSandboxSession,
-  type SandboxSession,
-  type ExecResult,
-  type CreateSandboxSessionOptions,
-} from "./sandbox/session.js";
+  createSandboxProvider,
+  runEphemeralSandbox,
+  type SandboxProviderDeps,
+} from "./sandbox/provider.js";
+export { SandboxPathPolicyError } from "./sandbox/path-policy.js";
 export {
   createEnvCredentialProvider,
   createVercelConnectProvider,
@@ -126,6 +125,9 @@ export {
   getWorkflowInstructionPort,
   ensureTeamspaceOrganizationScope,
   registerTeamspaceOrganization,
+  getSandboxEnvironmentPort,
+  getSandboxSessionRecordPort,
+  getSandboxSessionPort,
 } from "./ports.js";
 
 export type { AgentRunContext } from "./engine/types.js";

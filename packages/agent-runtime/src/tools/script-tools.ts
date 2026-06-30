@@ -3,7 +3,7 @@ import { z } from "zod";
 import { RunScriptToolInputSchema, type ScriptToolIndex } from "@ssota/contracts";
 import { getScriptToolPort } from "../ports.js";
 import { getRunContext } from "./context.js";
-import { attachSandboxSession, createSandboxSession } from "../sandbox/session.js";
+import { runEphemeralSandbox } from "../sandbox/provider.js";
 
 const RUNNER_WRAPPER = `
 export default async function run(input, sdk) {
@@ -51,29 +51,27 @@ async function executeScriptInSandbox(
   dryRun: boolean,
   timeoutMs: number,
 ): Promise<{ ok: boolean; output?: unknown; error?: string }> {
-  const sandbox = await createSandboxSession({ timeoutMs });
-  try {
-    const payload = JSON.stringify({ input, sdk: buildScopedSdk(dryRun) });
-    await sandbox.writeFile("/tmp/run-payload.json", payload);
-    await sandbox.writeFile("/tmp/worker.mjs", script);
-    await sandbox.writeFile("/tmp/runner.mjs", RUNNER_WRAPPER);
-    const result = await sandbox.exec("node", ["/tmp/runner.mjs"]);
-    if (result.exitCode !== 0) {
-      return { ok: false, error: result.stderr || result.stdout || "Script failed" };
-    }
-    try {
-      return { ok: true, output: JSON.parse(result.stdout.trim() || "{}") };
-    } catch {
-      return { ok: true, output: result.stdout.trim() };
-    }
-  } finally {
-    try {
-      const attached = await attachSandboxSession(sandbox.sandboxId);
-      await attached.stop();
-    } catch {
-      // best-effort teardown
-    }
-  }
+  return runEphemeralSandbox(
+    async (handle) => {
+      const payload = JSON.stringify({ input, sdk: buildScopedSdk(dryRun) });
+      await handle.writeFile("/tmp/run-payload.json", payload);
+      await handle.writeFile("/tmp/worker.mjs", script);
+      await handle.writeFile("/tmp/runner.mjs", RUNNER_WRAPPER);
+      const result = await handle.exec("node", ["/tmp/runner.mjs"]);
+      if (result.exitCode !== 0) {
+        return {
+          ok: false,
+          error: result.stderr || result.stdout || "Script failed",
+        };
+      }
+      try {
+        return { ok: true, output: JSON.parse(result.stdout.trim() || "{}") };
+      } catch {
+        return { ok: true, output: result.stdout.trim() };
+      }
+    },
+    { timeoutMs },
+  );
 }
 
 async function listScriptToolsForAgent(
