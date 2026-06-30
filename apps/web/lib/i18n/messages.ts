@@ -379,6 +379,7 @@ export const en = {
       "Checkout completed. Your subscription will appear here once Stripe confirms payment.",
     billingCheckoutCancel: "Checkout was canceled. You can try again when ready.",
     billingSeatsUpdated: "Billing seats updated to {count}.",
+    billingViewBilling: "View billing",
   },
   goals: {
     emptyTitle: "Set your first objective",
@@ -1218,6 +1219,7 @@ export const ko = {
       "결제가 완료되었습니다. Stripe 확인 후 구독 상태가 반영됩니다.",
     billingCheckoutCancel: "결제가 취소되었습니다. 준비되면 다시 시도할 수 있습니다.",
     billingSeatsUpdated: "청구 좌석이 {count}개로 업데이트되었습니다.",
+    billingViewBilling: "구독 관리",
   },
   goals: {
     emptyTitle: "첫 목표를 설정하세요",

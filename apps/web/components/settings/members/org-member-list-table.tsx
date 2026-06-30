@@ -25,7 +25,6 @@ import {
   revokeInvitationAction,
   removeMemberAction,
 } from "@/app/settings/member-actions";
-import { showBillingSeatsUpdatedToast } from "./billing-seat-toast";
 import { toast } from "@ssota/ui/components/ui/sonner";
 import { cn } from "@ssota/ui/lib/utils";
 import { getRoleIcon, getRoleLabel, type MemberRow } from "./org-member-list.types";
@@ -45,6 +44,7 @@ type OrgMemberListTableProps = {
   orgSlug: string;
   teamspaceSlug: string;
   onChanged: () => void;
+  onBillableSeatsSynced?: (billableSeats: number) => void;
   onRemoveOptimistic: (userId: string) => void;
   isMobile: boolean;
 };
@@ -57,6 +57,7 @@ export function OrgMemberListTable({
   orgSlug,
   teamspaceSlug,
   onChanged,
+  onBillableSeatsSynced,
   onRemoveOptimistic,
 }: OrgMemberListTableProps) {
   const { t } = useLocale();
@@ -92,8 +93,8 @@ export function OrgMemberListTable({
       });
       if (result.ok) {
         toast.success(t("settings.membersRemoveSuccess"));
-        if (isOwner && result.billableSeats != null) {
-          showBillingSeatsUpdatedToast(t, result.billableSeats);
+        if (result.billableSeats != null) {
+          onBillableSeatsSynced?.(result.billableSeats);
         }
         onChanged();
       } else {
