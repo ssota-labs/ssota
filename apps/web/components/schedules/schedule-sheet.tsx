@@ -14,6 +14,14 @@ import {
   SelectValue,
 } from "@ssota/ui/components/ui/select";
 import { cn } from "@ssota/ui/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@ssota/ui/components/ui/dialog";
 import type { ScheduleTargetType } from "@ssota/contracts";
 import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import {
@@ -48,6 +56,8 @@ interface ScheduleSheetProps {
   accountId: string;
   instructions: InstructionOption[];
   schedule?: ScheduleEditTarget;
+  /** Sheet on schedules page; dialog when nested in agent settings. */
+  presentation?: "sheet" | "dialog";
 }
 
 function inferTargetType(agentDefinitionId?: string): ScheduleTargetType {
@@ -100,6 +110,7 @@ export function ScheduleSheet({
   accountId,
   instructions,
   schedule,
+  presentation = "sheet",
 }: ScheduleSheetProps) {
   const router = useRouter();
   const isEdit = Boolean(schedule);
@@ -258,29 +269,24 @@ export function ScheduleSheet({
   const showAtTime = rec.frequency === "day" || rec.frequency === "week";
   const showDays = rec.frequency !== "day";
 
-  if (!open) return null;
+  const title = isEdit ? "Edit trigger" : "Add trigger";
+  const subtitle = selectedInstruction
+    ? selectedInstruction.name
+    : "Choose an agent and set a recurring schedule.";
 
-  return (
-    <ScheduleSheetPanel
-      title={isEdit ? "Edit trigger" : "Add trigger"}
-      subtitle={
-        selectedInstruction
-          ? selectedInstruction.name
-          : "Choose an agent and set a recurring schedule."
-      }
-      onClose={() => onOpenChange(false)}
-      footer={
-        <Button
-          type="submit"
-          form="schedule-sheet-form"
-          disabled={isPending || Boolean(preview.error)}
-          className="w-full"
-        >
-          {isEdit ? "Save changes" : "Add trigger"}
-        </Button>
-      }
+  const submitButton = (
+    <Button
+      type="submit"
+      form="schedule-sheet-form"
+      disabled={isPending || Boolean(preview.error)}
+      className={presentation === "sheet" ? "w-full" : undefined}
     >
-      <form id="schedule-sheet-form" className="space-y-5" onSubmit={handleSubmit}>
+      {isEdit ? "Save changes" : "Add trigger"}
+    </Button>
+  );
+
+  const form = (
+    <form id="schedule-sheet-form" className="space-y-5" onSubmit={handleSubmit}>
         <div className="space-y-2">
           <Label>Agent</Label>
           <InstructionPickerSelect
@@ -510,6 +516,37 @@ export function ScheduleSheet({
 
         {error && <p className="text-sm text-destructive">{error}</p>}
       </form>
+  );
+
+  if (presentation === "dialog") {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          className="max-h-[85vh] max-w-lg overflow-y-auto"
+          forceBackdrop
+          data-testid="schedule-add-dialog"
+        >
+          <DialogHeader>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogDescription>{subtitle}</DialogDescription>
+          </DialogHeader>
+          {form}
+          <DialogFooter>{submitButton}</DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (!open) return null;
+
+  return (
+    <ScheduleSheetPanel
+      title={title}
+      subtitle={subtitle}
+      onClose={() => onOpenChange(false)}
+      footer={submitButton}
+    >
+      {form}
     </ScheduleSheetPanel>
   );
 }

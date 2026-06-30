@@ -701,6 +701,7 @@ export function AgentSettingsDialogs({
       <ScheduleSheet
         open={scheduleOpen}
         onOpenChange={setScheduleOpen}
+        presentation="dialog"
         teamspaceId={teamspaceId}
         accountId={accountId}
         instructions={[{ id: definition.id, name: definition.name }]}
