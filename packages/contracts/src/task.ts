@@ -29,6 +29,7 @@ export const TaskSchema = z.object({
   context: z.record(z.unknown()).default({}),
   acceptanceCriteria: z.array(z.unknown()).default([]),
   idempotencyKey: z.string().nullable(),
+  sandboxEnvironmentId: z.string().uuid().nullable().optional(),
   result: z.record(z.unknown()).default({}),
   completedAt: z.string().nullable(),
   createdAt: z.string(),
@@ -100,6 +101,7 @@ export const UpdateTaskPatchSchema = z.object({
   context: z.record(z.unknown()).optional(),
   acceptanceCriteria: z.array(z.unknown()).optional(),
   result: z.record(z.unknown()).optional(),
+  sandboxEnvironmentId: z.string().uuid().nullable().optional(),
 });
 
 export type UpdateTaskPatch = z.infer<typeof UpdateTaskPatchSchema>;

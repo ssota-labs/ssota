@@ -52,6 +52,7 @@ function mapTask(row: typeof schema.tasks.$inferSelect): Task {
     context: row.context,
     acceptanceCriteria: row.acceptanceCriteria,
     idempotencyKey: row.idempotencyKey,
+    sandboxEnvironmentId: row.sandboxEnvironmentId ?? null,
     result: row.result,
     completedAt: row.completedAt,
     createdAt: row.createdAt,
@@ -162,6 +163,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           context: input.context ?? {},
           acceptanceCriteria: input.acceptanceCriteria ?? [],
           idempotencyKey: input.idempotencyKey ?? null,
+          sandboxEnvironmentId: input.sandboxEnvironmentId ?? null,
         })
         .returning();
       return mapTask(row!);
@@ -186,6 +188,9 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
         set.acceptanceCriteria = patch.acceptanceCriteria;
       }
       if (patch.result !== undefined) set.result = patch.result;
+      if (patch.sandboxEnvironmentId !== undefined) {
+        set.sandboxEnvironmentId = patch.sandboxEnvironmentId;
+      }
 
       const [row] = await db
         .update(schema.tasks)

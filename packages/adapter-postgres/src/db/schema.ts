@@ -570,6 +570,7 @@ export const tasks = pgTable(
     targetNodeId: uuid("target_node_id").references(() => nodes.id, {
       onDelete: "set null",
     }),
+    sandboxEnvironmentId: uuid("sandbox_environment_id"),
     parentTaskId: uuid("parent_task_id"),
     context: jsonb("context").notNull().default({}).$type<Record<string, unknown>>(),
     acceptanceCriteria: jsonb("acceptance_criteria")
