@@ -33,10 +33,19 @@ describe("resolveSkillManifest", () => {
     async readSkillFile() {
       return null;
     },
+    async listSkillFiles() {
+      return [];
+    },
     async listAgentSkillLinks() {
       return [];
     },
     async registerSkill() {
+      throw new Error("not implemented");
+    },
+    async updateCustomSkill() {
+      throw new Error("not implemented");
+    },
+    async deleteCustomSkill() {
       throw new Error("not implemented");
     },
     async updateAgentSkillBindings() {},

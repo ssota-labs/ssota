@@ -13,6 +13,7 @@ export function withConsolePaths(paths: string[]): string[] {
   set.add(orgPath(defaultCtx, "overview"));
   set.add(orgPath(defaultCtx, "tasks"));
   set.add(orgPath(defaultCtx, "agents"));
+  set.add(orgPath(defaultCtx, "skills"));
   set.add(orgPath(defaultCtx, "workflow", "map"));
   set.add(orgPath(defaultCtx, "workflow", "instructions"));
   set.add(orgPath(defaultCtx, "executive", "roadmap"));

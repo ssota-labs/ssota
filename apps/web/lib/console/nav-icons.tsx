@@ -45,6 +45,7 @@ export const NAV_ICONS: Record<string, Icon> = {
   workflow_instructions: FlowArrowIcon,
   chat: ChatCircleIcon,
   connections: PlugIcon,
+  skills: LightbulbIcon,
   schedules: ClockIcon,
   executive: BriefcaseIcon,
   research: MagnifyingGlassIcon,

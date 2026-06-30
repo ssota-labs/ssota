@@ -12,14 +12,13 @@ import {
   DocumentSheetPanel,
   type SheetSize,
 } from "@/lib/page-runtime/components/document-sheet-panel";
-import { AgentSkillBindings, SkillsCatalogPanel } from "@/components/console/skills-workspace";
+import { AgentSkillBindings } from "@/components/console/skills-workspace";
 import type { RenderNode } from "@/lib/page-runtime/types";
-
-type WorkspaceTab = "agents" | "skills";
 
 type AgentsWorkspaceProps = {
   teamspaceId: string;
   groups: AgentGroup[];
+  skillsHref: string;
 };
 
 function toRenderNode(definition: AgentDefinition): RenderNode {
@@ -37,10 +36,10 @@ function toRenderNode(definition: AgentDefinition): RenderNode {
 export function AgentsWorkspace({
   teamspaceId,
   groups: initialGroups,
+  skillsHref,
 }: AgentsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [tab, setTab] = useState<WorkspaceTab>("agents");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -101,46 +100,19 @@ export function AgentsWorkspace({
     >
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
-          title="Agents & Skills"
-          description="Agent playbooks and skill bindings for this project."
+          title="Agents"
+          description="Agent playbooks for this project. Manage the skill catalog on the Skills page."
+          actions={
+            <a
+              href={skillsHref}
+              className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              Open Skills
+            </a>
+          }
         />
 
-        <div className="mb-4 flex gap-2 border-b border-border pb-2">
-          <button
-            type="button"
-            className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-              tab === "agents"
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            onClick={() => setTab("agents")}
-          >
-            Agents
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-              tab === "skills"
-                ? "bg-muted text-foreground"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-            onClick={() => setTab("skills")}
-            data-testid="skills-tab"
-          >
-            Skills
-          </button>
-        </div>
-
-        {tab === "skills" ? (
-          <BrowseWorkspace.Section label="Organization catalog">
-            <SkillsCatalogPanel teamspaceId={teamspaceId} />
-          </BrowseWorkspace.Section>
-        ) : null}
-
-        {tab === "agents"
-          ? groups.map((group) => (
+        {groups.map((group) => (
           <BrowseWorkspace.Section key={group.key} label={group.label}>
             <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
               {group.items.map((definition) => (
@@ -173,10 +145,9 @@ export function AgentsWorkspace({
               ))}
             </div>
           </BrowseWorkspace.Section>
-        ))
-          : null}
+        ))}
 
-        {tab === "agents" && definitions.length === 0 ? (
+        {definitions.length === 0 ? (
           <BrowseWorkspace.Empty>
             No agent definitions seeded for this project yet.
           </BrowseWorkspace.Empty>

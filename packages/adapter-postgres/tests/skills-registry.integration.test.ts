@@ -83,4 +83,41 @@ describe("skills registry", () => {
     const bound = await port.listForAgentDefinition(agentDefinitionId);
     expect(bound.some((s) => s.key === "supabase")).toBe(true);
   });
+
+  it("creates, updates, and deletes custom org skills", async () => {
+    if (skip) return;
+    const port = createSkillPort(db, { organizationId, teamspaceId });
+    const created = await port.registerSkill(organizationId, {
+      key: "e2e-custom-skill",
+      name: "E2E Custom",
+      description: "Integration test skill",
+      source: "custom",
+      body: "Initial body",
+    });
+    expect(created.source).toBe("custom");
+
+    const file = await port.readSkillFile(
+      organizationId,
+      created.id,
+      "SKILL.md",
+    );
+    expect(file?.contents).toContain("Initial body");
+
+    const updated = await port.updateCustomSkill(organizationId, created.id, {
+      body: "Updated body",
+      description: "Updated description",
+    });
+    expect(updated.description).toBe("Updated description");
+
+    const updatedFile = await port.readSkillFile(
+      organizationId,
+      created.id,
+      "SKILL.md",
+    );
+    expect(updatedFile?.contents).toContain("Updated body");
+
+    await port.deleteCustomSkill(organizationId, created.id);
+    const gone = await port.getById(created.id);
+    expect(gone).toBeNull();
+  });
 });

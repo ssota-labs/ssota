@@ -10,6 +10,7 @@ import {
   type SkillFile,
   type SkillIndex,
   type SkillSnapshot,
+  type UpdateSkillInput,
 } from "@ssota/contracts";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
@@ -55,6 +56,25 @@ function orgCatalogCondition(organizationId: string) {
     eq(schema.skills.organizationId, organizationId),
     isNull(schema.skills.organizationId),
   );
+}
+
+function buildSkillMd(name: string, description: string, body: string): string {
+  const trimmed = body.trim();
+  return `---
+name: ${name}
+description: ${description}
+---
+
+${trimmed}
+`;
+}
+
+function skillMdBody(files: SkillFile[]): string {
+  const skillFile = files.find(
+    (f) => f.path === "SKILL.md" || f.path.endsWith("/SKILL.md"),
+  );
+  if (!skillFile) return "";
+  return stripSkillFrontmatter(skillFile.contents);
 }
 
 export function createSkillPort(
@@ -140,6 +160,33 @@ export function createSkillPort(
       return file;
     },
 
+    async listSkillFiles(orgId, skillId) {
+      const skillRows = await db
+        .select()
+        .from(schema.skills)
+        .where(and(eq(schema.skills.id, skillId), orgCatalogCondition(orgId)))
+        .limit(1);
+      if (!skillRows[0]) return [];
+
+      const snapRows = await db
+        .select()
+        .from(schema.skillSnapshots)
+        .where(eq(schema.skillSnapshots.skillId, skillId))
+        .limit(1);
+      const snap = snapRows[0];
+      if (!snap) return [];
+
+      return (snap.files as SkillFile[]).map((file) => {
+        if (file.path === "SKILL.md" || file.path.endsWith("/SKILL.md")) {
+          return {
+            path: file.path,
+            contents: stripSkillFrontmatter(file.contents),
+          };
+        }
+        return file;
+      });
+    },
+
     async listAgentSkillLinks(agentDefinitionId) {
       const rows = await db
         .select()
@@ -168,6 +215,20 @@ export function createSkillPort(
       const contentHash = files.length > 0 ? hashFiles(files) : null;
       const source = input.source ?? (input.externalId ? "skills_sh" : "custom");
 
+      let snapshotFiles = files;
+      if (snapshotFiles.length === 0 && input.body !== undefined) {
+        const skillName = input.name ?? key;
+        const skillDescription = input.description ?? "";
+        snapshotFiles = [
+          {
+            path: "SKILL.md",
+            contents: buildSkillMd(skillName, skillDescription, input.body),
+          },
+        ];
+      }
+      const resolvedHash =
+        snapshotFiles.length > 0 ? hashFiles(snapshotFiles) : contentHash;
+
       const existing = await db
         .select()
         .from(schema.skills)
@@ -184,7 +245,7 @@ export function createSkillPort(
             name: input.name ?? existing[0].name,
             description: input.description ?? existing[0].description,
             externalId: input.externalId ?? existing[0].externalId,
-            contentHash: contentHash ?? existing[0].contentHash,
+            contentHash: resolvedHash ?? existing[0].contentHash,
             source,
             updatedAt: sql`now()`,
           })
@@ -201,31 +262,115 @@ export function createSkillPort(
             description: input.description ?? "",
             source,
             externalId: input.externalId ?? null,
-            contentHash,
+            contentHash: resolvedHash,
           })
           .returning();
         skillRow = inserted!;
       }
 
-      if (files.length > 0 && contentHash) {
+      if (snapshotFiles.length > 0 && resolvedHash) {
         await db
           .insert(schema.skillSnapshots)
           .values({
             skillId: skillRow.id,
-            contentHash,
-            files,
+            contentHash: resolvedHash,
+            files: snapshotFiles,
           })
           .onConflictDoUpdate({
             target: schema.skillSnapshots.skillId,
             set: {
-              contentHash,
-              files,
+              contentHash: resolvedHash,
+              files: snapshotFiles,
               fetchedAt: sql`now()`,
             },
           });
       }
 
       return mapSkill(skillRow);
+    },
+
+    async updateCustomSkill(orgId, skillId, input: UpdateSkillInput) {
+      const rows = await db
+        .select()
+        .from(schema.skills)
+        .where(
+          and(eq(schema.skills.id, skillId), eq(schema.skills.organizationId, orgId)),
+        )
+        .limit(1);
+      const existing = rows[0];
+      if (!existing) {
+        throw new Error("SKILL_NOT_FOUND");
+      }
+      if (existing.source !== "custom") {
+        throw new Error("SKILL_NOT_EDITABLE");
+      }
+
+      const name = input.name ?? existing.name;
+      const description = input.description ?? existing.description ?? "";
+
+      const snapRows = await db
+        .select()
+        .from(schema.skillSnapshots)
+        .where(eq(schema.skillSnapshots.skillId, skillId))
+        .limit(1);
+      const currentFiles = (snapRows[0]?.files as SkillFile[] | undefined) ?? [];
+      const body =
+        input.body !== undefined ? input.body : skillMdBody(currentFiles);
+      const files: SkillFile[] = [
+        {
+          path: "SKILL.md",
+          contents: buildSkillMd(name, description, body),
+        },
+      ];
+      const contentHash = hashFiles(files);
+
+      const [updated] = await db
+        .update(schema.skills)
+        .set({
+          name,
+          description,
+          contentHash,
+          updatedAt: sql`now()`,
+        })
+        .where(eq(schema.skills.id, skillId))
+        .returning();
+
+      await db
+        .insert(schema.skillSnapshots)
+        .values({
+          skillId,
+          contentHash,
+          files,
+        })
+        .onConflictDoUpdate({
+          target: schema.skillSnapshots.skillId,
+          set: {
+            contentHash,
+            files,
+            fetchedAt: sql`now()`,
+          },
+        });
+
+      return mapSkill(updated!);
+    },
+
+    async deleteCustomSkill(orgId, skillId) {
+      const rows = await db
+        .select()
+        .from(schema.skills)
+        .where(
+          and(eq(schema.skills.id, skillId), eq(schema.skills.organizationId, orgId)),
+        )
+        .limit(1);
+      const existing = rows[0];
+      if (!existing) {
+        throw new Error("SKILL_NOT_FOUND");
+      }
+      if (existing.source !== "custom") {
+        throw new Error("SKILL_NOT_DELETABLE");
+      }
+
+      await db.delete(schema.skills).where(eq(schema.skills.id, skillId));
     },
 
     async updateAgentSkillBindings(
