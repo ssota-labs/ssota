@@ -13,5 +13,9 @@ test.describe("sandbox environments settings", () => {
     await expect(
       page.getByText("Manage reusable VM templates for coding agent task runs."),
     ).toBeVisible();
+    await expect(page.getByTestId("sandbox-environments-panel")).toBeVisible();
+    await expect(
+      page.getByTestId("sandbox-environment-row-sandbox.dev_node24"),
+    ).toBeVisible();
   });
 });

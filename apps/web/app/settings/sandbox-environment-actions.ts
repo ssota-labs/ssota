@@ -14,6 +14,19 @@ export async function listSandboxEnvironmentsAction(
   return port.listEnvironments();
 }
 
+export async function getSandboxEnvironmentAction(
+  orgSlug: string,
+  teamspaceSlug: string,
+  environmentId: string,
+) {
+  const { project } = await resolveOrg(orgSlug, teamspaceSlug);
+  const port = getSandboxEnvironmentPort(project.id);
+  const environment = await port.getById(environmentId);
+  if (!environment) return null;
+  const sources = await port.listSources(environmentId);
+  return { environment, sources };
+}
+
 export async function upsertSandboxEnvironmentAction(
   orgSlug: string,
   teamspaceSlug: string,

@@ -17,7 +17,11 @@ export default async function SettingsSandboxEnvironmentsPage({
       title={t("settings.sandboxEnvironments")}
       description={t("settings.sandboxEnvironmentsDescription")}
     >
-      <SandboxEnvironmentsPanel environments={environments} />
+      <SandboxEnvironmentsPanel
+        orgSlug={orgSlug}
+        teamspaceSlug={teamspaceSlug}
+        environments={environments}
+      />
     </SettingsPanel>
   );
 }
