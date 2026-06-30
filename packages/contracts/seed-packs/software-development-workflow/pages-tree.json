@@ -220,7 +220,37 @@
             "subtitle": "Metric snapshots for the selected period",
             "padding": "none"
           },
-          "children": ["metricsGrid"]
+          "children": ["kpiTable", "metricsGrid"]
+        },
+        "kpiTable": {
+          "type": "DataTable",
+          "props": {
+            "binding": "kpis",
+            "setAction": "setCell",
+            "columns": [
+              { "key": "title", "header": "KPI", "type": "text", "editable": true, "width": 280 },
+              { "key": "current_value", "header": "Current", "type": "number", "editable": true },
+              { "key": "target", "header": "Target", "type": "number", "editable": true },
+              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "badge",
+                "editable": true,
+                "options": ["active", "paused", "archived"],
+                "labels": {
+                  "active": "Active",
+                  "paused": "Paused",
+                  "archived": "Archived"
+                },
+                "colors": {
+                  "active": "oklch(0.9 0.07 150)",
+                  "paused": "oklch(0.92 0.06 70)",
+                  "archived": "oklch(0.94 0.01 260)"
+                }
+              }
+            ]
+          }
         },
         "metricsGrid": {
           "type": "Grid",
@@ -283,6 +313,11 @@
           "catalogKey": "metric_snapshot",
           "property": "snapshots"
         }
+      },
+      "kpis": {
+        "kind": "query",
+        "catalogKey": "kpi",
+        "filter": [{ "key": "seed", "op": "exists" }]
       }
     },
     "actions": {

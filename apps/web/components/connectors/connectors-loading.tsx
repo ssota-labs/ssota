@@ -35,7 +35,7 @@ export function ConnectorsLoading() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <ConnectorsScrollShell>
-        <ConsolePageFrame contentClassName="gap-8">
+        <ConsolePageFrame contentClassName="gap-8" maxWidthClassName="max-w-5xl">
         <header className="space-y-1">
           <h1 className="text-2xl font-semibold tracking-tight">Connectors</h1>
           <div className="max-w-2xl">

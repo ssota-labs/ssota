@@ -1007,6 +1007,7 @@ async function seedDemoOkr(
           cadence: "weekly",
           direction: "increase",
           status: "active",
+          current_value: 21,
           seed: `${DEMO_OKR_SEED_KEY}:kpi`,
         },
       })
@@ -1137,6 +1138,7 @@ async function seedDemoOkr(
               cadence: "weekly",
               direction: "decrease",
               status: "active",
+              current_value: 12,
               seed: `${DEMO_OKR_SEED_KEY_2}:kpi`,
             },
           })
@@ -1192,6 +1194,7 @@ async function seedDemoOkr(
             cadence: "weekly",
             direction: "decrease",
             status: "active",
+            current_value: 12,
             seed: `${DEMO_OKR_SEED_KEY_2}:kpi`,
           },
         })
@@ -1244,6 +1247,51 @@ async function seedDemoOkr(
         },
       })
       .where(eq(schema.nodes.id, objective2Row.id));
+  }
+
+  await ensureDemoKpiCurrentValues(db, teamspaceId, maps);
+}
+
+const DEMO_KPI_CURRENT_VALUES: Array<{ seedSuffix: string; currentValue: number }> =
+  [
+    { seedSuffix: `${DEMO_OKR_SEED_KEY}:kpi`, currentValue: 21 },
+    { seedSuffix: `${DEMO_OKR_SEED_KEY_2}:kpi`, currentValue: 12 },
+  ];
+
+async function ensureDemoKpiCurrentValues(
+  db: ReturnType<typeof createDb>["db"],
+  teamspaceId: string,
+  maps: CatalogMaps,
+) {
+  const kpiCatalogId = maps.nodeKeyToId.get("kpi");
+  if (!kpiCatalogId) return;
+
+  for (const { seedSuffix, currentValue } of DEMO_KPI_CURRENT_VALUES) {
+    const [row] = await db
+      .select({ id: schema.nodes.id, properties: schema.nodes.properties })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.teamspaceId, teamspaceId),
+          eq(schema.nodes.nodeCatalogId, kpiCatalogId),
+          sql`${schema.nodes.properties}->>'seed' = ${seedSuffix}`,
+        ),
+      )
+      .limit(1);
+    if (!row) continue;
+
+    const props = (row.properties ?? {}) as Record<string, unknown>;
+    if (props.current_value === currentValue) continue;
+
+    await db
+      .update(schema.nodes)
+      .set({
+        properties: {
+          ...props,
+          current_value: currentValue,
+        },
+      })
+      .where(eq(schema.nodes.id, row.id));
   }
 }
 

@@ -98,13 +98,30 @@ test.describe("Executive goals", () => {
     ).toHaveCount(0);
   });
 
+  test("shows KPI table with seeded metrics", async ({ page }) => {
+    await expect(page.getByRole("heading", { name: "KPI pulse" })).toBeVisible({
+      timeout: 15_000,
+    });
+    await expect(
+      page.getByRole("cell", { name: "Workspace creation rate", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("cell", { name: "Time to first value", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole("cell", { name: "21", exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: "12", exact: true })).toBeVisible();
+  });
+
   test("shows KPI line charts with titles", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "KPI pulse" })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText("Workspace creation rate", { exact: true })).toBeVisible();
-    await expect(page.getByText("Time to first value", { exact: true })).toBeVisible();
-    await expect(page.getByTestId("chart-line").first()).toBeVisible();
+    const charts = page.getByTestId("chart-line");
+    await expect(charts).toHaveCount(2);
+    await expect(
+      charts.filter({ hasText: "Workspace creation rate" }),
+    ).toBeVisible();
+    await expect(charts.filter({ hasText: "Time to first value" })).toBeVisible();
   });
 
   test("period filter slices KPI chart snapshots", async ({ page }) => {

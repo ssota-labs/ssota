@@ -24,6 +24,7 @@ function Frame({
       className={className}
       testId={testId}
       contentClassName="gap-8"
+      maxWidthClassName="max-w-5xl"
     >
       {children}
     </ConsolePageFrame>
