@@ -278,6 +278,11 @@ export const en = {
     appearancePageDescription: "Theme and display preferences for the console UI.",
     members: "Members",
     membersDescription: "Invite teammates and manage organization roles.",
+    membersBillableSeatsLabel: "Billable members: {count}",
+    membersBillableSeatsDescriptionBilling:
+      "Each organization owner or member counts as one billable seat. Adding or removing members updates your subscription.",
+    membersBillableSeatsDescriptionSelfHost:
+      "Each organization owner or member counts as one seat in this organization.",
     membersComingSoon:
       "Invite members, assign roles, and manage organization memberships.",
     membersInviteButton: "Invite member",
@@ -351,10 +356,20 @@ export const en = {
     billingDescription: "Manage your SSOTA Cloud subscription and seats.",
     billingCurrentPlan: "Current subscription",
     billingOrg: "Organization: {orgSlug}",
+    billingPlanLabel: "Plan",
+    billingPlanDescription: "Your SSOTA Cloud plan and subscription status.",
     billingEntitled: "Active access",
     billingNotEntitled: "Subscription required",
     billingSeats: "Billable members",
+    billingSeatsDescription:
+      "Each organization owner or member counts as one billable seat. Adding members updates your Stripe subscription.",
+    billingManageMembers: "Manage members",
     billingSeatQuantity: "Billed seats",
+    billingSeatQuantityDescription:
+      "Seat quantity on your Stripe subscription. Synced when members join or leave.",
+    billingActionsLabel: "Subscription",
+    billingActionsDescription:
+      "Start or manage your SSOTA Cloud subscription in Stripe.",
     billingPeriodEnd: "Current period ends",
     billingCancelAtPeriodEnd: "Cancellation",
     billingYes: "At period end",
@@ -363,6 +378,8 @@ export const en = {
     billingCheckoutSuccess:
       "Checkout completed. Your subscription will appear here once Stripe confirms payment.",
     billingCheckoutCancel: "Checkout was canceled. You can try again when ready.",
+    billingSeatsUpdated: "Billing seats updated to {count}.",
+    billingViewBilling: "View billing",
   },
   goals: {
     emptyTitle: "Set your first objective",
@@ -1103,6 +1120,11 @@ export const ko = {
     appearancePageDescription: "콘솔 UI의 테마 및 표시 설정.",
     members: "멤버",
     membersDescription: "팀원 초대 및 조직 역할 관리.",
+    membersBillableSeatsLabel: "과금 대상 멤버: {count}명",
+    membersBillableSeatsDescriptionBilling:
+      "조직 소유자·멤버 1명당 좌석 1개가 청구됩니다. 멤버 추가·제거 시 구독 좌석이 업데이트됩니다.",
+    membersBillableSeatsDescriptionSelfHost:
+      "조직 소유자·멤버 1명당 좌석 1개로 계산됩니다.",
     membersComingSoon: "멤버 초대, 역할 할당, 조직 멤버십 관리.",
     membersInviteButton: "멤버 초대",
     membersInviteTitle: "멤버 초대",
@@ -1175,10 +1197,19 @@ export const ko = {
     billingDescription: "SSOTA Cloud 구독과 좌석 수를 관리합니다.",
     billingCurrentPlan: "현재 구독",
     billingOrg: "조직: {orgSlug}",
+    billingPlanLabel: "플랜",
+    billingPlanDescription: "SSOTA Cloud 플랜과 구독 상태입니다.",
     billingEntitled: "이용 가능",
     billingNotEntitled: "구독 필요",
     billingSeats: "과금 대상 멤버",
+    billingSeatsDescription:
+      "조직 소유자·멤버 1명당 좌석 1개가 청구됩니다. 멤버 추가·제거 시 Stripe 구독 좌석이 동기화됩니다.",
+    billingManageMembers: "멤버 관리",
     billingSeatQuantity: "청구 좌석",
+    billingSeatQuantityDescription:
+      "Stripe 구독의 좌석 수입니다. 멤버 가입·탈퇴 시 자동으로 동기화됩니다.",
+    billingActionsLabel: "구독",
+    billingActionsDescription: "Stripe에서 SSOTA Cloud 구독을 시작하거나 관리합니다.",
     billingPeriodEnd: "현재 기간 종료",
     billingCancelAtPeriodEnd: "해지 예약",
     billingYes: "기간 종료 시",
@@ -1187,6 +1218,8 @@ export const ko = {
     billingCheckoutSuccess:
       "결제가 완료되었습니다. Stripe 확인 후 구독 상태가 반영됩니다.",
     billingCheckoutCancel: "결제가 취소되었습니다. 준비되면 다시 시도할 수 있습니다.",
+    billingSeatsUpdated: "청구 좌석이 {count}개로 업데이트되었습니다.",
+    billingViewBilling: "구독 관리",
   },
   goals: {
     emptyTitle: "첫 목표를 설정하세요",

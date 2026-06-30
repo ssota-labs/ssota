@@ -44,6 +44,7 @@ type OrgMemberListTableProps = {
   orgSlug: string;
   teamspaceSlug: string;
   onChanged: () => void;
+  onBillableSeatsSynced?: (billableSeats: number) => void;
   onRemoveOptimistic: (userId: string) => void;
   isMobile: boolean;
 };
@@ -56,6 +57,7 @@ export function OrgMemberListTable({
   orgSlug,
   teamspaceSlug,
   onChanged,
+  onBillableSeatsSynced,
   onRemoveOptimistic,
 }: OrgMemberListTableProps) {
   const { t } = useLocale();
@@ -91,6 +93,9 @@ export function OrgMemberListTable({
       });
       if (result.ok) {
         toast.success(t("settings.membersRemoveSuccess"));
+        if (result.billableSeats != null) {
+          onBillableSeatsSynced?.(result.billableSeats);
+        }
         onChanged();
       } else {
         toast.error(result.error);

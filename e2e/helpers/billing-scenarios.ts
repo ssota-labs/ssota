@@ -436,11 +436,12 @@ export const BILLING_SCENARIOS: BillingScenario[] = [
   },
   {
     id: "H3",
-    title: "Member invite/remove does not auto-sync seats",
-    tier: "manual",
+    title: "Member accept/remove syncs Stripe seat quantity",
+    tier: "unit",
     tags: ["@billing", "@seats"],
-    automation: "manual",
-    notes: "Regression guard until Phase D membership wiring ships.",
+    automation: "yes",
+    spec: "apps/web/app/settings/member-actions.billing.test.ts",
+    notes: "syncOrgBillingSeats on invitation accept and member remove.",
   },
   {
     id: "H4",

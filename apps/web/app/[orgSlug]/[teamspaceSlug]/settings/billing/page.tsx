@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { BillingActions } from "@/components/settings/billing-actions";
-import { PageHeader } from "@/components/studio/page-header";
+import {
+  SettingsPanel,
+  SettingsRow,
+  SettingsSection,
+} from "@/components/settings/settings-panel";
 import { isBillingEnabled, getBillingPort } from "@/lib/billing/provider";
 import { orgPath } from "@/lib/console/paths";
 import { getTranslations } from "@/lib/i18n/server";
@@ -8,13 +12,6 @@ import { getConsolePort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@ssota/ui/components/ui/card";
 
 function formatPlanLabel(plan: string): string {
   switch (plan) {
@@ -63,14 +60,13 @@ export default async function SettingsBillingPage({
     ]);
 
   const billingEnabled = isBillingEnabled();
+  const membersPath = orgPath({ orgSlug, teamspaceSlug }, "settings/members");
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={t("settings.billingTitle")}
-        description={t("settings.billingDescription")}
-      />
-
+    <SettingsPanel
+      title={t("settings.billingTitle")}
+      description={t("settings.billingDescription")}
+    >
       {checkout === "success" ? (
         <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
           {t("settings.billingCheckoutSuccess")}
@@ -82,12 +78,14 @@ export default async function SettingsBillingPage({
         </div>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">{t("settings.billingCurrentPlan")}</CardTitle>
-          <CardDescription>{t("settings.billingOrg", { orgSlug })}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <SettingsSection
+        title={t("settings.billingCurrentPlan")}
+        description={t("settings.billingOrg", { orgSlug })}
+      >
+        <SettingsRow
+          title={t("settings.billingPlanLabel")}
+          description={t("settings.billingPlanDescription")}
+        >
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant={entitlement.isEntitled ? "default" : "secondary"}>
               {formatPlanLabel(entitlement.plan)}
@@ -99,57 +97,64 @@ export default async function SettingsBillingPage({
               <Badge variant="destructive">{t("settings.billingNotEntitled")}</Badge>
             )}
           </div>
+        </SettingsRow>
 
-          <dl className="grid gap-3 text-sm sm:grid-cols-2">
-            <div>
-              <dt className="text-muted-foreground">{t("settings.billingSeats")}</dt>
-              <dd className="font-medium">{billableSeats}</dd>
-            </div>
-            <div>
-              <dt className="text-muted-foreground">{t("settings.billingSeatQuantity")}</dt>
-              <dd className="font-medium">{entitlement.seatQuantity}</dd>
-            </div>
-            {entitlement.currentPeriodEnd ? (
-              <div>
-                <dt className="text-muted-foreground">{t("settings.billingPeriodEnd")}</dt>
-                <dd className="font-medium">
-                  {new Date(entitlement.currentPeriodEnd).toLocaleDateString()}
-                </dd>
-              </div>
-            ) : null}
-            {entitlement.cancelAtPeriodEnd ? (
-              <div>
-                <dt className="text-muted-foreground">{t("settings.billingCancelAtPeriodEnd")}</dt>
-                <dd className="font-medium">{t("settings.billingYes")}</dd>
-              </div>
-            ) : null}
-          </dl>
+        <SettingsRow
+          title={t("settings.billingSeats")}
+          description={t("settings.billingSeatsDescription")}
+        >
+          <div className="space-y-2">
+            <p className="text-sm font-medium">{billableSeats}</p>
+            <Button
+              render={<Link href={membersPath} />}
+              variant="outline"
+              size="sm"
+              nativeButton={false}
+            >
+              {t("settings.billingManageMembers")}
+            </Button>
+          </div>
+        </SettingsRow>
 
-          {!billingEnabled ? (
-            <p className="text-sm text-muted-foreground">{t("settings.billingSelfHostMode")}</p>
-          ) : (
+        <SettingsRow
+          title={t("settings.billingSeatQuantity")}
+          description={t("settings.billingSeatQuantityDescription")}
+        >
+          <p className="text-sm font-medium">{entitlement.seatQuantity}</p>
+        </SettingsRow>
+
+        {entitlement.currentPeriodEnd ? (
+          <SettingsRow title={t("settings.billingPeriodEnd")}>
+            <p className="text-sm font-medium">
+              {new Date(entitlement.currentPeriodEnd).toLocaleDateString()}
+            </p>
+          </SettingsRow>
+        ) : null}
+
+        {entitlement.cancelAtPeriodEnd ? (
+          <SettingsRow title={t("settings.billingCancelAtPeriodEnd")}>
+            <p className="text-sm font-medium">{t("settings.billingYes")}</p>
+          </SettingsRow>
+        ) : null}
+
+        <SettingsRow
+          title={t("settings.billingActionsLabel")}
+          description={
+            billingEnabled
+              ? t("settings.billingActionsDescription")
+              : t("settings.billingSelfHostMode")
+          }
+        >
+          {billingEnabled ? (
             <BillingActions
               orgSlug={orgSlug}
               teamspaceSlug={teamspaceSlug}
               isBillingAdmin={isBillingAdmin}
               hasStripeCustomer={Boolean(billingRecord?.stripeCustomerId)}
             />
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="flex gap-2">
-        <Button
-          render={
-            <Link href={orgPath({ orgSlug, teamspaceSlug }, "settings/general")} />
-          }
-          variant="outline"
-          size="sm"
-          nativeButton={false}
-        >
-          {t("settings.general")}
-        </Button>
-      </div>
-    </div>
+          ) : null}
+        </SettingsRow>
+      </SettingsSection>
+    </SettingsPanel>
   );
 }
