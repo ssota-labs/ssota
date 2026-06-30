@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { withWebDeps } from "./web-server-command";
 
 // Emulate OAuth E2E: real Slack OAuth picker via vercel-labs/emulate, no CONNECT_STUB.
 const webPort = process.env.WEB_PORT ?? "3100";
@@ -57,7 +58,7 @@ export default defineConfig({
       stderr: "pipe",
     },
     {
-      command: `pnpm --filter web exec next dev --port ${webPort}`,
+      command: withWebDeps(`pnpm --filter web exec next dev --port ${webPort}`),
       cwd: workspaceRoot,
       url: webUrl,
       reuseExistingServer: !!process.env.REUSE_SERVERS,
