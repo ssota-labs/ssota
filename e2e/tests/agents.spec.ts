@@ -38,10 +38,27 @@ test.describe("Agents", () => {
     await gotoProject(page, "agents");
 
     await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
-    await page.getByTestId("agent-settings-triggers-card").click();
+    await page
+      .getByTestId("agent-settings-triggers-card")
+      .getByRole("button")
+      .click();
 
     await expect(page.getByRole("dialog", { name: "Triggers" })).toBeVisible();
     await expect(page.getByTestId("agent-trigger-chat")).toBeVisible();
+  });
+
+  test("settings cards show configured items in footer", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+
+    const toolsCard = page.getByTestId("agent-settings-tools-card");
+    await expect(toolsCard.getByText("Graph read")).toBeVisible();
+    await expect(toolsCard.getByText("Tasks")).toBeVisible();
+
+    const modelCard = page.getByTestId("agent-settings-model-card");
+    await expect(modelCard.getByText(/Auto|Claude|GPT/i)).toBeVisible();
   });
 
   test("sidebar nav link reaches agents", async ({ page }) => {
