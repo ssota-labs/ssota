@@ -1,7 +1,17 @@
 "use client";
 
-import { XIcon, SpinnerGapIcon, WarningIcon } from "@phosphor-icons/react";
-import { cn } from "@ssota/ui/lib/utils";
+import { XIcon } from "@phosphor-icons/react";
+import {
+  Attachment,
+  AttachmentAction,
+  AttachmentActions,
+  AttachmentContent,
+  AttachmentDescription,
+  AttachmentGroup,
+  AttachmentMedia,
+  AttachmentTitle,
+} from "@ssota/ui/components/ui/attachment";
+import { Spinner } from "@ssota/ui/components/ui/spinner";
 import type { PendingAttachment } from "./use-image-attachments";
 
 interface AttachmentsPreviewProps {
@@ -9,7 +19,15 @@ interface AttachmentsPreviewProps {
   onRemove: (id: string) => void;
 }
 
-/** Thumbnail strip of pending image attachments shown above the composer. */
+function mapAttachmentState(
+  status: PendingAttachment["status"],
+): "uploading" | "error" | "done" {
+  if (status === "uploading") return "uploading";
+  if (status === "error") return "error";
+  return "done";
+}
+
+/** Pending image attachments shown above the composer. */
 export function AttachmentsPreview({
   attachments,
   onRemove,
@@ -17,44 +35,44 @@ export function AttachmentsPreview({
   if (attachments.length === 0) return null;
 
   return (
-    <div
+    <AttachmentGroup
       data-testid="attachment-preview"
-      className="flex flex-wrap gap-2 px-2 pb-2 pt-1"
+      className="px-2 pb-2 pt-1"
     >
       {attachments.map((a) => (
-        <div key={a.id} className="group relative">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={a.previewUrl}
-            alt={a.filename}
-            className={cn(
-              "size-16 rounded-lg border object-cover",
-              a.status === "error" && "opacity-50",
+        <Attachment
+          key={a.id}
+          orientation="vertical"
+          state={mapAttachmentState(a.status)}
+          size="sm"
+          className="w-24"
+        >
+          <AttachmentMedia variant="image">
+            {a.status === "uploading" ? (
+              <Spinner />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={a.previewUrl} alt={a.filename} />
             )}
-          />
-          {a.status === "uploading" ? (
-            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40">
-              <SpinnerGapIcon className="size-5 animate-spin text-white" />
-            </div>
-          ) : null}
-          {a.status === "error" ? (
-            <div
-              className="absolute inset-0 flex items-center justify-center rounded-lg bg-destructive/30"
-              title={a.error}
+          </AttachmentMedia>
+          <AttachmentContent>
+            <AttachmentTitle>{a.filename}</AttachmentTitle>
+            {a.status === "error" ? (
+              <AttachmentDescription>{a.error}</AttachmentDescription>
+            ) : a.status === "uploading" ? (
+              <AttachmentDescription>Uploading</AttachmentDescription>
+            ) : null}
+          </AttachmentContent>
+          <AttachmentActions>
+            <AttachmentAction
+              aria-label={`${a.filename} 제거`}
+              onClick={() => onRemove(a.id)}
             >
-              <WarningIcon className="size-5 text-destructive" />
-            </div>
-          ) : null}
-          <button
-            type="button"
-            onClick={() => onRemove(a.id)}
-            className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-foreground text-background opacity-0 transition-opacity hover:bg-foreground/80 group-hover:opacity-100"
-            aria-label={`${a.filename} 제거`}
-          >
-            <XIcon className="size-3" />
-          </button>
-        </div>
+              <XIcon />
+            </AttachmentAction>
+          </AttachmentActions>
+        </Attachment>
       ))}
-    </div>
+    </AttachmentGroup>
   );
 }

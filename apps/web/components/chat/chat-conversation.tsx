@@ -1,11 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import type { FileUIPart, UIMessage } from "ai";
 import { WorkflowChatTransport } from "@ai-sdk/workflow";
+import {
+  MessageScroller,
+  MessageScrollerButton,
+  MessageScrollerContent,
+  MessageScrollerItem,
+  MessageScrollerProvider,
+  MessageScrollerViewport,
+} from "@ssota/ui/components/ui/message-scroller";
 import { ChatInput } from "./chat-input";
 import { ChatMessage } from "./chat-message";
+import { ChatThinkingMarker } from "./chat-thinking-marker";
 import type { ConnectorOption } from "./connect-card";
 import { DEFAULT_MODEL_ID } from "@/lib/chat/models";
 
@@ -35,9 +44,6 @@ export function ChatConversation({
   const { messages, sendMessage, status, stop } = useChat({
     id: threadId,
     messages: initialMessages,
-    // Durable WorkflowAgent run with resumable streaming: the POST returns an
-    // x-workflow-run-id and the transport reconnects to
-    // /api/chat/web/{runId}/stream if the connection drops.
     transport: new WorkflowChatTransport<UIMessage>({
       api: "/api/chat/web",
       prepareSendMessagesRequest: ({ body, messages: msgs }) => ({
@@ -47,12 +53,6 @@ export function ChatConversation({
   });
 
   const isStreaming = status === "submitted" || status === "streaming";
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages, isStreaming]);
-
   const lastIndex = messages.length - 1;
 
   function send(text: string, files: FileUIPart[]) {
@@ -64,30 +64,45 @@ export function ChatConversation({
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
-        <div className="mx-auto w-full max-w-3xl px-4 py-8">
+      <MessageScrollerProvider autoScroll scrollPreviousItemPeek={64}>
+        <MessageScroller className="flex-1 min-h-0">
           {messages.length === 0 ? (
-            <p className="py-16 text-center text-sm text-muted-foreground">
-              메시지를 보내 대화를 시작하세요
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {messages.map((message, index) => (
-                <ChatMessage
-                  key={message.id}
-                  message={message}
-                  isStreaming={isStreaming && index === lastIndex}
-                  connectors={connectors}
-                  returnTo={returnTo}
-                />
-              ))}
-              {status === "submitted" ? (
-                <p className="text-sm text-muted-foreground">생각 중…</p>
-              ) : null}
+            <div className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center px-4 py-16">
+              <p className="text-center text-sm text-muted-foreground">
+                메시지를 보내 대화를 시작하세요
+              </p>
             </div>
+          ) : (
+            <MessageScrollerViewport>
+              <MessageScrollerContent
+                aria-busy={isStreaming}
+                className="mx-auto w-full max-w-3xl space-y-6 px-4 py-8"
+              >
+                {messages.map((message, index) => (
+                  <MessageScrollerItem
+                    key={message.id}
+                    messageId={message.id}
+                    scrollAnchor={message.role === "user"}
+                  >
+                    <ChatMessage
+                      message={message}
+                      isStreaming={isStreaming && index === lastIndex}
+                      connectors={connectors}
+                      returnTo={returnTo}
+                    />
+                  </MessageScrollerItem>
+                ))}
+                {status === "submitted" ? (
+                  <MessageScrollerItem messageId="__thinking__">
+                    <ChatThinkingMarker />
+                  </MessageScrollerItem>
+                ) : null}
+              </MessageScrollerContent>
+            </MessageScrollerViewport>
           )}
-        </div>
-      </div>
+          <MessageScrollerButton />
+        </MessageScroller>
+      </MessageScrollerProvider>
 
       <div className="p-4">
         <div className="mx-auto w-full max-w-3xl">
