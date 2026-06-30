@@ -8,7 +8,6 @@ import {
   ChatsCircleIcon,
   ClockIcon,
   CpuIcon,
-  ListChecksIcon,
   PlusIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
@@ -61,11 +60,10 @@ type AgentSettingsSheetProps = {
   onClose: () => void;
 };
 
-const CARD_TRIGGER_TYPES: AgentTrigger[] = ["chatbot", "task"];
+const CARD_TRIGGER_TYPES: AgentTrigger[] = ["chatbot"];
 
 const TRIGGER_ICONS: Partial<Record<AgentTrigger, typeof ChatsCircleIcon>> = {
   chatbot: ChatsCircleIcon,
-  task: ListChecksIcon,
   schedule: CalendarBlankIcon,
 };
 
@@ -195,7 +193,7 @@ export function AgentSettingsSheet({
         runPolicy: {
           ...definition.runPolicy,
           model: draft.model,
-          allowedTriggers: draft.allowedTriggers,
+          allowedTriggers: [...new Set([...draft.allowedTriggers, "task"])],
           linkedWorkerAgentIds: draft.linkedWorkerAgentIds,
           enabledConnectorProviders: draft.enabledConnectorProviders,
         },

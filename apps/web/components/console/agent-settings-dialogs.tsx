@@ -5,7 +5,6 @@ import {
   CalendarBlankIcon,
   ChatsCircleIcon,
   ClockIcon,
-  ListChecksIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type { AgentDefinition, AgentTrigger, ToolBundle } from "@ssota/contracts";
@@ -93,7 +92,6 @@ type TriggerEntry =
 const TRIGGER_DESCRIPTIONS: Partial<Record<AgentTrigger, string>> = {
   chatbot:
     "Run when users message connected bots in Slack, Discord, or Telegram.",
-  task: "Run when dispatched as a task executor from the task board.",
   schedule:
     "Allow recurring cron runs. Add each schedule below once enabled.",
 };
@@ -192,7 +190,6 @@ export function AgentSettingsDialogs({
   const triggerEntries = useMemo((): TriggerEntry[] => {
     const base: TriggerEntry[] = [
       { kind: "trigger", id: "trigger:chatbot", trigger: "chatbot" },
-      { kind: "trigger", id: "trigger:task", trigger: "task" },
       { kind: "trigger", id: "trigger:schedule", trigger: "schedule" },
     ];
     if (draft.allowedTriggers.includes("schedule")) {
@@ -361,9 +358,7 @@ export function AgentSettingsDialogs({
         const Icon =
           entry.trigger === "chatbot"
             ? ChatsCircleIcon
-            : entry.trigger === "task"
-              ? ListChecksIcon
-              : CalendarBlankIcon;
+            : CalendarBlankIcon;
         return {
           id: entry.id,
           label: TRIGGER_LABELS[entry.trigger],
@@ -577,11 +572,7 @@ export function AgentSettingsDialogs({
 
     const { trigger } = selectedTrigger;
     const Icon =
-      trigger === "chatbot"
-        ? ChatsCircleIcon
-        : trigger === "task"
-          ? ListChecksIcon
-          : CalendarBlankIcon;
+      trigger === "chatbot" ? ChatsCircleIcon : CalendarBlankIcon;
 
     return (
       <>

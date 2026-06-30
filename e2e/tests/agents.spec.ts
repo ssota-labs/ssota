@@ -42,7 +42,7 @@ test.describe("Agents", () => {
 
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
     await expect(triggersCard.getByTestId("agent-trigger-chatbot")).toBeVisible();
-    await expect(triggersCard.getByTestId("agent-trigger-task")).toBeVisible();
+    await expect(triggersCard.getByTestId("agent-trigger-task")).not.toBeVisible();
     await expect(
       triggersCard.getByText("Weekly on weekdays at 9:00 AM"),
     ).toBeVisible();
