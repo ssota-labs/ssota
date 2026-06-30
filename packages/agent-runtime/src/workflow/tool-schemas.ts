@@ -6,7 +6,9 @@
  * schema is defined exactly once.
  */
 import { z } from "zod";
-import { ExecutionDirectiveSchema } from "@ssota/contracts";
+import { ExecutionDirectiveSchema, RunScriptToolInputSchema } from "@ssota/contracts";
+import { SUBAGENT_TYPES } from "../subagents/constants.js";
+import { composioMetaToolSchemas } from "../composio/meta-tool-schemas.js";
 
 const taskStatus = z.enum([
   "pending",
@@ -128,8 +130,35 @@ export const workflowToolSchemas = {
   }),
   read_page: z.object({ id: z.string().uuid() }),
   list_pages: z.object({}),
-  // Connector tools (Composio / legacy) are declared dynamically from the
-  // active adapter at run time — see fetchConnectorToolDefs / buildMainWorkflowAgent.
+
+  // --- Agent definitions ---
+  list_agent_definitions: z.object({}),
+  get_agent_instruction: z.object({
+    id: z.string().uuid().optional(),
+    key: z.string().optional(),
+  }),
+  write_agent_definition: z.object({
+    key: z.string(),
+    name: z.string(),
+    description: z.string(),
+    body: z.string(),
+    agentKind: z.enum(["main", "specialist", "worker", "guide"]).optional(),
+  }),
+
+  // --- Delegate (subagents) ---
+  delegate: z.object({
+    subagentType: z.enum(SUBAGENT_TYPES),
+    task: z.string(),
+    instructions: z.string(),
+  }),
+
+  // --- Script tools ---
+  list_script_tools: z.object({}),
+  describe_script_tool: z.object({ key: z.string().min(1) }),
+  run_script_tool: RunScriptToolInputSchema,
+
+  // --- Composio Tool Router meta-tools (fixed; not per-toolkit defs) ---
+  ...composioMetaToolSchemas,
 } as const;
 
 export type WorkflowToolName = keyof typeof workflowToolSchemas;

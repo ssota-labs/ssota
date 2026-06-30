@@ -103,8 +103,6 @@ describe("buildRunInstructions", () => {
     const prompt = buildRunInstructions({
       runtimeKind: "task",
       teamspaceId: "22222222-2222-2222-2222-222222222222",
-      // Legacy connector guidance names connection_search/connection_call.
-      connectorKind: "legacy",
       taskPlaybook: {
         id: "33333333-3333-3333-3333-333333333333",
         teamspaceId: "22222222-2222-2222-2222-222222222222",
@@ -142,8 +140,8 @@ describe("buildRunInstructions", () => {
 
     expect(prompt).toContain("Draft the onboarding PRD");
     expect(prompt).toContain("specialist.write_document");
-    expect(prompt).toContain("connection_call");
-    expect(prompt).toContain("connection_search");
+    expect(prompt).toContain("COMPOSIO_SEARCH_TOOLS");
+    expect(prompt).toContain("COMPOSIO_MULTI_EXECUTE_TOOL");
     expect(prompt).toContain("Covers activation metric");
     expect(prompt).toContain("Write the PRD for onboarding.");
     expect(prompt).toContain("complete_task");

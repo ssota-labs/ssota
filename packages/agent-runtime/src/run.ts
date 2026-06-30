@@ -1,17 +1,19 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
+import type { AgentTrigger } from "@ssota/contracts";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import { listRoutableAgentIndex } from "@ssota/contracts/agents";
-import { serializeTask, readAgentDefinitionById } from "@ssota/core";
+import { serializeTask, readAgentDefinitionById, readAgentDefinitionByKey } from "@ssota/core";
 import { getTaskPort, getAgentDefinitionPort } from "./ports.js";
-import { getConnectorAdapter } from "./connectors/adapter.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
 import type { AgentRuntimeKind } from "@ssota/contracts";
+import {
+  assertAllowedTrigger,
+  mainAgentRuntimeDefinition,
+  runtimeDefinitionFromAgent,
+  runtimeDefinitionFromAgentKey,
+  type AgentRuntimeDefinition,
+} from "./runtime-definition.js";
 
-/**
- * Per-run scope used to build the agent prompt. The actual agent loop now runs
- * on the WorkflowAgent (apps/web); this module only produces the serializable
- * instructions + messages via {@link buildRunPrompt}.
- */
 export interface RunAgentInput {
   teamspaceId: string;
   runId: string;
@@ -20,19 +22,12 @@ export interface RunAgentInput {
   threadId?: string;
   scheduleId?: string;
   accountId?: string;
-  /**
-   * Signed-in user (Supabase `auth.users.id`) driving this run. With the org it
-   * forms the Composio entity for connector tools. Absent on scheduler /
-   * autonomous runs → Composio connectors fall back to the org-shared entity.
-   */
   profileId?: string;
   modelId?: string;
   maxSteps?: number;
-  /** Main-runtime chat transcript injected from the web chat route. */
   chatContext?: Record<string, unknown>;
 }
 
-/** Result shape persisted by the run finalizers. */
 export interface RunAgentResult {
   finishReason: string;
   text: string;
@@ -42,6 +37,13 @@ export interface RunAgentResult {
     outputTokens?: number;
     totalTokens?: number;
   };
+}
+
+export interface ResolvedRunAgent {
+  definition: AgentRuntimeDefinition;
+  trigger: AgentTrigger;
+  instructions: SystemModelMessage[];
+  messages: ModelMessage[];
 }
 
 function extractChatMessages(
@@ -62,21 +64,85 @@ function extractExecutionDirective(
   return parsed.success ? parsed.data : null;
 }
 
-/**
- * Build the per-run instruction + message prompt for a runtime kind. Both
- * outputs are serializable (SystemModelMessage[] / ModelMessage[]), so the
- * WorkflowAgent path can produce them inside a `"use step"` and hand them to
- * the workflow-safe agent builder. The active connector adapter's kind drives
- * the prompt's connections guidance (Composio vs legacy tool names).
- */
+function resolveMainTrigger(input: RunAgentInput): AgentTrigger {
+  if (input.chatContext?.trigger === "heartbeat") return "heartbeat";
+  if (input.scheduleId) return "schedule";
+  if (input.chatContext?.trigger === "chatbot") return "chatbot";
+  return "chat";
+}
+
+function resolveTaskTrigger(input: RunAgentInput): AgentTrigger {
+  return input.scheduleId ? "schedule" : "task";
+}
+
+/** Resolve agent definition + trigger and enforce runPolicy.allowedTriggers. */
+export async function resolveRunAgentDefinition(
+  input: RunAgentInput,
+): Promise<{ definition: AgentRuntimeDefinition; trigger: AgentTrigger }> {
+  if (input.runtimeKind === "main") {
+    const definition = mainAgentRuntimeDefinition();
+    const trigger = resolveMainTrigger(input);
+    assertAllowedTrigger(definition, trigger);
+    return { definition, trigger };
+  }
+
+  if (input.runtimeKind === "task" && input.taskId) {
+    const taskPort = getTaskPort(input.teamspaceId, input.accountId);
+    const domainTask = await taskPort.getTask(input.taskId);
+    if (!domainTask) {
+      throw new Error(`Task ${input.taskId} not found in teamspace ${input.teamspaceId}`);
+    }
+    const task = serializeTask(domainTask);
+    const instructionPort = getAgentDefinitionPort(input.teamspaceId, input.accountId);
+
+    let definition: AgentRuntimeDefinition | null = null;
+    if (task.agentDefinitionId) {
+      const loaded = await readAgentDefinitionById(
+        instructionPort,
+        task.agentDefinitionId,
+      );
+      if (loaded) {
+        definition = runtimeDefinitionFromAgent(loaded.definition);
+      }
+    } else if (task.agentKey) {
+      definition = runtimeDefinitionFromAgentKey(task.agentKey);
+      if (!definition) {
+        const loaded = await readAgentDefinitionByKey(instructionPort, task.agentKey);
+        if (loaded) {
+          definition = runtimeDefinitionFromAgent(loaded.definition);
+        }
+      }
+    }
+
+    if (!definition) {
+      throw new Error(
+        `Task ${input.taskId} has no resolvable agent (agentKey=${task.agentKey ?? "null"}).`,
+      );
+    }
+
+    const trigger = resolveTaskTrigger(input);
+    assertAllowedTrigger(definition, trigger);
+    return { definition, trigger };
+  }
+
+  throw new Error(`Invalid run configuration for runtimeKind=${input.runtimeKind}`);
+}
+
 export async function buildRunPrompt(
   input: RunAgentInput,
 ): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
-  const { teamspaceId, accountId, runtimeKind } = input;
-  const instructionPort = getAgentDefinitionPort(teamspaceId, accountId);
+  const resolved = await resolveRunAgent(input);
+  return {
+    instructions: resolved.instructions,
+    messages: resolved.messages,
+  };
+}
 
-  const adapter = getConnectorAdapter();
-  const connectorKind = adapter?.kind;
+/** Full run resolution: definition, trigger, instructions, and messages. */
+export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRunAgent> {
+  const { teamspaceId, accountId, runtimeKind } = input;
+  const { definition, trigger } = await resolveRunAgentDefinition(input);
+  const instructionPort = getAgentDefinitionPort(teamspaceId, accountId);
 
   let instructions: SystemModelMessage[] = [];
   let messages: ModelMessage[] = [];
@@ -98,7 +164,6 @@ export async function buildRunPrompt(
       runtimeKind: "main",
       teamspaceId,
       accountId,
-      connectorKind,
       agentManifest,
     });
     const chatMessages = extractChatMessages(input.chatContext);
@@ -125,7 +190,6 @@ export async function buildRunPrompt(
       runtimeKind: "task",
       teamspaceId,
       accountId,
-      connectorKind,
       taskPlaybook: playbook?.definition ?? null,
       task: {
         id: task.id,
@@ -142,9 +206,7 @@ export async function buildRunPrompt(
         content: `Work the task "${task.title}" (id ${task.id}) to completion.`,
       },
     ];
-  } else {
-    throw new Error(`Invalid run configuration for runtimeKind=${runtimeKind}`);
   }
 
-  return { instructions, messages };
+  return { definition, trigger, instructions, messages };
 }

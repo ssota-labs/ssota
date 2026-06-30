@@ -2,7 +2,7 @@ import type { ModelMessage, SystemModelMessage } from "ai";
 import {
   getDb,
   getTaskPort,
-  buildRunPrompt,
+  resolveRunAgent,
   createSandboxSession,
   attachSandboxSession,
   toolBundlesForAgentKey,
@@ -58,17 +58,29 @@ export async function claimTaskRun(
 export async function buildTaskPromptStep(
   input: RunTaskAgentInput,
   workflowRunId: string,
-): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
+): Promise<{
+  instructions: SystemModelMessage[];
+  messages: ModelMessage[];
+  definition: Awaited<ReturnType<typeof resolveRunAgent>>["definition"];
+  trigger: Awaited<ReturnType<typeof resolveRunAgent>>["trigger"];
+}> {
   "use step";
-  return buildRunPrompt({
+  const resolved = await resolveRunAgent({
     teamspaceId: input.teamspaceId,
     runId: workflowRunId,
     runtimeKind: "task",
     taskId: input.taskId,
     accountId: input.accountId,
+    scheduleId: input.scheduleId,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
   });
+  return {
+    instructions: resolved.instructions,
+    messages: resolved.messages,
+    definition: resolved.definition,
+    trigger: resolved.trigger,
+  };
 }
 
 export async function finalizeTaskRun(

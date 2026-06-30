@@ -11,6 +11,11 @@ export const SUBAGENT_MODEL_ID = "anthropic/claude-haiku-4.5";
 /** Upper bound on a subagent's tool-loop steps. */
 export const SUBAGENT_STEP_LIMIT = 40;
 
+/** Subagent keys the parent can launch via `delegate` (workflow-safe list). */
+export const SUBAGENT_TYPES = ["explorer"] as const;
+
+export type SubagentType = (typeof SUBAGENT_TYPES)[number];
+
 export const SUBAGENT_NO_QUESTIONS_RULES = `### NEVER ASK QUESTIONS
 - You work zero-shot with NO ability to ask follow-up questions — no one will respond.
 - If instructions are ambiguous, make reasonable assumptions and state them.

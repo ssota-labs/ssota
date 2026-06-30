@@ -1,6 +1,6 @@
 export type { UIMessageChunk } from "ai";
-export { buildRunPrompt } from "./run.js";
-export type { RunAgentInput, RunAgentResult } from "./run.js";
+export { buildRunPrompt, resolveRunAgent, resolveRunAgentDefinition } from "./run.js";
+export type { RunAgentInput, RunAgentResult, ResolvedRunAgent } from "./run.js";
 
 export {
   createSsotaTools,
@@ -12,11 +12,11 @@ export {
 } from "./tools/index.js";
 export { createSandboxTools } from "./tools/sandbox.js";
 export { createConnectionTools } from "./tools/connections.js";
-// ── Connector adapter (Composio default / legacy Vercel Connect) ────────────
+// ── Connector adapter (Composio Tool Router) ────────────────────────────────
 export {
   getConnectorAdapter,
+  executeComposioMetaTool,
   type ConnectorAdapter,
-  type ConnectorAdapterKind,
   type ConnectorToolsBundle,
   type BuildConnectorToolsInput,
 } from "./connectors/adapter.js";
@@ -50,11 +50,30 @@ export {
   type ConnectorScope,
 } from "./composio/shared.js";
 export {
+  COMPOSIO_META_TOOL_NAMES,
+  composioMetaToolSchemas,
+  COMPOSIO_META_TOOL_DESCRIPTIONS,
+  isComposioMetaToolName,
+  type ComposioMetaToolName,
+} from "./composio/meta-tool-schemas.js";
+export {
   runMainAgentToolStep,
-  fetchConnectorToolDefs,
   MAIN_WORKFLOW_SANDBOX_TOOL_NAMES,
-  type ConnectorToolDef,
 } from "./workflow/dispatch-step.js";
+export {
+  mainAgentRuntimeDefinition,
+  runtimeDefinitionFromAgent,
+  runtimeDefinitionFromAgentKey,
+  assertAllowedTrigger,
+  TriggerNotAllowedError,
+  type AgentRuntimeDefinition,
+} from "./runtime-definition.js";
+export {
+  resolveNodeScopes,
+  assertCatalogKeyInScope,
+  assertNodeIdInScope,
+  NodeScopeViolation,
+} from "./node-scopes.js";
 export {
   createSandboxSession,
   attachSandboxSession,

@@ -6,10 +6,14 @@ import {
 } from "ai";
 import { z } from "zod";
 import { gateway } from "../models.js";
-import { SUBAGENT_MODEL_ID, SUBAGENT_STEP_LIMIT } from "../subagents/constants.js";
+import {
+  SUBAGENT_MODEL_ID,
+  SUBAGENT_STEP_LIMIT,
+  SUBAGENT_TYPES,
+  type SubagentType,
+} from "../subagents/constants.js";
 import {
   SUBAGENT_REGISTRY,
-  SUBAGENT_TYPES,
   buildSubagentSummaryLines,
 } from "../subagents/registry.js";
 import { sumUsage } from "../subagents/usage.js";

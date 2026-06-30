@@ -1,6 +1,6 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
-import { RunScriptToolInputSchema } from "@ssota/contracts";
+import { RunScriptToolInputSchema, type ScriptToolIndex } from "@ssota/contracts";
 import { getScriptToolPort } from "../ports.js";
 import { getRunContext } from "./context.js";
 import { attachSandboxSession, createSandboxSession } from "../sandbox/session.js";
@@ -76,6 +76,39 @@ async function executeScriptInSandbox(
   }
 }
 
+async function listScriptToolsForAgent(
+  teamspaceId: string,
+  accountId: string | undefined,
+  agentDefinitionId: string | undefined,
+): Promise<ScriptToolIndex[]> {
+  const port = getScriptToolPort(teamspaceId, accountId);
+  if (agentDefinitionId) {
+    const linked = await port.listForAgentDefinition(agentDefinitionId);
+    return linked.map((t) => ({
+      id: t.id,
+      key: t.key,
+      name: t.name,
+      description: t.description,
+      version: t.version,
+    }));
+  }
+  return port.listScriptTools();
+}
+
+async function getScriptToolForAgent(
+  teamspaceId: string,
+  accountId: string | undefined,
+  agentDefinitionId: string | undefined,
+  key: string,
+) {
+  const port = getScriptToolPort(teamspaceId, accountId);
+  if (agentDefinitionId) {
+    const linked = await port.listForAgentDefinition(agentDefinitionId);
+    return linked.find((t) => t.key === key) ?? null;
+  }
+  return port.getByKey(key);
+}
+
 export function createScriptToolTools(): ToolSet {
   return {
     list_script_tools: tool({
@@ -83,7 +116,11 @@ export function createScriptToolTools(): ToolSet {
       inputSchema: z.object({}),
       execute: async (_input, { context }) => {
         const ctx = getRunContext(context);
-        const items = await getScriptToolPort(ctx.teamspaceId, ctx.accountId).listScriptTools();
+        const items = await listScriptToolsForAgent(
+          ctx.teamspaceId,
+          ctx.accountId,
+          ctx.agentDefinitionId,
+        );
         return { tools: items };
       },
     }),
@@ -93,7 +130,10 @@ export function createScriptToolTools(): ToolSet {
       inputSchema: z.object({ key: z.string().min(1) }),
       execute: async (input, { context }) => {
         const ctx = getRunContext(context);
-        const toolDef = await getScriptToolPort(ctx.teamspaceId, ctx.accountId).getByKey(
+        const toolDef = await getScriptToolForAgent(
+          ctx.teamspaceId,
+          ctx.accountId,
+          ctx.agentDefinitionId,
           input.key,
         );
         if (!toolDef) return { found: false };
@@ -116,8 +156,12 @@ export function createScriptToolTools(): ToolSet {
       inputSchema: RunScriptToolInputSchema,
       execute: async (input, { context }) => {
         const ctx = getRunContext(context);
-        const port = getScriptToolPort(ctx.teamspaceId, ctx.accountId);
-        const toolDef = await port.getByKey(input.key);
+        const toolDef = await getScriptToolForAgent(
+          ctx.teamspaceId,
+          ctx.accountId,
+          ctx.agentDefinitionId,
+          input.key,
+        );
         if (!toolDef) {
           return { ok: false, error: `Unknown script tool: ${input.key}` };
         }
