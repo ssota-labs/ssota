@@ -1,50 +1,40 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import type { AgentDefinition } from "@ssota/contracts";
 import { cn } from "@ssota/ui/lib/utils";
-import { updateAgentDefinitionAction } from "@/app/actions";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
 import type { AgentGroup } from "@/lib/console/load-agents-for-ui";
-import {
-  DocumentSheetPanel,
-  type SheetSize,
-} from "@/lib/page-runtime/components/document-sheet-panel";
-import type { RenderNode } from "@/lib/page-runtime/types";
+import type { AgentSettingsContext } from "@/lib/console/load-agent-settings-context";
+import { isWorkerAgentId } from "@/lib/console/agent-tool-catalog";
 
 type AgentsWorkspaceProps = {
   teamspaceId: string;
   groups: AgentGroup[];
+  settingsContext: AgentSettingsContext;
+  scriptToolLinks: Record<string, string[]>;
 };
-
-function toRenderNode(definition: AgentDefinition): RenderNode {
-  return {
-    id: definition.id,
-    catalogKey: "agent_definition",
-    title: definition.name,
-    properties: {
-      content: definition.instructions,
-      summary: definition.description,
-    },
-  };
-}
 
 export function AgentsWorkspace({
   teamspaceId,
   groups: initialGroups,
+  settingsContext,
+  scriptToolLinks,
 }: AgentsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const router = useRouter();
 
   const definitions = groups.flatMap((group) => group.items);
   const activeDefinition =
     definitions.find((entry) => entry.id === activeId) ?? null;
   const open = activeDefinition !== null;
-  const sheetSize: SheetSize = "half";
+
+  const workers = useMemo(
+    () => definitions.filter((d) => isWorkerAgentId(d.id)),
+    [definitions],
+  );
 
   useEffect(() => {
     setGroups(initialGroups);
@@ -61,35 +51,6 @@ export function AgentsWorkspace({
 
   const close = () => setActiveId(null);
 
-  const handleSave = (blocks: unknown[]) => {
-    if (!activeDefinition) return;
-
-    startTransition(async () => {
-      await updateAgentDefinitionAction(teamspaceId, {
-        id: activeDefinition.id,
-        name: activeDefinition.name,
-        description: activeDefinition.description,
-        instructions: blocks,
-        isMain: activeDefinition.isMain,
-        referenceOnly: activeDefinition.referenceOnly,
-      });
-      setGroups((current) =>
-        current.map((group) => ({
-          ...group,
-          items: group.items.map((entry) =>
-            entry.id === activeDefinition.id
-              ? {
-                  ...entry,
-                  instructions: blocks as AgentDefinition["instructions"],
-                }
-              : entry,
-          ),
-        })),
-      );
-      router.refresh();
-    });
-  };
-
   return (
     <div
       className="absolute inset-0 flex flex-col"
@@ -98,7 +59,7 @@ export function AgentsWorkspace({
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Agents"
-          description="Agent playbooks for this project. Edits apply to the next agent or MCP run."
+          description="Configure agent playbooks, tools, triggers, and models for this project."
         />
 
         {groups.map((group) => (
@@ -144,22 +105,20 @@ export function AgentsWorkspace({
       </BrowseWorkspace.Frame>
 
       {open && activeDefinition ? (
-        <DocumentSheetPanel
-          node={toRenderNode(activeDefinition)}
-          subtitle={activeDefinition.description || activeDefinition.id}
-          field="content"
-          editable
-          sheetSize={sheetSize}
+        <AgentSettingsSheet
+          definition={activeDefinition}
+          teamspaceId={teamspaceId}
+          accountId={settingsContext.accountId}
+          scriptToolIds={scriptToolLinks[activeDefinition.id] ?? []}
+          scriptTools={settingsContext.scriptTools}
+          workers={workers}
+          connectors={settingsContext.connectors}
+          connections={settingsContext.connections}
+          schedules={settingsContext.schedules}
           onClose={close}
-          onSave={handleSave}
         />
       ) : null}
 
-      {isPending ? (
-        <p className="sr-only" aria-live="polite">
-          Saving agent definition
-        </p>
-      ) : null}
     </div>
   );
 }
