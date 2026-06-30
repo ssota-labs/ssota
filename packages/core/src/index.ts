@@ -607,6 +607,8 @@ export * from "./ports/workflow-read-port.js";
 export * from "./ports/agent-definition-port.js";
 export * from "./use-cases/agent/read-agent-definition.js";
 export * from "./ports/script-tool-port.js";
+export * from "./ports/sandbox-environment.js";
+export * from "./ports/sandbox-session.js";
 export * from "./ports/page-port.js";
 export * from "./ports/page-view-state-port.js";
 export * from "./use-cases/task/index.js";

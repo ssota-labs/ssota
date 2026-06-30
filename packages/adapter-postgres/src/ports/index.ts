@@ -23,6 +23,10 @@ export {
   seedWorkflowInstructions,
 } from "./agent-definition-port.js";
 export { createScriptToolPort } from "./script-tool-port.js";
+export {
+  createSandboxEnvironmentPort,
+  createSandboxSessionRecordPort,
+} from "./sandbox-environment-port.js";
 export { createPagePort, seedPages } from "./page-port.js";
 export { createPageViewStatePort } from "./page-view-state-port.js";
 export {
