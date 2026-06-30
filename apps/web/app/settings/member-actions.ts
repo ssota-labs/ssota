@@ -9,7 +9,7 @@ import {
   searchUserByEmailRequestSchema,
 } from "@ssota/contracts";
 import { SettingsError } from "@ssota/core";
-import { syncOrgBillingSeats } from "@/lib/billing/sync-seats";
+import { syncOrgBillingSeats, getOrgBillableSeats } from "@/lib/billing/sync-seats";
 import { sendOrganizationInviteEmail } from "@/lib/email/organization-invite-email";
 import { getConsolePort, getOrganizationMembersPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -128,21 +128,27 @@ export async function respondToInvitationAction(input: {
       accept: parsed.data.accept,
     });
 
+    let acceptedOrgId: string | undefined;
     if (parsed.data.accept) {
       const org = await getConsolePort().getOrganizationBySlug(
         result.organizationSlug,
       );
       if (org) {
+        acceptedOrgId = org.id;
         await syncOrgBillingSeats(org.id);
         revalidateBillingPaths(result.organizationSlug, input.teamspaceSlug);
       }
     }
 
     revalidatePath("/", "layout");
+    const billableSeats = acceptedOrgId
+      ? await getOrgBillableSeats(acceptedOrgId)
+      : undefined;
     return {
       ok: true as const,
       organizationSlug: result.organizationSlug,
       teamspaceSlug: input.teamspaceSlug,
+      billableSeats,
     };
   } catch (error) {
     if (error instanceof SettingsError) {
@@ -209,7 +215,8 @@ export async function removeMemberAction(input: {
       `/${input.orgSlug}/${input.teamspaceSlug}/settings/members`,
     );
     revalidatePath(`/${input.orgSlug}/settings/members`);
-    return { ok: true as const };
+    const billableSeats = await getOrgBillableSeats(parsed.data.organizationId);
+    return { ok: true as const, billableSeats };
   } catch (error) {
     if (error instanceof SettingsError) {
       return { ok: false as const, error: error.message };

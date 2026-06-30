@@ -25,6 +25,7 @@ import {
   revokeInvitationAction,
   removeMemberAction,
 } from "@/app/settings/member-actions";
+import { showBillingSeatsUpdatedToast } from "./billing-seat-toast";
 import { toast } from "@ssota/ui/components/ui/sonner";
 import { cn } from "@ssota/ui/lib/utils";
 import { getRoleIcon, getRoleLabel, type MemberRow } from "./org-member-list.types";
@@ -91,6 +92,9 @@ export function OrgMemberListTable({
       });
       if (result.ok) {
         toast.success(t("settings.membersRemoveSuccess"));
+        if (isOwner && result.billableSeats != null) {
+          showBillingSeatsUpdatedToast(t, result.billableSeats);
+        }
         onChanged();
       } else {
         toast.error(result.error);

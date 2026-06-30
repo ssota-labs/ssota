@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const syncOrgBillingSeats = vi.fn();
+const getOrgBillableSeats = vi.fn();
 const removeMember = vi.fn();
 const respondToInvitation = vi.fn();
 const getOrganizationBySlug = vi.fn();
@@ -8,6 +9,7 @@ const revalidatePath = vi.fn();
 
 vi.mock("@/lib/billing/sync-seats", () => ({
   syncOrgBillingSeats,
+  getOrgBillableSeats,
 }));
 
 vi.mock("next/cache", () => ({
@@ -36,12 +38,14 @@ describe("member-actions billing seat sync", () => {
   beforeEach(() => {
     vi.resetModules();
     syncOrgBillingSeats.mockReset();
+    getOrgBillableSeats.mockReset();
     removeMember.mockReset();
     respondToInvitation.mockReset();
     getOrganizationBySlug.mockReset();
     revalidatePath.mockReset();
     removeMember.mockResolvedValue(undefined);
     syncOrgBillingSeats.mockResolvedValue(undefined);
+    getOrgBillableSeats.mockResolvedValue(2);
   });
 
   it("syncs seats after removing a member", async () => {
@@ -54,7 +58,7 @@ describe("member-actions billing seat sync", () => {
       targetUserId,
     });
 
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, billableSeats: 2 });
     expect(removeMember).toHaveBeenCalledWith({
       organizationId,
       actorUserId: "actor-user-id",
@@ -82,6 +86,7 @@ describe("member-actions billing seat sync", () => {
     });
 
     expect(result.ok).toBe(true);
+    expect(result.billableSeats).toBe(2);
     expect(syncOrgBillingSeats).toHaveBeenCalledWith(organizationId);
     expect(revalidatePath).toHaveBeenCalledWith("/ssota-labs/settings/billing");
     expect(revalidatePath).toHaveBeenCalledWith(
