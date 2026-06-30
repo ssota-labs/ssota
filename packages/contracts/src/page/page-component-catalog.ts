@@ -53,7 +53,8 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
   PageHeader: {
     key: "PageHeader",
     category: "layout",
-    description: "Page title with an optional subtitle.",
+    description:
+      "Deprecated no-op — page titles come from sidebar / sibling nav. Kept for hub placeholder specs only.",
     children: false,
     props: {
       title: { type: "string", description: "Heading text.", required: true },

@@ -9,10 +9,9 @@ test.describe("Executive roadmap", () => {
   });
 
   test("shows product and planning document lists", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Roadmap", level: 1 })).toBeVisible({
+    await expect(page.getByText("Planning roadmaps")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText("Planning roadmaps")).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Product roadmap" }),
     ).toBeVisible();

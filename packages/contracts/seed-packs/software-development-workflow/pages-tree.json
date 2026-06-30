@@ -19,15 +19,7 @@
         "layout": {
           "type": "Stack",
           "props": { "gap": "md", "padding": "none" },
-          "children": ["pageBar", "productSection", "planningSection"]
-        },
-        "pageBar": {
-          "type": "PageHeader",
-          "props": {
-            "variant": "compact",
-            "title": "Roadmap",
-            "subtitle": "Product direction and planning documents"
-          }
+          "children": ["productSection", "planningSection"]
         },
         "productSection": {
           "type": "Section",
@@ -120,15 +112,7 @@
         "layout": {
           "type": "Stack",
           "props": { "gap": "md", "padding": "none" },
-          "children": ["pageBar", "okrSection", "metricsSection"]
-        },
-        "pageBar": {
-          "type": "PageHeader",
-          "props": {
-            "variant": "compact",
-            "title": "Goals",
-            "subtitle": "Objectives and key results aligned to the roadmap"
-          }
+          "children": ["okrSection", "metricsSection"]
         },
         "okrSection": {
           "type": "Section",

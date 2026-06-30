@@ -9,12 +9,9 @@ test.describe("Executive goals", () => {
   });
 
   test("shows compact header and objectives table", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Goals", level: 1 })).toBeVisible({
-      timeout: 15_000,
-    });
     await expect(
       page.getByRole("heading", { name: "Objectives" }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("expandable-table")).toBeVisible();
     await expect(
       page.getByRole("cell", { name: "Demo: First Release completion loop" }),
