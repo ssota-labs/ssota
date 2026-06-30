@@ -101,5 +101,46 @@ export function createScriptToolPort(
         );
       return rows.map((r) => mapScriptTool(r.tool));
     },
+
+    async listLinkedScriptToolIds(agentDefinitionId) {
+      const rows = await db
+        .select({ scriptToolId: schema.agentDefinitionScriptTools.scriptToolId })
+        .from(schema.agentDefinitionScriptTools)
+        .where(
+          and(
+            eq(
+              schema.agentDefinitionScriptTools.agentDefinitionId,
+              agentDefinitionId,
+            ),
+            eq(schema.agentDefinitionScriptTools.enabled, true),
+          ),
+        );
+      return rows.map((r) => r.scriptToolId);
+    },
+
+    async setAgentScriptTools(agentDefinitionId, scriptToolIds) {
+      await db
+        .delete(schema.agentDefinitionScriptTools)
+        .where(
+          and(
+            eq(schema.agentDefinitionScriptTools.teamspaceId, teamspaceId),
+            eq(
+              schema.agentDefinitionScriptTools.agentDefinitionId,
+              agentDefinitionId,
+            ),
+          ),
+        );
+
+      if (scriptToolIds.length === 0) return;
+
+      await db.insert(schema.agentDefinitionScriptTools).values(
+        scriptToolIds.map((scriptToolId) => ({
+          teamspaceId,
+          agentDefinitionId,
+          scriptToolId,
+          enabled: true,
+        })),
+      );
+    },
   };
 }

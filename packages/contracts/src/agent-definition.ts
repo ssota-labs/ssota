@@ -45,6 +45,8 @@ export const RunPolicySchema = z.object({
   allowedTriggers: z.array(AgentTriggerSchema).optional(),
   approvalPolicy: z.enum(["none", "gate", "human"]).optional(),
   timeoutMs: z.number().int().positive().optional(),
+  /** Worker agent definitions linked as delegate targets for this agent. */
+  linkedWorkerAgentIds: z.array(z.string().uuid()).optional(),
 });
 
 export type RunPolicy = z.infer<typeof RunPolicySchema>;

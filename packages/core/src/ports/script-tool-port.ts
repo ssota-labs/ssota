@@ -4,6 +4,14 @@ export interface ScriptToolReadPort {
   listScriptTools(): Promise<ScriptToolIndex[]>;
   getByKey(key: string): Promise<ScriptTool | null>;
   listForAgentDefinition(agentDefinitionId: string): Promise<ScriptTool[]>;
+  listLinkedScriptToolIds(agentDefinitionId: string): Promise<string[]>;
 }
 
-export type ScriptToolPort = ScriptToolReadPort;
+export interface ScriptToolWritePort {
+  setAgentScriptTools(
+    agentDefinitionId: string,
+    scriptToolIds: string[],
+  ): Promise<void>;
+}
+
+export type ScriptToolPort = ScriptToolReadPort & ScriptToolWritePort;
