@@ -10,6 +10,8 @@ type AgentSettingCardProps = {
   onOpen: () => void;
   testId?: string;
   children?: ReactNode;
+  /** Bottom action row (e.g. “Add schedule”). */
+  footer?: ReactNode;
 };
 
 export function AgentSettingCard({
@@ -18,6 +20,7 @@ export function AgentSettingCard({
   onOpen,
   testId,
   children,
+  footer,
 }: AgentSettingCardProps) {
   return (
     <section
@@ -38,17 +41,26 @@ export function AgentSettingCard({
           aria-hidden
         />
       </button>
-      {children ? (
-        <div className="border-border border-t">{children}</div>
+      {children ? <div className="px-3 pb-2">{children}</div> : null}
+      {footer ? (
+        <div className="border-border/60 border-t px-3 py-2">{footer}</div>
       ) : null}
     </section>
   );
 }
 
-/** Divided rows inside a setting card footer (document-list-sheet style). */
-export function AgentSettingItems({ children }: { children: ReactNode }) {
+/** Rows inside a setting card body. */
+export function AgentSettingItems({
+  children,
+  divided = false,
+}: {
+  children: ReactNode;
+  divided?: boolean;
+}) {
   return (
-    <div className="divide-y divide-border">{children}</div>
+    <div className={divided ? "divide-y divide-border" : "flex flex-col"}>
+      {children}
+    </div>
   );
 }
 
@@ -68,12 +80,12 @@ export function AgentSettingItem({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 px-4 py-2.5",
+        "flex items-center gap-3 rounded-md px-1 py-2",
         className,
       )}
     >
       {icon ? (
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-md border bg-muted/40">
+        <span className="bg-muted/50 flex size-7 shrink-0 items-center justify-center rounded-md">
           {icon}
         </span>
       ) : null}
@@ -83,9 +95,7 @@ export function AgentSettingItem({
           <p className="text-muted-foreground line-clamp-2 text-xs">{subtitle}</p>
         ) : null}
       </div>
-      {trailing ? (
-        <span className="text-muted-foreground shrink-0 text-xs">{trailing}</span>
-      ) : null}
+      {trailing ? <div className="shrink-0">{trailing}</div> : null}
     </div>
   );
 }

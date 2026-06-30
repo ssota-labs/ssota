@@ -33,7 +33,22 @@ test.describe("Agents", () => {
     await expect(page.getByTestId("agent-settings-model-card")).toBeVisible();
   });
 
-  test("opens triggers dialog with schedule toggle", async ({ page }) => {
+  test("triggers card shows inline switches and add schedule", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+
+    const triggersCard = page.getByTestId("agent-settings-triggers-card");
+    await expect(triggersCard.getByTestId("agent-trigger-chatbot")).toBeVisible();
+    await expect(triggersCard.getByTestId("agent-trigger-task")).toBeVisible();
+    await expect(
+      triggersCard.getByText("Weekly on weekdays at 9:00 AM"),
+    ).toBeVisible();
+    await expect(triggersCard.getByTestId("agent-triggers-add-schedule")).toBeVisible();
+  });
+
+  test("opens triggers dialog from card header", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
@@ -41,6 +56,7 @@ test.describe("Agents", () => {
     await page
       .getByTestId("agent-settings-triggers-card")
       .getByRole("button")
+      .first()
       .click();
 
     const triggersDialog = page.getByRole("dialog", { name: "Triggers" });

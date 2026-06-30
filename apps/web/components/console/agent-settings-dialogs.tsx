@@ -49,6 +49,7 @@ export type AgentSettingsDraft = {
   scriptToolIds: string[];
   linkedWorkerAgentIds: string[];
   enabledConnectorProviders: string[];
+  scheduleEnabledById: Record<string, boolean>;
 };
 
 type AgentSettingsDialogsProps = {

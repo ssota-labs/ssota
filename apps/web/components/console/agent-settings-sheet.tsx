@@ -4,20 +4,18 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarBlankIcon,
-  ChatCircleIcon,
   ChatsCircleIcon,
-  CheckCircleIcon,
   ClockIcon,
   CpuIcon,
   FileTextIcon,
-  LightningIcon,
   ListChecksIcon,
+  PlusIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
 import { blockNoteContentToText } from "@ssota/contracts";
-import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
+import { Switch } from "@ssota/ui/components/ui/switch";
 import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { ScheduleSheetPanel } from "@/components/schedules/schedule-sheet-panel";
@@ -55,8 +53,9 @@ type AgentSettingsSheetProps = {
   onClose: () => void;
 };
 
-const TRIGGER_ICONS: Partial<Record<AgentTrigger, typeof ChatCircleIcon>> = {
-  chat: ChatCircleIcon,
+const CARD_TRIGGER_TYPES: AgentTrigger[] = ["chatbot", "task"];
+
+const TRIGGER_ICONS: Partial<Record<AgentTrigger, typeof ChatsCircleIcon>> = {
   chatbot: ChatsCircleIcon,
   task: ListChecksIcon,
   schedule: CalendarBlankIcon,
@@ -65,7 +64,11 @@ const TRIGGER_ICONS: Partial<Record<AgentTrigger, typeof ChatCircleIcon>> = {
 function buildDraft(
   definition: AgentDefinition,
   scriptToolIds: string[],
+  schedules: AgentScheduleSummary[],
 ): AgentSettingsDraft {
+  const agentSchedules = schedules.filter(
+    (s) => s.agentDefinitionId === definition.id,
+  );
   return {
     instructions: definition.instructions,
     toolBundles: mergeToolBundles(definition.toolBundles),
@@ -75,6 +78,9 @@ function buildDraft(
     linkedWorkerAgentIds: definition.runPolicy.linkedWorkerAgentIds ?? [],
     enabledConnectorProviders:
       definition.runPolicy.enabledConnectorProviders ?? [],
+    scheduleEnabledById: Object.fromEntries(
+      agentSchedules.map((s) => [s.id, s.enabled]),
+    ),
   };
 }
 
@@ -92,7 +98,7 @@ export function AgentSettingsSheet({
 }: AgentSettingsSheetProps) {
   const router = useRouter();
   const [draft, setDraft] = useState(() =>
-    buildDraft(definition, initialScriptToolIds),
+    buildDraft(definition, initialScriptToolIds, schedules),
   );
   const [openDialog, setOpenDialog] = useState<AgentSettingsDialogKind | null>(
     null,
@@ -100,8 +106,8 @@ export function AgentSettingsSheet({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    setDraft(buildDraft(definition, initialScriptToolIds));
-  }, [definition, initialScriptToolIds]);
+    setDraft(buildDraft(definition, initialScriptToolIds, schedules));
+  }, [definition, initialScriptToolIds, schedules]);
 
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
@@ -113,11 +119,21 @@ export function AgentSettingsSheet({
     return text.length > 200 ? `${text.slice(0, 200)}…` : text;
   }, [draft.instructions]);
 
-  const activeTriggers = draft.allowedTriggers.filter(
-    (t) => t === "chatbot" || t === "task",
-  );
+  const toggleTrigger = (trigger: AgentTrigger, enabled: boolean) => {
+    const next = new Set(draft.allowedTriggers);
+    if (enabled) next.add(trigger);
+    else next.delete(trigger);
+    patchDraft({ allowedTriggers: [...next] });
+  };
 
-  const scheduleEnabled = draft.allowedTriggers.includes("schedule");
+  const toggleScheduleEnabled = (scheduleId: string, enabled: boolean) => {
+    patchDraft({
+      scheduleEnabledById: {
+        ...draft.scheduleEnabledById,
+        [scheduleId]: enabled,
+      },
+    });
+  };
 
   const modelLabel =
     MODEL_OPTIONS.find((m) => m.id === draft.model)?.label ?? "Auto";
@@ -176,6 +192,29 @@ export function AgentSettingsSheet({
         },
         scriptToolIds: draft.scriptToolIds,
       });
+
+      const schedulePatches = agentSchedules.filter(
+        (schedule) =>
+          draft.scheduleEnabledById[schedule.id] !== undefined &&
+          draft.scheduleEnabledById[schedule.id] !== schedule.enabled,
+      );
+      await Promise.all(
+        schedulePatches.map((schedule) =>
+          fetch(`/api/schedules/${schedule.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              teamspaceId,
+              accountId,
+              enabled: draft.scheduleEnabledById[schedule.id],
+            }),
+          }).then((res) => {
+            if (!res.ok) {
+              throw new Error(`Failed to update schedule (${res.status})`);
+            }
+          }),
+        ),
+      );
       router.refresh();
       onClose();
     });
@@ -209,66 +248,74 @@ export function AgentSettingsSheet({
             description="When should this agent run?"
             testId="agent-settings-triggers-card"
             onOpen={() => setOpenDialog("triggers")}
+            footer={
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-full justify-start gap-2"
+                data-testid="agent-triggers-add-schedule"
+                onClick={() => setOpenDialog("add-schedule")}
+              >
+                <PlusIcon className="size-3.5" aria-hidden />
+                Add schedule
+              </Button>
+            }
           >
-            {!scheduleEnabled &&
-            activeTriggers.length === 0 ? (
-              <AgentSettingEmpty>No triggers enabled</AgentSettingEmpty>
-            ) : (
-              <AgentSettingItems>
-                {activeTriggers.map((trigger) => {
-                  const Icon = TRIGGER_ICONS[trigger] ?? LightningIcon;
-                  return (
-                    <AgentSettingItem
-                      key={trigger}
-                      icon={<Icon className="size-3.5 text-muted-foreground" />}
-                      title={TRIGGER_LABELS[trigger]}
-                      trailing={
-                        <Badge variant="secondary" className="gap-1 font-normal">
-                          <CheckCircleIcon
-                            weight="fill"
-                            className="size-3 text-primary"
-                          />
-                          On
-                        </Badge>
-                      }
-                    />
-                  );
-                })}
-                {scheduleEnabled
-                  ? agentSchedules.length > 0
-                    ? agentSchedules.map((schedule) => {
-                        const rec = cronToRecurrence(
-                          schedule.cronExpression,
-                          schedule.timezone,
-                        );
-                        const label = rec
-                          ? describeRecurrence(rec)
-                          : schedule.cronExpression;
-                        return (
-                          <AgentSettingItem
-                            key={schedule.id}
-                            icon={
-                              <ClockIcon className="size-3.5 text-muted-foreground" />
-                            }
-                            title={label}
-                            subtitle="Cron schedule"
-                            trailing={schedule.enabled ? "On" : "Off"}
-                          />
-                        );
-                      })
-                    : (
-                      <AgentSettingItem
-                        icon={
-                          <CalendarBlankIcon className="size-3.5 text-muted-foreground" />
+            <AgentSettingItems>
+              {CARD_TRIGGER_TYPES.map((trigger) => {
+                const Icon = TRIGGER_ICONS[trigger] ?? ChatsCircleIcon;
+                const enabled = draft.allowedTriggers.includes(trigger);
+                return (
+                  <AgentSettingItem
+                    key={trigger}
+                    icon={<Icon className="size-3.5 text-muted-foreground" />}
+                    title={TRIGGER_LABELS[trigger]}
+                    trailing={
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={(checked) =>
+                          toggleTrigger(trigger, checked)
                         }
-                        title="Scheduler enabled"
-                        subtitle="Add a schedule in settings"
-                        trailing="No runs yet"
+                        data-testid={`agent-trigger-${trigger}`}
+                        aria-label={TRIGGER_LABELS[trigger]}
                       />
-                    )
-                  : null}
-              </AgentSettingItems>
-            )}
+                    }
+                  />
+                );
+              })}
+              {agentSchedules.map((schedule) => {
+                const rec = cronToRecurrence(
+                  schedule.cronExpression,
+                  schedule.timezone,
+                );
+                const label = rec
+                  ? describeRecurrence(rec)
+                  : schedule.cronExpression;
+                const enabled =
+                  draft.scheduleEnabledById[schedule.id] ?? schedule.enabled;
+                return (
+                  <AgentSettingItem
+                    key={schedule.id}
+                    icon={
+                      <ClockIcon className="size-3.5 text-muted-foreground" />
+                    }
+                    title={label}
+                    subtitle="Cron schedule"
+                    trailing={
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={(checked) =>
+                          toggleScheduleEnabled(schedule.id, checked)
+                        }
+                        data-testid={`agent-schedule-${schedule.id}`}
+                        aria-label={label}
+                      />
+                    }
+                  />
+                );
+              })}
+            </AgentSettingItems>
           </AgentSettingCard>
 
           <AgentSettingCard
