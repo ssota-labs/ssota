@@ -7,6 +7,8 @@ export {
   createGraphTools,
   createTaskTools,
   createPageTools,
+  buildAgentTools,
+  toolBundlesForAgentKey,
 } from "./tools/index.js";
 export { createSandboxTools } from "./tools/sandbox.js";
 export { createConnectionTools } from "./tools/connections.js";
@@ -100,6 +102,8 @@ export {
   getGraphPorts,
   getTaskPort,
   getGraphReadPort,
+  getAgentDefinitionPort,
+  getScriptToolPort,
   getWorkflowInstructionPort,
   ensureTeamspaceOrganizationScope,
   registerTeamspaceOrganization,

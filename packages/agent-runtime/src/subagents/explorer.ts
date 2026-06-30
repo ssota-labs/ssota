@@ -6,7 +6,7 @@ import { buildToolsContext } from "../tools/context.js";
 import { createGraphTools } from "../tools/graph.js";
 import { createPageTools } from "../tools/pages.js";
 import { createTaskTools } from "../tools/tasks.js";
-import { createWorkflowInstructionTools } from "../tools/workflow-instructions.js";
+import { createAgentDefinitionTools } from "../tools/agent-definitions.js";
 import {
   SUBAGENT_MODEL_ID,
   SUBAGENT_NO_QUESTIONS_RULES,
@@ -25,7 +25,7 @@ export function readOnlyWorkspaceTools(): ToolSet {
   const all: ToolSet = {
     ...createGraphTools(),
     ...createPageTools(),
-    ...createWorkflowInstructionTools(),
+    ...createAgentDefinitionTools(),
     ...createTaskTools(),
   };
   return pickTools(all, [
@@ -40,9 +40,9 @@ export function readOnlyWorkspaceTools(): ToolSet {
     "read_page",
     "list_page_components",
     "get_page_component",
-    // workflow reads
-    "list_workflow_instructions",
-    "get_workflow_instruction",
+    // agent definition reads
+    "list_agent_definitions",
+    "get_agent_instruction",
     // task reads
     "query_tasks",
     "get_task",
@@ -63,8 +63,8 @@ ${SUBAGENT_NO_QUESTIONS_RULES}
 ${SUBAGENT_RESPONSE_FORMAT}
 
 ## How to explore
-- Start broad: list_node_types / list_edge_types to learn the catalog, list_pages and list_workflow_instructions to see what exists.
-- Then drill in: query_nodes / get_node / traverse_edges for instances, read_page / get_workflow_instruction for details, query_tasks / get_task for work in flight.
+- Start broad: list_node_types / list_edge_types to learn the catalog, list_pages and list_agent_definitions to see what exists.
+- Then drill in: query_nodes / get_node / traverse_edges for instances, read_page / get_agent_instruction for details, query_tasks / get_task for work in flight.
 - Be efficient — gather what answers the task, then stop. Reference things by key/id so the parent can act.`;
 
 const callOptionsSchema = z.object({

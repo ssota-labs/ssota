@@ -74,7 +74,7 @@ const MAIN_WORKFLOW_TOOL_DESCRIPTIONS: Record<WorkflowToolName, string> = {
   get_task: "Fetch a task by id (defaults to the current run's task).",
   query_tasks: "List tasks in the project, optionally filtered by status.",
   spawn_task:
-    "Create a follow-up task with a full delegation directive. Required: title, workflowInstructionKey (or id), executionDirective (goal, background, steps), acceptanceCriteria.",
+    "Create a follow-up task with a full delegation directive. Required: title, agentKey (or agentDefinitionId), executionDirective (goal, background, steps), acceptanceCriteria.",
   update_task: "Update fields on a task (defaults to current run's task).",
   complete_task:
     "Mark the current run's task done. Call this once the task's goal and acceptance criteria are satisfied.",

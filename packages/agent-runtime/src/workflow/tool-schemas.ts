@@ -76,8 +76,8 @@ export const workflowToolSchemas = {
   }),
   spawn_task: z.object({
     title: z.string(),
-    workflowInstructionId: z.string().uuid().optional(),
-    workflowInstructionKey: z.string().optional(),
+    agentDefinitionId: z.string().uuid().optional(),
+    agentKey: z.string().optional(),
     targetNodeId: z.string().uuid().optional(),
     executionDirective: ExecutionDirectiveSchema,
     acceptanceCriteria: z.array(z.unknown()).min(1),

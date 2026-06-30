@@ -1,8 +1,8 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
-import { listBuiltinWorkflowIndex } from "@ssota/contracts/workflows";
-import { serializeTask, readWorkflowInstructionById } from "@ssota/core";
-import { getTaskPort, getWorkflowInstructionPort } from "./ports.js";
+import { listRoutableAgentIndex } from "@ssota/contracts/agents";
+import { serializeTask, readAgentDefinitionById } from "@ssota/core";
+import { getTaskPort, getAgentDefinitionPort } from "./ports.js";
 import { getConnectorAdapter } from "./connectors/adapter.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
 import type { AgentRuntimeKind } from "@ssota/contracts";
@@ -73,7 +73,7 @@ export async function buildRunPrompt(
   input: RunAgentInput,
 ): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
   const { teamspaceId, accountId, runtimeKind } = input;
-  const instructionPort = getWorkflowInstructionPort(teamspaceId, accountId);
+  const instructionPort = getAgentDefinitionPort(teamspaceId, accountId);
 
   const adapter = getConnectorAdapter();
   const connectorKind = adapter?.kind;
@@ -82,15 +82,15 @@ export async function buildRunPrompt(
   let messages: ModelMessage[] = [];
 
   if (runtimeKind === "main") {
-    const dbInstructions = await instructionPort.listInstructions();
-    const dbKeys = new Set(dbInstructions.map((w) => w.key));
-    // DB rows override built-ins with the same key.
-    const builtins = listBuiltinWorkflowIndex().filter((b) => !dbKeys.has(b.key));
-    const workflowManifest = [
-      ...dbInstructions.map((w) => ({
+    const dbDefinitions = await instructionPort.listDefinitions();
+    const dbKeys = new Set(dbDefinitions.map((w) => w.key));
+    const builtins = listRoutableAgentIndex().filter((b) => !dbKeys.has(b.key));
+    const agentManifest = [
+      ...dbDefinitions.map((w) => ({
         key: w.key,
         name: w.name,
         description: w.description,
+        agentKind: w.agentKind,
       })),
       ...builtins,
     ];
@@ -99,13 +99,16 @@ export async function buildRunPrompt(
       teamspaceId,
       accountId,
       connectorKind,
-      workflowManifest,
+      agentManifest,
     });
     const chatMessages = extractChatMessages(input.chatContext);
     messages = chatMessages ?? [
       {
         role: "user" as const,
-        content: "Continue the conversation and help the user.",
+        content:
+          input.chatContext?.trigger === "heartbeat"
+            ? "Run the scheduled heartbeat tick for this project."
+            : "Continue the conversation and help the user.",
       },
     ];
   } else if (runtimeKind === "task" && input.taskId) {
@@ -115,15 +118,15 @@ export async function buildRunPrompt(
       throw new Error(`Task ${input.taskId} not found in teamspace ${teamspaceId}`);
     }
     const task = serializeTask(domainTask);
-    const playbook = task.workflowInstructionId
-      ? await readWorkflowInstructionById(instructionPort, task.workflowInstructionId)
+    const playbook = task.agentDefinitionId
+      ? await readAgentDefinitionById(instructionPort, task.agentDefinitionId)
       : null;
     instructions = buildRunInstructionMessages({
       runtimeKind: "task",
       teamspaceId,
       accountId,
       connectorKind,
-      taskPlaybook: playbook?.instruction ?? null,
+      taskPlaybook: playbook?.definition ?? null,
       task: {
         id: task.id,
         title: task.title,
@@ -137,21 +140,6 @@ export async function buildRunPrompt(
       {
         role: "user" as const,
         content: `Work the task "${task.title}" (id ${task.id}) to completion.`,
-      },
-    ];
-  } else if (runtimeKind === "scheduler" && input.scheduleId) {
-    const scheduleInstruction = await instructionPort.getByKey("orchestrator.daily");
-    instructions = buildRunInstructionMessages({
-      runtimeKind: "scheduler",
-      teamspaceId,
-      accountId,
-      connectorKind,
-      mainInstruction: scheduleInstruction,
-    });
-    messages = [
-      {
-        role: "user" as const,
-        content: "Run the scheduled orchestration tick.",
       },
     ];
   } else {

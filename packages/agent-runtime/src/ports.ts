@@ -3,7 +3,8 @@ import {
   createGraphPorts,
   createDbCatalogWritePort,
   createTaskPort,
-  createWorkflowInstructionPort,
+  createAgentDefinitionPort,
+  createScriptToolPort,
   createPagePort,
   createConsolePort,
   createConnectorToolSettingsPort,
@@ -73,9 +74,16 @@ export async function getCatalogWritePort(teamspaceId: string) {
   return createDbCatalogWritePort(getDb(), { organizationId });
 }
 
-export function getWorkflowInstructionPort(teamspaceId: string, accountId?: string) {
-  return createWorkflowInstructionPort(getDb(), { teamspaceId, accountId });
+export function getAgentDefinitionPort(teamspaceId: string, accountId?: string) {
+  return createAgentDefinitionPort(getDb(), { teamspaceId, accountId });
 }
+
+export function getScriptToolPort(teamspaceId: string, accountId?: string) {
+  return createScriptToolPort(getDb(), { teamspaceId, accountId });
+}
+
+/** @deprecated Use getAgentDefinitionPort */
+export const getWorkflowInstructionPort = getAgentDefinitionPort;
 
 export function getPagePort(teamspaceId: string, accountId?: string) {
   return createPagePort(getDb(), { teamspaceId, accountId });
