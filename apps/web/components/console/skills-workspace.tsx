@@ -19,9 +19,6 @@ import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import {
-  connectorCardInteractiveClassName,
-} from "@/components/connectors/connector-card-styles";
-import {
   SkillDetailCard,
   SkillMarkdownView,
 } from "@/components/console/skill-detail-view";
@@ -194,15 +191,14 @@ export function SkillsPageWorkspace({
         </div>
 
         <BrowseWorkspace.Section label="Catalog">
-          <div className="space-y-2">
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {skills.map((skill) => (
               <button
                 key={skill.id}
                 type="button"
                 className={cn(
-                  connectorCardInteractiveClassName,
-                  "w-full",
-                  activeId === skill.id && "border-primary/20 bg-muted/30",
+                  "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
+                  activeId === skill.id && "bg-muted/30",
                 )}
                 data-testid={`skill-catalog-item-${skill.key}`}
                 onClick={() => setActiveId(skill.id)}
