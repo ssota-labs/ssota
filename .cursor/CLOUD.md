@@ -76,6 +76,8 @@ pnpm dev --filter web   # :3000
 
 상세: [AGENTS.md — Cursor Cloud specific instructions](../AGENTS.md).
 
+Cloud 부팅 시 `pnpm cloud:prepare`가 `sync-supabase-env.sh` 후 `materialize-env-from-secrets.sh`를 실행해 Cursor Secrets를 `apps/web/.env.local`, `apps/mcp/.env.local`에 merge한다 (각 `.env.example` manifest 기준).
+
 ---
 
 ## 검증 명령 요약

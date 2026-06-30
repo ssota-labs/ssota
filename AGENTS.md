@@ -472,7 +472,8 @@ pnpm cloud:prepare
 5. **Docker**: `docker`/`dockerd`가 없으면 `apt-get install -y docker.io`로 설치한 뒤, `iptables-legacy` + **`vfs` storage driver**로 `dockerd` 기동 (Cloud VM에서 기본 `iptables-nft`/`overlayfs`는 실패함)
 6. **Supabase**: `pnpm exec supabase start` (CLI **2.105.0** pinned)
 7. **DB**: `pnpm db:migrate` + `pnpm db:seed` (smoke 계정 포함)
-8. **Playwright**: `pnpm --filter e2e exec playwright install chromium`
+8. **Secrets → .env.local**: `scripts/materialize-env-from-secrets.sh` (각 앱 `.env.example` manifest 기준)
+9. **Playwright**: `pnpm --filter e2e exec playwright install chromium`
 
 옵션: `--skip-install`, `--skip-playwright`
 
@@ -519,7 +520,7 @@ pnpm db:migrate && pnpm db:seed
 
 **반복 방지 메모:** Cloud VM은 세션마다 Docker daemon뿐 아니라 Docker 패키지 자체가 없을 수 있다. `dockerd`가 없다고 E2E를 포기하지 말고 `pnpm cloud:prepare`가 `docker.io`를 설치하게 하거나 위 수동 명령으로 설치한 뒤 재시도한다. daemon 로그가 `API listen on /var/run/docker.sock`까지 갔는데 bootstrap이 실패하면 거의 항상 socket 권한 문제다.
 
-`pnpm cloud:prepare`는 Supabase 기동 후 `scripts/sync-supabase-env.sh`로 `apps/web/.env.local`, `apps/mcp/.env.local`, 루트 `.env.local`에 `supabase status` 키(URL·anon·service_role·DATABASE_URL)를 동기화한다. 수동 갱신: `pnpm sync:env`.
+`pnpm cloud:prepare`는 Supabase 기동 후 `scripts/sync-supabase-env.sh`로 `apps/web/.env.local`, `apps/mcp/.env.local`, 루트 `.env.local`에 `supabase status` 키(URL·anon·service_role·DATABASE_URL)를 동기화하고, 이어서 `scripts/materialize-env-from-secrets.sh`가 각 앱의 `.env.example` manifest에 선언된 키만 Cursor Secrets(`process.env`)에서 `.env.local`로 merge한다. 수동 갱신: `pnpm sync:env` (Supabase만), Secrets materialize는 `bash scripts/materialize-env-from-secrets.sh`.
 
 ### 앱 기동
 

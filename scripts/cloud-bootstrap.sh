@@ -103,6 +103,11 @@ sync_supabase_env() {
   bash "$ROOT_DIR/scripts/sync-supabase-env.sh"
 }
 
+materialize_env_from_secrets() {
+  log "Materializing Cursor Secrets into per-app .env.local…"
+  bash "$ROOT_DIR/scripts/materialize-env-from-secrets.sh"
+}
+
 ensure_docker_binaries() {
   if command -v docker >/dev/null 2>&1 && command -v dockerd >/dev/null 2>&1; then
     log "Docker binaries present"
@@ -225,6 +230,7 @@ main() {
   ensure_docker
   ensure_supabase
   sync_supabase_env
+  materialize_env_from_secrets
   ensure_database
   ensure_playwright
   log "Ready."
