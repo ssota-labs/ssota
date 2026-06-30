@@ -17,8 +17,8 @@ export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 export const TaskSchema = z.object({
   id: z.string().uuid(),
   teamspaceId: z.string().uuid(),
-  workflowInstructionId: z.string().uuid().nullable(),
-  workflowInstructionKey: z.string().nullable(),
+  agentDefinitionId: z.string().uuid().nullable(),
+  agentKey: z.string().nullable(),
   title: z.string().min(1),
   status: TaskStatusSchema,
   executorType: ExecutorTypeSchema,
@@ -42,8 +42,8 @@ export const TaskIndexSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
   status: TaskStatusSchema,
-  workflowInstructionId: z.string().uuid().nullable(),
-  workflowInstructionKey: z.string().nullable(),
+  agentDefinitionId: z.string().uuid().nullable(),
+  agentKey: z.string().nullable(),
   assignee: z.string().nullable(),
   executorType: ExecutorTypeSchema,
   targetNodeId: z.string().uuid().nullable(),
@@ -54,8 +54,8 @@ export type TaskIndex = z.infer<typeof TaskIndexSchema>;
 
 export const QueryTasksInputSchema = z.object({
   status: TaskStatusSchema.optional(),
-  workflowInstructionId: z.string().uuid().optional(),
-  workflowInstructionKey: z.string().optional(),
+  agentDefinitionId: z.string().uuid().optional(),
+  agentKey: z.string().optional(),
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
@@ -74,8 +74,8 @@ export type GetTaskInput = z.infer<typeof GetTaskInputSchema>;
 
 export const SpawnTaskInputSchema = z.object({
   title: z.string().min(1),
-  workflowInstructionId: z.string().uuid().optional(),
-  workflowInstructionKey: z.string().optional(),
+  agentDefinitionId: z.string().uuid().optional(),
+  agentKey: z.string().optional(),
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
@@ -91,12 +91,10 @@ export const SpawnTaskInputSchema = z.object({
   idempotencyKey: z.string().optional(),
   status: TaskStatusSchema.optional(),
 }).refine(
-  (value) =>
-    Boolean(value.workflowInstructionId) || Boolean(value.workflowInstructionKey),
+  (value) => Boolean(value.agentDefinitionId) || Boolean(value.agentKey),
   {
-    message:
-      "Either workflowInstructionId or workflowInstructionKey is required",
-    path: ["workflowInstructionId"],
+    message: "Either agentDefinitionId or agentKey is required",
+    path: ["agentDefinitionId"],
   },
 );
 
@@ -134,8 +132,8 @@ export type UpdateTaskInput = z.infer<typeof UpdateTaskInputSchema>;
 export const CreateTaskEffectPayloadSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().min(1),
-  workflowInstructionId: z.string().uuid().optional(),
-  workflowInstructionKey: z.string().optional(),
+  agentDefinitionId: z.string().uuid().optional(),
+  agentKey: z.string().optional(),
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
