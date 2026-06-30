@@ -18,6 +18,10 @@ import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import {
+  SkillDetailCard,
+  SkillMarkdownView,
+} from "@/components/console/skill-detail-view";
 import { ScheduleSheetPanel } from "@/components/schedules/schedule-sheet-panel";
 
 type SkillDetail = {
@@ -267,34 +271,41 @@ export function SkillsPageWorkspace({
             ) : undefined
           }
         >
-          {activeSkill.description ? (
-            <p className="text-sm text-muted-foreground">{activeSkill.description}</p>
-          ) : null}
+          <div className="space-y-4">
+            {activeSkill.description.trim() ? (
+              <SkillDetailCard title="Description" testId="skill-detail-description">
+                <SkillMarkdownView
+                  markdown={activeSkill.description}
+                  viewKey={`${activeSkill.id}-description`}
+                />
+              </SkillDetailCard>
+            ) : null}
 
-          {skillBody ? (
-            <div className="mt-4 space-y-2">
-              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                SKILL.md
-              </h3>
-              <pre className="overflow-auto rounded-md border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
-                {skillBody}
-              </pre>
-            </div>
-          ) : null}
+            {skillBody.trim() ? (
+              <SkillDetailCard title="SKILL.md" testId="skill-detail-body">
+                <SkillMarkdownView
+                  markdown={skillBody}
+                  viewKey={`${activeSkill.id}-body`}
+                />
+              </SkillDetailCard>
+            ) : null}
 
-          {activeSkill.source === "custom" && detail ? (
-            <EditCustomSkillForm
-              teamspaceId={teamspaceId}
-              skillId={activeSkill.id}
-              initialName={detail.skill.name}
-              initialDescription={detail.skill.description}
-              initialBody={skillBody}
-              onSaved={() => {
-                loadSkills(query);
-                loadDetail(activeSkill.id);
-              }}
-            />
-          ) : null}
+            {activeSkill.source === "custom" && detail ? (
+              <SkillDetailCard title="Edit" testId="skill-detail-edit">
+                <EditCustomSkillForm
+                  teamspaceId={teamspaceId}
+                  skillId={activeSkill.id}
+                  initialName={detail.skill.name}
+                  initialDescription={detail.skill.description}
+                  initialBody={skillBody}
+                  onSaved={() => {
+                    loadSkills(query);
+                    loadDetail(activeSkill.id);
+                  }}
+                />
+              </SkillDetailCard>
+            ) : null}
+          </div>
         </ScheduleSheetPanel>
       ) : null}
       </div>
@@ -490,8 +501,7 @@ function EditCustomSkillForm({
   };
 
   return (
-    <div className="space-y-3 border-t border-border pt-4" data-testid="skill-edit-form">
-      <h3 className="text-sm font-medium">Edit custom skill</h3>
+    <div className="space-y-3" data-testid="skill-edit-form">
       <div className="space-y-1.5">
         <Label htmlFor="skill-edit-name">Name</Label>
         <Input

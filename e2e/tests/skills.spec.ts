@@ -46,7 +46,9 @@ test.describe("Skills", () => {
 
     const sheet = page.getByTestId("skill-detail-sheet");
     await expect(sheet).toBeVisible({ timeout: 10_000 });
-    await expect(sheet.locator("pre").getByText("Follow these steps in tests.")).toBeVisible();
+    await expect(
+      sheet.getByTestId("skill-detail-body").getByText("Follow these steps in tests."),
+    ).toBeVisible();
 
     await expect(
       page.getByTestId(`skill-catalog-item-${CUSTOM_KEY}`),
