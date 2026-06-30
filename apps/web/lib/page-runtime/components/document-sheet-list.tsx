@@ -141,7 +141,7 @@ export function DocumentSheetListEl({
 
         {title ? <h3 className="text-sm font-medium">{title}</h3> : null}
 
-        <div className="border-border divide-border divide-y overflow-hidden rounded-lg border">
+        <div className="border-border bg-card divide-border divide-y overflow-hidden rounded-lg border">
           {visibleNodes.map((node) => {
             const subtitle = readNodeField(node, subtitleField);
             const status = readNodeField(node, statusField);
