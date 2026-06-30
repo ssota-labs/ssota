@@ -70,10 +70,20 @@ export const RegisterSkillInputSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
   source: SkillSourceSchema.optional(),
+  /** Markdown body without YAML frontmatter; server wraps as SKILL.md */
+  body: z.string().optional(),
   files: z.array(SkillFileSchema).optional(),
 });
 
 export type RegisterSkillInput = z.infer<typeof RegisterSkillInputSchema>;
+
+export const UpdateSkillInputSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  body: z.string().optional(),
+});
+
+export type UpdateSkillInput = z.infer<typeof UpdateSkillInputSchema>;
 
 export const UpdateAgentSkillsInputSchema = z.object({
   skillIds: z.array(z.string().uuid()),

@@ -6,6 +6,7 @@ import type {
   SkillFile,
   SkillIndex,
   SkillSnapshot,
+  UpdateSkillInput,
 } from "@ssota/contracts";
 
 export interface SkillReadPort {
@@ -19,6 +20,7 @@ export interface SkillReadPort {
     skillId: string,
     filePath: string,
   ): Promise<SkillFile | null>;
+  listSkillFiles(organizationId: string, skillId: string): Promise<SkillFile[]>;
   listAgentSkillLinks(agentDefinitionId: string): Promise<AgentDefinitionSkillLink[]>;
 }
 
@@ -27,6 +29,12 @@ export interface SkillWritePort {
     organizationId: string,
     input: RegisterSkillInput,
   ): Promise<Skill>;
+  updateCustomSkill(
+    organizationId: string,
+    skillId: string,
+    input: UpdateSkillInput,
+  ): Promise<Skill>;
+  deleteCustomSkill(organizationId: string, skillId: string): Promise<void>;
   updateAgentSkillBindings(
     teamspaceId: string,
     agentDefinitionId: string,
