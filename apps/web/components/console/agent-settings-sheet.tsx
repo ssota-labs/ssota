@@ -2,14 +2,31 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import {
+  CalendarBlankIcon,
+  ChatCircleIcon,
+  ChatsCircleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  CpuIcon,
+  FileTextIcon,
+  LightningIcon,
+  ListChecksIcon,
+  RobotIcon,
+  WrenchIcon,
+} from "@phosphor-icons/react";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
 import { blockNoteContentToText } from "@ssota/contracts";
+import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { updateAgentDefinitionAction } from "@/app/actions";
+import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { ScheduleSheetPanel } from "@/components/schedules/schedule-sheet-panel";
 import {
   AgentSettingCard,
-  AgentSettingSummaryRow,
+  AgentSettingEmpty,
+  AgentSettingItem,
+  AgentSettingItems,
 } from "@/components/console/agent-setting-card";
 import {
   AgentSettingsDialogs,
@@ -39,6 +56,13 @@ type AgentSettingsSheetProps = {
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
   schedules: AgentScheduleSummary[];
   onClose: () => void;
+};
+
+const TRIGGER_ICONS: Partial<Record<AgentTrigger, typeof ChatCircleIcon>> = {
+  chat: ChatCircleIcon,
+  chatbot: ChatsCircleIcon,
+  task: ListChecksIcon,
+  schedule: CalendarBlankIcon,
 };
 
 function buildDraft(
@@ -86,20 +110,46 @@ export function AgentSettingsSheet({
 
   const instructionPreview = useMemo(() => {
     const text = blockNoteContentToText(draft.instructions).trim();
-    if (!text) return "No instructions yet";
-    return text.length > 120 ? `${text.slice(0, 120)}…` : text;
+    if (!text) return null;
+    return text.length > 200 ? `${text.slice(0, 200)}…` : text;
   }, [draft.instructions]);
 
   const activeTriggers = draft.allowedTriggers.filter(
     (t) => t === "chat" || t === "chatbot" || t === "task" || t === "schedule",
   );
 
-  const optionalToolCount = draft.toolBundles.filter(
+  const optionalBundles = draft.toolBundles.filter(
     (b) => !BASE_TOOL_BUNDLES.includes(b),
-  ).length;
+  );
 
   const modelLabel =
     MODEL_OPTIONS.find((m) => m.id === draft.model)?.label ?? "Auto";
+
+  const modelProvider =
+    MODEL_OPTIONS.find((m) => m.id === draft.model)?.provider ?? "";
+
+  const connectedProviders = useMemo(() => {
+    const map = new Map<string, ConnectorConnection[]>();
+    for (const c of connections.user) {
+      const list = map.get(c.connector) ?? [];
+      list.push(c);
+      map.set(c.connector, list);
+    }
+    for (const c of connections.org) {
+      const list = map.get(c.connector) ?? [];
+      list.push(c);
+      map.set(c.connector, list);
+    }
+    return map;
+  }, [connections]);
+
+  const linkedScriptTools = scriptTools.filter((t) =>
+    draft.scriptToolIds.includes(t.id),
+  );
+
+  const linkedWorkers = workers.filter((w) =>
+    draft.linkedWorkerAgentIds.includes(w.id),
+  );
 
   const patchDraft = (patch: Partial<AgentSettingsDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -161,105 +211,160 @@ export function AgentSettingsSheet({
             description="When should this agent run?"
             testId="agent-settings-triggers-card"
             onOpen={() => setOpenDialog("triggers")}
-            summary={
-              activeTriggers.length === 0 ? (
-                <span>No triggers enabled</span>
-              ) : (
-                <span>
-                  {activeTriggers.map((t) => TRIGGER_LABELS[t]).join(", ")}
-                  {draft.allowedTriggers.includes("schedule") &&
-                  agentSchedules.length > 0
-                    ? ` · ${agentSchedules.length} schedule(s)`
-                    : null}
-                </span>
-              )
-            }
-          />
+          >
+            {activeTriggers.length === 0 && agentSchedules.length === 0 ? (
+              <AgentSettingEmpty>No triggers enabled</AgentSettingEmpty>
+            ) : (
+              <AgentSettingItems>
+                {activeTriggers.map((trigger) => {
+                  const Icon = TRIGGER_ICONS[trigger] ?? LightningIcon;
+                  return (
+                    <AgentSettingItem
+                      key={trigger}
+                      icon={<Icon className="size-3.5 text-muted-foreground" />}
+                      title={TRIGGER_LABELS[trigger]}
+                      trailing={
+                        <Badge variant="secondary" className="gap-1 font-normal">
+                          <CheckCircleIcon
+                            weight="fill"
+                            className="size-3 text-primary"
+                          />
+                          On
+                        </Badge>
+                      }
+                    />
+                  );
+                })}
+                {draft.allowedTriggers.includes("schedule")
+                  ? agentSchedules.map((schedule) => {
+                      const rec = cronToRecurrence(
+                        schedule.cronExpression,
+                        schedule.timezone,
+                      );
+                      const label = rec
+                        ? describeRecurrence(rec)
+                        : schedule.cronExpression;
+                      return (
+                        <AgentSettingItem
+                          key={schedule.id}
+                          icon={
+                            <ClockIcon className="size-3.5 text-muted-foreground" />
+                          }
+                          title={label}
+                          subtitle="Scheduled run"
+                          trailing={schedule.enabled ? "On" : "Off"}
+                        />
+                      );
+                    })
+                  : null}
+              </AgentSettingItems>
+            )}
+          </AgentSettingCard>
 
           <AgentSettingCard
             title="Instructions"
             description="What should the agent do every time it runs?"
             testId="agent-settings-instructions-card"
             onOpen={() => setOpenDialog("instructions")}
-            summary={<span className="line-clamp-2">{instructionPreview}</span>}
-          />
+          >
+            {instructionPreview ? (
+              <AgentSettingItems>
+                <AgentSettingItem
+                  icon={
+                    <FileTextIcon className="size-3.5 text-muted-foreground" />
+                  }
+                  title="Current instructions"
+                  subtitle={instructionPreview}
+                />
+              </AgentSettingItems>
+            ) : (
+              <AgentSettingEmpty>No instructions yet</AgentSettingEmpty>
+            )}
+          </AgentSettingCard>
 
           <AgentSettingCard
             title="Tools and access"
             description="What can the agent use?"
             testId="agent-settings-tools-card"
             onOpen={() => setOpenDialog("tools")}
-            summary={
-              <div className="space-y-0.5">
-                <AgentSettingSummaryRow
-                  label="Base tools"
-                  value={`${BASE_TOOL_BUNDLES.length} included`}
+          >
+            <AgentSettingItems>
+              {BASE_TOOL_BUNDLES.map((bundle) => (
+                <AgentSettingItem
+                  key={bundle}
+                  icon={<WrenchIcon className="size-3.5 text-muted-foreground" />}
+                  title={TOOL_BUNDLE_LABELS[bundle]}
+                  subtitle="Always included"
+                  trailing="On"
                 />
-                <AgentSettingSummaryRow
-                  label="Optional"
-                  value={
-                    optionalToolCount === 0
-                      ? "None"
-                      : draft.toolBundles
-                          .filter((b) => !BASE_TOOL_BUNDLES.includes(b))
-                          .map((b) => TOOL_BUNDLE_LABELS[b])
-                          .join(", ")
-                  }
+              ))}
+              {optionalBundles.map((bundle) => (
+                <AgentSettingItem
+                  key={bundle}
+                  icon={<WrenchIcon className="size-3.5 text-muted-foreground" />}
+                  title={TOOL_BUNDLE_LABELS[bundle]}
+                  trailing="On"
                 />
-                {draft.scriptToolIds.length > 0 ? (
-                  <AgentSettingSummaryRow
-                    label="Script tools"
-                    value={`${draft.scriptToolIds.length} linked`}
-                  />
-                ) : null}
-                {draft.linkedWorkerAgentIds.length > 0 ? (
-                  <AgentSettingSummaryRow
-                    label="Workers"
-                    value={`${draft.linkedWorkerAgentIds.length} linked`}
-                  />
-                ) : null}
-              </div>
-            }
-          />
+              ))}
+              {draft.toolBundles.includes("connectors")
+                ? connectors
+                    .filter((c) => connectedProviders.has(c.provider))
+                    .map((connector) => {
+                      const count =
+                        connectedProviders.get(connector.provider)?.length ?? 0;
+                      return (
+                        <AgentSettingItem
+                          key={connector.provider}
+                          icon={
+                            <ConnectorBrandIcon
+                              provider={connector.provider}
+                              className="size-3.5"
+                            />
+                          }
+                          title={connector.label}
+                          subtitle="Composio connector"
+                          trailing={
+                            count > 1 ? `${count} accounts` : "Connected"
+                          }
+                        />
+                      );
+                    })
+                : null}
+              {linkedScriptTools.map((tool) => (
+                <AgentSettingItem
+                  key={tool.id}
+                  icon={<WrenchIcon className="size-3.5 text-muted-foreground" />}
+                  title={tool.name}
+                  subtitle={tool.key}
+                  trailing="Script"
+                />
+              ))}
+              {linkedWorkers.map((worker) => (
+                <AgentSettingItem
+                  key={worker.id}
+                  icon={<RobotIcon className="size-3.5 text-muted-foreground" />}
+                  title={worker.name}
+                  subtitle={worker.description || "Worker agent"}
+                  trailing="Worker"
+                />
+              ))}
+            </AgentSettingItems>
+          </AgentSettingCard>
 
           <AgentSettingCard
             title="Model"
             description="Default model for agent runs."
             testId="agent-settings-model-card"
             onOpen={() => setOpenDialog("model")}
-            summary={<span>{modelLabel}</span>}
-          />
-
-          {agentSchedules.length > 0 ? (
-            <section className="rounded-lg border border-border bg-card px-4 py-3">
-              <h3 className="text-sm font-medium">Active schedules</h3>
-              <ul className="text-muted-foreground mt-2 space-y-1 text-xs">
-                {agentSchedules.map((schedule) => {
-                  const rec = cronToRecurrence(
-                    schedule.cronExpression,
-                    schedule.timezone,
-                  );
-                  const label = rec
-                    ? describeRecurrence(rec)
-                    : schedule.cronExpression;
-                  return (
-                    <li key={schedule.id}>
-                      {label} ({schedule.enabled ? "on" : "off"})
-                    </li>
-                  );
-                })}
-              </ul>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                onClick={() => setOpenDialog("add-schedule")}
-              >
-                Add schedule
-              </Button>
-            </section>
-          ) : null}
+          >
+            <AgentSettingItems>
+              <AgentSettingItem
+                icon={<CpuIcon className="size-3.5 text-muted-foreground" />}
+                title={modelLabel}
+                subtitle={modelProvider || "Default model"}
+              />
+            </AgentSettingItems>
+          </AgentSettingCard>
         </div>
       </ScheduleSheetPanel>
 

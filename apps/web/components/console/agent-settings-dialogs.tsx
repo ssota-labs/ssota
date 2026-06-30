@@ -157,7 +157,7 @@ export function AgentSettingsDialogs({
         open={openDialog === "triggers"}
         onOpenChange={(open) => !open && onOpenDialogChange(null)}
       >
-        <DialogContent className="max-w-lg" forceBackdrop>
+        <DialogContent className="max-w-2xl" forceBackdrop>
           <DialogHeader>
             <DialogTitle>Triggers</DialogTitle>
             <DialogDescription>
@@ -274,7 +274,7 @@ export function AgentSettingsDialogs({
         open={openDialog === "instructions"}
         onOpenChange={(open) => !open && onOpenDialogChange(null)}
       >
-        <DialogContent className="max-h-[85vh] max-w-2xl overflow-hidden" forceBackdrop>
+        <DialogContent className="max-h-[85vh] max-w-4xl overflow-hidden" forceBackdrop>
           <DialogHeader>
             <DialogTitle>Instructions</DialogTitle>
             <DialogDescription>
@@ -316,7 +316,7 @@ export function AgentSettingsDialogs({
         open={openDialog === "tools"}
         onOpenChange={(open) => !open && onOpenDialogChange(null)}
       >
-        <DialogContent className="max-h-[85vh] max-w-lg overflow-y-auto" forceBackdrop>
+        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto" forceBackdrop>
           <DialogHeader>
             <DialogTitle>Tools and access</DialogTitle>
             <DialogDescription>
@@ -463,7 +463,7 @@ export function AgentSettingsDialogs({
         open={openDialog === "model"}
         onOpenChange={(open) => !open && onOpenDialogChange(null)}
       >
-        <DialogContent className="max-w-md" forceBackdrop>
+        <DialogContent className="max-w-xl" forceBackdrop>
           <DialogHeader>
             <DialogTitle>Model</DialogTitle>
             <DialogDescription>
