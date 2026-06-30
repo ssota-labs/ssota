@@ -18,6 +18,13 @@ function revalidateOrgPaths(orgSlug: string) {
   revalidatePath(`/${orgSlug}`, "layout");
 }
 
+function revalidateBillingPaths(orgSlug: string, teamspaceSlug?: string) {
+  revalidatePath(`/${orgSlug}/settings/billing`);
+  if (teamspaceSlug) {
+    revalidatePath(`/${orgSlug}/${teamspaceSlug}/settings/billing`);
+  }
+}
+
 export async function inviteMemberAction(input: {
   organizationId: string;
   orgSlug: string;
@@ -127,6 +134,7 @@ export async function respondToInvitationAction(input: {
       );
       if (org) {
         await syncOrgBillingSeats(org.id);
+        revalidateBillingPaths(result.organizationSlug, input.teamspaceSlug);
       }
     }
 
@@ -196,9 +204,11 @@ export async function removeMemberAction(input: {
     });
     await syncOrgBillingSeats(parsed.data.organizationId);
     revalidateOrgPaths(input.orgSlug);
+    revalidateBillingPaths(input.orgSlug, input.teamspaceSlug);
     revalidatePath(
       `/${input.orgSlug}/${input.teamspaceSlug}/settings/members`,
     );
+    revalidatePath(`/${input.orgSlug}/settings/members`);
     return { ok: true as const };
   } catch (error) {
     if (error instanceof SettingsError) {
