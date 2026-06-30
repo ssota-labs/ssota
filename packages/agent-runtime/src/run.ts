@@ -80,7 +80,18 @@ export async function resolveRunAgentDefinition(
   input: RunAgentInput,
 ): Promise<{ definition: AgentRuntimeDefinition; trigger: AgentTrigger }> {
   if (input.runtimeKind === "main") {
-    const definition = mainAgentRuntimeDefinition();
+    const instructionPort = getAgentDefinitionPort(input.teamspaceId, input.accountId);
+    const dbMain = (await instructionPort.listDefinitions()).find((d) => d.isMain);
+    let definition = mainAgentRuntimeDefinition();
+    if (dbMain) {
+      const loaded = await instructionPort.getById(dbMain.id);
+      if (loaded) {
+        definition = {
+          ...runtimeDefinitionFromAgent(loaded),
+          isMain: true,
+        };
+      }
+    }
     const trigger = resolveMainTrigger(input);
     assertAllowedTrigger(definition, trigger);
     return { definition, trigger };

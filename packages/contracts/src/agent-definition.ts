@@ -59,6 +59,8 @@ export const RunPolicySchema = z.object({
   timeoutMs: z.number().int().positive().optional(),
   /** Worker agent definitions linked as delegate targets for this agent. */
   linkedWorkerAgentIds: z.array(z.string().uuid()).optional(),
+  /** Composio connector providers this agent may use (empty = none selected). */
+  enabledConnectorProviders: z.array(z.string()).optional(),
 });
 
 export type RunPolicy = z.infer<typeof RunPolicySchema>;

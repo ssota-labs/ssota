@@ -16,6 +16,8 @@ export interface AgentRunContext {
   agentDefinitionId?: string;
   /** Graph access limits from the agent definition. */
   nodeScopes?: NodeScope[];
+  /** Composio toolkit slugs this agent may use (empty = connector tools off). */
+  enabledConnectorProviders?: string[];
   /** Trigger that started this run (for policy checks). */
   trigger?: AgentTrigger;
   /**

@@ -20,6 +20,8 @@ export interface BuildConnectorToolsInput {
   teamspaceId: string;
   accountId?: string;
   profileId?: string;
+  /** Composio toolkit slugs enabled for this agent run. */
+  enabledConnectorProviders?: string[];
 }
 
 export interface ConnectorAdapter {
@@ -30,12 +32,18 @@ const EMPTY: ConnectorToolsBundle = { tools: {} };
 
 function composioAdapter(): ConnectorAdapter {
   return {
-    async buildTools({ teamspaceId, profileId }) {
+    async buildTools({ teamspaceId, profileId, enabledConnectorProviders }) {
       const orgId = await resolveOrgIdForProject(teamspaceId);
       if (!orgId) return EMPTY;
+      if (enabledConnectorProviders && enabledConnectorProviders.length === 0) {
+        return EMPTY;
+      }
+      const enabledToolkits = enabledConnectorProviders?.length
+        ? enabledConnectorProviders
+        : undefined;
       const tools = profileId
-        ? await createComposioTools({ orgId, profileId })
-        : await createComposioOrgTools({ orgId });
+        ? await createComposioTools({ orgId, profileId, enabledToolkits })
+        : await createComposioOrgTools({ orgId, enabledToolkits });
       return { tools };
     },
   };

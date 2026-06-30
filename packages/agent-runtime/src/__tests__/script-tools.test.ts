@@ -18,6 +18,7 @@ describe("script tool surface", () => {
       toolBundles: ["script_tools"],
     });
     expect(tools).toHaveProperty("run_script_tool");
-    expect(tools).not.toHaveProperty("spawn_task");
+    expect(tools).toHaveProperty("spawn_task");
+    expect(tools).not.toHaveProperty("create_node");
   });
 });

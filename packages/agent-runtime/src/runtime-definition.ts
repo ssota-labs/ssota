@@ -15,6 +15,8 @@ export interface AgentRuntimeDefinition {
   toolBundles: ToolBundle[];
   nodeScopes: NodeScope[];
   allowedTriggers: AgentTrigger[] | null;
+  /** Composio toolkit slugs the agent may use; empty/omitted = no connector tools. */
+  enabledConnectorProviders?: string[];
 }
 
 /** Builtin main agent definition (always available without DB). */
@@ -33,6 +35,8 @@ export function mainAgentRuntimeDefinition(): AgentRuntimeDefinition {
     ],
     nodeScopes: builtin?.nodeScopes ?? [],
     allowedTriggers: builtin?.runPolicy.allowedTriggers ?? null,
+    enabledConnectorProviders:
+      builtin?.runPolicy.enabledConnectorProviders ?? [],
   };
 }
 
@@ -48,6 +52,8 @@ export function runtimeDefinitionFromAgent(
     toolBundles: definition.toolBundles,
     nodeScopes: definition.nodeScopes,
     allowedTriggers: definition.runPolicy.allowedTriggers ?? null,
+    enabledConnectorProviders:
+      definition.runPolicy.enabledConnectorProviders ?? [],
   };
 }
 
@@ -62,6 +68,8 @@ export function runtimeDefinitionFromBuiltinId(
     toolBundles: builtin.toolBundles,
     nodeScopes: builtin.nodeScopes,
     allowedTriggers: builtin.runPolicy.allowedTriggers ?? null,
+    enabledConnectorProviders:
+      builtin.runPolicy.enabledConnectorProviders ?? [],
   };
 }
 
