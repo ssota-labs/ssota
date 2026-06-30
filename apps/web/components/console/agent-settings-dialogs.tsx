@@ -161,24 +161,11 @@ export function AgentSettingsDialogs({
           <DialogHeader>
             <DialogTitle>Triggers</DialogTitle>
             <DialogDescription>
-              When should this agent run? Chat uses Vercel Chat; schedules run on
-              cron.
+              Choose how this agent is invoked. Cron schedules list each recurring
+              run below once enabled.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-              <div>
-                <p className="text-sm font-medium">{TRIGGER_LABELS.chat}</p>
-                <p className="text-muted-foreground text-xs">
-                  Messages in project chat invoke this agent when enabled.
-                </p>
-              </div>
-              <Switch
-                checked={draft.allowedTriggers.includes("chat")}
-                onCheckedChange={(checked) => toggleTrigger("chat", checked)}
-                data-testid="agent-trigger-chat"
-              />
-            </div>
             <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
               <div>
                 <p className="text-sm font-medium">{TRIGGER_LABELS.chatbot}</p>
@@ -205,9 +192,9 @@ export function AgentSettingsDialogs({
             </div>
             <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
               <div>
-                <p className="text-sm font-medium">{TRIGGER_LABELS.schedule}</p>
+                <p className="text-sm font-medium">Cron schedules</p>
                 <p className="text-muted-foreground text-xs">
-                  Recurring cron schedules for this agent.
+                  Allow recurring runs. Add each schedule (e.g. weekly) below.
                 </p>
               </div>
               <Switch
@@ -215,6 +202,7 @@ export function AgentSettingsDialogs({
                 onCheckedChange={(checked) =>
                   toggleTrigger("schedule", checked)
                 }
+                data-testid="agent-trigger-schedule"
               />
             </div>
 
@@ -320,8 +308,8 @@ export function AgentSettingsDialogs({
           <DialogHeader>
             <DialogTitle>Tools and access</DialogTitle>
             <DialogDescription>
-              Base tools are always included. Add script workers and Composio
-              connectors as needed.
+              Graph, tasks, Composio connectors, and TypeScript scripts are always
+              on. Link specific scripts and optional capabilities below.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5">
@@ -360,67 +348,64 @@ export function AgentSettingsDialogs({
               </ul>
             </div>
 
-            {draft.toolBundles.includes("connectors") ? (
-              <div className="space-y-2">
-                <Label>Composio connectors</Label>
-                <p className="text-muted-foreground text-xs">
-                  Uses org connections from the Connectors page.
-                </p>
-                <ul className="divide-y divide-border rounded-md border">
-                  {connectors.map((connector) => {
-                    const connected = connectedProviders.has(connector.provider);
-                    return (
-                      <li
-                        key={connector.provider}
-                        className="flex items-center gap-2 px-3 py-2 text-sm"
-                      >
-                        <ConnectorBrandIcon
-                          provider={connector.provider}
-                          className="size-4"
-                        />
-                        <span className="flex-1">{connector.label}</span>
-                        <span className="text-muted-foreground text-xs">
-                          {connected ? "Connected" : "Not connected"}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ) : null}
+            <div className="space-y-2">
+              <Label>Composio connectors</Label>
+              <p className="text-muted-foreground text-xs">
+                Connected accounts from the Connectors page. All agents can use
+                them when connected.
+              </p>
+              <ul className="divide-y divide-border rounded-md border">
+                {connectors.map((connector) => {
+                  const connected = connectedProviders.has(connector.provider);
+                  return (
+                    <li
+                      key={connector.provider}
+                      className="flex items-center gap-2 px-3 py-2 text-sm"
+                    >
+                      <ConnectorBrandIcon
+                        provider={connector.provider}
+                        className="size-4"
+                      />
+                      <span className="flex-1">{connector.label}</span>
+                      <span className="text-muted-foreground text-xs">
+                        {connected ? "Connected" : "Not connected"}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
 
-            {draft.toolBundles.includes("script_tools") ? (
-              <div className="space-y-2">
-                <Label>Script tools</Label>
-                {scriptTools.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">
-                    No script tools in this project yet.
-                  </p>
-                ) : (
-                  <ul className="divide-y divide-border rounded-md border">
-                    {scriptTools.map((tool) => (
-                      <li
-                        key={tool.id}
-                        className="flex items-center justify-between gap-3 px-3 py-2"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium">{tool.name}</p>
-                          <p className="text-muted-foreground truncate font-mono text-xs">
-                            {tool.key}
-                          </p>
-                        </div>
-                        <Switch
-                          checked={draft.scriptToolIds.includes(tool.id)}
-                          onCheckedChange={(checked) =>
-                            toggleScriptTool(tool.id, checked)
-                          }
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ) : null}
+            <div className="space-y-2">
+              <Label>TypeScript scripts</Label>
+              {scriptTools.length === 0 ? (
+                <p className="text-muted-foreground text-xs">
+                  No TypeScript script tools in this project yet.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border rounded-md border">
+                  {scriptTools.map((tool) => (
+                    <li
+                      key={tool.id}
+                      className="flex items-center justify-between gap-3 px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium">{tool.name}</p>
+                        <p className="text-muted-foreground truncate font-mono text-xs">
+                          {tool.key}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={draft.scriptToolIds.includes(tool.id)}
+                        onCheckedChange={(checked) =>
+                          toggleScriptTool(tool.id, checked)
+                        }
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
             <div className="space-y-2">
               <Label>Worker agents</Label>

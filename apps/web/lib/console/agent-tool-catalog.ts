@@ -1,15 +1,17 @@
 import type { AgentTrigger, ToolBundle } from "@ssota/contracts";
+import {
+  DEFAULT_AGENT_TOOL_BUNDLES,
+  mergeAgentToolBundles,
+} from "@ssota/contracts";
 import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 
-/** Tool bundles every agent receives regardless of UI toggles. */
-export const BASE_TOOL_BUNDLES: ToolBundle[] = ["graph.read", "tasks.manage"];
+/** @deprecated Use DEFAULT_AGENT_TOOL_BUNDLES from @ssota/contracts */
+export const BASE_TOOL_BUNDLES: ToolBundle[] = [...DEFAULT_AGENT_TOOL_BUNDLES];
 
 /** Optional bundles the settings UI can enable per agent. */
 export const OPTIONAL_TOOL_BUNDLES: ToolBundle[] = [
   "graph.write",
   "pages.author",
-  "connectors",
-  "script_tools",
   "sandbox.code",
   "delegate",
 ];
@@ -21,7 +23,7 @@ export const TOOL_BUNDLE_LABELS: Record<ToolBundle, string> = {
   "pages.author": "Pages",
   connectors: "Composio connectors",
   delegate: "Delegate subagents",
-  script_tools: "Script tools",
+  script_tools: "TypeScript scripts",
   "sandbox.code": "Sandbox code",
 };
 
@@ -47,8 +49,7 @@ export function isWorkerAgentId(id: string): boolean {
 }
 
 export function mergeToolBundles(selected: ToolBundle[]): ToolBundle[] {
-  const merged = new Set<ToolBundle>([...BASE_TOOL_BUNDLES, ...selected]);
-  return [...merged];
+  return mergeAgentToolBundles(selected);
 }
 
 export function splitToolBundles(bundles: ToolBundle[]): {

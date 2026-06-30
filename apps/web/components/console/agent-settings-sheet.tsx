@@ -115,8 +115,10 @@ export function AgentSettingsSheet({
   }, [draft.instructions]);
 
   const activeTriggers = draft.allowedTriggers.filter(
-    (t) => t === "chat" || t === "chatbot" || t === "task" || t === "schedule",
+    (t) => t === "chatbot" || t === "task",
   );
+
+  const scheduleEnabled = draft.allowedTriggers.includes("schedule");
 
   const optionalBundles = draft.toolBundles.filter(
     (b) => !BASE_TOOL_BUNDLES.includes(b),
@@ -212,7 +214,8 @@ export function AgentSettingsSheet({
             testId="agent-settings-triggers-card"
             onOpen={() => setOpenDialog("triggers")}
           >
-            {activeTriggers.length === 0 && agentSchedules.length === 0 ? (
+            {!scheduleEnabled &&
+            activeTriggers.length === 0 ? (
               <AgentSettingEmpty>No triggers enabled</AgentSettingEmpty>
             ) : (
               <AgentSettingItems>
@@ -235,27 +238,38 @@ export function AgentSettingsSheet({
                     />
                   );
                 })}
-                {draft.allowedTriggers.includes("schedule")
-                  ? agentSchedules.map((schedule) => {
-                      const rec = cronToRecurrence(
-                        schedule.cronExpression,
-                        schedule.timezone,
-                      );
-                      const label = rec
-                        ? describeRecurrence(rec)
-                        : schedule.cronExpression;
-                      return (
-                        <AgentSettingItem
-                          key={schedule.id}
-                          icon={
-                            <ClockIcon className="size-3.5 text-muted-foreground" />
-                          }
-                          title={label}
-                          subtitle="Scheduled run"
-                          trailing={schedule.enabled ? "On" : "Off"}
-                        />
-                      );
-                    })
+                {scheduleEnabled
+                  ? agentSchedules.length > 0
+                    ? agentSchedules.map((schedule) => {
+                        const rec = cronToRecurrence(
+                          schedule.cronExpression,
+                          schedule.timezone,
+                        );
+                        const label = rec
+                          ? describeRecurrence(rec)
+                          : schedule.cronExpression;
+                        return (
+                          <AgentSettingItem
+                            key={schedule.id}
+                            icon={
+                              <ClockIcon className="size-3.5 text-muted-foreground" />
+                            }
+                            title={label}
+                            subtitle="Cron schedule"
+                            trailing={schedule.enabled ? "On" : "Off"}
+                          />
+                        );
+                      })
+                    : (
+                      <AgentSettingItem
+                        icon={
+                          <CalendarBlankIcon className="size-3.5 text-muted-foreground" />
+                        }
+                        title="Scheduler enabled"
+                        subtitle="Add a schedule in settings"
+                        trailing="No runs yet"
+                      />
+                    )
                   : null}
               </AgentSettingItems>
             )}
@@ -289,15 +303,14 @@ export function AgentSettingsSheet({
             onOpen={() => setOpenDialog("tools")}
           >
             <AgentSettingItems>
-              {BASE_TOOL_BUNDLES.map((bundle) => (
-                <AgentSettingItem
-                  key={bundle}
-                  icon={<WrenchIcon className="size-3.5 text-muted-foreground" />}
-                  title={TOOL_BUNDLE_LABELS[bundle]}
-                  subtitle="Always included"
-                  trailing="On"
-                />
-              ))}
+              <AgentSettingItem
+                icon={<WrenchIcon className="size-3.5 text-muted-foreground" />}
+                title="Base capabilities"
+                subtitle={BASE_TOOL_BUNDLES.map((b) => TOOL_BUNDLE_LABELS[b]).join(
+                  " · ",
+                )}
+                trailing="Always on"
+              />
               {optionalBundles.map((bundle) => (
                 <AgentSettingItem
                   key={bundle}
@@ -306,37 +319,39 @@ export function AgentSettingsSheet({
                   trailing="On"
                 />
               ))}
-              {draft.toolBundles.includes("connectors")
-                ? connectors
-                    .filter((c) => connectedProviders.has(c.provider))
-                    .map((connector) => {
-                      const count =
-                        connectedProviders.get(connector.provider)?.length ?? 0;
-                      return (
-                        <AgentSettingItem
-                          key={connector.provider}
-                          icon={
-                            <ConnectorBrandIcon
-                              provider={connector.provider}
-                              className="size-3.5"
-                            />
-                          }
-                          title={connector.label}
-                          subtitle="Composio connector"
-                          trailing={
-                            count > 1 ? `${count} accounts` : "Connected"
-                          }
+              {linkedScriptTools.length === 0 &&
+              !connectors.some((c) => connectedProviders.has(c.provider)) ? (
+                <AgentSettingEmpty>
+                  Link TypeScript scripts or connect Composio apps in settings
+                </AgentSettingEmpty>
+              ) : null}
+              {connectors
+                .filter((c) => connectedProviders.has(c.provider))
+                .map((connector) => {
+                  const count =
+                    connectedProviders.get(connector.provider)?.length ?? 0;
+                  return (
+                    <AgentSettingItem
+                      key={connector.provider}
+                      icon={
+                        <ConnectorBrandIcon
+                          provider={connector.provider}
+                          className="size-3.5"
                         />
-                      );
-                    })
-                : null}
+                      }
+                      title={connector.label}
+                      subtitle="Composio connector"
+                      trailing={count > 1 ? `${count} accounts` : "Connected"}
+                    />
+                  );
+                })}
               {linkedScriptTools.map((tool) => (
                 <AgentSettingItem
                   key={tool.id}
                   icon={<WrenchIcon className="size-3.5 text-muted-foreground" />}
                   title={tool.name}
                   subtitle={tool.key}
-                  trailing="Script"
+                  trailing="TypeScript"
                 />
               ))}
               {linkedWorkers.map((worker) => (
