@@ -12,6 +12,7 @@
     "e2e:prepare": "pnpm exec supabase start && pnpm db:migrate && pnpm db:seed",
     "cloud:prepare": "bash scripts/cloud-bootstrap.sh",
     "sync:env": "bash scripts/sync-supabase-env.sh",
+    "sync:secrets": "bash scripts/materialize-env-from-secrets.sh",
     "e2e:report": "pnpm e2e",
     "db:generate": "pnpm --filter @ssota/adapter-postgres db:generate",
     "db:migrate": "pnpm exec supabase migration up --local",
