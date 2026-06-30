@@ -144,22 +144,22 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await seedScheduleFixtures(db, teamspaceId);
 
     const implementFeature = await db
-      .select({ id: schema.workflowInstructions.id })
-      .from(schema.workflowInstructions)
+      .select({ id: schema.agentDefinitions.id })
+      .from(schema.agentDefinitions)
       .where(
         and(
-          eq(schema.workflowInstructions.teamspaceId, teamspaceId),
-          eq(schema.workflowInstructions.key, "work.implement_feature"),
+          eq(schema.agentDefinitions.teamspaceId, teamspaceId),
+          eq(schema.agentDefinitions.key, "specialist.implement_feature"),
         ),
       )
       .limit(1);
     const bootstrap = await db
-      .select({ id: schema.workflowInstructions.id })
-      .from(schema.workflowInstructions)
+      .select({ id: schema.agentDefinitions.id })
+      .from(schema.agentDefinitions)
       .where(
         and(
-          eq(schema.workflowInstructions.teamspaceId, teamspaceId),
-          eq(schema.workflowInstructions.key, "orchestrator.bootstrap"),
+          eq(schema.agentDefinitions.teamspaceId, teamspaceId),
+          eq(schema.agentDefinitions.key, "main.ssota"),
         ),
       )
       .limit(1);
@@ -168,7 +168,8 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .insert(schema.tasks)
       .values({
         teamspaceId,
-        workflowInstructionId: implementFeature[0]?.id ?? null,
+        agentDefinitionId: implementFeature[0]?.id ?? null,
+        agentKey: "specialist.implement_feature",
         title: "Archive generic runtime and focus active product on development workflow",
         status: "ready",
         executorType: "Agent",
@@ -186,7 +187,8 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .insert(schema.tasks)
       .values({
         teamspaceId,
-        workflowInstructionId: bootstrap[0]?.id ?? null,
+        agentDefinitionId: bootstrap[0]?.id ?? null,
+        agentKey: "main.ssota",
         title: "Configure Cursor Automations for ssota-dev orchestrators",
         status: "ready",
         executorType: "Human",

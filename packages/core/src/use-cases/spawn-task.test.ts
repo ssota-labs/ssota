@@ -7,7 +7,7 @@ import {
 import {
   createInMemoryState,
   createInMemoryPorts,
-  createInMemoryWorkflowInstructionPort,
+  createInMemoryAgentDefinitionPort,
   sampleExecutionDirective,
   TEST_PROJECT_ID,
 } from "../testing/in-memory.js";
@@ -21,38 +21,38 @@ function spawnDeps(state: ReturnType<typeof createInMemoryState>, teamspaceId: s
   const { tasks } = createInMemoryPorts(state, { teamspaceId });
   return {
     tasks,
-    workflowInstructions: createInMemoryWorkflowInstructionPort(teamspaceId),
+    agentDefinitions: createInMemoryAgentDefinitionPort(teamspaceId),
   };
 }
 
 describe("spawnTask", () => {
-  it("creates a task for a known workflow instruction key", async () => {
+  it("creates a task for a known agent key", async () => {
     const state = createInMemoryState();
     const task = await spawnTask(spawnDeps(state, PROJECT_ID), PROJECT_ID, {
       title: "Daily planning",
-      workflowInstructionKey: "orchestrator.daily",
+      agentKey: "main.ssota",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["Task created"],
     });
 
-    expect(task.workflowInstructionKey).toBe("orchestrator.daily");
+    expect(task.agentKey).toBe("main.ssota");
     expect(task.status).toBe("pending");
     expect(task.teamspaceId).toBe(PROJECT_ID);
   });
 
-  it("rejects unknown workflow instruction keys", async () => {
+  it("rejects unknown agent keys", async () => {
     const state = createInMemoryState();
 
     await expect(
       spawnTask(spawnDeps(state, PROJECT_ID), PROJECT_ID, {
         title: "Bad",
-        workflowInstructionKey: "not.registered",
+        agentKey: "not.registered",
         context: { executionDirective: sampleExecutionDirective },
         acceptanceCriteria: ["x"],
       }),
     ).rejects.toMatchObject({
       name: "TaskError",
-      code: "UNKNOWN_WORKFLOW_INSTRUCTION",
+      code: "UNKNOWN_AGENT_DEFINITION",
     });
   });
 
@@ -62,14 +62,14 @@ describe("spawnTask", () => {
 
     const first = await spawnTask(deps, PROJECT_ID, {
       title: "Work item",
-      workflowInstructionKey: "work.implement_feature",
+      agentKey: "specialist.implement_feature",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: "daily:2026-06-15:feature-a",
     });
     const second = await spawnTask(deps, PROJECT_ID, {
       title: "Different title",
-      workflowInstructionKey: "work.implement_feature",
+      agentKey: "specialist.implement_feature",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: "daily:2026-06-15:feature-a",
@@ -102,7 +102,7 @@ describe("spawnTask", () => {
     await expect(
       spawnTask(deps, PROJECT_ID, {
         title: "Linked work",
-        workflowInstructionKey: "work.implement_feature",
+        agentKey: "specialist.implement_feature",
         context: { executionDirective: sampleExecutionDirective },
         acceptanceCriteria: ["done"],
         targetNodeId: nodeId,
@@ -120,7 +120,7 @@ describe("updateTask", () => {
     const deps = spawnDeps(state, PROJECT_ID);
     const created = await spawnTask(deps, PROJECT_ID, {
       title: "Implement",
-      workflowInstructionKey: "work.implement_feature",
+      agentKey: "specialist.implement_feature",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["shipped"],
     });
@@ -141,7 +141,7 @@ describe("updateTask", () => {
     const deps = spawnDeps(state, PROJECT_ID);
     const created = await spawnTask(deps, PROJECT_ID, {
       title: "Implement",
-      workflowInstructionKey: "work.implement_feature",
+      agentKey: "specialist.implement_feature",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["shipped"],
     });

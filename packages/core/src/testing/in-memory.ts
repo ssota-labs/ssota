@@ -27,9 +27,9 @@ import type {
   Node,
   NodeCatalogEntry,
 } from "../domain/types.js";
-import type { WorkflowInstructionReadPort } from "../ports/workflow-instruction-port.js";
+import type { AgentDefinitionReadPort } from "../ports/agent-definition-port.js";
 import { DEFAULT_TITLE_FIELD, ensureTitleInPropertySchema } from "../catalog/property-schema.js";
-import type { Effect, GateStatus, LifecycleStatus, WorkflowInstruction } from "@ssota/contracts";
+import type { Effect, GateStatus, LifecycleStatus, AgentDefinition } from "@ssota/contracts";
 import { parseWorkflowSpec } from "@ssota/contracts";
 import {
   mergeActionCatalogEntries,
@@ -284,18 +284,18 @@ function applyEffect(
   } else if (effect.kind === "create_task") {
     const id = effect.task.id ?? randomUUID();
     const legacyKey =
-      "workflowInstructionKey" in effect.task
-        ? (effect.task as { workflowInstructionKey?: string }).workflowInstructionKey
+      "agentKey" in effect.task
+        ? (effect.task as { agentKey?: string }).agentKey
         : effect.task.workflowKey;
     state.tasks.set(id, {
       id,
       teamspaceId,
-      workflowInstructionId:
-        "workflowInstructionId" in effect.task
-          ? ((effect.task as { workflowInstructionId?: string }).workflowInstructionId ??
+      agentDefinitionId:
+        "agentDefinitionId" in effect.task
+          ? ((effect.task as { agentDefinitionId?: string }).agentDefinitionId ??
             null)
           : null,
-      workflowInstructionKey: legacyKey ?? null,
+      agentKey: legacyKey ?? null,
       title: effect.task.title,
       status: effect.task.status ?? "pending",
       executorType: effect.task.executorType ?? "Agent",
@@ -635,15 +635,13 @@ function createInMemoryTaskPort(
     if (params?.status) {
       items = items.filter((task) => task.status === params.status);
     }
-    if (params?.workflowInstructionId) {
+    if (params?.agentDefinitionId) {
       items = items.filter(
-        (task) => task.workflowInstructionId === params.workflowInstructionId,
+        (task) => task.agentDefinitionId === params.agentDefinitionId,
       );
     }
-    if (params?.workflowInstructionKey) {
-      items = items.filter(
-        (task) => task.workflowInstructionKey === params.workflowInstructionKey,
-      );
+    if (params?.agentKey) {
+      items = items.filter((task) => task.agentKey === params.agentKey);
     }
     if (params?.assignee) {
       items = items.filter((task) => task.assignee === params.assignee);
@@ -690,8 +688,8 @@ function createInMemoryTaskPort(
       const task: Task = {
         id: randomUUID(),
         teamspaceId,
-        workflowInstructionId: input.workflowInstructionId ?? null,
-        workflowInstructionKey: input.workflowInstructionKey ?? null,
+        agentDefinitionId: input.agentDefinitionId ?? null,
+        agentKey: input.agentKey ?? null,
         title: input.title,
         status: input.status ?? "pending",
         executorType: input.executorType ?? "Agent",
@@ -989,17 +987,25 @@ export function createTestGate(
   };
 }
 
-const TEST_WORKFLOW_INSTRUCTIONS = [
-  { key: "orchestrator.daily", name: "Daily orchestrator" },
-  { key: "work.implement_feature", name: "Implement feature" },
-  { key: "work.write_document", name: "Write document" },
+const TEST_AGENT_DEFINITIONS = [
+  { key: "main.ssota", name: "SSOTA Main Agent", agentKind: "main" as const },
+  {
+    key: "specialist.implement_feature",
+    name: "Implement feature",
+    agentKind: "specialist" as const,
+  },
+  {
+    key: "specialist.write_document",
+    name: "Write document",
+    agentKind: "specialist" as const,
+  },
 ];
 
-export function createInMemoryWorkflowInstructionPort(
+export function createInMemoryAgentDefinitionPort(
   teamspaceId: string = TEST_PROJECT_ID,
-): WorkflowInstructionReadPort {
-  const rows = new Map<string, WorkflowInstruction>(
-    TEST_WORKFLOW_INSTRUCTIONS.map((meta) => {
+): AgentDefinitionReadPort {
+  const rows = new Map<string, AgentDefinition>(
+    TEST_AGENT_DEFINITIONS.map((meta) => {
       const id = randomUUID();
       return [
         meta.key,
@@ -1010,7 +1016,11 @@ export function createInMemoryWorkflowInstructionPort(
           key: meta.key,
           name: meta.name,
           description: "",
-          content: [{ type: "paragraph", content: [{ type: "text", text: meta.name }] }],
+          instructions: [{ type: "paragraph", content: [{ type: "text", text: meta.name }] }],
+          agentKind: meta.agentKind,
+          toolBundles: [],
+          nodeScopes: [],
+          runPolicy: {},
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -1019,12 +1029,13 @@ export function createInMemoryWorkflowInstructionPort(
   );
 
   return {
-    async listInstructions() {
-      return [...rows.values()].map(({ id, key, name, description }) => ({
+    async listDefinitions() {
+      return [...rows.values()].map(({ id, key, name, description, agentKind }) => ({
         id,
         key,
         name,
         description,
+        agentKind,
       }));
     },
     async getById(id) {
@@ -1039,9 +1050,12 @@ export function createInMemoryWorkflowInstructionPort(
   };
 }
 
+/** @deprecated Use createInMemoryAgentDefinitionPort */
+export const createInMemoryWorkflowInstructionPort = createInMemoryAgentDefinitionPort;
+
 export const sampleExecutionDirective = {
   goal: "Complete the seeded test task with verifiable output.",
-  background: "Spawned from unit test fixture for workflow instruction migration.",
+  background: "Spawned from unit test fixture for agent definition migration.",
   steps: ["Read task context", "Perform work", "Mark done"],
   constraints: ["Do not modify unrelated tasks"],
   contextRefs: { nodeIds: [], edgeIds: [], taskIds: [] },

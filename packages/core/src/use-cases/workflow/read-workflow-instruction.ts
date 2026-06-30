@@ -1,13 +1,20 @@
-import type { WorkflowInstruction } from "@ssota/contracts";
-import type { WorkflowInstructionReadPort } from "../../ports/workflow-instruction-port.js";
+import type { AgentDefinition } from "@ssota/contracts";
+import type { AgentDefinitionReadPort } from "../../ports/agent-definition-port.js";
+
+export type {
+  AgentDefinitionPort as WorkflowInstructionPort,
+  AgentDefinitionReadPort as WorkflowInstructionReadPort,
+  AgentDefinitionWritePort as WorkflowInstructionWritePort,
+} from "../../ports/agent-definition-port.js";
 
 export interface ResolvedWorkflowInstruction {
-  instruction: WorkflowInstruction;
+  instruction: AgentDefinition;
   source: "db";
 }
 
+/** @deprecated Use readAgentDefinitionByKey from use-cases/agent */
 export async function readWorkflowInstructionByKey(
-  port: WorkflowInstructionReadPort,
+  port: AgentDefinitionReadPort,
   key: string,
   accountId?: string | null,
 ): Promise<ResolvedWorkflowInstruction | null> {
@@ -15,18 +22,20 @@ export async function readWorkflowInstructionByKey(
   return row ? { instruction: row, source: "db" } : null;
 }
 
+/** @deprecated Use readAgentDefinitionById from use-cases/agent */
 export async function readWorkflowInstructionById(
-  port: WorkflowInstructionReadPort,
+  port: AgentDefinitionReadPort,
   id: string,
 ): Promise<ResolvedWorkflowInstruction | null> {
   const row = await port.getById(id);
   return row ? { instruction: row, source: "db" } : null;
 }
 
+/** @deprecated Use listAgentDefinitions from use-cases/agent */
 export async function listWorkflowInstructions(
-  port: WorkflowInstructionReadPort,
+  port: AgentDefinitionReadPort,
 ): Promise<ResolvedWorkflowInstruction[]> {
-  const indices = await port.listInstructions();
+  const indices = await port.listDefinitions();
   const resolved: ResolvedWorkflowInstruction[] = [];
   for (const index of indices) {
     const row = await port.getById(index.id);
