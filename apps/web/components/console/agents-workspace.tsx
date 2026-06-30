@@ -12,7 +12,10 @@ import {
   DocumentSheetPanel,
   type SheetSize,
 } from "@/lib/page-runtime/components/document-sheet-panel";
+import { AgentSkillBindings, SkillsCatalogPanel } from "@/components/console/skills-workspace";
 import type { RenderNode } from "@/lib/page-runtime/types";
+
+type WorkspaceTab = "agents" | "skills";
 
 type AgentsWorkspaceProps = {
   teamspaceId: string;
@@ -37,6 +40,7 @@ export function AgentsWorkspace({
 }: AgentsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [tab, setTab] = useState<WorkspaceTab>("agents");
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -97,11 +101,46 @@ export function AgentsWorkspace({
     >
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
-          title="Agents"
-          description="Agent playbooks for this project. Edits apply to the next agent or MCP run."
+          title="Agents & Skills"
+          description="Agent playbooks and skill bindings for this project."
         />
 
-        {groups.map((group) => (
+        <div className="mb-4 flex gap-2 border-b border-border pb-2">
+          <button
+            type="button"
+            className={cn(
+              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              tab === "agents"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => setTab("agents")}
+          >
+            Agents
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+              tab === "skills"
+                ? "bg-muted text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            onClick={() => setTab("skills")}
+            data-testid="skills-tab"
+          >
+            Skills
+          </button>
+        </div>
+
+        {tab === "skills" ? (
+          <BrowseWorkspace.Section label="Organization catalog">
+            <SkillsCatalogPanel teamspaceId={teamspaceId} />
+          </BrowseWorkspace.Section>
+        ) : null}
+
+        {tab === "agents"
+          ? groups.map((group) => (
           <BrowseWorkspace.Section key={group.key} label={group.label}>
             <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
               {group.items.map((definition) => (
@@ -134,9 +173,10 @@ export function AgentsWorkspace({
               ))}
             </div>
           </BrowseWorkspace.Section>
-        ))}
+        ))
+          : null}
 
-        {definitions.length === 0 ? (
+        {tab === "agents" && definitions.length === 0 ? (
           <BrowseWorkspace.Empty>
             No agent definitions seeded for this project yet.
           </BrowseWorkspace.Empty>
@@ -144,15 +184,23 @@ export function AgentsWorkspace({
       </BrowseWorkspace.Frame>
 
       {open && activeDefinition ? (
-        <DocumentSheetPanel
-          node={toRenderNode(activeDefinition)}
-          subtitle={activeDefinition.description || activeDefinition.id}
-          field="content"
-          editable
-          sheetSize={sheetSize}
-          onClose={close}
-          onSave={handleSave}
-        />
+        <>
+          <DocumentSheetPanel
+            node={toRenderNode(activeDefinition)}
+            subtitle={activeDefinition.description || activeDefinition.id}
+            field="content"
+            editable
+            sheetSize={sheetSize}
+            onClose={close}
+            onSave={handleSave}
+          />
+          <div className="pointer-events-auto fixed bottom-0 right-0 z-50 w-full max-w-xl border-l border-t border-border bg-background p-4 shadow-lg md:max-h-[40vh]">
+            <AgentSkillBindings
+              teamspaceId={teamspaceId}
+              agentDefinitionId={activeDefinition.id}
+            />
+          </div>
+        </>
       ) : null}
 
       {isPending ? (

@@ -11,6 +11,7 @@ import {
   createOrganizationMembersPort,
   createTaskPort,
   createAgentDefinitionPort,
+  createSkillPort,
   createSchedulePort,
   createPagePort,
   createPageViewStatePort,
@@ -33,7 +34,11 @@ export function getDb(): Db {
   return cachedDb;
 }
 
-export { registerTeamspaceOrganization };
+export {
+  registerTeamspaceOrganization,
+  resolveOrganizationIdForTeamspace,
+  getCachedOrganizationIdForTeamspace,
+};
 
 export function getTaskPort(teamspaceId: string, accountId?: string) {
   return createTaskPort(getDb(), { teamspaceId, accountId });
@@ -107,6 +112,15 @@ export function getAgentDefinitionPort(teamspaceId: string) {
 
 /** @deprecated Use getAgentDefinitionPort */
 export const getWorkflowInstructionPort = getAgentDefinitionPort;
+
+export async function getSkillPort(teamspaceId: string) {
+  let organizationId = getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (!organizationId) {
+    organizationId = await resolveOrganizationIdForTeamspace(getDb(), teamspaceId);
+    registerTeamspaceOrganization(teamspaceId, organizationId);
+  }
+  return createSkillPort(getDb(), { organizationId, teamspaceId });
+}
 
 export function getSchedulePort(teamspaceId: string, accountId?: string | null) {
   return createSchedulePort(getDb(), { teamspaceId, accountId });
