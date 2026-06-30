@@ -15,16 +15,10 @@ import {
 } from "@ssota/ui/components/ui/dialog";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@ssota/ui/components/ui/sheet";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import { ScheduleSheetPanel } from "@/components/schedules/schedule-sheet-panel";
 
 type SkillDetail = {
   skill: Skill;
@@ -54,7 +48,7 @@ export function SkillsPageWorkspace({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [detail, setDetail] = useState<SkillDetail | null>(null);
   const [isPending, startListTransition] = useTransition();
-  const [isDetailPending, startDetailTransition] = useTransition();
+  const [, startDetailTransition] = useTransition();
   const [isDeleting, startDelete] = useTransition();
   const listRequestId = useRef(0);
 
@@ -120,6 +114,15 @@ export function SkillsPageWorkspace({
     loadDetail(activeId);
   }, [activeId, loadDetail]);
 
+  useEffect(() => {
+    if (!activeId) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveId(null);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [activeId]);
+
   const activeSkill = skills.find((s) => s.id === activeId) ?? detail?.skill ?? null;
   const skillBody =
     detail?.files.find(
@@ -141,8 +144,13 @@ export function SkillsPageWorkspace({
   };
 
   return (
-    <div className="absolute inset-0 flex flex-col" data-testid="skills-workspace">
-      <BrowseWorkspace.Frame>
+    <div
+      className="absolute inset-0 flex flex-col"
+      data-testid="skills-workspace"
+    >
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <div className="h-full overflow-y-auto">
+          <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Skills"
           description="Agent skills stored in your organization catalog. Platform builtins are read-only; add custom skills for your team."
@@ -233,7 +241,64 @@ export function SkillsPageWorkspace({
           </code>
           .
         </p>
-      </BrowseWorkspace.Frame>
+          </BrowseWorkspace.Frame>
+        </div>
+
+      {activeSkill ? (
+        <ScheduleSheetPanel
+          testId="skill-detail-sheet"
+          fullHeight
+          title={activeSkill.name}
+          subtitle={`${activeSkill.key} · ${sourceLabel(activeSkill.source)}`}
+          sheetSize="inspector"
+          onClose={() => setActiveId(null)}
+          footer={
+            activeSkill.source === "custom" ? (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                disabled={isDeleting}
+                onClick={handleDelete}
+                data-testid="skill-delete-button"
+              >
+                <TrashIcon className="size-4" aria-hidden />
+                Delete skill
+              </Button>
+            ) : undefined
+          }
+        >
+          {activeSkill.description ? (
+            <p className="text-sm text-muted-foreground">{activeSkill.description}</p>
+          ) : null}
+
+          {skillBody ? (
+            <div className="mt-4 space-y-2">
+              <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                SKILL.md
+              </h3>
+              <pre className="overflow-auto rounded-md border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
+                {skillBody}
+              </pre>
+            </div>
+          ) : null}
+
+          {activeSkill.source === "custom" && detail ? (
+            <EditCustomSkillForm
+              teamspaceId={teamspaceId}
+              skillId={activeSkill.id}
+              initialName={detail.skill.name}
+              initialDescription={detail.skill.description}
+              initialBody={skillBody}
+              onSaved={() => {
+                loadSkills(query);
+                loadDetail(activeSkill.id);
+              }}
+            />
+          ) : null}
+        </ScheduleSheetPanel>
+      ) : null}
+      </div>
 
       <CreateSkillDialog
         open={createOpen}
@@ -244,71 +309,6 @@ export function SkillsPageWorkspace({
           setActiveId(skill.id);
         }}
       />
-
-      <Sheet open={activeSkill !== null} onOpenChange={(open) => !open && setActiveId(null)}>
-        <SheetContent
-          className="w-full overflow-y-auto sm:max-w-xl"
-          data-testid="skill-detail-sheet"
-        >
-          {activeSkill ? (
-            <>
-              <SheetHeader>
-                <SheetTitle>{activeSkill.name}</SheetTitle>
-                <SheetDescription className="font-mono text-xs">
-                  {activeSkill.key} · {sourceLabel(activeSkill.source)}
-                </SheetDescription>
-              </SheetHeader>
-
-              <div className="mt-4 space-y-4">
-                {activeSkill.description ? (
-                  <p className="text-sm text-muted-foreground">
-                    {activeSkill.description}
-                  </p>
-                ) : null}
-
-                {skillBody ? (
-                  <div className="space-y-2">
-                    <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      SKILL.md
-                    </h3>
-                    <pre className="max-h-[50vh] overflow-auto rounded-md border border-border bg-muted/30 p-3 text-xs whitespace-pre-wrap">
-                      {skillBody}
-                    </pre>
-                  </div>
-                ) : null}
-
-                {activeSkill.source === "custom" && detail ? (
-                  <EditCustomSkillForm
-                    teamspaceId={teamspaceId}
-                    skillId={activeSkill.id}
-                    initialName={detail.skill.name}
-                    initialDescription={detail.skill.description}
-                    initialBody={skillBody}
-                    onSaved={() => {
-                      loadSkills(query);
-                      loadDetail(activeSkill.id);
-                    }}
-                  />
-                ) : null}
-
-                {activeSkill.source === "custom" ? (
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="sm"
-                    disabled={isDeleting}
-                    onClick={handleDelete}
-                    data-testid="skill-delete-button"
-                  >
-                    <TrashIcon className="size-4" aria-hidden />
-                    Delete skill
-                  </Button>
-                ) : null}
-              </div>
-            </>
-          ) : null}
-        </SheetContent>
-      </Sheet>
     </div>
   );
 }
