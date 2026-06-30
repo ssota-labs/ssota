@@ -247,7 +247,6 @@ export function SkillsPageWorkspace({
       {activeSkill ? (
         <ScheduleSheetPanel
           testId="skill-detail-sheet"
-          fullHeight
           title={activeSkill.name}
           subtitle={`${activeSkill.key} · ${sourceLabel(activeSkill.source)}`}
           sheetSize="inspector"
