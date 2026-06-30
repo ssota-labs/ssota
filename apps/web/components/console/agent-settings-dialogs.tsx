@@ -604,7 +604,7 @@ export function AgentSettingsDialogs({
               variant="outline"
               onClick={() => setScheduleOpen(true)}
             >
-              Add schedule
+              Add trigger
             </Button>
           </div>
         ) : null}

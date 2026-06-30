@@ -522,7 +522,7 @@ export function ScheduleSheet({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-h-[85vh] max-w-lg overflow-y-auto"
+          className="max-h-[85vh] max-w-3xl overflow-y-auto"
           forceBackdrop
           data-testid="schedule-add-dialog"
         >

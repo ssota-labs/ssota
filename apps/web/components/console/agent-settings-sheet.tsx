@@ -265,7 +265,7 @@ export function AgentSettingsSheet({
                 onClick={() => setOpenDialog("add-schedule")}
               >
                 <PlusIcon className="size-3.5" aria-hidden />
-                Add schedule
+                Add trigger
               </Button>
             }
           >
