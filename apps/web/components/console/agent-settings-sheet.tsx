@@ -234,10 +234,10 @@ export function AgentSettingsSheet({
         subtitle={definition.name}
         sheetSize="inspector"
         onClose={onClose}
-        footer={
+        headerAction={
           <Button
             type="button"
-            className="w-full"
+            size="sm"
             disabled={isPending}
             onClick={handleSave}
             data-testid="agent-settings-save"
