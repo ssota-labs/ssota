@@ -91,9 +91,10 @@ export const documentComponents: Record<string, CatalogComponent> = {
         props.sheetSize === "half" ||
         props.sheetSize === "inspector" ||
         props.sheetSize === "wide" ||
-        props.sheetSize === "full"
+        props.sheetSize === "full" ||
+        props.sheetSize === "viewport"
           ? props.sheetSize
-          : "half"
+          : "viewport"
       }
       filters={props.filters}
       />

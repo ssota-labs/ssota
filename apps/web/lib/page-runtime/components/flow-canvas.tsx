@@ -52,7 +52,14 @@ import { cn } from "@/lib/utils";
 const NODE_TYPES = { generic: FlowNode };
 const EDGE_TYPES = { flow: FlowEdge };
 
-const SHEET_SIZES: SheetSize[] = ["default", "half", "inspector", "wide", "full"];
+const SHEET_SIZES: SheetSize[] = [
+  "default",
+  "half",
+  "inspector",
+  "wide",
+  "full",
+  "viewport",
+];
 
 /** Z-index layering (edge line/marker colors are handled by the custom FlowEdge). */
 const FLOW_STYLES = `
