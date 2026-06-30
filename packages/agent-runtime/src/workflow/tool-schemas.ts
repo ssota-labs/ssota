@@ -6,7 +6,7 @@
  * schema is defined exactly once.
  */
 import { z } from "zod";
-import { ExecutionDirectiveSchema, RunScriptToolInputSchema } from "@ssota/contracts";
+import { ExecutionDirectiveSchema, ReadSkillInputSchema, RunScriptToolInputSchema } from "@ssota/contracts";
 import { SUBAGENT_TYPES } from "../subagents/constants.js";
 import { composioMetaToolSchemas } from "../composio/meta-tool-schemas.js";
 
@@ -155,6 +155,9 @@ export const workflowToolSchemas = {
   list_script_tools: z.object({}),
   describe_script_tool: z.object({ key: z.string().min(1) }),
   run_script_tool: RunScriptToolInputSchema,
+
+  // --- Skills (progressive disclosure) ---
+  read_skill: ReadSkillInputSchema,
 
   // --- Composio Tool Router meta-tools (fixed; not per-toolkit defs) ---
   ...composioMetaToolSchemas,

@@ -51,6 +51,7 @@ describe("createSsotaTools", () => {
         "list_script_tools",
         "query_nodes",
         "query_tasks",
+        "read_skill",
         "read_page",
         "request_approval",
         "run_script_tool",

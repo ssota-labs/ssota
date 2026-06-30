@@ -5,6 +5,7 @@ import {
   createTaskPort,
   createAgentDefinitionPort,
   createScriptToolPort,
+  createSkillPort,
   createPagePort,
   createConsolePort,
   createConnectorToolSettingsPort,
@@ -80,6 +81,13 @@ export function getAgentDefinitionPort(teamspaceId: string, accountId?: string) 
 
 export function getScriptToolPort(teamspaceId: string, accountId?: string) {
   return createScriptToolPort(getDb(), { teamspaceId, accountId });
+}
+
+export function getSkillPort(organizationId: string) {
+  return createSkillPort(getDb(), {
+    teamspaceId: "",
+    organizationId,
+  });
 }
 
 /** @deprecated Use getAgentDefinitionPort */

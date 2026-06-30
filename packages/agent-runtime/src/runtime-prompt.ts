@@ -3,6 +3,7 @@ import {
   blockNoteContentToText,
   type AgentDefinition,
   type ExecutionDirective,
+  type SkillIndex,
 } from "@ssota/contracts";
 import type { AgentManifestEntry } from "@ssota/contracts/agents";
 import type { SystemModelMessage } from "ai";
@@ -41,6 +42,8 @@ export interface BuildRunInstructionsParams {
   accountId?: string;
   /** Skill-style routing manifest for the main runtime (id + when-to-use). */
   agentManifest?: AgentManifestEntry[];
+  /** Skill-style routing manifest (name + when-to-use). */
+  skillManifest?: SkillIndex[];
   mainDefinition?: AgentDefinition | null;
   taskPlaybook?: AgentDefinition | null;
   task?: {
@@ -82,6 +85,7 @@ function buildDynamicInstructionSegment(
     teamspaceId,
     accountId,
     agentManifest,
+    skillManifest,
     taskPlaybook,
     task,
   } = params;
@@ -101,6 +105,29 @@ function buildDynamicInstructionSegment(
       lines.push(
         `## Available agents`,
         `No agents are configured for this project yet. Help the user directly or set them up with write_agent_definition.`,
+      );
+    }
+    if (skillManifest && skillManifest.length > 0) {
+      const rows = skillManifest
+        .map((s) => `- ${s.key}: ${s.description}`)
+        .join("\n");
+      lines.push(
+        `## Available skills`,
+        `Load with read_skill(<key>) when the task matches a skill description.`,
+        rows,
+      );
+    }
+  }
+
+  if (runtimeKind === "task") {
+    if (skillManifest && skillManifest.length > 0) {
+      const rows = skillManifest
+        .map((s) => `- ${s.key}: ${s.description}`)
+        .join("\n");
+      lines.push(
+        `## Available skills`,
+        `Load with read_skill(<key>) when the task matches a skill description.`,
+        rows,
       );
     }
   }

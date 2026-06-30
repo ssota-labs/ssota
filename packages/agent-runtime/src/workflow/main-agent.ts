@@ -87,6 +87,8 @@ const MAIN_WORKFLOW_TOOL_DESCRIPTIONS: Partial<Record<WorkflowToolName, string>>
   describe_script_tool: "Describe a script tool by key (schemas + permissions).",
   run_script_tool:
     "Execute a stored script tool in an isolated sandbox with a scoped SDK.",
+  read_skill:
+    "Load the full body of a bound skill by key when the task matches its description. Optional file path (default SKILL.md).",
   ...COMPOSIO_META_TOOL_DESCRIPTIONS,
 };
 

@@ -8,6 +8,7 @@ import { createAgentDefinitionTools } from "./agent-definitions.js";
 import { createDelegateTools } from "./delegate.js";
 import { createSandboxTools } from "./sandbox.js";
 import { createScriptToolTools } from "./script-tools.js";
+import { createSkillTools } from "./skills.js";
 
 const GRAPH_READ = new Set([
   "list_node_types",
@@ -64,6 +65,7 @@ export function buildAgentTools(
   const delegate = createDelegateTools();
   const sandbox = createSandboxTools();
   const scriptTools = createScriptToolTools();
+  const skills = createSkillTools();
 
   let tools: ToolSet = {};
 
@@ -90,6 +92,9 @@ export function buildAgentTools(
   }
   if (bundles.has("script_tools")) {
     tools = mergeTools(tools, scriptTools);
+  }
+  if (bundles.has("skills.read")) {
+    tools = mergeTools(tools, skills);
   }
 
   if (definition.isMain || bundles.has("graph.write")) {
