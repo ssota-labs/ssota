@@ -520,6 +520,83 @@ export const agentDefinitionScriptTools = pgTable(
   }),
 );
 
+export const skillSourceEnum = pgEnum("skill_source", [
+  "builtin",
+  "skills_sh",
+  "custom",
+]);
+
+export const skills = pgTable(
+  "skills",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").references(() => organizations.id, {
+      onDelete: "cascade",
+    }),
+    key: text("key").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    source: skillSourceEnum("source").notNull().default("custom"),
+    externalId: text("external_id"),
+    contentHash: text("content_hash"),
+    metadata: jsonb("metadata")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    orgKeyUnique: uniqueIndex("skills_organization_key_unique")
+      .on(table.organizationId, table.key)
+      .where(sql`${table.organizationId} IS NOT NULL`),
+    platformKeyUnique: uniqueIndex("skills_platform_key_unique")
+      .on(table.key)
+      .where(sql`${table.organizationId} IS NULL`),
+    orgIdx: index("skills_organization_id_idx").on(table.organizationId),
+  }),
+);
+
+export const skillSnapshots = pgTable(
+  "skill_snapshots",
+  {
+    skillId: uuid("skill_id")
+      .primaryKey()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    contentHash: text("content_hash").notNull(),
+    files: jsonb("files")
+      .notNull()
+      .default([])
+      .$type<Array<{ path: string; contents: string }>>(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+);
+
+export const agentDefinitionSkills = pgTable(
+  "agent_definition_skills",
+  {
+    teamspaceId: uuid("teamspace_id")
+      .notNull()
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
+    agentDefinitionId: uuid("agent_definition_id").notNull(),
+    skillId: uuid("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    enabled: boolean("enabled").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (table) => ({
+    definitionFk: foreignKey({
+      columns: [table.teamspaceId, table.agentDefinitionId],
+      foreignColumns: [agentDefinitions.teamspaceId, agentDefinitions.id],
+    }).onDelete("cascade"),
+    pk: uniqueIndex("agent_definition_skills_pk").on(
+      table.agentDefinitionId,
+      table.skillId,
+    ),
+  }),
+);
+
 export const schedules = pgTable(
   "schedules",
   {
