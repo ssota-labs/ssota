@@ -54,7 +54,7 @@ export function ConsolePageFrame({
     >
       <div
         className={cn(
-          "mx-auto flex w-full flex-col px-6 py-8",
+          "mx-auto flex w-full flex-col px-6 pt-4 pb-6",
           maxWidthClassName,
           fillHeight && "min-h-0 flex-1",
           contentClassName,
