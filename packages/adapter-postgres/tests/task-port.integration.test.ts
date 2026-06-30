@@ -7,7 +7,7 @@ import {
   createDb,
   createGraphPorts,
   createTaskPort,
-  createWorkflowInstructionPort,
+  createAgentDefinitionPort,
   DEFAULT_ORG_SLUG,
   DEFAULT_TEAMSPACE_SLUG,
 } from "../src/index.js";
@@ -28,7 +28,7 @@ describe("task port integration", () => {
   let otherProjectId: string;
   let taskPort: ReturnType<typeof createTaskPort>;
   let graphPorts: ReturnType<typeof createGraphPorts>;
-  let workflowInstructions: ReturnType<typeof createWorkflowInstructionPort>;
+  let agentDefinitions: ReturnType<typeof createAgentDefinitionPort>;
   let client: ReturnType<typeof createDb>["client"] | undefined;
 
   beforeAll(async () => {
@@ -52,23 +52,24 @@ describe("task port integration", () => {
         organizationId: org.id,
         teamspaceId,
       });
-      workflowInstructions = createWorkflowInstructionPort(dbBundle.db, {
+      agentDefinitions = createAgentDefinitionPort(dbBundle.db, {
         teamspaceId,
       });
 
-      // Projects start with no DB workflow_instructions rows by design
-      // (WORKFLOW_INSTRUCTION_SEEDS is empty; agents author them on demand).
-      // Seed the keys this suite spawns tasks with so it is self-contained.
       for (const key of [
-        "work.implement_feature",
-        "work.write_document",
-        "orchestrator.daily",
+        "specialist.implement_feature",
+        "specialist.write_document",
+        "main.ssota",
       ]) {
-        await workflowInstructions.upsertInstruction({
+        await agentDefinitions.upsertDefinition({
           key,
           name: key,
           description: `Integration fixture for ${key}`,
-          content: textToBlockNoteContent(`Fixture instruction for ${key}.`),
+          instructions: textToBlockNoteContent(`Fixture instruction for ${key}.`),
+          agentKind: key.startsWith("main.") ? "main" : "specialist",
+          toolBundles: [],
+          nodeScopes: [],
+          runPolicy: {},
         });
       }
 
@@ -98,34 +99,34 @@ describe("task port integration", () => {
     return {
       tasks: taskPort,
       graphRead: graphPorts.graphRead,
-      workflowInstructions,
+      agentDefinitions,
     };
   }
 
-  it("spawnTask persists task with workflow instruction defaults", async () => {
+  it("spawnTask persists task with agent definition defaults", async () => {
     const task = await spawnTask(spawnDeps(), teamspaceId, {
       title: `Integration ${randomUUID()}`,
-      workflowInstructionKey: "work.implement_feature",
+      agentKey: "specialist.implement_feature",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["Task completed"],
     });
     expect(task.id).toBeTruthy();
     expect(task.status).toBe("pending");
-    expect(task.workflowInstructionKey).toBe("work.implement_feature");
+    expect(task.agentKey).toBe("specialist.implement_feature");
   });
 
   it("spawnTask dedupes by idempotencyKey", async () => {
     const key = `integration:${randomUUID()}`;
     const first = await spawnTask(spawnDeps(), teamspaceId, {
       title: "First",
-      workflowInstructionKey: "orchestrator.daily",
+      agentKey: "main.ssota",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: key,
     });
     const second = await spawnTask(spawnDeps(), teamspaceId, {
       title: "Second",
-      workflowInstructionKey: "orchestrator.daily",
+      agentKey: "main.ssota",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: key,
@@ -146,7 +147,7 @@ describe("task port integration", () => {
 
     const task = await spawnTask(spawnDeps(), teamspaceId, {
       title: "Linked task",
-      workflowInstructionKey: "work.implement_feature",
+      agentKey: "specialist.implement_feature",
       targetNodeId: node.id,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
@@ -157,7 +158,7 @@ describe("task port integration", () => {
   it("updateTask patches status and result", async () => {
     const created = await spawnTask(spawnDeps(), teamspaceId, {
       title: `Patch ${randomUUID()}`,
-      workflowInstructionKey: "work.write_document",
+      agentKey: "specialist.write_document",
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["document updated"],
     });
@@ -190,7 +191,7 @@ describe("task port integration", () => {
 
     await spawnTask(spawnDeps(), teamspaceId, {
       title: "Filtered",
-      workflowInstructionKey: "work.implement_feature",
+      agentKey: "specialist.implement_feature",
       targetNodeId: node.id,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],

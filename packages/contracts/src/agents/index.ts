@@ -2,11 +2,8 @@ import { z } from "zod";
 import { ExecutorTypeSchema } from "../definitions.js";
 import {
   AgentKindSchema,
-  type ToolBundle,
   ToolBundleSchema,
-  type NodeScope,
   NodeScopeSchema,
-  type RunPolicy,
   RunPolicySchema,
 } from "../agent-definition.js";
 import { TaskStatusSchema } from "../task.js";

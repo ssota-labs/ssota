@@ -22,6 +22,7 @@ test.describe("MCP task tools", () => {
         name: "E2E task agent",
         description: "Agent referenced by the MCP tasks e2e spec.",
         instructions: textToBlockNoteContent("Complete the E2E task."),
+        agentKind: "specialist",
       });
     } finally {
       await client.end({ timeout: 1 });

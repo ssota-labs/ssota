@@ -1,5 +1,6 @@
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { z } from "zod";
+import { registerTeamspaceOrganization } from "@ssota/adapter-postgres";
 import { resolveProjectAccess } from "@/lib/mcp/project-access";
 
 /** Teamspace scope passed on every project-scoped MCP tool call. */
@@ -74,6 +75,7 @@ export async function resolveProjectIdForTool(
     if (!access) {
       throw new Error("Teamspace not found or access denied");
     }
+    registerTeamspaceOrganization(access.project.id, access.org.id);
     return access.project.id;
   }
 

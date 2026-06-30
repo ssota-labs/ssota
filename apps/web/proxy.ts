@@ -44,6 +44,7 @@ function marketingGateResponse(request: NextRequest): NextResponse | null {
 const CONSOLE_ROUTE_SEGMENTS = new Set([
   "p",
   "tasks",
+  "agents",
   "chat",
   "c",
   "overview",

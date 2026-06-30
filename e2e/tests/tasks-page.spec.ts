@@ -26,6 +26,7 @@ test.describe("Tasks page", () => {
         instructions: textToBlockNoteContent(
           "Complete the tasks-page fixture task.",
         ),
+        agentKind: "specialist",
       });
     } finally {
       await client.end({ timeout: 1 });

@@ -11,13 +11,14 @@ import type {
   SpawnTaskInput,
   UpdateTaskInput,
 } from "@ssota/contracts";
-import { getGraphReadPort, getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
+import { getGraphPortsForTeamspace, getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
 import { jsonError } from "@/lib/api/response";
 
-function taskDeps(teamspaceId: string) {
+async function taskDeps(teamspaceId: string) {
+  const graphPorts = await getGraphPortsForTeamspace(teamspaceId);
   return {
     tasks: getTaskPort(teamspaceId),
-    graphRead: getGraphReadPort(teamspaceId),
+    graphRead: graphPorts.graphRead,
     agentDefinitions: getAgentDefinitionPort(teamspaceId),
   };
 }
@@ -64,11 +65,16 @@ export async function queryTasks(teamspaceId: string, input: QueryTasksInput) {
 }
 
 export async function spawnTask(teamspaceId: string, input: SpawnTaskInput) {
-  const task = await spawnTaskUseCase(taskDeps(teamspaceId), teamspaceId, input);
+  const task = await spawnTaskUseCase(await taskDeps(teamspaceId), teamspaceId, input);
   return serializeTask(task);
 }
 
 export async function updateTask(teamspaceId: string, input: UpdateTaskInput) {
-  const task = await updateTaskUseCase(taskDeps(teamspaceId), teamspaceId, input);
+  const deps = await taskDeps(teamspaceId);
+  const task = await updateTaskUseCase(
+    { tasks: deps.tasks, graphRead: deps.graphRead },
+    teamspaceId,
+    input,
+  );
   return serializeTask(task);
 }
