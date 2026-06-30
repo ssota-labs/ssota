@@ -10,7 +10,7 @@ import {
   createOrganizationSettingsPort,
   createOrganizationMembersPort,
   createTaskPort,
-  createWorkflowInstructionPort,
+  createAgentDefinitionPort,
   createSchedulePort,
   createPagePort,
   createPageViewStatePort,
@@ -101,9 +101,12 @@ export async function getOrCreateProjectAccount(
   return getAccountReadPort().getOrCreateWorkspaceAccount(teamspaceId);
 }
 
-export function getWorkflowInstructionPort(teamspaceId: string) {
-  return createWorkflowInstructionPort(getDb(), { teamspaceId });
+export function getAgentDefinitionPort(teamspaceId: string) {
+  return createAgentDefinitionPort(getDb(), { teamspaceId });
 }
+
+/** @deprecated Use getAgentDefinitionPort */
+export const getWorkflowInstructionPort = getAgentDefinitionPort;
 
 export function getSchedulePort(teamspaceId: string, accountId?: string | null) {
   return createSchedulePort(getDb(), { teamspaceId, accountId });

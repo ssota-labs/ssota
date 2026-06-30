@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import {
   createInMemoryGraphReadPort,
   createInMemoryGraphStore,
@@ -7,7 +8,7 @@ import {
 import {
   createInMemoryState,
   createInMemoryPorts,
-  createInMemoryWorkflowInstructionPort,
+  createInMemoryAgentDefinitionPort,
   sampleExecutionDirective,
   TEST_PROJECT_ID,
 } from "../testing/in-memory.js";
@@ -21,38 +22,38 @@ function spawnDeps(state: ReturnType<typeof createInMemoryState>, teamspaceId: s
   const { tasks } = createInMemoryPorts(state, { teamspaceId });
   return {
     tasks,
-    workflowInstructions: createInMemoryWorkflowInstructionPort(teamspaceId),
+    agentDefinitions: createInMemoryAgentDefinitionPort(teamspaceId),
   };
 }
 
 describe("spawnTask", () => {
-  it("creates a task for a known workflow instruction key", async () => {
+  it("creates a task for a known agent definition id", async () => {
     const state = createInMemoryState();
     const task = await spawnTask(spawnDeps(state, PROJECT_ID), PROJECT_ID, {
       title: "Daily planning",
-      workflowInstructionKey: "orchestrator.daily",
+      agentDefinitionId: BUILTIN_AGENT_IDS.main,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["Task created"],
     });
 
-    expect(task.workflowInstructionKey).toBe("orchestrator.daily");
+    expect(task.agentDefinitionId).toBe(BUILTIN_AGENT_IDS.main);
     expect(task.status).toBe("pending");
     expect(task.teamspaceId).toBe(PROJECT_ID);
   });
 
-  it("rejects unknown workflow instruction keys", async () => {
+  it("rejects unknown agent definition ids", async () => {
     const state = createInMemoryState();
 
     await expect(
       spawnTask(spawnDeps(state, PROJECT_ID), PROJECT_ID, {
         title: "Bad",
-        workflowInstructionKey: "not.registered",
+        agentDefinitionId: "00000000-0000-4000-8000-000000000099",
         context: { executionDirective: sampleExecutionDirective },
         acceptanceCriteria: ["x"],
       }),
     ).rejects.toMatchObject({
       name: "TaskError",
-      code: "UNKNOWN_WORKFLOW_INSTRUCTION",
+      code: "UNKNOWN_AGENT_DEFINITION",
     });
   });
 
@@ -62,14 +63,14 @@ describe("spawnTask", () => {
 
     const first = await spawnTask(deps, PROJECT_ID, {
       title: "Work item",
-      workflowInstructionKey: "work.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: "daily:2026-06-15:feature-a",
     });
     const second = await spawnTask(deps, PROJECT_ID, {
       title: "Different title",
-      workflowInstructionKey: "work.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: "daily:2026-06-15:feature-a",
@@ -102,7 +103,7 @@ describe("spawnTask", () => {
     await expect(
       spawnTask(deps, PROJECT_ID, {
         title: "Linked work",
-        workflowInstructionKey: "work.implement_feature",
+        agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
         context: { executionDirective: sampleExecutionDirective },
         acceptanceCriteria: ["done"],
         targetNodeId: nodeId,
@@ -120,7 +121,7 @@ describe("updateTask", () => {
     const deps = spawnDeps(state, PROJECT_ID);
     const created = await spawnTask(deps, PROJECT_ID, {
       title: "Implement",
-      workflowInstructionKey: "work.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["shipped"],
     });
@@ -141,7 +142,7 @@ describe("updateTask", () => {
     const deps = spawnDeps(state, PROJECT_ID);
     const created = await spawnTask(deps, PROJECT_ID, {
       title: "Implement",
-      workflowInstructionKey: "work.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["shipped"],
     });

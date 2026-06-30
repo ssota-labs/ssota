@@ -6,7 +6,9 @@
  * schema is defined exactly once.
  */
 import { z } from "zod";
-import { ExecutionDirectiveSchema } from "@ssota/contracts";
+import { ExecutionDirectiveSchema, RunScriptToolInputSchema } from "@ssota/contracts";
+import { SUBAGENT_TYPES } from "../subagents/constants.js";
+import { composioMetaToolSchemas } from "../composio/meta-tool-schemas.js";
 
 const taskStatus = z.enum([
   "pending",
@@ -76,8 +78,7 @@ export const workflowToolSchemas = {
   }),
   spawn_task: z.object({
     title: z.string(),
-    workflowInstructionId: z.string().uuid().optional(),
-    workflowInstructionKey: z.string().optional(),
+    agentDefinitionId: z.string().uuid(),
     targetNodeId: z.string().uuid().optional(),
     executionDirective: ExecutionDirectiveSchema,
     acceptanceCriteria: z.array(z.unknown()).min(1),
@@ -128,8 +129,35 @@ export const workflowToolSchemas = {
   }),
   read_page: z.object({ id: z.string().uuid() }),
   list_pages: z.object({}),
-  // Connector tools (Composio / legacy) are declared dynamically from the
-  // active adapter at run time — see fetchConnectorToolDefs / buildMainWorkflowAgent.
+
+  // --- Agent definitions ---
+  list_agent_definitions: z.object({}),
+  get_agent_instruction: z.object({
+    id: z.string().uuid(),
+  }),
+  write_agent_definition: z.object({
+    id: z.string().uuid().optional(),
+    name: z.string(),
+    description: z.string(),
+    body: z.string(),
+    isMain: z.boolean().optional(),
+    referenceOnly: z.boolean().optional(),
+  }),
+
+  // --- Delegate (subagents) ---
+  delegate: z.object({
+    subagentType: z.enum(SUBAGENT_TYPES),
+    task: z.string(),
+    instructions: z.string(),
+  }),
+
+  // --- Script tools ---
+  list_script_tools: z.object({}),
+  describe_script_tool: z.object({ key: z.string().min(1) }),
+  run_script_tool: RunScriptToolInputSchema,
+
+  // --- Composio Tool Router meta-tools (fixed; not per-toolkit defs) ---
+  ...composioMetaToolSchemas,
 } as const;
 
 export type WorkflowToolName = keyof typeof workflowToolSchemas;

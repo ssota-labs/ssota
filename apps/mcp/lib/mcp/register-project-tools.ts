@@ -29,6 +29,18 @@ type McpToolServer = {
   ) => void;
 };
 
+function normalizeTaskToolArgs(
+  args: Record<string, unknown>,
+): Record<string, unknown> {
+  const normalized = { ...args };
+
+  if (!normalized.agentDefinitionId && normalized.workflowInstructionId) {
+    normalized.agentDefinitionId = normalized.workflowInstructionId;
+  }
+
+  return normalized;
+}
+
 export function registerProjectTools(server: McpToolServer) {
   registerScopedProjectTool(
     server,
@@ -69,8 +81,7 @@ export function registerProjectTools(server: McpToolServer) {
         status: z
           .enum(["pending", "ready", "running", "blocked", "done", "cancelled", "failed"])
           .optional(),
-        workflowInstructionId: z.string().uuid().optional(),
-        workflowInstructionKey: z.string().optional(),
+        agentDefinitionId: z.string().uuid().optional(),
         assignee: z.string().optional(),
         subjectId: z.string().optional(),
         targetNodeId: z.string().uuid().optional(),
@@ -80,7 +91,7 @@ export function registerProjectTools(server: McpToolServer) {
       },
     },
     async ({ teamspaceId, args }) => {
-      const parsed = QueryTasksInputSchema.parse(args);
+      const parsed = QueryTasksInputSchema.parse(normalizeTaskToolArgs(args));
       return jsonContent(await queryTasks(teamspaceId, parsed));
     },
   );
@@ -91,11 +102,10 @@ export function registerProjectTools(server: McpToolServer) {
     {
       title: "Spawn Task",
       description:
-        "Create a development workflow task. Requires workflowInstructionKey (or id), executionDirective, and acceptanceCriteria.",
+        "Create a development workflow task. Requires agentDefinitionId, executionDirective, and acceptanceCriteria.",
       inputSchema: {
         title: z.string().min(1),
-        workflowInstructionId: z.string().uuid().optional(),
-        workflowInstructionKey: z.string().optional(),
+        agentDefinitionId: z.string().uuid(),
         assignee: z.string().optional(),
         subjectId: z.string().optional(),
         targetNodeId: z.string().uuid().optional(),
@@ -111,10 +121,11 @@ export function registerProjectTools(server: McpToolServer) {
     },
     async ({ teamspaceId, args }) => {
       try {
+        const normalized = normalizeTaskToolArgs(args);
         const parsed = SpawnTaskInputSchema.parse({
-          ...args,
-          context: args.executionDirective
-            ? { executionDirective: args.executionDirective }
+          ...normalized,
+          context: normalized.executionDirective
+            ? { executionDirective: normalized.executionDirective }
             : undefined,
         });
         return jsonContent(await spawnTask(teamspaceId, parsed));

@@ -1,4 +1,5 @@
 import { and, desc, eq, isNull } from "drizzle-orm";
+import type { ScheduleTargetType } from "@ssota/contracts";
 import type { Db } from "../db/client.js";
 import { schedules } from "../db/schema.js";
 
@@ -11,7 +12,8 @@ export interface ScheduleRecord {
   id: string;
   teamspaceId: string;
   accountId: string | null;
-  workflowInstructionId: string;
+  agentDefinitionId: string;
+  targetType: ScheduleTargetType;
   cronExpression: string;
   timezone: string;
   enabled: boolean;
@@ -21,7 +23,8 @@ export interface ScheduleRecord {
 }
 
 export interface CreateScheduleInput {
-  workflowInstructionId: string;
+  agentDefinitionId: string;
+  targetType?: ScheduleTargetType;
   cronExpression: string;
   timezone: string;
   enabled?: boolean;
@@ -29,7 +32,8 @@ export interface CreateScheduleInput {
 }
 
 export interface UpdateScheduleInput {
-  workflowInstructionId?: string;
+  agentDefinitionId?: string;
+  targetType?: ScheduleTargetType;
   cronExpression?: string;
   timezone?: string;
   enabled?: boolean;
@@ -43,7 +47,8 @@ function mapSchedule(row: ScheduleRow): ScheduleRecord {
     id: row.id,
     teamspaceId: row.teamspaceId,
     accountId: row.accountId,
-    workflowInstructionId: row.workflowInstructionId,
+    agentDefinitionId: row.agentDefinitionId,
+    targetType: row.targetType,
     cronExpression: row.cronExpression,
     timezone: row.timezone,
     enabled: row.enabled,
@@ -59,11 +64,6 @@ function accountCondition(accountId?: string | null) {
     : isNull(schedules.accountId);
 }
 
-/**
- * Teamspace/account-scoped CRUD for user-defined schedules. Self-contained (no
- * core interface) like the agent-run telemetry port — schedules are a thin
- * config row, not a domain aggregate.
- */
 export function createSchedulePort(db: Db, scope: ScheduleScope) {
   const { teamspaceId } = scope;
   const accountId = scope.accountId ?? null;
@@ -97,7 +97,8 @@ export function createSchedulePort(db: Db, scope: ScheduleScope) {
         .values({
           teamspaceId,
           accountId,
-          workflowInstructionId: input.workflowInstructionId,
+          agentDefinitionId: input.agentDefinitionId,
+          targetType: input.targetType ?? "agent",
           cronExpression: input.cronExpression,
           timezone: input.timezone,
           enabled: input.enabled ?? true,
@@ -112,8 +113,9 @@ export function createSchedulePort(db: Db, scope: ScheduleScope) {
       patch: UpdateScheduleInput,
     ): Promise<ScheduleRecord | null> {
       const values: Record<string, unknown> = { updatedAt: new Date() };
-      if (patch.workflowInstructionId !== undefined)
-        values.workflowInstructionId = patch.workflowInstructionId;
+      if (patch.agentDefinitionId !== undefined)
+        values.agentDefinitionId = patch.agentDefinitionId;
+      if (patch.targetType !== undefined) values.targetType = patch.targetType;
       if (patch.cronExpression !== undefined)
         values.cronExpression = patch.cronExpression;
       if (patch.timezone !== undefined) values.timezone = patch.timezone;

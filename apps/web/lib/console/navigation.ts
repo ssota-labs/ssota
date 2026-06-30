@@ -46,9 +46,9 @@ export const L0_NAV: NavEntry[] = [
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
   {
     type: "link",
-    key: "workflow_instructions",
-    labelKey: "nav.workflowInstructions",
-    href: "workflow/instructions",
+    key: "agents",
+    labelKey: "nav.agents",
+    href: "agents",
     pattern: "L",
   },
   { type: "link", key: "chat", labelKey: "nav.chat", href: "c", pattern: "L" },
@@ -147,8 +147,8 @@ export function buildBreadcrumbSegments(
   if (relative === "workflow/map") {
     return [{ labelKey: "nav.workflowMap" }];
   }
-  if (relative === "workflow/instructions") {
-    return [{ labelKey: "nav.workflowInstructions" }];
+  if (relative === "agents") {
+    return [{ labelKey: "nav.agents" }];
   }
   if (
     relative === "design/ui-components" ||

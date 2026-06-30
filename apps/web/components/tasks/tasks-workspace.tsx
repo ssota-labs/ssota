@@ -6,7 +6,7 @@ export type TaskWorkspaceRow = {
   status: TaskStatus;
   executorType: string;
   assignee: string;
-  workflowInstructionKey: string;
+  agentDefinitionId: string;
   subjectId: string;
   acceptanceCriteria: string[];
   context: Record<string, unknown>;

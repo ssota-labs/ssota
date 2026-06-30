@@ -16,7 +16,13 @@ export { createOnboardingPort } from "./onboarding.js";
 export { createGraphPorts } from "./create-graph-ports.js";
 export { createGraphReadPort } from "./graph-read-port.js";
 export { createGraphWritePort } from "./graph-write-port.js";
-export { createWorkflowInstructionPort, seedWorkflowInstructions } from "./workflow-instruction-port.js";
+export {
+  createAgentDefinitionPort,
+  seedAgentDefinitions,
+  createWorkflowInstructionPort,
+  seedWorkflowInstructions,
+} from "./agent-definition-port.js";
+export { createScriptToolPort } from "./script-tool-port.js";
 export { createPagePort, seedPages } from "./page-port.js";
 export { createPageViewStatePort } from "./page-view-state-port.js";
 export {
@@ -30,8 +36,7 @@ function mapTask(row: typeof schema.tasks.$inferSelect): Task {
   return {
     id: row.id,
     teamspaceId: row.teamspaceId,
-    workflowInstructionId: row.workflowInstructionId,
-    workflowInstructionKey: null,
+    agentDefinitionId: row.agentDefinitionId,
     title: row.title,
     status: row.status,
     executorType: row.executorType,
@@ -47,24 +52,6 @@ function mapTask(row: typeof schema.tasks.$inferSelect): Task {
     completedAt: row.completedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-  };
-}
-
-async function hydrateWorkflowInstructionKey(
-  db: Db,
-  task: Task,
-): Promise<Task> {
-  if (!task.workflowInstructionId) {
-    return { ...task, workflowInstructionKey: null };
-  }
-  const rows = await db
-    .select({ key: schema.workflowInstructions.key })
-    .from(schema.workflowInstructions)
-    .where(eq(schema.workflowInstructions.id, task.workflowInstructionId))
-    .limit(1);
-  return {
-    ...task,
-    workflowInstructionKey: rows[0]?.key ?? null,
   };
 }
 
@@ -87,9 +74,9 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
       ...taskAccountConds(),
     ];
     if (params?.status) conditions.push(eq(schema.tasks.status, params.status));
-    if (params?.workflowInstructionId) {
+    if (params?.agentDefinitionId) {
       conditions.push(
-        eq(schema.tasks.workflowInstructionId, params.workflowInstructionId),
+        eq(schema.tasks.agentDefinitionId, params.agentDefinitionId),
       );
     }
     if (params?.assignee) conditions.push(eq(schema.tasks.assignee, params.assignee));
@@ -137,9 +124,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           ),
         )
         .limit(1);
-      return rows[0]
-        ? await hydrateWorkflowInstructionKey(db, mapTask(rows[0]))
-        : null;
+      return rows[0] ? mapTask(rows[0]) : null;
     },
 
     async getTaskByIdempotencyKey(idempotencyKey) {
@@ -163,7 +148,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           teamspaceId,
           accountId: accountIdValue,
           title: input.title,
-          workflowInstructionId: input.workflowInstructionId ?? null,
+          agentDefinitionId: input.agentDefinitionId ?? null,
           status: input.status ?? "pending",
           executorType: input.executorType ?? "Agent",
           assignee: input.assignee ?? null,
@@ -175,7 +160,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           idempotencyKey: input.idempotencyKey ?? null,
         })
         .returning();
-      return await hydrateWorkflowInstructionKey(db, mapTask(row!));
+      return mapTask(row!);
     },
 
     async updateTask(taskId: string, patch: TaskUpdatePatch) {

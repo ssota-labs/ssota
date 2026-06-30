@@ -24,7 +24,7 @@ describe("explorer toolset is read-only", () => {
       "list_node_types",
       "list_pages",
       "list_page_components",
-      "get_workflow_instruction",
+      "get_agent_instruction",
       "query_tasks",
     ]) {
       expect(keys).toContain(k);
@@ -40,7 +40,7 @@ describe("explorer toolset is read-only", () => {
       "create_edge_type",
       "create_page",
       "update_page",
-      "write_workflow_instruction",
+      "write_agent_definition",
       "spawn_task",
       "update_task",
       "complete_task",

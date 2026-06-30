@@ -3,47 +3,47 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CaretRightIcon } from "@phosphor-icons/react";
-import type { WorkflowInstruction } from "@ssota/contracts";
+import type { AgentDefinition } from "@ssota/contracts";
 import { cn } from "@ssota/ui/lib/utils";
-import { updateWorkflowInstructionAction } from "@/app/actions";
+import { updateAgentDefinitionAction } from "@/app/actions";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
-import type { WorkflowInstructionGroup } from "@/lib/console/load-workflow-instructions-for-ui";
+import type { AgentGroup } from "@/lib/console/load-agents-for-ui";
 import {
   DocumentSheetPanel,
   type SheetSize,
 } from "@/lib/page-runtime/components/document-sheet-panel";
 import type { RenderNode } from "@/lib/page-runtime/types";
 
-type WorkflowInstructionsWorkspaceProps = {
+type AgentsWorkspaceProps = {
   teamspaceId: string;
-  groups: WorkflowInstructionGroup[];
+  groups: AgentGroup[];
 };
 
-function toRenderNode(instruction: WorkflowInstruction): RenderNode {
+function toRenderNode(definition: AgentDefinition): RenderNode {
   return {
-    id: instruction.id,
-    catalogKey: "workflow_instruction",
-    title: instruction.name,
+    id: definition.id,
+    catalogKey: "agent_definition",
+    title: definition.name,
     properties: {
-      content: instruction.content,
-      summary: instruction.key,
+      content: definition.instructions,
+      summary: definition.description,
     },
   };
 }
 
-export function WorkflowInstructionsWorkspace({
+export function AgentsWorkspace({
   teamspaceId,
   groups: initialGroups,
-}: WorkflowInstructionsWorkspaceProps) {
+}: AgentsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const instructions = groups.flatMap((group) => group.items);
-  const activeInstruction =
-    instructions.find((entry) => entry.id === activeId) ?? null;
-  const open = activeInstruction !== null;
+  const definitions = groups.flatMap((group) => group.items);
+  const activeDefinition =
+    definitions.find((entry) => entry.id === activeId) ?? null;
+  const open = activeDefinition !== null;
   const sheetSize: SheetSize = "half";
 
   useEffect(() => {
@@ -62,23 +62,25 @@ export function WorkflowInstructionsWorkspace({
   const close = () => setActiveId(null);
 
   const handleSave = (blocks: unknown[]) => {
-    if (!activeInstruction) return;
+    if (!activeDefinition) return;
 
     startTransition(async () => {
-      await updateWorkflowInstructionAction(teamspaceId, {
-        key: activeInstruction.key,
-        name: activeInstruction.name,
-        description: activeInstruction.description,
-        content: blocks,
+      await updateAgentDefinitionAction(teamspaceId, {
+        id: activeDefinition.id,
+        name: activeDefinition.name,
+        description: activeDefinition.description,
+        instructions: blocks,
+        isMain: activeDefinition.isMain,
+        referenceOnly: activeDefinition.referenceOnly,
       });
       setGroups((current) =>
         current.map((group) => ({
           ...group,
           items: group.items.map((entry) =>
-            entry.id === activeInstruction.id
+            entry.id === activeDefinition.id
               ? {
                   ...entry,
-                  content: blocks as WorkflowInstruction["content"],
+                  instructions: blocks as AgentDefinition["instructions"],
                 }
               : entry,
           ),
@@ -91,36 +93,36 @@ export function WorkflowInstructionsWorkspace({
   return (
     <div
       className="absolute inset-0 flex flex-col"
-      data-testid="workflow-instructions-workspace"
+      data-testid="agents-workspace"
     >
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
-          title="Workflow instructions"
+          title="Agents"
           description="Agent playbooks for this project. Edits apply to the next agent or MCP run."
         />
 
         {groups.map((group) => (
           <BrowseWorkspace.Section key={group.key} label={group.label}>
             <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
-              {group.items.map((instruction) => (
+              {group.items.map((definition) => (
                 <button
-                  key={instruction.id}
+                  key={definition.id}
                   type="button"
-                  data-testid={`workflow-instruction-item-${instruction.key}`}
+                  data-testid={`agent-item-${definition.id}`}
                   className={cn(
                     "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
-                    activeId === instruction.id && "bg-muted/30",
+                    activeId === definition.id && "bg-muted/30",
                   )}
-                  onClick={() => setActiveId(instruction.id)}
+                  onClick={() => setActiveId(definition.id)}
                 >
                   <div className="min-w-0 flex-1 space-y-1">
-                    <span className="text-sm font-medium">{instruction.name}</span>
+                    <span className="text-sm font-medium">{definition.name}</span>
                     <p className="font-mono text-xs text-muted-foreground">
-                      {instruction.key}
+                      {definition.id}
                     </p>
-                    {instruction.description ? (
+                    {definition.description ? (
                       <p className="line-clamp-2 text-xs text-muted-foreground">
-                        {instruction.description}
+                        {definition.description}
                       </p>
                     ) : null}
                   </div>
@@ -134,17 +136,17 @@ export function WorkflowInstructionsWorkspace({
           </BrowseWorkspace.Section>
         ))}
 
-        {instructions.length === 0 ? (
+        {definitions.length === 0 ? (
           <BrowseWorkspace.Empty>
-            No workflow instructions seeded for this project yet.
+            No agent definitions seeded for this project yet.
           </BrowseWorkspace.Empty>
         ) : null}
       </BrowseWorkspace.Frame>
 
-      {open && activeInstruction ? (
+      {open && activeDefinition ? (
         <DocumentSheetPanel
-          node={toRenderNode(activeInstruction)}
-          subtitle={activeInstruction.key}
+          node={toRenderNode(activeDefinition)}
+          subtitle={activeDefinition.description || activeDefinition.id}
           field="content"
           editable
           sheetSize={sheetSize}
@@ -155,9 +157,12 @@ export function WorkflowInstructionsWorkspace({
 
       {isPending ? (
         <p className="sr-only" aria-live="polite">
-          Saving workflow instruction
+          Saving agent definition
         </p>
       ) : null}
     </div>
   );
 }
+
+/** @deprecated Use AgentsWorkspace */
+export const WorkflowInstructionsWorkspace = AgentsWorkspace;

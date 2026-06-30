@@ -1,4 +1,5 @@
 import type { UIMessage } from "ai";
+import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import { getDb, type RunAgentResult } from "@ssota/agent-runtime";
 import { createAgentRunPort, createChatPort } from "@ssota/adapter-postgres";
 
@@ -12,6 +13,7 @@ export interface RunMainAgentInput {
   teamspaceId: string;
   threadId: string;
   accountId?: string;
+  scheduleId?: string;
   /** Signed-in user (Composio acting entity for connector tools). */
   profileId?: string;
   modelId?: string;
@@ -28,8 +30,16 @@ export async function claimMainRunning(
     teamspaceId: input.teamspaceId,
     runtimeKind: "main",
     threadId: input.threadId,
+    scheduleId: input.scheduleId ?? null,
     workflowRunId: runId,
     accountId: input.accountId ?? null,
+    agentDefinitionId: MAIN_AGENT_ID,
+    trigger:
+      input.chatContext?.trigger === "heartbeat"
+        ? "heartbeat"
+        : input.scheduleId
+          ? "schedule"
+          : "chat",
     model: input.modelId ?? null,
   });
 }

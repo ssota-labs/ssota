@@ -1,7 +1,7 @@
 import { TasksExplorer } from "@/components/tasks/tasks-explorer";
 import { type TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 import { resolveEndUserContext } from "@/lib/request-context";
-import { getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
+import { getAgentDefinitionPort, getTaskPort } from "@/lib/ports";
 
 export default async function AppTasksPage({
   params,
@@ -20,7 +20,7 @@ export default async function AppTasksPage({
     status: task.status,
     executorType: task.executorType,
     assignee: task.assignee ?? "Unassigned",
-    workflowInstructionKey: task.workflowInstructionKey ?? "",
+    agentDefinitionId: task.agentDefinitionId ?? "",
     subjectId: task.subjectId ?? "",
     acceptanceCriteria: task.acceptanceCriteria.flatMap((item) => {
       if (typeof item === "string") return [item];
@@ -34,10 +34,10 @@ export default async function AppTasksPage({
     createdAt: task.createdAt.toISOString(),
   }));
 
-  const workflowInstructions =
-    await getWorkflowInstructionPort(ctx.teamspaceId).listInstructions();
-  const workflowOptions = workflowInstructions.map((entry) => ({
-    workflowInstructionKey: entry.key,
+  const agentDefinitions =
+    await getAgentDefinitionPort(ctx.teamspaceId).listDefinitions();
+  const agentOptions = agentDefinitions.map((entry) => ({
+    agentDefinitionId: entry.id,
     title: entry.name,
   }));
 
@@ -45,7 +45,7 @@ export default async function AppTasksPage({
     <TasksExplorer
       rows={rows}
       teamspaceId={ctx.teamspaceId}
-      workflowOptions={workflowOptions}
+      agentOptions={agentOptions}
     />
   );
 }

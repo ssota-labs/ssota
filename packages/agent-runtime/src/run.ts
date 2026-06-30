@@ -1,17 +1,19 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
+import type { AgentTrigger } from "@ssota/contracts";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
-import { listBuiltinWorkflowIndex } from "@ssota/contracts/workflows";
-import { serializeTask, readWorkflowInstructionById } from "@ssota/core";
-import { getTaskPort, getWorkflowInstructionPort } from "./ports.js";
-import { getConnectorAdapter } from "./connectors/adapter.js";
+import { getAgentDefinitionById, listRoutableAgentIndex } from "@ssota/contracts/agents";
+import { serializeTask, readAgentDefinitionById } from "@ssota/core";
+import { getTaskPort, getAgentDefinitionPort } from "./ports.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
 import type { AgentRuntimeKind } from "@ssota/contracts";
+import {
+  assertAllowedTrigger,
+  mainAgentRuntimeDefinition,
+  runtimeDefinitionFromAgent,
+  runtimeDefinitionFromBuiltinId,
+  type AgentRuntimeDefinition,
+} from "./runtime-definition.js";
 
-/**
- * Per-run scope used to build the agent prompt. The actual agent loop now runs
- * on the WorkflowAgent (apps/web); this module only produces the serializable
- * instructions + messages via {@link buildRunPrompt}.
- */
 export interface RunAgentInput {
   teamspaceId: string;
   runId: string;
@@ -20,19 +22,12 @@ export interface RunAgentInput {
   threadId?: string;
   scheduleId?: string;
   accountId?: string;
-  /**
-   * Signed-in user (Supabase `auth.users.id`) driving this run. With the org it
-   * forms the Composio entity for connector tools. Absent on scheduler /
-   * autonomous runs → Composio connectors fall back to the org-shared entity.
-   */
   profileId?: string;
   modelId?: string;
   maxSteps?: number;
-  /** Main-runtime chat transcript injected from the web chat route. */
   chatContext?: Record<string, unknown>;
 }
 
-/** Result shape persisted by the run finalizers. */
 export interface RunAgentResult {
   finishReason: string;
   text: string;
@@ -42,6 +37,13 @@ export interface RunAgentResult {
     outputTokens?: number;
     totalTokens?: number;
   };
+}
+
+export interface ResolvedRunAgent {
+  definition: AgentRuntimeDefinition;
+  trigger: AgentTrigger;
+  instructions: SystemModelMessage[];
+  messages: ModelMessage[];
 }
 
 function extractChatMessages(
@@ -62,50 +64,111 @@ function extractExecutionDirective(
   return parsed.success ? parsed.data : null;
 }
 
-/**
- * Build the per-run instruction + message prompt for a runtime kind. Both
- * outputs are serializable (SystemModelMessage[] / ModelMessage[]), so the
- * WorkflowAgent path can produce them inside a `"use step"` and hand them to
- * the workflow-safe agent builder. The active connector adapter's kind drives
- * the prompt's connections guidance (Composio vs legacy tool names).
- */
+function resolveMainTrigger(input: RunAgentInput): AgentTrigger {
+  if (input.chatContext?.trigger === "heartbeat") return "heartbeat";
+  if (input.scheduleId) return "schedule";
+  if (input.chatContext?.trigger === "chatbot") return "chatbot";
+  return "chat";
+}
+
+function resolveTaskTrigger(input: RunAgentInput): AgentTrigger {
+  return input.scheduleId ? "schedule" : "task";
+}
+
+/** Resolve agent definition + trigger and enforce runPolicy.allowedTriggers. */
+export async function resolveRunAgentDefinition(
+  input: RunAgentInput,
+): Promise<{ definition: AgentRuntimeDefinition; trigger: AgentTrigger }> {
+  if (input.runtimeKind === "main") {
+    const definition = mainAgentRuntimeDefinition();
+    const trigger = resolveMainTrigger(input);
+    assertAllowedTrigger(definition, trigger);
+    return { definition, trigger };
+  }
+
+  if (input.runtimeKind === "task" && input.taskId) {
+    const taskPort = getTaskPort(input.teamspaceId, input.accountId);
+    const domainTask = await taskPort.getTask(input.taskId);
+    if (!domainTask) {
+      throw new Error(`Task ${input.taskId} not found in teamspace ${input.teamspaceId}`);
+    }
+    const task = serializeTask(domainTask);
+    const instructionPort = getAgentDefinitionPort(input.teamspaceId, input.accountId);
+
+    let definition: AgentRuntimeDefinition | null = null;
+    if (task.agentDefinitionId) {
+      const loaded = await readAgentDefinitionById(
+        instructionPort,
+        task.agentDefinitionId,
+      );
+      if (loaded) {
+        definition = runtimeDefinitionFromAgent(loaded.definition);
+      } else {
+        definition = runtimeDefinitionFromBuiltinId(task.agentDefinitionId);
+      }
+    }
+
+    if (!definition) {
+      throw new Error(
+        `Task ${input.taskId} has no resolvable agent (agentDefinitionId=${task.agentDefinitionId ?? "null"}).`,
+      );
+    }
+
+    const trigger = resolveTaskTrigger(input);
+    assertAllowedTrigger(definition, trigger);
+    return { definition, trigger };
+  }
+
+  throw new Error(`Invalid run configuration for runtimeKind=${input.runtimeKind}`);
+}
+
 export async function buildRunPrompt(
   input: RunAgentInput,
 ): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
-  const { teamspaceId, accountId, runtimeKind } = input;
-  const instructionPort = getWorkflowInstructionPort(teamspaceId, accountId);
+  const resolved = await resolveRunAgent(input);
+  return {
+    instructions: resolved.instructions,
+    messages: resolved.messages,
+  };
+}
 
-  const adapter = getConnectorAdapter();
-  const connectorKind = adapter?.kind;
+/** Full run resolution: definition, trigger, instructions, and messages. */
+export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRunAgent> {
+  const { teamspaceId, accountId, runtimeKind } = input;
+  const { definition, trigger } = await resolveRunAgentDefinition(input);
+  const instructionPort = getAgentDefinitionPort(teamspaceId, accountId);
 
   let instructions: SystemModelMessage[] = [];
   let messages: ModelMessage[] = [];
 
   if (runtimeKind === "main") {
-    const dbInstructions = await instructionPort.listInstructions();
-    const dbKeys = new Set(dbInstructions.map((w) => w.key));
-    // DB rows override built-ins with the same key.
-    const builtins = listBuiltinWorkflowIndex().filter((b) => !dbKeys.has(b.key));
-    const workflowManifest = [
-      ...dbInstructions.map((w) => ({
-        key: w.key,
-        name: w.name,
-        description: w.description,
-      })),
+    const dbDefinitions = await instructionPort.listDefinitions();
+    const dbIds = new Set(dbDefinitions.map((w) => w.id));
+    const builtins = listRoutableAgentIndex().filter((b) => !dbIds.has(b.id));
+    const agentManifest = [
+      ...dbDefinitions
+        .filter((w) => !w.isMain && !w.referenceOnly)
+        .map((w) => ({
+          id: w.id,
+          name: w.name,
+          description: w.description,
+        })),
       ...builtins,
     ];
     instructions = buildRunInstructionMessages({
       runtimeKind: "main",
       teamspaceId,
       accountId,
-      connectorKind,
-      workflowManifest,
+      agentManifest,
     });
     const chatMessages = extractChatMessages(input.chatContext);
     messages = chatMessages ?? [
       {
         role: "user" as const,
-        content: "Continue the conversation and help the user.",
+        content:
+          input.chatContext?.trigger === "heartbeat"
+            ? "Run the scheduled heartbeat tick for this project."
+            : "Continue the conversation and help the user.",
       },
     ];
   } else if (runtimeKind === "task" && input.taskId) {
@@ -115,15 +178,37 @@ export async function buildRunPrompt(
       throw new Error(`Task ${input.taskId} not found in teamspace ${teamspaceId}`);
     }
     const task = serializeTask(domainTask);
-    const playbook = task.workflowInstructionId
-      ? await readWorkflowInstructionById(instructionPort, task.workflowInstructionId)
+    let playbook = task.agentDefinitionId
+      ? await readAgentDefinitionById(instructionPort, task.agentDefinitionId)
       : null;
+    if (!playbook && task.agentDefinitionId) {
+      const builtin = getAgentDefinitionById(task.agentDefinitionId);
+      if (builtin) {
+        playbook = {
+          source: "db" as const,
+          definition: {
+            id: builtin.id,
+            teamspaceId,
+            accountId: null,
+            name: builtin.title,
+            description: builtin.description,
+            instructions: [],
+            isMain: builtin.isMain,
+            referenceOnly: builtin.referenceOnly,
+            toolBundles: builtin.toolBundles,
+            nodeScopes: builtin.nodeScopes,
+            runPolicy: builtin.runPolicy,
+            createdAt: new Date(0).toISOString(),
+            updatedAt: new Date(0).toISOString(),
+          },
+        };
+      }
+    }
     instructions = buildRunInstructionMessages({
       runtimeKind: "task",
       teamspaceId,
       accountId,
-      connectorKind,
-      taskPlaybook: playbook?.instruction ?? null,
+      taskPlaybook: playbook?.definition ?? null,
       task: {
         id: task.id,
         title: task.title,
@@ -139,24 +224,7 @@ export async function buildRunPrompt(
         content: `Work the task "${task.title}" (id ${task.id}) to completion.`,
       },
     ];
-  } else if (runtimeKind === "scheduler" && input.scheduleId) {
-    const scheduleInstruction = await instructionPort.getByKey("orchestrator.daily");
-    instructions = buildRunInstructionMessages({
-      runtimeKind: "scheduler",
-      teamspaceId,
-      accountId,
-      connectorKind,
-      mainInstruction: scheduleInstruction,
-    });
-    messages = [
-      {
-        role: "user" as const,
-        content: "Run the scheduled orchestration tick.",
-      },
-    ];
-  } else {
-    throw new Error(`Invalid run configuration for runtimeKind=${runtimeKind}`);
   }
 
-  return { instructions, messages };
+  return { definition, trigger, instructions, messages };
 }

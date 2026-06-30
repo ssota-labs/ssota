@@ -1,20 +1,20 @@
 import { TasksDetail } from "@/components/tasks/tasks-detail";
 import {
   SpawnTaskDialog,
-  type WorkflowOption,
+  type AgentOption,
 } from "@/components/tasks/spawn-task-dialog";
 import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 
 type TasksExplorerProps = {
   rows: TaskWorkspaceRow[];
   teamspaceId: string;
-  workflowOptions: WorkflowOption[];
+  agentOptions: AgentOption[];
 };
 
 export function TasksExplorer({
   rows,
   teamspaceId,
-  workflowOptions,
+  agentOptions,
 }: TasksExplorerProps) {
   return (
     <div className="flex h-full min-h-0 flex-col bg-background">
@@ -26,12 +26,12 @@ export function TasksExplorer({
             through update_task.
           </p>
         </div>
-        <SpawnTaskDialog teamspaceId={teamspaceId} workflowOptions={workflowOptions} />
+        <SpawnTaskDialog teamspaceId={teamspaceId} agentOptions={agentOptions} />
       </div>
       <TasksDetail
         rows={rows}
         teamspaceId={teamspaceId}
-        workflowOptions={workflowOptions}
+        agentOptions={agentOptions}
       />
     </div>
   );

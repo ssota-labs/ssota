@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
-import { start } from "workflow/api";
 import { getDb } from "@/lib/ports";
 import { schema, createAgentRunPort } from "@ssota/adapter-postgres";
-import { runSchedulerAgentWorkflow } from "@/app/workflows/scheduler-agent";
+import { fanOutSchedule } from "@/lib/schedules/schedule-fan-out";
 import { shouldRunNow } from "@/lib/schedules/should-run-now";
 
 export const runtime = "nodejs";
@@ -59,18 +58,18 @@ export async function GET(request: Request) {
     }
     // Dedupe: if this schedule already produced a run for this fire (e.g. a
     // double heartbeat or overlapping buffer), do not spawn another.
-    if (await agentRunPort.hasRunForScheduleSince(schedule.id, fire)) {
+    if (await agentRunPort.hasScheduleRunSince(schedule.id, fire)) {
       skipped.push(schedule.id);
       continue;
     }
-    const runHandle = await start(runSchedulerAgentWorkflow, [
-      {
-        teamspaceId: schedule.teamspaceId,
-        scheduleId: schedule.id,
-        accountId: schedule.accountId ?? undefined,
-      },
-    ]);
-    started.push(runHandle.runId);
+    const runHandle = await fanOutSchedule(db, {
+      id: schedule.id,
+      teamspaceId: schedule.teamspaceId,
+      accountId: schedule.accountId,
+      agentDefinitionId: schedule.agentDefinitionId,
+      targetType: schedule.targetType,
+    });
+    if (runHandle) started.push(runHandle);
   }
 
   return NextResponse.json({

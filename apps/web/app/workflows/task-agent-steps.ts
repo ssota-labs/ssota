@@ -1,15 +1,41 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
+import type { ToolBundle } from "@ssota/contracts";
+import {
+  BUILTIN_AGENT_IDS,
+  getAgentDefinitionById,
+} from "@ssota/contracts/agents";
 import {
   getDb,
   getTaskPort,
-  buildRunPrompt,
+  resolveRunAgent,
   createSandboxSession,
   attachSandboxSession,
+  getAgentDefinitionPort,
 } from "@ssota/agent-runtime";
 import { createAgentRunPort } from "@ssota/adapter-postgres";
 
-/** Workflow instruction keys whose runs get a sandbox for code/build tools. */
-const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
+function agentNeedsSandbox(
+  agentDefinitionId: string | null | undefined,
+  toolBundles: ToolBundle[],
+): boolean {
+  if (!agentDefinitionId) return false;
+  if (agentDefinitionId === BUILTIN_AGENT_IDS.implementFeature) return true;
+  return toolBundles.includes("sandbox.code");
+}
+
+async function resolveAgentToolBundles(
+  teamspaceId: string,
+  accountId: string | undefined,
+  agentDefinitionId: string | null | undefined,
+): Promise<ToolBundle[]> {
+  if (!agentDefinitionId) return [];
+  const builtin = getAgentDefinitionById(agentDefinitionId);
+  if (builtin) return builtin.toolBundles;
+  const row = await getAgentDefinitionPort(teamspaceId, accountId).getById(
+    agentDefinitionId,
+  );
+  return row?.toolBundles ?? [];
+}
 
 /**
  * Durable steps shared by the two task-runtime entry points: runTaskAgentWorkflow
@@ -21,6 +47,7 @@ export interface RunTaskAgentInput {
   teamspaceId: string;
   taskId: string;
   accountId?: string;
+  scheduleId?: string;
   modelId?: string;
   maxSteps?: number;
 }
@@ -36,9 +63,11 @@ export async function claimTaskRun(
     teamspaceId: input.teamspaceId,
     runtimeKind: "task",
     taskId: input.taskId,
+    scheduleId: input.scheduleId ?? null,
     workflowRunId,
     accountId: input.accountId ?? null,
     model: input.modelId ?? null,
+    trigger: input.scheduleId ? "schedule" : "task",
   });
   await getTaskPort(input.teamspaceId, input.accountId).updateTask(input.taskId, {
     status: "running",
@@ -48,17 +77,29 @@ export async function claimTaskRun(
 export async function buildTaskPromptStep(
   input: RunTaskAgentInput,
   workflowRunId: string,
-): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
+): Promise<{
+  instructions: SystemModelMessage[];
+  messages: ModelMessage[];
+  definition: Awaited<ReturnType<typeof resolveRunAgent>>["definition"];
+  trigger: Awaited<ReturnType<typeof resolveRunAgent>>["trigger"];
+}> {
   "use step";
-  return buildRunPrompt({
+  const resolved = await resolveRunAgent({
     teamspaceId: input.teamspaceId,
     runId: workflowRunId,
     runtimeKind: "task",
     taskId: input.taskId,
     accountId: input.accountId,
+    scheduleId: input.scheduleId,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
   });
+  return {
+    instructions: resolved.instructions,
+    messages: resolved.messages,
+    definition: resolved.definition,
+    trigger: resolved.trigger,
+  };
 }
 
 export async function finalizeTaskRun(
@@ -98,9 +139,14 @@ export async function provisionSandboxStep(
   const task = await getTaskPort(input.teamspaceId, input.accountId).getTask(
     input.taskId,
   );
+  const toolBundles = await resolveAgentToolBundles(
+    input.teamspaceId,
+    input.accountId,
+    task?.agentDefinitionId,
+  );
   if (
-    !task?.workflowInstructionKey ||
-    !DEV_CAPABLE_WORKFLOW_KEYS.has(task.workflowInstructionKey)
+    !task?.agentDefinitionId ||
+    !agentNeedsSandbox(task.agentDefinitionId, toolBundles)
   ) {
     return undefined;
   }

@@ -1,5 +1,4 @@
 export {
-  readWorkflowInstructionByKey,
   readWorkflowInstructionById,
   listWorkflowInstructions,
   type ResolvedWorkflowInstruction,

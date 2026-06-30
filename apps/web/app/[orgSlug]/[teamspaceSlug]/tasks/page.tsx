@@ -1,7 +1,7 @@
 import { TasksExplorer } from "@/components/tasks/tasks-explorer";
 import { type TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 import { resolveOrg } from "@/lib/console/resolve-project";
-import { getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
+import { getAgentDefinitionPort, getTaskPort } from "@/lib/ports";
 
 export default async function TasksPage({
   params,
@@ -18,7 +18,7 @@ export default async function TasksPage({
     status: task.status,
     executorType: task.executorType,
     assignee: task.assignee ?? "Unassigned",
-    workflowInstructionKey: task.workflowInstructionKey ?? "",
+    agentDefinitionId: task.agentDefinitionId ?? "",
     subjectId: task.subjectId ?? "",
     acceptanceCriteria: task.acceptanceCriteria.flatMap((item) => {
       if (typeof item === "string") return [item];
@@ -32,10 +32,10 @@ export default async function TasksPage({
     createdAt: task.createdAt.toISOString(),
   }));
 
-  const workflowInstructions =
-    await getWorkflowInstructionPort(project.id).listInstructions();
-  const workflowOptions = workflowInstructions.map((entry) => ({
-    workflowInstructionKey: entry.key,
+  const agentDefinitions =
+    await getAgentDefinitionPort(project.id).listDefinitions();
+  const agentOptions = agentDefinitions.map((entry) => ({
+    agentDefinitionId: entry.id,
     title: entry.name,
   }));
 
@@ -43,7 +43,7 @@ export default async function TasksPage({
     <TasksExplorer
       rows={rows}
       teamspaceId={project.id}
-      workflowOptions={workflowOptions}
+      agentOptions={agentOptions}
     />
   );
 }

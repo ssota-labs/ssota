@@ -5,7 +5,7 @@ import {
   BlockNoteContentSchema,
   SpawnTaskInputSchema,
   UpdateTaskInputSchema,
-  UpsertWorkflowInstructionInputSchema,
+  UpsertAgentDefinitionInputSchema,
 } from "@ssota/contracts";
 import { spawnTask } from "@ssota/core";
 import { revalidatePath } from "next/cache";
@@ -17,7 +17,7 @@ import { clearAuthSignedOut } from "@/lib/auth/signed-out-cookie";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
-import { getGraphPorts, getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
+import { getGraphPorts, getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
 import { uploadEditorAsset } from "@/lib/editor/storage";
 
 function loginRedirect(error: string, next?: string | null): never {
@@ -33,31 +33,38 @@ async function resolvePostSignInPath(userId: string, next?: string | null) {
   return resolvePostAuthPath(userId);
 }
 
-export async function updateWorkflowInstructionAction(
+export async function updateAgentDefinitionAction(
   teamspaceId: string,
   input: {
-    key: string;
+    id: string;
     name: string;
     description?: string;
-    content: unknown;
+    instructions: unknown;
+    isMain?: boolean;
+    referenceOnly?: boolean;
   },
 ) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const parsed = UpsertWorkflowInstructionInputSchema.parse({
-    key: input.key,
+  const parsed = UpsertAgentDefinitionInputSchema.parse({
+    id: input.id,
     name: input.name,
     description: input.description ?? "",
-    content: BlockNoteContentSchema.parse(input.content),
+    instructions: BlockNoteContentSchema.parse(input.instructions),
+    isMain: input.isMain ?? false,
+    referenceOnly: input.referenceOnly ?? false,
   });
 
-  await getWorkflowInstructionPort(teamspaceId).upsertInstruction(parsed);
+  await getAgentDefinitionPort(teamspaceId).upsertDefinition(parsed);
 
-  for (const path of withConsolePaths(["/workflow/instructions"])) {
+  for (const path of withConsolePaths(["/agents"])) {
     revalidatePath(path);
   }
 }
+
+/** @deprecated Use updateAgentDefinitionAction */
+export const updateWorkflowInstructionAction = updateAgentDefinitionAction;
 
 export async function updateTaskStatusAction(
   teamspaceId: string,
@@ -82,7 +89,7 @@ export async function spawnTaskAction(
   teamspaceId: string,
   input: {
     title: string;
-    workflowInstructionKey: string;
+    agentDefinitionId: string;
     assignee?: string;
     executorType?: "Agent" | "Human" | "System";
   },
@@ -92,7 +99,7 @@ export async function spawnTaskAction(
 
   const parsed = SpawnTaskInputSchema.parse({
     title: input.title,
-    workflowInstructionKey: input.workflowInstructionKey,
+    agentDefinitionId: input.agentDefinitionId,
     assignee: input.assignee,
     executorType: input.executorType,
     acceptanceCriteria: ["Complete the work described in the task title and context"],
@@ -118,7 +125,7 @@ export async function spawnTaskAction(
     {
       tasks: getTaskPort(teamspaceId),
       graphRead: graphPorts.graphRead,
-      workflowInstructions: getWorkflowInstructionPort(teamspaceId),
+      agentDefinitions: getAgentDefinitionPort(teamspaceId),
     },
     teamspaceId,
     parsed,

@@ -17,6 +17,7 @@ import { seedGraphInstances } from "./seed/graph-instances.js";
 import { seedScheduleFixtures } from "./seed/schedules.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -143,32 +144,14 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await applyTemplate(db, teamspaceId, SOFTWARE_DEV_TEMPLATE);
     await seedScheduleFixtures(db, teamspaceId);
 
-    const implementFeature = await db
-      .select({ id: schema.workflowInstructions.id })
-      .from(schema.workflowInstructions)
-      .where(
-        and(
-          eq(schema.workflowInstructions.teamspaceId, teamspaceId),
-          eq(schema.workflowInstructions.key, "work.implement_feature"),
-        ),
-      )
-      .limit(1);
-    const bootstrap = await db
-      .select({ id: schema.workflowInstructions.id })
-      .from(schema.workflowInstructions)
-      .where(
-        and(
-          eq(schema.workflowInstructions.teamspaceId, teamspaceId),
-          eq(schema.workflowInstructions.key, "orchestrator.bootstrap"),
-        ),
-      )
-      .limit(1);
+    const implementFeatureId = BUILTIN_AGENT_IDS.implementFeature;
+    const mainAgentId = BUILTIN_AGENT_IDS.main;
 
     await db
       .insert(schema.tasks)
       .values({
         teamspaceId,
-        workflowInstructionId: implementFeature[0]?.id ?? null,
+        agentDefinitionId: implementFeatureId,
         title: "Archive generic runtime and focus active product on development workflow",
         status: "ready",
         executorType: "Agent",
@@ -186,7 +169,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .insert(schema.tasks)
       .values({
         teamspaceId,
-        workflowInstructionId: bootstrap[0]?.id ?? null,
+        agentDefinitionId: mainAgentId,
         title: "Configure Cursor Automations for ssota-dev orchestrators",
         status: "ready",
         executorType: "Human",

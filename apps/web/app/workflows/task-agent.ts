@@ -28,7 +28,7 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
 
   const sandboxId = await provisionSandboxStep(input);
 
-  const { instructions, messages } = await buildTaskPromptStep(
+  const { instructions, messages, definition, trigger } = await buildTaskPromptStep(
     input,
     workflowRunId,
   );
@@ -43,7 +43,11 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
       runId: workflowRunId,
       accountId: input.accountId,
       sandboxId,
+      agentDefinitionId: definition.agentDefinitionId,
+      nodeScopes: definition.nodeScopes,
+      trigger,
     },
+    definition,
     dispatch: dispatchMainTool,
     includeSandboxTools: Boolean(sandboxId),
     instructions,
