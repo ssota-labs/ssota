@@ -47,6 +47,7 @@ export async function updateAgentDefinitionAction(
       model?: string;
       allowedTriggers?: string[];
       linkedWorkerAgentIds?: string[];
+      enabledConnectorProviders?: string[];
       maxSteps?: number;
       sandboxPolicy?: "none" | "optional" | "required";
       approvalPolicy?: "none" | "gate" | "human";

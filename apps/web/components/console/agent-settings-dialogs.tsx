@@ -48,6 +48,7 @@ export type AgentSettingsDraft = {
   model: string;
   scriptToolIds: string[];
   linkedWorkerAgentIds: string[];
+  enabledConnectorProviders: string[];
 };
 
 type AgentSettingsDialogsProps = {
@@ -136,6 +137,13 @@ export function AgentSettingsDialogs({
     if (enabled) next.add(id);
     else next.delete(id);
     onDraftChange({ scriptToolIds: [...next] });
+  };
+
+  const toggleConnectorProvider = (provider: string, enabled: boolean) => {
+    const next = new Set(draft.enabledConnectorProviders);
+    if (enabled) next.add(provider);
+    else next.delete(provider);
+    onDraftChange({ enabledConnectorProviders: [...next] });
   };
 
   const toggleWorker = (id: string, enabled: boolean) => {
@@ -308,68 +316,45 @@ export function AgentSettingsDialogs({
           <DialogHeader>
             <DialogTitle>Tools and access</DialogTitle>
             <DialogDescription>
-              Graph, tasks, Composio connectors, and TypeScript scripts are always
-              on. Link specific scripts and optional capabilities below.
+              Choose Composio connectors and TypeScript scripts for this agent.
+              Graph and task tools are always available in the background.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5">
             <div className="space-y-2">
-              <Label>Always included</Label>
-              <ul className="divide-y divide-border rounded-md border">
-                {BASE_TOOL_BUNDLES.map((bundle) => (
-                  <li
-                    key={bundle}
-                    className="flex items-center justify-between px-3 py-2 text-sm"
-                  >
-                    <span>{TOOL_BUNDLE_LABELS[bundle]}</span>
-                    <span className="text-muted-foreground text-xs">On</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Optional capabilities</Label>
-              <ul className="divide-y divide-border rounded-md border">
-                {OPTIONAL_TOOL_BUNDLES.map((bundle) => (
-                  <li
-                    key={bundle}
-                    className="flex items-center justify-between gap-3 px-3 py-2"
-                  >
-                    <span className="text-sm">{TOOL_BUNDLE_LABELS[bundle]}</span>
-                    <Switch
-                      checked={draft.toolBundles.includes(bundle)}
-                      onCheckedChange={(checked) =>
-                        toggleOptionalBundle(bundle, checked)
-                      }
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="space-y-2">
               <Label>Composio connectors</Label>
               <p className="text-muted-foreground text-xs">
-                Connected accounts from the Connectors page. All agents can use
-                them when connected.
+                Enable providers this agent can use. Connect accounts on the
+                Connectors page first.
               </p>
               <ul className="divide-y divide-border rounded-md border">
                 {connectors.map((connector) => {
                   const connected = connectedProviders.has(connector.provider);
+                  const enabled = draft.enabledConnectorProviders.includes(
+                    connector.provider,
+                  );
                   return (
                     <li
                       key={connector.provider}
-                      className="flex items-center gap-2 px-3 py-2 text-sm"
+                      className="flex items-center gap-3 px-3 py-2"
                     >
                       <ConnectorBrandIcon
                         provider={connector.provider}
-                        className="size-4"
+                        className="size-4 shrink-0"
                       />
-                      <span className="flex-1">{connector.label}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {connected ? "Connected" : "Not connected"}
-                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">{connector.label}</p>
+                        <p className="text-muted-foreground text-xs">
+                          {connected ? "Connected" : "Not connected"}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={enabled}
+                        onCheckedChange={(checked) =>
+                          toggleConnectorProvider(connector.provider, checked)
+                        }
+                        data-testid={`agent-connector-${connector.provider}`}
+                      />
                     </li>
                   );
                 })}
@@ -406,6 +391,28 @@ export function AgentSettingsDialogs({
                 </ul>
               )}
             </div>
+
+            <details className="rounded-md border px-3 py-2">
+              <summary className="cursor-pointer text-sm font-medium">
+                Advanced capabilities
+              </summary>
+              <ul className="divide-y divide-border mt-3 overflow-hidden rounded-md border">
+                {OPTIONAL_TOOL_BUNDLES.map((bundle) => (
+                  <li
+                    key={bundle}
+                    className="flex items-center justify-between gap-3 px-3 py-2"
+                  >
+                    <span className="text-sm">{TOOL_BUNDLE_LABELS[bundle]}</span>
+                    <Switch
+                      checked={draft.toolBundles.includes(bundle)}
+                      onCheckedChange={(checked) =>
+                        toggleOptionalBundle(bundle, checked)
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            </details>
 
             <div className="space-y-2">
               <Label>Worker agents</Label>

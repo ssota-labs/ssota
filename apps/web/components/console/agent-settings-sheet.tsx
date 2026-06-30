@@ -12,7 +12,6 @@ import {
   FileTextIcon,
   LightningIcon,
   ListChecksIcon,
-  RobotIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
@@ -36,9 +35,7 @@ import {
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import {
-  BASE_TOOL_BUNDLES,
   TRIGGER_LABELS,
-  TOOL_BUNDLE_LABELS,
   mergeToolBundles,
 } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
@@ -76,6 +73,8 @@ function buildDraft(
     model: definition.runPolicy.model ?? DEFAULT_MODEL_ID,
     scriptToolIds,
     linkedWorkerAgentIds: definition.runPolicy.linkedWorkerAgentIds ?? [],
+    enabledConnectorProviders:
+      definition.runPolicy.enabledConnectorProviders ?? [],
   };
 }
 
@@ -120,10 +119,6 @@ export function AgentSettingsSheet({
 
   const scheduleEnabled = draft.allowedTriggers.includes("schedule");
 
-  const optionalBundles = draft.toolBundles.filter(
-    (b) => !BASE_TOOL_BUNDLES.includes(b),
-  );
-
   const modelLabel =
     MODEL_OPTIONS.find((m) => m.id === draft.model)?.label ?? "Auto";
 
@@ -149,8 +144,8 @@ export function AgentSettingsSheet({
     draft.scriptToolIds.includes(t.id),
   );
 
-  const linkedWorkers = workers.filter((w) =>
-    draft.linkedWorkerAgentIds.includes(w.id),
+  const enabledConnectors = connectors.filter((c) =>
+    draft.enabledConnectorProviders.includes(c.provider),
   );
 
   const patchDraft = (patch: Partial<AgentSettingsDraft>) => {
@@ -177,6 +172,7 @@ export function AgentSettingsSheet({
           model: draft.model,
           allowedTriggers: draft.allowedTriggers,
           linkedWorkerAgentIds: draft.linkedWorkerAgentIds,
+          enabledConnectorProviders: draft.enabledConnectorProviders,
         },
         scriptToolIds: draft.scriptToolIds,
       });
@@ -298,36 +294,18 @@ export function AgentSettingsSheet({
 
           <AgentSettingCard
             title="Tools and access"
-            description="What can the agent use?"
+            description="Composio connectors and TypeScript scripts for this agent."
             testId="agent-settings-tools-card"
             onOpen={() => setOpenDialog("tools")}
           >
-            <AgentSettingItems>
-              <AgentSettingItem
-                icon={<WrenchIcon className="size-3.5 text-muted-foreground" />}
-                title="Base capabilities"
-                subtitle={BASE_TOOL_BUNDLES.map((b) => TOOL_BUNDLE_LABELS[b]).join(
-                  " · ",
-                )}
-                trailing="Always on"
-              />
-              {optionalBundles.map((bundle) => (
-                <AgentSettingItem
-                  key={bundle}
-                  icon={<WrenchIcon className="size-3.5 text-muted-foreground" />}
-                  title={TOOL_BUNDLE_LABELS[bundle]}
-                  trailing="On"
-                />
-              ))}
-              {linkedScriptTools.length === 0 &&
-              !connectors.some((c) => connectedProviders.has(c.provider)) ? (
-                <AgentSettingEmpty>
-                  Link TypeScript scripts or connect Composio apps in settings
-                </AgentSettingEmpty>
-              ) : null}
-              {connectors
-                .filter((c) => connectedProviders.has(c.provider))
-                .map((connector) => {
+            {enabledConnectors.length === 0 && linkedScriptTools.length === 0 ? (
+              <AgentSettingEmpty>
+                No connectors or scripts selected yet
+              </AgentSettingEmpty>
+            ) : (
+              <AgentSettingItems>
+                {enabledConnectors.map((connector) => {
+                  const connected = connectedProviders.has(connector.provider);
                   const count =
                     connectedProviders.get(connector.provider)?.length ?? 0;
                   return (
@@ -340,30 +318,32 @@ export function AgentSettingsSheet({
                         />
                       }
                       title={connector.label}
-                      subtitle="Composio connector"
-                      trailing={count > 1 ? `${count} accounts` : "Connected"}
+                      subtitle={
+                        connected ? "Composio connector" : "Enabled — not connected"
+                      }
+                      trailing={
+                        connected
+                          ? count > 1
+                            ? `${count} accounts`
+                            : "Connected"
+                          : "Pending"
+                      }
                     />
                   );
                 })}
-              {linkedScriptTools.map((tool) => (
-                <AgentSettingItem
-                  key={tool.id}
-                  icon={<WrenchIcon className="size-3.5 text-muted-foreground" />}
-                  title={tool.name}
-                  subtitle={tool.key}
-                  trailing="TypeScript"
-                />
-              ))}
-              {linkedWorkers.map((worker) => (
-                <AgentSettingItem
-                  key={worker.id}
-                  icon={<RobotIcon className="size-3.5 text-muted-foreground" />}
-                  title={worker.name}
-                  subtitle={worker.description || "Worker agent"}
-                  trailing="Worker"
-                />
-              ))}
-            </AgentSettingItems>
+                {linkedScriptTools.map((tool) => (
+                  <AgentSettingItem
+                    key={tool.id}
+                    icon={
+                      <WrenchIcon className="size-3.5 text-muted-foreground" />
+                    }
+                    title={tool.name}
+                    subtitle={tool.key}
+                    trailing="TypeScript"
+                  />
+                ))}
+              </AgentSettingItems>
+            )}
           </AgentSettingCard>
 
           <AgentSettingCard

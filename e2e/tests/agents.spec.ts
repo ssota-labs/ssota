@@ -58,10 +58,10 @@ test.describe("Agents", () => {
     await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
 
     const toolsCard = page.getByTestId("agent-settings-tools-card");
-    await expect(toolsCard.getByText("Base capabilities")).toBeVisible();
     await expect(
-      toolsCard.getByText("Graph read · Tasks · Composio connectors · TypeScript scripts"),
+      toolsCard.getByText("No connectors or scripts selected yet"),
     ).toBeVisible();
+    await expect(toolsCard.getByText("Base capabilities")).not.toBeVisible();
 
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
     await expect(
