@@ -10,6 +10,8 @@ import {
   uuid,
   uniqueIndex,
   index,
+  primaryKey,
+  foreignKey,
 } from "drizzle-orm/pg-core";
 
 export const executorTypeEnum = pgEnum("executor_type", [
@@ -406,7 +408,7 @@ export const edgeCatalog = pgTable(
 export const agentDefinitions = pgTable(
   "agent_definitions",
   {
-    id: uuid("id").primaryKey().defaultRandom(),
+    id: uuid("id").notNull(),
     teamspaceId: uuid("teamspace_id")
       .notNull()
       .references(() => teamspaces.id, { onDelete: "cascade" }),
@@ -437,6 +439,7 @@ export const agentDefinitions = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
+    pk: primaryKey({ columns: [table.teamspaceId, table.id] }),
     teamspaceIdx: index("agent_definitions_teamspace_id_idx").on(table.teamspaceId),
   }),
 );
@@ -492,9 +495,10 @@ export const scriptTools = pgTable(
 export const agentDefinitionScriptTools = pgTable(
   "agent_definition_script_tools",
   {
-    agentDefinitionId: uuid("agent_definition_id")
+    teamspaceId: uuid("teamspace_id")
       .notNull()
-      .references(() => agentDefinitions.id, { onDelete: "cascade" }),
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
+    agentDefinitionId: uuid("agent_definition_id").notNull(),
     scriptToolId: uuid("script_tool_id")
       .notNull()
       .references(() => scriptTools.id, { onDelete: "cascade" }),
@@ -505,6 +509,10 @@ export const agentDefinitionScriptTools = pgTable(
       .$type<Record<string, unknown>>(),
   },
   (table) => ({
+    definitionFk: foreignKey({
+      columns: [table.teamspaceId, table.agentDefinitionId],
+      foreignColumns: [agentDefinitions.teamspaceId, agentDefinitions.id],
+    }).onDelete("cascade"),
     pk: uniqueIndex("agent_definition_script_tools_pk").on(
       table.agentDefinitionId,
       table.scriptToolId,
@@ -522,9 +530,7 @@ export const schedules = pgTable(
     accountId: uuid("account_id").references(() => accounts.id, {
       onDelete: "cascade",
     }),
-    agentDefinitionId: uuid("agent_definition_id")
-      .notNull()
-      .references(() => agentDefinitions.id, { onDelete: "cascade" }),
+    agentDefinitionId: uuid("agent_definition_id").notNull(),
     targetType: scheduleTargetTypeEnum("target_type")
       .notNull()
       .default("agent"),
@@ -538,6 +544,10 @@ export const schedules = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
+    agentDefinitionFk: foreignKey({
+      columns: [table.teamspaceId, table.agentDefinitionId],
+      foreignColumns: [agentDefinitions.teamspaceId, agentDefinitions.id],
+    }).onDelete("cascade"),
     projectIdx: index("schedules_project_id_idx").on(table.teamspaceId),
   }),
 );
@@ -551,10 +561,7 @@ export const tasks = pgTable(
       .references(() => teamspaces.id),
     // End-user data partition (Phase 5). Null = builder/shared scope.
     accountId: uuid("account_id"),
-    agentDefinitionId: uuid("agent_definition_id").references(
-      () => agentDefinitions.id,
-      { onDelete: "set null" },
-    ),
+    agentDefinitionId: uuid("agent_definition_id"),
     title: text("title").notNull(),
     status: taskStatusEnum("status").notNull().default("pending"),
     executorType: executorTypeEnum("executor_type").notNull().default("Agent"),
@@ -576,6 +583,10 @@ export const tasks = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
+    agentDefinitionFk: foreignKey({
+      columns: [table.teamspaceId, table.agentDefinitionId],
+      foreignColumns: [agentDefinitions.teamspaceId, agentDefinitions.id],
+    }).onDelete("set null"),
     idempotencyUnique: uniqueIndex("tasks_project_idempotency_unique")
       .on(table.teamspaceId, table.idempotencyKey)
       .where(sql`${table.idempotencyKey} IS NOT NULL`),
@@ -797,10 +808,7 @@ export const agentRuns = pgTable(
     // End-user data partition (Phase 5). Null = builder/shared scope.
     accountId: uuid("account_id"),
     runtimeKind: agentRuntimeKindEnum("runtime_kind").notNull().default("task"),
-    agentDefinitionId: uuid("agent_definition_id").references(
-      () => agentDefinitions.id,
-      { onDelete: "set null" },
-    ),
+    agentDefinitionId: uuid("agent_definition_id"),
     trigger: agentTriggerEnum("trigger"),
     taskId: uuid("task_id").references(() => tasks.id, { onDelete: "cascade" }),
     threadId: uuid("thread_id").references(() => chatThreads.id, {
@@ -819,6 +827,10 @@ export const agentRuns = pgTable(
     finishedAt: timestamp("finished_at", { withTimezone: true }),
   },
   (table) => ({
+    agentDefinitionFk: foreignKey({
+      columns: [table.teamspaceId, table.agentDefinitionId],
+      foreignColumns: [agentDefinitions.teamspaceId, agentDefinitions.id],
+    }).onDelete("set null"),
     projectIdx: index("agent_runs_project_id_idx").on(table.teamspaceId),
     taskIdx: index("agent_runs_task_id_idx").on(table.taskId),
     threadIdx: index("agent_runs_thread_id_idx").on(table.threadId),

@@ -1,5 +1,4 @@
 import type { ToolBundle } from "@ssota/contracts";
-import { isComposioEnabled } from "../composio/client.js";
 import { COMPOSIO_META_TOOL_NAMES } from "../composio/meta-tool-schemas.js";
 import {
   workflowToolSchemas,
@@ -98,7 +97,8 @@ export function resolveWorkflowToolNames(
   }
 
   const composioOn =
-    (input.includeComposioTools ?? isComposioEnabled()) && bundles.has("connectors");
+    (input.includeComposioTools ?? Boolean(process.env.COMPOSIO_API_KEY?.trim())) &&
+    bundles.has("connectors");
   if (composioOn) {
     for (const n of COMPOSIO_META_TOOL_NAMES) {
       names.add(n as WorkflowToolName);

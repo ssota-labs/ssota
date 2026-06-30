@@ -127,6 +127,23 @@ export function createAgentDefinitionPort(
           nodeScopes: parsed.nodeScopes,
           runPolicy: parsed.runPolicy,
         })
+        .onConflictDoUpdate({
+          target: [
+            schema.agentDefinitions.teamspaceId,
+            schema.agentDefinitions.id,
+          ],
+          set: {
+            name: parsed.name,
+            description: parsed.description,
+            instructions: parsed.instructions,
+            isMain: parsed.isMain,
+            referenceOnly: parsed.referenceOnly,
+            toolBundles: parsed.toolBundles,
+            nodeScopes: parsed.nodeScopes,
+            runPolicy: parsed.runPolicy,
+            updatedAt: new Date(),
+          },
+        })
         .returning();
       return mapDefinition(row!);
     },
