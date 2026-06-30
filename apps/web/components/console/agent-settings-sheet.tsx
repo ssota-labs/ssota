@@ -262,7 +262,7 @@ export function AgentSettingsSheet({
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="w-full justify-start gap-2"
+                className="w-fit justify-start gap-2"
                 data-testid="agent-triggers-add-schedule"
                 onClick={() => setOpenDialog("add-schedule")}
               >
