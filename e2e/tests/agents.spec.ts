@@ -33,7 +33,7 @@ test.describe("Agents", () => {
     await expect(page.getByTestId("agent-settings-model-card")).toBeVisible();
   });
 
-  test("opens triggers dialog with chat toggle", async ({ page }) => {
+  test("opens triggers dialog with schedule toggle", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
@@ -43,8 +43,12 @@ test.describe("Agents", () => {
       .getByRole("button")
       .click();
 
-    await expect(page.getByRole("dialog", { name: "Triggers" })).toBeVisible();
-    await expect(page.getByTestId("agent-trigger-chat")).toBeVisible();
+    const triggersDialog = page.getByRole("dialog", { name: "Triggers" });
+    await expect(triggersDialog).toBeVisible();
+    await expect(triggersDialog.getByTestId("agent-trigger-schedule")).toBeVisible();
+    await expect(
+      triggersDialog.getByText("Weekly on weekdays at 9:00 AM"),
+    ).toBeVisible();
   });
 
   test("settings cards show configured items in footer", async ({ page }) => {
@@ -54,8 +58,18 @@ test.describe("Agents", () => {
     await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
 
     const toolsCard = page.getByTestId("agent-settings-tools-card");
-    await expect(toolsCard.getByText("Graph read")).toBeVisible();
-    await expect(toolsCard.getByText("Tasks")).toBeVisible();
+    await expect(toolsCard.getByText("Base capabilities")).toBeVisible();
+    await expect(
+      toolsCard.getByText("Graph read · Tasks · Composio connectors · TypeScript scripts"),
+    ).toBeVisible();
+
+    const triggersCard = page.getByTestId("agent-settings-triggers-card");
+    await expect(
+      triggersCard.getByText("Weekly on weekdays at 9:00 AM"),
+    ).toBeVisible();
+    await expect(
+      triggersCard.getByText("Web chat", { exact: false }),
+    ).not.toBeVisible();
 
     const modelCard = page.getByTestId("agent-settings-model-card");
     await expect(modelCard.getByText(/Auto|Claude|GPT/i)).toBeVisible();
