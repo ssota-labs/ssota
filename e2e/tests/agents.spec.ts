@@ -60,12 +60,30 @@ test.describe("Agents", () => {
       .first()
       .click();
 
-    const triggersDialog = page.getByRole("dialog", { name: "Triggers" });
+    const triggersDialog = page.getByTestId("agent-triggers-sidebar-dialog");
     await expect(triggersDialog).toBeVisible();
     await expect(triggersDialog.getByTestId("agent-trigger-schedule")).toBeVisible();
     await expect(
       triggersDialog.getByText("Weekly on weekdays at 9:00 AM"),
     ).toBeVisible();
+  });
+
+  test("opens tools dialog with sidebar list", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page
+      .getByTestId("agent-settings-tools-card")
+      .getByRole("button")
+      .first()
+      .click();
+
+    const toolsDialog = page.getByTestId("agent-tools-sidebar-dialog");
+    await expect(toolsDialog).toBeVisible();
+    await expect(toolsDialog.getByTestId("agent-connector-notion")).toBeVisible();
+    await expect(toolsDialog.getByText("Composio connectors")).not.toBeVisible();
+    await expect(toolsDialog.getByText("TypeScript scripts")).not.toBeVisible();
   });
 
   test("settings cards show configured items in footer", async ({ page }) => {

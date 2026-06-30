@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import {
+  CalendarBlankIcon,
+  ChatsCircleIcon,
+  ClockIcon,
+  ListChecksIcon,
+  WrenchIcon,
+} from "@phosphor-icons/react";
 import type { AgentDefinition, AgentTrigger, ToolBundle } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -34,6 +41,12 @@ import {
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { ScheduleSheet } from "@/components/schedules/schedule-sheet";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
+import {
+  AgentSettingsSidebarDialog,
+  SidebarDetailDoneButton,
+  SidebarDetailHeader,
+  type SidebarListItem,
+} from "@/components/console/agent-settings-sidebar-dialog";
 
 export type AgentSettingsDraft = {
   instructions: AgentDefinition["instructions"];
@@ -67,6 +80,33 @@ export type AgentSettingsDialogKind =
   | "model"
   | "add-schedule";
 
+type ToolEntry =
+  | { kind: "connector"; id: string; provider: string; label: string }
+  | { kind: "script"; id: string; toolId: string; label: string; key: string }
+  | { kind: "worker"; id: string; workerId: string; label: string }
+  | { kind: "bundle"; id: string; bundle: ToolBundle; label: string };
+
+type TriggerEntry =
+  | { kind: "trigger"; id: string; trigger: AgentTrigger }
+  | { kind: "cron"; id: string; scheduleId: string; label: string };
+
+const TRIGGER_DESCRIPTIONS: Partial<Record<AgentTrigger, string>> = {
+  chatbot:
+    "Run when users message connected bots in Slack, Discord, or Telegram.",
+  task: "Run when dispatched as a task executor from the task board.",
+  schedule:
+    "Allow recurring cron runs. Add each schedule below once enabled.",
+};
+
+function matchesSearch(label: string, query: string, extra?: string) {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    label.toLowerCase().includes(q) ||
+    (extra?.toLowerCase().includes(q) ?? false)
+  );
+}
+
 export function AgentSettingsDialogs({
   definition,
   draft,
@@ -82,6 +122,12 @@ export function AgentSettingsDialogs({
   onOpenDialogChange,
 }: AgentSettingsDialogsProps) {
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
+  const [selectedTriggerId, setSelectedTriggerId] = useState<string | null>(
+    null,
+  );
+  const [toolSearch, setToolSearch] = useState("");
+  const [triggerSearch, setTriggerSearch] = useState("");
 
   useEffect(() => {
     if (openDialog === "add-schedule") {
@@ -100,6 +146,114 @@ export function AgentSettingsDialogs({
     for (const c of connections.org) set.add(c.connector);
     return set;
   }, [connections]);
+
+  const toolEntries = useMemo((): ToolEntry[] => {
+    const entries: ToolEntry[] = [
+      ...connectors.map((connector) => ({
+        kind: "connector" as const,
+        id: `connector:${connector.provider}`,
+        provider: connector.provider,
+        label: connector.label,
+      })),
+      ...scriptTools.map((tool) => ({
+        kind: "script" as const,
+        id: `script:${tool.id}`,
+        toolId: tool.id,
+        label: tool.name,
+        key: tool.key,
+      })),
+      ...workers.map((worker) => ({
+        kind: "worker" as const,
+        id: `worker:${worker.id}`,
+        workerId: worker.id,
+        label: worker.name,
+      })),
+      ...OPTIONAL_TOOL_BUNDLES.map((bundle) => ({
+        kind: "bundle" as const,
+        id: `bundle:${bundle}`,
+        bundle,
+        label: TOOL_BUNDLE_LABELS[bundle],
+      })),
+    ];
+    return entries.sort((a, b) => a.label.localeCompare(b.label));
+  }, [connectors, scriptTools, workers]);
+
+  const filteredToolEntries = useMemo(
+    () =>
+      toolEntries.filter((entry) => {
+        if (entry.kind === "script") {
+          return matchesSearch(entry.label, toolSearch, entry.key);
+        }
+        return matchesSearch(entry.label, toolSearch);
+      }),
+    [toolEntries, toolSearch],
+  );
+
+  const triggerEntries = useMemo((): TriggerEntry[] => {
+    const base: TriggerEntry[] = [
+      { kind: "trigger", id: "trigger:chatbot", trigger: "chatbot" },
+      { kind: "trigger", id: "trigger:task", trigger: "task" },
+      { kind: "trigger", id: "trigger:schedule", trigger: "schedule" },
+    ];
+    if (draft.allowedTriggers.includes("schedule")) {
+      for (const schedule of agentSchedules) {
+        const rec = cronToRecurrence(
+          schedule.cronExpression,
+          schedule.timezone,
+        );
+        const label = rec
+          ? describeRecurrence(rec)
+          : schedule.cronExpression;
+        base.push({
+          kind: "cron",
+          id: `cron:${schedule.id}`,
+          scheduleId: schedule.id,
+          label,
+        });
+      }
+    }
+    return base;
+  }, [agentSchedules, draft.allowedTriggers]);
+
+  const filteredTriggerEntries = useMemo(
+    () =>
+      triggerEntries.filter((entry) => {
+        const label =
+          entry.kind === "trigger"
+            ? TRIGGER_LABELS[entry.trigger]
+            : entry.label;
+        return matchesSearch(label, triggerSearch);
+      }),
+    [triggerEntries, triggerSearch],
+  );
+
+  useEffect(() => {
+    if (openDialog === "tools") {
+      setToolSearch("");
+      setSelectedToolId(toolEntries[0]?.id ?? null);
+    }
+  }, [openDialog, toolEntries]);
+
+  useEffect(() => {
+    if (openDialog === "triggers") {
+      setTriggerSearch("");
+      setSelectedTriggerId(triggerEntries[0]?.id ?? null);
+    }
+  }, [openDialog, triggerEntries]);
+
+  useEffect(() => {
+    if (openDialog !== "tools" || !selectedToolId) return;
+    if (!filteredToolEntries.some((entry) => entry.id === selectedToolId)) {
+      setSelectedToolId(filteredToolEntries[0]?.id ?? null);
+    }
+  }, [filteredToolEntries, openDialog, selectedToolId]);
+
+  useEffect(() => {
+    if (openDialog !== "triggers" || !selectedTriggerId) return;
+    if (!filteredTriggerEntries.some((entry) => entry.id === selectedTriggerId)) {
+      setSelectedTriggerId(filteredTriggerEntries[0]?.id ?? null);
+    }
+  }, [filteredTriggerEntries, openDialog, selectedTriggerId]);
 
   const toggleTrigger = (trigger: AgentTrigger, enabled: boolean) => {
     const next = new Set(draft.allowedTriggers);
@@ -146,255 +300,369 @@ export function AgentSettingsDialogs({
     });
   };
 
+  const toggleScheduleEnabled = (scheduleId: string, enabled: boolean) => {
+    onDraftChange({
+      scheduleEnabledById: {
+        ...draft.scheduleEnabledById,
+        [scheduleId]: enabled,
+      },
+    });
+  };
+
+  const isToolEnabled = (entry: ToolEntry) => {
+    switch (entry.kind) {
+      case "connector":
+        return draft.enabledConnectorProviders.includes(entry.provider);
+      case "script":
+        return draft.scriptToolIds.includes(entry.toolId);
+      case "worker":
+        return draft.linkedWorkerAgentIds.includes(entry.workerId);
+      case "bundle":
+        return draft.toolBundles.includes(entry.bundle);
+    }
+  };
+
+  const toolSidebarItems: SidebarListItem[] = filteredToolEntries.map(
+    (entry) => {
+      const enabled = isToolEnabled(entry);
+      const subtitle =
+        entry.kind === "script"
+          ? entry.key
+          : entry.kind === "connector"
+            ? connectedProviders.has(entry.provider)
+              ? "Connected"
+              : "Not connected"
+            : undefined;
+
+      const icon =
+        entry.kind === "connector" ? (
+          <ConnectorBrandIcon provider={entry.provider} className="size-3.5" />
+        ) : (
+          <WrenchIcon className="size-3.5 text-muted-foreground" />
+        );
+
+      return {
+        id: entry.id,
+        label: entry.label,
+        subtitle,
+        icon,
+        enabled,
+        testId:
+          entry.kind === "connector"
+            ? `agent-connector-${entry.provider}`
+            : undefined,
+      };
+    },
+  );
+
+  const triggerSidebarItems: SidebarListItem[] = filteredTriggerEntries.map(
+    (entry) => {
+      if (entry.kind === "trigger") {
+        const Icon =
+          entry.trigger === "chatbot"
+            ? ChatsCircleIcon
+            : entry.trigger === "task"
+              ? ListChecksIcon
+              : CalendarBlankIcon;
+        return {
+          id: entry.id,
+          label: TRIGGER_LABELS[entry.trigger],
+          icon: <Icon className="size-3.5 text-muted-foreground" />,
+          enabled: draft.allowedTriggers.includes(entry.trigger),
+          testId:
+            entry.trigger === "schedule"
+              ? "agent-trigger-schedule"
+              : `agent-trigger-${entry.trigger}`,
+        };
+      }
+
+      const schedule = agentSchedules.find((s) => s.id === entry.scheduleId);
+      const enabled =
+        draft.scheduleEnabledById[entry.scheduleId] ?? schedule?.enabled ?? false;
+
+      return {
+        id: entry.id,
+        label: entry.label,
+        subtitle: "Cron schedule",
+        icon: <ClockIcon className="size-3.5 text-muted-foreground" />,
+        enabled,
+        testId: `agent-schedule-${entry.scheduleId}`,
+      };
+    },
+  );
+
+  const selectedTool = toolEntries.find((e) => e.id === selectedToolId) ?? null;
+  const selectedTrigger =
+    triggerEntries.find((e) => e.id === selectedTriggerId) ?? null;
+
+  const renderToolDetail = () => {
+    if (!selectedTool) {
+      return (
+        <p className="text-muted-foreground text-sm">
+          Select a tool from the list to configure access.
+        </p>
+      );
+    }
+
+    const enabled = isToolEnabled(selectedTool);
+
+    if (selectedTool.kind === "connector") {
+      const connected = connectedProviders.has(selectedTool.provider);
+      return (
+        <>
+          <SidebarDetailHeader
+            icon={
+              <ConnectorBrandIcon
+                provider={selectedTool.provider}
+                className="size-5"
+              />
+            }
+            title={selectedTool.label}
+            status={
+              <span className="text-muted-foreground text-xs">
+                {connected ? "Connected" : "Not connected"}
+              </span>
+            }
+          />
+          <p className="text-muted-foreground mb-6 text-sm">
+            Allow this agent to use {selectedTool.label} through Composio.
+            Connect an account on the Connectors page before running.
+          </p>
+          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+            <Label htmlFor={`tool-enable-${selectedTool.id}`}>
+              Enable for this agent
+            </Label>
+            <Switch
+              id={`tool-enable-${selectedTool.id}`}
+              checked={enabled}
+              onCheckedChange={(checked) =>
+                toggleConnectorProvider(selectedTool.provider, checked)
+              }
+              data-testid={`agent-connector-${selectedTool.provider}`}
+            />
+          </div>
+        </>
+      );
+    }
+
+    if (selectedTool.kind === "script") {
+      return (
+        <>
+          <SidebarDetailHeader
+            icon={<WrenchIcon className="size-5 text-muted-foreground" />}
+            title={selectedTool.label}
+            status={
+              <span className="text-muted-foreground font-mono text-xs">
+                {selectedTool.key}
+              </span>
+            }
+          />
+          <p className="text-muted-foreground mb-6 text-sm">
+            Run this TypeScript script as a tool during agent execution.
+          </p>
+          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+            <Label htmlFor={`tool-enable-${selectedTool.id}`}>
+              Enable for this agent
+            </Label>
+            <Switch
+              id={`tool-enable-${selectedTool.id}`}
+              checked={enabled}
+              onCheckedChange={(checked) =>
+                toggleScriptTool(selectedTool.toolId, checked)
+              }
+            />
+          </div>
+        </>
+      );
+    }
+
+    if (selectedTool.kind === "worker") {
+      const worker = workers.find((w) => w.id === selectedTool.workerId);
+      return (
+        <>
+          <SidebarDetailHeader
+            title={selectedTool.label}
+            status={
+              <span className="text-muted-foreground text-xs">Worker agent</span>
+            }
+          />
+          <p className="text-muted-foreground mb-6 text-sm">
+            {worker?.description ??
+              "Link this worker as a delegate target for batch runs."}
+          </p>
+          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+            <Label htmlFor={`tool-enable-${selectedTool.id}`}>
+              Link worker
+            </Label>
+            <Switch
+              id={`tool-enable-${selectedTool.id}`}
+              checked={enabled}
+              onCheckedChange={(checked) =>
+                toggleWorker(selectedTool.workerId, checked)
+              }
+              disabled={!isWorkerAgentId(selectedTool.workerId)}
+            />
+          </div>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <SidebarDetailHeader title={selectedTool.label} />
+        <p className="text-muted-foreground mb-6 text-sm">
+          Optional capability for this agent beyond the default tool set.
+        </p>
+        <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+          <Label htmlFor={`tool-enable-${selectedTool.id}`}>Enable</Label>
+          <Switch
+            id={`tool-enable-${selectedTool.id}`}
+            checked={enabled}
+            onCheckedChange={(checked) =>
+              toggleOptionalBundle(selectedTool.bundle, checked)
+            }
+          />
+        </div>
+      </>
+    );
+  };
+
+  const renderTriggerDetail = () => {
+    if (!selectedTrigger) {
+      return (
+        <p className="text-muted-foreground text-sm">
+          Select a trigger from the list to configure it.
+        </p>
+      );
+    }
+
+    if (selectedTrigger.kind === "cron") {
+      const schedule = agentSchedules.find(
+        (s) => s.id === selectedTrigger.scheduleId,
+      );
+      const enabled =
+        draft.scheduleEnabledById[selectedTrigger.scheduleId] ??
+        schedule?.enabled ??
+        false;
+
+      return (
+        <>
+          <SidebarDetailHeader
+            icon={<ClockIcon className="size-5 text-muted-foreground" />}
+            title={selectedTrigger.label}
+            status={
+              <span className="text-muted-foreground text-xs">Cron schedule</span>
+            }
+          />
+          <p className="text-muted-foreground mb-6 text-sm">
+            Recurring run for this agent. Toggle off to pause without deleting
+            the schedule.
+          </p>
+          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+            <Label htmlFor={`trigger-enable-${selectedTrigger.id}`}>
+              Schedule enabled
+            </Label>
+            <Switch
+              id={`trigger-enable-${selectedTrigger.id}`}
+              checked={enabled}
+              onCheckedChange={(checked) =>
+                toggleScheduleEnabled(selectedTrigger.scheduleId, checked)
+              }
+              data-testid={`agent-schedule-${selectedTrigger.scheduleId}`}
+            />
+          </div>
+        </>
+      );
+    }
+
+    const { trigger } = selectedTrigger;
+    const Icon =
+      trigger === "chatbot"
+        ? ChatsCircleIcon
+        : trigger === "task"
+          ? ListChecksIcon
+          : CalendarBlankIcon;
+
+    return (
+      <>
+        <SidebarDetailHeader
+          icon={<Icon className="size-5 text-muted-foreground" />}
+          title={TRIGGER_LABELS[trigger]}
+        />
+        <p className="text-muted-foreground mb-6 text-sm">
+          {TRIGGER_DESCRIPTIONS[trigger]}
+        </p>
+        <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+          <Label htmlFor={`trigger-enable-${selectedTrigger.id}`}>Enabled</Label>
+          <Switch
+            id={`trigger-enable-${selectedTrigger.id}`}
+            checked={draft.allowedTriggers.includes(trigger)}
+            onCheckedChange={(checked) => toggleTrigger(trigger, checked)}
+            data-testid={
+              trigger === "schedule"
+                ? "agent-trigger-schedule"
+                : `agent-trigger-${trigger}`
+            }
+          />
+        </div>
+        {trigger === "schedule" && draft.allowedTriggers.includes("schedule") ? (
+          <div className="mt-4">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => setScheduleOpen(true)}
+            >
+              Add schedule
+            </Button>
+          </div>
+        ) : null}
+      </>
+    );
+  };
+
   return (
     <>
-      <Dialog
+      <AgentSettingsSidebarDialog
         open={openDialog === "triggers"}
         onOpenChange={(open) => !open && onOpenDialogChange(null)}
-      >
-        <DialogContent className="max-w-2xl" forceBackdrop>
-          <DialogHeader>
-            <DialogTitle>Triggers</DialogTitle>
-            <DialogDescription>
-              Choose how this agent is invoked. Cron schedules list each recurring
-              run below once enabled.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-              <div>
-                <p className="text-sm font-medium">{TRIGGER_LABELS.chatbot}</p>
-                <p className="text-muted-foreground text-xs">
-                  Slack, Discord, or Telegram bots connected via Chat.
-                </p>
-              </div>
-              <Switch
-                checked={draft.allowedTriggers.includes("chatbot")}
-                onCheckedChange={(checked) => toggleTrigger("chatbot", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-              <div>
-                <p className="text-sm font-medium">{TRIGGER_LABELS.task}</p>
-                <p className="text-muted-foreground text-xs">
-                  Spawned as a task executor from the task board.
-                </p>
-              </div>
-              <Switch
-                checked={draft.allowedTriggers.includes("task")}
-                onCheckedChange={(checked) => toggleTrigger("task", checked)}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
-              <div>
-                <p className="text-sm font-medium">Cron schedules</p>
-                <p className="text-muted-foreground text-xs">
-                  Allow recurring runs. Add each schedule (e.g. weekly) below.
-                </p>
-              </div>
-              <Switch
-                checked={draft.allowedTriggers.includes("schedule")}
-                onCheckedChange={(checked) =>
-                  toggleTrigger("schedule", checked)
-                }
-                data-testid="agent-trigger-schedule"
-              />
-            </div>
+        title="Triggers"
+        testId="agent-triggers-sidebar-dialog"
+        items={triggerSidebarItems}
+        selectedId={selectedTriggerId}
+        onSelect={setSelectedTriggerId}
+        searchQuery={triggerSearch}
+        onSearchQueryChange={setTriggerSearch}
+        searchPlaceholder="Search triggers…"
+        detail={renderTriggerDetail()}
+        footer={
+          <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
+        }
+      />
 
-            {draft.allowedTriggers.includes("schedule") ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Schedules</Label>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setScheduleOpen(true)}
-                  >
-                    Add schedule
-                  </Button>
-                </div>
-                {agentSchedules.length === 0 ? (
-                  <p className="text-muted-foreground text-xs">
-                    No schedules yet for this agent.
-                  </p>
-                ) : (
-                  <ul className="divide-y divide-border rounded-md border">
-                    {agentSchedules.map((schedule) => {
-                      const rec = cronToRecurrence(
-                        schedule.cronExpression,
-                        schedule.timezone,
-                      );
-                      const label = rec
-                        ? describeRecurrence(rec)
-                        : schedule.cronExpression;
-                      return (
-                        <li
-                          key={schedule.id}
-                          className="flex items-center justify-between px-3 py-2 text-sm"
-                        >
-                          <span>{label}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {schedule.enabled ? "On" : "Off"}
-                          </span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </div>
-            ) : null}
-          </div>
-          <DialogFooter>
-            <Button type="button" onClick={() => onOpenDialogChange(null)}>
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
+      <AgentSettingsSidebarDialog
         open={openDialog === "tools"}
         onOpenChange={(open) => !open && onOpenDialogChange(null)}
-      >
-        <DialogContent className="max-h-[85vh] max-w-3xl overflow-y-auto" forceBackdrop>
-          <DialogHeader>
-            <DialogTitle>Tools and access</DialogTitle>
-            <DialogDescription>
-              Choose Composio connectors and TypeScript scripts for this agent.
+        title="Tools and access"
+        testId="agent-tools-sidebar-dialog"
+        items={toolSidebarItems}
+        selectedId={selectedToolId}
+        onSelect={setSelectedToolId}
+        searchQuery={toolSearch}
+        onSearchQueryChange={setToolSearch}
+        searchPlaceholder="Search tools…"
+        detail={
+          <>
+            <p className="text-muted-foreground mb-4 text-xs">
               Graph and task tools are always available in the background.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-5">
-            <div className="space-y-2">
-              <Label>Composio connectors</Label>
-              <p className="text-muted-foreground text-xs">
-                Enable providers this agent can use. Connect accounts on the
-                Connectors page first.
-              </p>
-              <ul className="divide-y divide-border rounded-md border">
-                {connectors.map((connector) => {
-                  const connected = connectedProviders.has(connector.provider);
-                  const enabled = draft.enabledConnectorProviders.includes(
-                    connector.provider,
-                  );
-                  return (
-                    <li
-                      key={connector.provider}
-                      className="flex items-center gap-3 px-3 py-2"
-                    >
-                      <ConnectorBrandIcon
-                        provider={connector.provider}
-                        className="size-4 shrink-0"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">{connector.label}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {connected ? "Connected" : "Not connected"}
-                        </p>
-                      </div>
-                      <Switch
-                        checked={enabled}
-                        onCheckedChange={(checked) =>
-                          toggleConnectorProvider(connector.provider, checked)
-                        }
-                        data-testid={`agent-connector-${connector.provider}`}
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-
-            <div className="space-y-2">
-              <Label>TypeScript scripts</Label>
-              {scriptTools.length === 0 ? (
-                <p className="text-muted-foreground text-xs">
-                  No TypeScript script tools in this project yet.
-                </p>
-              ) : (
-                <ul className="divide-y divide-border rounded-md border">
-                  {scriptTools.map((tool) => (
-                    <li
-                      key={tool.id}
-                      className="flex items-center justify-between gap-3 px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium">{tool.name}</p>
-                        <p className="text-muted-foreground truncate font-mono text-xs">
-                          {tool.key}
-                        </p>
-                      </div>
-                      <Switch
-                        checked={draft.scriptToolIds.includes(tool.id)}
-                        onCheckedChange={(checked) =>
-                          toggleScriptTool(tool.id, checked)
-                        }
-                      />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <details className="rounded-md border px-3 py-2">
-              <summary className="cursor-pointer text-sm font-medium">
-                Advanced capabilities
-              </summary>
-              <ul className="divide-y divide-border mt-3 overflow-hidden rounded-md border">
-                {OPTIONAL_TOOL_BUNDLES.map((bundle) => (
-                  <li
-                    key={bundle}
-                    className="flex items-center justify-between gap-3 px-3 py-2"
-                  >
-                    <span className="text-sm">{TOOL_BUNDLE_LABELS[bundle]}</span>
-                    <Switch
-                      checked={draft.toolBundles.includes(bundle)}
-                      onCheckedChange={(checked) =>
-                        toggleOptionalBundle(bundle, checked)
-                      }
-                    />
-                  </li>
-                ))}
-              </ul>
-            </details>
-
-            <div className="space-y-2">
-              <Label>Worker agents</Label>
-              <p className="text-muted-foreground text-xs">
-                Link batch workers as delegate targets for this agent.
-              </p>
-              <ul className="divide-y divide-border rounded-md border">
-                {workers.map((worker) => (
-                  <li
-                    key={worker.id}
-                    className="flex items-center justify-between gap-3 px-3 py-2"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">{worker.name}</p>
-                      <p className="text-muted-foreground line-clamp-1 text-xs">
-                        {worker.description}
-                      </p>
-                    </div>
-                    <Switch
-                      checked={draft.linkedWorkerAgentIds.includes(worker.id)}
-                      onCheckedChange={(checked) =>
-                        toggleWorker(worker.id, checked)
-                      }
-                      disabled={!isWorkerAgentId(worker.id)}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" onClick={() => onOpenDialogChange(null)}>
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </p>
+            {renderToolDetail()}
+          </>
+        }
+        footer={
+          <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
+        }
+      />
 
       <Dialog
         open={openDialog === "model"}

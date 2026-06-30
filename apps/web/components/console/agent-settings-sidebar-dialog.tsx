@@ -1,0 +1,206 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import { cn } from "@ssota/ui/lib/utils";
+import { Button } from "@ssota/ui/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+} from "@ssota/ui/components/ui/dialog";
+import { Input } from "@ssota/ui/components/ui/input";
+
+export type SidebarListItem = {
+  id: string;
+  label: string;
+  subtitle?: string;
+  icon?: ReactNode;
+  enabled?: boolean;
+  testId?: string;
+};
+
+type AgentSettingsSidebarDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  items: SidebarListItem[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  searchQuery?: string;
+  onSearchQueryChange?: (query: string) => void;
+  searchPlaceholder?: string;
+  detail: ReactNode;
+  footer?: ReactNode;
+  testId?: string;
+  className?: string;
+};
+
+export function AgentSettingsSidebarDialog({
+  open,
+  onOpenChange,
+  title,
+  items,
+  selectedId,
+  onSelect,
+  searchQuery,
+  onSearchQueryChange,
+  searchPlaceholder = "Search…",
+  detail,
+  footer,
+  testId,
+  className,
+}: AgentSettingsSidebarDialogProps) {
+  const showSearch = onSearchQueryChange !== undefined;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent
+        className={cn(
+          "flex max-h-[85vh] max-w-4xl flex-col gap-0 overflow-hidden p-0",
+          className,
+        )}
+        forceBackdrop
+        data-testid={testId}
+      >
+        <DialogTitle className="sr-only">{title}</DialogTitle>
+        <div className="flex min-h-0 flex-1">
+          <aside className="border-border flex w-56 shrink-0 flex-col border-r bg-muted/20">
+            <div className="border-border flex items-center gap-2 border-b px-3 py-3">
+              <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
+                {title}
+              </h2>
+              {showSearch ? (
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground shrink-0 rounded-md p-1 transition-colors"
+                  aria-label="Focus search"
+                  onClick={() => {
+                    document
+                      .getElementById(`${testId ?? title}-search`)
+                      ?.focus();
+                  }}
+                >
+                  <MagnifyingGlassIcon className="size-4" aria-hidden />
+                </button>
+              ) : null}
+            </div>
+            {showSearch ? (
+              <div className="border-border border-b px-3 py-2">
+                <Input
+                  id={`${testId ?? title}-search`}
+                  value={searchQuery ?? ""}
+                  onChange={(e) => onSearchQueryChange?.(e.target.value)}
+                  placeholder={searchPlaceholder}
+                  className="h-8 text-xs"
+                />
+              </div>
+            ) : null}
+            <nav
+              className="min-h-0 flex-1 overflow-y-auto p-1.5"
+              aria-label={title}
+            >
+              {items.length === 0 ? (
+                <p className="text-muted-foreground px-2 py-3 text-xs">
+                  No items match your search.
+                </p>
+              ) : (
+                <ul className="space-y-0.5">
+                  {items.map((item) => {
+                    const selected = item.id === selectedId;
+                    return (
+                      <li key={item.id}>
+                        <button
+                          type="button"
+                          data-testid={item.testId}
+                          onClick={() => onSelect(item.id)}
+                          className={cn(
+                            "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
+                            selected
+                              ? "bg-muted font-medium"
+                              : "hover:bg-muted/60",
+                          )}
+                        >
+                          {item.icon ? (
+                            <span className="bg-background flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 shadow-sm">
+                              {item.icon}
+                            </span>
+                          ) : null}
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate">{item.label}</span>
+                            {item.subtitle ? (
+                              <span className="text-muted-foreground block truncate text-xs font-normal">
+                                {item.subtitle}
+                              </span>
+                            ) : null}
+                          </span>
+                          {item.enabled !== undefined ? (
+                            <span
+                              className={cn(
+                                "size-1.5 shrink-0 rounded-full",
+                                item.enabled
+                                  ? "bg-emerald-500"
+                                  : "bg-muted-foreground/30",
+                              )}
+                              aria-hidden
+                            />
+                          ) : null}
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </nav>
+          </aside>
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto p-5">{detail}</div>
+            {footer ? (
+              <div className="border-border flex justify-end border-t px-5 py-3">
+                {footer}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function SidebarDetailHeader({
+  icon,
+  title,
+  status,
+}: {
+  icon?: ReactNode;
+  title: string;
+  status?: ReactNode;
+}) {
+  return (
+    <div className="mb-4 flex items-start gap-3">
+      {icon ? (
+        <span className="bg-muted/50 flex size-10 shrink-0 items-center justify-center rounded-lg border border-border/60">
+          {icon}
+        </span>
+      ) : null}
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-base font-semibold">{title}</h3>
+          {status}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function SidebarDetailDoneButton({
+  onClick,
+}: {
+  onClick: () => void;
+}) {
+  return (
+    <Button type="button" onClick={onClick}>
+      Done
+    </Button>
+  );
+}
