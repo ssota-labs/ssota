@@ -12,9 +12,7 @@ export interface AgentRunContext {
   accountId?: string;
   /** Signed-in user driving the run (Supabase `auth.users.id`), if any. */
   profileId?: string;
-  /** Agent definition key for this run (main or task executor). */
-  agentKey?: string;
-  /** DB agent definition id when the executor is DB-backed. */
+  /** DB agent definition id for this run. */
   agentDefinitionId?: string;
   /** Graph access limits from the agent definition. */
   nodeScopes?: NodeScope[];

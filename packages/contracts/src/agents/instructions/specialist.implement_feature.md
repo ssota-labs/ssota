@@ -7,7 +7,7 @@ Implement a single scoped feature or fix linked to a task.
 ## When to run
 
 - Task `status=ready`, spawned by orchestrator or Human
-- Agent picks from `query_tasks(status=ready, agentKey=specialist.implement_feature)`
+- Agent picks from `query_tasks(status=ready, agentDefinitionId=a0000000-0000-4000-8000-000000000002)`
 
 ## Preconditions
 

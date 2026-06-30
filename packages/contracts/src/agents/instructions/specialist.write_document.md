@@ -6,7 +6,7 @@ Produce or update a graph document node for a task (SSOTA Console content).
 
 ## When to run
 
-- Task `status=ready`, `agentKey=specialist.write_document`
+- Task `status=ready`, `agentDefinitionId=a0000000-0000-4000-8000-000000000005`
 
 ## Preconditions
 

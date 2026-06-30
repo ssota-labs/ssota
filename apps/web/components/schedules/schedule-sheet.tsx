@@ -15,6 +15,7 @@ import {
 } from "@ssota/ui/components/ui/select";
 import { cn } from "@ssota/ui/lib/utils";
 import type { ScheduleTargetType } from "@ssota/contracts";
+import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import {
   DEFAULT_TIMEZONE,
   cronToRecurrence,
@@ -49,8 +50,8 @@ interface ScheduleSheetProps {
   schedule?: ScheduleEditTarget;
 }
 
-function inferTargetType(agentKey?: string): ScheduleTargetType {
-  return agentKey === "main.ssota" ? "main_heartbeat" : "specialist_agent";
+function inferTargetType(agentDefinitionId?: string): ScheduleTargetType {
+  return agentDefinitionId === MAIN_AGENT_ID ? "main_heartbeat" : "agent";
 }
 
 const FREQUENCIES: { value: Frequency; label: string }[] = [
@@ -226,7 +227,7 @@ export function ScheduleSheet({
           teamspaceId,
           accountId,
           agentDefinitionId: instructionId,
-          targetType: inferTargetType(selected?.key),
+          targetType: inferTargetType(selected?.id),
           cronExpression,
           timezone,
           enabled,

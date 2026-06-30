@@ -6,7 +6,7 @@ Batch worker for connector sync operations. Invoked by specialist agents or sche
 
 ## When to run
 
-- Task assigned with `agentKey=worker.connector_sync`
+- Task assigned with `agentDefinitionId=a0000000-0000-4000-8000-000000000012`
 - Schedule trigger for batch processing
 
 ## Steps

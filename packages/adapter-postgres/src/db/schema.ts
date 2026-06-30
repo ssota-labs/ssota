@@ -28,13 +28,6 @@ export const taskStatusEnum = pgEnum("task_status", [
   "failed",
 ]);
 
-export const agentKindEnum = pgEnum("agent_kind", [
-  "main",
-  "specialist",
-  "worker",
-  "guide",
-]);
-
 export const agentTriggerEnum = pgEnum("agent_trigger", [
   "chat",
   "chatbot",
@@ -47,7 +40,7 @@ export const agentTriggerEnum = pgEnum("agent_trigger", [
 
 export const scheduleTargetTypeEnum = pgEnum("schedule_target_type", [
   "main_heartbeat",
-  "specialist_agent",
+  "agent",
   "ready_task_dispatch",
 ]);
 
@@ -420,14 +413,14 @@ export const agentDefinitions = pgTable(
     accountId: uuid("account_id").references(() => accounts.id, {
       onDelete: "cascade",
     }),
-    key: text("key").notNull(),
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     instructions: jsonb("instructions")
       .notNull()
       .default([])
       .$type<unknown[]>(),
-    agentKind: agentKindEnum("agent_kind").notNull().default("specialist"),
+    isMain: boolean("is_main").notNull().default(false),
+    referenceOnly: boolean("reference_only").notNull().default(false),
     toolBundles: jsonb("tool_bundles")
       .notNull()
       .default([])
@@ -444,14 +437,6 @@ export const agentDefinitions = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    teamspaceKeyUnique: uniqueIndex("agent_definitions_teamspace_key_unique")
-      .on(table.teamspaceId, table.key)
-      .where(sql`${table.accountId} IS NULL`),
-    teamspaceAccountKeyUnique: uniqueIndex(
-      "agent_definitions_teamspace_account_key_unique",
-    )
-      .on(table.teamspaceId, table.accountId, table.key)
-      .where(sql`${table.accountId} IS NOT NULL`),
     teamspaceIdx: index("agent_definitions_teamspace_id_idx").on(table.teamspaceId),
   }),
 );
@@ -542,7 +527,7 @@ export const schedules = pgTable(
       .references(() => agentDefinitions.id, { onDelete: "cascade" }),
     targetType: scheduleTargetTypeEnum("target_type")
       .notNull()
-      .default("specialist_agent"),
+      .default("agent"),
     cronExpression: text("cron_expression").notNull(),
     // IANA timezone the cron expression is evaluated in (the heartbeat ticks in
     // UTC, but each schedule's window/days are interpreted in this zone).
@@ -570,7 +555,6 @@ export const tasks = pgTable(
       () => agentDefinitions.id,
       { onDelete: "set null" },
     ),
-    agentKey: text("agent_key"),
     title: text("title").notNull(),
     status: taskStatusEnum("status").notNull().default("pending"),
     executorType: executorTypeEnum("executor_type").notNull().default("Agent"),
@@ -817,8 +801,6 @@ export const agentRuns = pgTable(
       () => agentDefinitions.id,
       { onDelete: "set null" },
     ),
-    agentKey: text("agent_key"),
-    agentKind: agentKindEnum("agent_kind"),
     trigger: agentTriggerEnum("trigger"),
     taskId: uuid("task_id").references(() => tasks.id, { onDelete: "cascade" }),
     threadId: uuid("thread_id").references(() => chatThreads.id, {

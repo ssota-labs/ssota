@@ -6,6 +6,7 @@ import {
   DEFAULT_ORG_SLUG,
   DEFAULT_TEAMSPACE_SLUG,
 } from "@ssota/adapter-postgres";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import {
   getAgentForMcp,
   getAgentInstructionForMcp,
@@ -52,35 +53,51 @@ describe("agent-services", () => {
 
   it("lists agent definitions without bodies (incl. code built-ins)", async () => {
     const result = await listAgentsForMcp(db, teamspaceId);
-    expect(result.agents.some((w) => w.key === "specialist.implement_feature")).toBe(
-      true,
-    );
+    expect(
+      result.agents.some(
+        (w) => w.id === BUILTIN_AGENT_IDS.implementFeature,
+      ),
+    ).toBe(true);
     for (const agent of result.agents) {
       expect(agent).not.toHaveProperty("instructions");
       expect(agent.name.length).toBeGreaterThan(0);
     }
   });
 
-  it("returns agent definition metadata by key (built-in)", async () => {
-    const agent = await getAgentForMcp(db, teamspaceId, "specialist.implement_feature");
-    expect(agent?.key).toBe("specialist.implement_feature");
+  it("returns agent definition metadata by id (built-in)", async () => {
+    const agent = await getAgentForMcp(
+      db,
+      teamspaceId,
+      BUILTIN_AGENT_IDS.implementFeature,
+    );
+    expect(agent?.id).toBe(BUILTIN_AGENT_IDS.implementFeature);
     expect(agent).not.toHaveProperty("instructions");
   });
 
-  it("returns null for unknown agent keys", async () => {
-    expect(await getAgentForMcp(db, teamspaceId, "not.a.agent")).toBeNull();
+  it("returns null for unknown agent ids", async () => {
     expect(
-      await getAgentInstructionForMcp(db, teamspaceId, "not.a.agent"),
+      await getAgentForMcp(
+        db,
+        teamspaceId,
+        "00000000-0000-4000-8000-000000000099",
+      ),
+    ).toBeNull();
+    expect(
+      await getAgentInstructionForMcp(
+        db,
+        teamspaceId,
+        "00000000-0000-4000-8000-000000000099",
+      ),
     ).toBeNull();
   });
 
-  it("returns instruction body by key (built-in)", async () => {
+  it("returns instruction body by id (built-in)", async () => {
     const result = await getAgentInstructionForMcp(
       db,
       teamspaceId,
-      "specialist.implement_feature",
+      BUILTIN_AGENT_IDS.implementFeature,
     );
-    expect(result?.agentKey).toBe("specialist.implement_feature");
+    expect(result?.agentDefinitionId).toBe(BUILTIN_AGENT_IDS.implementFeature);
     expect(result?.instruction.length).toBeGreaterThan(50);
   });
 });

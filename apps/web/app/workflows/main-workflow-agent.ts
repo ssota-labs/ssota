@@ -34,7 +34,6 @@ export async function runMainWorkflowAgent(input: RunMainAgentInput) {
     runId: workflowRunId,
     accountId: input.accountId,
     profileId: input.profileId,
-    agentKey: definition.agentKey,
     agentDefinitionId: definition.agentDefinitionId,
     nodeScopes: definition.nodeScopes,
     trigger,

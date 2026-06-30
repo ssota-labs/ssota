@@ -78,8 +78,7 @@ export const workflowToolSchemas = {
   }),
   spawn_task: z.object({
     title: z.string(),
-    agentDefinitionId: z.string().uuid().optional(),
-    agentKey: z.string().optional(),
+    agentDefinitionId: z.string().uuid(),
     targetNodeId: z.string().uuid().optional(),
     executionDirective: ExecutionDirectiveSchema,
     acceptanceCriteria: z.array(z.unknown()).min(1),
@@ -134,15 +133,15 @@ export const workflowToolSchemas = {
   // --- Agent definitions ---
   list_agent_definitions: z.object({}),
   get_agent_instruction: z.object({
-    id: z.string().uuid().optional(),
-    key: z.string().optional(),
+    id: z.string().uuid(),
   }),
   write_agent_definition: z.object({
-    key: z.string(),
+    id: z.string().uuid().optional(),
     name: z.string(),
     description: z.string(),
     body: z.string(),
-    agentKind: z.enum(["main", "specialist", "worker", "guide"]).optional(),
+    isMain: z.boolean().optional(),
+    referenceOnly: z.boolean().optional(),
   }),
 
   // --- Delegate (subagents) ---

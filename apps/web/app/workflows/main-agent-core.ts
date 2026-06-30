@@ -1,4 +1,5 @@
 import type { UIMessage } from "ai";
+import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import { getDb, type RunAgentResult } from "@ssota/agent-runtime";
 import { createAgentRunPort, createChatPort } from "@ssota/adapter-postgres";
 
@@ -32,8 +33,7 @@ export async function claimMainRunning(
     scheduleId: input.scheduleId ?? null,
     workflowRunId: runId,
     accountId: input.accountId ?? null,
-    agentKey: "main.ssota",
-    agentKind: "main",
+    agentDefinitionId: MAIN_AGENT_ID,
     trigger:
       input.chatContext?.trigger === "heartbeat"
         ? "heartbeat"

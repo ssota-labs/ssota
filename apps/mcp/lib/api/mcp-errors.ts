@@ -7,11 +7,14 @@ export function throwMcpToolError(error: unknown): never {
   throw error;
 }
 
-export function throwUnknownAgentKey(agentKey: string): never {
+export function throwUnknownAgentDefinitionId(agentDefinitionId: string): never {
   throw new Error(
-    `UNKNOWN_AGENT_KEY: Agent '${agentKey}' is not in the registry`,
+    `UNKNOWN_AGENT_DEFINITION: Agent '${agentDefinitionId}' is not in the registry`,
   );
 }
 
-/** @deprecated Use throwUnknownAgentKey */
-export const throwUnknownWorkflowKey = throwUnknownAgentKey;
+/** @deprecated Use throwUnknownAgentDefinitionId */
+export const throwUnknownAgentKey = throwUnknownAgentDefinitionId;
+
+/** @deprecated Use throwUnknownAgentDefinitionId */
+export const throwUnknownWorkflowKey = throwUnknownAgentDefinitionId;

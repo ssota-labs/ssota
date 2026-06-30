@@ -5,10 +5,6 @@ export const BlockNoteContentSchema = z.array(z.record(z.unknown()));
 
 export type BlockNoteContent = z.infer<typeof BlockNoteContentSchema>;
 
-export const AgentKindSchema = z.enum(["main", "specialist", "worker", "guide"]);
-
-export type AgentKind = z.infer<typeof AgentKindSchema>;
-
 export const AgentTriggerSchema = z.enum([
   "chat",
   "chatbot",
@@ -57,11 +53,11 @@ export const AgentDefinitionSchema = z.object({
   id: z.string().uuid(),
   teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().nullable(),
-  key: z.string().min(1),
   name: z.string().min(1),
   description: z.string(),
   instructions: BlockNoteContentSchema,
-  agentKind: AgentKindSchema,
+  isMain: z.boolean().default(false),
+  referenceOnly: z.boolean().default(false),
   toolBundles: z.array(ToolBundleSchema).default([]),
   nodeScopes: z.array(NodeScopeSchema).default([]),
   runPolicy: RunPolicySchema.default({}),
@@ -73,20 +69,21 @@ export type AgentDefinition = z.infer<typeof AgentDefinitionSchema>;
 
 export const AgentDefinitionIndexSchema = z.object({
   id: z.string().uuid(),
-  key: z.string().min(1),
   name: z.string().min(1),
   description: z.string(),
-  agentKind: AgentKindSchema,
+  isMain: z.boolean().default(false),
+  referenceOnly: z.boolean().default(false),
 });
 
 export type AgentDefinitionIndex = z.infer<typeof AgentDefinitionIndexSchema>;
 
 export const AgentDefinitionSeedSchema = z.object({
-  key: z.string().min(1),
+  id: z.string().uuid(),
   name: z.string().min(1),
   description: z.string().default(""),
   instructions: BlockNoteContentSchema,
-  agentKind: AgentKindSchema,
+  isMain: z.boolean().default(false),
+  referenceOnly: z.boolean().default(false),
   toolBundles: z.array(ToolBundleSchema).default([]),
   nodeScopes: z.array(NodeScopeSchema).default([]),
   runPolicy: RunPolicySchema.default({}),

@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { QueryTasksInputSchema } from "@ssota/contracts";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 
 describe("task service inputs", () => {
   it("parses active task query filters", () => {
     const parsed = QueryTasksInputSchema.parse({
-      agentKey: "specialist.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       status: "ready",
       limit: 10,
     });
 
-    expect(parsed.agentKey).toBe("specialist.implement_feature");
+    expect(parsed.agentDefinitionId).toBe(BUILTIN_AGENT_IDS.implementFeature);
     expect(parsed.status).toBe("ready");
   });
 });

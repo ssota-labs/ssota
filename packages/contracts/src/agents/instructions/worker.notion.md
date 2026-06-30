@@ -6,7 +6,7 @@ Batch worker for notion operations. Invoked by specialist agents or schedules vi
 
 ## When to run
 
-- Task assigned with `agentKey=worker.notion`
+- Task assigned with `agentDefinitionId=a0000000-0000-4000-8000-000000000010`
 - Schedule trigger for batch processing
 
 ## Steps

@@ -1,29 +1,28 @@
 import type {
   AgentDefinition,
-  AgentKind,
   AgentTrigger,
   NodeScope,
   ToolBundle,
 } from "@ssota/contracts";
-import { getAgentDefinitionByKey } from "@ssota/contracts/agents";
+import {
+  BUILTIN_AGENT_IDS,
+  getAgentDefinitionById,
+} from "@ssota/contracts/agents";
 
 export interface AgentRuntimeDefinition {
-  agentKey: string;
-  agentKind: AgentKind;
-  agentDefinitionId?: string;
+  agentDefinitionId: string;
+  isMain: boolean;
   toolBundles: ToolBundle[];
   nodeScopes: NodeScope[];
   allowedTriggers: AgentTrigger[] | null;
 }
 
-const MAIN_AGENT_KEY = "main.ssota";
-
 /** Builtin main agent definition (always available without DB). */
 export function mainAgentRuntimeDefinition(): AgentRuntimeDefinition {
-  const builtin = getAgentDefinitionByKey(MAIN_AGENT_KEY);
+  const builtin = getAgentDefinitionById(BUILTIN_AGENT_IDS.main);
   return {
-    agentKey: MAIN_AGENT_KEY,
-    agentKind: builtin?.agentKind ?? "main",
+    agentDefinitionId: BUILTIN_AGENT_IDS.main,
+    isMain: true,
     toolBundles: builtin?.toolBundles ?? [
       "graph.read",
       "graph.write",
@@ -40,27 +39,26 @@ export function mainAgentRuntimeDefinition(): AgentRuntimeDefinition {
 export function runtimeDefinitionFromAgent(
   definition: Pick<
     AgentDefinition,
-    "id" | "key" | "agentKind" | "toolBundles" | "nodeScopes" | "runPolicy"
+    "id" | "isMain" | "toolBundles" | "nodeScopes" | "runPolicy"
   >,
 ): AgentRuntimeDefinition {
   return {
-    agentKey: definition.key,
-    agentKind: definition.agentKind,
     agentDefinitionId: definition.id,
+    isMain: definition.isMain,
     toolBundles: definition.toolBundles,
     nodeScopes: definition.nodeScopes,
     allowedTriggers: definition.runPolicy.allowedTriggers ?? null,
   };
 }
 
-export function runtimeDefinitionFromAgentKey(
-  agentKey: string,
+export function runtimeDefinitionFromBuiltinId(
+  agentDefinitionId: string,
 ): AgentRuntimeDefinition | null {
-  const builtin = getAgentDefinitionByKey(agentKey);
+  const builtin = getAgentDefinitionById(agentDefinitionId);
   if (!builtin) return null;
   return {
-    agentKey: builtin.agentKey,
-    agentKind: builtin.agentKind,
+    agentDefinitionId: builtin.id,
+    isMain: builtin.isMain,
     toolBundles: builtin.toolBundles,
     nodeScopes: builtin.nodeScopes,
     allowedTriggers: builtin.runPolicy.allowedTriggers ?? null,

@@ -36,22 +36,24 @@ async function resolvePostSignInPath(userId: string, next?: string | null) {
 export async function updateAgentDefinitionAction(
   teamspaceId: string,
   input: {
-    key: string;
+    id: string;
     name: string;
     description?: string;
     instructions: unknown;
-    agentKind?: "main" | "specialist" | "worker" | "guide";
+    isMain?: boolean;
+    referenceOnly?: boolean;
   },
 ) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
   const parsed = UpsertAgentDefinitionInputSchema.parse({
-    key: input.key,
+    id: input.id,
     name: input.name,
     description: input.description ?? "",
     instructions: BlockNoteContentSchema.parse(input.instructions),
-    agentKind: input.agentKind ?? "specialist",
+    isMain: input.isMain ?? false,
+    referenceOnly: input.referenceOnly ?? false,
   });
 
   await getAgentDefinitionPort(teamspaceId).upsertDefinition(parsed);
@@ -87,7 +89,7 @@ export async function spawnTaskAction(
   teamspaceId: string,
   input: {
     title: string;
-    agentKey: string;
+    agentDefinitionId: string;
     assignee?: string;
     executorType?: "Agent" | "Human" | "System";
   },
@@ -97,7 +99,7 @@ export async function spawnTaskAction(
 
   const parsed = SpawnTaskInputSchema.parse({
     title: input.title,
-    agentKey: input.agentKey,
+    agentDefinitionId: input.agentDefinitionId,
     assignee: input.assignee,
     executorType: input.executorType,
     acceptanceCriteria: ["Complete the work described in the task title and context"],

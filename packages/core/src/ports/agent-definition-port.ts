@@ -11,14 +11,13 @@ import type {
 export interface AgentDefinitionReadPort {
   listDefinitions(): Promise<AgentDefinitionIndex[]>;
   getById(id: string): Promise<AgentDefinition | null>;
-  getByKey(key: string, accountId?: string | null): Promise<AgentDefinition | null>;
 }
 
 export interface AgentDefinitionWritePort {
   upsertDefinition(
     input: UpsertAgentDefinitionInput & { accountId?: string | null },
   ): Promise<AgentDefinition>;
-  deleteByKey(key: string, accountId?: string | null): Promise<void>;
+  deleteById(id: string, accountId?: string | null): Promise<void>;
 }
 
 export type AgentDefinitionPort = AgentDefinitionReadPort &

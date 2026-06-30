@@ -1,93 +1,89 @@
 import { describe, expect, it } from "vitest";
 import {
-  AGENT_DEFINITION_KEYS,
+  BUILTIN_AGENT_IDS,
   AGENT_DEFINITION_REGISTRY,
-  getAgentDefinitionByKey,
+  getAgentDefinitionById,
   getMainAgentDefinition,
-  isKnownAgentKey,
-  listAgentDefinitionKeys,
-  listAgentsByKind,
+  isKnownBuiltinAgentId,
+  listBuiltinAgentIds,
   listRoutableAgentIndex,
 } from "./index.js";
 
 describe("agent definition registry SSOT", () => {
   it("defines main, specialist, worker, and guide agents", () => {
-    expect(AGENT_DEFINITION_KEYS.length).toBeGreaterThanOrEqual(15);
-    expect(isKnownAgentKey("main.ssota")).toBe(true);
-    expect(isKnownAgentKey("specialist.implement_feature")).toBe(true);
-    expect(isKnownAgentKey("worker.notion")).toBe(true);
-    expect(isKnownAgentKey("guide.agent_authoring")).toBe(true);
-    expect(isKnownAgentKey("unknown.agent")).toBe(false);
-  });
-
-  it("no longer defines legacy workflow keys", () => {
-    expect(isKnownAgentKey("orchestrator.daily")).toBe(false);
-    expect(isKnownAgentKey("work.implement_feature")).toBe(false);
-    expect(isKnownAgentKey("agent.setup")).toBe(false);
-    expect(isKnownAgentKey("agent.main")).toBe(false);
+    expect(listBuiltinAgentIds().length).toBeGreaterThanOrEqual(15);
+    expect(isKnownBuiltinAgentId(BUILTIN_AGENT_IDS.main)).toBe(true);
+    expect(isKnownBuiltinAgentId(BUILTIN_AGENT_IDS.implementFeature)).toBe(true);
+    expect(isKnownBuiltinAgentId(BUILTIN_AGENT_IDS.workerNotion)).toBe(true);
+    expect(isKnownBuiltinAgentId(BUILTIN_AGENT_IDS.guideAgentAuthoring)).toBe(
+      true,
+    );
+    expect(
+      isKnownBuiltinAgentId("00000000-0000-4000-8000-000000000099"),
+    ).toBe(false);
   });
 
   it("every agent carries a skill-style description for routing", () => {
-    for (const key of AGENT_DEFINITION_KEYS) {
-      const entry = AGENT_DEFINITION_REGISTRY[key]!;
-      if (!entry.reference) {
+    for (const id of listBuiltinAgentIds()) {
+      const entry = AGENT_DEFINITION_REGISTRY[id]!;
+      if (!entry.referenceOnly) {
         expect(entry.description.length).toBeGreaterThan(20);
       }
     }
   });
 
-  it("returns full instruction for main.ssota", () => {
-    const agent = getAgentDefinitionByKey("main.ssota");
+  it("returns full instruction for main agent", () => {
+    const agent = getAgentDefinitionById(BUILTIN_AGENT_IDS.main);
     expect(agent).not.toBeNull();
-    expect(agent?.instruction).toContain("main.ssota");
     expect(agent?.instruction).toContain("query_tasks");
-    expect(agent?.agentKind).toBe("main");
+    expect(agent?.isMain).toBe(true);
   });
 
-  it("has unique agent keys", () => {
-    const keys = listAgentDefinitionKeys();
-    expect(new Set(keys).size).toBe(keys.length);
+  it("has unique agent ids", () => {
+    const ids = listBuiltinAgentIds();
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("loads non-empty instructions for every registry entry", () => {
-    for (const key of AGENT_DEFINITION_KEYS) {
-      const entry = AGENT_DEFINITION_REGISTRY[key]!;
+    for (const id of listBuiltinAgentIds()) {
+      const entry = AGENT_DEFINITION_REGISTRY[id]!;
       expect(entry.instruction.length).toBeGreaterThan(50);
-      expect(entry.agentKey).toBe(key);
+      expect(entry.id).toBe(id);
     }
   });
 
-  it("getAgentDefinitionByKey returns null for unknown keys", () => {
-    expect(getAgentDefinitionByKey("not.an.agent")).toBeNull();
+  it("getAgentDefinitionById returns null for unknown ids", () => {
+    expect(
+      getAgentDefinitionById("00000000-0000-4000-8000-000000000099"),
+    ).toBeNull();
   });
 
   it("lists specialists and workers in routable manifest", () => {
     const routable = listRoutableAgentIndex();
-    expect(routable.some((a) => a.key === "specialist.implement_feature")).toBe(
+    expect(
+      routable.some((a) => a.id === BUILTIN_AGENT_IDS.implementFeature),
+    ).toBe(true);
+    expect(routable.some((a) => a.id === BUILTIN_AGENT_IDS.workerNotion)).toBe(
       true,
     );
-    expect(routable.some((a) => a.key === "worker.notion")).toBe(true);
-    expect(routable.some((a) => a.key === "main.ssota")).toBe(false);
-    expect(routable.some((a) => a.key.startsWith("guide."))).toBe(false);
-  });
-
-  it("hides reference guides from routable manifest but resolves them by key", () => {
+    expect(routable.some((a) => a.id === BUILTIN_AGENT_IDS.main)).toBe(false);
     expect(
-      getAgentDefinitionByKey("guide.page_authoring"),
-    ).not.toBeNull();
-    expect(
-      listRoutableAgentIndex().some((a) => a.key === "guide.page_authoring"),
+      routable.some((a) => a.id === BUILTIN_AGENT_IDS.guideAgentAuthoring),
     ).toBe(false);
   });
 
-  it("getMainAgentDefinition returns main.ssota", () => {
-    expect(getMainAgentDefinition().agentKey).toBe("main.ssota");
+  it("hides reference guides from routable manifest but resolves them by id", () => {
+    expect(
+      getAgentDefinitionById(BUILTIN_AGENT_IDS.guidePageAuthoring),
+    ).not.toBeNull();
+    expect(
+      listRoutableAgentIndex().some(
+        (a) => a.id === BUILTIN_AGENT_IDS.guidePageAuthoring,
+      ),
+    ).toBe(false);
   });
 
-  it("groups agents by kind", () => {
-    expect(listAgentsByKind("main")).toHaveLength(1);
-    expect(listAgentsByKind("specialist").length).toBeGreaterThanOrEqual(6);
-    expect(listAgentsByKind("worker").length).toBeGreaterThanOrEqual(4);
-    expect(listAgentsByKind("guide").length).toBeGreaterThanOrEqual(4);
+  it("getMainAgentDefinition returns main builtin", () => {
+    expect(getMainAgentDefinition().id).toBe(BUILTIN_AGENT_IDS.main);
   });
 });

@@ -18,7 +18,7 @@ export default async function TasksPage({
     status: task.status,
     executorType: task.executorType,
     assignee: task.assignee ?? "Unassigned",
-    agentKey: task.agentKey ?? "",
+    agentDefinitionId: task.agentDefinitionId ?? "",
     subjectId: task.subjectId ?? "",
     acceptanceCriteria: task.acceptanceCriteria.flatMap((item) => {
       if (typeof item === "string") return [item];
@@ -35,7 +35,7 @@ export default async function TasksPage({
   const agentDefinitions =
     await getAgentDefinitionPort(project.id).listDefinitions();
   const agentOptions = agentDefinitions.map((entry) => ({
-    agentKey: entry.key,
+    agentDefinitionId: entry.id,
     title: entry.name,
   }));
 

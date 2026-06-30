@@ -9,7 +9,7 @@ A Task is not an agent. It records title, status, executor type, assigned agent,
 ## Creating tasks
 
 Use `spawn_task` with:
-- `agentKey` or `agentDefinitionId` when `executorType=Agent`
+- `agentDefinitionId` when `executorType=Agent`
 - `context.executionDirective` — complete instructions for the executor
 - `acceptanceCriteria` — verifiable completion conditions
 - `idempotencyKey` — prevent duplicate spawns
@@ -18,5 +18,5 @@ Use `spawn_task` with:
 
 1. Main Agent identifies work needing a specialist
 2. Load specialist instruction via `get_agent_instruction`
-3. `spawn_task` with appropriate `agentKey` and directive
+3. `spawn_task` with appropriate `agentDefinitionId` and directive
 4. Task dispatch triggers specialist agent run

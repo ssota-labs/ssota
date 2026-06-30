@@ -1,8 +1,8 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
 import type { AgentTrigger } from "@ssota/contracts";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
-import { listRoutableAgentIndex } from "@ssota/contracts/agents";
-import { serializeTask, readAgentDefinitionById, readAgentDefinitionByKey } from "@ssota/core";
+import { getAgentDefinitionById, listRoutableAgentIndex } from "@ssota/contracts/agents";
+import { serializeTask, readAgentDefinitionById } from "@ssota/core";
 import { getTaskPort, getAgentDefinitionPort } from "./ports.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
 import type { AgentRuntimeKind } from "@ssota/contracts";
@@ -10,7 +10,7 @@ import {
   assertAllowedTrigger,
   mainAgentRuntimeDefinition,
   runtimeDefinitionFromAgent,
-  runtimeDefinitionFromAgentKey,
+  runtimeDefinitionFromBuiltinId,
   type AgentRuntimeDefinition,
 } from "./runtime-definition.js";
 
@@ -103,20 +103,14 @@ export async function resolveRunAgentDefinition(
       );
       if (loaded) {
         definition = runtimeDefinitionFromAgent(loaded.definition);
-      }
-    } else if (task.agentKey) {
-      definition = runtimeDefinitionFromAgentKey(task.agentKey);
-      if (!definition) {
-        const loaded = await readAgentDefinitionByKey(instructionPort, task.agentKey);
-        if (loaded) {
-          definition = runtimeDefinitionFromAgent(loaded.definition);
-        }
+      } else {
+        definition = runtimeDefinitionFromBuiltinId(task.agentDefinitionId);
       }
     }
 
     if (!definition) {
       throw new Error(
-        `Task ${input.taskId} has no resolvable agent (agentKey=${task.agentKey ?? "null"}).`,
+        `Task ${input.taskId} has no resolvable agent (agentDefinitionId=${task.agentDefinitionId ?? "null"}).`,
       );
     }
 
@@ -149,15 +143,16 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
 
   if (runtimeKind === "main") {
     const dbDefinitions = await instructionPort.listDefinitions();
-    const dbKeys = new Set(dbDefinitions.map((w) => w.key));
-    const builtins = listRoutableAgentIndex().filter((b) => !dbKeys.has(b.key));
+    const dbIds = new Set(dbDefinitions.map((w) => w.id));
+    const builtins = listRoutableAgentIndex().filter((b) => !dbIds.has(b.id));
     const agentManifest = [
-      ...dbDefinitions.map((w) => ({
-        key: w.key,
-        name: w.name,
-        description: w.description,
-        agentKind: w.agentKind,
-      })),
+      ...dbDefinitions
+        .filter((w) => !w.isMain && !w.referenceOnly)
+        .map((w) => ({
+          id: w.id,
+          name: w.name,
+          description: w.description,
+        })),
       ...builtins,
     ];
     instructions = buildRunInstructionMessages({
@@ -183,9 +178,32 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
       throw new Error(`Task ${input.taskId} not found in teamspace ${teamspaceId}`);
     }
     const task = serializeTask(domainTask);
-    const playbook = task.agentDefinitionId
+    let playbook = task.agentDefinitionId
       ? await readAgentDefinitionById(instructionPort, task.agentDefinitionId)
       : null;
+    if (!playbook && task.agentDefinitionId) {
+      const builtin = getAgentDefinitionById(task.agentDefinitionId);
+      if (builtin) {
+        playbook = {
+          source: "db" as const,
+          definition: {
+            id: builtin.id,
+            teamspaceId,
+            accountId: null,
+            name: builtin.title,
+            description: builtin.description,
+            instructions: [],
+            isMain: builtin.isMain,
+            referenceOnly: builtin.referenceOnly,
+            toolBundles: builtin.toolBundles,
+            nodeScopes: builtin.nodeScopes,
+            runPolicy: builtin.runPolicy,
+            createdAt: new Date(0).toISOString(),
+            updatedAt: new Date(0).toISOString(),
+          },
+        };
+      }
+    }
     instructions = buildRunInstructionMessages({
       runtimeKind: "task",
       teamspaceId,

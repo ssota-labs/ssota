@@ -57,7 +57,7 @@ const MAIN_WORKFLOW_TOOL_DESCRIPTIONS: Partial<Record<WorkflowToolName, string>>
   get_task: "Fetch a task by id (defaults to the current run's task).",
   query_tasks: "List tasks in the project, optionally filtered by status.",
   spawn_task:
-    "Create a follow-up task with a full delegation directive. Required: title, agentKey (or agentDefinitionId), executionDirective, acceptanceCriteria.",
+    "Create a follow-up task with a full delegation directive. Required: title, agentDefinitionId, executionDirective, acceptanceCriteria.",
   update_task: "Update fields on a task (defaults to current run's task).",
   complete_task:
     "Mark the current run's task done. Call this once the task's goal and acceptance criteria are satisfied.",
@@ -78,9 +78,9 @@ const MAIN_WORKFLOW_TOOL_DESCRIPTIONS: Partial<Record<WorkflowToolName, string>>
   list_agent_definitions:
     "List agent definitions for this project (metadata only).",
   get_agent_instruction:
-    "Fetch an agent definition playbook by id or key. Load on demand before acting.",
+    "Fetch an agent definition playbook by id. Load on demand before acting.",
   write_agent_definition:
-    "Create or update an agent definition (upsert by key). Write the playbook as markdown in body.",
+    "Create or update an agent definition (upsert by id). Write the playbook as markdown in body.",
   delegate:
     "Launch a specialized read-only subagent for focused exploration; returns only a summary.",
   list_script_tools: "List script tools available to this agent in this project.",
@@ -122,7 +122,7 @@ export function buildMainWorkflowAgent(
   const ctx = { ssota: input.ssota };
   const toolNames = resolveWorkflowToolNames({
     toolBundles: input.definition.toolBundles,
-    agentKind: input.definition.agentKind,
+    isMain: input.definition.isMain,
     includeComposioTools: input.includeComposioTools,
   });
 

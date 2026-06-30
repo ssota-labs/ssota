@@ -23,7 +23,7 @@ About SSOTA: a project is one organization's domain workspace, modeled as a type
 
 Persistence: Keep working until the request is fully resolved — only stop when the goal is met or you genuinely need the user's decision. Never assume a tool's outcome before you see its result; wait for each tool response and act on what actually happened. Do not claim a task was spawned, a workflow was written, or a page was created until the tool confirms it.
 
-Routing: Match the user's intent against the "Available agents" list below. When one fits, call get_agent_instruction(<key>) to load its full playbook before acting — never inline or guess a playbook. When none fits — including first-time setup — act directly with your tools (e.g. create a missing playbook with write_agent_definition).
+Routing: Match the user's intent against the "Available agents" list below. When one fits, call get_agent_instruction(<id>) to load its full playbook before acting — never inline or guess a playbook. When none fits — including first-time setup — act directly with your tools (e.g. create a missing playbook with write_agent_definition).
 
 Spawning work: Spawn tasks only when work should run in the background or be delegated to an executor. Each spawned task must include a full executionDirective (goal, background, steps, constraints) so the executor can run without asking follow-up questions.
 
@@ -39,7 +39,7 @@ export interface BuildRunInstructionsParams {
   runtimeKind: AgentRuntimeKind;
   teamspaceId: string;
   accountId?: string;
-  /** Skill-style routing manifest for the main runtime (key + when-to-use). */
+  /** Skill-style routing manifest for the main runtime (id + when-to-use). */
   agentManifest?: AgentManifestEntry[];
   mainDefinition?: AgentDefinition | null;
   taskPlaybook?: AgentDefinition | null;
@@ -90,11 +90,11 @@ function buildDynamicInstructionSegment(
   if (runtimeKind === "main") {
     if (agentManifest && agentManifest.length > 0) {
       const rows = agentManifest
-        .map((w) => `- ${w.key} — ${w.description || w.name}`)
+        .map((w) => `- ${w.id} (${w.name}) — ${w.description}`)
         .join("\n");
       lines.push(
         `## Available agents`,
-        `Match the user's intent to one of these. Load the full playbook with get_agent_instruction(<key>) before acting.`,
+        `Match the user's intent to one of these. Load the full playbook with get_agent_instruction(<id>) before acting.`,
         rows,
       );
     } else {
@@ -140,7 +140,7 @@ function buildDynamicInstructionSegment(
     }
     if (taskPlaybook) {
       lines.push(
-        `\n## Agent playbook (${taskPlaybook.key})`,
+        `\n## Agent playbook (${taskPlaybook.name})`,
         blockNoteContentToText(taskPlaybook.instructions),
       );
     }

@@ -1,6 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { textToBlockNoteContent } from "@ssota/contracts";
-import { getAgentDefinitionByKey } from "@ssota/contracts/agents";
+import {
+  BUILTIN_AGENT_IDS,
+  getAgentDefinitionById,
+} from "@ssota/contracts/agents";
 import type { Db } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { createDbAccountReadPort } from "../../ports/account-read-port.js";
@@ -8,15 +11,15 @@ import { createAgentDefinitionPort } from "../../ports/agent-definition-port.js"
 
 const SCHEDULE_SEEDS = [
   {
-    agentKey: "main.ssota",
+    agentDefinitionId: BUILTIN_AGENT_IDS.main,
     targetType: "main_heartbeat" as const,
     cronExpression: "0 9 * * 1-5",
     timezone: "Asia/Seoul",
     enabled: true,
   },
   {
-    agentKey: "specialist.implement_feature",
-    targetType: "specialist_agent" as const,
+    agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
+    targetType: "agent" as const,
     cronExpression: "0 9 * * 1",
     timezone: "Asia/Seoul",
     enabled: true,
@@ -37,15 +40,16 @@ export async function seedScheduleFixtures(
   const agentPort = createAgentDefinitionPort(db, { teamspaceId });
 
   for (const seed of SCHEDULE_SEEDS) {
-    const agent = getAgentDefinitionByKey(seed.agentKey);
+    const agent = getAgentDefinitionById(seed.agentDefinitionId);
     if (!agent) continue;
 
     const definition = await agentPort.upsertDefinition({
-      key: agent.agentKey,
+      id: agent.id,
       name: agent.title,
       description: agent.description,
       instructions: textToBlockNoteContent(agent.instruction),
-      agentKind: agent.agentKind,
+      isMain: agent.isMain,
+      referenceOnly: agent.referenceOnly,
       toolBundles: agent.toolBundles,
       nodeScopes: agent.nodeScopes,
       runPolicy: agent.runPolicy,

@@ -1,5 +1,5 @@
 import { and, eq, gte } from "drizzle-orm";
-import type { AgentRuntimeKind, AgentKind, AgentTrigger } from "@ssota/contracts";
+import type { AgentRuntimeKind, AgentTrigger } from "@ssota/contracts";
 import type { Db } from "../db/client.js";
 import { agentRuns } from "../db/schema.js";
 
@@ -8,8 +8,6 @@ export interface StartAgentRunInput {
   workflowRunId: string;
   runtimeKind: AgentRuntimeKind;
   agentDefinitionId?: string | null;
-  agentKey?: string | null;
-  agentKind?: AgentKind | null;
   trigger?: AgentTrigger | null;
   taskId?: string | null;
   threadId?: string | null;
@@ -37,8 +35,6 @@ export function createAgentRunPort(db: Db) {
           teamspaceId: input.teamspaceId,
           runtimeKind: input.runtimeKind,
           agentDefinitionId: input.agentDefinitionId ?? null,
-          agentKey: input.agentKey ?? null,
-          agentKind: input.agentKind ?? null,
           trigger: input.trigger ?? null,
           taskId: input.taskId ?? null,
           threadId: input.threadId ?? null,
@@ -78,10 +74,9 @@ export function createAgentRunPort(db: Db) {
     /**
      * Has this schedule already produced a run at or after `since`? Used by the
      * cron gate to dedupe: when the heartbeat ticks more often than buffer
-     * overlaps allow, a schedule whose previous fire already spawned a run must
-     * not spawn a second one for the same tick.
+     * windows allow, only one fan-out per schedule per window should run.
      */
-    async hasRunForScheduleSince(
+    async hasScheduleRunSince(
       scheduleId: string,
       since: Date,
     ): Promise<boolean> {

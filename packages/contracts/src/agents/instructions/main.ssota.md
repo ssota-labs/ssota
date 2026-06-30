@@ -16,15 +16,15 @@ The SSOTA Main Agent — handles web chat, chatbot requests, and project orchest
 - Answer informational requests directly
 - Review task backlog on heartbeat and spawn today's work items
 - Create tasks with complete execution directives
-- Assign tasks to specialist agents via `agentKey`
+- Assign tasks to specialist agents via `agentDefinitionId`
 - Load specialist agent instructions on demand before delegating
 
 ## Heartbeat steps (daily)
 
 1. `query_tasks` — `status` in `ready`, `running`, `blocked`; note stale `running` (>24h `updatedAt`).
 2. `query_tasks` — `status=pending`, `executorType=Agent`, prioritize by `updatedAt`.
-3. For each planned work item, `spawn_task` with `agentKey` from specialist keys and `idempotencyKey=daily:{date}:{agentKey}:{slug}`.
-4. If stale running tasks found, `spawn_task` with `agentKey=specialist.unblock_task`.
+3. For each planned work item, `spawn_task` with `agentDefinitionId` from the routing manifest and `idempotencyKey=daily:{date}:{agentDefinitionId}:{slug}`.
+4. If stale running tasks found, `spawn_task` with `agentDefinitionId` for the Unblock stalled task agent (`a0000000-0000-4000-8000-000000000006`).
 5. Summarize spawned, skipped, and stale counts.
 
 ## Setup steps

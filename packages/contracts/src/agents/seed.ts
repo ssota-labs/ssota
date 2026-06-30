@@ -2,11 +2,12 @@ import { textToBlockNoteContent } from "../agent-definition.js";
 import type { AgentDefinitionSeed } from "../agent-definition.js";
 
 type AgentSeedSource = {
-  agentKey: string;
+  id: string;
   title: string;
   description: string;
   instruction: string;
-  agentKind: AgentDefinitionSeed["agentKind"];
+  isMain?: boolean;
+  referenceOnly?: boolean;
   toolBundles?: AgentDefinitionSeed["toolBundles"];
   nodeScopes?: AgentDefinitionSeed["nodeScopes"];
   runPolicy?: AgentDefinitionSeed["runPolicy"];
@@ -17,11 +18,12 @@ export function buildAgentDefinitionSeeds(
   registry: Record<string, AgentSeedSource>,
 ): AgentDefinitionSeed[] {
   return Object.values(registry).map((entry) => ({
-    key: entry.agentKey,
+    id: entry.id,
     name: entry.title,
     description: entry.description,
     instructions: textToBlockNoteContent(entry.instruction),
-    agentKind: entry.agentKind,
+    isMain: entry.isMain ?? false,
+    referenceOnly: entry.referenceOnly ?? false,
     toolBundles: entry.toolBundles ?? [],
     nodeScopes: entry.nodeScopes ?? [],
     runPolicy: entry.runPolicy ?? {},

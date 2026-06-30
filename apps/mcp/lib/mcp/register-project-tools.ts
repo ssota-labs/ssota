@@ -37,9 +37,6 @@ function normalizeTaskToolArgs(
   if (!normalized.agentDefinitionId && normalized.workflowInstructionId) {
     normalized.agentDefinitionId = normalized.workflowInstructionId;
   }
-  if (!normalized.agentKey && normalized.workflowInstructionKey) {
-    normalized.agentKey = normalized.workflowInstructionKey;
-  }
 
   return normalized;
 }
@@ -85,7 +82,6 @@ export function registerProjectTools(server: McpToolServer) {
           .enum(["pending", "ready", "running", "blocked", "done", "cancelled", "failed"])
           .optional(),
         agentDefinitionId: z.string().uuid().optional(),
-        agentKey: z.string().optional(),
         assignee: z.string().optional(),
         subjectId: z.string().optional(),
         targetNodeId: z.string().uuid().optional(),
@@ -106,11 +102,10 @@ export function registerProjectTools(server: McpToolServer) {
     {
       title: "Spawn Task",
       description:
-        "Create a development workflow task. Requires agentKey (or agentDefinitionId), executionDirective, and acceptanceCriteria.",
+        "Create a development workflow task. Requires agentDefinitionId, executionDirective, and acceptanceCriteria.",
       inputSchema: {
         title: z.string().min(1),
-        agentDefinitionId: z.string().uuid().optional(),
-        agentKey: z.string().optional(),
+        agentDefinitionId: z.string().uuid(),
         assignee: z.string().optional(),
         subjectId: z.string().optional(),
         targetNodeId: z.string().uuid().optional(),

@@ -22,7 +22,7 @@ import {
   buildRunInstructions,
 } from "../runtime-prompt.js";
 import { DEFAULT_MODEL_ID } from "../models.js";
-
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 describe("createSsotaTools", () => {
   it("exposes the full graph + task tool set", () => {
     const tools = createSsotaTools();
@@ -104,10 +104,9 @@ describe("buildRunInstructions", () => {
       runtimeKind: "task",
       teamspaceId: "22222222-2222-2222-2222-222222222222",
       taskPlaybook: {
-        id: "33333333-3333-3333-3333-333333333333",
+        id: BUILTIN_AGENT_IDS.writeDocument,
         teamspaceId: "22222222-2222-2222-2222-222222222222",
         accountId: null,
-        key: "specialist.write_document",
         name: "Write document",
         description: "",
         instructions: [
@@ -116,7 +115,8 @@ describe("buildRunInstructions", () => {
             content: [{ type: "text", text: "Playbook body" }],
           },
         ],
-        agentKind: "specialist" as const,
+        isMain: false,
+        referenceOnly: false,
         toolBundles: [],
         nodeScopes: [],
         runPolicy: {},
@@ -139,7 +139,7 @@ describe("buildRunInstructions", () => {
     });
 
     expect(prompt).toContain("Draft the onboarding PRD");
-    expect(prompt).toContain("specialist.write_document");
+    expect(prompt).toContain("Write document");
     expect(prompt).toContain("COMPOSIO_SEARCH_TOOLS");
     expect(prompt).toContain("COMPOSIO_MULTI_EXECUTE_TOOL");
     expect(prompt).toContain("Covers activation metric");

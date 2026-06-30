@@ -52,11 +52,10 @@ export function createTaskTools(): ToolSet {
 
     spawn_task: tool({
       description:
-        "Create a follow-up task with a full delegation directive. Required: title, agentKey (or agentDefinitionId), executionDirective (goal, background, steps), acceptanceCriteria.",
+        "Create a follow-up task with a full delegation directive. Required: title, agentDefinitionId, executionDirective (goal, background, steps), acceptanceCriteria.",
       inputSchema: z.object({
         title: z.string(),
-        agentDefinitionId: z.string().uuid().optional(),
-        agentKey: z.string().optional(),
+        agentDefinitionId: z.string().uuid(),
         targetNodeId: z.string().uuid().optional(),
         executionDirective: ExecutionDirectiveSchema,
         acceptanceCriteria: z.array(z.unknown()).min(1),
@@ -70,7 +69,6 @@ export function createTaskTools(): ToolSet {
         const parsed = SpawnTaskInputSchema.parse({
           title: input.title,
           agentDefinitionId: input.agentDefinitionId,
-          agentKey: input.agentKey,
           targetNodeId: input.targetNodeId,
           acceptanceCriteria: input.acceptanceCriteria,
           idempotencyKey: input.idempotencyKey,

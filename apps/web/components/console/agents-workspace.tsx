@@ -26,7 +26,7 @@ function toRenderNode(definition: AgentDefinition): RenderNode {
     title: definition.name,
     properties: {
       content: definition.instructions,
-      summary: definition.key,
+      summary: definition.description,
     },
   };
 }
@@ -66,11 +66,12 @@ export function AgentsWorkspace({
 
     startTransition(async () => {
       await updateAgentDefinitionAction(teamspaceId, {
-        key: activeDefinition.key,
+        id: activeDefinition.id,
         name: activeDefinition.name,
         description: activeDefinition.description,
         instructions: blocks,
-        agentKind: activeDefinition.agentKind,
+        isMain: activeDefinition.isMain,
+        referenceOnly: activeDefinition.referenceOnly,
       });
       setGroups((current) =>
         current.map((group) => ({
@@ -107,7 +108,7 @@ export function AgentsWorkspace({
                 <button
                   key={definition.id}
                   type="button"
-                  data-testid={`agent-item-${definition.key}`}
+                  data-testid={`agent-item-${definition.id}`}
                   className={cn(
                     "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
                     activeId === definition.id && "bg-muted/30",
@@ -117,7 +118,7 @@ export function AgentsWorkspace({
                   <div className="min-w-0 flex-1 space-y-1">
                     <span className="text-sm font-medium">{definition.name}</span>
                     <p className="font-mono text-xs text-muted-foreground">
-                      {definition.key}
+                      {definition.id}
                     </p>
                     {definition.description ? (
                       <p className="line-clamp-2 text-xs text-muted-foreground">
@@ -145,7 +146,7 @@ export function AgentsWorkspace({
       {open && activeDefinition ? (
         <DocumentSheetPanel
           node={toRenderNode(activeDefinition)}
-          subtitle={activeDefinition.key}
+          subtitle={activeDefinition.description || activeDefinition.id}
           field="content"
           editable
           sheetSize={sheetSize}

@@ -5,7 +5,7 @@ import { createPageTools } from "./pages.js";
 import { createAgentDefinitionTools } from "./agent-definitions.js";
 import { createDelegateTools } from "./delegate.js";
 import { createScriptToolTools } from "./script-tools.js";
-import { buildAgentTools, toolBundlesForAgentKey } from "./build-agent-tools.js";
+import { buildAgentTools, toolBundlesForAgentDefinitionId } from "./build-agent-tools.js";
 
 export function createSsotaTools(): ToolSet {
   return {
@@ -26,5 +26,5 @@ export {
   createDelegateTools,
   createScriptToolTools,
   buildAgentTools,
-  toolBundlesForAgentKey,
+  toolBundlesForAgentDefinitionId,
 };

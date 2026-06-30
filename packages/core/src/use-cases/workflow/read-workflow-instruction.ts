@@ -12,16 +12,6 @@ export interface ResolvedWorkflowInstruction {
   source: "db";
 }
 
-/** @deprecated Use readAgentDefinitionByKey from use-cases/agent */
-export async function readWorkflowInstructionByKey(
-  port: AgentDefinitionReadPort,
-  key: string,
-  accountId?: string | null,
-): Promise<ResolvedWorkflowInstruction | null> {
-  const row = await port.getByKey(key, accountId);
-  return row ? { instruction: row, source: "db" } : null;
-}
-
 /** @deprecated Use readAgentDefinitionById from use-cases/agent */
 export async function readWorkflowInstructionById(
   port: AgentDefinitionReadPort,

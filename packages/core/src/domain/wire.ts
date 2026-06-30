@@ -91,7 +91,6 @@ export function serializeTaskIndex(task: Task): WireTaskIndex {
     title: task.title,
     status: task.status,
     agentDefinitionId: task.agentDefinitionId,
-    agentKey: task.agentKey,
     assignee: task.assignee,
     executorType: task.executorType,
     targetNodeId: task.targetNodeId,

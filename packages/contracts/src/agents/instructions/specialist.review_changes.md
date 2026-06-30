@@ -6,7 +6,7 @@ Review code or graph changes against acceptance criteria and produce a structure
 
 ## When to run
 
-- Task assigned with `agentKey=specialist.review_changes`
+- Task assigned with `agentDefinitionId=a0000000-0000-4000-8000-000000000003`
 - Main Agent delegates a review work order
 
 ## Steps

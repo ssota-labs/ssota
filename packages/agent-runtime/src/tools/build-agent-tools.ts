@@ -1,6 +1,6 @@
 import type { ToolSet } from "ai";
 import type { AgentDefinition, ToolBundle } from "@ssota/contracts";
-import { getAgentDefinitionByKey } from "@ssota/contracts/agents";
+import { getAgentDefinitionById } from "@ssota/contracts/agents";
 import { createGraphTools } from "./graph.js";
 import { createTaskTools } from "./tasks.js";
 import { createPageTools } from "./pages.js";
@@ -51,9 +51,9 @@ function mergeTools(...sets: ToolSet[]): ToolSet {
  * tools are resolved separately by the active adapter at run time.
  */
 export function buildAgentTools(
-  definition: Pick<AgentDefinition, "toolBundles" | "agentKind"> | {
+  definition: Pick<AgentDefinition, "toolBundles" | "isMain"> | {
     toolBundles: ToolBundle[];
-    agentKind: AgentDefinition["agentKind"];
+    isMain: boolean;
   },
 ): ToolSet {
   const bundles = new Set(definition.toolBundles);
@@ -92,16 +92,18 @@ export function buildAgentTools(
     tools = mergeTools(tools, scriptTools);
   }
 
-  if (definition.agentKind === "main" || bundles.has("graph.write")) {
+  if (definition.isMain || bundles.has("graph.write")) {
     tools = mergeTools(tools, pickTools(agents, AGENT_DEF_TOOLS));
   }
 
   return tools;
 }
 
-/** Resolve tool bundles from a task's agent key (builtin or DB-backed). */
-export function toolBundlesForAgentKey(agentKey: string | null | undefined): ToolBundle[] {
-  if (!agentKey) return [];
-  const builtin = getAgentDefinitionByKey(agentKey);
+/** Resolve tool bundles from a task's agent definition id (builtin or DB-backed). */
+export function toolBundlesForAgentDefinitionId(
+  agentDefinitionId: string | null | undefined,
+): ToolBundle[] {
+  if (!agentDefinitionId) return [];
+  const builtin = getAgentDefinitionById(agentDefinitionId);
   return builtin?.toolBundles ?? [];
 }

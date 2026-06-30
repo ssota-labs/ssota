@@ -1,11 +1,10 @@
 import { z } from "zod";
-import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import {
   getAgentForMcp,
   getAgentInstructionForMcp,
   listAgentsForMcp,
 } from "@/lib/api/agent-services";
-import { throwUnknownAgentKey } from "@/lib/api/mcp-errors";
+import { throwUnknownAgentDefinitionId } from "@/lib/api/mcp-errors";
 import { jsonContent } from "@/lib/mcp/json-content";
 import { registerScopedProjectTool } from "@/lib/mcp/register-scoped-tool";
 import { getDb } from "@/lib/ports";
@@ -42,14 +41,18 @@ export function registerAgentTools(server: McpToolServer) {
     {
       title: "Get Agent",
       description:
-        "Fetch agent definition metadata by key. Use get_agent_instruction for the full body.",
-      inputSchema: { agentKey: z.string().min(1) },
+        "Fetch agent definition metadata by id. Use get_agent_instruction for the full body.",
+      inputSchema: { agentDefinitionId: z.string().uuid() },
     },
     async ({ args, teamspaceId }) => {
-      const agentKey = String(args.agentKey);
-      const agent = await getAgentForMcp(getDb(), teamspaceId, agentKey);
+      const agentDefinitionId = String(args.agentDefinitionId);
+      const agent = await getAgentForMcp(
+        getDb(),
+        teamspaceId,
+        agentDefinitionId,
+      );
       if (!agent) {
-        throwUnknownAgentKey(agentKey);
+        throwUnknownAgentDefinitionId(agentDefinitionId);
       }
       return jsonContent(agent);
     },
@@ -61,18 +64,18 @@ export function registerAgentTools(server: McpToolServer) {
     {
       title: "Get Agent Instruction",
       description:
-        "Fetch the full instruction text for an agent key from the project DB.",
-      inputSchema: { agentKey: z.string().min(1) },
+        "Fetch the full instruction text for an agent definition id from the project DB.",
+      inputSchema: { agentDefinitionId: z.string().uuid() },
     },
     async ({ args, teamspaceId }) => {
-      const agentKey = String(args.agentKey);
+      const agentDefinitionId = String(args.agentDefinitionId);
       const instruction = await getAgentInstructionForMcp(
         getDb(),
         teamspaceId,
-        agentKey,
+        agentDefinitionId,
       );
       if (!instruction) {
-        throwUnknownAgentKey(agentKey);
+        throwUnknownAgentDefinitionId(agentDefinitionId);
       }
       return jsonContent(instruction);
     },

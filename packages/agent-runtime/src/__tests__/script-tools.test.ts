@@ -14,7 +14,7 @@ describe("script tool surface", () => {
 
   it("includes script tools when tool_bundles has script_tools", () => {
     const tools = buildAgentTools({
-      agentKind: "worker",
+      isMain: false,
       toolBundles: ["script_tools"],
     });
     expect(tools).toHaveProperty("run_script_tool");

@@ -1,40 +1,28 @@
-import { getAgentDefinitionPort } from "@/lib/ports";
 import {
-  isVirtualAgentDefinitionId,
-  loadAgentDefinitionsForUi,
-} from "@/lib/console/load-agents-for-ui";
+  AGENT_DEFINITION_SEEDS,
+  isKnownBuiltinAgentId,
+} from "@ssota/contracts/agents";
+import { getAgentDefinitionPort } from "@/lib/ports";
 
 /**
- * A schedule's `agentDefinitionId` is a real FK. The UI may hand us a
- * `virtual:{key}` id for a code-defined agent the user never saved — in that
- * case persist it (idempotent upsert) and return the resulting uuid.
- * Returns null if the id resolves to nothing.
+ * A schedule's `agentDefinitionId` is a real FK. When the UI references a
+ * builtin id that is not yet persisted for this teamspace, seed it idempotently
+ * and return the stable uuid.
  */
 export async function resolveAgentDefinitionId(
   teamspaceId: string,
   definitionId: string,
 ): Promise<string | null> {
-  if (!isVirtualAgentDefinitionId(definitionId)) {
-    const existing = await getAgentDefinitionPort(teamspaceId).getById(
-      definitionId,
-    );
-    return existing ? existing.id : null;
-  }
+  const port = getAgentDefinitionPort(teamspaceId);
+  const existing = await port.getById(definitionId);
+  if (existing) return existing.id;
 
-  const all = await loadAgentDefinitionsForUi(teamspaceId);
-  const virtual = all.find((entry) => entry.id === definitionId);
-  if (!virtual) return null;
+  if (!isKnownBuiltinAgentId(definitionId)) return null;
 
-  const saved = await getAgentDefinitionPort(teamspaceId).upsertDefinition({
-    key: virtual.key,
-    name: virtual.name,
-    description: virtual.description,
-    instructions: virtual.instructions,
-    agentKind: virtual.agentKind,
-    toolBundles: virtual.toolBundles,
-    nodeScopes: virtual.nodeScopes,
-    runPolicy: virtual.runPolicy,
-  });
+  const seed = AGENT_DEFINITION_SEEDS.find((entry) => entry.id === definitionId);
+  if (!seed) return null;
+
+  const saved = await port.upsertDefinition(seed);
   return saved.id;
 }
 

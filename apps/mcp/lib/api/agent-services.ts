@@ -1,7 +1,8 @@
-import type { AgentDefinition } from "@ssota/contracts";
+import type { AgentDefinition, AgentDefinitionIndex } from "@ssota/contracts";
 import { blockNoteContentToText } from "@ssota/contracts";
 import {
-  getAgentDefinitionByKey,
+  getAgentDefinitionById,
+  listBuiltinAgentIds,
   listRoutableAgentIndex,
 } from "@ssota/contracts/agents";
 import { createAgentDefinitionPort } from "@ssota/adapter-postgres";
@@ -10,68 +11,82 @@ import type { getDb } from "@/lib/ports";
 type Db = ReturnType<typeof getDb>;
 
 export interface AgentSummary {
-  id: string | null;
-  key: string;
+  id: string;
   name: string;
   description: string;
-  agentKind?: string;
+  isMain?: boolean;
+  referenceOnly?: boolean;
 }
 
-function serializeAgentSummary(entry: AgentDefinition): AgentSummary {
+function serializeAgentSummary(
+  entry: AgentDefinition | AgentDefinitionIndex,
+): AgentSummary {
   return {
     id: entry.id,
-    key: entry.key,
     name: entry.name,
     description: entry.description,
-    agentKind: entry.agentKind,
+    isMain: entry.isMain,
+    referenceOnly: entry.referenceOnly,
   };
 }
 
 export async function listAgentsForMcp(db: Db, teamspaceId: string) {
   const port = createAgentDefinitionPort(db, { teamspaceId });
   const items = await port.listDefinitions();
-  const dbKeys = new Set(items.map((w) => w.key));
-  const builtins: AgentSummary[] = listRoutableAgentIndex()
-    .filter((b) => !dbKeys.has(b.key))
-    .map((b) => ({ id: null, ...b }));
-  return { agents: [...items, ...builtins] };
+  const dbIds = new Set(items.map((w) => w.id));
+  const builtins: AgentSummary[] = listBuiltinAgentIds()
+    .filter((id) => !dbIds.has(id))
+    .map((id) => {
+      const builtin = getAgentDefinitionById(id)!;
+      return {
+        id: builtin.id,
+        name: builtin.title,
+        description: builtin.description,
+        isMain: builtin.isMain,
+        referenceOnly: builtin.referenceOnly,
+      };
+    });
+  return { agents: [...items.map(serializeAgentSummary), ...builtins] };
 }
 
 export async function getAgentForMcp(
   db: Db,
   teamspaceId: string,
-  agentKey: string,
+  agentDefinitionId: string,
 ): Promise<AgentSummary | null> {
   const port = createAgentDefinitionPort(db, { teamspaceId });
-  const entry = await port.getByKey(agentKey);
+  const entry = await port.getById(agentDefinitionId);
   if (entry) return serializeAgentSummary(entry);
-  const builtin = getAgentDefinitionByKey(agentKey);
+  const builtin = getAgentDefinitionById(agentDefinitionId);
   if (!builtin) return null;
   return {
-    id: null,
-    key: builtin.agentKey,
+    id: builtin.id,
     name: builtin.title,
     description: builtin.description,
-    agentKind: builtin.agentKind,
+    isMain: builtin.isMain,
+    referenceOnly: builtin.referenceOnly,
   };
 }
 
 export async function getAgentInstructionForMcp(
   db: Db,
   teamspaceId: string,
-  agentKey: string,
+  agentDefinitionId: string,
 ) {
   const port = createAgentDefinitionPort(db, { teamspaceId });
-  const entry = await port.getByKey(agentKey);
+  const entry = await port.getById(agentDefinitionId);
   if (entry) {
     return {
-      agentKey: entry.key,
+      agentDefinitionId: entry.id,
       instruction: blockNoteContentToText(entry.instructions),
     };
   }
-  const builtin = getAgentDefinitionByKey(agentKey);
+  const builtin = getAgentDefinitionById(agentDefinitionId);
   if (!builtin) return null;
-  return { agentKey: builtin.agentKey, instruction: builtin.instruction };
+  return {
+    agentDefinitionId: builtin.id,
+    instruction: builtin.instruction,
+  };
 }
 
 /** @deprecated Use listAgentsForMcp */

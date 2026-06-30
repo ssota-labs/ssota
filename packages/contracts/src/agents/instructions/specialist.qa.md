@@ -6,7 +6,7 @@ Run QA checks against acceptance criteria for a scoped deliverable.
 
 ## When to run
 
-- Task assigned with `agentKey=specialist.qa`
+- Task assigned with `agentDefinitionId=a0000000-0000-4000-8000-000000000007`
 - Post-implementation verification work order
 
 ## Steps

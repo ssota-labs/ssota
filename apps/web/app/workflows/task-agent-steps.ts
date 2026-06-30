@@ -1,21 +1,40 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
+import type { ToolBundle } from "@ssota/contracts";
+import {
+  BUILTIN_AGENT_IDS,
+  getAgentDefinitionById,
+} from "@ssota/contracts/agents";
 import {
   getDb,
   getTaskPort,
   resolveRunAgent,
   createSandboxSession,
   attachSandboxSession,
-  toolBundlesForAgentKey,
+  getAgentDefinitionPort,
 } from "@ssota/agent-runtime";
 import { createAgentRunPort } from "@ssota/adapter-postgres";
 
-/** Agent keys whose runs get a sandbox when tool_bundles includes sandbox.code. */
-const DEV_CAPABLE_AGENT_KEYS = new Set(["specialist.implement_feature"]);
+function agentNeedsSandbox(
+  agentDefinitionId: string | null | undefined,
+  toolBundles: ToolBundle[],
+): boolean {
+  if (!agentDefinitionId) return false;
+  if (agentDefinitionId === BUILTIN_AGENT_IDS.implementFeature) return true;
+  return toolBundles.includes("sandbox.code");
+}
 
-function agentNeedsSandbox(agentKey: string | null | undefined): boolean {
-  if (!agentKey) return false;
-  if (DEV_CAPABLE_AGENT_KEYS.has(agentKey)) return true;
-  return toolBundlesForAgentKey(agentKey).includes("sandbox.code");
+async function resolveAgentToolBundles(
+  teamspaceId: string,
+  accountId: string | undefined,
+  agentDefinitionId: string | null | undefined,
+): Promise<ToolBundle[]> {
+  if (!agentDefinitionId) return [];
+  const builtin = getAgentDefinitionById(agentDefinitionId);
+  if (builtin) return builtin.toolBundles;
+  const row = await getAgentDefinitionPort(teamspaceId, accountId).getById(
+    agentDefinitionId,
+  );
+  return row?.toolBundles ?? [];
 }
 
 /**
@@ -120,9 +139,14 @@ export async function provisionSandboxStep(
   const task = await getTaskPort(input.teamspaceId, input.accountId).getTask(
     input.taskId,
   );
+  const toolBundles = await resolveAgentToolBundles(
+    input.teamspaceId,
+    input.accountId,
+    task?.agentDefinitionId,
+  );
   if (
-    !task?.agentKey ||
-    !agentNeedsSandbox(task.agentKey)
+    !task?.agentDefinitionId ||
+    !agentNeedsSandbox(task.agentDefinitionId, toolBundles)
   ) {
     return undefined;
   }

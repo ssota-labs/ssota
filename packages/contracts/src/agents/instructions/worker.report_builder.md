@@ -6,7 +6,7 @@ Batch worker for report builder operations. Invoked by specialist agents or sche
 
 ## When to run
 
-- Task assigned with `agentKey=worker.report_builder`
+- Task assigned with `agentDefinitionId=a0000000-0000-4000-8000-000000000013`
 - Schedule trigger for batch processing
 
 ## Steps

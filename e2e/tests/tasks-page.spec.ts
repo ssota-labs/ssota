@@ -12,7 +12,7 @@ import {
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
-const AGENT_KEY = "specialist.e2e_tasks_page";
+const E2E_AGENT_ID = "b0000000-0000-4000-8000-000000000098";
 
 test.describe("Tasks page", () => {
   test.beforeAll(async ({ request }) => {
@@ -20,13 +20,12 @@ test.describe("Tasks page", () => {
     const { db, client } = createDb(process.env.DATABASE_URL);
     try {
       await createAgentDefinitionPort(db, { teamspaceId }).upsertDefinition({
-        key: AGENT_KEY,
+        id: E2E_AGENT_ID,
         name: "E2E tasks page agent",
         description: "Agent referenced by the tasks-page e2e fixture.",
         instructions: textToBlockNoteContent(
           "Complete the tasks-page fixture task.",
         ),
-        agentKind: "specialist",
       });
     } finally {
       await client.end({ timeout: 1 });
@@ -35,7 +34,7 @@ test.describe("Tasks page", () => {
     const token = await getSmokeAccessToken();
     await mcpToolCall(request, mcpUrl, token, "spawn_task", {
       title: "E2E tasks page fixture",
-      agentKey: AGENT_KEY,
+      agentDefinitionId: E2E_AGENT_ID,
       assignee: "agent:e2e-tasks-page",
       executionDirective: E2E_EXECUTION_DIRECTIVE,
       acceptanceCriteria: ["Visible on tasks page"],

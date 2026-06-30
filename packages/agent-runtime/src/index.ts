@@ -8,7 +8,7 @@ export {
   createTaskTools,
   createPageTools,
   buildAgentTools,
-  toolBundlesForAgentKey,
+  toolBundlesForAgentDefinitionId,
 } from "./tools/index.js";
 export { createSandboxTools } from "./tools/sandbox.js";
 export { createConnectionTools } from "./tools/connections.js";
@@ -63,7 +63,7 @@ export {
 export {
   mainAgentRuntimeDefinition,
   runtimeDefinitionFromAgent,
-  runtimeDefinitionFromAgentKey,
+  runtimeDefinitionFromBuiltinId,
   assertAllowedTrigger,
   TriggerNotAllowedError,
   type AgentRuntimeDefinition,

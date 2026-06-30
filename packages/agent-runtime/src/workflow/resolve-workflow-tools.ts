@@ -1,4 +1,4 @@
-import type { AgentKind, ToolBundle } from "@ssota/contracts";
+import type { ToolBundle } from "@ssota/contracts";
 import { isComposioEnabled } from "../composio/client.js";
 import { COMPOSIO_META_TOOL_NAMES } from "../composio/meta-tool-schemas.js";
 import {
@@ -60,7 +60,7 @@ const SCRIPT_TOOLS: WorkflowToolName[] = [
 
 export interface ResolveWorkflowToolsInput {
   toolBundles: ToolBundle[];
-  agentKind: AgentKind;
+  isMain?: boolean;
   includeSandboxTools?: boolean;
   /** When false, omit Composio meta-tools even if connectors bundle is present. */
   includeComposioTools?: boolean;
@@ -93,7 +93,7 @@ export function resolveWorkflowToolNames(
   if (bundles.has("script_tools")) {
     for (const n of SCRIPT_TOOLS) names.add(n);
   }
-  if (input.agentKind === "main" || bundles.has("graph.write")) {
+  if (input.isMain || bundles.has("graph.write")) {
     for (const n of AGENT_DEF_TOOLS) names.add(n);
   }
 

@@ -14,7 +14,7 @@ const createSchema = z.object({
   accountId: z.string().uuid().optional(),
   agentDefinitionId: z.string().min(1),
   targetType: z
-    .enum(["main_heartbeat", "specialist_agent", "ready_task_dispatch"])
+    .enum(["main_heartbeat", "agent", "ready_task_dispatch"])
     .optional(),
   cronExpression: z.string().min(1),
   timezone: z.string().min(1),

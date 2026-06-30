@@ -31,7 +31,7 @@ describe("resolveWorkflowToolNames", () => {
     const def = mainAgentRuntimeDefinition();
     const names = resolveWorkflowToolNames({
       toolBundles: def.toolBundles,
-      agentKind: def.agentKind,
+      isMain: def.isMain,
       includeComposioTools: true,
     });
     expect(names).toContain("delegate");
@@ -44,7 +44,7 @@ describe("resolveWorkflowToolNames", () => {
   it("omits composio tools when connectors bundle is absent", () => {
     const names = resolveWorkflowToolNames({
       toolBundles: ["graph.read"],
-      agentKind: "worker",
+      isMain: false,
       includeComposioTools: true,
     });
     expect(names).not.toContain("COMPOSIO_SEARCH_TOOLS");
@@ -60,7 +60,7 @@ describe("main workflow-agent tool surface", () => {
     const def = mainAgentRuntimeDefinition();
     const names = resolveWorkflowToolNames({
       toolBundles: def.toolBundles,
-      agentKind: def.agentKind,
+      isMain: def.isMain,
       includeComposioTools: true,
     });
     const missing = names.filter((n) => !dispatchable.has(n));

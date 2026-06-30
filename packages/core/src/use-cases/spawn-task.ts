@@ -17,31 +17,11 @@ export async function spawnTask(
   teamspaceId: string,
   input: SpawnTaskInput,
 ): Promise<Task> {
-  let agentDefinitionId = input.agentDefinitionId ?? null;
-  let agentKey: string | null = input.agentKey ?? null;
-
-  if (agentDefinitionId) {
-    const row = await deps.agentDefinitions.getById(agentDefinitionId);
-    if (!row || row.teamspaceId !== teamspaceId) {
-      throw new TaskError(
-        "UNKNOWN_AGENT_DEFINITION",
-        `Agent definition '${agentDefinitionId}' not found in project`,
-      );
-    }
-    agentKey = row.key;
-  } else if (agentKey) {
-    const row = await deps.agentDefinitions.getByKey(agentKey);
-    if (!row) {
-      throw new TaskError(
-        "UNKNOWN_AGENT_DEFINITION",
-        `Agent key '${agentKey}' not found`,
-      );
-    }
-    agentDefinitionId = row.id;
-  } else {
+  const row = await deps.agentDefinitions.getById(input.agentDefinitionId);
+  if (!row || row.teamspaceId !== teamspaceId) {
     throw new TaskError(
-      "PRECONDITION_FAILED",
-      "agentDefinitionId or agentKey is required",
+      "UNKNOWN_AGENT_DEFINITION",
+      `Agent definition '${input.agentDefinitionId}' not found in project`,
     );
   }
 
@@ -84,16 +64,15 @@ export async function spawnTask(
 
   return deps.tasks.createTask({
     title: input.title,
-    agentDefinitionId,
-    agentKey,
-    status: input.status ?? "pending",
-    executorType: input.executorType ?? "Agent",
+    agentDefinitionId: row.id,
     assignee: input.assignee ?? null,
     subjectId: input.subjectId ?? null,
     targetNodeId: input.targetNodeId ?? null,
     parentTaskId: input.parentTaskId ?? null,
+    executorType: input.executorType ?? "Agent",
     context: input.context ?? {},
     acceptanceCriteria: input.acceptanceCriteria ?? [],
     idempotencyKey: input.idempotencyKey ?? null,
+    status: input.status ?? "pending",
   });
 }

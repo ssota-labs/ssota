@@ -284,18 +284,13 @@ function applyEffect(
   } else if (effect.kind === "create_task") {
     const id = effect.task.id ?? randomUUID();
     const legacyKey =
-      "agentKey" in effect.task
-        ? (effect.task as { agentKey?: string }).agentKey
-        : effect.task.workflowKey;
+      "agentDefinitionId" in effect.task
+        ? (effect.task as { agentDefinitionId?: string }).agentDefinitionId
+        : null;
     state.tasks.set(id, {
       id,
       teamspaceId,
-      agentDefinitionId:
-        "agentDefinitionId" in effect.task
-          ? ((effect.task as { agentDefinitionId?: string }).agentDefinitionId ??
-            null)
-          : null,
-      agentKey: legacyKey ?? null,
+      agentDefinitionId: legacyKey ?? null,
       title: effect.task.title,
       status: effect.task.status ?? "pending",
       executorType: effect.task.executorType ?? "Agent",
@@ -640,9 +635,6 @@ function createInMemoryTaskPort(
         (task) => task.agentDefinitionId === params.agentDefinitionId,
       );
     }
-    if (params?.agentKey) {
-      items = items.filter((task) => task.agentKey === params.agentKey);
-    }
     if (params?.assignee) {
       items = items.filter((task) => task.assignee === params.assignee);
     }
@@ -689,7 +681,6 @@ function createInMemoryTaskPort(
         id: randomUUID(),
         teamspaceId,
         agentDefinitionId: input.agentDefinitionId ?? null,
-        agentKey: input.agentKey ?? null,
         title: input.title,
         status: input.status ?? "pending",
         executorType: input.executorType ?? "Agent",
@@ -987,17 +978,26 @@ export function createTestGate(
   };
 }
 
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+
 const TEST_AGENT_DEFINITIONS = [
-  { key: "main.ssota", name: "SSOTA Main Agent", agentKind: "main" as const },
   {
-    key: "specialist.implement_feature",
-    name: "Implement feature",
-    agentKind: "specialist" as const,
+    id: BUILTIN_AGENT_IDS.main,
+    name: "SSOTA Main Agent",
+    isMain: true,
+    referenceOnly: false,
   },
   {
-    key: "specialist.write_document",
+    id: BUILTIN_AGENT_IDS.implementFeature,
+    name: "Implement feature",
+    isMain: false,
+    referenceOnly: false,
+  },
+  {
+    id: BUILTIN_AGENT_IDS.writeDocument,
     name: "Write document",
-    agentKind: "specialist" as const,
+    isMain: false,
+    referenceOnly: false,
   },
 ];
 
@@ -1005,47 +1005,38 @@ export function createInMemoryAgentDefinitionPort(
   teamspaceId: string = TEST_PROJECT_ID,
 ): AgentDefinitionReadPort {
   const rows = new Map<string, AgentDefinition>(
-    TEST_AGENT_DEFINITIONS.map((meta) => {
-      const id = randomUUID();
-      return [
-        meta.key,
-        {
-          id,
-          teamspaceId,
-          accountId: null,
-          key: meta.key,
-          name: meta.name,
-          description: "",
-          instructions: [{ type: "paragraph", content: [{ type: "text", text: meta.name }] }],
-          agentKind: meta.agentKind,
-          toolBundles: [],
-          nodeScopes: [],
-          runPolicy: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-    }),
+    TEST_AGENT_DEFINITIONS.map((meta) => [
+      meta.id,
+      {
+        id: meta.id,
+        teamspaceId,
+        accountId: null,
+        name: meta.name,
+        description: "",
+        instructions: [{ type: "paragraph", content: [{ type: "text", text: meta.name }] }],
+        isMain: meta.isMain,
+        referenceOnly: meta.referenceOnly,
+        toolBundles: [],
+        nodeScopes: [],
+        runPolicy: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    ]),
   );
 
   return {
     async listDefinitions() {
-      return [...rows.values()].map(({ id, key, name, description, agentKind }) => ({
+      return [...rows.values()].map(({ id, name, description, isMain, referenceOnly }) => ({
         id,
-        key,
         name,
         description,
-        agentKind,
+        isMain,
+        referenceOnly,
       }));
     },
     async getById(id) {
-      for (const row of rows.values()) {
-        if (row.id === id) return row;
-      }
-      return null;
-    },
-    async getByKey(key) {
-      return rows.get(key) ?? null;
+      return rows.get(id) ?? null;
     },
   };
 }

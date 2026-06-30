@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it, beforeAll, afterAll, beforeEach } from "vitest";
 import { createNode, spawnTask, updateTask } from "@ssota/core";
 import { textToBlockNoteContent } from "@ssota/contracts";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import {
   createConsolePort,
   createDb,
@@ -56,17 +57,38 @@ describe("task port integration", () => {
         teamspaceId,
       });
 
-      for (const key of [
-        "specialist.implement_feature",
-        "specialist.write_document",
-        "main.ssota",
-      ]) {
+      const fixtures: Array<{
+        id: string;
+        name: string;
+        isMain: boolean;
+      }> = [
+        {
+          id: BUILTIN_AGENT_IDS.implementFeature,
+          name: "Implement feature",
+          isMain: false,
+        },
+        {
+          id: BUILTIN_AGENT_IDS.writeDocument,
+          name: "Write document",
+          isMain: false,
+        },
+        {
+          id: BUILTIN_AGENT_IDS.main,
+          name: "SSOTA Main Agent",
+          isMain: true,
+        },
+      ];
+
+      for (const fixture of fixtures) {
         await agentDefinitions.upsertDefinition({
-          key,
-          name: key,
-          description: `Integration fixture for ${key}`,
-          instructions: textToBlockNoteContent(`Fixture instruction for ${key}.`),
-          agentKind: key.startsWith("main.") ? "main" : "specialist",
+          id: fixture.id,
+          name: fixture.name,
+          description: `Integration fixture for ${fixture.name}`,
+          instructions: textToBlockNoteContent(
+            `Fixture instruction for ${fixture.name}.`,
+          ),
+          isMain: fixture.isMain,
+          referenceOnly: false,
           toolBundles: [],
           nodeScopes: [],
           runPolicy: {},
@@ -106,27 +128,27 @@ describe("task port integration", () => {
   it("spawnTask persists task with agent definition defaults", async () => {
     const task = await spawnTask(spawnDeps(), teamspaceId, {
       title: `Integration ${randomUUID()}`,
-      agentKey: "specialist.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["Task completed"],
     });
     expect(task.id).toBeTruthy();
     expect(task.status).toBe("pending");
-    expect(task.agentKey).toBe("specialist.implement_feature");
+    expect(task.agentDefinitionId).toBe(BUILTIN_AGENT_IDS.implementFeature);
   });
 
   it("spawnTask dedupes by idempotencyKey", async () => {
     const key = `integration:${randomUUID()}`;
     const first = await spawnTask(spawnDeps(), teamspaceId, {
       title: "First",
-      agentKey: "main.ssota",
+      agentDefinitionId: BUILTIN_AGENT_IDS.main,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: key,
     });
     const second = await spawnTask(spawnDeps(), teamspaceId, {
       title: "Second",
-      agentKey: "main.ssota",
+      agentDefinitionId: BUILTIN_AGENT_IDS.main,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: key,
@@ -147,7 +169,7 @@ describe("task port integration", () => {
 
     const task = await spawnTask(spawnDeps(), teamspaceId, {
       title: "Linked task",
-      agentKey: "specialist.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       targetNodeId: node.id,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
@@ -158,7 +180,7 @@ describe("task port integration", () => {
   it("updateTask patches status and result", async () => {
     const created = await spawnTask(spawnDeps(), teamspaceId, {
       title: `Patch ${randomUUID()}`,
-      agentKey: "specialist.write_document",
+      agentDefinitionId: BUILTIN_AGENT_IDS.writeDocument,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["document updated"],
     });
@@ -191,7 +213,7 @@ describe("task port integration", () => {
 
     await spawnTask(spawnDeps(), teamspaceId, {
       title: "Filtered",
-      agentKey: "specialist.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       targetNodeId: node.id,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],

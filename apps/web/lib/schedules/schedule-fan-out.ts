@@ -43,7 +43,7 @@ export async function fanOutSchedule(
       ]);
       return run.runId;
     }
-    case "specialist_agent": {
+    case "agent": {
       const agentPort = getAgentDefinitionPort(schedule.teamspaceId);
       const definition = await agentPort.getById(schedule.agentDefinitionId);
       if (!definition) return null;
@@ -62,7 +62,7 @@ export async function fanOutSchedule(
           idempotencyKey: `schedule:${schedule.id}:${new Date().toISOString().slice(0, 10)}`,
           context: {
             executionDirective: {
-              goal: `Execute scheduled specialist agent ${definition.key}`,
+              goal: `Execute scheduled agent ${definition.name}`,
               background: "Triggered by schedule fan-out",
               steps: ["Load agent playbook", "Execute task", "Report completion"],
               constraints: [],
@@ -70,7 +70,7 @@ export async function fanOutSchedule(
             },
           },
           acceptanceCriteria: [
-            { description: "Scheduled specialist run completed" },
+            { description: "Scheduled agent run completed" },
           ],
         },
       );

@@ -98,7 +98,7 @@ export function createSchedulePort(db: Db, scope: ScheduleScope) {
           teamspaceId,
           accountId,
           agentDefinitionId: input.agentDefinitionId,
-          targetType: input.targetType ?? "specialist_agent",
+          targetType: input.targetType ?? "agent",
           cronExpression: input.cronExpression,
           timezone: input.timezone,
           enabled: input.enabled ?? true,

@@ -196,9 +196,9 @@ export function TasksKanbanBoard({
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    {feature.agentKey ? (
+                    {feature.agentDefinitionId ? (
                       <span className="truncate font-mono text-[11px] text-muted-foreground">
-                        {feature.agentKey}
+                        {feature.agentDefinitionId.slice(0, 8)}
                       </span>
                     ) : (
                       <span />

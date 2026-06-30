@@ -43,7 +43,6 @@ export async function runSsotaAgentWorkflow(input: RunSsotaAgentInput) {
       runId: workflowRunId,
       accountId: input.accountId,
       sandboxId,
-      agentKey: definition.agentKey,
       agentDefinitionId: definition.agentDefinitionId,
       nodeScopes: definition.nodeScopes,
       trigger,

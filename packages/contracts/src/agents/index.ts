@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { ExecutorTypeSchema } from "../definitions.js";
 import {
-  AgentKindSchema,
   ToolBundleSchema,
   NodeScopeSchema,
   RunPolicySchema,
+  textToBlockNoteContent,
+  type AgentDefinitionSeed,
 } from "../agent-definition.js";
 import { TaskStatusSchema } from "../task.js";
+import { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, isBuiltinAgentId, type BuiltinAgentId } from "./builtin-ids.js";
 import { loadAgentInstruction } from "./load-instruction.js";
 
 export const AgentCadenceHintSchema = z.enum([
@@ -19,25 +21,22 @@ export const AgentCadenceHintSchema = z.enum([
 export type AgentCadenceHint = z.infer<typeof AgentCadenceHintSchema>;
 
 export const AgentDefinitionBuiltinSchema = z.object({
-  agentKey: z.string().min(1),
+  id: z.string().uuid(),
   title: z.string().min(1),
   /**
    * Skill-style "when to use" line. Injected into the main agent's prompt as a
-   * routing manifest so the agent self-selects the specialist and loads its full
+   * routing manifest so the agent self-selects an executor and loads its full
    * playbook on demand.
    */
   description: z.string().min(1),
-  agentKind: AgentKindSchema,
+  isMain: z.boolean().default(false),
+  referenceOnly: z.boolean().default(false),
   toolBundles: z.array(ToolBundleSchema).default([]),
   nodeScopes: z.array(NodeScopeSchema).default([]),
   runPolicy: RunPolicySchema.default({}),
   cadenceHint: AgentCadenceHintSchema.optional(),
   defaultExecutorType: ExecutorTypeSchema.optional(),
   defaultStatus: TaskStatusSchema.optional(),
-  /**
-   * Reference-only guides are loadable by key but hidden from the routing manifest.
-   */
-  reference: z.boolean().optional(),
   instruction: z.string().min(1),
 });
 
@@ -49,11 +48,12 @@ type AgentMeta = Omit<AgentDefinitionBuiltin, "instruction"> & {
 
 const AGENT_META: AgentMeta[] = [
   {
-    agentKey: "main.ssota",
+    id: BUILTIN_AGENT_IDS.main,
     title: "SSOTA Main Agent",
     description:
       "Default SSOTA conversational agent. Handles web chat, chatbots, project orchestration, heartbeat planning, and first-time setup.",
-    agentKind: "main",
+    isMain: true,
+    referenceOnly: false,
     toolBundles: [
       "graph.read",
       "graph.write",
@@ -70,11 +70,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "main.ssota.md",
   },
   {
-    agentKey: "specialist.implement_feature",
+    id: BUILTIN_AGENT_IDS.implementFeature,
     title: "Implement feature",
     description:
       "Implement a single scoped feature or fix. Use when executing a concrete, well-specified coding task with clear acceptance criteria.",
-    agentKind: "specialist",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["graph.read", "tasks.manage", "sandbox.code"],
     nodeScopes: [],
     runPolicy: { sandboxPolicy: "required", allowedTriggers: ["task", "manual"] },
@@ -83,11 +84,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "specialist.implement_feature.md",
   },
   {
-    agentKey: "specialist.review_changes",
+    id: BUILTIN_AGENT_IDS.reviewChanges,
     title: "Review changes",
     description:
       "Review code or graph changes against acceptance criteria. Use after implementation or before merge.",
-    agentKind: "specialist",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["graph.read", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "manual"] },
@@ -96,11 +98,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "specialist.review_changes.md",
   },
   {
-    agentKey: "specialist.research",
+    id: BUILTIN_AGENT_IDS.research,
     title: "Research",
     description:
       "Research a topic and produce structured findings. Use when information gathering is the primary deliverable.",
-    agentKind: "specialist",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["graph.read", "graph.write", "tasks.manage", "connectors"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "manual"] },
@@ -109,11 +112,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "specialist.research.md",
   },
   {
-    agentKey: "specialist.write_document",
+    id: BUILTIN_AGENT_IDS.writeDocument,
     title: "Write document",
     description:
       "Create or update a graph document node. Use when the deliverable is written content/documentation in the SSOTA graph.",
-    agentKind: "specialist",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["graph.read", "graph.write", "tasks.manage", "pages.author"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "manual"] },
@@ -122,11 +126,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "specialist.write_document.md",
   },
   {
-    agentKey: "specialist.unblock_task",
+    id: BUILTIN_AGENT_IDS.unblockTask,
     title: "Unblock stalled task",
     description:
       "Recover a stalled or blocked task. Use when a parent task is blocked and needs nudging, re-queuing, or escalation to a human.",
-    agentKind: "specialist",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["graph.read", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule", "heartbeat", "manual"] },
@@ -135,11 +140,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "specialist.unblock_task.md",
   },
   {
-    agentKey: "specialist.qa",
+    id: BUILTIN_AGENT_IDS.qa,
     title: "QA verification",
     description:
       "Run QA checks against acceptance criteria. Use for post-implementation verification work orders.",
-    agentKind: "specialist",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["graph.read", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "manual"] },
@@ -148,11 +154,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "specialist.qa.md",
   },
   {
-    agentKey: "worker.notion",
+    id: BUILTIN_AGENT_IDS.workerNotion,
     title: "Notion worker",
     description:
       "Batch sync or transform Notion content. Use for connector-backed Notion operations.",
-    agentKind: "worker",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["connectors", "script_tools", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
@@ -161,11 +168,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "worker.notion.md",
   },
   {
-    agentKey: "worker.graph_batch",
+    id: BUILTIN_AGENT_IDS.workerGraphBatch,
     title: "Graph batch worker",
     description:
       "Batch graph read/write operations. Use for bulk node/edge updates with bounded concurrency.",
-    agentKind: "worker",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["graph.read", "graph.write", "script_tools", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
@@ -174,11 +182,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "worker.graph_batch.md",
   },
   {
-    agentKey: "worker.connector_sync",
+    id: BUILTIN_AGENT_IDS.workerConnectorSync,
     title: "Connector sync worker",
     description:
       "Sync data from external connectors into the graph. Use for scheduled or on-demand connector batch jobs.",
-    agentKind: "worker",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["connectors", "graph.write", "script_tools", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
@@ -187,11 +196,12 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "worker.connector_sync.md",
   },
   {
-    agentKey: "worker.report_builder",
+    id: BUILTIN_AGENT_IDS.workerReportBuilder,
     title: "Report builder worker",
     description:
       "Build structured reports from graph data. Use when output is a compact summary or export artifact.",
-    agentKind: "worker",
+    isMain: false,
+    referenceOnly: false,
     toolBundles: ["graph.read", "script_tools", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
@@ -200,51 +210,51 @@ const AGENT_META: AgentMeta[] = [
     instructionFile: "worker.report_builder.md",
   },
   {
-    agentKey: "guide.agent_authoring",
+    id: BUILTIN_AGENT_IDS.guideAgentAuthoring,
     title: "Guide: agent authoring",
     description:
-      "Reference for writing good agent definitions (key naming, description, body). Load when authoring agents.",
-    agentKind: "guide",
+      "Reference for writing good agent definitions (description, body). Load when authoring agents.",
+    isMain: false,
+    referenceOnly: true,
     toolBundles: [],
     nodeScopes: [],
     runPolicy: {},
-    reference: true,
     instructionFile: "guide.agent_authoring.md",
   },
   {
-    agentKey: "guide.page_authoring",
+    id: BUILTIN_AGENT_IDS.guidePageAuthoring,
     title: "Guide: page authoring",
     description:
       "Reference for the json-render page format (spec, bindings, actions). Load when authoring pages.",
-    agentKind: "guide",
+    isMain: false,
+    referenceOnly: true,
     toolBundles: [],
     nodeScopes: [],
     runPolicy: {},
-    reference: true,
     instructionFile: "guide.page_authoring.md",
   },
   {
-    agentKey: "guide.script_tool_authoring",
+    id: BUILTIN_AGENT_IDS.guideScriptToolAuthoring,
     title: "Guide: script tool authoring",
     description:
       "Reference for authoring Script Tools (stored TypeScript workers). Load when defining reusable batch logic.",
-    agentKind: "guide",
+    isMain: false,
+    referenceOnly: true,
     toolBundles: [],
     nodeScopes: [],
     runPolicy: {},
-    reference: true,
     instructionFile: "guide.script_tool_authoring.md",
   },
   {
-    agentKey: "guide.task_delegation",
+    id: BUILTIN_AGENT_IDS.guideTaskDelegation,
     title: "Guide: task delegation",
     description:
-      "Reference for how the Main Agent creates and assigns tasks to specialists. Load when designing delegation patterns.",
-    agentKind: "guide",
+      "Reference for how the Main Agent creates and assigns tasks. Load when designing delegation patterns.",
+    isMain: false,
+    referenceOnly: true,
     toolBundles: [],
     nodeScopes: [],
     runPolicy: {},
-    reference: true,
     instructionFile: "guide.task_delegation.md",
   },
 ];
@@ -254,11 +264,11 @@ function buildRegistry(
 ): Record<string, AgentDefinitionBuiltin> {
   const registry: Record<string, AgentDefinitionBuiltin> = {};
   for (const entry of meta) {
-    if (entry.agentKey in registry) {
-      throw new Error(`Duplicate agent key: ${entry.agentKey}`);
+    if (entry.id in registry) {
+      throw new Error(`Duplicate builtin agent id: ${entry.id}`);
     }
     const { instructionFile, ...rest } = entry;
-    registry[entry.agentKey] = AgentDefinitionBuiltinSchema.parse({
+    registry[entry.id] = AgentDefinitionBuiltinSchema.parse({
       ...rest,
       instruction: loadAgentInstruction(instructionFile),
     });
@@ -269,77 +279,68 @@ function buildRegistry(
 export const AGENT_DEFINITION_REGISTRY: Record<string, AgentDefinitionBuiltin> =
   buildRegistry(AGENT_META);
 
-export const AGENT_DEFINITION_KEYS = Object.keys(
+export const BUILTIN_AGENT_ID_LIST = Object.keys(
   AGENT_DEFINITION_REGISTRY,
-) as AgentDefinitionKey[];
+) as BuiltinAgentId[];
 
-export type AgentDefinitionKey = (typeof AGENT_META)[number]["agentKey"];
-
-export function listAgentDefinitionKeys(): AgentDefinitionKey[] {
-  return [...AGENT_DEFINITION_KEYS];
+export function listBuiltinAgentIds(): BuiltinAgentId[] {
+  return [...BUILTIN_AGENT_ID_LIST];
 }
 
-export function getAgentDefinitionByKey(
-  agentKey: string,
+export function getAgentDefinitionById(
+  agentDefinitionId: string,
 ): AgentDefinitionBuiltin | null {
-  return AGENT_DEFINITION_REGISTRY[agentKey] ?? null;
+  return AGENT_DEFINITION_REGISTRY[agentDefinitionId] ?? null;
 }
 
-export function isKnownAgentKey(
-  agentKey: string,
-): agentKey is AgentDefinitionKey {
-  return agentKey in AGENT_DEFINITION_REGISTRY;
+export function isKnownBuiltinAgentId(
+  agentDefinitionId: string,
+): agentDefinitionId is BuiltinAgentId {
+  return agentDefinitionId in AGENT_DEFINITION_REGISTRY;
 }
 
-export function listAgentsByKind(
-  agentKind: z.infer<typeof AgentKindSchema>,
-): AgentDefinitionBuiltin[] {
-  return Object.values(AGENT_DEFINITION_REGISTRY).filter(
-    (a) => a.agentKind === agentKind,
-  );
-}
-
-/** Lightweight routing-manifest row (no DB id — built-ins have none). */
+/** Lightweight routing-manifest row for Main Agent delegation. */
 export interface AgentManifestEntry {
-  key: string;
+  id: string;
   name: string;
   description: string;
-  agentKind: z.infer<typeof AgentKindSchema>;
 }
 
 /**
- * Specialist and worker agents as manifest rows for Main Agent routing.
- * Excludes main, guides, and reference-only entries.
+ * Task-runnable agents for Main Agent routing. Excludes main and reference guides.
  */
 export function listRoutableAgentIndex(): AgentManifestEntry[] {
   return Object.values(AGENT_DEFINITION_REGISTRY)
-    .filter(
-      (a) =>
-        !a.reference &&
-        (a.agentKind === "specialist" || a.agentKind === "worker"),
-    )
+    .filter((a) => !a.isMain && !a.referenceOnly)
     .map((a) => ({
-      key: a.agentKey,
+      id: a.id,
       name: a.title,
       description: a.description,
-      agentKind: a.agentKind,
     }));
 }
 
-/** Main agent manifest entry. */
+/** Main agent builtin definition. */
 export function getMainAgentDefinition(): AgentDefinitionBuiltin {
-  const main = AGENT_DEFINITION_REGISTRY["main.ssota"];
+  const main = AGENT_DEFINITION_REGISTRY[MAIN_AGENT_ID];
   if (!main) {
-    throw new Error("main.ssota agent definition is missing from registry");
+    throw new Error("Main agent builtin definition is missing from registry");
   }
   return main;
 }
 
-import type { AgentDefinitionSeed } from "../agent-definition.js";
+/** DB seeds for teamspace bootstrap — stable ids from {@link BUILTIN_AGENT_IDS}. */
+export const AGENT_DEFINITION_SEEDS: AgentDefinitionSeed[] = Object.values(
+  AGENT_DEFINITION_REGISTRY,
+).map((entry) => ({
+  id: entry.id,
+  name: entry.title,
+  description: entry.description,
+  instructions: textToBlockNoteContent(entry.instruction),
+  isMain: entry.isMain,
+  referenceOnly: entry.referenceOnly,
+  toolBundles: entry.toolBundles,
+  nodeScopes: entry.nodeScopes,
+  runPolicy: entry.runPolicy,
+}));
 
-/**
- * DB seeds for project bootstrap — intentionally EMPTY. Built-in agents ship in
- * code via {@link AGENT_DEFINITION_REGISTRY}. Projects may override by writing
- * DB rows with the same key.
- */
-export const AGENT_DEFINITION_SEEDS: AgentDefinitionSeed[] = [];
+export { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, isBuiltinAgentId, type BuiltinAgentId } from "./builtin-ids.js";

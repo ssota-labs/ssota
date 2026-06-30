@@ -10,15 +10,6 @@ export async function listAgentDefinitions(
   return port.listDefinitions();
 }
 
-export async function readAgentDefinitionByKey(
-  port: { getByKey(key: string): Promise<AgentDefinition | null> },
-  key: string,
-): Promise<{ source: "db"; definition: AgentDefinition } | null> {
-  const row = await port.getByKey(key);
-  if (!row) return null;
-  return { source: "db", definition: row };
-}
-
 export async function readAgentDefinitionById(
   port: { getById(id: string): Promise<AgentDefinition | null> },
   id: string,

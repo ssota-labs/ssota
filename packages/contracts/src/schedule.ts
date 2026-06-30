@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const ScheduleTargetTypeSchema = z.enum([
   "main_heartbeat",
-  "specialist_agent",
+  "agent",
   "ready_task_dispatch",
 ]);
 

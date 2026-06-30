@@ -1,16 +1,16 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 import {
   listAgentDefinitions,
   readAgentDefinitionById,
-  readAgentDefinitionByKey,
 } from "@ssota/core";
 import {
   blockNoteContentToText,
   textToBlockNoteContent,
 } from "@ssota/contracts";
 import {
-  getAgentDefinitionByKey,
+  getAgentDefinitionById,
   listRoutableAgentIndex,
 } from "@ssota/contracts/agents";
 import { getAgentDefinitionPort } from "../ports.js";
@@ -28,51 +28,50 @@ export function createAgentDefinitionTools(): ToolSet {
           getAgentDefinitionPort(ctx.teamspaceId, ctx.accountId),
         );
         const dbRows = items.map((definition) => ({
-          id: definition.id as string | null,
-          key: definition.key,
+          id: definition.id,
           name: definition.name,
           description: definition.description,
-          agentKind: definition.agentKind,
+          isMain: definition.isMain,
+          referenceOnly: definition.referenceOnly,
         }));
-        const dbKeys = new Set(dbRows.map((r) => r.key));
+        const dbIds = new Set(dbRows.map((r) => r.id));
         const builtins = listRoutableAgentIndex()
-          .filter((b) => !dbKeys.has(b.key))
-          .map((b) => ({ id: null, ...b }));
+          .filter((b) => !dbIds.has(b.id))
+          .map((b) => ({
+            id: b.id,
+            name: b.name,
+            description: b.description,
+            isMain: false,
+            referenceOnly: false,
+          }));
         return { definitions: [...dbRows, ...builtins] };
       },
     }),
 
     get_agent_instruction: tool({
       description:
-        "Fetch an agent definition playbook by id or key. Returns BlockNote content as plain text for reading. Load on demand — do not cache entire library inline.",
+        "Fetch an agent definition playbook by id. Returns BlockNote content as plain text for reading. Load on demand — do not cache entire library inline.",
       inputSchema: z.object({
-        id: z.string().uuid().optional(),
-        key: z.string().optional(),
+        id: z.string().uuid(),
       }),
       execute: async (input, { context }) => {
         const ctx = getRunContext(context);
         const port = getAgentDefinitionPort(ctx.teamspaceId, ctx.accountId);
-        const result = input.id
-          ? await readAgentDefinitionById(port, input.id)
-          : input.key
-            ? await readAgentDefinitionByKey(port, input.key)
-            : null;
+        const result = await readAgentDefinitionById(port, input.id);
         if (result) {
           return {
             found: true,
             id: result.definition.id,
-            key: result.definition.key,
             name: result.definition.name,
             description: result.definition.description,
             text: blockNoteContentToText(result.definition.instructions),
           };
         }
-        const builtin = input.key ? getAgentDefinitionByKey(input.key) : null;
+        const builtin = getAgentDefinitionById(input.id);
         if (builtin) {
           return {
             found: true,
-            id: null,
-            key: builtin.agentKey,
+            id: builtin.id,
             name: builtin.title,
             description: builtin.description,
             text: builtin.instruction,
@@ -84,11 +83,9 @@ export function createAgentDefinitionTools(): ToolSet {
 
     write_agent_definition: tool({
       description:
-        "Create or update an agent definition (upsert by key). Write the playbook as markdown in `body` — a clear step-by-step process. `description` is a skill-style 'when to use' line (routing quality depends on it).",
+        "Create or update an agent definition (upsert by id). Omit id to create a new agent. Write the playbook as markdown in `body` — a clear step-by-step process. `description` is a skill-style 'when to use' line (routing quality depends on it).",
       inputSchema: z.object({
-        key: z
-          .string()
-          .describe("Stable agent key, e.g. 'specialist.onboard_customer'."),
+        id: z.string().uuid().optional(),
         name: z.string().describe("Human-readable title."),
         description: z
           .string()
@@ -96,10 +93,8 @@ export function createAgentDefinitionTools(): ToolSet {
         body: z
           .string()
           .describe("The playbook as markdown / plain text."),
-        agentKind: z
-          .enum(["main", "specialist", "worker", "guide"])
-          .optional()
-          .describe("Agent kind; defaults to specialist."),
+        isMain: z.boolean().optional(),
+        referenceOnly: z.boolean().optional(),
       }),
       execute: async (input, { context }) => {
         const ctx = getRunContext(context);
@@ -108,16 +103,17 @@ export function createAgentDefinitionTools(): ToolSet {
             ctx.teamspaceId,
             ctx.accountId,
           ).upsertDefinition({
-            key: input.key,
+            id: input.id ?? randomUUID(),
             name: input.name,
             description: input.description,
             instructions: textToBlockNoteContent(input.body),
-            agentKind: input.agentKind ?? "specialist",
+            isMain: input.isMain ?? false,
+            referenceOnly: input.referenceOnly ?? false,
             toolBundles: [],
             nodeScopes: [],
             runPolicy: {},
           });
-          return { ok: true, id: saved.id, key: saved.key };
+          return { ok: true, id: saved.id };
         } catch (error) {
           return {
             ok: false,

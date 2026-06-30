@@ -10,7 +10,7 @@ import {
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
-const AGENT_KEY = "specialist.e2e_task";
+const E2E_AGENT_ID = "b0000000-0000-4000-8000-000000000099";
 
 test.describe("MCP task tools", () => {
   test.beforeAll(async () => {
@@ -18,11 +18,10 @@ test.describe("MCP task tools", () => {
     const { db, client } = createDb(process.env.DATABASE_URL);
     try {
       await createAgentDefinitionPort(db, { teamspaceId }).upsertDefinition({
-        key: AGENT_KEY,
+        id: E2E_AGENT_ID,
         name: "E2E task agent",
         description: "Agent referenced by the MCP tasks e2e spec.",
         instructions: textToBlockNoteContent("Complete the E2E task."),
-        agentKind: "specialist",
       });
     } finally {
       await client.end({ timeout: 1 });
@@ -35,7 +34,7 @@ test.describe("MCP task tools", () => {
 
     const spawned = (await mcpToolCall(request, mcpUrl, token, "spawn_task", {
       title: "E2E spawned task",
-      agentKey: AGENT_KEY,
+      agentDefinitionId: E2E_AGENT_ID,
       assignee: "agent:e2e",
       executionDirective: E2E_EXECUTION_DIRECTIVE,
       acceptanceCriteria: ["Task completed in E2E"],
@@ -43,12 +42,12 @@ test.describe("MCP task tools", () => {
     })) as {
       id: string;
       title: string;
-      agentKey: string;
+      agentDefinitionId: string;
       status: string;
     };
 
     expect(spawned.id).toBeTruthy();
-    expect(spawned.agentKey).toBe(AGENT_KEY);
+    expect(spawned.agentDefinitionId).toBe(E2E_AGENT_ID);
     expect(spawned.status).toBe("pending");
 
     const listed = (await mcpToolCall(
@@ -56,7 +55,7 @@ test.describe("MCP task tools", () => {
       mcpUrl,
       token,
       "list_tasks",
-    )) as Array<{ id: string; title: string; agentKey: string }>;
+    )) as Array<{ id: string; title: string; agentDefinitionId: string }>;
     expect(Array.isArray(listed)).toBe(true);
     expect(listed.some((task) => task.title === "E2E spawned task")).toBe(true);
 
@@ -66,7 +65,7 @@ test.describe("MCP task tools", () => {
       token,
       "query_tasks",
       {
-        agentKey: AGENT_KEY,
+        agentDefinitionId: E2E_AGENT_ID,
         assignee: "agent:e2e",
         limit: 10,
       },
@@ -76,9 +75,9 @@ test.describe("MCP task tools", () => {
 
     const task = (await mcpToolCall(request, mcpUrl, token, "get_task", {
       taskId: matched!.id,
-    })) as { id: string; title: string; agentKey: string } | null;
+    })) as { id: string; title: string; agentDefinitionId: string } | null;
     expect(task?.id).toBe(matched!.id);
-    expect(task?.agentKey).toBe(AGENT_KEY);
+    expect(task?.agentDefinitionId).toBe(E2E_AGENT_ID);
 
     const updated = (await mcpToolCall(request, mcpUrl, token, "update_task", {
       taskId: matched!.id,
@@ -90,7 +89,7 @@ test.describe("MCP task tools", () => {
 
     const duplicate = (await mcpToolCall(request, mcpUrl, token, "spawn_task", {
       title: "Should not create duplicate",
-      agentKey: AGENT_KEY,
+      agentDefinitionId: E2E_AGENT_ID,
       executionDirective: E2E_EXECUTION_DIRECTIVE,
       acceptanceCriteria: ["done"],
       idempotencyKey,

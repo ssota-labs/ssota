@@ -34,7 +34,6 @@ export default async function SchedulesPage({
           id: i.id,
           name: i.name,
           description: i.description,
-          key: i.key,
         }))}
         teamspaceId={project.id}
         accountId={account.id}

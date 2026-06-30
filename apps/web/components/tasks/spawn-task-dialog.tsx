@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import { spawnTaskAction } from "@/app/actions";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -23,7 +24,7 @@ import {
 } from "@ssota/ui/components/ui/select";
 
 export type AgentOption = {
-  agentKey: string;
+  agentDefinitionId: string;
   title: string;
 };
 
@@ -41,8 +42,8 @@ export function SpawnTaskDialog({
 }: SpawnTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [agentKey, setAgentKey] = useState(
-    agentOptions[0]?.agentKey ?? "specialist.implement_feature",
+  const [agentDefinitionId, setAgentDefinitionId] = useState(
+    agentOptions[0]?.agentDefinitionId ?? BUILTIN_AGENT_IDS.implementFeature,
   );
   const [assignee, setAssignee] = useState("");
   const [executorType, setExecutorType] = useState<"Agent" | "Human" | "System">(
@@ -55,7 +56,9 @@ export function SpawnTaskDialog({
     setTitle("");
     setAssignee("");
     setExecutorType("Human");
-    setAgentKey(agentOptions[0]?.agentKey ?? "specialist.implement_feature");
+    setAgentDefinitionId(
+      agentOptions[0]?.agentDefinitionId ?? BUILTIN_AGENT_IDS.implementFeature,
+    );
     setError(null);
   }
 
@@ -66,7 +69,7 @@ export function SpawnTaskDialog({
       try {
         await spawnTaskAction(teamspaceId, {
           title: title.trim(),
-          agentKey,
+          agentDefinitionId,
           assignee: assignee.trim() || undefined,
           executorType,
         });
@@ -111,11 +114,11 @@ export function SpawnTaskDialog({
             <div className="grid gap-2">
               <Label htmlFor="task-agent">Agent</Label>
               <Select
-                value={agentKey}
-                onValueChange={(value) => value && setAgentKey(value)}
+                value={agentDefinitionId}
+                onValueChange={(value) => value && setAgentDefinitionId(value)}
                 disabled={isPending}
                 items={agentOptions.map((option) => ({
-                  value: option.agentKey,
+                  value: option.agentDefinitionId,
                   label: option.title,
                 }))}
               >
@@ -124,7 +127,10 @@ export function SpawnTaskDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {agentOptions.map((option) => (
-                    <SelectItem key={option.agentKey} value={option.agentKey}>
+                    <SelectItem
+                      key={option.agentDefinitionId}
+                      value={option.agentDefinitionId}
+                    >
                       {option.title}
                     </SelectItem>
                   ))}

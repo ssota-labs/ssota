@@ -1,21 +1,26 @@
-import type { AgentDefinition, AgentKind } from "@ssota/contracts";
-import { getAgentDefinitionByKey } from "@ssota/contracts/agents";
+import type { AgentDefinition } from "@ssota/contracts";
+import { isBuiltinAgentId } from "@ssota/contracts/agents";
 
-export type AgentGroupKey = AgentKind | "custom";
+export type AgentGroupKey = "main" | "agents" | "reference" | "custom";
 
-const GROUP_ORDER: AgentGroupKey[] = ["main", "specialist", "worker", "guide", "custom"];
+const GROUP_ORDER: AgentGroupKey[] = [
+  "main",
+  "agents",
+  "reference",
+  "custom",
+];
 
 const GROUP_LABEL: Record<AgentGroupKey, string> = {
   main: "Main",
-  specialist: "Specialist",
-  worker: "Worker",
-  guide: "Guide",
+  agents: "Agents",
+  reference: "Reference",
   custom: "Custom",
 };
 
-export function agentGroupKey(definitionKey: string): AgentGroupKey {
-  const builtin = getAgentDefinitionByKey(definitionKey);
-  if (builtin) return builtin.agentKind;
+export function agentGroupKey(definition: AgentDefinition): AgentGroupKey {
+  if (definition.isMain) return "main";
+  if (definition.referenceOnly) return "reference";
+  if (isBuiltinAgentId(definition.id)) return "agents";
   return "custom";
 }
 
@@ -29,7 +34,7 @@ export function groupAgentDefinitions(
   const buckets = new Map<AgentGroupKey, AgentDefinition[]>();
 
   for (const definition of definitions) {
-    const groupKey = agentGroupKey(definition.key);
+    const groupKey = agentGroupKey(definition);
     const list = buckets.get(groupKey) ?? [];
     list.push(definition);
     buckets.set(groupKey, list);

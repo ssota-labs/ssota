@@ -17,11 +17,11 @@ function mapDefinition(row: DefinitionRow): AgentDefinition {
     id: row.id,
     teamspaceId: row.teamspaceId,
     accountId: row.accountId,
-    key: row.key,
     name: row.name,
     description: row.description,
     instructions: row.instructions,
-    agentKind: row.agentKind,
+    isMain: row.isMain,
+    referenceOnly: row.referenceOnly,
     toolBundles: row.toolBundles,
     nodeScopes: row.nodeScopes,
     runPolicy: row.runPolicy,
@@ -33,10 +33,10 @@ function mapDefinition(row: DefinitionRow): AgentDefinition {
 function mapIndex(row: DefinitionRow): AgentDefinitionIndex {
   return {
     id: row.id,
-    key: row.key,
     name: row.name,
     description: row.description,
-    agentKind: row.agentKind,
+    isMain: row.isMain,
+    referenceOnly: row.referenceOnly,
   };
 }
 
@@ -80,21 +80,6 @@ export function createAgentDefinitionPort(
       return rows[0] ? mapDefinition(rows[0]) : null;
     },
 
-    async getByKey(key, accountId = null) {
-      const rows = await db
-        .select()
-        .from(schema.agentDefinitions)
-        .where(
-          and(
-            eq(schema.agentDefinitions.teamspaceId, teamspaceId),
-            eq(schema.agentDefinitions.key, key),
-            accountCondition(accountId),
-          ),
-        )
-        .limit(1);
-      return rows[0] ? mapDefinition(rows[0]) : null;
-    },
-
     async upsertDefinition(input) {
       const parsed = AgentDefinitionSeedSchema.parse(input);
       const accountId = input.accountId ?? null;
@@ -104,7 +89,7 @@ export function createAgentDefinitionPort(
         .where(
           and(
             eq(schema.agentDefinitions.teamspaceId, teamspaceId),
-            eq(schema.agentDefinitions.key, parsed.key),
+            eq(schema.agentDefinitions.id, parsed.id),
             accountCondition(accountId),
           ),
         )
@@ -116,7 +101,8 @@ export function createAgentDefinitionPort(
             name: parsed.name,
             description: parsed.description,
             instructions: parsed.instructions,
-            agentKind: parsed.agentKind,
+            isMain: parsed.isMain,
+            referenceOnly: parsed.referenceOnly,
             toolBundles: parsed.toolBundles,
             nodeScopes: parsed.nodeScopes,
             runPolicy: parsed.runPolicy,
@@ -129,13 +115,14 @@ export function createAgentDefinitionPort(
       const [row] = await db
         .insert(schema.agentDefinitions)
         .values({
+          id: parsed.id,
           teamspaceId,
           accountId,
-          key: parsed.key,
           name: parsed.name,
           description: parsed.description,
           instructions: parsed.instructions,
-          agentKind: parsed.agentKind,
+          isMain: parsed.isMain,
+          referenceOnly: parsed.referenceOnly,
           toolBundles: parsed.toolBundles,
           nodeScopes: parsed.nodeScopes,
           runPolicy: parsed.runPolicy,
@@ -144,13 +131,13 @@ export function createAgentDefinitionPort(
       return mapDefinition(row!);
     },
 
-    async deleteByKey(key, accountId = null) {
+    async deleteById(id, accountId = null) {
       await db
         .delete(schema.agentDefinitions)
         .where(
           and(
             eq(schema.agentDefinitions.teamspaceId, teamspaceId),
-            eq(schema.agentDefinitions.key, key),
+            eq(schema.agentDefinitions.id, id),
             accountCondition(accountId),
           ),
         );
@@ -162,54 +149,16 @@ export function createAgentDefinitionPort(
 export const createWorkflowInstructionPort = createAgentDefinitionPort;
 
 /**
- * Bootstrap-seed agent definitions for a teamspace. Idempotent.
+ * Bootstrap-seed agent definitions for a teamspace. Idempotent by stable id.
  */
 export async function seedAgentDefinitions(
   db: Db,
   teamspaceId: string,
   seeds: UpsertAgentDefinitionInput[],
 ): Promise<void> {
+  const port = createAgentDefinitionPort(db, { teamspaceId });
   for (const seed of seeds) {
-    const parsed = AgentDefinitionSeedSchema.parse(seed);
-    const existing = await db
-      .select()
-      .from(schema.agentDefinitions)
-      .where(
-        and(
-          eq(schema.agentDefinitions.teamspaceId, teamspaceId),
-          eq(schema.agentDefinitions.key, parsed.key),
-          isNull(schema.agentDefinitions.accountId),
-        ),
-      )
-      .limit(1);
-    if (existing[0]) {
-      await db
-        .update(schema.agentDefinitions)
-        .set({
-          name: parsed.name,
-          description: parsed.description,
-          instructions: parsed.instructions,
-          agentKind: parsed.agentKind,
-          toolBundles: parsed.toolBundles,
-          nodeScopes: parsed.nodeScopes,
-          runPolicy: parsed.runPolicy,
-          updatedAt: new Date(),
-        })
-        .where(eq(schema.agentDefinitions.id, existing[0].id));
-    } else {
-      await db.insert(schema.agentDefinitions).values({
-        teamspaceId,
-        accountId: null,
-        key: parsed.key,
-        name: parsed.name,
-        description: parsed.description,
-        instructions: parsed.instructions,
-        agentKind: parsed.agentKind,
-        toolBundles: parsed.toolBundles,
-        nodeScopes: parsed.nodeScopes,
-        runPolicy: parsed.runPolicy,
-      });
-    }
+    await port.upsertDefinition(seed);
   }
 }
 

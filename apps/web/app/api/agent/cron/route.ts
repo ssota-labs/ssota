@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     }
     // Dedupe: if this schedule already produced a run for this fire (e.g. a
     // double heartbeat or overlapping buffer), do not spawn another.
-    if (await agentRunPort.hasRunForScheduleSince(schedule.id, fire)) {
+    if (await agentRunPort.hasScheduleRunSince(schedule.id, fire)) {
       skipped.push(schedule.id);
       continue;
     }

@@ -6,6 +6,7 @@ import {
   mcpToolCall,
   mcpToolCallExpectError,
 } from "../helpers/mcp";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 
 const mcpUrl = process.env.MCP_URL ?? "http://127.0.0.1:3101";
 
@@ -27,10 +28,12 @@ test.describe("MCP agent tools", () => {
       "list_agents",
       {},
       scope,
-    )) as { agents: Array<{ key: string; name: string }> };
+    )) as { agents: Array<{ id: string; name: string }> };
 
     expect(
-      listed.agents.some((entry) => entry.key === "specialist.implement_feature"),
+      listed.agents.some(
+        (entry) => entry.id === BUILTIN_AGENT_IDS.implementFeature,
+      ),
     ).toBe(true);
     for (const agent of listed.agents) {
       expect(agent).not.toHaveProperty("instruction");
@@ -42,10 +45,10 @@ test.describe("MCP agent tools", () => {
       mcpUrl,
       token,
       "get_agent",
-      { agentKey: "guide.agent_authoring" },
+      { agentDefinitionId: BUILTIN_AGENT_IDS.guideAgentAuthoring },
       scope,
-    )) as { key: string; name: string };
-    expect(guide.key).toBe("guide.agent_authoring");
+    )) as { id: string; name: string };
+    expect(guide.id).toBe(BUILTIN_AGENT_IDS.guideAgentAuthoring);
     expect(guide).not.toHaveProperty("instruction");
     expect(guide).not.toHaveProperty("content");
 
@@ -54,24 +57,26 @@ test.describe("MCP agent tools", () => {
       mcpUrl,
       token,
       "get_agent_instruction",
-      { agentKey: "guide.agent_authoring" },
+      { agentDefinitionId: BUILTIN_AGENT_IDS.guideAgentAuthoring },
       scope,
-    )) as { agentKey: string; instruction: string };
-    expect(guideInstruction.agentKey).toBe("guide.agent_authoring");
+    )) as { agentDefinitionId: string; instruction: string };
+    expect(guideInstruction.agentDefinitionId).toBe(
+      BUILTIN_AGENT_IDS.guideAgentAuthoring,
+    );
     expect(guideInstruction.instruction).toContain("write_agent_instruction");
     expect(guideInstruction.instruction.length).toBeGreaterThan(50);
   });
 
-  test("rejects unknown agent keys", async ({ request }) => {
+  test("rejects unknown agent definition ids", async ({ request }) => {
     const token = await getSmokeAccessToken();
     const errorText = await mcpToolCallExpectError(
       request,
       mcpUrl,
       token,
       "get_agent_instruction",
-      { agentKey: "not.an.agent" },
+      { agentDefinitionId: "00000000-0000-4000-8000-000000000099" },
       scope,
     );
-    expect(errorText).toContain("UNKNOWN_AGENT_KEY");
+    expect(errorText).toContain("UNKNOWN_AGENT_DEFINITION");
   });
 });

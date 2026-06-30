@@ -14,7 +14,6 @@ export interface InstructionOption {
   id: string;
   name: string;
   description?: string;
-  key?: string;
 }
 
 type InstructionPickerSelectProps = {

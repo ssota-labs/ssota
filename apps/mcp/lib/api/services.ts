@@ -29,7 +29,6 @@ export function mapTaskError(error: unknown): Response | null {
       error.code === "NOT_FOUND"
         ? 404
         : error.code === "UNKNOWN_AGENT_DEFINITION" ||
-            error.code === "UNKNOWN_AGENT_KEY" ||
             error.code === "VALIDATION_FAILED"
           ? 422
           : error.code === "ORG_MISMATCH"

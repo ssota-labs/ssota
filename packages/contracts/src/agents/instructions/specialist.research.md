@@ -6,7 +6,7 @@ Research a topic and produce a structured summary or graph document.
 
 ## When to run
 
-- Task assigned with `agentKey=specialist.research`
+- Task assigned with `agentDefinitionId=a0000000-0000-4000-8000-000000000004`
 - User requests research via Main Agent delegation
 
 ## Steps

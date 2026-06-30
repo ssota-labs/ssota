@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import {
   createInMemoryGraphReadPort,
   createInMemoryGraphStore,
@@ -26,27 +27,27 @@ function spawnDeps(state: ReturnType<typeof createInMemoryState>, teamspaceId: s
 }
 
 describe("spawnTask", () => {
-  it("creates a task for a known agent key", async () => {
+  it("creates a task for a known agent definition id", async () => {
     const state = createInMemoryState();
     const task = await spawnTask(spawnDeps(state, PROJECT_ID), PROJECT_ID, {
       title: "Daily planning",
-      agentKey: "main.ssota",
+      agentDefinitionId: BUILTIN_AGENT_IDS.main,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["Task created"],
     });
 
-    expect(task.agentKey).toBe("main.ssota");
+    expect(task.agentDefinitionId).toBe(BUILTIN_AGENT_IDS.main);
     expect(task.status).toBe("pending");
     expect(task.teamspaceId).toBe(PROJECT_ID);
   });
 
-  it("rejects unknown agent keys", async () => {
+  it("rejects unknown agent definition ids", async () => {
     const state = createInMemoryState();
 
     await expect(
       spawnTask(spawnDeps(state, PROJECT_ID), PROJECT_ID, {
         title: "Bad",
-        agentKey: "not.registered",
+        agentDefinitionId: "00000000-0000-4000-8000-000000000099",
         context: { executionDirective: sampleExecutionDirective },
         acceptanceCriteria: ["x"],
       }),
@@ -62,14 +63,14 @@ describe("spawnTask", () => {
 
     const first = await spawnTask(deps, PROJECT_ID, {
       title: "Work item",
-      agentKey: "specialist.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: "daily:2026-06-15:feature-a",
     });
     const second = await spawnTask(deps, PROJECT_ID, {
       title: "Different title",
-      agentKey: "specialist.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["done"],
       idempotencyKey: "daily:2026-06-15:feature-a",
@@ -102,7 +103,7 @@ describe("spawnTask", () => {
     await expect(
       spawnTask(deps, PROJECT_ID, {
         title: "Linked work",
-        agentKey: "specialist.implement_feature",
+        agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
         context: { executionDirective: sampleExecutionDirective },
         acceptanceCriteria: ["done"],
         targetNodeId: nodeId,
@@ -120,7 +121,7 @@ describe("updateTask", () => {
     const deps = spawnDeps(state, PROJECT_ID);
     const created = await spawnTask(deps, PROJECT_ID, {
       title: "Implement",
-      agentKey: "specialist.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["shipped"],
     });
@@ -141,7 +142,7 @@ describe("updateTask", () => {
     const deps = spawnDeps(state, PROJECT_ID);
     const created = await spawnTask(deps, PROJECT_ID, {
       title: "Implement",
-      agentKey: "specialist.implement_feature",
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["shipped"],
     });

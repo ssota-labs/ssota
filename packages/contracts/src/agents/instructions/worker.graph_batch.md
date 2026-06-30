@@ -6,7 +6,7 @@ Batch worker for graph batch operations. Invoked by specialist agents or schedul
 
 ## When to run
 
-- Task assigned with `agentKey=worker.graph_batch`
+- Task assigned with `agentDefinitionId=a0000000-0000-4000-8000-000000000011`
 - Schedule trigger for batch processing
 
 ## Steps

@@ -37,7 +37,6 @@ function mapTask(row: typeof schema.tasks.$inferSelect): Task {
     id: row.id,
     teamspaceId: row.teamspaceId,
     agentDefinitionId: row.agentDefinitionId,
-    agentKey: row.agentKey,
     title: row.title,
     status: row.status,
     executorType: row.executorType,
@@ -53,27 +52,6 @@ function mapTask(row: typeof schema.tasks.$inferSelect): Task {
     completedAt: row.completedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
-  };
-}
-
-async function hydrateAgentKey(
-  db: Db,
-  task: Task,
-): Promise<Task> {
-  if (task.agentKey) {
-    return task;
-  }
-  if (!task.agentDefinitionId) {
-    return { ...task, agentKey: null };
-  }
-  const rows = await db
-    .select({ key: schema.agentDefinitions.key })
-    .from(schema.agentDefinitions)
-    .where(eq(schema.agentDefinitions.id, task.agentDefinitionId))
-    .limit(1);
-  return {
-    ...task,
-    agentKey: rows[0]?.key ?? null,
   };
 }
 
@@ -100,9 +78,6 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
       conditions.push(
         eq(schema.tasks.agentDefinitionId, params.agentDefinitionId),
       );
-    }
-    if (params?.agentKey) {
-      conditions.push(eq(schema.tasks.agentKey, params.agentKey));
     }
     if (params?.assignee) conditions.push(eq(schema.tasks.assignee, params.assignee));
     if (params?.subjectId) conditions.push(eq(schema.tasks.subjectId, params.subjectId));
@@ -149,9 +124,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           ),
         )
         .limit(1);
-      return rows[0]
-        ? await hydrateAgentKey(db, mapTask(rows[0]))
-        : null;
+      return rows[0] ? mapTask(rows[0]) : null;
     },
 
     async getTaskByIdempotencyKey(idempotencyKey) {
@@ -176,7 +149,6 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           accountId: accountIdValue,
           title: input.title,
           agentDefinitionId: input.agentDefinitionId ?? null,
-          agentKey: input.agentKey ?? null,
           status: input.status ?? "pending",
           executorType: input.executorType ?? "Agent",
           assignee: input.assignee ?? null,
@@ -188,7 +160,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           idempotencyKey: input.idempotencyKey ?? null,
         })
         .returning();
-      return await hydrateAgentKey(db, mapTask(row!));
+      return mapTask(row!);
     },
 
     async updateTask(taskId: string, patch: TaskUpdatePatch) {
