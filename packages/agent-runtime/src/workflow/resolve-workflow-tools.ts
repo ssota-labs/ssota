@@ -1,4 +1,5 @@
-import type { ToolBundle } from "@ssota/contracts";
+import type { ToolBundle, SandboxAccessTier } from "@ssota/contracts";
+import { SANDBOX_TOOLS_BY_ACCESS_TIER } from "@ssota/contracts";
 import { COMPOSIO_META_TOOL_NAMES } from "../composio/meta-tool-schemas.js";
 import {
   workflowToolSchemas,
@@ -61,6 +62,7 @@ export interface ResolveWorkflowToolsInput {
   toolBundles: ToolBundle[];
   isMain?: boolean;
   includeSandboxTools?: boolean;
+  sandboxAccess?: SandboxAccessTier;
   /** When false, omit Composio meta-tools even if connectors bundle is present. */
   includeComposioTools?: boolean;
 }
@@ -110,7 +112,9 @@ export function resolveWorkflowToolNames(
 
 export function resolveSandboxToolNames(
   includeSandboxTools: boolean | undefined,
+  sandboxAccess: SandboxAccessTier = "code",
 ): SandboxToolName[] {
-  if (!includeSandboxTools) return [];
-  return Object.keys(sandboxToolSchemas) as SandboxToolName[];
+  if (!includeSandboxTools || sandboxAccess === "none") return [];
+  const allowed = SANDBOX_TOOLS_BY_ACCESS_TIER[sandboxAccess];
+  return allowed.filter((name) => name in sandboxToolSchemas) as SandboxToolName[];
 }
