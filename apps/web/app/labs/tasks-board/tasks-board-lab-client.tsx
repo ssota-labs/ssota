@@ -12,7 +12,7 @@ function row(
   title: string,
   status: TaskStatus,
   assignee: string,
-  workflowInstructionKey: string,
+  agentKey: string,
 ): TaskWorkspaceRow {
   return {
     id,
@@ -20,7 +20,7 @@ function row(
     status,
     executorType: "human",
     assignee,
-    workflowInstructionKey,
+    agentKey,
     subjectId: "",
     acceptanceCriteria: [],
     context: {},

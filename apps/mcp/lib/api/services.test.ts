@@ -4,12 +4,12 @@ import { QueryTasksInputSchema } from "@ssota/contracts";
 describe("task service inputs", () => {
   it("parses active task query filters", () => {
     const parsed = QueryTasksInputSchema.parse({
-      workflowInstructionKey: "development",
+      agentKey: "specialist.implement_feature",
       status: "ready",
       limit: 10,
     });
 
-    expect(parsed.workflowInstructionKey).toBe("development");
+    expect(parsed.agentKey).toBe("specialist.implement_feature");
     expect(parsed.status).toBe("ready");
   });
 });

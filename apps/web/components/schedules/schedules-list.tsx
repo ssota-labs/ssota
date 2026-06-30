@@ -33,7 +33,8 @@ import { BrowseWorkspace } from "@/components/console/browse-workspace";
 
 export interface ScheduleRow {
   id: string;
-  workflowInstructionId: string;
+  agentDefinitionId: string;
+  targetType: import("@ssota/contracts").ScheduleTargetType;
   cronExpression: string;
   timezone: string;
   enabled: boolean;
@@ -81,7 +82,8 @@ export function SchedulesList({
   function openEditSheet(schedule: ScheduleRow) {
     setEditingSchedule({
       id: schedule.id,
-      workflowInstructionId: schedule.workflowInstructionId,
+      agentDefinitionId: schedule.agentDefinitionId,
+      targetType: schedule.targetType,
       cronExpression: schedule.cronExpression,
       timezone: schedule.timezone,
       enabled: schedule.enabled,
@@ -174,7 +176,7 @@ export function SchedulesList({
                   >
                     <div className="min-w-0 flex-1 space-y-1">
                       <span className="text-sm font-medium">
-                        {instructionName(schedule.workflowInstructionId)}
+                        {instructionName(schedule.agentDefinitionId)}
                       </span>
                       <p className="text-muted-foreground line-clamp-2 text-xs">
                         {summarize(schedule.cronExpression, schedule.timezone)}
@@ -207,7 +209,7 @@ export function SchedulesList({
                       onCheckedChange={(value) => toggleEnabled(schedule, value)}
                       onClick={(event) => event.stopPropagation()}
                       disabled={isPending}
-                      aria-label={`Toggle ${instructionName(schedule.workflowInstructionId)}`}
+                      aria-label={`Toggle ${instructionName(schedule.agentDefinitionId)}`}
                     />
                     <AlertDialog>
                       <AlertDialogTrigger

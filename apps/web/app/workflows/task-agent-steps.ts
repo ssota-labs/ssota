@@ -5,11 +5,18 @@ import {
   buildRunPrompt,
   createSandboxSession,
   attachSandboxSession,
+  toolBundlesForAgentKey,
 } from "@ssota/agent-runtime";
 import { createAgentRunPort } from "@ssota/adapter-postgres";
 
-/** Workflow instruction keys whose runs get a sandbox for code/build tools. */
-const DEV_CAPABLE_WORKFLOW_KEYS = new Set(["work.implement_feature"]);
+/** Agent keys whose runs get a sandbox when tool_bundles includes sandbox.code. */
+const DEV_CAPABLE_AGENT_KEYS = new Set(["specialist.implement_feature"]);
+
+function agentNeedsSandbox(agentKey: string | null | undefined): boolean {
+  if (!agentKey) return false;
+  if (DEV_CAPABLE_AGENT_KEYS.has(agentKey)) return true;
+  return toolBundlesForAgentKey(agentKey).includes("sandbox.code");
+}
 
 /**
  * Durable steps shared by the two task-runtime entry points: runTaskAgentWorkflow
@@ -21,6 +28,7 @@ export interface RunTaskAgentInput {
   teamspaceId: string;
   taskId: string;
   accountId?: string;
+  scheduleId?: string;
   modelId?: string;
   maxSteps?: number;
 }
@@ -36,9 +44,11 @@ export async function claimTaskRun(
     teamspaceId: input.teamspaceId,
     runtimeKind: "task",
     taskId: input.taskId,
+    scheduleId: input.scheduleId ?? null,
     workflowRunId,
     accountId: input.accountId ?? null,
     model: input.modelId ?? null,
+    trigger: input.scheduleId ? "schedule" : "task",
   });
   await getTaskPort(input.teamspaceId, input.accountId).updateTask(input.taskId, {
     status: "running",
@@ -99,8 +109,8 @@ export async function provisionSandboxStep(
     input.taskId,
   );
   if (
-    !task?.workflowInstructionKey ||
-    !DEV_CAPABLE_WORKFLOW_KEYS.has(task.workflowInstructionKey)
+    !task?.agentKey ||
+    !agentNeedsSandbox(task.agentKey)
   ) {
     return undefined;
   }

@@ -18,6 +18,7 @@ export async function buildMainPrompt(
     runId: workflowRunId,
     runtimeKind: "main",
     threadId: input.threadId,
+    scheduleId: input.scheduleId,
     accountId: input.accountId,
     modelId: input.modelId,
     maxSteps: input.maxSteps,

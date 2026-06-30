@@ -11,14 +11,14 @@ import type {
   SpawnTaskInput,
   UpdateTaskInput,
 } from "@ssota/contracts";
-import { getGraphReadPort, getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
+import { getGraphReadPort, getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
 import { jsonError } from "@/lib/api/response";
 
 function taskDeps(teamspaceId: string) {
   return {
     tasks: getTaskPort(teamspaceId),
     graphRead: getGraphReadPort(teamspaceId),
-    workflowInstructions: getWorkflowInstructionPort(teamspaceId),
+    agentDefinitions: getAgentDefinitionPort(teamspaceId),
   };
 }
 
@@ -27,7 +27,8 @@ export function mapTaskError(error: unknown): Response | null {
     const status =
       error.code === "NOT_FOUND"
         ? 404
-        : error.code === "UNKNOWN_WORKFLOW_INSTRUCTION" ||
+        : error.code === "UNKNOWN_AGENT_DEFINITION" ||
+            error.code === "UNKNOWN_AGENT_KEY" ||
             error.code === "VALIDATION_FAILED"
           ? 422
           : error.code === "ORG_MISMATCH"

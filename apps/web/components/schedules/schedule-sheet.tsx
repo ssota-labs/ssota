@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@ssota/ui/components/ui/select";
 import { cn } from "@ssota/ui/lib/utils";
+import type { ScheduleTargetType } from "@ssota/contracts";
 import {
   DEFAULT_TIMEZONE,
   cronToRecurrence,
@@ -32,7 +33,8 @@ export type { InstructionOption };
 
 export interface ScheduleEditTarget {
   id: string;
-  workflowInstructionId: string;
+  agentDefinitionId: string;
+  targetType: ScheduleTargetType;
   cronExpression: string;
   timezone: string;
   enabled: boolean;
@@ -45,6 +47,10 @@ interface ScheduleSheetProps {
   accountId: string;
   instructions: InstructionOption[];
   schedule?: ScheduleEditTarget;
+}
+
+function inferTargetType(agentKey?: string): ScheduleTargetType {
+  return agentKey === "main.ssota" ? "main_heartbeat" : "specialist_agent";
 }
 
 const FREQUENCIES: { value: Frequency; label: string }[] = [
@@ -117,7 +123,7 @@ export function ScheduleSheet({
 
   const [advanced, setAdvanced] = useState(initialAdvanced);
   const [instructionId, setInstructionId] = useState(
-    schedule?.workflowInstructionId ?? instructions[0]?.id ?? "",
+    schedule?.agentDefinitionId ?? instructions[0]?.id ?? "",
   );
   const [rec, setRec] = useState<Recurrence>(initialRecurrence);
   const [timezone, setTimezone] = useState(initialTimezone);
@@ -130,7 +136,7 @@ export function ScheduleSheet({
     if (!open) return;
     setAdvanced(initialAdvanced);
     setInstructionId(
-      schedule?.workflowInstructionId ?? instructions[0]?.id ?? "",
+      schedule?.agentDefinitionId ?? instructions[0]?.id ?? "",
     );
     setRec(initialRecurrence);
     setTimezone(initialTimezone);
@@ -215,10 +221,12 @@ export function ScheduleSheet({
 
     startTransition(async () => {
       try {
+        const selected = instructions.find((entry) => entry.id === instructionId);
         const body = {
           teamspaceId,
           accountId,
-          workflowInstructionId: instructionId,
+          agentDefinitionId: instructionId,
+          targetType: inferTargetType(selected?.key),
           cronExpression,
           timezone,
           enabled,

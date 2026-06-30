@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import type { TaskStatus } from "@ssota/contracts";
 import { updateTaskStatusAction } from "@/app/actions";
-import { SpawnTaskDialog, type WorkflowOption } from "@/components/tasks/spawn-task-dialog";
+import { SpawnTaskDialog, type AgentOption } from "@/components/tasks/spawn-task-dialog";
 import { TasksDetailSheet } from "@/components/tasks/tasks-detail-sheet";
 import { TasksKanbanBoard } from "@/components/tasks/tasks-kanban-board";
 import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
@@ -11,13 +11,13 @@ import type { TaskWorkspaceRow } from "@/components/tasks/tasks-workspace";
 type TasksDetailProps = {
   rows: TaskWorkspaceRow[];
   teamspaceId: string;
-  workflowOptions: WorkflowOption[];
+  agentOptions: AgentOption[];
 };
 
 export function TasksDetail({
   rows,
   teamspaceId,
-  workflowOptions,
+  agentOptions,
 }: TasksDetailProps) {
   const [selected, setSelected] = useState<TaskWorkspaceRow | null>(null);
   const [motionReduced, setMotionReduced] = useState(false);
@@ -52,7 +52,7 @@ export function TasksDetail({
           <div className="flex justify-center">
             <SpawnTaskDialog
               teamspaceId={teamspaceId}
-              workflowOptions={workflowOptions}
+              agentOptions={agentOptions}
             />
           </div>
         </div>

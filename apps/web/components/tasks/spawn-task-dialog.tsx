@@ -22,24 +22,27 @@ import {
   SelectValue,
 } from "@ssota/ui/components/ui/select";
 
-export type WorkflowOption = {
-  workflowInstructionKey: string;
+export type AgentOption = {
+  agentKey: string;
   title: string;
 };
 
+/** @deprecated Use AgentOption */
+export type WorkflowOption = AgentOption;
+
 type SpawnTaskDialogProps = {
   teamspaceId: string;
-  workflowOptions: WorkflowOption[];
+  agentOptions: AgentOption[];
 };
 
 export function SpawnTaskDialog({
   teamspaceId,
-  workflowOptions,
+  agentOptions,
 }: SpawnTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [workflowInstructionKey, setWorkflowInstructionKey] = useState(
-    workflowOptions[0]?.workflowInstructionKey ?? "work.implement_feature",
+  const [agentKey, setAgentKey] = useState(
+    agentOptions[0]?.agentKey ?? "specialist.implement_feature",
   );
   const [assignee, setAssignee] = useState("");
   const [executorType, setExecutorType] = useState<"Agent" | "Human" | "System">(
@@ -52,9 +55,7 @@ export function SpawnTaskDialog({
     setTitle("");
     setAssignee("");
     setExecutorType("Human");
-    setWorkflowInstructionKey(
-      workflowOptions[0]?.workflowInstructionKey ?? "work.implement_feature",
-    );
+    setAgentKey(agentOptions[0]?.agentKey ?? "specialist.implement_feature");
     setError(null);
   }
 
@@ -65,7 +66,7 @@ export function SpawnTaskDialog({
       try {
         await spawnTaskAction(teamspaceId, {
           title: title.trim(),
-          workflowInstructionKey,
+          agentKey,
           assignee: assignee.trim() || undefined,
           executorType,
         });
@@ -108,25 +109,22 @@ export function SpawnTaskDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="task-workflow">Workflow instruction</Label>
+              <Label htmlFor="task-agent">Agent</Label>
               <Select
-                value={workflowInstructionKey}
-                onValueChange={(value) => value && setWorkflowInstructionKey(value)}
+                value={agentKey}
+                onValueChange={(value) => value && setAgentKey(value)}
                 disabled={isPending}
-                items={workflowOptions.map((option) => ({
-                  value: option.workflowInstructionKey,
+                items={agentOptions.map((option) => ({
+                  value: option.agentKey,
                   label: option.title,
                 }))}
               >
-                <SelectTrigger id="task-workflow" className="w-full">
+                <SelectTrigger id="task-agent" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {workflowOptions.map((option) => (
-                    <SelectItem
-                      key={option.workflowInstructionKey}
-                      value={option.workflowInstructionKey}
-                    >
+                  {agentOptions.map((option) => (
+                    <SelectItem key={option.agentKey} value={option.agentKey}>
                       {option.title}
                     </SelectItem>
                   ))}

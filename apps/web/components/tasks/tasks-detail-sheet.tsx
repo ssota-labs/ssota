@@ -35,7 +35,7 @@ export function TasksDetailSheet({ task, onClose }: TasksDetailSheetProps) {
                   ["status", TASK_STATUS_LABELS[task.status] ?? task.status],
                   ["executor", task.executorType],
                   ["assignee", task.assignee],
-                  ["workflow_instruction", task.workflowInstructionKey],
+                  ["agent", task.agentKey],
                   ["subject_id", task.subjectId],
                 ]}
               />

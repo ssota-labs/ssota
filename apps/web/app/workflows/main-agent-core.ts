@@ -12,6 +12,7 @@ export interface RunMainAgentInput {
   teamspaceId: string;
   threadId: string;
   accountId?: string;
+  scheduleId?: string;
   /** Signed-in user (Composio acting entity for connector tools). */
   profileId?: string;
   modelId?: string;
@@ -28,8 +29,17 @@ export async function claimMainRunning(
     teamspaceId: input.teamspaceId,
     runtimeKind: "main",
     threadId: input.threadId,
+    scheduleId: input.scheduleId ?? null,
     workflowRunId: runId,
     accountId: input.accountId ?? null,
+    agentKey: "main.ssota",
+    agentKind: "main",
+    trigger:
+      input.chatContext?.trigger === "heartbeat"
+        ? "heartbeat"
+        : input.scheduleId
+          ? "schedule"
+          : "chat",
     model: input.modelId ?? null,
   });
 }

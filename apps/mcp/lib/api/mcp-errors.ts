@@ -7,8 +7,11 @@ export function throwMcpToolError(error: unknown): never {
   throw error;
 }
 
-export function throwUnknownWorkflowKey(workflowKey: string): never {
+export function throwUnknownAgentKey(agentKey: string): never {
   throw new Error(
-    `UNKNOWN_WORKFLOW_KEY: Workflow '${workflowKey}' is not in the registry`,
+    `UNKNOWN_AGENT_KEY: Agent '${agentKey}' is not in the registry`,
   );
 }
+
+/** @deprecated Use throwUnknownAgentKey */
+export const throwUnknownWorkflowKey = throwUnknownAgentKey;

@@ -4,7 +4,7 @@ import { getSchedulePort } from "@/lib/ports";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { resolveWorkflowInstructionId } from "@/lib/schedules/resolve-instruction";
+import { resolveAgentDefinitionId } from "@/lib/schedules/resolve-agent-definition";
 import { isValidTimezone, validateCron } from "@/lib/schedules/recurrence";
 
 export const runtime = "nodejs";
@@ -12,7 +12,10 @@ export const runtime = "nodejs";
 const createSchema = z.object({
   teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().optional(),
-  workflowInstructionId: z.string().min(1),
+  agentDefinitionId: z.string().min(1),
+  targetType: z
+    .enum(["main_heartbeat", "specialist_agent", "ready_task_dispatch"])
+    .optional(),
   cronExpression: z.string().min(1),
   timezone: z.string().min(1),
   enabled: z.boolean().optional(),
@@ -95,19 +98,20 @@ export async function POST(request: Request) {
     throw error;
   }
 
-  const workflowInstructionId = await resolveWorkflowInstructionId(
+  const agentDefinitionId = await resolveAgentDefinitionId(
     parsed.teamspaceId,
-    parsed.workflowInstructionId,
+    parsed.agentDefinitionId,
   );
-  if (!workflowInstructionId) {
+  if (!agentDefinitionId) {
     return NextResponse.json(
-      { error: "Unknown workflow instruction" },
+      { error: "Unknown agent definition" },
       { status: 422 },
     );
   }
 
   const schedule = await getSchedulePort(parsed.teamspaceId, accountId).create({
-    workflowInstructionId,
+    agentDefinitionId,
+    targetType: parsed.targetType,
     cronExpression: parsed.cronExpression,
     timezone: parsed.timezone,
     enabled: parsed.enabled,
