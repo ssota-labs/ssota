@@ -19,6 +19,9 @@ import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import {
+  connectorCardInteractiveClassName,
+} from "@/components/connectors/connector-card-styles";
+import {
   SkillDetailCard,
   SkillMarkdownView,
 } from "@/components/console/skill-detail-view";
@@ -191,14 +194,15 @@ export function SkillsPageWorkspace({
         </div>
 
         <BrowseWorkspace.Section label="Catalog">
-          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+          <div className="space-y-2">
             {skills.map((skill) => (
               <button
                 key={skill.id}
                 type="button"
                 className={cn(
-                  "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
-                  activeId === skill.id && "bg-muted/30",
+                  connectorCardInteractiveClassName,
+                  "w-full",
+                  activeId === skill.id && "border-primary/20 bg-muted/30",
                 )}
                 data-testid={`skill-catalog-item-${skill.key}`}
                 onClick={() => setActiveId(skill.id)}
@@ -224,7 +228,7 @@ export function SkillsPageWorkspace({
               </button>
             ))}
             {skills.length === 0 && !isPending ? (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+              <p className="rounded-lg border border-border bg-card px-4 py-6 text-center text-sm text-muted-foreground">
                 No skills yet. Run db:seed for platform builtins or add a custom skill.
               </p>
             ) : null}
