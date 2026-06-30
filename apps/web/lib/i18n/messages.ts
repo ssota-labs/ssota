@@ -336,6 +336,9 @@ export const en = {
       "Rename teamspace, toggle end-user app access (app_enabled), and manage deployment settings.",
     developer: "Developer",
     developerDescription: "MCP connection details and agent integration setup.",
+    sandboxEnvironments: "Sandbox environments",
+    sandboxEnvironmentsDescription:
+      "Manage reusable VM templates for coding agent task runs.",
     workspaceInfo: "Workspace",
     workspaceInfoDescription:
       "These identifiers are used in URLs and MCP headers. They cannot be changed from the console yet.",
@@ -1177,6 +1180,9 @@ export const ko = {
       "팀스페이스 이름 변경, 엔드유저 앱 접근(app_enabled) 토글, 배포 설정.",
     developer: "개발자",
     developerDescription: "MCP 연결 정보 및 에이전트 연동 설정.",
+    sandboxEnvironments: "샌드박스 환경",
+    sandboxEnvironmentsDescription:
+      "코딩 에이전트 태스크 실행에 사용할 재사용 VM 템플릿을 관리합니다.",
     workspaceInfo: "워크스페이스",
     workspaceInfoDescription:
       "이 식별자는 URL 및 MCP 헤더에 사용됩니다. 아직 콘솔에서 변경할 수 없습니다.",

@@ -6,7 +6,20 @@
  * schema is defined exactly once.
  */
 import { z } from "zod";
-import { ExecutionDirectiveSchema, RunScriptToolInputSchema } from "@ssota/contracts";
+import {
+  ExecutionDirectiveSchema,
+  RunScriptToolInputSchema,
+  SandboxAwaitInputSchema,
+  SandboxDeleteInputSchema,
+  SandboxGlobInputSchema,
+  SandboxGrepInputSchema,
+  SandboxReadInputSchema,
+  SandboxReadLintsInputSchema,
+  SandboxShellInputSchema,
+  SandboxStrReplaceInputSchema,
+  SandboxWriteInputSchema,
+  SANDBOX_PRIMITIVE_TOOL_NAMES,
+} from "@ssota/contracts";
 import { SUBAGENT_TYPES } from "../subagents/constants.js";
 import { composioMetaToolSchemas } from "../composio/meta-tool-schemas.js";
 
@@ -163,20 +176,22 @@ export const workflowToolSchemas = {
 export type WorkflowToolName = keyof typeof workflowToolSchemas;
 
 /**
- * Sandbox tool schemas — exposed to the agent only for dev-capable task runs
- * (buildMainWorkflowAgent({ includeSandboxTools: true })). Dispatched via the
- * re-attach branch in dispatch-step.ts.
+ * Sandbox primitive tool schemas — SSOT in @ssota/contracts, re-exported here
+ * for workflow agent surface. Exposed only for dev-capable task runs.
  */
 export const sandboxToolSchemas = {
-  sandbox_exec: z.object({
-    cmd: z.string().describe("Executable, e.g. 'pnpm', 'git', 'bash'."),
-    args: z.array(z.string()).optional().describe("Arguments."),
-  }),
-  sandbox_write_file: z.object({
-    path: z.string().describe("Sandbox path."),
-    content: z.string(),
-  }),
-  sandbox_read_file: z.object({ path: z.string() }),
-} as const;
+  sandbox_shell: SandboxShellInputSchema,
+  sandbox_await: SandboxAwaitInputSchema,
+  sandbox_read: SandboxReadInputSchema,
+  sandbox_write: SandboxWriteInputSchema,
+  sandbox_str_replace: SandboxStrReplaceInputSchema,
+  sandbox_delete: SandboxDeleteInputSchema,
+  sandbox_glob: SandboxGlobInputSchema,
+  sandbox_grep: SandboxGrepInputSchema,
+  sandbox_read_lints: SandboxReadLintsInputSchema,
+} as const satisfies Record<
+  (typeof SANDBOX_PRIMITIVE_TOOL_NAMES)[number],
+  z.ZodTypeAny
+>;
 
 export type SandboxToolName = keyof typeof sandboxToolSchemas;
