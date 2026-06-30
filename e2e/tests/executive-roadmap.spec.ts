@@ -77,6 +77,34 @@ test.describe("Executive roadmap", () => {
     await expect(q2Row.locator('[class*="amber"]').first()).toBeVisible();
   });
 
+  test("opens only one full-height sheet when switching between lists", async ({
+    page,
+  }) => {
+    const year = new Date().getFullYear();
+
+    await page.getByRole("button", { name: "Product roadmap" }).first().click();
+    await expect(page.getByTestId("document-sheet-panel")).toHaveCount(1);
+    await expect(page.getByTestId("document-sheet-panel")).toHaveAttribute(
+      "data-dock",
+      "viewport",
+    );
+
+    const panel = page.getByTestId("document-sheet-panel");
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    const box = await panel.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.height).toBeGreaterThanOrEqual(viewport!.height - 4);
+
+    await page
+      .getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) })
+      .click({ position: { x: 8, y: 12 } });
+    await expect(page.getByTestId("document-sheet-panel")).toHaveCount(1);
+    await expect(
+      page.getByTestId("document-sheet-panel").getByText(`${year} Q1 분기 로드맵`),
+    ).toBeVisible();
+  });
+
   test("opens roadmap document in floating sheet panel", async ({ page }) => {
     const year = new Date().getFullYear();
     await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();

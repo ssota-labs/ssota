@@ -16,7 +16,8 @@ import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import { useAction } from "../context";
 import type { RenderNode } from "../types";
 import { DocumentStatusBadge } from "./document-status-badge";
-import { DocumentSheetPanel, type SheetSize } from "./document-sheet-panel";
+import { useDocumentSheet } from "./document-sheet-context";
+import type { SheetSize } from "./document-sheet-panel";
 import { readNodeField } from "./roadmap-doc-card";
 import {
   applyDocumentSheetListFilters,
@@ -59,7 +60,7 @@ export function DocumentSheetListEl({
   filters: rawFilters,
 }: DocumentSheetListProps) {
   const onAction = useAction();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const documentSheet = useDocumentSheet();
   const currentYear = new Date().getFullYear();
   const filterDefs = useMemo(
     () => parseDocumentSheetListFilters(rawFilters),
@@ -86,25 +87,36 @@ export function DocumentSheetListEl({
     [nodes, filterDefs, filterState],
   );
 
-  const activeNode = visibleNodes.find((node) => node.id === activeId) ?? null;
-  const open = activeNode !== null;
+  const activeId = documentSheet?.activeNodeId ?? null;
+
+  const openNode = (node: RenderNode) => {
+    if (!documentSheet) return;
+    documentSheet.openSheet({
+      node,
+      subtitle: readNodeField(node, subtitleField),
+      status: readNodeField(node, statusField),
+      field,
+      editable,
+      sheetSize,
+      onSave: (blocks) => {
+        if (onAction && action) {
+          void onAction(action, {
+            nodeId: node.id,
+            doc: blocks,
+          });
+        }
+      },
+    });
+  };
 
   useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActiveId(null);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
-
-  useEffect(() => {
-    if (activeId && !visibleNodes.some((node) => node.id === activeId)) {
-      setActiveId(null);
+    if (!documentSheet || !activeId) return;
+    const ownsNode = nodes.some((node) => node.id === activeId);
+    if (!ownsNode) return;
+    if (!visibleNodes.some((node) => node.id === activeId)) {
+      documentSheet.closeSheet();
     }
-  }, [activeId, visibleNodes]);
-
-  const close = () => setActiveId(null);
+  }, [activeId, documentSheet, nodes, visibleNodes]);
 
   const inSection = useSectionHeaderActions() !== null;
   const filterBar = useMemo(
@@ -157,7 +169,7 @@ export function DocumentSheetListEl({
                   "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
                   activeId === node.id && "bg-muted/30",
                 )}
-                onClick={() => setActiveId(node.id)}
+                onClick={() => openNode(node)}
               >
                 <div className="flex min-w-0 flex-1 items-start gap-2">
                   {status ? (
@@ -187,26 +199,6 @@ export function DocumentSheetListEl({
         </div>
         </div>
       </div>
-
-      {open && activeNode ? (
-        <DocumentSheetPanel
-          node={activeNode}
-          subtitle={readNodeField(activeNode, subtitleField)}
-          status={readNodeField(activeNode, statusField)}
-          field={field}
-          editable={editable}
-          sheetSize={sheetSize}
-          onClose={close}
-          onSave={(blocks) => {
-            if (onAction && action) {
-              void onAction(action, {
-                nodeId: activeNode.id,
-                doc: blocks,
-              });
-            }
-          }}
-        />
-      ) : null}
     </div>
   );
 }

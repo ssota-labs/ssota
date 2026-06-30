@@ -512,6 +512,7 @@ function FlowCanvasEl({
 
       {activeRenderNode ? (
         <DocumentSheetPanel
+          dock="parent"
           node={activeRenderNode}
           subtitle={readNodeField(activeRenderNode, sheet.subtitleField)}
           status={readNodeField(activeRenderNode, sheet.statusField)}

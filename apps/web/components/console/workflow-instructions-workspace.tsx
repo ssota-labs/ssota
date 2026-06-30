@@ -143,6 +143,7 @@ export function WorkflowInstructionsWorkspace({
 
       {open && activeInstruction ? (
         <DocumentSheetPanel
+          dock="viewport"
           node={toRenderNode(activeInstruction)}
           subtitle={activeInstruction.key}
           field="content"

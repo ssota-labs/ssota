@@ -16,6 +16,7 @@ import {
 import { CATALOG } from "./registry";
 import type { BindingContext } from "./types";
 import { PeriodFilterProvider } from "./period-filter-context";
+import { DocumentSheetProvider } from "./components/document-sheet-context";
 import {
   extractUrlSelectionBindings,
   SelectionProvider,
@@ -92,7 +93,9 @@ function SelectionWrappedTree({
 
   return (
     <Suspense fallback={selectionTree}>
-      <PeriodFilterProvider>{selectionTree}</PeriodFilterProvider>
+      <PeriodFilterProvider>
+        <DocumentSheetProvider>{selectionTree}</DocumentSheetProvider>
+      </PeriodFilterProvider>
     </Suspense>
   );
 }

@@ -1,7 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useLayoutEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
+import { createPortal } from "react-dom";
 import { XIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
@@ -18,6 +25,7 @@ const DocumentEditorEl = dynamic(
 );
 
 type SheetSize = "default" | "half" | "inspector" | "wide" | "full";
+type SheetDock = "viewport" | "parent";
 
 const panelWidthClass: Record<SheetSize, string> = {
   default: "w-[min(24rem,100%)]",
@@ -34,6 +42,8 @@ type DocumentSheetPanelProps = {
   field: string;
   editable: boolean;
   sheetSize: SheetSize;
+  /** `viewport` docks to the browser window; `parent` anchors inside a relative container. */
+  dock?: SheetDock;
   onClose: () => void;
   onSave?: (blocks: unknown[]) => void;
 };
@@ -42,7 +52,10 @@ function readContent(node: RenderNode, field: string): unknown {
   return node.properties[field];
 }
 
-function readMaxPanelWidth(panel: HTMLElement): number {
+function readMaxPanelWidth(panel: HTMLElement, dock: SheetDock): number {
+  if (dock === "viewport") {
+    return window.innerWidth * 0.95;
+  }
   const parent = panel.offsetParent;
   if (parent instanceof HTMLElement) {
     return Math.max(parent.clientWidth - 8, panel.getBoundingClientRect().width);
@@ -57,6 +70,7 @@ export function DocumentSheetPanel({
   field,
   editable,
   sheetSize,
+  dock = "viewport",
   onClose,
   onSave,
 }: DocumentSheetPanelProps) {
@@ -81,7 +95,7 @@ export function DocumentSheetPanel({
       minWidthPxRef.current = startWidth;
     }
     const minWidth = minWidthPxRef.current;
-    const maxWidth = readMaxPanelWidth(panel);
+    const maxWidth = readMaxPanelWidth(panel, dock);
 
     const onMove = (moveEvent: MouseEvent | globalThis.PointerEvent) => {
       const delta = startX - moveEvent.clientX;
@@ -117,20 +131,24 @@ export function DocumentSheetPanel({
     beginResize(event.clientX);
   };
 
-  return (
+  const panel = (
     <div
       ref={panelRef}
       role="dialog"
       aria-modal="false"
       aria-labelledby="document-sheet-title"
       data-testid="document-sheet-panel"
+      data-dock={dock}
       style={widthPx === null ? undefined : { width: widthPx }}
       className={cn(
-        "border-border/60 absolute inset-y-2 right-0 z-20 flex flex-col overflow-hidden rounded-xl border",
+        "border-border/60 flex flex-col overflow-hidden border",
         "bg-background/50 shadow-lg shadow-black/5",
         "supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150",
         "supports-backdrop-filter:bg-background/40",
         "animate-in slide-in-from-right-4 fade-in duration-200",
+        dock === "viewport"
+          ? "fixed inset-y-0 right-0 z-50 rounded-none border-l"
+          : "absolute inset-y-2 right-0 z-20 rounded-xl",
         widthPx === null ? panelWidthClass[sheetSize] : "min-w-0",
       )}
     >
@@ -187,6 +205,12 @@ export function DocumentSheetPanel({
       </div>
     </div>
   );
+
+  if (dock === "viewport" && typeof document !== "undefined") {
+    return createPortal(panel, document.body);
+  }
+
+  return panel;
 }
 
-export type { SheetSize };
+export type { SheetDock, SheetSize };
