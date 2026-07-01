@@ -299,11 +299,11 @@ function SheetRoot({
         data-testid={testId}
         style={viewport || widthPx === null ? undefined : { width: widthPx }}
         className={cn(
-          "flex flex-col overflow-hidden border",
+          "flex flex-col overflow-hidden border border-border",
           viewport
-            ? "fixed inset-0 z-50 rounded-none border-border/60"
+            ? "fixed inset-0 z-50 rounded-none"
             : cn(
-                "border-border/60 absolute z-20",
+                "absolute z-20",
                 fullHeight
                   ? "inset-y-0 right-0 h-full rounded-l-xl border-y-0 border-r-0"
                   : "inset-y-2 right-2 rounded-xl",
@@ -350,7 +350,7 @@ function SheetHeader({
   return (
     <header
       className={cn(
-        "border-border/50 bg-background/20 supports-backdrop-filter:backdrop-blur-md flex shrink-0 gap-2 border-b px-4 py-3",
+        "border-border bg-background/20 supports-backdrop-filter:backdrop-blur-md flex shrink-0 gap-2 border-b px-4 py-3",
         align === "start" ? "items-start" : "items-center",
         className,
       )}
@@ -453,7 +453,7 @@ function SheetFooter({
   className?: string;
 }) {
   return (
-    <footer className={cn("border-border/50 shrink-0 border-t px-4 py-3", className)}>
+    <footer className={cn("border-border shrink-0 border-t px-4 py-3", className)}>
       {children}
     </footer>
   );
