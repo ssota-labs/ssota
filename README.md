@@ -30,9 +30,9 @@ customer operations console, legal review workspace, or software delivery hub
 that feels purpose-built, while agents operate on the structured context behind
 it.
 
-## The core idea
+## The context graph idea
 
-The graph is not the UI. The graph is the substrate.
+The context graph is not the UI. It is the substrate behind the UI.
 
 Most SaaS products do not show users raw database tables, even when tables are
 the system of record. They translate records into domain-specific screens:
