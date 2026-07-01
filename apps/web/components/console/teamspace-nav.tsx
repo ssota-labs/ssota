@@ -62,7 +62,7 @@ export function TeamspaceNav({ ctx, groups, activeTeamspaceId }: TeamspaceNavPro
               <span className="min-w-0 flex-1 truncate text-left">{teamspace.name}</span>
             </button>
             {isOpen ? (
-              <div className="ml-1 border-l pl-1">
+              <div className="ml-3 space-y-0.5 border-l pl-2">
                 <PageTreeNav pages={pages} basePath={basePath} heading={null} />
               </div>
             ) : null}

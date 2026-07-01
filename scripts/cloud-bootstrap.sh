@@ -80,11 +80,10 @@ ensure_dependencies() {
 }
 
 ensure_build() {
-  # 워크스페이스 라이브러리(contracts·core·adapter·client·studio-renderer)를 빌드한다.
-  # dist/는 git에 없고 세션 간 유지되지 않으므로, seed·통합 테스트·앱이
-  # @ssota/core/dist 등을 import하기 전에 반드시 빌드되어 있어야 한다.
-  log "Building workspace libraries (contracts/core/adapter/client/studio)…"
-  pnpm build --filter @ssota/adapter-postgres --filter @ssota/client --filter @ssota/studio-preview-runtime --filter @ssota/studio-renderer --filter @ssota/studio-build --filter @ssota/studio-sandbox
+  # apps/web가 import하는 워크스페이스 패키지(agent-runtime, ee, adapter 등)의 dist/를
+  # 생성한다. dist/는 git·세션 간 유지되지 않으므로 E2E webServer(next dev) 기동 전 필수.
+  log "Building web workspace dependencies (web^…)…"
+  pnpm build --filter web^...
 }
 
 ensure_env_files() {

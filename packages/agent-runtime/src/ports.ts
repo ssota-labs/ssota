@@ -5,13 +5,17 @@ import {
   createTaskPort,
   createAgentDefinitionPort,
   createScriptToolPort,
+  createSkillPort,
   createPagePort,
   createConsolePort,
   createConnectorToolSettingsPort,
+  createSandboxEnvironmentPort,
+  createSandboxSessionRecordPort,
   registerTeamspaceOrganization,
   resolveOrganizationIdForTeamspace,
   getCachedOrganizationIdForTeamspace,
 } from "@ssota/adapter-postgres";
+import { createSandboxProvider } from "./sandbox/provider.js";
 
 export { registerTeamspaceOrganization };
 
@@ -82,6 +86,13 @@ export function getScriptToolPort(teamspaceId: string, accountId?: string) {
   return createScriptToolPort(getDb(), { teamspaceId, accountId });
 }
 
+export function getSkillPort(organizationId: string) {
+  return createSkillPort(getDb(), {
+    teamspaceId: "",
+    organizationId,
+  });
+}
+
 /** @deprecated Use getAgentDefinitionPort */
 export const getWorkflowInstructionPort = getAgentDefinitionPort;
 
@@ -95,6 +106,22 @@ export function getConsolePort() {
 
 export function getConnectorToolSettingsPort() {
   return createConnectorToolSettingsPort(getDb());
+}
+
+export function getSandboxEnvironmentPort(teamspaceId: string) {
+  return createSandboxEnvironmentPort(getDb(), { teamspaceId });
+}
+
+export function getSandboxSessionRecordPort(teamspaceId: string) {
+  return createSandboxSessionRecordPort(getDb(), { teamspaceId });
+}
+
+export function getSandboxSessionPort(teamspaceId: string) {
+  return createSandboxProvider({
+    environmentPort: getSandboxEnvironmentPort(teamspaceId),
+    sessionRecordPort: getSandboxSessionRecordPort(teamspaceId),
+    githubToken: process.env.GITHUB_TOKEN,
+  });
 }
 
 /** Resolve the owning organization id for a teamspace, or null if not found. */

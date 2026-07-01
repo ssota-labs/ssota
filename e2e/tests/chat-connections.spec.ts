@@ -491,7 +491,7 @@ test.describe("Connections + Chat", () => {
       );
 
       await expect(
-        page.getByTestId("tool-activity-connection_search"),
+        page.getByTestId("tool-trace-connection_search"),
       ).toBeVisible({ timeout: 60_000 });
       await expect(page.getByRole("button", { name: "전송" })).toBeVisible({
         timeout: 60_000,
@@ -500,7 +500,7 @@ test.describe("Connections + Chat", () => {
       await page.reload();
       await expect(chatComposer(page)).toBeVisible();
       await expect(
-        page.getByTestId("tool-activity-connection_search"),
+        page.getByTestId("tool-trace-connection_search"),
       ).toBeVisible({ timeout: 15_000 });
     });
   });

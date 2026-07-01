@@ -26,7 +26,10 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
   const { workflowRunId } = getWorkflowMetadata();
   await claimTaskRun(input, workflowRunId);
 
-  const sandboxId = await provisionSandboxStep(input);
+  const { sandboxSessionId, sandboxAccess } = await provisionSandboxStep(
+    input,
+    workflowRunId,
+  );
 
   const { instructions, messages, definition, trigger } = await buildTaskPromptStep(
     input,
@@ -42,7 +45,8 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
       taskId: input.taskId,
       runId: workflowRunId,
       accountId: input.accountId,
-      sandboxId,
+      sandboxSessionId,
+      sandboxAccess,
       agentDefinitionId: definition.agentDefinitionId,
       nodeScopes: definition.nodeScopes,
       enabledConnectorProviders: definition.enabledConnectorProviders,
@@ -50,7 +54,8 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
     },
     definition,
     dispatch: dispatchMainTool,
-    includeSandboxTools: Boolean(sandboxId),
+    includeSandboxTools: Boolean(sandboxSessionId),
+    sandboxAccess,
     instructions,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
@@ -64,6 +69,8 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
       stepCount: result.steps.length,
     };
   } finally {
-    if (sandboxId) await stopSandboxStep(sandboxId);
+    if (sandboxSessionId) {
+      await stopSandboxStep(sandboxSessionId, input.teamspaceId);
+    }
   }
 }

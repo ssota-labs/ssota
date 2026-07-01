@@ -15,6 +15,7 @@ import {
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
 import { seedScheduleFixtures } from "./seed/schedules.js";
+import { seedBuiltinSkills } from "./seed/builtin-skills.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
 import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
@@ -319,6 +320,25 @@ async function seedAllProjectCatalogs(db: ReturnType<typeof createDb>["db"]) {
   }
 }
 
+async function seedDefaultSandboxEnvironments(db: ReturnType<typeof createDb>["db"]) {
+  const projects = await db
+    .select({ id: schema.teamspaces.id })
+    .from(schema.teamspaces);
+  const { createSandboxEnvironmentPort } = await import("../ports/sandbox-environment-port.js");
+  for (const { id: teamspaceId } of projects) {
+    const port = createSandboxEnvironmentPort(db, { teamspaceId });
+    const existing = await port.getByKey("sandbox.dev_node24");
+    if (existing) continue;
+    await port.upsertEnvironment({
+      key: "sandbox.dev_node24",
+      name: "Dev Node 24",
+      description: "Default empty Node 24 sandbox for coding agents",
+      runtime: "node24",
+      workingRoot: "/vercel/sandbox",
+    });
+  }
+}
+
 async function main() {
   const { db, client } = createDb();
   console.log("Seeding local auth user (AUTH=local)...");
@@ -333,6 +353,11 @@ async function main() {
   }
   console.log("Backfilling node/edge catalog for all projects...");
   await seedAllProjectCatalogs(db);
+  console.log("Seeding platform builtin skills...");
+  const builtinCount = await seedBuiltinSkills(db);
+  console.log(`Seeded ${builtinCount} builtin skills.`);
+  console.log("Seeding default sandbox environments...");
+  await seedDefaultSandboxEnvironments(db);
   console.log("Seed complete.");
   await client.end();
 }

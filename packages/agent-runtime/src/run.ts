@@ -3,8 +3,9 @@ import type { AgentTrigger } from "@ssota/contracts";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import { getAgentDefinitionById, listRoutableAgentIndex } from "@ssota/contracts/agents";
 import { serializeTask, readAgentDefinitionById } from "@ssota/core";
-import { getTaskPort, getAgentDefinitionPort } from "./ports.js";
+import { getTaskPort, getAgentDefinitionPort, getSkillPort, ensureTeamspaceOrganizationScope } from "./ports.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
+import { resolveSkillManifest } from "./skill-manifest.js";
 import type { AgentRuntimeKind } from "@ssota/contracts";
 import {
   assertAllowedTrigger,
@@ -166,11 +167,18 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
         })),
       ...builtins,
     ];
+    const organizationId = await ensureTeamspaceOrganizationScope(teamspaceId);
+    const skillManifest = await resolveSkillManifest(
+      getSkillPort(organizationId),
+      organizationId,
+      definition.agentDefinitionId,
+    );
     instructions = buildRunInstructionMessages({
       runtimeKind: "main",
       teamspaceId,
       accountId,
       agentManifest,
+      skillManifest,
     });
     const chatMessages = extractChatMessages(input.chatContext);
     messages = chatMessages ?? [
@@ -215,11 +223,21 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
         };
       }
     }
+    const organizationId = await ensureTeamspaceOrganizationScope(teamspaceId);
+    const skillPort = getSkillPort(organizationId);
+    const skillManifest = task.agentDefinitionId
+      ? await resolveSkillManifest(
+          skillPort,
+          organizationId,
+          task.agentDefinitionId,
+        )
+      : [];
     instructions = buildRunInstructionMessages({
       runtimeKind: "task",
       teamspaceId,
       accountId,
       taskPlaybook: playbook?.definition ?? null,
+      skillManifest,
       task: {
         id: task.id,
         title: task.title,

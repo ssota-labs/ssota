@@ -17,6 +17,7 @@ import { Button } from "@ssota/ui/components/ui/button";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
+import { AgentSkillBindings } from "@/components/console/skills-workspace";
 import { ScheduleSheetPanel } from "@/components/schedules/schedule-sheet-panel";
 import {
   AgentSettingCard,
@@ -409,6 +410,17 @@ export function AgentSettingsSheet({
                 subtitle={modelProvider || "Default model"}
               />
             </AgentSettingItems>
+          </AgentSettingCard>
+
+          <AgentSettingCard
+            title="Skills"
+            description="Runtime skills loaded via read_skill."
+            testId="agent-settings-skills-card"
+          >
+            <AgentSkillBindings
+              teamspaceId={teamspaceId}
+              agentDefinitionId={definition.id}
+            />
           </AgentSettingCard>
         </div>
       </ScheduleSheetPanel>

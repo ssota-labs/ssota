@@ -51,6 +51,13 @@ export const L0_NAV: NavEntry[] = [
     href: "agents",
     pattern: "L",
   },
+  {
+    type: "link",
+    key: "skills",
+    labelKey: "nav.skills",
+    href: "skills",
+    pattern: "L",
+  },
   { type: "link", key: "chat", labelKey: "nav.chat", href: "c", pattern: "L" },
   {
     type: "link",
@@ -149,6 +156,9 @@ export function buildBreadcrumbSegments(
   }
   if (relative === "agents") {
     return [{ labelKey: "nav.agents" }];
+  }
+  if (relative === "skills" || relative.startsWith("skills/")) {
+    return [{ labelKey: "nav.skills" }];
   }
   if (
     relative === "design/ui-components" ||

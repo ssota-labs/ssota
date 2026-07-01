@@ -24,6 +24,7 @@ export const TOOL_BUNDLE_LABELS: Record<ToolBundle, string> = {
   connectors: "Composio connectors",
   delegate: "Delegate subagents",
   script_tools: "TypeScript scripts",
+  "skills.read": "Runtime skills",
   "sandbox.code": "Sandbox code",
 };
 

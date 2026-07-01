@@ -520,6 +520,83 @@ export const agentDefinitionScriptTools = pgTable(
   }),
 );
 
+export const skillSourceEnum = pgEnum("skill_source", [
+  "builtin",
+  "skills_sh",
+  "custom",
+]);
+
+export const skills = pgTable(
+  "skills",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id").references(() => organizations.id, {
+      onDelete: "cascade",
+    }),
+    key: text("key").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    source: skillSourceEnum("source").notNull().default("custom"),
+    externalId: text("external_id"),
+    contentHash: text("content_hash"),
+    metadata: jsonb("metadata")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    orgKeyUnique: uniqueIndex("skills_organization_key_unique")
+      .on(table.organizationId, table.key)
+      .where(sql`${table.organizationId} IS NOT NULL`),
+    platformKeyUnique: uniqueIndex("skills_platform_key_unique")
+      .on(table.key)
+      .where(sql`${table.organizationId} IS NULL`),
+    orgIdx: index("skills_organization_id_idx").on(table.organizationId),
+  }),
+);
+
+export const skillSnapshots = pgTable(
+  "skill_snapshots",
+  {
+    skillId: uuid("skill_id")
+      .primaryKey()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    contentHash: text("content_hash").notNull(),
+    files: jsonb("files")
+      .notNull()
+      .default([])
+      .$type<Array<{ path: string; contents: string }>>(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+);
+
+export const agentDefinitionSkills = pgTable(
+  "agent_definition_skills",
+  {
+    teamspaceId: uuid("teamspace_id")
+      .notNull()
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
+    agentDefinitionId: uuid("agent_definition_id").notNull(),
+    skillId: uuid("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    enabled: boolean("enabled").notNull().default(true),
+    sortOrder: integer("sort_order").notNull().default(0),
+  },
+  (table) => ({
+    definitionFk: foreignKey({
+      columns: [table.teamspaceId, table.agentDefinitionId],
+      foreignColumns: [agentDefinitions.teamspaceId, agentDefinitions.id],
+    }).onDelete("cascade"),
+    pk: uniqueIndex("agent_definition_skills_pk").on(
+      table.agentDefinitionId,
+      table.skillId,
+    ),
+  }),
+);
+
 export const schedules = pgTable(
   "schedules",
   {
@@ -570,6 +647,7 @@ export const tasks = pgTable(
     targetNodeId: uuid("target_node_id").references(() => nodes.id, {
       onDelete: "set null",
     }),
+    sandboxEnvironmentId: uuid("sandbox_environment_id"),
     parentTaskId: uuid("parent_task_id"),
     context: jsonb("context").notNull().default({}).$type<Record<string, unknown>>(),
     acceptanceCriteria: jsonb("acceptance_criteria")
@@ -609,6 +687,179 @@ export const tasks = pgTable(
     projectTargetNodeIdx: index("tasks_project_target_node_idx").on(
       table.teamspaceId,
       table.targetNodeId,
+    ),
+  }),
+);
+
+export const sandboxSessionStatusEnum = pgEnum("sandbox_session_status", [
+  "provisioning",
+  "ready",
+  "running",
+  "stopped",
+  "failed",
+]);
+
+export const sandboxSetupStatusEnum = pgEnum("sandbox_setup_status", [
+  "pending",
+  "cloning",
+  "installing",
+  "ready",
+  "failed",
+]);
+
+export const sandboxSnapshotKindEnum = pgEnum("sandbox_snapshot_kind", [
+  "base",
+  "project",
+  "run",
+]);
+
+export const sandboxEnvironments = pgTable(
+  "sandbox_environments",
+  {
+    id: uuid("id").notNull(),
+    teamspaceId: uuid("teamspace_id")
+      .notNull()
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
+    accountId: uuid("account_id").references(() => accounts.id, {
+      onDelete: "cascade",
+    }),
+    key: text("key").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    runtime: text("runtime").notNull().default("node24"),
+    workingRoot: text("working_root").notNull().default("/vercel/sandbox"),
+    primarySourceKey: text("primary_source_key"),
+    setupScript: text("setup_script"),
+    envPolicy: jsonb("env_policy")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
+    ports: jsonb("ports").notNull().default([]).$type<number[]>(),
+    baseSnapshotId: uuid("base_snapshot_id"),
+    latestProjectSnapshotId: uuid("latest_project_snapshot_id"),
+    persistencePolicy: jsonb("persistence_policy")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.teamspaceId, table.id] }),
+    teamspaceKeyUnique: uniqueIndex("sandbox_environments_teamspace_key_unique")
+      .on(table.teamspaceId, table.key)
+      .where(sql`${table.accountId} IS NULL`),
+    teamspaceAccountKeyUnique: uniqueIndex(
+      "sandbox_environments_teamspace_account_key_unique",
+    )
+      .on(table.teamspaceId, table.accountId, table.key)
+      .where(sql`${table.accountId} IS NOT NULL`),
+    teamspaceIdx: index("sandbox_environments_teamspace_id_idx").on(
+      table.teamspaceId,
+    ),
+  }),
+);
+
+export const sandboxSources = pgTable(
+  "sandbox_sources",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    teamspaceId: uuid("teamspace_id")
+      .notNull()
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
+    sandboxEnvironmentId: uuid("sandbox_environment_id").notNull(),
+    key: text("key").notNull(),
+    url: text("url").notNull(),
+    provider: text("provider").notNull().default("github"),
+    repoOwner: text("repo_owner"),
+    repoName: text("repo_name"),
+    branch: text("branch").notNull().default("main"),
+    revision: text("revision"),
+    path: text("path").notNull(),
+    primary: boolean("primary").notNull().default(false),
+    authPolicy: jsonb("auth_policy")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
+  },
+  (table) => ({
+    environmentFk: foreignKey({
+      columns: [table.teamspaceId, table.sandboxEnvironmentId],
+      foreignColumns: [sandboxEnvironments.teamspaceId, sandboxEnvironments.id],
+    }).onDelete("cascade"),
+    envKeyUnique: uniqueIndex("sandbox_sources_env_key_unique").on(
+      table.sandboxEnvironmentId,
+      table.key,
+    ),
+  }),
+);
+
+export const sandboxSessions = pgTable(
+  "sandbox_sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    teamspaceId: uuid("teamspace_id")
+      .notNull()
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
+    sandboxEnvironmentId: uuid("sandbox_environment_id").notNull(),
+    vercelSandboxId: text("vercel_sandbox_id"),
+    sandboxName: text("sandbox_name"),
+    status: sandboxSessionStatusEnum("status").notNull().default("provisioning"),
+    currentSnapshotId: uuid("current_snapshot_id"),
+    portUrls: jsonb("port_urls")
+      .notNull()
+      .default({})
+      .$type<Record<string, string>>(),
+    setupStatus: sandboxSetupStatusEnum("setup_status")
+      .notNull()
+      .default("pending"),
+    allowedRoots: jsonb("allowed_roots")
+      .notNull()
+      .default([])
+      .$type<string[]>(),
+    lastActivityAt: timestamp("last_activity_at", { withTimezone: true }),
+    ownerAgentRunId: uuid("owner_agent_run_id"),
+    ownerTaskId: uuid("owner_task_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    environmentFk: foreignKey({
+      columns: [table.teamspaceId, table.sandboxEnvironmentId],
+      foreignColumns: [sandboxEnvironments.teamspaceId, sandboxEnvironments.id],
+    }).onDelete("cascade"),
+    teamspaceIdx: index("sandbox_sessions_teamspace_id_idx").on(table.teamspaceId),
+    environmentIdx: index("sandbox_sessions_environment_id_idx").on(
+      table.sandboxEnvironmentId,
+    ),
+  }),
+);
+
+export const sandboxSnapshots = pgTable(
+  "sandbox_snapshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    teamspaceId: uuid("teamspace_id")
+      .notNull()
+      .references(() => teamspaces.id, { onDelete: "cascade" }),
+    sandboxEnvironmentId: uuid("sandbox_environment_id").notNull(),
+    vercelSnapshotId: text("vercel_snapshot_id"),
+    kind: sandboxSnapshotKindEnum("kind").notNull(),
+    label: text("label").notNull(),
+    sourceRevisions: jsonb("source_revisions")
+      .notNull()
+      .default({})
+      .$type<Record<string, string>>(),
+    createdByAgentRunId: uuid("created_by_agent_run_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    environmentFk: foreignKey({
+      columns: [table.teamspaceId, table.sandboxEnvironmentId],
+      foreignColumns: [sandboxEnvironments.teamspaceId, sandboxEnvironments.id],
+    }).onDelete("cascade"),
+    environmentIdx: index("sandbox_snapshots_environment_id_idx").on(
+      table.sandboxEnvironmentId,
     ),
   }),
 );

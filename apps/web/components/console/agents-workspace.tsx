@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { CaretRightIcon } from "@phosphor-icons/react";
-import type { AgentDefinition } from "@ssota/contracts";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
@@ -15,6 +14,7 @@ type AgentsWorkspaceProps = {
   groups: AgentGroup[];
   settingsContext: AgentSettingsContext;
   scriptToolLinks: Record<string, string[]>;
+  skillsHref: string;
 };
 
 export function AgentsWorkspace({
@@ -22,6 +22,7 @@ export function AgentsWorkspace({
   groups: initialGroups,
   settingsContext,
   scriptToolLinks,
+  skillsHref,
 }: AgentsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -59,7 +60,15 @@ export function AgentsWorkspace({
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Agents"
-          description="Configure agent playbooks, tools, triggers, and models for this project."
+          description="Configure agent playbooks, tools, triggers, models, and skills for this project."
+          actions={
+            <a
+              href={skillsHref}
+              className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              Open Skills
+            </a>
+          }
         />
 
         {groups.map((group) => (
@@ -118,7 +127,6 @@ export function AgentsWorkspace({
           onClose={close}
         />
       ) : null}
-
     </div>
   );
 }

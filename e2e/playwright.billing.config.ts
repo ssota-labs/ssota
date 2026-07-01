@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import { chatStubWebEnv } from "./chat-stub-env";
 import { E2E_STRIPE_WEBHOOK_SECRET } from "./helpers/billing";
+import { withWebDeps } from "./web-server-command";
 
 const webPort = process.env.WEB_PORT ?? "3100";
 const mcpPort = process.env.MCP_PORT ?? "3101";
@@ -58,7 +59,7 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {
-      command: `pnpm --filter web exec next dev --port ${webPort}`,
+      command: withWebDeps(`pnpm --filter web exec next dev --port ${webPort}`),
       url: webUrl,
       reuseExistingServer: !!process.env.REUSE_SERVERS,
       timeout: 120_000,
@@ -71,7 +72,7 @@ export default defineConfig({
       },
     },
     {
-      command: `pnpm --filter mcp exec next dev --port ${mcpPort}`,
+      command: withWebDeps(`pnpm --filter mcp exec next dev --port ${mcpPort}`),
       url: mcpUrl,
       reuseExistingServer: !!process.env.REUSE_SERVERS,
       timeout: 120_000,

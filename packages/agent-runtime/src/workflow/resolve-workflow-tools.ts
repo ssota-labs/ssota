@@ -1,4 +1,5 @@
-import type { ToolBundle } from "@ssota/contracts";
+import type { ToolBundle, SandboxAccessTier } from "@ssota/contracts";
+import { SANDBOX_TOOLS_BY_ACCESS_TIER } from "@ssota/contracts";
 import { COMPOSIO_META_TOOL_NAMES } from "../composio/meta-tool-schemas.js";
 import {
   workflowToolSchemas,
@@ -57,10 +58,13 @@ const SCRIPT_TOOLS: WorkflowToolName[] = [
   "run_script_tool",
 ];
 
+const SKILL_TOOLS: WorkflowToolName[] = ["read_skill"];
+
 export interface ResolveWorkflowToolsInput {
   toolBundles: ToolBundle[];
   isMain?: boolean;
   includeSandboxTools?: boolean;
+  sandboxAccess?: SandboxAccessTier;
   /** When false, omit Composio meta-tools even if connectors bundle is present. */
   includeComposioTools?: boolean;
   /** Composio toolkit slugs enabled for this agent; composio tools only when non-empty. */
@@ -94,6 +98,9 @@ export function resolveWorkflowToolNames(
   if (bundles.has("script_tools")) {
     for (const n of SCRIPT_TOOLS) names.add(n);
   }
+  if (bundles.has("skills.read")) {
+    for (const n of SKILL_TOOLS) names.add(n);
+  }
   if (input.isMain || bundles.has("graph.write")) {
     for (const n of AGENT_DEF_TOOLS) names.add(n);
   }
@@ -113,7 +120,9 @@ export function resolveWorkflowToolNames(
 
 export function resolveSandboxToolNames(
   includeSandboxTools: boolean | undefined,
+  sandboxAccess: SandboxAccessTier = "code",
 ): SandboxToolName[] {
-  if (!includeSandboxTools) return [];
-  return Object.keys(sandboxToolSchemas) as SandboxToolName[];
+  if (!includeSandboxTools || sandboxAccess === "none") return [];
+  const allowed = SANDBOX_TOOLS_BY_ACCESS_TIER[sandboxAccess];
+  return allowed.filter((name) => name in sandboxToolSchemas) as SandboxToolName[];
 }

@@ -4,6 +4,7 @@ import {
   loadAgentSettingsConnections,
   loadAgentSettingsContext,
 } from "@/lib/console/load-agent-settings-context";
+import { orgPath } from "@/lib/console/paths";
 import { resolveOrg } from "@/lib/console/resolve-project";
 import { getScriptToolPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -46,6 +47,7 @@ export default async function AgentsPage({
           connections,
         }}
         scriptToolLinks={scriptToolLinks}
+        skillsHref={orgPath({ orgSlug, teamspaceSlug }, "skills")}
       />
     </div>
   );

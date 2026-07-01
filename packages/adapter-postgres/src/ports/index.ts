@@ -23,6 +23,11 @@ export {
   seedWorkflowInstructions,
 } from "./agent-definition-port.js";
 export { createScriptToolPort } from "./script-tool-port.js";
+export { createSkillPort } from "./skill-port.js";
+export {
+  createSandboxEnvironmentPort,
+  createSandboxSessionRecordPort,
+} from "./sandbox-environment-port.js";
 export { createPagePort, seedPages } from "./page-port.js";
 export { createPageViewStatePort } from "./page-view-state-port.js";
 export {
@@ -48,6 +53,7 @@ function mapTask(row: typeof schema.tasks.$inferSelect): Task {
     context: row.context,
     acceptanceCriteria: row.acceptanceCriteria,
     idempotencyKey: row.idempotencyKey,
+    sandboxEnvironmentId: row.sandboxEnvironmentId ?? null,
     result: row.result,
     completedAt: row.completedAt,
     createdAt: row.createdAt,
@@ -158,6 +164,7 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
           context: input.context ?? {},
           acceptanceCriteria: input.acceptanceCriteria ?? [],
           idempotencyKey: input.idempotencyKey ?? null,
+          sandboxEnvironmentId: input.sandboxEnvironmentId ?? null,
         })
         .returning();
       return mapTask(row!);
@@ -182,6 +189,9 @@ export function createTaskPort(db: Db, scope: ActionPortsScope): TaskPort {
         set.acceptanceCriteria = patch.acceptanceCriteria;
       }
       if (patch.result !== undefined) set.result = patch.result;
+      if (patch.sandboxEnvironmentId !== undefined) {
+        set.sandboxEnvironmentId = patch.sandboxEnvironmentId;
+      }
 
       const [row] = await db
         .update(schema.tasks)

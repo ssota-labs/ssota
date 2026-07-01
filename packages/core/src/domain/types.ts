@@ -207,6 +207,7 @@ export interface Task {
   context: Record<string, unknown>;
   acceptanceCriteria: unknown[];
   idempotencyKey: string | null;
+  sandboxEnvironmentId: string | null;
   result: Record<string, unknown>;
   completedAt: Date | null;
   createdAt: Date;
@@ -236,6 +237,7 @@ export interface TaskCreateInput {
   context?: Record<string, unknown>;
   acceptanceCriteria?: unknown[];
   idempotencyKey?: string | null;
+  sandboxEnvironmentId?: string | null;
 }
 
 export interface TaskUpdatePatch {
@@ -248,6 +250,7 @@ export interface TaskUpdatePatch {
   context?: Record<string, unknown>;
   acceptanceCriteria?: unknown[];
   result?: Record<string, unknown>;
+  sandboxEnvironmentId?: string | null;
 }
 
 export interface TaskPort {

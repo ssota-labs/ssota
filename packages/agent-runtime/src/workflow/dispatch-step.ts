@@ -6,11 +6,16 @@
  *
  * - SSOTA tools (graph/tasks/pages/delegate/script/agent-def) via createSsotaTools
  * - Composio meta-tools via executeComposioMetaTool (fixed names, session per step)
- * - sandbox tools re-attach to the run's sandbox by id
+ * - sandbox tools re-attach to the run's sandbox session by id
  */
+import {
+  SANDBOX_PRIMITIVE_TOOL_NAMES,
+  SANDBOX_TOOLS_BY_ACCESS_TIER,
+  type SandboxPrimitiveToolName,
+} from "@ssota/contracts";
 import { createSsotaTools } from "../tools/index.js";
 import { createSandboxTools } from "../tools/sandbox.js";
-import { attachSandboxSession } from "../sandbox/session.js";
+import { getSandboxSessionPort } from "../ports.js";
 import {
   executeComposioMetaTool,
   getConnectorAdapter,
@@ -24,13 +29,9 @@ import {
 } from "../node-scopes.js";
 
 /** Sandbox tool names handled by the re-attach branch (dev-capable tasks). */
-export const MAIN_WORKFLOW_SANDBOX_TOOL_NAMES = [
-  "sandbox_exec",
-  "sandbox_write_file",
-  "sandbox_read_file",
-] as const;
+export const MAIN_WORKFLOW_SANDBOX_TOOL_NAMES = SANDBOX_PRIMITIVE_TOOL_NAMES;
 
-const SANDBOX_TOOLS = new Set<string>(MAIN_WORKFLOW_SANDBOX_TOOL_NAMES);
+const SANDBOX_TOOLS = new Set<string>(SANDBOX_PRIMITIVE_TOOL_NAMES);
 
 const toolCallId = (toolName: string) => `main-wf-${toolName}`;
 
@@ -71,6 +72,17 @@ function assertGraphToolNodeScope(
   }
 }
 
+function isSandboxToolAllowed(
+  toolName: string,
+  ssota: AgentRunContext,
+): toolName is SandboxPrimitiveToolName {
+  const tier = ssota.sandboxAccess ?? "code";
+  if (tier === "none") return false;
+  return SANDBOX_TOOLS_BY_ACCESS_TIER[tier].includes(
+    toolName as SandboxPrimitiveToolName,
+  );
+}
+
 /**
  * Execute a single named main-agent tool inside a durable step and return its
  * result. `ssota` is the serializable per-run scope; live credential/MCP/sandbox
@@ -108,12 +120,18 @@ export async function runMainAgentToolStep(
   }
 
   if (SANDBOX_TOOLS.has(toolName)) {
-    if (!ssota.sandboxId) {
+    if (!ssota.sandboxSessionId) {
       throw new Error(
-        `Sandbox tool ${toolName} requires a sandbox, but none was provisioned for this run.`,
+        `Sandbox tool ${toolName} requires a sandbox session, but none was provisioned for this run.`,
       );
     }
-    const sandbox = await attachSandboxSession(ssota.sandboxId);
+    if (!isSandboxToolAllowed(toolName, ssota)) {
+      throw new Error(
+        `Sandbox tool ${toolName} is not allowed for access tier '${ssota.sandboxAccess ?? "code"}'.`,
+      );
+    }
+    const sessionPort = getSandboxSessionPort(ssota.teamspaceId);
+    const sandbox = await sessionPort.attach(ssota.sandboxSessionId);
     const t = createSandboxTools()[toolName];
     if (!t?.execute) throw new Error(`Unknown sandbox tool: ${toolName}`);
     return await t.execute(input as never, {

@@ -125,10 +125,21 @@ export function createStripeBillingPort(db: Db): BillingPort {
       const itemId = subscription.items.data[0]?.id;
       if (!itemId) return;
 
-      await stripe.subscriptions.update(billing.stripeSubscriptionId, {
-        items: [{ id: itemId, quantity: seatQuantity }],
-        proration_behavior: "create_prorations",
-      });
+      const currentQuantity = subscription.items.data[0]?.quantity ?? 1;
+      if (currentQuantity !== seatQuantity) {
+        await stripe.subscriptions.update(billing.stripeSubscriptionId, {
+          items: [{ id: itemId, quantity: seatQuantity }],
+          proration_behavior: "create_prorations",
+        });
+      }
+
+      if (billing.seatQuantity !== seatQuantity) {
+        await write.upsertOrganizationBilling({
+          ...billing,
+          seatQuantity,
+          updatedAt: new Date(),
+        });
+      }
     },
   });
 }
