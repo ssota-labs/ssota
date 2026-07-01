@@ -10,12 +10,15 @@ const GROUP_ORDER: AgentGroupKey[] = [
   "custom",
 ];
 
-const GROUP_LABEL: Record<AgentGroupKey, string> = {
+export const AGENT_GROUP_LABEL: Record<AgentGroupKey, string> = {
   main: "Main",
   agents: "Agents",
   reference: "Reference",
   custom: "Custom",
 };
+
+/** @deprecated Use AGENT_GROUP_LABEL */
+const GROUP_LABEL = AGENT_GROUP_LABEL;
 
 export function agentGroupKey(definition: AgentDefinition): AgentGroupKey {
   if (definition.isMain) return "main";
@@ -43,7 +46,7 @@ export function groupAgentDefinitions(
   return GROUP_ORDER.filter((key) => (buckets.get(key)?.length ?? 0) > 0).map(
     (key) => ({
       key,
-      label: GROUP_LABEL[key],
+      label: AGENT_GROUP_LABEL[key],
       items: [...(buckets.get(key) ?? [])].sort((a, b) =>
         a.name.localeCompare(b.name),
       ),

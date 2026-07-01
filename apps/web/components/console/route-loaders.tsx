@@ -18,7 +18,7 @@ function SectionLabelSkeleton({ width = "w-28" }: { width?: string }) {
   return <Skeleton className={cn("h-3 rounded-sm", width)} />;
 }
 
-function GridCardSkeleton() {
+export function GridCardSkeleton() {
   return (
     <div className="space-y-2 rounded-lg border bg-card p-4">
       <Skeleton className="size-5 rounded-sm" />
@@ -29,7 +29,7 @@ function GridCardSkeleton() {
   );
 }
 
-function ListRowSkeleton() {
+export function ListRowSkeleton() {
   return (
     <div className="flex items-center gap-3 px-4 py-3">
       <div className="min-w-0 flex-1 space-y-1.5">
