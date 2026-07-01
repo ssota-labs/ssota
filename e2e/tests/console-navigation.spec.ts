@@ -15,12 +15,12 @@ test.describe("Console v2.7 navigation", () => {
     const expectedLinks = [
       "Chat",
       "Tasks",
-      "Channels",
-      "Scheduler",
-      "Sandbox",
       "Agents",
       "Skills",
       "Templates",
+      "Channels",
+      "Scheduler",
+      "Sandbox",
       "Graph",
       "Connectors",
     ] as const;
