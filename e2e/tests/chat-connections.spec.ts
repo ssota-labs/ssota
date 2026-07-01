@@ -122,7 +122,7 @@ test.describe("Connections + Chat", () => {
   test("connections: multi-workspace connector records multiple installs", async ({
     page,
   }) => {
-    await gotoProject(page, "connectors");
+    await gotoProject(page, "connections");
 
     const slack = page.getByTestId("connector-slack");
     await expect(slack).toBeVisible();
@@ -153,7 +153,7 @@ test.describe("Connections + Chat", () => {
   test("connections: single-workspace connector (Linear) has no add-workspace", async ({
     page,
   }) => {
-    await gotoProject(page, "connectors");
+    await gotoProject(page, "connections");
 
     const linear = page.getByTestId("connector-linear");
     await expect(linear).toBeVisible();
@@ -437,7 +437,7 @@ test.describe("Connections + Chat", () => {
     test("connection_search then connection_call via stub model", async ({
       page,
     }) => {
-      await gotoProject(page, "connectors");
+      await gotoProject(page, "connections");
       await page.getByTestId("connect-linear").click();
       await expect(
         page.getByTestId("connector-linear").getByTestId("connection-row"),
@@ -478,7 +478,7 @@ test.describe("Connections + Chat", () => {
     });
 
     test("tool activity persists after page refresh", async ({ page }) => {
-      await gotoProject(page, "connectors");
+      await gotoProject(page, "connections");
       await page.getByTestId("connect-linear").click();
       await expect(
         page.getByTestId("connector-linear").getByTestId("connection-row"),

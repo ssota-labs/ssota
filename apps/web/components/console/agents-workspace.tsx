@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CaretRightIcon } from "@phosphor-icons/react";
-import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
+import { ListSheet } from "@/components/list-sheet";
 import type { AgentGroup } from "@/lib/console/load-agents-for-ui";
 import type { AgentSettingsContext } from "@/lib/console/load-agent-settings-context";
 import { isWorkerAgentId } from "@/lib/console/agent-tool-catalog";
@@ -41,21 +40,14 @@ export function AgentsWorkspace({
     setGroups(initialGroups);
   }, [initialGroups]);
 
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActiveId(null);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
-
   const close = () => setActiveId(null);
 
   return (
-    <div
+    <ListSheet.Root
+      activeId={activeId}
+      onActiveIdChange={setActiveId}
       className="absolute inset-0 flex flex-col"
-      data-testid="agents-workspace"
+      testId="agents-workspace"
     >
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
@@ -73,17 +65,12 @@ export function AgentsWorkspace({
 
         {groups.map((group) => (
           <BrowseWorkspace.Section key={group.key} label={group.label}>
-            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border">
+            <ListSheet.List className="border-border">
               {group.items.map((definition) => (
-                <button
+                <ListSheet.Row
                   key={definition.id}
-                  type="button"
-                  data-testid={`agent-item-${definition.id}`}
-                  className={cn(
-                    "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
-                    activeId === definition.id && "bg-muted/30",
-                  )}
-                  onClick={() => setActiveId(definition.id)}
+                  id={definition.id}
+                  testId={`agent-item-${definition.id}`}
                 >
                   <div className="min-w-0 flex-1 space-y-1">
                     <span className="text-sm font-medium">{definition.name}</span>
@@ -96,13 +83,10 @@ export function AgentsWorkspace({
                       </p>
                     ) : null}
                   </div>
-                  <CaretRightIcon
-                    className="size-4 shrink-0 text-muted-foreground"
-                    aria-hidden
-                  />
-                </button>
+                  <ListSheet.RowCaret />
+                </ListSheet.Row>
               ))}
-            </div>
+            </ListSheet.List>
           </BrowseWorkspace.Section>
         ))}
 
@@ -127,7 +111,7 @@ export function AgentsWorkspace({
           onClose={close}
         />
       ) : null}
-    </div>
+    </ListSheet.Root>
   );
 }
 

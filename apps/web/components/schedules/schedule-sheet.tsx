@@ -36,7 +36,7 @@ import {
 } from "@/lib/schedules/recurrence";
 import { InstructionPickerSelect } from "./instruction-picker-select";
 import type { InstructionOption } from "./instruction-picker-select";
-import { ScheduleSheetPanel } from "./schedule-sheet-panel";
+import { CardSheetPanel } from "@/components/card-sheet-panel";
 
 export type { InstructionOption };
 
@@ -540,13 +540,17 @@ export function ScheduleSheet({
   if (!open) return null;
 
   return (
-    <ScheduleSheetPanel
+    <CardSheetPanel
       title={title}
       subtitle={subtitle}
+      sheetSize="half"
       onClose={() => onOpenChange(false)}
       footer={submitButton}
+      testId="schedule-sheet-panel"
+      closeButtonTestId="schedule-sheet-close"
+      resizeHandleTestId="schedule-sheet-resize-handle"
     >
       {form}
-    </ScheduleSheetPanel>
+    </CardSheetPanel>
   );
 }

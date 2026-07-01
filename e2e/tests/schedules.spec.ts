@@ -2,14 +2,14 @@ import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
-test.describe("Scheduler", () => {
+test.describe("Schedules", () => {
   test("shows seeded schedules and opens add-trigger sheet", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "schedules");
 
     const main = page.getByRole("main");
     await expect(
-      main.getByRole("heading", { name: /^Scheduler$|^스케줄러$/i }),
+      main.getByRole("heading", { name: /^Schedules$|^스케줄$/i }),
     ).toBeVisible();
     await expect(main.getByTestId("schedule-list")).toBeVisible();
     await expect(

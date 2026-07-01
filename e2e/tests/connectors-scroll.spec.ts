@@ -2,11 +2,11 @@ import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { gotoProject } from "../helpers/console";
 
-test.describe("Connectors page", () => {
+test.describe("Connections page", () => {
   test.beforeEach(async ({ page }) => {
     await loginAsSmoke(page);
-    await gotoProject(page, "connectors");
-    await expect(page.getByRole("heading", { name: "Connectors" })).toBeVisible();
+    await gotoProject(page, "connections");
+    await expect(page.getByRole("heading", { name: "Connections" })).toBeVisible();
   });
 
   test("scroll reaches Storage, CRM, Design, and Support sections", async ({
