@@ -1,7 +1,8 @@
 # SSOTA
 
-SSOTA turns Eve-shaped agent code into an editable team workspace with shared
-graph memory and dynamic human pages.
+SSOTA turns [Vercel Eve](https://vercel.com/eve)-shaped agent code into an
+editable team workspace with shared graph memory and SaaS-grade user-facing
+pages.
 
 It is built for teams that want the Vercel agent stack, but need a product
 surface where agent systems can be edited, inspected, reused, and operated.
