@@ -13,8 +13,9 @@ team's playbooks on it, and **review pages** where humans approve outcomes —
 not re-enter every field. SSOTA implements the record as a **typed graph** and
 ships the workspace to configure agents and pages on top.
 
-Built for teams shipping vertical work software on the
-[Vercel agent stack](https://vercel.com/eve).
+For teams whose process does not fit a vendor's default playbook — who need
+their own **system of record**, **configurable specialists**, and **review
+surfaces** in one workspace.
 
 > Specialists do the work. The graph remembers. Pages are for approval.
 
@@ -278,7 +279,7 @@ Agents write the graph. Humans review outcomes on pages.
 
 ### Templates
 
-Templates package a complete vertical work product: graph catalog, runtime
+Templates package a complete domain workspace: graph catalog, runtime
 definitions, page tree, human UI layer, and workflow defaults.
 
 The built-in software development template includes roadmap, research,
@@ -286,7 +287,7 @@ initiatives, design, engineering, build, QA, launch, and retrospective surfaces.
 
 ## For builders
 
-SSOTA is for teams building vertical work software, not another opinionated
+SSOTA is for teams building **domain workspaces** — not another opinionated
 SaaS SKU:
 
 - **Declare the domain model** — node and edge catalogs per template
