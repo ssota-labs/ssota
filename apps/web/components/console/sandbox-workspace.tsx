@@ -7,7 +7,7 @@ import type { SandboxEnvironmentIndex } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
-import { ListSheet } from "@/components/list-sheet";
+import { CardListSheet } from "@/components/card-list-sheet";
 import { SandboxEnvironmentSheet } from "@/components/settings/sandbox-environment-sheet";
 
 type SandboxWorkspaceProps = {
@@ -41,7 +41,7 @@ export function SandboxWorkspace({
   }, [createOpen]);
 
   return (
-    <ListSheet.Root
+    <CardListSheet.Root
       activeId={selectedId}
       onActiveIdChange={setSelectedId}
       className="absolute inset-0 flex flex-col"
@@ -72,9 +72,9 @@ export function SandboxWorkspace({
                 <code className="text-xs">sandbox.dev_node24</code> automatically.
               </BrowseWorkspace.Empty>
             ) : (
-              <ListSheet.List className="border-border">
+              <CardListSheet.List className="border-border">
                 {environments.map((env) => (
-                  <ListSheet.Row
+                  <CardListSheet.Row
                     key={env.id}
                     id={env.id}
                     testId={`sandbox-environment-row-${env.key}`}
@@ -97,10 +97,10 @@ export function SandboxWorkspace({
                         <p className="font-mono text-xs text-muted-foreground">{env.key}</p>
                       )}
                     </div>
-                    <ListSheet.RowCaret />
-                  </ListSheet.Row>
+                    <CardListSheet.RowCaret />
+                  </CardListSheet.Row>
                 ))}
-              </ListSheet.List>
+              </CardListSheet.List>
             )}
           </div>
         </BrowseWorkspace.Section>
@@ -125,6 +125,6 @@ export function SandboxWorkspace({
           onSaved={refresh}
         />
       </BrowseWorkspace.Frame>
-    </ListSheet.Root>
+    </CardListSheet.Root>
   );
 }

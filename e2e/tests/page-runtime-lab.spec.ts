@@ -119,7 +119,7 @@ test.describe("Page Runtime Lab", () => {
     await expect(page.getByRole("heading", { name: "2026 Q1 분기 로드맵" })).toBeVisible();
     await expect(page.getByTestId("document-sheet-editor")).toBeVisible();
     await expect(page.getByTestId("blocknote-editor-shell")).toBeVisible();
-    await expect(page.getByText("DocumentSheetList catalog component")).toBeVisible();
+    await expect(page.getByText("DocumentCardListSheet catalog component")).toBeVisible();
     await expect(page.getByText("2026 연간 로드맵")).toBeVisible();
   });
 

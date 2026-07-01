@@ -606,11 +606,11 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       props: { binding: "article", field: "content", action: "saveArticle" },
     },
   },
-  DocumentSheetList: {
-    key: "DocumentSheetList",
+  DocumentCardListSheet: {
+    key: "DocumentCardListSheet",
     category: "document",
     description:
-      "List of document nodes; clicking a row opens a floating BlockNote sheet panel. Wrap in Section for page headings and padding.",
+      "CardListSheet pattern for document nodes: card list rows open a BlockNote detail sheet. Wrap in Section for page headings and padding.",
     children: false,
     props: {
       binding: binding("A multi-node binding."),
@@ -639,7 +639,7 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       },
     },
     example: {
-      type: "DocumentSheetList",
+      type: "DocumentCardListSheet",
       props: {
         binding: "rows",
         field: "content",
@@ -881,7 +881,7 @@ export const PAGE_COMPOSITE_PATTERNS: Record<string, PageComponentDescriptor> = 
     key: "RoadmapSheetWorkspace",
     category: "document",
     description:
-      "Resizable + DocumentEditor (evergreen product roadmap) + DocumentSheetList (planning docs). See executive/roadmap in pages-tree.json.",
+      "Resizable + DocumentEditor (evergreen product roadmap) + DocumentCardListSheet (planning docs). See executive/roadmap in pages-tree.json.",
     children: false,
     props: {
       editorBinding: binding("Single-node binding for the evergreen roadmap editor."),

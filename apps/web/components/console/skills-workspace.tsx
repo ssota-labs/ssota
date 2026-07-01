@@ -22,8 +22,7 @@ import {
   SkillDetailCard,
   SkillMarkdownView,
 } from "@/components/console/skill-detail-view";
-import { CardSheetPanel } from "@/components/card-sheet-panel";
-import { ListSheet } from "@/components/list-sheet";
+import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
 
 type SkillDetail = {
   skill: Skill;
@@ -144,7 +143,7 @@ export function SkillsPageWorkspace({
       className="absolute inset-0 flex flex-col"
       data-testid="skills-workspace"
     >
-      <ListSheet.Root
+      <CardListSheet.Root
         activeId={activeId}
         onActiveIdChange={setActiveId}
         className="relative min-h-0 flex-1 overflow-hidden"
@@ -187,9 +186,9 @@ export function SkillsPageWorkspace({
         </div>
 
         <BrowseWorkspace.Section label="Catalog">
-          <ListSheet.List className="border-border">
+          <CardListSheet.List className="border-border">
             {skills.map((skill) => (
-              <ListSheet.Row
+              <CardListSheet.Row
                 key={skill.id}
                 id={skill.id}
                 testId={`skill-catalog-item-${skill.key}`}
@@ -207,15 +206,15 @@ export function SkillsPageWorkspace({
                     </p>
                   ) : null}
                 </div>
-                <ListSheet.RowCaret />
-              </ListSheet.Row>
+                <CardListSheet.RowCaret />
+              </CardListSheet.Row>
             ))}
             {skills.length === 0 && !isPending ? (
-              <ListSheet.Empty>
+              <CardListSheet.Empty>
                 No skills yet. Run db:seed for platform builtins or add a custom skill.
-              </ListSheet.Empty>
+              </CardListSheet.Empty>
             ) : null}
-          </ListSheet.List>
+          </CardListSheet.List>
         </BrowseWorkspace.Section>
 
         <p className="text-xs text-muted-foreground">
@@ -236,7 +235,7 @@ export function SkillsPageWorkspace({
         </div>
 
       {activeSkill ? (
-        <CardSheetPanel
+        <CardListSheetPanel
           testId="skill-detail-sheet"
           title={activeSkill.name}
           subtitle={`${activeSkill.key} · ${sourceLabel(activeSkill.source)}`}
@@ -293,9 +292,9 @@ export function SkillsPageWorkspace({
               </SkillDetailCard>
             ) : null}
           </div>
-        </CardSheetPanel>
+        </CardListSheetPanel>
       ) : null}
-      </ListSheet.Root>
+      </CardListSheet.Root>
 
       <CreateSkillDialog
         open={createOpen}

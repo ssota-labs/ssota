@@ -24,7 +24,7 @@ import {
   getSandboxEnvironmentAction,
   upsertSandboxEnvironmentAction,
 } from "@/app/settings/sandbox-environment-actions";
-import { CardSheetPanel } from "@/components/card-sheet-panel";
+import { CardListSheetPanel } from "@/components/card-list-sheet";
 import { SandboxEnvironmentSheetSkeleton } from "@/components/settings/sandbox-environment-sheet-skeleton";
 import { SettingsRow } from "@/components/settings/settings-panel";
 
@@ -262,7 +262,7 @@ export function SandboxEnvironmentSheet({
     mode === "create" ? "New sandbox environment" : form.name || "Sandbox environment";
 
   return (
-    <CardSheetPanel
+    <CardListSheetPanel
       title={title}
       subtitle="VM template for coding agent runs — runtime, repos, and boot policy."
       sheetSize="viewport"
@@ -516,6 +516,6 @@ export function SandboxEnvironmentSheet({
           </section>
         </div>
       )}
-    </CardSheetPanel>
+    </CardListSheetPanel>
   );
 }

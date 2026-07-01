@@ -1,6 +1,8 @@
+/** @deprecated Use CardListSheetPanel from @/components/card-list-sheet */
 export {
-  CardSheetPanel,
-  CardSheetShell,
-  type CardSheetPanelProps,
-  type CardSheetSize,
-} from "@/components/card-sheet-shell";
+  CardListSheetPanel as CardSheetPanel,
+  CardListSheetPanel,
+  CardListSheet,
+  type CardListSheetPanelProps as CardSheetPanelProps,
+  type CardListSheetSize as CardSheetSize,
+} from "@/components/card-list-sheet";
