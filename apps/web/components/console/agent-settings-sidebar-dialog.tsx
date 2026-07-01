@@ -72,7 +72,7 @@ export function AgentSettingsSidebarDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "flex h-[min(85vh,40rem)] w-[min(94vw,72rem)] !max-w-[min(94vw,72rem)] flex-col gap-0 overflow-hidden p-0 sm:!max-w-[min(94vw,72rem)]",
+          "flex h-[min(85vh,40rem)] w-[min(50vw,40rem)] !max-w-[min(50vw,40rem)] flex-col gap-0 overflow-hidden p-0 sm:!max-w-[min(50vw,40rem)]",
           className,
         )}
         forceBackdrop
@@ -142,9 +142,9 @@ export function AgentSettingsSidebarDialog({
             </nav>
           </aside>
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto p-6">{detail}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">{detail}</div>
             {footer ? (
-              <div className="border-border flex justify-end border-t px-6 py-4">
+              <div className="flex justify-end px-4 py-3">{footer}</div>
                 {footer}
               </div>
             ) : null}
