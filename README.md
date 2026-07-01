@@ -21,11 +21,11 @@ surfaces** in one workspace.
 
 ## The shift
 
-Salesforce-style SaaS is not really "software." It is several lists — accounts,
-opportunities, activities — plus a sales playbook baked into stages, required
-fields, and defaults. That combination works for the average team. It breaks
-down when your process has exceptions, context, and judgment that do not fit the
-product's opinionated model.
+Most enterprise SaaS is built from the same parts: **lists** — accounts,
+opportunities, activities — plus a **vendor playbook** baked into stages, required
+fields, and defaults. The product surface hides that shape, but the model is
+opinionated. It works for the average team until your process needs exceptions,
+context, and judgment the defaults were not built for.
 
 Customization markets exist for a reason. Teams either bend the tool, hire
 consultants, or hire a human specialist and let them manage the lists outside
