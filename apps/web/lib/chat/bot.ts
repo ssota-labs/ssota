@@ -16,6 +16,16 @@ import {
 import { runMainWorkflowAgent } from "@/app/workflows/main-workflow-agent";
 import { getSiteUrl } from "@/lib/auth/config";
 import { extractWorkspaceKey, resolveChatTarget } from "./resolve-account";
+import type { SlackInboundRoute } from "./slack-inbound-route";
+import {
+  listTeamspaceAgentDefinitions,
+  resolveSlackInboundRoute,
+} from "./slack-inbound-route";
+import { getAgentDefinitionPort } from "@/lib/ports";
+
+type ChatThreadState = {
+  agentDefinitionId?: string;
+};
 
 function notLinkedReply(): string {
   return (
@@ -27,12 +37,6 @@ function notLinkedReply(): string {
 
 function slackAdapter() {
   const signingSecret = process.env.SLACK_SIGNING_SECRET;
-  // The bot's Slack transport token (used to receive + post messages) defaults
-  // to Vercel Connect: it is resolved per Slack installation from Connect. This
-  // is independent of the agent's Composio connector tools. Escape hatches:
-  //   - SLACK_BOT_TOKEN forces a single static bot token (single-workspace dev).
-  //   - SLACK_CONNECT=0 disables Connect (falls back to static/signing-secret).
-  //   - SLACK_CONNECT_CONNECTOR overrides the Connect connector uid (default "slack").
   const staticToken = process.env.SLACK_BOT_TOKEN;
   const connectDisabled =
     process.env.SLACK_CONNECT === "0" || Boolean(staticToken);
@@ -90,26 +94,49 @@ interface IncomingMessage {
   author?: { userId?: string };
   raw?: unknown;
   threadId?: string;
+  isMention?: boolean;
+  id?: string;
 }
 
-async function runAgentStream(message: IncomingMessage) {
-  const workspaceKey = extractWorkspaceKey(message.raw);
-  const target = await resolveChatTarget(workspaceKey);
-  if (!target) {
-    return notLinkedReply();
-  }
-  const { teamspaceId, accountId } = target;
-  const text = message.text;
-  const threadId = message.threadId ?? `chat:${workspaceKey}`;
+const handledMessageIds = new Map<string, number>();
+const HANDLED_TTL_MS = 60_000;
 
+function shouldHandleMessage(messageId: string | undefined): boolean {
+  if (!messageId) return true;
+  const now = Date.now();
+  for (const [id, expiresAt] of handledMessageIds) {
+    if (expiresAt <= now) handledMessageIds.delete(id);
+  }
+  if (handledMessageIds.has(messageId)) return false;
+  handledMessageIds.set(messageId, now + HANDLED_TTL_MS);
+  return true;
+}
+
+async function loadDefinitions(teamspaceId: string) {
+  const port = getAgentDefinitionPort(teamspaceId);
+  return listTeamspaceAgentDefinitions(
+    () => port.listDefinitions(),
+    (id) => port.getById(id),
+  );
+}
+
+async function runAgentStream(
+  message: IncomingMessage,
+  target: { teamspaceId: string; accountId?: string },
+  route: SlackInboundRoute,
+  threadId: string,
+  workspaceKey: string | undefined,
+) {
   const run = await start(runMainWorkflowAgent, [
     {
-      teamspaceId,
+      teamspaceId: target.teamspaceId,
       threadId,
-      accountId,
+      accountId: target.accountId,
+      agentDefinitionId: route.isMain ? undefined : route.agentDefinitionId,
       chatContext: {
+        trigger: "chatbot",
         chat: {
-          messages: [{ role: "user", content: text }],
+          messages: [{ role: "user", content: message.text }],
         },
         channel: "chat",
         workspace: workspaceKey,
@@ -123,6 +150,50 @@ async function runAgentStream(message: IncomingMessage) {
     readable.pipeThrough(
       createModelCallToUIChunkTransform(),
     ) as ReadableStream<UIMessageChunk>,
+  );
+}
+
+async function handleInboundMessage(
+  thread: {
+    id: string;
+    post: (
+      message: string | AsyncIterable<string>,
+    ) => Promise<unknown>;
+    startTyping: (status?: string) => Promise<void>;
+    setState: (state: Partial<ChatThreadState>) => Promise<void>;
+    state: Promise<ChatThreadState | null>;
+    subscribe: () => Promise<void>;
+  },
+  message: IncomingMessage,
+) {
+  if (!shouldHandleMessage(message.id)) return;
+
+  const workspaceKey = extractWorkspaceKey(message.raw);
+  const target = await resolveChatTarget(workspaceKey);
+  if (!target) {
+    await thread.post(notLinkedReply());
+    return;
+  }
+
+  const threadState = await thread.state;
+  const definitions = await loadDefinitions(target.teamspaceId);
+  const route = await resolveSlackInboundRoute({
+    definitions,
+    messageText: message.text,
+    messageIsBotMention: message.isMention ?? false,
+    threadAgentDefinitionId: threadState?.agentDefinitionId,
+  });
+
+  if (!route) return;
+
+  await thread.setState({ agentDefinitionId: route.agentDefinitionId });
+
+  if (route.showTypingIndicator) {
+    await thread.startTyping();
+  }
+
+  await thread.post(
+    await runAgentStream(message, target, route, thread.id, workspaceKey),
   );
 }
 
@@ -149,21 +220,28 @@ export function getBot(): Chat {
 
     bot.onNewMention(async (thread, message) => {
       await thread.subscribe();
-      await thread.post(
-        await runAgentStream({
-          ...message,
-          threadId: thread.id,
-        }),
-      );
+      await handleInboundMessage(thread, {
+        ...message,
+        threadId: thread.id,
+        isMention: true,
+      });
+    });
+
+    bot.onNewMessage(/<!subteam\^/i, async (thread, message) => {
+      await thread.subscribe();
+      await handleInboundMessage(thread, {
+        ...message,
+        threadId: thread.id,
+        isMention: false,
+      });
     });
 
     bot.onSubscribedMessage(async (thread, message) => {
-      await thread.post(
-        await runAgentStream({
-          ...message,
-          threadId: thread.id,
-        }),
-      );
+      await handleInboundMessage(thread, {
+        ...message,
+        threadId: thread.id,
+        isMention: message.isMention,
+      });
     });
 
     cached = bot;

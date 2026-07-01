@@ -70,6 +70,12 @@ test.describe("Agents", () => {
     await expect(addDialog.getByRole("button", { name: "Done" })).toHaveCount(0);
     await expect(nav.getByText("Slack", { exact: true })).toBeVisible();
     await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
+    await expect(
+      addDialog.getByText(/Slack user group/i),
+    ).toBeVisible();
+    await expect(
+      addDialog.getByText(/Saved or Later messages/i),
+    ).toBeVisible();
   });
 
   test("opens schedule edit popover with prefilled form", async ({ page }) => {

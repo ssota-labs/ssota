@@ -14,6 +14,8 @@ export interface RunMainAgentInput {
   threadId: string;
   accountId?: string;
   scheduleId?: string;
+  /** Run a specialist agent definition instead of the teamspace main agent. */
+  agentDefinitionId?: string;
   /** Signed-in user (Composio acting entity for connector tools). */
   profileId?: string;
   modelId?: string;
@@ -33,13 +35,15 @@ export async function claimMainRunning(
     scheduleId: input.scheduleId ?? null,
     workflowRunId: runId,
     accountId: input.accountId ?? null,
-    agentDefinitionId: MAIN_AGENT_ID,
+    agentDefinitionId: input.agentDefinitionId ?? MAIN_AGENT_ID,
     trigger:
       input.chatContext?.trigger === "heartbeat"
         ? "heartbeat"
-        : input.scheduleId
-          ? "schedule"
-          : "chat",
+        : input.chatContext?.trigger === "chatbot"
+          ? "chatbot"
+          : input.scheduleId
+            ? "schedule"
+            : "chat",
     model: input.modelId ?? null,
   });
 }

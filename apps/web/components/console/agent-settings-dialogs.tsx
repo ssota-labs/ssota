@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@ssota/ui/components/ui/select";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
+import { provisionSlackAgentMentionTriggerAction } from "@/app/actions";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
@@ -117,6 +118,8 @@ export function AgentSettingsDialogs({
   >(null);
   const [toolSearch, setToolSearch] = useState("");
   const [addTriggerSearch, setAddTriggerSearch] = useState("");
+  const [isProvisioningSlack, setIsProvisioningSlack] = useState(false);
+  const [addTriggerError, setAddTriggerError] = useState<string | null>(null);
 
   const connectedProviders = useMemo(() => {
     const set = new Set<string>();
@@ -197,6 +200,7 @@ export function AgentSettingsDialogs({
   useEffect(() => {
     if (openDialog === "add-trigger") {
       setAddTriggerSearch("");
+      setAddTriggerError(null);
       setSelectedAddTriggerId(addTriggerFlatItems[0]?.id ?? null);
     }
   }, [openDialog, addTriggerFlatItems]);
@@ -330,10 +334,37 @@ export function AgentSettingsDialogs({
     ? findAddableTrigger(selectedAddTriggerId)
     : null;
 
-  const addConnectionTrigger = (triggerId: string) => {
+  const addConnectionTrigger = async (triggerId: string) => {
     const def = findAddableTrigger(triggerId);
     if (!def || def.action !== "connection" || !def.provider || !def.kind) {
       return;
+    }
+
+    setAddTriggerError(null);
+
+    let slackUserGroupId: string | undefined;
+    let slackUserGroupHandle: string | undefined;
+
+    if (triggerId === "slack:agent_mentioned") {
+      setIsProvisioningSlack(true);
+      try {
+        const provisioned = await provisionSlackAgentMentionTriggerAction(
+          teamspaceId,
+          {
+            agentDefinitionId: definition.id,
+            agentName: definition.name,
+          },
+        );
+        slackUserGroupId = provisioned.slackUserGroupId;
+        slackUserGroupHandle = provisioned.slackUserGroupHandle;
+      } catch (error) {
+        setAddTriggerError(
+          error instanceof Error ? error.message : "Failed to provision Slack user group.",
+        );
+        setIsProvisioningSlack(false);
+        return;
+      }
+      setIsProvisioningSlack(false);
     }
 
     const entry: ConnectionTrigger = {
@@ -342,6 +373,9 @@ export function AgentSettingsDialogs({
       kind: def.kind,
       label: def.label,
       enabled: true,
+      showTypingIndicator: true,
+      ...(slackUserGroupId ? { slackUserGroupId } : {}),
+      ...(slackUserGroupHandle ? { slackUserGroupHandle } : {}),
     };
 
     const allowed = new Set(draft.allowedTriggers);
@@ -554,15 +588,26 @@ export function AgentSettingsDialogs({
             </span>
           }
         />
-        <p className="text-muted-foreground mb-6 text-sm">
+        <p className="text-muted-foreground mb-4 text-sm">
           {selectedAddTrigger.description}
         </p>
+        {selectedAddTrigger.id === "slack:agent_mentioned" ? (
+          <p className="text-muted-foreground mb-4 text-sm">
+            SSOTA creates a Slack user group for this agent so teammates can
+            @mention it by name. Your Slack workspace owner must allow members
+            to create user groups. Saved or Later messages are not supported.
+          </p>
+        ) : null}
+        {addTriggerError ? (
+          <p className="text-destructive mb-4 text-sm">{addTriggerError}</p>
+        ) : null}
         <Button
           type="button"
           data-testid="add-trigger-confirm"
-          onClick={() => addConnectionTrigger(selectedAddTrigger.id)}
+          disabled={isProvisioningSlack}
+          onClick={() => void addConnectionTrigger(selectedAddTrigger.id)}
         >
-          Add trigger
+          {isProvisioningSlack ? "Creating Slack user group…" : "Add trigger"}
         </Button>
       </>
     );

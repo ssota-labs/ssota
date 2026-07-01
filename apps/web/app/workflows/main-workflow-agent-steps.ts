@@ -28,6 +28,7 @@ export async function buildMainPrompt(
     profileId: input.profileId,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
+    agentDefinitionId: input.agentDefinitionId,
     chatContext: input.chatContext,
   });
   return {

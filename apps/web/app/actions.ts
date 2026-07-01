@@ -19,6 +19,12 @@ import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
 import { getGraphPorts, getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
 import { uploadEditorAsset } from "@/lib/editor/storage";
+import { createSlackUserGroupForAgent } from "@ssota/agent-runtime";
+import { getSlackBotTokenForTeamspace } from "@/lib/chat/slack-token";
+import {
+  assertSlackMentionTriggerAllowed,
+  listTeamspaceAgentDefinitions,
+} from "@/lib/chat/slack-inbound-route";
 
 function loginRedirect(error: string, next?: string | null): never {
   const params = new URLSearchParams({ error });
@@ -54,6 +60,9 @@ export async function updateAgentDefinitionAction(
         kind: string;
         label: string;
         enabled?: boolean;
+        slackUserGroupId?: string;
+        slackUserGroupHandle?: string;
+        showTypingIndicator?: boolean;
       }>;
       maxSteps?: number;
       sandboxPolicy?: "none" | "optional" | "required";
@@ -94,6 +103,39 @@ export async function updateAgentDefinitionAction(
 
 /** @deprecated Use updateAgentDefinitionAction */
 export const updateWorkflowInstructionAction = updateAgentDefinitionAction;
+
+export async function provisionSlackAgentMentionTriggerAction(
+  teamspaceId: string,
+  input: { agentDefinitionId: string; agentName: string },
+) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const port = getAgentDefinitionPort(teamspaceId);
+  const definitions = await listTeamspaceAgentDefinitions(
+    () => port.listDefinitions(),
+    (id) => port.getById(id),
+  );
+  await assertSlackMentionTriggerAllowed(definitions, input.agentDefinitionId);
+
+  const token = await getSlackBotTokenForTeamspace(teamspaceId);
+  if (!token) {
+    throw new Error(
+      "Connect Slack on the Connections page before adding a Slack mention trigger.",
+    );
+  }
+
+  const created = await createSlackUserGroupForAgent(
+    token,
+    input.agentName,
+    `SSOTA agent — mention @${input.agentName} in Slack to run this agent.`,
+  );
+
+  return {
+    slackUserGroupId: created.id,
+    slackUserGroupHandle: created.handle,
+  };
+}
 
 export async function updateTaskStatusAction(
   teamspaceId: string,
