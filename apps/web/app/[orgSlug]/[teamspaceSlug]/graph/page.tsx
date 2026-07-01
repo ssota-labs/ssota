@@ -18,17 +18,15 @@ export default async function GraphPage({
   ]);
 
   return (
-    <div className="relative min-h-0 flex-1">
-      <GraphWorkspace
-        nodeTypes={nodeCatalog.map((row: NodeCatalogRow) => ({
-          key: row.key,
-          title: row.label,
-        }))}
-        edgeTypes={edgeCatalog.map((row: EdgeCatalogRow) => ({
-          key: row.key,
-          title: row.label,
-        }))}
-      />
-    </div>
+    <GraphWorkspace
+      nodeTypes={nodeCatalog.map((row: NodeCatalogRow) => ({
+        key: row.key,
+        title: row.label,
+      }))}
+      edgeTypes={edgeCatalog.map((row: EdgeCatalogRow) => ({
+        key: row.key,
+        title: row.label,
+      }))}
+    />
   );
 }

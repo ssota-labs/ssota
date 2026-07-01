@@ -54,8 +54,8 @@ export function BrowseWorkspaceGridLoading({
   testId,
 }: BrowseGridLoadingProps) {
   return (
-    <div className="relative min-h-0 flex-1">
-      <ConsolePageFrame contentClassName="gap-8" testId={testId}>
+    <div className="flex min-h-0 flex-1 flex-col" data-testid={testId}>
+      <ConsolePageFrame className="min-h-0 flex-1" contentClassName="gap-8">
         <BrowseHeaderSkeleton showAction={showAction} />
         {sections.map((section, index) => {
           const gridClass =
