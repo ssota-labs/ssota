@@ -9,7 +9,11 @@ import {
   DialogContent,
   DialogTitle,
 } from "@ssota/ui/components/ui/dialog";
-import { Input } from "@ssota/ui/components/ui/input";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@ssota/ui/components/ui/input-group";
 
 export type SidebarListItem = {
   id: string;
@@ -81,30 +85,21 @@ export function AgentSettingsSidebarDialog({
               <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
                 {title}
               </h2>
-              {showSearch ? (
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-foreground shrink-0 rounded-md p-1 transition-colors"
-                  aria-label="Focus search"
-                  onClick={() => {
-                    document
-                      .getElementById(`${testId ?? title}-search`)
-                      ?.focus();
-                  }}
-                >
-                  <MagnifyingGlassIcon className="size-4" aria-hidden />
-                </button>
-              ) : null}
             </div>
             {showSearch ? (
               <div className="border-border border-b px-3 py-2">
-                <Input
-                  id={`${testId ?? title}-search`}
-                  value={searchQuery ?? ""}
-                  onChange={(e) => onSearchQueryChange?.(e.target.value)}
-                  placeholder={searchPlaceholder}
-                  className="h-8 text-xs"
-                />
+                <InputGroup className="h-8">
+                  <InputGroupAddon align="inline-start">
+                    <MagnifyingGlassIcon className="size-3.5" aria-hidden />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id={`${testId ?? title}-search`}
+                    value={searchQuery ?? ""}
+                    onChange={(e) => onSearchQueryChange?.(e.target.value)}
+                    placeholder={searchPlaceholder}
+                    className="text-xs"
+                  />
+                </InputGroup>
               </div>
             ) : null}
             <nav
