@@ -80,7 +80,7 @@ export function AgentSettingItem({
   icon,
   className,
   testId,
-  onClick,
+  onPress,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
@@ -89,26 +89,26 @@ export function AgentSettingItem({
   className?: string;
   testId?: string;
   /** Makes the full row open/edit; trailing controls stop propagation. */
-  onClick?: () => void;
+  onPress?: (element: HTMLDivElement) => void;
 }) {
   return (
     <div
       className={cn(
         "flex items-center gap-3 rounded-md px-1 py-2",
-        onClick &&
+        onPress &&
           "cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}
       data-testid={testId}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
+      role={onPress ? "button" : undefined}
+      tabIndex={onPress ? 0 : undefined}
+      onClick={onPress ? (e) => onPress(e.currentTarget) : undefined}
       onKeyDown={
-        onClick
+        onPress
           ? (e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                onClick();
+                onPress(e.currentTarget);
               }
             }
           : undefined

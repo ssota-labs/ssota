@@ -44,10 +44,8 @@ import {
   filterAddableTriggerGroups,
   findAddableTrigger,
 } from "@/lib/console/agent-trigger-catalog";
-import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import {
   ScheduleSheet,
-  type ScheduleEditTarget,
 } from "@/components/schedules/schedule-sheet";
 import {
   AgentSettingsSidebarDialog,
@@ -77,13 +75,10 @@ type AgentSettingsDialogsProps = {
   scriptTools: Array<{ id: string; key: string; name: string }>;
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
-  schedules: AgentScheduleSummary[];
   teamspaceId: string;
   accountId: string;
   openDialog: AgentSettingsDialogKind | null;
   onOpenDialogChange: (kind: AgentSettingsDialogKind | null) => void;
-  editingScheduleId: string | null;
-  onEditingScheduleIdChange: (id: string | null) => void;
 };
 
 export type AgentSettingsDialogKind = "add-trigger" | "tools" | "model";
@@ -111,41 +106,17 @@ export function AgentSettingsDialogs({
   scriptTools,
   connectors,
   connections,
-  schedules,
   teamspaceId,
   accountId,
   openDialog,
   onOpenDialogChange,
-  editingScheduleId,
-  onEditingScheduleIdChange,
 }: AgentSettingsDialogsProps) {
-  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [selectedAddTriggerId, setSelectedAddTriggerId] = useState<
     string | null
   >(null);
   const [toolSearch, setToolSearch] = useState("");
   const [addTriggerSearch, setAddTriggerSearch] = useState("");
-
-  const agentSchedules = schedules.filter(
-    (s) => s.agentDefinitionId === definition.id,
-  );
-
-  const editingSchedule = editingScheduleId
-    ? agentSchedules.find((s) => s.id === editingScheduleId)
-    : undefined;
-
-  useEffect(() => {
-    if (editingScheduleId) {
-      setScheduleOpen(true);
-    }
-  }, [editingScheduleId]);
-
-  useEffect(() => {
-    if (!scheduleOpen && editingScheduleId) {
-      onEditingScheduleIdChange(null);
-    }
-  }, [scheduleOpen, editingScheduleId, onEditingScheduleIdChange]);
 
   const connectedProviders = useMemo(() => {
     const set = new Set<string>();
@@ -595,17 +566,6 @@ export function AgentSettingsDialogs({
     );
   };
 
-  const scheduleEditTarget: ScheduleEditTarget | undefined = editingSchedule
-    ? {
-        id: editingSchedule.id,
-        agentDefinitionId: editingSchedule.agentDefinitionId,
-        targetType: "agent",
-        cronExpression: editingSchedule.cronExpression,
-        timezone: editingSchedule.timezone,
-        enabled: editingSchedule.enabled,
-      }
-    : undefined;
-
   return (
     <>
       <AgentSettingsSidebarDialog
@@ -691,16 +651,6 @@ export function AgentSettingsDialogs({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <ScheduleSheet
-        open={scheduleOpen}
-        onOpenChange={setScheduleOpen}
-        presentation="dialog"
-        teamspaceId={teamspaceId}
-        accountId={accountId}
-        instructions={[{ id: definition.id, name: definition.name }]}
-        schedule={scheduleEditTarget}
-      />
     </>
   );
 }

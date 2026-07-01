@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   AtIcon,
@@ -14,7 +14,17 @@ import {
 import type { Block } from "@blocknote/core";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+} from "@ssota/ui/components/ui/popover";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import {
+  ScheduleSheet,
+  type ScheduleEditTarget,
+} from "@/components/schedules/schedule-sheet";
 import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { AgentSkillBindings } from "@/components/console/skills-workspace";
@@ -110,6 +120,7 @@ export function AgentSettingsSheet({
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(
     null,
   );
+  const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -119,6 +130,21 @@ export function AgentSettingsSheet({
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
+
+  const editingSchedule = editingScheduleId
+    ? agentSchedules.find((s) => s.id === editingScheduleId)
+    : undefined;
+
+  const scheduleEditTarget: ScheduleEditTarget | undefined = editingSchedule
+    ? {
+        id: editingSchedule.id,
+        agentDefinitionId: editingSchedule.agentDefinitionId,
+        targetType: "agent",
+        cronExpression: editingSchedule.cronExpression,
+        timezone: editingSchedule.timezone,
+        enabled: editingSchedule.enabled,
+      }
+    : undefined;
 
   const patchDraft = (patch: Partial<AgentSettingsDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -349,7 +375,10 @@ export function AgentSettingsSheet({
                     key={schedule.id}
                     className="group"
                     testId={`agent-schedule-edit-${schedule.id}`}
-                    onClick={() => setEditingScheduleId(schedule.id)}
+                    onPress={(element) => {
+                      schedulePopoverAnchorRef.current = element;
+                      setEditingScheduleId(schedule.id);
+                    }}
                     icon={
                       <ClockIcon className="size-3.5 text-muted-foreground" />
                     }
@@ -469,6 +498,41 @@ export function AgentSettingsSheet({
         </div>
       </CardListSheetPanel>
 
+      <Popover
+        open={editingScheduleId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingScheduleId(null);
+        }}
+      >
+        <PopoverContent
+          anchor={schedulePopoverAnchorRef}
+          side="left"
+          align="start"
+          sideOffset={8}
+          className="w-[min(32rem,92vw)] max-h-[min(80vh,40rem)] overflow-y-auto p-4"
+          data-testid="schedule-edit-popover"
+        >
+          {scheduleEditTarget ? (
+            <>
+              <PopoverHeader className="mb-3 p-0">
+                <PopoverTitle>Edit trigger</PopoverTitle>
+              </PopoverHeader>
+              <ScheduleSheet
+                presentation="inline"
+                open
+                onOpenChange={(open) => {
+                  if (!open) setEditingScheduleId(null);
+                }}
+                teamspaceId={teamspaceId}
+                accountId={accountId}
+                instructions={[{ id: definition.id, name: definition.name }]}
+                schedule={scheduleEditTarget}
+              />
+            </>
+          ) : null}
+        </PopoverContent>
+      </Popover>
+
       <AgentSettingsDialogs
         definition={definition}
         draft={draft}
@@ -477,13 +541,10 @@ export function AgentSettingsSheet({
         scriptTools={scriptTools}
         connectors={connectors}
         connections={connections}
-        schedules={schedules}
         teamspaceId={teamspaceId}
         accountId={accountId}
         openDialog={openDialog}
         onOpenDialogChange={setOpenDialog}
-        editingScheduleId={editingScheduleId}
-        onEditingScheduleIdChange={setEditingScheduleId}
       />
     </>
   );

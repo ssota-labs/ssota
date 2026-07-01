@@ -275,10 +275,15 @@ export function ScheduleSheet({
     ? selectedInstruction.name
     : "Choose an agent and set a recurring schedule.";
 
+  const formId =
+    presentation === "inline" && schedule
+      ? `schedule-sheet-form-${schedule.id}`
+      : "schedule-sheet-form";
+
   const submitButton = (
     <Button
       type="submit"
-      form="schedule-sheet-form"
+      form={formId}
       disabled={isPending || Boolean(preview.error)}
       className={presentation === "sheet" ? "w-full" : undefined}
       data-testid={
@@ -290,7 +295,7 @@ export function ScheduleSheet({
   );
 
   const form = (
-    <form id="schedule-sheet-form" className="space-y-5" onSubmit={handleSubmit}>
+    <form id={formId} className="space-y-5" onSubmit={handleSubmit}>
         {showAgentPicker ? (
           <div className="space-y-2">
             <Label>Agent</Label>

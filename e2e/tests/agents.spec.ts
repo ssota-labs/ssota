@@ -69,6 +69,23 @@ test.describe("Agents", () => {
     await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
   });
 
+  test("opens schedule edit popover with prefilled form", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+
+    const triggersCard = page.getByTestId("agent-settings-triggers-card");
+    await triggersCard.getByText("Weekly on weekdays at 9:00 AM").click();
+
+    const popover = page.getByTestId("schedule-edit-popover");
+    await expect(popover).toBeVisible();
+    await expect(
+      popover.getByRole("button", { name: "Save changes" }),
+    ).toBeVisible();
+    await expect(popover.getByLabel("Every")).toHaveValue("1");
+  });
+
   test("opens tools dialog with sidebar list", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
