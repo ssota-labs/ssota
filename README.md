@@ -3,33 +3,28 @@
 **Infrastructure for SaaS 2.0: Specialist + System of record.**
 
 Classic SaaS fuses three things in one product: the **lists** (what happened),
-the vendor's **playbook** (how you're supposed to work), and the **UI** humans
-operate every day. That works for the average team until your process needs
-exceptions, judgment, and context the product was not built for.
+the **playbook** (how work gets done), and the **UI** a human operates every
+day. The human is the specialist — moving records, following stages, applying
+judgment in the gaps the product allows.
 
-SaaS 2.0 **unbundles** that monolith into layers that work together: a
-**system of record** for memory, **domain agents** as specialists that run your
-team's playbooks on it, and **review pages** where humans approve outcomes —
-not re-enter every field. SSOTA implements the record as a **typed graph** and
-ships the workspace to configure agents and pages on top.
-
-For teams whose process does not fit a vendor's default playbook — who need
-their own **system of record**, **configurable specialists**, and **review
-surfaces** in one workspace.
+The next step is not a better opinionated UI. It is **agents** doing that
+specialist work. That only works if the product **unbundles** into layers: a
+**system of record** agents read and write, **domain agents** with your team's
+playbooks, and **review pages** where humans approve outcomes — not operate every
+field. SSOTA implements the record as a **typed graph** and ships the workspace
+to configure agents and pages on that structure.
 
 > Specialists do the work. The graph remembers. Pages are for approval.
 
 ## The shift
 
 Most enterprise SaaS is built from the same parts: **lists** — accounts,
-opportunities, activities — plus a **vendor playbook** baked into stages, required
-fields, and defaults. The product surface hides that shape, but the model is
-opinionated. It works for the average team until your process needs exceptions,
-context, and judgment the defaults were not built for.
+opportunities, activities — plus a **playbook** baked into stages, required
+fields, and defaults. A human operates the UI and acts as the specialist.
 
-Customization markets exist for a reason. Teams either bend the tool, hire
-consultants, or hire a human specialist and let them manage the lists outside
-the system's rules.
+**Agents** are the scalable replacement for that operator. They need a machine-
+readable **system of record**, explicit **playbooks**, and a place for humans to
+**review** — not another monolithic screen where a person still does the work.
 
 SaaS 2.0 unbundles the stack:
 
