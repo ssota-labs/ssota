@@ -1,77 +1,59 @@
 # SSOTA
 
-SSOTA is an Eve-like agent runtime, a typed workspace context graph, dynamic
-JSON-render pages, task/chat/sandbox runtime, and template control plane in one
-workspace.
+SSOTA turns Eve-shaped agent code into an editable team workspace with shared
+graph memory and dynamic human pages.
 
 It is built for teams that want the Vercel agent stack, but need a product
 surface where agent systems can be edited, inspected, reused, and operated.
 
-Agents work over a structured graph. Humans work through domain pages.
-
 ## Why SSOTA exists
 
-Vercel's Eve gives agents a useful shape: instructions, tools, skills,
+Vercel's Eve introduced a useful shape for agents: instructions, tools, skills,
 connections, schedules, channels, subagents, and a sandbox live together as one
 deployable agent project.
 
-SSOTA turns that shape into an editable workspace with a typed context graph.
+That is the right runtime shape. But it is still code.
 
-Instead of editing files and redeploying every time an agent system changes, a
-team gets a live workspace where they can:
+Once a team operates more than one agent, two problems show up.
 
-- add a specialist agent without creating a new app
-- bind skills, tools, connectors, schedules, channels, and sandboxes
-- launch work from chat, tasks, schedules, or human approvals
-- turn the same graph into pages that look like a vertical SaaS product
+### 1. Agent runtime is not a team workspace
+
+Teams need to understand and change the agent system without reading every file
+or redeploying every iteration:
+
+- which agents exist
+- what instructions they follow
+- what triggers, channels, and schedules start them
+- which tools, skills, connectors, subagents, and sandboxes they can use
+- what model, approval policy, and run policy they use
+
+### 2. Agents need shared context, not isolated prompts
+
+Agents also need a common workspace to act inside:
+
+- domain objects and relationships
+- tasks, chat sessions, artifacts, and work history
+- graph scopes that define what each agent can read or write
+- pages that let humans understand and operate the same system
+
+Without that shared context layer, every agent becomes its own isolated prompt
+and tool bundle.
+
+## The SSOTA answer
+
+SSOTA solves those two problems with two editable runtimes:
+
+1. **Agent runtime configuration**: the team-facing control plane for agents.
+2. **Context runtime configuration**: a typed graph workspace that agents use as
+   shared memory and humans experience through dynamic pages.
 
 The user-visible result is a domain workspace: a roadmap, hiring pipeline,
 customer operations console, legal review workspace, or software delivery hub
-that feels purpose-built, while agents operate on the structured context behind
-it.
+that feels purpose-built, while agents operate on structured context behind it.
 
-## The workspace idea
+## Agent runtime configuration
 
-SSOTA is not only an agent runtime, and it is not a raw graph database. It keeps
-three surfaces editable together:
-
-- **Runtime surface**: who can act, what tools they can use, when they run, and
-  where they execute.
-- **Context surface**: what domain objects exist, how they relate, and what each
-  agent is allowed to read or write.
-- **Human surface**: the pages, tables, documents, and dashboards people use to
-  understand and operate the system.
-
-### Context graph: substrate, not UI
-
-The context graph sits underneath the workspace. It is not the UI.
-
-Most SaaS products do not show users raw database tables, even when tables are
-the system of record. They translate records into domain-specific screens:
-pipelines, roadmaps, candidate funnels, project plans, support queues, and
-dashboards.
-
-SSOTA applies the same idea to graph-backed agent workspaces:
-
-- **Graph for agents**: typed nodes and edges store domain context in a form LLMs
-  can query, traverse, and update. Teams can change what graph context each agent
-  can read or write.
-- **Pages for humans**: dynamic JSON-render pages turn the graph into familiar
-  SaaS surfaces: tables, documents, boards, workbenches, and dashboards.
-- **Templates for teams**: a template installs the whole agent SaaS surface:
-  data model, agent runtime, human UI layer, skills, schedules, and sandbox
-  policy for a vertical workflow.
-
-The goal is not to show users a graph. The goal is to give agents a graph-shaped
-memory, then render that memory as product-grade pages people can understand.
-
-Think of it as an LLM Wiki made operational: structured enough for agents,
-legible enough for teams, and editable as a workspace.
-
-## From Eve-shaped agent to workspace platform
-
-Eve treats an agent as a deployable directory. SSOTA treats an agent system as an
-editable workspace.
+SSOTA turns Eve-shaped runtime code into workspace objects:
 
 | Eve-shaped element | SSOTA workspace object |
 | --- | --- |
@@ -87,8 +69,34 @@ editable workspace.
 | Deployable app | Teamspace template and runtime |
 
 This makes agent systems easier to operate after they exist. A team can change
-the surface, the context, and the runtime policy without treating every product
-iteration as a new agent deployment.
+agent definitions, permissions, and runtime policy without treating every
+product iteration as a new agent deployment.
+
+## Context runtime configuration
+
+The context graph is the shared workspace underneath the agents. It is not the
+UI.
+
+Most SaaS products do not show users raw database tables, even when tables are
+the system of record. They translate records into domain-specific screens:
+pipelines, roadmaps, candidate funnels, project plans, support queues, and
+dashboards.
+
+SSOTA applies the same idea to graph-backed agent workspaces:
+
+- **Graph for agents**: typed nodes and edges store domain context in a form LLMs
+  can query, traverse, and update.
+- **Pages for humans**: dynamic JSON-render pages turn the graph into familiar
+  SaaS surfaces: tables, documents, boards, workbenches, and dashboards.
+- **Templates for teams**: a template installs the whole agent SaaS surface:
+  data model, agent runtime, human UI layer, skills, schedules, and sandbox
+  policy for a vertical workflow.
+
+The goal is not to show users a graph. The goal is to give agents a graph-shaped
+memory, then render that memory as product-grade pages people can understand.
+
+Think of it as an LLM Wiki made operational: structured enough for agents,
+legible enough for teams, and editable as a workspace.
 
 ## Product model
 
