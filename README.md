@@ -1,23 +1,44 @@
 # SSOTA
 
-**SSOTA is an Eve-style agent workspace platform that turns LLM graph memory into
-human-friendly dynamic pages.**
+**SSOTA is an Eve-style platform for defining and operating agent runtimes:
+agents, tools, skills, connectors, channels, schedules, sandboxes, deployment,
+and the workspace around them.**
 
 Think of it as:
 
-> Vercel Eve + a graph-backed Notion/Airtable layer for agent teams.
+> Vercel Eve, but made into a teamspace product where every agent runtime
+> component is easy to define, operate, reuse, and package.
 
 Vercel Eve standardizes the agent runtime: instructions, tools, skills,
 connectors, channels, schedules, sandbox, and deployment. SSOTA starts from that
 category and lets teams create and operate Eve-like agent runtimes, also designed
-for Vercel-native deployment, then adds the workspace layer around them:
-teamspaces, templates, tasks, chats, graph memory, and dynamic pages.
+for Vercel-native deployment.
+
+Graph memory is an additional context layer: when agents need durable domain
+memory, SSOTA can store it as typed nodes and edges, then render it as dynamic
+pages that humans can understand.
 
 ## Why this exists
 
-LLMs benefit from structured memory. A graph of typed nodes and edges is a good
-shape for that memory: agents can traverse it, validate it, update it, and use it
-as a shared domain wiki.
+Eve opened the category: an agent is not just a prompt. It is a bundle of
+runtime pieces that need to be defined, permissioned, deployed, and observed:
+
+- instructions and model policy;
+- tools and allowed tool bundles;
+- skills and reusable procedures;
+- connectors and credential boundaries;
+- channels such as HTTP, web chat, Slack, Discord, or Telegram;
+- schedules and autonomous triggers;
+- sandbox environments for code and file work;
+- subagents, delegation, and runtime observability.
+
+SSOTA's core product bet is that teams need a product surface for defining all
+of those pieces, not just a filesystem convention. A template should be able to
+say: "this is a web-app development teamspace" or "this is an HR teamspace" and
+ship the relevant agents, skills, connectors, schedules, sandboxes, pages, and
+context defaults together.
+
+Graph memory is one layer in that teamspace.
 
 But most users should not have to operate a graph. A good SaaS product does not
 show its system of record as raw database tables; it turns records into workflows
@@ -32,7 +53,7 @@ memory:
 
 In one line:
 
-> **Agents see a graph wiki. Humans see a product.**
+> **SSOTA turns Eve-style agent components into reusable teamspace products.**
 
 ## Relationship to Vercel Eve
 
@@ -58,22 +79,23 @@ Eve runs this shape on Vercel primitives: Workflows for durable sessions,
 Sandbox for isolated execution, AI Gateway for models, Connect for external
 credentials, and Observability for Agent Runs.
 
-SSOTA uses Eve as the easiest mental model for the runtime layer, then adds the
-workspace and context layer Eve does not try to own.
+SSOTA uses Eve as the core mental model. Instead of starting from a graph product
+and adding agents, SSOTA starts from the Eve agent-runtime category and makes
+those runtime pieces manageable as product data.
 
 | Question | Eve | SSOTA |
 | --- | --- | --- |
 | How do I define an agent? | Files under `agent/` | `agent_definitions`, skills, tool bundles, run policy |
 | Where does the agent live? | A deployable agent project | A multi-agent teamspace |
 | How do users enter the runtime? | Channels such as HTTP or Slack | Web chat, external chat workspaces, tasks, schedules, MCP |
-| What does the agent know? | Prompt, tools, skills, connections, session state | Typed graph catalog, node/edge instances, page bindings, task context |
-| How do humans inspect the work? | Streams, channels, Agent Runs | Dynamic workspace pages, tables, documents, tasks, chat, traces |
-| How do teams reuse a setup? | Copy/scaffold an agent project | Apply a template bundle with agents, graph catalog, pages, and runtime defaults |
+| What does the agent know? | Prompt, tools, skills, connections, session state | Agent definitions, skills, connectors, task/chat context, optional graph memory |
+| How do humans inspect the work? | Streams, channels, Agent Runs | Dynamic pages, tables, documents, iframe previews, canvases, graph views, filters, chat, traces |
+| How do teams reuse a setup? | Copy/scaffold an agent project | Apply a template bundle with agents, skills, connectors, schedules, sandboxes, pages, and context defaults |
 
 Short version:
 
-> Eve answers "how do I build and deploy an agent?" SSOTA answers "how do I
-> turn a set of agents into a usable workspace with durable domain memory?"
+> Eve answers "how do I build and deploy an agent?" SSOTA answers "how do I make
+> all Eve-style runtime components easy for a team to define, operate, and reuse?"
 
 ## Product model
 
