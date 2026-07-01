@@ -12,11 +12,13 @@ import {
   DocumentSheetPanel,
   type SheetSize,
 } from "@/lib/page-runtime/components/document-sheet-panel";
+import { AgentSkillBindings } from "@/components/console/skills-workspace";
 import type { RenderNode } from "@/lib/page-runtime/types";
 
 type AgentsWorkspaceProps = {
   teamspaceId: string;
   groups: AgentGroup[];
+  skillsHref: string;
 };
 
 function toRenderNode(definition: AgentDefinition): RenderNode {
@@ -34,6 +36,7 @@ function toRenderNode(definition: AgentDefinition): RenderNode {
 export function AgentsWorkspace({
   teamspaceId,
   groups: initialGroups,
+  skillsHref,
 }: AgentsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -98,7 +101,15 @@ export function AgentsWorkspace({
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Agents"
-          description="Agent playbooks for this project. Edits apply to the next agent or MCP run."
+          description="Agent playbooks for this project. Manage the skill catalog on the Skills page."
+          actions={
+            <a
+              href={skillsHref}
+              className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            >
+              Open Skills
+            </a>
+          }
         />
 
         {groups.map((group) => (
@@ -144,15 +155,23 @@ export function AgentsWorkspace({
       </BrowseWorkspace.Frame>
 
       {open && activeDefinition ? (
-        <DocumentSheetPanel
-          node={toRenderNode(activeDefinition)}
-          subtitle={activeDefinition.description || activeDefinition.id}
-          field="content"
-          editable
-          sheetSize={sheetSize}
-          onClose={close}
-          onSave={handleSave}
-        />
+        <>
+          <DocumentSheetPanel
+            node={toRenderNode(activeDefinition)}
+            subtitle={activeDefinition.description || activeDefinition.id}
+            field="content"
+            editable
+            sheetSize={sheetSize}
+            onClose={close}
+            onSave={handleSave}
+          />
+          <div className="pointer-events-auto fixed bottom-0 right-0 z-50 w-full max-w-xl border-l border-t border-border bg-background p-4 shadow-lg md:max-h-[40vh]">
+            <AgentSkillBindings
+              teamspaceId={teamspaceId}
+              agentDefinitionId={activeDefinition.id}
+            />
+          </div>
+        </>
       ) : null}
 
       {isPending ? (

@@ -23,6 +23,7 @@ export {
   seedWorkflowInstructions,
 } from "./agent-definition-port.js";
 export { createScriptToolPort } from "./script-tool-port.js";
+export { createSkillPort } from "./skill-port.js";
 export {
   createSandboxEnvironmentPort,
   createSandboxSessionRecordPort,

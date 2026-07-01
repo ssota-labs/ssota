@@ -61,6 +61,7 @@ const AGENT_META: AgentMeta[] = [
       "pages.author",
       "connectors",
       "delegate",
+      "skills.read",
     ],
     nodeScopes: [],
     runPolicy: {
@@ -76,7 +77,7 @@ const AGENT_META: AgentMeta[] = [
       "Implement a single scoped feature or fix. Use when executing a concrete, well-specified coding task with clear acceptance criteria.",
     isMain: false,
     referenceOnly: false,
-    toolBundles: ["graph.read", "tasks.manage", "sandbox.code"],
+    toolBundles: ["graph.read", "tasks.manage", "sandbox.code", "skills.read"],
     nodeScopes: [],
     runPolicy: { sandboxPolicy: "required", allowedTriggers: ["task", "manual"] },
     defaultExecutorType: "Agent",

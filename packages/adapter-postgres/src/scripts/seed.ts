@@ -15,6 +15,7 @@ import {
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
 import { seedScheduleFixtures } from "./seed/schedules.js";
+import { seedBuiltinSkills } from "./seed/builtin-skills.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
 import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
@@ -352,6 +353,9 @@ async function main() {
   }
   console.log("Backfilling node/edge catalog for all projects...");
   await seedAllProjectCatalogs(db);
+  console.log("Seeding platform builtin skills...");
+  const builtinCount = await seedBuiltinSkills(db);
+  console.log(`Seeded ${builtinCount} builtin skills.`);
   console.log("Seeding default sandbox environments...");
   await seedDefaultSandboxEnvironments(db);
   console.log("Seed complete.");

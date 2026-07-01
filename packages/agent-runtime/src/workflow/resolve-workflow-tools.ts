@@ -58,6 +58,8 @@ const SCRIPT_TOOLS: WorkflowToolName[] = [
   "run_script_tool",
 ];
 
+const SKILL_TOOLS: WorkflowToolName[] = ["read_skill"];
+
 export interface ResolveWorkflowToolsInput {
   toolBundles: ToolBundle[];
   isMain?: boolean;
@@ -93,6 +95,9 @@ export function resolveWorkflowToolNames(
   }
   if (bundles.has("script_tools")) {
     for (const n of SCRIPT_TOOLS) names.add(n);
+  }
+  if (bundles.has("skills.read")) {
+    for (const n of SKILL_TOOLS) names.add(n);
   }
   if (input.isMain || bundles.has("graph.write")) {
     for (const n of AGENT_DEF_TOOLS) names.add(n);

@@ -11,6 +11,7 @@ export * from "./task.js";
 export * from "./execution-directive.js";
 export * from "./agent-definition.js";
 export * from "./script-tool.js";
+export * from "./skill.js";
 export * from "./sandbox-environment.js";
 export * from "./schedule.js";
 export * from "./markdown-blocknote.js";

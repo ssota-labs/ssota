@@ -7,6 +7,7 @@ export {
   createGraphPorts,
   createAgentDefinitionPort,
   createScriptToolPort,
+  createSkillPort,
   createSandboxEnvironmentPort,
   createSandboxSessionRecordPort,
   seedAgentDefinitions,

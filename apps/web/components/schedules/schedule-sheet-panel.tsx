@@ -25,6 +25,9 @@ type ScheduleSheetPanelProps = {
   title: string;
   subtitle?: string;
   sheetSize?: SheetSize;
+  /** Fill the parent height (no vertical inset). Default matches document card sheets. */
+  fullHeight?: boolean;
+  testId?: string;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
@@ -42,6 +45,8 @@ export function ScheduleSheetPanel({
   title,
   subtitle,
   sheetSize = "half",
+  fullHeight = false,
+  testId = "schedule-sheet-panel",
   onClose,
   children,
   footer,
@@ -109,10 +114,13 @@ export function ScheduleSheetPanel({
       role="dialog"
       aria-modal="false"
       aria-labelledby="schedule-sheet-title"
-      data-testid="schedule-sheet-panel"
+      data-testid={testId}
       style={widthPx === null ? undefined : { width: widthPx }}
       className={cn(
-        "border-border/60 absolute inset-y-2 right-0 z-20 flex flex-col overflow-hidden rounded-xl border",
+        "border-border/60 absolute z-20 flex flex-col overflow-hidden border",
+        fullHeight
+          ? "inset-y-0 right-0 h-full rounded-l-xl border-y-0 border-r-0"
+          : "inset-y-2 right-2 rounded-xl",
         "bg-background/50 shadow-lg shadow-black/5",
         "supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150",
         "supports-backdrop-filter:bg-background/40",

@@ -25,6 +25,7 @@ export const ToolBundleSchema = z.enum([
   "connectors",
   "delegate",
   "script_tools",
+  "skills.read",
   "sandbox.code",
 ]);
 

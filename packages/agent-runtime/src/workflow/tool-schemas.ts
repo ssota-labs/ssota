@@ -8,6 +8,7 @@
 import { z } from "zod";
 import {
   ExecutionDirectiveSchema,
+  ReadSkillInputSchema,
   RunScriptToolInputSchema,
   SandboxAwaitInputSchema,
   SandboxDeleteInputSchema,
@@ -168,6 +169,9 @@ export const workflowToolSchemas = {
   list_script_tools: z.object({}),
   describe_script_tool: z.object({ key: z.string().min(1) }),
   run_script_tool: RunScriptToolInputSchema,
+
+  // --- Skills (progressive disclosure) ---
+  read_skill: ReadSkillInputSchema,
 
   // --- Composio Tool Router meta-tools (fixed; not per-toolkit defs) ---
   ...composioMetaToolSchemas,
