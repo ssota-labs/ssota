@@ -15,7 +15,6 @@ import type { Block } from "@blocknote/core";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Switch } from "@ssota/ui/components/ui/switch";
-import { cn } from "@ssota/ui/lib/utils";
 import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { AgentSkillBindings } from "@/components/console/skills-workspace";
@@ -349,21 +348,12 @@ export function AgentSettingsSheet({
                   <AgentSettingItem
                     key={schedule.id}
                     className="group"
+                    testId={`agent-schedule-edit-${schedule.id}`}
+                    onClick={() => setEditingScheduleId(schedule.id)}
                     icon={
                       <ClockIcon className="size-3.5 text-muted-foreground" />
                     }
-                    title={
-                      <button
-                        type="button"
-                        className={cn(
-                          "text-left text-sm underline-offset-2 hover:underline",
-                        )}
-                        data-testid={`agent-schedule-edit-${schedule.id}`}
-                        onClick={() => setEditingScheduleId(schedule.id)}
-                      >
-                        {label}
-                      </button>
-                    }
+                    title={label}
                     trailing={
                       <Switch
                         checked={enabled}
