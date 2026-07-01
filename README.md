@@ -28,17 +28,18 @@ or redeploying every iteration:
 - which tools, skills, connectors, subagents, and sandboxes they can use
 - what model, approval policy, and run policy they use
 
-### 2. Agents need shared context, not isolated prompts
+### 2. Agents need a shared SSOT work context
 
-Agents also need a common workspace to act inside:
+Agents also need one workspace context to act inside:
 
 - domain objects and relationships
 - tasks, chat sessions, artifacts, and work history
 - graph scopes that define what each agent can read or write
+- connected data pulled from external services through connectors
 - pages that let humans understand and operate the same system
 
-Without that shared context layer, every agent becomes its own isolated prompt
-and tool bundle.
+Without that shared SSOT context, agent work fragments across tools, chats,
+files, and external services.
 
 ## The SSOTA answer
 
@@ -46,7 +47,7 @@ SSOTA solves those two problems with two editable runtimes:
 
 1. **Agent runtime configuration**: the team-facing control plane for agents.
 2. **Context runtime configuration**: a typed graph workspace that agents use as
-   shared memory and humans experience through dynamic pages.
+   shared SSOT work context and humans experience through dynamic pages.
 
 The user-visible result is a domain workspace: a roadmap, hiring pipeline,
 customer operations console, legal review workspace, or software delivery hub
