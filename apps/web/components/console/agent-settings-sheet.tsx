@@ -18,7 +18,7 @@ import { Switch } from "@ssota/ui/components/ui/switch";
 import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { AgentSkillBindings } from "@/components/console/skills-workspace";
-import { ScheduleSheetPanel } from "@/components/schedules/schedule-sheet-panel";
+import { CardSheetPanel } from "@/components/card-sheet-panel";
 import {
   AgentSettingCard,
   AgentSettingEmpty,
@@ -230,7 +230,7 @@ export function AgentSettingsSheet({
 
   return (
     <>
-      <ScheduleSheetPanel
+      <CardSheetPanel
         title="Settings"
         subtitle={definition.name}
         sheetSize="inspector"
@@ -423,7 +423,7 @@ export function AgentSettingsSheet({
             />
           </AgentSettingCard>
         </div>
-      </ScheduleSheetPanel>
+      </CardSheetPanel>
 
       <AgentSettingsDialogs
         definition={definition}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { CaretRightIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { Skill, SkillIndex } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -22,7 +22,8 @@ import {
   SkillDetailCard,
   SkillMarkdownView,
 } from "@/components/console/skill-detail-view";
-import { ScheduleSheetPanel } from "@/components/schedules/schedule-sheet-panel";
+import { CardSheetPanel } from "@/components/card-sheet-panel";
+import { ListSheet } from "@/components/list-sheet";
 
 type SkillDetail = {
   skill: Skill;
@@ -118,15 +119,6 @@ export function SkillsPageWorkspace({
     loadDetail(activeId);
   }, [activeId, loadDetail]);
 
-  useEffect(() => {
-    if (!activeId) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActiveId(null);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [activeId]);
-
   const activeSkill = skills.find((s) => s.id === activeId) ?? detail?.skill ?? null;
   const skillBody =
     detail?.files.find(
@@ -152,7 +144,11 @@ export function SkillsPageWorkspace({
       className="absolute inset-0 flex flex-col"
       data-testid="skills-workspace"
     >
-      <div className="relative min-h-0 flex-1 overflow-hidden">
+      <ListSheet.Root
+        activeId={activeId}
+        onActiveIdChange={setActiveId}
+        className="relative min-h-0 flex-1 overflow-hidden"
+      >
         <div className="h-full overflow-y-auto">
           <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
@@ -191,17 +187,12 @@ export function SkillsPageWorkspace({
         </div>
 
         <BrowseWorkspace.Section label="Catalog">
-          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          <ListSheet.List className="border-border">
             {skills.map((skill) => (
-              <button
+              <ListSheet.Row
                 key={skill.id}
-                type="button"
-                className={cn(
-                  "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40",
-                  activeId === skill.id && "bg-muted/30",
-                )}
-                data-testid={`skill-catalog-item-${skill.key}`}
-                onClick={() => setActiveId(skill.id)}
+                id={skill.id}
+                testId={`skill-catalog-item-${skill.key}`}
               >
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex items-center gap-2">
@@ -216,18 +207,15 @@ export function SkillsPageWorkspace({
                     </p>
                   ) : null}
                 </div>
-                <CaretRightIcon
-                  className="size-4 shrink-0 text-muted-foreground"
-                  aria-hidden
-                />
-              </button>
+                <ListSheet.RowCaret />
+              </ListSheet.Row>
             ))}
             {skills.length === 0 && !isPending ? (
-              <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+              <ListSheet.Empty>
                 No skills yet. Run db:seed for platform builtins or add a custom skill.
-              </p>
+              </ListSheet.Empty>
             ) : null}
-          </div>
+          </ListSheet.List>
         </BrowseWorkspace.Section>
 
         <p className="text-xs text-muted-foreground">
@@ -248,7 +236,7 @@ export function SkillsPageWorkspace({
         </div>
 
       {activeSkill ? (
-        <ScheduleSheetPanel
+        <CardSheetPanel
           testId="skill-detail-sheet"
           title={activeSkill.name}
           subtitle={`${activeSkill.key} · ${sourceLabel(activeSkill.source)}`}
@@ -305,9 +293,9 @@ export function SkillsPageWorkspace({
               </SkillDetailCard>
             ) : null}
           </div>
-        </ScheduleSheetPanel>
+        </CardSheetPanel>
       ) : null}
-      </div>
+      </ListSheet.Root>
 
       <CreateSkillDialog
         open={createOpen}
