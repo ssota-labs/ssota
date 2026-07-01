@@ -1,6 +1,6 @@
 # SSOTA
 
-**Infrastructure for SaaS 2.0: Specialist + Spreadsheet.**
+**Infrastructure for SaaS 2.0: Specialist + System of record.**
 
 Classic SaaS is lists plus an embedded playbook — opinionated screens and fixed
 workflows for the average team. The next generation separates the **specialist**
@@ -30,7 +30,7 @@ SaaS 2.0 inverts the split:
 
 | SaaS 1.0 | SaaS 2.0 |
 | --- | --- |
-| Lists + playbook in one product | Specialist + spreadsheet as separate layers |
+| Lists + playbook in one product | Specialist + system of record as separate layers |
 | Human operates the UI | Agent operates the record |
 | Playbook fixed by vendor | Playbook configurable per team |
 | UI is where work happens | UI is where work is reviewed and approved |
@@ -57,8 +57,9 @@ that feels purpose-built, while agents operate on structured context behind it.
 
 ## Why a graph, not a spreadsheet
 
-The Specialist + Spreadsheet model is easy to picture as rows and columns.
-CRM, ATS, and ops tools *feel* like spreadsheets with opinions baked in.
+The Specialist + system of record model is easy to picture as rows and columns —
+the spreadsheet metaphor from SaaS 1.0. CRM, ATS, and ops tools *feel* like
+spreadsheets with opinions baked in.
 
 That metaphor is directionally right, but it breaks down once agents become the
 primary operator.
@@ -320,9 +321,9 @@ environment for iteration.
 - [Vercel Eve](https://vercel.com/eve) — deployable agent runtime shape
   (instructions, tools, skills, connections, sandbox)
 
-SSOTA adopts the Specialist + Spreadsheet direction, but implements the
-system of record as a typed graph so agents can traverse relational work
-context across vertical domains.
+SSOTA adopts the Specialist + system of record model and implements the record
+as a typed graph so agents can traverse relational work context across vertical
+domains.
 
 ## Local development
 
