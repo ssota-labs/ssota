@@ -77,7 +77,7 @@ export function AgentSettingsSidebarDialog({
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <div className="flex min-h-0 flex-1">
           <aside className="border-border flex w-[22rem] shrink-0 flex-col border-r bg-muted/20">
-            <div className="border-border flex items-center gap-2 border-b px-3 py-3">
+            <div className="flex items-center gap-2 px-3 py-3">
               <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
                 {title}
               </h2>
