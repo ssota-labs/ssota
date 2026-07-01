@@ -1,17 +1,17 @@
 # SSOTA
 
-**SSOTA is an Eve-style agent workspace platform: build Vercel-native agent
-runtimes, give them graph-backed LLM memory, and render that memory as
+**SSOTA is an Eve-style agent workspace platform that turns LLM graph memory into
 human-friendly dynamic pages.**
 
 Think of it as:
 
-> Vercel Eve for making agents production-ready, plus a graph-backed
-> Notion/Airtable-style workspace for making agent work understandable to humans.
+> Vercel Eve + a graph-backed Notion/Airtable layer for agent teams.
 
-Vercel Eve makes it much easier to define and deploy durable agents. SSOTA takes
-that same agent-runtime shape and adds the product layer around it: teamspaces,
-templates, tasks, chats, connectors, graph memory, and vertical pages.
+Vercel Eve standardizes the agent runtime: instructions, tools, skills,
+connectors, channels, schedules, sandbox, and deployment. SSOTA starts from that
+category and lets teams create and operate Eve-like agent runtimes, also designed
+for Vercel-native deployment, then adds the workspace layer around them:
+teamspaces, templates, tasks, chats, graph memory, and dynamic pages.
 
 ## Why this exists
 
@@ -25,7 +25,8 @@ that make sense for a vertical domain. SSOTA applies the same idea to graph
 memory:
 
 - agents see typed graph context;
-- humans see pages, tables, documents, kanban views, chats, and drill-ins;
+- humans see pages, tables, documents, iframe previews, canvases, graph views,
+  filters, chats, and drill-ins;
 - templates turn the same primitives into different teamspace products, such as
   a software-development workspace or an HR workspace.
 
