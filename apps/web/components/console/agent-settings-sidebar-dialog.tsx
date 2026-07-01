@@ -68,7 +68,7 @@ export function AgentSettingsSidebarDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "flex max-h-[85vh] max-w-4xl flex-col gap-0 overflow-hidden p-0",
+          "flex h-[min(85vh,40rem)] w-[min(94vw,76rem)] max-w-none flex-col gap-0 overflow-hidden p-0 sm:max-w-none",
           className,
         )}
         forceBackdrop
@@ -76,7 +76,7 @@ export function AgentSettingsSidebarDialog({
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <div className="flex min-h-0 flex-1">
-          <aside className="border-border flex w-56 shrink-0 flex-col border-r bg-muted/20">
+          <aside className="border-border flex w-[22rem] shrink-0 flex-col border-r bg-muted/20">
             <div className="border-border flex items-center gap-2 border-b px-3 py-3">
               <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
                 {title}
@@ -151,9 +151,9 @@ export function AgentSettingsSidebarDialog({
             </nav>
           </aside>
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto p-5">{detail}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-6">{detail}</div>
             {footer ? (
-              <div className="border-border flex justify-end border-t px-5 py-3">
+              <div className="border-border flex justify-end border-t px-6 py-4">
                 {footer}
               </div>
             ) : null}
@@ -228,9 +228,9 @@ function SidebarNavItem({
           </span>
         ) : null}
         <span className="min-w-0 flex-1">
-          <span className="block truncate">{item.label}</span>
+          <span className="block text-sm leading-snug">{item.label}</span>
           {item.subtitle ? (
-            <span className="text-muted-foreground block truncate text-xs font-normal">
+            <span className="text-muted-foreground block text-xs leading-snug font-normal">
               {item.subtitle}
             </span>
           ) : null}
