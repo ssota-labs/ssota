@@ -65,6 +65,9 @@ test.describe("Agents", () => {
     await expect(nav.getByText("On a schedule")).toBeVisible();
     await expect(addDialog.getByTestId("schedule-inline-form")).toBeVisible();
     await expect(addDialog.getByLabel("Every")).toBeVisible();
+    await expect(addDialog.getByTestId("add-trigger-confirm")).toBeVisible();
+    await expect(addDialog.getByRole("button", { name: "Cancel" })).toBeVisible();
+    await expect(addDialog.getByRole("button", { name: "Done" })).toHaveCount(0);
     await expect(nav.getByText("Slack", { exact: true })).toBeVisible();
     await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
   });

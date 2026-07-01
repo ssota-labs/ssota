@@ -522,6 +522,7 @@ export function AgentSettingsDialogs({
           </p>
           <ScheduleSheet
             presentation="inline"
+            inlineSubmitPlacement="footer"
             open={openDialog === "add-trigger"}
             onOpenChange={(open) => {
               if (!open) onOpenDialogChange(null);
@@ -581,7 +582,26 @@ export function AgentSettingsDialogs({
         searchPlaceholder="Search triggers…"
         detail={renderAddTriggerDetail()}
         footer={
-          <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
+          selectedAddTrigger?.action === "schedule" ? (
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenDialogChange(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="schedule-sheet-form"
+                data-testid="add-trigger-confirm"
+              >
+                Add trigger
+              </Button>
+            </div>
+          ) : (
+            <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
+          )
         }
       />
 

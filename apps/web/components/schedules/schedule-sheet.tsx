@@ -58,6 +58,8 @@ interface ScheduleSheetProps {
   schedule?: ScheduleEditTarget;
   /** Sheet on schedules page; dialog when editing from agent card; inline in add-trigger sidebar. */
   presentation?: "sheet" | "dialog" | "inline";
+  /** Where the submit button renders for inline presentation (default inline). */
+  inlineSubmitPlacement?: "inline" | "footer";
 }
 
 function inferTargetType(agentDefinitionId?: string): ScheduleTargetType {
@@ -111,6 +113,7 @@ export function ScheduleSheet({
   instructions,
   schedule,
   presentation = "sheet",
+  inlineSubmitPlacement = "inline",
 }: ScheduleSheetProps) {
   const router = useRouter();
   const isEdit = Boolean(schedule);
@@ -534,7 +537,9 @@ export function ScheduleSheet({
     return (
       <div className="space-y-4" data-testid="schedule-inline-form">
         {form}
-        <div className="flex justify-end">{submitButton}</div>
+        {inlineSubmitPlacement === "inline" ? (
+          <div className="flex justify-end">{submitButton}</div>
+        ) : null}
       </div>
     );
   }
