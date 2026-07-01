@@ -80,7 +80,7 @@ export function AgentSettingsSidebarDialog({
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <div className="flex min-h-0 flex-1">
-          <aside className="border-border flex w-[22rem] shrink-0 flex-col border-r bg-muted/20">
+          <aside className="border-border flex w-48 shrink-0 flex-col border-r bg-muted/20">
             <div className="space-y-2 px-3 py-3">
               <h2 className="min-w-0 truncate text-sm font-semibold">{title}</h2>
               {showSearch ? (
@@ -145,8 +145,6 @@ export function AgentSettingsSidebarDialog({
             <div className="min-h-0 flex-1 overflow-y-auto p-4">{detail}</div>
             {footer ? (
               <div className="flex justify-end px-4 py-3">{footer}</div>
-                {footer}
-              </div>
             ) : null}
           </div>
         </div>
