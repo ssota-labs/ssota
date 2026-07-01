@@ -1,16 +1,10 @@
-import { BUILTIN_TEMPLATES } from "@ssota/adapter-postgres";
-import type { TemplateBundle } from "@ssota/contracts";
-import { TemplatesWorkspace } from "@/components/console/templates-workspace";
+import { redirect } from "next/navigation";
 
-export default function TemplatesPage() {
-  return (
-    <TemplatesWorkspace
-      templates={BUILTIN_TEMPLATES.map((template: TemplateBundle) => ({
-        id: template.meta.id,
-        name: template.meta.name,
-        description: template.meta.description,
-        category: template.meta.category,
-      }))}
-    />
-  );
+export default async function TemplatesRedirectPage({
+  params,
+}: {
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
+}) {
+  const { orgSlug, teamspaceSlug } = await params;
+  redirect(`/${orgSlug}/${teamspaceSlug}/tools`);
 }

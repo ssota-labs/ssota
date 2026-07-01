@@ -32,7 +32,7 @@ export const TRIGGER_LABELS: Record<AgentTrigger, string> = {
   chat: "Web chat (Vercel Chat)",
   chatbot: "Chatbot (Slack / Discord / Telegram)",
   task: "Task dispatch",
-  schedule: "Scheduler",
+  schedule: "Schedules",
   heartbeat: "Heartbeat",
   manual: "Manual run",
   gate_resume: "Gate resume",

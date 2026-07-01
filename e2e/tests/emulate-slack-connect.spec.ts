@@ -24,7 +24,7 @@ test.describe("emulate-slack", () => {
   test("connections: slack OAuth via emulate records a workspace row", async ({
     page,
   }) => {
-    await gotoProject(page, "connectors");
+    await gotoProject(page, "connections");
 
     const slack = page.getByTestId("connector-slack");
     await expect(slack).toBeVisible();

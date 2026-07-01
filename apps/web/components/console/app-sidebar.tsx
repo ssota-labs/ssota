@@ -29,6 +29,8 @@ import { PageTreeNav, type SidebarPage } from "./page-tree-nav";
 import { TeamspaceNav, type TeamspaceNavGroup } from "./teamspace-nav";
 import { useNodeDrill } from "./node-drill-context";
 import { SettingsNavLinks } from "@/components/settings/settings-nav-links";
+import { AgentsNavLinks } from "@/components/console/agents-nav-links";
+import { isAgentsRoute } from "@/lib/console/agents-navigation";
 
 const SIDEBAR_FOOTER_ROW_CLASS =
   "flex h-9 min-h-9 w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm transition-colors";
@@ -90,7 +92,8 @@ export function AppSidebar({
     ? { nodeId: drill.nodeId, pages: templatesByType[drill.catalogKey] ?? [] }
     : null;
   const inSettings = pathname.includes("/settings");
-  const showL1 = Boolean(nodeNav) || inSettings;
+  const inAgents = isAgentsRoute(relativePath);
+  const showL1 = Boolean(nodeNav) || inSettings || inAgents;
   const mode = showL1 ? "l1" : "l0";
 
   function toggleGroup(key: string) {
@@ -102,7 +105,10 @@ export function AppSidebar({
 
   function renderNavLink(item: NavLink) {
     const href = resolveNavHref(ctx, item.href);
-    const active = isNavLinkActive(pathname, projectBase, item.href);
+    const active =
+      item.key === "agents"
+        ? inAgents
+        : isNavLinkActive(pathname, projectBase, item.href);
 
     return (
       <Link
@@ -207,6 +213,15 @@ export function AppSidebar({
     );
   }
 
+  function renderAgentsNav() {
+    return (
+      <>
+        {renderL1BackLink("nav.home")}
+        <AgentsNavLinks />
+      </>
+    );
+  }
+
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r bg-sidebar">
       <ConsoleOrgSwitcher organizations={organizations} />
@@ -249,7 +264,9 @@ export function AppSidebar({
                   ? renderNodeNav(nodeNav)
                   : inSettings
                     ? renderSettingsNav()
-                    : null}
+                    : inAgents
+                      ? renderAgentsNav()
+                      : null}
               </div>
             </div>
           </div>
