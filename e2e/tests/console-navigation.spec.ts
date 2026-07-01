@@ -15,19 +15,23 @@ test.describe("Console v2.7 navigation", () => {
     const expectedLinks = [
       "Chat",
       "Tasks",
-      "Agents",
-      "Skills",
-      "Graph",
-      "Connectors",
       "Channels",
       "Scheduler",
       "Sandbox",
+      "Agents",
+      "Skills",
       "Templates",
+      "Graph",
+      "Connectors",
     ] as const;
 
     for (const label of expectedLinks) {
       await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
+
+    await expect(nav.getByText("Agent Runtime", { exact: true })).toBeVisible();
+    await expect(nav.getByText("Agent Setting", { exact: true })).toBeVisible();
+    await expect(nav.getByText("Context Setting", { exact: true })).toBeVisible();
 
     const linkLabels = await nav.getByRole("link").allTextContents();
     const runtimeLabels = linkLabels
