@@ -222,6 +222,9 @@ OSI-approved open source.
   ([LICENSE.md](LICENSE.md)). You may self-host and modify it for your own
   internal business purposes or non-commercial use, and redistribute it free of
   charge for non-commercial purposes.
+- You may not offer SSOTA as a paid managed hosting service for third-party
+  customers, including monthly or usage-based hosted instances, without a
+  separate commercial agreement.
 - Files containing `.ee.` and content under `ee/` directories are licensed under
   the **SSOTA Enterprise License** ([LICENSE_EE.md](LICENSE_EE.md)) and require a
   valid commercial agreement.
