@@ -365,7 +365,6 @@ export function AgentSettingsSheet({
                         {label}
                       </button>
                     }
-                    subtitle="Cron schedule"
                     trailing={
                       <Switch
                         checked={enabled}
