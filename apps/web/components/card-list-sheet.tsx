@@ -25,11 +25,11 @@ export type CardListSheetSize =
   | "full"
   | "viewport";
 
-/** Docked sheet width — single rule (sheetSize does not change width except viewport). */
+/** Docked sheet width as % of CardListSheet.Root (main content column). */
 const DOCKED_SHEET_MIN_WIDTH_PX = 24 * 16;
 const DOCKED_SHEET_MAX_WIDTH_PX = 640;
-const dockedSheetWidthClass =
-  "w-[min(42%,640px)] min-w-[24rem] max-w-[640px]";
+/** 60% of the positioning parent — scales with ConsolePageFrame column width. */
+const dockedSheetWidthClass = "w-[60%] min-w-[24rem] max-w-[640px]";
 
 const isViewportSheet = (sheetSize: CardListSheetSize) => sheetSize === "viewport";
 
