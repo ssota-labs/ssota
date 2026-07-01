@@ -4,8 +4,8 @@
 
 Classic SaaS is lists plus an embedded playbook — opinionated screens and fixed
 workflows for the average team. The next generation separates the **specialist**
-(who does the work) from the **spreadsheet** (what actually happened). SSOTA
-implements that spreadsheet as a **graph-shaped system of record**, runs
+(who does the work) from the **system of record** (what actually happened).
+SSOTA implements that record as a **typed graph**, runs
 **domain agents** with your team's playbooks, and renders **review pages** where
 humans approve outcomes — not re-enter every field by hand.
 
@@ -41,7 +41,7 @@ SSOTA is infrastructure for that model.
 
 | Layer | SaaS 2.0 role | SSOTA |
 | --- | --- | --- |
-| Spreadsheet | System of record | Typed graph (nodes, edges, catalog) |
+| System of record | What actually happened | Typed graph (nodes, edges, catalog) |
 | Specialist | Judgment + execution | Domain agents (instructions, skills, tools) |
 | Surface | Trust + oversight | JSON-render review pages (approve, override, audit) |
 
@@ -321,8 +321,8 @@ environment for iteration.
   (instructions, tools, skills, connections, sandbox)
 
 SSOTA adopts the Specialist + Spreadsheet direction, but implements the
-spreadsheet as a graph-shaped system of record so agents can traverse
-relational work context across vertical domains.
+system of record as a typed graph so agents can traverse relational work
+context across vertical domains.
 
 ## Local development
 
