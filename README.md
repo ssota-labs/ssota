@@ -30,11 +30,14 @@ or redeploying every iteration:
 
 ### 2. Agents need a shared SSOT work context
 
-Agents also need one workspace context to act inside:
+Agents also need one workspace context to act inside. SSOTA models that context
+as a typed graph because agent work is relational: requirements connect to
+tasks, tasks connect to artifacts, artifacts connect to decisions, and external
+service data needs to be linked back to the same source of truth.
 
 - domain objects and relationships
-- tasks, chat sessions, artifacts, and work history
 - graph scopes that define what each agent can read or write
+- tasks, chat sessions, artifacts, and work history
 - connected data pulled from external services through connectors
 - pages that let humans understand and operate the same system
 
