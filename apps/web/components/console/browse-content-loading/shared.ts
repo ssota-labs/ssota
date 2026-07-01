@@ -3,10 +3,18 @@ import {
   COMPOSIO_TOOLKITS,
 } from "@ssota/agent-runtime/composio-shared";
 
-export function getComposioThemeGridSections() {
+export function getComposioThemeSections() {
   return COMPOSIO_THEME_ORDER.map((theme) => ({
-    labelWidth: "w-24",
+    label: theme,
     count: COMPOSIO_TOOLKITS.filter((toolkit) => toolkit.theme === theme).length,
-    columns: "three" as const,
   })).filter((section) => section.count > 0);
+}
+
+/** @deprecated Use getComposioThemeSections for Connections browse loaders. */
+export function getComposioThemeGridSections() {
+  return getComposioThemeSections().map((section) => ({
+    labelWidth: "w-24",
+    count: section.count,
+    columns: "three" as const,
+  }));
 }

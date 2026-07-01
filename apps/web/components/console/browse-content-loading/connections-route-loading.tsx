@@ -1,12 +1,13 @@
-import { BrowseWorkspaceGridLoading } from "@/components/console/route-loaders";
-import { getComposioThemeGridSections } from "@/components/console/browse-content-loading/shared";
+import { ConnectionsBrowseLoading } from "@/components/console/browse-content-loading/connections-browse-loading";
+import { getComposioThemeSections } from "@/components/console/browse-content-loading/shared";
 
 /** Phase-1 sync route fallback for Connections grid pages. */
 export function ConnectionsRouteLoading() {
   return (
-    <BrowseWorkspaceGridLoading
+    <ConnectionsBrowseLoading
       testId="route-loading-connections"
-      sections={getComposioThemeGridSections()}
+      titleSkeleton
+      sections={getComposioThemeSections()}
     />
   );
 }
