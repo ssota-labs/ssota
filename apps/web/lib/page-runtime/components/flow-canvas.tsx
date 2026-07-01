@@ -44,7 +44,10 @@ import {
   FLOW_HAND_PAN_STYLES,
   getFlowInteractionProps,
 } from "./flow-preview-interaction";
-import { DocumentSheetPanel, type SheetSize } from "./document-sheet-panel";
+import {
+  DocumentCardListSheetPanel,
+  type DocumentCardListSheetSize,
+} from "./document-card-list-sheet-panel";
 import { readNodeField } from "./roadmap-doc-card";
 import type { CatalogComponent, RenderNode } from "../types";
 import { cn } from "@/lib/utils";
@@ -52,7 +55,7 @@ import { cn } from "@/lib/utils";
 const NODE_TYPES = { generic: FlowNode };
 const EDGE_TYPES = { flow: FlowEdge };
 
-const SHEET_SIZES: SheetSize[] = [
+const SHEET_SIZES: DocumentCardListSheetSize[] = [
   "default",
   "half",
   "inspector",
@@ -145,7 +148,7 @@ type SheetConfig = {
   subtitleField: string;
   statusField: string;
   editable: boolean;
-  sheetSize: SheetSize;
+  sheetSize: DocumentCardListSheetSize;
   setAction?: string;
 };
 
@@ -518,7 +521,7 @@ function FlowCanvasEl({
       ) : null}
 
       {activeRenderNode ? (
-        <DocumentSheetPanel
+        <DocumentCardListSheetPanel
           node={activeRenderNode}
           subtitle={readNodeField(activeRenderNode, sheet.subtitleField)}
           status={readNodeField(activeRenderNode, sheet.statusField)}
@@ -563,8 +566,8 @@ export const flowComponents: Record<string, CatalogComponent> = {
       statusField:
         typeof props.statusField === "string" ? props.statusField : "status",
       editable: props.editable === true,
-      sheetSize: SHEET_SIZES.includes(props.sheetSize as SheetSize)
-        ? (props.sheetSize as SheetSize)
+      sheetSize: SHEET_SIZES.includes(props.sheetSize as DocumentCardListSheetSize)
+        ? (props.sheetSize as DocumentCardListSheetSize)
         : "default",
       setAction: typeof props.setAction === "string" ? props.setAction : undefined,
     };

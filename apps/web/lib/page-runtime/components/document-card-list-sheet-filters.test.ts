@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { RenderNode } from "../types";
 import {
-  applyDocumentSheetListFilters,
+  applyDocumentCardListSheetFilters,
   buildInitialFilterState,
-} from "./document-sheet-list-filters";
+} from "./document-card-list-sheet-filters";
 
 const node = (
   id: string,
@@ -16,7 +16,7 @@ const node = (
   properties,
 });
 
-describe("document sheet list filters", () => {
+describe("document card list sheet filters", () => {
   it("hides archived product roadmaps until the toggle is enabled", () => {
     const nodes = [
       node("active", { doc_status: "active", summary: "Current" }, "Product roadmap"),
@@ -38,12 +38,12 @@ describe("document sheet list filters", () => {
     const state = buildInitialFilterState(filters, nodes, 2026);
 
     expect(
-      applyDocumentSheetListFilters(nodes, filters, state).map((row) => row.id),
+      applyDocumentCardListSheetFilters(nodes, filters, state).map((row) => row.id),
     ).toEqual(["active"]);
 
     const showingArchived = { ...state, "toggle:doc_status:archived:0": true };
     expect(
-      applyDocumentSheetListFilters(nodes, filters, showingArchived).map(
+      applyDocumentCardListSheetFilters(nodes, filters, showingArchived).map(
         (row) => row.id,
       ),
     ).toEqual(["active", "archived"]);
@@ -72,12 +72,12 @@ describe("document sheet list filters", () => {
     const state = buildInitialFilterState(filters, nodes, 2026);
 
     expect(
-      applyDocumentSheetListFilters(nodes, filters, state).map((row) => row.id),
+      applyDocumentCardListSheetFilters(nodes, filters, state).map((row) => row.id),
     ).toEqual(["2026-annual"]);
 
     const year2025 = { ...state, "select:year:0": 2025 };
     expect(
-      applyDocumentSheetListFilters(nodes, filters, year2025).map((row) => row.id),
+      applyDocumentCardListSheetFilters(nodes, filters, year2025).map((row) => row.id),
     ).toEqual(["2025-annual"]);
   });
 });

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
-import { ListSheet } from "@/components/list-sheet";
+import { CardListSheet } from "@/components/card-list-sheet";
 import type { AgentGroup } from "@/lib/console/load-agents-for-ui";
 import type { AgentSettingsContext } from "@/lib/console/load-agent-settings-context";
 import { isWorkerAgentId } from "@/lib/console/agent-tool-catalog";
@@ -43,7 +43,7 @@ export function AgentsWorkspace({
   const close = () => setActiveId(null);
 
   return (
-    <ListSheet.Root
+    <CardListSheet.Root
       activeId={activeId}
       onActiveIdChange={setActiveId}
       className="absolute inset-0 flex flex-col"
@@ -65,9 +65,9 @@ export function AgentsWorkspace({
 
         {groups.map((group) => (
           <BrowseWorkspace.Section key={group.key} label={group.label}>
-            <ListSheet.List className="border-border">
+            <CardListSheet.List className="border-border">
               {group.items.map((definition) => (
-                <ListSheet.Row
+                <CardListSheet.Row
                   key={definition.id}
                   id={definition.id}
                   testId={`agent-item-${definition.id}`}
@@ -83,10 +83,10 @@ export function AgentsWorkspace({
                       </p>
                     ) : null}
                   </div>
-                  <ListSheet.RowCaret />
-                </ListSheet.Row>
+                  <CardListSheet.RowCaret />
+                </CardListSheet.Row>
               ))}
-            </ListSheet.List>
+            </CardListSheet.List>
           </BrowseWorkspace.Section>
         ))}
 
@@ -111,7 +111,7 @@ export function AgentsWorkspace({
           onClose={close}
         />
       ) : null}
-    </ListSheet.Root>
+    </CardListSheet.Root>
   );
 }
 
