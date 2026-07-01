@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import { resolvePageBindings } from "@ssota/core";
+import { NodePageContentLoading } from "@/components/console/browse-content-loading";
 import { resolveOrg } from "@/lib/console/resolve-project";
 import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
@@ -24,7 +26,26 @@ import { SetNodeDrill } from "@/components/console/node-drill-context";
  * template renders per-instance (e.g. one "Features" template, scoped to each
  * initiative). Generic replacement for the per-initiative factory routes.
  */
-export default async function NodeTemplatePage({
+export default function NodeTemplatePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{
+    orgSlug: string;
+    teamspaceSlug: string;
+    nodeId: string;
+    pageId: string;
+  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return (
+    <Suspense fallback={<NodePageContentLoading params={params} />}>
+      <NodeTemplatePageInner params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function NodeTemplatePageInner({
   params,
   searchParams,
 }: {

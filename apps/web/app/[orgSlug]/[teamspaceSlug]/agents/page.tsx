@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { AgentsWorkspace } from "@/components/console/agents-workspace";
+import { AgentsContentLoading } from "@/components/console/browse-content-loading";
 import { loadAgentGroupsForUi } from "@/lib/console/load-agents-for-ui";
 import {
   loadAgentSettingsConnections,
@@ -9,7 +11,19 @@ import { resolveOrg } from "@/lib/console/resolve-project";
 import { getScriptToolPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
-export default async function AgentsPage({
+export default function AgentsPage({
+  params,
+}: {
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
+}) {
+  return (
+    <Suspense fallback={<AgentsContentLoading />}>
+      <AgentsPageInner params={params} />
+    </Suspense>
+  );
+}
+
+async function AgentsPageInner({
   params,
 }: {
   params: Promise<{ orgSlug: string; teamspaceSlug: string }>;

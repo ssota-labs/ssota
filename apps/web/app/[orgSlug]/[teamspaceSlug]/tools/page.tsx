@@ -1,9 +1,19 @@
+import { Suspense } from "react";
 import { BUILTIN_TEMPLATES } from "@ssota/adapter-postgres";
 import type { TemplateBundle } from "@ssota/contracts";
 import { TemplatesWorkspace } from "@/components/console/templates-workspace";
+import { ToolsContentLoading } from "@/components/console/browse-content-loading";
 import { getTranslations } from "@/lib/i18n/server";
 
-export default async function ToolsPage() {
+export default function ToolsPage() {
+  return (
+    <Suspense fallback={<ToolsContentLoading />}>
+      <ToolsPageInner />
+    </Suspense>
+  );
+}
+
+async function ToolsPageInner() {
   const { t } = await getTranslations();
 
   return (

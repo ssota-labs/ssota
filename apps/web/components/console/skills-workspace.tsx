@@ -33,6 +33,7 @@ type SkillsPageWorkspaceProps = {
   teamspaceId: string;
   orgSlug: string;
   teamspaceSlug: string;
+  initialSkills?: SkillIndex[];
 };
 
 function sourceLabel(source: SkillIndex["source"]) {
@@ -45,8 +46,9 @@ export function SkillsPageWorkspace({
   teamspaceId,
   orgSlug,
   teamspaceSlug,
+  initialSkills = [],
 }: SkillsPageWorkspaceProps) {
-  const [skills, setSkills] = useState<SkillIndex[]>([]);
+  const [skills, setSkills] = useState<SkillIndex[]>(initialSkills);
   const [query, setQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -107,8 +109,9 @@ export function SkillsPageWorkspace({
   );
 
   useEffect(() => {
+    if (initialSkills.length > 0) return;
     loadSkills();
-  }, [loadSkills]);
+  }, [initialSkills.length, loadSkills]);
 
   useEffect(() => {
     if (!activeId) {

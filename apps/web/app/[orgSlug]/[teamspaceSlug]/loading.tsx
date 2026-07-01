@@ -1,5 +1,5 @@
-import { OverviewRouteLoading } from "@/components/console/route-loaders";
+import { ProjectRouteLoading } from "@/components/console/route-loaders";
 
 export default function Loading() {
-  return <OverviewRouteLoading />;
+  return <ProjectRouteLoading />;
 }

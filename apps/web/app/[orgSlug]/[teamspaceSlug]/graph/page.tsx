@@ -1,9 +1,23 @@
+import { Suspense } from "react";
 import { GraphWorkspace } from "@/components/console/graph-workspace";
+import { GraphContentLoading } from "@/components/console/browse-content-loading";
 import { resolveOrg } from "@/lib/console/resolve-project";
 import { getGraphPorts } from "@/lib/ports";
 import type { EdgeCatalogRow, NodeCatalogRow } from "@ssota/contracts/catalog";
 
-export default async function GraphPage({
+export default function GraphPage({
+  params,
+}: {
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
+}) {
+  return (
+    <Suspense fallback={<GraphContentLoading />}>
+      <GraphPageInner params={params} />
+    </Suspense>
+  );
+}
+
+async function GraphPageInner({
   params,
 }: {
   params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
