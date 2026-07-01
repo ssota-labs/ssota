@@ -8,36 +8,23 @@ test.describe("Console v2.7 navigation", () => {
     await gotoProject(page, "tasks");
   });
 
-  test("sidebar: L0 shows runtime nav in order with icons and page tree groups", async ({
-    page,
-  }) => {
+  test("sidebar: L0 shows flat runtime nav with page tree groups", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
-    const expectedLinks = [
-      "Chat",
-      "Tasks",
-      "Agents",
-      "Skills",
-      "Templates",
-      "Channels",
-      "Schedules",
-      "Sandbox",
-      "Graph",
-      "Connections",
-    ] as const;
+    const expectedL0Links = ["Chat", "Tasks", "Graph"] as const;
 
-    for (const label of expectedLinks) {
+    for (const label of expectedL0Links) {
       await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
     }
 
-    await expect(nav.getByText("Agent Runtime", { exact: true })).toBeVisible();
-    await expect(nav.getByText("Agent Setting", { exact: true })).toBeVisible();
-    await expect(nav.getByText("Context Setting", { exact: true })).toBeVisible();
+    await expect(nav.getByText("Agent Runtime", { exact: true })).toHaveCount(0);
+    await expect(nav.getByText("Agent Setting", { exact: true })).toHaveCount(0);
+    await expect(nav.getByText("Context Setting", { exact: true })).toHaveCount(0);
 
     const linkLabels = await nav.getByRole("link").allTextContents();
-    const runtimeLabels = linkLabels
+    const l0Labels = linkLabels
       .map((text) => text.trim())
-      .filter((text) => expectedLinks.includes(text as (typeof expectedLinks)[number]));
-    expect(runtimeLabels).toEqual([...expectedLinks]);
+      .filter((text) => expectedL0Links.includes(text as (typeof expectedL0Links)[number]));
+    expect(l0Labels).toEqual([...expectedL0Links]);
 
     await expect(nav.getByRole("link", { name: "Home", exact: true })).toHaveCount(0);
     await expect(nav.getByRole("link", { name: "Workflow Map", exact: true })).toHaveCount(0);
@@ -46,6 +33,30 @@ test.describe("Console v2.7 navigation", () => {
     await expect(nav.getByRole("button", { name: "Manager", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Development", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Design", exact: true })).toBeVisible();
+  });
+
+  test("sidebar: Agents footer opens L1 with agent settings links", async ({ page }) => {
+    const sidebar = page.locator("aside");
+    await sidebar.getByRole("link", { name: "Agents", exact: true }).click();
+
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    const expectedAgentsLinks = [
+      "Agents",
+      "Skills",
+      "Tools",
+      "Sandbox",
+      "Channels",
+      "Connections",
+      "Subagents",
+      "Schedules",
+    ] as const;
+
+    for (const label of expectedAgentsLinks) {
+      await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
+    }
+
+    await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Chat", exact: true })).toHaveCount(0);
   });
 
   test("sidebar: page tree research group expands and navigates", async ({ page }) => {
@@ -89,16 +100,16 @@ test.describe("Console v2.7 navigation", () => {
     );
   });
 
-  test("sidebar footer: developer setup and settings links", async ({ page }) => {
+  test("sidebar footer: agents and settings links", async ({ page }) => {
     const sidebar = page.locator("aside");
-    await expect(sidebar.getByRole("link", { name: "Developer setup", exact: true })).toBeVisible();
+    await expect(sidebar.getByRole("link", { name: "Agents", exact: true })).toBeVisible();
     await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
   });
 
   test("footer profile menu: appearance and sign out", async ({ page }) => {
     const sidebar = page.locator("aside");
     await sidebar.getByRole("button", { name: "Signed in as" }).click();
-    await expect(page.getByText("Appearance", { exact: true })).toBeVisible();
+    await expect(page.getByText("Theme", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
   });
 
