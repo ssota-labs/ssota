@@ -1,110 +1,195 @@
 # SSOTA
 
-SSOTA is the workspace and context layer for agent teams: **Eve-like agent
-runtimes, graph-backed domain memory, and vertical pages that make that memory
-usable by humans.**
+**SSOTA is an Eve-style agent workspace platform: build Vercel-native agent
+runtimes, give them graph-backed LLM memory, and render that memory as
+human-friendly dynamic pages.**
 
-The product thesis is simple:
+Think of it as:
 
-- Agent frameworks like [Vercel eve](https://vercel.com/docs/eve) standardize how
-  agents are defined, equipped, scheduled, sandboxed, connected, and observed.
-- The missing layer is the workspace where those agents share domain context,
-  leave durable work behind, and expose that context as product-specific UI.
-- Users should not have to "look at a graph" to use graph-structured data, just
-  as great SaaS products do not expose their system of record as raw tables.
-  SSOTA renders graph memory as dynamic pages, tables, documents, task views, and
-  drill-in surfaces that match each team's workflow.
+> Vercel Eve for making agents production-ready, plus a graph-backed
+> Notion/Airtable-style workspace for making agent work understandable to humans.
 
-In one line: **SSOTA turns a teamspace into an agent-operated, graph-backed
-system of record.**
+Vercel Eve makes it much easier to define and deploy durable agents. SSOTA takes
+that same agent-runtime shape and adds the product layer around it: teamspaces,
+templates, tasks, chats, connectors, graph memory, and vertical pages.
 
-## What SSOTA is
+## Why this exists
 
-SSOTA is an open-core automation platform. The core is **self-hostable** and runs
-on any Postgres; a managed cloud offering adds durable execution, managed OAuth
-connectors, multi-tenancy, and other operational features.
+LLMs benefit from structured memory. A graph of typed nodes and edges is a good
+shape for that memory: agents can traverse it, validate it, update it, and use it
+as a shared domain wiki.
 
-It combines four product layers:
+But most users should not have to operate a graph. A good SaaS product does not
+show its system of record as raw database tables; it turns records into workflows
+that make sense for a vertical domain. SSOTA applies the same idea to graph
+memory:
 
-| Layer | What it defines | Code concepts |
+- agents see typed graph context;
+- humans see pages, tables, documents, kanban views, chats, and drill-ins;
+- templates turn the same primitives into different teamspace products, such as
+  a software-development workspace or an HR workspace.
+
+In one line:
+
+> **Agents see a graph wiki. Humans see a product.**
+
+## Relationship to Vercel Eve
+
+[Vercel eve](https://vercel.com/docs/eve) is a filesystem-first framework for
+durable backend AI agents. Eve projects are organized around an `agent/`
+directory:
+
+```text
+agent/
+  instructions.md       # always-on system prompt
+  agent.ts              # model and runtime config
+  tools/                # typed actions, one tool per file
+  skills/               # on-demand procedures and reference material
+  subagents/            # delegated child agents
+  channels/             # entry points such as HTTP and Slack
+  connections/          # typed integrations and credential boundaries
+  schedules/            # recurring triggers
+  sandbox/              # isolated compute environment
+  instrumentation.ts    # optional OpenTelemetry setup
+```
+
+Eve runs this shape on Vercel primitives: Workflows for durable sessions,
+Sandbox for isolated execution, AI Gateway for models, Connect for external
+credentials, and Observability for Agent Runs.
+
+SSOTA uses Eve as the easiest mental model for the runtime layer, then adds the
+workspace and context layer Eve does not try to own.
+
+| Question | Eve | SSOTA |
 | --- | --- | --- |
-| Runtime definitions | What can run | `agent_definitions`, `skills`, script tools, connector settings, `schedules`, sandbox environments |
-| Context definitions | What the workspace knows and shows | `node_catalog`, `edge_catalog`, `pages` specs, bindings, actions |
-| Agent runtime | Work in motion | `tasks`, `chat_threads`, `chat_messages`, `agent_runs` |
-| Context runtime | Domain state in use | `nodes`, `edges`, page rows, page view state |
+| How do I define an agent? | Files under `agent/` | `agent_definitions`, skills, tool bundles, run policy |
+| Where does the agent live? | A deployable agent project | A multi-agent teamspace |
+| How do users enter the runtime? | Channels such as HTTP or Slack | Web chat, external chat workspaces, tasks, schedules, MCP |
+| What does the agent know? | Prompt, tools, skills, connections, session state | Typed graph catalog, node/edge instances, page bindings, task context |
+| How do humans inspect the work? | Streams, channels, Agent Runs | Dynamic workspace pages, tables, documents, tasks, chat, traces |
+| How do teams reuse a setup? | Copy/scaffold an agent project | Apply a template bundle with agents, graph catalog, pages, and runtime defaults |
 
-Templates tie the first two layers together. A template such as "software
-development workspace" can seed agent definitions, skills, graph catalog,
-connectors, sandbox defaults, and page trees as one teamspace bundle.
+Short version:
 
-## Why graph-backed pages
+> Eve answers "how do I build and deploy an agent?" SSOTA answers "how do I
+> turn a set of agents into a usable workspace with durable domain memory?"
 
-LLMs need structured memory, but most users do not need a graph canvas. They need
-pages that feel native to their domain:
+## Product model
 
-- an engineering workspace with initiatives, tasks, pull requests, specs, and
-  release pages;
-- an HR workspace with candidates, interview loops, scorecards, policies, and
-  onboarding pages;
-- a customer workspace with accounts, tickets, opportunities, notes, and
-  playbooks.
+SSOTA is organized around four layers.
 
-Under the hood, these are validated node and edge instances. In the UI, they are
-rendered through page specs, data bindings, tables, documents, and node drill-ins.
-The graph gives agents a reliable context model; pages give humans a usable
-product surface.
+### 1. Runtime definitions: what can run
 
-## Relationship to Vercel eve
+These are the definitions that describe an agent team's capabilities before any
+work starts.
 
-Vercel eve is a filesystem-first framework for durable AI agents. Its
-`agent/` directory convention gives an agent instructions, tools, skills,
-channels, connections, schedules, subagents, and sandbox access, then runs it on
-Vercel primitives such as Workflows, Sandbox, Connect, AI Gateway, and
-Observability.
-
-SSOTA is complementary but higher in the product stack:
-
-| Dimension | Vercel eve | SSOTA |
+| Concept | Meaning in SSOTA | Code concepts |
 | --- | --- | --- |
-| Primary unit | One durable agent project | A multi-agent teamspace |
-| Authoring shape | Filesystem conventions under `agent/` | Database-backed definitions plus seeded template bundles |
-| Context model | Tools, skills, connections, and session state | Graph catalog, graph instances, page specs, bindings, and task context |
-| Human surface | Channels and app/API entry points | Full workspace UI with dynamic pages, tables, documents, chat, tasks, and connectors |
-| Work unit | Durable sessions and subagents | First-class tasks, chats, schedules, and agent runs |
-| Template layer | Not a core concept | Bundles runtime definitions and context definitions into reusable teamspace types |
+| Agent | The runnable worker: instructions, description, allowed tools, model policy, triggers, sandbox policy, and graph scope. | `agent_definitions`, `toolBundles`, `runPolicy`, `nodeScopes` |
+| Skill | A reusable procedure or plugin-like knowledge pack an agent can load when relevant. | `skills`, `skill_snapshots`, `agent_definition_skills` |
+| Connector | A way for agents to act in external systems without putting credentials in prompts. | Composio Tool Router settings, Vercel Connect grants, `account_connections`, `connector_tool_settings` |
+| Channel | A platform entry point into the same agent runtime, such as web chat, Slack, Discord, or Telegram. | `chat_workspaces`, chat APIs, channel-specific auth/config |
+| Scheduler | A recurring trigger that wakes an agent or workflow without a user message. | `schedules`, cron fan-out, schedule-backed `agent_runs` |
+| Sandbox | A working environment for code execution, repo work, files, ports, setup scripts, and snapshots. | `sandbox_environments`, `sandbox_sources`, `sandbox_sessions`, sandbox tools |
+| Template | A reusable workspace type that seeds runtime definitions and context definitions together. | `TemplateBundle`, template catalog, agent seeds, page seeds |
 
-In short: **eve answers "how do I build and deploy an agent?"; SSOTA answers
-"where does an agent team work, what does it know, and how do humans operate that
-workspace?"**
+This is the Eve-like layer: agents, skills, connectors, channels, schedules, and
+sandboxes. The difference is that SSOTA stores them as teamspace definitions so
+they can be composed into products, not just individual agent projects.
+
+### 2. Context definitions: what the workspace knows and shows
+
+These definitions describe the domain model and the user-facing surfaces built
+on top of it.
+
+| Concept | Meaning in SSOTA | Code concepts |
+| --- | --- | --- |
+| Graph | The schema for graph memory: node types, edge types, property schemas, allowed relationships, and keywords. | `node_catalog`, `edge_catalog` |
+| Page | The domain UI definition: a JSON-render spec plus bindings and actions that read/write graph context. | `pages.spec`, `pages.bindings`, `pages.actions`, UI catalog |
+
+The graph is the LLM wiki. Pages are how that wiki becomes a product.
+
+### 3. Agent runtime: work in motion
+
+These are the live executions created from runtime definitions.
+
+| Concept | Meaning in SSOTA | Code concepts |
+| --- | --- | --- |
+| Task | A first-class asynchronous work item with status, assignee, target node, context, acceptance criteria, and result. | `tasks` |
+| Chat session | A durable conversation where each turn can create agent work and replay context. | `chat_threads`, `chat_messages` |
+| Agent run | The bridge between a task/chat/schedule trigger and the underlying durable workflow execution. | `agent_runs` |
+
+Tasks are not just messages. They are durable units of delegated work that can be
+assigned, resumed, inspected, and linked back to graph context.
+
+### 4. Context runtime: domain state in use
+
+These are the live records that agents update and pages render.
+
+| Concept | Meaning in SSOTA | Code concepts |
+| --- | --- | --- |
+| Node instance | A typed record in the domain graph, such as an initiative, candidate, account, requirement, or document. | `nodes`, `properties`, `schemaVersion` |
+| Edge instance | A typed relationship between node instances. | `edges`, `sourceNodeId`, `targetNodeId` |
+| Page instance | A persisted or contextual view of graph state, including project pages, node drill-ins, and per-user table state. | `pages`, `subjectNodeId`, `page_view_states` |
+
+The important UX choice is that users do not need to manipulate these as graph
+objects. A page can render the same graph as a roadmap, a hiring pipeline, a
+document workspace, a task board, or a customer record.
+
+## Templates: the product packaging layer
+
+Templates are how SSOTA turns primitives into a vertical workspace.
+
+A template can bundle:
+
+- agent definitions and worker roles;
+- skills and script tools;
+- connector defaults;
+- schedule defaults;
+- sandbox defaults;
+- graph catalog entries;
+- page trees, bindings, and actions.
+
+Examples:
+
+- **Software development teamspace**: agents for implementation, review,
+  research, QA, and documentation; graph types for tasks, specs, PRs, releases,
+  and artifacts; pages for roadmap, execution, research, and workflow map.
+- **HR teamspace**: agents for sourcing, screening, interview coordination, and
+  onboarding; graph types for candidates, roles, interviews, scorecards, and
+  policies; pages for pipeline, candidate drill-in, and onboarding plan.
 
 ## Architecture
 
-```
+```text
 apps/
-  web/     # Next.js workspace UI, chat, tasks, connectors, pages
-  mcp/     # MCP surface for tasks, workflow instructions, and graph read/write
+  web/              # Next.js workspace UI, chat, tasks, connectors, pages
+  mcp/              # MCP surface for tasks, workflow instructions, graph IO
 packages/
-  core/    # Ports and use-cases; no database or app IO
-  adapter-postgres/
-           # Drizzle schema, Postgres ports, seeds, templates
-  agent-runtime/
-           # Agent tools, connector routing, sandbox tools
-  contracts/
-           # Zod schemas, agent definitions, template contracts, UI catalog
-supabase/  # Migration source of truth for managed and local Postgres
-e2e/       # Playwright coverage for workspace flows
+  contracts/        # Zod schemas, agent definitions, templates, UI catalog
+  core/             # Ports and use-cases; no database or app IO
+  adapter-postgres/ # Drizzle schema, Postgres ports, seeds, templates
+  agent-runtime/    # Agent tools, connector routing, sandbox tools
+supabase/           # Migration source of truth
+e2e/                # Playwright coverage for workspace flows
 ```
 
 The dependency direction is hexagonal: `apps/* -> core <- adapter-postgres`.
 Graph writes flow through core use-cases and graph ports; app code does not write
 `nodes` or `edges` directly.
 
-See [docs/open-core-plan.md](docs/open-core-plan.md) for the open-core architecture
-and self-hosting roadmap.
+## Open core and deployment
+
+SSOTA is open-core. The core is self-hostable on standard Postgres. The managed
+cloud path is Vercel-native and adds durable execution, managed OAuth
+connectors, multi-tenancy, and operational infrastructure.
+
+See [docs/open-core-plan.md](docs/open-core-plan.md) for the open-core
+architecture and [docs/self-hosting.md](docs/self-hosting.md) for local setup.
 
 ## License
 
-SSOTA is **fair-code** distributed software — source-available, but **not**
+SSOTA is **fair-code** distributed software: source-available, but **not**
 OSI-approved open source.
 
 - Everything **except** files containing `.ee.` in their name and content under
@@ -116,17 +201,5 @@ OSI-approved open source.
   the **SSOTA Enterprise License** ([LICENSE_EE.md](LICENSE_EE.md)) and require a
   valid commercial agreement.
 
-This mirrors the licensing model used by [n8n](https://docs.n8n.io/sustainable-use-license/).
-
-## Self-hosting
-
-The core runs without any Vercel or Supabase account. Set the adapter selection
-env vars (see [docs/open-core-plan.md](docs/open-core-plan.md)) to run fully
-locally:
-
-```
-JOB_RUNNER=inline      # durable execution disabled, runs in-process
-AUTH=local             # single-user / Auth.js
-CREDENTIALS=own-app    # register your own OAuth apps per connector
-STORAGE=local          # filesystem storage
-```
+This mirrors the licensing model used by
+[n8n](https://docs.n8n.io/sustainable-use-license/).
