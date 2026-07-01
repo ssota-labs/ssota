@@ -20,16 +20,16 @@ type OverviewHubProps = {
   quickLinks: HubQuickLink[];
   recentActivity: { id: string; nodeType: string; title: string; updatedAt: string }[];
   nodesBasePath: string;
-  workflowMapPath: string;
+  graphPath: string;
   workflowSummary: WorkflowPhaseSummary[];
 };
 
 function WorkflowPreview({
   summary,
-  workflowMapPath,
+  graphPath,
 }: {
   summary: WorkflowPhaseSummary[];
-  workflowMapPath: string;
+  graphPath: string;
 }) {
   const activePhases = summary.filter((phase) => phase.nodeCount > 0).slice(0, 3);
 
@@ -38,15 +38,15 @@ function WorkflowPreview({
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">
           No graph nodes yet. Create research items or initiatives to populate the
-          workflow map.
+          graph.
         </p>
         <Button
-          render={<Link href={workflowMapPath} />}
+          render={<Link href={graphPath} />}
           variant="outline"
           size="sm"
           nativeButton={false}
         >
-          Open Workflow Map
+          Open Graph
         </Button>
       </div>
     );
@@ -70,12 +70,12 @@ function WorkflowPreview({
         ))}
       </div>
       <Button
-        render={<Link href={workflowMapPath} />}
+        render={<Link href={graphPath} />}
         variant="outline"
         size="sm"
         nativeButton={false}
       >
-        Open Workflow Map
+        Open Graph
       </Button>
     </div>
   );
@@ -86,7 +86,7 @@ export function OverviewHub({
   quickLinks,
   recentActivity,
   nodesBasePath,
-  workflowMapPath,
+  graphPath,
   workflowSummary,
 }: OverviewHubProps) {
   const { locale } = useLocale();
@@ -96,7 +96,7 @@ export function OverviewHub({
       stats={stats}
       quickLinks={quickLinks}
       graphSlot={
-        <WorkflowPreview summary={workflowSummary} workflowMapPath={workflowMapPath} />
+        <WorkflowPreview summary={workflowSummary} graphPath={graphPath} />
       }
       quickLinksSlot={
         recentActivity.length > 0 ? (

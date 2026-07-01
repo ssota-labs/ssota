@@ -130,14 +130,12 @@ export function ConnectorsView({
     ? (byProvider.get(selected) ?? { user: [], org: [] })
     : { user: [], org: [] };
 
-  const connectedCount = byProvider.size;
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Connectors"
-          description={`Browse and manage the apps your agent can use. ${connectedCount} connected.`}
+          description="Browse and manage the apps your agent can use."
         />
 
         {groups.map((group) => (

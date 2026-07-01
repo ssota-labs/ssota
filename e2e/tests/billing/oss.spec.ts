@@ -24,9 +24,7 @@ test.describe("billing @billing @oss", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "overview");
     await expect(page).toHaveURL(/\/ssota-labs\/overview/);
-    await expect(
-      page.getByRole("button", { name: "Open Workflow Map" }),
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Open Graph" })).toBeVisible();
   });
 
   // @billing-scenario A3
