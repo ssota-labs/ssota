@@ -39,7 +39,7 @@
           "children": ["product"]
         },
         "product": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "productRoadmaps",
             "field": "content",
@@ -68,7 +68,7 @@
           "children": ["planning"]
         },
         "planning": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "planningRoadmaps",
             "field": "content",
@@ -197,7 +197,7 @@
           "children": ["list"]
         },
         "list": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
@@ -237,7 +237,7 @@
           "children": ["list"]
         },
         "list": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
@@ -277,7 +277,7 @@
           "children": ["list"]
         },
         "list": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
@@ -522,7 +522,7 @@
           "children": ["list"]
         },
         "list": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
@@ -1337,7 +1337,7 @@
           "children": ["releaseList"]
         },
         "releaseList": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "releaseNotes",
             "field": "content",
@@ -1353,7 +1353,7 @@
           "children": ["runbookList"]
         },
         "runbookList": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "runbooks",
             "field": "content",
