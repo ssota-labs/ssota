@@ -299,7 +299,6 @@ export function AgentSettingsSheet({
                 testId="agent-trigger-chat"
                 icon={<ChatsCircleIcon className="size-3.5 text-muted-foreground" />}
                 title={chatLabel}
-                subtitle={TRIGGER_LABELS.chat}
               />
               <AgentSettingItem
                 icon={<AtIcon className="size-3.5 text-muted-foreground" />}
