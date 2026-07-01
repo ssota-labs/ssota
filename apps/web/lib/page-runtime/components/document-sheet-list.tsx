@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { CaretRightIcon } from "@phosphor-icons/react";
 import {
   Select,
   SelectContent,
@@ -11,7 +10,7 @@ import {
 } from "@ssota/ui/components/ui/select";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import { Label } from "@ssota/ui/components/ui/label";
-import { cn } from "@ssota/ui/lib/utils";
+import { ListSheet } from "@/components/list-sheet";
 import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import { useAction } from "../context";
 import type { RenderNode } from "../types";
@@ -90,15 +89,6 @@ export function DocumentSheetListEl({
   const open = activeNode !== null;
 
   useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActiveId(null);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
-
-  useEffect(() => {
     if (activeId && !visibleNodes.some((node) => node.id === activeId)) {
       setActiveId(null);
     }
@@ -122,9 +112,10 @@ export function DocumentSheetListEl({
   );
 
   return (
-    <div
-      className="relative flex min-h-0 flex-1 flex-col"
-      data-testid="document-sheet-list"
+    <ListSheet.Root
+      activeId={activeId}
+      onActiveIdChange={setActiveId}
+      testId="document-sheet-list"
     >
       {filterBar && inSection ? (
         <SectionHeaderEnd>{filterBar}</SectionHeaderEnd>
@@ -144,20 +135,15 @@ export function DocumentSheetListEl({
 
         {title ? <h3 className="text-sm font-medium">{title}</h3> : null}
 
-        <div className="divide-y divide-border overflow-hidden rounded-lg border bg-card">
+        <ListSheet.List>
           {visibleNodes.map((node) => {
             const subtitle = readNodeField(node, subtitleField);
             const status = readNodeField(node, statusField);
             return (
-              <button
+              <ListSheet.Row
                 key={node.id}
-                type="button"
-                data-testid={`document-sheet-list-item-${node.id}`}
-                className={cn(
-                  "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-                  activeId === node.id && "bg-muted/30",
-                )}
-                onClick={() => setActiveId(node.id)}
+                id={node.id}
+                testId={`document-sheet-list-item-${node.id}`}
               >
                 <div className="flex min-w-0 flex-1 items-start gap-2">
                   {status ? (
@@ -172,19 +158,14 @@ export function DocumentSheetListEl({
                     ) : null}
                   </div>
                 </div>
-                <CaretRightIcon
-                  className="text-muted-foreground size-4 shrink-0"
-                  aria-hidden
-                />
-              </button>
+                <ListSheet.RowCaret />
+              </ListSheet.Row>
             );
           })}
           {visibleNodes.length === 0 ? (
-            <p className="text-muted-foreground px-4 py-6 text-center text-sm">
-              No documents
-            </p>
+            <ListSheet.Empty>No documents</ListSheet.Empty>
           ) : null}
-        </div>
+        </ListSheet.List>
         </div>
       </div>
 
@@ -207,7 +188,7 @@ export function DocumentSheetListEl({
           }}
         />
       ) : null}
-    </div>
+    </ListSheet.Root>
   );
 }
 
