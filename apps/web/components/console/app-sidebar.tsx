@@ -105,7 +105,10 @@ export function AppSidebar({
 
   function renderNavLink(item: NavLink) {
     const href = resolveNavHref(ctx, item.href);
-    const active = isNavLinkActive(pathname, projectBase, item.href);
+    const active =
+      item.key === "agents"
+        ? inAgents
+        : isNavLinkActive(pathname, projectBase, item.href);
 
     return (
       <Link
@@ -271,20 +274,6 @@ export function AppSidebar({
       </ScrollArea>
 
       <div className="shrink-0 space-y-0.5 border-t p-2">
-        <Link
-          href={orgPath(ctx, "agents")}
-          prefetch
-          className={cn(
-            SIDEBAR_FOOTER_ROW_CLASS,
-            "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-            inAgents && "bg-sidebar-accent font-medium text-sidebar-accent-foreground",
-          )}
-        >
-          <span className={SIDEBAR_FOOTER_LEADING_CLASS}>
-            <NavItemIcon iconKey="agents" className="size-4 shrink-0" />
-          </span>
-          <span className="min-w-0 truncate">{t("nav.agents")}</span>
-        </Link>
         <Link
           href={orgPath(ctx, "settings")}
           prefetch

@@ -10,7 +10,7 @@ test.describe("Console v2.7 navigation", () => {
 
   test("sidebar: L0 shows flat runtime nav with page tree groups", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
-    const expectedL0Links = ["Chat", "Tasks", "Graph"] as const;
+    const expectedL0Links = ["Chat", "Tasks", "Agents", "Graph"] as const;
 
     for (const label of expectedL0Links) {
       await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
@@ -35,11 +35,10 @@ test.describe("Console v2.7 navigation", () => {
     await expect(nav.getByRole("button", { name: "Design", exact: true })).toBeVisible();
   });
 
-  test("sidebar: Agents footer opens L1 with agent settings links", async ({ page }) => {
-    const sidebar = page.locator("aside");
-    await sidebar.getByRole("link", { name: "Agents", exact: true }).click();
-
+  test("sidebar: Agents L0 link opens L1 with agent settings links", async ({ page }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
+    await nav.getByRole("link", { name: "Agents", exact: true }).click();
+
     const expectedAgentsLinks = [
       "Agents",
       "Skills",
@@ -100,10 +99,14 @@ test.describe("Console v2.7 navigation", () => {
     );
   });
 
-  test("sidebar footer: agents and settings links", async ({ page }) => {
+  test("sidebar footer: settings link only (agents in L0 nav)", async ({ page }) => {
     const sidebar = page.locator("aside");
-    await expect(sidebar.getByRole("link", { name: "Agents", exact: true })).toBeVisible();
-    await expect(sidebar.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
+    const nav = page.getByRole("navigation", { name: "Primary" });
+    await expect(nav.getByRole("link", { name: "Agents", exact: true })).toBeVisible();
+
+    const footer = sidebar.locator("div.border-t");
+    await expect(footer.getByRole("link", { name: "Agents", exact: true })).toHaveCount(0);
+    await expect(footer.getByRole("link", { name: "Settings", exact: true })).toBeVisible();
   });
 
   test("footer profile menu: appearance and sign out", async ({ page }) => {

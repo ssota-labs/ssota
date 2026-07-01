@@ -35,10 +35,11 @@ export type NavSection = {
 
 export type NavEntry = NavSeparator | NavLink | NavGroup | NavSection;
 
-/** Top-level builder sidebar links (Agents L1 is footer + slide-in, like Settings). */
+/** Top-level builder sidebar links (Agents opens L1 slide-in, like Settings). */
 export const L0_NAV: NavEntry[] = [
   { type: "link", key: "chat", labelKey: "nav.chat", href: "c", pattern: "L" },
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
+  { type: "link", key: "agents", labelKey: "nav.agents", href: "agents", pattern: "L" },
   { type: "link", key: "graph", labelKey: "nav.graph", href: "graph", pattern: "L" },
 ];
 
