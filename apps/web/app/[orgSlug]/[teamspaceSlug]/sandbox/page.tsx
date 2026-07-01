@@ -26,12 +26,14 @@ async function SandboxPageInner({
   const environments = await listSandboxEnvironmentsAction(orgSlug, teamspaceSlug);
 
   return (
-    <SandboxWorkspace
-      title={t("nav.sandbox")}
-      description={t("settings.sandboxEnvironmentsDescription")}
-      orgSlug={orgSlug}
-      teamspaceSlug={teamspaceSlug}
-      environments={environments}
-    />
+    <div className="relative min-h-0 flex-1">
+      <SandboxWorkspace
+        title={t("nav.sandbox")}
+        description={t("settings.sandboxEnvironmentsDescription")}
+        orgSlug={orgSlug}
+        teamspaceSlug={teamspaceSlug}
+        environments={environments}
+      />
+    </div>
   );
 }

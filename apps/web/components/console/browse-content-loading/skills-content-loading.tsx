@@ -8,10 +8,10 @@ const DEFAULT_SKILL_ROWS = 6;
 export function SkillsContentLoading() {
   return (
     <div
-      className="absolute inset-0 flex flex-col"
+      className="relative min-h-0 flex-1"
       data-testid="content-loading-skills"
     >
-      <div className="relative min-h-0 flex-1 overflow-hidden">
+      <div className="absolute inset-0 flex flex-col overflow-hidden">
         <div className="h-full overflow-y-auto">
           <ConsolePageFrame contentClassName="gap-8">
             <header className="space-y-1">
