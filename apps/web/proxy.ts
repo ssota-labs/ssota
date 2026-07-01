@@ -55,7 +55,7 @@ const CONSOLE_ROUTE_SEGMENTS = new Set([
   "research",
   "executive",
   "manager",
-  "connectors",
+  "connections",
   "channels",
   "schedules",
   "sandbox",
@@ -114,6 +114,13 @@ function orgUrlResponse(request: NextRequest): NextResponse | null {
 
   if (!second) {
     return null;
+  }
+
+  if (second === "connectors") {
+    const suffix = rest.length ? `/${rest.join("/")}` : "";
+    const url = request.nextUrl.clone();
+    url.pathname = `/${orgSlug}/connections${suffix}`;
+    return NextResponse.redirect(url, 308);
   }
 
   const isFlatConsoleRoute = CONSOLE_ROUTE_SEGMENTS.has(second);

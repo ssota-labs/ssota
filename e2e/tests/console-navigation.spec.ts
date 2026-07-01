@@ -19,10 +19,10 @@ test.describe("Console v2.7 navigation", () => {
       "Skills",
       "Templates",
       "Channels",
-      "Scheduler",
+      "Schedules",
       "Sandbox",
       "Graph",
-      "Connectors",
+      "Connections",
     ] as const;
 
     for (const label of expectedLinks) {

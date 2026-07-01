@@ -102,9 +102,9 @@ export const L0_NAV: NavEntry[] = [
       { type: "link", key: "graph", labelKey: "nav.graph", href: "graph", pattern: "L" },
       {
         type: "link",
-        key: "connectors",
+        key: "connections",
         labelKey: "nav.connections",
-        href: "connectors",
+        href: "connections",
         pattern: "L",
       },
     ],
@@ -164,7 +164,7 @@ export function buildBreadcrumbSegments(
   if (relative === "c" || relative.startsWith("c/")) {
     return [{ labelKey: "nav.chat" }];
   }
-  if (relative === "connectors" || relative.startsWith("connectors/")) {
+  if (relative === "connections" || relative.startsWith("connections/")) {
     return [{ labelKey: "nav.connections" }];
   }
   if (relative === "schedules" || relative.startsWith("schedules/")) {

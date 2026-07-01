@@ -11,6 +11,7 @@ import {
 } from "@/components/connectors/connector-card-styles";
 import { ConsolePageFrame } from "@/components/console/console-page-frame";
 import { ConnectorsScrollShell } from "@/components/connectors/connectors-scroll-shell";
+import { getTranslations } from "@/lib/i18n/server";
 
 function ConnectorCardSkeleton() {
   return (
@@ -26,7 +27,8 @@ function ConnectorCardSkeleton() {
   );
 }
 
-export function ConnectorsLoading() {
+export async function ConnectorsLoading() {
+  const { t } = await getTranslations();
   const groups = COMPOSIO_THEME_ORDER.map((theme) => ({
     theme,
     count: COMPOSIO_TOOLKITS.filter((toolkit) => toolkit.theme === theme).length,
@@ -37,7 +39,7 @@ export function ConnectorsLoading() {
       <ConnectorsScrollShell>
         <ConsolePageFrame contentClassName="gap-8">
         <header className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Connectors</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("nav.connections")}</h1>
           <div className="max-w-2xl">
             <Skeleton className="h-4 w-72 max-w-full rounded-sm" />
           </div>

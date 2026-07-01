@@ -22,12 +22,13 @@ import {
   SheetTitle,
 } from "@ssota/ui/components/ui/sheet";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import {
   disconnectConnectionAction,
   loadToolkitToolSettingsAction,
   setToolkitDisabledAction,
-} from "@/app/[orgSlug]/[teamspaceSlug]/connectors/actions";
+} from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
 import {
   CONNECTOR_THEMES,
   type ConnectorDef,
@@ -98,6 +99,7 @@ export function ConnectorsView({
   returnTo,
   allowOrgScope,
 }: ConnectorsViewProps) {
+  const { t } = useLocale();
   const [selected, setSelected] = useState<ConnectorProvider | null>(null);
 
   const byProvider = useMemo(() => {
@@ -134,8 +136,8 @@ export function ConnectorsView({
     <div className="flex h-full min-h-0 flex-col">
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
-          title="Connectors"
-          description="Browse and manage the apps your agent can use."
+          title={t("nav.connections")}
+          description={t("connections.description")}
         />
 
         {groups.map((group) => (
