@@ -34,15 +34,9 @@ export type NavSection = {
 
 export type NavEntry = NavSeparator | NavLink | NavGroup | NavSection;
 
-
+/** Runtime + context definition surfaces — fixed order in the builder sidebar. */
 export const L0_NAV: NavEntry[] = [
-  {
-    type: "link",
-    key: "home",
-    labelKey: "nav.home",
-    href: "overview",
-    pattern: "H",
-  },
+  { type: "link", key: "chat", labelKey: "nav.chat", href: "c", pattern: "L" },
   { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
   {
     type: "link",
@@ -58,12 +52,19 @@ export const L0_NAV: NavEntry[] = [
     href: "skills",
     pattern: "L",
   },
-  { type: "link", key: "chat", labelKey: "nav.chat", href: "c", pattern: "L" },
+  { type: "link", key: "graph", labelKey: "nav.graph", href: "graph", pattern: "L" },
   {
     type: "link",
-    key: "connections",
+    key: "connectors",
     labelKey: "nav.connections",
     href: "connectors",
+    pattern: "L",
+  },
+  {
+    type: "link",
+    key: "channels",
+    labelKey: "nav.channels",
+    href: "channels",
     pattern: "L",
   },
   {
@@ -73,22 +74,19 @@ export const L0_NAV: NavEntry[] = [
     href: "schedules",
     pattern: "L",
   },
-  // The per-stage workflow nav (Executive/Research/Manager/Development/Design)
-  // is now the Notion-style page tree (PageTreeNav, fed by the pages table), not
-  // a static section here. L0 keeps only the always-on top links + Explore.
   {
-    type: "section",
-    key: "l0_explore",
-    labelKey: "nav.sectionExplore",
-    children: [
-      {
-        type: "link",
-        key: "workflow_map",
-        labelKey: "nav.workflowMap",
-        href: "workflow/map",
-        pattern: "canvas",
-      },
-    ],
+    type: "link",
+    key: "sandbox",
+    labelKey: "nav.sandbox",
+    href: "sandbox",
+    pattern: "L",
+  },
+  {
+    type: "link",
+    key: "templates",
+    labelKey: "nav.templates",
+    href: "templates",
+    pattern: "L",
   },
 ];
 
@@ -151,14 +149,23 @@ export function buildBreadcrumbSegments(
   if (relative === "schedules" || relative.startsWith("schedules/")) {
     return [{ labelKey: "nav.schedules" }];
   }
-  if (relative === "workflow/map") {
-    return [{ labelKey: "nav.workflowMap" }];
-  }
-  if (relative === "agents") {
+  if (relative === "agents" || relative.startsWith("agents/")) {
     return [{ labelKey: "nav.agents" }];
   }
   if (relative === "skills" || relative.startsWith("skills/")) {
     return [{ labelKey: "nav.skills" }];
+  }
+  if (relative === "graph" || relative.startsWith("graph/")) {
+    return [{ labelKey: "nav.graph" }];
+  }
+  if (relative === "channels" || relative.startsWith("channels/")) {
+    return [{ labelKey: "nav.channels" }];
+  }
+  if (relative === "sandbox" || relative.startsWith("sandbox/")) {
+    return [{ labelKey: "nav.sandbox" }];
+  }
+  if (relative === "templates" || relative.startsWith("templates/")) {
+    return [{ labelKey: "nav.templates" }];
   }
   if (
     relative === "design/ui-components" ||

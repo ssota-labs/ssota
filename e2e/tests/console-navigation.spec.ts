@@ -8,20 +8,40 @@ test.describe("Console v2.7 navigation", () => {
     await gotoProject(page, "tasks");
   });
 
-  test("sidebar: L0 shows home, tasks, chat, connections, and page tree groups", async ({
+  test("sidebar: L0 shows runtime nav in order with icons and page tree groups", async ({
     page,
   }) => {
     const nav = page.getByRole("navigation", { name: "Primary" });
-    await expect(nav.getByRole("link", { name: "Home", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Tasks", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Chat", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Connectors", exact: true })).toBeVisible();
+    const expectedLinks = [
+      "Chat",
+      "Tasks",
+      "Agents",
+      "Skills",
+      "Graph",
+      "Connectors",
+      "Channels",
+      "Scheduler",
+      "Sandbox",
+      "Templates",
+    ] as const;
+
+    for (const label of expectedLinks) {
+      await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
+    }
+
+    const linkLabels = await nav.getByRole("link").allTextContents();
+    const runtimeLabels = linkLabels
+      .map((text) => text.trim())
+      .filter((text) => expectedLinks.includes(text as (typeof expectedLinks)[number]));
+    expect(runtimeLabels).toEqual([...expectedLinks]);
+
+    await expect(nav.getByRole("link", { name: "Home", exact: true })).toHaveCount(0);
+    await expect(nav.getByRole("link", { name: "Workflow Map", exact: true })).toHaveCount(0);
     await expect(nav.getByRole("button", { name: "Executive", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Research", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Manager", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Development", exact: true })).toBeVisible();
     await expect(nav.getByRole("button", { name: "Design", exact: true })).toBeVisible();
-    await expect(nav.getByRole("link", { name: "Workflow Map", exact: true })).toBeVisible();
   });
 
   test("sidebar: page tree research group expands and navigates", async ({ page }) => {
