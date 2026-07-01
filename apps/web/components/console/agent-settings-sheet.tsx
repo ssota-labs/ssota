@@ -14,7 +14,6 @@ import {
 import type { Block } from "@blocknote/core";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
-import { Checkbox } from "@ssota/ui/components/ui/checkbox";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import { cn } from "@ssota/ui/lib/utils";
 import { updateAgentDefinitionAction } from "@/app/actions";
@@ -306,11 +305,9 @@ export function AgentSettingsSheet({
                 icon={<AtIcon className="size-3.5 text-muted-foreground" />}
                 title={TRIGGER_LABELS.task}
                 trailing={
-                  <Checkbox
+                  <Switch
                     checked={draft.allowedTriggers.includes("task")}
-                    onCheckedChange={(checked) =>
-                      toggleTrigger("task", checked === true)
-                    }
+                    onCheckedChange={(checked) => toggleTrigger("task", checked)}
                     data-testid="agent-trigger-task"
                     aria-label={TRIGGER_LABELS.task}
                   />
