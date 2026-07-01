@@ -2,12 +2,16 @@
 
 **Infrastructure for SaaS 2.0: Specialist + System of record.**
 
-Classic SaaS is lists plus an embedded playbook — opinionated screens and fixed
-workflows for the average team. The next generation separates the **specialist**
-(who does the work) from the **system of record** (what actually happened).
-SSOTA implements that record as a **typed graph**, runs
-**domain agents** with your team's playbooks, and renders **review pages** where
-humans approve outcomes — not re-enter every field by hand.
+Classic SaaS fuses three things in one product: the **lists** (what happened),
+the vendor's **playbook** (how you're supposed to work), and the **UI** humans
+operate every day. That works for the average team until your process needs
+exceptions, judgment, and context the product was not built for.
+
+SaaS 2.0 **unbundles** that monolith into layers that work together: a
+**system of record** for memory, **domain agents** as specialists that run your
+team's playbooks on it, and **review pages** where humans approve outcomes —
+not re-enter every field. SSOTA implements the record as a **typed graph** and
+ships the workspace to configure agents and pages on top.
 
 Built for teams shipping vertical work software on the
 [Vercel agent stack](https://vercel.com/eve).
@@ -26,11 +30,11 @@ Customization markets exist for a reason. Teams either bend the tool, hire
 consultants, or hire a human specialist and let them manage the lists outside
 the system's rules.
 
-SaaS 2.0 inverts the split:
+SaaS 2.0 unbundles the stack:
 
 | SaaS 1.0 | SaaS 2.0 |
 | --- | --- |
-| Lists + playbook in one product | Specialist + system of record as separate layers |
+| Lists + playbook + UI in one product | System of record + specialist + review surface as layers |
 | Human operates the UI | Agent operates the record |
 | Playbook fixed by vendor | Playbook configurable per team |
 | UI is where work happens | UI is where work is reviewed and approved |
