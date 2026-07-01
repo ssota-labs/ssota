@@ -15,19 +15,15 @@ Vercel's Eve gives agents a useful shape: instructions, tools, skills,
 connections, schedules, channels, subagents, and a sandbox live together as one
 deployable agent project.
 
-SSOTA turns that shape into an editable workspace.
+SSOTA turns that shape into an editable workspace with a typed context graph.
 
 Instead of editing files and redeploying every time an agent system changes, a
 team gets a live workspace where they can:
 
 - add a specialist agent without creating a new app
-- change what graph context that agent can read or write
 - bind skills, tools, connectors, schedules, channels, and sandboxes
 - launch work from chat, tasks, schedules, or human approvals
 - turn the same graph into pages that look like a vertical SaaS product
-
-The goal is not to show users a graph. The goal is to give agents a graph-shaped
-memory, then render that memory as product-grade pages people can understand.
 
 The user-visible result is a domain workspace: a roadmap, hiring pipeline,
 customer operations console, legal review workspace, or software delivery hub
@@ -46,12 +42,16 @@ dashboards.
 SSOTA applies the same idea to graph-backed agent workspaces:
 
 - **Graph for agents**: typed nodes and edges store domain context in a form LLMs
-  can query, traverse, and update.
+  can query, traverse, and update. Teams can change what graph context each agent
+  can read or write.
 - **Pages for humans**: dynamic JSON-render pages turn the graph into familiar
   SaaS surfaces: tables, documents, boards, workbenches, and dashboards.
 - **Templates for teams**: a template installs the whole agent SaaS surface:
   data model, agent runtime, human UI layer, skills, schedules, and sandbox
   policy for a vertical workflow.
+
+The goal is not to show users a graph. The goal is to give agents a graph-shaped
+memory, then render that memory as product-grade pages people can understand.
 
 Think of it as an LLM Wiki made operational: structured enough for agents,
 legible enough for teams, and editable as a workspace.
