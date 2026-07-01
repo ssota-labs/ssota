@@ -157,13 +157,21 @@ export function SidebarDetailHeader({
   icon,
   title,
   status,
+  sticky = false,
 }: {
   icon?: ReactNode;
   title: string;
   status?: ReactNode;
+  sticky?: boolean;
 }) {
   return (
-    <div className="mb-4 flex items-start gap-3">
+    <div
+      className={cn(
+        "mb-4 flex items-start gap-3",
+        sticky &&
+          "sticky top-0 z-10 -mx-4 border-b border-border/60 bg-background/95 px-4 pb-3 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80",
+      )}
+    >
       {icon ? (
         <span className="bg-muted/50 flex size-10 shrink-0 items-center justify-center rounded-lg border border-border/60">
           {icon}

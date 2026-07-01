@@ -509,6 +509,7 @@ export function AgentSettingsDialogs({
       return (
         <>
           <SidebarDetailHeader
+            sticky
             icon={<ClockIcon className="size-5 text-muted-foreground" />}
             title={selectedAddTrigger.label}
             status={
