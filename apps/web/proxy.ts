@@ -60,6 +60,8 @@ const CONSOLE_ROUTE_SEGMENTS = new Set([
   "schedules",
   "sandbox",
   "templates",
+  "tools",
+  "subagents",
   "design",
   "graph",
   "n",
@@ -120,6 +122,13 @@ function orgUrlResponse(request: NextRequest): NextResponse | null {
     const suffix = rest.length ? `/${rest.join("/")}` : "";
     const url = request.nextUrl.clone();
     url.pathname = `/${orgSlug}/connections${suffix}`;
+    return NextResponse.redirect(url, 308);
+  }
+
+  if (second === "templates") {
+    const suffix = rest.length ? `/${rest.join("/")}` : "";
+    const url = request.nextUrl.clone();
+    url.pathname = `/${orgSlug}/tools${suffix}`;
     return NextResponse.redirect(url, 308);
   }
 

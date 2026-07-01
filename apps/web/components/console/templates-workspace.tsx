@@ -12,15 +12,18 @@ type TemplateCard = {
 
 type TemplatesWorkspaceProps = {
   templates: TemplateCard[];
+  title?: string;
+  description?: string;
 };
 
-export function TemplatesWorkspace({ templates }: TemplatesWorkspaceProps) {
+export function TemplatesWorkspace({
+  templates,
+  title = "Templates",
+  description = "Teamspace starter packs — catalog, agents, and page trees applied at onboarding.",
+}: TemplatesWorkspaceProps) {
   return (
     <BrowseWorkspace.Frame testId="templates-workspace">
-      <BrowseWorkspace.Header
-        title="Templates"
-        description="Teamspace starter packs — catalog, agents, and page trees applied at onboarding."
-      />
+      <BrowseWorkspace.Header title={title} description={description} />
       <BrowseWorkspace.Section label="Available templates">
         {templates.length > 0 ? (
           <BrowseWorkspace.Grid columns="two">

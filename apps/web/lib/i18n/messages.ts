@@ -42,6 +42,8 @@ export const en = {
     schedules: "Schedules",
     sandbox: "Sandbox",
     templates: "Templates",
+    tools: "Tools",
+    subagents: "Subagents",
     home: "Home",
     overview: "Overview",
     settings: "Settings",
@@ -50,8 +52,6 @@ export const en = {
     project: "Teamspace",
     signedInAs: "Signed in as",
     primary: "Primary",
-    sectionAgentRuntime: "Agent Runtime",
-    sectionAgentSetting: "Agent Setting",
     sectionContextSetting: "Context Setting",
     executive: "Executive",
     executiveRoadmap: "Roadmap",
@@ -231,6 +231,12 @@ export const en = {
     workflow: "workflow",
     outcome: "Outcome",
     executor: "Executor",
+  },
+  agents: {
+    subagentsDescription:
+      "Delegate focused work to specialized read-only subagents from the main agent.",
+    subagentsComingSoon:
+      "Subagent configuration and monitoring will appear here in a future release.",
   },
   settings: {
     title: "Settings",
@@ -941,6 +947,8 @@ export const ko = {
     schedules: "스케줄",
     sandbox: "샌드박스",
     templates: "템플릿",
+    tools: "도구",
+    subagents: "서브에이전트",
     home: "홈",
     overview: "Overview",
     settings: "설정",
@@ -949,8 +957,6 @@ export const ko = {
     project: "프로젝트",
     signedInAs: "로그인 계정",
     primary: "주요 메뉴",
-    sectionAgentRuntime: "에이전트 실행",
-    sectionAgentSetting: "에이전트 설정",
     sectionContextSetting: "컨텍스트 설정",
     executive: "경영진",
     executiveRoadmap: "로드맵",
@@ -1130,6 +1136,11 @@ export const ko = {
     workflow: "workflow",
     outcome: "결과",
     executor: "실행자",
+  },
+  agents: {
+    subagentsDescription:
+      "메인 에이전트가 읽기 전용 서브에이전트에 집중 작업을 위임합니다.",
+    subagentsComingSoon: "서브에이전트 구성 및 모니터링은 후속 릴리스에서 제공됩니다.",
   },
   settings: {
     title: "설정",
