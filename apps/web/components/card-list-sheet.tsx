@@ -26,10 +26,10 @@ export type CardListSheetSize =
   | "viewport";
 
 const panelWidthClass: Record<Exclude<CardListSheetSize, "viewport">, string> = {
-  default: "w-[min(24rem,100%)]",
-  half: "w-1/2 min-w-[18rem]",
-  inspector: "w-[min(42%,560px)] min-w-[18rem]",
-  wide: "w-2/3 min-w-[20rem] max-w-[48rem]",
+  default: "w-[min(28rem,100%)] min-w-[22rem]",
+  half: "w-1/2 min-w-[22rem]",
+  inspector: "w-[min(42%,640px)] min-w-[24rem]",
+  wide: "w-2/3 min-w-[24rem] max-w-[48rem]",
   full: "w-full",
 };
 
