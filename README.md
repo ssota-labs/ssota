@@ -1,17 +1,146 @@
 # SSOTA
 
-SSOTA turns [Vercel Eve](https://vercel.com/eve)-shaped agent code into an
-editable team workspace with shared graph memory and SaaS-grade user-facing
-pages.
+**Infrastructure for SaaS 2.0: Specialist + Spreadsheet.**
 
-It is built for teams that want the Vercel agent stack, but need a product
-surface where agent systems can be edited, inspected, reused, and operated.
+Classic SaaS is lists plus an embedded playbook — opinionated screens and fixed
+workflows for the average team. The next generation separates the **specialist**
+(who does the work) from the **spreadsheet** (what actually happened). SSOTA
+implements that spreadsheet as a **graph-shaped system of record**, runs
+**domain agents** with your team's playbooks, and renders **review pages** where
+humans approve outcomes — not re-enter every field by hand.
+
+Built for teams shipping vertical work software on the
+[Vercel agent stack](https://vercel.com/eve).
+
+> Specialists do the work. The graph remembers. Pages are for approval.
+
+## The shift
+
+Salesforce-style SaaS is not really "software." It is several lists — accounts,
+opportunities, activities — plus a sales playbook baked into stages, required
+fields, and defaults. That combination works for the average team. It breaks
+down when your process has exceptions, context, and judgment that do not fit the
+product's opinionated model.
+
+Customization markets exist for a reason. Teams either bend the tool, hire
+consultants, or hire a human specialist and let them manage the lists outside
+the system's rules.
+
+SaaS 2.0 inverts the split:
+
+| SaaS 1.0 | SaaS 2.0 |
+| --- | --- |
+| Lists + playbook in one product | Specialist + spreadsheet as separate layers |
+| Human operates the UI | Agent operates the record |
+| Playbook fixed by vendor | Playbook configurable per team |
+| UI is where work happens | UI is where work is reviewed and approved |
+
+SSOTA is infrastructure for that model.
+
+## The SSOTA model
+
+| Layer | SaaS 2.0 role | SSOTA |
+| --- | --- | --- |
+| Spreadsheet | System of record | Typed graph (nodes, edges, catalog) |
+| Specialist | Judgment + execution | Domain agents (instructions, skills, tools) |
+| Surface | Trust + oversight | JSON-render review pages (approve, override, audit) |
+
+SSOTA solves the product problem with two editable runtimes:
+
+1. **Agent runtime configuration** — the team-facing control plane for specialists.
+2. **Context runtime configuration** — the graph-shaped system of record agents
+   use as shared work context, and humans experience through dynamic pages.
+
+The user-visible result is a domain workspace: a roadmap, hiring pipeline,
+customer operations console, legal review workspace, or software delivery hub
+that feels purpose-built, while agents operate on structured context behind it.
+
+## Why a graph, not a spreadsheet
+
+The Specialist + Spreadsheet model is easy to picture as rows and columns.
+CRM, ATS, and ops tools *feel* like spreadsheets with opinions baked in.
+
+That metaphor is directionally right, but it breaks down once agents become the
+primary operator.
+
+### Real work is relational, not tabular
+
+A hiring pipeline is not one list. It is candidates, roles, interviews,
+feedback, offers, and blockers — linked to each other. A product delivery
+workspace is requirements, tasks, artifacts, decisions, and dependencies.
+
+Agents do not only "update a row." They traverse relationships: what blocked
+this task, which decision changed this scope, what artifact proves this claim. A
+graph models that directly. A spreadsheet models it with hidden foreign keys
+and team convention.
+
+### Vertical domains do not fit one table shape
+
+Every vertical has different object types and rules. Sales has accounts and
+opportunities. Engineering has initiatives and PRs. Legal has matters and
+clauses.
+
+SSOTA uses typed catalogs (node types, edge types) so each template can define
+its own domain model without rebuilding a database and UI from scratch every
+time. The graph is a spreadsheet that can grow new lists and links, not a
+single grid.
+
+### Playbooks need context, not just cells
+
+A specialist follows a playbook: qualify this lead, unblock this task, prepare
+this review. Playbooks depend on neighborhood context — what is connected, what
+changed, what is stale.
+
+Graphs give agents queryable work context. Spreadsheets give them cells.
+Agents work better when the system of record matches how work is actually
+connected.
+
+### Humans still need auditability
+
+Even when users stop doing data entry, they still ask: *did this actually
+happen?* *who approved it?* *what was the state before?*
+
+A graph-shaped system of record keeps structured history across linked objects.
+Review pages surface that record in familiar SaaS shapes — tables, boards,
+documents — without forcing humans to operate the raw structure.
+
+### The SSOTA choice
+
+SSOTA keeps the spreadsheet mental model — lists, records, system of truth — but
+implements it as a typed graph:
+
+- **Nodes** — domain objects (the lists)
+- **Edges** — relationships and process links
+- **Catalog** — schema per vertical template
+- **Pages** — human-readable views over the same record
+
+**The graph is the spreadsheet, unfolded.** Specialists operate on the graph.
+Humans approve on pages.
+
+## How work runs
+
+1. A user states intent — in chat, a trigger, or a schedule.
+2. A domain agent applies the playbook — reads the graph, calls tools, updates
+   records, creates tasks.
+3. A human reviews the outcome on a page — approves, rejects, or corrects
+   exceptions.
+4. The graph remains the system of record — pages reflect it, agents write it.
+
+```mermaid
+flowchart LR
+  Intent[User intent] --> Agent[Domain agent]
+  Agent --> Graph[Graph system of record]
+  Graph --> Page[Review page]
+  Page -->|approve / override| Graph
+  Agent --> Tools[Connectors and sandbox]
+  Tools --> Graph
+```
 
 ## Why SSOTA exists
 
-Vercel's Eve introduced a useful shape for agents: instructions, tools, skills,
-connections, schedules, channels, subagents, and a sandbox live together as one
-deployable agent project.
+[Vercel Eve](https://vercel.com/eve) introduced a useful shape for agents:
+instructions, tools, skills, connections, schedules, channels, subagents, and a
+sandbox live together as one deployable agent project.
 
 That is the right runtime shape. But it is still code.
 
@@ -28,7 +157,7 @@ or redeploying every iteration:
 - which tools, skills, connectors, subagents, and sandboxes they can use
 - what model, approval policy, and run policy they use
 
-### 2. Agents need a shared SSOT work context
+### 2. Agents need a shared system of record
 
 Agents also need one workspace context to act inside. SSOTA models that context
 as a typed graph because agent work is relational: requirements connect to
@@ -39,22 +168,10 @@ service data needs to be linked back to the same source of truth.
 - graph scopes that define what each agent can read or write
 - tasks, chat sessions, artifacts, and work history
 - connected data pulled from external services through connectors
-- pages that let humans understand and operate the same system
+- pages that let humans review and approve the same system
 
-Without that shared SSOT context, agent work fragments across tools, chats,
+Without that shared system of record, agent work fragments across tools, chats,
 files, and external services.
-
-## The SSOTA answer
-
-SSOTA solves those two problems with two editable runtimes:
-
-1. **Agent runtime configuration**: the team-facing control plane for agents.
-2. **Context runtime configuration**: a typed graph workspace that agents use as
-   shared SSOT work context and humans experience through dynamic pages.
-
-The user-visible result is a domain workspace: a roadmap, hiring pipeline,
-customer operations console, legal review workspace, or software delivery hub
-that feels purpose-built, while agents operate on structured context behind it.
 
 ## Agent runtime configuration
 
@@ -79,7 +196,7 @@ product iteration as a new agent deployment.
 
 ## Context runtime configuration
 
-The context graph is the shared workspace underneath the agents. It is not the
+The graph is the shared system of record underneath the agents. It is not the
 UI.
 
 Most SaaS products do not show users raw database tables, even when tables are
@@ -89,16 +206,18 @@ dashboards.
 
 SSOTA applies the same idea to graph-backed agent workspaces:
 
-- **Graph for agents**: typed nodes and edges store domain context in a form LLMs
-  can query, traverse, and update.
-- **Pages for humans**: dynamic JSON-render pages turn the graph into familiar
-  SaaS surfaces: tables, documents, boards, workbenches, and dashboards.
-- **Templates for teams**: a template installs the whole agent SaaS surface:
+- **Graph for agents** — typed nodes and edges store domain context in a form
+  LLMs can query, traverse, and update.
+- **Pages for humans** — dynamic JSON-render pages turn the graph into familiar
+  SaaS surfaces: tables, documents, boards, workbenches, and dashboards — focused
+  on review, approval, and exception handling.
+- **Templates for teams** — a template installs the whole vertical product:
   data model, agent runtime, human UI layer, skills, schedules, and sandbox
-  policy for a vertical workflow.
+  policy for a workflow.
 
-The goal is not to show users a graph. The goal is to give agents a graph-shaped
-memory, then render that memory as product-grade pages people can understand.
+The goal is not to make humans operate a graph. The goal is to give agents a
+graph-shaped system of record, then render that record as product-grade review
+surfaces people can trust.
 
 Think of it as an LLM Wiki made operational: structured enough for agents,
 legible enough for teams, and editable as a workspace.
@@ -150,15 +269,30 @@ preview apps, and generated artifacts.
 Pages are dynamic views over the graph. A page defines a JSON-render component
 tree, data bindings, and server-authoritative actions.
 
-Users interact with pages. Agents interact with the graph underneath them.
+Agents write the graph. Humans review outcomes on pages.
 
 ### Templates
 
-Templates package a complete agent SaaS product: graph catalog, runtime
+Templates package a complete vertical work product: graph catalog, runtime
 definitions, page tree, human UI layer, and workflow defaults.
 
 The built-in software development template includes roadmap, research,
 initiatives, design, engineering, build, QA, launch, and retrospective surfaces.
+
+## For builders
+
+SSOTA is for teams building vertical work software, not another opinionated
+SaaS SKU:
+
+- **Declare the domain model** — node and edge catalogs per template
+- **Configure specialists** — agent instructions, skills, tools, connectors,
+  schedules, and approval policy in the workspace
+- **Ship review surfaces** — JSON-render pages with bindings and actions, not
+  bespoke React screens per workflow
+- **Install a template** — graph schema, agents, and pages as one vertical pack
+
+The active product is a development-workflow workspace. The generic action
+runtime from earlier experiments is archived as reference material only.
 
 ## Architecture
 
@@ -179,8 +313,16 @@ SSOTA is Vercel-native by default. Local development can still attach to a
 developer's own Postgres, Supabase, connector credentials, and sandbox-like
 environment for iteration.
 
-The active product is a development-workflow workspace. The generic action
-runtime from earlier experiments is archived as reference material only.
+## Influences
+
+- [SaaS 2.0 — from Software-as-a-Service to Specialist-and-a-Spreadsheet](https://benn.substack.com/p/saas-2-specialist-and-a-spreadsheet)
+  — lists plus embedded playbooks, and the shift toward agent-operated records
+- [Vercel Eve](https://vercel.com/eve) — deployable agent runtime shape
+  (instructions, tools, skills, connections, sandbox)
+
+SSOTA adopts the Specialist + Spreadsheet direction, but implements the
+spreadsheet as a graph-shaped system of record so agents can traverse
+relational work context across vertical domains.
 
 ## Local development
 
