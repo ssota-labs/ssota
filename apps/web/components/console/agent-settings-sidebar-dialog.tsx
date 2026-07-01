@@ -81,13 +81,9 @@ export function AgentSettingsSidebarDialog({
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <div className="flex min-h-0 flex-1">
           <aside className="border-border flex w-[22rem] shrink-0 flex-col border-r bg-muted/20">
-            <div className="flex items-center gap-2 px-3 py-3">
-              <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">
-                {title}
-              </h2>
-            </div>
-            {showSearch ? (
-              <div className="border-border border-b px-3 py-2">
+            <div className="space-y-2 px-3 py-3">
+              <h2 className="min-w-0 truncate text-sm font-semibold">{title}</h2>
+              {showSearch ? (
                 <InputGroup className="h-8">
                   <InputGroupAddon align="inline-start">
                     <MagnifyingGlassIcon className="size-3.5" aria-hidden />
@@ -100,8 +96,8 @@ export function AgentSettingsSidebarDialog({
                     className="text-xs"
                   />
                 </InputGroup>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
             <nav
               className="min-h-0 flex-1 overflow-y-auto p-1.5"
               aria-label={title}
