@@ -63,6 +63,8 @@ test.describe("Agents", () => {
     const nav = addDialog.getByRole("navigation", { name: "Add trigger" });
     await expect(nav.getByText("Schedule", { exact: true })).toBeVisible();
     await expect(nav.getByText("On a schedule")).toBeVisible();
+    await expect(addDialog.getByTestId("schedule-inline-form")).toBeVisible();
+    await expect(addDialog.getByLabel("Every")).toBeVisible();
     await expect(nav.getByText("Slack", { exact: true })).toBeVisible();
     await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
   });

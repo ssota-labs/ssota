@@ -393,12 +393,6 @@ export function AgentSettingsDialogs({
     onOpenDialogChange(null);
   };
 
-  const openScheduleCreator = () => {
-    onEditingScheduleIdChange(null);
-    onOpenDialogChange(null);
-    setScheduleOpen(true);
-  };
-
   const renderToolDetail = () => {
     if (!selectedTool) {
       return (
@@ -540,15 +534,41 @@ export function AgentSettingsDialogs({
       );
     }
 
-    const icon =
-      selectedAddTrigger.action === "schedule" ? (
-        <ClockIcon className="size-5 text-muted-foreground" />
-      ) : selectedAddTrigger.provider ? (
-        <ConnectorBrandIcon
-          provider={selectedAddTrigger.provider}
-          className="size-5"
-        />
-      ) : undefined;
+    if (selectedAddTrigger.action === "schedule") {
+      return (
+        <>
+          <SidebarDetailHeader
+            icon={<ClockIcon className="size-5 text-muted-foreground" />}
+            title={selectedAddTrigger.label}
+            status={
+              <span className="text-muted-foreground text-xs">
+                {selectedAddTrigger.groupLabel}
+              </span>
+            }
+          />
+          <p className="text-muted-foreground mb-4 text-sm">
+            {selectedAddTrigger.description}
+          </p>
+          <ScheduleSheet
+            presentation="inline"
+            open={openDialog === "add-trigger"}
+            onOpenChange={(open) => {
+              if (!open) onOpenDialogChange(null);
+            }}
+            teamspaceId={teamspaceId}
+            accountId={accountId}
+            instructions={[{ id: definition.id, name: definition.name }]}
+          />
+        </>
+      );
+    }
+
+    const icon = selectedAddTrigger.provider ? (
+      <ConnectorBrandIcon
+        provider={selectedAddTrigger.provider}
+        className="size-5"
+      />
+    ) : undefined;
 
     return (
       <>
@@ -567,13 +587,7 @@ export function AgentSettingsDialogs({
         <Button
           type="button"
           data-testid="add-trigger-confirm"
-          onClick={() => {
-            if (selectedAddTrigger.action === "schedule") {
-              openScheduleCreator();
-            } else {
-              addConnectionTrigger(selectedAddTrigger.id);
-            }
-          }}
+          onClick={() => addConnectionTrigger(selectedAddTrigger.id)}
         >
           Add trigger
         </Button>

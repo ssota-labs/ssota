@@ -56,8 +56,8 @@ interface ScheduleSheetProps {
   accountId: string;
   instructions: InstructionOption[];
   schedule?: ScheduleEditTarget;
-  /** Sheet on schedules page; dialog when nested in agent settings. */
-  presentation?: "sheet" | "dialog";
+  /** Sheet on schedules page; dialog when editing from agent card; inline in add-trigger sidebar. */
+  presentation?: "sheet" | "dialog" | "inline";
 }
 
 function inferTargetType(agentDefinitionId?: string): ScheduleTargetType {
@@ -268,6 +268,7 @@ export function ScheduleSheet({
   const showWindow = rec.frequency === "minute" || rec.frequency === "hour";
   const showAtTime = rec.frequency === "day" || rec.frequency === "week";
   const showDays = rec.frequency !== "day";
+  const showAgentPicker = instructions.length > 1;
 
   const title = isEdit ? "Edit trigger" : "Add trigger";
   const subtitle = selectedInstruction
@@ -280,6 +281,9 @@ export function ScheduleSheet({
       form="schedule-sheet-form"
       disabled={isPending || Boolean(preview.error)}
       className={presentation === "sheet" ? "w-full" : undefined}
+      data-testid={
+        presentation === "inline" && !isEdit ? "add-trigger-confirm" : undefined
+      }
     >
       {isEdit ? "Save changes" : "Add trigger"}
     </Button>
@@ -287,15 +291,17 @@ export function ScheduleSheet({
 
   const form = (
     <form id="schedule-sheet-form" className="space-y-5" onSubmit={handleSubmit}>
-        <div className="space-y-2">
-          <Label>Agent</Label>
-          <InstructionPickerSelect
-            instructions={instructions}
-            selectedId={instructionId}
-            onSelect={setInstructionId}
-            disabled={isPending}
-          />
-        </div>
+        {showAgentPicker ? (
+          <div className="space-y-2">
+            <Label>Agent</Label>
+            <InstructionPickerSelect
+              instructions={instructions}
+              selectedId={instructionId}
+              onSelect={setInstructionId}
+              disabled={isPending}
+            />
+          </div>
+        ) : null}
 
         {!advanced && (
           <>
@@ -517,6 +523,16 @@ export function ScheduleSheet({
         {error && <p className="text-sm text-destructive">{error}</p>}
       </form>
   );
+
+  if (presentation === "inline") {
+    if (!open) return null;
+    return (
+      <div className="space-y-4" data-testid="schedule-inline-form">
+        {form}
+        <div className="flex justify-end">{submitButton}</div>
+      </div>
+    );
+  }
 
   if (presentation === "dialog") {
     return (
