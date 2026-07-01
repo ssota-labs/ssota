@@ -30,9 +30,21 @@ customer operations console, legal review workspace, or software delivery hub
 that feels purpose-built, while agents operate on the structured context behind
 it.
 
-## The context graph idea
+## The workspace idea
 
-The context graph is not the UI. It is the substrate behind the UI.
+SSOTA is not only an agent runtime, and it is not a raw graph database. It keeps
+three surfaces editable together:
+
+- **Runtime surface**: who can act, what tools they can use, when they run, and
+  where they execute.
+- **Context surface**: what domain objects exist, how they relate, and what each
+  agent is allowed to read or write.
+- **Human surface**: the pages, tables, documents, and dashboards people use to
+  understand and operate the system.
+
+### Context graph: substrate, not UI
+
+The context graph sits underneath the workspace. It is not the UI.
 
 Most SaaS products do not show users raw database tables, even when tables are
 the system of record. They translate records into domain-specific screens:
