@@ -1,29 +1,38 @@
 # SSOTA
 
-SSOTA is a workspace for building domain agents on the Vercel agent stack.
+SSOTA is an Eve-like agent runtime, a typed workspace context graph, dynamic
+JSON-render pages, task/chat/sandbox runtime, and template control plane in one
+workspace.
 
-Agents work over a structured graph. Humans work through dynamic pages.
+It is built for teams that want the Vercel agent stack, but need a product
+surface where agent systems can be edited, inspected, reused, and operated.
+
+Agents work over a structured graph. Humans work through domain pages.
 
 ## Why SSOTA exists
 
 Vercel's Eve gives agents a useful shape: instructions, tools, skills,
-connections, schedules, channels, and a sandbox live together as one deployable
-agent project.
+connections, schedules, channels, subagents, and a sandbox live together as one
+deployable agent project.
 
 SSOTA turns that shape into an editable workspace.
 
-Instead of editing files and redeploying every time an agent system changes,
-teams can inspect and modify the runtime surface directly:
+Instead of editing files and redeploying every time an agent system changes, a
+team gets a live workspace where they can:
 
-- which agents exist
-- what instructions they follow
-- which tools, skills, connectors, and sandboxes they may use
-- what graph context they can read or write
-- which schedules and tasks cause them to run
-- which pages expose the resulting domain system to humans
+- add a specialist agent without creating a new app
+- change what graph context that agent can read or write
+- bind skills, tools, connectors, schedules, channels, and sandboxes
+- launch work from chat, tasks, schedules, or human approvals
+- turn the same graph into pages that look like a vertical SaaS product
 
 The goal is not to show users a graph. The goal is to give agents a graph-shaped
 memory, then render that memory as product-grade pages people can understand.
+
+The user-visible result is a domain workspace: a roadmap, hiring pipeline,
+customer operations console, legal review workspace, or software delivery hub
+that feels purpose-built, while agents operate on the structured context behind
+it.
 
 ## The core idea
 
@@ -40,8 +49,9 @@ SSOTA applies the same idea to graph-backed agent workspaces:
   can query, traverse, and update.
 - **Pages for humans**: dynamic JSON-render pages turn the graph into familiar
   SaaS surfaces: tables, documents, boards, workbenches, and dashboards.
-- **Templates for teams**: a template installs the graph schema, page tree,
-  agents, skills, schedules, and sandbox policy for a vertical workflow.
+- **Templates for teams**: a template installs the whole agent SaaS surface:
+  data model, agent runtime, human UI layer, skills, schedules, and sandbox
+  policy for a vertical workflow.
 
 Think of it as an LLM Wiki made operational: structured enough for agents,
 legible enough for teams, and editable as a workspace.
@@ -58,6 +68,7 @@ editable workspace.
 | `tools/` | Allowed tool bundles and script tools |
 | `skills/` | Bound skill catalog and on-demand playbooks |
 | `connections/` | Connector accounts and provider permissions |
+| `channels/` | Chat, API, bot, and workflow entry points |
 | `schedules/` | Workspace schedules and heartbeat fan-out |
 | `sandbox/` | Sandbox environments, sources, sessions, snapshots |
 | `subagents/` | Agent definitions and task delegation |
@@ -73,7 +84,7 @@ SSOTA has four layers.
 
 | Layer | Agent-facing form | Human-facing form |
 | --- | --- | --- |
-| Runtime definition | Agents, skills, tools, connectors, schedules, sandboxes | Workspace settings and templates |
+| Runtime definition | Agents, subagents, skills, tools, connectors, channels, schedules, sandboxes | Workspace settings and templates |
 | Context definition | Node catalog, edge catalog, graph scopes | Page definitions and page templates |
 | Agent runtime | Tasks, chat sessions, agent runs | Task board, chat UI, run history |
 | Context runtime | Node instances, edge instances | Dynamic pages, tables, documents, dashboards |
@@ -83,7 +94,8 @@ SSOTA has four layers.
 ### Agents
 
 Agents are runtime definitions: instructions, allowed triggers, tool bundles,
-model policy, sandbox access, connector providers, and graph scope.
+model policy, sandbox access, connector providers, channels, subagents, and
+graph scope.
 
 They can be main conversational agents, specialist task agents, scheduled
 workers, or reference-only guides.
@@ -117,8 +129,8 @@ Users interact with pages. Agents interact with the graph underneath them.
 
 ### Templates
 
-Templates package a complete workspace: graph catalog, agents, page tree, and
-workflow defaults.
+Templates package a complete agent SaaS product: graph catalog, runtime
+definitions, page tree, human UI layer, and workflow defaults.
 
 The built-in software development template includes roadmap, research,
 initiatives, design, engineering, build, QA, launch, and retrospective surfaces.
@@ -128,12 +140,19 @@ initiatives, design, engineering, build, QA, launch, and retrospective surfaces.
 SSOTA is built as a multi-tenant workspace on top of:
 
 - Next.js 16 for the web app
-- Vercel Workflows for durable agent execution
+- Vercel AI Gateway for model routing
+- Vercel Workflow SDK for durable agent execution
+- Vercel Chat SDK patterns for chat and bot surfaces
+- Vercel Connect-style scoped credentials for external systems
 - Vercel Sandbox for isolated work environments
 - Postgres and Drizzle for graph, page, task, chat, and runtime state
 - Zod contracts for typed boundaries
 - JSON-render pages for dynamic human-facing surfaces
 - Composio-backed connectors for external tool access
+
+SSOTA is Vercel-native by default. Local development can still attach to a
+developer's own Postgres, Supabase, connector credentials, and sandbox-like
+environment for iteration.
 
 The active product is a development-workflow workspace. The generic action
 runtime from earlier experiments is archived as reference material only.
