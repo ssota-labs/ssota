@@ -1,9 +1,23 @@
+import { Suspense } from "react";
 import { SchedulesList } from "@/components/schedules/schedules-list";
+import { SchedulesContentLoading } from "@/components/console/browse-content-loading";
 import { resolveOrg } from "@/lib/console/resolve-project";
 import { loadAgentDefinitionsForUi } from "@/lib/console/load-agents-for-ui";
 import { getOrCreateProjectAccount, getSchedulePort } from "@/lib/ports";
 
-export default async function SchedulesPage({
+export default function SchedulesPage({
+  params,
+}: {
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
+}) {
+  return (
+    <Suspense fallback={<SchedulesContentLoading />}>
+      <SchedulesPageInner params={params} />
+    </Suspense>
+  );
+}
+
+async function SchedulesPageInner({
   params,
 }: {
   params: Promise<{ orgSlug: string; teamspaceSlug: string }>;

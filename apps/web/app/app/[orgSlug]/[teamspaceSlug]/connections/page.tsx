@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   composioUserId,
   listComposioConnections,
@@ -7,6 +8,7 @@ import {
   ConnectorsView,
   type ConnectorConnection,
 } from "@/components/connectors/connectors-view";
+import { ConnectorsContentLoading } from "@/components/console/browse-content-loading";
 import { getConnectors } from "@/lib/connect/connectors";
 import { appProjectPath } from "@/lib/console/app-paths";
 import { resolveOrg } from "@/lib/console/resolve-project";
@@ -18,7 +20,19 @@ const toConnection = (c: ComposioConnection): ConnectorConnection => ({
   name: null,
 });
 
-export default async function AppConnectionsPage({
+export default function AppConnectionsPage({
+  params,
+}: {
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
+}) {
+  return (
+    <Suspense fallback={<ConnectorsContentLoading />}>
+      <AppConnectionsPageInner params={params} />
+    </Suspense>
+  );
+}
+
+async function AppConnectionsPageInner({
   params,
 }: {
   params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
@@ -30,8 +44,6 @@ export default async function AppConnectionsPage({
 
   const connectors = getConnectors();
 
-  // End users manage their personal connections only; org-shared connections
-  // (managed by the builder) are used by the agent but not editable here.
   const userConns = await listComposioConnections(
     composioUserId({ orgId: org.id, profileId: ctx.userId }),
   );

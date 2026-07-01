@@ -1,7 +1,17 @@
+import { Suspense } from "react";
 import { ConsoleComingSoon } from "@/components/console/console-coming-soon";
+import { SubagentsContentLoading } from "@/components/console/browse-content-loading";
 import { getTranslations } from "@/lib/i18n/server";
 
-export default async function SubagentsPage() {
+export default function SubagentsPage() {
+  return (
+    <Suspense fallback={<SubagentsContentLoading />}>
+      <SubagentsPageInner />
+    </Suspense>
+  );
+}
+
+async function SubagentsPageInner() {
   const { t } = await getTranslations();
 
   return (

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import {
   composioOrgUserId,
   composioUserId,
@@ -8,6 +9,7 @@ import {
   ConnectorsView,
   type ConnectorConnection,
 } from "@/components/connectors/connectors-view";
+import { ConnectorsContentLoading } from "@/components/console/browse-content-loading";
 import { getConnectors } from "@/lib/connect/connectors";
 import { orgPath } from "@/lib/console/paths";
 import { resolveOrg } from "@/lib/console/resolve-project";
@@ -20,7 +22,19 @@ const toConnection = (c: ComposioConnection): ConnectorConnection => ({
   name: null,
 });
 
-export default async function ConnectionsPage({
+export default function ConnectionsPage({
+  params,
+}: {
+  params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
+}) {
+  return (
+    <Suspense fallback={<ConnectorsContentLoading />}>
+      <ConnectionsPageInner params={params} />
+    </Suspense>
+  );
+}
+
+async function ConnectionsPageInner({
   params,
 }: {
   params: Promise<{ orgSlug: string; teamspaceSlug: string }>;
@@ -30,13 +44,9 @@ export default async function ConnectionsPage({
   const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
   const user = await getCurrentUser();
 
-  // accountId is threaded through hrefs but is no longer the connector tenancy
-  // key — Composio keys connectors by org + profile (personal) or org (shared).
   const account = await getOrCreateProjectAccount(project.id);
   const connectors = getConnectors();
 
-  // Live connection state for both scopes: personal (org+profile) and the
-  // org-shared entity.
   let userConns: ComposioConnection[] = [];
   let orgConns: ComposioConnection[] = [];
   if (user) {
