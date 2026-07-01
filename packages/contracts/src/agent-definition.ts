@@ -31,6 +31,18 @@ export const ToolBundleSchema = z.enum([
 
 export type ToolBundle = z.infer<typeof ToolBundleSchema>;
 
+/** Bundles merged into every runnable agent (reference-only agents excluded at runtime). */
+export const DEFAULT_AGENT_TOOL_BUNDLES: ToolBundle[] = [
+  "graph.read",
+  "tasks.manage",
+  "connectors",
+  "script_tools",
+];
+
+export function mergeAgentToolBundles(bundles: ToolBundle[]): ToolBundle[] {
+  return [...new Set([...DEFAULT_AGENT_TOOL_BUNDLES, ...bundles])];
+}
+
 export const NodeScopeSchema = z.object({
   catalogKeys: z.array(z.string()).optional(),
   nodeIds: z.array(z.string().uuid()).optional(),
@@ -47,6 +59,10 @@ export const RunPolicySchema = z.object({
   allowedTriggers: z.array(AgentTriggerSchema).optional(),
   approvalPolicy: z.enum(["none", "gate", "human"]).optional(),
   timeoutMs: z.number().int().positive().optional(),
+  /** Worker agent definitions linked as delegate targets for this agent. */
+  linkedWorkerAgentIds: z.array(z.string().uuid()).optional(),
+  /** Composio connector providers this agent may use (empty = none selected). */
+  enabledConnectorProviders: z.array(z.string()).optional(),
 });
 
 export type RunPolicy = z.infer<typeof RunPolicySchema>;

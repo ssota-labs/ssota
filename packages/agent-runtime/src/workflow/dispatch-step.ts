@@ -103,6 +103,7 @@ export async function runMainAgentToolStep(
       teamspaceId: ssota.teamspaceId,
       accountId: ssota.accountId,
       profileId: ssota.profileId,
+      enabledConnectorProviders: ssota.enabledConnectorProviders,
     });
   }
 

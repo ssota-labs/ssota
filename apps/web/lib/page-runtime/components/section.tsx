@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@ssota/ui/lib/utils";
+import { useMemo } from "react";
 import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import {
   SectionHeaderActionsContext,
@@ -28,12 +29,16 @@ export function SectionEl({
   children: React.ReactNode;
 }) {
   const [headerEnd, setHeaderEnd] = useSectionHeaderEndState();
+  const headerActionsValue = useMemo(
+    () => ({ setHeaderEnd }),
+    [setHeaderEnd],
+  );
   const hasTitle = Boolean(title);
   const hasSubtitle = Boolean(subtitle);
   const showHeader = hasTitle || hasSubtitle || headerEnd;
 
   return (
-    <SectionHeaderActionsContext value={{ setHeaderEnd }}>
+    <SectionHeaderActionsContext value={headerActionsValue}>
       <section
         className={cn(
           "flex min-h-0 flex-1 flex-col gap-3",

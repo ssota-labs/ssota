@@ -67,6 +67,8 @@ export interface ResolveWorkflowToolsInput {
   sandboxAccess?: SandboxAccessTier;
   /** When false, omit Composio meta-tools even if connectors bundle is present. */
   includeComposioTools?: boolean;
+  /** Composio toolkit slugs enabled for this agent; composio tools only when non-empty. */
+  enabledConnectorProviders?: string[];
 }
 
 export function resolveWorkflowToolNames(
@@ -105,7 +107,8 @@ export function resolveWorkflowToolNames(
 
   const composioOn =
     (input.includeComposioTools ?? Boolean(process.env.COMPOSIO_API_KEY?.trim())) &&
-    bundles.has("connectors");
+    bundles.has("connectors") &&
+    (input.enabledConnectorProviders?.length ?? 0) > 0;
   if (composioOn) {
     for (const n of COMPOSIO_META_TOOL_NAMES) {
       names.add(n as WorkflowToolName);

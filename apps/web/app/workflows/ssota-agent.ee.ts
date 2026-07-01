@@ -49,6 +49,7 @@ export async function runSsotaAgentWorkflow(input: RunSsotaAgentInput) {
       sandboxAccess,
       agentDefinitionId: definition.agentDefinitionId,
       nodeScopes: definition.nodeScopes,
+      enabledConnectorProviders: definition.enabledConnectorProviders,
       trigger,
     },
     definition,

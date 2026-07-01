@@ -1,5 +1,6 @@
 import type { ToolSet } from "ai";
 import type { AgentDefinition, ToolBundle } from "@ssota/contracts";
+import { mergeAgentToolBundles } from "@ssota/contracts";
 import { getAgentDefinitionById } from "@ssota/contracts/agents";
 import { createGraphTools } from "./graph.js";
 import { createTaskTools } from "./tasks.js";
@@ -57,7 +58,7 @@ export function buildAgentTools(
     isMain: boolean;
   },
 ): ToolSet {
-  const bundles = new Set(definition.toolBundles);
+  const bundles = new Set(mergeAgentToolBundles(definition.toolBundles));
   const graph = createGraphTools();
   const tasks = createTaskTools();
   const pages = createPageTools();

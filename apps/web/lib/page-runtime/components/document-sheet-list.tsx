@@ -107,16 +107,19 @@ export function DocumentSheetListEl({
   const close = () => setActiveId(null);
 
   const inSection = useSectionHeaderActions() !== null;
-  const filterBar =
-    filterDefs.length > 0 ? (
-      <DocumentSheetListFilterBar
-        nodes={nodes}
-        filters={filterDefs}
-        state={filterState}
-        currentYear={currentYear}
-        onChange={setFilterState}
-      />
-    ) : null;
+  const filterBar = useMemo(
+    () =>
+      filterDefs.length > 0 ? (
+        <DocumentSheetListFilterBar
+          nodes={nodes}
+          filters={filterDefs}
+          state={filterState}
+          currentYear={currentYear}
+          onChange={setFilterState}
+        />
+      ) : null,
+    [filterDefs, nodes, filterState, currentYear],
+  );
 
   return (
     <div

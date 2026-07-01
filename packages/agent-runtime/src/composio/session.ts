@@ -26,12 +26,15 @@ export interface ToolRouterSessionInput {
    * (`tools: { <toolkit>: { disable } }`). Sourced from connector_tool_settings.
    */
   disabledTools?: Record<string, string[]>;
+  /** When set, only these toolkit slugs are included in the session. */
+  enabledToolkits?: string[];
 }
 
 export interface OrgToolRouterSessionInput {
   orgId: string;
   callbackUrl?: string;
   disabledTools?: Record<string, string[]>;
+  enabledToolkits?: string[];
 }
 
 /** Build the Tool Router `tools` config from per-toolkit disabled slugs. */
@@ -66,7 +69,11 @@ function parseUnconfigurableToolkits(error: unknown): string[] {
 
 async function createSessionForEntity(
   userId: string,
-  opts: { callbackUrl?: string; disabledTools?: Record<string, string[]> },
+  opts: {
+    callbackUrl?: string;
+    disabledTools?: Record<string, string[]>;
+    enabledToolkits?: string[];
+  },
 ) {
   const composio = getComposioClient();
   if (!composio) return null;
@@ -77,7 +84,11 @@ async function createSessionForEntity(
   const manageConnections = opts.callbackUrl
     ? { enable: true, callbackUrl: opts.callbackUrl }
     : true;
-  let toolkits = getSessionToolkitSlugs();
+  const allowed = new Set(getSessionToolkitSlugs());
+  let toolkits = opts.enabledToolkits?.length
+    ? opts.enabledToolkits.filter((slug) => allowed.has(slug))
+    : getSessionToolkitSlugs();
+  if (toolkits.length === 0) return null;
 
   // Resilient: if Composio 400s because a toolkit has no managed auth config and
   // can't auto-create one, drop those toolkits and retry so the rest still work.
@@ -112,7 +123,11 @@ async function createSessionForEntity(
 export async function getToolRouterSession(input: ToolRouterSessionInput) {
   return createSessionForEntity(
     composioUserId({ orgId: input.orgId, profileId: input.profileId }),
-    { callbackUrl: input.callbackUrl, disabledTools: input.disabledTools },
+    {
+      callbackUrl: input.callbackUrl,
+      disabledTools: input.disabledTools,
+      enabledToolkits: input.enabledToolkits,
+    },
   );
 }
 
@@ -121,6 +136,7 @@ export async function getOrgToolRouterSession(input: OrgToolRouterSessionInput) 
   return createSessionForEntity(composioOrgUserId(input.orgId), {
     callbackUrl: input.callbackUrl,
     disabledTools: input.disabledTools,
+    enabledToolkits: input.enabledToolkits,
   });
 }
 

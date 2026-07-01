@@ -135,6 +135,7 @@ export function buildMainWorkflowAgent(
     toolBundles: input.definition.toolBundles,
     isMain: input.definition.isMain,
     includeComposioTools: input.includeComposioTools,
+    enabledConnectorProviders: input.definition.enabledConnectorProviders,
   });
 
   const sandboxNames = resolveSandboxToolNames(

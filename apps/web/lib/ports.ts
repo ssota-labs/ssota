@@ -13,6 +13,7 @@ import {
   createAgentDefinitionPort,
   createSkillPort,
   createSchedulePort,
+  createScriptToolPort,
   createPagePort,
   createPageViewStatePort,
   createConnectorToolSettingsPort,
@@ -125,6 +126,10 @@ export async function getSkillPort(teamspaceId: string) {
 
 export function getSchedulePort(teamspaceId: string, accountId?: string | null) {
   return createSchedulePort(getDb(), { teamspaceId, accountId });
+}
+
+export function getScriptToolPort(teamspaceId: string) {
+  return createScriptToolPort(getDb(), { teamspaceId });
 }
 
 export function getPagePort(teamspaceId: string) {

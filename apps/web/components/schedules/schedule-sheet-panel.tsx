@@ -30,6 +30,8 @@ type ScheduleSheetPanelProps = {
   testId?: string;
   onClose: () => void;
   children: ReactNode;
+  /** Renders in the header row, before the close button. */
+  headerAction?: ReactNode;
   footer?: ReactNode;
 };
 
@@ -49,6 +51,7 @@ export function ScheduleSheetPanel({
   testId = "schedule-sheet-panel",
   onClose,
   children,
+  headerAction,
   footer,
 }: ScheduleSheetPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
@@ -141,7 +144,7 @@ export function ScheduleSheetPanel({
         onMouseDown={handleResizeMouseDown}
         onPointerDown={handleResizePointerDown}
       />
-      <header className="border-border/50 bg-background/20 supports-backdrop-filter:backdrop-blur-md flex shrink-0 items-start gap-3 border-b px-4 py-3">
+      <header className="border-border/50 bg-background/20 supports-backdrop-filter:backdrop-blur-md flex shrink-0 items-center gap-2 border-b px-4 py-3">
         <div className="min-w-0 flex-1 space-y-1">
           <h2
             id="schedule-sheet-title"
@@ -153,6 +156,7 @@ export function ScheduleSheetPanel({
             <p className="text-muted-foreground text-sm">{subtitle}</p>
           ) : null}
         </div>
+        {headerAction}
         <Button
           type="button"
           variant="outline"

@@ -42,6 +42,18 @@ export async function updateAgentDefinitionAction(
     instructions: unknown;
     isMain?: boolean;
     referenceOnly?: boolean;
+    toolBundles?: string[];
+    runPolicy?: {
+      model?: string;
+      allowedTriggers?: string[];
+      linkedWorkerAgentIds?: string[];
+      enabledConnectorProviders?: string[];
+      maxSteps?: number;
+      sandboxPolicy?: "none" | "optional" | "required";
+      approvalPolicy?: "none" | "gate" | "human";
+      timeoutMs?: number;
+    };
+    scriptToolIds?: string[];
   },
 ) {
   const user = await getCurrentUser();
@@ -54,9 +66,19 @@ export async function updateAgentDefinitionAction(
     instructions: BlockNoteContentSchema.parse(input.instructions),
     isMain: input.isMain ?? false,
     referenceOnly: input.referenceOnly ?? false,
+    toolBundles: input.toolBundles,
+    runPolicy: input.runPolicy,
   });
 
   await getAgentDefinitionPort(teamspaceId).upsertDefinition(parsed);
+
+  if (input.scriptToolIds) {
+    const { getScriptToolPort } = await import("@/lib/ports");
+    await getScriptToolPort(teamspaceId).setAgentScriptTools(
+      input.id,
+      input.scriptToolIds,
+    );
+  }
 
   for (const path of withConsolePaths(["/agents"])) {
     revalidatePath(path);

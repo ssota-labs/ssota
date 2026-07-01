@@ -49,6 +49,7 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
       sandboxAccess,
       agentDefinitionId: definition.agentDefinitionId,
       nodeScopes: definition.nodeScopes,
+      enabledConnectorProviders: definition.enabledConnectorProviders,
       trigger,
     },
     definition,

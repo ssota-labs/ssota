@@ -33,11 +33,25 @@ describe("resolveWorkflowToolNames", () => {
       toolBundles: def.toolBundles,
       isMain: def.isMain,
       includeComposioTools: true,
+      enabledConnectorProviders: ["github"],
     });
     expect(names).toContain("delegate");
     expect(names).toContain("spawn_task");
     for (const composioName of COMPOSIO_META_TOOL_NAMES) {
       expect(names).toContain(composioName);
+    }
+  });
+
+  it("omits composio tools when no connectors are enabled for the agent", () => {
+    const def = mainAgentRuntimeDefinition();
+    const names = resolveWorkflowToolNames({
+      toolBundles: def.toolBundles,
+      isMain: def.isMain,
+      includeComposioTools: true,
+      enabledConnectorProviders: [],
+    });
+    for (const composioName of COMPOSIO_META_TOOL_NAMES) {
+      expect(names).not.toContain(composioName);
     }
   });
 
@@ -93,7 +107,10 @@ describe("main workflow-agent tool surface", () => {
   });
 
   it("includes composio meta-tools when connectors bundle is enabled", async () => {
-    const def = mainAgentRuntimeDefinition();
+    const def = {
+      ...mainAgentRuntimeDefinition(),
+      enabledConnectorProviders: ["github"],
+    };
     const calls: string[] = [];
     const agent = buildMainWorkflowAgent({
       ssota: { teamspaceId: "p", organizationId: "o", runId: "r" },
