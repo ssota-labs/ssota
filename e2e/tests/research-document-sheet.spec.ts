@@ -50,7 +50,7 @@ test.describe("Research document sheet", () => {
     await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
     await expect(
       page.getByTestId("document-sheet-editor").getByText(
-        "If research pages use DocumentSheetList",
+        "If research pages use DocumentCardListSheet",
         { exact: false },
       ),
     ).toBeVisible({ timeout: 15_000 });
