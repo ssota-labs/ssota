@@ -25,22 +25,21 @@ export type CardListSheetSize =
   | "full"
   | "viewport";
 
-const panelWidthClass: Record<Exclude<CardListSheetSize, "viewport">, string> = {
-  default: "w-[min(28rem,100%)] min-w-[22rem]",
-  half: "w-1/2 min-w-[22rem]",
-  inspector: "w-[min(42%,640px)] min-w-[24rem]",
-  wide: "w-2/3 min-w-[24rem] max-w-[48rem]",
-  full: "w-full",
-};
+/** Docked sheet width — single rule (sheetSize does not change width except viewport). */
+const DOCKED_SHEET_MIN_WIDTH_PX = 24 * 16;
+const DOCKED_SHEET_MAX_WIDTH_PX = 640;
+const dockedSheetWidthClass =
+  "w-[min(42%,640px)] min-w-[24rem] max-w-[640px]";
 
 const isViewportSheet = (sheetSize: CardListSheetSize) => sheetSize === "viewport";
 
-function readMaxPanelWidth(panel: HTMLElement): number {
+function readDockedSheetMaxWidth(panel: HTMLElement): number {
   const parent = panel.offsetParent;
-  if (parent instanceof HTMLElement) {
-    return Math.max(parent.clientWidth - 8, panel.getBoundingClientRect().width);
-  }
-  return window.innerWidth * 0.95;
+  const parentCap =
+    parent instanceof HTMLElement
+      ? parent.clientWidth - 8
+      : window.innerWidth * 0.95;
+  return Math.min(DOCKED_SHEET_MAX_WIDTH_PX, parentCap);
 }
 
 // --- List (card rows trigger) ---
@@ -229,15 +228,10 @@ function SheetRoot({
   const generatedTitleId = useId();
   const titleId = titleIdProp ?? generatedTitleId;
   const panelRef = useRef<HTMLDivElement>(null);
-  const minWidthPxRef = useRef<number | null>(null);
   const [widthPx, setWidthPx] = useState<number | null>(null);
 
   useLayoutEffect(() => {
     if (isViewportSheet(sheetSize)) return;
-    const panel = panelRef.current;
-    if (!panel) return;
-
-    minWidthPxRef.current = panel.getBoundingClientRect().width;
     setWidthPx(null);
   }, [sheetSize, open]);
 
@@ -246,11 +240,8 @@ function SheetRoot({
     if (!panel) return;
 
     const startWidth = panel.getBoundingClientRect().width;
-    if (minWidthPxRef.current === null) {
-      minWidthPxRef.current = startWidth;
-    }
-    const minWidth = minWidthPxRef.current;
-    const maxWidth = readMaxPanelWidth(panel);
+    const minWidth = DOCKED_SHEET_MIN_WIDTH_PX;
+    const maxWidth = readDockedSheetMaxWidth(panel);
 
     const onMove = (moveEvent: MouseEvent | globalThis.PointerEvent) => {
       const delta = startX - moveEvent.clientX;
@@ -307,7 +298,7 @@ function SheetRoot({
                 fullHeight
                   ? "inset-y-0 right-0 h-full rounded-l-xl border-y-0 border-r-0"
                   : "inset-y-2 right-2 rounded-xl",
-                widthPx === null ? panelWidthClass[sheetSize] : "min-w-0",
+                widthPx === null ? dockedSheetWidthClass : "min-w-0 max-w-[640px]",
               ),
           "bg-background/50 shadow-lg shadow-black/5",
           "supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150",
