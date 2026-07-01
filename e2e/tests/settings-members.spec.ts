@@ -11,7 +11,7 @@ test.describe("Settings members", () => {
   test("shows members page with owner row", async ({ page }) => {
     await expect(page.getByRole("heading", { name: "Members", level: 1 })).toBeVisible();
     await expect(page.getByRole("button", { name: "Invite member" })).toBeVisible();
-    await expect(page.getByText("smoke@ssota.test")).toBeVisible();
+    await expect(page.getByText("smoke@ssota.ai")).toBeVisible();
     await expect(page.getByText("Owner")).toBeVisible();
   });
 

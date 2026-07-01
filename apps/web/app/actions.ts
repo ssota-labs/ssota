@@ -48,6 +48,13 @@ export async function updateAgentDefinitionAction(
       allowedTriggers?: string[];
       linkedWorkerAgentIds?: string[];
       enabledConnectorProviders?: string[];
+      connectionTriggers?: Array<{
+        id: string;
+        provider: string;
+        kind: string;
+        label: string;
+        enabled?: boolean;
+      }>;
       maxSteps?: number;
       sandboxPolicy?: "none" | "optional" | "required";
       approvalPolicy?: "none" | "gate" | "human";

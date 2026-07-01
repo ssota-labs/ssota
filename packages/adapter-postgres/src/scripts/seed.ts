@@ -214,7 +214,10 @@ async function seedSmokeUser(
 
   const { data: existing } = await admin.auth.admin.listUsers();
   const found = existing.users.find((user) => user.email === SMOKE_EMAIL);
-  if (found) return found.id;
+  if (found) {
+    await admin.auth.admin.updateUserById(found.id, { password: SMOKE_PASSWORD });
+    return found.id;
+  }
 
   const { data, error } = await admin.auth.admin.createUser({
     email: SMOKE_EMAIL,

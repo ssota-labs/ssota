@@ -29,9 +29,9 @@ export const TOOL_BUNDLE_LABELS: Record<ToolBundle, string> = {
 };
 
 export const TRIGGER_LABELS: Record<AgentTrigger, string> = {
-  chat: "Web chat (Vercel Chat)",
+  chat: "Web chat",
   chatbot: "Chatbot (Slack / Discord / Telegram)",
-  task: "Task dispatch",
+  task: "When assigned to a task",
   schedule: "Schedules",
   heartbeat: "Heartbeat",
   manual: "Manual run",

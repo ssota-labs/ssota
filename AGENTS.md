@@ -292,7 +292,7 @@ Phase 1 구현 계획(`ssota_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0�
 | Integration | `pnpm test --filter @ssota/adapter-supabase` | **smoke 계정** | graph CRUD, RLS deny-all, initiative bundle, seed 무결성 |
 | E2E | `pnpm e2e` | **smoke 계정** | Console onboarding·tasks (graph UI E2E는 PR 4+) |
 
-- **Smoke 계정**: `smoke@ssota.test` — 시드 단계에서 Auth Admin API로 생성되는 전용 테스트 사용자. integration·e2e는 반드시 이 계정으로만 인증한다. 실제 사용자 계정이나 service key 우회로 테스트하지 않는다.
+- **Smoke 계정**: `smoke@ssota.ai` — 시드 단계에서 Auth Admin API로 생성되는 전용 테스트 사용자. integration·e2e는 반드시 이 계정으로만 인증한다. 실제 사용자 계정이나 service key 우회로 테스트하지 않는다.
 - Integration·e2e 실행 전 `supabase start`가 떠 있어야 한다. **로컬**에서는 `pnpm e2e:prepare` (= supabase start + migrate + seed). **Cursor Cloud**에서는 세션마다 `pnpm cloud:prepare`로 Docker·Supabase·시드를 한 번에 부트스트랩한다 (`scripts/cloud-bootstrap.sh`). `pnpm e2e` global setup은 smoke 로그인 실패 시 migrate+seed만 자동 재시도한다 (`e2e/global-setup.ts`) — Cloud에서 Docker가 안 떠 있으면 `cloud:prepare`가 필요하다.
 - E2E 로그인은 `e2e/helpers/auth.ts`의 `loginAsSmoke()`를 사용한다 — 헤더의「로그인」링크와 폼 submit 버튼 이름이 같아 `getByRole('button', { name: '로그인' })` 단독 사용 시 strict mode violation이 난다.
 - 새 강제 규칙·포트를 추가하면 **거부 케이스 테스트가 필수다.** 통과 케이스만 있는 PR은 불완전하다.
@@ -556,7 +556,7 @@ pnpm e2e:emulate          # emulate OAuth E2E (별도 Playwright config)
 | 어댑터 통합 | `pnpm test --filter @ssota/adapter-postgres` | `cloud:prepare` |
 | E2E + artifacts | `pnpm e2e:ci` | `cloud:prepare` |
 
-스모크 계정: `smoke@ssota.test` / `smoke-test-password-123` (시드 생성).
+스모크 계정: `smoke@ssota.ai` / `1234` (시드 생성).
 
 > 어댑터 패키지는 `@ssota/adapter-postgres`다 (구 `@ssota/adapter-supabase` 명칭 아님). `--filter` 시 `adapter-postgres`를 쓴다.
 

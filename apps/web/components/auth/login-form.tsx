@@ -56,7 +56,6 @@ export function LoginForm({
               name="password"
               placeholder="password"
               required
-              minLength={8}
               autoComplete="current-password"
             />
           </div>

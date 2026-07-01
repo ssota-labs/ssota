@@ -1,5 +1,5 @@
-export const SMOKE_EMAIL = "smoke@ssota.test";
-export const SMOKE_PASSWORD = "smoke-test-password-123";
+export const SMOKE_EMAIL = "smoke@ssota.ai";
+export const SMOKE_PASSWORD = "1234";
 /** Org member (non-owner) for billing auth E2E (B7, G2). */
 export const SMOKE_MEMBER_EMAIL = "member@ssota.test";
 export const SMOKE_MEMBER_PASSWORD = "smoke-test-password-123";

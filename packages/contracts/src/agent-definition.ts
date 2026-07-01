@@ -51,6 +51,17 @@ export const NodeScopeSchema = z.object({
 
 export type NodeScope = z.infer<typeof NodeScopeSchema>;
 
+/** Connection-based trigger (Slack, Notion, etc.) configured per agent. */
+export const ConnectionTriggerSchema = z.object({
+  id: z.string().min(1),
+  provider: z.string().min(1),
+  kind: z.string().min(1),
+  label: z.string().min(1),
+  enabled: z.boolean().default(true),
+});
+
+export type ConnectionTrigger = z.infer<typeof ConnectionTriggerSchema>;
+
 export const RunPolicySchema = z.object({
   model: z.string().optional(),
   maxSteps: z.number().int().positive().optional(),
@@ -63,6 +74,8 @@ export const RunPolicySchema = z.object({
   linkedWorkerAgentIds: z.array(z.string().uuid()).optional(),
   /** Composio connector providers this agent may use (empty = none selected). */
   enabledConnectorProviders: z.array(z.string()).optional(),
+  /** External connection event triggers (Slack, Notion, etc.). */
+  connectionTriggers: z.array(ConnectionTriggerSchema).optional(),
 });
 
 export type RunPolicy = z.infer<typeof RunPolicySchema>;

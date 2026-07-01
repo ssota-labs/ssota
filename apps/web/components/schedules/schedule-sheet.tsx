@@ -56,8 +56,10 @@ interface ScheduleSheetProps {
   accountId: string;
   instructions: InstructionOption[];
   schedule?: ScheduleEditTarget;
-  /** Sheet on schedules page; dialog when nested in agent settings. */
-  presentation?: "sheet" | "dialog";
+  /** Sheet on schedules page; dialog when editing from agent card; inline in add-trigger sidebar. */
+  presentation?: "sheet" | "dialog" | "inline";
+  /** Where the submit button renders for inline presentation (default inline). */
+  inlineSubmitPlacement?: "inline" | "footer";
 }
 
 function inferTargetType(agentDefinitionId?: string): ScheduleTargetType {
@@ -111,6 +113,7 @@ export function ScheduleSheet({
   instructions,
   schedule,
   presentation = "sheet",
+  inlineSubmitPlacement = "inline",
 }: ScheduleSheetProps) {
   const router = useRouter();
   const isEdit = Boolean(schedule);
@@ -268,34 +271,45 @@ export function ScheduleSheet({
   const showWindow = rec.frequency === "minute" || rec.frequency === "hour";
   const showAtTime = rec.frequency === "day" || rec.frequency === "week";
   const showDays = rec.frequency !== "day";
+  const showAgentPicker = instructions.length > 1;
 
   const title = isEdit ? "Edit trigger" : "Add trigger";
   const subtitle = selectedInstruction
     ? selectedInstruction.name
     : "Choose an agent and set a recurring schedule.";
 
+  const formId =
+    presentation === "inline" && schedule
+      ? `schedule-sheet-form-${schedule.id}`
+      : "schedule-sheet-form";
+
   const submitButton = (
     <Button
       type="submit"
-      form="schedule-sheet-form"
+      form={formId}
       disabled={isPending || Boolean(preview.error)}
       className={presentation === "sheet" ? "w-full" : undefined}
+      data-testid={
+        presentation === "inline" && !isEdit ? "add-trigger-confirm" : undefined
+      }
     >
       {isEdit ? "Save changes" : "Add trigger"}
     </Button>
   );
 
   const form = (
-    <form id="schedule-sheet-form" className="space-y-5" onSubmit={handleSubmit}>
-        <div className="space-y-2">
-          <Label>Agent</Label>
-          <InstructionPickerSelect
-            instructions={instructions}
-            selectedId={instructionId}
-            onSelect={setInstructionId}
-            disabled={isPending}
-          />
-        </div>
+    <form id={formId} className="space-y-5" onSubmit={handleSubmit}>
+        {showAgentPicker ? (
+          <div className="space-y-2">
+            <Label>Agent</Label>
+            <InstructionPickerSelect
+              instructions={instructions}
+              selectedId={instructionId}
+              onSelect={setInstructionId}
+              disabled={isPending}
+            />
+          </div>
+        ) : null}
 
         {!advanced && (
           <>
@@ -517,6 +531,18 @@ export function ScheduleSheet({
         {error && <p className="text-sm text-destructive">{error}</p>}
       </form>
   );
+
+  if (presentation === "inline") {
+    if (!open) return null;
+    return (
+      <div className="space-y-4" data-testid="schedule-inline-form">
+        {form}
+        {inlineSubmitPlacement === "inline" ? (
+          <div className="flex justify-end">{submitButton}</div>
+        ) : null}
+      </div>
+    );
+  }
 
   if (presentation === "dialog") {
     return (

@@ -1,10 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarBlankIcon,
+  AtIcon,
   ChatsCircleIcon,
   ClockIcon,
   CpuIcon,
@@ -14,7 +14,17 @@ import {
 import type { Block } from "@blocknote/core";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+} from "@ssota/ui/components/ui/popover";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import {
+  ScheduleSheet,
+  type ScheduleEditTarget,
+} from "@/components/schedules/schedule-sheet";
 import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { AgentSkillBindings } from "@/components/console/skills-workspace";
@@ -32,10 +42,7 @@ import {
 } from "@/components/console/agent-settings-dialogs";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
-import {
-  TRIGGER_LABELS,
-  mergeToolBundles,
-} from "@/lib/console/agent-tool-catalog";
+import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
@@ -61,12 +68,8 @@ type AgentSettingsSheetProps = {
   onClose: () => void;
 };
 
-const CARD_TRIGGER_TYPES: AgentTrigger[] = ["chatbot"];
-
-const TRIGGER_ICONS: Partial<Record<AgentTrigger, typeof ChatsCircleIcon>> = {
-  chatbot: ChatsCircleIcon,
-  schedule: CalendarBlankIcon,
-};
+/** Default triggers always shown on the card (not added via sidebar). */
+const DEFAULT_CARD_TRIGGERS: AgentTrigger[] = ["chat", "task"];
 
 function buildDraft(
   definition: AgentDefinition,
@@ -76,10 +79,13 @@ function buildDraft(
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
+  const allowedTriggers = definition.runPolicy.allowedTriggers ?? [];
   return {
     instructions: definition.instructions,
     toolBundles: mergeToolBundles(definition.toolBundles),
-    allowedTriggers: definition.runPolicy.allowedTriggers ?? [],
+    allowedTriggers: [
+      ...new Set([...allowedTriggers, ...DEFAULT_CARD_TRIGGERS]),
+    ],
     model: definition.runPolicy.model ?? DEFAULT_MODEL_ID,
     scriptToolIds,
     linkedWorkerAgentIds: definition.runPolicy.linkedWorkerAgentIds ?? [],
@@ -88,6 +94,7 @@ function buildDraft(
     scheduleEnabledById: Object.fromEntries(
       agentSchedules.map((s) => [s.id, s.enabled]),
     ),
+    connectionTriggers: definition.runPolicy.connectionTriggers ?? [],
   };
 }
 
@@ -110,6 +117,10 @@ export function AgentSettingsSheet({
   const [openDialog, setOpenDialog] = useState<AgentSettingsDialogKind | null>(
     null,
   );
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(
+    null,
+  );
+  const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -119,6 +130,21 @@ export function AgentSettingsSheet({
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
+
+  const editingSchedule = editingScheduleId
+    ? agentSchedules.find((s) => s.id === editingScheduleId)
+    : undefined;
+
+  const scheduleEditTarget: ScheduleEditTarget | undefined = editingSchedule
+    ? {
+        id: editingSchedule.id,
+        agentDefinitionId: editingSchedule.agentDefinitionId,
+        targetType: "agent",
+        cronExpression: editingSchedule.cronExpression,
+        timezone: editingSchedule.timezone,
+        enabled: editingSchedule.enabled,
+      }
+    : undefined;
 
   const patchDraft = (patch: Partial<AgentSettingsDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
@@ -132,9 +158,11 @@ export function AgentSettingsSheet({
   }, []);
 
   const toggleTrigger = (trigger: AgentTrigger, enabled: boolean) => {
+    if (trigger === "chat") return;
     const next = new Set(draft.allowedTriggers);
     if (enabled) next.add(trigger);
     else next.delete(trigger);
+    next.add("chat");
     patchDraft({ allowedTriggers: [...next] });
   };
 
@@ -144,6 +172,14 @@ export function AgentSettingsSheet({
         ...draft.scheduleEnabledById,
         [scheduleId]: enabled,
       },
+    });
+  };
+
+  const toggleConnectionTrigger = (triggerId: string, enabled: boolean) => {
+    patchDraft({
+      connectionTriggers: draft.connectionTriggers.map((t) =>
+        t.id === triggerId ? { ...t, enabled } : t,
+      ),
     });
   };
 
@@ -176,11 +212,24 @@ export function AgentSettingsSheet({
     draft.enabledConnectorProviders.includes(c.provider),
   );
 
+  const chatLabel = `New chat with ${definition.name}`;
+
   const handleSave = () => {
     startTransition(async () => {
       const bundles = mergeToolBundles(draft.toolBundles);
       if (draft.linkedWorkerAgentIds.length > 0 && !bundles.includes("delegate")) {
         bundles.push("delegate");
+      }
+
+      const allowedTriggers = [...new Set([...draft.allowedTriggers, "chat"])];
+      if (agentSchedules.length > 0 && !allowedTriggers.includes("schedule")) {
+        allowedTriggers.push("schedule");
+      }
+      if (
+        draft.connectionTriggers.some((t) => t.enabled) &&
+        !allowedTriggers.includes("chatbot")
+      ) {
+        allowedTriggers.push("chatbot");
       }
 
       await updateAgentDefinitionAction(teamspaceId, {
@@ -194,9 +243,10 @@ export function AgentSettingsSheet({
         runPolicy: {
           ...definition.runPolicy,
           model: draft.model,
-          allowedTriggers: [...new Set([...draft.allowedTriggers, "task"])],
+          allowedTriggers,
           linkedWorkerAgentIds: draft.linkedWorkerAgentIds,
           enabledConnectorProviders: draft.enabledConnectorProviders,
+          connectionTriggers: draft.connectionTriggers,
         },
         scriptToolIds: draft.scriptToolIds,
       });
@@ -255,15 +305,14 @@ export function AgentSettingsSheet({
             title="Triggers"
             description="When should this agent run?"
             testId="agent-settings-triggers-card"
-            onOpen={() => setOpenDialog("triggers")}
             footer={
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 className="w-fit justify-start gap-2"
-                data-testid="agent-triggers-add-schedule"
-                onClick={() => setOpenDialog("add-schedule")}
+                data-testid="agent-triggers-add"
+                onClick={() => setOpenDialog("add-trigger")}
               >
                 <PlusIcon className="size-3.5" aria-hidden />
                 Add trigger
@@ -271,27 +320,46 @@ export function AgentSettingsSheet({
             }
           >
             <AgentSettingItems>
-              {CARD_TRIGGER_TYPES.map((trigger) => {
-                const Icon = TRIGGER_ICONS[trigger] ?? ChatsCircleIcon;
-                const enabled = draft.allowedTriggers.includes(trigger);
-                return (
-                  <AgentSettingItem
-                    key={trigger}
-                    icon={<Icon className="size-3.5 text-muted-foreground" />}
-                    title={TRIGGER_LABELS[trigger]}
-                    trailing={
-                      <Switch
-                        checked={enabled}
-                        onCheckedChange={(checked) =>
-                          toggleTrigger(trigger, checked)
-                        }
-                        data-testid={`agent-trigger-${trigger}`}
-                        aria-label={TRIGGER_LABELS[trigger]}
-                      />
-                    }
+              <AgentSettingItem
+                testId="agent-trigger-chat"
+                icon={<ChatsCircleIcon className="size-3.5 text-muted-foreground" />}
+                title={chatLabel}
+              />
+              <AgentSettingItem
+                icon={<AtIcon className="size-3.5 text-muted-foreground" />}
+                title={TRIGGER_LABELS.task}
+                trailing={
+                  <Switch
+                    checked={draft.allowedTriggers.includes("task")}
+                    onCheckedChange={(checked) => toggleTrigger("task", checked)}
+                    data-testid="agent-trigger-task"
+                    aria-label={TRIGGER_LABELS.task}
                   />
-                );
-              })}
+                }
+              />
+              {draft.connectionTriggers.map((trigger) => (
+                <AgentSettingItem
+                  key={trigger.id}
+                  icon={
+                    <ConnectorBrandIcon
+                      provider={trigger.provider}
+                      className="size-3.5"
+                    />
+                  }
+                  title={trigger.label}
+                  subtitle={trigger.provider}
+                  trailing={
+                    <Switch
+                      checked={trigger.enabled}
+                      onCheckedChange={(checked) =>
+                        toggleConnectionTrigger(trigger.id, checked)
+                      }
+                      data-testid={`agent-connection-trigger-${trigger.id}`}
+                      aria-label={trigger.label}
+                    />
+                  }
+                />
+              ))}
               {agentSchedules.map((schedule) => {
                 const rec = cronToRecurrence(
                   schedule.cronExpression,
@@ -305,11 +373,16 @@ export function AgentSettingsSheet({
                 return (
                   <AgentSettingItem
                     key={schedule.id}
+                    className="group"
+                    testId={`agent-schedule-edit-${schedule.id}`}
+                    onPress={(element) => {
+                      schedulePopoverAnchorRef.current = element;
+                      setEditingScheduleId(schedule.id);
+                    }}
                     icon={
                       <ClockIcon className="size-3.5 text-muted-foreground" />
                     }
                     title={label}
-                    subtitle="Cron schedule"
                     trailing={
                       <Switch
                         checked={enabled}
@@ -425,6 +498,41 @@ export function AgentSettingsSheet({
         </div>
       </CardListSheetPanel>
 
+      <Popover
+        open={editingScheduleId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingScheduleId(null);
+        }}
+      >
+        <PopoverContent
+          anchor={schedulePopoverAnchorRef}
+          side="left"
+          align="start"
+          sideOffset={8}
+          className="w-[min(32rem,92vw)] max-h-[min(80vh,40rem)] overflow-y-auto p-4"
+          data-testid="schedule-edit-popover"
+        >
+          {scheduleEditTarget ? (
+            <>
+              <PopoverHeader className="mb-3 p-0">
+                <PopoverTitle>Edit trigger</PopoverTitle>
+              </PopoverHeader>
+              <ScheduleSheet
+                presentation="inline"
+                open
+                onOpenChange={(open) => {
+                  if (!open) setEditingScheduleId(null);
+                }}
+                teamspaceId={teamspaceId}
+                accountId={accountId}
+                instructions={[{ id: definition.id, name: definition.name }]}
+                schedule={scheduleEditTarget}
+              />
+            </>
+          ) : null}
+        </PopoverContent>
+      </Popover>
+
       <AgentSettingsDialogs
         definition={definition}
         draft={draft}
@@ -433,7 +541,6 @@ export function AgentSettingsSheet({
         scriptTools={scriptTools}
         connectors={connectors}
         connections={connections}
-        schedules={schedules}
         teamspaceId={teamspaceId}
         accountId={accountId}
         openDialog={openDialog}

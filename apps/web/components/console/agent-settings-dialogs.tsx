@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   CalendarBlankIcon,
-  ChatsCircleIcon,
   ClockIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
-import type { AgentDefinition, AgentTrigger, ToolBundle } from "@ssota/contracts";
+import type {
+  AgentDefinition,
+  ConnectionTrigger,
+  ToolBundle,
+} from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
   Dialog,
@@ -34,28 +37,34 @@ import {
   BASE_TOOL_BUNDLES,
   OPTIONAL_TOOL_BUNDLES,
   TOOL_BUNDLE_LABELS,
-  TRIGGER_LABELS,
   isWorkerAgentId,
 } from "@/lib/console/agent-tool-catalog";
-import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
-import { ScheduleSheet } from "@/components/schedules/schedule-sheet";
-import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
+import {
+  ADDABLE_TRIGGER_GROUPS,
+  filterAddableTriggerGroups,
+  findAddableTrigger,
+} from "@/lib/console/agent-trigger-catalog";
+import {
+  ScheduleSheet,
+} from "@/components/schedules/schedule-sheet";
 import {
   AgentSettingsSidebarDialog,
   SidebarDetailDoneButton,
   SidebarDetailHeader,
+  type SidebarListGroup,
   type SidebarListItem,
 } from "@/components/console/agent-settings-sidebar-dialog";
 
 export type AgentSettingsDraft = {
   instructions: AgentDefinition["instructions"];
   toolBundles: ToolBundle[];
-  allowedTriggers: AgentTrigger[];
+  allowedTriggers: NonNullable<AgentDefinition["runPolicy"]["allowedTriggers"]>;
   model: string;
   scriptToolIds: string[];
   linkedWorkerAgentIds: string[];
   enabledConnectorProviders: string[];
   scheduleEnabledById: Record<string, boolean>;
+  connectionTriggers: ConnectionTrigger[];
 };
 
 type AgentSettingsDialogsProps = {
@@ -66,35 +75,19 @@ type AgentSettingsDialogsProps = {
   scriptTools: Array<{ id: string; key: string; name: string }>;
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
-  schedules: AgentScheduleSummary[];
   teamspaceId: string;
   accountId: string;
   openDialog: AgentSettingsDialogKind | null;
   onOpenDialogChange: (kind: AgentSettingsDialogKind | null) => void;
 };
 
-export type AgentSettingsDialogKind =
-  | "triggers"
-  | "tools"
-  | "model"
-  | "add-schedule";
+export type AgentSettingsDialogKind = "add-trigger" | "tools" | "model";
 
 type ToolEntry =
   | { kind: "connector"; id: string; provider: string; label: string }
   | { kind: "script"; id: string; toolId: string; label: string; key: string }
   | { kind: "worker"; id: string; workerId: string; label: string }
   | { kind: "bundle"; id: string; bundle: ToolBundle; label: string };
-
-type TriggerEntry =
-  | { kind: "trigger"; id: string; trigger: AgentTrigger }
-  | { kind: "cron"; id: string; scheduleId: string; label: string };
-
-const TRIGGER_DESCRIPTIONS: Partial<Record<AgentTrigger, string>> = {
-  chatbot:
-    "Run when users message connected bots in Slack, Discord, or Telegram.",
-  schedule:
-    "Allow recurring cron runs. Add each schedule below once enabled.",
-};
 
 function matchesSearch(label: string, query: string, extra?: string) {
   const q = query.trim().toLowerCase();
@@ -113,30 +106,17 @@ export function AgentSettingsDialogs({
   scriptTools,
   connectors,
   connections,
-  schedules,
   teamspaceId,
   accountId,
   openDialog,
   onOpenDialogChange,
 }: AgentSettingsDialogsProps) {
-  const [scheduleOpen, setScheduleOpen] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
-  const [selectedTriggerId, setSelectedTriggerId] = useState<string | null>(
-    null,
-  );
+  const [selectedAddTriggerId, setSelectedAddTriggerId] = useState<
+    string | null
+  >(null);
   const [toolSearch, setToolSearch] = useState("");
-  const [triggerSearch, setTriggerSearch] = useState("");
-
-  useEffect(() => {
-    if (openDialog === "add-schedule") {
-      setScheduleOpen(true);
-      onOpenDialogChange(null);
-    }
-  }, [openDialog, onOpenDialogChange]);
-
-  const agentSchedules = schedules.filter(
-    (s) => s.agentDefinitionId === definition.id,
-  );
+  const [addTriggerSearch, setAddTriggerSearch] = useState("");
 
   const connectedProviders = useMemo(() => {
     const set = new Set<string>();
@@ -144,6 +124,26 @@ export function AgentSettingsDialogs({
     for (const c of connections.org) set.add(c.connector);
     return set;
   }, [connections]);
+
+  const addedConnectionTriggerIds = useMemo(
+    () => new Set(draft.connectionTriggers.map((t) => t.id)),
+    [draft.connectionTriggers],
+  );
+
+  const filteredAddTriggerGroups = useMemo(
+    () =>
+      filterAddableTriggerGroups(
+        ADDABLE_TRIGGER_GROUPS,
+        addTriggerSearch,
+        addedConnectionTriggerIds,
+      ),
+    [addTriggerSearch, addedConnectionTriggerIds],
+  );
+
+  const addTriggerFlatItems = useMemo(
+    () => filteredAddTriggerGroups.flatMap((g) => g.items),
+    [filteredAddTriggerGroups],
+  );
 
   const toolEntries = useMemo((): ToolEntry[] => {
     const entries: ToolEntry[] = [
@@ -187,43 +187,6 @@ export function AgentSettingsDialogs({
     [toolEntries, toolSearch],
   );
 
-  const triggerEntries = useMemo((): TriggerEntry[] => {
-    const base: TriggerEntry[] = [
-      { kind: "trigger", id: "trigger:chatbot", trigger: "chatbot" },
-      { kind: "trigger", id: "trigger:schedule", trigger: "schedule" },
-    ];
-    if (draft.allowedTriggers.includes("schedule")) {
-      for (const schedule of agentSchedules) {
-        const rec = cronToRecurrence(
-          schedule.cronExpression,
-          schedule.timezone,
-        );
-        const label = rec
-          ? describeRecurrence(rec)
-          : schedule.cronExpression;
-        base.push({
-          kind: "cron",
-          id: `cron:${schedule.id}`,
-          scheduleId: schedule.id,
-          label,
-        });
-      }
-    }
-    return base;
-  }, [agentSchedules, draft.allowedTriggers]);
-
-  const filteredTriggerEntries = useMemo(
-    () =>
-      triggerEntries.filter((entry) => {
-        const label =
-          entry.kind === "trigger"
-            ? TRIGGER_LABELS[entry.trigger]
-            : entry.label;
-        return matchesSearch(label, triggerSearch);
-      }),
-    [triggerEntries, triggerSearch],
-  );
-
   useEffect(() => {
     if (openDialog === "tools") {
       setToolSearch("");
@@ -232,11 +195,11 @@ export function AgentSettingsDialogs({
   }, [openDialog, toolEntries]);
 
   useEffect(() => {
-    if (openDialog === "triggers") {
-      setTriggerSearch("");
-      setSelectedTriggerId(triggerEntries[0]?.id ?? null);
+    if (openDialog === "add-trigger") {
+      setAddTriggerSearch("");
+      setSelectedAddTriggerId(addTriggerFlatItems[0]?.id ?? null);
     }
-  }, [openDialog, triggerEntries]);
+  }, [openDialog, addTriggerFlatItems]);
 
   useEffect(() => {
     if (openDialog !== "tools" || !selectedToolId) return;
@@ -246,18 +209,11 @@ export function AgentSettingsDialogs({
   }, [filteredToolEntries, openDialog, selectedToolId]);
 
   useEffect(() => {
-    if (openDialog !== "triggers" || !selectedTriggerId) return;
-    if (!filteredTriggerEntries.some((entry) => entry.id === selectedTriggerId)) {
-      setSelectedTriggerId(filteredTriggerEntries[0]?.id ?? null);
+    if (openDialog !== "add-trigger" || !selectedAddTriggerId) return;
+    if (!addTriggerFlatItems.some((item) => item.id === selectedAddTriggerId)) {
+      setSelectedAddTriggerId(addTriggerFlatItems[0]?.id ?? null);
     }
-  }, [filteredTriggerEntries, openDialog, selectedTriggerId]);
-
-  const toggleTrigger = (trigger: AgentTrigger, enabled: boolean) => {
-    const next = new Set(draft.allowedTriggers);
-    if (enabled) next.add(trigger);
-    else next.delete(trigger);
-    onDraftChange({ allowedTriggers: [...next] });
-  };
+  }, [addTriggerFlatItems, openDialog, selectedAddTriggerId]);
 
   const toggleOptionalBundle = (bundle: ToolBundle, enabled: boolean) => {
     const optionalSet = new Set(
@@ -294,15 +250,6 @@ export function AgentSettingsDialogs({
     onDraftChange({
       linkedWorkerAgentIds: [...next],
       toolBundles: [...bundleSet],
-    });
-  };
-
-  const toggleScheduleEnabled = (scheduleId: string, enabled: boolean) => {
-    onDraftChange({
-      scheduleEnabledById: {
-        ...draft.scheduleEnabledById,
-        [scheduleId]: enabled,
-      },
     });
   };
 
@@ -352,43 +299,70 @@ export function AgentSettingsDialogs({
     },
   );
 
-  const triggerSidebarItems: SidebarListItem[] = filteredTriggerEntries.map(
-    (entry) => {
-      if (entry.kind === "trigger") {
-        const Icon =
-          entry.trigger === "chatbot"
-            ? ChatsCircleIcon
-            : CalendarBlankIcon;
-        return {
-          id: entry.id,
-          label: TRIGGER_LABELS[entry.trigger],
-          icon: <Icon className="size-3.5 text-muted-foreground" />,
-          enabled: draft.allowedTriggers.includes(entry.trigger),
-          testId:
-            entry.trigger === "schedule"
-              ? "agent-trigger-schedule"
-              : `agent-trigger-${entry.trigger}`,
-        };
-      }
-
-      const schedule = agentSchedules.find((s) => s.id === entry.scheduleId);
-      const enabled =
-        draft.scheduleEnabledById[entry.scheduleId] ?? schedule?.enabled ?? false;
-
-      return {
-        id: entry.id,
-        label: entry.label,
-        subtitle: "Cron schedule",
-        icon: <ClockIcon className="size-3.5 text-muted-foreground" />,
-        enabled,
-        testId: `agent-schedule-${entry.scheduleId}`,
-      };
-    },
+  const addTriggerSidebarGroups: SidebarListGroup[] = useMemo(
+    () =>
+      filteredAddTriggerGroups.map((group) => ({
+        id: group.id,
+        label: group.label,
+        icon:
+          group.id === "schedule" ? (
+            <CalendarBlankIcon className="size-3" aria-hidden />
+          ) : (
+            <ConnectorBrandIcon provider={group.id} className="size-3" />
+          ),
+        items: group.items.map((item) => ({
+          id: item.id,
+          label: item.label,
+          icon:
+            item.action === "schedule" ? (
+              <ClockIcon className="size-3.5 text-muted-foreground" />
+            ) : item.provider ? (
+              <ConnectorBrandIcon provider={item.provider} className="size-3.5" />
+            ) : undefined,
+          testId: `add-trigger-${item.id}`,
+        })),
+      })),
+    [filteredAddTriggerGroups],
   );
 
   const selectedTool = toolEntries.find((e) => e.id === selectedToolId) ?? null;
-  const selectedTrigger =
-    triggerEntries.find((e) => e.id === selectedTriggerId) ?? null;
+  const selectedAddTrigger = selectedAddTriggerId
+    ? findAddableTrigger(selectedAddTriggerId)
+    : null;
+
+  const addConnectionTrigger = (triggerId: string) => {
+    const def = findAddableTrigger(triggerId);
+    if (!def || def.action !== "connection" || !def.provider || !def.kind) {
+      return;
+    }
+
+    const entry: ConnectionTrigger = {
+      id: def.id,
+      provider: def.provider,
+      kind: def.kind,
+      label: def.label,
+      enabled: true,
+    };
+
+    const allowed = new Set(draft.allowedTriggers);
+    allowed.add("chatbot");
+    if (!draft.enabledConnectorProviders.includes(def.provider)) {
+      onDraftChange({
+        connectionTriggers: [...draft.connectionTriggers, entry],
+        allowedTriggers: [...allowed],
+        enabledConnectorProviders: [
+          ...draft.enabledConnectorProviders,
+          def.provider,
+        ],
+      });
+    } else {
+      onDraftChange({
+        connectionTriggers: [...draft.connectionTriggers, entry],
+        allowedTriggers: [...allowed],
+      });
+    }
+    onOpenDialogChange(null);
+  };
 
   const renderToolDetail = () => {
     if (!selectedTool) {
@@ -522,92 +496,74 @@ export function AgentSettingsDialogs({
     );
   };
 
-  const renderTriggerDetail = () => {
-    if (!selectedTrigger) {
+  const renderAddTriggerDetail = () => {
+    if (!selectedAddTrigger) {
       return (
         <p className="text-muted-foreground text-sm">
-          Select a trigger from the list to configure it.
+          Select a trigger type from the list to add it.
         </p>
       );
     }
 
-    if (selectedTrigger.kind === "cron") {
-      const schedule = agentSchedules.find(
-        (s) => s.id === selectedTrigger.scheduleId,
-      );
-      const enabled =
-        draft.scheduleEnabledById[selectedTrigger.scheduleId] ??
-        schedule?.enabled ??
-        false;
-
+    if (selectedAddTrigger.action === "schedule") {
       return (
         <>
           <SidebarDetailHeader
+            sticky
             icon={<ClockIcon className="size-5 text-muted-foreground" />}
-            title={selectedTrigger.label}
+            title={selectedAddTrigger.label}
             status={
-              <span className="text-muted-foreground text-xs">Cron schedule</span>
+              <span className="text-muted-foreground text-xs">
+                {selectedAddTrigger.groupLabel}
+              </span>
             }
           />
-          <p className="text-muted-foreground mb-6 text-sm">
-            Recurring run for this agent. Toggle off to pause without deleting
-            the schedule.
+          <p className="text-muted-foreground mb-4 text-sm">
+            {selectedAddTrigger.description}
           </p>
-          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-            <Label htmlFor={`trigger-enable-${selectedTrigger.id}`}>
-              Schedule enabled
-            </Label>
-            <Switch
-              id={`trigger-enable-${selectedTrigger.id}`}
-              checked={enabled}
-              onCheckedChange={(checked) =>
-                toggleScheduleEnabled(selectedTrigger.scheduleId, checked)
-              }
-              data-testid={`agent-schedule-${selectedTrigger.scheduleId}`}
-            />
-          </div>
+          <ScheduleSheet
+            presentation="inline"
+            inlineSubmitPlacement="footer"
+            open={openDialog === "add-trigger"}
+            onOpenChange={(open) => {
+              if (!open) onOpenDialogChange(null);
+            }}
+            teamspaceId={teamspaceId}
+            accountId={accountId}
+            instructions={[{ id: definition.id, name: definition.name }]}
+          />
         </>
       );
     }
 
-    const { trigger } = selectedTrigger;
-    const Icon =
-      trigger === "chatbot" ? ChatsCircleIcon : CalendarBlankIcon;
+    const icon = selectedAddTrigger.provider ? (
+      <ConnectorBrandIcon
+        provider={selectedAddTrigger.provider}
+        className="size-5"
+      />
+    ) : undefined;
 
     return (
       <>
         <SidebarDetailHeader
-          icon={<Icon className="size-5 text-muted-foreground" />}
-          title={TRIGGER_LABELS[trigger]}
+          icon={icon}
+          title={selectedAddTrigger.label}
+          status={
+            <span className="text-muted-foreground text-xs">
+              {selectedAddTrigger.groupLabel}
+            </span>
+          }
         />
         <p className="text-muted-foreground mb-6 text-sm">
-          {TRIGGER_DESCRIPTIONS[trigger]}
+          {selectedAddTrigger.description}
         </p>
-        <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-          <Label htmlFor={`trigger-enable-${selectedTrigger.id}`}>Enabled</Label>
-          <Switch
-            id={`trigger-enable-${selectedTrigger.id}`}
-            checked={draft.allowedTriggers.includes(trigger)}
-            onCheckedChange={(checked) => toggleTrigger(trigger, checked)}
-            data-testid={
-              trigger === "schedule"
-                ? "agent-trigger-schedule"
-                : `agent-trigger-${trigger}`
-            }
-          />
-        </div>
-        {trigger === "schedule" && draft.allowedTriggers.includes("schedule") ? (
-          <div className="mt-4">
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setScheduleOpen(true)}
-            >
-              Add trigger
-            </Button>
-          </div>
-        ) : null}
+        <Button
+          type="button"
+          data-testid="add-trigger-confirm"
+          onClick={() => addConnectionTrigger(selectedAddTrigger.id)}
+        >
+          Add trigger
+        </Button>
       </>
     );
   };
@@ -615,19 +571,38 @@ export function AgentSettingsDialogs({
   return (
     <>
       <AgentSettingsSidebarDialog
-        open={openDialog === "triggers"}
+        open={openDialog === "add-trigger"}
         onOpenChange={(open) => !open && onOpenDialogChange(null)}
-        title="Triggers"
-        testId="agent-triggers-sidebar-dialog"
-        items={triggerSidebarItems}
-        selectedId={selectedTriggerId}
-        onSelect={setSelectedTriggerId}
-        searchQuery={triggerSearch}
-        onSearchQueryChange={setTriggerSearch}
+        title="Add trigger"
+        testId="agent-add-trigger-sidebar-dialog"
+        groups={addTriggerSidebarGroups}
+        selectedId={selectedAddTriggerId}
+        onSelect={setSelectedAddTriggerId}
+        searchQuery={addTriggerSearch}
+        onSearchQueryChange={setAddTriggerSearch}
         searchPlaceholder="Search triggers…"
-        detail={renderTriggerDetail()}
+        detail={renderAddTriggerDetail()}
         footer={
-          <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
+          selectedAddTrigger?.action === "schedule" ? (
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenDialogChange(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                form="schedule-sheet-form"
+                data-testid="add-trigger-confirm"
+              >
+                Add trigger
+              </Button>
+            </div>
+          ) : (
+            <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
+          )
         }
       />
 
@@ -697,15 +672,6 @@ export function AgentSettingsDialogs({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <ScheduleSheet
-        open={scheduleOpen}
-        onOpenChange={setScheduleOpen}
-        presentation="dialog"
-        teamspaceId={teamspaceId}
-        accountId={accountId}
-        instructions={[{ id: definition.id, name: definition.name }]}
-      />
     </>
   );
 }

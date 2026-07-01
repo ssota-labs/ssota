@@ -79,19 +79,40 @@ export function AgentSettingItem({
   trailing,
   icon,
   className,
+  testId,
+  onPress,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   trailing?: ReactNode;
   icon?: ReactNode;
   className?: string;
+  testId?: string;
+  /** Makes the full row open/edit; trailing controls stop propagation. */
+  onPress?: (element: HTMLDivElement) => void;
 }) {
   return (
     <div
       className={cn(
         "flex items-center gap-3 rounded-md px-1 py-2",
+        onPress &&
+          "cursor-pointer transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
       )}
+      data-testid={testId}
+      role={onPress ? "button" : undefined}
+      tabIndex={onPress ? 0 : undefined}
+      onClick={onPress ? (e) => onPress(e.currentTarget) : undefined}
+      onKeyDown={
+        onPress
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onPress(e.currentTarget);
+              }
+            }
+          : undefined
+      }
     >
       {icon ? (
         <span className="bg-muted/50 flex size-7 shrink-0 items-center justify-center rounded-md">
@@ -104,7 +125,15 @@ export function AgentSettingItem({
           <p className="text-muted-foreground line-clamp-2 text-xs">{subtitle}</p>
         ) : null}
       </div>
-      {trailing ? <div className="shrink-0">{trailing}</div> : null}
+      {trailing ? (
+        <div
+          className="shrink-0"
+          onClick={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          {trailing}
+        </div>
+      ) : null}
     </div>
   );
 }
