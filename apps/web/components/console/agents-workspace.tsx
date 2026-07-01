@@ -52,7 +52,7 @@ export function AgentsWorkspace({
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Agents"
-          description="Configure agent playbooks, tools, triggers, models, and skills for this project."
+          description="Configure agent playbooks, tools, triggers, models, and skills."
           actions={
             <a
               href={skillsHref}
