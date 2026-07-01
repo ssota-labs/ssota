@@ -251,6 +251,16 @@ export function ProjectRouteLoading() {
   );
 }
 
+export function SandboxRouteLoading() {
+  return (
+    <BrowseWorkspaceListLoading
+      testId="route-loading-sandbox"
+      showAction
+      sections={[{ labelWidth: "w-28", rows: 4 }]}
+    />
+  );
+}
+
 export function GraphRouteLoading() {
   return (
     <BrowseWorkspaceGridLoading

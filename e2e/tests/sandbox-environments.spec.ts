@@ -1,15 +1,12 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
+import { gotoProject } from "../helpers/console";
 
-test.describe("sandbox environments settings", () => {
-  test("lists sandbox environments page in developer settings", async ({
-    page,
-  }) => {
+test.describe("sandbox environments", () => {
+  test("lists sandbox environments on the Sandbox nav page", async ({ page }) => {
     await loginAsSmoke(page);
-    await page.goto("/ssota-labs/ssota-dev/settings/sandbox-environments");
-    await expect(
-      page.getByRole("heading", { name: /sandbox environments/i }),
-    ).toBeVisible();
+    await gotoProject(page, "sandbox");
+    await expect(page.getByRole("heading", { name: /^Sandbox$/i })).toBeVisible();
     await expect(
       page.getByText("Manage reusable VM templates for coding agent task runs."),
     ).toBeVisible();

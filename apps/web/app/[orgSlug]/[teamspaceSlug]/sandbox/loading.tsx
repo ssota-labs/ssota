@@ -1,5 +1,5 @@
-import { SettingsPanelRouteLoading } from "@/components/console/route-loaders";
+import { SandboxRouteLoading } from "@/components/console/route-loaders";
 
 export default function Loading() {
-  return <SettingsPanelRouteLoading testId="route-loading-sandbox" />;
+  return <SandboxRouteLoading />;
 }

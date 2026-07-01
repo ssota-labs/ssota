@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { UpsertSandboxEnvironmentInputSchema } from "@ssota/contracts";
 import { getSandboxEnvironmentPort } from "@/lib/ports";
+import { orgPath } from "@/lib/console/paths";
 import { resolveOrg } from "@/lib/console/resolve-project";
 
 export async function listSandboxEnvironmentsAction(
@@ -36,7 +37,7 @@ export async function upsertSandboxEnvironmentAction(
   const { project } = await resolveOrg(orgSlug, teamspaceSlug);
   const port = getSandboxEnvironmentPort(project.id);
   const env = await port.upsertEnvironment(parsed);
-  revalidatePath(`/${orgSlug}/${teamspaceSlug}/settings/sandbox-environments`);
+  revalidatePath(orgPath({ orgSlug, teamspaceSlug }, "sandbox"));
   return env;
 }
 
@@ -48,5 +49,5 @@ export async function deleteSandboxEnvironmentAction(
   const { project } = await resolveOrg(orgSlug, teamspaceSlug);
   const port = getSandboxEnvironmentPort(project.id);
   await port.deleteById(environmentId);
-  revalidatePath(`/${orgSlug}/${teamspaceSlug}/settings/sandbox-environments`);
+  revalidatePath(orgPath({ orgSlug, teamspaceSlug }, "sandbox"));
 }
