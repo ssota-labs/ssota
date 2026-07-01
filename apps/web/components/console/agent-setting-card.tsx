@@ -79,12 +79,14 @@ export function AgentSettingItem({
   trailing,
   icon,
   className,
+  testId,
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
   trailing?: ReactNode;
   icon?: ReactNode;
   className?: string;
+  testId?: string;
 }) {
   return (
     <div
@@ -92,6 +94,7 @@ export function AgentSettingItem({
         "flex items-center gap-3 rounded-md px-1 py-2",
         className,
       )}
+      data-testid={testId}
     >
       {icon ? (
         <span className="bg-muted/50 flex size-7 shrink-0 items-center justify-center rounded-md">

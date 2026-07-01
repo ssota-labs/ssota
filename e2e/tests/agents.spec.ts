@@ -42,6 +42,7 @@ test.describe("Agents", () => {
 
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
     await expect(triggersCard.getByTestId("agent-trigger-chat")).toBeVisible();
+    await expect(triggersCard.getByTestId("agent-trigger-chat").getByRole("switch")).toHaveCount(0);
     await expect(triggersCard.getByTestId("agent-trigger-task")).toBeVisible();
     await expect(triggersCard.getByTestId("agent-trigger-chatbot")).not.toBeVisible();
     await expect(

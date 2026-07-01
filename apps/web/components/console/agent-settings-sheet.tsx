@@ -134,9 +134,11 @@ export function AgentSettingsSheet({
   }, []);
 
   const toggleTrigger = (trigger: AgentTrigger, enabled: boolean) => {
+    if (trigger === "chat") return;
     const next = new Set(draft.allowedTriggers);
     if (enabled) next.add(trigger);
     else next.delete(trigger);
+    next.add("chat");
     patchDraft({ allowedTriggers: [...next] });
   };
 
@@ -195,7 +197,7 @@ export function AgentSettingsSheet({
         bundles.push("delegate");
       }
 
-      const allowedTriggers = [...draft.allowedTriggers];
+      const allowedTriggers = [...new Set([...draft.allowedTriggers, "chat"])];
       if (agentSchedules.length > 0 && !allowedTriggers.includes("schedule")) {
         allowedTriggers.push("schedule");
       }
@@ -295,17 +297,10 @@ export function AgentSettingsSheet({
           >
             <AgentSettingItems>
               <AgentSettingItem
+                testId="agent-trigger-chat"
                 icon={<ChatsCircleIcon className="size-3.5 text-muted-foreground" />}
                 title={chatLabel}
                 subtitle={TRIGGER_LABELS.chat}
-                trailing={
-                  <Switch
-                    checked={draft.allowedTriggers.includes("chat")}
-                    onCheckedChange={(checked) => toggleTrigger("chat", checked)}
-                    data-testid="agent-trigger-chat"
-                    aria-label={chatLabel}
-                  />
-                }
               />
               <AgentSettingItem
                 icon={<AtIcon className="size-3.5 text-muted-foreground" />}
