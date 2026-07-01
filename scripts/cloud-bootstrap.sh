@@ -233,7 +233,7 @@ main() {
   ensure_database
   ensure_playwright
   log "Ready."
-  log "Smoke: smoke@ssota.test / smoke-test-password-123"
+  log "Smoke: smoke@ssota.ai / 1234"
   log "Next: pnpm e2e:ci  |  pnpm test --filter @ssota/adapter-supabase"
 }
 

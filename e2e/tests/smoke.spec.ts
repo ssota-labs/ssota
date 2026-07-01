@@ -46,7 +46,7 @@ test.describe("SSOTA Console", () => {
     await loginAsSmoke(page);
     const sidebar = page.locator("aside");
     await sidebar.getByRole("button", { name: "Signed in as" }).click();
-    await expect(page.getByText("smoke@ssota.test").last()).toBeVisible();
+    await expect(page.getByText("smoke@ssota.ai").last()).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
     await expect(page.getByText("Appearance")).toBeVisible();
     await expect(page.getByText("Language")).toBeVisible();
