@@ -838,7 +838,6 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
             field: "content",
             subtitleField: "summary",
             statusField: "doc_status",
-            sheetSize: "half",
             editable: true,
             action: "saveRoadmapDoc",
           },

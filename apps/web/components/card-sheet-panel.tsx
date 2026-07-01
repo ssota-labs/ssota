@@ -42,23 +42,29 @@ function readMaxPanelWidth(panel: HTMLElement): number {
 type CardSheetPanelProps = {
   title: string;
   subtitle?: string;
+  headerPrefix?: ReactNode;
   sheetSize?: CardSheetSize;
   onClose: () => void;
   footer?: ReactNode;
   children: ReactNode;
   testId?: string;
   titleId?: string;
+  closeButtonTestId?: string;
+  resizeHandleTestId?: string;
 };
 
 export function CardSheetPanel({
   title,
   subtitle,
+  headerPrefix,
   sheetSize = "inspector",
   onClose,
   footer,
   children,
   testId = "card-sheet-panel",
   titleId = "card-sheet-title",
+  closeButtonTestId = "card-sheet-close",
+  resizeHandleTestId = "card-sheet-resize-handle",
 }: CardSheetPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const minWidthPxRef = useRef<number | null>(null);
@@ -144,27 +150,30 @@ export function CardSheetPanel({
           role="separator"
           aria-orientation="vertical"
           aria-label="Resize panel"
-          data-testid="card-sheet-resize-handle"
+          data-testid={resizeHandleTestId}
           className="hover:bg-primary/20 active:bg-primary/30 absolute top-0 bottom-0 left-0 z-30 w-1.5 -translate-x-1/2 cursor-col-resize touch-none"
           onMouseDown={handleResizeMouseDown}
           onPointerDown={handleResizePointerDown}
         />
       ) : null}
       <header className="border-border/50 bg-background/20 supports-backdrop-filter:backdrop-blur-md flex shrink-0 items-start gap-3 border-b px-4 py-3">
-        <div className="min-w-0 flex-1 space-y-1">
-          <h2 id={titleId} className="text-base font-semibold leading-snug">
-            {title}
-          </h2>
-          {subtitle ? (
-            <p className="text-muted-foreground text-sm">{subtitle}</p>
-          ) : null}
+        <div className="flex min-w-0 flex-1 items-start gap-2">
+          {headerPrefix}
+          <div className="min-w-0 flex-1 space-y-1">
+            <h2 id={titleId} className="text-base font-semibold leading-snug">
+              {title}
+            </h2>
+            {subtitle ? (
+              <p className="text-muted-foreground text-sm">{subtitle}</p>
+            ) : null}
+          </div>
         </div>
         <Button
           type="button"
           variant="outline"
           size="icon-sm"
           aria-label="Close"
-          data-testid="card-sheet-close"
+          data-testid={closeButtonTestId}
           onClick={onClose}
         >
           <XIcon className="size-4" />

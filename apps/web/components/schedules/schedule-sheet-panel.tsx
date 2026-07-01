@@ -13,7 +13,7 @@ import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
 import type { SheetSize } from "@/lib/page-runtime/components/document-sheet-panel";
 
-const panelWidthClass: Record<SheetSize, string> = {
+const panelWidthClass: Record<Exclude<SheetSize, "viewport">, string> = {
   default: "w-[min(24rem,100%)]",
   half: "w-1/2 min-w-[18rem]",
   inspector: "w-[min(42%,560px)] min-w-[18rem]",
@@ -125,7 +125,11 @@ export function ScheduleSheetPanel({
         "supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150",
         "supports-backdrop-filter:bg-background/40",
         "animate-in slide-in-from-right-4 fade-in duration-200",
-        widthPx === null ? panelWidthClass[sheetSize] : "min-w-0",
+        widthPx === null && sheetSize !== "viewport"
+          ? panelWidthClass[sheetSize]
+          : widthPx === null
+            ? "w-full"
+            : "min-w-0",
       )}
     >
       <div

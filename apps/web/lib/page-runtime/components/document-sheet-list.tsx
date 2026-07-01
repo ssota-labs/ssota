@@ -55,7 +55,7 @@ export function DocumentSheetListEl({
   statusField = "lifecycleStatus",
   editable = false,
   action,
-  sheetSize = "half",
+  sheetSize = "viewport",
   filters: rawFilters,
 }: DocumentSheetListProps) {
   const onAction = useAction();
@@ -141,7 +141,7 @@ export function DocumentSheetListEl({
 
         {title ? <h3 className="text-sm font-medium">{title}</h3> : null}
 
-        <div className="border-border divide-border divide-y overflow-hidden rounded-lg border">
+        <div className="divide-y divide-border overflow-hidden rounded-lg border bg-card">
           {visibleNodes.map((node) => {
             const subtitle = readNodeField(node, subtitleField);
             const status = readNodeField(node, statusField);

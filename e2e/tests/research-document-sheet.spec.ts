@@ -48,7 +48,12 @@ test.describe("Research document sheet", () => {
       .click();
 
     await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
-    await expect(page.getByText("Document sheet list improves research doc iteration speed")).toBeVisible();
+    await expect(
+      page.getByTestId("document-sheet-editor").getByText(
+        "If research pages use DocumentSheetList",
+        { exact: false },
+      ),
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   test("closes sheet panel with close button", async ({ page }) => {

@@ -78,20 +78,27 @@ test.describe("Executive roadmap", () => {
     await expect(q2Row.locator('[class*="amber"]').first()).toBeVisible();
   });
 
-  test("opens roadmap document in floating sheet panel", async ({ page }) => {
+  test("opens roadmap document in full-viewport sheet panel", async ({ page }) => {
     const year = new Date().getFullYear();
     await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
 
-    await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
+    const panel = page.getByTestId("document-sheet-panel");
+    await expect(panel).toBeVisible();
     await expect(page.getByTestId("document-sheet-editor")).toBeVisible();
     await expect(
       page.getByTestId("document-sheet-editor").getByTestId("blocknote-editor-shell"),
     ).toBeVisible({
       timeout: 15_000,
     });
-    await expect(
-      page.getByTestId("document-sheet-panel").getByText(`${year} Q1 분기 로드맵`),
-    ).toBeVisible();
+    await expect(panel.getByText(`${year} Q1 분기 로드맵`)).toBeVisible();
+
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    const box = await panel.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThanOrEqual(viewport!.width - 4);
+    expect(box!.height).toBeGreaterThanOrEqual(viewport!.height - 4);
+    await expect(page.getByTestId("document-sheet-resize-handle")).toHaveCount(0);
   });
 
   test("closes sheet panel with close button", async ({ page }) => {
@@ -101,32 +108,6 @@ test.describe("Executive roadmap", () => {
 
     await page.getByTestId("document-sheet-close").click();
     await expect(page.getByTestId("document-sheet-panel")).not.toBeVisible();
-  });
-
-  test("widens sheet panel from left resize handle", async ({ page }) => {
-    const year = new Date().getFullYear();
-    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
-    const panel = page.getByTestId("document-sheet-panel");
-    await expect(panel).toBeVisible();
-
-    const before = await panel.boundingBox();
-    const handle = page.getByTestId("document-sheet-resize-handle");
-    await expect(handle).toBeVisible();
-    const handleBox = await handle.boundingBox();
-    expect(before).not.toBeNull();
-    expect(handleBox).not.toBeNull();
-
-    const centerY = handleBox!.y + handleBox!.height / 2;
-    const startX = handleBox!.x + handleBox!.width / 2;
-    await page.mouse.move(startX, centerY);
-    await page.mouse.down();
-    await page.mouse.move(startX - 320, centerY, { steps: 24 });
-    await page.mouse.up();
-    await page.waitForTimeout(200);
-
-    const after = await panel.boundingBox();
-    expect(after).not.toBeNull();
-    expect(after!.width).toBeGreaterThanOrEqual(before!.width + 20);
   });
 
   test("autosaves roadmap doc edits from sheet panel", async ({ page }) => {
