@@ -58,6 +58,12 @@ export const ConnectionTriggerSchema = z.object({
   kind: z.string().min(1),
   label: z.string().min(1),
   enabled: z.boolean().default(true),
+  /** Slack user group id (S…); set when `kind` is `agent_mentioned`. */
+  slackUserGroupId: z.string().optional(),
+  /** Slack @mention handle without `@` (e.g. `content-planner`). */
+  slackUserGroupHandle: z.string().optional(),
+  /** When false, skip Chat SDK typing indicator for this trigger. */
+  showTypingIndicator: z.boolean().optional(),
 });
 
 export type ConnectionTrigger = z.infer<typeof ConnectionTriggerSchema>;

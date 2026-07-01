@@ -131,3 +131,6 @@ export {
 } from "./ports.js";
 
 export type { AgentRunContext } from "./engine/types.js";
+
+export { createSlackUserGroupForAgent } from "./slack-user-groups.js";
+export { slackHandleFromAgentName } from "./slack-user-group-handle.js";

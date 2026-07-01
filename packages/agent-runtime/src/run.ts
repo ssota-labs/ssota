@@ -26,6 +26,8 @@ export interface RunAgentInput {
   profileId?: string;
   modelId?: string;
   maxSteps?: number;
+  /** When set on main runtime, run this agent definition instead of the main agent. */
+  agentDefinitionId?: string;
   chatContext?: Record<string, unknown>;
 }
 
@@ -82,6 +84,20 @@ export async function resolveRunAgentDefinition(
 ): Promise<{ definition: AgentRuntimeDefinition; trigger: AgentTrigger }> {
   if (input.runtimeKind === "main") {
     const instructionPort = getAgentDefinitionPort(input.teamspaceId, input.accountId);
+
+    if (input.agentDefinitionId) {
+      const loaded = await instructionPort.getById(input.agentDefinitionId);
+      if (!loaded) {
+        throw new Error(
+          `Agent definition ${input.agentDefinitionId} not found in teamspace ${input.teamspaceId}`,
+        );
+      }
+      const definition = runtimeDefinitionFromAgent(loaded);
+      const trigger = resolveMainTrigger(input);
+      assertAllowedTrigger(definition, trigger);
+      return { definition, trigger };
+    }
+
     const dbMain = (await instructionPort.listDefinitions()).find((d) => d.isMain);
     let definition = mainAgentRuntimeDefinition();
     if (dbMain) {
@@ -154,32 +170,53 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
   let messages: ModelMessage[] = [];
 
   if (runtimeKind === "main") {
-    const dbDefinitions = await instructionPort.listDefinitions();
-    const dbIds = new Set(dbDefinitions.map((w) => w.id));
-    const builtins = listRoutableAgentIndex().filter((b) => !dbIds.has(b.id));
-    const agentManifest = [
-      ...dbDefinitions
-        .filter((w) => !w.isMain && !w.referenceOnly)
-        .map((w) => ({
-          id: w.id,
-          name: w.name,
-          description: w.description,
-        })),
-      ...builtins,
-    ];
     const organizationId = await ensureTeamspaceOrganizationScope(teamspaceId);
     const skillManifest = await resolveSkillManifest(
       getSkillPort(organizationId),
       organizationId,
       definition.agentDefinitionId,
     );
-    instructions = buildRunInstructionMessages({
-      runtimeKind: "main",
-      teamspaceId,
-      accountId,
-      agentManifest,
-      skillManifest,
-    });
+
+    if (!definition.isMain) {
+      const playbook = await readAgentDefinitionById(
+        instructionPort,
+        definition.agentDefinitionId,
+      );
+      instructions = buildRunInstructionMessages({
+        runtimeKind: "task",
+        teamspaceId,
+        accountId,
+        taskPlaybook: playbook?.definition ?? null,
+        skillManifest,
+        task: {
+          id: input.threadId ?? input.runId,
+          title: "Slack conversation",
+          acceptanceCriteria: [],
+        },
+      });
+    } else {
+      const dbDefinitions = await instructionPort.listDefinitions();
+      const dbIds = new Set(dbDefinitions.map((w) => w.id));
+      const builtins = listRoutableAgentIndex().filter((b) => !dbIds.has(b.id));
+      const agentManifest = [
+        ...dbDefinitions
+          .filter((w) => !w.isMain && !w.referenceOnly)
+          .map((w) => ({
+            id: w.id,
+            name: w.name,
+            description: w.description,
+          })),
+        ...builtins,
+      ];
+      instructions = buildRunInstructionMessages({
+        runtimeKind: "main",
+        teamspaceId,
+        accountId,
+        agentManifest,
+        skillManifest,
+      });
+    }
+
     const chatMessages = extractChatMessages(input.chatContext);
     messages = chatMessages ?? [
       {
