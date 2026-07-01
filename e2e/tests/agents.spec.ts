@@ -34,38 +34,36 @@ test.describe("Agents", () => {
     await expect(page.getByTestId("agent-settings-model-card")).toBeVisible();
   });
 
-  test("triggers card shows inline switches and add schedule", async ({ page }) => {
+  test("triggers card shows default chat/task and add trigger button", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
     await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
 
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
-    await expect(triggersCard.getByTestId("agent-trigger-chatbot")).toBeVisible();
-    await expect(triggersCard.getByTestId("agent-trigger-task")).not.toBeVisible();
+    await expect(triggersCard.getByTestId("agent-trigger-chat")).toBeVisible();
+    await expect(triggersCard.getByTestId("agent-trigger-task")).toBeVisible();
+    await expect(triggersCard.getByTestId("agent-trigger-chatbot")).not.toBeVisible();
     await expect(
       triggersCard.getByText("Weekly on weekdays at 9:00 AM"),
     ).toBeVisible();
-    await expect(triggersCard.getByTestId("agent-triggers-add-schedule")).toBeVisible();
+    await expect(triggersCard.getByTestId("agent-triggers-add")).toBeVisible();
   });
 
-  test("opens triggers dialog from card header", async ({ page }) => {
+  test("opens add-trigger sidebar dialog from footer button", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
     await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
-    await page
-      .getByTestId("agent-settings-triggers-card")
-      .getByRole("button")
-      .first()
-      .click();
+    await page.getByTestId("agent-triggers-add").click();
 
-    const triggersDialog = page.getByTestId("agent-triggers-sidebar-dialog");
-    await expect(triggersDialog).toBeVisible();
-    await expect(triggersDialog.getByTestId("agent-trigger-schedule")).toBeVisible();
-    await expect(
-      triggersDialog.getByText("Weekly on weekdays at 9:00 AM"),
-    ).toBeVisible();
+    const addDialog = page.getByTestId("agent-add-trigger-sidebar-dialog");
+    await expect(addDialog).toBeVisible();
+    const nav = addDialog.getByRole("navigation", { name: "Add trigger" });
+    await expect(nav.getByText("Schedule", { exact: true })).toBeVisible();
+    await expect(nav.getByText("On a schedule")).toBeVisible();
+    await expect(nav.getByText("Slack", { exact: true })).toBeVisible();
+    await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
   });
 
   test("opens tools dialog with sidebar list", async ({ page }) => {
@@ -102,9 +100,7 @@ test.describe("Agents", () => {
     await expect(
       triggersCard.getByText("Weekly on weekdays at 9:00 AM"),
     ).toBeVisible();
-    await expect(
-      triggersCard.getByText("Web chat", { exact: false }),
-    ).not.toBeVisible();
+    await expect(triggersCard.getByTestId("agent-trigger-chat")).toBeVisible();
 
     const modelCard = page.getByTestId("agent-settings-model-card");
     await expect(modelCard.getByText(/Auto|Claude|GPT/i)).toBeVisible();

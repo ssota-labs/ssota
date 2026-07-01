@@ -20,11 +20,19 @@ export type SidebarListItem = {
   testId?: string;
 };
 
+export type SidebarListGroup = {
+  id: string;
+  label: string;
+  icon?: ReactNode;
+  items: SidebarListItem[];
+};
+
 type AgentSettingsSidebarDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  items: SidebarListItem[];
+  items?: SidebarListItem[];
+  groups?: SidebarListGroup[];
   selectedId: string | null;
   onSelect: (id: string) => void;
   searchQuery?: string;
@@ -41,6 +49,7 @@ export function AgentSettingsSidebarDialog({
   onOpenChange,
   title,
   items,
+  groups,
   selectedId,
   onSelect,
   searchQuery,
@@ -52,6 +61,8 @@ export function AgentSettingsSidebarDialog({
   className,
 }: AgentSettingsSidebarDialogProps) {
   const showSearch = onSearchQueryChange !== undefined;
+  const flatItems =
+    groups?.flatMap((group) => group.items) ?? items ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -100,55 +111,41 @@ export function AgentSettingsSidebarDialog({
               className="min-h-0 flex-1 overflow-y-auto p-1.5"
               aria-label={title}
             >
-              {items.length === 0 ? (
+              {flatItems.length === 0 ? (
                 <p className="text-muted-foreground px-2 py-3 text-xs">
                   No items match your search.
                 </p>
+              ) : groups ? (
+                <div className="space-y-3">
+                  {groups.map((group) => (
+                    <div key={group.id}>
+                      <div className="text-muted-foreground flex items-center gap-1.5 px-2 py-1 text-[11px] font-medium tracking-wide uppercase">
+                        {group.icon}
+                        <span>{group.label}</span>
+                      </div>
+                      <ul className="space-y-0.5">
+                        {group.items.map((item) => (
+                          <SidebarNavItem
+                            key={item.id}
+                            item={item}
+                            selected={item.id === selectedId}
+                            onSelect={onSelect}
+                          />
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <ul className="space-y-0.5">
-                  {items.map((item) => {
-                    const selected = item.id === selectedId;
-                    return (
-                      <li key={item.id}>
-                        <button
-                          type="button"
-                          data-testid={item.testId}
-                          onClick={() => onSelect(item.id)}
-                          className={cn(
-                            "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
-                            selected
-                              ? "bg-muted font-medium"
-                              : "hover:bg-muted/60",
-                          )}
-                        >
-                          {item.icon ? (
-                            <span className="bg-background flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 shadow-sm">
-                              {item.icon}
-                            </span>
-                          ) : null}
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate">{item.label}</span>
-                            {item.subtitle ? (
-                              <span className="text-muted-foreground block truncate text-xs font-normal">
-                                {item.subtitle}
-                              </span>
-                            ) : null}
-                          </span>
-                          {item.enabled !== undefined ? (
-                            <span
-                              className={cn(
-                                "size-1.5 shrink-0 rounded-full",
-                                item.enabled
-                                  ? "bg-emerald-500"
-                                  : "bg-muted-foreground/30",
-                              )}
-                              aria-hidden
-                            />
-                          ) : null}
-                        </button>
-                      </li>
-                    );
-                  })}
+                  {flatItems.map((item) => (
+                    <SidebarNavItem
+                      key={item.id}
+                      item={item}
+                      selected={item.id === selectedId}
+                      onSelect={onSelect}
+                    />
+                  ))}
                 </ul>
               )}
             </nav>
@@ -202,5 +199,52 @@ export function SidebarDetailDoneButton({
     <Button type="button" onClick={onClick}>
       Done
     </Button>
+  );
+}
+
+function SidebarNavItem({
+  item,
+  selected,
+  onSelect,
+}: {
+  item: SidebarListItem;
+  selected: boolean;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <li>
+      <button
+        type="button"
+        data-testid={item.testId}
+        onClick={() => onSelect(item.id)}
+        className={cn(
+          "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
+          selected ? "bg-muted font-medium" : "hover:bg-muted/60",
+        )}
+      >
+        {item.icon ? (
+          <span className="bg-background flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 shadow-sm">
+            {item.icon}
+          </span>
+        ) : null}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate">{item.label}</span>
+          {item.subtitle ? (
+            <span className="text-muted-foreground block truncate text-xs font-normal">
+              {item.subtitle}
+            </span>
+          ) : null}
+        </span>
+        {item.enabled !== undefined ? (
+          <span
+            className={cn(
+              "size-1.5 shrink-0 rounded-full",
+              item.enabled ? "bg-emerald-500" : "bg-muted-foreground/30",
+            )}
+            aria-hidden
+          />
+        ) : null}
+      </button>
+    </li>
   );
 }

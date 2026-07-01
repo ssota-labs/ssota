@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
-  CalendarBlankIcon,
+  AtIcon,
   ChatsCircleIcon,
   ClockIcon,
   CpuIcon,
@@ -14,7 +14,9 @@ import {
 import type { Block } from "@blocknote/core";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
+import { Checkbox } from "@ssota/ui/components/ui/checkbox";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import { cn } from "@ssota/ui/lib/utils";
 import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { AgentSkillBindings } from "@/components/console/skills-workspace";
@@ -32,10 +34,7 @@ import {
 } from "@/components/console/agent-settings-dialogs";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
-import {
-  TRIGGER_LABELS,
-  mergeToolBundles,
-} from "@/lib/console/agent-tool-catalog";
+import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
@@ -61,12 +60,8 @@ type AgentSettingsSheetProps = {
   onClose: () => void;
 };
 
-const CARD_TRIGGER_TYPES: AgentTrigger[] = ["chatbot"];
-
-const TRIGGER_ICONS: Partial<Record<AgentTrigger, typeof ChatsCircleIcon>> = {
-  chatbot: ChatsCircleIcon,
-  schedule: CalendarBlankIcon,
-};
+/** Default triggers always shown on the card (not added via sidebar). */
+const DEFAULT_CARD_TRIGGERS: AgentTrigger[] = ["chat", "task"];
 
 function buildDraft(
   definition: AgentDefinition,
@@ -76,10 +71,13 @@ function buildDraft(
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
+  const allowedTriggers = definition.runPolicy.allowedTriggers ?? [];
   return {
     instructions: definition.instructions,
     toolBundles: mergeToolBundles(definition.toolBundles),
-    allowedTriggers: definition.runPolicy.allowedTriggers ?? [],
+    allowedTriggers: [
+      ...new Set([...allowedTriggers, ...DEFAULT_CARD_TRIGGERS]),
+    ],
     model: definition.runPolicy.model ?? DEFAULT_MODEL_ID,
     scriptToolIds,
     linkedWorkerAgentIds: definition.runPolicy.linkedWorkerAgentIds ?? [],
@@ -88,6 +86,7 @@ function buildDraft(
     scheduleEnabledById: Object.fromEntries(
       agentSchedules.map((s) => [s.id, s.enabled]),
     ),
+    connectionTriggers: definition.runPolicy.connectionTriggers ?? [],
   };
 }
 
@@ -108,6 +107,9 @@ export function AgentSettingsSheet({
     buildDraft(definition, initialScriptToolIds, schedules),
   );
   const [openDialog, setOpenDialog] = useState<AgentSettingsDialogKind | null>(
+    null,
+  );
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(
     null,
   );
   const [isPending, startTransition] = useTransition();
@@ -147,6 +149,14 @@ export function AgentSettingsSheet({
     });
   };
 
+  const toggleConnectionTrigger = (triggerId: string, enabled: boolean) => {
+    patchDraft({
+      connectionTriggers: draft.connectionTriggers.map((t) =>
+        t.id === triggerId ? { ...t, enabled } : t,
+      ),
+    });
+  };
+
   const modelLabel =
     MODEL_OPTIONS.find((m) => m.id === draft.model)?.label ?? "Auto";
 
@@ -176,11 +186,24 @@ export function AgentSettingsSheet({
     draft.enabledConnectorProviders.includes(c.provider),
   );
 
+  const chatLabel = `New chat with ${definition.name}`;
+
   const handleSave = () => {
     startTransition(async () => {
       const bundles = mergeToolBundles(draft.toolBundles);
       if (draft.linkedWorkerAgentIds.length > 0 && !bundles.includes("delegate")) {
         bundles.push("delegate");
+      }
+
+      const allowedTriggers = [...draft.allowedTriggers];
+      if (agentSchedules.length > 0 && !allowedTriggers.includes("schedule")) {
+        allowedTriggers.push("schedule");
+      }
+      if (
+        draft.connectionTriggers.some((t) => t.enabled) &&
+        !allowedTriggers.includes("chatbot")
+      ) {
+        allowedTriggers.push("chatbot");
       }
 
       await updateAgentDefinitionAction(teamspaceId, {
@@ -194,9 +217,10 @@ export function AgentSettingsSheet({
         runPolicy: {
           ...definition.runPolicy,
           model: draft.model,
-          allowedTriggers: [...new Set([...draft.allowedTriggers, "task"])],
+          allowedTriggers,
           linkedWorkerAgentIds: draft.linkedWorkerAgentIds,
           enabledConnectorProviders: draft.enabledConnectorProviders,
+          connectionTriggers: draft.connectionTriggers,
         },
         scriptToolIds: draft.scriptToolIds,
       });
@@ -255,15 +279,14 @@ export function AgentSettingsSheet({
             title="Triggers"
             description="When should this agent run?"
             testId="agent-settings-triggers-card"
-            onOpen={() => setOpenDialog("triggers")}
             footer={
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
                 className="w-fit justify-start gap-2"
-                data-testid="agent-triggers-add-schedule"
-                onClick={() => setOpenDialog("add-schedule")}
+                data-testid="agent-triggers-add"
+                onClick={() => setOpenDialog("add-trigger")}
               >
                 <PlusIcon className="size-3.5" aria-hidden />
                 Add trigger
@@ -271,27 +294,56 @@ export function AgentSettingsSheet({
             }
           >
             <AgentSettingItems>
-              {CARD_TRIGGER_TYPES.map((trigger) => {
-                const Icon = TRIGGER_ICONS[trigger] ?? ChatsCircleIcon;
-                const enabled = draft.allowedTriggers.includes(trigger);
-                return (
-                  <AgentSettingItem
-                    key={trigger}
-                    icon={<Icon className="size-3.5 text-muted-foreground" />}
-                    title={TRIGGER_LABELS[trigger]}
-                    trailing={
-                      <Switch
-                        checked={enabled}
-                        onCheckedChange={(checked) =>
-                          toggleTrigger(trigger, checked)
-                        }
-                        data-testid={`agent-trigger-${trigger}`}
-                        aria-label={TRIGGER_LABELS[trigger]}
-                      />
-                    }
+              <AgentSettingItem
+                icon={<ChatsCircleIcon className="size-3.5 text-muted-foreground" />}
+                title={chatLabel}
+                subtitle={TRIGGER_LABELS.chat}
+                trailing={
+                  <Switch
+                    checked={draft.allowedTriggers.includes("chat")}
+                    onCheckedChange={(checked) => toggleTrigger("chat", checked)}
+                    data-testid="agent-trigger-chat"
+                    aria-label={chatLabel}
                   />
-                );
-              })}
+                }
+              />
+              <AgentSettingItem
+                icon={<AtIcon className="size-3.5 text-muted-foreground" />}
+                title={TRIGGER_LABELS.task}
+                trailing={
+                  <Checkbox
+                    checked={draft.allowedTriggers.includes("task")}
+                    onCheckedChange={(checked) =>
+                      toggleTrigger("task", checked === true)
+                    }
+                    data-testid="agent-trigger-task"
+                    aria-label={TRIGGER_LABELS.task}
+                  />
+                }
+              />
+              {draft.connectionTriggers.map((trigger) => (
+                <AgentSettingItem
+                  key={trigger.id}
+                  icon={
+                    <ConnectorBrandIcon
+                      provider={trigger.provider}
+                      className="size-3.5"
+                    />
+                  }
+                  title={trigger.label}
+                  subtitle={trigger.provider}
+                  trailing={
+                    <Switch
+                      checked={trigger.enabled}
+                      onCheckedChange={(checked) =>
+                        toggleConnectionTrigger(trigger.id, checked)
+                      }
+                      data-testid={`agent-connection-trigger-${trigger.id}`}
+                      aria-label={trigger.label}
+                    />
+                  }
+                />
+              ))}
               {agentSchedules.map((schedule) => {
                 const rec = cronToRecurrence(
                   schedule.cronExpression,
@@ -305,10 +357,22 @@ export function AgentSettingsSheet({
                 return (
                   <AgentSettingItem
                     key={schedule.id}
+                    className="group"
                     icon={
                       <ClockIcon className="size-3.5 text-muted-foreground" />
                     }
-                    title={label}
+                    title={
+                      <button
+                        type="button"
+                        className={cn(
+                          "text-left text-sm underline-offset-2 hover:underline",
+                        )}
+                        data-testid={`agent-schedule-edit-${schedule.id}`}
+                        onClick={() => setEditingScheduleId(schedule.id)}
+                      >
+                        {label}
+                      </button>
+                    }
                     subtitle="Cron schedule"
                     trailing={
                       <Switch
@@ -438,6 +502,8 @@ export function AgentSettingsSheet({
         accountId={accountId}
         openDialog={openDialog}
         onOpenDialogChange={setOpenDialog}
+        editingScheduleId={editingScheduleId}
+        onEditingScheduleIdChange={setEditingScheduleId}
       />
     </>
   );
