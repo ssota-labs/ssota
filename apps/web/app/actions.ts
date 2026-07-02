@@ -133,7 +133,7 @@ export async function provisionSlackAgentMentionTriggerAction(
   const token = await getSlackBotTokenForTeamspace(teamspaceId);
   if (!token) {
     throw new Error(
-      "Connect Slack on the Connections page before adding a Slack mention trigger.",
+      "Connect Slack on the Channels page before adding a Slack mention trigger.",
     );
   }
 

@@ -6,7 +6,7 @@ import {
   loadAgentSettingsConnections,
   loadAgentSettingsContext,
 } from "@/lib/console/load-agent-settings-context";
-import { orgPath } from "@/lib/console/paths";
+import { legacyOrgTeamspacePath } from "@/lib/console/paths";
 import { resolveOrg } from "@/lib/console/resolve-project";
 import { getScriptToolPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
@@ -32,7 +32,10 @@ async function AgentsPageInner({
   const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
   const [groups, settingsContext, user] = await Promise.all([
     loadAgentGroupsForUi(project.id),
-    loadAgentSettingsContext(project.id),
+    loadAgentSettingsContext(
+      project.id,
+      legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "channels"),
+    ),
     getCurrentUser(),
   ]);
 
@@ -61,7 +64,7 @@ async function AgentsPageInner({
           connections,
         }}
         scriptToolLinks={scriptToolLinks}
-        skillsHref={orgPath({ orgSlug, teamspaceSlug }, "skills")}
+        skillsHref={legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "skills")}
       />
     </div>
   );

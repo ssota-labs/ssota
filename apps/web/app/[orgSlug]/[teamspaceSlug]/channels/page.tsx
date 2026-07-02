@@ -1,8 +1,10 @@
 import { Suspense } from "react";
 import { ChannelsWorkspace } from "@/components/console/channels-workspace";
 import { ChannelsContentLoading } from "@/components/console/browse-content-loading";
+import { loadInboundChannelStatus } from "@/lib/connect/inbound-channel-status";
+import { legacyOrgTeamspacePath } from "@/lib/console/paths";
 import { resolveOrg } from "@/lib/console/resolve-project";
-import { getChatWorkspacePort } from "@/lib/ports";
+import { getOrCreateProjectAccount } from "@/lib/ports";
 
 export default function ChannelsPage({
   params,
@@ -23,7 +25,19 @@ async function ChannelsPageInner({
 }) {
   const { orgSlug, teamspaceSlug } = await params;
   const { project } = await resolveOrg(orgSlug, teamspaceSlug);
-  const linked = await getChatWorkspacePort().list(project.id);
+  const account = await getOrCreateProjectAccount(project.id);
+  const channels = await loadInboundChannelStatus(project.id);
+  const returnTo = legacyOrgTeamspacePath(
+    { orgSlug, teamspaceSlug },
+    "channels",
+  );
 
-  return <ChannelsWorkspace linked={linked} />;
+  return (
+    <ChannelsWorkspace
+      channels={channels}
+      teamspaceId={project.id}
+      accountId={account.id}
+      returnTo={returnTo}
+    />
+  );
 }

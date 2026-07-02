@@ -1,84 +1,135 @@
 "use client";
 
 import {
-  ChatsCircleIcon,
   DiscordLogoIcon,
   SlackLogoIcon,
-  TelegramLogoIcon,
 } from "@phosphor-icons/react";
 import { Badge } from "@ssota/ui/components/ui/badge";
+import { Button } from "@ssota/ui/components/ui/button";
+import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import {
+  connectorCardDescriptionClassName,
+  connectorCardTextClassName,
+  connectorCardTitleClassName,
+  connectorIconWrapClassName,
+} from "@/components/connectors/connector-card-styles";
+import {
+  inboundChannelAuthorizeHref,
+  type InboundChannelPlatform,
+} from "@/lib/connect/inbound-channels";
+import type { InboundChannelStatus } from "@/lib/connect/inbound-channel-status";
 
-type ChannelRow = {
-  id: string;
-  platform: string;
-  workspaceKey: string;
-  name: string | null;
-};
-
-const PLATFORM_ICONS: Record<string, typeof ChatsCircleIcon> = {
+const PLATFORM_ICONS = {
   slack: SlackLogoIcon,
   discord: DiscordLogoIcon,
-  telegram: TelegramLogoIcon,
-};
+} satisfies Record<InboundChannelPlatform, typeof SlackLogoIcon>;
 
 type ChannelsWorkspaceProps = {
-  linked: ChannelRow[];
+  channels: InboundChannelStatus[];
+  teamspaceId: string;
+  accountId: string;
+  returnTo: string;
 };
 
-export function ChannelsWorkspace({ linked }: ChannelsWorkspaceProps) {
-  const planned = [
-    { key: "slack", label: "Slack", description: "Team chat and approvals" },
-    { key: "discord", label: "Discord", description: "Community and support bots" },
-    { key: "telegram", label: "Telegram", description: "Lightweight chat channel" },
-    { key: "web", label: "Web chat", description: "Built-in console threads (/c)" },
-  ];
-
+export function ChannelsWorkspace({
+  channels,
+  teamspaceId,
+  accountId,
+  returnTo,
+}: ChannelsWorkspaceProps) {
   return (
     <BrowseWorkspace.Frame testId="channels-workspace">
       <BrowseWorkspace.Header
         title="Channels"
-        description="Surfaces where agents receive messages — Slack, Discord, Telegram, and web chat."
+        description="Connect Slack or Discord so agents can receive inbound messages. Agent tools (search, post via Composio) stay on the Connections page."
       />
-      <BrowseWorkspace.Section label="Linked workspaces">
-        {linked.length > 0 ? (
-          <BrowseWorkspace.Grid columns="two">
-            {linked.map((row) => {
-              const Icon = PLATFORM_ICONS[row.platform] ?? ChatsCircleIcon;
-              return (
-                <BrowseWorkspace.Card
-                  key={row.id}
-                  title={row.name ?? row.workspaceKey}
-                  subtitle={row.platform}
-                  description={row.workspaceKey}
-                  icon={<Icon className="size-4" />}
-                  badge={<Badge variant="secondary">Linked</Badge>}
-                  onSelect={() => {}}
-                  className="cursor-default"
-                />
-              );
-            })}
-          </BrowseWorkspace.Grid>
-        ) : (
-          <BrowseWorkspace.Empty>
-            No external chat workspaces linked yet. Connect Slack or Discord from Developer
-            settings, or use web chat in the sidebar.
-          </BrowseWorkspace.Empty>
-        )}
-      </BrowseWorkspace.Section>
-      <BrowseWorkspace.Section label="Supported channels">
+      <BrowseWorkspace.Section label="Inbound channels">
         <BrowseWorkspace.Grid columns="two">
-          {planned.map((channel) => {
-            const Icon = PLATFORM_ICONS[channel.key] ?? ChatsCircleIcon;
+          {channels.map((channel) => {
+            const Icon = PLATFORM_ICONS[channel.platform];
+            const connectHref = inboundChannelAuthorizeHref({
+              connectorUid: channel.connectorUid,
+              teamspaceId,
+              accountId,
+              returnTo,
+            });
+
             return (
-              <BrowseWorkspace.Card
-                key={channel.key}
-                title={channel.label}
-                description={channel.description}
-                icon={<Icon className="size-4" />}
-                onSelect={() => {}}
-                className="cursor-default"
-              />
+              <div
+                key={channel.platform}
+                data-testid={`channel-card-${channel.platform}`}
+                className="flex flex-col gap-3 rounded-lg border border-border/60 bg-card/40 p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <span className={connectorIconWrapClassName}>
+                    <Icon className="size-4" />
+                  </span>
+                  <span className={cn(connectorCardTextClassName, "min-w-0 flex-1")}>
+                    <span className={connectorCardTitleClassName}>
+                      {channel.label}
+                    </span>
+                    <span className={connectorCardDescriptionClassName}>
+                      {channel.platform}
+                    </span>
+                    <span className="mt-1 block text-xs text-muted-foreground">
+                      {channel.description}
+                    </span>
+                  </span>
+                  {channel.ready ? (
+                    <Badge variant="secondary">Connected</Badge>
+                  ) : channel.credentialConnected ? (
+                    <Badge variant="outline">Linking…</Badge>
+                  ) : (
+                    <Badge variant="outline">Not connected</Badge>
+                  )}
+                </div>
+
+                {channel.workspaceLinked ? (
+                  <p className="text-muted-foreground font-mono text-xs">
+                    {channel.workspaceName ?? channel.workspaceKey}
+                    {channel.workspaceName && channel.workspaceKey
+                      ? ` · ${channel.workspaceKey}`
+                      : null}
+                  </p>
+                ) : channel.credentialConnected ? (
+                  <p className="text-muted-foreground text-xs">
+                    Credential saved — finish OAuth or refresh if routing does not
+                    appear.
+                  </p>
+                ) : null}
+
+                {!channel.ready ? (
+                  channel.canConnect ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      className="w-fit"
+                      render={
+                        <a
+                          href={connectHref}
+                          data-testid={`channel-connect-${channel.platform}`}
+                        />
+                      }
+                    >
+                      Connect {channel.label}
+                    </Button>
+                  ) : (
+                    <p className="text-muted-foreground text-xs">
+                      Set{" "}
+                      <span className="font-mono">
+                        {channel.platform === "slack"
+                          ? "SLACK_CONNECT_CONNECTOR"
+                          : "DISCORD_CONNECT_CONNECTOR"}
+                      </span>{" "}
+                      to a Vercel Connect uid (e.g.{" "}
+                      <span className="font-mono">{channel.platform}/ssota</span>
+                      ).
+                    </p>
+                  )
+                ) : null}
+              </div>
             );
           })}
         </BrowseWorkspace.Grid>

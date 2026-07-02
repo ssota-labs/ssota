@@ -51,6 +51,7 @@ import {
 } from "@/components/console/agent-settings-dialogs";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
+import type { InboundChannelStatus } from "@/lib/connect/inbound-channel-status";
 import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
@@ -73,6 +74,8 @@ type AgentSettingsSheetProps = {
   workers: AgentDefinition[];
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
+  inboundChannels: InboundChannelStatus[];
+  channelsHref: string;
   schedules: AgentScheduleSummary[];
   onClose: () => void;
 };
@@ -116,6 +119,8 @@ export function AgentSettingsSheet({
   workers,
   connectors,
   connections,
+  inboundChannels,
+  channelsHref,
   schedules,
   onClose,
 }: AgentSettingsSheetProps) {
@@ -628,6 +633,8 @@ export function AgentSettingsSheet({
         scriptTools={scriptTools}
         connectors={connectors}
         connections={connections}
+        inboundChannels={inboundChannels}
+        channelsHref={channelsHref}
         teamspaceId={teamspaceId}
         accountId={accountId}
         openDialog={openDialog}

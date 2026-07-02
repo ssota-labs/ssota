@@ -35,9 +35,9 @@ type ChatThreadState = {
 
 function notLinkedReply(): string {
   return (
-    "I'm not connected to a project yet. An admin can connect this workspace " +
-    `from a project's Connections page in SSOTA (${getSiteUrl()}) — pick the ` +
-    "project, then Connect → Slack/Discord. After that, @mention me here again."
+    "I'm not connected to a project yet. An admin can link this workspace from " +
+    `the project's Channels page in SSOTA (${getSiteUrl()}) — Connect Slack or ` +
+    "Discord for inbound chat. After that, @mention me here again."
   );
 }
 

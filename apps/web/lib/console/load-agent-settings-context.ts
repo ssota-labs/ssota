@@ -1,5 +1,6 @@
 import type { ScriptToolIndex } from "@ssota/contracts";
 import type { ConnectorDef } from "@/lib/connect/connectors";
+import type { InboundChannelStatus } from "@/lib/connect/inbound-channel-status";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import {
   getOrCreateProjectAccount,
@@ -23,16 +24,22 @@ export type AgentSettingsContext = {
     user: ConnectorConnection[];
     org: ConnectorConnection[];
   };
+  inboundChannels: InboundChannelStatus[];
   accountId: string;
+  channelsHref: string;
 };
 
 export async function loadAgentSettingsContext(
   teamspaceId: string,
+  channelsHref: string,
 ): Promise<AgentSettingsContext> {
   const account = await getOrCreateProjectAccount(teamspaceId);
-  const [scriptTools, schedules] = await Promise.all([
+  const [scriptTools, schedules, inboundChannels] = await Promise.all([
     getScriptToolPort(teamspaceId).listScriptTools(),
     getSchedulePort(teamspaceId, account.id).list(),
+    import("@/lib/connect/inbound-channel-status").then((m) =>
+      m.loadInboundChannelStatus(teamspaceId),
+    ),
   ]);
 
   const { getConnectors } = await import("@/lib/connect/connectors");
@@ -48,7 +55,9 @@ export async function loadAgentSettingsContext(
     })),
     connectors: getConnectors(),
     connections: { user: [], org: [] },
+    inboundChannels,
     accountId: account.id,
+    channelsHref,
   };
 }
 

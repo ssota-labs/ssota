@@ -33,6 +33,11 @@ import { ConnectorBrandIcon } from "@/components/connections/connector-brand-ico
 import { provisionSlackAgentMentionTriggerAction } from "@/app/actions";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
+import { inboundChannelAuthorizeHref } from "@/lib/connect/inbound-channels";
+import {
+  inboundChannelStatusFor,
+  type InboundChannelStatus,
+} from "@/lib/connect/inbound-channel-status";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
 import {
   BASE_TOOL_BUNDLES,
@@ -76,6 +81,8 @@ type AgentSettingsDialogsProps = {
   scriptTools: Array<{ id: string; key: string; name: string }>;
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
+  inboundChannels: InboundChannelStatus[];
+  channelsHref: string;
   teamspaceId: string;
   accountId: string;
   openDialog: AgentSettingsDialogKind | null;
@@ -107,6 +114,8 @@ export function AgentSettingsDialogs({
   scriptTools,
   connectors,
   connections,
+  inboundChannels,
+  channelsHref,
   teamspaceId,
   accountId,
   openDialog,
@@ -127,6 +136,21 @@ export function AgentSettingsDialogs({
     for (const c of connections.org) set.add(c.connector);
     return set;
   }, [connections]);
+
+  const slackInbound = useMemo(
+    () => inboundChannelStatusFor(inboundChannels, "slack"),
+    [inboundChannels],
+  );
+
+  const slackInboundConnectHref =
+    slackInbound?.canConnect && slackInbound.connectorUid
+      ? inboundChannelAuthorizeHref({
+          connectorUid: slackInbound.connectorUid,
+          teamspaceId,
+          accountId,
+          returnTo: channelsHref,
+        })
+      : channelsHref;
 
   const addedConnectionTriggerIds = useMemo(
     () => new Set(draft.connectionTriggers.map((t) => t.id)),
@@ -346,6 +370,13 @@ export function AgentSettingsDialogs({
     let slackUserGroupHandle: string | undefined;
 
     if (triggerId === "slack:agent_mentioned") {
+      if (!slackInbound?.ready) {
+        setAddTriggerError(
+          "Connect Slack on the Channels page before adding this trigger.",
+        );
+        return;
+      }
+
       setIsProvisioningSlack(true);
       try {
         const provisioned = await provisionSlackAgentMentionTriggerAction(
@@ -598,13 +629,49 @@ export function AgentSettingsDialogs({
             to create user groups. Saved or Later messages are not supported.
           </p>
         ) : null}
+        {selectedAddTrigger.id === "slack:agent_mentioned" &&
+        !slackInbound?.ready ? (
+          <div className="mb-4 space-y-3 rounded-lg border px-4 py-3">
+            <p className="text-sm">
+              Inbound Slack is not connected for this project. Connect the same
+              workspace on Channels (Vercel Connect), not the Composio card on
+              Connections.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                size="sm"
+                render={
+                  <a
+                    href={slackInboundConnectHref}
+                    data-testid="agent-trigger-connect-slack-channel"
+                  />
+                }
+              >
+                Connect Slack channel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                render={<a href={channelsHref} />}
+              >
+                Open Channels
+              </Button>
+            </div>
+          </div>
+        ) : null}
         {addTriggerError ? (
           <p className="text-destructive mb-4 text-sm">{addTriggerError}</p>
         ) : null}
         <Button
           type="button"
           data-testid="add-trigger-confirm"
-          disabled={isProvisioningSlack}
+          disabled={
+            isProvisioningSlack ||
+            (selectedAddTrigger.id === "slack:agent_mentioned" &&
+              !slackInbound?.ready)
+          }
           onClick={() => void addConnectionTrigger(selectedAddTrigger.id)}
         >
           {isProvisioningSlack ? "Creating Slack user group…" : "Add trigger"}
