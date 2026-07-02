@@ -142,7 +142,7 @@ export function AgentSettingsSidebarDialog({
             </nav>
           </aside>
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">{detail}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 scrollbar-none">{detail}</div>
             {footer ? (
               <div className="flex justify-end px-4 py-3">{footer}</div>
             ) : null}
