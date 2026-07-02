@@ -72,6 +72,22 @@ test.describe("Agents", () => {
     await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
   });
 
+  test("frequency select opens inside add-trigger dialog", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId("agent-triggers-add").click();
+
+    const addDialog = page.getByTestId("agent-add-trigger-sidebar-dialog");
+    await addDialog.locator("#schedule-frequency").click();
+
+    await expect(page.getByRole("option", { name: "Hour" })).toBeVisible();
+    await expect(page.getByRole("option", { name: "Day" })).toBeVisible();
+    await page.getByRole("option", { name: "Hour" }).click();
+    await expect(addDialog.locator("#schedule-frequency")).toContainText("Hour");
+  });
+
   test("opens schedule edit popover with prefilled form", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
