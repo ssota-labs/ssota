@@ -100,16 +100,21 @@ export async function resolveSlackInboundRoute(input: {
   return null;
 }
 
-export async function assertSlackMentionTriggerAllowed(
+/** Reject duplicate Slack user-group ids across agents in one teamspace. */
+export async function assertSlackMentionUserGroupUnique(
   definitions: AgentDefinition[],
   agentDefinitionId: string,
+  slackUserGroupId: string,
 ): Promise<void> {
   for (const definition of definitions) {
     if (definition.id === agentDefinitionId) continue;
     const trigger = slackMentionTrigger(definition);
-    if (trigger?.enabled && trigger.slackUserGroupId) {
+    if (
+      trigger?.enabled &&
+      trigger.slackUserGroupId === slackUserGroupId
+    ) {
       throw new Error(
-        "Another agent in this teamspace already has Slack agent mention enabled.",
+        "Another agent in this teamspace already uses this Slack user group.",
       );
     }
   }

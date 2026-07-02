@@ -22,7 +22,7 @@ import { uploadEditorAsset } from "@/lib/editor/storage";
 import { createSlackUserGroupForAgent } from "@ssota/agent-runtime";
 import { getSlackBotTokenForTeamspace } from "@/lib/chat/slack-token";
 import {
-  assertSlackMentionTriggerAllowed,
+  assertSlackMentionUserGroupUnique,
   listTeamspaceAgentDefinitions,
 } from "@/lib/chat/slack-inbound-route";
 
@@ -86,7 +86,26 @@ export async function updateAgentDefinitionAction(
     runPolicy: input.runPolicy,
   });
 
-  await getAgentDefinitionPort(teamspaceId).upsertDefinition(parsed);
+  const port = getAgentDefinitionPort(teamspaceId);
+  const definitions = await listTeamspaceAgentDefinitions(
+    () => port.listDefinitions(),
+    (id) => port.getById(id),
+  );
+  for (const trigger of parsed.runPolicy.connectionTriggers ?? []) {
+    if (
+      trigger.id === "slack:agent_mentioned" &&
+      trigger.enabled &&
+      trigger.slackUserGroupId
+    ) {
+      await assertSlackMentionUserGroupUnique(
+        definitions,
+        parsed.id,
+        trigger.slackUserGroupId,
+      );
+    }
+  }
+
+  await port.upsertDefinition(parsed);
 
   if (input.scriptToolIds) {
     const { getScriptToolPort } = await import("@/lib/ports");
@@ -110,13 +129,6 @@ export async function provisionSlackAgentMentionTriggerAction(
 ) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
-
-  const port = getAgentDefinitionPort(teamspaceId);
-  const definitions = await listTeamspaceAgentDefinitions(
-    () => port.listDefinitions(),
-    (id) => port.getById(id),
-  );
-  await assertSlackMentionTriggerAllowed(definitions, input.agentDefinitionId);
 
   const token = await getSlackBotTokenForTeamspace(teamspaceId);
   if (!token) {

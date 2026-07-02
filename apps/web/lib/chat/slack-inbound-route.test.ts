@@ -87,3 +87,67 @@ describe("resolveSlackInboundRoute", () => {
     expect(route?.agentDefinitionId).toBe(specialist.id);
   });
 });
+
+describe("assertSlackMentionUserGroupUnique", () => {
+  const specialistA = agent({
+    id: "11111111-1111-4111-8111-111111111111",
+    name: "Content Planner",
+    runPolicy: {
+      connectionTriggers: [
+        {
+          id: "slack:agent_mentioned",
+          provider: "slack",
+          kind: "agent_mentioned",
+          label: "Agent mentioned",
+          enabled: true,
+          slackUserGroupId: "S0614NJ2P",
+          slackUserGroupHandle: "content-planner",
+        },
+      ],
+    },
+  });
+
+  const specialistB = agent({
+    id: "22222222-2222-4222-8222-222222222222",
+    name: "Research",
+    runPolicy: {
+      connectionTriggers: [
+        {
+          id: "slack:agent_mentioned",
+          provider: "slack",
+          kind: "agent_mentioned",
+          label: "Agent mentioned",
+          enabled: true,
+          slackUserGroupId: "S0RESEARCH",
+          slackUserGroupHandle: "research",
+        },
+      ],
+    },
+  });
+
+  it("allows multiple agents with distinct user groups", async () => {
+    const { assertSlackMentionUserGroupUnique } = await import(
+      "./slack-inbound-route"
+    );
+    await expect(
+      assertSlackMentionUserGroupUnique(
+        [specialistA, specialistB],
+        specialistB.id,
+        "S0OTHERGROUP",
+      ),
+    ).resolves.toBeUndefined();
+  });
+
+  it("rejects duplicate user group ids", async () => {
+    const { assertSlackMentionUserGroupUnique } = await import(
+      "./slack-inbound-route"
+    );
+    await expect(
+      assertSlackMentionUserGroupUnique(
+        [specialistA, specialistB],
+        specialistB.id,
+        "S0614NJ2P",
+      ),
+    ).rejects.toThrow(/already uses this Slack user group/i);
+  });
+});
