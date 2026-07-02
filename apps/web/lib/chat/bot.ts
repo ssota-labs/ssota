@@ -6,6 +6,8 @@ import { createMigrationBackedPostgresState } from "./postgres-state";
 import {
   createVercelConnectProvider,
   createVercelOidcVerifier,
+  isEmulateEnabled,
+  resolveProviderApiOrigin,
   type UIMessageChunk,
 } from "@ssota/agent-runtime";
 import { start } from "workflow/api";
@@ -22,6 +24,10 @@ import {
   resolveSlackInboundRoute,
 } from "./slack-inbound-route";
 import { getAgentDefinitionPort } from "@/lib/ports";
+import {
+  createSlackWebhookVerifier,
+  resolveSlackSigningSecret,
+} from "./slack-webhook-verify";
 
 type ChatThreadState = {
   agentDefinitionId?: string;
@@ -36,10 +42,15 @@ function notLinkedReply(): string {
 }
 
 function slackAdapter() {
-  const signingSecret = process.env.SLACK_SIGNING_SECRET;
+  const signingSecret = resolveSlackSigningSecret();
+  const slackWebhookVerifier = createSlackWebhookVerifier(signingSecret);
   const staticToken = process.env.SLACK_BOT_TOKEN;
   const connectDisabled =
     process.env.SLACK_CONNECT === "0" || Boolean(staticToken);
+  const emulateApiUrl = isEmulateEnabled()
+    ? `${resolveProviderApiOrigin("slack")}/api/`
+    : process.env.SLACK_API_URL;
+  const apiOptions = emulateApiUrl ? { apiUrl: emulateApiUrl } : {};
 
   if (!connectDisabled) {
     const connector = process.env.SLACK_CONNECT_CONNECTOR ?? "slack";
@@ -47,6 +58,7 @@ function slackAdapter() {
     const teamspaceId = process.env.CHAT_PROJECT_ID ?? "";
     const useIntake = process.env.SLACK_CONNECT_INTAKE !== "0";
     return createSlackAdapter({
+      ...apiOptions,
       ...(useIntake
         ? { webhookVerifier: createVercelOidcVerifier() }
         : { signingSecret }),
@@ -65,10 +77,14 @@ function slackAdapter() {
   }
 
   if (staticToken) {
-    return createSlackAdapter({ signingSecret, botToken: staticToken });
+    return createSlackAdapter({
+      webhookVerifier: slackWebhookVerifier,
+      botToken: staticToken,
+      ...apiOptions,
+    });
   }
 
-  return createSlackAdapter({ signingSecret });
+  return createSlackAdapter({ webhookVerifier: slackWebhookVerifier, ...apiOptions });
 }
 
 async function* uiChunksToText(
@@ -120,6 +136,13 @@ async function loadDefinitions(teamspaceId: string) {
   );
 }
 
+const STUB_EMULATE_REPLY =
+  "안녕하세요. 로컬 stub agent입니다. 채팅 스트리밍 파이프라인이 정상 동작합니다.";
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function runAgentStream(
   message: IncomingMessage,
   target: { teamspaceId: string; accountId?: string },
@@ -134,7 +157,7 @@ async function runAgentStream(
       accountId: target.accountId,
       agentDefinitionId: route.isMain ? undefined : route.agentDefinitionId,
       chatContext: {
-        trigger: "chatbot",
+        trigger: route.isMain ? "chatbot" : "manual",
         chat: {
           messages: [{ role: "user", content: message.text }],
         },
@@ -146,11 +169,51 @@ async function runAgentStream(
   ]);
 
   const readable = run.getReadable() as ReadableStream<ModelCallStreamPart>;
-  return uiChunksToText(
+  const stream = uiChunksToText(
     readable.pipeThrough(
       createModelCallToUIChunkTransform(),
     ) as ReadableStream<UIMessageChunk>,
   );
+  return { run, stream };
+}
+
+async function collectTextStream(
+  stream: AsyncIterable<string>,
+): Promise<string> {
+  let text = "";
+  for await (const chunk of stream) {
+    text += chunk;
+  }
+  return text.trim();
+}
+
+/**
+ * Emulate + inline workflow runs may finish before the durable stream closes.
+ * Race stream collection against workflow completion, then fall back to the stub
+ * reply when STUB_MODEL is enabled so Slack thread.post is not blocked forever.
+ */
+async function collectEmulateAgentReply(
+  run: Awaited<ReturnType<typeof start>>,
+  stream: AsyncIterable<string>,
+): Promise<string> {
+  let text = "";
+  const streamTask = collectTextStream(stream).then((value) => {
+    text = value;
+  });
+
+  await Promise.race([
+    streamTask,
+    run.returnValue.then(() => undefined).catch(() => undefined),
+  ]);
+
+  if (!text.trim()) {
+    await Promise.race([streamTask, sleep(3_000)]);
+  }
+
+  const trimmed = text.trim();
+  if (trimmed) return trimmed;
+  if (process.env.STUB_MODEL === "1") return STUB_EMULATE_REPLY;
+  return "";
 }
 
 async function handleInboundMessage(
@@ -188,13 +251,31 @@ async function handleInboundMessage(
 
   await thread.setState({ agentDefinitionId: route.agentDefinitionId });
 
-  if (route.showTypingIndicator) {
+  if (route.showTypingIndicator && !isEmulateEnabled()) {
     await thread.startTyping();
   }
 
-  await thread.post(
-    await runAgentStream(message, target, route, thread.id, workspaceKey),
+  const { run, stream } = await runAgentStream(
+    message,
+    target,
+    route,
+    thread.id,
+    workspaceKey,
   );
+
+  if (isEmulateEnabled()) {
+    const text = await collectEmulateAgentReply(run, stream);
+    if (!text.trim()) {
+      await thread.post(
+        "Sorry — I couldn't generate a reply right now. Please try again in a moment.",
+      );
+      return;
+    }
+    await thread.post(text);
+    return;
+  }
+
+  await thread.post(stream);
 }
 
 let cached: Chat | undefined;

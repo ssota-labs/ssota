@@ -80,6 +80,7 @@ const GLOBAL_PREFIXES = [
   "labs",
   "settings",
   "emulate",
+  ".well-known",
   "_next",
   "favicon.ico",
 ];

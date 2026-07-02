@@ -23,6 +23,15 @@ export interface RunMainAgentInput {
   chatContext?: Record<string, unknown>;
 }
 
+const CHAT_THREAD_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Platform bot threads (Slack/Discord ids) are not chat_threads UUIDs. */
+function chatThreadIdForTelemetry(threadId?: string): string | null {
+  if (!threadId) return null;
+  return CHAT_THREAD_UUID_RE.test(threadId) ? threadId : null;
+}
+
 export async function claimMainRunning(
   input: RunMainAgentInput,
   runId: string,
@@ -31,7 +40,7 @@ export async function claimMainRunning(
   await createAgentRunPort(db).start({
     teamspaceId: input.teamspaceId,
     runtimeKind: "main",
-    threadId: input.threadId,
+    threadId: chatThreadIdForTelemetry(input.threadId),
     scheduleId: input.scheduleId ?? null,
     workflowRunId: runId,
     accountId: input.accountId ?? null,
@@ -58,6 +67,7 @@ export async function persistMainAssistantMessage(
   parts: UIMessage["parts"] | null,
 ): Promise<void> {
   if (!parts || parts.length === 0 || !input.threadId) return;
+  if (!CHAT_THREAD_UUID_RE.test(input.threadId)) return;
 
   const db = getDb();
   const chat = createChatPort(db, {

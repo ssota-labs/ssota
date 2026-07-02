@@ -1,4 +1,5 @@
 import type { ModelMessage, SystemModelMessage, UIMessage } from "ai";
+import "@/lib/ai/register-stub-gateway";
 import { resolveRunAgent } from "@ssota/agent-runtime";
 import {
   claimMainRunning,
