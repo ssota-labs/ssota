@@ -95,7 +95,10 @@ test.describe("Agents", () => {
     await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
 
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
-    await triggersCard.getByText("Weekly on weekdays at 9:00 AM").click();
+    const scheduleRow = triggersCard.getByRole("button", {
+      name: /Weekly on weekdays at 9:00 AM/i,
+    });
+    await scheduleRow.click();
 
     const popover = page.getByTestId("schedule-edit-popover");
     await expect(popover).toBeVisible();
@@ -103,6 +106,9 @@ test.describe("Agents", () => {
       popover.getByRole("button", { name: "Save changes" }),
     ).toBeVisible();
     await expect(popover.getByLabel("Every")).toHaveValue("1");
+
+    await scheduleRow.click();
+    await expect(popover).not.toBeVisible();
   });
 
   test("opens tools dialog with sidebar list", async ({ page }) => {

@@ -121,6 +121,7 @@ export function AgentSettingsSheet({
     null,
   );
   const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
+  const ignoreNextScheduleRowPressRef = useRef(false);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -377,8 +378,15 @@ export function AgentSettingsSheet({
                     className="group"
                     testId={`agent-schedule-edit-${schedule.id}`}
                     onPress={(element) => {
-                      schedulePopoverAnchorRef.current = element;
-                      setEditingScheduleId(schedule.id);
+                      if (ignoreNextScheduleRowPressRef.current) {
+                        ignoreNextScheduleRowPressRef.current = false;
+                        return;
+                      }
+                      setEditingScheduleId((current) => {
+                        if (current === schedule.id) return null;
+                        schedulePopoverAnchorRef.current = element;
+                        return schedule.id;
+                      });
                     }}
                     icon={
                       <ClockIcon className="size-3.5 text-muted-foreground" />
@@ -501,7 +509,18 @@ export function AgentSettingsSheet({
 
       <Popover
         open={editingScheduleId !== null}
-        onOpenChange={(open) => {
+        onOpenChange={(open, eventDetails) => {
+          if (
+            !open &&
+            eventDetails?.reason === "outside-press" &&
+            schedulePopoverAnchorRef.current?.contains(
+              eventDetails.event.target as Node,
+            )
+          ) {
+            setEditingScheduleId(null);
+            ignoreNextScheduleRowPressRef.current = true;
+            return;
+          }
           if (!open) setEditingScheduleId(null);
         }}
       >
@@ -510,7 +529,7 @@ export function AgentSettingsSheet({
           side="left"
           align="start"
           sideOffset={8}
-          className="w-[min(32rem,92vw)] max-h-[min(80vh,40rem)] overflow-y-auto p-4"
+          className="w-[min(26rem,88vw)] max-h-[min(80vh,40rem)] overflow-y-auto p-4"
           data-testid="schedule-edit-popover"
         >
           {scheduleEditTarget ? (
