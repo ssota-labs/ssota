@@ -315,8 +315,9 @@ export function ScheduleSheet({
           <>
             <div className="flex items-end gap-2">
               <div className="grid gap-2">
-                <Label>Every</Label>
+                <Label htmlFor="schedule-every">Every</Label>
                 <Input
+                  id="schedule-every"
                   type="number"
                   min={1}
                   className="w-20"
@@ -336,6 +337,7 @@ export function ScheduleSheet({
                   }
                   disabled={isPending}
                   items={FREQUENCIES}
+                  modal={false}
                 >
                   <SelectTrigger id="schedule-frequency" className="w-full">
                     <SelectValue />
@@ -477,6 +479,7 @@ export function ScheduleSheet({
             onValueChange={(value) => value && setTimezone(value)}
             disabled={isPending}
             items={tzOptions.map((tz) => ({ value: tz, label: tz }))}
+            modal={false}
           >
             <SelectTrigger id="schedule-timezone" className="w-full">
               <SelectValue />

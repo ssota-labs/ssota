@@ -327,13 +327,13 @@ export function AgentSettingsSheet({
                 title={chatLabel}
               />
               <AgentSettingItem
+                testId="agent-trigger-task"
                 icon={<AtIcon className="size-3.5 text-muted-foreground" />}
                 title={TRIGGER_LABELS.task}
                 trailing={
                   <Switch
                     checked={draft.allowedTriggers.includes("task")}
                     onCheckedChange={(checked) => toggleTrigger("task", checked)}
-                    data-testid="agent-trigger-task"
                     aria-label={TRIGGER_LABELS.task}
                   />
                 }
