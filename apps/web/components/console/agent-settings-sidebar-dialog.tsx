@@ -80,7 +80,7 @@ export function AgentSettingsSidebarDialog({
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <div className="flex min-h-0 flex-1">
-          <aside className="border-border flex w-40 shrink-0 flex-col border-r">
+          <aside className="border-border flex w-52 shrink-0 flex-col border-r">
             <div className="space-y-2 px-3 py-3">
               <h2 className="min-w-0 truncate text-sm font-semibold">{title}</h2>
               {showSearch ? (
