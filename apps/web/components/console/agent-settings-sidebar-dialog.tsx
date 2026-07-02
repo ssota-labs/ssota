@@ -215,19 +215,19 @@ function SidebarNavItem({
         data-testid={item.testId}
         onClick={() => onSelect(item.id)}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
+          "flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors",
           selected ? "bg-muted font-medium" : "hover:bg-muted/60",
         )}
       >
         {item.icon ? (
-          <span className="bg-background flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 shadow-sm">
+          <span className="bg-background flex size-6 shrink-0 items-center justify-center rounded-md border border-border/60 shadow-sm">
             {item.icon}
           </span>
         ) : null}
         <span className="min-w-0 flex-1">
-          <span className="block text-sm leading-snug">{item.label}</span>
+          <span className="block text-xs leading-snug">{item.label}</span>
           {item.subtitle ? (
-            <span className="text-muted-foreground block text-xs leading-snug font-normal">
+            <span className="text-muted-foreground block text-[11px] leading-snug font-normal">
               {item.subtitle}
             </span>
           ) : null}
