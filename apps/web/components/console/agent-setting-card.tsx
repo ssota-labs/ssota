@@ -10,6 +10,7 @@ type AgentSettingCardProps = {
   /** Omit when the card body is self-contained (e.g. inline editor). */
   onOpen?: () => void;
   testId?: string;
+  className?: string;
   children?: ReactNode;
   /** Bottom action row (e.g. “Add schedule”). */
   footer?: ReactNode;
@@ -20,6 +21,7 @@ export function AgentSettingCard({
   description,
   onOpen,
   testId,
+  className,
   children,
   footer,
 }: AgentSettingCardProps) {
@@ -32,7 +34,10 @@ export function AgentSettingCard({
 
   return (
     <section
-      className="overflow-hidden rounded-lg border border-border bg-card"
+      className={cn(
+        "overflow-hidden rounded-lg border border-border bg-card",
+        className,
+      )}
       data-testid={testId}
     >
       {onOpen ? (

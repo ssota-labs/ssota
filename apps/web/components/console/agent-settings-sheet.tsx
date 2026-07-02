@@ -305,6 +305,7 @@ export function AgentSettingsSheet({
             title="Triggers"
             description="When should this agent run?"
             testId="agent-settings-triggers-card"
+            className="bg-transparent"
             footer={
               <Button
                 type="button"
