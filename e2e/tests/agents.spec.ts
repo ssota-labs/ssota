@@ -70,6 +70,8 @@ test.describe("Agents", () => {
     await expect(addDialog.getByRole("button", { name: "Done" })).toHaveCount(0);
     await expect(nav.getByText("Slack", { exact: true })).toBeVisible();
     await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
+    await expect(nav.getByText("Notion", { exact: true })).not.toBeVisible();
+    await expect(nav.getByText("Discord", { exact: true })).not.toBeVisible();
   });
 
   test("frequency select opens inside add-trigger dialog", async ({ page }) => {
