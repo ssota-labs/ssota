@@ -46,6 +46,8 @@ export interface BuildRunInstructionsParams {
   skillManifest?: SkillIndex[];
   mainDefinition?: AgentDefinition | null;
   taskPlaybook?: AgentDefinition | null;
+  /** Specialist agent invoked from chat (Slack/web), not a task run. */
+  specialistChatPlaybook?: AgentDefinition | null;
   task?: {
     id: string;
     title: string;
@@ -92,7 +94,15 @@ function buildDynamicInstructionSegment(
   const lines: string[] = [];
 
   if (runtimeKind === "main") {
-    if (agentManifest && agentManifest.length > 0) {
+    if (params.specialistChatPlaybook) {
+      const playbook = params.specialistChatPlaybook;
+      lines.push(
+        `## Specialist chat mode`,
+        `You are ${playbook.name} in a live chat thread. Answer the user's message directly using your playbook and tools. This is not a delegated task run — do not call get_task, update_task, complete_task, or block_task unless the user names a specific task id.`,
+        `\n## Agent playbook (${playbook.name})`,
+        blockNoteContentToText(playbook.instructions),
+      );
+    } else if (agentManifest && agentManifest.length > 0) {
       const rows = agentManifest
         .map((w) => `- ${w.id} (${w.name}) — ${w.description}`)
         .join("\n");

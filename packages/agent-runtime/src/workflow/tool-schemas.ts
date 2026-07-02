@@ -7,7 +7,6 @@
  */
 import { z } from "zod";
 import {
-  ExecutionDirectiveSchema,
   ReadSkillInputSchema,
   RunScriptToolInputSchema,
   SandboxAwaitInputSchema,
@@ -23,6 +22,32 @@ import {
 } from "@ssota/contracts";
 import { SUBAGENT_TYPES } from "../subagents/constants.js";
 import { composioMetaToolSchemas } from "../composio/meta-tool-schemas.js";
+
+/**
+ * Workflow JSON Schema serialization rejects `format: "uuid"` (from z.string().uuid()).
+ * Use a regex-backed string instead — same validation, workflow-safe JSON Schema.
+ */
+const WORKFLOW_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function workflowUuid() {
+  return z.string().regex(WORKFLOW_UUID_RE, { message: "Invalid UUID" });
+}
+
+const workflowExecutionDirective = z.object({
+  goal: z.string().min(10),
+  background: z.string().min(10),
+  steps: z.array(z.string().min(3)).min(1),
+  constraints: z.array(z.string()).default([]),
+  contextRefs: z
+    .object({
+      nodeIds: z.array(workflowUuid()).default([]),
+      edgeIds: z.array(workflowUuid()).default([]),
+      taskIds: z.array(workflowUuid()).default([]),
+    })
+    .default({ nodeIds: [], edgeIds: [], taskIds: [] }),
+  notes: z.string().optional(),
+});
 
 const taskStatus = z.enum([
   "pending",
@@ -59,9 +84,9 @@ export const workflowToolSchemas = {
       .describe("Node catalog key, e.g. 'feature', 'prd', 'objective'."),
     limit: z.number().int().positive().max(100).optional(),
   }),
-  get_node: z.object({ nodeId: z.string().uuid() }),
+  get_node: z.object({ nodeId: workflowUuid() }),
   traverse_edges: z.object({
-    nodeId: z.string().uuid(),
+    nodeId: workflowUuid(),
     direction: z.enum(["out", "in", "both"]).optional(),
     edgeType: z.string().optional(),
   }),
@@ -72,35 +97,35 @@ export const workflowToolSchemas = {
     content: z.string().optional(),
   }),
   update_node: z.object({
-    nodeId: z.string().uuid(),
+    nodeId: workflowUuid(),
     title: z.string().optional(),
     properties: z.record(z.unknown()).optional(),
     content: z.string().optional(),
   }),
   create_edge: z.object({
     catalogKey: z.string(),
-    sourceNodeId: z.string().uuid(),
-    targetNodeId: z.string().uuid(),
+    sourceNodeId: workflowUuid(),
+    targetNodeId: workflowUuid(),
     properties: z.record(z.unknown()).optional(),
   }),
 
   // --- Tasks ---
-  get_task: z.object({ taskId: z.string().uuid().optional() }),
+  get_task: z.object({ taskId: workflowUuid().optional() }),
   query_tasks: z.object({
     status: taskStatus.optional(),
     limit: z.number().int().positive().max(100).optional(),
   }),
   spawn_task: z.object({
     title: z.string(),
-    agentDefinitionId: z.string().uuid(),
-    targetNodeId: z.string().uuid().optional(),
-    executionDirective: ExecutionDirectiveSchema,
+    agentDefinitionId: workflowUuid(),
+    targetNodeId: workflowUuid().optional(),
+    executionDirective: workflowExecutionDirective,
     acceptanceCriteria: z.array(z.unknown()).min(1),
     idempotencyKey: z.string().optional(),
     status: taskStatus.optional(),
   }),
   update_task: z.object({
-    taskId: z.string().uuid().optional(),
+    taskId: workflowUuid().optional(),
     title: z.string().optional(),
     status: taskStatus.optional(),
     context: z.record(z.unknown()).optional(),
@@ -126,31 +151,31 @@ export const workflowToolSchemas = {
   }),
   create_page: z.object({
     title: z.string().describe("Page title (shown in the sidebar tree)."),
-    parentId: z.string().uuid().nullable().optional(),
-    subjectNodeId: z.string().uuid().nullable().optional(),
+    parentId: workflowUuid().nullable().optional(),
+    subjectNodeId: workflowUuid().nullable().optional(),
     spec: z.record(z.unknown()).describe("JSON-render spec { root, elements }."),
     bindings: z.record(z.unknown()).optional(),
     actions: z.record(z.unknown()).optional(),
   }),
   update_page: z.object({
-    id: z.string().uuid(),
+    id: workflowUuid(),
     title: z.string().optional(),
-    parentId: z.string().uuid().nullable().optional(),
-    subjectNodeId: z.string().uuid().nullable().optional(),
+    parentId: workflowUuid().nullable().optional(),
+    subjectNodeId: workflowUuid().nullable().optional(),
     spec: z.record(z.unknown()).optional(),
     bindings: z.record(z.unknown()).optional(),
     actions: z.record(z.unknown()).optional(),
   }),
-  read_page: z.object({ id: z.string().uuid() }),
+  read_page: z.object({ id: workflowUuid() }),
   list_pages: z.object({}),
 
   // --- Agent definitions ---
   list_agent_definitions: z.object({}),
   get_agent_instruction: z.object({
-    id: z.string().uuid(),
+    id: workflowUuid(),
   }),
   write_agent_definition: z.object({
-    id: z.string().uuid().optional(),
+    id: workflowUuid().optional(),
     name: z.string(),
     description: z.string(),
     body: z.string(),

@@ -1,3 +1,7 @@
+import {
+  isEmulateEnabled,
+  resolveProviderApiUrl,
+} from "./connections/provider-api-base.js";
 import { slackHandleFromAgentName } from "./slack-user-group-handle.js";
 
 export { slackHandleFromAgentName };
@@ -9,7 +13,8 @@ async function slackApi<T>(
   method: string,
   body: Record<string, unknown>,
 ): Promise<T> {
-  const response = await fetch(`https://slack.com/api/${method}`, {
+  const url = resolveProviderApiUrl("slack", `https://slack.com/api/${method}`);
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -29,6 +34,13 @@ export type CreatedSlackUserGroup = {
   handle: string;
 };
 
+/** Deterministic user-group ids for local emulate (usergroups.* is not implemented). */
+export function emulateSlackUserGroupForAgent(agentName: string): CreatedSlackUserGroup {
+  const handle = slackHandleFromAgentName(agentName);
+  const compact = handle.replace(/-/g, "").toUpperCase().slice(0, 8).padEnd(8, "0");
+  return { id: `S0${compact}`, handle };
+}
+
 /** Create and enable a Slack user group for @mention routing to an agent. */
 export async function createSlackUserGroupForAgent(
   token: string,
@@ -36,6 +48,11 @@ export async function createSlackUserGroupForAgent(
   description?: string,
 ): Promise<CreatedSlackUserGroup> {
   const handle = slackHandleFromAgentName(agentName);
+
+  if (isEmulateEnabled()) {
+    return emulateSlackUserGroupForAgent(agentName);
+  }
+
   const created = await slackApi<{
     usergroup: { id: string; handle?: string };
   }>(token, "usergroups.create", {

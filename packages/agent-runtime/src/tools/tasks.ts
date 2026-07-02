@@ -20,8 +20,10 @@ export function createTaskTools(): ToolSet {
       inputSchema: z.object({ taskId: z.string().uuid().optional() }),
       execute: async (input, { context }) => {
         const ctx = getRunContext(context);
+        const taskId = input.taskId ?? ctx.taskId;
+        if (!taskId) return null;
         const task = await getTaskPort(ctx.teamspaceId, ctx.accountId).getTask(
-          input.taskId ?? ctx.taskId ?? "",
+          taskId,
         );
         return task ? serializeTask(task) : null;
       },

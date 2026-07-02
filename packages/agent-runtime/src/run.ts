@@ -71,6 +71,7 @@ function resolveMainTrigger(input: RunAgentInput): AgentTrigger {
   if (input.chatContext?.trigger === "heartbeat") return "heartbeat";
   if (input.scheduleId) return "schedule";
   if (input.chatContext?.trigger === "chatbot") return "chatbot";
+  if (input.chatContext?.trigger === "manual") return "manual";
   return "chat";
 }
 
@@ -183,16 +184,11 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
         definition.agentDefinitionId,
       );
       instructions = buildRunInstructionMessages({
-        runtimeKind: "task",
+        runtimeKind: "main",
         teamspaceId,
         accountId,
-        taskPlaybook: playbook?.definition ?? null,
         skillManifest,
-        task: {
-          id: input.threadId ?? input.runId,
-          title: "Slack conversation",
-          acceptanceCriteria: [],
-        },
+        specialistChatPlaybook: playbook?.definition ?? null,
       });
     } else {
       const dbDefinitions = await instructionPort.listDefinitions();
