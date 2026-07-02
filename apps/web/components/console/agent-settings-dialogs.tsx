@@ -116,7 +116,6 @@ export function AgentSettingsDialogs({
     string | null
   >(null);
   const [toolSearch, setToolSearch] = useState("");
-  const [addTriggerSearch, setAddTriggerSearch] = useState("");
 
   const connectedProviders = useMemo(() => {
     const set = new Set<string>();
@@ -134,10 +133,10 @@ export function AgentSettingsDialogs({
     () =>
       filterAddableTriggerGroups(
         ADDABLE_TRIGGER_GROUPS,
-        addTriggerSearch,
+        "",
         addedConnectionTriggerIds,
       ),
-    [addTriggerSearch, addedConnectionTriggerIds],
+    [addedConnectionTriggerIds],
   );
 
   const addTriggerFlatItems = useMemo(
@@ -196,7 +195,6 @@ export function AgentSettingsDialogs({
 
   useEffect(() => {
     if (openDialog === "add-trigger") {
-      setAddTriggerSearch("");
       setSelectedAddTriggerId(addTriggerFlatItems[0]?.id ?? null);
     }
   }, [openDialog, addTriggerFlatItems]);
@@ -578,9 +576,6 @@ export function AgentSettingsDialogs({
         groups={addTriggerSidebarGroups}
         selectedId={selectedAddTriggerId}
         onSelect={setSelectedAddTriggerId}
-        searchQuery={addTriggerSearch}
-        onSearchQueryChange={setAddTriggerSearch}
-        searchPlaceholder="Search triggers…"
         detail={renderAddTriggerDetail()}
         footer={
           selectedAddTrigger?.action === "schedule" ? (
