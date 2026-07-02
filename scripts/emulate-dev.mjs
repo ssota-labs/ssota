@@ -21,7 +21,8 @@ const emulators = await Promise.all(
     createEmulator({
       service,
       port,
-      seed: seed[service],
+      // createEmulator reads svc config at seed[service] — pass the full YAML root.
+      seed,
     }),
   ),
 );
