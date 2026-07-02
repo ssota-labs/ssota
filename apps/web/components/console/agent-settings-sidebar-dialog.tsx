@@ -169,7 +169,7 @@ export function SidebarDetailHeader({
       className={cn(
         "mb-4 flex items-start gap-3",
         sticky &&
-          "sticky top-0 z-10 -mx-4 border-b border-border/60 bg-popover px-4 pb-3 pt-1",
+          "sticky top-0 z-10 -mx-4 -mt-4 border-b border-border/60 bg-popover px-4 pb-3 pt-4",
       )}
     >
       {icon ? (
