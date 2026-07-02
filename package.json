@@ -24,6 +24,8 @@
     "db:seed:demo-connections": "pnpm exec tsx scripts/seed-demo-connections.ts",
     "design-lab": "pnpm --filter design-lab dev",
     "design-lab:build": "pnpm --filter design-lab build",
+    "toolcraft": "pnpm --filter toolcraft dev",
+    "toolcraft:verify": "pnpm --filter toolcraft verify:quick",
     "deck": "pnpm --filter deck dev",
     "deck:build": "pnpm --filter deck build",
     "deck:export-pdf": "pnpm --filter deck export:pdf",

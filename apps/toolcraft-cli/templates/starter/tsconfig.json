@@ -1,0 +1,11 @@
+{
+  "extends": "../packages/typescript-config/vite-react.json",
+  "compilerOptions": {
+    "types": ["vite/client", "node"],
+    "paths": {
+      "@/*": ["./src/*"],
+      "#/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

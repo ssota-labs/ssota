@@ -1,0 +1,31 @@
+{
+  "name": "@ssota/toolcraft-cli",
+  "version": "0.0.12",
+  "private": true,
+  "license": "SEE LICENSE IN LICENSE.md",
+  "type": "module",
+  "bin": {
+    "toolcraft": "./bin/toolcraft.mjs",
+    "create-toolcraft-app": "./bin/create-toolcraft-app.mjs"
+  },
+  "files": [
+    "LICENSE.md",
+    "README.md",
+    "bin",
+    "scripts",
+    "src",
+    "templates",
+    "toolcraft-skills",
+    "package.json"
+  ],
+  "scripts": {
+    "prepack": "node scripts/prepare-pack.mjs",
+    "test": "node --test src/*.test.mjs",
+    "typecheck": "node --check bin/toolcraft.mjs && node --check bin/create-toolcraft-app.mjs && node --check scripts/*.mjs && node --check src/*.mjs"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.6.0",
+    "cross-spawn": "^7.0.6",
+    "skills": "^1.5.12"
+  }
+}
