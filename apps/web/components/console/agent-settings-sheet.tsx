@@ -526,19 +526,20 @@ export function AgentSettingsSheet({
       >
         <PopoverContent
           anchor={schedulePopoverAnchorRef}
-          side="left"
+          side="bottom"
           align="start"
-          sideOffset={8}
-          className="w-[min(26rem,88vw)] max-h-[min(80vh,40rem)] overflow-y-auto p-4"
+          sideOffset={6}
+          className="w-[min(22rem,92vw)] max-h-[min(65vh,24rem)] overflow-y-auto p-3"
           data-testid="schedule-edit-popover"
         >
           {scheduleEditTarget ? (
             <>
-              <PopoverHeader className="mb-3 p-0">
+              <PopoverHeader className="mb-2 p-0">
                 <PopoverTitle>Edit trigger</PopoverTitle>
               </PopoverHeader>
               <ScheduleSheet
                 presentation="inline"
+                compact
                 open
                 onOpenChange={(open) => {
                   if (!open) setEditingScheduleId(null);

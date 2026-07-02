@@ -60,6 +60,8 @@ interface ScheduleSheetProps {
   presentation?: "sheet" | "dialog" | "inline";
   /** Where the submit button renders for inline presentation (default inline). */
   inlineSubmitPlacement?: "inline" | "footer";
+  /** Tighter spacing for compact popovers (agent schedule edit). */
+  compact?: boolean;
 }
 
 function inferTargetType(agentDefinitionId?: string): ScheduleTargetType {
@@ -114,6 +116,7 @@ export function ScheduleSheet({
   schedule,
   presentation = "sheet",
   inlineSubmitPlacement = "inline",
+  compact = false,
 }: ScheduleSheetProps) {
   const router = useRouter();
   const isEdit = Boolean(schedule);
@@ -298,7 +301,11 @@ export function ScheduleSheet({
   );
 
   const form = (
-    <form id={formId} className="space-y-5" onSubmit={handleSubmit}>
+    <form
+      id={formId}
+      className={cn(compact ? "space-y-3" : "space-y-5")}
+      onSubmit={handleSubmit}
+    >
         {showAgentPicker ? (
           <div className="space-y-2">
             <Label>Agent</Label>
@@ -444,7 +451,10 @@ export function ScheduleSheet({
                         type="button"
                         size="sm"
                         variant={active ? "default" : "outline"}
-                        className={cn("h-8 w-10 px-0")}
+                        className={cn(
+                          "px-0",
+                          compact ? "h-7 w-9" : "h-8 w-10",
+                        )}
                         onClick={() => toggleDay(d.value)}
                         disabled={isPending}
                       >
@@ -504,7 +514,12 @@ export function ScheduleSheet({
           />
         </div>
 
-        <div className="rounded-md border bg-muted/40 p-3 text-sm">
+        <div
+          className={cn(
+            "rounded-md border bg-muted/40",
+            compact ? "p-2 text-xs" : "p-3 text-sm",
+          )}
+        >
           {preview.error ? (
             <p className="text-destructive">{preview.error}</p>
           ) : (
