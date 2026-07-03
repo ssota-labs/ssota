@@ -294,14 +294,7 @@ export function AgentSettingsDialogs({
   const toolSidebarItems: SidebarListItem[] = filteredToolEntries.map(
     (entry) => {
       const enabled = isToolEnabled(entry);
-      const subtitle =
-        entry.kind === "script"
-          ? entry.key
-          : entry.kind === "connector"
-            ? connectedProviders.has(entry.provider)
-              ? "Connected"
-              : "Not connected"
-            : undefined;
+      const subtitle = entry.kind === "script" ? entry.key : undefined;
 
       const icon =
         entry.kind === "connector" ? (
