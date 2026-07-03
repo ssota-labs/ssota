@@ -59,7 +59,7 @@ interface ScheduleSheetProps {
   /** Sheet on schedules page; dialog when editing from agent card; inline in add-trigger sidebar. */
   presentation?: "sheet" | "dialog" | "inline";
   /** Where the submit button renders for inline presentation (default inline). */
-  inlineSubmitPlacement?: "inline" | "footer";
+  inlineSubmitPlacement?: "inline" | "footer" | "header";
   /** Tighter spacing for compact popovers (agent schedule edit). */
   compact?: boolean;
 }
@@ -291,7 +291,13 @@ export function ScheduleSheet({
       type="submit"
       form={formId}
       disabled={isPending || Boolean(preview.error)}
-      className={presentation === "sheet" ? "w-full" : undefined}
+      className={cn(
+        presentation === "sheet" ? "w-full" : undefined,
+        presentation === "inline" &&
+          compact &&
+          inlineSubmitPlacement === "header" &&
+          "h-8 px-3 text-xs",
+      )}
       data-testid={
         presentation === "inline" && !isEdit ? "add-trigger-confirm" : undefined
       }
@@ -554,6 +560,12 @@ export function ScheduleSheet({
     if (!open) return null;
     return (
       <div className="space-y-4" data-testid="schedule-inline-form">
+        {inlineSubmitPlacement === "header" ? (
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold leading-none">{title}</h3>
+            {submitButton}
+          </div>
+        ) : null}
         {form}
         {inlineSubmitPlacement === "inline" ? (
           <div className="flex justify-end">{submitButton}</div>

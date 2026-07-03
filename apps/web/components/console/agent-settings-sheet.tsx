@@ -17,8 +17,6 @@ import { Button } from "@ssota/ui/components/ui/button";
 import {
   Popover,
   PopoverContent,
-  PopoverHeader,
-  PopoverTitle,
 } from "@ssota/ui/components/ui/popover";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import {
@@ -533,23 +531,19 @@ export function AgentSettingsSheet({
           data-testid="schedule-edit-popover"
         >
           {scheduleEditTarget ? (
-            <>
-              <PopoverHeader className="mb-2 p-0">
-                <PopoverTitle>Edit trigger</PopoverTitle>
-              </PopoverHeader>
-              <ScheduleSheet
-                presentation="inline"
-                compact
-                open
-                onOpenChange={(open) => {
-                  if (!open) setEditingScheduleId(null);
-                }}
-                teamspaceId={teamspaceId}
-                accountId={accountId}
-                instructions={[{ id: definition.id, name: definition.name }]}
-                schedule={scheduleEditTarget}
-              />
-            </>
+            <ScheduleSheet
+              presentation="inline"
+              inlineSubmitPlacement="header"
+              compact
+              open
+              onOpenChange={(open) => {
+                if (!open) setEditingScheduleId(null);
+              }}
+              teamspaceId={teamspaceId}
+              accountId={accountId}
+              instructions={[{ id: definition.id, name: definition.name }]}
+              schedule={scheduleEditTarget}
+            />
           ) : null}
         </PopoverContent>
       </Popover>
