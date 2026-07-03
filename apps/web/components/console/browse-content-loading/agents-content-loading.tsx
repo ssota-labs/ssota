@@ -28,7 +28,7 @@ export function AgentsContentLoading() {
             <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Project agent
             </h2>
-            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-transparent">
               <ListRowSkeleton />
             </div>
           </section>
@@ -38,7 +38,7 @@ export function AgentsContentLoading() {
               <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {AGENT_GROUP_LABEL[key]}
               </h2>
-              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-transparent">
                 {Array.from(
                   { length: key === "builtin" ? builtinRows : 1 },
                   (_, index) => (

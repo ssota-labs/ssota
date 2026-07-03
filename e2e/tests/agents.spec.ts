@@ -5,6 +5,18 @@ import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 const PROJECT_AGENT_CARD = "main-agent-card";
 
 test.describe("Agents", () => {
+  test("agent browse list cards use transparent background", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    const main = page.getByRole("main");
+    const listCards = main.locator(
+      ".divide-y.divide-border.overflow-hidden.rounded-lg.border",
+    );
+    await expect(listCards.first()).toHaveClass(/bg-transparent/);
+    await expect(listCards.first()).not.toHaveClass(/bg-card/);
+  });
+
   test("lists seeded agents and opens settings sheet", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
