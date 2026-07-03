@@ -37,12 +37,7 @@ import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { AgentSkillBindings } from "@/components/console/skills-workspace";
 import { CardListSheetPanel } from "@/components/card-list-sheet";
-import {
-  AgentSettingCard,
-  AgentSettingEmpty,
-  AgentSettingItem,
-  AgentSettingItems,
-} from "@/components/console/agent-setting-card";
+import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import {
   AgentSettingsDialogs,
   type AgentSettingsDialogKind,
@@ -359,31 +354,19 @@ export function AgentSettingsSheet({
           data-testid="agent-settings-sheet"
           data-unsaved={isDirty ? "true" : undefined}
         >
-          <AgentSettingCard
-            title="Triggers"
-            description="When should this agent run?"
-            testId="agent-settings-triggers-card"
-            footer={
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="w-fit justify-start gap-2"
-                data-testid="agent-triggers-add"
-                onClick={() => setOpenDialog("add-trigger")}
-              >
-                <PlusIcon className="size-3.5" aria-hidden />
-                Add trigger
-              </Button>
-            }
-          >
-            <AgentSettingItems>
-              <AgentSettingItem
+          <AgentSettingCard.Root testId="agent-settings-triggers-card">
+            <AgentSettingCard.Header
+              title="Triggers"
+              description="When should this agent run?"
+            />
+            <AgentSettingCard.Body>
+              <AgentSettingCard.Items>
+              <AgentSettingCard.Item
                 testId="agent-trigger-chat"
                 icon={<ChatsCircleIcon className="size-3.5 text-muted-foreground" />}
                 title={chatLabel}
               />
-              <AgentSettingItem
+              <AgentSettingCard.Item
                 testId="agent-trigger-task"
                 icon={<AtIcon className="size-3.5 text-muted-foreground" />}
                 title={TRIGGER_LABELS.task}
@@ -396,7 +379,7 @@ export function AgentSettingsSheet({
                 }
               />
               {draft.connectionTriggers.map((trigger) => (
-                <AgentSettingItem
+                <AgentSettingCard.Item
                   key={trigger.id}
                   icon={
                     <ConnectorBrandIcon
@@ -429,7 +412,7 @@ export function AgentSettingsSheet({
                 const enabled =
                   draft.scheduleEnabledById[schedule.id] ?? schedule.enabled;
                 return (
-                  <AgentSettingItem
+                  <AgentSettingCard.Item
                     key={schedule.id}
                     className="group"
                     testId={`agent-schedule-edit-${schedule.id}`}
@@ -461,14 +444,29 @@ export function AgentSettingsSheet({
                   />
                 );
               })}
-            </AgentSettingItems>
-          </AgentSettingCard>
+              </AgentSettingCard.Items>
+            </AgentSettingCard.Body>
+            <AgentSettingCard.Footer>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-fit justify-start gap-2"
+                data-testid="agent-triggers-add"
+                onClick={() => setOpenDialog("add-trigger")}
+              >
+                <PlusIcon className="size-3.5" aria-hidden />
+                Add trigger
+              </Button>
+            </AgentSettingCard.Footer>
+          </AgentSettingCard.Root>
 
-          <AgentSettingCard
-            title="Instructions"
-            description="What should the agent do every time it runs?"
-            testId="agent-settings-instructions-card"
-          >
+          <AgentSettingCard.Root testId="agent-settings-instructions-card">
+            <AgentSettingCard.Header
+              title="Instructions"
+              description="What should the agent do every time it runs?"
+            />
+            <AgentSettingCard.Body>
             <div
               className="min-h-[200px] max-h-[min(24rem,45vh)] overflow-y-auto overscroll-contain"
               data-testid="agent-instructions-editor"
@@ -479,26 +477,33 @@ export function AgentSettingsSheet({
                 onSave={handleInstructionsSave}
               />
             </div>
-          </AgentSettingCard>
+            </AgentSettingCard.Body>
+          </AgentSettingCard.Root>
 
-          <AgentSettingCard
-            title="Tools and access"
-            description="Composio connectors and TypeScript scripts for this agent."
-            testId="agent-settings-tools-card"
-            onOpen={() => setOpenDialog("tools")}
-          >
+          <AgentSettingCard.Root testId="agent-settings-tools-card">
+            <AgentSettingCard.Header
+              title="Tools and access"
+              description="Composio connectors and TypeScript scripts for this agent."
+              action={
+                <AgentSettingCard.OpenAction
+                  onOpen={() => setOpenDialog("tools")}
+                  aria-label="Open tools and access"
+                />
+              }
+            />
+            <AgentSettingCard.Body>
             {enabledConnectors.length === 0 && linkedScriptTools.length === 0 ? (
-              <AgentSettingEmpty>
+              <AgentSettingCard.Empty>
                 No connectors or scripts selected yet
-              </AgentSettingEmpty>
+              </AgentSettingCard.Empty>
             ) : (
-              <AgentSettingItems>
+              <AgentSettingCard.Items>
                 {enabledConnectors.map((connector) => {
                   const connected = connectedProviders.has(connector.provider);
                   const count =
                     connectedProviders.get(connector.provider)?.length ?? 0;
                   return (
-                    <AgentSettingItem
+                    <AgentSettingCard.Item
                       key={connector.provider}
                       icon={
                         <ConnectorBrandIcon
@@ -521,7 +526,7 @@ export function AgentSettingsSheet({
                   );
                 })}
                 {linkedScriptTools.map((tool) => (
-                  <AgentSettingItem
+                  <AgentSettingCard.Item
                     key={tool.id}
                     icon={
                       <WrenchIcon className="size-3.5 text-muted-foreground" />
@@ -531,35 +536,45 @@ export function AgentSettingsSheet({
                     trailing="TypeScript"
                   />
                 ))}
-              </AgentSettingItems>
+              </AgentSettingCard.Items>
             )}
-          </AgentSettingCard>
+            </AgentSettingCard.Body>
+          </AgentSettingCard.Root>
 
-          <AgentSettingCard
-            title="Model"
-            description="Default model for agent runs."
-            testId="agent-settings-model-card"
-            onOpen={() => setOpenDialog("model")}
-          >
-            <AgentSettingItems>
-              <AgentSettingItem
+          <AgentSettingCard.Root testId="agent-settings-model-card">
+            <AgentSettingCard.Header
+              title="Model"
+              description="Default model for agent runs."
+              action={
+                <AgentSettingCard.OpenAction
+                  onOpen={() => setOpenDialog("model")}
+                  aria-label="Open model settings"
+                />
+              }
+            />
+            <AgentSettingCard.Body>
+            <AgentSettingCard.Items>
+              <AgentSettingCard.Item
                 icon={<CpuIcon className="size-3.5 text-muted-foreground" />}
                 title={modelLabel}
                 subtitle={modelProvider || "Default model"}
               />
-            </AgentSettingItems>
-          </AgentSettingCard>
+            </AgentSettingCard.Items>
+            </AgentSettingCard.Body>
+          </AgentSettingCard.Root>
 
-          <AgentSettingCard
-            title="Skills"
-            description="Runtime skills loaded via read_skill."
-            testId="agent-settings-skills-card"
-          >
+          <AgentSettingCard.Root testId="agent-settings-skills-card">
+            <AgentSettingCard.Header
+              title="Skills"
+              description="Runtime skills loaded via read_skill."
+            />
+            <AgentSettingCard.Body>
             <AgentSkillBindings
               teamspaceId={teamspaceId}
               agentDefinitionId={definition.id}
             />
-          </AgentSettingCard>
+            </AgentSettingCard.Body>
+          </AgentSettingCard.Root>
         </div>
       </CardListSheetPanel>
 

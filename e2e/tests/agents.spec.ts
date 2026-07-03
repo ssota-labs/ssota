@@ -120,8 +120,7 @@ test.describe("Agents", () => {
     await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
     await page
       .getByTestId("agent-settings-tools-card")
-      .getByRole("button")
-      .first()
+      .getByTestId("agent-setting-card-open")
       .click();
 
     const toolsDialog = page.getByTestId("agent-tools-sidebar-dialog");

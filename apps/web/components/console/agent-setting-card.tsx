@@ -4,34 +4,17 @@ import type { ReactNode } from "react";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { cn } from "@ssota/ui/lib/utils";
 
-type AgentSettingCardProps = {
-  title: string;
-  description: string;
-  /** Omit when the card body is self-contained (e.g. inline editor). */
-  onOpen?: () => void;
+type AgentSettingCardRootProps = {
   testId?: string;
   className?: string;
-  children?: ReactNode;
-  /** Bottom action row (e.g. “Add schedule”). */
-  footer?: ReactNode;
+  children: ReactNode;
 };
 
-export function AgentSettingCard({
-  title,
-  description,
-  onOpen,
+function AgentSettingCardRoot({
   testId,
   className,
   children,
-  footer,
-}: AgentSettingCardProps) {
-  const header = (
-    <div className="min-w-0 flex-1 space-y-0.5">
-      <h3 className="text-sm font-medium">{title}</h3>
-      <p className="text-muted-foreground text-xs">{description}</p>
-    </div>
-  );
-
+}: AgentSettingCardRootProps) {
   return (
     <section
       className={cn(
@@ -40,31 +23,68 @@ export function AgentSettingCard({
       )}
       data-testid={testId}
     >
-      {onOpen ? (
-        <button
-          type="button"
-          className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40"
-          onClick={onOpen}
-        >
-          {header}
-          <CaretRightIcon
-            className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-            aria-hidden
-          />
-        </button>
-      ) : (
-        <div className="px-4 py-3">{header}</div>
-      )}
-      {children ? <div className="select-none px-3 pb-2">{children}</div> : null}
-      {footer ? (
-        <div className="border-border/60 border-t px-3 py-2">{footer}</div>
-      ) : null}
+      {children}
     </section>
   );
 }
 
+type AgentSettingCardHeaderProps = {
+  title: string;
+  description: string;
+  /** Trailing control (e.g. open chevron) — same row as Triggers header. */
+  action?: ReactNode;
+};
+
+function AgentSettingCardHeader({
+  title,
+  description,
+  action,
+}: AgentSettingCardHeaderProps) {
+  return (
+    <div className="flex items-start gap-3 px-4 py-3">
+      <div className="min-w-0 flex-1 space-y-0.5">
+        <h3 className="text-sm font-medium">{title}</h3>
+        <p className="text-muted-foreground text-xs">{description}</p>
+      </div>
+      {action}
+    </div>
+  );
+}
+
+function AgentSettingCardBody({ children }: { children: ReactNode }) {
+  return <div className="select-none px-3 pb-2">{children}</div>;
+}
+
+function AgentSettingCardFooter({ children }: { children: ReactNode }) {
+  return (
+    <div className="border-border/60 border-t px-3 py-2">{children}</div>
+  );
+}
+
+function AgentSettingCardOpenAction({
+  onOpen,
+  testId = "agent-setting-card-open",
+  "aria-label": ariaLabel = "Open settings",
+}: {
+  onOpen: () => void;
+  testId?: string;
+  "aria-label"?: string;
+}) {
+  return (
+    <button
+      type="button"
+      className="text-muted-foreground hover:text-foreground mt-0.5 shrink-0 rounded-md p-0.5 transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      onClick={onOpen}
+      data-testid={testId}
+      aria-label={ariaLabel}
+    >
+      <CaretRightIcon className="size-4" aria-hidden />
+    </button>
+  );
+}
+
 /** Rows inside a setting card body. */
-export function AgentSettingItems({
+function AgentSettingItems({
   children,
   divided = false,
 }: {
@@ -78,7 +98,7 @@ export function AgentSettingItems({
   );
 }
 
-export function AgentSettingItem({
+function AgentSettingItem({
   title,
   subtitle,
   trailing,
@@ -143,12 +163,19 @@ export function AgentSettingItem({
   );
 }
 
-export function AgentSettingEmpty({
-  children,
-}: {
-  children: ReactNode;
-}) {
+function AgentSettingEmpty({ children }: { children: ReactNode }) {
   return (
-    <p className="text-muted-foreground px-4 py-3 text-xs">{children}</p>
+    <p className="text-muted-foreground px-1 py-2 text-xs">{children}</p>
   );
 }
+
+export const AgentSettingCard = {
+  Root: AgentSettingCardRoot,
+  Header: AgentSettingCardHeader,
+  Body: AgentSettingCardBody,
+  Footer: AgentSettingCardFooter,
+  OpenAction: AgentSettingCardOpenAction,
+  Items: AgentSettingItems,
+  Item: AgentSettingItem,
+  Empty: AgentSettingEmpty,
+};
