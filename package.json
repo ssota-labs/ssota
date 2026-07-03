@@ -12,6 +12,7 @@
     "harness:boundaries": "node scripts/harness/check-boundaries.mjs",
     "harness:env": "node scripts/harness/check-env.mjs",
     "harness:mirrors": "node scripts/harness/check-mirrors.mjs",
+    "harness:pr-forensics": "node scripts/harness/check-pr-forensics.mjs",
     "verify:quick": "pnpm harness:docs && node scripts/harness/check-env.mjs --quick && pnpm harness:boundaries && turbo run lint typecheck",
     "verify:final": "pnpm harness:docs && pnpm harness:env && pnpm harness:boundaries && pnpm harness:mirrors && turbo run lint typecheck test && pnpm e2e:ci",
     "e2e": "bash scripts/e2e-report.sh",

@@ -398,6 +398,24 @@ MVP 마일스톤(M0–M6)의 “마일스톤당 1커밋”은 이 정책의 **�
 - **[PR-01]** 머지 전 필수: `pnpm lint`, `pnpm typecheck`, `pnpm test` 그린.
 - **[PR-02]** 도메인 불변식(Console v2.7 Graph Invariants)을 건드리는 변경은 PR 설명에 `## Invariant 사유` 섹션으로 근거를 명시한다 (해당 `[GRAPH-*]` 등 ID 나열).
 
+### PR 본문 하네스 (pr-forensics) — 푸시 전 로컬 확인
+
+**코드·테스트가 그린이어도** Harness job `pr-forensics`는 **PR 본문 문자열**을 기계 검사한다. CI까지 가서 본문만 고치며 빈 커밋을 반복하지 않도록, **푸시 직전**에 로컬에서 동일 검사를 돌린다.
+
+```bash
+pnpm harness:pr-forensics
+# PR 미생성·gh 없음: draft 본문 파일로
+pnpm harness:pr-forensics -- --body-file /tmp/pr-body.md
+```
+
+| 룰 | 트리거 | PR 본문에 **반드시** 들어가야 하는 것 |
+|---|---|---|
+| **[PR-03]** | `apps/web`·`packages/ui`의 `.tsx`/`.css` (test/spec 제외) | `## 검증` 또는 `## Verification` · `/opt/cursor/artifacts/e2e/` 또는 `results.json` 또는 `e2e/report/` · `![` 또는 `<img ` 스크린샷 · `agent-browser` 또는 `Computer Use` |
+| **[PR-02]** | `rules.ts`의 `paths`와 diff 교차 (예: `supabase/migrations/**`, adapter schema) | `## Invariant 사유` · 본문에 **문자열 그대로** 각 ID (`GRAPH-02`, `SEC-01` 등) — "불변식 변경 없음"만 쓰면 실패 |
+| **[GIT-01]** | PR 커밋 전체 | 제목 접두사 `[core\|adapter\|mcp\|web\|e2e\|infra\|dogfood]` |
+
+템플릿: `.github/pull_request_template.md`. Cloud Agent는 PR 생성·업데이트 직후 `pnpm harness:pr-forensics`로 본문을 한 번 더 확인한다.
+
 ### `main` 직접 커밋·푸시 금지 (에이전트 필수)
 
 **[GIT-02] `main`에 직접 커밋하거나 푸시하지 않는다.** 모든 변경은 feature 브랜치 → GitHub PR → CI·리뷰 후 `main` 머지로만 반영한다. 로컬 `main`에 작업 커밋이 쌓이면 PR 없이 배포 경로에 들어간 것으로 오해하기 쉽다.
@@ -468,7 +486,7 @@ MVP 마일스톤(M0–M6)의 “마일스톤당 1커밋”은 이 정책의 **�
 이 저장소의 규범은 산문이 아니라 **typed 계약**으로 관리된다.
 
 - **계약 SSOT**: `packages/contracts/src/invariants/rules.ts` — 모든 `[AREA-NN]` 룰의 정의·레벨·강제 수단. 이 문서의 태그와 계약의 ID는 `pnpm harness:docs`가 동기화를 강제한다 (드리프트 = 모든 테스트 차단).
-- **체크 명령**: `pnpm harness:docs`(문서 동기화) / `pnpm harness:boundaries`(우회 스캔) / `pnpm harness:env`(환경 프리플라이트) / `pnpm harness:mirrors`(스킬 미러 정합) / `pnpm harness`(전부).
+- **체크 명령**: `pnpm harness:docs`(문서 동기화) / `pnpm harness:boundaries`(우회 스캔) / `pnpm harness:env`(환경 프리플라이트) / `pnpm harness:mirrors`(스킬 미러 정합) / `pnpm harness:pr-forensics`(PR 본문·커밋 — CI `pr-forensics`와 동일) / `pnpm harness`(전부).
 - **allowlist 정책**: 룰 예외는 코드에 몰래 두지 않는다 — `scripts/harness/allowlists/*.json` 또는 `packages/config/eslint/allowlists.js`에 **경로 + 룰 ID + 사유**로 등록한다. 죽은 예외(존재하지 않는 경로)는 `harness:docs`가 실패시킨다.
 - **[ENV-02] 스킬 미러**: 스킬 정본은 `.agents/skills/`이며 `.claude/skills/`·`.cursor/skills/` 미러와 `skills-lock.json`은 정합해야 한다. 드리프트는 `pnpm harness:mirrors`가 잡는다 — 미러를 직접 수정하지 말고 정본을 고친 뒤 복사한다.
 - **에러 메시지 = 지시문**: 하네스 체크의 실패 출력은 "무엇이 왜 실패했고, 다음에 뭘 해야 하는지"를 담는다. 실패를 우회하지 말고 출력의 Next steps를 따른다.
