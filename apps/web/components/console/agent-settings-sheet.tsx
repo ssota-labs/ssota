@@ -590,8 +590,6 @@ export function AgentSettingsSheet({
                       <WrenchIcon className="size-3.5 text-muted-foreground" />
                     }
                     title="No connectors or scripts selected yet"
-                    onPress={() => setOpenDialog("tools")}
-                    trailing={<AgentSettingCard.ItemCaret />}
                   />
                 ) : (
                   <>
