@@ -114,7 +114,13 @@ export {
   COMMUNICATION_STYLE,
   LAYER0_RUNTIME_PROMPTS,
 } from "./runtime-prompt.js";
-export { gateway, DEFAULT_MODEL_ID, STUB_CONNECTION_SEARCH_TRIGGER } from "./models.js";
+export {
+  gateway,
+  DEFAULT_MODEL_ID,
+  STUB_CONNECTION_SEARCH_TRIGGER,
+  stubModel,
+} from "./models.js";
+export { registerStubGateway } from "./stub-gateway.js";
 export {
   getDb,
   getGraphPorts,
@@ -131,3 +137,14 @@ export {
 } from "./ports.js";
 
 export type { AgentRunContext } from "./engine/types.js";
+
+export {
+  createSlackUserGroupForAgent,
+  emulateSlackUserGroupForAgent,
+} from "./slack-user-groups.js";
+export { slackHandleFromAgentName } from "./slack-user-group-handle.js";
+export {
+  isEmulateEnabled,
+  resolveProviderApiOrigin,
+  resolveProviderApiUrl,
+} from "./connections/provider-api-base.js";

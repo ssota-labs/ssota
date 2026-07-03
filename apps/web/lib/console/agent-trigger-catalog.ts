@@ -43,31 +43,12 @@ export const ADDABLE_TRIGGER_GROUPS: AddableTriggerGroup[] = [
     label: "Slack",
     items: [
       {
-        id: "slack:message_posted",
-        groupId: "slack",
-        groupLabel: "Slack",
-        label: "Message posted",
-        description: "Run when a new message is posted in a connected channel.",
-        action: "connection",
-        provider: "slack",
-        kind: "message_posted",
-      },
-      {
-        id: "slack:emoji_reaction",
-        groupId: "slack",
-        groupLabel: "Slack",
-        label: "Emoji reaction added",
-        description: "Run when someone adds an emoji reaction to a message.",
-        action: "connection",
-        provider: "slack",
-        kind: "emoji_reaction",
-      },
-      {
         id: "slack:agent_mentioned",
         groupId: "slack",
         groupLabel: "Slack",
         label: "Agent mentioned",
-        description: "Run when this agent is @mentioned in Slack.",
+        description:
+          "Run when this agent is @mentioned in Slack via a dedicated user group handle.",
         action: "connection",
         provider: "slack",
         kind: "agent_mentioned",

@@ -1,4 +1,5 @@
 import type { ModelMessage, SystemModelMessage, UIMessage } from "ai";
+import "@/lib/ai/register-stub-gateway";
 import { resolveRunAgent } from "@ssota/agent-runtime";
 import {
   claimMainRunning,
@@ -28,6 +29,7 @@ export async function buildMainPrompt(
     profileId: input.profileId,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
+    agentDefinitionId: input.agentDefinitionId,
     chatContext: input.chatContext,
   });
   return {

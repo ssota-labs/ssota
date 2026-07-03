@@ -9,7 +9,6 @@ import {
   type Skill,
   type SkillFile,
   type SkillIndex,
-  type SkillSnapshot,
   type UpdateSkillInput,
 } from "@ssota/contracts";
 import type { Db } from "../db/client.js";

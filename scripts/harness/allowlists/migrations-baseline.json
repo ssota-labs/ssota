@@ -1,0 +1,4 @@
+{
+  "baselineMigration": "20260630180000_tasks_sandbox_environment_id.sql",
+  "note": "이 파일명 이후의 마이그레이션만 migration-schema-guard 스캔 대상"
+}

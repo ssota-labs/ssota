@@ -1,5 +1,6 @@
 import eslint from "@eslint/js";
 import tseslint from "typescript-eslint";
+import { designSystemRules, graphSchemaBoundary } from "./boundaries.js";
 
 /** @type {import("eslint").Linter.Config[]} */
 export default tseslint.config(
@@ -17,4 +18,7 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "error",
     },
   },
+  // 하네스 경계 룰 — 계약은 packages/contracts/src/invariants/rules.ts
+  ...graphSchemaBoundary,
+  ...designSystemRules,
 );

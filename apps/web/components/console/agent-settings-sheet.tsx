@@ -12,7 +12,7 @@ import {
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type { Block } from "@blocknote/core";
-import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
+import type { AgentDefinition, AgentTrigger, ConnectionTrigger } from "@ssota/contracts";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
 import {
   AlertDialog,
@@ -25,10 +25,19 @@ import {
   AlertDialogTitle,
 } from "@ssota/ui/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@ssota/ui/components/ui/dialog";
+import {
   Popover,
   PopoverContent,
 } from "@ssota/ui/components/ui/popover";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import { Label } from "@ssota/ui/components/ui/label";
 import {
   ScheduleSheet,
   type ScheduleEditTarget,
@@ -46,6 +55,7 @@ import {
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import { buildConnectorAuthorizeHref } from "@/lib/connect/authorize-href";
+import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
@@ -73,6 +83,8 @@ type AgentSettingsSheetProps = {
   workers: AgentDefinition[];
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
+  inboundChannels: InboundChannelStatus[];
+  channelsHref: string;
   schedules: AgentScheduleSummary[];
   onClose: () => void;
   registerRequestClose?: (
@@ -119,6 +131,8 @@ export function AgentSettingsSheet({
   workers,
   connectors,
   connections,
+  inboundChannels,
+  channelsHref,
   schedules,
   onClose,
   registerRequestClose,
@@ -136,6 +150,9 @@ export function AgentSettingsSheet({
   const [editingScheduleId, setEditingScheduleId] = useState<string | null>(
     null,
   );
+  const [editingSlackTriggerId, setEditingSlackTriggerId] = useState<
+    string | null
+  >(null);
   const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
   const ignoreNextScheduleRowPressRef = useRef(false);
   const [isPending, startTransition] = useTransition();
@@ -200,6 +217,10 @@ export function AgentSettingsSheet({
     ? agentSchedules.find((s) => s.id === editingScheduleId)
     : undefined;
 
+  const editingSlackTrigger = editingSlackTriggerId
+    ? draft.connectionTriggers.find((t) => t.id === editingSlackTriggerId)
+    : undefined;
+
   const scheduleEditTarget: ScheduleEditTarget | undefined = editingSchedule
     ? {
         id: editingSchedule.id,
@@ -244,6 +265,17 @@ export function AgentSettingsSheet({
     patchDraft({
       connectionTriggers: draft.connectionTriggers.map((t) =>
         t.id === triggerId ? { ...t, enabled } : t,
+      ),
+    });
+  };
+
+  const patchConnectionTrigger = (
+    triggerId: string,
+    patch: Partial<ConnectionTrigger>,
+  ) => {
+    patchDraft({
+      connectionTriggers: draft.connectionTriggers.map((t) =>
+        t.id === triggerId ? { ...t, ...patch } : t,
       ),
     });
   };
@@ -383,6 +415,12 @@ export function AgentSettingsSheet({
               {draft.connectionTriggers.map((trigger) => (
                 <AgentSettingCard.Item
                   key={trigger.id}
+                  className={trigger.id === "slack:agent_mentioned" ? "group" : undefined}
+                  onPress={
+                    trigger.id === "slack:agent_mentioned"
+                      ? () => setEditingSlackTriggerId(trigger.id)
+                      : undefined
+                  }
                   icon={
                     <ConnectorBrandIcon
                       provider={trigger.provider}
@@ -390,7 +428,11 @@ export function AgentSettingsSheet({
                     />
                   }
                   title={trigger.label}
-                  subtitle={trigger.provider}
+                  subtitle={
+                    trigger.slackUserGroupHandle
+                      ? `@${trigger.slackUserGroupHandle}`
+                      : trigger.provider
+                  }
                   trailing={
                     <Switch
                       checked={trigger.enabled}
@@ -668,6 +710,56 @@ export function AgentSettingsSheet({
         </PopoverContent>
       </Popover>
 
+      <Dialog
+        open={editingSlackTriggerId !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingSlackTriggerId(null);
+        }}
+      >
+        <DialogContent className="max-w-md" forceBackdrop>
+          <DialogHeader>
+            <DialogTitle>Slack agent mention</DialogTitle>
+            <DialogDescription>
+              Mention this agent in Slack with its user group handle. Workspace
+              owners must allow members to create user groups.
+            </DialogDescription>
+          </DialogHeader>
+          {editingSlackTrigger ? (
+            <div className="space-y-4">
+              <div className="rounded-lg border px-4 py-3 text-sm">
+                <p className="text-muted-foreground text-xs">Mention handle</p>
+                <p className="font-mono">
+                  {editingSlackTrigger.slackUserGroupHandle
+                    ? `@${editingSlackTrigger.slackUserGroupHandle}`
+                    : "Not provisioned yet"}
+                </p>
+              </div>
+              <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+                <Label htmlFor="slack-show-typing">Show typing indicator in Slack</Label>
+                <Switch
+                  id="slack-show-typing"
+                  checked={editingSlackTrigger.showTypingIndicator !== false}
+                  onCheckedChange={(checked) =>
+                    patchConnectionTrigger(editingSlackTrigger.id, {
+                      showTypingIndicator: checked,
+                    })
+                  }
+                  data-testid="slack-trigger-show-typing"
+                />
+              </div>
+              <p className="text-muted-foreground text-xs">
+                Saved or Later messages in Slack are not supported.
+              </p>
+            </div>
+          ) : null}
+          <DialogFooter>
+            <Button type="button" onClick={() => setEditingSlackTriggerId(null)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AgentSettingsDialogs
         definition={definition}
         draft={draft}
@@ -676,6 +768,8 @@ export function AgentSettingsSheet({
         scriptTools={scriptTools}
         connectors={connectors}
         connections={connections}
+        inboundChannels={inboundChannels}
+        channelsHref={channelsHref}
         teamspaceId={teamspaceId}
         accountId={accountId}
         openDialog={openDialog}

@@ -64,6 +64,7 @@ const MCP_CONNECT_SCOPES: Record<string, string[]> = {
     "pins:read",
     "bookmarks:read",
     "usergroups:read",
+    "usergroups:write",
     "team:read",
     "dnd:read",
     "canvases:read",

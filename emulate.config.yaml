@@ -19,6 +19,8 @@ slack:
       client_secret: ssota_emulate_secret
       app_id: A000SSOTA01
       name: SSOTA Slack Dev
+      bot_id: B0SSOTABOT
+      bot_user_id: U0SSOTABOT
       redirect_uris:
         - http://localhost:3000/api/connect/callback
         - http://localhost:3100/api/connect/callback
@@ -28,17 +30,21 @@ slack:
         - channels:history
         - users:read
         - team:read
+        - usergroups:write
       user_scopes: [users:read]
       bot_name: ssota-bot
   tokens:
     - token: xoxb-local-test
-      user: smoke
+      user_id: U0SSOTABOT
+      bot_id: B0SSOTABOT
+      client_id: "12345.ssota-dev"
       scopes:
         - chat:write
         - channels:read
         - channels:history
         - users:read
         - team:read
+        - usergroups:write
   strict_scopes: false
 
 github:

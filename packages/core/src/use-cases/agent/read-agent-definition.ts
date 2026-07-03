@@ -1,5 +1,4 @@
 import type {
-  UpsertAgentDefinitionInput,
   AgentDefinition,
   AgentDefinitionIndex,
 } from "@ssota/contracts";
