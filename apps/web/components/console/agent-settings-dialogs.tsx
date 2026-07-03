@@ -653,6 +653,43 @@ export function AgentSettingsDialogs({
         {addTriggerError ? (
           <p className="text-destructive mb-4 text-sm">{addTriggerError}</p>
         ) : null}
+      </>
+    );
+  };
+
+  const renderAddTriggerFooter = () => {
+    if (!selectedAddTrigger) return null;
+
+    if (selectedAddTrigger.action === "schedule") {
+      return (
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenDialogChange(null)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="schedule-sheet-form"
+            data-testid="add-trigger-confirm"
+          >
+            Add trigger
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenDialogChange(null)}
+        >
+          Cancel
+        </Button>
         <Button
           type="button"
           data-testid="add-trigger-confirm"
@@ -665,7 +702,7 @@ export function AgentSettingsDialogs({
         >
           {isProvisioningSlack ? "Creating Slack user group…" : "Add trigger"}
         </Button>
-      </>
+      </div>
     );
   };
 
@@ -683,28 +720,7 @@ export function AgentSettingsDialogs({
         onSearchQueryChange={setAddTriggerSearch}
         searchPlaceholder="Search triggers…"
         detail={renderAddTriggerDetail()}
-        footer={
-          selectedAddTrigger?.action === "schedule" ? (
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenDialogChange(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                form="schedule-sheet-form"
-                data-testid="add-trigger-confirm"
-              >
-                Add trigger
-              </Button>
-            </div>
-          ) : (
-            <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
-          )
-        }
+        footer={renderAddTriggerFooter()}
       />
 
       <AgentSettingsSidebarDialog
