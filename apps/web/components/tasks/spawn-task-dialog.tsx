@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import { spawnTaskAction } from "@/app/actions";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
@@ -22,24 +23,27 @@ import {
   SelectValue,
 } from "@ssota/ui/components/ui/select";
 
-export type WorkflowOption = {
-  workflowInstructionKey: string;
+export type AgentOption = {
+  agentDefinitionId: string;
   title: string;
 };
 
+/** @deprecated Use AgentOption */
+export type WorkflowOption = AgentOption;
+
 type SpawnTaskDialogProps = {
   teamspaceId: string;
-  workflowOptions: WorkflowOption[];
+  agentOptions: AgentOption[];
 };
 
 export function SpawnTaskDialog({
   teamspaceId,
-  workflowOptions,
+  agentOptions,
 }: SpawnTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [workflowInstructionKey, setWorkflowInstructionKey] = useState(
-    workflowOptions[0]?.workflowInstructionKey ?? "work.implement_feature",
+  const [agentDefinitionId, setAgentDefinitionId] = useState(
+    agentOptions[0]?.agentDefinitionId ?? BUILTIN_AGENT_IDS.implementFeature,
   );
   const [assignee, setAssignee] = useState("");
   const [executorType, setExecutorType] = useState<"Agent" | "Human" | "System">(
@@ -52,8 +56,8 @@ export function SpawnTaskDialog({
     setTitle("");
     setAssignee("");
     setExecutorType("Human");
-    setWorkflowInstructionKey(
-      workflowOptions[0]?.workflowInstructionKey ?? "work.implement_feature",
+    setAgentDefinitionId(
+      agentOptions[0]?.agentDefinitionId ?? BUILTIN_AGENT_IDS.implementFeature,
     );
     setError(null);
   }
@@ -65,7 +69,7 @@ export function SpawnTaskDialog({
       try {
         await spawnTaskAction(teamspaceId, {
           title: title.trim(),
-          workflowInstructionKey,
+          agentDefinitionId,
           assignee: assignee.trim() || undefined,
           executorType,
         });
@@ -108,24 +112,24 @@ export function SpawnTaskDialog({
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="task-workflow">Workflow instruction</Label>
+              <Label htmlFor="task-agent">Agent</Label>
               <Select
-                value={workflowInstructionKey}
-                onValueChange={(value) => value && setWorkflowInstructionKey(value)}
+                value={agentDefinitionId}
+                onValueChange={(value) => value && setAgentDefinitionId(value)}
                 disabled={isPending}
-                items={workflowOptions.map((option) => ({
-                  value: option.workflowInstructionKey,
+                items={agentOptions.map((option) => ({
+                  value: option.agentDefinitionId,
                   label: option.title,
                 }))}
               >
-                <SelectTrigger id="task-workflow" className="w-full">
+                <SelectTrigger id="task-agent" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {workflowOptions.map((option) => (
+                  {agentOptions.map((option) => (
                     <SelectItem
-                      key={option.workflowInstructionKey}
-                      value={option.workflowInstructionKey}
+                      key={option.agentDefinitionId}
+                      value={option.agentDefinitionId}
                     >
                       {option.title}
                     </SelectItem>

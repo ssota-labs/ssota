@@ -19,7 +19,7 @@ Semantic tokens (`packages/ui/src/styles/globals.css`):
 | `border` / `input` / `ring` | 테두리·포커스 |
 | `accent` | hover, 선택 |
 
-Primary는 cyan 계열 oklch (`--primary: oklch(0.52 0.105 223.128)`). **임의 hex를 컴포넌트에 직접 쓰지 않는다.**
+Primary는 cyan 계열 oklch (`--primary: oklch(0.52 0.105 223.128)`). **[DS-01] 임의 hex를 컴포넌트에 직접 쓰지 않는다.**
 
 ## 3. Typography
 
@@ -58,13 +58,13 @@ Import path: `@ssota/ui/components/ui/<component>`
 **Do**
 
 - `@ssota/ui` semantic tokens 사용 (`bg-background`, `text-muted-foreground`)
-- Base UI `render` prop으로 trigger/close 구성
-- 모든 쓰기는 `executeAction()` 경유 (UI에서 직접 CRUD 금지)
+- **[DS-03]** Base UI `render` prop으로 trigger/close 구성
+- 모든 그래프 쓰기는 core graph use-case + `GraphWritePort` 경유 (UI에서 직접 CRUD 금지, [GRAPH-02])
 
 **Don't**
 
-- Radix `asChild` 패턴 사용 (Base UI 아님)
-- `neutral-*` / `green-*` 등 raw Tailwind palette를 새 UI에 추가
+- Radix `asChild` 패턴 사용 (Base UI 아님) [DS-03]
+- **[DS-02]** `neutral-*` / `green-*` 등 raw Tailwind palette를 새 UI에 추가
 - 결정 입력을 임의 필드로 깎아내는 폼 UI
 
 ## 8. Code Mapping

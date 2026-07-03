@@ -289,7 +289,7 @@ const mockRoadmapDocs = [
         },
         {
           type: "bulletListItem",
-          content: "DocumentSheetList catalog component",
+          content: "DocumentCardListSheet catalog component",
         },
         {
           type: "bulletListItem",
@@ -816,10 +816,10 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
   {
     id: "roadmap-document-sheet",
     category: "document",
-    title: "DocumentSheetList",
+    title: "DocumentCardListSheet",
     description:
       "Card rows — click opens a floating in-panel sheet (border, shadow, no overlay dim).",
-    components: ["Section", "DocumentSheetList"],
+    components: ["Section", "DocumentCardListSheet"],
     spec: {
       root: "section",
       elements: {
@@ -833,14 +833,13 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
           children: ["list"],
         },
         list: {
-          type: "DocumentSheetList",
+          type: "DocumentCardListSheet",
           props: {
             binding: "roadmaps",
             title: "Product roadmap documents",
             field: "content",
             subtitleField: "summary",
             statusField: "doc_status",
-            sheetSize: "half",
             editable: true,
             action: "saveRoadmapDoc",
           },

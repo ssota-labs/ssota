@@ -491,7 +491,7 @@ async function seedRoadmapPlanningDocs(
         },
         {
           type: "bulletListItem",
-          content: "DocumentSheetList catalog component",
+          content: "DocumentCardListSheet catalog component",
         },
         {
           type: "bulletListItem",
@@ -683,7 +683,7 @@ async function seedResearchDocs(
         {
           type: "paragraph",
           content:
-            "If research pages use DocumentSheetList, teams will edit market/user/hypothesis notes 2× faster than table-only navigation.",
+            "If research pages use DocumentCardListSheet, teams will edit market/user/hypothesis notes 2× faster than table-only navigation.",
         },
       ],
     },
@@ -713,7 +713,6 @@ async function seedResearchDocs(
         hypothesisId = existing[0].id;
       }
       const props = existing[0].properties as Record<string, unknown>;
-      if (props.content) continue;
 
       await db
         .update(schema.nodes)

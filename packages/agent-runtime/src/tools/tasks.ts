@@ -2,14 +2,14 @@ import { tool, type ToolSet } from "ai";
 import { z } from "zod";
 import { ExecutionDirectiveSchema, SpawnTaskInputSchema } from "@ssota/contracts";
 import { serializeTask, spawnTask, updateTask } from "@ssota/core";
-import { getGraphReadPort, getTaskPort, getWorkflowInstructionPort } from "../ports.js";
+import { getGraphReadPort, getTaskPort, getAgentDefinitionPort } from "../ports.js";
 import { getRunContext } from "./context.js";
 
 function taskDeps(teamspaceId: string, accountId?: string) {
   return {
     tasks: getTaskPort(teamspaceId, accountId),
     graphRead: getGraphReadPort(teamspaceId, accountId),
-    workflowInstructions: getWorkflowInstructionPort(teamspaceId, accountId),
+    agentDefinitions: getAgentDefinitionPort(teamspaceId, accountId),
   };
 }
 
@@ -20,8 +20,10 @@ export function createTaskTools(): ToolSet {
       inputSchema: z.object({ taskId: z.string().uuid().optional() }),
       execute: async (input, { context }) => {
         const ctx = getRunContext(context);
+        const taskId = input.taskId ?? ctx.taskId;
+        if (!taskId) return null;
         const task = await getTaskPort(ctx.teamspaceId, ctx.accountId).getTask(
-          input.taskId ?? ctx.taskId ?? "",
+          taskId,
         );
         return task ? serializeTask(task) : null;
       },
@@ -52,11 +54,10 @@ export function createTaskTools(): ToolSet {
 
     spawn_task: tool({
       description:
-        "Create a follow-up task with a full delegation directive. Required: title, workflowInstructionKey (or id), executionDirective (goal, background, steps), acceptanceCriteria.",
+        "Create a follow-up task with a full delegation directive. Required: title, agentDefinitionId, executionDirective (goal, background, steps), acceptanceCriteria.",
       inputSchema: z.object({
         title: z.string(),
-        workflowInstructionId: z.string().uuid().optional(),
-        workflowInstructionKey: z.string().optional(),
+        agentDefinitionId: z.string().uuid(),
         targetNodeId: z.string().uuid().optional(),
         executionDirective: ExecutionDirectiveSchema,
         acceptanceCriteria: z.array(z.unknown()).min(1),
@@ -69,8 +70,7 @@ export function createTaskTools(): ToolSet {
         const ctx = getRunContext(context);
         const parsed = SpawnTaskInputSchema.parse({
           title: input.title,
-          workflowInstructionId: input.workflowInstructionId,
-          workflowInstructionKey: input.workflowInstructionKey,
+          agentDefinitionId: input.agentDefinitionId,
           targetNodeId: input.targetNodeId,
           acceptanceCriteria: input.acceptanceCriteria,
           idempotencyKey: input.idempotencyKey,

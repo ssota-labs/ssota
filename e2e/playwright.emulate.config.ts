@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { withWebDeps } from "./web-server-command";
 
 // Emulate OAuth E2E: real Slack OAuth picker via vercel-labs/emulate, no CONNECT_STUB.
 const webPort = process.env.WEB_PORT ?? "3100";
@@ -21,12 +22,20 @@ const env = {
   CONNECT_STUB: "0",
   EMULATE_ENABLED: "1",
   EMULATE_OAUTH: "1",
+  STUB_MODEL: "1",
   EMULATE_SLACK_URL: "http://127.0.0.1:4003",
+  EMULATE_SLACK_SIGNING_SECRET: "ssota-emulate-test-secret",
+  CHAT_PROJECT_ID: "ac26abf1-2503-4ea3-b73e-5a05461874ab",
   EMULATE_GITHUB_URL: "http://127.0.0.1:4001",
   EMULATE_LINEAR_URL: "http://127.0.0.1:4012",
   MCP_STUB: "1",
-  STUB_MODEL: "1",
+  JOB_RUNNER: "inline",
   CREDENTIALS: "own-app",
+  SLACK_BOT_TOKEN: "xoxb-local-test",
+  SLACK_SIGNING_SECRET: "ssota-emulate-test-secret",
+  SLACK_API_URL: "http://127.0.0.1:4003/api/",
+  SLACK_CONNECT: "0",
+  SLACK_CONNECT_INTAKE: "0",
   CONNECTOR_SLACK_DEV_TOKEN: "xoxb-local-test",
   SLACK_CONNECT_CONNECTOR: "slack/dev",
   NOTION_CONNECT_CONNECTOR: "notion/dev",
@@ -37,7 +46,7 @@ const env = {
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: "emulate-slack-connect.spec.ts",
+  testMatch: /emulate-slack.*\.spec\.ts/,
   globalSetup: "./global-setup.ts",
   fullyParallel: false,
   workers: 1,
@@ -57,7 +66,7 @@ export default defineConfig({
       stderr: "pipe",
     },
     {
-      command: `pnpm --filter web exec next dev --port ${webPort}`,
+      command: withWebDeps(`pnpm --filter web exec next dev --port ${webPort}`),
       cwd: workspaceRoot,
       url: webUrl,
       reuseExistingServer: !!process.env.REUSE_SERVERS,

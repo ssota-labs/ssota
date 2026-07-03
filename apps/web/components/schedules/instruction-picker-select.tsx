@@ -100,7 +100,7 @@ export function InstructionPickerSelect({
           })}
           {instructions.length === 0 ? (
             <p className="text-muted-foreground px-3 py-4 text-center text-sm">
-              No agents available. Add a workflow instruction first.
+              No agents available. Add an agent definition first.
             </p>
           ) : null}
         </div>

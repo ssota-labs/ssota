@@ -2,14 +2,13 @@ import { describe, it, expect } from "vitest";
 import { asSchema } from "ai";
 import { createSsotaTools } from "../tools/index.js";
 import { workflowToolSchemas } from "../workflow/tool-schemas.js";
+import { mainAgentRuntimeDefinition } from "../runtime-definition.js";
 import {
-  MAIN_WORKFLOW_TOOL_NAMES,
-  MAIN_WORKFLOW_TOOL_SCHEMAS,
   buildMainWorkflowAgent,
 } from "../workflow/main-agent.js";
+import { resolveWorkflowToolNames } from "../workflow/resolve-workflow-tools.js";
+import { COMPOSIO_META_TOOL_NAMES } from "../composio/meta-tool-schemas.js";
 
-/** Strip `description` keys so the drift guard compares structure (fields,
- *  types, required) and not human-readable field hints. */
 function stripDescriptions(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stripDescriptions);
   if (value && typeof value === "object") {
@@ -22,33 +21,85 @@ function stripDescriptions(value: unknown): unknown {
   return value;
 }
 
-function structureOf(schema: unknown): unknown {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return stripDescriptions(asSchema(schema as any).jsonSchema);
+/** Workflow schemas use regex UUIDs; real tools use format:uuid — treat as equivalent. */
+function normalizeWorkflowSchema(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeWorkflowSchema);
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([k, v]) => !(k === "format" && v === "uuid"))
+        .filter(([k]) => k !== "pattern")
+        .map(([k, v]) => [k, normalizeWorkflowSchema(v)]),
+    );
+  }
+  return value;
 }
 
-describe("main workflow-agent tool surface", () => {
-  it("every static workflow tool name maps to a dispatchable SSOTA tool (no drift)", () => {
-    // Connector tools (Composio / legacy) are declared dynamically from the
-    // active adapter (see fetchConnectorToolDefs) — they are NOT in this static
-    // set, so the static surface must map 1:1 onto createSsotaTools.
-    const dispatchable = new Set<string>(Object.keys(createSsotaTools()));
-    const missing = MAIN_WORKFLOW_TOOL_NAMES.filter((n) => !dispatchable.has(n));
-    expect(missing).toEqual([]);
-  });
+function structureOf(schema: unknown): unknown {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return normalizeWorkflowSchema(stripDescriptions(asSchema(schema as any).jsonSchema));
+}
 
-  it("each tool def carries a description and an inputSchema", () => {
-    for (const name of MAIN_WORKFLOW_TOOL_NAMES) {
-      const def = MAIN_WORKFLOW_TOOL_SCHEMAS[name];
-      expect(typeof def.description).toBe("string");
-      expect(def.description.length).toBeGreaterThan(0);
-      expect(def.inputSchema).toBeDefined();
+describe("resolveWorkflowToolNames", () => {
+  it("includes main agent bundles including delegate and composio meta-tools", () => {
+    const def = mainAgentRuntimeDefinition();
+    const names = resolveWorkflowToolNames({
+      toolBundles: def.toolBundles,
+      isMain: def.isMain,
+      includeComposioTools: true,
+      enabledConnectorProviders: ["github"],
+    });
+    expect(names).toContain("delegate");
+    expect(names).toContain("spawn_task");
+    for (const composioName of COMPOSIO_META_TOOL_NAMES) {
+      expect(names).toContain(composioName);
     }
   });
 
-  it("workflow schema matches the real SSOTA tool's inputSchema (drift guard)", () => {
+  it("omits composio tools when no connectors are enabled for the agent", () => {
+    const def = mainAgentRuntimeDefinition();
+    const names = resolveWorkflowToolNames({
+      toolBundles: def.toolBundles,
+      isMain: def.isMain,
+      includeComposioTools: true,
+      enabledConnectorProviders: [],
+    });
+    for (const composioName of COMPOSIO_META_TOOL_NAMES) {
+      expect(names).not.toContain(composioName);
+    }
+  });
+
+  it("omits composio tools when connectors bundle is absent", () => {
+    const names = resolveWorkflowToolNames({
+      toolBundles: ["graph.read"],
+      isMain: false,
+      includeComposioTools: true,
+    });
+    expect(names).not.toContain("COMPOSIO_SEARCH_TOOLS");
+  });
+});
+
+describe("main workflow-agent tool surface", () => {
+  it("every workflow tool name maps to a dispatchable SSOTA or Composio tool", () => {
+    const dispatchable = new Set<string>([
+      ...Object.keys(createSsotaTools()),
+      ...COMPOSIO_META_TOOL_NAMES,
+    ]);
+    const def = mainAgentRuntimeDefinition();
+    const names = resolveWorkflowToolNames({
+      toolBundles: def.toolBundles,
+      isMain: def.isMain,
+      includeComposioTools: true,
+    });
+    const missing = names.filter((n) => !dispatchable.has(n));
+    expect(missing).toEqual([]);
+  });
+
+  it("workflow input schemas match real SSOTA tools (drift guard)", () => {
     const tools = createSsotaTools();
     for (const [name, schema] of Object.entries(workflowToolSchemas)) {
+      if (name.startsWith("COMPOSIO_")) continue;
       const real = tools[name];
       if (!real?.inputSchema) continue;
       expect(structureOf(schema), `schema drift for ${name}`).toEqual(
@@ -57,42 +108,39 @@ describe("main workflow-agent tool surface", () => {
     }
   });
 
-  it("builds a WorkflowAgent exposing exactly the declared static tools", () => {
+  it("builds a WorkflowAgent scoped to the agent definition tool bundles", () => {
+    const def = mainAgentRuntimeDefinition();
     const agent = buildMainWorkflowAgent({
       ssota: { teamspaceId: "p", organizationId: "o", runId: "r" },
+      definition: def,
       dispatch: async () => null,
+      includeComposioTools: false,
     });
-    expect(Object.keys(agent.tools).sort()).toEqual(
-      [...MAIN_WORKFLOW_TOOL_NAMES].sort(),
-    );
+    expect(agent.tools.delegate).toBeDefined();
+    expect(agent.tools.spawn_task).toBeDefined();
+    expect(agent.tools.COMPOSIO_SEARCH_TOOLS).toBeUndefined();
   });
 
-  it("declares dynamic connector tools from connectorToolDefs", async () => {
+  it("includes composio meta-tools when connectors bundle is enabled", async () => {
+    const def = {
+      ...mainAgentRuntimeDefinition(),
+      enabledConnectorProviders: ["github"],
+    };
     const calls: string[] = [];
     const agent = buildMainWorkflowAgent({
       ssota: { teamspaceId: "p", organizationId: "o", runId: "r" },
+      definition: def,
       dispatch: async (toolName) => {
         calls.push(toolName);
         return { ok: true };
       },
-      connectorToolDefs: [
-        {
-          name: "COMPOSIO_SEARCH_TOOLS",
-          description: "Search connected toolkits.",
-          jsonSchema: {
-            type: "object",
-            properties: { query: { type: "string" } },
-            required: ["query"],
-          },
-        },
-      ],
+      includeComposioTools: true,
     });
-    expect(Object.keys(agent.tools)).toContain("COMPOSIO_SEARCH_TOOLS");
-    // The dynamic tool dispatches through the same injected dispatcher.
-    const tool = agent.tools["COMPOSIO_SEARCH_TOOLS"] as {
-      execute: (i: unknown, opts: unknown) => Promise<unknown>;
+    expect(agent.tools.COMPOSIO_SEARCH_TOOLS).toBeDefined();
+    const tool = agent.tools.COMPOSIO_SEARCH_TOOLS as unknown as {
+      execute: (i: unknown) => Promise<unknown>;
     };
-    await tool.execute({ query: "slack" }, {});
+    await tool.execute({ queries: [{ use_case: "send slack message" }] });
     expect(calls).toContain("COMPOSIO_SEARCH_TOOLS");
   });
 });

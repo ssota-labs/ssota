@@ -1,14 +1,17 @@
-import type { WorkflowInstructionDefinition } from "@ssota/contracts/workflows";
-import { getWorkflowByKey, isKnownWorkflowKey } from "@ssota/contracts/workflows";
+import type { AgentDefinitionBuiltin } from "@ssota/contracts/agents";
+import {
+  getAgentDefinitionById,
+  isKnownBuiltinAgentId,
+} from "@ssota/contracts/agents";
 
 export interface WorkflowReadPort {
-  getWorkflowByKey(workflowKey: string): WorkflowInstructionDefinition | null;
-  isKnownWorkflowKey(workflowKey: string): boolean;
+  getWorkflowById(agentDefinitionId: string): AgentDefinitionBuiltin | null;
+  isKnownWorkflowId(agentDefinitionId: string): boolean;
 }
 
 export function createContractsWorkflowReadPort(): WorkflowReadPort {
   return {
-    getWorkflowByKey,
-    isKnownWorkflowKey,
+    getWorkflowById: getAgentDefinitionById,
+    isKnownWorkflowId: isKnownBuiltinAgentId,
   };
 }

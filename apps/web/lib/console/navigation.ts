@@ -1,5 +1,6 @@
 import type { OrgRouteContext } from "./paths";
 import { orgPath } from "./paths";
+import { getAgentsSectionLabelKey, isAgentsRoute } from "./agents-navigation";
 import { getSettingsSectionLabelKey } from "../settings/navigation";
 
 export type PagePatternCode = "H" | "D" | "L" | "T" | "canvas";
@@ -34,55 +35,12 @@ export type NavSection = {
 
 export type NavEntry = NavSeparator | NavLink | NavGroup | NavSection;
 
-
+/** Top-level builder sidebar links (Agents opens L1 slide-in, like Settings). */
 export const L0_NAV: NavEntry[] = [
-  {
-    type: "link",
-    key: "home",
-    labelKey: "nav.home",
-    href: "overview",
-    pattern: "H",
-  },
-  { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
-  {
-    type: "link",
-    key: "workflow_instructions",
-    labelKey: "nav.workflowInstructions",
-    href: "workflow/instructions",
-    pattern: "L",
-  },
   { type: "link", key: "chat", labelKey: "nav.chat", href: "c", pattern: "L" },
-  {
-    type: "link",
-    key: "connections",
-    labelKey: "nav.connections",
-    href: "connectors",
-    pattern: "L",
-  },
-  {
-    type: "link",
-    key: "schedules",
-    labelKey: "nav.schedules",
-    href: "schedules",
-    pattern: "L",
-  },
-  // The per-stage workflow nav (Executive/Research/Manager/Development/Design)
-  // is now the Notion-style page tree (PageTreeNav, fed by the pages table), not
-  // a static section here. L0 keeps only the always-on top links + Explore.
-  {
-    type: "section",
-    key: "l0_explore",
-    labelKey: "nav.sectionExplore",
-    children: [
-      {
-        type: "link",
-        key: "workflow_map",
-        labelKey: "nav.workflowMap",
-        href: "workflow/map",
-        pattern: "canvas",
-      },
-    ],
-  },
+  { type: "link", key: "tasks", labelKey: "nav.tasks", href: "tasks", pattern: "L" },
+  { type: "link", key: "agents", labelKey: "nav.agents", href: "agents", pattern: "L" },
+  { type: "link", key: "graph", labelKey: "nav.graph", href: "graph", pattern: "L" },
 ];
 
 export type L0GroupKey = "executive" | "research" | "manager" | "development" | "design";
@@ -138,17 +96,24 @@ export function buildBreadcrumbSegments(
   if (relative === "c" || relative.startsWith("c/")) {
     return [{ labelKey: "nav.chat" }];
   }
-  if (relative === "connectors" || relative.startsWith("connectors/")) {
-    return [{ labelKey: "nav.connections" }];
+  if (relative === "graph" || relative.startsWith("graph/")) {
+    return [{ labelKey: "nav.graph" }];
   }
-  if (relative === "schedules" || relative.startsWith("schedules/")) {
-    return [{ labelKey: "nav.schedules" }];
+  if (isAgentsRoute(relative)) {
+    const sectionKey = getAgentsSectionLabelKey(relative);
+    if (sectionKey && sectionKey !== "nav.agents") {
+      return [
+        { labelKey: "nav.agents", href: "agents" },
+        { labelKey: sectionKey },
+      ];
+    }
+    return [{ labelKey: "nav.agents" }];
   }
-  if (relative === "workflow/map") {
-    return [{ labelKey: "nav.workflowMap" }];
-  }
-  if (relative === "workflow/instructions") {
-    return [{ labelKey: "nav.workflowInstructions" }];
+  if (relative === "templates" || relative.startsWith("templates/")) {
+    return [
+      { labelKey: "nav.agents", href: "agents" },
+      { labelKey: "nav.tools" },
+    ];
   }
   if (
     relative === "design/ui-components" ||

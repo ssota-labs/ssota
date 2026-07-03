@@ -16,21 +16,25 @@
       "types": "./dist/graph/index.d.ts",
       "default": "./dist/graph/index.js"
     },
-    "./workflows": {
-      "types": "./dist/workflows/index.d.ts",
-      "default": "./dist/workflows/index.js"
+    "./agents": {
+      "types": "./dist/agents/index.d.ts",
+      "default": "./dist/agents/index.js"
     },
     "./page": {
       "types": "./dist/page/index.d.ts",
       "default": "./dist/page/index.js"
     },
+    "./invariants": {
+      "types": "./dist/invariants/index.d.ts",
+      "default": "./dist/invariants/index.js"
+    },
     "./seed-packs/software-development-workflow/*": "./seed-packs/software-development-workflow/*"
   },
   "scripts": {
-    "build": "tsx scripts/embed-workflow-instructions.ts && tsc",
+    "build": "tsx scripts/embed-agent-instructions.ts && tsx scripts/embed-workflow-instructions.ts && tsc",
     "dev": "tsc --watch",
     "lint": "eslint src",
-    "typecheck": "tsx scripts/embed-workflow-instructions.ts && tsc --noEmit",
+    "typecheck": "tsx scripts/embed-agent-instructions.ts && tsx scripts/embed-workflow-instructions.ts && tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {

@@ -5,7 +5,7 @@ import {
   BlockNoteContentSchema,
   SpawnTaskInputSchema,
   UpdateTaskInputSchema,
-  UpsertWorkflowInstructionInputSchema,
+  UpsertAgentDefinitionInputSchema,
 } from "@ssota/contracts";
 import { spawnTask } from "@ssota/core";
 import { revalidatePath } from "next/cache";
@@ -17,8 +17,14 @@ import { clearAuthSignedOut } from "@/lib/auth/signed-out-cookie";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
-import { getGraphPorts, getTaskPort, getWorkflowInstructionPort } from "@/lib/ports";
+import { getGraphPorts, getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
 import { uploadEditorAsset } from "@/lib/editor/storage";
+import { createSlackUserGroupForAgent } from "@ssota/agent-runtime";
+import { getSlackBotTokenForTeamspace } from "@/lib/chat/slack-token";
+import {
+  assertSlackMentionUserGroupUnique,
+  listTeamspaceAgentDefinitions,
+} from "@/lib/chat/slack-inbound-route";
 
 function loginRedirect(error: string, next?: string | null): never {
   const params = new URLSearchParams({ error });
@@ -33,30 +39,114 @@ async function resolvePostSignInPath(userId: string, next?: string | null) {
   return resolvePostAuthPath(userId);
 }
 
-export async function updateWorkflowInstructionAction(
+export async function updateAgentDefinitionAction(
   teamspaceId: string,
   input: {
-    key: string;
+    id: string;
     name: string;
     description?: string;
-    content: unknown;
+    instructions: unknown;
+    isMain?: boolean;
+    referenceOnly?: boolean;
+    toolBundles?: string[];
+    runPolicy?: {
+      model?: string;
+      allowedTriggers?: string[];
+      linkedWorkerAgentIds?: string[];
+      enabledConnectorProviders?: string[];
+      connectionTriggers?: Array<{
+        id: string;
+        provider: string;
+        kind: string;
+        label: string;
+        enabled?: boolean;
+        slackUserGroupId?: string;
+        slackUserGroupHandle?: string;
+        showTypingIndicator?: boolean;
+      }>;
+      maxSteps?: number;
+      sandboxPolicy?: "none" | "optional" | "required";
+      approvalPolicy?: "none" | "gate" | "human";
+      timeoutMs?: number;
+    };
+    scriptToolIds?: string[];
   },
 ) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Unauthorized");
 
-  const parsed = UpsertWorkflowInstructionInputSchema.parse({
-    key: input.key,
+  const parsed = UpsertAgentDefinitionInputSchema.parse({
+    id: input.id,
     name: input.name,
     description: input.description ?? "",
-    content: BlockNoteContentSchema.parse(input.content),
+    instructions: BlockNoteContentSchema.parse(input.instructions),
+    isMain: input.isMain ?? false,
+    referenceOnly: input.referenceOnly ?? false,
+    toolBundles: input.toolBundles,
+    runPolicy: input.runPolicy,
   });
 
-  await getWorkflowInstructionPort(teamspaceId).upsertInstruction(parsed);
+  const port = getAgentDefinitionPort(teamspaceId);
+  const definitions = await listTeamspaceAgentDefinitions(
+    () => port.listDefinitions(),
+    (id) => port.getById(id),
+  );
+  for (const trigger of parsed.runPolicy.connectionTriggers ?? []) {
+    if (
+      trigger.id === "slack:agent_mentioned" &&
+      trigger.enabled &&
+      trigger.slackUserGroupId
+    ) {
+      await assertSlackMentionUserGroupUnique(
+        definitions,
+        parsed.id,
+        trigger.slackUserGroupId,
+      );
+    }
+  }
 
-  for (const path of withConsolePaths(["/workflow/instructions"])) {
+  await port.upsertDefinition(parsed);
+
+  if (input.scriptToolIds) {
+    const { getScriptToolPort } = await import("@/lib/ports");
+    await getScriptToolPort(teamspaceId).setAgentScriptTools(
+      input.id,
+      input.scriptToolIds,
+    );
+  }
+
+  for (const path of withConsolePaths(["/agents"])) {
     revalidatePath(path);
   }
+}
+
+/** @deprecated Use updateAgentDefinitionAction */
+export const updateWorkflowInstructionAction = updateAgentDefinitionAction;
+
+export async function provisionSlackAgentMentionTriggerAction(
+  teamspaceId: string,
+  input: { agentDefinitionId: string; agentName: string },
+) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const token = await getSlackBotTokenForTeamspace(teamspaceId);
+  if (!token) {
+    throw new Error(
+      "Connect Slack on the Channels page before adding a Slack mention trigger.",
+    );
+  }
+
+  const created = await createSlackUserGroupForAgent(
+    token,
+    input.agentName,
+    `SSOTA agent — mention @${input.agentName} in Slack to run this agent.`,
+  );
+
+  return {
+    slackUserGroupId: created.id,
+    slackUserGroupHandle: created.handle,
+  };
 }
 
 export async function updateTaskStatusAction(
@@ -82,7 +172,7 @@ export async function spawnTaskAction(
   teamspaceId: string,
   input: {
     title: string;
-    workflowInstructionKey: string;
+    agentDefinitionId: string;
     assignee?: string;
     executorType?: "Agent" | "Human" | "System";
   },
@@ -92,7 +182,7 @@ export async function spawnTaskAction(
 
   const parsed = SpawnTaskInputSchema.parse({
     title: input.title,
-    workflowInstructionKey: input.workflowInstructionKey,
+    agentDefinitionId: input.agentDefinitionId,
     assignee: input.assignee,
     executorType: input.executorType,
     acceptanceCriteria: ["Complete the work described in the task title and context"],
@@ -118,7 +208,7 @@ export async function spawnTaskAction(
     {
       tasks: getTaskPort(teamspaceId),
       graphRead: graphPorts.graphRead,
-      workflowInstructions: getWorkflowInstructionPort(teamspaceId),
+      agentDefinitions: getAgentDefinitionPort(teamspaceId),
     },
     teamspaceId,
     parsed,

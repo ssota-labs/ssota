@@ -20,14 +20,15 @@ function Frame({
   testId?: string;
 }) {
   return (
-    <ConsolePageFrame
-      className={className}
-      testId={testId}
-      contentClassName="gap-8"
-      maxWidthClassName="max-w-5xl"
-    >
-      {children}
-    </ConsolePageFrame>
+    <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
+      <ConsolePageFrame
+        className="min-h-0 flex-1"
+        testId={testId}
+        contentClassName="gap-8"
+      >
+        {children}
+      </ConsolePageFrame>
+    </div>
   );
 }
 

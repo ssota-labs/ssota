@@ -4,7 +4,7 @@ import { getSchedulePort } from "@/lib/ports";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { getCurrentUser } from "@/lib/supabase/server";
-import { resolveWorkflowInstructionId } from "@/lib/schedules/resolve-instruction";
+import { resolveAgentDefinitionId } from "@/lib/schedules/resolve-agent-definition";
 import { isValidTimezone, validateCron } from "@/lib/schedules/recurrence";
 
 export const runtime = "nodejs";
@@ -12,7 +12,10 @@ export const runtime = "nodejs";
 const updateSchema = z.object({
   teamspaceId: z.string().uuid(),
   accountId: z.string().uuid().optional(),
-  workflowInstructionId: z.string().min(1).optional(),
+  agentDefinitionId: z.string().min(1).optional(),
+  targetType: z
+    .enum(["main_heartbeat", "agent", "ready_task_dispatch"])
+    .optional(),
   cronExpression: z.string().min(1).optional(),
   timezone: z.string().min(1).optional(),
   enabled: z.boolean().optional(),
@@ -87,25 +90,26 @@ export async function PATCH(
   );
   if (error) return error;
 
-  let workflowInstructionId: string | undefined;
-  if (parsed.workflowInstructionId !== undefined) {
-    const resolved = await resolveWorkflowInstructionId(
+  let agentDefinitionId: string | undefined;
+  if (parsed.agentDefinitionId !== undefined) {
+    const resolved = await resolveAgentDefinitionId(
       parsed.teamspaceId,
-      parsed.workflowInstructionId,
+      parsed.agentDefinitionId,
     );
     if (!resolved) {
       return NextResponse.json(
-        { error: "Unknown workflow instruction" },
+        { error: "Unknown agent definition" },
         { status: 422 },
       );
     }
-    workflowInstructionId = resolved;
+    agentDefinitionId = resolved;
   }
 
   const schedule = await getSchedulePort(parsed.teamspaceId, accountId).update(
     scheduleId,
     {
-      workflowInstructionId,
+      agentDefinitionId,
+      targetType: parsed.targetType,
       cronExpression: parsed.cronExpression,
       timezone: parsed.timezone,
       enabled: parsed.enabled,

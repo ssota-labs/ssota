@@ -22,7 +22,7 @@ import {
   buildRunInstructions,
 } from "../runtime-prompt.js";
 import { DEFAULT_MODEL_ID } from "../models.js";
-
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 describe("createSsotaTools", () => {
   it("exposes the full graph + task tool set", () => {
     const tools = createSsotaTools();
@@ -36,40 +36,50 @@ describe("createSsotaTools", () => {
         "create_node_type",
         "create_page",
         "delegate",
+        "describe_script_tool",
+        "get_agent_instruction",
         "get_edge_type",
         "get_node",
         "get_node_type",
         "get_page_component",
         "get_task",
-        "get_workflow_instruction",
+        "list_agent_definitions",
         "list_edge_types",
         "list_node_types",
         "list_page_components",
         "list_pages",
-        "list_workflow_instructions",
+        "list_script_tools",
         "query_nodes",
         "query_tasks",
+        "read_skill",
         "read_page",
         "request_approval",
+        "run_script_tool",
         "search_catalog",
         "spawn_task",
         "traverse_edges",
         "update_node",
         "update_page",
         "update_task",
-        "write_workflow_instruction",
+        "write_agent_definition",
       ].sort(),
     );
   });
 
   it("sandbox tools are a separate set (attached only for dev runs)", () => {
     const base = createSsotaTools();
-    expect(base).not.toHaveProperty("sandbox_exec");
+    expect(base).not.toHaveProperty("sandbox_shell");
     const sandbox = createSandboxTools();
     expect(Object.keys(sandbox).sort()).toEqual([
-      "sandbox_exec",
-      "sandbox_read_file",
-      "sandbox_write_file",
+      "sandbox_await",
+      "sandbox_delete",
+      "sandbox_glob",
+      "sandbox_grep",
+      "sandbox_read",
+      "sandbox_read_lints",
+      "sandbox_shell",
+      "sandbox_str_replace",
+      "sandbox_write",
     ]);
   });
 
@@ -100,21 +110,23 @@ describe("buildRunInstructions", () => {
     const prompt = buildRunInstructions({
       runtimeKind: "task",
       teamspaceId: "22222222-2222-2222-2222-222222222222",
-      // Legacy connector guidance names connection_search/connection_call.
-      connectorKind: "legacy",
       taskPlaybook: {
-        id: "33333333-3333-3333-3333-333333333333",
+        id: BUILTIN_AGENT_IDS.writeDocument,
         teamspaceId: "22222222-2222-2222-2222-222222222222",
         accountId: null,
-        key: "work.write_document",
         name: "Write document",
         description: "",
-        content: [
+        instructions: [
           {
             type: "paragraph",
             content: [{ type: "text", text: "Playbook body" }],
           },
         ],
+        isMain: false,
+        referenceOnly: false,
+        toolBundles: [],
+        nodeScopes: [],
+        runPolicy: {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       },
@@ -134,9 +146,9 @@ describe("buildRunInstructions", () => {
     });
 
     expect(prompt).toContain("Draft the onboarding PRD");
-    expect(prompt).toContain("work.write_document");
-    expect(prompt).toContain("connection_call");
-    expect(prompt).toContain("connection_search");
+    expect(prompt).toContain("Write document");
+    expect(prompt).toContain("COMPOSIO_SEARCH_TOOLS");
+    expect(prompt).toContain("COMPOSIO_MULTI_EXECUTE_TOOL");
     expect(prompt).toContain("Covers activation metric");
     expect(prompt).toContain("Write the PRD for onboarding.");
     expect(prompt).toContain("complete_task");
@@ -146,7 +158,7 @@ describe("buildRunInstructions", () => {
     const prompt = buildRunInstructions({
       runtimeKind: "main",
       teamspaceId: "22222222-2222-2222-2222-222222222222",
-      mainInstruction: null,
+      mainDefinition: null,
     });
     expect(prompt).toMatch(/persistent chat thread/i);
   });
@@ -213,10 +225,42 @@ describe("buildRunInstructionMessages", () => {
     const messages = buildRunInstructionMessages({
       runtimeKind: "scheduler",
       teamspaceId: "22222222-2222-2222-2222-222222222222",
-      mainInstruction: null,
+      mainDefinition: null,
     });
     expect(messages).toHaveLength(1);
     expect(messages[0]?.providerOptions).toEqual(ephemeral);
+  });
+
+  it("uses specialist chat mode for main runtime with a specialist playbook", () => {
+    const messages = buildRunInstructionMessages({
+      runtimeKind: "main",
+      teamspaceId: "22222222-2222-2222-2222-222222222222",
+      specialistChatPlaybook: {
+        id: BUILTIN_AGENT_IDS.research,
+        teamspaceId: "22222222-2222-2222-2222-222222222222",
+        accountId: null,
+        name: "Research",
+        description: "Research specialist",
+        instructions: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "Summarize findings clearly." }],
+          },
+        ],
+        isMain: false,
+        referenceOnly: false,
+        toolBundles: [],
+        nodeScopes: [],
+        runPolicy: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    const dynamic = messages.at(-1)?.content ?? "";
+    expect(dynamic).toContain("Specialist chat mode");
+    expect(dynamic).toContain("do not call get_task");
+    expect(dynamic).toContain("Summarize findings clearly.");
   });
 });
 

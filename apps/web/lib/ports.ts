@@ -8,12 +8,16 @@ import {
   createGraphPorts,
   createOnboardingPort,
   createOrganizationSettingsPort,
+  createOrganizationMembersPort,
   createTaskPort,
-  createWorkflowInstructionPort,
+  createAgentDefinitionPort,
+  createSkillPort,
   createSchedulePort,
+  createScriptToolPort,
   createPagePort,
   createPageViewStatePort,
   createConnectorToolSettingsPort,
+  createSandboxEnvironmentPort,
   createOrgMembershipPort,
   registerTeamspaceOrganization,
   resolveOrganizationIdForTeamspace,
@@ -32,7 +36,11 @@ export function getDb(): Db {
   return cachedDb;
 }
 
-export { registerTeamspaceOrganization };
+export {
+  registerTeamspaceOrganization,
+  resolveOrganizationIdForTeamspace,
+  getCachedOrganizationIdForTeamspace,
+};
 
 export function getTaskPort(teamspaceId: string, accountId?: string) {
   return createTaskPort(getDb(), { teamspaceId, accountId });
@@ -56,6 +64,10 @@ export function getOnboardingPort() {
 
 export function getOrganizationSettingsPort() {
   return createOrganizationSettingsPort(getDb());
+}
+
+export function getOrganizationMembersPort() {
+  return createOrganizationMembersPort(getDb());
 }
 
 export function getAccountReadPort() {
@@ -96,12 +108,28 @@ export async function getOrCreateProjectAccount(
   return getAccountReadPort().getOrCreateWorkspaceAccount(teamspaceId);
 }
 
-export function getWorkflowInstructionPort(teamspaceId: string) {
-  return createWorkflowInstructionPort(getDb(), { teamspaceId });
+export function getAgentDefinitionPort(teamspaceId: string) {
+  return createAgentDefinitionPort(getDb(), { teamspaceId });
+}
+
+/** @deprecated Use getAgentDefinitionPort */
+export const getWorkflowInstructionPort = getAgentDefinitionPort;
+
+export async function getSkillPort(teamspaceId: string) {
+  let organizationId = getCachedOrganizationIdForTeamspace(teamspaceId);
+  if (!organizationId) {
+    organizationId = await resolveOrganizationIdForTeamspace(getDb(), teamspaceId);
+    registerTeamspaceOrganization(teamspaceId, organizationId);
+  }
+  return createSkillPort(getDb(), { organizationId, teamspaceId });
 }
 
 export function getSchedulePort(teamspaceId: string, accountId?: string | null) {
   return createSchedulePort(getDb(), { teamspaceId, accountId });
+}
+
+export function getScriptToolPort(teamspaceId: string) {
+  return createScriptToolPort(getDb(), { teamspaceId });
 }
 
 export function getPagePort(teamspaceId: string) {
@@ -110,6 +138,10 @@ export function getPagePort(teamspaceId: string) {
 
 export function getPageViewStatePort(teamspaceId: string) {
   return createPageViewStatePort(getDb(), { teamspaceId });
+}
+
+export function getSandboxEnvironmentPort(teamspaceId: string) {
+  return createSandboxEnvironmentPort(getDb(), { teamspaceId });
 }
 
 export async function resolveDefaultProjectId(): Promise<string> {

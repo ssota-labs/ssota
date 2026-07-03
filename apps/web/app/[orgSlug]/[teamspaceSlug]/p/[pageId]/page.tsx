@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import type { TableViewState } from "@ssota/contracts";
 import type { UiComponentContentV2 } from "@ssota/contracts/catalog";
 import { resolvePageBindings } from "@ssota/core";
+import { PageContentLoading } from "@/components/console/browse-content-loading";
 import { resolveOrgPage } from "@/lib/console/resolve-org-page";
 import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
@@ -31,7 +33,21 @@ import { slugifyComponentTitle } from "@/lib/design-studio/tree-utils";
  * anchors the page's bindings to a node (exposed to bindings as `context.subject`,
  * consumed by the `subject` binding kind / `traverse from:"subject"`).
  */
-export default async function TreePage({
+export default function TreePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ orgSlug: string; teamspaceSlug: string; pageId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  return (
+    <Suspense fallback={<PageContentLoading params={params} />}>
+      <TreePageInner params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function TreePageInner({
   params,
   searchParams,
 }: {
@@ -131,9 +147,6 @@ export default async function TreePage({
     });
   }
 
-  // Per-user table view state (column order/visibility/sizing/sort/filters/…),
-  // loaded for the current user and threaded into the renderer. `save` is the
-  // controlled-table persistence callback.
   const user = await getCurrentUser();
   const initialViewStates = user
     ? await getPageViewStatePort(project.id).getForPage(user.id, pageId)

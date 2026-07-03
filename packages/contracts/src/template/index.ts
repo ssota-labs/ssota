@@ -1,8 +1,8 @@
-import type { WorkflowInstructionSeed } from "../workflow-instruction.js";
+import type { AgentDefinitionSeed } from "../agent-definition.js";
 
 /**
  * A project template: a self-contained bundle that seeds a new project's
- * catalog (node/edge types), workflow instructions, and Notion-style page tree.
+ * catalog (node/edge types), agent definitions, and Notion-style page tree.
  */
 export interface TemplateMeta {
   /** Stable id / slug (e.g. "software-development"). */
@@ -34,6 +34,8 @@ export interface TemplatePageSeed {
 export interface TemplateBundle {
   meta: TemplateMeta;
   catalog: TemplateCatalog;
-  workflowInstructions: WorkflowInstructionSeed[];
+  agentDefinitions: AgentDefinitionSeed[];
   pages: TemplatePageSeed[];
+  /** @deprecated Use agentDefinitions */
+  workflowInstructions?: AgentDefinitionSeed[];
 }

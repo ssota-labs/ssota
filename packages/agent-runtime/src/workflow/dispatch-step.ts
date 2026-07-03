@@ -4,66 +4,83 @@
  * use Node-dependent code. It re-hydrates the per-step tool environment from the
  * serializable `ssota` scope:
  *
- * - plain SSOTA tools (graph/tasks/pages) need only `{ ssota }`.
- * - connector tools come from the active connector adapter (Composio by default,
- *   legacy Vercel Connect when `CONNECTORS=connect`). The adapter is rebuilt per
- *   step (live MCP/credential objects can't cross step boundaries) and any
- *   session is closed in a `finally`.
- * - sandbox tools re-attach to the run's sandbox by id.
+ * - SSOTA tools (graph/tasks/pages/delegate/script/agent-def) via createSsotaTools
+ * - Composio meta-tools via executeComposioMetaTool (fixed names, session per step)
+ * - sandbox tools re-attach to the run's sandbox session by id
  */
-import { asSchema } from "ai";
+import {
+  SANDBOX_PRIMITIVE_TOOL_NAMES,
+  SANDBOX_TOOLS_BY_ACCESS_TIER,
+  type SandboxPrimitiveToolName,
+} from "@ssota/contracts";
 import { createSsotaTools } from "../tools/index.js";
 import { createSandboxTools } from "../tools/sandbox.js";
-import { attachSandboxSession } from "../sandbox/session.js";
-import { getConnectorAdapter } from "../connectors/adapter.js";
+import { getSandboxSessionPort } from "../ports.js";
+import {
+  executeComposioMetaTool,
+  getConnectorAdapter,
+} from "../connectors/adapter.js";
+import { isComposioMetaToolName } from "../composio/meta-tool-schemas.js";
 import type { AgentRunContext } from "../engine/types.js";
+import {
+  assertCatalogKeyInScope,
+  assertNodeIdInScope,
+  resolveNodeScopes,
+} from "../node-scopes.js";
 
 /** Sandbox tool names handled by the re-attach branch (dev-capable tasks). */
-export const MAIN_WORKFLOW_SANDBOX_TOOL_NAMES = [
-  "sandbox_exec",
-  "sandbox_write_file",
-  "sandbox_read_file",
-] as const;
+export const MAIN_WORKFLOW_SANDBOX_TOOL_NAMES = SANDBOX_PRIMITIVE_TOOL_NAMES;
 
-const SANDBOX_TOOLS = new Set<string>(MAIN_WORKFLOW_SANDBOX_TOOL_NAMES);
+const SANDBOX_TOOLS = new Set<string>(SANDBOX_PRIMITIVE_TOOL_NAMES);
 
 const toolCallId = (toolName: string) => `main-wf-${toolName}`;
 
-/** Serializable connector tool definition handed to the workflow-safe agent. */
-export interface ConnectorToolDef {
-  name: string;
-  description: string;
-  /** JSON Schema for the tool input (rehydrated with `jsonSchema()`). */
-  jsonSchema: unknown;
+function assertGraphToolNodeScope(
+  toolName: string,
+  input: unknown,
+  ssota: AgentRunContext,
+): void {
+  const scope = resolveNodeScopes(ssota.nodeScopes);
+  if (!scope) return;
+
+  const data = (input ?? {}) as Record<string, unknown>;
+
+  switch (toolName) {
+    case "query_nodes":
+    case "create_node":
+      if (typeof data.catalogKey === "string") {
+        assertCatalogKeyInScope(scope, data.catalogKey, toolName);
+      }
+      break;
+    case "get_node":
+    case "update_node":
+    case "traverse_edges":
+      if (typeof data.nodeId === "string") {
+        assertNodeIdInScope(scope, data.nodeId, toolName);
+      }
+      break;
+    case "create_edge":
+      if (typeof data.sourceNodeId === "string") {
+        assertNodeIdInScope(scope, data.sourceNodeId, `${toolName} source`);
+      }
+      if (typeof data.targetNodeId === "string") {
+        assertNodeIdInScope(scope, data.targetNodeId, `${toolName} target`);
+      }
+      break;
+    default:
+      break;
+  }
 }
 
-/**
- * Fetch the active connector adapter's tool definitions (name + description +
- * JSON schema) for this run. Runs as a `"use step"`; the returned defs are
- * serializable so the workflow can declare them on the WorkflowAgent.
- */
-export async function fetchConnectorToolDefs(
+function isSandboxToolAllowed(
+  toolName: string,
   ssota: AgentRunContext,
-): Promise<ConnectorToolDef[]> {
-  const adapter = getConnectorAdapter();
-  if (!adapter) return [];
-  const bundle = await adapter.buildTools({
-    teamspaceId: ssota.teamspaceId,
-    accountId: ssota.accountId,
-    profileId: ssota.profileId,
-  });
-  try {
-    return Object.entries(bundle.tools).map(([name, tool]) => ({
-      name,
-      // Connector tool descriptions are static strings; ignore the rare
-      // dynamic-description form (not used by Composio/legacy connectors).
-      description: typeof tool.description === "string" ? tool.description : "",
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      jsonSchema: asSchema((tool as any).inputSchema).jsonSchema,
-    }));
-  } finally {
-    await bundle.connectionSessionManager?.close();
-  }
+): toolName is SandboxPrimitiveToolName {
+  const tier = ssota.sandboxAccess ?? "code";
+  if (tier === "none") return false;
+  return SANDBOX_TOOLS_BY_ACCESS_TIER[tier].includes(
+    toolName as SandboxPrimitiveToolName,
+  );
 }
 
 /**
@@ -76,7 +93,22 @@ export async function runMainAgentToolStep(
   input: unknown,
   ssota: AgentRunContext,
 ): Promise<unknown> {
-  // 1. Plain SSOTA tools (graph/tasks/pages).
+  if (isComposioMetaToolName(toolName)) {
+    if (!getConnectorAdapter()) {
+      throw new Error(
+        `Connector tool ${toolName} requires Composio (COMPOSIO_API_KEY).`,
+      );
+    }
+    return executeComposioMetaTool(toolName, input, {
+      teamspaceId: ssota.teamspaceId,
+      accountId: ssota.accountId,
+      profileId: ssota.profileId,
+      enabledConnectorProviders: ssota.enabledConnectorProviders,
+    });
+  }
+
+  assertGraphToolNodeScope(toolName, input, ssota);
+
   const ssotaTools = createSsotaTools();
   const ssotaTool = ssotaTools[toolName];
   if (ssotaTool?.execute) {
@@ -87,14 +119,19 @@ export async function runMainAgentToolStep(
     });
   }
 
-  // 2. Sandbox tools (dev-capable task runs) — re-attach by id.
   if (SANDBOX_TOOLS.has(toolName)) {
-    if (!ssota.sandboxId) {
+    if (!ssota.sandboxSessionId) {
       throw new Error(
-        `Sandbox tool ${toolName} requires a sandbox, but none was provisioned for this run.`,
+        `Sandbox tool ${toolName} requires a sandbox session, but none was provisioned for this run.`,
       );
     }
-    const sandbox = await attachSandboxSession(ssota.sandboxId);
+    if (!isSandboxToolAllowed(toolName, ssota)) {
+      throw new Error(
+        `Sandbox tool ${toolName} is not allowed for access tier '${ssota.sandboxAccess ?? "code"}'.`,
+      );
+    }
+    const sessionPort = getSandboxSessionPort(ssota.teamspaceId);
+    const sandbox = await sessionPort.attach(ssota.sandboxSessionId);
     const t = createSandboxTools()[toolName];
     if (!t?.execute) throw new Error(`Unknown sandbox tool: ${toolName}`);
     return await t.execute(input as never, {
@@ -102,32 +139,6 @@ export async function runMainAgentToolStep(
       messages: [],
       context: { ssota, sandbox },
     });
-  }
-
-  // 3. Connector tools via the active adapter (Composio / legacy).
-  const adapter = getConnectorAdapter();
-  if (adapter) {
-    const bundle = await adapter.buildTools({
-      teamspaceId: ssota.teamspaceId,
-      accountId: ssota.accountId,
-      profileId: ssota.profileId,
-    });
-    try {
-      const t = bundle.tools[toolName];
-      if (t?.execute) {
-        return await t.execute(input as never, {
-          toolCallId: toolCallId(toolName),
-          messages: [],
-          context: {
-            ssota,
-            credentials: bundle.credentials,
-            connectionState: bundle.connectionState,
-          },
-        });
-      }
-    } finally {
-      await bundle.connectionSessionManager?.close();
-    }
   }
 
   throw new Error(`Unknown or non-executable tool: ${toolName}`);

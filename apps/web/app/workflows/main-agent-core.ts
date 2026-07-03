@@ -1,4 +1,5 @@
 import type { UIMessage } from "ai";
+import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import { getDb, type RunAgentResult } from "@ssota/agent-runtime";
 import { createAgentRunPort, createChatPort } from "@ssota/adapter-postgres";
 
@@ -12,11 +13,23 @@ export interface RunMainAgentInput {
   teamspaceId: string;
   threadId: string;
   accountId?: string;
+  scheduleId?: string;
+  /** Run a specialist agent definition instead of the teamspace main agent. */
+  agentDefinitionId?: string;
   /** Signed-in user (Composio acting entity for connector tools). */
   profileId?: string;
   modelId?: string;
   maxSteps?: number;
   chatContext?: Record<string, unknown>;
+}
+
+const CHAT_THREAD_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Platform bot threads (Slack/Discord ids) are not chat_threads UUIDs. */
+function chatThreadIdForTelemetry(threadId?: string): string | null {
+  if (!threadId) return null;
+  return CHAT_THREAD_UUID_RE.test(threadId) ? threadId : null;
 }
 
 export async function claimMainRunning(
@@ -27,9 +40,19 @@ export async function claimMainRunning(
   await createAgentRunPort(db).start({
     teamspaceId: input.teamspaceId,
     runtimeKind: "main",
-    threadId: input.threadId,
+    threadId: chatThreadIdForTelemetry(input.threadId),
+    scheduleId: input.scheduleId ?? null,
     workflowRunId: runId,
     accountId: input.accountId ?? null,
+    agentDefinitionId: input.agentDefinitionId ?? MAIN_AGENT_ID,
+    trigger:
+      input.chatContext?.trigger === "heartbeat"
+        ? "heartbeat"
+        : input.chatContext?.trigger === "chatbot"
+          ? "chatbot"
+          : input.scheduleId
+            ? "schedule"
+            : "chat",
     model: input.modelId ?? null,
   });
 }
@@ -44,6 +67,7 @@ export async function persistMainAssistantMessage(
   parts: UIMessage["parts"] | null,
 ): Promise<void> {
   if (!parts || parts.length === 0 || !input.threadId) return;
+  if (!CHAT_THREAD_UUID_RE.test(input.threadId)) return;
 
   const db = getDb();
   const chat = createChatPort(db, {

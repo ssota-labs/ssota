@@ -1,6 +1,6 @@
 import { config as loadEnv } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
@@ -10,11 +10,15 @@ import {
   LOCAL_AUTH_USER_ID,
   SMOKE_EMAIL,
   SMOKE_PASSWORD,
+  SMOKE_MEMBER_EMAIL,
+  SMOKE_MEMBER_PASSWORD,
 } from "../constants.js";
 import { seedGraphInstances } from "./seed/graph-instances.js";
 import { seedScheduleFixtures } from "./seed/schedules.js";
+import { seedBuiltinSkills } from "./seed/builtin-skills.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
+import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 
 loadEnv({ path: "../../.env.local" });
 loadEnv({ path: "../../apps/web/.env.local" });
@@ -141,32 +145,14 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
     await applyTemplate(db, teamspaceId, SOFTWARE_DEV_TEMPLATE);
     await seedScheduleFixtures(db, teamspaceId);
 
-    const implementFeature = await db
-      .select({ id: schema.workflowInstructions.id })
-      .from(schema.workflowInstructions)
-      .where(
-        and(
-          eq(schema.workflowInstructions.teamspaceId, teamspaceId),
-          eq(schema.workflowInstructions.key, "work.implement_feature"),
-        ),
-      )
-      .limit(1);
-    const bootstrap = await db
-      .select({ id: schema.workflowInstructions.id })
-      .from(schema.workflowInstructions)
-      .where(
-        and(
-          eq(schema.workflowInstructions.teamspaceId, teamspaceId),
-          eq(schema.workflowInstructions.key, "orchestrator.bootstrap"),
-        ),
-      )
-      .limit(1);
+    const implementFeatureId = BUILTIN_AGENT_IDS.implementFeature;
+    const mainAgentId = BUILTIN_AGENT_IDS.main;
 
     await db
       .insert(schema.tasks)
       .values({
         teamspaceId,
-        workflowInstructionId: implementFeature[0]?.id ?? null,
+        agentDefinitionId: implementFeatureId,
         title: "Archive generic runtime and focus active product on development workflow",
         status: "ready",
         executorType: "Agent",
@@ -184,7 +170,7 @@ async function seedConsole(db: ReturnType<typeof createDb>["db"], smokeUserId?: 
       .insert(schema.tasks)
       .values({
         teamspaceId,
-        workflowInstructionId: bootstrap[0]?.id ?? null,
+        agentDefinitionId: mainAgentId,
         title: "Configure Cursor Automations for ssota-dev orchestrators",
         status: "ready",
         executorType: "Human",
@@ -228,7 +214,10 @@ async function seedSmokeUser(
 
   const { data: existing } = await admin.auth.admin.listUsers();
   const found = existing.users.find((user) => user.email === SMOKE_EMAIL);
-  if (found) return found.id;
+  if (found) {
+    await admin.auth.admin.updateUserById(found.id, { password: SMOKE_PASSWORD });
+    return found.id;
+  }
 
   const { data, error } = await admin.auth.admin.createUser({
     email: SMOKE_EMAIL,
@@ -250,12 +239,106 @@ async function seedSmokeUser(
   return data.user?.id;
 }
 
+async function seedSmokeMemberUser(
+  db: ReturnType<typeof createDb>["db"],
+  organizationId: string,
+): Promise<string | undefined> {
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.warn("SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing; skipping member auth user");
+    return undefined;
+  }
+
+  const admin = createClient(supabaseUrl, serviceRoleKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data: existing } = await admin.auth.admin.listUsers();
+  const found = existing.users.find((user) => user.email === SMOKE_MEMBER_EMAIL);
+  let memberUserId = found?.id;
+
+  if (!memberUserId) {
+    const { data, error } = await admin.auth.admin.createUser({
+      email: SMOKE_MEMBER_EMAIL,
+      password: SMOKE_MEMBER_PASSWORD,
+      email_confirm: true,
+      user_metadata: { name: "Smoke Member" },
+    });
+
+    if (error) {
+      if (error.code === "email_exists") {
+        const rows = await db.execute<{ id: string }>(sql`
+          SELECT id::text AS id FROM auth.users WHERE email = ${SMOKE_MEMBER_EMAIL} LIMIT 1
+        `);
+        memberUserId = (rows[0] as { id: string } | undefined)?.id;
+      } else {
+        throw error;
+      }
+    } else {
+      memberUserId = data.user?.id;
+    }
+  }
+
+  if (!memberUserId) return undefined;
+
+  await db
+    .insert(schema.profiles)
+    .values({
+      id: memberUserId,
+      email: SMOKE_MEMBER_EMAIL,
+      displayName: "Smoke Member",
+      onboardingStep: "completed",
+      onboardingCompletedAt: new Date(),
+    })
+    .onConflictDoUpdate({
+      target: schema.profiles.id,
+      set: {
+        email: SMOKE_MEMBER_EMAIL,
+        displayName: "Smoke Member",
+        onboardingStep: "completed",
+        onboardingCompletedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+  await db
+    .insert(schema.organizationMemberships)
+    .values({
+      organizationId,
+      userId: memberUserId,
+      role: "member",
+    })
+    .onConflictDoNothing();
+
+  return memberUserId;
+}
+
 async function seedAllProjectCatalogs(db: ReturnType<typeof createDb>["db"]) {
   const projects = await db
     .select({ id: schema.teamspaces.id })
     .from(schema.teamspaces);
   for (const { id } of projects) {
     await applyTemplate(db, id, SOFTWARE_DEV_TEMPLATE);
+  }
+}
+
+async function seedDefaultSandboxEnvironments(db: ReturnType<typeof createDb>["db"]) {
+  const projects = await db
+    .select({ id: schema.teamspaces.id })
+    .from(schema.teamspaces);
+  const { createSandboxEnvironmentPort } = await import("../ports/sandbox-environment-port.js");
+  for (const { id: teamspaceId } of projects) {
+    const port = createSandboxEnvironmentPort(db, { teamspaceId });
+    const existing = await port.getByKey("sandbox.dev_node24");
+    if (existing) continue;
+    await port.upsertEnvironment({
+      key: "sandbox.dev_node24",
+      name: "Dev Node 24",
+      description: "Default empty Node 24 sandbox for coding agents",
+      runtime: "node24",
+      workingRoot: "/vercel/sandbox",
+    });
   }
 }
 
@@ -266,9 +349,18 @@ async function main() {
   console.log("Seeding smoke user...");
   const smokeUserId = await seedSmokeUser(db);
   console.log("Seeding active console runtime...");
-  await seedConsole(db, smokeUserId);
+  const consoleSeed = await seedConsole(db, smokeUserId);
+  if (consoleSeed?.organizationId && smokeUserId) {
+    console.log("Seeding smoke org member (non-owner)...");
+    await seedSmokeMemberUser(db, consoleSeed.organizationId);
+  }
   console.log("Backfilling node/edge catalog for all projects...");
   await seedAllProjectCatalogs(db);
+  console.log("Seeding platform builtin skills...");
+  const builtinCount = await seedBuiltinSkills(db);
+  console.log(`Seeded ${builtinCount} builtin skills.`);
+  console.log("Seeding default sandbox environments...");
+  await seedDefaultSandboxEnvironments(db);
   console.log("Seed complete.");
   await client.end();
 }

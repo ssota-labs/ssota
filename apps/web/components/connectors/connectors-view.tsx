@@ -22,17 +22,22 @@ import {
   SheetTitle,
 } from "@ssota/ui/components/ui/sheet";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import { useLocale } from "@/components/i18n/locale-provider";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import {
   disconnectConnectionAction,
   loadToolkitToolSettingsAction,
   setToolkitDisabledAction,
-} from "@/app/[orgSlug]/[teamspaceSlug]/connectors/actions";
+} from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
 import {
   CONNECTOR_THEMES,
   type ConnectorDef,
   type ConnectorProvider,
 } from "@/lib/connect/connectors";
+import {
+  buildConnectorAuthorizeHref,
+  type ConnectorConnectScope,
+} from "@/lib/connect/authorize-href";
 
 export interface ConnectorConnection {
   /** Composio connected-account id (used to disconnect). */
@@ -48,7 +53,7 @@ export interface ScopedConnections {
   org: ConnectorConnection[];
 }
 
-type Scope = "user" | "org";
+type Scope = ConnectorConnectScope;
 
 const SCOPE_META: Record<Scope, { title: string; subtitle: string; icon: Icon }> = {
   user: {
@@ -73,23 +78,6 @@ interface ConnectorsViewProps {
   allowOrgScope: boolean;
 }
 
-function authorizeHref(params: {
-  slug: string;
-  teamspaceId: string;
-  accountId: string;
-  returnTo: string;
-  scope: Scope;
-}): string {
-  const search = new URLSearchParams({
-    connector: params.slug,
-    accountId: params.accountId,
-    teamspaceId: params.teamspaceId,
-    returnTo: params.returnTo,
-  });
-  if (params.scope === "org") search.set("scope", "org");
-  return `/api/connect/authorize?${search.toString()}`;
-}
-
 export function ConnectorsView({
   connectors,
   connections,
@@ -98,6 +86,7 @@ export function ConnectorsView({
   returnTo,
   allowOrgScope,
 }: ConnectorsViewProps) {
+  const { t } = useLocale();
   const [selected, setSelected] = useState<ConnectorProvider | null>(null);
 
   const byProvider = useMemo(() => {
@@ -130,14 +119,12 @@ export function ConnectorsView({
     ? (byProvider.get(selected) ?? { user: [], org: [] })
     : { user: [], org: [] };
 
-  const connectedCount = byProvider.size;
-
   return (
     <div className="flex h-full min-h-0 flex-col">
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
-          title="Connectors"
-          description={`Browse and manage the apps your agent can use. ${connectedCount} connected.`}
+          title={t("nav.connections")}
+          description={t("connections.description")}
         />
 
         {groups.map((group) => (
@@ -369,7 +356,7 @@ function ScopeDetail({
   const meta = SCOPE_META[scope];
   const ScopeIcon = meta.icon;
   const connected = connections.length > 0;
-  const href = authorizeHref({
+  const href = buildConnectorAuthorizeHref({
     slug: connector.provider,
     teamspaceId,
     accountId,

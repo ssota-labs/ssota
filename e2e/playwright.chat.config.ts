@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { chatStubWebEnv } from "./chat-stub-env";
+import { withWebDeps } from "./web-server-command";
 
 // Focused config for the chat + connections e2e: only the web server, with the
 // local dev stubs enabled (CONNECT_STUB, STUB_MODEL) and connector env set so
@@ -39,7 +40,7 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: [
     {
-      command: `pnpm --filter web exec next dev --port ${webPort}`,
+      command: withWebDeps(`pnpm --filter web exec next dev --port ${webPort}`),
       url: webUrl,
       reuseExistingServer: !!process.env.REUSE_SERVERS,
       timeout: 180_000,

@@ -195,8 +195,7 @@ export interface ImpactQueueQueryInput {
 export interface Task {
   id: string;
   teamspaceId: string;
-  workflowInstructionId: string | null;
-  workflowInstructionKey: string | null;
+  agentDefinitionId: string | null;
   title: string;
   status: TaskStatus;
   executorType: ExecutorType;
@@ -208,6 +207,7 @@ export interface Task {
   context: Record<string, unknown>;
   acceptanceCriteria: unknown[];
   idempotencyKey: string | null;
+  sandboxEnvironmentId: string | null;
   result: Record<string, unknown>;
   completedAt: Date | null;
   createdAt: Date;
@@ -216,8 +216,7 @@ export interface Task {
 
 export interface TaskQueryInput {
   status?: TaskStatus;
-  workflowInstructionId?: string;
-  workflowInstructionKey?: string;
+  agentDefinitionId?: string;
   assignee?: string;
   subjectId?: string;
   targetNodeId?: string;
@@ -228,8 +227,7 @@ export interface TaskQueryInput {
 
 export interface TaskCreateInput {
   title: string;
-  workflowInstructionId?: string | null;
-  workflowInstructionKey?: string | null;
+  agentDefinitionId?: string | null;
   status?: TaskStatus;
   executorType?: ExecutorType;
   assignee?: string | null;
@@ -239,6 +237,7 @@ export interface TaskCreateInput {
   context?: Record<string, unknown>;
   acceptanceCriteria?: unknown[];
   idempotencyKey?: string | null;
+  sandboxEnvironmentId?: string | null;
 }
 
 export interface TaskUpdatePatch {
@@ -251,6 +250,7 @@ export interface TaskUpdatePatch {
   context?: Record<string, unknown>;
   acceptanceCriteria?: unknown[];
   result?: Record<string, unknown>;
+  sandboxEnvironmentId?: string | null;
 }
 
 export interface TaskPort {

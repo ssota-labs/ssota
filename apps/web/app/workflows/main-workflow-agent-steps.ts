@@ -1,5 +1,6 @@
 import type { ModelMessage, SystemModelMessage, UIMessage } from "ai";
-import { buildRunPrompt } from "@ssota/agent-runtime";
+import "@/lib/ai/register-stub-gateway";
+import { resolveRunAgent } from "@ssota/agent-runtime";
 import {
   claimMainRunning,
   persistMainAssistantMessage,
@@ -7,22 +8,36 @@ import {
   type RunMainAgentInput,
 } from "./main-agent-core";
 
-/** Build the main-agent instructions + messages (chat history) in a step. */
+/** Build the main-agent instructions, messages, and runtime definition in a step. */
 export async function buildMainPrompt(
   input: RunMainAgentInput,
   workflowRunId: string,
-): Promise<{ instructions: SystemModelMessage[]; messages: ModelMessage[] }> {
+): Promise<{
+  instructions: SystemModelMessage[];
+  messages: ModelMessage[];
+  definition: Awaited<ReturnType<typeof resolveRunAgent>>["definition"];
+  trigger: Awaited<ReturnType<typeof resolveRunAgent>>["trigger"];
+}> {
   "use step";
-  return buildRunPrompt({
+  const resolved = await resolveRunAgent({
     teamspaceId: input.teamspaceId,
     runId: workflowRunId,
     runtimeKind: "main",
     threadId: input.threadId,
+    scheduleId: input.scheduleId,
     accountId: input.accountId,
+    profileId: input.profileId,
     modelId: input.modelId,
     maxSteps: input.maxSteps,
+    agentDefinitionId: input.agentDefinitionId,
     chatContext: input.chatContext,
   });
+  return {
+    instructions: resolved.instructions,
+    messages: resolved.messages,
+    definition: resolved.definition,
+    trigger: resolved.trigger,
+  };
 }
 
 /**

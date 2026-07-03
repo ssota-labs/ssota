@@ -1,20 +1,22 @@
 export type { UIMessageChunk } from "ai";
-export { buildRunPrompt } from "./run.js";
-export type { RunAgentInput, RunAgentResult } from "./run.js";
+export { buildRunPrompt, resolveRunAgent, resolveRunAgentDefinition } from "./run.js";
+export type { RunAgentInput, RunAgentResult, ResolvedRunAgent } from "./run.js";
 
 export {
   createSsotaTools,
   createGraphTools,
   createTaskTools,
   createPageTools,
+  buildAgentTools,
+  toolBundlesForAgentDefinitionId,
 } from "./tools/index.js";
 export { createSandboxTools } from "./tools/sandbox.js";
 export { createConnectionTools } from "./tools/connections.js";
-// ── Connector adapter (Composio default / legacy Vercel Connect) ────────────
+// ── Connector adapter (Composio Tool Router) ────────────────────────────────
 export {
   getConnectorAdapter,
+  executeComposioMetaTool,
   type ConnectorAdapter,
-  type ConnectorAdapterKind,
   type ConnectorToolsBundle,
   type BuildConnectorToolsInput,
 } from "./connectors/adapter.js";
@@ -48,18 +50,36 @@ export {
   type ConnectorScope,
 } from "./composio/shared.js";
 export {
+  COMPOSIO_META_TOOL_NAMES,
+  composioMetaToolSchemas,
+  COMPOSIO_META_TOOL_DESCRIPTIONS,
+  isComposioMetaToolName,
+  type ComposioMetaToolName,
+} from "./composio/meta-tool-schemas.js";
+export {
   runMainAgentToolStep,
-  fetchConnectorToolDefs,
   MAIN_WORKFLOW_SANDBOX_TOOL_NAMES,
-  type ConnectorToolDef,
 } from "./workflow/dispatch-step.js";
 export {
-  createSandboxSession,
-  attachSandboxSession,
-  type SandboxSession,
-  type ExecResult,
-  type CreateSandboxSessionOptions,
-} from "./sandbox/session.js";
+  mainAgentRuntimeDefinition,
+  runtimeDefinitionFromAgent,
+  runtimeDefinitionFromBuiltinId,
+  assertAllowedTrigger,
+  TriggerNotAllowedError,
+  type AgentRuntimeDefinition,
+} from "./runtime-definition.js";
+export {
+  resolveNodeScopes,
+  assertCatalogKeyInScope,
+  assertNodeIdInScope,
+  NodeScopeViolation,
+} from "./node-scopes.js";
+export {
+  createSandboxProvider,
+  runEphemeralSandbox,
+  type SandboxProviderDeps,
+} from "./sandbox/provider.js";
+export { SandboxPathPolicyError } from "./sandbox/path-policy.js";
 export {
   createEnvCredentialProvider,
   createVercelConnectProvider,
@@ -94,15 +114,37 @@ export {
   COMMUNICATION_STYLE,
   LAYER0_RUNTIME_PROMPTS,
 } from "./runtime-prompt.js";
-export { gateway, DEFAULT_MODEL_ID, STUB_CONNECTION_SEARCH_TRIGGER } from "./models.js";
+export {
+  gateway,
+  DEFAULT_MODEL_ID,
+  STUB_CONNECTION_SEARCH_TRIGGER,
+  stubModel,
+} from "./models.js";
+export { registerStubGateway } from "./stub-gateway.js";
 export {
   getDb,
   getGraphPorts,
   getTaskPort,
   getGraphReadPort,
+  getAgentDefinitionPort,
+  getScriptToolPort,
   getWorkflowInstructionPort,
   ensureTeamspaceOrganizationScope,
   registerTeamspaceOrganization,
+  getSandboxEnvironmentPort,
+  getSandboxSessionRecordPort,
+  getSandboxSessionPort,
 } from "./ports.js";
 
 export type { AgentRunContext } from "./engine/types.js";
+
+export {
+  createSlackUserGroupForAgent,
+  emulateSlackUserGroupForAgent,
+} from "./slack-user-groups.js";
+export { slackHandleFromAgentName } from "./slack-user-group-handle.js";
+export {
+  isEmulateEnabled,
+  resolveProviderApiOrigin,
+  resolveProviderApiUrl,
+} from "./connections/provider-api-base.js";

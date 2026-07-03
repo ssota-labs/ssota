@@ -57,9 +57,9 @@ export default async function OverviewPage({
       quickLinks={[
         { id: "tasks", label: "Tasks", description: "Team work queue" },
         {
-          id: "workflow",
-          label: "Workflow Map",
-          description: "Full project graph",
+          id: "graph",
+          label: "Graph",
+          description: "Node and edge catalog",
         },
         {
           id: "initiatives",
@@ -69,7 +69,7 @@ export default async function OverviewPage({
       ]}
       recentActivity={recentActivity}
       nodesBasePath={orgPath(ctx, "n")}
-      workflowMapPath={orgPath(ctx, "workflow", "map")}
+      graphPath={orgPath(ctx, "graph")}
       workflowSummary={workflowSummary}
     />
   );

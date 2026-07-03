@@ -17,8 +17,7 @@ export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 export const TaskSchema = z.object({
   id: z.string().uuid(),
   teamspaceId: z.string().uuid(),
-  workflowInstructionId: z.string().uuid().nullable(),
-  workflowInstructionKey: z.string().nullable(),
+  agentDefinitionId: z.string().uuid().nullable(),
   title: z.string().min(1),
   status: TaskStatusSchema,
   executorType: ExecutorTypeSchema,
@@ -30,6 +29,7 @@ export const TaskSchema = z.object({
   context: z.record(z.unknown()).default({}),
   acceptanceCriteria: z.array(z.unknown()).default([]),
   idempotencyKey: z.string().nullable(),
+  sandboxEnvironmentId: z.string().uuid().nullable().optional(),
   result: z.record(z.unknown()).default({}),
   completedAt: z.string().nullable(),
   createdAt: z.string(),
@@ -42,8 +42,7 @@ export const TaskIndexSchema = z.object({
   id: z.string().uuid(),
   title: z.string(),
   status: TaskStatusSchema,
-  workflowInstructionId: z.string().uuid().nullable(),
-  workflowInstructionKey: z.string().nullable(),
+  agentDefinitionId: z.string().uuid().nullable(),
   assignee: z.string().nullable(),
   executorType: ExecutorTypeSchema,
   targetNodeId: z.string().uuid().nullable(),
@@ -54,8 +53,7 @@ export type TaskIndex = z.infer<typeof TaskIndexSchema>;
 
 export const QueryTasksInputSchema = z.object({
   status: TaskStatusSchema.optional(),
-  workflowInstructionId: z.string().uuid().optional(),
-  workflowInstructionKey: z.string().optional(),
+  agentDefinitionId: z.string().uuid().optional(),
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
@@ -74,8 +72,7 @@ export type GetTaskInput = z.infer<typeof GetTaskInputSchema>;
 
 export const SpawnTaskInputSchema = z.object({
   title: z.string().min(1),
-  workflowInstructionId: z.string().uuid().optional(),
-  workflowInstructionKey: z.string().optional(),
+  agentDefinitionId: z.string().uuid(),
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),
@@ -90,15 +87,7 @@ export const SpawnTaskInputSchema = z.object({
   acceptanceCriteria: z.array(z.unknown()).min(1).optional(),
   idempotencyKey: z.string().optional(),
   status: TaskStatusSchema.optional(),
-}).refine(
-  (value) =>
-    Boolean(value.workflowInstructionId) || Boolean(value.workflowInstructionKey),
-  {
-    message:
-      "Either workflowInstructionId or workflowInstructionKey is required",
-    path: ["workflowInstructionId"],
-  },
-);
+});
 
 export type SpawnTaskInput = z.infer<typeof SpawnTaskInputSchema>;
 
@@ -112,6 +101,7 @@ export const UpdateTaskPatchSchema = z.object({
   context: z.record(z.unknown()).optional(),
   acceptanceCriteria: z.array(z.unknown()).optional(),
   result: z.record(z.unknown()).optional(),
+  sandboxEnvironmentId: z.string().uuid().nullable().optional(),
 });
 
 export type UpdateTaskPatch = z.infer<typeof UpdateTaskPatchSchema>;
@@ -134,8 +124,7 @@ export type UpdateTaskInput = z.infer<typeof UpdateTaskInputSchema>;
 export const CreateTaskEffectPayloadSchema = z.object({
   id: z.string().uuid().optional(),
   title: z.string().min(1),
-  workflowInstructionId: z.string().uuid().optional(),
-  workflowInstructionKey: z.string().optional(),
+  agentDefinitionId: z.string().uuid(),
   assignee: z.string().optional(),
   subjectId: z.string().optional(),
   targetNodeId: z.string().uuid().optional(),

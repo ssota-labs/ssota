@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>SSOTA Billing E2E Reports</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: system-ui, sans-serif;
+      }
+      body {
+        max-width: 52rem;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        line-height: 1.5;
+      }
+      h1 {
+        font-size: 1.5rem;
+      }
+      .card {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin: 1rem 0;
+      }
+      a {
+        font-weight: 600;
+      }
+      code {
+        font-size: 0.9em;
+      }
+      ul {
+        margin: 0.5rem 0 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Billing E2E — per-test videos</h1>
+    <p>
+      Each UI test has its own recording in the Playwright HTML report. Open a suite,
+      click a test name, then use the <strong>Video</strong> tab.
+    </p>
+    <p>Regenerate: <code>pnpm e2e:billing:record</code></p>
+
+    <div class="card">
+      <h2>OSS — <code>BILLING=none</code></h2>
+      <p>Self-host billing, no entitlement gate (A1–A3, H2-1/2, registry).</p>
+      <p><a href="billing-oss-html/index.html">Open OSS Playwright report →</a></p>
+    </div>
+
+    <div class="card">
+      <h2>Stripe mode — gate + webhook</h2>
+      <p>Cloud entitlement gate, webhook API, live catalog (B*, C8, E*, F*, G3, H2-3/4).</p>
+      <p><a href="billing-stripe-html/index.html">Open Stripe Playwright report →</a></p>
+    </div>
+
+    <div class="card">
+      <h2>태그 색 / 다크 모드</h2>
+      <p>
+        <code>pnpm e2e:billing:record</code>·<code>pnpm e2e:billing:open</code> 시 리포트에
+        <strong>라이트 테마 패치</strong>가 자동 적용됩니다 (<code>@billing</code> 등 태그 칩이
+        불투명하게 보이도록). 수동 패치: <code>pnpm e2e:billing:patch-theme</code>.
+        리포트 우상단 테마가 System/Dark면 <strong>Light mode</strong>로 바꿔도 됩니다.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>CLI / manual (Test Clock, Portal, Checkout)</h2>
+      <ul>
+        <li><code>pnpm stripe:smoke</code> — scenario catalog + checklist</li>
+        <li><code>pnpm stripe:smoke --clock</code> — E1–E7 Test Clock steps</li>
+        <li><code>pnpm stripe:smoke --run all</code> — unit + integration + billing E2E</li>
+        <li><code>STRIPE_E2E_LIVE=1 pnpm e2e:billing:live</code> — Checkout redirect (real sk_test_)</li>
+      </ul>
+      <p>Docs: <code>packages/ee/docs/test-clocks.md</code></p>
+    </div>
+
+    <div class="card">
+      <h2>Local dev server</h2>
+      <ul>
+        <li><code>pnpm e2e:billing:open hub</code> — hub + reports on localhost</li>
+        <li><code>pnpm e2e:billing:open oss</code> / <code>stripe</code> — one suite</li>
+      </ul>
+    </div>
+  </body>
+</html>

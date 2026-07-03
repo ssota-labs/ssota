@@ -3,12 +3,12 @@ import {
   listEdgeTypes,
   type TemplateBundle,
 } from "@ssota/contracts";
-import { WORKFLOW_INSTRUCTION_SEEDS } from "@ssota/contracts/workflows";
+import { AGENT_DEFINITION_SEEDS } from "@ssota/contracts/agents";
 import pagesTreeSeed from "@ssota/contracts/seed-packs/software-development-workflow/pages-tree.json" with { type: "json" };
 import type { Db } from "../db/client.js";
 import { seedDomainCatalog } from "./db-catalog-read-port.js";
 import { resolveOrganizationIdForTeamspace } from "../teamspace-org-scope.js";
-import { seedWorkflowInstructions } from "./workflow-instruction-port.js";
+import { seedAgentDefinitions } from "./agent-definition-port.js";
 import { seedPages } from "./page-port.js";
 
 export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
@@ -23,7 +23,7 @@ export const SOFTWARE_DEV_TEMPLATE: TemplateBundle = {
     nodeTypeKeys: listNodeTypes(),
     edgeTypeKeys: listEdgeTypes(),
   },
-  workflowInstructions: WORKFLOW_INSTRUCTION_SEEDS,
+  agentDefinitions: AGENT_DEFINITION_SEEDS,
   pages: pagesTreeSeed as unknown as TemplateBundle["pages"],
 };
 
@@ -43,6 +43,7 @@ export async function applyTemplate(
     nodeTypeKeys: bundle.catalog.nodeTypeKeys,
     edgeTypeKeys: bundle.catalog.edgeTypeKeys,
   });
-  await seedWorkflowInstructions(db, teamspaceId, bundle.workflowInstructions);
+  const seeds = bundle.agentDefinitions ?? bundle.workflowInstructions ?? [];
+  await seedAgentDefinitions(db, teamspaceId, seeds);
   await seedPages(db, teamspaceId, bundle.pages);
 }

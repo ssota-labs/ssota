@@ -14,6 +14,8 @@ import { getConnectorToolSettingsPort } from "../ports.js";
 export interface ComposioToolsInput {
   orgId: string;
   profileId: string;
+  /** When set, restrict the Tool Router session to these toolkit slugs. */
+  enabledToolkits?: string[];
 }
 
 /** AI-SDK ToolSet from the user entity's Tool Router session (personal +
@@ -25,7 +27,11 @@ export async function createComposioTools(
     .getDisabledByToolkit(input.orgId, input.profileId)
     .catch(() => ({}) as Record<string, string[]>);
 
-  const session = await getToolRouterSession({ ...input, disabledTools });
+  const session = await getToolRouterSession({
+    ...input,
+    disabledTools,
+    enabledToolkits: input.enabledToolkits,
+  });
   if (!session) return {};
   const tools = await session.tools();
   return tools as ToolSet;
@@ -38,8 +44,12 @@ export async function createComposioTools(
  */
 export async function createComposioOrgTools(input: {
   orgId: string;
+  enabledToolkits?: string[];
 }): Promise<ToolSet> {
-  const session = await getOrgToolRouterSession({ orgId: input.orgId });
+  const session = await getOrgToolRouterSession({
+    orgId: input.orgId,
+    enabledToolkits: input.enabledToolkits,
+  });
   if (!session) return {};
   const tools = await session.tools();
   return tools as ToolSet;

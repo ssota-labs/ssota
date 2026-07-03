@@ -1,6 +1,6 @@
 /** Seed fragments for embedded emulate routes (non-production only). */
 export const emulateGithubSeed = {
-  users: [{ login: "smoke-dev", name: "Smoke Developer", email: "smoke@ssota.test" }],
+  users: [{ login: "smoke-dev", name: "Smoke Developer", email: "smoke@ssota.ai" }],
   orgs: [{ login: "ssota-labs", name: "SSOTA Labs" }],
   repos: [
     {
@@ -15,7 +15,7 @@ export const emulateGithubSeed = {
 export const emulateSlackSeed = {
   team: { name: "SSOTA Dev", domain: "ssota-dev" },
   users: [
-    { name: "smoke", real_name: "Smoke Test", email: "smoke@ssota.test" },
+    { name: "smoke", real_name: "Smoke Test", email: "smoke@ssota.ai" },
   ],
   channels: [{ name: "general", topic: "SSOTA emulate dev channel" }],
   tokens: [
@@ -29,7 +29,7 @@ export const emulateSlackSeed = {
 };
 
 export const emulateGoogleSeed = {
-  users: [{ email: "smoke@ssota.test", name: "Smoke Test" }],
+  users: [{ email: "smoke@ssota.ai", name: "Smoke Test" }],
   oauth_clients: [
     {
       client_id: "ssota-dev.apps.googleusercontent.com",

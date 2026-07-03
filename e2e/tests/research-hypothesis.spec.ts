@@ -4,7 +4,7 @@ import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
 /**
  * Legacy HypothesesWorkspace UI (table + "New hypothesis" + "Create initiative")
- * was replaced by catalog DocumentSheetList on the research/hypotheses page.
+ * was replaced by catalog DocumentCardListSheet on the research/hypotheses page.
  * Initiative-from-hypothesis flow will be reintroduced via page actions in a follow-up.
  */
 test.describe.skip("Research hypotheses — legacy initiative spawn", () => {

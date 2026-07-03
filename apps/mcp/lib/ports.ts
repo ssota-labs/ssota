@@ -3,7 +3,7 @@ import {
   createGraphPorts,
   createDb,
   createTaskPort,
-  createWorkflowInstructionPort,
+  createAgentDefinitionPort,
   registerTeamspaceOrganization,
   resolveOrganizationIdForTeamspace,
   getCachedOrganizationIdForTeamspace,
@@ -24,9 +24,12 @@ export function getTaskPort(teamspaceId: string) {
   return createTaskPort(getDb(), { teamspaceId });
 }
 
-export function getWorkflowInstructionPort(teamspaceId: string) {
-  return createWorkflowInstructionPort(getDb(), { teamspaceId });
+export function getAgentDefinitionPort(teamspaceId: string) {
+  return createAgentDefinitionPort(getDb(), { teamspaceId });
 }
+
+/** @deprecated Use getAgentDefinitionPort */
+export const getWorkflowInstructionPort = getAgentDefinitionPort;
 
 export function getGraphPorts(teamspaceId: string, organizationId?: string) {
   const orgId =

@@ -2,14 +2,14 @@ import { ExecutionDirectiveSchema } from "@ssota/contracts";
 import { TaskError } from "../domain/task-errors.js";
 import { assertGraphNodeInProject } from "../domain/graph-scope.js";
 import type { GraphReadPort } from "../ports/graph-read-port.js";
-import type { WorkflowInstructionReadPort } from "../ports/workflow-instruction-port.js";
+import type { AgentDefinitionReadPort } from "../ports/agent-definition-port.js";
 import type { Task, TaskPort } from "../domain/types.js";
 import type { SpawnTaskInput } from "@ssota/contracts";
 
 export interface SpawnTaskDeps {
   tasks: TaskPort;
   graphRead?: GraphReadPort;
-  workflowInstructions: WorkflowInstructionReadPort;
+  agentDefinitions: AgentDefinitionReadPort;
 }
 
 export async function spawnTask(
@@ -17,31 +17,11 @@ export async function spawnTask(
   teamspaceId: string,
   input: SpawnTaskInput,
 ): Promise<Task> {
-  let workflowInstructionId = input.workflowInstructionId ?? null;
-  let workflowInstructionKey: string | null = input.workflowInstructionKey ?? null;
-
-  if (workflowInstructionId) {
-    const row = await deps.workflowInstructions.getById(workflowInstructionId);
-    if (!row || row.teamspaceId !== teamspaceId) {
-      throw new TaskError(
-        "UNKNOWN_WORKFLOW_INSTRUCTION",
-        `Workflow instruction '${workflowInstructionId}' not found in project`,
-      );
-    }
-    workflowInstructionKey = row.key;
-  } else if (workflowInstructionKey) {
-    const row = await deps.workflowInstructions.getByKey(workflowInstructionKey);
-    if (!row) {
-      throw new TaskError(
-        "UNKNOWN_WORKFLOW_INSTRUCTION",
-        `Workflow instruction key '${workflowInstructionKey}' not found`,
-      );
-    }
-    workflowInstructionId = row.id;
-  } else {
+  const row = await deps.agentDefinitions.getById(input.agentDefinitionId);
+  if (!row || row.teamspaceId !== teamspaceId) {
     throw new TaskError(
-      "PRECONDITION_FAILED",
-      "workflowInstructionId or workflowInstructionKey is required",
+      "UNKNOWN_AGENT_DEFINITION",
+      `Agent definition '${input.agentDefinitionId}' not found in project`,
     );
   }
 
@@ -84,16 +64,15 @@ export async function spawnTask(
 
   return deps.tasks.createTask({
     title: input.title,
-    workflowInstructionId,
-    workflowInstructionKey,
-    status: input.status ?? "pending",
-    executorType: input.executorType ?? "Agent",
+    agentDefinitionId: row.id,
     assignee: input.assignee ?? null,
     subjectId: input.subjectId ?? null,
     targetNodeId: input.targetNodeId ?? null,
     parentTaskId: input.parentTaskId ?? null,
+    executorType: input.executorType ?? "Agent",
     context: input.context ?? {},
     acceptanceCriteria: input.acceptanceCriteria ?? [],
     idempotencyKey: input.idempotencyKey ?? null,
+    status: input.status ?? "pending",
   });
 }

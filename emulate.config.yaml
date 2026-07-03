@@ -8,7 +8,7 @@ slack:
   users:
     - name: smoke
       real_name: Smoke Test
-      email: smoke@ssota.test
+      email: smoke@ssota.ai
   channels:
     - name: general
       topic: SSOTA emulate dev channel
@@ -19,6 +19,8 @@ slack:
       client_secret: ssota_emulate_secret
       app_id: A000SSOTA01
       name: SSOTA Slack Dev
+      bot_id: B0SSOTABOT
+      bot_user_id: U0SSOTABOT
       redirect_uris:
         - http://localhost:3000/api/connect/callback
         - http://localhost:3100/api/connect/callback
@@ -28,24 +30,28 @@ slack:
         - channels:history
         - users:read
         - team:read
+        - usergroups:write
       user_scopes: [users:read]
       bot_name: ssota-bot
   tokens:
     - token: xoxb-local-test
-      user: smoke
+      user_id: U0SSOTABOT
+      bot_id: B0SSOTABOT
+      client_id: "12345.ssota-dev"
       scopes:
         - chat:write
         - channels:read
         - channels:history
         - users:read
         - team:read
+        - usergroups:write
   strict_scopes: false
 
 github:
   users:
     - login: smoke-dev
       name: Smoke Developer
-      email: smoke@ssota.test
+      email: smoke@ssota.ai
   orgs:
     - login: ssota-labs
       name: SSOTA Labs
@@ -67,7 +73,7 @@ linear:
     name: SSOTA
     url_key: ssota
   users:
-    - email: smoke@ssota.test
+    - email: smoke@ssota.ai
       name: Smoke Test
       admin: true
   teams:
@@ -77,7 +83,7 @@ linear:
     - team: ENG
       title: Emulate integration smoke issue
       state: Todo
-      assignee: smoke@ssota.test
+      assignee: smoke@ssota.ai
   oauth_apps:
     - client_id: lin_ssota_dev
       client_secret: ssota_linear_secret
@@ -88,12 +94,12 @@ linear:
       scopes: [read, write, issues:create, comments:create]
   tokens:
     - token: lin_test_smoke
-      user: smoke@ssota.test
+      user: smoke@ssota.ai
       scopes: [read, write, issues:create, comments:create, admin]
 
 google:
   users:
-    - email: smoke@ssota.test
+    - email: smoke@ssota.ai
       name: Smoke Test
   oauth_clients:
     - client_id: ssota-dev.apps.googleusercontent.com

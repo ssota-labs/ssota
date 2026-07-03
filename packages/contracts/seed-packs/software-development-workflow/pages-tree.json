@@ -31,13 +31,12 @@
           "children": ["product"]
         },
         "product": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "productRoadmaps",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "doc_status",
-            "sheetSize": "half",
             "editable": true,
             "action": "saveProductDoc",
             "filters": [
@@ -61,13 +60,12 @@
           "children": ["planning"]
         },
         "planning": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "planningRoadmaps",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "doc_status",
-            "sheetSize": "half",
             "editable": true,
             "action": "savePlanningDoc",
             "filters": [
@@ -339,13 +337,12 @@
           "children": ["list"]
         },
         "list": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
-            "sheetSize": "half",
             "editable": true,
             "action": "saveDoc"
           }
@@ -380,13 +377,12 @@
           "children": ["list"]
         },
         "list": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
-            "sheetSize": "half",
             "editable": true,
             "action": "saveDoc"
           }
@@ -421,13 +417,12 @@
           "children": ["list"]
         },
         "list": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
-            "sheetSize": "half",
             "editable": true,
             "action": "saveDoc"
           }
@@ -667,13 +662,12 @@
           "children": ["list"]
         },
         "list": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "rows",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
-            "sheetSize": "half",
             "editable": true,
             "action": "saveDoc"
           }
@@ -1483,13 +1477,12 @@
           "children": ["releaseList"]
         },
         "releaseList": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "releaseNotes",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
-            "sheetSize": "half",
             "editable": true,
             "action": "saveDoc"
           }
@@ -1500,13 +1493,12 @@
           "children": ["runbookList"]
         },
         "runbookList": {
-          "type": "DocumentSheetList",
+          "type": "DocumentCardListSheet",
           "props": {
             "binding": "runbooks",
             "field": "content",
             "subtitleField": "summary",
             "statusField": "lifecycleStatus",
-            "sheetSize": "half",
             "editable": true,
             "action": "saveDoc"
           }

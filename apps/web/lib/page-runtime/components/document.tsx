@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useAction } from "../context";
 import { boundNode, boundNodes } from "../bindings";
-import { DocumentSheetListEl } from "./document-sheet-list";
+import { DocumentCardListSheetEl } from "./document-card-list-sheet";
 import type { CatalogComponent } from "../types";
 
 // BlockNote is browser-only; load lazily (no SSR).
@@ -62,9 +62,9 @@ export const documentComponents: Record<string, CatalogComponent> = {
       />
     </div>
   ),
-  DocumentSheetList: ({ props, bindingData }) => (
+  DocumentCardListSheet: ({ props, bindingData }) => (
     <div className="flex min-h-0 flex-1 flex-col">
-      <DocumentSheetListEl
+      <DocumentCardListSheetEl
         nodes={boundNodes(bindingData, props)}
       title={props.title ? String(props.title) : undefined}
       sectionTitle={
@@ -91,9 +91,10 @@ export const documentComponents: Record<string, CatalogComponent> = {
         props.sheetSize === "half" ||
         props.sheetSize === "inspector" ||
         props.sheetSize === "wide" ||
-        props.sheetSize === "full"
+        props.sheetSize === "full" ||
+        props.sheetSize === "viewport"
           ? props.sheetSize
-          : "half"
+          : "viewport"
       }
       filters={props.filters}
       />

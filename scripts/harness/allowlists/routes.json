@@ -1,0 +1,297 @@
+[
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/agents/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/c/[threadId]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/c/new/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/c/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/channels/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/chat/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/connections/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/connectors/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/design/preview/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/design/ui-components/[[...componentId]]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/developer/setup/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/executive/roadmap/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/graph/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/manager/initiatives/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/n/[nodeId]/p/[pageId]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/n/[nodeId]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/overview/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/p/[pageId]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/research/[segment]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/sandbox/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/schedules/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/settings/account/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/settings/appearance/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/settings/billing/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/settings/developer/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/settings/general/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/settings/members/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/settings/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/settings/sandbox-environments/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/settings/teamspace/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/skills/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/subagents/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/tasks/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/templates/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/tools/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/workflow/map/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/c/[threadId]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/c/new/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/c/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/chat/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/connections/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/p/[pageId]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/app/[orgSlug]/[teamspaceSlug]/tasks/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/editor-lab-blocknote/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/editor-lab/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/home/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/invite/[invitationId]/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/labs/page-runtime/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/labs/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/labs/tasks-board/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/login/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/oauth/consent/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/oauth/consent/preview/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/onboarding/profile/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/onboarding/project/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/onboarding/template/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  },
+  {
+    "path": "apps/web/app/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
+  }
+]
