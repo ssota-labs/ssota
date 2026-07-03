@@ -69,6 +69,33 @@ describe("getSlackBotTokenForInstallation", () => {
     });
   });
 
+  it("passes subjectUserId from account_connections for Connect token mint", async () => {
+    resolveWorkspace.mockResolvedValue({
+      teamspaceId: "teamspace-1",
+      accountId: "acct-1",
+    });
+    listScopes.mockResolvedValue([
+      {
+        connector: "slack/ssota",
+        installationId: "T0914DV7GA0",
+        tenantId: "T0914DV7GA0",
+        subjectUserId: "user-who-connected",
+        installationName: "SSOTA Labs",
+      },
+    ]);
+
+    const { getSlackBotTokenForInstallation } = await import("./slack-token");
+    const token = await getSlackBotTokenForInstallation("T0914DV7GA0");
+
+    expect(token).toBe("xoxb-minted");
+    expect(getToken).toHaveBeenCalledWith("slack/ssota", {
+      teamspaceId: "teamspace-1",
+      accountId: "acct-1",
+      installationId: "T0914DV7GA0",
+      userId: "user-who-connected",
+    });
+  });
+
   it("falls back to CHAT_PROJECT_ID when workspace is not linked", async () => {
     resolveWorkspace.mockResolvedValue(null);
     process.env.CHAT_PROJECT_ID = "teamspace-fallback";
