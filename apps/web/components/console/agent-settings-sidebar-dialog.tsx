@@ -178,10 +178,8 @@ export function SidebarDetailHeader({
         </span>
       ) : null}
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-base font-semibold">{title}</h3>
-          {status}
-        </div>
+        <h3 className="text-base font-semibold">{title}</h3>
+        {status ? <div className="mt-0.5">{status}</div> : null}
       </div>
     </div>
   );
