@@ -31,23 +31,11 @@
           "children": ["product"]
         },
         "product": {
-          "type": "DocumentCardListSheet",
+          "type": "DocumentEditor",
           "props": {
-            "binding": "productRoadmaps",
+            "binding": "productDoc",
             "field": "content",
-            "subtitleField": "summary",
-            "statusField": "doc_status",
-            "editable": true,
-            "action": "saveProductDoc",
-            "filters": [
-              {
-                "type": "toggle",
-                "field": "doc_status",
-                "value": "archived",
-                "label": "Show archived",
-                "defaultHidden": true
-              }
-            ]
+            "action": "saveProductDoc"
           }
         },
         "planningSection": {
@@ -80,13 +68,13 @@
       }
     },
     "bindings": {
-      "productRoadmaps": { "kind": "query", "catalogKey": "product_roadmap" },
+      "productDoc": { "kind": "evergreen", "catalogKey": "product_roadmap" },
       "planningRoadmaps": { "kind": "query", "catalogKey": "roadmap" }
     },
     "actions": {
       "saveProductDoc": {
         "kind": "update_node",
-        "nodeId": { "$input": "nodeId" },
+        "nodeId": { "$binding": "productDoc.id" },
         "properties": { "content": { "$input": "doc" } },
         "merge": true
       },

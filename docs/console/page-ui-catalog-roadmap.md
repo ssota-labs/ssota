@@ -86,7 +86,7 @@
 
 | slug | 현재 spec (시드) | 목표 spec | Δ | 상태 |
 |------|------------------|-----------|---|------|
-| `executive/roadmap` | `Stack` → `Section×2` → `DocumentSheetList×2` (product + planning) | `Stack` → **위:** `Section` → `DocumentEditor` (singleton `product_roadmap`) / **아래:** `Section` → `DocumentSheetList` (query `roadmap`) | product는 1노드인데 SheetList 부적합 | ⏳ |
+| `executive/roadmap` | `Stack` → `Section×2` → `DocumentSheetList×2` (product + planning) | `Stack` → **위:** `Section` → `DocumentEditor` (singleton `product_roadmap`) / **아래:** `Section` → `DocumentSheetList` (query `roadmap`) | product는 1노드인데 SheetList 부적합 | ✅ |
 | `executive/goals` | `Stack` → OKR `ExpandableTable` + KPI `DataTable`/`ChartLine` | 동일 | — | ✅ |
 | `research/market` | `Section` → `DocumentSheetList` | 동일 (+ `Toolbar`는 후순위) | — | ✅ |
 | `research/user` | `Section` → `DocumentSheetList` | 동일 | — | ✅ |
@@ -147,7 +147,7 @@ Stack
 
 | # | slug | 핵심 쟁점 | 제안 (v0) |
 |---|------|-----------|-----------|
-| 1 | `executive/roadmap` | product = `DocumentEditor` vs `DocumentSheetList` 유지 | **Editor** — evergreen singleton 1노드 |
+| 1 | `executive/roadmap` | product = `DocumentEditor` vs `DocumentSheetList` 유지 | **Editor** — evergreen singleton 1노드 ✅ |
 | 2 | `development/data-model` | `ErdDiagram` + `properties.erd` | evergreen `data_spec`에 `erd` jsonb 시드 |
 | 3 | `development/system-model` | `FlowCanvas` vs prose-only | **FlowCanvas** model 1 — `architecture_spec.diagram` |
 | 4 | `development/api-reference` | `SchemaDisplay` vs BlockNote only | **Split** — endpoints jsonb + prose 가이드 |
@@ -257,4 +257,5 @@ tpl/initiative/retrospective/review   Section → DocumentEditor
 
 | 날짜 | 버전 | 내용 |
 |------|------|------|
+| 2026-07-03 | v0.1 | `executive/roadmap` — product `DocumentEditor` + evergreen binding |
 | 2026-07-03 | v0 | 초안 — 44페이지 slug→spec 제안안, Δ 논의 큐, 구현 절차 |

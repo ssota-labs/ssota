@@ -158,7 +158,6 @@ export async function seedGraphInstances(
 
   await migrateLegacyRoadmapSingletons(db, teamspaceId, maps);
   await seedProductRoadmapDoc(db, teamspaceId, maps);
-  await seedProductRoadmapArchivedDoc(db, teamspaceId, maps);
   await seedRoadmapPlanningDocs(db, teamspaceId, maps);
 
   const hypothesisId = await seedResearchDocs(db, teamspaceId, maps);
@@ -347,55 +346,6 @@ async function seedProductRoadmapDoc(
       },
     })
     .where(eq(schema.nodes.id, existing.id));
-}
-
-const PRODUCT_ROADMAP_ARCHIVED_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}product_roadmap_archived`;
-
-async function seedProductRoadmapArchivedDoc(
-  db: ReturnType<typeof createDb>["db"],
-  teamspaceId: string,
-  maps: CatalogMaps,
-) {
-  const catalogId = maps.nodeKeyToId.get("product_roadmap");
-  if (!catalogId) return;
-
-  const title = "Product roadmap (2025 archive)";
-  const [existing] = await db
-    .select({ id: schema.nodes.id })
-    .from(schema.nodes)
-    .where(
-      and(
-        eq(schema.nodes.teamspaceId, teamspaceId),
-        eq(schema.nodes.nodeCatalogId, catalogId),
-        eq(schema.nodes.title, title),
-      ),
-    )
-    .limit(1);
-  if (existing) return;
-
-  await db.insert(schema.nodes).values({
-    teamspaceId,
-    nodeCatalogId: catalogId,
-    title,
-    properties: {
-      doc_status: "archived",
-      summary: "Pre graph-first pivot themes retained for reference",
-      content: [
-        {
-          type: "heading",
-          props: { level: 2 },
-          content: "2025 direction (archived)",
-        },
-        {
-          type: "paragraph",
-          content:
-            "Earlier strategic focus before Console v2.7 graph runtime became the builder SSOT.",
-        },
-      ],
-      seed: PRODUCT_ROADMAP_ARCHIVED_SEED_KEY,
-    },
-    schemaVersion: 1,
-  });
 }
 
 type RoadmapDocSeed = {

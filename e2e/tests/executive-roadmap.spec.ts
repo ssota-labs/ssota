@@ -8,19 +8,24 @@ test.describe("Executive roadmap", () => {
     await gotoProject(page, "executive/roadmap");
   });
 
-  test("shows product and planning document lists", async ({ page }) => {
+  test("shows inline product editor and planning document list", async ({ page }) => {
     await expect(page.getByText("Planning roadmaps")).toBeVisible({
       timeout: 15_000,
     });
     await expect(
       page.getByRole("heading", { name: "Product roadmap" }),
     ).toBeVisible();
-    await expect(page.getByTestId("document-sheet-list")).toHaveCount(2);
 
-    const productList = page.getByTestId("document-sheet-list").first();
+    const productSection = page
+      .getByRole("heading", { name: "Product roadmap" })
+      .locator("xpath=ancestor::section[1]");
     await expect(
-      productList.getByRole("button", { name: "Product roadmap" }).first(),
-    ).toBeVisible();
+      productSection.getByTestId("blocknote-editor-shell"),
+    ).toBeVisible({ timeout: 15_000 });
+    await expect(productSection.getByText("Product direction")).toBeVisible();
+
+    await expect(page.getByTestId("document-sheet-list")).toHaveCount(1);
+
     const year = new Date().getFullYear();
     await expect(
       page.getByRole("button", { name: new RegExp(`${year} 연간 로드맵`) }),
@@ -30,20 +35,6 @@ test.describe("Executive roadmap", () => {
     ).toBeVisible();
     await expect(
       page.getByRole("button", { name: new RegExp(`${year} Q2 분기 로드맵`) }),
-    ).toBeVisible();
-  });
-
-  test("hides archived product roadmap until show-archived toggle is enabled", async ({
-    page,
-  }) => {
-    await expect(
-      page.getByRole("button", { name: "Product roadmap (2025 archive)" }),
-    ).not.toBeVisible();
-
-    await page.getByRole("switch", { name: "Show archived" }).click();
-
-    await expect(
-      page.getByRole("button", { name: "Product roadmap (2025 archive)" }),
     ).toBeVisible();
   });
 
@@ -77,12 +68,12 @@ test.describe("Executive roadmap", () => {
     await expect(q2Row.locator('[class*="amber"]').first()).toBeVisible();
   });
 
-  test("opens only one full-viewport sheet when switching between lists", async ({
+  test("opens only one full-viewport sheet when switching between planning docs", async ({
     page,
   }) => {
     const year = new Date().getFullYear();
 
-    await page.getByRole("button", { name: "Product roadmap" }).first().click();
+    await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
     await expect(page.getByTestId("document-sheet-panel")).toHaveCount(1);
 
     const panel = page.getByTestId("document-sheet-panel");
@@ -94,11 +85,11 @@ test.describe("Executive roadmap", () => {
     expect(box!.height).toBeGreaterThanOrEqual(viewport!.height - 4);
 
     await page
-      .getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) })
+      .getByRole("button", { name: new RegExp(`${year} Q2 분기 로드맵`) })
       .click({ position: { x: 8, y: 12 } });
     await expect(page.getByTestId("document-sheet-panel")).toHaveCount(1);
     await expect(
-      page.getByTestId("document-sheet-panel").getByText(`${year} Q1 분기 로드맵`),
+      page.getByTestId("document-sheet-panel").getByText(`${year} Q2 분기 로드맵`),
     ).toBeVisible();
   });
 
@@ -134,7 +125,37 @@ test.describe("Executive roadmap", () => {
     await expect(page.getByTestId("document-sheet-panel")).not.toBeVisible();
   });
 
-  test("autosaves roadmap doc edits from sheet panel", async ({ page }) => {
+  test("autosaves product roadmap edits from inline editor", async ({ page }) => {
+    test.slow();
+
+    const productSection = page
+      .getByRole("heading", { name: "Product roadmap" })
+      .locator("xpath=ancestor::section[1]");
+    const editor = productSection.locator(".ProseMirror");
+    await expect(editor).toBeVisible({ timeout: 15_000 });
+
+    const marker = `product-roadmap-autosave-${Date.now()}`;
+    const saveResponse = page.waitForResponse(
+      (response) => response.request().method() === "POST" && response.ok(),
+      { timeout: 20_000 },
+    );
+    await editor.click();
+    await editor.press("End");
+    await editor.type(` ${marker}`);
+    await saveResponse;
+    await page.waitForTimeout(500);
+
+    await page.reload();
+    await gotoProject(page, "executive/roadmap");
+    const reloadedEditor = page
+      .getByRole("heading", { name: "Product roadmap" })
+      .locator("xpath=ancestor::section[1]")
+      .locator(".ProseMirror");
+    await expect(reloadedEditor).toBeVisible({ timeout: 15_000 });
+    await expect(reloadedEditor).toContainText(marker, { timeout: 15_000 });
+  });
+
+  test("autosaves planning roadmap doc edits from sheet panel", async ({ page }) => {
     test.slow();
 
     const year = new Date().getFullYear();
