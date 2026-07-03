@@ -1,5 +1,4 @@
 import type { UIMessage } from "ai";
-import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import { getDb, type RunAgentResult } from "@ssota/agent-runtime";
 import {
   createAgentDefinitionPort,
@@ -36,15 +35,15 @@ function chatThreadIdForTelemetry(threadId?: string): string | null {
   return CHAT_THREAD_UUID_RE.test(threadId) ? threadId : null;
 }
 
-/** Skip agent_runs FK when a teamspace has not been template-seeded yet. */
+/** Main agent runs from code; only specialist runs reference a DB row. */
 async function agentDefinitionIdForTelemetry(
   teamspaceId: string,
   agentDefinitionId?: string,
 ): Promise<string | null> {
-  const requested = agentDefinitionId ?? MAIN_AGENT_ID;
+  if (!agentDefinitionId) return null;
   const port = createAgentDefinitionPort(getDb(), { teamspaceId });
-  const definition = await port.getById(requested);
-  return definition ? requested : null;
+  const definition = await port.getById(agentDefinitionId);
+  return definition ? agentDefinitionId : null;
 }
 
 export async function claimMainRunning(
