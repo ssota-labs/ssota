@@ -292,7 +292,11 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
         required: true,
       },
       title: { type: "string", description: "Optional table title." },
-      rowHref: { type: "string", description: "Optional row link template." },
+      rowHref: { type: "string", description: "Optional row link path segment." },
+      selectionParam: {
+        type: "string",
+        description: "URL query param to set when the title cell is clicked (url_selection).",
+      },
       setAction: action("Dispatched with { nodeId, field, value } on cell edit."),
       addAction: action("Dispatched when the user adds a row."),
       deleteAction: action("Dispatched with { nodeId } when a row is deleted."),
@@ -990,6 +994,32 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     example: {
       type: "FigmaEmbed",
       props: { binding: "designNode", urlField: "figmaUrl", embedType: "design", height: 480 },
+    },
+  },
+  MediaEmbed: {
+    key: "MediaEmbed",
+    category: "widget",
+    description:
+      "Embeds or previews an external media URL from a bound node. YouTube renders an iframe; X and articles render a rich link card with optional summary.",
+    children: false,
+    props: {
+      binding: binding(
+        "A single-node binding (typically url_selection) whose property field holds the media URL.",
+      ),
+      urlField: {
+        type: "string",
+        description: 'Node property field holding the media URL (default "url").',
+      },
+      platformField: {
+        type: "string",
+        description:
+          'Node property field for platform hint (default "platform"); falls back to URL parsing.',
+      },
+      height: { type: "number", description: "Embed height in px for YouTube (default 360)." },
+    },
+    example: {
+      type: "MediaEmbed",
+      props: { binding: "selectedSource", urlField: "url", platformField: "platform", height: 360 },
     },
   },
 };

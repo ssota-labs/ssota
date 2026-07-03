@@ -21,8 +21,8 @@ import {
 } from "./index.js";
 
 describe("v2.7 catalog SSOT", () => {
-  it("defines 36 node types and 18 edge types", () => {
-    expect(NODE_TYPES).toHaveLength(36);
+  it("defines 39 node types and 18 edge types", () => {
+    expect(NODE_TYPES).toHaveLength(39);
     expect(EDGE_TYPES).toHaveLength(18);
   });
 
@@ -78,6 +78,52 @@ describe("v2.7 catalog SSOT", () => {
         kind: "annual",
         year: 2026,
         quarter: 1,
+      }),
+    ).toThrow();
+  });
+
+  it("parses competitor properties", () => {
+    const parsed = parseNodeProperties("competitor", {
+      category: "docs",
+      positioning: "All-in-one workspace",
+      website_url: "https://notion.so",
+    });
+    expect(parsed.category).toBe("docs");
+    expect(parsed.positioning).toBe("All-in-one workspace");
+  });
+
+  it("parses market_segment TAM fields as strings", () => {
+    const parsed = parseNodeProperties("market_segment", {
+      tam: "$2B",
+      sam: "$400M",
+      som: "$40M",
+      geography: "Global",
+    });
+    expect(parsed.tam).toBe("$2B");
+    expect(parsed.geography).toBe("Global");
+  });
+
+  it("parses raw_source with required url", () => {
+    const parsed = parseNodeProperties("raw_source", {
+      url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      platform: "youtube",
+      summary: "Analyst takeaway",
+    });
+    expect(parsed.url).toContain("youtube.com");
+    expect(parsed.platform).toBe("youtube");
+  });
+
+  it("rejects raw_source without url", () => {
+    expect(() =>
+      parseNodeProperties("raw_source", { platform: "youtube" }),
+    ).toThrow();
+  });
+
+  it("rejects invalid raw_source platform", () => {
+    expect(() =>
+      parseNodeProperties("raw_source", {
+        url: "https://example.com",
+        platform: "tiktok",
       }),
     ).toThrow();
   });
