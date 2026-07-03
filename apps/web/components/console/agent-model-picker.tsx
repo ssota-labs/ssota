@@ -15,18 +15,12 @@ import {
   modelsByProvider,
 } from "@/lib/chat/models";
 
-function ModelProviderMark({ provider }: { provider: string }) {
-  const tone =
-    provider === "Anthropic"
-      ? "text-orange-600"
-      : provider === "OpenAI"
-        ? "text-emerald-600"
-        : provider === "Google"
-          ? "text-blue-600"
-          : "text-muted-foreground";
-
+function ModelProviderMark() {
   return (
-    <SparkleIcon className={cn("size-4 shrink-0", tone)} aria-hidden />
+    <SparkleIcon
+      className="text-muted-foreground size-4 shrink-0"
+      aria-hidden
+    />
   );
 }
 
@@ -70,7 +64,7 @@ export function AgentModelPicker({
       >
         {active ? (
           <>
-            <ModelProviderMark provider={active.provider} />
+            <ModelProviderMark />
             <span className="max-w-[10rem] truncate text-sm">{active.label}</span>
           </>
         ) : (
@@ -105,7 +99,7 @@ export function AgentModelPicker({
                   )}
                   onClick={() => handleSelect(model.id)}
                 >
-                  <ModelProviderMark provider={model.provider} />
+                  <ModelProviderMark />
                   <span className="min-w-0 flex-1 truncate">{model.label}</span>
                   {isSelected ? (
                     <CheckIcon
