@@ -251,6 +251,8 @@ Notion [Console v2.7 구현 계획](https://app.notion.com/p/380346dac456810c8a7
 
 공통 인프라(`lib/graph/`, 공용 컴포넌트)는 **해당 시퀀스의 첫 PR**(예: PR7)에만 넣고, 이후 PR은 그 위에 화면·E2E만 추가한다.
 
+**44페이지 UI spec 로드맵:** slug → 목표 json-render spec 트리·Δ 논의 큐·PR 단위 구현 순서는 [docs/console/page-ui-catalog-roadmap.md](docs/console/page-ui-catalog-roadmap.md). SSOT는 `packages/contracts/seed-packs/software-development-workflow/pages-tree.json` 한 슬라이스당 하나.
+
 **Historical:** Phase 1 MVP 마일스톤 M0–M6(generic runtime)은 `archive/generic-runtime/`로 archive됨.
 
 ## MVP 마일스톤 (historical — generic runtime)
