@@ -32,7 +32,8 @@ test.describe("inbound-channels-ui", () => {
     await gotoProject(page, "channels");
     const slackCard = page.getByTestId("channel-card-slack");
     await expect(slackCard).toBeVisible();
-    await expect(slackCard.getByText("Not connected")).toBeVisible();
+    await expect(slackCard.getByText("Connected")).toHaveCount(0);
+    await slackCard.click();
     await expect(page.getByTestId("channel-connect-slack")).toBeVisible();
 
     await page.screenshot({
@@ -64,7 +65,10 @@ test.describe("inbound-channels-ui", () => {
     await expect(slackCard).toBeVisible();
     await expect(slackCard.getByText("Connected")).toBeVisible();
     await expect(slackCard.getByText(INBOUND_SLACK_WORKSPACE_NAME)).toBeVisible();
-    await expect(slackCard.getByText(INBOUND_SLACK_TEAM_ID)).toBeVisible();
+    await slackCard.click();
+    await expect(page.getByTestId(`channel-workspace-slack`)).toContainText(
+      INBOUND_SLACK_TEAM_ID,
+    );
     await expect(page.getByTestId("channel-connect-slack")).toHaveCount(0);
 
     await page.screenshot({
