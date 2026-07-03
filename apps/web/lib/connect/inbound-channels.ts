@@ -5,6 +5,26 @@
 
 export type InboundChannelPlatform = "slack" | "discord";
 
+export type InboundChannelStatus = {
+  platform: InboundChannelPlatform;
+  label: string;
+  description: string;
+  connectorUid: string;
+  canConnect: boolean;
+  credentialConnected: boolean;
+  workspaceLinked: boolean;
+  workspaceKey: string | null;
+  workspaceName: string | null;
+  ready: boolean;
+};
+
+export function inboundChannelStatusFor(
+  statuses: InboundChannelStatus[],
+  platform: InboundChannelPlatform,
+): InboundChannelStatus | undefined {
+  return statuses.find((row) => row.platform === platform);
+}
+
 export type InboundChannelDef = {
   platform: InboundChannelPlatform;
   label: string;

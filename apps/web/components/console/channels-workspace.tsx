@@ -18,7 +18,7 @@ import {
   inboundChannelAuthorizeHref,
   type InboundChannelPlatform,
 } from "@/lib/connect/inbound-channels";
-import type { InboundChannelStatus } from "@/lib/connect/inbound-channel-status";
+import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 
 const PLATFORM_ICONS = {
   slack: SlackLogoIcon,

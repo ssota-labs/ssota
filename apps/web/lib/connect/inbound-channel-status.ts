@@ -4,26 +4,11 @@ import {
   getInboundChannels,
   isVercelConnectChannelUid,
   providerOfInboundChannel,
-  type InboundChannelPlatform,
+  type InboundChannelStatus,
 } from "@/lib/connect/inbound-channels";
 import { getChatWorkspacePort, getOrCreateProjectAccount } from "@/lib/ports";
 
-export type InboundChannelStatus = {
-  platform: InboundChannelPlatform;
-  label: string;
-  description: string;
-  connectorUid: string;
-  /** Whether authorize can use Vercel Connect (connector uid includes `/`). */
-  canConnect: boolean;
-  /** Vercel Connect install recorded in `account_connections`, or static Slack token. */
-  credentialConnected: boolean;
-  /** `chat_workspaces` row exists for this teamspace + platform. */
-  workspaceLinked: boolean;
-  workspaceKey: string | null;
-  workspaceName: string | null;
-  /** Credential + workspace link — required for inbound routing and Slack triggers. */
-  ready: boolean;
-};
+export type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 
 function slackUsesStaticToken(): boolean {
   return (
@@ -69,11 +54,4 @@ export async function loadInboundChannelStatus(
       ready,
     };
   });
-}
-
-export function inboundChannelStatusFor(
-  statuses: InboundChannelStatus[],
-  platform: InboundChannelPlatform,
-): InboundChannelStatus | undefined {
-  return statuses.find((row) => row.platform === platform);
 }

@@ -1,6 +1,6 @@
 import type { ScriptToolIndex } from "@ssota/contracts";
 import type { ConnectorDef } from "@/lib/connect/connectors";
-import type { InboundChannelStatus } from "@/lib/connect/inbound-channel-status";
+import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import {
   getOrCreateProjectAccount,

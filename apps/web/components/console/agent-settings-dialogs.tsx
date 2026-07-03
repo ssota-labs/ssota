@@ -33,11 +33,8 @@ import { ConnectorBrandIcon } from "@/components/connections/connector-brand-ico
 import { provisionSlackAgentMentionTriggerAction } from "@/app/actions";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
-import { inboundChannelAuthorizeHref } from "@/lib/connect/inbound-channels";
-import {
-  inboundChannelStatusFor,
-  type InboundChannelStatus,
-} from "@/lib/connect/inbound-channel-status";
+import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
+import { inboundChannelAuthorizeHref, inboundChannelStatusFor } from "@/lib/connect/inbound-channels";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
 import {
   BASE_TOOL_BUNDLES,
