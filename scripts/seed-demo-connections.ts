@@ -3,8 +3,12 @@
  * Requires `pnpm db:seed` first. Does not run as part of the default seed.
  *
  *   pnpm db:seed:demo-connections
+ *
+ * Default `pnpm db:seed` already seeds inbound Slack/Discord workspaces via
+ * `seedInboundChannelFixtures`. This script replaces all connections with a
+ * broader Composio-style demo set and re-links chat workspaces for Slack/Discord.
  */
-import { createDb } from "@ssota/adapter-postgres";
+import { createDb, createChatWorkspacePort } from "@ssota/adapter-postgres";
 import { sql } from "drizzle-orm";
 
 async function main() {
@@ -79,6 +83,36 @@ async function main() {
       ON CONFLICT (account_id, connector, installation_id) DO UPDATE
       SET tenant_id = EXCLUDED.tenant_id, name = EXCLUDED.name, updated_at = now()
     `);
+  }
+
+  const workspacePort = createChatWorkspacePort(db);
+
+  const inboundLinks = [
+    {
+      platform: "slack",
+      workspaceKey: "T01SSOTA-DEMO",
+      name: "SSOTA Labs",
+    },
+    {
+      platform: "slack",
+      workspaceKey: "T02ACME-DEMO",
+      name: "Acme Product",
+    },
+    {
+      platform: "discord",
+      workspaceKey: "9876543210",
+      name: "SSOTA Community",
+    },
+  ] as const;
+
+  for (const link of inboundLinks) {
+    await workspacePort.link({
+      teamspaceId,
+      accountId,
+      platform: link.platform,
+      workspaceKey: link.workspaceKey,
+      name: link.name,
+    });
   }
 
   console.log(`Seeded ${demoConnections.length} demo connections for account ${accountId}`);

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { revokeConnectAuthorization } from "@ssota/agent-runtime";
+import { finalizeVercelConnect } from "@/lib/connect/finalize-vercel-connect";
+import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
 import {
   providerOfInboundChannel,
   type InboundChannelPlatform,
@@ -26,6 +28,50 @@ function parseCredentialOnlyWorkspaceId(workspaceId: string): string | null {
   if (!workspaceId.startsWith("credential:")) return null;
   const connectionId = workspaceId.slice("credential:".length).trim();
   return connectionId || null;
+}
+
+function stubInstallationId(connectorUid: string, userId: string): string {
+  const slug = connectorUid.replace(/[^a-zA-Z0-9]/g, "-");
+  const suffix = Math.abs(
+    [...`${connectorUid}:${userId}:${Date.now()}`].reduce(
+      (acc, ch) => (acc * 31 + ch.charCodeAt(0)) | 0,
+      7,
+    ),
+  )
+    .toString(36)
+    .slice(0, 6);
+  return `stub-${slug}-${suffix}`;
+}
+
+/**
+ * Dev-only: record a synthetic inbound workspace when CONNECT_STUB=1 (no OAuth).
+ */
+export async function addInboundChannelWorkspaceStubAction(input: {
+  teamspaceId: string;
+  accountId: string;
+  connectorUid: string;
+  revalidate: string;
+}): Promise<void> {
+  if (process.env.CONNECT_STUB !== "1") {
+    throw new Error("Stub connect is not enabled");
+  }
+
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  await resolveApiAccountScope(input.teamspaceId, {
+    requestedAccountId: input.accountId,
+  });
+
+  await finalizeVercelConnect({
+    connector: input.connectorUid,
+    teamspaceId: input.teamspaceId,
+    accountId: input.accountId,
+    userId: user.id,
+    installationId: stubInstallationId(input.connectorUid, user.id),
+  });
+
+  revalidatePath(input.revalidate);
 }
 
 /**

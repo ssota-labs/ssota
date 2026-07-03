@@ -24,7 +24,10 @@ import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
-import { disconnectInboundChannelWorkspaceAction } from "@/app/[orgSlug]/[teamspaceSlug]/channels/actions";
+import {
+  addInboundChannelWorkspaceStubAction,
+  disconnectInboundChannelWorkspaceAction,
+} from "@/app/[orgSlug]/[teamspaceSlug]/channels/actions";
 import {
   inboundChannelAuthorizeHref,
   type InboundChannelPlatform,
@@ -37,6 +40,7 @@ type ChannelsWorkspaceProps = {
   teamspaceId: string;
   accountId: string;
   returnTo: string;
+  connectStubEnabled?: boolean;
 };
 
 function workspaceItemKey(workspace: InboundChannelWorkspace): string {
@@ -107,12 +111,14 @@ function InboundChannelSettingsPanel({
   teamspaceId,
   accountId,
   returnTo,
+  connectStubEnabled = false,
   onClose,
 }: {
   channel: InboundChannelStatus;
   teamspaceId: string;
   accountId: string;
   returnTo: string;
+  connectStubEnabled?: boolean;
   onClose: () => void;
 }) {
   const router = useRouter();
@@ -142,6 +148,18 @@ function InboundChannelSettingsPanel({
       if (channel.workspaces.length <= 1) {
         onClose();
       }
+    });
+  }
+
+  function addStubConnection() {
+    startTransition(async () => {
+      await addInboundChannelWorkspaceStubAction({
+        teamspaceId,
+        accountId,
+        connectorUid: channel.connectorUid,
+        revalidate: returnTo,
+      });
+      router.refresh();
     });
   }
 
@@ -239,18 +257,33 @@ function InboundChannelSettingsPanel({
                 </AgentSettingCard.Items>
               </AgentSettingCard.Body>
               <AgentSettingCard.Footer>
-                <a
-                  className={buttonVariants({
-                    variant: "secondary",
-                    size: "sm",
-                    className: "w-fit justify-start gap-2",
-                  })}
-                  href={connectHref}
-                  data-testid={`channel-add-connection-${channel.platform}`}
-                >
-                  <PlusIcon className="size-4" />
-                  Add connection
-                </a>
+                {connectStubEnabled ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="w-fit justify-start gap-2"
+                    disabled={isPending}
+                    data-testid={`channel-add-connection-${channel.platform}`}
+                    onClick={addStubConnection}
+                  >
+                    <PlusIcon className="size-4" />
+                    Add connection
+                  </Button>
+                ) : (
+                  <a
+                    className={buttonVariants({
+                      variant: "secondary",
+                      size: "sm",
+                      className: "w-fit justify-start gap-2",
+                    })}
+                    href={connectHref}
+                    data-testid={`channel-add-connection-${channel.platform}`}
+                  >
+                    <PlusIcon className="size-4" />
+                    Add connection
+                  </a>
+                )}
               </AgentSettingCard.Footer>
             </AgentSettingCard.Root>
           )}
@@ -293,6 +326,7 @@ export function ChannelsWorkspace({
   teamspaceId,
   accountId,
   returnTo,
+  connectStubEnabled = false,
 }: ChannelsWorkspaceProps) {
   const [activeId, setActiveId] = useState<InboundChannelPlatform | null>(null);
 
@@ -330,6 +364,7 @@ export function ChannelsWorkspace({
           teamspaceId={teamspaceId}
           accountId={accountId}
           returnTo={returnTo}
+          connectStubEnabled={connectStubEnabled}
           onClose={() => setActiveId(null)}
         />
       ) : null}
