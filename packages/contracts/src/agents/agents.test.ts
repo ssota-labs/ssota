@@ -5,8 +5,10 @@ import {
   getAgentDefinitionById,
   getMainAgentDefinition,
   isKnownBuiltinAgentId,
+  isGuideBuiltinAgentId,
   listBuiltinAgentIds,
   listRoutableAgentIndex,
+  MAIN_AGENT_ID,
 } from "./index.js";
 
 describe("agent definition registry SSOT", () => {
@@ -23,10 +25,10 @@ describe("agent definition registry SSOT", () => {
     ).toBe(false);
   });
 
-  it("every agent carries a skill-style description for routing", () => {
+  it("every runnable agent carries a skill-style description for routing", () => {
     for (const id of listBuiltinAgentIds()) {
       const entry = AGENT_DEFINITION_REGISTRY[id]!;
-      if (!entry.referenceOnly) {
+      if (!isGuideBuiltinAgentId(id) && id !== MAIN_AGENT_ID) {
         expect(entry.description.length).toBeGreaterThan(20);
       }
     }
@@ -36,7 +38,7 @@ describe("agent definition registry SSOT", () => {
     const agent = getAgentDefinitionById(BUILTIN_AGENT_IDS.main);
     expect(agent).not.toBeNull();
     expect(agent?.instruction).toContain("query_tasks");
-    expect(agent?.isMain).toBe(true);
+    expect(agent?.id).toBe(MAIN_AGENT_ID);
   });
 
   it("has unique agent ids", () => {

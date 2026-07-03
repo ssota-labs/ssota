@@ -8,7 +8,7 @@ import {
   type AgentDefinitionSeed,
 } from "../agent-definition.js";
 import { TaskStatusSchema } from "../task.js";
-import { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, type BuiltinAgentId } from "./builtin-ids.js";
+import { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, type BuiltinAgentId, isGuideBuiltinAgentId } from "./builtin-ids.js";
 import { loadAgentInstruction } from "./load-instruction.js";
 
 export const AgentCadenceHintSchema = z.enum([
@@ -29,8 +29,6 @@ export const AgentDefinitionBuiltinSchema = z.object({
    * playbook on demand.
    */
   description: z.string().min(1),
-  isMain: z.boolean().default(false),
-  referenceOnly: z.boolean().default(false),
   toolBundles: z.array(ToolBundleSchema).default([]),
   nodeScopes: z.array(NodeScopeSchema).default([]),
   runPolicy: RunPolicySchema.default({}),
@@ -52,8 +50,6 @@ const AGENT_META: AgentMeta[] = [
     title: "SSOTA Main Agent",
     description:
       "Default SSOTA conversational agent. Handles web chat, chatbots, project orchestration, heartbeat planning, and first-time setup.",
-    isMain: true,
-    referenceOnly: false,
     toolBundles: [
       "graph.read",
       "graph.write",
@@ -75,8 +71,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Implement feature",
     description:
       "Implement a single scoped feature or fix. Use when executing a concrete, well-specified coding task with clear acceptance criteria.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["graph.read", "tasks.manage", "sandbox.code", "skills.read"],
     nodeScopes: [],
     runPolicy: { sandboxPolicy: "required", allowedTriggers: ["task", "manual"] },
@@ -89,8 +83,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Review changes",
     description:
       "Review code or graph changes against acceptance criteria. Use after implementation or before merge.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["graph.read", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "manual"] },
@@ -103,8 +95,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Research",
     description:
       "Research a topic and produce structured findings. Use when information gathering is the primary deliverable.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["graph.read", "graph.write", "tasks.manage", "connectors"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "manual"] },
@@ -117,8 +107,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Write document",
     description:
       "Create or update a graph document node. Use when the deliverable is written content/documentation in the SSOTA graph.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["graph.read", "graph.write", "tasks.manage", "pages.author"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "manual"] },
@@ -131,8 +119,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Unblock stalled task",
     description:
       "Recover a stalled or blocked task. Use when a parent task is blocked and needs nudging, re-queuing, or escalation to a human.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["graph.read", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule", "heartbeat", "manual"] },
@@ -145,8 +131,6 @@ const AGENT_META: AgentMeta[] = [
     title: "QA verification",
     description:
       "Run QA checks against acceptance criteria. Use for post-implementation verification work orders.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["graph.read", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "manual"] },
@@ -159,8 +143,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Notion worker",
     description:
       "Batch sync or transform Notion content. Use for connector-backed Notion operations.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["connectors", "script_tools", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
@@ -173,8 +155,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Graph batch worker",
     description:
       "Batch graph read/write operations. Use for bulk node/edge updates with bounded concurrency.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["graph.read", "graph.write", "script_tools", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
@@ -187,8 +167,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Connector sync worker",
     description:
       "Sync data from external connectors into the graph. Use for scheduled or on-demand connector batch jobs.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["connectors", "graph.write", "script_tools", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
@@ -201,8 +179,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Report builder worker",
     description:
       "Build structured reports from graph data. Use when output is a compact summary or export artifact.",
-    isMain: false,
-    referenceOnly: false,
     toolBundles: ["graph.read", "script_tools", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
@@ -215,8 +191,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Guide: agent authoring",
     description:
       "Reference for writing good agent definitions (description, body). Load when authoring agents.",
-    isMain: false,
-    referenceOnly: true,
     toolBundles: [],
     nodeScopes: [],
     runPolicy: {},
@@ -227,8 +201,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Guide: page authoring",
     description:
       "Reference for the json-render page format (spec, bindings, actions). Load when authoring pages.",
-    isMain: false,
-    referenceOnly: true,
     toolBundles: [],
     nodeScopes: [],
     runPolicy: {},
@@ -239,8 +211,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Guide: script tool authoring",
     description:
       "Reference for authoring Script Tools (stored TypeScript workers). Load when defining reusable batch logic.",
-    isMain: false,
-    referenceOnly: true,
     toolBundles: [],
     nodeScopes: [],
     runPolicy: {},
@@ -251,8 +221,6 @@ const AGENT_META: AgentMeta[] = [
     title: "Guide: task delegation",
     description:
       "Reference for how the Main Agent creates and assigns tasks. Load when designing delegation patterns.",
-    isMain: false,
-    referenceOnly: true,
     toolBundles: [],
     nodeScopes: [],
     runPolicy: {},
@@ -300,6 +268,13 @@ export function isKnownBuiltinAgentId(
   return agentDefinitionId in AGENT_DEFINITION_REGISTRY;
 }
 
+/** Builtin specialists and workers seeded into agent_definitions (not main or guides). */
+export function listRunnableBuiltinAgentIds(): BuiltinAgentId[] {
+  return listBuiltinAgentIds().filter(
+    (id) => id !== MAIN_AGENT_ID && !isGuideBuiltinAgentId(id),
+  );
+}
+
 /** Lightweight routing-manifest row for Main Agent delegation. */
 export interface AgentManifestEntry {
   id: string;
@@ -308,16 +283,17 @@ export interface AgentManifestEntry {
 }
 
 /**
- * Task-runnable agents for Main Agent routing. Excludes main and reference guides.
+ * Task-runnable agents for Main Agent routing. Excludes main orchestrator and guides.
  */
 export function listRoutableAgentIndex(): AgentManifestEntry[] {
-  return Object.values(AGENT_DEFINITION_REGISTRY)
-    .filter((a) => !a.isMain && !a.referenceOnly)
-    .map((a) => ({
+  return listRunnableBuiltinAgentIds().map((id) => {
+    const a = AGENT_DEFINITION_REGISTRY[id]!;
+    return {
       id: a.id,
       name: a.title,
       description: a.description,
-    }));
+    };
+  });
 }
 
 /** Main agent builtin definition. */
@@ -329,19 +305,19 @@ export function getMainAgentDefinition(): AgentDefinitionBuiltin {
   return main;
 }
 
-/** DB seeds for teamspace bootstrap — stable ids from {@link BUILTIN_AGENT_IDS}. */
-export const AGENT_DEFINITION_SEEDS: AgentDefinitionSeed[] = Object.values(
-  AGENT_DEFINITION_REGISTRY,
-).map((entry) => ({
-  id: entry.id,
-  name: entry.title,
-  description: entry.description,
-  instructions: textToBlockNoteContent(entry.instruction),
-  isMain: entry.isMain,
-  referenceOnly: entry.referenceOnly,
-  toolBundles: entry.toolBundles,
-  nodeScopes: entry.nodeScopes,
-  runPolicy: entry.runPolicy,
-}));
+/** DB seeds for teamspace bootstrap — runnable specialists/workers only. */
+export const AGENT_DEFINITION_SEEDS: AgentDefinitionSeed[] =
+  listRunnableBuiltinAgentIds().map((id) => {
+    const entry = AGENT_DEFINITION_REGISTRY[id]!;
+    return {
+      id: entry.id,
+      name: entry.title,
+      description: entry.description,
+      instructions: textToBlockNoteContent(entry.instruction),
+      toolBundles: entry.toolBundles,
+      nodeScopes: entry.nodeScopes,
+      runPolicy: entry.runPolicy,
+    };
+  });
 
-export { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, isBuiltinAgentId, type BuiltinAgentId } from "./builtin-ids.js";
+export { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, isBuiltinAgentId, isGuideBuiltinAgentId, type BuiltinAgentId } from "./builtin-ids.js";
