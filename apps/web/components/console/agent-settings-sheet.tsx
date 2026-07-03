@@ -295,9 +295,7 @@ export function AgentSettingsSheet({
     <>
       <CardListSheetPanel
         title="Settings"
-        subtitle={
-          isDirty ? `${definition.name} · Unsaved changes` : definition.name
-        }
+        subtitle={definition.name}
         sheetSize="inspector"
         onClose={handleClose}
         headerAction={
