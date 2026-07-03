@@ -13,7 +13,9 @@ test.describe("Agents", () => {
     await expect(
       main.getByRole("heading", { level: 1, name: "Agents", exact: true }),
     ).toBeVisible();
-    await expect(main.getByText("Project agent", { exact: true })).toBeVisible();
+    await expect(
+      main.getByRole("heading", { name: "Project agent", exact: true }),
+    ).toBeVisible();
     await expect(page.getByTestId(PROJECT_AGENT_CARD)).toBeVisible();
 
     await page.getByTestId(PROJECT_AGENT_CARD).click();
@@ -72,8 +74,10 @@ test.describe("Agents", () => {
     await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
     await expect(nav.getByText("Notion", { exact: true })).not.toBeVisible();
     await expect(nav.getByText("Discord", { exact: true })).not.toBeVisible();
+
+    await nav.getByTestId("add-trigger-slack:agent_mentioned").click();
     await expect(
-      addDialog.getByText(/Slack user group/i),
+      addDialog.getByText(/creates a Slack user group/i),
     ).toBeVisible();
     await expect(
       addDialog.getByText(/Saved or Later messages/i),
