@@ -10,7 +10,6 @@ import {
   SUBAGENT_MODEL_ID,
   SUBAGENT_STEP_LIMIT,
   SUBAGENT_TYPES,
-  type SubagentType,
 } from "../subagents/constants.js";
 import {
   SUBAGENT_REGISTRY,
