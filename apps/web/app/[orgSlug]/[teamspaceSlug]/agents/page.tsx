@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { SkillIndex } from "@ssota/contracts";
 import { AgentsWorkspace } from "@/components/console/agents-workspace";
 import { AgentsContentLoading } from "@/components/console/browse-content-loading";
 import { loadAgentGroupsForUi } from "@/lib/console/load-agents-for-ui";
@@ -8,7 +9,7 @@ import {
 } from "@/lib/console/load-agent-settings-context";
 import { legacyOrgTeamspacePath } from "@/lib/console/paths";
 import { resolveOrg } from "@/lib/console/resolve-project";
-import { getScriptToolPort } from "@/lib/ports";
+import { getScriptToolPort, getSkillPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export default function AgentsPage({
@@ -34,6 +35,7 @@ async function AgentsPageInner({
     loadAgentGroupsForUi(project.id),
     loadAgentSettingsContext(
       project.id,
+      org.id,
       legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "channels"),
     ),
     getCurrentUser(),
@@ -46,11 +48,16 @@ async function AgentsPageInner({
 
   const definitions = groups.flatMap((g) => g.items);
   const scriptToolPort = getScriptToolPort(project.id);
+  const skillPort = await getSkillPort(project.id);
   const scriptToolLinks: Record<string, string[]> = {};
+  const skillLinks: Record<string, string[]> = {};
+
   await Promise.all(
     definitions.map(async (definition) => {
       scriptToolLinks[definition.id] =
         await scriptToolPort.listLinkedScriptToolIds(definition.id);
+      const boundSkills = await skillPort.listForAgentDefinition(definition.id);
+      skillLinks[definition.id] = boundSkills.map((skill: SkillIndex) => skill.id);
     }),
   );
 
@@ -64,6 +71,7 @@ async function AgentsPageInner({
           connections,
         }}
         scriptToolLinks={scriptToolLinks}
+        skillLinks={skillLinks}
         skillsHref={legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "skills")}
       />
     </div>

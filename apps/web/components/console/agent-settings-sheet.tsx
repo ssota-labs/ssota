@@ -8,11 +8,17 @@ import {
   ChatsCircleIcon,
   ClockIcon,
   CpuIcon,
+  LightbulbIcon,
   PlusIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type { Block } from "@blocknote/core";
-import type { AgentDefinition, AgentTrigger, ConnectionTrigger } from "@ssota/contracts";
+import type {
+  AgentDefinition,
+  AgentTrigger,
+  ConnectionTrigger,
+  SkillIndex,
+} from "@ssota/contracts";
 import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
 import {
   AlertDialog,
@@ -44,7 +50,6 @@ import {
 } from "@/components/schedules/schedule-sheet";
 import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
-import { AgentSkillBindings } from "@/components/console/skills-workspace";
 import { CardListSheetPanel } from "@/components/card-list-sheet";
 import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import {
@@ -79,6 +84,8 @@ type AgentSettingsSheetProps = {
   teamspaceId: string;
   accountId: string;
   scriptToolIds: string[];
+  boundSkillIds: string[];
+  skillCatalog: SkillIndex[];
   scriptTools: Array<{ id: string; key: string; name: string }>;
   workers: AgentDefinition[];
   connectors: ConnectorDef[];
@@ -98,6 +105,7 @@ const DEFAULT_CARD_TRIGGERS: AgentTrigger[] = ["chat", "task"];
 function buildDraft(
   definition: AgentDefinition,
   scriptToolIds: string[],
+  boundSkillIds: string[],
   schedules: AgentScheduleSummary[],
 ): AgentSettingsDraft {
   const agentSchedules = schedules.filter(
@@ -119,6 +127,7 @@ function buildDraft(
       agentSchedules.map((s) => [s.id, s.enabled]),
     ),
     connectionTriggers: definition.runPolicy.connectionTriggers ?? [],
+    boundSkillIds,
   };
 }
 
@@ -127,6 +136,8 @@ export function AgentSettingsSheet({
   teamspaceId,
   accountId,
   scriptToolIds: initialScriptToolIds,
+  boundSkillIds: initialBoundSkillIds,
+  skillCatalog,
   scriptTools,
   workers,
   connectors,
@@ -140,7 +151,12 @@ export function AgentSettingsSheet({
   const router = useRouter();
   const pathname = usePathname();
   const [draft, setDraft] = useState(() =>
-    buildDraft(definition, initialScriptToolIds, schedules),
+    buildDraft(
+      definition,
+      initialScriptToolIds,
+      initialBoundSkillIds,
+      schedules,
+    ),
   );
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const pendingCloseActionRef = useRef<(() => void) | null>(null);
@@ -158,16 +174,29 @@ export function AgentSettingsSheet({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    setDraft(buildDraft(definition, initialScriptToolIds, schedules));
-  }, [definition, initialScriptToolIds, schedules]);
+    setDraft(
+      buildDraft(
+        definition,
+        initialScriptToolIds,
+        initialBoundSkillIds,
+        schedules,
+      ),
+    );
+  }, [definition, initialScriptToolIds, initialBoundSkillIds, schedules]);
 
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
 
   const savedDraft = useMemo(
-    () => buildDraft(definition, initialScriptToolIds, schedules),
-    [definition, initialScriptToolIds, schedules],
+    () =>
+      buildDraft(
+        definition,
+        initialScriptToolIds,
+        initialBoundSkillIds,
+        schedules,
+      ),
+    [definition, initialScriptToolIds, initialBoundSkillIds, schedules],
   );
 
   const isDirty = useMemo(
@@ -305,6 +334,10 @@ export function AgentSettingsSheet({
     draft.scriptToolIds.includes(t.id),
   );
 
+  const boundSkills = skillCatalog.filter((skill) =>
+    draft.boundSkillIds.includes(skill.id),
+  );
+
   const enabledConnectors = connectors.filter((c) =>
     draft.enabledConnectorProviders.includes(c.provider),
   );
@@ -357,6 +390,22 @@ export function AgentSettingsSheet({
           }),
         ),
       );
+
+      const skillsRes = await fetch(
+        `/api/agents/${definition.id}/skills`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            teamspaceId,
+            skillIds: draft.boundSkillIds,
+          }),
+        },
+      );
+      if (!skillsRes.ok) {
+        throw new Error(`Failed to update skill bindings (${skillsRes.status})`);
+      }
+
       router.refresh();
       onClose();
     });
@@ -657,12 +706,48 @@ export function AgentSettingsSheet({
               description="Runtime skills loaded via read_skill."
             />
             <AgentSettingCard.Body>
-              <AgentSkillBindings
-                embedded
-                teamspaceId={teamspaceId}
-                agentDefinitionId={definition.id}
-              />
+              <AgentSettingCard.Items>
+                {boundSkills.length === 0 ? (
+                  <AgentSettingCard.Item
+                    testId="agent-skills-empty"
+                    icon={
+                      <LightbulbIcon className="size-3.5 text-muted-foreground" />
+                    }
+                    title="No skills bound yet"
+                    onPress={() => setOpenDialog("skills")}
+                    trailing={<AgentSettingCard.ItemCaret />}
+                  />
+                ) : (
+                  boundSkills.map((skill) => (
+                    <AgentSettingCard.Item
+                      key={skill.id}
+                      testId={`agent-bound-skill-${skill.key}`}
+                      icon={
+                        <LightbulbIcon className="size-3.5 text-muted-foreground" />
+                      }
+                      title={skill.name}
+                      subtitle={skill.key}
+                      trailing={
+                        skill.source === "builtin" ? "Platform" : "Custom"
+                      }
+                    />
+                  ))
+                )}
+              </AgentSettingCard.Items>
             </AgentSettingCard.Body>
+            <AgentSettingCard.Footer>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-fit justify-start gap-2"
+                data-testid="agent-skills-manage"
+                onClick={() => setOpenDialog("skills")}
+              >
+                <LightbulbIcon className="size-3.5" aria-hidden />
+                Manage skills
+              </Button>
+            </AgentSettingCard.Footer>
           </AgentSettingCard.Root>
         </div>
       </CardListSheetPanel>
@@ -766,6 +851,7 @@ export function AgentSettingsSheet({
         onDraftChange={patchDraft}
         workers={workers}
         scriptTools={scriptTools}
+        skillCatalog={skillCatalog}
         connectors={connectors}
         connections={connections}
         inboundChannels={inboundChannels}

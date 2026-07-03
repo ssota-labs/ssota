@@ -13,6 +13,7 @@ export type AgentSettingsSaveSnapshot = {
   enabledConnectorProviders: string[];
   connectionTriggersJson: string;
   scheduleEnabledJson: string;
+  boundSkillIds: string[];
 };
 
 function sortStrings(values: string[]): string[] {
@@ -100,6 +101,7 @@ export function buildAgentSettingsSaveSnapshot(
       draft.connectionTriggers,
     ),
     scheduleEnabledJson: stableScheduleEnabledJson(scheduleEnabled),
+    boundSkillIds: sortStrings(draft.boundSkillIds),
   };
 }
 
@@ -119,7 +121,8 @@ export function agentSettingsSnapshotsEqual(
     JSON.stringify(left.enabledConnectorProviders) ===
       JSON.stringify(right.enabledConnectorProviders) &&
     left.connectionTriggersJson === right.connectionTriggersJson &&
-    left.scheduleEnabledJson === right.scheduleEnabledJson
+    left.scheduleEnabledJson === right.scheduleEnabledJson &&
+    JSON.stringify(left.boundSkillIds) === JSON.stringify(right.boundSkillIds)
   );
 }
 

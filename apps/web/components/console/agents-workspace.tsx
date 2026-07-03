@@ -13,6 +13,7 @@ type AgentsWorkspaceProps = {
   groups: AgentGroup[];
   settingsContext: AgentSettingsContext;
   scriptToolLinks: Record<string, string[]>;
+  skillLinks: Record<string, string[]>;
   skillsHref: string;
 };
 
@@ -21,6 +22,7 @@ export function AgentsWorkspace({
   groups: initialGroups,
   settingsContext,
   scriptToolLinks,
+  skillLinks,
   skillsHref,
 }: AgentsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
@@ -132,6 +134,8 @@ export function AgentsWorkspace({
           teamspaceId={teamspaceId}
           accountId={settingsContext.accountId}
           scriptToolIds={scriptToolLinks[activeDefinition.id] ?? []}
+          boundSkillIds={skillLinks[activeDefinition.id] ?? []}
+          skillCatalog={settingsContext.skillCatalog}
           scriptTools={settingsContext.scriptTools}
           workers={workers}
           connectors={settingsContext.connectors}

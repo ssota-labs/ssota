@@ -16,6 +16,7 @@ const baseDraft = (): AgentSettingsDraft => ({
   enabledConnectorProviders: [],
   scheduleEnabledById: {},
   connectionTriggers: [],
+  boundSkillIds: [],
 });
 
 describe("agent-settings-save-snapshot", () => {

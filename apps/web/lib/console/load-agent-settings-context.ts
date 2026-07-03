@@ -1,4 +1,4 @@
-import type { ScriptToolIndex } from "@ssota/contracts";
+import type { ScriptToolIndex, SkillIndex } from "@ssota/contracts";
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
@@ -6,6 +6,7 @@ import {
   getOrCreateProjectAccount,
   getSchedulePort,
   getScriptToolPort,
+  getSkillPort,
 } from "@/lib/ports";
 
 export type AgentScheduleSummary = {
@@ -18,6 +19,7 @@ export type AgentScheduleSummary = {
 
 export type AgentSettingsContext = {
   scriptTools: ScriptToolIndex[];
+  skillCatalog: SkillIndex[];
   schedules: AgentScheduleSummary[];
   connectors: ConnectorDef[];
   connections: {
@@ -31,21 +33,27 @@ export type AgentSettingsContext = {
 
 export async function loadAgentSettingsContext(
   teamspaceId: string,
+  organizationId: string,
   channelsHref: string,
 ): Promise<AgentSettingsContext> {
   const account = await getOrCreateProjectAccount(teamspaceId);
-  const [scriptTools, schedules, inboundChannels] = await Promise.all([
-    getScriptToolPort(teamspaceId).listScriptTools(),
-    getSchedulePort(teamspaceId, account.id).list(),
-    import("@/lib/connect/inbound-channel-status").then((m) =>
-      m.loadInboundChannelStatus(teamspaceId),
-    ),
-  ]);
+  const [scriptTools, schedules, inboundChannels, skillCatalog] =
+    await Promise.all([
+      getScriptToolPort(teamspaceId).listScriptTools(),
+      getSchedulePort(teamspaceId, account.id).list(),
+      import("@/lib/connect/inbound-channel-status").then((m) =>
+        m.loadInboundChannelStatus(teamspaceId),
+      ),
+      getSkillPort(teamspaceId).then((port) =>
+        port.listForOrganization(organizationId),
+      ),
+    ]);
 
   const { getConnectors } = await import("@/lib/connect/connectors");
 
   return {
     scriptTools,
+    skillCatalog,
     schedules: schedules.map((s) => ({
       id: s.id,
       agentDefinitionId: s.agentDefinitionId,

@@ -43,6 +43,7 @@ test.describe("Agents", () => {
     ).toBeVisible();
     await expect(page.getByTestId("agent-instructions-editor")).toBeVisible();
     await expect(page.getByTestId("agent-settings-tools-card")).toBeVisible();
+    await expect(page.getByTestId("agent-settings-skills-card")).toBeVisible();
     await expect(page.getByTestId("agent-settings-model-card")).toBeVisible();
   });
 
@@ -143,6 +144,24 @@ test.describe("Agents", () => {
     await expect(toolsDialog.getByTestId("agent-connector-notion")).toBeVisible();
     await expect(toolsDialog.getByText("Composio connectors")).not.toBeVisible();
     await expect(toolsDialog.getByText("TypeScript scripts")).not.toBeVisible();
+  });
+
+  test("opens skills dialog with sidebar list", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId("agent-skills-manage").click();
+
+    const skillsDialog = page.getByTestId("agent-skills-sidebar-dialog");
+    await expect(skillsDialog).toBeVisible();
+    await expect(skillsDialog.getByTestId("agent-skill-agent-browser")).toBeVisible();
+    await expect(
+      skillsDialog.getByRole("button", { name: "Done" }),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("agent-settings-skills-card").getByText("Save bindings"),
+    ).not.toBeVisible();
   });
 
   test("settings cards show configured items in footer", async ({ page }) => {

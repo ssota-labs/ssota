@@ -4,11 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CalendarBlankIcon,
   ClockIcon,
+  LightbulbIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type {
   AgentDefinition,
   ConnectionTrigger,
+  SkillIndex,
   ToolBundle,
 } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -68,6 +70,7 @@ export type AgentSettingsDraft = {
   enabledConnectorProviders: string[];
   scheduleEnabledById: Record<string, boolean>;
   connectionTriggers: ConnectionTrigger[];
+  boundSkillIds: string[];
 };
 
 type AgentSettingsDialogsProps = {
@@ -76,6 +79,7 @@ type AgentSettingsDialogsProps = {
   onDraftChange: (patch: Partial<AgentSettingsDraft>) => void;
   workers: AgentDefinition[];
   scriptTools: Array<{ id: string; key: string; name: string }>;
+  skillCatalog: SkillIndex[];
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
   inboundChannels: InboundChannelStatus[];
@@ -86,7 +90,7 @@ type AgentSettingsDialogsProps = {
   onOpenDialogChange: (kind: AgentSettingsDialogKind | null) => void;
 };
 
-export type AgentSettingsDialogKind = "add-trigger" | "tools" | "model";
+export type AgentSettingsDialogKind = "add-trigger" | "tools" | "skills" | "model";
 
 type ToolEntry =
   | { kind: "connector"; id: string; provider: string; label: string }
@@ -103,12 +107,19 @@ function matchesSearch(label: string, query: string, extra?: string) {
   );
 }
 
+function skillSourceLabel(source: SkillIndex["source"]) {
+  if (source === "builtin") return "Platform";
+  if (source === "custom") return "Custom";
+  return source;
+}
+
 export function AgentSettingsDialogs({
   definition,
   draft,
   onDraftChange,
   workers,
   scriptTools,
+  skillCatalog,
   connectors,
   connections,
   inboundChannels,
@@ -119,10 +130,12 @@ export function AgentSettingsDialogs({
   onOpenDialogChange,
 }: AgentSettingsDialogsProps) {
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
+  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const [selectedAddTriggerId, setSelectedAddTriggerId] = useState<
     string | null
   >(null);
   const [toolSearch, setToolSearch] = useState("");
+  const [skillSearch, setSkillSearch] = useState("");
   const [addTriggerSearch, setAddTriggerSearch] = useState("");
   const [isProvisioningSlack, setIsProvisioningSlack] = useState(false);
   const [addTriggerError, setAddTriggerError] = useState<string | null>(null);
@@ -211,12 +224,31 @@ export function AgentSettingsDialogs({
     [toolEntries, toolSearch],
   );
 
+  const filteredSkills = useMemo(
+    () =>
+      [...skillCatalog]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .filter(
+          (skill) =>
+            matchesSearch(skill.name, skillSearch, skill.key) ||
+            matchesSearch(skill.description, skillSearch),
+        ),
+    [skillCatalog, skillSearch],
+  );
+
   useEffect(() => {
     if (openDialog === "tools") {
       setToolSearch("");
       setSelectedToolId(toolEntries[0]?.id ?? null);
     }
   }, [openDialog, toolEntries]);
+
+  useEffect(() => {
+    if (openDialog === "skills") {
+      setSkillSearch("");
+      setSelectedSkillId(filteredSkills[0]?.id ?? skillCatalog[0]?.id ?? null);
+    }
+  }, [openDialog, filteredSkills, skillCatalog]);
 
   useEffect(() => {
     if (openDialog === "add-trigger") {
@@ -232,6 +264,13 @@ export function AgentSettingsDialogs({
       setSelectedToolId(filteredToolEntries[0]?.id ?? null);
     }
   }, [filteredToolEntries, openDialog, selectedToolId]);
+
+  useEffect(() => {
+    if (openDialog !== "skills" || !selectedSkillId) return;
+    if (!filteredSkills.some((skill) => skill.id === selectedSkillId)) {
+      setSelectedSkillId(filteredSkills[0]?.id ?? null);
+    }
+  }, [filteredSkills, openDialog, selectedSkillId]);
 
   useEffect(() => {
     if (openDialog !== "add-trigger" || !selectedAddTriggerId) return;
@@ -276,6 +315,13 @@ export function AgentSettingsDialogs({
       linkedWorkerAgentIds: [...next],
       toolBundles: [...bundleSet],
     });
+  };
+
+  const toggleSkillBinding = (skillId: string, enabled: boolean) => {
+    const next = new Set(draft.boundSkillIds);
+    if (enabled) next.add(skillId);
+    else next.delete(skillId);
+    onDraftChange({ boundSkillIds: [...next] });
   };
 
   const isToolEnabled = (entry: ToolEntry) => {
@@ -324,6 +370,15 @@ export function AgentSettingsDialogs({
     },
   );
 
+  const skillSidebarItems: SidebarListItem[] = filteredSkills.map((skill) => ({
+    id: skill.id,
+    label: skill.name,
+    subtitle: skill.key,
+    icon: <LightbulbIcon className="size-3.5 text-muted-foreground" />,
+    enabled: draft.boundSkillIds.includes(skill.id),
+    testId: `agent-skill-${skill.key}`,
+  }));
+
   const addTriggerSidebarGroups: SidebarListGroup[] = useMemo(
     () =>
       filteredAddTriggerGroups.map((group) => ({
@@ -351,6 +406,8 @@ export function AgentSettingsDialogs({
   );
 
   const selectedTool = toolEntries.find((e) => e.id === selectedToolId) ?? null;
+  const selectedSkill =
+    skillCatalog.find((skill) => skill.id === selectedSkillId) ?? null;
   const selectedAddTrigger = selectedAddTriggerId
     ? findAddableTrigger(selectedAddTriggerId)
     : null;
@@ -558,6 +615,52 @@ export function AgentSettingsDialogs({
     );
   };
 
+  const renderSkillDetail = () => {
+    if (!selectedSkill) {
+      return (
+        <p className="text-muted-foreground text-sm">
+          Select a skill from the list to bind it to this agent.
+        </p>
+      );
+    }
+
+    const enabled = draft.boundSkillIds.includes(selectedSkill.id);
+
+    return (
+      <>
+        <SidebarDetailHeader
+          icon={<LightbulbIcon className="size-5 text-muted-foreground" />}
+          title={selectedSkill.name}
+          status={
+            <span className="text-muted-foreground font-mono text-xs">
+              {selectedSkill.key}
+            </span>
+          }
+        />
+        <p className="text-muted-foreground mb-6 text-sm">
+          {selectedSkill.description.trim() ||
+            "Skill descriptions appear in the agent manifest. Full bodies load via read_skill at runtime."}
+        </p>
+        <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
+          <Label htmlFor={`skill-enable-${selectedSkill.id}`}>
+            Bind to this agent
+          </Label>
+          <Switch
+            id={`skill-enable-${selectedSkill.id}`}
+            checked={enabled}
+            onCheckedChange={(checked) =>
+              toggleSkillBinding(selectedSkill.id, checked)
+            }
+            data-testid={`agent-skill-bind-${selectedSkill.key}`}
+          />
+        </div>
+        <p className="text-muted-foreground mt-3 text-xs">
+          Source: {skillSourceLabel(selectedSkill.source)}
+        </p>
+      </>
+    );
+  };
+
   const renderAddTriggerDetail = () => {
     if (!selectedAddTrigger) {
       return (
@@ -732,6 +835,31 @@ export function AgentSettingsDialogs({
               Graph and task tools are always available in the background.
             </p>
             {renderToolDetail()}
+          </>
+        }
+        footer={
+          <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
+        }
+      />
+
+      <AgentSettingsSidebarDialog
+        open={openDialog === "skills"}
+        onOpenChange={(open) => !open && onOpenDialogChange(null)}
+        title="Skills"
+        testId="agent-skills-sidebar-dialog"
+        items={skillSidebarItems}
+        selectedId={selectedSkillId}
+        onSelect={setSelectedSkillId}
+        searchQuery={skillSearch}
+        onSearchQueryChange={setSkillSearch}
+        searchPlaceholder="Search skills…"
+        detail={
+          <>
+            <p className="text-muted-foreground mb-4 text-xs">
+              Bound skill descriptions appear in the agent manifest. Full bodies
+              load via read_skill at runtime.
+            </p>
+            {renderSkillDetail()}
           </>
         }
         footer={
