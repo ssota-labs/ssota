@@ -631,10 +631,6 @@ export const schedules = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    agentDefinitionFk: foreignKey({
-      columns: [table.teamspaceId, table.agentDefinitionId],
-      foreignColumns: [agentDefinitions.teamspaceId, agentDefinitions.id],
-    }).onDelete("cascade"),
     projectIdx: index("schedules_project_id_idx").on(table.teamspaceId),
   }),
 );
