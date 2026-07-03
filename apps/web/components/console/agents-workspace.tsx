@@ -93,12 +93,13 @@ export function AgentsWorkspace({
 
         {groups.map((group) => (
           <BrowseWorkspace.Section key={group.key} label={group.label}>
-            <CardListSheet.List className="border-border">
+            <CardListSheet.List className="rounded-none border-0 bg-transparent">
               {group.items.map((definition) => (
                 <CardListSheet.Row
                   key={definition.id}
                   id={definition.id}
                   testId={`agent-item-${definition.id}`}
+                  className="bg-transparent hover:bg-muted/30"
                 >
                   <div className="min-w-0 flex-1 space-y-1">
                     <span className="text-sm font-medium">{definition.name}</span>
