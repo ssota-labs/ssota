@@ -10,6 +10,13 @@ import traceManifest from "../../packages/studio-build/studio-trace-manifest.jso
 const configDir = path.dirname(fileURLToPath(import.meta.url));
 const monorepoRoot = path.join(configDir, "../..");
 
+/** Sentry CLI expects an org slug; numeric SENTRY_ORG values mismatch auth tokens. */
+function resolveSentryBuildOrg(): string | undefined {
+  const org = process.env.SENTRY_ORG?.trim();
+  if (!org || /^\d+$/.test(org)) return undefined;
+  return org;
+}
+
 /** Package-level globs derived from esbuild metafile (studio-build generate:trace-manifest). */
 const studioBuildTraceIncludes = [
   ...traceManifest.globs.map((glob) => `../../${glob}`),
@@ -78,7 +85,7 @@ export default async function config(
   // No-op for events at runtime unless NEXT_PUBLIC_SENTRY_DSN is set; source
   // maps upload only when SENTRY_AUTH_TOKEN/ORG/PROJECT are present (CI/Vercel).
   return withSentryConfig(result, {
-    org: process.env.SENTRY_ORG,
+    org: resolveSentryBuildOrg(),
     project: process.env.SENTRY_PROJECT,
     authToken: process.env.SENTRY_AUTH_TOKEN,
     silent: !process.env.CI,
