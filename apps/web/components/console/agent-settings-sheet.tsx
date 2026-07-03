@@ -468,7 +468,7 @@ export function AgentSettingsSheet({
             />
             <AgentSettingCard.Body>
             <div
-              className="min-h-[200px] max-h-[min(24rem,45vh)] overflow-y-auto overscroll-contain"
+              className="min-h-[200px] max-h-[min(24rem,45vh)] overflow-y-auto"
               data-testid="agent-instructions-editor"
             >
               <DocumentEditorEl
