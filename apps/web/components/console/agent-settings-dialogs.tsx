@@ -490,7 +490,7 @@ export function AgentSettingsDialogs({
             }
           />
           <p className="text-muted-foreground mb-6 text-sm">
-            Allow this agent to use {selectedTool.label} through Composio.
+            Allow this agent to use {selectedTool.label} as a connector tool.
             Connect an account on the Connections page before running.
           </p>
           <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">

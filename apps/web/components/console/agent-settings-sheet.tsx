@@ -579,7 +579,7 @@ export function AgentSettingsSheet({
           <AgentSettingCard.Root testId="agent-settings-tools-card">
             <AgentSettingCard.Header
               title="Tools and access"
-              description="Composio connectors and TypeScript scripts for this agent."
+              description="Connectors and TypeScript scripts for this agent."
             />
             <AgentSettingCard.Body>
               <AgentSettingCard.Items>
@@ -608,7 +608,7 @@ export function AgentSettingsSheet({
                           }
                           title={connector.label}
                           subtitle={
-                            connected ? "Composio connector" : "Enabled"
+                            connected ? "Connector" : "Enabled"
                           }
                           trailing={
                             connected ? (
