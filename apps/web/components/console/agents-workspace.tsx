@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
 import { CardListSheet } from "@/components/card-list-sheet";
@@ -25,6 +25,7 @@ export function AgentsWorkspace({
 }: AgentsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const requestCloseRef = useRef<((action: () => void) => void) | null>(null);
 
   const definitions = groups.flatMap((group) => group.items);
   const activeDefinition =
@@ -42,10 +43,37 @@ export function AgentsWorkspace({
 
   const close = () => setActiveId(null);
 
+  const handleActiveIdChange = useCallback(
+    (nextId: string | null) => {
+      if (activeId === null) {
+        setActiveId(nextId);
+        return;
+      }
+      if (nextId === activeId) {
+        return;
+      }
+      const applyChange = () => setActiveId(nextId);
+      if (requestCloseRef.current) {
+        requestCloseRef.current(applyChange);
+        return;
+      }
+      applyChange();
+    },
+    [activeId],
+  );
+
+  const registerRequestClose = useCallback(
+    (requestClose: ((action: () => void) => void) | null) => {
+      requestCloseRef.current = requestClose;
+    },
+    [],
+  );
+
   return (
     <CardListSheet.Root
       activeId={activeId}
-      onActiveIdChange={setActiveId}
+      onActiveIdChange={handleActiveIdChange}
+      dismissOnOutsideClick
       className="absolute inset-0 flex flex-col"
       testId="agents-workspace"
     >
@@ -65,12 +93,13 @@ export function AgentsWorkspace({
 
         {groups.map((group) => (
           <BrowseWorkspace.Section key={group.key} label={group.label}>
-            <CardListSheet.List className="border-border">
+            <CardListSheet.List className="border-border bg-transparent">
               {group.items.map((definition) => (
                 <CardListSheet.Row
                   key={definition.id}
                   id={definition.id}
                   testId={`agent-item-${definition.id}`}
+                  className="bg-transparent hover:bg-muted/30"
                 >
                   <div className="min-w-0 flex-1 space-y-1">
                     <span className="text-sm font-medium">{definition.name}</span>
@@ -111,6 +140,7 @@ export function AgentsWorkspace({
           channelsHref={settingsContext.channelsHref}
           schedules={settingsContext.schedules}
           onClose={close}
+          registerRequestClose={registerRequestClose}
         />
       ) : null}
     </CardListSheet.Root>

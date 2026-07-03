@@ -59,7 +59,9 @@ interface ScheduleSheetProps {
   /** Sheet on schedules page; dialog when editing from agent card; inline in add-trigger sidebar. */
   presentation?: "sheet" | "dialog" | "inline";
   /** Where the submit button renders for inline presentation (default inline). */
-  inlineSubmitPlacement?: "inline" | "footer";
+  inlineSubmitPlacement?: "inline" | "footer" | "header";
+  /** Tighter spacing for compact popovers (agent schedule edit). */
+  compact?: boolean;
 }
 
 function inferTargetType(agentDefinitionId?: string): ScheduleTargetType {
@@ -114,6 +116,7 @@ export function ScheduleSheet({
   schedule,
   presentation = "sheet",
   inlineSubmitPlacement = "inline",
+  compact = false,
 }: ScheduleSheetProps) {
   const router = useRouter();
   const isEdit = Boolean(schedule);
@@ -288,7 +291,13 @@ export function ScheduleSheet({
       type="submit"
       form={formId}
       disabled={isPending || Boolean(preview.error)}
-      className={presentation === "sheet" ? "w-full" : undefined}
+      className={cn(
+        presentation === "sheet" ? "w-full" : undefined,
+        presentation === "inline" &&
+          compact &&
+          inlineSubmitPlacement === "header" &&
+          "h-8 px-3 text-xs",
+      )}
       data-testid={
         presentation === "inline" && !isEdit ? "add-trigger-confirm" : undefined
       }
@@ -298,7 +307,11 @@ export function ScheduleSheet({
   );
 
   const form = (
-    <form id={formId} className="space-y-5" onSubmit={handleSubmit}>
+    <form
+      id={formId}
+      className={cn(compact ? "space-y-3" : "space-y-5")}
+      onSubmit={handleSubmit}
+    >
         {showAgentPicker ? (
           <div className="space-y-2">
             <Label>Agent</Label>
@@ -315,8 +328,9 @@ export function ScheduleSheet({
           <>
             <div className="flex items-end gap-2">
               <div className="grid gap-2">
-                <Label>Every</Label>
+                <Label htmlFor="schedule-every">Every</Label>
                 <Input
+                  id="schedule-every"
                   type="number"
                   min={1}
                   className="w-20"
@@ -336,6 +350,7 @@ export function ScheduleSheet({
                   }
                   disabled={isPending}
                   items={FREQUENCIES}
+                  modal={false}
                 >
                   <SelectTrigger id="schedule-frequency" className="w-full">
                     <SelectValue />
@@ -442,7 +457,10 @@ export function ScheduleSheet({
                         type="button"
                         size="sm"
                         variant={active ? "default" : "outline"}
-                        className={cn("h-8 w-10 px-0")}
+                        className={cn(
+                          "px-0",
+                          compact ? "h-7 w-9" : "h-8 w-10",
+                        )}
                         onClick={() => toggleDay(d.value)}
                         disabled={isPending}
                       >
@@ -477,6 +495,7 @@ export function ScheduleSheet({
             onValueChange={(value) => value && setTimezone(value)}
             disabled={isPending}
             items={tzOptions.map((tz) => ({ value: tz, label: tz }))}
+            modal={false}
           >
             <SelectTrigger id="schedule-timezone" className="w-full">
               <SelectValue />
@@ -501,7 +520,12 @@ export function ScheduleSheet({
           />
         </div>
 
-        <div className="rounded-md border bg-muted/40 p-3 text-sm">
+        <div
+          className={cn(
+            "rounded-md border bg-muted/40",
+            compact ? "p-2 text-xs" : "p-3 text-sm",
+          )}
+        >
           {preview.error ? (
             <p className="text-destructive">{preview.error}</p>
           ) : (
@@ -536,6 +560,12 @@ export function ScheduleSheet({
     if (!open) return null;
     return (
       <div className="space-y-4" data-testid="schedule-inline-form">
+        {inlineSubmitPlacement === "header" ? (
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold leading-none">{title}</h3>
+            {submitButton}
+          </div>
+        ) : null}
         {form}
         {inlineSubmitPlacement === "inline" ? (
           <div className="flex justify-end">{submitButton}</div>

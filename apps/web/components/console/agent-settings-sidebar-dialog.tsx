@@ -69,10 +69,10 @@ export function AgentSettingsSidebarDialog({
     groups?.flatMap((group) => group.items) ?? items ?? [];
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal="trap-focus">
       <DialogContent
         className={cn(
-          "flex h-[min(85vh,40rem)] w-[min(50vw,40rem)] !max-w-[min(50vw,40rem)] flex-col gap-0 overflow-hidden p-0 sm:!max-w-[min(50vw,40rem)]",
+          "flex h-[min(85vh,40rem)] w-[min(68vw,56rem)] !max-w-[min(68vw,56rem)] flex-col gap-0 overflow-hidden !p-0 sm:!max-w-[min(68vw,56rem)]",
           className,
         )}
         forceBackdrop
@@ -80,8 +80,8 @@ export function AgentSettingsSidebarDialog({
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <div className="flex min-h-0 flex-1">
-          <aside className="border-border flex w-48 shrink-0 flex-col border-r">
-            <div className="space-y-2 px-3 py-3">
+          <aside className="flex w-52 shrink-0 flex-col border-r border-muted">
+            <div className="space-y-2 px-2 py-3">
               <h2 className="min-w-0 truncate text-sm font-semibold">{title}</h2>
               {showSearch ? (
                 <InputGroup className="h-8">
@@ -142,9 +142,9 @@ export function AgentSettingsSidebarDialog({
             </nav>
           </aside>
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">{detail}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-0 scrollbar-none">{detail}</div>
             {footer ? (
-              <div className="flex justify-end px-4 py-3">{footer}</div>
+              <div className="flex justify-end px-3 pt-3 pb-1.5">{footer}</div>
             ) : null}
           </div>
         </div>
@@ -169,7 +169,7 @@ export function SidebarDetailHeader({
       className={cn(
         "mb-4 flex items-start gap-3",
         sticky &&
-          "sticky top-0 z-10 -mx-4 border-b border-border/60 bg-background/95 px-4 pb-3 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80",
+          "sticky top-0 z-10 -mx-3 border-b border-border/60 bg-popover px-3 pb-3 pt-0",
       )}
     >
       {icon ? (
@@ -178,10 +178,8 @@ export function SidebarDetailHeader({
         </span>
       ) : null}
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-base font-semibold">{title}</h3>
-          {status}
-        </div>
+        <h3 className="text-base font-semibold">{title}</h3>
+        {status ? <div className="mt-0.5">{status}</div> : null}
       </div>
     </div>
   );
@@ -215,19 +213,19 @@ function SidebarNavItem({
         data-testid={item.testId}
         onClick={() => onSelect(item.id)}
         className={cn(
-          "flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-left text-sm transition-colors",
+          "flex w-full items-center gap-2 rounded-md px-1.5 py-1.5 text-left transition-colors",
           selected ? "bg-muted font-medium" : "hover:bg-muted/60",
         )}
       >
         {item.icon ? (
-          <span className="bg-background flex size-7 shrink-0 items-center justify-center rounded-md border border-border/60 shadow-sm">
+          <span className="bg-background flex size-6 shrink-0 items-center justify-center rounded-md border border-border/60 shadow-sm">
             {item.icon}
           </span>
         ) : null}
         <span className="min-w-0 flex-1">
-          <span className="block text-sm leading-snug">{item.label}</span>
+          <span className="block text-xs leading-snug">{item.label}</span>
           {item.subtitle ? (
-            <span className="text-muted-foreground block text-xs leading-snug font-normal">
+            <span className="text-muted-foreground block text-[11px] leading-snug font-normal">
               {item.subtitle}
             </span>
           ) : null}
@@ -235,7 +233,7 @@ function SidebarNavItem({
         {item.enabled !== undefined ? (
           <span
             className={cn(
-              "size-1.5 shrink-0 rounded-full",
+              "mr-1 size-1.5 shrink-0 rounded-full",
               item.enabled ? "bg-emerald-500" : "bg-muted-foreground/30",
             )}
             aria-hidden

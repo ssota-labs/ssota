@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   AtIcon,
   ChatsCircleIcon,
@@ -13,7 +13,17 @@ import {
 } from "@phosphor-icons/react";
 import type { Block } from "@blocknote/core";
 import type { AgentDefinition, AgentTrigger, ConnectionTrigger } from "@ssota/contracts";
-import { Button } from "@ssota/ui/components/ui/button";
+import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@ssota/ui/components/ui/alert-dialog";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +35,6 @@ import {
 import {
   Popover,
   PopoverContent,
-  PopoverHeader,
-  PopoverTitle,
 } from "@ssota/ui/components/ui/popover";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import { Label } from "@ssota/ui/components/ui/label";
@@ -38,12 +46,7 @@ import { updateAgentDefinitionAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { AgentSkillBindings } from "@/components/console/skills-workspace";
 import { CardListSheetPanel } from "@/components/card-list-sheet";
-import {
-  AgentSettingCard,
-  AgentSettingEmpty,
-  AgentSettingItem,
-  AgentSettingItems,
-} from "@/components/console/agent-setting-card";
+import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import {
   AgentSettingsDialogs,
   type AgentSettingsDialogKind,
@@ -51,11 +54,17 @@ import {
 } from "@/components/console/agent-settings-dialogs";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
+import { buildConnectorAuthorizeHref } from "@/lib/connect/authorize-href";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
+import {
+  isAgentSettingsDraftDirty,
+  resolveAllowedTriggersForSave,
+  resolveToolBundlesForSave,
+} from "@/lib/console/agent-settings-save-snapshot";
 
 const DocumentEditorEl = dynamic(
   () =>
@@ -78,6 +87,9 @@ type AgentSettingsSheetProps = {
   channelsHref: string;
   schedules: AgentScheduleSummary[];
   onClose: () => void;
+  registerRequestClose?: (
+    requestClose: ((action: () => void) => void) | null,
+  ) => void;
 };
 
 /** Default triggers always shown on the card (not added via sidebar). */
@@ -123,11 +135,15 @@ export function AgentSettingsSheet({
   channelsHref,
   schedules,
   onClose,
+  registerRequestClose,
 }: AgentSettingsSheetProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [draft, setDraft] = useState(() =>
     buildDraft(definition, initialScriptToolIds, schedules),
   );
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const pendingCloseActionRef = useRef<(() => void) | null>(null);
   const [openDialog, setOpenDialog] = useState<AgentSettingsDialogKind | null>(
     null,
   );
@@ -138,6 +154,7 @@ export function AgentSettingsSheet({
     string | null
   >(null);
   const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
+  const ignoreNextScheduleRowPressRef = useRef(false);
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -147,6 +164,54 @@ export function AgentSettingsSheet({
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
+
+  const savedDraft = useMemo(
+    () => buildDraft(definition, initialScriptToolIds, schedules),
+    [definition, initialScriptToolIds, schedules],
+  );
+
+  const isDirty = useMemo(
+    () => isAgentSettingsDraftDirty(draft, savedDraft, agentSchedules),
+    [draft, savedDraft, agentSchedules],
+  );
+
+  const requestClose = useCallback(
+    (action: () => void) => {
+      if (!isDirty) {
+        action();
+        return;
+      }
+      if (discardDialogOpen) {
+        return;
+      }
+      pendingCloseActionRef.current = action;
+      setDiscardDialogOpen(true);
+    },
+    [discardDialogOpen, isDirty],
+  );
+
+  const handleClose = useCallback(() => {
+    requestClose(onClose);
+  }, [requestClose, onClose]);
+
+  const handleDiscardDialogOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      pendingCloseActionRef.current = null;
+      setDiscardDialogOpen(false);
+    }
+  }, []);
+
+  const handleDiscardChanges = useCallback(() => {
+    const action = pendingCloseActionRef.current;
+    pendingCloseActionRef.current = null;
+    setDiscardDialogOpen(false);
+    action?.();
+  }, []);
+
+  useEffect(() => {
+    registerRequestClose?.(requestClose);
+    return () => registerRequestClose?.(null);
+  }, [registerRequestClose, requestClose]);
 
   const editingSchedule = editingScheduleId
     ? agentSchedules.find((s) => s.id === editingScheduleId)
@@ -248,21 +313,8 @@ export function AgentSettingsSheet({
 
   const handleSave = () => {
     startTransition(async () => {
-      const bundles = mergeToolBundles(draft.toolBundles);
-      if (draft.linkedWorkerAgentIds.length > 0 && !bundles.includes("delegate")) {
-        bundles.push("delegate");
-      }
-
-      const allowedTriggers = [...new Set([...draft.allowedTriggers, "chat"])];
-      if (agentSchedules.length > 0 && !allowedTriggers.includes("schedule")) {
-        allowedTriggers.push("schedule");
-      }
-      if (
-        draft.connectionTriggers.some((t) => t.enabled) &&
-        !allowedTriggers.includes("chatbot")
-      ) {
-        allowedTriggers.push("chatbot");
-      }
+      const bundles = resolveToolBundlesForSave(draft);
+      const allowedTriggers = resolveAllowedTriggersForSave(draft, agentSchedules);
 
       await updateAgentDefinitionAction(teamspaceId, {
         id: definition.id,
@@ -316,61 +368,52 @@ export function AgentSettingsSheet({
         title="Settings"
         subtitle={definition.name}
         sheetSize="inspector"
-        onClose={onClose}
+        onClose={handleClose}
         headerAction={
           <Button
             type="button"
             size="sm"
-            disabled={isPending}
+            variant={isDirty ? "default" : "secondary"}
+            disabled={isPending || !isDirty}
             onClick={handleSave}
             data-testid="agent-settings-save"
+            aria-disabled={isPending || !isDirty}
           >
-            {isPending ? "Saving…" : "Save"}
+            {isPending ? "Saving…" : isDirty ? "Save changes" : "Saved"}
           </Button>
         }
       >
         <div
           className="space-y-3"
           data-testid="agent-settings-sheet"
+          data-unsaved={isDirty ? "true" : undefined}
         >
-          <AgentSettingCard
-            title="Triggers"
-            description="When should this agent run?"
-            testId="agent-settings-triggers-card"
-            footer={
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="w-fit justify-start gap-2"
-                data-testid="agent-triggers-add"
-                onClick={() => setOpenDialog("add-trigger")}
-              >
-                <PlusIcon className="size-3.5" aria-hidden />
-                Add trigger
-              </Button>
-            }
-          >
-            <AgentSettingItems>
-              <AgentSettingItem
+          <AgentSettingCard.Root testId="agent-settings-triggers-card">
+            <AgentSettingCard.Header
+              title="Triggers"
+              description="When should this agent run?"
+            />
+            <AgentSettingCard.Body>
+              <AgentSettingCard.Items>
+              <AgentSettingCard.Item
                 testId="agent-trigger-chat"
                 icon={<ChatsCircleIcon className="size-3.5 text-muted-foreground" />}
                 title={chatLabel}
               />
-              <AgentSettingItem
+              <AgentSettingCard.Item
+                testId="agent-trigger-task"
                 icon={<AtIcon className="size-3.5 text-muted-foreground" />}
                 title={TRIGGER_LABELS.task}
                 trailing={
                   <Switch
                     checked={draft.allowedTriggers.includes("task")}
                     onCheckedChange={(checked) => toggleTrigger("task", checked)}
-                    data-testid="agent-trigger-task"
                     aria-label={TRIGGER_LABELS.task}
                   />
                 }
               />
               {draft.connectionTriggers.map((trigger) => (
-                <AgentSettingItem
+                <AgentSettingCard.Item
                   key={trigger.id}
                   className={trigger.id === "slack:agent_mentioned" ? "group" : undefined}
                   onPress={
@@ -413,13 +456,20 @@ export function AgentSettingsSheet({
                 const enabled =
                   draft.scheduleEnabledById[schedule.id] ?? schedule.enabled;
                 return (
-                  <AgentSettingItem
+                  <AgentSettingCard.Item
                     key={schedule.id}
                     className="group"
                     testId={`agent-schedule-edit-${schedule.id}`}
                     onPress={(element) => {
-                      schedulePopoverAnchorRef.current = element;
-                      setEditingScheduleId(schedule.id);
+                      if (ignoreNextScheduleRowPressRef.current) {
+                        ignoreNextScheduleRowPressRef.current = false;
+                        return;
+                      }
+                      setEditingScheduleId((current) => {
+                        if (current === schedule.id) return null;
+                        schedulePopoverAnchorRef.current = element;
+                        return schedule.id;
+                      });
                     }}
                     icon={
                       <ClockIcon className="size-3.5 text-muted-foreground" />
@@ -438,16 +488,31 @@ export function AgentSettingsSheet({
                   />
                 );
               })}
-            </AgentSettingItems>
-          </AgentSettingCard>
+              </AgentSettingCard.Items>
+            </AgentSettingCard.Body>
+            <AgentSettingCard.Footer>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-fit justify-start gap-2"
+                data-testid="agent-triggers-add"
+                onClick={() => setOpenDialog("add-trigger")}
+              >
+                <PlusIcon className="size-3.5" aria-hidden />
+                Add trigger
+              </Button>
+            </AgentSettingCard.Footer>
+          </AgentSettingCard.Root>
 
-          <AgentSettingCard
-            title="Instructions"
-            description="What should the agent do every time it runs?"
-            testId="agent-settings-instructions-card"
-          >
+          <AgentSettingCard.Root testId="agent-settings-instructions-card">
+            <AgentSettingCard.Header
+              title="Instructions"
+              description="What should the agent do every time it runs?"
+            />
+            <AgentSettingCard.Body>
             <div
-              className="min-h-[200px] overflow-y-auto rounded-md border border-border/60 bg-background/40 p-2"
+              className="min-h-[200px] max-h-[min(24rem,45vh)] overflow-y-auto"
               data-testid="agent-instructions-editor"
             >
               <DocumentEditorEl
@@ -456,121 +521,191 @@ export function AgentSettingsSheet({
                 onSave={handleInstructionsSave}
               />
             </div>
-          </AgentSettingCard>
+            </AgentSettingCard.Body>
+          </AgentSettingCard.Root>
 
-          <AgentSettingCard
-            title="Tools and access"
-            description="Composio connectors and TypeScript scripts for this agent."
-            testId="agent-settings-tools-card"
-            onOpen={() => setOpenDialog("tools")}
-          >
-            {enabledConnectors.length === 0 && linkedScriptTools.length === 0 ? (
-              <AgentSettingEmpty>
-                No connectors or scripts selected yet
-              </AgentSettingEmpty>
-            ) : (
-              <AgentSettingItems>
-                {enabledConnectors.map((connector) => {
-                  const connected = connectedProviders.has(connector.provider);
-                  const count =
-                    connectedProviders.get(connector.provider)?.length ?? 0;
-                  return (
-                    <AgentSettingItem
-                      key={connector.provider}
-                      icon={
-                        <ConnectorBrandIcon
-                          provider={connector.provider}
-                          className="size-3.5"
-                        />
-                      }
-                      title={connector.label}
-                      subtitle={
-                        connected ? "Composio connector" : "Enabled — not connected"
-                      }
-                      trailing={
-                        connected
-                          ? count > 1
-                            ? `${count} accounts`
-                            : "Connected"
-                          : "Pending"
-                      }
-                    />
-                  );
-                })}
-                {linkedScriptTools.map((tool) => (
-                  <AgentSettingItem
-                    key={tool.id}
+          <AgentSettingCard.Root testId="agent-settings-tools-card">
+            <AgentSettingCard.Header
+              title="Tools and access"
+              description="Composio connectors and TypeScript scripts for this agent."
+            />
+            <AgentSettingCard.Body>
+              <AgentSettingCard.Items>
+                {enabledConnectors.length === 0 && linkedScriptTools.length === 0 ? (
+                  <AgentSettingCard.Item
+                    testId="agent-tools-empty"
                     icon={
                       <WrenchIcon className="size-3.5 text-muted-foreground" />
                     }
-                    title={tool.name}
-                    subtitle={tool.key}
-                    trailing="TypeScript"
+                    title="No connectors or scripts selected yet"
+                    onPress={() => setOpenDialog("tools")}
+                    trailing={<AgentSettingCard.ItemCaret />}
                   />
-                ))}
-              </AgentSettingItems>
-            )}
-          </AgentSettingCard>
+                ) : (
+                  <>
+                    {enabledConnectors.map((connector) => {
+                      const connected = connectedProviders.has(connector.provider);
+                      const count =
+                        connectedProviders.get(connector.provider)?.length ?? 0;
+                      return (
+                        <AgentSettingCard.Item
+                          key={connector.provider}
+                          icon={
+                            <ConnectorBrandIcon
+                              provider={connector.provider}
+                              className="size-3.5"
+                            />
+                          }
+                          title={connector.label}
+                          subtitle={
+                            connected ? "Composio connector" : "Enabled"
+                          }
+                          trailing={
+                            connected ? (
+                              count > 1 ? (
+                                `${count} accounts`
+                              ) : (
+                                "Connected"
+                              )
+                            ) : (
+                              <a
+                                href={buildConnectorAuthorizeHref({
+                                  slug: connector.provider,
+                                  teamspaceId,
+                                  accountId,
+                                  returnTo: pathname,
+                                })}
+                                className={buttonVariants({
+                                  variant: "secondary",
+                                  size: "sm",
+                                  className: "h-7 shrink-0",
+                                })}
+                                data-testid={`agent-connector-connect-${connector.provider}`}
+                              >
+                                Connect
+                              </a>
+                            )
+                          }
+                        />
+                      );
+                    })}
+                    {linkedScriptTools.map((tool) => (
+                      <AgentSettingCard.Item
+                        key={tool.id}
+                        icon={
+                          <WrenchIcon className="size-3.5 text-muted-foreground" />
+                        }
+                        title={tool.name}
+                        subtitle={tool.key}
+                        trailing="TypeScript"
+                      />
+                    ))}
+                  </>
+                )}
+              </AgentSettingCard.Items>
+            </AgentSettingCard.Body>
+            <AgentSettingCard.Footer>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-fit justify-start gap-2"
+                data-testid="agent-tools-manage"
+                onClick={() => setOpenDialog("tools")}
+              >
+                <WrenchIcon className="size-3.5" aria-hidden />
+                Manage tools
+              </Button>
+            </AgentSettingCard.Footer>
+          </AgentSettingCard.Root>
 
-          <AgentSettingCard
-            title="Model"
-            description="Default model for agent runs."
-            testId="agent-settings-model-card"
-            onOpen={() => setOpenDialog("model")}
-          >
-            <AgentSettingItems>
-              <AgentSettingItem
-                icon={<CpuIcon className="size-3.5 text-muted-foreground" />}
-                title={modelLabel}
-                subtitle={modelProvider || "Default model"}
-              />
-            </AgentSettingItems>
-          </AgentSettingCard>
-
-          <AgentSettingCard
-            title="Skills"
-            description="Runtime skills loaded via read_skill."
-            testId="agent-settings-skills-card"
-          >
-            <AgentSkillBindings
-              teamspaceId={teamspaceId}
-              agentDefinitionId={definition.id}
+          <AgentSettingCard.Root testId="agent-settings-model-card">
+            <AgentSettingCard.Header
+              title="Model"
+              description="Default model for agent runs."
             />
-          </AgentSettingCard>
+            <AgentSettingCard.Body>
+              <AgentSettingCard.Items>
+                <AgentSettingCard.Item
+                  testId="agent-model-summary"
+                  icon={<CpuIcon className="size-3.5 text-muted-foreground" />}
+                  title={modelLabel}
+                  subtitle={modelProvider || "Default model"}
+                  onPress={() => setOpenDialog("model")}
+                  trailing={<AgentSettingCard.ItemCaret />}
+                />
+              </AgentSettingCard.Items>
+            </AgentSettingCard.Body>
+            <AgentSettingCard.Footer>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-fit justify-start gap-2"
+                data-testid="agent-model-change"
+                onClick={() => setOpenDialog("model")}
+              >
+                <CpuIcon className="size-3.5" aria-hidden />
+                Change model
+              </Button>
+            </AgentSettingCard.Footer>
+          </AgentSettingCard.Root>
+
+          <AgentSettingCard.Root testId="agent-settings-skills-card">
+            <AgentSettingCard.Header
+              title="Skills"
+              description="Runtime skills loaded via read_skill."
+            />
+            <AgentSettingCard.Body>
+              <AgentSkillBindings
+                embedded
+                teamspaceId={teamspaceId}
+                agentDefinitionId={definition.id}
+              />
+            </AgentSettingCard.Body>
+          </AgentSettingCard.Root>
         </div>
       </CardListSheetPanel>
 
       <Popover
         open={editingScheduleId !== null}
-        onOpenChange={(open) => {
+        onOpenChange={(open, eventDetails) => {
+          if (
+            !open &&
+            eventDetails?.reason === "outside-press" &&
+            schedulePopoverAnchorRef.current?.contains(
+              eventDetails.event.target as Node,
+            )
+          ) {
+            setEditingScheduleId(null);
+            ignoreNextScheduleRowPressRef.current = true;
+            return;
+          }
           if (!open) setEditingScheduleId(null);
         }}
       >
         <PopoverContent
           anchor={schedulePopoverAnchorRef}
-          side="left"
+          side="bottom"
           align="start"
-          sideOffset={8}
-          className="w-[min(32rem,92vw)] max-h-[min(80vh,40rem)] overflow-y-auto p-4"
+          sideOffset={6}
+          className="w-[min(22rem,92vw)] max-h-[min(65vh,24rem)] overflow-y-auto p-3"
           data-testid="schedule-edit-popover"
         >
           {scheduleEditTarget ? (
-            <>
-              <PopoverHeader className="mb-3 p-0">
-                <PopoverTitle>Edit trigger</PopoverTitle>
-              </PopoverHeader>
-              <ScheduleSheet
-                presentation="inline"
-                open
-                onOpenChange={(open) => {
-                  if (!open) setEditingScheduleId(null);
-                }}
-                teamspaceId={teamspaceId}
-                accountId={accountId}
-                instructions={[{ id: definition.id, name: definition.name }]}
-                schedule={scheduleEditTarget}
-              />
-            </>
+            <ScheduleSheet
+              presentation="inline"
+              inlineSubmitPlacement="header"
+              compact
+              open
+              onOpenChange={(open) => {
+                if (!open) setEditingScheduleId(null);
+              }}
+              teamspaceId={teamspaceId}
+              accountId={accountId}
+              instructions={[{ id: definition.id, name: definition.name }]}
+              schedule={scheduleEditTarget}
+            />
           ) : null}
         </PopoverContent>
       </Popover>
@@ -640,6 +775,32 @@ export function AgentSettingsSheet({
         openDialog={openDialog}
         onOpenDialogChange={setOpenDialog}
       />
+
+      <AlertDialog
+        open={discardDialogOpen}
+        onOpenChange={handleDiscardDialogOpenChange}
+      >
+        <AlertDialogContent data-testid="agent-settings-discard-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your changes have not been saved. Close without saving and they
+              will not apply to the agent runtime.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="agent-settings-discard-cancel">
+              Keep editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="agent-settings-discard-confirm"
+              onClick={handleDiscardChanges}
+            >
+              Discard changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

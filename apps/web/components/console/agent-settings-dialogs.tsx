@@ -580,7 +580,7 @@ export function AgentSettingsDialogs({
               </span>
             }
           />
-          <p className="text-muted-foreground mb-4 text-sm">
+          <p className="text-muted-foreground mt-2 mb-4 text-sm">
             {selectedAddTrigger.description}
           </p>
           <ScheduleSheet
