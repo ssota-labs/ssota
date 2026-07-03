@@ -60,6 +60,11 @@
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
   },
   {
+    "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/executive/goals/page.tsx",
+    "ruleId": "GRAPH-08",
+    "reason": "Legacy slug URL redirect to json-render page (executive/goals) — same pattern as executive/roadmap"
+  },
+  {
     "path": "apps/web/app/[orgSlug]/[teamspaceSlug]/graph/page.tsx",
     "ruleId": "GRAPH-08",
     "reason": "기존 라우트 (하네스 도입 이전 베이스라인) — json-render 전환 대상 여부는 개별 판단"
