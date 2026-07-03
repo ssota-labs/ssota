@@ -628,8 +628,8 @@ export function AgentSettingsDialogs({
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
-                type="button"
                 size="sm"
+                nativeButton={false}
                 render={
                   <a
                     href={slackInboundConnectHref}
@@ -640,9 +640,9 @@ export function AgentSettingsDialogs({
                 Connect Slack channel
               </Button>
               <Button
-                type="button"
                 size="sm"
                 variant="outline"
+                nativeButton={false}
                 render={<a href={channelsHref} />}
               >
                 Open Channels
