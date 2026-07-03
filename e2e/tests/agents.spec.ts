@@ -145,8 +145,9 @@ test.describe("Agents", () => {
     const toolsDialog = page.getByTestId("agent-tools-sidebar-dialog");
     await expect(toolsDialog).toBeVisible();
     await expect(toolsDialog.getByTestId("agent-connector-notion")).toBeVisible();
-    await expect(toolsDialog.getByText("Composio connectors")).not.toBeVisible();
-    await expect(toolsDialog.getByText("TypeScript scripts")).not.toBeVisible();
+    await expect(toolsDialog.getByText("Connectors")).toBeVisible();
+    await expect(toolsDialog.getByText("TypeScript scripts")).toBeVisible();
+    await expect(toolsDialog.getByText("Pages")).not.toBeVisible();
   });
 
   test("opens skills dialog with sidebar list", async ({ page }) => {

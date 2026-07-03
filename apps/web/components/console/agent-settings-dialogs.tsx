@@ -23,12 +23,6 @@ import type { ConnectorDef } from "@/lib/connect/connectors";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { inboundChannelAuthorizeHref, inboundChannelStatusFor } from "@/lib/connect/inbound-channels";
 import {
-  BASE_TOOL_BUNDLES,
-  OPTIONAL_TOOL_BUNDLES,
-  TOOL_BUNDLE_LABELS,
-  isWorkerAgentId,
-} from "@/lib/console/agent-tool-catalog";
-import {
   ADDABLE_TRIGGER_GROUPS,
   filterAddableTriggerGroups,
   findAddableTrigger,
@@ -78,9 +72,7 @@ export type AgentSettingsDialogKind = "add-trigger" | "tools" | "skills";
 
 type ToolEntry =
   | { kind: "connector"; id: string; provider: string; label: string }
-  | { kind: "script"; id: string; toolId: string; label: string; key: string }
-  | { kind: "worker"; id: string; workerId: string; label: string }
-  | { kind: "bundle"; id: string; bundle: ToolBundle; label: string };
+  | { kind: "script"; id: string; toolId: string; label: string; key: string };
 
 function matchesSearch(label: string, query: string, extra?: string) {
   const q = query.trim().toLowerCase();
@@ -181,21 +173,9 @@ export function AgentSettingsDialogs({
         label: tool.name,
         key: tool.key,
       })),
-      ...workers.map((worker) => ({
-        kind: "worker" as const,
-        id: `worker:${worker.id}`,
-        workerId: worker.id,
-        label: worker.name,
-      })),
-      ...OPTIONAL_TOOL_BUNDLES.map((bundle) => ({
-        kind: "bundle" as const,
-        id: `bundle:${bundle}`,
-        bundle,
-        label: TOOL_BUNDLE_LABELS[bundle],
-      })),
     ];
     return entries.sort((a, b) => a.label.localeCompare(b.label));
-  }, [connectors, scriptTools, workers]);
+  }, [connectors, scriptTools]);
 
   const filteredToolEntries = useMemo(
     () =>
@@ -263,17 +243,6 @@ export function AgentSettingsDialogs({
     }
   }, [addTriggerFlatItems, openDialog, selectedAddTriggerId]);
 
-  const toggleOptionalBundle = (bundle: ToolBundle, enabled: boolean) => {
-    const optionalSet = new Set(
-      draft.toolBundles.filter((b) => !BASE_TOOL_BUNDLES.includes(b)),
-    );
-    if (enabled) optionalSet.add(bundle);
-    else optionalSet.delete(bundle);
-    onDraftChange({
-      toolBundles: [...BASE_TOOL_BUNDLES, ...optionalSet],
-    });
-  };
-
   const toggleScriptTool = (id: string, enabled: boolean) => {
     const next = new Set(draft.scriptToolIds);
     if (enabled) next.add(id);
@@ -286,19 +255,6 @@ export function AgentSettingsDialogs({
     if (enabled) next.add(provider);
     else next.delete(provider);
     onDraftChange({ enabledConnectorProviders: [...next] });
-  };
-
-  const toggleWorker = (id: string, enabled: boolean) => {
-    const next = new Set(draft.linkedWorkerAgentIds);
-    if (enabled) next.add(id);
-    else next.delete(id);
-    const hasWorkers = next.size > 0;
-    const bundleSet = new Set(draft.toolBundles);
-    if (hasWorkers) bundleSet.add("delegate");
-    onDraftChange({
-      linkedWorkerAgentIds: [...next],
-      toolBundles: [...bundleSet],
-    });
   };
 
   const toggleSkillBinding = (skillId: string, enabled: boolean) => {
@@ -314,38 +270,55 @@ export function AgentSettingsDialogs({
         return draft.enabledConnectorProviders.includes(entry.provider);
       case "script":
         return draft.scriptToolIds.includes(entry.toolId);
-      case "worker":
-        return draft.linkedWorkerAgentIds.includes(entry.workerId);
-      case "bundle":
-        return draft.toolBundles.includes(entry.bundle);
     }
   };
 
-  const toolSidebarItems: SidebarListItem[] = filteredToolEntries.map(
-    (entry) => {
-      const enabled = isToolEnabled(entry);
-      const subtitle = entry.kind === "script" ? entry.key : undefined;
+  const toolEntryToSidebarItem = (entry: ToolEntry): SidebarListItem => {
+    const enabled = isToolEnabled(entry);
+    const subtitle = entry.kind === "script" ? entry.key : undefined;
+    const icon =
+      entry.kind === "connector" ? (
+        <ConnectorBrandIcon provider={entry.provider} className="size-3.5" />
+      ) : (
+        <WrenchIcon className="size-3.5 text-muted-foreground" />
+      );
 
-      const icon =
-        entry.kind === "connector" ? (
-          <ConnectorBrandIcon provider={entry.provider} className="size-3.5" />
-        ) : (
-          <WrenchIcon className="size-3.5 text-muted-foreground" />
-        );
+    return {
+      id: entry.id,
+      label: entry.label,
+      subtitle,
+      icon,
+      enabled,
+      testId:
+        entry.kind === "connector"
+          ? `agent-connector-${entry.provider}`
+          : `agent-script-${entry.toolId}`,
+    };
+  };
 
-      return {
-        id: entry.id,
-        label: entry.label,
-        subtitle,
-        icon,
-        enabled,
-        testId:
-          entry.kind === "connector"
-            ? `agent-connector-${entry.provider}`
-            : undefined,
-      };
-    },
-  );
+  const toolSidebarGroups: SidebarListGroup[] = useMemo(() => {
+    const connectors = filteredToolEntries.filter((e) => e.kind === "connector");
+    const scripts = filteredToolEntries.filter((e) => e.kind === "script");
+    const groups: SidebarListGroup[] = [];
+
+    if (connectors.length > 0) {
+      groups.push({
+        id: "connectors",
+        label: "Connectors",
+        items: connectors.map(toolEntryToSidebarItem),
+      });
+    }
+    if (scripts.length > 0) {
+      groups.push({
+        id: "scripts",
+        label: "TypeScript scripts",
+        icon: <WrenchIcon className="size-3" aria-hidden />,
+        items: scripts.map(toolEntryToSidebarItem),
+      });
+    }
+
+    return groups;
+  }, [filteredToolEntries, draft.enabledConnectorProviders, draft.scriptToolIds]);
 
   const skillSidebarItems: SidebarListItem[] = filteredSkills.map((skill) => ({
     id: skill.id,
@@ -541,55 +514,7 @@ export function AgentSettingsDialogs({
       );
     }
 
-    if (selectedTool.kind === "worker") {
-      const worker = workers.find((w) => w.id === selectedTool.workerId);
-      return (
-        <>
-          <SidebarDetailHeader
-            title={selectedTool.label}
-            status={
-              <span className="text-muted-foreground text-xs">Worker agent</span>
-            }
-          />
-          <p className="text-muted-foreground mb-6 text-sm">
-            {worker?.description ??
-              "Link this worker as a delegate target for batch runs."}
-          </p>
-          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-            <Label htmlFor={`tool-enable-${selectedTool.id}`}>
-              Link worker
-            </Label>
-            <Switch
-              id={`tool-enable-${selectedTool.id}`}
-              checked={enabled}
-              onCheckedChange={(checked) =>
-                toggleWorker(selectedTool.workerId, checked)
-              }
-              disabled={!isWorkerAgentId(selectedTool.workerId)}
-            />
-          </div>
-        </>
-      );
-    }
-
-    return (
-      <>
-        <SidebarDetailHeader title={selectedTool.label} />
-        <p className="text-muted-foreground mb-6 text-sm">
-          Optional capability for this agent beyond the default tool set.
-        </p>
-        <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-          <Label htmlFor={`tool-enable-${selectedTool.id}`}>Enable</Label>
-          <Switch
-            id={`tool-enable-${selectedTool.id}`}
-            checked={enabled}
-            onCheckedChange={(checked) =>
-              toggleOptionalBundle(selectedTool.bundle, checked)
-            }
-          />
-        </div>
-      </>
-    );
+    return null;
   };
 
   const renderSkillDetail = () => {
@@ -815,7 +740,7 @@ export function AgentSettingsDialogs({
         onOpenChange={(open) => !open && onOpenDialogChange(null)}
         title="Tools and access"
         testId="agent-tools-sidebar-dialog"
-        items={toolSidebarItems}
+        groups={toolSidebarGroups}
         selectedId={selectedToolId}
         onSelect={setSelectedToolId}
         searchQuery={toolSearch}
