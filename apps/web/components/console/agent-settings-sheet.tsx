@@ -709,8 +709,6 @@ export function AgentSettingsSheet({
                       <LightbulbIcon className="size-3.5 text-muted-foreground" />
                     }
                     title="No skills bound yet"
-                    onPress={() => setOpenDialog("skills")}
-                    trailing={<AgentSettingCard.ItemCaret />}
                   />
                 ) : (
                   boundSkills.map((skill) => (
