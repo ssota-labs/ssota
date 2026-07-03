@@ -21,9 +21,24 @@ function stripDescriptions(value: unknown): unknown {
   return value;
 }
 
+/** Workflow schemas use regex UUIDs; real tools use format:uuid — treat as equivalent. */
+function normalizeWorkflowSchema(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(normalizeWorkflowSchema);
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([k, v]) => !(k === "format" && v === "uuid"))
+        .filter(([k]) => k !== "pattern")
+        .map(([k, v]) => [k, normalizeWorkflowSchema(v)]),
+    );
+  }
+  return value;
+}
+
 function structureOf(schema: unknown): unknown {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return stripDescriptions(asSchema(schema as any).jsonSchema);
+  return normalizeWorkflowSchema(stripDescriptions(asSchema(schema as any).jsonSchema));
 }
 
 describe("resolveWorkflowToolNames", () => {

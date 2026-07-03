@@ -100,7 +100,7 @@ function promptContainsTrigger(prompt: unknown, trigger: string): boolean {
  * stub runs connection_search → connection_call → a short text reply so
  * E2E can exercise the MCP facade without a real model.
  */
-function stubModel(): LanguageModel {
+export function stubModel(): LanguageModel {
   const defaultReply =
     "안녕하세요. 로컬 stub agent입니다. 채팅 스트리밍 파이프라인이 정상 동작합니다.";
   const connectionReply =

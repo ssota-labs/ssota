@@ -5,6 +5,8 @@ import * as Sentry from "@sentry/nextjs";
 
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    const { registerStubGateway } = await import("@ssota/agent-runtime");
+    registerStubGateway();
     await import("./sentry.server.config");
   }
 

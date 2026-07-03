@@ -1,4 +1,5 @@
 import { after } from "next/server";
+import { isEmulateEnabled } from "@ssota/agent-runtime";
 import { getBot } from "@/lib/chat/bot";
 
 export const runtime = "nodejs";
@@ -33,6 +34,23 @@ export async function POST(
       status: 404,
     });
   }
+
+  // Local emulate E2E: Next `after()` may not run long enough in dev/test, so
+  // await inbound message processing before returning the webhook ack.
+  const awaitInboundProcessing =
+    isEmulateEnabled() && process.env.SLACK_CONNECT === "0";
+
+  if (awaitInboundProcessing) {
+    let background: Promise<unknown> | undefined;
+    const response = await handler(request, {
+      waitUntil: (promise) => {
+        background = promise;
+      },
+    });
+    if (background) await background;
+    return response;
+  }
+
   return handler(request, {
     waitUntil: (promise) => after(() => promise),
   });

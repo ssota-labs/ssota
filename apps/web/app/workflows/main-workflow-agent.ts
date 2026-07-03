@@ -1,4 +1,5 @@
 import { getWorkflowMetadata, getWritable } from "workflow";
+import "@/lib/ai/register-stub-gateway";
 import {
   buildMainWorkflowAgent,
   type ModelCallStreamPart,

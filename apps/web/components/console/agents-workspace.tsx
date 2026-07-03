@@ -107,6 +107,8 @@ export function AgentsWorkspace({
           workers={workers}
           connectors={settingsContext.connectors}
           connections={settingsContext.connections}
+          inboundChannels={settingsContext.inboundChannels}
+          channelsHref={settingsContext.channelsHref}
           schedules={settingsContext.schedules}
           onClose={close}
         />

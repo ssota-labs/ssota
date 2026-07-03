@@ -230,6 +230,38 @@ describe("buildRunInstructionMessages", () => {
     expect(messages).toHaveLength(1);
     expect(messages[0]?.providerOptions).toEqual(ephemeral);
   });
+
+  it("uses specialist chat mode for main runtime with a specialist playbook", () => {
+    const messages = buildRunInstructionMessages({
+      runtimeKind: "main",
+      teamspaceId: "22222222-2222-2222-2222-222222222222",
+      specialistChatPlaybook: {
+        id: BUILTIN_AGENT_IDS.research,
+        teamspaceId: "22222222-2222-2222-2222-222222222222",
+        accountId: null,
+        name: "Research",
+        description: "Research specialist",
+        instructions: [
+          {
+            type: "paragraph",
+            content: [{ type: "text", text: "Summarize findings clearly." }],
+          },
+        ],
+        isMain: false,
+        referenceOnly: false,
+        toolBundles: [],
+        nodeScopes: [],
+        runPolicy: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      },
+    });
+
+    const dynamic = messages.at(-1)?.content ?? "";
+    expect(dynamic).toContain("Specialist chat mode");
+    expect(dynamic).toContain("do not call get_task");
+    expect(dynamic).toContain("Summarize findings clearly.");
+  });
 });
 
 describe("env credential provider", () => {
