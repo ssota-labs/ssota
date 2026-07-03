@@ -982,7 +982,6 @@ export function createTestGate(
 
 import {
   BUILTIN_AGENT_IDS,
-  MAIN_AGENT_ID,
 } from "@ssota/contracts/agents";
 
 const TEST_AGENT_DEFINITIONS = [
