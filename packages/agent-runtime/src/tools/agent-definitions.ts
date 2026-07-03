@@ -9,10 +9,7 @@ import {
   blockNoteContentToText,
   textToBlockNoteContent,
 } from "@ssota/contracts";
-import {
-  getAgentDefinitionById,
-  listRoutableAgentIndex,
-} from "@ssota/contracts/agents";
+import { getAgentDefinitionById } from "@ssota/contracts/agents";
 import { getAgentDefinitionPort } from "../ports.js";
 import { getRunContext } from "./context.js";
 
@@ -27,20 +24,13 @@ export function createAgentDefinitionTools(): ToolSet {
         const items = await listAgentDefinitions(
           getAgentDefinitionPort(ctx.teamspaceId, ctx.accountId),
         );
-        const dbRows = items.map((definition) => ({
-          id: definition.id,
-          name: definition.name,
-          description: definition.description,
-        }));
-        const dbIds = new Set(dbRows.map((r) => r.id));
-        const builtins = listRoutableAgentIndex()
-          .filter((b) => !dbIds.has(b.id))
-          .map((b) => ({
-            id: b.id,
-            name: b.name,
-            description: b.description,
-          }));
-        return { definitions: [...dbRows, ...builtins] };
+        return {
+          definitions: items.map((definition) => ({
+            id: definition.id,
+            name: definition.name,
+            description: definition.description,
+          })),
+        };
       },
     }),
 

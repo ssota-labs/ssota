@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { AgentsWorkspace } from "@/components/console/agents-workspace";
 import { AgentsContentLoading } from "@/components/console/browse-content-loading";
-import { loadAgentGroupsForUi } from "@/lib/console/load-agents-for-ui";
+import { loadAgentDefinitionsForUi } from "@/lib/console/load-agents-for-ui";
 import { loadMainAgentDefinitionForUi } from "@/lib/console/load-main-agent-for-ui";
 import {
   loadAgentSettingsConnections,
@@ -31,22 +31,22 @@ async function AgentsPageInner({
 }) {
   const { orgSlug, teamspaceSlug } = await params;
   const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
-  const [groups, mainAgentDefinition, settingsContext, user] = await Promise.all([
-    loadAgentGroupsForUi(project.id),
-    loadMainAgentDefinitionForUi(project.id),
-    loadAgentSettingsContext(
-      project.id,
-      legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "channels"),
-    ),
-    getCurrentUser(),
-  ]);
+  const [definitions, mainAgentDefinition, settingsContext, user] =
+    await Promise.all([
+      loadAgentDefinitionsForUi(project.id),
+      loadMainAgentDefinitionForUi(project.id),
+      loadAgentSettingsContext(
+        project.id,
+        legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "channels"),
+      ),
+      getCurrentUser(),
+    ]);
 
   const connections =
     user != null
       ? await loadAgentSettingsConnections(project.id, org.id, user.id)
       : { user: [], org: [] };
 
-  const definitions = groups.flatMap((g) => g.items);
   const scriptToolPort = getScriptToolPort(project.id);
   const scriptToolLinks: Record<string, string[]> = {};
   await Promise.all(
@@ -61,7 +61,7 @@ async function AgentsPageInner({
       <AgentsWorkspace
         teamspaceId={project.id}
         mainAgentDefinition={mainAgentDefinition}
-        groups={groups}
+        definitions={definitions}
         settingsContext={{
           ...settingsContext,
           connections,

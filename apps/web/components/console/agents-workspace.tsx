@@ -6,14 +6,13 @@ import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
 import { CardListSheet } from "@/components/card-list-sheet";
 import type { AgentDefinition } from "@ssota/contracts";
 import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
-import type { AgentGroup } from "@/lib/console/load-agents-for-ui";
 import type { AgentSettingsContext } from "@/lib/console/load-agent-settings-context";
 import { isWorkerAgentId } from "@/lib/console/agent-tool-catalog";
 
 type AgentsWorkspaceProps = {
   teamspaceId: string;
   mainAgentDefinition: AgentDefinition;
-  groups: AgentGroup[];
+  definitions: AgentDefinition[];
   settingsContext: AgentSettingsContext;
   scriptToolLinks: Record<string, string[]>;
   skillsHref: string;
@@ -22,17 +21,16 @@ type AgentsWorkspaceProps = {
 export function AgentsWorkspace({
   teamspaceId,
   mainAgentDefinition,
-  groups: initialGroups,
+  definitions: initialDefinitions,
   settingsContext,
   scriptToolLinks,
   skillsHref,
 }: AgentsWorkspaceProps) {
-  const [groups, setGroups] = useState(initialGroups);
+  const [definitions, setDefinitions] = useState(initialDefinitions);
   const [mainAgent, setMainAgent] = useState(mainAgentDefinition);
   const [activeId, setActiveId] = useState<string | null>(null);
   const requestCloseRef = useRef<((action: () => void) => void) | null>(null);
 
-  const definitions = groups.flatMap((group) => group.items);
   const activeDefinition =
     activeId === MAIN_AGENT_ID
       ? mainAgent
@@ -45,8 +43,8 @@ export function AgentsWorkspace({
   );
 
   useEffect(() => {
-    setGroups(initialGroups);
-  }, [initialGroups]);
+    setDefinitions(initialDefinitions);
+  }, [initialDefinitions]);
 
   useEffect(() => {
     setMainAgent(mainAgentDefinition);
@@ -91,7 +89,7 @@ export function AgentsWorkspace({
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Agents"
-          description="Configure the project agent and runnable specialist playbooks."
+          description="Configure the project agent and agents you create for this project."
           actions={
             <a
               href={skillsHref}
@@ -120,36 +118,32 @@ export function AgentsWorkspace({
           </CardListSheet.List>
         </BrowseWorkspace.Section>
 
-        {groups.map((group) => (
-          <BrowseWorkspace.Section key={group.key} label={group.label}>
-            <CardListSheet.List className="border-border bg-transparent">
-              {group.items.map((definition) => (
-                <CardListSheet.Row
-                  key={definition.id}
-                  id={definition.id}
-                  testId={`agent-item-${definition.id}`}
-                  className="bg-transparent hover:bg-muted/30"
-                >
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <span className="text-sm font-medium">{definition.name}</span>
-                    {definition.description ? (
-                      <p className="line-clamp-2 text-xs text-muted-foreground">
-                        {definition.description}
-                      </p>
-                    ) : null}
-                  </div>
-                  <CardListSheet.RowCaret />
-                </CardListSheet.Row>
-              ))}
-            </CardListSheet.List>
-          </BrowseWorkspace.Section>
-        ))}
-
-        {definitions.length === 0 ? (
+        {definitions.length > 0 ? (
+          <CardListSheet.List className="border-border bg-transparent">
+            {definitions.map((definition) => (
+              <CardListSheet.Row
+                key={definition.id}
+                id={definition.id}
+                testId={`agent-item-${definition.id}`}
+                className="bg-transparent hover:bg-muted/30"
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="text-sm font-medium">{definition.name}</span>
+                  {definition.description ? (
+                    <p className="line-clamp-2 text-xs text-muted-foreground">
+                      {definition.description}
+                    </p>
+                  ) : null}
+                </div>
+                <CardListSheet.RowCaret />
+              </CardListSheet.Row>
+            ))}
+          </CardListSheet.List>
+        ) : (
           <BrowseWorkspace.Empty>
-            No runnable agent playbooks seeded for this project yet.
+            No agents yet. Create agents from chat or when applying a template.
           </BrowseWorkspace.Empty>
-        ) : null}
+        )}
       </BrowseWorkspace.Frame>
 
       {open && activeDefinition ? (

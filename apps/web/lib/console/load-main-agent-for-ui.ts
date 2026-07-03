@@ -1,8 +1,5 @@
 import { getTeamspaceMainConfigPort } from "@/lib/ports";
-import {
-  mainConfigToAgentDefinition,
-  type AgentGroup,
-} from "@/lib/console/load-agents-for-ui";
+import { mainConfigToAgentDefinition } from "@/lib/console/load-agents-for-ui";
 
 export async function loadMainAgentDefinitionForUi(teamspaceId: string) {
   const config = await getTeamspaceMainConfigPort().getMainConfig(teamspaceId);

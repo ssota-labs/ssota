@@ -1,9 +1,6 @@
 import type { AgentDefinition, AgentDefinitionIndex } from "@ssota/contracts";
 import { blockNoteContentToText } from "@ssota/contracts";
-import {
-  getAgentDefinitionById,
-  listRunnableBuiltinAgentIds,
-} from "@ssota/contracts/agents";
+import { getAgentDefinitionById } from "@ssota/contracts/agents";
 import { createAgentDefinitionPort } from "@ssota/adapter-postgres";
 import type { getDb } from "@/lib/ports";
 
@@ -28,18 +25,7 @@ function serializeAgentSummary(
 export async function listAgentsForMcp(db: Db, teamspaceId: string) {
   const port = createAgentDefinitionPort(db, { teamspaceId });
   const items = await port.listDefinitions();
-  const dbIds = new Set(items.map((w) => w.id));
-  const builtins: AgentSummary[] = listRunnableBuiltinAgentIds()
-    .filter((id) => !dbIds.has(id))
-    .map((id) => {
-      const builtin = getAgentDefinitionById(id)!;
-      return {
-        id: builtin.id,
-        name: builtin.title,
-        description: builtin.description,
-      };
-    });
-  return { agents: [...items.map(serializeAgentSummary), ...builtins] };
+  return { agents: items.map(serializeAgentSummary) };
 }
 
 export async function getAgentForMcp(

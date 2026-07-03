@@ -1,7 +1,7 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
 import type { AgentTrigger } from "@ssota/contracts";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
-import { getAgentDefinitionById, listRoutableAgentIndex, BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+import { getAgentDefinitionById, BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import { serializeTask, readAgentDefinitionById } from "@ssota/core";
 import { getTaskPort, getAgentDefinitionPort, getSkillPort, getTeamspaceMainConfigPort, ensureTeamspaceOrganizationScope } from "./ports.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
@@ -186,16 +186,11 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
       const mainConfigPort = getTeamspaceMainConfigPort();
       const mainConfig = await mainConfigPort.getMainConfig(teamspaceId);
       const dbDefinitions = await instructionPort.listDefinitions();
-      const dbIds = new Set(dbDefinitions.map((w) => w.id));
-      const builtins = listRoutableAgentIndex().filter((b) => !dbIds.has(b.id));
-      const agentManifest = [
-        ...dbDefinitions.map((w) => ({
-          id: w.id,
-          name: w.name,
-          description: w.description,
-        })),
-        ...builtins,
-      ];
+      const agentManifest = dbDefinitions.map((w) => ({
+        id: w.id,
+        name: w.name,
+        description: w.description,
+      }));
       instructions = buildRunInstructionMessages({
         runtimeKind: "main",
         teamspaceId,
