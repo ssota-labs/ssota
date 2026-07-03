@@ -28,7 +28,7 @@ import {
   createSlackWebhookVerifier,
   resolveSlackSigningSecret,
 } from "./slack-webhook-verify";
-import { getSlackBotTokenForInstallation } from "./slack-token";
+import { getSlackBotTokenForInstallation, getCachedSlackTokenSubject, isSlackNotAllowedTokenTypeError } from "./slack-token";
 
 type ChatThreadState = {
   agentDefinitionId?: string;
@@ -182,6 +182,19 @@ async function collectTextStream(
   return text.trim();
 }
 
+function emptyAgentReply(): string {
+  return "Sorry — I couldn't generate a reply right now. Please try again in a moment.";
+}
+
+async function postCollectedAgentReply(
+  thread: { post: (message: string) => Promise<unknown> },
+  run: Awaited<ReturnType<typeof start>>,
+  stream: AsyncIterable<string>,
+): Promise<void> {
+  const text = await collectEmulateAgentReply(run, stream);
+  await thread.post(text.trim() ? text : emptyAgentReply());
+}
+
 /**
  * Emulate + inline workflow runs may finish before the durable stream closes.
  * Race stream collection against workflow completion, then fall back to the stub
@@ -259,8 +272,7 @@ async function handleInboundMessage(
     try {
       await thread.startTyping();
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (!message.includes("not_allowed_token_type")) {
+      if (!isSlackNotAllowedTokenTypeError(error)) {
         throw error;
       }
       // User-subject Slack tokens (xoxp) cannot call assistant.threads.setStatus.
@@ -275,19 +287,35 @@ async function handleInboundMessage(
     workspaceKey,
   );
 
-  if (isEmulateEnabled()) {
-    const text = await collectEmulateAgentReply(run, stream);
-    if (!text.trim()) {
-      await thread.post(
-        "Sorry — I couldn't generate a reply right now. Please try again in a moment.",
-      );
-      return;
-    }
-    await thread.post(text);
+  if (workspaceKey && !isEmulateEnabled()) {
+    await getSlackBotTokenForInstallation(workspaceKey);
+  }
+
+  const slackTokenSubject = workspaceKey
+    ? getCachedSlackTokenSubject(workspaceKey)
+    : undefined;
+  const useSlackPlainPost =
+    isEmulateEnabled() || slackTokenSubject === "user";
+
+  if (useSlackPlainPost) {
+    await postCollectedAgentReply(thread, run, stream);
     return;
   }
 
-  await thread.post(stream);
+  try {
+    await thread.post(stream);
+  } catch (error) {
+    if (!isSlackNotAllowedTokenTypeError(error)) {
+      throw error;
+    }
+    console.warn(
+      "[chat-sdk:slack] Slack streaming post failed with not_allowed_token_type; reconnect Slack from Channels for bot token",
+      { threadId: thread.id, workspaceKey },
+    );
+    await thread.post(
+      "I generated a reply but Slack rejected delivery (token type). An admin should reconnect Slack from the project's Channels page so SSOTA can use a bot token.",
+    );
+  }
 }
 
 let cached: Chat | undefined;

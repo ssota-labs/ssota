@@ -131,4 +131,78 @@ describe("getSlackBotTokenForInstallation", () => {
       installationId: "T0914DV7GA0",
     });
   });
+
+  it("caches user subject when Connect falls back to user token", async () => {
+    resolveWorkspace.mockResolvedValue({
+      teamspaceId: "teamspace-1",
+      accountId: "acct-1",
+    });
+    listScopes.mockResolvedValue([
+      {
+        connector: "slack/ssota",
+        installationId: "T0914DV7GA0",
+        tenantId: "T0914DV7GA0",
+        subjectUserId: "user-who-connected",
+        installationName: "SSOTA Labs",
+      },
+    ]);
+    getToken
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ token: "xoxp-user-fallback" });
+
+    const { getSlackBotTokenForInstallation, getCachedSlackTokenSubject } =
+      await import("./slack-token");
+    await getSlackBotTokenForInstallation("T0914DV7GA0");
+
+    expect(getCachedSlackTokenSubject("T0914DV7GA0")).toBe("user");
+  });
+
+  it("caches app subject when Connect returns bot token", async () => {
+    resolveWorkspace.mockResolvedValue({
+      teamspaceId: "teamspace-1",
+      accountId: "acct-1",
+    });
+    listScopes.mockResolvedValue([
+      {
+        connector: "slack/ssota",
+        installationId: "T0914DV7GA0",
+        tenantId: "T0914DV7GA0",
+        subjectUserId: null,
+        installationName: "SSOTA Labs",
+      },
+    ]);
+    getToken.mockResolvedValueOnce({ token: "xoxb-minted" });
+
+    const { getSlackBotTokenForInstallation, getCachedSlackTokenSubject } =
+      await import("./slack-token");
+    await getSlackBotTokenForInstallation("T0914DV7GA0");
+
+    expect(getCachedSlackTokenSubject("T0914DV7GA0")).toBe("app");
+  });
+});
+
+describe("slack token helpers", () => {
+  it("detects user tokens by prefix", async () => {
+    const { isSlackUserToken } = await import("./slack-token");
+    expect(isSlackUserToken("xoxp-123")).toBe(true);
+    expect(isSlackUserToken("xoxb-123")).toBe(false);
+  });
+
+  it("detects not_allowed_token_type Slack API errors", async () => {
+    const { isSlackNotAllowedTokenTypeError } = await import("./slack-token");
+    expect(
+      isSlackNotAllowedTokenTypeError(
+        new Error("An API error occurred: not_allowed_token_type"),
+      ),
+    ).toBe(true);
+    expect(
+      isSlackNotAllowedTokenTypeError({
+        code: "slack_webapi_platform_error",
+        data: { ok: false, error: "not_allowed_token_type" },
+      }),
+    ).toBe(true);
+    expect(isSlackNotAllowedTokenTypeError(new Error("channel_not_found"))).toBe(
+      false,
+    );
+  });
 });

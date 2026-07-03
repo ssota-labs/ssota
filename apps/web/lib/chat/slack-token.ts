@@ -53,12 +53,52 @@ function pickSlackScope(
   );
 }
 
+export type SlackTokenSubject = "app" | "user";
+
+const tokenSubjectByInstallation = new Map<string, SlackTokenSubject>();
+
+function cacheSlackTokenSubject(
+  installationId: string | undefined,
+  tokenSubject: SlackTokenSubject,
+): void {
+  if (installationId) {
+    tokenSubjectByInstallation.set(installationId, tokenSubject);
+  }
+}
+
+export function getCachedSlackTokenSubject(
+  installationId: string,
+): SlackTokenSubject | undefined {
+  return tokenSubjectByInstallation.get(installationId);
+}
+
+export function isSlackUserToken(token: string): boolean {
+  return token.startsWith("xoxp");
+}
+
+export function isSlackNotAllowedTokenTypeError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  if (message.includes("not_allowed_token_type")) return true;
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code?: unknown }).code)
+      : "";
+  if (code === "slack_webapi_platform_error" && error && typeof error === "object") {
+    const data =
+      "data" in error && error.data && typeof error.data === "object"
+        ? (error.data as { error?: unknown })
+        : undefined;
+    return data?.error === "not_allowed_token_type";
+  }
+  return false;
+}
+
 async function mintSlackBotToken(input: {
   teamspaceId: string;
   accountId: string;
   installationId?: string;
   connectorUid?: string;
-}): Promise<string | null> {
+}): Promise<{ token: string; tokenSubject: SlackTokenSubject } | null> {
   const db = getDb();
   const accountConnections = createAccountConnectionPort(db);
   const scopes = await accountConnections.listConnectCredentialScopes(
@@ -83,19 +123,28 @@ async function mintSlackBotToken(input: {
     installationId,
   };
 
-  // Inbound bot APIs (post, assistant.threads.setStatus) need bot token (xoxb).
+  // Inbound bot APIs (streaming, assistant.threads.setStatus) need bot token (xoxb).
   // Connect exposes that via app-subject + installationId after Channels OAuth.
   const appCred = await provider.getToken(connector, tokenScope);
-  if (appCred?.token) return appCred.token;
+  if (appCred?.token) {
+    const tokenSubject: SlackTokenSubject = isSlackUserToken(appCred.token)
+      ? "user"
+      : "app";
+    cacheSlackTokenSubject(installationId, tokenSubject);
+    return { token: appCred.token, tokenSubject };
+  }
 
-  // Fallback: user-subject grant from Channels OAuth (xoxp — limited API surface).
+  // Fallback: user-subject grant from Channels OAuth (xoxp — chat.postMessage only).
   const subjectUserId = slackScope?.subjectUserId ?? undefined;
   if (subjectUserId) {
     const userCred = await provider.getToken(connector, {
       ...tokenScope,
       userId: subjectUserId,
     });
-    if (userCred?.token) return userCred.token;
+    if (userCred?.token) {
+      cacheSlackTokenSubject(installationId, "user");
+      return { token: userCred.token, tokenSubject: "user" };
+    }
   }
 
   return null;
@@ -121,12 +170,13 @@ export async function getSlackBotTokenForInstallation(
   const accountId =
     link?.accountId ?? (await getOrCreateProjectAccount(teamspaceId)).id;
 
-  return mintSlackBotToken({
+  const minted = await mintSlackBotToken({
     teamspaceId,
     accountId,
     installationId,
     connectorUid: defaultSlackConnectorUid(),
   });
+  return minted?.token ?? null;
 }
 
 export async function getSlackBotTokenForTeamspace(
@@ -148,10 +198,11 @@ export async function getSlackBotTokenForTeamspace(
 
   const account = await getOrCreateProjectAccount(teamspaceId);
 
-  return mintSlackBotToken({
+  const minted = await mintSlackBotToken({
     teamspaceId,
     accountId: account.id,
     installationId: slackWorkspace?.workspaceKey ?? workspaceKey,
     connectorUid: defaultSlackConnectorUid(),
   });
+  return minted?.token ?? null;
 }
