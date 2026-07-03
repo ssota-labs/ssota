@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   AtIcon,
   ChatsCircleIcon,
@@ -13,7 +13,7 @@ import {
 } from "@phosphor-icons/react";
 import type { Block } from "@blocknote/core";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
-import { Button } from "@ssota/ui/components/ui/button";
+import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +45,7 @@ import {
 } from "@/components/console/agent-settings-dialogs";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
+import { buildConnectorAuthorizeHref } from "@/lib/connect/authorize-href";
 import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
@@ -123,6 +124,7 @@ export function AgentSettingsSheet({
   registerRequestClose,
 }: AgentSettingsSheetProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [draft, setDraft] = useState(() =>
     buildDraft(definition, initialScriptToolIds, schedules),
   );
@@ -519,11 +521,30 @@ export function AgentSettingsSheet({
                               : "Enabled — not connected"
                           }
                           trailing={
-                            connected
-                              ? count > 1
-                                ? `${count} accounts`
-                                : "Connected"
-                              : "Pending"
+                            connected ? (
+                              count > 1 ? (
+                                `${count} accounts`
+                              ) : (
+                                "Connected"
+                              )
+                            ) : (
+                              <a
+                                href={buildConnectorAuthorizeHref({
+                                  slug: connector.provider,
+                                  teamspaceId,
+                                  accountId,
+                                  returnTo: pathname,
+                                })}
+                                className={buttonVariants({
+                                  variant: "secondary",
+                                  size: "sm",
+                                  className: "h-7 shrink-0",
+                                })}
+                                data-testid={`agent-connector-connect-${connector.provider}`}
+                              >
+                                Connect
+                              </a>
+                            )
                           }
                         />
                       );

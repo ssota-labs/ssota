@@ -34,6 +34,10 @@ import {
   type ConnectorDef,
   type ConnectorProvider,
 } from "@/lib/connect/connectors";
+import {
+  buildConnectorAuthorizeHref,
+  type ConnectorConnectScope,
+} from "@/lib/connect/authorize-href";
 
 export interface ConnectorConnection {
   /** Composio connected-account id (used to disconnect). */
@@ -49,7 +53,7 @@ export interface ScopedConnections {
   org: ConnectorConnection[];
 }
 
-type Scope = "user" | "org";
+type Scope = ConnectorConnectScope;
 
 const SCOPE_META: Record<Scope, { title: string; subtitle: string; icon: Icon }> = {
   user: {
@@ -72,23 +76,6 @@ interface ConnectorsViewProps {
   returnTo: string;
   /** Show the org-shared scope (builder console). End-user app shows personal only. */
   allowOrgScope: boolean;
-}
-
-function authorizeHref(params: {
-  slug: string;
-  teamspaceId: string;
-  accountId: string;
-  returnTo: string;
-  scope: Scope;
-}): string {
-  const search = new URLSearchParams({
-    connector: params.slug,
-    accountId: params.accountId,
-    teamspaceId: params.teamspaceId,
-    returnTo: params.returnTo,
-  });
-  if (params.scope === "org") search.set("scope", "org");
-  return `/api/connect/authorize?${search.toString()}`;
 }
 
 export function ConnectorsView({
@@ -369,7 +356,7 @@ function ScopeDetail({
   const meta = SCOPE_META[scope];
   const ScopeIcon = meta.icon;
   const connected = connections.length > 0;
-  const href = authorizeHref({
+  const href = buildConnectorAuthorizeHref({
     slug: connector.provider,
     teamspaceId,
     accountId,
