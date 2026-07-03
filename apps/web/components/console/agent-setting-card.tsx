@@ -35,7 +35,7 @@ export function AgentSettingCard({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-lg border border-border bg-card",
+        "overflow-hidden rounded-lg border border-border bg-transparent",
         className,
       )}
       data-testid={testId}
