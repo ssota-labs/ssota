@@ -11,6 +11,7 @@ import {
   createOrganizationMembersPort,
   createTaskPort,
   createAgentDefinitionPort,
+  createTeamspaceMainConfigPort,
   createSkillPort,
   createSchedulePort,
   createScriptToolPort,
@@ -110,6 +111,10 @@ export async function getOrCreateProjectAccount(
 
 export function getAgentDefinitionPort(teamspaceId: string) {
   return createAgentDefinitionPort(getDb(), { teamspaceId });
+}
+
+export function getTeamspaceMainConfigPort() {
+  return createTeamspaceMainConfigPort(getDb());
 }
 
 /** @deprecated Use getAgentDefinitionPort */

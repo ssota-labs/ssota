@@ -22,6 +22,10 @@ export {
   createWorkflowInstructionPort,
   seedWorkflowInstructions,
 } from "./agent-definition-port.js";
+export {
+  createTeamspaceMainConfigPort,
+  seedTeamspaceMainConfig,
+} from "./teamspace-main-config-port.js";
 export { createScriptToolPort } from "./script-tool-port.js";
 export { createSkillPort } from "./skill-port.js";
 export {

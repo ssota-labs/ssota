@@ -10,6 +10,7 @@ export * from "./workflow-store.js";
 export * from "./task.js";
 export * from "./execution-directive.js";
 export * from "./agent-definition.js";
+export * from "./teamspace-main-config.js";
 export * from "./script-tool.js";
 export * from "./skill.js";
 export * from "./sandbox-environment.js";

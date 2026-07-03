@@ -14,10 +14,6 @@ export const BUILTIN_AGENT_IDS = {
   workerGraphBatch: "a0000000-0000-4000-8000-000000000011",
   workerConnectorSync: "a0000000-0000-4000-8000-000000000012",
   workerReportBuilder: "a0000000-0000-4000-8000-000000000013",
-  guideAgentAuthoring: "a0000000-0000-4000-8000-000000000020",
-  guidePageAuthoring: "a0000000-0000-4000-8000-000000000021",
-  guideScriptToolAuthoring: "a0000000-0000-4000-8000-000000000022",
-  guideTaskDelegation: "a0000000-0000-4000-8000-000000000023",
 } as const;
 
 export type BuiltinAgentId =

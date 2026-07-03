@@ -182,42 +182,10 @@ export function isKnownWorkflowKey(
 
 /**
  * Built-in workflows ship in code and are available in EVERY project without
- * being seeded into the DB. They are merged into the runtime manifest and
- * resolved by `get_workflow_instruction` as a fallback when a project has no
- * DB row for the key (a project may override a built-in by writing its own row
- * with the same key). Kept OUT of {@link WORKFLOW_INSTRUCTION_SEEDS}.
+ * being seeded into the DB. Kept OUT of {@link WORKFLOW_INSTRUCTION_SEEDS}.
+ * (Currently empty — teamspace setup is handled by the main agent runtime.)
  */
-const BUILTIN_WORKFLOW_META: WorkflowMeta[] = [
-  {
-    workflowKey: "agent.setup",
-    title: "Teamspace setup",
-    description:
-      "Set up a project from scratch (or reconfigure it): interview the user about the domain and goals, then author workflows and build pages so the project can operate. Use when the project has no workflows yet, or the user wants to (re)configure how it works.",
-    category: "orchestrator",
-    cadenceHint: "on_demand",
-    defaultExecutorType: "Agent",
-    defaultStatus: "ready",
-    instructionFile: "agent.setup.md",
-  },
-  {
-    workflowKey: "agent.guide.page_authoring",
-    title: "Guide: page authoring",
-    description:
-      "Reference for the json-render page format (spec, bindings, actions). Load when authoring pages.",
-    category: "orchestrator",
-    reference: true,
-    instructionFile: "agent.guide.page_authoring.md",
-  },
-  {
-    workflowKey: "agent.guide.workflow_authoring",
-    title: "Guide: workflow authoring",
-    description:
-      "Reference for writing good workflow instructions (key naming, description, body). Load when authoring workflows.",
-    category: "orchestrator",
-    reference: true,
-    instructionFile: "agent.guide.workflow_authoring.md",
-  },
-];
+const BUILTIN_WORKFLOW_META: WorkflowMeta[] = [];
 
 export const BUILTIN_WORKFLOW_REGISTRY: Record<
   string,
@@ -258,7 +226,7 @@ import type { WorkflowInstructionSeed } from "../workflow-instruction.js";
  * DB seeds for project bootstrap — intentionally EMPTY. WORKFLOW_META and the
  * registry are kept in code for metadata/reference, but workflows are no longer
  * seeded into each project's DB. A project starts empty and the agent authors
- * workflows on demand (the `agent.setup` built-in bootstraps this).
+ * workflows on demand via write tools and the main agent runtime.
  * `buildWorkflowInstructionSeeds` (./seed.js) stays available if explicit
  * seeding is ever needed again.
  */

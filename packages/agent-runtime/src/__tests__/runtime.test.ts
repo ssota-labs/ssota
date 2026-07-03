@@ -122,8 +122,6 @@ describe("buildRunInstructions", () => {
             content: [{ type: "text", text: "Playbook body" }],
           },
         ],
-        isMain: false,
-        referenceOnly: false,
         toolBundles: [],
         nodeScopes: [],
         runPolicy: {},
@@ -158,7 +156,7 @@ describe("buildRunInstructions", () => {
     const prompt = buildRunInstructions({
       runtimeKind: "main",
       teamspaceId: "22222222-2222-2222-2222-222222222222",
-      mainDefinition: null,
+      mainConfig: null,
     });
     expect(prompt).toMatch(/persistent chat thread/i);
   });
@@ -225,7 +223,7 @@ describe("buildRunInstructionMessages", () => {
     const messages = buildRunInstructionMessages({
       runtimeKind: "scheduler",
       teamspaceId: "22222222-2222-2222-2222-222222222222",
-      mainDefinition: null,
+      mainConfig: null,
     });
     expect(messages).toHaveLength(1);
     expect(messages[0]?.providerOptions).toEqual(ephemeral);
@@ -247,8 +245,6 @@ describe("buildRunInstructionMessages", () => {
             content: [{ type: "text", text: "Summarize findings clearly." }],
           },
         ],
-        isMain: false,
-        referenceOnly: false,
         toolBundles: [],
         nodeScopes: [],
         runPolicy: {},
