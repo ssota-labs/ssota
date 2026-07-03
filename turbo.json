@@ -39,6 +39,18 @@
     },
     "test": {
       "dependsOn": ["^build"]
+    },
+    "@ssota/contracts#test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/AGENTS.md",
+        "$TURBO_ROOT$/CLAUDE.md",
+        "$TURBO_ROOT$/DESIGN.md",
+        "$TURBO_ROOT$/scripts/harness/**",
+        "$TURBO_ROOT$/packages/config/eslint/**",
+        "$TURBO_ROOT$/.github/workflows/**"
+      ]
     }
   }
 }

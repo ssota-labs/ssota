@@ -472,6 +472,7 @@ MVP 마일스톤(M0–M6)의 “마일스톤당 1커밋”은 이 정책의 **�
 - **계약 SSOT**: `packages/contracts/src/invariants/rules.ts` — 모든 `[AREA-NN]` 룰의 정의·레벨·강제 수단. 이 문서의 태그와 계약의 ID는 `pnpm harness:docs`가 동기화를 강제한다 (드리프트 = 모든 테스트 차단).
 - **체크 명령**: `pnpm harness:docs`(문서 동기화) / `pnpm harness:boundaries`(우회 스캔) / `pnpm harness:env`(환경 프리플라이트) / `pnpm harness:mirrors`(스킬 미러 정합) / `pnpm harness`(전부).
 - **allowlist 정책**: 룰 예외는 코드에 몰래 두지 않는다 — `scripts/harness/allowlists/*.json` 또는 `packages/config/eslint/allowlists.js`에 **경로 + 룰 ID + 사유**로 등록한다. 죽은 예외(존재하지 않는 경로)는 `harness:docs`가 실패시킨다.
+- **[ENV-02] 스킬 미러**: 스킬 정본은 `.agents/skills/`이며 `.claude/skills/`·`.cursor/skills/` 미러와 `skills-lock.json`은 정합해야 한다. 드리프트는 `pnpm harness:mirrors`가 잡는다 — 미러를 직접 수정하지 말고 정본을 고친 뒤 복사한다.
 - **에러 메시지 = 지시문**: 하네스 체크의 실패 출력은 "무엇이 왜 실패했고, 다음에 뭘 해야 하는지"를 담는다. 실패를 우회하지 말고 출력의 Next steps를 따른다.
 - **dev-identity**: 여러 worktree에서 dev 서버를 띄우는 환경에서는, 브라우저·스크린샷 검증 전에 `node scripts/harness/check-dev-identity.mjs --url http://localhost:<port>`로 그 포트가 **내 worktree의 서버**인지 확인한다. 포트가 열려 있다는 것은 내 서버라는 뜻이 아니다.
 

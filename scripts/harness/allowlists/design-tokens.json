@@ -1,0 +1,87 @@
+[
+  {
+    "path": "apps/web/components/connections/additional-brand-icons.tsx",
+    "ruleId": "DS-01",
+    "reason": "브랜드 로고 SVG 고유 색상 — semantic token 부적용 대상"
+  },
+  {
+    "path": "apps/web/components/connections/google-workspace-icons.tsx",
+    "ruleId": "DS-01",
+    "reason": "브랜드 로고 SVG 고유 색상 — semantic token 부적용 대상"
+  },
+  {
+    "path": "packages/ui/src/components/ui/chart.tsx",
+    "ruleId": "DS-01",
+    "reason": "shadcn chart 기본 컴포넌트의 CSS 변수 fallback hex"
+  },
+  {
+    "path": "packages/ui/src/components/design-studio/inspector-controls.tsx",
+    "ruleId": "DS-01",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/components/tasks/tasks-kanban-board.tsx",
+    "ruleId": "DS-01",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/lib/page-runtime/components/flow-edge.tsx",
+    "ruleId": "DS-01",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/lib/page-runtime/components/erd-relation-edge.tsx",
+    "ruleId": "DS-01",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/lib/page-runtime/components/test-results.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/lib/page-runtime/components/schema-display.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/lib/page-runtime/components/flow-node.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/lib/page-runtime/components/document-status-badge.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/lib/page-runtime/components/erd-table-node.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/lib/wireframe/primitives.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/components/console/roadmap/planning-roadmaps-section.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/components/console/agent-settings-sidebar-dialog.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/app/editor-lab/page.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  },
+  {
+    "path": "apps/web/app/editor-lab-blocknote/page.tsx",
+    "ruleId": "DS-02",
+    "reason": "하네스 도입 이전 베이스라인 — semantic token 전환 대상 (디자인 부채)"
+  }
+]
