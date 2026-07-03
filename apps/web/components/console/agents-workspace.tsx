@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
 import { CardListSheet } from "@/components/card-list-sheet";
@@ -25,6 +25,7 @@ export function AgentsWorkspace({
 }: AgentsWorkspaceProps) {
   const [groups, setGroups] = useState(initialGroups);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const requestCloseRef = useRef<((action: () => void) => void) | null>(null);
 
   const definitions = groups.flatMap((group) => group.items);
   const activeDefinition =
@@ -42,10 +43,36 @@ export function AgentsWorkspace({
 
   const close = () => setActiveId(null);
 
+  const handleActiveIdChange = useCallback(
+    (nextId: string | null) => {
+      if (activeId === null) {
+        setActiveId(nextId);
+        return;
+      }
+      if (nextId === activeId) {
+        return;
+      }
+      const applyChange = () => setActiveId(nextId);
+      if (requestCloseRef.current) {
+        requestCloseRef.current(applyChange);
+        return;
+      }
+      applyChange();
+    },
+    [activeId],
+  );
+
+  const registerRequestClose = useCallback(
+    (requestClose: ((action: () => void) => void) | null) => {
+      requestCloseRef.current = requestClose;
+    },
+    [],
+  );
+
   return (
     <CardListSheet.Root
       activeId={activeId}
-      onActiveIdChange={setActiveId}
+      onActiveIdChange={handleActiveIdChange}
       className="absolute inset-0 flex flex-col"
       testId="agents-workspace"
     >
@@ -109,6 +136,7 @@ export function AgentsWorkspace({
           connections={settingsContext.connections}
           schedules={settingsContext.schedules}
           onClose={close}
+          registerRequestClose={registerRequestClose}
         />
       ) : null}
     </CardListSheet.Root>

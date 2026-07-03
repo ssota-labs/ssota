@@ -179,6 +179,30 @@ test.describe("Agents", () => {
     await expect(saveButton).toBeDisabled();
   });
 
+  test("confirms discard when closing with unsaved changes", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page
+      .getByTestId("agent-trigger-task")
+      .getByRole("switch")
+      .click();
+
+    await page.getByTestId("card-list-sheet-close").click();
+
+    const dialog = page.getByTestId("agent-settings-discard-dialog");
+    await expect(dialog).toBeVisible();
+    await page.getByTestId("agent-settings-discard-cancel").click();
+    await expect(dialog).not.toBeVisible();
+    await expect(page.getByTestId("agent-settings-sheet")).toBeVisible();
+
+    await page.getByTestId("card-list-sheet-close").click();
+    await expect(dialog).toBeVisible();
+    await page.getByTestId("agent-settings-discard-confirm").click();
+    await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
+  });
+
   test("sidebar nav link reaches agents", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "overview");

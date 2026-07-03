@@ -15,6 +15,16 @@ import type { Block } from "@blocknote/core";
 import type { AgentDefinition, AgentTrigger } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@ssota/ui/components/ui/alert-dialog";
+import {
   Popover,
   PopoverContent,
 } from "@ssota/ui/components/ui/popover";
@@ -69,6 +79,9 @@ type AgentSettingsSheetProps = {
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
   schedules: AgentScheduleSummary[];
   onClose: () => void;
+  registerRequestClose?: (
+    requestClose: ((action: () => void) => void) | null,
+  ) => void;
 };
 
 /** Default triggers always shown on the card (not added via sidebar). */
@@ -112,11 +125,14 @@ export function AgentSettingsSheet({
   connections,
   schedules,
   onClose,
+  registerRequestClose,
 }: AgentSettingsSheetProps) {
   const router = useRouter();
   const [draft, setDraft] = useState(() =>
     buildDraft(definition, initialScriptToolIds, schedules),
   );
+  const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const pendingCloseActionRef = useRef<(() => void) | null>(null);
   const [openDialog, setOpenDialog] = useState<AgentSettingsDialogKind | null>(
     null,
   );
@@ -145,17 +161,43 @@ export function AgentSettingsSheet({
     [draft, savedDraft, agentSchedules],
   );
 
+  const requestClose = useCallback(
+    (action: () => void) => {
+      if (!isDirty) {
+        action();
+        return;
+      }
+      if (discardDialogOpen) {
+        return;
+      }
+      pendingCloseActionRef.current = action;
+      setDiscardDialogOpen(true);
+    },
+    [discardDialogOpen, isDirty],
+  );
+
   const handleClose = useCallback(() => {
-    if (
-      isDirty &&
-      !window.confirm(
-        "You have unsaved changes. Close without saving?",
-      )
-    ) {
-      return;
+    requestClose(onClose);
+  }, [requestClose, onClose]);
+
+  const handleDiscardDialogOpenChange = useCallback((open: boolean) => {
+    if (!open) {
+      pendingCloseActionRef.current = null;
+      setDiscardDialogOpen(false);
     }
-    onClose();
-  }, [isDirty, onClose]);
+  }, []);
+
+  const handleDiscardChanges = useCallback(() => {
+    const action = pendingCloseActionRef.current;
+    pendingCloseActionRef.current = null;
+    setDiscardDialogOpen(false);
+    action?.();
+  }, []);
+
+  useEffect(() => {
+    registerRequestClose?.(requestClose);
+    return () => registerRequestClose?.(null);
+  }, [registerRequestClose, requestClose]);
 
   const editingSchedule = editingScheduleId
     ? agentSchedules.find((s) => s.id === editingScheduleId)
@@ -578,6 +620,32 @@ export function AgentSettingsSheet({
         openDialog={openDialog}
         onOpenDialogChange={setOpenDialog}
       />
+
+      <AlertDialog
+        open={discardDialogOpen}
+        onOpenChange={handleDiscardDialogOpenChange}
+      >
+        <AlertDialogContent data-testid="agent-settings-discard-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard unsaved changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your changes have not been saved. Close without saving and they
+              will not apply to the agent runtime.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="agent-settings-discard-cancel">
+              Keep editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="agent-settings-discard-confirm"
+              onClick={handleDiscardChanges}
+            >
+              Discard changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
