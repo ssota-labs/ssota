@@ -197,8 +197,7 @@ function InboundChannelSettingsPanel({
             ) : (
               <p className="text-sm text-muted-foreground">
                 Connect your {channel.label} workspace so agents can receive
-                inbound @mentions and post replies. This uses Vercel Connect on
-                Channels — not the Composio card on Connections.
+                inbound @mentions and post replies.
               </p>
             )}
 
@@ -242,7 +241,7 @@ export function ChannelsWorkspace({
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Channels"
-          description="Connect Slack or Discord so agents can receive inbound messages. Agent tools (search, post via Composio) stay on the Connections page."
+          description="Connect Slack or Discord so agents can receive inbound messages and @mentions."
         />
         <BrowseWorkspace.Grid>
           {channels.map((channel) => (

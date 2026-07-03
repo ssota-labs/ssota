@@ -49,7 +49,7 @@ test.describe("inbound-channels-ui", () => {
     await expect(addDialog.getByText("Open Channels")).toBeVisible();
     await expect(addDialog.getByTestId("add-trigger-confirm")).toBeDisabled();
     await expect(
-      addDialog.getByText(/Inbound Slack is not connected/i),
+      addDialog.getByText(/Slack is not connected for this project/i),
     ).toBeVisible();
 
     await addDialog.screenshot({
@@ -88,7 +88,7 @@ test.describe("inbound-channels-ui", () => {
       addDialog.getByText(/creates a Slack user group/i),
     ).toBeVisible();
     await expect(
-      addDialog.getByText(/Inbound Slack is not connected/i),
+      addDialog.getByText(/Slack is not connected for this project/i),
     ).toHaveCount(0);
 
     await addDialog.screenshot({

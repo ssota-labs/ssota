@@ -630,9 +630,8 @@ export function AgentSettingsDialogs({
         !slackInbound?.ready ? (
           <div className="mb-4 space-y-3 rounded-lg border px-4 py-3">
             <p className="text-sm">
-              Inbound Slack is not connected for this project. Connect the same
-              workspace on Channels (Vercel Connect), not the Composio card on
-              Connections.
+              Slack is not connected for this project yet. Connect your workspace
+              on the Channels page to enable @mentions.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
