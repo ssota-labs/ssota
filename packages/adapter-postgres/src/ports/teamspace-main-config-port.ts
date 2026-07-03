@@ -7,7 +7,6 @@ import {
   DEFAULT_MAIN_RUN_POLICY,
   textToBlockNoteContent,
   type TeamspaceMainConfig,
-  type UpdateTeamspaceMainConfigInput,
 } from "@ssota/contracts";
 import { getMainAgentDefinition } from "@ssota/contracts/agents";
 import type { Db } from "../db/client.js";
@@ -99,8 +98,6 @@ export async function seedTeamspaceMainConfig(
   db: Db,
   teamspaceId: string,
 ): Promise<void> {
-  const port = createTeamspaceMainConfigPort(db);
-  const existing = await port.getMainConfig(teamspaceId);
   const rows = await db
     .select()
     .from(schema.teamspaces)
@@ -118,6 +115,7 @@ export async function seedTeamspaceMainConfig(
 
   if (hasStored) return;
 
+  const port = createTeamspaceMainConfigPort(db);
   const defaults = defaultMainConfig(teamspaceId);
   await port.updateMainConfig(teamspaceId, {
     instructions: defaults.instructions,
