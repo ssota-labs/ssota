@@ -55,7 +55,7 @@ export function AgentSettingCard({
       ) : (
         <div className="px-4 py-3">{header}</div>
       )}
-      {children ? <div className="px-3 pb-2">{children}</div> : null}
+      {children ? <div className="select-none px-3 pb-2">{children}</div> : null}
       {footer ? (
         <div className="border-border/60 border-t px-3 py-2">{footer}</div>
       ) : null}
