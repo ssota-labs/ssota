@@ -821,14 +821,7 @@ export function AgentSettingsDialogs({
         searchQuery={toolSearch}
         onSearchQueryChange={setToolSearch}
         searchPlaceholder="Search tools…"
-        detail={
-          <>
-            <p className="text-muted-foreground mb-4 text-xs">
-              Graph and task tools are always available in the background.
-            </p>
-            {renderToolDetail()}
-          </>
-        }
+        detail={renderToolDetail()}
         footer={
           <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
         }
