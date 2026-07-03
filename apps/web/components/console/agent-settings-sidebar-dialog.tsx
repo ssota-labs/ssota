@@ -142,7 +142,7 @@ export function AgentSettingsSidebarDialog({
             </nav>
           </aside>
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto p-4 scrollbar-none">{detail}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-0 scrollbar-none">{detail}</div>
             {footer ? (
               <div className="flex justify-end px-4 py-3">{footer}</div>
             ) : null}
@@ -169,7 +169,7 @@ export function SidebarDetailHeader({
       className={cn(
         "mb-4 flex items-start gap-3",
         sticky &&
-          "sticky top-0 z-10 -mx-4 -mt-4 border-b border-border/60 bg-popover px-4 pb-3 pt-4",
+          "sticky top-0 z-10 -mx-4 border-b border-border/60 bg-popover px-4 pb-3 pt-0",
       )}
     >
       {icon ? (
