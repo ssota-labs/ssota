@@ -40,20 +40,23 @@ export async function seedScheduleFixtures(
   const agentPort = createAgentDefinitionPort(db, { teamspaceId });
 
   for (const seed of SCHEDULE_SEEDS) {
-    const agent = getAgentDefinitionById(seed.agentDefinitionId);
-    if (!agent) continue;
+    let agentDefinitionId: string = seed.agentDefinitionId;
 
-    const definition = await agentPort.upsertDefinition({
-      id: agent.id,
-      name: agent.title,
-      description: agent.description,
-      instructions: textToBlockNoteContent(agent.instruction),
-      isMain: agent.isMain,
-      referenceOnly: agent.referenceOnly,
-      toolBundles: agent.toolBundles,
-      nodeScopes: agent.nodeScopes,
-      runPolicy: agent.runPolicy,
-    });
+    if (seed.agentDefinitionId !== BUILTIN_AGENT_IDS.main) {
+      const agent = getAgentDefinitionById(seed.agentDefinitionId);
+      if (!agent) continue;
+
+      const definition = await agentPort.upsertDefinition({
+        id: agent.id,
+        name: agent.title,
+        description: agent.description,
+        instructions: textToBlockNoteContent(agent.instruction),
+        toolBundles: agent.toolBundles,
+        nodeScopes: agent.nodeScopes,
+        runPolicy: agent.runPolicy,
+      });
+      agentDefinitionId = definition.id;
+    }
 
     const existing = await db
       .select({ id: schema.schedules.id })
@@ -62,7 +65,7 @@ export async function seedScheduleFixtures(
         and(
           eq(schema.schedules.teamspaceId, teamspaceId),
           eq(schema.schedules.accountId, account.id),
-          eq(schema.schedules.agentDefinitionId, definition.id),
+          eq(schema.schedules.agentDefinitionId, agentDefinitionId),
         ),
       )
       .limit(1);
@@ -72,7 +75,7 @@ export async function seedScheduleFixtures(
     await db.insert(schema.schedules).values({
       teamspaceId,
       accountId: account.id,
-      agentDefinitionId: definition.id,
+      agentDefinitionId,
       targetType: seed.targetType,
       cronExpression: seed.cronExpression,
       timezone: seed.timezone,

@@ -1,30 +1,17 @@
 import type { AgentDefinition } from "@ssota/contracts";
 import { isBuiltinAgentId } from "@ssota/contracts/agents";
 
-export type AgentGroupKey = "main" | "agents" | "reference" | "custom";
+export type AgentGroupKey = "builtin" | "custom";
 
-const GROUP_ORDER: AgentGroupKey[] = [
-  "main",
-  "agents",
-  "reference",
-  "custom",
-];
+const GROUP_ORDER: AgentGroupKey[] = ["builtin", "custom"];
 
 export const AGENT_GROUP_LABEL: Record<AgentGroupKey, string> = {
-  main: "Main",
-  agents: "Agents",
-  reference: "Reference",
+  builtin: "Built-in",
   custom: "Custom",
 };
 
-/** @deprecated Use AGENT_GROUP_LABEL */
-const GROUP_LABEL = AGENT_GROUP_LABEL;
-
 export function agentGroupKey(definition: AgentDefinition): AgentGroupKey {
-  if (definition.isMain) return "main";
-  if (definition.referenceOnly) return "reference";
-  if (isBuiltinAgentId(definition.id)) return "agents";
-  return "custom";
+  return isBuiltinAgentId(definition.id) ? "builtin" : "custom";
 }
 
 export function groupAgentDefinitions(

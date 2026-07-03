@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { AgentsWorkspace } from "@/components/console/agents-workspace";
 import { AgentsContentLoading } from "@/components/console/browse-content-loading";
 import { loadAgentGroupsForUi } from "@/lib/console/load-agents-for-ui";
+import { loadMainAgentDefinitionForUi } from "@/lib/console/load-main-agent-for-ui";
 import {
   loadAgentSettingsConnections,
   loadAgentSettingsContext,
@@ -30,8 +31,9 @@ async function AgentsPageInner({
 }) {
   const { orgSlug, teamspaceSlug } = await params;
   const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
-  const [groups, settingsContext, user] = await Promise.all([
+  const [groups, mainAgentDefinition, settingsContext, user] = await Promise.all([
     loadAgentGroupsForUi(project.id),
+    loadMainAgentDefinitionForUi(project.id),
     loadAgentSettingsContext(
       project.id,
       legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "channels"),
@@ -58,6 +60,7 @@ async function AgentsPageInner({
     <div className="relative min-h-0 flex-1">
       <AgentsWorkspace
         teamspaceId={project.id}
+        mainAgentDefinition={mainAgentDefinition}
         groups={groups}
         settingsContext={{
           ...settingsContext,

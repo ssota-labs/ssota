@@ -1,38 +1,14 @@
 import { Skeleton } from "@ssota/ui/components/ui/skeleton";
-import {
-  getAgentDefinitionById,
-  listBuiltinAgentIds,
-} from "@ssota/contracts/agents";
+import { listRunnableBuiltinAgentIds } from "@ssota/contracts/agents";
 import { AGENT_GROUP_LABEL, type AgentGroupKey } from "@/lib/console/agent-groups";
 import { ConsolePageFrame } from "@/components/console/console-page-frame";
 import { ListRowSkeleton } from "@/components/console/route-loaders";
 
-const GROUP_ORDER: AgentGroupKey[] = ["main", "agents", "reference", "custom"];
-
-function builtinAgentGroups() {
-  const buckets = new Map<AgentGroupKey, number>();
-  for (const id of listBuiltinAgentIds()) {
-    const builtin = getAgentDefinitionById(id);
-    if (!builtin) continue;
-    const key: AgentGroupKey = builtin.isMain
-      ? "main"
-      : builtin.referenceOnly
-        ? "reference"
-        : "agents";
-    buckets.set(key, (buckets.get(key) ?? 0) + 1);
-  }
-  return GROUP_ORDER.filter((key) => (buckets.get(key) ?? 0) > 0).map(
-    (key) => ({
-      key,
-      label: AGENT_GROUP_LABEL[key],
-      rows: buckets.get(key) ?? 0,
-    }),
-  );
-}
+const GROUP_ORDER: AgentGroupKey[] = ["builtin", "custom"];
 
 /** Phase-2 Suspense fallback for Agents browse page. */
 export function AgentsContentLoading() {
-  const groups = builtinAgentGroups();
+  const builtinRows = listRunnableBuiltinAgentIds().length;
 
   return (
     <div
@@ -48,27 +24,30 @@ export function AgentsContentLoading() {
             </div>
           </header>
 
-          {groups.map((group) => (
-            <section key={group.key} className="space-y-3">
-              <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {group.label}
-              </h2>
-              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-                {Array.from({ length: group.rows }, (_, index) => (
-                  <ListRowSkeleton key={index} />
-                ))}
-              </div>
-            </section>
-          ))}
-
           <section className="space-y-3">
             <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {AGENT_GROUP_LABEL.custom}
+              Project agent
             </h2>
             <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
               <ListRowSkeleton />
             </div>
           </section>
+
+          {GROUP_ORDER.map((key) => (
+            <section key={key} className="space-y-3">
+              <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                {AGENT_GROUP_LABEL[key]}
+              </h2>
+              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+                {Array.from(
+                  { length: key === "builtin" ? builtinRows : 1 },
+                  (_, index) => (
+                    <ListRowSkeleton key={index} />
+                  ),
+                )}
+              </div>
+            </section>
+          ))}
         </ConsolePageFrame>
       </div>
     </div>

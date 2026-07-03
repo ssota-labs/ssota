@@ -1,4 +1,4 @@
-import type { AgentDefinition } from "@ssota/contracts";
+import type { AgentDefinition, RunPolicy, TeamspaceMainConfig } from "@ssota/contracts";
 import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import { parseSlackUserGroupMentions } from "./slack-mentions";
 
@@ -10,8 +10,8 @@ export type SlackInboundRoute = {
 
 const SLACK_AGENT_MENTION_TRIGGER_ID = "slack:agent_mentioned";
 
-function slackMentionTrigger(definition: AgentDefinition) {
-  return definition.runPolicy.connectionTriggers?.find(
+function slackMentionTrigger(runPolicy: RunPolicy | undefined) {
+  return runPolicy?.connectionTriggers?.find(
     (t) =>
       t.id === SLACK_AGENT_MENTION_TRIGGER_ID &&
       t.enabled &&
@@ -54,6 +54,7 @@ export async function listTeamspaceAgentDefinitions(
 
 export async function resolveSlackInboundRoute(input: {
   definitions: AgentDefinition[];
+  mainConfig?: Pick<TeamspaceMainConfig, "runPolicy"> | null;
   messageText: string;
   messageIsBotMention: boolean;
   threadAgentDefinitionId?: string | null;
@@ -62,8 +63,7 @@ export async function resolveSlackInboundRoute(input: {
 
   if (mentions.length > 0) {
     for (const definition of input.definitions) {
-      if (definition.isMain || definition.referenceOnly) continue;
-      const trigger = slackMentionTrigger(definition);
+      const trigger = slackMentionTrigger(definition.runPolicy);
       if (!trigger || !matchesUserGroup(trigger, mentions)) continue;
       return {
         agentDefinitionId: definition.id,
@@ -74,25 +74,27 @@ export async function resolveSlackInboundRoute(input: {
   }
 
   if (input.messageIsBotMention) {
-    const main =
-      input.definitions.find((d) => d.isMain) ??
-      input.definitions.find((d) => d.id === MAIN_AGENT_ID);
-    const mainTrigger = main ? slackMentionTrigger(main) : undefined;
+    const mainTrigger = slackMentionTrigger(input.mainConfig?.runPolicy);
     return {
-      agentDefinitionId: main?.id ?? MAIN_AGENT_ID,
+      agentDefinitionId: MAIN_AGENT_ID,
       isMain: true,
       showTypingIndicator: mainTrigger?.showTypingIndicator !== false,
     };
   }
 
   if (input.threadAgentDefinitionId) {
-    const definition = input.definitions.find(
-      (d) => d.id === input.threadAgentDefinitionId,
-    );
-    const trigger = definition ? slackMentionTrigger(definition) : undefined;
+    const isMain = input.threadAgentDefinitionId === MAIN_AGENT_ID;
+    const definition = isMain
+      ? null
+      : input.definitions.find((d) => d.id === input.threadAgentDefinitionId);
+    const trigger = isMain
+      ? slackMentionTrigger(input.mainConfig?.runPolicy)
+      : definition
+        ? slackMentionTrigger(definition.runPolicy)
+        : undefined;
     return {
       agentDefinitionId: input.threadAgentDefinitionId,
-      isMain: definition?.isMain ?? input.threadAgentDefinitionId === MAIN_AGENT_ID,
+      isMain,
       showTypingIndicator: trigger?.showTypingIndicator !== false,
     };
   }
@@ -100,15 +102,28 @@ export async function resolveSlackInboundRoute(input: {
   return null;
 }
 
-/** Reject duplicate Slack user-group ids across agents in one teamspace. */
+/** Reject duplicate Slack user-group ids across project agent + runnable agents. */
 export async function assertSlackMentionUserGroupUnique(
   definitions: AgentDefinition[],
-  agentDefinitionId: string,
+  mainConfig: Pick<TeamspaceMainConfig, "runPolicy"> | null | undefined,
+  agentDefinitionId: string | null,
   slackUserGroupId: string,
 ): Promise<void> {
+  if (agentDefinitionId !== null) {
+    const mainTrigger = slackMentionTrigger(mainConfig?.runPolicy);
+    if (
+      mainTrigger?.enabled &&
+      mainTrigger.slackUserGroupId === slackUserGroupId
+    ) {
+      throw new Error(
+        "The project agent already uses this Slack user group.",
+      );
+    }
+  }
+
   for (const definition of definitions) {
-    if (definition.id === agentDefinitionId) continue;
-    const trigger = slackMentionTrigger(definition);
+    if (agentDefinitionId && definition.id === agentDefinitionId) continue;
+    const trigger = slackMentionTrigger(definition.runPolicy);
     if (
       trigger?.enabled &&
       trigger.slackUserGroupId === slackUserGroupId

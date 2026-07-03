@@ -11,8 +11,6 @@ function agent(
     accountId: null,
     description: "",
     instructions: [],
-    isMain: false,
-    referenceOnly: false,
     toolBundles: [],
     nodeScopes: [],
     runPolicy: {},
@@ -42,15 +40,29 @@ describe("resolveSlackInboundRoute", () => {
     },
   });
 
-  const main = agent({
-    id: MAIN_AGENT_ID,
-    name: "SSOTA Main Agent",
-    isMain: true,
-  });
+  const mainConfig = {
+    teamspaceId: "00000000-0000-4000-8000-000000000001",
+    instructions: [],
+    toolBundles: [],
+    runPolicy: {
+      connectionTriggers: [
+        {
+          id: "slack:agent_mentioned",
+          provider: "slack",
+          kind: "agent_mentioned",
+          label: "Agent mentioned",
+          enabled: true,
+          showTypingIndicator: true,
+        },
+      ],
+    },
+    updatedAt: new Date(0).toISOString(),
+  };
 
   it("routes user-group mentions to the matching specialist", async () => {
     const route = await resolveSlackInboundRoute({
-      definitions: [main, specialist],
+      definitions: [specialist],
+      mainConfig,
       messageText: "Please help <!subteam^S0614NJ2P|@content-planner>",
       messageIsBotMention: false,
     });
@@ -64,7 +76,8 @@ describe("resolveSlackInboundRoute", () => {
 
   it("routes bot mentions to the main agent", async () => {
     const route = await resolveSlackInboundRoute({
-      definitions: [main, specialist],
+      definitions: [specialist],
+      mainConfig,
       messageText: "hello",
       messageIsBotMention: true,
     });
@@ -78,7 +91,8 @@ describe("resolveSlackInboundRoute", () => {
 
   it("continues subscribed threads with stored agent id", async () => {
     const route = await resolveSlackInboundRoute({
-      definitions: [main, specialist],
+      definitions: [specialist],
+      mainConfig,
       messageText: "follow up",
       messageIsBotMention: false,
       threadAgentDefinitionId: specialist.id,
@@ -132,6 +146,7 @@ describe("assertSlackMentionUserGroupUnique", () => {
     await expect(
       assertSlackMentionUserGroupUnique(
         [specialistA, specialistB],
+        null,
         specialistB.id,
         "S0OTHERGROUP",
       ),
@@ -145,9 +160,37 @@ describe("assertSlackMentionUserGroupUnique", () => {
     await expect(
       assertSlackMentionUserGroupUnique(
         [specialistA, specialistB],
+        null,
         specialistB.id,
         "S0614NJ2P",
       ),
     ).rejects.toThrow(/already uses this Slack user group/i);
+  });
+
+  it("rejects specialist group that conflicts with project agent", async () => {
+    const { assertSlackMentionUserGroupUnique } = await import(
+      "./slack-inbound-route"
+    );
+    await expect(
+      assertSlackMentionUserGroupUnique(
+        [specialistA],
+        {
+          runPolicy: {
+            connectionTriggers: [
+              {
+                id: "slack:agent_mentioned",
+                provider: "slack",
+                kind: "agent_mentioned",
+                label: "Agent mentioned",
+                enabled: true,
+                slackUserGroupId: "S0MAIN",
+              },
+            ],
+          },
+        },
+        specialistA.id,
+        "S0MAIN",
+      ),
+    ).rejects.toThrow(/project agent already uses/i);
   });
 });

@@ -980,26 +980,19 @@ export function createTestGate(
   };
 }
 
-import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
+import {
+  BUILTIN_AGENT_IDS,
+  MAIN_AGENT_ID,
+} from "@ssota/contracts/agents";
 
 const TEST_AGENT_DEFINITIONS = [
   {
-    id: BUILTIN_AGENT_IDS.main,
-    name: "SSOTA Main Agent",
-    isMain: true,
-    referenceOnly: false,
-  },
-  {
     id: BUILTIN_AGENT_IDS.implementFeature,
     name: "Implement feature",
-    isMain: false,
-    referenceOnly: false,
   },
   {
     id: BUILTIN_AGENT_IDS.writeDocument,
     name: "Write document",
-    isMain: false,
-    referenceOnly: false,
   },
 ];
 
@@ -1016,8 +1009,6 @@ export function createInMemoryAgentDefinitionPort(
         name: meta.name,
         description: "",
         instructions: [{ type: "paragraph", content: [{ type: "text", text: meta.name }] }],
-        isMain: meta.isMain,
-        referenceOnly: meta.referenceOnly,
         toolBundles: [],
         nodeScopes: [],
         runPolicy: {},
@@ -1029,12 +1020,10 @@ export function createInMemoryAgentDefinitionPort(
 
   return {
     async listDefinitions() {
-      return [...rows.values()].map(({ id, name, description, isMain, referenceOnly }) => ({
+      return [...rows.values()].map(({ id, name, description }) => ({
         id,
         name,
         description,
-        isMain,
-        referenceOnly,
       }));
     },
     async getById(id) {

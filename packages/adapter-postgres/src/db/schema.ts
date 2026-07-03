@@ -84,6 +84,18 @@ export const teamspaces = pgTable(
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     appEnabled: boolean("app_enabled").notNull().default(false),
+    mainInstructions: jsonb("main_instructions")
+      .notNull()
+      .default([])
+      .$type<unknown[]>(),
+    mainToolBundles: jsonb("main_tool_bundles")
+      .notNull()
+      .default([])
+      .$type<string[]>(),
+    mainRunPolicy: jsonb("main_run_policy")
+      .notNull()
+      .default({})
+      .$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
@@ -421,8 +433,6 @@ export const agentDefinitions = pgTable(
       .notNull()
       .default([])
       .$type<unknown[]>(),
-    isMain: boolean("is_main").notNull().default(false),
-    referenceOnly: boolean("reference_only").notNull().default(false),
     toolBundles: jsonb("tool_bundles")
       .notNull()
       .default([])

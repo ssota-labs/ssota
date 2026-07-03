@@ -2,10 +2,13 @@ import {
   normalizeWorkflowInstructionContent,
   textToBlockNoteContent,
   type AgentDefinition,
+  type TeamspaceMainConfig,
 } from "@ssota/contracts";
 import {
   getAgentDefinitionById,
-  listBuiltinAgentIds,
+  listRunnableBuiltinAgentIds,
+  MAIN_AGENT_ID,
+  getMainAgentDefinition,
 } from "@ssota/contracts/agents";
 import { groupAgentDefinitions } from "@/lib/console/agent-groups";
 import { getAgentDefinitionPort } from "@/lib/ports";
@@ -13,8 +16,7 @@ import { getAgentDefinitionPort } from "@/lib/ports";
 export type AgentGroup = ReturnType<typeof groupAgentDefinitions>[number];
 
 /**
- * Teamspace DB rows plus code-defined builtins not yet overridden in the DB.
- * Builtins use stable ids from {@link BUILTIN_AGENT_IDS}.
+ * Teamspace DB rows plus runnable code-defined builtins not yet overridden in the DB.
  */
 export async function loadAgentDefinitionsForUi(
   teamspaceId: string,
@@ -35,7 +37,7 @@ export async function loadAgentDefinitionsForUi(
     ]),
   );
 
-  for (const id of listBuiltinAgentIds()) {
+  for (const id of listRunnableBuiltinAgentIds()) {
     if (byId.has(id)) continue;
     const builtin = getAgentDefinitionById(id);
     if (!builtin) continue;
@@ -49,8 +51,6 @@ export async function loadAgentDefinitionsForUi(
       instructions: normalizeWorkflowInstructionContent(
         textToBlockNoteContent(builtin.instruction),
       ),
-      isMain: builtin.isMain,
-      referenceOnly: builtin.referenceOnly,
       toolBundles: builtin.toolBundles,
       nodeScopes: builtin.nodeScopes,
       runPolicy: builtin.runPolicy,
@@ -60,6 +60,26 @@ export async function loadAgentDefinitionsForUi(
   }
 
   return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function mainConfigToAgentDefinition(
+  teamspaceId: string,
+  config: TeamspaceMainConfig,
+): AgentDefinition {
+  const builtin = getMainAgentDefinition();
+  return {
+    id: MAIN_AGENT_ID,
+    teamspaceId,
+    accountId: null,
+    name: "Project agent",
+    description: builtin.description,
+    instructions: normalizeWorkflowInstructionContent(config.instructions),
+    toolBundles: config.toolBundles,
+    nodeScopes: [],
+    runPolicy: config.runPolicy,
+    createdAt: config.updatedAt,
+    updatedAt: config.updatedAt,
+  };
 }
 
 export async function loadAgentGroupsForUi(
