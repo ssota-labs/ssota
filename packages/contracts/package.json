@@ -24,6 +24,10 @@
       "types": "./dist/page/index.d.ts",
       "default": "./dist/page/index.js"
     },
+    "./invariants": {
+      "types": "./dist/invariants/index.d.ts",
+      "default": "./dist/invariants/index.js"
+    },
     "./seed-packs/software-development-workflow/*": "./seed-packs/software-development-workflow/*"
   },
   "scripts": {
