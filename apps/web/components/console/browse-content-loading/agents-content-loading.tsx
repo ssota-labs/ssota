@@ -53,7 +53,7 @@ export function AgentsContentLoading() {
               <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 {group.label}
               </h2>
-              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+              <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-transparent">
                 {Array.from({ length: group.rows }, (_, index) => (
                   <ListRowSkeleton key={index} />
                 ))}
@@ -65,7 +65,7 @@ export function AgentsContentLoading() {
             <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {AGENT_GROUP_LABEL.custom}
             </h2>
-            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-transparent">
               <ListRowSkeleton />
             </div>
           </section>
