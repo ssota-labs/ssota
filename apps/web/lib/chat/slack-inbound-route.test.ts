@@ -62,7 +62,7 @@ describe("resolveSlackInboundRoute", () => {
     });
   });
 
-  it("routes bot mentions to the main agent", async () => {
+  it("routes bot mentions to the main agent without a DB id fallback", async () => {
     const route = await resolveSlackInboundRoute({
       definitions: [main, specialist],
       messageText: "hello",
@@ -71,6 +71,33 @@ describe("resolveSlackInboundRoute", () => {
 
     expect(route).toEqual({
       agentDefinitionId: MAIN_AGENT_ID,
+      isMain: true,
+      showTypingIndicator: true,
+    });
+  });
+
+  it("routes bot mentions to code main when no DB main row exists", async () => {
+    const route = await resolveSlackInboundRoute({
+      definitions: [specialist],
+      messageText: "hello",
+      messageIsBotMention: true,
+    });
+
+    expect(route).toEqual({
+      isMain: true,
+      showTypingIndicator: true,
+    });
+  });
+
+  it("continues main threads from stored builtin id without routing id", async () => {
+    const route = await resolveSlackInboundRoute({
+      definitions: [specialist],
+      messageText: "follow up",
+      messageIsBotMention: false,
+      threadAgentDefinitionId: MAIN_AGENT_ID,
+    });
+
+    expect(route).toEqual({
       isMain: true,
       showTypingIndicator: true,
     });

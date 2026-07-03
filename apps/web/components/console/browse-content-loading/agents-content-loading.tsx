@@ -13,7 +13,7 @@ function builtinAgentGroups() {
   const buckets = new Map<AgentGroupKey, number>();
   for (const id of listBuiltinAgentIds()) {
     const builtin = getAgentDefinitionById(id);
-    if (!builtin) continue;
+    if (!builtin || builtin.isMain) continue;
     const key: AgentGroupKey = builtin.isMain
       ? "main"
       : builtin.referenceOnly

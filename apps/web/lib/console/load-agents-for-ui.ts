@@ -14,7 +14,8 @@ export type AgentGroup = ReturnType<typeof groupAgentDefinitions>[number];
 
 /**
  * Teamspace DB rows plus code-defined builtins not yet overridden in the DB.
- * Builtins use stable ids from {@link BUILTIN_AGENT_IDS}.
+ * Main agent is code-only and excluded; other builtins use stable ids from
+ * {@link BUILTIN_AGENT_IDS}.
  */
 export async function loadAgentDefinitionsForUi(
   teamspaceId: string,
@@ -38,7 +39,7 @@ export async function loadAgentDefinitionsForUi(
   for (const id of listBuiltinAgentIds()) {
     if (byId.has(id)) continue;
     const builtin = getAgentDefinitionById(id);
-    if (!builtin) continue;
+    if (!builtin || builtin.isMain) continue;
     const now = new Date(0).toISOString();
     byId.set(id, {
       id: builtin.id,

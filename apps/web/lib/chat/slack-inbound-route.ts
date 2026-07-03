@@ -1,9 +1,10 @@
 import type { AgentDefinition } from "@ssota/contracts";
-import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
+import { getAgentDefinitionById } from "@ssota/contracts/agents";
 import { parseSlackUserGroupMentions } from "./slack-mentions";
 
 export type SlackInboundRoute = {
-  agentDefinitionId: string;
+  /** Omitted for main agent (code builtin); workflow receives undefined via isMain. */
+  agentDefinitionId?: string;
   isMain: boolean;
   showTypingIndicator: boolean;
 };
@@ -74,12 +75,10 @@ export async function resolveSlackInboundRoute(input: {
   }
 
   if (input.messageIsBotMention) {
-    const main =
-      input.definitions.find((d) => d.isMain) ??
-      input.definitions.find((d) => d.id === MAIN_AGENT_ID);
+    const main = input.definitions.find((d) => d.isMain);
     const mainTrigger = main ? slackMentionTrigger(main) : undefined;
     return {
-      agentDefinitionId: main?.id ?? MAIN_AGENT_ID,
+      ...(main?.id ? { agentDefinitionId: main.id } : {}),
       isMain: true,
       showTypingIndicator: mainTrigger?.showTypingIndicator !== false,
     };
@@ -89,10 +88,15 @@ export async function resolveSlackInboundRoute(input: {
     const definition = input.definitions.find(
       (d) => d.id === input.threadAgentDefinitionId,
     );
+    const builtin =
+      definition === undefined
+        ? getAgentDefinitionById(input.threadAgentDefinitionId)
+        : null;
+    const isMain = definition?.isMain ?? builtin?.isMain ?? false;
     const trigger = definition ? slackMentionTrigger(definition) : undefined;
     return {
-      agentDefinitionId: input.threadAgentDefinitionId,
-      isMain: definition?.isMain ?? input.threadAgentDefinitionId === MAIN_AGENT_ID,
+      ...(isMain ? {} : { agentDefinitionId: input.threadAgentDefinitionId }),
+      isMain,
       showTypingIndicator: trigger?.showTypingIndicator !== false,
     };
   }

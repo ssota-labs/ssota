@@ -22,6 +22,7 @@ import {
   listTeamspaceAgentDefinitions,
   resolveSlackInboundRoute,
 } from "./slack-inbound-route";
+import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import { getAgentDefinitionPort } from "@/lib/ports";
 import {
   createSlackWebhookVerifier,
@@ -243,7 +244,12 @@ async function handleInboundMessage(
 
   if (!route) return;
 
-  await thread.setState({ agentDefinitionId: route.agentDefinitionId });
+  // Main agent runs from code builtin; persist MAIN_AGENT_ID for thread routing only.
+  await thread.setState({
+    agentDefinitionId: route.isMain
+      ? (route.agentDefinitionId ?? MAIN_AGENT_ID)
+      : route.agentDefinitionId,
+  });
 
   if (route.showTypingIndicator && !isEmulateEnabled()) {
     try {
