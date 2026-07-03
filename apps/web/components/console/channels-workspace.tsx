@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { CheckCircleIcon, PlusIcon } from "@phosphor-icons/react";
-import { Badge } from "@ssota/ui/components/ui/badge";
-import { buttonVariants } from "@ssota/ui/components/ui/button";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@ssota/ui/components/ui/sheet";
+  CheckCircleIcon,
+  LinkBreakIcon,
+  PlusIcon,
+} from "@phosphor-icons/react";
+import { Badge } from "@ssota/ui/components/ui/badge";
+import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
+import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
+import { disconnectInboundChannelAction } from "@/app/[orgSlug]/[teamspaceSlug]/channels/actions";
 import {
   inboundChannelAuthorizeHref,
   type InboundChannelPlatform,
@@ -79,32 +79,56 @@ function InboundChannelBrowseCard({
   );
 }
 
-function InboundChannelSettings({
+function InboundChannelSettingsPanel({
   channel,
-  connectHref,
+  teamspaceId,
+  accountId,
+  returnTo,
+  onClose,
 }: {
   channel: InboundChannelStatus;
-  connectHref: string;
+  teamspaceId: string;
+  accountId: string;
+  returnTo: string;
+  onClose: () => void;
 }) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const configured = channel.canConnect;
+  const connectHref = inboundChannelAuthorizeHref({
+    connectorUid: channel.connectorUid,
+    teamspaceId,
+    accountId,
+    returnTo,
+  });
+  const canDisconnect =
+    channel.credentialConnected || channel.workspaceLinked || channel.ready;
+
+  function disconnect() {
+    startTransition(async () => {
+      await disconnectInboundChannelAction({
+        teamspaceId,
+        platform: channel.platform,
+        revalidate: returnTo,
+      });
+      router.refresh();
+      onClose();
+    });
+  }
 
   return (
-    <>
-      <SheetHeader className="gap-3 border-b px-5 py-4">
-        <div className="flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
-            <ConnectorBrandIcon provider={channel.platform} className="size-5" />
-          </span>
-          <div className="min-w-0">
-            <SheetTitle className="text-base">{channel.label}</SheetTitle>
-            <SheetDescription className="text-xs">
-              {channel.description}
-            </SheetDescription>
-          </div>
-        </div>
-      </SheetHeader>
-
-      <div className="flex-1 overflow-y-auto px-5 py-4">
+    <CardListSheetPanel
+      title={channel.label}
+      subtitle={channel.description}
+      sheetSize="inspector"
+      onClose={onClose}
+      headerPrefix={
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40">
+          <ConnectorBrandIcon provider={channel.platform} className="size-5" />
+        </span>
+      }
+    >
+      <div className="space-y-4" data-testid={`channel-detail-${channel.platform}`}>
         {!configured ? (
           <p className="rounded-md border border-dashed bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
             Set{" "}
@@ -118,7 +142,7 @@ function InboundChannelSettings({
             inbound OAuth can start.
           </p>
         ) : (
-          <div className="space-y-4">
+          <>
             {channel.workspaceLinked ? (
               <div
                 className="rounded-lg border bg-background px-3 py-2"
@@ -128,13 +152,13 @@ function InboundChannelSettings({
                   {channel.workspaceName ?? channel.workspaceKey}
                 </p>
                 {channel.workspaceName && channel.workspaceKey ? (
-                  <p className="text-muted-foreground font-mono text-xs">
+                  <p className="font-mono text-xs text-muted-foreground">
                     {channel.workspaceKey}
                   </p>
                 ) : null}
               </div>
             ) : channel.credentialConnected ? (
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 Credential saved — finish OAuth or refresh if routing does not
                 appear.
               </p>
@@ -146,20 +170,37 @@ function InboundChannelSettings({
               </p>
             )}
 
-            {!channel.ready ? (
-              <a
-                className={buttonVariants({ variant: "outline", size: "sm" })}
-                href={connectHref}
-                data-testid={`channel-connect-${channel.platform}`}
-              >
-                <PlusIcon className="size-4" />
-                Connect
-              </a>
-            ) : null}
-          </div>
+            <div className="flex flex-wrap gap-2">
+              {!channel.ready ? (
+                <a
+                  className={buttonVariants({ variant: "outline", size: "sm" })}
+                  href={connectHref}
+                  data-testid={`channel-connect-${channel.platform}`}
+                >
+                  <PlusIcon className="size-4" />
+                  Connect
+                </a>
+              ) : null}
+
+              {canDisconnect ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isPending}
+                  className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                  onClick={disconnect}
+                  data-testid={`channel-disconnect-${channel.platform}`}
+                >
+                  <LinkBreakIcon className="size-4" />
+                  {isPending ? "Disconnecting…" : "Disconnect"}
+                </Button>
+              ) : null}
+            </div>
+          </>
         )}
       </div>
-    </>
+    </CardListSheetPanel>
   );
 }
 
@@ -169,15 +210,21 @@ export function ChannelsWorkspace({
   accountId,
   returnTo,
 }: ChannelsWorkspaceProps) {
-  const [selected, setSelected] = useState<InboundChannelPlatform | null>(null);
+  const [activeId, setActiveId] = useState<InboundChannelPlatform | null>(null);
 
-  const selectedChannel = selected
-    ? (channels.find((row) => row.platform === selected) ?? null)
+  const activeChannel = activeId
+    ? (channels.find((row) => row.platform === activeId) ?? null)
     : null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <BrowseWorkspace.Frame testId="channels-workspace">
+    <CardListSheet.Root
+      activeId={activeId}
+      onActiveIdChange={(id) => setActiveId(id as InboundChannelPlatform | null)}
+      dismissOnOutsideClick
+      className="absolute inset-0 flex flex-col"
+      testId="channels-workspace"
+    >
+      <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Channels"
           description="Connect Slack or Discord so agents can receive inbound messages. Agent tools (search, post via Composio) stay on the Connections page."
@@ -188,31 +235,22 @@ export function ChannelsWorkspace({
               <InboundChannelBrowseCard
                 key={channel.platform}
                 channel={channel}
-                onSelect={() => setSelected(channel.platform)}
+                onSelect={() => setActiveId(channel.platform)}
               />
             ))}
           </BrowseWorkspace.Grid>
         </BrowseWorkspace.Section>
       </BrowseWorkspace.Frame>
 
-      <Sheet
-        open={selected !== null}
-        onOpenChange={(open) => !open && setSelected(null)}
-      >
-        <SheetContent side="right" className="flex flex-col gap-0 p-0">
-          {selectedChannel ? (
-            <InboundChannelSettings
-              channel={selectedChannel}
-              connectHref={inboundChannelAuthorizeHref({
-                connectorUid: selectedChannel.connectorUid,
-                teamspaceId,
-                accountId,
-                returnTo,
-              })}
-            />
-          ) : null}
-        </SheetContent>
-      </Sheet>
-    </div>
+      {activeChannel ? (
+        <InboundChannelSettingsPanel
+          channel={activeChannel}
+          teamspaceId={teamspaceId}
+          accountId={accountId}
+          returnTo={returnTo}
+          onClose={() => setActiveId(null)}
+        />
+      ) : null}
+    </CardListSheet.Root>
   );
 }
