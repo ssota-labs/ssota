@@ -92,7 +92,8 @@ const allowedPaths = (name) => new Set(loadAllowlist(name).map((entry) => entry.
     ...walkFiles("packages/ui/src", { exts: [".tsx"] }),
   ].filter((file) => !/\.(test|spec|stories)\.tsx$/.test(file));
 
-  const HEX_COLOR = /(["'`]|:\s*)#[0-9a-fA-F]{3}\b|(["'`]|:\s*)#[0-9a-fA-F]{6}\b/;
+  // 프리픽스에 `[` 포함 — Tailwind arbitrary value(`bg-[#ff0000]`)도 잡는다
+  const HEX_COLOR = /(["'`[]|:\s*)#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/;
   const RAW_PALETTE =
     /\b(?:bg|text|border|ring|fill|stroke|from|to|via|divide|outline|decoration|shadow)-(?:neutral|gray|zinc|slate|stone|green|red|blue|yellow|orange|amber|lime|emerald|teal|cyan|sky|indigo|violet|purple|fuchsia|pink|rose)-(?:50|[1-9]50?|[1-9]00|950)\b/;
 
