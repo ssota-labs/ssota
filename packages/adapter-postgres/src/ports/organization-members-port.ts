@@ -86,7 +86,7 @@ function displayName(
 async function buildMembersView(
   db: Db,
   org: typeof schema.organizations.$inferSelect,
-  userRole: "owner" | "member",
+  _userRole: "owner" | "member",
 ): Promise<Pick<OrganizationMembersView, "currentMembers" | "pendingInvitations">> {
   const memberRows = await db
     .select({

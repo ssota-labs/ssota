@@ -106,7 +106,7 @@ export function createGraphReadPort(
   db: Db,
   scope: GraphPortsScope,
 ): GraphReadPort {
-  const { organizationId, teamspaceId, accountId } = scope;
+  const { organizationId: _organizationId, teamspaceId, accountId } = scope;
 
   /** Teamspace-scoped reads include org-shared rows (teamspace_id IS NULL). */
   const teamspaceScopeCond = () =>

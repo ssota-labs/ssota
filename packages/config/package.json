@@ -2,6 +2,7 @@
   "name": "@ssota/config",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "exports": {
     "./typescript/base": "./typescript/base.json",
     "./typescript/base.json": "./typescript/base.json",
@@ -11,6 +12,10 @@
     "./typescript/nextjs.json": "./typescript/nextjs.json",
     "./eslint/base": "./eslint/base.js",
     "./eslint/base.js": "./eslint/base.js",
+    "./eslint/boundaries": "./eslint/boundaries.js",
+    "./eslint/boundaries.js": "./eslint/boundaries.js",
+    "./eslint/allowlists": "./eslint/allowlists.js",
+    "./eslint/allowlists.js": "./eslint/allowlists.js",
     "./vitest/node": "./vitest/node.mjs",
     "./vitest/node.mjs": "./vitest/node.mjs"
   },

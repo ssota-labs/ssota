@@ -8,7 +8,7 @@ import {
   type AgentDefinitionSeed,
 } from "../agent-definition.js";
 import { TaskStatusSchema } from "../task.js";
-import { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, isBuiltinAgentId, type BuiltinAgentId } from "./builtin-ids.js";
+import { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, type BuiltinAgentId } from "./builtin-ids.js";
 import { loadAgentInstruction } from "./load-instruction.js";
 
 export const AgentCadenceHintSchema = z.enum([

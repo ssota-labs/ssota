@@ -1,6 +1,6 @@
 import { config as loadEnv } from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import { and, eq, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { createDb } from "../db/client.js";
 import * as schema from "../db/schema.js";
 import {
