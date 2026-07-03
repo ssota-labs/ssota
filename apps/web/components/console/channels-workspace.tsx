@@ -142,26 +142,58 @@ function InboundChannelSettingsPanel({
             inbound OAuth can start.
           </p>
         ) : (
-          <>
+          <div className="space-y-2">
             {channel.workspaceLinked ? (
               <div
-                className="rounded-lg border bg-background px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
                 data-testid={`channel-workspace-${channel.platform}`}
               >
-                <p className="text-sm font-medium">
-                  {channel.workspaceName ?? channel.workspaceKey}
-                </p>
-                {channel.workspaceName && channel.workspaceKey ? (
-                  <p className="font-mono text-xs text-muted-foreground">
-                    {channel.workspaceKey}
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {channel.workspaceName ?? channel.workspaceKey}
                   </p>
+                  {channel.workspaceName && channel.workspaceKey ? (
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {channel.workspaceKey}
+                    </p>
+                  ) : null}
+                </div>
+                {canDisconnect ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isPending}
+                    className="shrink-0 text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                    onClick={disconnect}
+                    data-testid={`channel-disconnect-${channel.platform}`}
+                  >
+                    <LinkBreakIcon className="size-4" />
+                    {isPending ? "Disconnecting…" : "Disconnect"}
+                  </Button>
                 ) : null}
               </div>
             ) : channel.credentialConnected ? (
-              <p className="text-sm text-muted-foreground">
-                Credential saved — finish OAuth or refresh if routing does not
-                appear.
-              </p>
+              <div className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2">
+                <p className="min-w-0 text-sm text-muted-foreground">
+                  Credential saved — finish OAuth or refresh if routing does not
+                  appear.
+                </p>
+                {canDisconnect ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isPending}
+                    className="shrink-0 text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                    onClick={disconnect}
+                    data-testid={`channel-disconnect-${channel.platform}`}
+                  >
+                    <LinkBreakIcon className="size-4" />
+                    {isPending ? "Disconnecting…" : "Disconnect"}
+                  </Button>
+                ) : null}
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground">
                 Connect your {channel.label} workspace so agents can receive
@@ -170,34 +202,17 @@ function InboundChannelSettingsPanel({
               </p>
             )}
 
-            <div className="flex flex-wrap gap-2">
-              {!channel.ready ? (
-                <a
-                  className={buttonVariants({ variant: "outline", size: "sm" })}
-                  href={connectHref}
-                  data-testid={`channel-connect-${channel.platform}`}
-                >
-                  <PlusIcon className="size-4" />
-                  Connect
-                </a>
-              ) : null}
-
-              {canDisconnect ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={isPending}
-                  className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
-                  onClick={disconnect}
-                  data-testid={`channel-disconnect-${channel.platform}`}
-                >
-                  <LinkBreakIcon className="size-4" />
-                  {isPending ? "Disconnecting…" : "Disconnect"}
-                </Button>
-              ) : null}
-            </div>
-          </>
+            {!channel.ready ? (
+              <a
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+                href={connectHref}
+                data-testid={`channel-connect-${channel.platform}`}
+              >
+                <PlusIcon className="size-4" />
+                Connect
+              </a>
+            ) : null}
+          </div>
         )}
       </div>
     </CardListSheetPanel>
@@ -229,17 +244,15 @@ export function ChannelsWorkspace({
           title="Channels"
           description="Connect Slack or Discord so agents can receive inbound messages. Agent tools (search, post via Composio) stay on the Connections page."
         />
-        <BrowseWorkspace.Section label="Inbound channels">
-          <BrowseWorkspace.Grid>
-            {channels.map((channel) => (
-              <InboundChannelBrowseCard
-                key={channel.platform}
-                channel={channel}
-                onSelect={() => setActiveId(channel.platform)}
-              />
-            ))}
-          </BrowseWorkspace.Grid>
-        </BrowseWorkspace.Section>
+        <BrowseWorkspace.Grid>
+          {channels.map((channel) => (
+            <InboundChannelBrowseCard
+              key={channel.platform}
+              channel={channel}
+              onSelect={() => setActiveId(channel.platform)}
+            />
+          ))}
+        </BrowseWorkspace.Grid>
       </BrowseWorkspace.Frame>
 
       {activeChannel ? (
