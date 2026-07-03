@@ -116,6 +116,53 @@ Toolcraft 하네스의 메커니즘은 깔끔한 이분법이 아니라 3층으�
    그 파일들을 교체해보며 인터페이스를 발견한다 (rule of three 전에 API 확정 금지).
 3. **C층은 고민 없이 씨앗에.**
 
+## 에이전트 계층 — A · B · 템플릿
+
+```
+A (메인 에이전트) — 제품 스킬 harness-engineering으로 B를 조립
+├─ B (도메인 빌더: PPT B · 투자 B · 디자인툴 B …) — 독립 개체
+│    정의 = 공통 Agent Kit 참조 + seed 참조 + 도메인 지침 + 노드 I/O 선언
+│    사람은 B와 대화하며 자신만의 툴을 만든다
+└─ 템플릿 = B 정의 + 노드 카탈로그 + 페이지 구조 (저장·복제·배포 단위)
+```
+
+- **A의 하네스 전문성은 제품 스킬(`harness-engineering`)로 담는다** — 3층 구분,
+  kit 세팅 절차, seed 규약, 발행 게이트 체크리스트. 단 "시스템이 강제해야 하는 것"
+  (판정 외부화, push 주입, provenance 기록)은 스킬이 아니라 **오케스트레이터 코드**다 —
+  A가 잊거나 어겨도 시스템이 막는 층으로 둔다.
+- **B는 상태 없는 참조 묶음**이어야 저장·복제·버전업("PPT B v2로 교체")이 가능하다.
+  B의 노드 I/O는 구체 노드 타입 하드코딩이 아니라 **인터페이스 선언**
+  (`agent_definitions.nodeScopes`)으로 — 같은 PPT B가 유저 워크플로우에 따라
+  다른 노드 카탈로그·페이지 구조와 조합될 수 있는 조건이다.
+- 포함관계: **템플릿 ⊃ (B 정의, 노드 카탈로그, 페이지 구조)**, **B ⊃ (kit 참조, seed 참조)**.
+- **A의 v1 범위는 "조립"까지**: 기존 seed 카탈로그에서 골라 B를 배선하고 도메인 지침을
+  작성한다. A가 seed 코드(판정기·프리셋)까지 생성하는 것은 v2 — 발행 게이트 + 사람
+  리뷰 필수. B 생성의 완료 조건 = **그 B로 샘플 툴 1개를 끝까지 길러 통과** (씨앗 발행
+  게이트와 동일 원리 — 미검증 B를 양산하지 않는다).
+
+### 스킬 정본 위치와 노출 게이트
+
+- **현행 문제**: builtin 스킬 시드가 dev 레포의 `.agents/skills/`를 읽는다
+  (`builtin-skills.ts` — "One-time ingest of repo .agents/skills"). 지금은 dogfooding
+  단계(제품 스페셜리스트가 implement_feature/qa/review 등 개발 작업)라 dev 스킬과 제품
+  스킬이 우연히 일치해 동작하지만, 구조적으로는 **dev 도구 관리(`npx skills update`)가
+  리뷰 게이트 없이 제품 행동을 바꾸는 공급망 결합**이다.
+- **처방**: 제품 스킬 정본을 지침과 같은 자리로 — `packages/contracts/src/agents/skills/`
+  신설, 시드 소스를 여기로 변경. `.agents/skills/`는 순수 dev 도구로 환원. 양쪽에 다
+  필요한 스킬은 제품 쪽에 복사해 제품 버전으로 관리(리뷰 게이트 통과). `harness-engineering`
+  은 처음부터 제품 디렉토리에 넣는다.
+- **스킬 추가 ≠ 전 에이전트 컨텍스트 주입** — 노출은 두 게이트가 통제한다:
+  1. **바인딩**: 명시 바인딩(`agent_definition_skills`)된 스킬만 노출. 바인딩 없는
+     에이전트 중 **메인만** builtin 전체를 fallback으로 받는다(`resolveSkillManifest`).
+     B들은 명시 바인딩이 없으면 스킬 0개 — B가 하네스 지식을 볼 일 없음.
+  2. **lazy load**: 노출되어도 프롬프트에는 이름+설명 한 줄뿐, 본문은 `read_skill`로
+     온디맨드 로드. builtin 1종 추가의 컨텍스트 비용 = 메인 프롬프트 한 줄.
+- 주의: 메인 fallback이 "builtin 전부"라 카탈로그가 커지면(30종+) 매니페스트가 비대해진다
+  — 그 시점에 메인에도 명시 바인딩 큐레이션으로 전환. 한 줄 description이 트리거의
+  전부이므로 **트리거 조건 중심으로 작성**한다.
+- 정적 지침 `guide.agent_authoring.md`에 "B 생성 시 `harness-engineering`을 로드하라"
+  한 줄을 추가 — 지침(행동 계약, 빌드타임 임베딩)과 스킬(온디맨드 지식)의 짝 구조.
+
 ## Product concepts
 
 ### Seed
@@ -179,6 +226,36 @@ Sandbox Environment (runtime profile: 예 sandbox.seed_webgl)
 
 Kit은 **오케스트레이터가 push 주입**한다 (에이전트 셀프 다운로드 금지 — 버전 증명이
 에이전트 자기 보고가 되고, 세팅 누락·네트워크 의존이 생긴다).
+
+## 저장 모델 — 기존 선례 재사용, 신설은 2개
+
+코드를 저장하는 선례가 이미 3개 있고, 원칙이 여기서 나온다:
+
+| 기존 선례 | 저장 방식 | 용도 |
+|---|---|---|
+| `skills` + `skill_snapshots` | 파일셋을 JSONB `[{path, contents}]` + contentHash | 에이전트가 읽는 소형 텍스트 |
+| `script_tools` | `script` text + input/outputSchema + `runtime: "vercel_sandbox"` + version | 에이전트가 호출하는 단일 스크립트 |
+| `studio-build-storage` | Supabase Storage blob + signed URL | 대형 빌드 산출물 |
+
+**원칙: 에이전트가 읽는 소형 파일셋 = JSONB 스냅샷, 샌드박스로 전개되는 대형
+페이로드 = blob + DB 메타 행.**
+
+| 구성요소 | 저장 | 신설? |
+|---|---|---|
+| `harness-engineering` 스킬 (A) | `skills` + `skill_snapshots` (builtin) | ❌ |
+| B의 도메인 지침 | `agent_definitions.instructions` (jsonb) | ❌ |
+| B의 노드 I/O 선언 | `agent_definitions.nodeScopes` | ❌ |
+| **Agent Kit** | 신설 `agent_kits` + `agent_kit_versions` — skill_snapshots 패턴 + **불변 버전 이력**(append-only) | ✅ |
+| **Seed tarball** | blob `{teamspaceId}/seeds/{key}@{ver}.tar.gz` (studio-build-storage 확장) + 신설 `seeds` 메타 테이블(key·domain·version·digest·발행상태·레퍼런스툴 검증기록) | ✅ |
+| B ↔ kit/seed 참조 | v1: `agent_definitions.runPolicy`에 `{kitVersion, seedRefs}` — 마이그레이션 없이 시작, 안정 후 조인 테이블 승격 | △ |
+| 성장 태스크 provenance | 기존 태스크 레코드 metadata (kit@v · seed@v · 판정 결과) | ❌ |
+
+kit을 `skill_snapshots`나 `script_tools`에 얹지 않는 이유:
+ⓐ `skill_snapshots`는 skillId가 PK인 **단일 스냅샷 덮어쓰기 구조** — kit은 판정
+외부화(fresh 재주입 + 태스크에 kit@v 기록) 때문에 불변 버전 이력이 필수다.
+ⓑ **의미 경계** — 스킬·script tool은 에이전트가 *읽고 호출하는* 표면이고, kit의
+checks는 오케스트레이터가 에이전트를 *잡는* 장치다. 같은 표면에 두면 "에이전트가
+자기 검증기를 스킬처럼 수정"하는 경로가 열린다.
 
 ## 실행 플로우
 
