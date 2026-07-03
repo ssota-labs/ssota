@@ -471,7 +471,7 @@ export function AgentSettingsSheet({
             testId="agent-settings-instructions-card"
           >
             <div
-              className="min-h-[200px] overflow-y-auto rounded-md border border-border/60 bg-background/40 p-2"
+              className="min-h-[200px] overflow-y-auto"
               data-testid="agent-instructions-editor"
             >
               <DocumentEditorEl
