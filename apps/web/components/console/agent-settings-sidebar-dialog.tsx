@@ -233,7 +233,7 @@ function SidebarNavItem({
         {item.enabled !== undefined ? (
           <span
             className={cn(
-              "size-1.5 shrink-0 rounded-full",
+              "mr-1 size-1.5 shrink-0 rounded-full",
               item.enabled ? "bg-emerald-500" : "bg-muted-foreground/30",
             )}
             aria-hidden
