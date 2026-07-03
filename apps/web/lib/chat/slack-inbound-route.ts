@@ -3,7 +3,8 @@ import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import { parseSlackUserGroupMentions } from "./slack-mentions";
 
 export type SlackInboundRoute = {
-  agentDefinitionId: string;
+  /** Omitted for main agent (code builtin); workflow receives undefined via isMain. */
+  agentDefinitionId?: string;
   isMain: boolean;
   showTypingIndicator: boolean;
 };
@@ -76,7 +77,6 @@ export async function resolveSlackInboundRoute(input: {
   if (input.messageIsBotMention) {
     const mainTrigger = slackMentionTrigger(input.mainConfig?.runPolicy);
     return {
-      agentDefinitionId: MAIN_AGENT_ID,
       isMain: true,
       showTypingIndicator: mainTrigger?.showTypingIndicator !== false,
     };
@@ -93,7 +93,7 @@ export async function resolveSlackInboundRoute(input: {
         ? slackMentionTrigger(definition.runPolicy)
         : undefined;
     return {
-      agentDefinitionId: input.threadAgentDefinitionId,
+      ...(isMain ? {} : { agentDefinitionId: input.threadAgentDefinitionId }),
       isMain,
       showTypingIndicator: trigger?.showTypingIndicator !== false,
     };

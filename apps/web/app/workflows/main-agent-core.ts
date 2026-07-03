@@ -1,7 +1,10 @@
 import type { UIMessage } from "ai";
-import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import { getDb, type RunAgentResult } from "@ssota/agent-runtime";
-import { createAgentRunPort, createChatPort } from "@ssota/adapter-postgres";
+import {
+  createAgentDefinitionPort,
+  createAgentRunPort,
+  createChatPort,
+} from "@ssota/adapter-postgres";
 
 /**
  * Pure DB helpers for the main (chat) agent run lifecycle, wrapped in
@@ -32,11 +35,26 @@ function chatThreadIdForTelemetry(threadId?: string): string | null {
   return CHAT_THREAD_UUID_RE.test(threadId) ? threadId : null;
 }
 
+/** Main agent runs from code; only specialist runs reference a DB row. */
+async function agentDefinitionIdForTelemetry(
+  teamspaceId: string,
+  agentDefinitionId?: string,
+): Promise<string | null> {
+  if (!agentDefinitionId) return null;
+  const port = createAgentDefinitionPort(getDb(), { teamspaceId });
+  const definition = await port.getById(agentDefinitionId);
+  return definition ? agentDefinitionId : null;
+}
+
 export async function claimMainRunning(
   input: RunMainAgentInput,
   runId: string,
 ): Promise<void> {
   const db = getDb();
+  const agentDefinitionId = await agentDefinitionIdForTelemetry(
+    input.teamspaceId,
+    input.agentDefinitionId,
+  );
   await createAgentRunPort(db).start({
     teamspaceId: input.teamspaceId,
     runtimeKind: "main",
@@ -44,7 +62,7 @@ export async function claimMainRunning(
     scheduleId: input.scheduleId ?? null,
     workflowRunId: runId,
     accountId: input.accountId ?? null,
-    agentDefinitionId: input.agentDefinitionId ?? MAIN_AGENT_ID,
+    agentDefinitionId,
     trigger:
       input.chatContext?.trigger === "heartbeat"
         ? "heartbeat"

@@ -22,6 +22,7 @@ import {
   listTeamspaceAgentDefinitions,
   resolveSlackInboundRoute,
 } from "./slack-inbound-route";
+import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import { getAgentDefinitionPort, getTeamspaceMainConfigPort } from "@/lib/ports";
 import {
   createSlackWebhookVerifier,
@@ -247,10 +248,23 @@ async function handleInboundMessage(
 
   if (!route) return;
 
-  await thread.setState({ agentDefinitionId: route.agentDefinitionId });
+  // Main agent runs from code builtin; persist MAIN_AGENT_ID for thread routing only.
+  await thread.setState({
+    agentDefinitionId: route.isMain
+      ? (route.agentDefinitionId ?? MAIN_AGENT_ID)
+      : route.agentDefinitionId,
+  });
 
   if (route.showTypingIndicator && !isEmulateEnabled()) {
-    await thread.startTyping();
+    try {
+      await thread.startTyping();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("not_allowed_token_type")) {
+        throw error;
+      }
+      // User-subject Slack tokens (xoxp) cannot call assistant.threads.setStatus.
+    }
   }
 
   const { run, stream } = await runAgentStream(

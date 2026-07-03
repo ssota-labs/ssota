@@ -40,7 +40,7 @@ describe("getSlackBotTokenForInstallation", () => {
     delete process.env.CHAT_PROJECT_ID;
     process.env.SLACK_CONNECT_CONNECTOR = "slack/wrong-default";
     getAccount.mockResolvedValue({ id: "acct-fallback" });
-    getToken.mockResolvedValue({ token: "xoxb-minted" });
+    getToken.mockResolvedValue(null);
   });
 
   it("uses account_connections connector for the linked workspace", async () => {
@@ -57,11 +57,13 @@ describe("getSlackBotTokenForInstallation", () => {
         installationName: "SSOTA Labs",
       },
     ]);
+    getToken.mockResolvedValueOnce({ token: "xoxb-minted" });
 
     const { getSlackBotTokenForInstallation } = await import("./slack-token");
     const token = await getSlackBotTokenForInstallation("T0914DV7GA0");
 
     expect(token).toBe("xoxb-minted");
+    expect(getToken).toHaveBeenCalledTimes(1);
     expect(getToken).toHaveBeenCalledWith("slack/ssota", {
       teamspaceId: "teamspace-1",
       accountId: "acct-1",
@@ -69,7 +71,7 @@ describe("getSlackBotTokenForInstallation", () => {
     });
   });
 
-  it("passes subjectUserId from account_connections for Connect token mint", async () => {
+  it("tries app subject before user subject for Connect token mint", async () => {
     resolveWorkspace.mockResolvedValue({
       teamspaceId: "teamspace-1",
       accountId: "acct-1",
@@ -83,12 +85,20 @@ describe("getSlackBotTokenForInstallation", () => {
         installationName: "SSOTA Labs",
       },
     ]);
+    getToken
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ token: "xoxp-user-fallback" });
 
     const { getSlackBotTokenForInstallation } = await import("./slack-token");
     const token = await getSlackBotTokenForInstallation("T0914DV7GA0");
 
-    expect(token).toBe("xoxb-minted");
-    expect(getToken).toHaveBeenCalledWith("slack/ssota", {
+    expect(token).toBe("xoxp-user-fallback");
+    expect(getToken).toHaveBeenNthCalledWith(1, "slack/ssota", {
+      teamspaceId: "teamspace-1",
+      accountId: "acct-1",
+      installationId: "T0914DV7GA0",
+    });
+    expect(getToken).toHaveBeenNthCalledWith(2, "slack/ssota", {
       teamspaceId: "teamspace-1",
       accountId: "acct-1",
       installationId: "T0914DV7GA0",
@@ -108,6 +118,7 @@ describe("getSlackBotTokenForInstallation", () => {
         installationName: "SSOTA Labs",
       },
     ]);
+    getToken.mockResolvedValueOnce({ token: "xoxb-minted" });
 
     const { getSlackBotTokenForInstallation } = await import("./slack-token");
     const token = await getSlackBotTokenForInstallation("T0914DV7GA0");

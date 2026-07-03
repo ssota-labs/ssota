@@ -68,23 +68,37 @@ async function mintSlackBotToken(input: {
   if (!slackScope && !input.connectorUid) return null;
 
   const connector = slackScope?.connector ?? input.connectorUid!;
+  // Prefer Connect's installation id from account_connections; webhook team_id
+  // is only a lookup key and may differ from Connect's installation id.
   const installationId =
-    input.installationId ??
     slackScope?.installationId ??
     slackScope?.tenantId ??
+    input.installationId ??
     undefined;
 
   const provider = createVercelConnectProvider();
-  const subjectUserId = slackScope?.subjectUserId ?? undefined;
-  const cred = await provider.getToken(connector, {
+  const tokenScope = {
     teamspaceId: input.teamspaceId,
     accountId: input.accountId,
     installationId,
-    // Channels OAuth records the install under the authorizing user's Connect
-    // subject; mint with that userId so getToken does not fall back to app subject.
-    ...(subjectUserId ? { userId: subjectUserId } : {}),
-  });
-  return cred?.token ?? null;
+  };
+
+  // Inbound bot APIs (post, assistant.threads.setStatus) need bot token (xoxb).
+  // Connect exposes that via app-subject + installationId after Channels OAuth.
+  const appCred = await provider.getToken(connector, tokenScope);
+  if (appCred?.token) return appCred.token;
+
+  // Fallback: user-subject grant from Channels OAuth (xoxp — limited API surface).
+  const subjectUserId = slackScope?.subjectUserId ?? undefined;
+  if (subjectUserId) {
+    const userCred = await provider.getToken(connector, {
+      ...tokenScope,
+      userId: subjectUserId,
+    });
+    if (userCred?.token) return userCred.token;
+  }
+
+  return null;
 }
 
 /**
