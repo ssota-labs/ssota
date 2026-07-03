@@ -4,7 +4,6 @@ import { createDiscordAdapter } from "@chat-adapter/discord";
 import { createTelegramAdapter } from "@chat-adapter/telegram";
 import { createMigrationBackedPostgresState } from "./postgres-state";
 import {
-  createVercelConnectProvider,
   createVercelOidcVerifier,
   isEmulateEnabled,
   resolveProviderApiOrigin,
@@ -28,6 +27,7 @@ import {
   createSlackWebhookVerifier,
   resolveSlackSigningSecret,
 } from "./slack-webhook-verify";
+import { getSlackBotTokenForInstallation } from "./slack-token";
 
 type ChatThreadState = {
   agentDefinitionId?: string;
@@ -53,9 +53,6 @@ function slackAdapter() {
   const apiOptions = emulateApiUrl ? { apiUrl: emulateApiUrl } : {};
 
   if (!connectDisabled) {
-    const connector = process.env.SLACK_CONNECT_CONNECTOR ?? "slack";
-    const provider = createVercelConnectProvider();
-    const teamspaceId = process.env.CHAT_PROJECT_ID ?? "";
     const useIntake = process.env.SLACK_CONNECT_INTAKE !== "0";
     return createSlackAdapter({
       ...apiOptions,
@@ -66,11 +63,8 @@ function slackAdapter() {
       clientSecret: process.env.SLACK_CLIENT_SECRET,
       installationProvider: {
         getInstallation: async (installationId: string) => {
-          const cred = await provider.getToken(connector, {
-            teamspaceId,
-            installationId,
-          });
-          return cred ? { botToken: cred.token } : null;
+          const token = await getSlackBotTokenForInstallation(installationId);
+          return token ? { botToken: token } : null;
         },
       },
     });
