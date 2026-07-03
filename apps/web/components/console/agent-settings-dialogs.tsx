@@ -14,30 +14,14 @@ import type {
   ToolBundle,
 } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@ssota/ui/components/ui/dialog";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ssota/ui/components/ui/select";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { provisionSlackAgentMentionTriggerAction } from "@/app/actions";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { inboundChannelAuthorizeHref, inboundChannelStatusFor } from "@/lib/connect/inbound-channels";
-import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
 import {
   BASE_TOOL_BUNDLES,
   OPTIONAL_TOOL_BUNDLES,
@@ -90,7 +74,7 @@ type AgentSettingsDialogsProps = {
   onOpenDialogChange: (kind: AgentSettingsDialogKind | null) => void;
 };
 
-export type AgentSettingsDialogKind = "add-trigger" | "tools" | "skills" | "model";
+export type AgentSettingsDialogKind = "add-trigger" | "tools" | "skills";
 
 type ToolEntry =
   | { kind: "connector"; id: string; provider: string; label: string }
@@ -867,48 +851,6 @@ export function AgentSettingsDialogs({
         }
       />
 
-      <Dialog
-        open={openDialog === "model"}
-        onOpenChange={(open) => !open && onOpenDialogChange(null)}
-      >
-        <DialogContent className="max-w-xl" forceBackdrop>
-          <DialogHeader>
-            <DialogTitle>Model</DialogTitle>
-            <DialogDescription>
-              Default model for this agent when not overridden per run.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor="agent-model-select">Model</Label>
-            <Select
-              value={draft.model || DEFAULT_MODEL_ID}
-              onValueChange={(value) =>
-                value && onDraftChange({ model: value })
-              }
-              items={MODEL_OPTIONS.map((m) => ({
-                value: m.id,
-                label: `${m.label} (${m.provider})`,
-              }))}
-            >
-              <SelectTrigger id="agent-model-select" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MODEL_OPTIONS.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    {model.label} — {model.provider}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button type="button" onClick={() => onOpenDialogChange(null)}>
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

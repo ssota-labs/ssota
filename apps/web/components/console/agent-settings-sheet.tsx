@@ -7,7 +7,6 @@ import {
   AtIcon,
   ChatsCircleIcon,
   ClockIcon,
-  CpuIcon,
   LightbulbIcon,
   PlusIcon,
   WrenchIcon,
@@ -63,7 +62,8 @@ import { buildConnectorAuthorizeHref } from "@/lib/connect/authorize-href";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
-import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
+import { AgentModelPicker } from "@/components/console/agent-model-picker";
+import { DEFAULT_MODEL_ID } from "@/lib/chat/models";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
 import {
   isAgentSettingsDraftDirty,
@@ -308,12 +308,6 @@ export function AgentSettingsSheet({
       ),
     });
   };
-
-  const modelLabel =
-    MODEL_OPTIONS.find((m) => m.id === draft.model)?.label ?? "Auto";
-
-  const modelProvider =
-    MODEL_OPTIONS.find((m) => m.id === draft.model)?.provider ?? "";
 
   const connectedProviders = useMemo(() => {
     const map = new Map<string, ConnectorConnection[]>();
@@ -668,36 +662,30 @@ export function AgentSettingsSheet({
             </AgentSettingCard.Footer>
           </AgentSettingCard.Root>
 
-          <AgentSettingCard.Root testId="agent-settings-model-card">
+          <AgentSettingCard.Root testId="agent-settings-advanced-card">
             <AgentSettingCard.Header
-              title="Model"
-              description="Default model for agent runs."
+              title="Advanced"
+              description="Additional configuration for agent runs."
             />
             <AgentSettingCard.Body>
-              <AgentSettingCard.Items>
-                <AgentSettingCard.Item
-                  testId="agent-model-summary"
-                  icon={<CpuIcon className="size-3.5 text-muted-foreground" />}
-                  title={modelLabel}
-                  subtitle={modelProvider || "Default model"}
-                  onPress={() => setOpenDialog("model")}
-                  trailing={<AgentSettingCard.ItemCaret />}
-                />
+              <AgentSettingCard.Items divided>
+                <div
+                  className="flex items-center justify-between gap-3 px-1 py-2"
+                  data-testid="agent-advanced-model-row"
+                >
+                  <Label
+                    htmlFor="agent-model-picker"
+                    className="text-sm font-normal"
+                  >
+                    Model
+                  </Label>
+                  <AgentModelPicker
+                    value={draft.model || DEFAULT_MODEL_ID}
+                    onChange={(modelId) => patchDraft({ model: modelId })}
+                  />
+                </div>
               </AgentSettingCard.Items>
             </AgentSettingCard.Body>
-            <AgentSettingCard.Footer>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="w-fit justify-start gap-2"
-                data-testid="agent-model-change"
-                onClick={() => setOpenDialog("model")}
-              >
-                <CpuIcon className="size-3.5" aria-hidden />
-                Change model
-              </Button>
-            </AgentSettingCard.Footer>
           </AgentSettingCard.Root>
 
           <AgentSettingCard.Root testId="agent-settings-skills-card">

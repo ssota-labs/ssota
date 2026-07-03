@@ -44,7 +44,7 @@ test.describe("Agents", () => {
     await expect(page.getByTestId("agent-instructions-editor")).toBeVisible();
     await expect(page.getByTestId("agent-settings-tools-card")).toBeVisible();
     await expect(page.getByTestId("agent-settings-skills-card")).toBeVisible();
-    await expect(page.getByTestId("agent-settings-model-card")).toBeVisible();
+    await expect(page.getByTestId("agent-settings-advanced-card")).toBeVisible();
   });
 
   test("triggers card shows default chat/task and add trigger button", async ({ page }) => {
@@ -165,6 +165,25 @@ test.describe("Agents", () => {
     ).not.toBeVisible();
   });
 
+  test("opens model picker popover in Advanced card", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+
+    const advancedCard = page.getByTestId("agent-settings-advanced-card");
+    await expect(advancedCard.getByText("Advanced", { exact: true })).toBeVisible();
+    await expect(advancedCard.getByTestId("agent-advanced-model-row")).toBeVisible();
+
+    await advancedCard.getByTestId("agent-model-picker").click();
+    const picker = page.getByTestId("agent-model-picker-content");
+    await expect(picker).toBeVisible();
+    await expect(
+      picker.getByTestId("agent-model-option-anthropic--claude-sonnet-4.6"),
+    ).toBeVisible();
+    await expect(page.getByTestId("agent-model-change")).toHaveCount(0);
+  });
+
   test("settings cards show configured items in footer", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
@@ -183,8 +202,9 @@ test.describe("Agents", () => {
     ).toBeVisible();
     await expect(triggersCard.getByTestId("agent-trigger-chat")).toBeVisible();
 
-    const modelCard = page.getByTestId("agent-settings-model-card");
-    await expect(modelCard.getByText(/Auto|Claude|GPT/i)).toBeVisible();
+    const advancedCard = page.getByTestId("agent-settings-advanced-card");
+    await expect(advancedCard.getByTestId("agent-model-picker")).toBeVisible();
+    await expect(advancedCard.getByText(/Claude|GPT|Gemini/i)).toBeVisible();
   });
 
   test("shows unsaved state when task trigger is toggled", async ({ page }) => {
