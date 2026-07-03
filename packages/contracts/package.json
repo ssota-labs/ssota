@@ -27,10 +27,10 @@
     "./seed-packs/software-development-workflow/*": "./seed-packs/software-development-workflow/*"
   },
   "scripts": {
-    "build": "tsx scripts/embed-agent-instructions.ts && tsc",
+    "build": "tsx scripts/embed-agent-instructions.ts && tsx scripts/embed-workflow-instructions.ts && tsc",
     "dev": "tsc --watch",
     "lint": "eslint src",
-    "typecheck": "tsx scripts/embed-agent-instructions.ts && tsc --noEmit",
+    "typecheck": "tsx scripts/embed-agent-instructions.ts && tsx scripts/embed-workflow-instructions.ts && tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
