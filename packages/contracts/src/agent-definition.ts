@@ -31,7 +31,7 @@ export const ToolBundleSchema = z.enum([
 
 export type ToolBundle = z.infer<typeof ToolBundleSchema>;
 
-/** Bundles merged into every runnable agent (reference-only agents excluded at runtime). */
+/** Bundles merged into every runnable agent at runtime. */
 export const DEFAULT_AGENT_TOOL_BUNDLES: ToolBundle[] = [
   "graph.read",
   "tasks.manage",
@@ -93,8 +93,6 @@ export const AgentDefinitionSchema = z.object({
   name: z.string().min(1),
   description: z.string(),
   instructions: BlockNoteContentSchema,
-  isMain: z.boolean().default(false),
-  referenceOnly: z.boolean().default(false),
   toolBundles: z.array(ToolBundleSchema).default([]),
   nodeScopes: z.array(NodeScopeSchema).default([]),
   runPolicy: RunPolicySchema.default({}),
@@ -108,8 +106,6 @@ export const AgentDefinitionIndexSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1),
   description: z.string(),
-  isMain: z.boolean().default(false),
-  referenceOnly: z.boolean().default(false),
 });
 
 export type AgentDefinitionIndex = z.infer<typeof AgentDefinitionIndexSchema>;
@@ -119,8 +115,6 @@ export const AgentDefinitionSeedSchema = z.object({
   name: z.string().min(1),
   description: z.string().default(""),
   instructions: BlockNoteContentSchema,
-  isMain: z.boolean().default(false),
-  referenceOnly: z.boolean().default(false),
   toolBundles: z.array(ToolBundleSchema).default([]),
   nodeScopes: z.array(NodeScopeSchema).default([]),
   runPolicy: RunPolicySchema.default({}),

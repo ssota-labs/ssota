@@ -84,7 +84,10 @@ export default async function config(
     silent: !process.env.CI,
     // Upload a wider set of client files for better stack traces.
     widenClientFileUpload: true,
-    // Tree-shake Sentry's debug logger out of the client bundle.
-    disableLogger: true,
+    webpack: {
+      treeshake: {
+        removeDebugLogging: true,
+      },
+    },
   });
 };

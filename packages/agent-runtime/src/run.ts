@@ -1,9 +1,9 @@
 import type { ModelMessage, SystemModelMessage } from "ai";
 import type { AgentTrigger } from "@ssota/contracts";
 import { ExecutionDirectiveSchema } from "@ssota/contracts";
-import { getAgentDefinitionById, listRoutableAgentIndex } from "@ssota/contracts/agents";
+import { getAgentDefinitionById, BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import { serializeTask, readAgentDefinitionById } from "@ssota/core";
-import { getTaskPort, getAgentDefinitionPort, getSkillPort, ensureTeamspaceOrganizationScope } from "./ports.js";
+import { getTaskPort, getAgentDefinitionPort, getSkillPort, getTeamspaceMainConfigPort, ensureTeamspaceOrganizationScope } from "./ports.js";
 import { buildRunInstructionMessages } from "./runtime-prompt.js";
 import { resolveSkillManifest } from "./skill-manifest.js";
 import type { AgentRuntimeKind } from "@ssota/contracts";
@@ -86,7 +86,7 @@ export async function resolveRunAgentDefinition(
   if (input.runtimeKind === "main") {
     const instructionPort = getAgentDefinitionPort(input.teamspaceId, input.accountId);
 
-    if (input.agentDefinitionId) {
+    if (input.agentDefinitionId && input.agentDefinitionId !== BUILTIN_AGENT_IDS.main) {
       const loaded = await instructionPort.getById(input.agentDefinitionId);
       if (!loaded) {
         throw new Error(
@@ -99,17 +99,9 @@ export async function resolveRunAgentDefinition(
       return { definition, trigger };
     }
 
-    const dbMain = (await instructionPort.listDefinitions()).find((d) => d.isMain);
-    let definition = mainAgentRuntimeDefinition();
-    if (dbMain) {
-      const loaded = await instructionPort.getById(dbMain.id);
-      if (loaded) {
-        definition = {
-          ...runtimeDefinitionFromAgent(loaded),
-          isMain: true,
-        };
-      }
-    }
+    const mainConfigPort = getTeamspaceMainConfigPort();
+    const mainConfig = await mainConfigPort.getMainConfig(input.teamspaceId);
+    const definition = mainAgentRuntimeDefinition(mainConfig);
     const trigger = resolveMainTrigger(input);
     assertAllowedTrigger(definition, trigger);
     return { definition, trigger };
@@ -191,25 +183,21 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
         specialistChatPlaybook: playbook?.definition ?? null,
       });
     } else {
+      const mainConfigPort = getTeamspaceMainConfigPort();
+      const mainConfig = await mainConfigPort.getMainConfig(teamspaceId);
       const dbDefinitions = await instructionPort.listDefinitions();
-      const dbIds = new Set(dbDefinitions.map((w) => w.id));
-      const builtins = listRoutableAgentIndex().filter((b) => !dbIds.has(b.id));
-      const agentManifest = [
-        ...dbDefinitions
-          .filter((w) => !w.isMain && !w.referenceOnly)
-          .map((w) => ({
-            id: w.id,
-            name: w.name,
-            description: w.description,
-          })),
-        ...builtins,
-      ];
+      const agentManifest = dbDefinitions.map((w) => ({
+        id: w.id,
+        name: w.name,
+        description: w.description,
+      }));
       instructions = buildRunInstructionMessages({
         runtimeKind: "main",
         teamspaceId,
         accountId,
         agentManifest,
         skillManifest,
+        mainConfig,
       });
     }
 
@@ -245,8 +233,6 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
             name: builtin.title,
             description: builtin.description,
             instructions: [],
-            isMain: builtin.isMain,
-            referenceOnly: builtin.referenceOnly,
             toolBundles: builtin.toolBundles,
             nodeScopes: builtin.nodeScopes,
             runPolicy: builtin.runPolicy,

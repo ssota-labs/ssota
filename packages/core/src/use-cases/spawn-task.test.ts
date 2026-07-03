@@ -31,12 +31,12 @@ describe("spawnTask", () => {
     const state = createInMemoryState();
     const task = await spawnTask(spawnDeps(state, PROJECT_ID), PROJECT_ID, {
       title: "Daily planning",
-      agentDefinitionId: BUILTIN_AGENT_IDS.main,
+      agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature,
       context: { executionDirective: sampleExecutionDirective },
       acceptanceCriteria: ["Task created"],
     });
 
-    expect(task.agentDefinitionId).toBe(BUILTIN_AGENT_IDS.main);
+    expect(task.agentDefinitionId).toBe(BUILTIN_AGENT_IDS.implementFeature);
     expect(task.status).toBe("pending");
     expect(task.teamspaceId).toBe(PROJECT_ID);
   });

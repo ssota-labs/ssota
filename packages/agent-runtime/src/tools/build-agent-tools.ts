@@ -1,5 +1,5 @@
 import type { ToolSet } from "ai";
-import type { AgentDefinition, ToolBundle } from "@ssota/contracts";
+import type { ToolBundle } from "@ssota/contracts";
 import { mergeAgentToolBundles } from "@ssota/contracts";
 import { getAgentDefinitionById } from "@ssota/contracts/agents";
 import { createGraphTools } from "./graph.js";
@@ -52,12 +52,10 @@ function mergeTools(...sets: ToolSet[]): ToolSet {
  * Build a scoped tool set from an agent definition's `toolBundles`. Connector
  * tools are resolved separately by the active adapter at run time.
  */
-export function buildAgentTools(
-  definition: Pick<AgentDefinition, "toolBundles" | "isMain"> | {
-    toolBundles: ToolBundle[];
-    isMain: boolean;
-  },
-): ToolSet {
+export function buildAgentTools(definition: {
+  toolBundles: ToolBundle[];
+  isMain: boolean;
+}): ToolSet {
   const bundles = new Set(mergeAgentToolBundles(definition.toolBundles));
   const graph = createGraphTools();
   const tasks = createTaskTools();

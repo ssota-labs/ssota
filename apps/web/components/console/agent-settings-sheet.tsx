@@ -47,7 +47,7 @@ import {
   ScheduleSheet,
   type ScheduleEditTarget,
 } from "@/components/schedules/schedule-sheet";
-import { updateAgentDefinitionAction } from "@/app/actions";
+import { updateAgentDefinitionAction, updateTeamspaceMainConfigAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { CardListSheetPanel } from "@/components/card-list-sheet";
 import { AgentSettingCard } from "@/components/console/agent-setting-card";
@@ -81,6 +81,7 @@ const DocumentEditorEl = dynamic(
 
 type AgentSettingsSheetProps = {
   definition: AgentDefinition;
+  settingsTarget?: "main" | "agent";
   teamspaceId: string;
   accountId: string;
   scriptToolIds: string[];
@@ -133,6 +134,7 @@ function buildDraft(
 
 export function AgentSettingsSheet({
   definition,
+  settingsTarget = "agent",
   teamspaceId,
   accountId,
   scriptToolIds: initialScriptToolIds,
@@ -342,25 +344,32 @@ export function AgentSettingsSheet({
     startTransition(async () => {
       const bundles = resolveToolBundlesForSave(draft);
       const allowedTriggers = resolveAllowedTriggersForSave(draft, agentSchedules);
+      const runPolicy = {
+        ...definition.runPolicy,
+        model: draft.model,
+        allowedTriggers,
+        linkedWorkerAgentIds: draft.linkedWorkerAgentIds,
+        enabledConnectorProviders: draft.enabledConnectorProviders,
+        connectionTriggers: draft.connectionTriggers,
+      };
 
-      await updateAgentDefinitionAction(teamspaceId, {
-        id: definition.id,
-        name: definition.name,
-        description: definition.description,
-        instructions: draft.instructions,
-        isMain: definition.isMain,
-        referenceOnly: definition.referenceOnly,
-        toolBundles: bundles,
-        runPolicy: {
-          ...definition.runPolicy,
-          model: draft.model,
-          allowedTriggers,
-          linkedWorkerAgentIds: draft.linkedWorkerAgentIds,
-          enabledConnectorProviders: draft.enabledConnectorProviders,
-          connectionTriggers: draft.connectionTriggers,
-        },
-        scriptToolIds: draft.scriptToolIds,
-      });
+      if (settingsTarget === "main") {
+        await updateTeamspaceMainConfigAction(teamspaceId, {
+          instructions: draft.instructions,
+          toolBundles: bundles,
+          runPolicy,
+        });
+      } else {
+        await updateAgentDefinitionAction(teamspaceId, {
+          id: definition.id,
+          name: definition.name,
+          description: definition.description,
+          instructions: draft.instructions,
+          toolBundles: bundles,
+          runPolicy,
+          scriptToolIds: draft.scriptToolIds,
+        });
+      }
 
       const schedulePatches = agentSchedules.filter(
         (schedule) =>

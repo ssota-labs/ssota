@@ -1,11 +1,12 @@
 "use server";
 
 import {
-  type TaskStatus,
   BlockNoteContentSchema,
   SpawnTaskInputSchema,
   UpdateTaskInputSchema,
+  UpdateTeamspaceMainConfigInputSchema,
   UpsertAgentDefinitionInputSchema,
+  type TaskStatus,
 } from "@ssota/contracts";
 import { spawnTask } from "@ssota/core";
 import { revalidatePath } from "next/cache";
@@ -17,7 +18,7 @@ import { clearAuthSignedOut } from "@/lib/auth/signed-out-cookie";
 import { getSiteUrl, isGoogleAuthEnabled } from "@/lib/auth/config";
 import { safeNextPath } from "@/lib/auth/safe-next-path";
 import { createSupabaseServerClient, getCurrentUser } from "@/lib/supabase/server";
-import { getGraphPorts, getTaskPort, getAgentDefinitionPort } from "@/lib/ports";
+import { getGraphPorts, getTaskPort, getAgentDefinitionPort, getTeamspaceMainConfigPort } from "@/lib/ports";
 import { uploadEditorAsset } from "@/lib/editor/storage";
 import { createSlackUserGroupForAgent } from "@ssota/agent-runtime";
 import { getSlackBotTokenForTeamspace } from "@/lib/chat/slack-token";
@@ -46,8 +47,6 @@ export async function updateAgentDefinitionAction(
     name: string;
     description?: string;
     instructions: unknown;
-    isMain?: boolean;
-    referenceOnly?: boolean;
     toolBundles?: string[];
     runPolicy?: {
       model?: string;
@@ -80,8 +79,6 @@ export async function updateAgentDefinitionAction(
     name: input.name,
     description: input.description ?? "",
     instructions: BlockNoteContentSchema.parse(input.instructions),
-    isMain: input.isMain ?? false,
-    referenceOnly: input.referenceOnly ?? false,
     toolBundles: input.toolBundles,
     runPolicy: input.runPolicy,
   });
@@ -91,6 +88,7 @@ export async function updateAgentDefinitionAction(
     () => port.listDefinitions(),
     (id) => port.getById(id),
   );
+  const mainConfig = await getTeamspaceMainConfigPort().getMainConfig(teamspaceId);
   for (const trigger of parsed.runPolicy.connectionTriggers ?? []) {
     if (
       trigger.id === "slack:agent_mentioned" &&
@@ -99,6 +97,7 @@ export async function updateAgentDefinitionAction(
     ) {
       await assertSlackMentionUserGroupUnique(
         definitions,
+        mainConfig,
         parsed.id,
         trigger.slackUserGroupId,
       );
@@ -122,6 +121,71 @@ export async function updateAgentDefinitionAction(
 
 /** @deprecated Use updateAgentDefinitionAction */
 export const updateWorkflowInstructionAction = updateAgentDefinitionAction;
+
+export async function updateTeamspaceMainConfigAction(
+  teamspaceId: string,
+  input: {
+    instructions?: unknown;
+    toolBundles?: string[];
+    runPolicy?: {
+      model?: string;
+      allowedTriggers?: string[];
+      linkedWorkerAgentIds?: string[];
+      enabledConnectorProviders?: string[];
+      connectionTriggers?: Array<{
+        id: string;
+        provider: string;
+        kind: string;
+        label: string;
+        enabled?: boolean;
+        slackUserGroupId?: string;
+        slackUserGroupHandle?: string;
+        showTypingIndicator?: boolean;
+      }>;
+      maxSteps?: number;
+      sandboxPolicy?: "none" | "optional" | "required";
+      approvalPolicy?: "none" | "gate" | "human";
+      timeoutMs?: number;
+    };
+  },
+) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("Unauthorized");
+
+  const parsed = UpdateTeamspaceMainConfigInputSchema.parse({
+    instructions: input.instructions
+      ? BlockNoteContentSchema.parse(input.instructions)
+      : undefined,
+    toolBundles: input.toolBundles,
+    runPolicy: input.runPolicy,
+  });
+
+  const port = getAgentDefinitionPort(teamspaceId);
+  const definitions = await listTeamspaceAgentDefinitions(
+    () => port.listDefinitions(),
+    (id) => port.getById(id),
+  );
+  for (const trigger of parsed.runPolicy?.connectionTriggers ?? []) {
+    if (
+      trigger.id === "slack:agent_mentioned" &&
+      trigger.enabled &&
+      trigger.slackUserGroupId
+    ) {
+      await assertSlackMentionUserGroupUnique(
+        definitions,
+        null,
+        null,
+        trigger.slackUserGroupId,
+      );
+    }
+  }
+
+  await getTeamspaceMainConfigPort().updateMainConfig(teamspaceId, parsed);
+
+  for (const path of withConsolePaths(["/agents"])) {
+    revalidatePath(path);
+  }
+}
 
 export async function provisionSlackAgentMentionTriggerAction(
   teamspaceId: string,

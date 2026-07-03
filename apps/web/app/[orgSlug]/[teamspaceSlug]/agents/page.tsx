@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import type { SkillIndex } from "@ssota/contracts";
 import { AgentsWorkspace } from "@/components/console/agents-workspace";
 import { AgentsContentLoading } from "@/components/console/browse-content-loading";
-import { loadAgentGroupsForUi } from "@/lib/console/load-agents-for-ui";
+import { loadAgentDefinitionsForUi } from "@/lib/console/load-agents-for-ui";
+import { loadMainAgentDefinitionForUi } from "@/lib/console/load-main-agent-for-ui";
 import {
   loadAgentSettingsConnections,
   loadAgentSettingsContext,
@@ -31,22 +32,23 @@ async function AgentsPageInner({
 }) {
   const { orgSlug, teamspaceSlug } = await params;
   const { org, project } = await resolveOrg(orgSlug, teamspaceSlug);
-  const [groups, settingsContext, user] = await Promise.all([
-    loadAgentGroupsForUi(project.id),
-    loadAgentSettingsContext(
-      project.id,
-      org.id,
-      legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "channels"),
-    ),
-    getCurrentUser(),
-  ]);
+  const [definitions, mainAgentDefinition, settingsContext, user] =
+    await Promise.all([
+      loadAgentDefinitionsForUi(project.id),
+      loadMainAgentDefinitionForUi(project.id),
+      loadAgentSettingsContext(
+        project.id,
+        org.id,
+        legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "channels"),
+      ),
+      getCurrentUser(),
+    ]);
 
   const connections =
     user != null
       ? await loadAgentSettingsConnections(project.id, org.id, user.id)
       : { user: [], org: [] };
 
-  const definitions = groups.flatMap((g) => g.items);
   const scriptToolPort = getScriptToolPort(project.id);
   const skillPort = await getSkillPort(project.id);
   const scriptToolLinks: Record<string, string[]> = {};
@@ -65,7 +67,8 @@ async function AgentsPageInner({
     <div className="relative min-h-0 flex-1">
       <AgentsWorkspace
         teamspaceId={project.id}
-        groups={groups}
+        mainAgentDefinition={mainAgentDefinition}
+        definitions={definitions}
         settingsContext={{
           ...settingsContext,
           connections,

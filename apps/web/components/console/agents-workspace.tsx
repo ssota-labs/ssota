@@ -4,13 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
 import { CardListSheet } from "@/components/card-list-sheet";
-import type { AgentGroup } from "@/lib/console/load-agents-for-ui";
+import type { AgentDefinition } from "@ssota/contracts";
+import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import type { AgentSettingsContext } from "@/lib/console/load-agent-settings-context";
 import { isWorkerAgentId } from "@/lib/console/agent-tool-catalog";
 
 type AgentsWorkspaceProps = {
   teamspaceId: string;
-  groups: AgentGroup[];
+  mainAgentDefinition: AgentDefinition;
+  definitions: AgentDefinition[];
   settingsContext: AgentSettingsContext;
   scriptToolLinks: Record<string, string[]>;
   skillLinks: Record<string, string[]>;
@@ -19,19 +21,22 @@ type AgentsWorkspaceProps = {
 
 export function AgentsWorkspace({
   teamspaceId,
-  groups: initialGroups,
+  mainAgentDefinition,
+  definitions: initialDefinitions,
   settingsContext,
   scriptToolLinks,
   skillLinks,
   skillsHref,
 }: AgentsWorkspaceProps) {
-  const [groups, setGroups] = useState(initialGroups);
+  const [definitions, setDefinitions] = useState(initialDefinitions);
+  const [mainAgent, setMainAgent] = useState(mainAgentDefinition);
   const [activeId, setActiveId] = useState<string | null>(null);
   const requestCloseRef = useRef<((action: () => void) => void) | null>(null);
 
-  const definitions = groups.flatMap((group) => group.items);
   const activeDefinition =
-    definitions.find((entry) => entry.id === activeId) ?? null;
+    activeId === MAIN_AGENT_ID
+      ? mainAgent
+      : (definitions.find((entry) => entry.id === activeId) ?? null);
   const open = activeDefinition !== null;
 
   const workers = useMemo(
@@ -40,8 +45,12 @@ export function AgentsWorkspace({
   );
 
   useEffect(() => {
-    setGroups(initialGroups);
-  }, [initialGroups]);
+    setDefinitions(initialDefinitions);
+  }, [initialDefinitions]);
+
+  useEffect(() => {
+    setMainAgent(mainAgentDefinition);
+  }, [mainAgentDefinition]);
 
   const close = () => setActiveId(null);
 
@@ -82,7 +91,7 @@ export function AgentsWorkspace({
       <BrowseWorkspace.Frame>
         <BrowseWorkspace.Header
           title="Agents"
-          description="Configure agent playbooks, tools, triggers, models, and skills."
+          description="Configure the project agent and agents you create for this project."
           actions={
             <a
               href={skillsHref}
@@ -93,44 +102,56 @@ export function AgentsWorkspace({
           }
         />
 
-        {groups.map((group) => (
-          <BrowseWorkspace.Section key={group.key} label={group.label}>
-            <CardListSheet.List className="border-border bg-transparent">
-              {group.items.map((definition) => (
-                <CardListSheet.Row
-                  key={definition.id}
-                  id={definition.id}
-                  testId={`agent-item-${definition.id}`}
-                  className="bg-transparent hover:bg-muted/30"
-                >
-                  <div className="min-w-0 flex-1 space-y-1">
-                    <span className="text-sm font-medium">{definition.name}</span>
-                    <p className="font-mono text-xs text-muted-foreground">
-                      {definition.id}
-                    </p>
-                    {definition.description ? (
-                      <p className="line-clamp-2 text-xs text-muted-foreground">
-                        {definition.description}
-                      </p>
-                    ) : null}
-                  </div>
-                  <CardListSheet.RowCaret />
-                </CardListSheet.Row>
-              ))}
-            </CardListSheet.List>
-          </BrowseWorkspace.Section>
-        ))}
+        <BrowseWorkspace.Section label="Project agent">
+          <CardListSheet.List className="border-border bg-transparent">
+            <CardListSheet.Row
+              id={MAIN_AGENT_ID}
+              testId="main-agent-card"
+              className="bg-transparent hover:bg-muted/30"
+            >
+              <div className="min-w-0 flex-1 space-y-1">
+                <span className="text-sm font-medium">{mainAgent.name}</span>
+                <p className="line-clamp-2 text-xs text-muted-foreground">
+                  {mainAgent.description}
+                </p>
+              </div>
+              <CardListSheet.RowCaret />
+            </CardListSheet.Row>
+          </CardListSheet.List>
+        </BrowseWorkspace.Section>
 
-        {definitions.length === 0 ? (
+        {definitions.length > 0 ? (
+          <CardListSheet.List className="border-border bg-transparent">
+            {definitions.map((definition) => (
+              <CardListSheet.Row
+                key={definition.id}
+                id={definition.id}
+                testId={`agent-item-${definition.id}`}
+                className="bg-transparent hover:bg-muted/30"
+              >
+                <div className="min-w-0 flex-1 space-y-1">
+                  <span className="text-sm font-medium">{definition.name}</span>
+                  {definition.description ? (
+                    <p className="line-clamp-2 text-xs text-muted-foreground">
+                      {definition.description}
+                    </p>
+                  ) : null}
+                </div>
+                <CardListSheet.RowCaret />
+              </CardListSheet.Row>
+            ))}
+          </CardListSheet.List>
+        ) : (
           <BrowseWorkspace.Empty>
-            No agent definitions seeded for this project yet.
+            No agents yet. Create agents from chat or when applying a template.
           </BrowseWorkspace.Empty>
-        ) : null}
+        )}
       </BrowseWorkspace.Frame>
 
       {open && activeDefinition ? (
         <AgentSettingsSheet
           definition={activeDefinition}
+          settingsTarget={activeId === MAIN_AGENT_ID ? "main" : "agent"}
           teamspaceId={teamspaceId}
           accountId={settingsContext.accountId}
           scriptToolIds={scriptToolLinks[activeDefinition.id] ?? []}

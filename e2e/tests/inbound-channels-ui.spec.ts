@@ -12,7 +12,7 @@ const SCREENSHOT_DIR = "/opt/cursor/artifacts/screenshots";
 
 async function openSlackAddTriggerDetail(page: import("@playwright/test").Page) {
   await gotoProject(page, "agents");
-  await page.getByTestId("agent-item-a0000000-0000-4000-8000-000000000001").click();
+  await page.getByTestId("main-agent-card").click();
   await page.getByTestId("agent-triggers-add").click();
 
   const addDialog = page.getByTestId("agent-add-trigger-sidebar-dialog");

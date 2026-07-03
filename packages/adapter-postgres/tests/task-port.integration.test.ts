@@ -60,22 +60,14 @@ describe("task port integration", () => {
       const fixtures: Array<{
         id: string;
         name: string;
-        isMain: boolean;
       }> = [
         {
           id: BUILTIN_AGENT_IDS.implementFeature,
           name: "Implement feature",
-          isMain: false,
         },
         {
           id: BUILTIN_AGENT_IDS.writeDocument,
           name: "Write document",
-          isMain: false,
-        },
-        {
-          id: BUILTIN_AGENT_IDS.main,
-          name: "SSOTA Main Agent",
-          isMain: true,
         },
       ];
 
@@ -87,8 +79,6 @@ describe("task port integration", () => {
           instructions: textToBlockNoteContent(
             `Fixture instruction for ${fixture.name}.`,
           ),
-          isMain: fixture.isMain,
-          referenceOnly: false,
           toolBundles: [],
           nodeScopes: [],
           runPolicy: {},

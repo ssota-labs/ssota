@@ -9,10 +9,7 @@ import {
   blockNoteContentToText,
   textToBlockNoteContent,
 } from "@ssota/contracts";
-import {
-  getAgentDefinitionById,
-  listRoutableAgentIndex,
-} from "@ssota/contracts/agents";
+import { getAgentDefinitionById } from "@ssota/contracts/agents";
 import { getAgentDefinitionPort } from "../ports.js";
 import { getRunContext } from "./context.js";
 
@@ -27,24 +24,13 @@ export function createAgentDefinitionTools(): ToolSet {
         const items = await listAgentDefinitions(
           getAgentDefinitionPort(ctx.teamspaceId, ctx.accountId),
         );
-        const dbRows = items.map((definition) => ({
-          id: definition.id,
-          name: definition.name,
-          description: definition.description,
-          isMain: definition.isMain,
-          referenceOnly: definition.referenceOnly,
-        }));
-        const dbIds = new Set(dbRows.map((r) => r.id));
-        const builtins = listRoutableAgentIndex()
-          .filter((b) => !dbIds.has(b.id))
-          .map((b) => ({
-            id: b.id,
-            name: b.name,
-            description: b.description,
-            isMain: false,
-            referenceOnly: false,
-          }));
-        return { definitions: [...dbRows, ...builtins] };
+        return {
+          definitions: items.map((definition) => ({
+            id: definition.id,
+            name: definition.name,
+            description: definition.description,
+          })),
+        };
       },
     }),
 
@@ -93,8 +79,6 @@ export function createAgentDefinitionTools(): ToolSet {
         body: z
           .string()
           .describe("The playbook as markdown / plain text."),
-        isMain: z.boolean().optional(),
-        referenceOnly: z.boolean().optional(),
       }),
       execute: async (input, { context }) => {
         const ctx = getRunContext(context);
@@ -107,8 +91,6 @@ export function createAgentDefinitionTools(): ToolSet {
             name: input.name,
             description: input.description,
             instructions: textToBlockNoteContent(input.body),
-            isMain: input.isMain ?? false,
-            referenceOnly: input.referenceOnly ?? false,
             toolBundles: [],
             nodeScopes: [],
             runPolicy: {},
