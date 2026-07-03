@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
-const MAIN_AGENT_BUTTON = /SSOTA Main Agent/i;
+const PROJECT_AGENT_CARD = "main-agent-card";
 
 test.describe("Agents", () => {
   test("agent browse list cards use transparent background", async ({ page }) => {
@@ -25,10 +25,12 @@ test.describe("Agents", () => {
     await expect(
       main.getByRole("heading", { level: 1, name: "Agents", exact: true }),
     ).toBeVisible();
-    await expect(main.getByText("Main", { exact: true })).toBeVisible();
-    await expect(main.getByRole("button", { name: MAIN_AGENT_BUTTON })).toBeVisible();
+    await expect(
+      main.getByRole("heading", { name: "Project agent", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByTestId(PROJECT_AGENT_CARD)).toBeVisible();
 
-    await main.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
 
     const sheet = page.getByTestId("agent-settings-sheet");
     await expect(sheet).toBeVisible();
@@ -50,7 +52,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
 
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
     await expect(triggersCard.getByTestId("agent-trigger-chat")).toBeVisible();
@@ -67,7 +69,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
     await page.getByTestId("agent-triggers-add").click();
 
     const addDialog = page.getByTestId("agent-add-trigger-sidebar-dialog");
@@ -86,7 +88,7 @@ test.describe("Agents", () => {
     await expect(nav.getByText("Discord", { exact: true })).not.toBeVisible();
     await addDialog.getByTestId("add-trigger-slack:agent_mentioned").click();
     await expect(
-      addDialog.getByText(/Slack user group/i),
+      addDialog.getByText(/creates a Slack user group/i),
     ).toBeVisible();
     await expect(
       addDialog.getByText(/Saved or Later messages/i),
@@ -97,7 +99,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
     await page.getByTestId("agent-triggers-add").click();
 
     const addDialog = page.getByTestId("agent-add-trigger-sidebar-dialog");
@@ -113,7 +115,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
 
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
     const scheduleRow = triggersCard.getByRole("button", {
@@ -136,7 +138,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
     await page.getByTestId("agent-tools-manage").click();
 
     const toolsDialog = page.getByTestId("agent-tools-sidebar-dialog");
@@ -150,7 +152,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
 
     const toolsCard = page.getByTestId("agent-settings-tools-card");
     await expect(
@@ -172,7 +174,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
 
     const sheet = page.getByTestId("agent-settings-sheet");
     const saveButton = page.getByTestId("agent-settings-save");
@@ -198,7 +200,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
     await page
       .getByTestId("agent-trigger-task")
       .getByRole("switch")
@@ -222,7 +224,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
     await expect(page.getByTestId("agent-settings-sheet")).toBeVisible();
 
     const workspace = page.getByTestId("agents-workspace");

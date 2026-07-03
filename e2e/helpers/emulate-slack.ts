@@ -69,8 +69,6 @@ export async function ensureEmulateSlackMentionTrigger(
       name: existing?.name ?? builtin?.title ?? agentName,
       description: existing?.description ?? builtin?.description ?? "",
       instructions: existing?.instructions ?? [],
-      isMain: false,
-      referenceOnly: false,
       toolBundles: existing?.toolBundles ?? builtin?.toolBundles ?? [],
       runPolicy,
     });

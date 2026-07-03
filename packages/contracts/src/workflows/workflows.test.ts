@@ -57,31 +57,16 @@ describe("workflow registry SSOT", () => {
 });
 
 describe("built-in workflows (code-only, not seeded)", () => {
-  it("exposes agent.setup as a built-in with a full instruction", () => {
-    const setup = getBuiltinWorkflowByKey("agent.setup");
-    expect(setup).not.toBeNull();
-    expect(setup?.instruction.length).toBeGreaterThan(50);
-    expect(setup?.description.length).toBeGreaterThan(20);
-    expect(listBuiltinWorkflowIndex().some((w) => w.key === "agent.setup")).toBe(
-      true,
-    );
+  it("has no built-in workflow entries", () => {
+    expect(listBuiltinWorkflowIndex()).toHaveLength(0);
+    expect(getBuiltinWorkflowByKey("agent.setup")).toBeNull();
+    expect(getBuiltinWorkflowByKey("agent.guide.page_authoring")).toBeNull();
+    expect(getBuiltinWorkflowByKey("agent.guide.workflow_authoring")).toBeNull();
   });
 
   it("keeps built-ins OUT of the seeded registry", () => {
     expect(isKnownWorkflowKey("agent.setup")).toBe(false);
     expect(getWorkflowByKey("agent.setup")).toBeNull();
-  });
-
-  it("hides reference guides from the manifest but resolves them by key", () => {
-    const manifestKeys = listBuiltinWorkflowIndex().map((w) => w.key);
-    expect(manifestKeys).toContain("agent.setup");
-    expect(manifestKeys).not.toContain("agent.guide.page_authoring");
-    expect(manifestKeys).not.toContain("agent.guide.workflow_authoring");
-    // ...but they are still loadable on demand.
-    expect(getBuiltinWorkflowByKey("agent.guide.page_authoring")).not.toBeNull();
-    expect(
-      getBuiltinWorkflowByKey("agent.guide.workflow_authoring"),
-    ).not.toBeNull();
   });
 });
 

@@ -13,6 +13,8 @@ export {
   seedAgentDefinitions,
   createWorkflowInstructionPort,
   seedWorkflowInstructions,
+  createTeamspaceMainConfigPort,
+  seedTeamspaceMainConfig,
   createPagePort,
   createPageViewStatePort,
   seedPages,

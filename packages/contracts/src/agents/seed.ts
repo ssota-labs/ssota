@@ -6,8 +6,6 @@ type AgentSeedSource = {
   title: string;
   description: string;
   instruction: string;
-  isMain?: boolean;
-  referenceOnly?: boolean;
   toolBundles?: AgentDefinitionSeed["toolBundles"];
   nodeScopes?: AgentDefinitionSeed["nodeScopes"];
   runPolicy?: AgentDefinitionSeed["runPolicy"];
@@ -22,8 +20,6 @@ export function buildAgentDefinitionSeeds(
     name: entry.title,
     description: entry.description,
     instructions: textToBlockNoteContent(entry.instruction),
-    isMain: entry.isMain ?? false,
-    referenceOnly: entry.referenceOnly ?? false,
     toolBundles: entry.toolBundles ?? [],
     nodeScopes: entry.nodeScopes ?? [],
     runPolicy: entry.runPolicy ?? {},

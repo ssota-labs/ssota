@@ -23,7 +23,7 @@ import {
   resolveSlackInboundRoute,
 } from "./slack-inbound-route";
 import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
-import { getAgentDefinitionPort } from "@/lib/ports";
+import { getAgentDefinitionPort, getTeamspaceMainConfigPort } from "@/lib/ports";
 import {
   createSlackWebhookVerifier,
   resolveSlackSigningSecret,
@@ -235,8 +235,12 @@ async function handleInboundMessage(
 
   const threadState = await thread.state;
   const definitions = await loadDefinitions(target.teamspaceId);
+  const mainConfig = await getTeamspaceMainConfigPort().getMainConfig(
+    target.teamspaceId,
+  );
   const route = await resolveSlackInboundRoute({
     definitions,
+    mainConfig,
     messageText: message.text,
     messageIsBotMention: message.isMention ?? false,
     threadAgentDefinitionId: threadState?.agentDefinitionId,
