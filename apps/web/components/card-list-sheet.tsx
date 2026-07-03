@@ -138,7 +138,7 @@ function Row({ id, children, className, testId, onClick }: RowProps) {
       data-testid={testId}
       className={cn(
         "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
-        active && "bg-muted/30",
+        active && "bg-transparent",
         className,
       )}
       onClick={() => {
