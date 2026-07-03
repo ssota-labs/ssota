@@ -319,14 +319,6 @@ export function AgentSettingsSheet({
           data-testid="agent-settings-sheet"
           data-unsaved={isDirty ? "true" : undefined}
         >
-          {isDirty ? (
-            <p
-              className="text-xs text-amber-600 dark:text-amber-400"
-              data-testid="agent-settings-unsaved"
-            >
-              Changes are not saved yet. Save to apply them to the agent runtime.
-            </p>
-          ) : null}
           <AgentSettingCard
             title="Triggers"
             description="When should this agent run?"

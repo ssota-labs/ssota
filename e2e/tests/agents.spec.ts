@@ -159,22 +159,23 @@ test.describe("Agents", () => {
 
     await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
 
+    const sheet = page.getByTestId("agent-settings-sheet");
     const saveButton = page.getByTestId("agent-settings-save");
     await expect(saveButton).toBeDisabled();
     await expect(saveButton).toHaveText("Saved");
-    await expect(page.getByTestId("agent-settings-unsaved")).not.toBeVisible();
+    await expect(sheet).not.toHaveAttribute("data-unsaved", "true");
 
     const taskSwitch = page
       .getByTestId("agent-trigger-task")
       .getByRole("switch");
     await taskSwitch.click();
 
-    await expect(page.getByTestId("agent-settings-unsaved")).toBeVisible();
+    await expect(sheet).toHaveAttribute("data-unsaved", "true");
     await expect(saveButton).toBeEnabled();
     await expect(saveButton).toHaveText("Save changes");
 
     await taskSwitch.click();
-    await expect(page.getByTestId("agent-settings-unsaved")).not.toBeVisible();
+    await expect(sheet).not.toHaveAttribute("data-unsaved", "true");
     await expect(saveButton).toBeDisabled();
   });
 
