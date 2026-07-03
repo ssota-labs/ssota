@@ -153,6 +153,31 @@ test.describe("Agents", () => {
     await expect(modelCard.getByText(/Auto|Claude|GPT/i)).toBeVisible();
   });
 
+  test("shows unsaved state when task trigger is toggled", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+
+    const saveButton = page.getByTestId("agent-settings-save");
+    await expect(saveButton).toBeDisabled();
+    await expect(saveButton).toHaveText("Saved");
+    await expect(page.getByTestId("agent-settings-unsaved")).not.toBeVisible();
+
+    const taskSwitch = page
+      .getByTestId("agent-trigger-task")
+      .getByRole("switch");
+    await taskSwitch.click();
+
+    await expect(page.getByTestId("agent-settings-unsaved")).toBeVisible();
+    await expect(saveButton).toBeEnabled();
+    await expect(saveButton).toHaveText("Save changes");
+
+    await taskSwitch.click();
+    await expect(page.getByTestId("agent-settings-unsaved")).not.toBeVisible();
+    await expect(saveButton).toBeDisabled();
+  });
+
   test("sidebar nav link reaches agents", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "overview");

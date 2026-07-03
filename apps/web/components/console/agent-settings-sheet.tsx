@@ -44,6 +44,11 @@ import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catal
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
+import {
+  isAgentSettingsDraftDirty,
+  resolveAllowedTriggersForSave,
+  resolveToolBundlesForSave,
+} from "@/lib/console/agent-settings-save-snapshot";
 
 const DocumentEditorEl = dynamic(
   () =>
@@ -130,6 +135,28 @@ export function AgentSettingsSheet({
     (s) => s.agentDefinitionId === definition.id,
   );
 
+  const savedDraft = useMemo(
+    () => buildDraft(definition, initialScriptToolIds, schedules),
+    [definition, initialScriptToolIds, schedules],
+  );
+
+  const isDirty = useMemo(
+    () => isAgentSettingsDraftDirty(draft, savedDraft, agentSchedules),
+    [draft, savedDraft, agentSchedules],
+  );
+
+  const handleClose = useCallback(() => {
+    if (
+      isDirty &&
+      !window.confirm(
+        "You have unsaved changes. Close without saving?",
+      )
+    ) {
+      return;
+    }
+    onClose();
+  }, [isDirty, onClose]);
+
   const editingSchedule = editingScheduleId
     ? agentSchedules.find((s) => s.id === editingScheduleId)
     : undefined;
@@ -215,21 +242,8 @@ export function AgentSettingsSheet({
 
   const handleSave = () => {
     startTransition(async () => {
-      const bundles = mergeToolBundles(draft.toolBundles);
-      if (draft.linkedWorkerAgentIds.length > 0 && !bundles.includes("delegate")) {
-        bundles.push("delegate");
-      }
-
-      const allowedTriggers = [...new Set([...draft.allowedTriggers, "chat"])];
-      if (agentSchedules.length > 0 && !allowedTriggers.includes("schedule")) {
-        allowedTriggers.push("schedule");
-      }
-      if (
-        draft.connectionTriggers.some((t) => t.enabled) &&
-        !allowedTriggers.includes("chatbot")
-      ) {
-        allowedTriggers.push("chatbot");
-      }
+      const bundles = resolveToolBundlesForSave(draft);
+      const allowedTriggers = resolveAllowedTriggersForSave(draft, agentSchedules);
 
       await updateAgentDefinitionAction(teamspaceId, {
         id: definition.id,
@@ -281,25 +295,38 @@ export function AgentSettingsSheet({
     <>
       <CardListSheetPanel
         title="Settings"
-        subtitle={definition.name}
+        subtitle={
+          isDirty ? `${definition.name} · Unsaved changes` : definition.name
+        }
         sheetSize="inspector"
-        onClose={onClose}
+        onClose={handleClose}
         headerAction={
           <Button
             type="button"
             size="sm"
-            disabled={isPending}
+            variant={isDirty ? "default" : "secondary"}
+            disabled={isPending || !isDirty}
             onClick={handleSave}
             data-testid="agent-settings-save"
+            aria-disabled={isPending || !isDirty}
           >
-            {isPending ? "Saving…" : "Save"}
+            {isPending ? "Saving…" : isDirty ? "Save changes" : "Saved"}
           </Button>
         }
       >
         <div
           className="space-y-3"
           data-testid="agent-settings-sheet"
+          data-unsaved={isDirty ? "true" : undefined}
         >
+          {isDirty ? (
+            <p
+              className="text-xs text-amber-600 dark:text-amber-400"
+              data-testid="agent-settings-unsaved"
+            >
+              Changes are not saved yet. Save to apply them to the agent runtime.
+            </p>
+          ) : null}
           <AgentSettingCard
             title="Triggers"
             description="When should this agent run?"
