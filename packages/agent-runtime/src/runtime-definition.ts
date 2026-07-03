@@ -1,12 +1,17 @@
 import type {
-  AgentDefinition,
   AgentTrigger,
   NodeScope,
+  TeamspaceMainConfig,
   ToolBundle,
+} from "@ssota/contracts";
+import {
+  DEFAULT_MAIN_TOOL_BUNDLES,
+  DEFAULT_MAIN_RUN_POLICY,
 } from "@ssota/contracts";
 import {
   BUILTIN_AGENT_IDS,
   getAgentDefinitionById,
+  MAIN_AGENT_ID,
 } from "@ssota/contracts/agents";
 
 export interface AgentRuntimeDefinition {
@@ -19,36 +24,39 @@ export interface AgentRuntimeDefinition {
   enabledConnectorProviders?: string[];
 }
 
-/** Builtin main agent definition (always available without DB). */
-export function mainAgentRuntimeDefinition(): AgentRuntimeDefinition {
+/** Builtin main agent definition merged with optional teamspace overrides. */
+export function mainAgentRuntimeDefinition(
+  config?: Pick<TeamspaceMainConfig, "toolBundles" | "runPolicy"> | null,
+): AgentRuntimeDefinition {
   const builtin = getAgentDefinitionById(BUILTIN_AGENT_IDS.main);
   return {
     agentDefinitionId: BUILTIN_AGENT_IDS.main,
     isMain: true,
-    toolBundles: builtin?.toolBundles ?? [
-      "graph.read",
-      "graph.write",
-      "tasks.manage",
-      "pages.author",
-      "connectors",
-      "delegate",
-    ],
+    toolBundles:
+      config?.toolBundles && config.toolBundles.length > 0
+        ? config.toolBundles
+        : (builtin?.toolBundles ?? [...DEFAULT_MAIN_TOOL_BUNDLES]),
     nodeScopes: builtin?.nodeScopes ?? [],
-    allowedTriggers: builtin?.runPolicy.allowedTriggers ?? null,
+    allowedTriggers:
+      config?.runPolicy.allowedTriggers ??
+      builtin?.runPolicy.allowedTriggers ??
+      [...DEFAULT_MAIN_RUN_POLICY.allowedTriggers],
     enabledConnectorProviders:
-      builtin?.runPolicy.enabledConnectorProviders ?? [],
+      config?.runPolicy.enabledConnectorProviders ??
+      builtin?.runPolicy.enabledConnectorProviders ??
+      [],
   };
 }
 
 export function runtimeDefinitionFromAgent(
   definition: Pick<
-    AgentDefinition,
-    "id" | "isMain" | "toolBundles" | "nodeScopes" | "runPolicy"
+    import("@ssota/contracts").AgentDefinition,
+    "id" | "toolBundles" | "nodeScopes" | "runPolicy"
   >,
 ): AgentRuntimeDefinition {
   return {
     agentDefinitionId: definition.id,
-    isMain: definition.isMain,
+    isMain: false,
     toolBundles: definition.toolBundles,
     nodeScopes: definition.nodeScopes,
     allowedTriggers: definition.runPolicy.allowedTriggers ?? null,
@@ -64,7 +72,7 @@ export function runtimeDefinitionFromBuiltinId(
   if (!builtin) return null;
   return {
     agentDefinitionId: builtin.id,
-    isMain: builtin.isMain,
+    isMain: builtin.id === MAIN_AGENT_ID,
     toolBundles: builtin.toolBundles,
     nodeScopes: builtin.nodeScopes,
     allowedTriggers: builtin.runPolicy.allowedTriggers ?? null,

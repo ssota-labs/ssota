@@ -179,8 +179,6 @@ export const workflowToolSchemas = {
     name: z.string(),
     description: z.string(),
     body: z.string(),
-    isMain: z.boolean().optional(),
-    referenceOnly: z.boolean().optional(),
   }),
 
   // --- Delegate (subagents) ---

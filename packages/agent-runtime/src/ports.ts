@@ -6,6 +6,7 @@ import {
   createAgentDefinitionPort,
   createScriptToolPort,
   createSkillPort,
+  createTeamspaceMainConfigPort,
   createPagePort,
   createConsolePort,
   createConnectorToolSettingsPort,
@@ -80,6 +81,10 @@ export async function getCatalogWritePort(teamspaceId: string) {
 
 export function getAgentDefinitionPort(teamspaceId: string, accountId?: string) {
   return createAgentDefinitionPort(getDb(), { teamspaceId, accountId });
+}
+
+export function getTeamspaceMainConfigPort() {
+  return createTeamspaceMainConfigPort(getDb());
 }
 
 export function getScriptToolPort(teamspaceId: string, accountId?: string) {

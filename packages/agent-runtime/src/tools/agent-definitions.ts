@@ -31,8 +31,6 @@ export function createAgentDefinitionTools(): ToolSet {
           id: definition.id,
           name: definition.name,
           description: definition.description,
-          isMain: definition.isMain,
-          referenceOnly: definition.referenceOnly,
         }));
         const dbIds = new Set(dbRows.map((r) => r.id));
         const builtins = listRoutableAgentIndex()
@@ -41,8 +39,6 @@ export function createAgentDefinitionTools(): ToolSet {
             id: b.id,
             name: b.name,
             description: b.description,
-            isMain: false,
-            referenceOnly: false,
           }));
         return { definitions: [...dbRows, ...builtins] };
       },
@@ -93,8 +89,6 @@ export function createAgentDefinitionTools(): ToolSet {
         body: z
           .string()
           .describe("The playbook as markdown / plain text."),
-        isMain: z.boolean().optional(),
-        referenceOnly: z.boolean().optional(),
       }),
       execute: async (input, { context }) => {
         const ctx = getRunContext(context);
@@ -107,8 +101,6 @@ export function createAgentDefinitionTools(): ToolSet {
             name: input.name,
             description: input.description,
             instructions: textToBlockNoteContent(input.body),
-            isMain: input.isMain ?? false,
-            referenceOnly: input.referenceOnly ?? false,
             toolBundles: [],
             nodeScopes: [],
             runPolicy: {},

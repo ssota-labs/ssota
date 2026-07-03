@@ -4,6 +4,7 @@ import {
   type AgentDefinition,
   type ExecutionDirective,
   type SkillIndex,
+  type TeamspaceMainConfig,
 } from "@ssota/contracts";
 import type { AgentManifestEntry } from "@ssota/contracts/agents";
 import type { SystemModelMessage } from "ai";
@@ -44,7 +45,7 @@ export interface BuildRunInstructionsParams {
   agentManifest?: AgentManifestEntry[];
   /** Skill-style routing manifest (name + when-to-use). */
   skillManifest?: SkillIndex[];
-  mainDefinition?: AgentDefinition | null;
+  mainConfig?: TeamspaceMainConfig | null;
   taskPlaybook?: AgentDefinition | null;
   /** Specialist agent invoked from chat (Slack/web), not a task run. */
   specialistChatPlaybook?: AgentDefinition | null;
@@ -116,6 +117,13 @@ function buildDynamicInstructionSegment(
         `## Available agents`,
         `No agents are configured for this project yet. Help the user directly or set them up with write_agent_definition.`,
       );
+    }
+    const customInstructions = params.mainConfig?.instructions;
+    if (customInstructions && customInstructions.length > 0) {
+      const text = blockNoteContentToText(customInstructions).trim();
+      if (text) {
+        lines.push(`\n## Project custom instructions`, text);
+      }
     }
     if (skillManifest && skillManifest.length > 0) {
       const rows = skillManifest
