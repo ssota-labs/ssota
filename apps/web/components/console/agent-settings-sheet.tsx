@@ -484,83 +484,110 @@ export function AgentSettingsSheet({
             <AgentSettingCard.Header
               title="Tools and access"
               description="Composio connectors and TypeScript scripts for this agent."
-              action={
-                <AgentSettingCard.OpenAction
-                  onOpen={() => setOpenDialog("tools")}
-                  aria-label="Open tools and access"
-                />
-              }
             />
             <AgentSettingCard.Body>
-            {enabledConnectors.length === 0 && linkedScriptTools.length === 0 ? (
-              <AgentSettingCard.Empty>
-                No connectors or scripts selected yet
-              </AgentSettingCard.Empty>
-            ) : (
               <AgentSettingCard.Items>
-                {enabledConnectors.map((connector) => {
-                  const connected = connectedProviders.has(connector.provider);
-                  const count =
-                    connectedProviders.get(connector.provider)?.length ?? 0;
-                  return (
-                    <AgentSettingCard.Item
-                      key={connector.provider}
-                      icon={
-                        <ConnectorBrandIcon
-                          provider={connector.provider}
-                          className="size-3.5"
-                        />
-                      }
-                      title={connector.label}
-                      subtitle={
-                        connected ? "Composio connector" : "Enabled — not connected"
-                      }
-                      trailing={
-                        connected
-                          ? count > 1
-                            ? `${count} accounts`
-                            : "Connected"
-                          : "Pending"
-                      }
-                    />
-                  );
-                })}
-                {linkedScriptTools.map((tool) => (
+                {enabledConnectors.length === 0 && linkedScriptTools.length === 0 ? (
                   <AgentSettingCard.Item
-                    key={tool.id}
+                    testId="agent-tools-empty"
                     icon={
                       <WrenchIcon className="size-3.5 text-muted-foreground" />
                     }
-                    title={tool.name}
-                    subtitle={tool.key}
-                    trailing="TypeScript"
+                    title="No connectors or scripts selected yet"
+                    onPress={() => setOpenDialog("tools")}
+                    trailing={<AgentSettingCard.ItemCaret />}
                   />
-                ))}
+                ) : (
+                  <>
+                    {enabledConnectors.map((connector) => {
+                      const connected = connectedProviders.has(connector.provider);
+                      const count =
+                        connectedProviders.get(connector.provider)?.length ?? 0;
+                      return (
+                        <AgentSettingCard.Item
+                          key={connector.provider}
+                          icon={
+                            <ConnectorBrandIcon
+                              provider={connector.provider}
+                              className="size-3.5"
+                            />
+                          }
+                          title={connector.label}
+                          subtitle={
+                            connected
+                              ? "Composio connector"
+                              : "Enabled — not connected"
+                          }
+                          trailing={
+                            connected
+                              ? count > 1
+                                ? `${count} accounts`
+                                : "Connected"
+                              : "Pending"
+                          }
+                        />
+                      );
+                    })}
+                    {linkedScriptTools.map((tool) => (
+                      <AgentSettingCard.Item
+                        key={tool.id}
+                        icon={
+                          <WrenchIcon className="size-3.5 text-muted-foreground" />
+                        }
+                        title={tool.name}
+                        subtitle={tool.key}
+                        trailing="TypeScript"
+                      />
+                    ))}
+                  </>
+                )}
               </AgentSettingCard.Items>
-            )}
             </AgentSettingCard.Body>
+            <AgentSettingCard.Footer>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-fit justify-start gap-2"
+                data-testid="agent-tools-manage"
+                onClick={() => setOpenDialog("tools")}
+              >
+                <WrenchIcon className="size-3.5" aria-hidden />
+                Manage tools
+              </Button>
+            </AgentSettingCard.Footer>
           </AgentSettingCard.Root>
 
           <AgentSettingCard.Root testId="agent-settings-model-card">
             <AgentSettingCard.Header
               title="Model"
               description="Default model for agent runs."
-              action={
-                <AgentSettingCard.OpenAction
-                  onOpen={() => setOpenDialog("model")}
-                  aria-label="Open model settings"
-                />
-              }
             />
             <AgentSettingCard.Body>
-            <AgentSettingCard.Items>
-              <AgentSettingCard.Item
-                icon={<CpuIcon className="size-3.5 text-muted-foreground" />}
-                title={modelLabel}
-                subtitle={modelProvider || "Default model"}
-              />
-            </AgentSettingCard.Items>
+              <AgentSettingCard.Items>
+                <AgentSettingCard.Item
+                  testId="agent-model-summary"
+                  icon={<CpuIcon className="size-3.5 text-muted-foreground" />}
+                  title={modelLabel}
+                  subtitle={modelProvider || "Default model"}
+                  onPress={() => setOpenDialog("model")}
+                  trailing={<AgentSettingCard.ItemCaret />}
+                />
+              </AgentSettingCard.Items>
             </AgentSettingCard.Body>
+            <AgentSettingCard.Footer>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-fit justify-start gap-2"
+                data-testid="agent-model-change"
+                onClick={() => setOpenDialog("model")}
+              >
+                <CpuIcon className="size-3.5" aria-hidden />
+                Change model
+              </Button>
+            </AgentSettingCard.Footer>
           </AgentSettingCard.Root>
 
           <AgentSettingCard.Root testId="agent-settings-skills-card">
@@ -569,10 +596,11 @@ export function AgentSettingsSheet({
               description="Runtime skills loaded via read_skill."
             />
             <AgentSettingCard.Body>
-            <AgentSkillBindings
-              teamspaceId={teamspaceId}
-              agentDefinitionId={definition.id}
-            />
+              <AgentSkillBindings
+                embedded
+                teamspaceId={teamspaceId}
+                agentDefinitionId={definition.id}
+              />
             </AgentSettingCard.Body>
           </AgentSettingCard.Root>
         </div>

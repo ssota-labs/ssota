@@ -607,9 +607,12 @@ export function SkillsCatalogPanel({ teamspaceId }: { teamspaceId: string }) {
 export function AgentSkillBindings({
   teamspaceId,
   agentDefinitionId,
+  embedded = false,
 }: {
   teamspaceId: string;
   agentDefinitionId: string;
+  /** Agent settings card body — no duplicate title or top border. */
+  embedded?: boolean;
 }) {
   const [catalog, setCatalog] = useState<SkillIndex[]>([]);
   const [boundIds, setBoundIds] = useState<Set<string>>(new Set());
@@ -652,22 +655,35 @@ export function AgentSkillBindings({
   };
 
   return (
-    <div className="space-y-3 border-t border-border pt-4" data-testid="agent-skill-bindings">
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-medium">Bound skills</h3>
+    <div
+      className={cn("space-y-3", embedded ? undefined : "border-t border-border pt-4")}
+      data-testid="agent-skill-bindings"
+    >
+      <div
+        className={cn(
+          "flex items-center gap-2",
+          embedded ? "justify-end" : "justify-between",
+        )}
+      >
+        {!embedded ? (
+          <h3 className="text-sm font-medium">Bound skills</h3>
+        ) : null}
         <Button type="button" size="sm" disabled={isPending} onClick={save}>
           Save bindings
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Descriptions appear in the agent manifest; full bodies load via read_skill.
-      </p>
+      {!embedded ? (
+        <p className="text-xs text-muted-foreground">
+          Descriptions appear in the agent manifest; full bodies load via read_skill.
+        </p>
+      ) : null}
       <ul className="max-h-48 space-y-1 overflow-y-auto">
         {catalog.map((skill) => (
           <li key={skill.id}>
             <label
               className={cn(
-                "flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-muted/40",
+                "flex cursor-pointer items-start gap-2 rounded-md text-sm hover:bg-muted/40",
+                embedded ? "px-1 py-2" : "px-2 py-1.5",
               )}
             >
               <input

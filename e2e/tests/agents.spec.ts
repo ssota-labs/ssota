@@ -118,10 +118,7 @@ test.describe("Agents", () => {
     await gotoProject(page, "agents");
 
     await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
-    await page
-      .getByTestId("agent-settings-tools-card")
-      .getByTestId("agent-setting-card-open")
-      .click();
+    await page.getByTestId("agent-tools-manage").click();
 
     const toolsDialog = page.getByTestId("agent-tools-sidebar-dialog");
     await expect(toolsDialog).toBeVisible();

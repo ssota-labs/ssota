@@ -61,6 +61,15 @@ function AgentSettingCardFooter({ children }: { children: ReactNode }) {
   );
 }
 
+function AgentSettingCardItemCaret({ className }: { className?: string }) {
+  return (
+    <CaretRightIcon
+      className={cn("text-muted-foreground size-4 shrink-0", className)}
+      aria-hidden
+    />
+  );
+}
+
 function AgentSettingCardOpenAction({
   onOpen,
   testId = "agent-setting-card-open",
@@ -175,6 +184,7 @@ export const AgentSettingCard = {
   Body: AgentSettingCardBody,
   Footer: AgentSettingCardFooter,
   OpenAction: AgentSettingCardOpenAction,
+  ItemCaret: AgentSettingCardItemCaret,
   Items: AgentSettingItems,
   Item: AgentSettingItem,
   Empty: AgentSettingEmpty,
