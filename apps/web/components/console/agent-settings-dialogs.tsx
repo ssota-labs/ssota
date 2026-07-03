@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  BuildingsIcon,
   CalendarBlankIcon,
   ClockIcon,
   LightbulbIcon,
+  UserIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type {
   AgentDefinition,
+  AgentConnectorBinding,
   ConnectionTrigger,
   SkillIndex,
   ToolBundle,
@@ -22,6 +25,20 @@ import type { ConnectorConnection } from "@/components/connectors/connectors-vie
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { inboundChannelAuthorizeHref, inboundChannelStatusFor } from "@/lib/connect/inbound-channels";
+import {
+  buildConnectorAuthorizeHref,
+  type ConnectorConnectScope,
+} from "@/lib/connect/authorize-href";
+import {
+  addConnectorBinding,
+  connectorBindingKey,
+  connectionDisplayLabel,
+  deriveEnabledProvidersFromBindings,
+  flattenScopedConnections,
+  isConnectorBound,
+  removeConnectorBinding,
+  type ScopedConnection,
+} from "@/lib/console/agent-connector-bindings";
 import {
   ADDABLE_TRIGGER_GROUPS,
   filterAddableTriggerGroups,
@@ -45,6 +62,7 @@ export type AgentSettingsDraft = {
   model: string;
   scriptToolIds: string[];
   linkedWorkerAgentIds: string[];
+  connectorBindings: AgentConnectorBinding[];
   enabledConnectorProviders: string[];
   scheduleEnabledById: Record<string, boolean>;
   connectionTriggers: ConnectionTrigger[];
@@ -64,6 +82,8 @@ type AgentSettingsDialogsProps = {
   channelsHref: string;
   teamspaceId: string;
   accountId: string;
+  returnTo: string;
+  allowOrgScope: boolean;
   openDialog: AgentSettingsDialogKind | null;
   onOpenDialogChange: (kind: AgentSettingsDialogKind | null) => void;
 };
@@ -71,8 +91,27 @@ type AgentSettingsDialogsProps = {
 export type AgentSettingsDialogKind = "add-trigger" | "tools" | "skills";
 
 type ToolEntry =
-  | { kind: "connector"; id: string; provider: string; label: string }
+  | {
+      kind: "bound-connection";
+      id: string;
+      connection: ScopedConnection;
+      providerLabel: string;
+      label: string;
+    }
+  | {
+      kind: "connection";
+      id: string;
+      connection: ScopedConnection;
+      providerLabel: string;
+      label: string;
+    }
+  | { kind: "connect-provider"; id: string; provider: string; label: string }
   | { kind: "script"; id: string; toolId: string; label: string; key: string };
+
+const SCOPE_LABEL: Record<ConnectorConnectScope, string> = {
+  user: "Personal",
+  org: "Organization",
+};
 
 function matchesSearch(label: string, query: string, extra?: string) {
   const q = query.trim().toLowerCase();
@@ -102,6 +141,8 @@ export function AgentSettingsDialogs({
   channelsHref,
   teamspaceId,
   accountId,
+  returnTo,
+  allowOrgScope,
   openDialog,
   onOpenDialogChange,
 }: AgentSettingsDialogsProps) {
@@ -115,13 +156,27 @@ export function AgentSettingsDialogs({
   const [addTriggerSearch, setAddTriggerSearch] = useState("");
   const [isProvisioningSlack, setIsProvisioningSlack] = useState(false);
   const [addTriggerError, setAddTriggerError] = useState<string | null>(null);
+  const [connectScope, setConnectScope] = useState<ConnectorConnectScope>("user");
 
-  const connectedProviders = useMemo(() => {
-    const set = new Set<string>();
-    for (const c of connections.user) set.add(c.connector);
-    for (const c of connections.org) set.add(c.connector);
-    return set;
-  }, [connections]);
+  const connectorByProvider = useMemo(
+    () => new Map(connectors.map((c) => [c.provider, c])),
+    [connectors],
+  );
+
+  const scopedConnections = useMemo(
+    () => flattenScopedConnections(connections),
+    [connections],
+  );
+
+  const connectionsByProvider = useMemo(() => {
+    const map = new Map<string, ScopedConnection[]>();
+    for (const c of scopedConnections) {
+      const list = map.get(c.connector) ?? [];
+      list.push(c);
+      map.set(c.connector, list);
+    }
+    return map;
+  }, [scopedConnections]);
 
   const slackInbound = useMemo(
     () => inboundChannelStatusFor(inboundChannels, "slack"),
@@ -159,23 +214,80 @@ export function AgentSettingsDialogs({
   );
 
   const toolEntries = useMemo((): ToolEntry[] => {
-    const entries: ToolEntry[] = [
-      ...connectors.map((connector) => ({
-        kind: "connector" as const,
-        id: `connector:${connector.provider}`,
-        provider: connector.provider,
-        label: connector.label,
-      })),
-      ...scriptTools.map((tool) => ({
-        kind: "script" as const,
+    const entries: ToolEntry[] = [];
+
+    for (const binding of draft.connectorBindings) {
+      const connection = scopedConnections.find(
+        (c) =>
+          c.id === binding.connectionId &&
+          c.scope === binding.scope &&
+          c.connector === binding.provider,
+      );
+      if (!connection) continue;
+      const providerLabel =
+        connectorByProvider.get(binding.provider)?.label ?? binding.provider;
+      entries.push({
+        kind: "bound-connection",
+        id: `bound:${connectorBindingKey(binding.scope, binding.connectionId)}`,
+        connection,
+        providerLabel,
+        label: binding.accountLabel ?? connectionDisplayLabel(connection, providerLabel),
+      });
+    }
+
+    for (const connection of scopedConnections) {
+      if (
+        isConnectorBound(
+          draft.connectorBindings,
+          connection.scope,
+          connection.id,
+        )
+      ) {
+        continue;
+      }
+      const providerLabel =
+        connectorByProvider.get(connection.connector)?.label ??
+        connection.connector;
+      entries.push({
+        kind: "connection",
+        id: `connection:${connectorBindingKey(connection.scope, connection.id)}`,
+        connection,
+        providerLabel,
+        label: connectionDisplayLabel(connection, providerLabel),
+      });
+    }
+
+    for (const connector of connectors) {
+      const count = connectionsByProvider.get(connector.provider)?.length ?? 0;
+      if (count === 0) {
+        entries.push({
+          kind: "connect-provider",
+          id: `connect:${connector.provider}`,
+          provider: connector.provider,
+          label: connector.label,
+        });
+      }
+    }
+
+    for (const tool of scriptTools) {
+      entries.push({
+        kind: "script",
         id: `script:${tool.id}`,
         toolId: tool.id,
         label: tool.name,
         key: tool.key,
-      })),
-    ];
-    return entries.sort((a, b) => a.label.localeCompare(b.label));
-  }, [connectors, scriptTools]);
+      });
+    }
+
+    return entries;
+  }, [
+    connectors,
+    connectionsByProvider,
+    connectorByProvider,
+    draft.connectorBindings,
+    scopedConnections,
+    scriptTools,
+  ]);
 
   const filteredToolEntries = useMemo(
     () =>
@@ -183,7 +295,14 @@ export function AgentSettingsDialogs({
         if (entry.kind === "script") {
           return matchesSearch(entry.label, toolSearch, entry.key);
         }
-        return matchesSearch(entry.label, toolSearch);
+        if (entry.kind === "connect-provider") {
+          return matchesSearch(entry.label, toolSearch);
+        }
+        return matchesSearch(
+          entry.label,
+          toolSearch,
+          `${entry.providerLabel} ${SCOPE_LABEL[entry.connection.scope]}`,
+        );
       }),
     [toolEntries, toolSearch],
   );
@@ -243,18 +362,41 @@ export function AgentSettingsDialogs({
     }
   }, [addTriggerFlatItems, openDialog, selectedAddTriggerId]);
 
+  const patchConnectorBindings = (bindings: AgentConnectorBinding[]) => {
+    onDraftChange({
+      connectorBindings: bindings,
+      enabledConnectorProviders: deriveEnabledProvidersFromBindings(bindings),
+    });
+  };
+
+  const addBindingForConnection = (connection: ScopedConnection) => {
+    const providerLabel =
+      connectorByProvider.get(connection.connector)?.label ??
+      connection.connector;
+    patchConnectorBindings(
+      addConnectorBinding(
+        draft.connectorBindings,
+        connection,
+        providerLabel,
+      ),
+    );
+  };
+
+  const removeBindingForConnection = (connection: ScopedConnection) => {
+    patchConnectorBindings(
+      removeConnectorBinding(
+        draft.connectorBindings,
+        connection.scope,
+        connection.id,
+      ),
+    );
+  };
+
   const toggleScriptTool = (id: string, enabled: boolean) => {
     const next = new Set(draft.scriptToolIds);
     if (enabled) next.add(id);
     else next.delete(id);
     onDraftChange({ scriptToolIds: [...next] });
-  };
-
-  const toggleConnectorProvider = (provider: string, enabled: boolean) => {
-    const next = new Set(draft.enabledConnectorProviders);
-    if (enabled) next.add(provider);
-    else next.delete(provider);
-    onDraftChange({ enabledConnectorProviders: [...next] });
   };
 
   const toggleSkillBinding = (skillId: string, enabled: boolean) => {
@@ -266,8 +408,11 @@ export function AgentSettingsDialogs({
 
   const isToolEnabled = (entry: ToolEntry) => {
     switch (entry.kind) {
-      case "connector":
-        return draft.enabledConnectorProviders.includes(entry.provider);
+      case "bound-connection":
+        return true;
+      case "connection":
+      case "connect-provider":
+        return false;
       case "script":
         return draft.scriptToolIds.includes(entry.toolId);
     }
@@ -275,13 +420,36 @@ export function AgentSettingsDialogs({
 
   const toolEntryToSidebarItem = (entry: ToolEntry): SidebarListItem => {
     const enabled = isToolEnabled(entry);
-    const subtitle = entry.kind === "script" ? entry.key : undefined;
-    const icon =
-      entry.kind === "connector" ? (
-        <ConnectorBrandIcon provider={entry.provider} className="size-3.5" />
-      ) : (
-        <WrenchIcon className="size-3.5 text-muted-foreground" />
-      );
+    let subtitle: string | undefined;
+    let icon: ReactNode;
+    let testId: string;
+
+    switch (entry.kind) {
+      case "bound-connection":
+      case "connection": {
+        subtitle = `${entry.providerLabel} · ${SCOPE_LABEL[entry.connection.scope]}`;
+        icon = (
+          <ConnectorBrandIcon
+            provider={entry.connection.connector}
+            className="size-3.5"
+          />
+        );
+        testId = `agent-connection-${entry.connection.scope}-${entry.connection.id}`;
+        break;
+      }
+      case "connect-provider":
+        subtitle = "Not connected";
+        icon = (
+          <ConnectorBrandIcon provider={entry.provider} className="size-3.5" />
+        );
+        testId = `agent-connect-${entry.provider}`;
+        break;
+      case "script":
+        subtitle = entry.key;
+        icon = <WrenchIcon className="size-3.5 text-muted-foreground" />;
+        testId = `agent-script-${entry.toolId}`;
+        break;
+    }
 
     return {
       id: entry.id,
@@ -289,23 +457,38 @@ export function AgentSettingsDialogs({
       subtitle,
       icon,
       enabled,
-      testId:
-        entry.kind === "connector"
-          ? `agent-connector-${entry.provider}`
-          : `agent-script-${entry.toolId}`,
+      testId,
     };
   };
 
   const toolSidebarGroups: SidebarListGroup[] = useMemo(() => {
-    const connectors = filteredToolEntries.filter((e) => e.kind === "connector");
+    const bound = filteredToolEntries.filter((e) => e.kind === "bound-connection");
+    const available = filteredToolEntries.filter((e) => e.kind === "connection");
+    const connect = filteredToolEntries.filter(
+      (e) => e.kind === "connect-provider",
+    );
     const scripts = filteredToolEntries.filter((e) => e.kind === "script");
     const groups: SidebarListGroup[] = [];
 
-    if (connectors.length > 0) {
+    if (bound.length > 0) {
       groups.push({
-        id: "connectors",
-        label: "Connectors",
-        items: connectors.map(toolEntryToSidebarItem),
+        id: "on-agent",
+        label: "On this agent",
+        items: bound.map(toolEntryToSidebarItem),
+      });
+    }
+    if (available.length > 0) {
+      groups.push({
+        id: "connections",
+        label: "Connections",
+        items: available.map(toolEntryToSidebarItem),
+      });
+    }
+    if (connect.length > 0) {
+      groups.push({
+        id: "connect",
+        label: "Connect",
+        items: connect.map(toolEntryToSidebarItem),
       });
     }
     if (scripts.length > 0) {
@@ -318,7 +501,7 @@ export function AgentSettingsDialogs({
     }
 
     return groups;
-  }, [filteredToolEntries, draft.enabledConnectorProviders, draft.scriptToolIds]);
+  }, [filteredToolEntries, draft.connectorBindings, draft.scriptToolIds]);
 
   const skillSidebarItems: SidebarListItem[] = filteredSkills.map((skill) => ({
     id: skill.id,
@@ -415,23 +598,78 @@ export function AgentSettingsDialogs({
 
     const allowed = new Set(draft.allowedTriggers);
     allowed.add("chatbot");
-    if (!draft.enabledConnectorProviders.includes(def.provider)) {
-      onDraftChange({
-        connectionTriggers: [...draft.connectionTriggers, entry],
-        allowedTriggers: [...allowed],
-        enabledConnectorProviders: [
-          ...draft.enabledConnectorProviders,
-          def.provider,
-        ],
-      });
-    } else {
-      onDraftChange({
-        connectionTriggers: [...draft.connectionTriggers, entry],
-        allowedTriggers: [...allowed],
-      });
+
+    const providerConnections =
+      connectionsByProvider.get(def.provider) ?? [];
+    const firstConnection = providerConnections[0];
+    let nextBindings = draft.connectorBindings;
+    if (
+      firstConnection &&
+      !isConnectorBound(
+        draft.connectorBindings,
+        firstConnection.scope,
+        firstConnection.id,
+      )
+    ) {
+      const providerLabel =
+        connectorByProvider.get(def.provider)?.label ?? def.provider;
+      nextBindings = addConnectorBinding(
+        draft.connectorBindings,
+        firstConnection,
+        providerLabel,
+      );
     }
+
+    onDraftChange({
+      connectionTriggers: [...draft.connectionTriggers, entry],
+      allowedTriggers: [...allowed],
+      connectorBindings: nextBindings,
+      enabledConnectorProviders:
+        deriveEnabledProvidersFromBindings(nextBindings),
+    });
     onOpenDialogChange(null);
   };
+
+  const scopeOptions: ConnectorConnectScope[] = allowOrgScope
+    ? ["user", "org"]
+    : ["user"];
+
+  const renderScopePicker = (provider: string) => (
+    <div className="mb-4 space-y-2">
+      <p className="text-muted-foreground text-sm">
+        Choose who owns this connection.
+      </p>
+      <div className="flex flex-col gap-2">
+        {scopeOptions.map((scope) => {
+          const ScopeIcon = scope === "user" ? UserIcon : BuildingsIcon;
+          const selected = connectScope === scope;
+          return (
+            <button
+              key={scope}
+              type="button"
+              className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
+                selected
+                  ? "border-primary bg-primary/5"
+                  : "hover:bg-muted/40"
+              }`}
+              onClick={() => setConnectScope(scope)}
+              data-testid={`agent-connect-scope-${provider}-${scope}`}
+            >
+              <ScopeIcon className="size-4 shrink-0 text-muted-foreground" />
+              <span>
+                <span className="font-medium">{SCOPE_LABEL[scope]}</span>
+                <span className="text-muted-foreground block text-xs">
+                  {scope === "user"
+                    ? "Only your runs use this connection."
+                    : "Everyone in the org can use this connection."}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   const renderToolDetail = () => {
     if (!selectedTool) {
@@ -442,10 +680,65 @@ export function AgentSettingsDialogs({
       );
     }
 
-    const enabled = isToolEnabled(selectedTool);
+    if (
+      selectedTool.kind === "bound-connection" ||
+      selectedTool.kind === "connection"
+    ) {
+      const { connection, providerLabel, label } = selectedTool;
+      const bound = selectedTool.kind === "bound-connection";
+      return (
+        <>
+          <SidebarDetailHeader
+            icon={
+              <ConnectorBrandIcon
+                provider={connection.connector}
+                className="size-5"
+              />
+            }
+            title={label}
+            status={
+              <span className="text-muted-foreground text-xs">
+                {providerLabel} · {SCOPE_LABEL[connection.scope]}
+              </span>
+            }
+          />
+          <p className="text-muted-foreground mb-6 text-sm">
+            {bound
+              ? "This connected account is available to the agent at runtime."
+              : "Add this connection to let the agent use this account."}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {bound ? (
+              <Button
+                type="button"
+                variant="outline"
+                data-testid={`agent-connection-remove-${connection.scope}-${connection.id}`}
+                onClick={() => removeBindingForConnection(connection)}
+              >
+                Remove from agent
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                data-testid={`agent-connection-add-${connection.scope}-${connection.id}`}
+                onClick={() => addBindingForConnection(connection)}
+              >
+                Add to agent
+              </Button>
+            )}
+          </div>
+        </>
+      );
+    }
 
-    if (selectedTool.kind === "connector") {
-      const connected = connectedProviders.has(selectedTool.provider);
+    if (selectedTool.kind === "connect-provider") {
+      const authorizeHref = buildConnectorAuthorizeHref({
+        slug: selectedTool.provider,
+        teamspaceId,
+        accountId,
+        returnTo,
+        scope: connectScope,
+      });
       return (
         <>
           <SidebarDetailHeader
@@ -458,32 +751,32 @@ export function AgentSettingsDialogs({
             title={selectedTool.label}
             status={
               <span className="text-muted-foreground text-xs">
-                {connected ? "Connected" : "Not connected"}
+                Not connected
               </span>
             }
           />
-          <p className="text-muted-foreground mb-6 text-sm">
-            Allow this agent to use {selectedTool.label}. Connect an account on
-            the Connections page before running.
+          <p className="text-muted-foreground mb-4 text-sm">
+            Connect a {selectedTool.label} account, then add it to this agent.
           </p>
-          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-            <Label htmlFor={`tool-enable-${selectedTool.id}`}>
-              Enable for this agent
-            </Label>
-            <Switch
-              id={`tool-enable-${selectedTool.id}`}
-              checked={enabled}
-              onCheckedChange={(checked) =>
-                toggleConnectorProvider(selectedTool.provider, checked)
-              }
-              data-testid={`agent-connector-${selectedTool.provider}`}
-            />
-          </div>
+          {scopeOptions.length > 1 ? renderScopePicker(selectedTool.provider) : null}
+          <Button
+            size="sm"
+            nativeButton={false}
+            render={
+              <a
+                href={authorizeHref}
+                data-testid={`agent-connect-link-${selectedTool.provider}`}
+              />
+            }
+          >
+            Connect {selectedTool.label}
+          </Button>
         </>
       );
     }
 
     if (selectedTool.kind === "script") {
+      const enabled = draft.scriptToolIds.includes(selectedTool.toolId);
       return (
         <>
           <SidebarDetailHeader

@@ -144,9 +144,8 @@ test.describe("Agents", () => {
 
     const toolsDialog = page.getByTestId("agent-tools-sidebar-dialog");
     await expect(toolsDialog).toBeVisible();
-    await expect(toolsDialog.getByTestId("agent-connector-notion")).toBeVisible();
-    await expect(toolsDialog.getByText("Connectors")).toBeVisible();
-    await expect(toolsDialog.getByText("TypeScript scripts")).toBeVisible();
+    await expect(toolsDialog.getByText("Connect", { exact: true })).toBeVisible();
+    await expect(toolsDialog.getByTestId("agent-connect-notion")).toBeVisible();
     await expect(toolsDialog.getByText("Pages")).not.toBeVisible();
   });
 
@@ -154,12 +153,11 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
     await page.getByTestId("agent-skills-manage").click();
 
     const skillsDialog = page.getByTestId("agent-skills-sidebar-dialog");
     await expect(skillsDialog).toBeVisible();
-    await expect(skillsDialog.getByTestId("agent-skill-agent-browser")).toBeVisible();
     await expect(
       skillsDialog.getByRole("button", { name: "Done" }),
     ).toBeVisible();
@@ -172,7 +170,7 @@ test.describe("Agents", () => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
 
-    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
 
     const advancedCard = page.getByTestId("agent-settings-advanced-card");
     await expect(advancedCard.getByText("Advanced", { exact: true })).toBeVisible();

@@ -14,6 +14,7 @@ const baseDraft = (): AgentSettingsDraft => ({
   scriptToolIds: [],
   linkedWorkerAgentIds: [],
   enabledConnectorProviders: [],
+  connectorBindings: [],
   scheduleEnabledById: {},
   connectionTriggers: [],
   boundSkillIds: [],

@@ -18,7 +18,8 @@ import type {
   ConnectionTrigger,
   SkillIndex,
 } from "@ssota/contracts";
-import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
+import { deriveEnabledConnectorProviders } from "@ssota/contracts";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,7 +59,6 @@ import {
 } from "@/components/console/agent-settings-dialogs";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
-import { buildConnectorAuthorizeHref } from "@/lib/connect/authorize-href";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
@@ -68,8 +68,13 @@ import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence
 import {
   isAgentSettingsDraftDirty,
   resolveAllowedTriggersForSave,
+  resolveConnectorBindingsForSave,
   resolveToolBundlesForSave,
 } from "@/lib/console/agent-settings-save-snapshot";
+import {
+  connectionDisplayLabel,
+  migrateConnectorBindings,
+} from "@/lib/console/agent-connector-bindings";
 
 const DocumentEditorEl = dynamic(
   () =>
@@ -108,11 +113,17 @@ function buildDraft(
   scriptToolIds: string[],
   boundSkillIds: string[],
   schedules: AgentScheduleSummary[],
+  connections: { user: ConnectorConnection[]; org: ConnectorConnection[] },
 ): AgentSettingsDraft {
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
   const allowedTriggers = definition.runPolicy.allowedTriggers ?? [];
+  const connectorBindings = migrateConnectorBindings(
+    definition.runPolicy.enabledConnectorProviders ?? [],
+    connections,
+    definition.runPolicy.connectorBindings,
+  );
   return {
     instructions: definition.instructions,
     toolBundles: mergeToolBundles(definition.toolBundles),
@@ -122,6 +133,7 @@ function buildDraft(
     model: definition.runPolicy.model ?? DEFAULT_MODEL_ID,
     scriptToolIds,
     linkedWorkerAgentIds: definition.runPolicy.linkedWorkerAgentIds ?? [],
+    connectorBindings,
     enabledConnectorProviders:
       definition.runPolicy.enabledConnectorProviders ?? [],
     scheduleEnabledById: Object.fromEntries(
@@ -158,6 +170,7 @@ export function AgentSettingsSheet({
       initialScriptToolIds,
       initialBoundSkillIds,
       schedules,
+      connections,
     ),
   );
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
@@ -182,9 +195,10 @@ export function AgentSettingsSheet({
         initialScriptToolIds,
         initialBoundSkillIds,
         schedules,
+        connections,
       ),
     );
-  }, [definition, initialScriptToolIds, initialBoundSkillIds, schedules]);
+  }, [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections]);
 
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
@@ -197,8 +211,9 @@ export function AgentSettingsSheet({
         initialScriptToolIds,
         initialBoundSkillIds,
         schedules,
+        connections,
       ),
-    [definition, initialScriptToolIds, initialBoundSkillIds, schedules],
+    [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections],
   );
 
   const isDirty = useMemo(
@@ -311,31 +326,31 @@ export function AgentSettingsSheet({
     });
   };
 
-  const connectedProviders = useMemo(() => {
-    const map = new Map<string, ConnectorConnection[]>();
-    for (const c of connections.user) {
-      const list = map.get(c.connector) ?? [];
-      list.push(c);
-      map.set(c.connector, list);
-    }
-    for (const c of connections.org) {
-      const list = map.get(c.connector) ?? [];
-      list.push(c);
-      map.set(c.connector, list);
-    }
-    return map;
-  }, [connections]);
-
   const linkedScriptTools = scriptTools.filter((t) =>
     draft.scriptToolIds.includes(t.id),
   );
 
+  const boundConnectorItems = useMemo(() => {
+    const connectorLabels = new Map(
+      connectors.map((c) => [c.provider, c.label]),
+    );
+    return draft.connectorBindings.map((binding) => ({
+      binding,
+      label:
+        binding.accountLabel ??
+        connectionDisplayLabel(
+          {
+            connector: binding.provider,
+            name: binding.accountLabel ?? null,
+          },
+          connectorLabels.get(binding.provider),
+        ),
+      providerLabel: connectorLabels.get(binding.provider) ?? binding.provider,
+    }));
+  }, [connectors, draft.connectorBindings]);
+
   const boundSkills = skillCatalog.filter((skill) =>
     draft.boundSkillIds.includes(skill.id),
-  );
-
-  const enabledConnectors = connectors.filter((c) =>
-    draft.enabledConnectorProviders.includes(c.provider),
   );
 
   const chatLabel = `New chat with ${definition.name}`;
@@ -344,12 +359,16 @@ export function AgentSettingsSheet({
     startTransition(async () => {
       const bundles = resolveToolBundlesForSave(draft);
       const allowedTriggers = resolveAllowedTriggersForSave(draft, agentSchedules);
+      const connectorBindings = resolveConnectorBindingsForSave(draft);
       const runPolicy = {
         ...definition.runPolicy,
         model: draft.model,
         allowedTriggers,
         linkedWorkerAgentIds: draft.linkedWorkerAgentIds,
-        enabledConnectorProviders: draft.enabledConnectorProviders,
+        connectorBindings,
+        enabledConnectorProviders: deriveEnabledConnectorProviders({
+          connectorBindings,
+        }),
         connectionTriggers: draft.connectionTriggers,
       };
 
@@ -583,7 +602,8 @@ export function AgentSettingsSheet({
             />
             <AgentSettingCard.Body>
               <AgentSettingCard.Items>
-                {enabledConnectors.length === 0 && linkedScriptTools.length === 0 ? (
+                {boundConnectorItems.length === 0 &&
+                linkedScriptTools.length === 0 ? (
                   <AgentSettingCard.Item
                     testId="agent-tools-empty"
                     icon={
@@ -593,52 +613,22 @@ export function AgentSettingsSheet({
                   />
                 ) : (
                   <>
-                    {enabledConnectors.map((connector) => {
-                      const connected = connectedProviders.has(connector.provider);
-                      const count =
-                        connectedProviders.get(connector.provider)?.length ?? 0;
-                      return (
-                        <AgentSettingCard.Item
-                          key={connector.provider}
-                          icon={
-                            <ConnectorBrandIcon
-                              provider={connector.provider}
-                              className="size-3.5"
-                            />
-                          }
-                          title={connector.label}
-                          subtitle={
-                            connected ? "Connector" : "Enabled"
-                          }
-                          trailing={
-                            connected ? (
-                              count > 1 ? (
-                                `${count} accounts`
-                              ) : (
-                                "Connected"
-                              )
-                            ) : (
-                              <a
-                                href={buildConnectorAuthorizeHref({
-                                  slug: connector.provider,
-                                  teamspaceId,
-                                  accountId,
-                                  returnTo: pathname,
-                                })}
-                                className={buttonVariants({
-                                  variant: "secondary",
-                                  size: "sm",
-                                  className: "h-7 shrink-0",
-                                })}
-                                data-testid={`agent-connector-connect-${connector.provider}`}
-                              >
-                                Connect
-                              </a>
-                            )
-                          }
-                        />
-                      );
-                    })}
+                    {boundConnectorItems.map(({ binding, label, providerLabel }) => (
+                      <AgentSettingCard.Item
+                        key={`${binding.scope}:${binding.connectionId}`}
+                        icon={
+                          <ConnectorBrandIcon
+                            provider={binding.provider}
+                            className="size-3.5"
+                          />
+                        }
+                        title={label}
+                        subtitle={`${providerLabel} · ${
+                          binding.scope === "org" ? "Organization" : "Personal"
+                        }`}
+                        testId={`agent-bound-connection-${binding.scope}-${binding.connectionId}`}
+                      />
+                    ))}
                     {linkedScriptTools.map((tool) => (
                       <AgentSettingCard.Item
                         key={tool.id}
@@ -851,6 +841,8 @@ export function AgentSettingsSheet({
         channelsHref={channelsHref}
         teamspaceId={teamspaceId}
         accountId={accountId}
+        returnTo={pathname}
+        allowOrgScope
         openDialog={openDialog}
         onOpenDialogChange={setOpenDialog}
       />
