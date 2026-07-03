@@ -5,6 +5,18 @@
 
 export type InboundChannelPlatform = "slack" | "discord";
 
+export type InboundChannelWorkspaceLinkStatus = "linked" | "credential_only";
+
+/** One connected inbound workspace (Slack team, Discord guild, …). */
+export type InboundChannelWorkspace = {
+  /** `chat_workspaces.id` when linked; `credential:{connectionId}` for orphan creds. */
+  id: string;
+  workspaceKey: string;
+  name: string | null;
+  connectionId: string | null;
+  status: InboundChannelWorkspaceLinkStatus;
+};
+
 export type InboundChannelStatus = {
   platform: InboundChannelPlatform;
   label: string;
@@ -16,6 +28,7 @@ export type InboundChannelStatus = {
   workspaceKey: string | null;
   workspaceName: string | null;
   ready: boolean;
+  workspaces: InboundChannelWorkspace[];
 };
 
 export function inboundChannelStatusFor(

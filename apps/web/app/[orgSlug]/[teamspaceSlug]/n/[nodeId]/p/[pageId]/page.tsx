@@ -132,7 +132,11 @@ async function NodeTemplatePageInner({
         nodeTitle={subject.title}
         pageTitle={page.title}
       />
-      <ConsolePageFrame fullWidth={usesWorkbench} fillHeight={!usesWorkbench}>
+      <ConsolePageFrame
+        fullWidth={usesWorkbench}
+        fillHeight={!usesWorkbench}
+        contentClassName={siblingNav ? "pt-2" : undefined}
+      >
         <DynamicPageRenderer
           spec={page.spec}
           pageBindings={page.bindings}

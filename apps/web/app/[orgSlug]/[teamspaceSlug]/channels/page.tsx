@@ -38,6 +38,7 @@ async function ChannelsPageInner({
       teamspaceId={project.id}
       accountId={account.id}
       returnTo={returnTo}
+      connectStubEnabled={process.env.CONNECT_STUB === "1"}
     />
   );
 }

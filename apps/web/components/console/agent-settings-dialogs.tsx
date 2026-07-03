@@ -324,14 +324,7 @@ export function AgentSettingsDialogs({
   const toolSidebarItems: SidebarListItem[] = filteredToolEntries.map(
     (entry) => {
       const enabled = isToolEnabled(entry);
-      const subtitle =
-        entry.kind === "script"
-          ? entry.key
-          : entry.kind === "connector"
-            ? connectedProviders.has(entry.provider)
-              ? "Connected"
-              : "Not connected"
-            : undefined;
+      const subtitle = entry.kind === "script" ? entry.key : undefined;
 
       const icon =
         entry.kind === "connector" ? (
@@ -717,14 +710,13 @@ export function AgentSettingsDialogs({
         !slackInbound?.ready ? (
           <div className="mb-4 space-y-3 rounded-lg border px-4 py-3">
             <p className="text-sm">
-              Inbound Slack is not connected for this project. Connect the same
-              workspace on Channels (Vercel Connect), not the Composio card on
-              Connections.
+              Slack is not connected for this project yet. Connect your workspace
+              on the Channels page to enable @mentions.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button
-                type="button"
                 size="sm"
+                nativeButton={false}
                 render={
                   <a
                     href={slackInboundConnectHref}
@@ -735,9 +727,9 @@ export function AgentSettingsDialogs({
                 Connect Slack channel
               </Button>
               <Button
-                type="button"
                 size="sm"
                 variant="outline"
+                nativeButton={false}
                 render={<a href={channelsHref} />}
               >
                 Open Channels
@@ -748,6 +740,43 @@ export function AgentSettingsDialogs({
         {addTriggerError ? (
           <p className="text-destructive mb-4 text-sm">{addTriggerError}</p>
         ) : null}
+      </>
+    );
+  };
+
+  const renderAddTriggerFooter = () => {
+    if (!selectedAddTrigger) return null;
+
+    if (selectedAddTrigger.action === "schedule") {
+      return (
+        <div className="flex justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenDialogChange(null)}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="schedule-sheet-form"
+            data-testid="add-trigger-confirm"
+          >
+            Add trigger
+          </Button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => onOpenDialogChange(null)}
+        >
+          Cancel
+        </Button>
         <Button
           type="button"
           data-testid="add-trigger-confirm"
@@ -760,7 +789,7 @@ export function AgentSettingsDialogs({
         >
           {isProvisioningSlack ? "Creating Slack user group…" : "Add trigger"}
         </Button>
-      </>
+      </div>
     );
   };
 
@@ -778,28 +807,7 @@ export function AgentSettingsDialogs({
         onSearchQueryChange={setAddTriggerSearch}
         searchPlaceholder="Search triggers…"
         detail={renderAddTriggerDetail()}
-        footer={
-          selectedAddTrigger?.action === "schedule" ? (
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenDialogChange(null)}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                form="schedule-sheet-form"
-                data-testid="add-trigger-confirm"
-              >
-                Add trigger
-              </Button>
-            </div>
-          ) : (
-            <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
-          )
-        }
+        footer={renderAddTriggerFooter()}
       />
 
       <AgentSettingsSidebarDialog

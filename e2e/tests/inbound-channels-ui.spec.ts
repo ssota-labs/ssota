@@ -34,7 +34,8 @@ test.describe("inbound-channels-ui", () => {
     await expect(slackCard).toBeVisible();
     await expect(slackCard.getByText("Connected")).toHaveCount(0);
     await slackCard.click();
-    await expect(page.getByTestId("channel-connect-slack")).toBeVisible();
+    await expect(page.getByTestId("card-list-sheet-panel")).toBeVisible();
+    await expect(page.getByTestId("channel-add-connection-slack")).toBeVisible();
 
     await page.screenshot({
       path: `${SCREENSHOT_DIR}/channels-slack-disconnected.png`,
@@ -48,7 +49,7 @@ test.describe("inbound-channels-ui", () => {
     await expect(addDialog.getByText("Open Channels")).toBeVisible();
     await expect(addDialog.getByTestId("add-trigger-confirm")).toBeDisabled();
     await expect(
-      addDialog.getByText(/Inbound Slack is not connected/i),
+      addDialog.getByText(/Slack is not connected for this project/i),
     ).toBeVisible();
 
     await addDialog.screenshot({
@@ -66,10 +67,14 @@ test.describe("inbound-channels-ui", () => {
     await expect(slackCard.getByText("Connected")).toBeVisible();
     await expect(slackCard.getByText(INBOUND_SLACK_WORKSPACE_NAME)).toBeVisible();
     await slackCard.click();
-    await expect(page.getByTestId(`channel-workspace-slack`)).toContainText(
+    await expect(page.getByTestId("card-list-sheet-panel")).toBeVisible();
+    await expect(page.getByTestId(`channel-workspace-slack-${INBOUND_SLACK_TEAM_ID}`)).toContainText(
       INBOUND_SLACK_TEAM_ID,
     );
-    await expect(page.getByTestId("channel-connect-slack")).toHaveCount(0);
+    await expect(page.getByTestId("channel-add-connection-slack")).toBeVisible();
+    await expect(
+      page.getByTestId(`channel-disconnect-slack-${INBOUND_SLACK_TEAM_ID}`),
+    ).toBeVisible();
 
     await page.screenshot({
       path: `${SCREENSHOT_DIR}/channels-slack-connected.png`,
@@ -85,11 +90,41 @@ test.describe("inbound-channels-ui", () => {
       addDialog.getByText(/creates a Slack user group/i),
     ).toBeVisible();
     await expect(
-      addDialog.getByText(/Inbound Slack is not connected/i),
+      addDialog.getByText(/Slack is not connected for this project/i),
     ).toHaveCount(0);
 
     await addDialog.screenshot({
       path: `${SCREENSHOT_DIR}/agent-add-trigger-slack-connected.png`,
+    });
+  });
+
+  test("connected: disconnect from channel sheet", async ({ page }) => {
+    await seedInboundSlackConnected();
+    await loginAsSmoke(page);
+
+    await gotoProject(page, "channels");
+    const slackCard = page.getByTestId("channel-card-slack");
+    await expect(slackCard.getByText("Connected")).toBeVisible();
+    await slackCard.click();
+    await expect(
+      page.getByTestId(`channel-disconnect-slack-${INBOUND_SLACK_TEAM_ID}`),
+    ).toBeVisible();
+    await page.getByTestId(`channel-disconnect-slack-${INBOUND_SLACK_TEAM_ID}`).click();
+    await expect(page.getByTestId("channel-disconnect-dialog")).toBeVisible();
+    await page.getByTestId("channel-disconnect-confirm").click();
+
+    await expect(page.getByTestId("card-list-sheet-panel")).toHaveCount(0);
+    await expect(slackCard.getByText("Connected")).toHaveCount(0);
+
+    await slackCard.click();
+    await expect(page.getByTestId("channel-add-connection-slack")).toBeVisible();
+    await expect(
+      page.getByTestId(`channel-disconnect-slack-${INBOUND_SLACK_TEAM_ID}`),
+    ).toHaveCount(0);
+
+    await page.screenshot({
+      path: `${SCREENSHOT_DIR}/channels-slack-after-disconnect.png`,
+      fullPage: true,
     });
   });
 });

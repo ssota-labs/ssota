@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -31,6 +31,7 @@ import {
   SectionHeaderEnd,
   useSectionHeaderActions,
 } from "./section-header-actions";
+import { useDocumentSheet } from "./document-sheet-context";
 
 export type DocumentCardListSheetProps = {
   nodes: RenderNode[];
@@ -60,7 +61,8 @@ export function DocumentCardListSheetEl({
   filters: rawFilters,
 }: DocumentCardListSheetProps) {
   const onAction = useAction();
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const documentSheet = useDocumentSheet();
+  const [localActiveId, setLocalActiveId] = useState<string | null>(null);
   const currentYear = new Date().getFullYear();
   const filterDefs = useMemo(
     () => parseDocumentCardListSheetFilters(rawFilters),
@@ -87,16 +89,92 @@ export function DocumentCardListSheetEl({
     [nodes, filterDefs, filterState],
   );
 
+  const activeId = documentSheet?.activeNodeId ?? localActiveId;
+
+  const openNode = useCallback(
+    (node: RenderNode) => {
+      const onSave = (blocks: unknown[]) => {
+        if (onAction && action) {
+          void onAction(action, {
+            nodeId: node.id,
+            doc: blocks,
+          });
+        }
+      };
+
+      if (documentSheet) {
+        documentSheet.openSheet({
+          node,
+          subtitle: readNodeField(node, subtitleField),
+          status: readNodeField(node, statusField),
+          field,
+          editable,
+          sheetSize,
+          onSave,
+        });
+        return;
+      }
+
+      setLocalActiveId(node.id);
+    },
+    [
+      action,
+      documentSheet,
+      editable,
+      field,
+      onAction,
+      sheetSize,
+      statusField,
+      subtitleField,
+    ],
+  );
+
+  const onActiveIdChange = useCallback(
+    (id: string | null) => {
+      if (documentSheet) {
+        if (!id) {
+          documentSheet.closeSheet();
+          return;
+        }
+        const node = visibleNodes.find((item) => item.id === id);
+        if (node) openNode(node);
+        return;
+      }
+      setLocalActiveId(id);
+    },
+    [documentSheet, openNode, visibleNodes],
+  );
+
   const activeNode = visibleNodes.find((node) => node.id === activeId) ?? null;
-  const open = activeNode !== null;
+  const open = !documentSheet && activeNode !== null;
 
   useEffect(() => {
-    if (activeId && !visibleNodes.some((node) => node.id === activeId)) {
-      setActiveId(null);
+    if (documentSheet) {
+      if (!documentSheet.activeNodeId) return;
+      const ownsNode = nodes.some(
+        (node) => node.id === documentSheet.activeNodeId,
+      );
+      if (!ownsNode) return;
+      if (
+        !visibleNodes.some((node) => node.id === documentSheet.activeNodeId)
+      ) {
+        documentSheet.closeSheet();
+      }
+      return;
     }
-  }, [activeId, visibleNodes]);
 
-  const close = () => setActiveId(null);
+    if (localActiveId && !visibleNodes.some((node) => node.id === localActiveId)) {
+      setLocalActiveId(null);
+    }
+  }, [documentSheet, localActiveId, nodes, visibleNodes]);
+
+  const close = () => {
+    if (documentSheet) {
+      documentSheet.closeSheet();
+      return;
+    }
+    setLocalActiveId(null);
+  };
 
   const inSection = useSectionHeaderActions() !== null;
   const filterBar = useMemo(
@@ -116,7 +194,7 @@ export function DocumentCardListSheetEl({
   return (
     <CardListSheet.Root
       activeId={activeId}
-      onActiveIdChange={setActiveId}
+      onActiveIdChange={onActiveIdChange}
       testId="document-sheet-list"
     >
       {filterBar && inSection ? (

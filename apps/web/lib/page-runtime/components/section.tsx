@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@ssota/ui/lib/utils";
 import { useMemo } from "react";
+import { cn } from "@ssota/ui/lib/utils";
 import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import {
   SectionHeaderActionsContext,

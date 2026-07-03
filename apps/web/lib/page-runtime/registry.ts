@@ -16,6 +16,8 @@ import { wireframeComponents } from "./components/wireframe-canvas";
 import { erdDiagramComponents } from "./components/erd-diagram";
 import { widgetComponents } from "./components/widget";
 import { figmaEmbedComponents } from "./components/figma-embed";
+import { periodSelectComponents } from "./components/period-select";
+import { chartComponents } from "./components/charts";
 
 /**
  * The JSON-render catalog: a registry of component type → renderer. Adding a
@@ -40,6 +42,8 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...erdDiagramComponents,
   ...widgetComponents,
   ...figmaEmbedComponents,
+  ...periodSelectComponents,
+  ...chartComponents,
 };
 
 export const UI_CATALOG_COMPONENTS = Object.keys(CATALOG);

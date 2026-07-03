@@ -1,0 +1,59 @@
+"use client";
+
+import { PolarGrid, RadialBar, RadialBarChart } from "recharts";
+import {
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@ssota/ui/components/ui/chart";
+import { boundNodes } from "../../bindings";
+import type { CatalogComponent } from "../../types";
+import { ChartShell } from "./chart-shell";
+import { parseChartProps } from "./chart-types";
+import { useKpiSeries } from "./use-kpi-series";
+
+function ChartRadialEl({
+  nodes,
+  height,
+  title,
+  snapshotProperty,
+  respectPeriodFilter,
+}: {
+  nodes: ReturnType<typeof boundNodes>;
+  height: number;
+  title?: string;
+  snapshotProperty: string;
+  respectPeriodFilter: boolean;
+}) {
+  const { data, isEmpty } = useKpiSeries(nodes, {
+    snapshotProperty,
+    respectPeriodFilter,
+  });
+
+  return (
+    <ChartShell title={title} height={height} isEmpty={isEmpty} testId="chart-radial">
+      <RadialBarChart
+        data={data}
+        innerRadius={height * 0.25}
+        outerRadius={height * 0.45}
+        accessibilityLayer
+      >
+        <PolarGrid />
+        <ChartTooltip content={<ChartTooltipContent nameKey="label" />} />
+        <RadialBar dataKey="value" fill="var(--color-value)" background />
+      </RadialBarChart>
+    </ChartShell>
+  );
+}
+
+export const chartRadialComponent: CatalogComponent = ({ props, bindingData }) => {
+  const parsed = parseChartProps(props);
+  return (
+    <ChartRadialEl
+      nodes={boundNodes(bindingData, props)}
+      height={parsed.height}
+      title={parsed.title}
+      snapshotProperty={parsed.snapshotProperty}
+      respectPeriodFilter={parsed.respectPeriodFilter}
+    />
+  );
+};
