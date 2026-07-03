@@ -68,6 +68,8 @@ type ListRootProps = {
   className?: string;
   testId?: string;
   dismissOnEscape?: boolean;
+  /** Close the sheet when the user clicks the list area outside the panel. */
+  dismissOnOutsideClick?: boolean;
 };
 
 function ListRoot({
@@ -77,7 +79,9 @@ function ListRoot({
   className,
   testId,
   dismissOnEscape = true,
+  dismissOnOutsideClick = false,
 }: ListRootProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const open = activeId !== null;
 
   useEffect(() => {
@@ -89,9 +93,35 @@ function ListRoot({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [dismissOnEscape, open, onActiveIdChange]);
 
+  useEffect(() => {
+    if (!dismissOnOutsideClick || !open) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const root = rootRef.current;
+      const target = event.target;
+      if (!root || !(target instanceof Node) || !root.contains(target)) return;
+
+      const sheet = root.querySelector('[role="dialog"]');
+      if (sheet?.contains(target)) return;
+
+      if (
+        target instanceof Element &&
+        target.closest("[data-card-list-sheet-row]")
+      ) {
+        return;
+      }
+
+      onActiveIdChange(null);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [dismissOnOutsideClick, open, onActiveIdChange]);
+
   return (
     <CardListSheetListContext value={{ activeId, setActiveId: onActiveIdChange }}>
       <div
+        ref={rootRef}
         className={cn("relative flex min-h-0 flex-1 flex-col", className)}
         data-testid={testId}
       >
@@ -136,6 +166,7 @@ function Row({ id, children, className, testId, onClick }: RowProps) {
     <button
       type="button"
       data-testid={testId}
+      data-card-list-sheet-row=""
       className={cn(
         "hover:bg-muted/40 flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
         active && "bg-transparent",

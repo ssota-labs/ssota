@@ -73,6 +73,7 @@ export function AgentsWorkspace({
     <CardListSheet.Root
       activeId={activeId}
       onActiveIdChange={handleActiveIdChange}
+      dismissOnOutsideClick
       className="absolute inset-0 flex flex-col"
       testId="agents-workspace"
     >

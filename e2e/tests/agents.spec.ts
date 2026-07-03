@@ -203,6 +203,21 @@ test.describe("Agents", () => {
     await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
   });
 
+  test("closes when clicking outside the sheet", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByRole("button", { name: MAIN_AGENT_BUTTON }).click();
+    await expect(page.getByTestId("agent-settings-sheet")).toBeVisible();
+
+    const workspace = page.getByTestId("agents-workspace");
+    const box = await workspace.boundingBox();
+    if (!box) throw new Error("agents workspace not visible");
+    await page.mouse.click(box.x + 24, box.y + 96);
+
+    await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
+  });
+
   test("sidebar nav link reaches agents", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "overview");
