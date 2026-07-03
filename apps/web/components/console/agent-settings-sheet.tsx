@@ -516,9 +516,7 @@ export function AgentSettingsSheet({
                           }
                           title={connector.label}
                           subtitle={
-                            connected
-                              ? "Composio connector"
-                              : "Enabled — not connected"
+                            connected ? "Composio connector" : "Enabled"
                           }
                           trailing={
                             connected ? (
