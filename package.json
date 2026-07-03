@@ -2,6 +2,7 @@
   "name": "ssota",
   "private": true,
   "scripts": {
+    "postinstall": "node scripts/patch-ai-sdk-sourcemaps.mjs",
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
