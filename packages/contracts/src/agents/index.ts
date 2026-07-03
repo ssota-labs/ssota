@@ -8,7 +8,7 @@ import {
   type AgentDefinitionSeed,
 } from "../agent-definition.js";
 import { TaskStatusSchema } from "../task.js";
-import { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, type BuiltinAgentId, isGuideBuiltinAgentId } from "./builtin-ids.js";
+import { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, type BuiltinAgentId } from "./builtin-ids.js";
 import { loadAgentInstruction } from "./load-instruction.js";
 
 export const AgentCadenceHintSchema = z.enum([
@@ -186,46 +186,6 @@ const AGENT_META: AgentMeta[] = [
     defaultStatus: "ready",
     instructionFile: "worker.report_builder.md",
   },
-  {
-    id: BUILTIN_AGENT_IDS.guideAgentAuthoring,
-    title: "Guide: agent authoring",
-    description:
-      "Reference for writing good agent definitions (description, body). Load when authoring agents.",
-    toolBundles: [],
-    nodeScopes: [],
-    runPolicy: {},
-    instructionFile: "guide.agent_authoring.md",
-  },
-  {
-    id: BUILTIN_AGENT_IDS.guidePageAuthoring,
-    title: "Guide: page authoring",
-    description:
-      "Reference for the json-render page format (spec, bindings, actions). Load when authoring pages.",
-    toolBundles: [],
-    nodeScopes: [],
-    runPolicy: {},
-    instructionFile: "guide.page_authoring.md",
-  },
-  {
-    id: BUILTIN_AGENT_IDS.guideScriptToolAuthoring,
-    title: "Guide: script tool authoring",
-    description:
-      "Reference for authoring Script Tools (stored TypeScript workers). Load when defining reusable batch logic.",
-    toolBundles: [],
-    nodeScopes: [],
-    runPolicy: {},
-    instructionFile: "guide.script_tool_authoring.md",
-  },
-  {
-    id: BUILTIN_AGENT_IDS.guideTaskDelegation,
-    title: "Guide: task delegation",
-    description:
-      "Reference for how the Main Agent creates and assigns tasks. Load when designing delegation patterns.",
-    toolBundles: [],
-    nodeScopes: [],
-    runPolicy: {},
-    instructionFile: "guide.task_delegation.md",
-  },
 ];
 
 function buildRegistry(
@@ -268,11 +228,9 @@ export function isKnownBuiltinAgentId(
   return agentDefinitionId in AGENT_DEFINITION_REGISTRY;
 }
 
-/** Builtin specialists and workers seeded into agent_definitions (not main or guides). */
+/** Builtin specialists and workers seeded into agent_definitions (not main). */
 export function listRunnableBuiltinAgentIds(): BuiltinAgentId[] {
-  return listBuiltinAgentIds().filter(
-    (id) => id !== MAIN_AGENT_ID && !isGuideBuiltinAgentId(id),
-  );
+  return listBuiltinAgentIds().filter((id) => id !== MAIN_AGENT_ID);
 }
 
 /** Lightweight routing-manifest row for Main Agent delegation. */
@@ -282,9 +240,7 @@ export interface AgentManifestEntry {
   description: string;
 }
 
-/**
- * Task-runnable agents for Main Agent routing. Excludes main orchestrator and guides.
- */
+/** Task-runnable agents for Main Agent routing. Excludes main orchestrator. */
 export function listRoutableAgentIndex(): AgentManifestEntry[] {
   return listRunnableBuiltinAgentIds().map((id) => {
     const a = AGENT_DEFINITION_REGISTRY[id]!;
@@ -320,4 +276,4 @@ export const AGENT_DEFINITION_SEEDS: AgentDefinitionSeed[] =
     };
   });
 
-export { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, isBuiltinAgentId, isGuideBuiltinAgentId, type BuiltinAgentId } from "./builtin-ids.js";
+export { BUILTIN_AGENT_IDS, MAIN_AGENT_ID, isBuiltinAgentId, type BuiltinAgentId } from "./builtin-ids.js";

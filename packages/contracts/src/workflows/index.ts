@@ -199,24 +199,6 @@ const BUILTIN_WORKFLOW_META: WorkflowMeta[] = [
     defaultStatus: "ready",
     instructionFile: "agent.setup.md",
   },
-  {
-    workflowKey: "agent.guide.page_authoring",
-    title: "Guide: page authoring",
-    description:
-      "Reference for the json-render page format (spec, bindings, actions). Load when authoring pages.",
-    category: "orchestrator",
-    reference: true,
-    instructionFile: "agent.guide.page_authoring.md",
-  },
-  {
-    workflowKey: "agent.guide.workflow_authoring",
-    title: "Guide: workflow authoring",
-    description:
-      "Reference for writing good workflow instructions (key naming, description, body). Load when authoring workflows.",
-    category: "orchestrator",
-    reference: true,
-    instructionFile: "agent.guide.workflow_authoring.md",
-  },
 ];
 
 export const BUILTIN_WORKFLOW_REGISTRY: Record<

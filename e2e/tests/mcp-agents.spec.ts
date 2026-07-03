@@ -40,31 +40,31 @@ test.describe("MCP agent tools", () => {
       expect(agent).not.toHaveProperty("content");
     }
 
-    const guide = (await mcpToolCall(
+    const agent = (await mcpToolCall(
       request,
       mcpUrl,
       token,
       "get_agent",
-      { agentDefinitionId: BUILTIN_AGENT_IDS.guideAgentAuthoring },
+      { agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature },
       scope,
     )) as { id: string; name: string };
-    expect(guide.id).toBe(BUILTIN_AGENT_IDS.guideAgentAuthoring);
-    expect(guide).not.toHaveProperty("instruction");
-    expect(guide).not.toHaveProperty("content");
+    expect(agent.id).toBe(BUILTIN_AGENT_IDS.implementFeature);
+    expect(agent).not.toHaveProperty("instruction");
+    expect(agent).not.toHaveProperty("content");
 
-    const guideInstruction = (await mcpToolCall(
+    const instruction = (await mcpToolCall(
       request,
       mcpUrl,
       token,
       "get_agent_instruction",
-      { agentDefinitionId: BUILTIN_AGENT_IDS.guideAgentAuthoring },
+      { agentDefinitionId: BUILTIN_AGENT_IDS.implementFeature },
       scope,
     )) as { agentDefinitionId: string; instruction: string };
-    expect(guideInstruction.agentDefinitionId).toBe(
-      BUILTIN_AGENT_IDS.guideAgentAuthoring,
+    expect(instruction.agentDefinitionId).toBe(
+      BUILTIN_AGENT_IDS.implementFeature,
     );
-    expect(guideInstruction.instruction).toContain("write_agent_instruction");
-    expect(guideInstruction.instruction.length).toBeGreaterThan(50);
+    expect(instruction.instruction).toContain("implement");
+    expect(instruction.instruction.length).toBeGreaterThan(50);
   });
 
   test("rejects unknown agent definition ids", async ({ request }) => {

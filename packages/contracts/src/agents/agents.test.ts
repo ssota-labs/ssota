@@ -5,21 +5,17 @@ import {
   getAgentDefinitionById,
   getMainAgentDefinition,
   isKnownBuiltinAgentId,
-  isGuideBuiltinAgentId,
   listBuiltinAgentIds,
   listRoutableAgentIndex,
   MAIN_AGENT_ID,
 } from "./index.js";
 
 describe("agent definition registry SSOT", () => {
-  it("defines main, specialist, worker, and guide agents", () => {
-    expect(listBuiltinAgentIds().length).toBeGreaterThanOrEqual(15);
+  it("defines main, specialist, and worker agents", () => {
+    expect(listBuiltinAgentIds().length).toBeGreaterThanOrEqual(11);
     expect(isKnownBuiltinAgentId(BUILTIN_AGENT_IDS.main)).toBe(true);
     expect(isKnownBuiltinAgentId(BUILTIN_AGENT_IDS.implementFeature)).toBe(true);
     expect(isKnownBuiltinAgentId(BUILTIN_AGENT_IDS.workerNotion)).toBe(true);
-    expect(isKnownBuiltinAgentId(BUILTIN_AGENT_IDS.guideAgentAuthoring)).toBe(
-      true,
-    );
     expect(
       isKnownBuiltinAgentId("00000000-0000-4000-8000-000000000099"),
     ).toBe(false);
@@ -28,7 +24,7 @@ describe("agent definition registry SSOT", () => {
   it("every runnable agent carries a skill-style description for routing", () => {
     for (const id of listBuiltinAgentIds()) {
       const entry = AGENT_DEFINITION_REGISTRY[id]!;
-      if (!isGuideBuiltinAgentId(id) && id !== MAIN_AGENT_ID) {
+      if (id !== MAIN_AGENT_ID) {
         expect(entry.description.length).toBeGreaterThan(20);
       }
     }
@@ -69,20 +65,6 @@ describe("agent definition registry SSOT", () => {
       true,
     );
     expect(routable.some((a) => a.id === BUILTIN_AGENT_IDS.main)).toBe(false);
-    expect(
-      routable.some((a) => a.id === BUILTIN_AGENT_IDS.guideAgentAuthoring),
-    ).toBe(false);
-  });
-
-  it("hides reference guides from routable manifest but resolves them by id", () => {
-    expect(
-      getAgentDefinitionById(BUILTIN_AGENT_IDS.guidePageAuthoring),
-    ).not.toBeNull();
-    expect(
-      listRoutableAgentIndex().some(
-        (a) => a.id === BUILTIN_AGENT_IDS.guidePageAuthoring,
-      ),
-    ).toBe(false);
   });
 
   it("getMainAgentDefinition returns main builtin", () => {
