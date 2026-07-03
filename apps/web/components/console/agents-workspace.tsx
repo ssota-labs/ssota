@@ -132,9 +132,6 @@ export function AgentsWorkspace({
                 >
                   <div className="min-w-0 flex-1 space-y-1">
                     <span className="text-sm font-medium">{definition.name}</span>
-                    <p className="font-mono text-xs text-muted-foreground">
-                      {definition.id}
-                    </p>
                     {definition.description ? (
                       <p className="line-clamp-2 text-xs text-muted-foreground">
                         {definition.description}
