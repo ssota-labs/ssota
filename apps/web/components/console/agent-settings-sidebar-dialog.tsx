@@ -144,7 +144,7 @@ export function AgentSettingsSidebarDialog({
           <div className="flex min-w-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-0 scrollbar-none">{detail}</div>
             {footer ? (
-              <div className="flex justify-end px-4 py-3">{footer}</div>
+              <div className="flex justify-end px-4 pt-3 pb-1.5">{footer}</div>
             ) : null}
           </div>
         </div>
