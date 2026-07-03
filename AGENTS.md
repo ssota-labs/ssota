@@ -4,7 +4,7 @@
 
 SSOTA는 더 이상 범용 컨텍스트 그래프 런타임을 active product로 구현하지 않는다. Active product는 개발 에이전트를 찾는 일반 사용자와 개발자를 위한 **개발 워크플로우 작업 공간**이다.
 
-Active DB/runtime keep set은 `profiles`, `organizations`, `organization_memberships`, `projects`, `tasks`, `accounts`, `account_memberships`, `account_connections`, `node_catalog`, `edge_catalog`, `nodes`, `edges`다. **L1 데이터 catalog**(`node_catalog`, `edge_catalog`)는 project-scoped DB 테이블이며 uuid PK + `key`(project 내 unique)다. **L2 UI catalog**는 `packages/contracts/ui-catalog`(code, json-render). **L3 페이지**·**L4 워크스페이스 네비**는 `page`/`workspace` catalog key graph 노드(`properties.spec`·`properties.nav`). dev-workflow 시드 pack SSOT는 `packages/contracts/seed-packs/dev-workflow/`다. 과거 generic graph/catalog/action/workflow runtime 코드는 `archive/generic-runtime/`에 reference-only로 보존하며, 배포 경로와 active Drizzle schema에서는 제외한다.
+Active DB/runtime keep set은 `profiles`, `organizations`, `organization_memberships`, `projects`, `tasks`, `accounts`, `account_memberships`, `account_connections`, `node_catalog`, `edge_catalog`, `nodes`, `edges`다. **L1 데이터 catalog**(`node_catalog`, `edge_catalog`)는 project-scoped DB 테이블이며 uuid PK + `key`(project 내 unique)다. **L2 UI catalog**는 `packages/contracts/ui-catalog`(code, json-render). **L3 페이지**·**L4 워크스페이스 네비**는 `page`/`workspace` catalog key graph 노드(`properties.spec`·`properties.nav`). dev-workflow 시드 pack SSOT는 `packages/contracts/seed-packs/software-development-workflow/`다. 과거 generic graph/catalog/action/workflow runtime 코드는 이 저장소에서 제거되었다 — 복원·의존 금지 ([ARCH-03], 아래 Legacy Runtime 절).
 
 기획·스펙의 SSOT는 Notion의 SSOTA-on-SSOTA 개발 Playbook이다. 일반 코딩 작업은 MCP가 아니라 이 저장소의 개발 워크플로우 명령으로 수행한다.
 
@@ -17,41 +17,42 @@ Active DB/runtime keep set은 `profiles`, `organizations`, `organization_members
 
 ## Architecture — Hexagonal (불변)
 
-이 저장소는 **이중 트랙**이다. Active product는 Console v2.7 그래프 + tasks 워크플로우이고, `archive/generic-runtime/`의 `executeAction`·Gate·Action Log 런타임은 reference-only다.
+Active product는 Console v2.7 그래프 + tasks 워크플로우다. 과거 generic runtime(`executeAction`·Gate·Action Log)은 저장소에서 제거되었으며 복원하지 않는다 ([ARCH-03]).
 
 ```
 apps/
   web/                  # Next.js 16 — Console v2.7 UI + Supabase Auth
   mcp/                  # Next.js 16 — account/project/task + graph query MCP
 packages/
-  core/                 # CatalogReadPort, GraphReadPort, GraphWritePort, graph use-cases (+ legacy executeAction in archive path)
-  adapter-supabase/     # Drizzle 스키마·시드, createGraphPorts / createTaskPort
+  core/                 # CatalogReadPort, GraphReadPort, GraphWritePort, graph use-cases
+  adapter-postgres/     # Drizzle 스키마·시드, createGraphPorts / createTaskPort
+  adapter-supabase/     # Supabase 래퍼 (adapter-postgres 사용)
   contracts/            # L2 ui-catalog, page/workspace Zod, seed-packs/dev-workflow, graph/* DTO
   config/
 supabase/
 e2e/
 ```
 
-**의존 방향:** `apps/* → core ← adapter-supabase`. `packages/core`는 IO 의존 0.
+**의존 방향 [ARCH-01]:** `apps/* → core ← adapter-postgres/adapter-supabase`. `packages/core`는 IO 의존 0. apps는 adapter 내부 경로(deep import)를 참조하지 않는다 [ARCH-02].
 
 **Adapter 진입점 (active):** `createGraphPorts(db, { organizationId, teamspaceId, accountId? })` → `{ catalog, graphRead, graphWrite }`. Catalog read는 `organizationId`, instance read/write는 `teamspaceId`(+ org-shared `teamspace_id IS NULL`). `accountId`가 있으면 end-user scope(shared `account_id IS NULL` + own rows). `createDbAccountReadPort(db)` → `provisionForUser`, `assertAccountAccess`, `getOrCreateWorkspaceAccount`.
 
 ## Console v2.7 Graph Invariants — 협상 불가 (active)
 
-1. **4계층 catalog** — L1 `node_catalog`/`edge_catalog`(DB, **org-scoped** `organization_id` + project 내 unique `key`); L2 `packages/contracts/ui-catalog`(code); L3 `page` graph nodes(`properties.spec` + `bindings`); L4 `workspace` singleton(`properties.nav` → page node ids). 출시 Console은 읽기 전용 + hardcoded nav fallback; catalog 편집은 lab only (`CATALOG_LAB_ENABLED`).
-2. **그래프 쓰기는 `GraphWritePort` (또는 core graph use-case)로만 한다.** apps/MCP에서 Drizzle·`nodes`/`edges` 직접 CRUD export 금지.
-3. **Catalog는 `organization_id`로 격리, 인스턴스는 `teamspace_id`로 귀속** — `nodes.teamspace_id`/`edges.teamspace_id` nullable = org-shared instance. Edge endpoints는 **같은 org**면 teamspace가 달라도 허용(cross-teamspace link). Cross-org → `ORG_MISMATCH`.
-4. **인스턴스 → catalog FK only** — `nodes.node_catalog_id`, `edges.edge_catalog_id`. `node_type`/`edge_type` text 컬럼 없음. API는 `catalogKey`(또는 `nodeCatalogId`/`edgeCatalogId`)로 생성·조회.
-5. **타입·properties 검증은 API 동작이다.** catalog에 없는 `catalogKey`·`property_schema` 위반 properties는 커밋 전 reject. edge domain/range는 `edge_catalog.domain_catalog_ids`/`range_catalog_ids`로 검증.
-6. **노드 봉투 = `title` + `properties` only** — `content`·`lifecycle_status` DB 컬럼 없음. BlockNote 본문·lifecycle·ui_component spec 등은 dev-workflow convention으로 `properties.content`, `properties.lifecycleStatus`, `properties.spec`/`componentTree`에 저장. 읽기 헬퍼: `readNodeContent()`, `readLifecycleStatus()` (`packages/core`).
-7. **시드 pack** — `packages/contracts/seed-packs/dev-workflow/`(L1 catalog + pages + workspace). `seedDevWorkflowCatalog` + `applyDevWorkflowPack`이 onboarding·`pnpm db:seed`에서 호출.
-8. **페이지 UI는 json-render 조합만** — L3 `page.properties.spec`은 L2 catalog 컴포넌트(`DocumentEditor`, `DataTable`, `ArtifactWorkbench` 등)를 `bindings`·`actions`와 함께 선언적으로 조합한다. 도메인 전용 React 페이지·라우트(`DesignStudioPage`, `/design/ui-components/[id]` 등)를 추가하지 않는다. URL 선택은 `url_selection` binding + `SelectionProvider`로 처리한다.
+1. **[GRAPH-01] 4계층 catalog** — L1 `node_catalog`/`edge_catalog`(DB, **org-scoped** `organization_id` + project 내 unique `key`); L2 `packages/contracts/ui-catalog`(code); L3 `page` graph nodes(`properties.spec` + `bindings`); L4 `workspace` singleton(`properties.nav` → page node ids). 출시 Console은 읽기 전용 + hardcoded nav fallback; catalog 편집은 lab only (`CATALOG_LAB_ENABLED`).
+2. **[GRAPH-02] 그래프 쓰기는 `GraphWritePort` (또는 core graph use-case)로만 한다.** apps/MCP에서 Drizzle·`nodes`/`edges` 직접 CRUD export 금지.
+3. **[GRAPH-03] Catalog는 `organization_id`로 격리, 인스턴스는 `teamspace_id`로 귀속** — `nodes.teamspace_id`/`edges.teamspace_id` nullable = org-shared instance. Edge endpoints는 **같은 org**면 teamspace가 달라도 허용(cross-teamspace link). Cross-org → `ORG_MISMATCH`.
+4. **[GRAPH-04] 인스턴스 → catalog FK only** — `nodes.node_catalog_id`, `edges.edge_catalog_id`. `node_type`/`edge_type` text 컬럼 없음. API는 `catalogKey`(또는 `nodeCatalogId`/`edgeCatalogId`)로 생성·조회.
+5. **[GRAPH-05] 타입·properties 검증은 API 동작이다.** catalog에 없는 `catalogKey`·`property_schema` 위반 properties는 커밋 전 reject. edge domain/range는 `edge_catalog.domain_catalog_ids`/`range_catalog_ids`로 검증.
+6. **[GRAPH-06] 노드 봉투 = `title` + `properties` only** — `content`·`lifecycle_status` DB 컬럼 없음. BlockNote 본문·lifecycle·ui_component spec 등은 dev-workflow convention으로 `properties.content`, `properties.lifecycleStatus`, `properties.spec`/`componentTree`에 저장. 읽기 헬퍼: `readNodeContent()`, `readLifecycleStatus()` (`packages/core`).
+7. **[GRAPH-07] 시드 pack** — `packages/contracts/seed-packs/software-development-workflow/`(L1 catalog + pages + workspace). `seedDevWorkflowCatalog` + `applyDevWorkflowPack`이 onboarding·`pnpm db:seed`에서 호출.
+8. **[GRAPH-08] 페이지 UI는 json-render 조합만** — L3 `page.properties.spec`은 L2 catalog 컴포넌트(`DocumentEditor`, `DataTable`, `ArtifactWorkbench` 등)를 `bindings`·`actions`와 함께 선언적으로 조합한다. 도메인 전용 React 페이지·라우트(`DesignStudioPage`, `/design/ui-components/[id]` 등)를 추가하지 않는다. URL 선택은 `url_selection` binding + `SelectionProvider`로 처리한다.
 
-**명시적 비범위 (v1):** `executeAction`, Action Catalog DB, Human Gate, `action_log`, MCP `execute_action` — `archive/generic-runtime/` 참고만.
+**명시적 비범위 (v1):** `executeAction`, Action Catalog DB, Human Gate, `action_log`, MCP `execute_action`.
 
-## Legacy Runtime (archived) — reference only
+## Legacy Runtime — 복원 금지
 
-`archive/generic-runtime/`에 보존된 generic runtime의 불변식(`executeAction` 단일 쓰기, ActionCommitPort+log 단일 트랜잭션, 4대 강제, Gate)은 **active product에 적용하지 않는다**. 해당 코드를 복원·의존하지 말 것.
+**[ARCH-03]** 과거 generic runtime의 불변식(`executeAction` 단일 쓰기, ActionCommitPort+log 단일 트랜잭션, 4대 강제, Gate)은 **active product에 적용하지 않는다**. 해당 코드·패턴을 복원하거나 의존하지 말 것. 필요하면 git 히스토리에서 참고만 한다.
 
 ## Tenancy & Security — Builder / End-user + `teamspace_id`
 
@@ -100,7 +101,7 @@ Console URL `[orgSlug]`(flat)와 MCP `orgSlug` + `teamspaceSlug`(explicit write 
 
 ### Postgres RLS — 전 테이블 deny-all (의도적)
 
-SSOTA 테이블(`profiles`, `organizations`, `teamspaces`, `organization_memberships`, …) **전부 RLS deny-all**.
+**[SEC-01]** SSOTA 테이블(`profiles`, `organizations`, `teamspaces`, `organization_memberships`, …) **전부 RLS deny-all**.
 
 1. **격리 SSOT**: core use-case + 서버 `teamspaceId` (+ end-user `accountId`) + org/account membership 검증.
 2. **서버만 DB 접근**: `DATABASE_URL` / `createAdminDb`, RLS bypass.
@@ -151,7 +152,7 @@ pnpm lint && pnpm typecheck  # 린트 + 타입 체크
 
 ## Frontend 작업 완료 정의 (에이전트·PR 공통)
 
-`apps/web`·`packages/ui` 등 **사용자에게 보이는 UI를 바꾸는 작업**은 코드 커밋만으로 끝나지 않는다. 아래 4단계를 모두 마쳐야 **완료**다. 사용자가 스크린샷·데모를 따로 요청하지 않아도 에이전트가 끝까지 수행한다.
+**[PR-03]** `apps/web`·`packages/ui` 등 **사용자에게 보이는 UI를 바꾸는 작업**은 코드 커밋만으로 끝나지 않는다. 아래 4단계를 모두 마쳐야 **완료**다. 사용자가 스크린샷·데모를 따로 요청하지 않아도 에이전트가 끝까지 수행한다.
 
 ```
 1. 구현 + 정적 검증
@@ -251,7 +252,7 @@ Notion [Console v2.7 구현 계획](https://app.notion.com/p/380346dac456810c8a7
 
 공통 인프라(`lib/graph/`, 공용 컴포넌트)는 **해당 시퀀스의 첫 PR**(예: PR7)에만 넣고, 이후 PR은 그 위에 화면·E2E만 추가한다.
 
-**Historical:** Phase 1 MVP 마일스톤 M0–M6(generic runtime)은 `archive/generic-runtime/`로 archive됨.
+**Historical:** Phase 1 MVP 마일스톤 M0–M6(generic runtime)은 저장소에서 제거됨 (git 히스토리 참고).
 
 ## MVP 마일스톤 (historical — generic runtime)
 
@@ -289,13 +290,13 @@ Phase 1 구현 계획(`ssota_mvp_구현_c63c2b4a.plan.md`)의 **마일스톤(M0�
 | 층 | 명령 | 인증 | 대상 |
 |---|---|---|---|
 | Unit | `pnpm test --filter @ssota/core` | 없음 | catalog Zod, `ORG_MISMATCH`, graph use-case 거부 |
-| Integration | `pnpm test --filter @ssota/adapter-supabase` | **smoke 계정** | graph CRUD, RLS deny-all, initiative bundle, seed 무결성 |
+| Integration | `pnpm test --filter @ssota/adapter-postgres` | **smoke 계정** | graph CRUD, RLS deny-all, initiative bundle, seed 무결성 |
 | E2E | `pnpm e2e` | **smoke 계정** | Console onboarding·tasks (graph UI E2E는 PR 4+) |
 
-- **Smoke 계정**: `smoke@ssota.ai` — 시드 단계에서 Auth Admin API로 생성되는 전용 테스트 사용자. integration·e2e는 반드시 이 계정으로만 인증한다. 실제 사용자 계정이나 service key 우회로 테스트하지 않는다.
+- **[ENV-01] Smoke 계정**: `smoke@ssota.ai` — 시드 단계에서 Auth Admin API로 생성되는 전용 테스트 사용자. integration·e2e는 반드시 이 계정으로만 인증한다. 실제 사용자 계정이나 service key 우회로 테스트하지 않는다.
 - Integration·e2e 실행 전 `supabase start`가 떠 있어야 한다. **로컬**에서는 `pnpm e2e:prepare` (= supabase start + migrate + seed). **Cursor Cloud**에서는 세션마다 `pnpm cloud:prepare`로 Docker·Supabase·시드를 한 번에 부트스트랩한다 (`scripts/cloud-bootstrap.sh`). `pnpm e2e` global setup은 smoke 로그인 실패 시 migrate+seed만 자동 재시도한다 (`e2e/global-setup.ts`) — Cloud에서 Docker가 안 떠 있으면 `cloud:prepare`가 필요하다.
 - E2E 로그인은 `e2e/helpers/auth.ts`의 `loginAsSmoke()`를 사용한다 — 헤더의「로그인」링크와 폼 submit 버튼 이름이 같아 `getByRole('button', { name: '로그인' })` 단독 사용 시 strict mode violation이 난다.
-- 새 강제 규칙·포트를 추가하면 **거부 케이스 테스트가 필수다.** 통과 케이스만 있는 PR은 불완전하다.
+- **[TEST-01]** 새 강제 규칙·포트를 추가하면 **거부 케이스 테스트가 필수다.** 통과 케이스만 있는 PR은 불완전하다.
 - "비기록 변경 0건"(Phase 1 exit criteria)은 integration에서 구조적으로 검증한다: 로그 없이 커밋되는 경로가 존재하지 않음.
 
 ### E2E 리포트 (에이전트·PR 공통)
@@ -367,7 +368,7 @@ pnpm e2e -- --grep onboarding
 
 **커밋 메시지**
 
-- 접두사: `[core|adapter|mcp|web|e2e|infra]` (변경 레이어·앱 기준)
+- **[GIT-01]** 접두사: `[core|adapter|mcp|web|e2e|infra]` (변경 레이어·앱 기준)
 - 본문: **왜/무엇** 한 줄 + 필요 시 불릿으로 태스크 요약
 
 ```
@@ -394,12 +395,12 @@ MVP 마일스톤(M0–M6)의 “마일스톤당 1커밋”은 이 정책의 **�
 ## PR Guidelines
 
 - 제목: `[core|adapter|mcp|web|e2e|infra] 요약` — Console UI는 `[web] Console v2.7 PR N — …` 형식 권장.
-- 머지 전 필수: `pnpm lint`, `pnpm typecheck`, `pnpm test` 그린.
-- 도메인 불변식(Console v2.7 Graph Invariants)을 건드리는 변경은 PR 설명에 근거를 명시한다.
+- **[PR-01]** 머지 전 필수: `pnpm lint`, `pnpm typecheck`, `pnpm test` 그린.
+- **[PR-02]** 도메인 불변식(Console v2.7 Graph Invariants)을 건드리는 변경은 PR 설명에 `## Invariant 사유` 섹션으로 근거를 명시한다 (해당 `[GRAPH-*]` 등 ID 나열).
 
 ### `main` 직접 커밋·푸시 금지 (에이전트 필수)
 
-**`main`에 직접 커밋하거나 푸시하지 않는다.** 모든 변경은 feature 브랜치 → GitHub PR → CI·리뷰 후 `main` 머지로만 반영한다. 로컬 `main`에 작업 커밋이 쌓이면 PR 없이 배포 경로에 들어간 것으로 오해하기 쉽다.
+**[GIT-02] `main`에 직접 커밋하거나 푸시하지 않는다.** 모든 변경은 feature 브랜치 → GitHub PR → CI·리뷰 후 `main` 머지로만 반영한다. 로컬 `main`에 작업 커밋이 쌓이면 PR 없이 배포 경로에 들어간 것으로 오해하기 쉽다.
 
 | 해야 할 것 | 하지 말 것 |
 |---|---|
@@ -446,6 +447,31 @@ MVP 마일스톤(M0–M6)의 “마일스톤당 1커밋”은 이 정책의 **�
 - 사용자가 명시적으로 “한 PR로” 요청한 경우
 
 이 정책은 MVP 마일스톤(M0–M6)의 “한 마일스톤 = 한 커밋 단위”·[Git 커밋 정책](#git-커밋-정책)의 모듈 분리와 같고, Console v2.7 UI는 **Notion PR 번호 단위**로 적용한다.
+
+## Verification Tiers
+
+편집 전에 변경의 **blast radius**(변경 표면 + 실패 파급 범위)로 티어를 정하고, 티어에 맞는 검증만 실행한다. 라인 수가 아니라 **어떤 표면을 건드렸는가**가 기준이다. 불확실하면 **한 티어 위로** 올린다 (Tier 4로 점프하지 않는다).
+
+| 티어 | 변경 표면 | 실행 |
+|---|---|---|
+| **Tier 0** — 문서/지침 | AGENTS.md·CLAUDE.md·DESIGN.md·`packages/contracts/src/*/instructions/*.md`·주석·카피 | `pnpm harness:docs` |
+| **Tier 1** — UI 컴포넌트 | `packages/ui`·`apps/web` 개별 컴포넌트의 표시 상태 (도메인 로직·스키마 불변) | `pnpm verify:quick` + `pnpm --filter <pkg> test` |
+| **Tier 2** — page spec / L2 catalog / contracts | `pages-tree.json`·`ui-catalog`·`packages/contracts` 스키마·시드 | `pnpm verify:quick && pnpm --filter @ssota/contracts test` + 관련 e2e spec (`pnpm e2e -- --grep <키워드>`) |
+| **Tier 3** — ports / adapter / schema / migrations | `packages/core` 포트·use-case, `packages/adapter-postgres`, `supabase/migrations/` | `pnpm verify:quick && pnpm test && pnpm e2e:ci` + 마이그레이션 up/down 확인 |
+| **Tier 4** — 머지/최종 납품 | PR 머지 전, 의존성 변경, 광범위 리팩토링 | `pnpm verify:final` + [PR-03] 완료 증거 |
+
+- Tier 0–2 편집마다 전체 e2e를 돌리지 않는다 (과잉 검증 금지).
+- Tier 3+ 없이 `done` 선언하지 않는다 (과소 검증 금지).
+
+## Harness
+
+이 저장소의 규범은 산문이 아니라 **typed 계약**으로 관리된다.
+
+- **계약 SSOT**: `packages/contracts/src/invariants/rules.ts` — 모든 `[AREA-NN]` 룰의 정의·레벨·강제 수단. 이 문서의 태그와 계약의 ID는 `pnpm harness:docs`가 동기화를 강제한다 (드리프트 = 모든 테스트 차단).
+- **체크 명령**: `pnpm harness:docs`(문서 동기화) / `pnpm harness:boundaries`(우회 스캔) / `pnpm harness:env`(환경 프리플라이트) / `pnpm harness:mirrors`(스킬 미러 정합) / `pnpm harness`(전부).
+- **allowlist 정책**: 룰 예외는 코드에 몰래 두지 않는다 — `scripts/harness/allowlists/*.json` 또는 `packages/config/eslint/allowlists.js`에 **경로 + 룰 ID + 사유**로 등록한다. 죽은 예외(존재하지 않는 경로)는 `harness:docs`가 실패시킨다.
+- **에러 메시지 = 지시문**: 하네스 체크의 실패 출력은 "무엇이 왜 실패했고, 다음에 뭘 해야 하는지"를 담는다. 실패를 우회하지 말고 출력의 Next steps를 따른다.
+- **dev-identity**: 여러 worktree에서 dev 서버를 띄우는 환경에서는, 브라우저·스크린샷 검증 전에 `node scripts/harness/check-dev-identity.mjs --url http://localhost:<port>`로 그 포트가 **내 worktree의 서버**인지 확인한다. 포트가 열려 있다는 것은 내 서버라는 뜻이 아니다.
 
 ## Additional Notes
 
