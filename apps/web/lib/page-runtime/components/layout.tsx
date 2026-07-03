@@ -12,7 +12,6 @@ import {
   ResizablePanelGroup,
 } from "@ssota/ui/components/ui/resizable";
 import { cn } from "@ssota/ui/lib/utils";
-import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import type { CatalogComponent } from "../types";
 import { SectionEl } from "./section";
 import { TabsEl, type TabItemDef } from "./layout-tabs";
@@ -98,33 +97,8 @@ function stackGapClass(gap: unknown): string {
 
 /** Structural / static display components. */
 export const layoutComponents: Record<string, CatalogComponent> = {
-  PageHeader: ({ props }) => {
-    const compact = props.variant === "compact";
-    const title = String(props.title ?? "Page");
-    const subtitle = props.subtitle ? String(props.subtitle) : undefined;
-
-    if (compact) {
-      return (
-        <header className="flex shrink-0 items-start gap-2 border-b py-2">
-          <div className="min-w-0 flex-1 space-y-1">
-            <h1 className="text-sm font-semibold">{title}</h1>
-            {subtitle ? (
-              <p className="text-xs text-muted-foreground">{subtitle}</p>
-            ) : null}
-          </div>
-        </header>
-      );
-    }
-
-    return (
-      <header className="shrink-0 space-y-1 px-4 pt-4 md:px-6 md:pt-6">
-        <h1 className="text-2xl font-semibold">{title}</h1>
-        {subtitle ? (
-          <p className="text-muted-foreground text-sm">{subtitle}</p>
-        ) : null}
-      </header>
-    );
-  },
+  /** Page titles live in sidebar / sibling nav — no duplicate header bar. */
+  PageHeader: () => null,
   Section: ({ props, children }) => (
     <SectionEl
       title={props.title ? String(props.title) : undefined}

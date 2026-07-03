@@ -19,15 +19,7 @@
         "layout": {
           "type": "Stack",
           "props": { "gap": "md", "padding": "none" },
-          "children": ["pageBar", "productSection", "planningSection"]
-        },
-        "pageBar": {
-          "type": "PageHeader",
-          "props": {
-            "variant": "compact",
-            "title": "Roadmap",
-            "subtitle": "Product direction and planning documents"
-          }
+          "children": ["productSection", "planningSection"]
         },
         "productSection": {
           "type": "Section",
@@ -113,13 +105,34 @@
     "title": "Goals",
     "icon": "executive_goals",
     "spec": {
-      "root": "okr",
+      "root": "layout",
       "elements": {
+        "layout": {
+          "type": "Stack",
+          "props": { "gap": "md", "padding": "none" },
+          "children": ["okrSection", "metricsSection"]
+        },
+        "okrSection": {
+          "type": "Section",
+          "props": {
+            "title": "Objectives",
+            "subtitle": "Expand a row to view and edit key results",
+            "padding": "none"
+          },
+          "children": ["periodSelect", "okr"]
+        },
+        "periodSelect": {
+          "type": "PeriodSelect",
+          "props": {
+            "binding": "objectives",
+            "field": "period",
+            "label": "Period"
+          }
+        },
         "okr": {
           "type": "ExpandableTable",
           "props": {
             "binding": "objectives",
-            "title": "Goals",
             "setAction": "setCell",
             "childCellAction": "setCell",
             "childProperty": "keyResults",
@@ -130,8 +143,25 @@
               {
                 "key": "status",
                 "header": "Status",
-                "type": "select",
-                "options": ["on-track", "at-risk", "off-track"]
+                "type": "badge",
+                "editable": true,
+                "options": ["draft", "on_track", "at_risk", "achieved", "partial", "missed"],
+                "labels": {
+                  "draft": "Draft",
+                  "on_track": "On track",
+                  "at_risk": "At risk",
+                  "achieved": "Achieved",
+                  "partial": "Partial",
+                  "missed": "Missed"
+                },
+                "colors": {
+                  "draft": "oklch(0.94 0.01 260)",
+                  "on_track": "oklch(0.9 0.07 150)",
+                  "at_risk": "oklch(0.92 0.06 70)",
+                  "achieved": "oklch(0.9 0.06 200)",
+                  "partial": "oklch(0.92 0.05 85)",
+                  "missed": "oklch(0.92 0.08 25)"
+                }
               }
             ],
             "childColumns": [
@@ -142,10 +172,89 @@
               {
                 "key": "status",
                 "header": "Status",
-                "type": "select",
-                "options": ["on-track", "at-risk", "off-track"]
+                "type": "badge",
+                "editable": true,
+                "options": ["draft", "on_track", "at_risk", "achieved", "partial", "missed"],
+                "labels": {
+                  "draft": "Draft",
+                  "on_track": "On track",
+                  "at_risk": "At risk",
+                  "achieved": "Achieved",
+                  "partial": "Partial",
+                  "missed": "Missed"
+                },
+                "colors": {
+                  "draft": "oklch(0.94 0.01 260)",
+                  "on_track": "oklch(0.9 0.07 150)",
+                  "at_risk": "oklch(0.92 0.06 70)",
+                  "achieved": "oklch(0.9 0.06 200)",
+                  "partial": "oklch(0.92 0.05 85)",
+                  "missed": "oklch(0.92 0.08 25)"
+                }
               }
             ]
+          }
+        },
+        "metricsSection": {
+          "type": "Section",
+          "props": {
+            "title": "KPI pulse",
+            "subtitle": "Metric snapshots for the selected period",
+            "padding": "none"
+          },
+          "children": ["kpiTable", "metricsGrid"]
+        },
+        "kpiTable": {
+          "type": "DataTable",
+          "props": {
+            "binding": "kpis",
+            "setAction": "setCell",
+            "columns": [
+              { "key": "title", "header": "KPI", "type": "text", "editable": true, "width": 280 },
+              { "key": "current_value", "header": "Current", "type": "number", "editable": true },
+              { "key": "target", "header": "Target", "type": "number", "editable": true },
+              { "key": "unit", "header": "Unit", "type": "text" },
+              {
+                "key": "status",
+                "header": "Status",
+                "type": "badge",
+                "editable": true,
+                "options": ["active", "paused", "archived"],
+                "labels": {
+                  "active": "Active",
+                  "paused": "Paused",
+                  "archived": "Archived"
+                },
+                "colors": {
+                  "active": "oklch(0.9 0.07 150)",
+                  "paused": "oklch(0.92 0.06 70)",
+                  "archived": "oklch(0.94 0.01 260)"
+                }
+              }
+            ]
+          }
+        },
+        "metricsGrid": {
+          "type": "Grid",
+          "props": { "columns": 2, "gap": "sm", "padding": "none" },
+          "children": ["chartWorkspace", "chartOnboarding"]
+        },
+        "chartWorkspace": {
+          "type": "ChartLine",
+          "props": {
+            "binding": "kpiWorkspace",
+            "height": 128,
+            "title": "Workspace creation rate",
+            "respectPeriodFilter": true
+          }
+        },
+        "chartOnboarding": {
+          "type": "ChartLine",
+          "props": {
+            "binding": "kpiOnboarding",
+            "height": 128,
+            "title": "Time to first value",
+            "respectPeriodFilter": true
           }
         }
       }
@@ -160,6 +269,37 @@
           "catalogKey": "key_result",
           "property": "keyResults"
         }
+      },
+      "kpiWorkspace": {
+        "kind": "query",
+        "catalogKey": "kpi",
+        "filter": [
+          { "key": "seed", "op": "eq", "value": "seed:graph:demo_okr:kpi" }
+        ],
+        "attachChildren": {
+          "edgeCatalogKey": "snapshotted_from",
+          "direction": "in",
+          "catalogKey": "metric_snapshot",
+          "property": "snapshots"
+        }
+      },
+      "kpiOnboarding": {
+        "kind": "query",
+        "catalogKey": "kpi",
+        "filter": [
+          { "key": "seed", "op": "eq", "value": "seed:graph:demo_okr_2:kpi" }
+        ],
+        "attachChildren": {
+          "edgeCatalogKey": "snapshotted_from",
+          "direction": "in",
+          "catalogKey": "metric_snapshot",
+          "property": "snapshots"
+        }
+      },
+      "kpis": {
+        "kind": "query",
+        "catalogKey": "kpi",
+        "filter": [{ "key": "seed", "op": "exists" }]
       }
     },
     "actions": {

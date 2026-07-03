@@ -55,7 +55,11 @@ export default async function AppDynamicPage({
   return (
     <>
       {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
-      <ConsolePageFrame fullWidth={usesWorkbench} fillHeight={!usesWorkbench}>
+      <ConsolePageFrame
+        fullWidth={usesWorkbench}
+        fillHeight={!usesWorkbench}
+        contentClassName={siblingNav ? "pt-2" : undefined}
+      >
         <DynamicPageRenderer
           spec={page.spec}
           bindingData={bindingData}

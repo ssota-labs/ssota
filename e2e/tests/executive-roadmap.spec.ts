@@ -9,10 +9,9 @@ test.describe("Executive roadmap", () => {
   });
 
   test("shows product and planning document lists", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Roadmap", level: 1 })).toBeVisible({
+    await expect(page.getByText("Planning roadmaps")).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByText("Planning roadmaps")).toBeVisible();
     await expect(
       page.getByRole("heading", { name: "Product roadmap" }),
     ).toBeVisible();
@@ -76,6 +75,31 @@ test.describe("Executive roadmap", () => {
     await expect(annualRow.locator('[class*="emerald"]').first()).toBeVisible();
     await expect(q1Row.locator('[class*="muted"]').first()).toBeVisible();
     await expect(q2Row.locator('[class*="amber"]').first()).toBeVisible();
+  });
+
+  test("opens only one full-viewport sheet when switching between lists", async ({
+    page,
+  }) => {
+    const year = new Date().getFullYear();
+
+    await page.getByRole("button", { name: "Product roadmap" }).first().click();
+    await expect(page.getByTestId("document-sheet-panel")).toHaveCount(1);
+
+    const panel = page.getByTestId("document-sheet-panel");
+    const viewport = page.viewportSize();
+    expect(viewport).not.toBeNull();
+    const box = await panel.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThanOrEqual(viewport!.width - 4);
+    expect(box!.height).toBeGreaterThanOrEqual(viewport!.height - 4);
+
+    await page
+      .getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) })
+      .click({ position: { x: 8, y: 12 } });
+    await expect(page.getByTestId("document-sheet-panel")).toHaveCount(1);
+    await expect(
+      page.getByTestId("document-sheet-panel").getByText(`${year} Q1 분기 로드맵`),
+    ).toBeVisible();
   });
 
   test("opens roadmap document in full-viewport sheet panel", async ({ page }) => {

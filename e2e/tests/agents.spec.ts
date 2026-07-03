@@ -86,8 +86,7 @@ test.describe("Agents", () => {
     await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
     await expect(nav.getByText("Notion", { exact: true })).not.toBeVisible();
     await expect(nav.getByText("Discord", { exact: true })).not.toBeVisible();
-
-    await nav.getByTestId("add-trigger-slack:agent_mentioned").click();
+    await addDialog.getByTestId("add-trigger-slack:agent_mentioned").click();
     await expect(
       addDialog.getByText(/creates a Slack user group/i),
     ).toBeVisible();

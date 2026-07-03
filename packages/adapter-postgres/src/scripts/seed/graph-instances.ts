@@ -6,7 +6,7 @@ import {
   PLATFORM_DESIGN_TOOLCHAIN_LOCKFILE,
   PLATFORM_DESIGN_TOOLCHAIN_PACKAGE_JSON,
 } from "@ssota/contracts/catalog";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { createDb } from "../../db/client.js";
 import * as schema from "../../db/schema.js";
 import { seedDomainCatalog } from "../../ports/db-catalog-read-port.js";
@@ -33,7 +33,9 @@ export const EXECUTIVE_SINGLETON_TYPES = [] as const satisfies readonly NodeType
 
 const GRAPH_SEED_IDEMPOTENCY_PREFIX = "seed:graph:";
 const DEMO_OKR_SEED_TITLE = "Demo: First Release completion loop";
+const DEMO_OKR_SEED_TITLE_2 = "Demo: Onboarding excellence";
 const DEMO_OKR_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}demo_okr`;
+const DEMO_OKR_SEED_KEY_2 = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}demo_okr_2`;
 const DEMO_UI_COMPONENT_SEED_KEY = `${GRAPH_SEED_IDEMPOTENCY_PREFIX}ui_component_demo`;
 
 type CatalogMaps = {
@@ -753,6 +755,139 @@ async function seedResearchDocs(
   return hypothesisId;
 }
 
+type MetricSnapshotSeed = {
+  seedKey: string;
+  title: string;
+  value: number;
+  capturedAt: string;
+  snapshotKind?: string;
+};
+
+async function ensureMetricSnapshots(
+  db: ReturnType<typeof createDb>["db"],
+  teamspaceId: string,
+  maps: CatalogMaps,
+  kpiId: string,
+  snapshots: MetricSnapshotSeed[],
+) {
+  const snapshotCatalogId = maps.nodeKeyToId.get("metric_snapshot");
+  const snapshottedId = maps.edgeKeyToId.get("snapshotted_from");
+  if (!snapshotCatalogId || !snapshottedId) return;
+
+  for (const snapshot of snapshots) {
+    const [existing] = await db
+      .select({ id: schema.nodes.id })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.teamspaceId, teamspaceId),
+          eq(schema.nodes.nodeCatalogId, snapshotCatalogId),
+          sql`${schema.nodes.properties}->>'seed' = ${snapshot.seedKey}`,
+        ),
+      )
+      .limit(1);
+    if (existing) continue;
+
+    const [row] = await db
+      .insert(schema.nodes)
+      .values({
+        teamspaceId,
+        nodeCatalogId: snapshotCatalogId,
+        title: snapshot.title,
+        properties: {
+          value: snapshot.value,
+          captured_at: snapshot.capturedAt,
+          snapshot_kind: snapshot.snapshotKind ?? "checkpoint",
+          source: "manual",
+          seed: snapshot.seedKey,
+        },
+      })
+      .returning({ id: schema.nodes.id });
+
+    if (!row?.id) continue;
+
+    await db.insert(schema.edges).values({
+      teamspaceId,
+      edgeCatalogId: snapshottedId,
+      sourceNodeId: row.id,
+      targetNodeId: kpiId,
+      properties: { seed: `${snapshot.seedKey}:snapshotted_from` },
+    });
+  }
+}
+
+async function findKpiBySeed(
+  db: ReturnType<typeof createDb>["db"],
+  teamspaceId: string,
+  maps: CatalogMaps,
+  seedKey: string,
+): Promise<string | null> {
+  const kpiCatalogId = maps.nodeKeyToId.get("kpi");
+  if (!kpiCatalogId) return null;
+
+  const [row] = await db
+    .select({ id: schema.nodes.id })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.teamspaceId, teamspaceId),
+        eq(schema.nodes.nodeCatalogId, kpiCatalogId),
+        sql`${schema.nodes.properties}->>'seed' = ${seedKey}`,
+      ),
+    )
+    .limit(1);
+
+  return row?.id ?? null;
+}
+
+const DEMO_OKR_WORKSPACE_SNAPSHOTS: MetricSnapshotSeed[] = [
+  {
+    seedKey: `${DEMO_OKR_SEED_KEY}:snapshot:1`,
+    title: "Workspace creation rate — Apr",
+    value: 10,
+    capturedAt: "2026-04-05T00:00:00.000Z",
+  },
+  {
+    seedKey: `${DEMO_OKR_SEED_KEY}:snapshot:2`,
+    title: "Workspace creation rate — May",
+    value: 14,
+    capturedAt: "2026-05-12T00:00:00.000Z",
+  },
+  {
+    seedKey: `${DEMO_OKR_SEED_KEY}:snapshot:3`,
+    title: "Workspace creation rate — Jun",
+    value: 18,
+    capturedAt: "2026-06-18T00:00:00.000Z",
+  },
+  {
+    seedKey: `${DEMO_OKR_SEED_KEY}:snapshot:4`,
+    title: "Workspace creation rate — late Jun",
+    value: 21,
+    capturedAt: "2026-06-28T00:00:00.000Z",
+  },
+];
+
+const DEMO_OKR_ONBOARDING_SNAPSHOTS: MetricSnapshotSeed[] = [
+  {
+    seedKey: `${DEMO_OKR_SEED_KEY_2}:snapshot:1`,
+    title: "Time to first value — Jul",
+    value: 16,
+    capturedAt: "2026-07-08T00:00:00.000Z",
+  },
+  {
+    seedKey: `${DEMO_OKR_SEED_KEY_2}:snapshot:2`,
+    title: "Time to first value — Aug",
+    value: 14,
+    capturedAt: "2026-08-15T00:00:00.000Z",
+  },
+  {
+    seedKey: `${DEMO_OKR_SEED_KEY_2}:snapshot:3`,
+    title: "Time to first value — Sep",
+    value: 12,
+    capturedAt: "2026-09-22T00:00:00.000Z",
+  },
+];
+
 async function seedDemoOkr(
   db: ReturnType<typeof createDb>["db"],
   teamspaceId: string,
@@ -773,177 +908,389 @@ async function seedDemoOkr(
     )
     .limit(1);
 
-  if (existingObjective.length > 0) return;
-
-  const roadmapCatalogId = maps.nodeKeyToId.get("roadmap");
-  const [roadmap] = roadmapCatalogId
-    ? await db
-        .select({ id: schema.nodes.id })
-        .from(schema.nodes)
-        .where(
-          and(
-            eq(schema.nodes.teamspaceId, teamspaceId),
-            eq(schema.nodes.nodeCatalogId, roadmapCatalogId),
-          ),
-        )
-        .limit(1)
-    : [];
-
-  const [objective] = await db
-    .insert(schema.nodes)
-    .values({
-      teamspaceId,
-      nodeCatalogId: objectiveCatalogId,
-      title: DEMO_OKR_SEED_TITLE,
-      properties: {
-        lifecycleStatus: "Active",
-        period: "Q2 2026",
-        priority: "high",
-        status: "on_track",
-        seed: DEMO_OKR_SEED_KEY,
-      },
-    })
-    .returning({ id: schema.nodes.id });
-
-  if (!objective?.id) return;
-
-  const informsId = maps.edgeKeyToId.get("informs");
-  if (roadmap?.id && informsId) {
-    await db.insert(schema.edges).values({
-      teamspaceId,
-      edgeCatalogId: informsId,
-      sourceNodeId: roadmap.id,
-      targetNodeId: objective.id,
-      properties: { seed: `${DEMO_OKR_SEED_KEY}:informs` },
-    });
-  }
-
   const krCatalogId = maps.nodeKeyToId.get("key_result");
-  const kpiCatalogId = maps.nodeKeyToId.get("kpi");
-  const snapshotCatalogId = maps.nodeKeyToId.get("metric_snapshot");
-  if (!krCatalogId || !kpiCatalogId) return;
-
-  const [kr1] = await db
-    .insert(schema.nodes)
-    .values({
-      teamspaceId,
-      nodeCatalogId: krCatalogId,
-      title: "Pilot workspaces complete first Release with retrospective",
-      properties: {
-        lifecycleStatus: "Active",
-        baseline: 0,
-        target: 8,
-        current_value: 6,
-        unit: "workspaces",
-        direction: "increase",
-        status: "on_track",
-        seed: `${DEMO_OKR_SEED_KEY}:kr1`,
-      },
-    })
-    .returning({ id: schema.nodes.id });
-
-  const [kr2] = await db
-    .insert(schema.nodes)
-    .values({
-      teamspaceId,
-      nodeCatalogId: krCatalogId,
-      title: "Onboarding completion rate improvement",
-      properties: {
-        lifecycleStatus: "Active",
-        baseline: 40,
-        target: 70,
-        current_value: 52,
-        unit: "%",
-        direction: "increase",
-        status: "on_track",
-        seed: `${DEMO_OKR_SEED_KEY}:kr2`,
-      },
-    })
-    .returning({ id: schema.nodes.id });
-
-  const [kpi] = await db
-    .insert(schema.nodes)
-    .values({
-      teamspaceId,
-      nodeCatalogId: kpiCatalogId,
-      title: "Workspace creation rate",
-      properties: {
-        lifecycleStatus: "Active",
-        baseline: 10,
-        target: 25,
-        unit: "%",
-        cadence: "weekly",
-        direction: "increase",
-        status: "active",
-        seed: `${DEMO_OKR_SEED_KEY}:kpi`,
-      },
-    })
-    .returning({ id: schema.nodes.id });
-
   const contributesId = maps.edgeKeyToId.get("contributes_to");
-  if (contributesId) {
-    for (const kr of [kr1, kr2]) {
-      if (!kr?.id) continue;
+
+  if (existingObjective.length === 0) {
+    const roadmapCatalogId = maps.nodeKeyToId.get("roadmap");
+    const [roadmap] = roadmapCatalogId
+      ? await db
+          .select({ id: schema.nodes.id })
+          .from(schema.nodes)
+          .where(
+            and(
+              eq(schema.nodes.teamspaceId, teamspaceId),
+              eq(schema.nodes.nodeCatalogId, roadmapCatalogId),
+            ),
+          )
+          .limit(1)
+      : [];
+
+    const [objective] = await db
+      .insert(schema.nodes)
+      .values({
+        teamspaceId,
+        nodeCatalogId: objectiveCatalogId,
+        title: DEMO_OKR_SEED_TITLE,
+        properties: {
+          period: "Q2 2026",
+          priority: "high",
+          status: "on_track",
+          seed: DEMO_OKR_SEED_KEY,
+        },
+      })
+      .returning({ id: schema.nodes.id });
+
+    if (!objective?.id) return;
+
+    const informsId = maps.edgeKeyToId.get("informs");
+    if (roadmap?.id && informsId) {
       await db.insert(schema.edges).values({
         teamspaceId,
-        edgeCatalogId: contributesId,
-        sourceNodeId: kr.id,
+        edgeCatalogId: informsId,
+        sourceNodeId: roadmap.id,
         targetNodeId: objective.id,
-        properties: { seed: `${DEMO_OKR_SEED_KEY}:contributes_to` },
+        properties: { seed: `${DEMO_OKR_SEED_KEY}:informs` },
+      });
+    }
+
+    const kpiCatalogId = maps.nodeKeyToId.get("kpi");
+    if (!krCatalogId || !kpiCatalogId) return;
+
+    const [kr1] = await db
+      .insert(schema.nodes)
+      .values({
+        teamspaceId,
+        nodeCatalogId: krCatalogId,
+        title: "Pilot workspaces complete first Release with retrospective",
+        properties: {
+          baseline: 0,
+          target: 8,
+          current_value: 6,
+          unit: "workspaces",
+          direction: "increase",
+          status: "on_track",
+          seed: `${DEMO_OKR_SEED_KEY}:kr1`,
+        },
+      })
+      .returning({ id: schema.nodes.id });
+
+    const [kr2] = await db
+      .insert(schema.nodes)
+      .values({
+        teamspaceId,
+        nodeCatalogId: krCatalogId,
+        title: "Onboarding completion rate improvement",
+        properties: {
+          baseline: 40,
+          target: 70,
+          current_value: 52,
+          unit: "%",
+          direction: "increase",
+          status: "at_risk",
+          seed: `${DEMO_OKR_SEED_KEY}:kr2`,
+        },
+      })
+      .returning({ id: schema.nodes.id });
+
+    const [kpi] = await db
+      .insert(schema.nodes)
+      .values({
+        teamspaceId,
+        nodeCatalogId: kpiCatalogId,
+        title: "Workspace creation rate",
+        properties: {
+          baseline: 10,
+          target: 25,
+          unit: "%",
+          cadence: "weekly",
+          direction: "increase",
+          status: "active",
+          current_value: 21,
+          seed: `${DEMO_OKR_SEED_KEY}:kpi`,
+        },
+      })
+      .returning({ id: schema.nodes.id });
+
+    if (contributesId) {
+      for (const kr of [kr1, kr2]) {
+        if (!kr?.id) continue;
+        await db.insert(schema.edges).values({
+          teamspaceId,
+          edgeCatalogId: contributesId,
+          sourceNodeId: kr.id,
+          targetNodeId: objective.id,
+          properties: { seed: `${DEMO_OKR_SEED_KEY}:contributes_to` },
+        });
+      }
+    }
+
+    const measuredById = maps.edgeKeyToId.get("measured_by");
+    if (kr1?.id && kpi?.id && measuredById) {
+      await db.insert(schema.edges).values({
+        teamspaceId,
+        edgeCatalogId: measuredById,
+        sourceNodeId: kr1.id,
+        targetNodeId: kpi.id,
+        properties: { seed: `${DEMO_OKR_SEED_KEY}:measured_by` },
+      });
+    }
+
+    const trackedById = maps.edgeKeyToId.get("tracked_by");
+    if (kpi?.id && trackedById) {
+      await db.insert(schema.edges).values({
+        teamspaceId,
+        edgeCatalogId: trackedById,
+        sourceNodeId: objective.id,
+        targetNodeId: kpi.id,
+        properties: { seed: `${DEMO_OKR_SEED_KEY}:tracked_by` },
       });
     }
   }
 
-  const measuredById = maps.edgeKeyToId.get("measured_by");
-  if (kr1?.id && kpi?.id && measuredById) {
-    await db.insert(schema.edges).values({
+  const workspaceKpiId = await findKpiBySeed(
+    db,
+    teamspaceId,
+    maps,
+    `${DEMO_OKR_SEED_KEY}:kpi`,
+  );
+  if (workspaceKpiId) {
+    await ensureMetricSnapshots(
+      db,
       teamspaceId,
-      edgeCatalogId: measuredById,
-      sourceNodeId: kr1.id,
-      targetNodeId: kpi.id,
-      properties: { seed: `${DEMO_OKR_SEED_KEY}:measured_by` },
-    });
+      maps,
+      workspaceKpiId,
+      DEMO_OKR_WORKSPACE_SNAPSHOTS,
+    );
   }
 
-  const trackedById = maps.edgeKeyToId.get("tracked_by");
-  const snapshottedId = maps.edgeKeyToId.get("snapshotted_from");
-  if (kpi?.id && trackedById) {
-    await db.insert(schema.edges).values({
-      teamspaceId,
-      edgeCatalogId: trackedById,
-      sourceNodeId: objective.id,
-      targetNodeId: kpi.id,
-      properties: { seed: `${DEMO_OKR_SEED_KEY}:tracked_by` },
-    });
+  const existingObjective2 = await db
+    .select({ id: schema.nodes.id })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.teamspaceId, teamspaceId),
+        eq(schema.nodes.nodeCatalogId, objectiveCatalogId),
+        eq(schema.nodes.title, DEMO_OKR_SEED_TITLE_2),
+      ),
+    )
+    .limit(1);
 
-    if (snapshotCatalogId && snapshottedId) {
-      const [snapshot] = await db
+  if (existingObjective2.length === 0) {
+    const [objective2] = await db
+      .insert(schema.nodes)
+      .values({
+        teamspaceId,
+        nodeCatalogId: objectiveCatalogId,
+        title: DEMO_OKR_SEED_TITLE_2,
+        properties: {
+          period: "Q3 2026",
+          priority: "medium",
+          status: "at_risk",
+          seed: DEMO_OKR_SEED_KEY_2,
+        },
+      })
+      .returning({ id: schema.nodes.id });
+
+    if (objective2?.id && krCatalogId && contributesId) {
+      const [kr3] = await db
         .insert(schema.nodes)
         .values({
           teamspaceId,
-          nodeCatalogId: snapshotCatalogId,
-          title: "Workspace creation rate baseline",
+          nodeCatalogId: krCatalogId,
+          title: "Reduce time-to-first-value under 10 minutes",
           properties: {
-            lifecycleStatus: "Active",
-            value: 12,
-            captured_at: new Date().toISOString(),
-            snapshot_kind: "baseline",
-            source: "manual",
-            seed: `${DEMO_OKR_SEED_KEY}:snapshot`,
+            baseline: 18,
+            target: 10,
+            current_value: 14,
+            unit: "min",
+            direction: "decrease",
+            status: "at_risk",
+            seed: `${DEMO_OKR_SEED_KEY_2}:kr1`,
           },
         })
         .returning({ id: schema.nodes.id });
 
-      if (snapshot?.id) {
+      if (kr3?.id) {
         await db.insert(schema.edges).values({
           teamspaceId,
-          edgeCatalogId: snapshottedId,
-          sourceNodeId: snapshot.id,
-          targetNodeId: kpi.id,
-          properties: { seed: `${DEMO_OKR_SEED_KEY}:snapshotted_from` },
+          edgeCatalogId: contributesId,
+          sourceNodeId: kr3.id,
+          targetNodeId: objective2.id,
+          properties: { seed: `${DEMO_OKR_SEED_KEY_2}:contributes_to` },
         });
       }
+
+      const kpiCatalogId = maps.nodeKeyToId.get("kpi");
+      const trackedById = maps.edgeKeyToId.get("tracked_by");
+      if (kpiCatalogId) {
+        const [onboardingKpi] = await db
+          .insert(schema.nodes)
+          .values({
+            teamspaceId,
+            nodeCatalogId: kpiCatalogId,
+            title: "Time to first value",
+            properties: {
+              baseline: 20,
+              target: 10,
+              unit: "min",
+              cadence: "weekly",
+              direction: "decrease",
+              status: "active",
+              current_value: 12,
+              seed: `${DEMO_OKR_SEED_KEY_2}:kpi`,
+            },
+          })
+          .returning({ id: schema.nodes.id });
+
+        if (onboardingKpi?.id && trackedById) {
+          await db.insert(schema.edges).values({
+            teamspaceId,
+            edgeCatalogId: trackedById,
+            sourceNodeId: objective2.id,
+            targetNodeId: onboardingKpi.id,
+            properties: { seed: `${DEMO_OKR_SEED_KEY_2}:tracked_by` },
+          });
+        }
+      }
     }
+  }
+
+  const onboardingKpiId = await findKpiBySeed(
+    db,
+    teamspaceId,
+    maps,
+    `${DEMO_OKR_SEED_KEY_2}:kpi`,
+  );
+  let resolvedOnboardingKpiId = onboardingKpiId;
+
+  if (!resolvedOnboardingKpiId) {
+    const [objective2ForKpi] = await db
+      .select({ id: schema.nodes.id })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.teamspaceId, teamspaceId),
+          eq(schema.nodes.nodeCatalogId, objectiveCatalogId),
+          eq(schema.nodes.title, DEMO_OKR_SEED_TITLE_2),
+        ),
+      )
+      .limit(1);
+
+    const kpiCatalogId = maps.nodeKeyToId.get("kpi");
+    const trackedById = maps.edgeKeyToId.get("tracked_by");
+    if (objective2ForKpi?.id && kpiCatalogId) {
+      const [onboardingKpi] = await db
+        .insert(schema.nodes)
+        .values({
+          teamspaceId,
+          nodeCatalogId: kpiCatalogId,
+          title: "Time to first value",
+          properties: {
+            baseline: 20,
+            target: 10,
+            unit: "min",
+            cadence: "weekly",
+            direction: "decrease",
+            status: "active",
+            current_value: 12,
+            seed: `${DEMO_OKR_SEED_KEY_2}:kpi`,
+          },
+        })
+        .returning({ id: schema.nodes.id });
+
+      if (onboardingKpi?.id && trackedById) {
+        await db.insert(schema.edges).values({
+          teamspaceId,
+          edgeCatalogId: trackedById,
+          sourceNodeId: objective2ForKpi.id,
+          targetNodeId: onboardingKpi.id,
+          properties: { seed: `${DEMO_OKR_SEED_KEY_2}:tracked_by` },
+        });
+      }
+      resolvedOnboardingKpiId = onboardingKpi?.id ?? null;
+    }
+  }
+
+  if (resolvedOnboardingKpiId) {
+    await ensureMetricSnapshots(
+      db,
+      teamspaceId,
+      maps,
+      resolvedOnboardingKpiId,
+      DEMO_OKR_ONBOARDING_SNAPSHOTS,
+    );
+  }
+
+  const [objective2Row] = await db
+    .select({ id: schema.nodes.id, properties: schema.nodes.properties })
+    .from(schema.nodes)
+    .where(
+      and(
+        eq(schema.nodes.teamspaceId, teamspaceId),
+        eq(schema.nodes.nodeCatalogId, objectiveCatalogId),
+        eq(schema.nodes.title, DEMO_OKR_SEED_TITLE_2),
+      ),
+    )
+    .limit(1);
+
+  if (objective2Row) {
+    const props = (objective2Row.properties ?? {}) as Record<string, unknown>;
+    const { lifecycleStatus: _legacy, ...rest } = props;
+    await db
+      .update(schema.nodes)
+      .set({
+        properties: {
+          ...rest,
+          period: "Q3 2026",
+        },
+      })
+      .where(eq(schema.nodes.id, objective2Row.id));
+  }
+
+  await ensureDemoKpiCurrentValues(db, teamspaceId, maps);
+}
+
+const DEMO_KPI_CURRENT_VALUES: Array<{ seedSuffix: string; currentValue: number }> =
+  [
+    { seedSuffix: `${DEMO_OKR_SEED_KEY}:kpi`, currentValue: 21 },
+    { seedSuffix: `${DEMO_OKR_SEED_KEY_2}:kpi`, currentValue: 12 },
+  ];
+
+async function ensureDemoKpiCurrentValues(
+  db: ReturnType<typeof createDb>["db"],
+  teamspaceId: string,
+  maps: CatalogMaps,
+) {
+  const kpiCatalogId = maps.nodeKeyToId.get("kpi");
+  if (!kpiCatalogId) return;
+
+  for (const { seedSuffix, currentValue } of DEMO_KPI_CURRENT_VALUES) {
+    const [row] = await db
+      .select({ id: schema.nodes.id, properties: schema.nodes.properties })
+      .from(schema.nodes)
+      .where(
+        and(
+          eq(schema.nodes.teamspaceId, teamspaceId),
+          eq(schema.nodes.nodeCatalogId, kpiCatalogId),
+          sql`${schema.nodes.properties}->>'seed' = ${seedSuffix}`,
+        ),
+      )
+      .limit(1);
+    if (!row) continue;
+
+    const props = (row.properties ?? {}) as Record<string, unknown>;
+    if (props.current_value === currentValue) continue;
+
+    await db
+      .update(schema.nodes)
+      .set({
+        properties: {
+          ...props,
+          current_value: currentValue,
+        },
+      })
+      .where(eq(schema.nodes.id, row.id));
   }
 }
 

@@ -75,10 +75,14 @@ async function mintSlackBotToken(input: {
     undefined;
 
   const provider = createVercelConnectProvider();
+  const subjectUserId = slackScope?.subjectUserId ?? undefined;
   const cred = await provider.getToken(connector, {
     teamspaceId: input.teamspaceId,
     accountId: input.accountId,
     installationId,
+    // Channels OAuth records the install under the authorizing user's Connect
+    // subject; mint with that userId so getToken does not fall back to app subject.
+    ...(subjectUserId ? { userId: subjectUserId } : {}),
   });
   return cred?.token ?? null;
 }

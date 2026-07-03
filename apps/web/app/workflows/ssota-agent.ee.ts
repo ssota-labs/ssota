@@ -64,7 +64,10 @@ export async function runSsotaAgentWorkflow(input: RunSsotaAgentInput) {
   try {
     const result = await agent.stream({ messages });
     await finalizeTaskRun(input, workflowRunId, sumStepUsage(result.steps));
-    return result;
+    return {
+      messageCount: result.messages.length,
+      stepCount: result.steps.length,
+    };
   } finally {
     if (sandboxSessionId) {
       await stopSandboxStep(sandboxSessionId, input.teamspaceId);
