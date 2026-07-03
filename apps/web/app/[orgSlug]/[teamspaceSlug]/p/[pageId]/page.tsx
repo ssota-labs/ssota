@@ -173,7 +173,11 @@ async function TreePageInner({
   return (
     <>
       {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
-      <ConsolePageFrame fullWidth={usesWorkbench} fillHeight={!usesWorkbench}>
+      <ConsolePageFrame
+        fullWidth={usesWorkbench}
+        fillHeight={!usesWorkbench}
+        contentClassName={siblingNav ? "pt-2" : undefined}
+      >
         <DynamicPageRenderer
           spec={page.spec}
           pageBindings={page.bindings}

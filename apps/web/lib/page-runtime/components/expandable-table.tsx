@@ -14,6 +14,7 @@ import {
 import { cn } from "@ssota/ui/lib/utils";
 import { useAction, useBasePath, usePageViewState } from "../context";
 import { boundNodes } from "../bindings";
+import { usePeriodFilter } from "../period-filter-context";
 import type { CatalogComponent, RenderNode } from "../types";
 
 type ColumnType = "text" | "select" | "number" | "checkbox" | "date" | "badge";
@@ -26,7 +27,12 @@ type TableColumn = {
   width?: number;
   options?: string[];
   colors?: Record<string, string>;
+  labels?: Record<string, string>;
 };
+
+function formatFacetLabel(value: string, labels?: Record<string, string>): string {
+  return labels?.[value] ?? value.replaceAll("_", " ");
+}
 
 function readCell(node: RenderNode, key: string): unknown {
   return key === "title"
@@ -195,10 +201,11 @@ function useGridColumns({
             );
           }
           if (isFaceted) {
+            const rawValue = raw == null ? "" : String(raw);
             return (
               <Chip
-                value={raw == null ? "" : String(raw)}
-                color={col.colors?.[String(raw ?? "")]}
+                value={formatFacetLabel(rawValue, col.labels)}
+                color={col.colors?.[rawValue]}
               />
             );
           }
@@ -230,7 +237,10 @@ function useGridColumns({
       .map((c) => ({
         columnId: c.key,
         title: c.header,
-        options: (c.options ?? []).map((o) => ({ label: o, value: o })),
+        options: (c.options ?? []).map((o) => ({
+          label: formatFacetLabel(o, c.labels),
+          value: o,
+        })),
       }));
 
     return { defs, facetedFilters };
@@ -366,13 +376,22 @@ function ExpandableTableEl({
   const onAction = useAction();
   const basePath = useBasePath();
   const viewStateCtx = usePageViewState();
+  const { period } = usePeriodFilter();
 
-  const [rows, setRows] = React.useState<RenderNode[]>(nodes);
+  const filteredNodes = React.useMemo(() => {
+    if (!period) return nodes;
+    return nodes.filter((node) => {
+      const value = readCell(node, "period");
+      return typeof value === "string" && value === period;
+    });
+  }, [nodes, period]);
+
+  const [rows, setRows] = React.useState<RenderNode[]>(filteredNodes);
   const signature = JSON.stringify(
-    nodes.map((n) => [n.id, n.title, n.properties]),
+    filteredNodes.map((n) => [n.id, n.title, n.properties]),
   );
   React.useEffect(() => {
-    setRows(nodes);
+    setRows(filteredNodes);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signature]);
 
@@ -452,7 +471,7 @@ function ExpandableTableEl({
   }, 600);
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-testid="expandable-table">
       {title ? <h2 className="text-sm font-medium">{title}</h2> : null}
       <AdvancedDataTable<RenderNode>
         columns={defs}

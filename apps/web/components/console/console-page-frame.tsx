@@ -8,6 +8,8 @@ type ConsolePageFrameProps = {
   testId?: string;
   /** Skip max-width constraint (e.g. ArtifactWorkbench). */
   fullWidth?: boolean;
+  /** Tailwind max-width class for the inner column (Connectors browse). */
+  maxWidthClassName?: string;
   /**
    * Fill the main column height for in-page panels (document sheets, split panes).
    * Browse-style pages (Connectors) leave this false and scroll the frame.
@@ -16,9 +18,9 @@ type ConsolePageFrameProps = {
 };
 
 /**
- * Shared console content column — matches Connectors `BrowseWorkspace.Frame`
- * (`max-w-5xl`, centered, horizontal padding). Applied at route/layout parents,
- * not inside json-render page specs.
+ * Shared console content column for browse-style console pages. Applied at route
+ * layout parents, not inside json-render page specs. Page routes use full width;
+ * Connectors keeps optional `maxWidth` constraint.
  */
 export function ConsolePageFrame({
   children,
@@ -27,6 +29,7 @@ export function ConsolePageFrame({
   testId,
   fullWidth = false,
   fillHeight = false,
+  maxWidthClassName,
 }: ConsolePageFrameProps) {
   if (fullWidth) {
     return (
@@ -51,7 +54,8 @@ export function ConsolePageFrame({
     >
       <div
         className={cn(
-          "mx-auto flex w-full max-w-5xl flex-col px-6 py-8",
+          "mx-auto flex w-full flex-col px-6 pt-4 pb-6",
+          maxWidthClassName,
           fillHeight && "min-h-0 flex-1",
           contentClassName,
         )}
