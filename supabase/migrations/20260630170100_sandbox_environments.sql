@@ -1,24 +1,40 @@
 -- Sandbox environment tables for Vercel Sandbox-backed execution environments.
+-- Idempotent: safe to re-run after a partial apply (e.g. enum types created, tables not).
 
-CREATE TYPE "public"."sandbox_session_status" AS ENUM(
-  'provisioning',
-  'ready',
-  'running',
-  'stopped',
-  'failed'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sandbox_session_status') THEN
+    CREATE TYPE "public"."sandbox_session_status" AS ENUM(
+      'provisioning',
+      'ready',
+      'running',
+      'stopped',
+      'failed'
+    );
+  END IF;
+END $$;
 
-CREATE TYPE "public"."sandbox_setup_status" AS ENUM(
-  'pending',
-  'cloning',
-  'installing',
-  'ready',
-  'failed'
-);
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sandbox_setup_status') THEN
+    CREATE TYPE "public"."sandbox_setup_status" AS ENUM(
+      'pending',
+      'cloning',
+      'installing',
+      'ready',
+      'failed'
+    );
+  END IF;
+END $$;
 
-CREATE TYPE "public"."sandbox_snapshot_kind" AS ENUM('base', 'project', 'run');
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'sandbox_snapshot_kind') THEN
+    CREATE TYPE "public"."sandbox_snapshot_kind" AS ENUM('base', 'project', 'run');
+  END IF;
+END $$;
 
-CREATE TABLE "sandbox_environments" (
+CREATE TABLE IF NOT EXISTS "sandbox_environments" (
   "id" uuid NOT NULL,
   "teamspace_id" uuid NOT NULL REFERENCES "teamspaces"("id") ON DELETE CASCADE,
   "account_id" uuid REFERENCES "accounts"("id") ON DELETE CASCADE,
@@ -39,18 +55,18 @@ CREATE TABLE "sandbox_environments" (
   PRIMARY KEY ("teamspace_id", "id")
 );
 
-CREATE UNIQUE INDEX "sandbox_environments_teamspace_key_unique"
+CREATE UNIQUE INDEX IF NOT EXISTS "sandbox_environments_teamspace_key_unique"
   ON "sandbox_environments" ("teamspace_id", "key")
   WHERE "account_id" IS NULL;
 
-CREATE UNIQUE INDEX "sandbox_environments_teamspace_account_key_unique"
+CREATE UNIQUE INDEX IF NOT EXISTS "sandbox_environments_teamspace_account_key_unique"
   ON "sandbox_environments" ("teamspace_id", "account_id", "key")
   WHERE "account_id" IS NOT NULL;
 
-CREATE INDEX "sandbox_environments_teamspace_id_idx"
+CREATE INDEX IF NOT EXISTS "sandbox_environments_teamspace_id_idx"
   ON "sandbox_environments" ("teamspace_id");
 
-CREATE TABLE "sandbox_sources" (
+CREATE TABLE IF NOT EXISTS "sandbox_sources" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "teamspace_id" uuid NOT NULL REFERENCES "teamspaces"("id") ON DELETE CASCADE,
   "sandbox_environment_id" uuid NOT NULL,
@@ -70,10 +86,10 @@ CREATE TABLE "sandbox_sources" (
     ON DELETE CASCADE
 );
 
-CREATE UNIQUE INDEX "sandbox_sources_env_key_unique"
+CREATE UNIQUE INDEX IF NOT EXISTS "sandbox_sources_env_key_unique"
   ON "sandbox_sources" ("sandbox_environment_id", "key");
 
-CREATE TABLE "sandbox_sessions" (
+CREATE TABLE IF NOT EXISTS "sandbox_sessions" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "teamspace_id" uuid NOT NULL REFERENCES "teamspaces"("id") ON DELETE CASCADE,
   "sandbox_environment_id" uuid NOT NULL,
@@ -95,13 +111,13 @@ CREATE TABLE "sandbox_sessions" (
     ON DELETE CASCADE
 );
 
-CREATE INDEX "sandbox_sessions_teamspace_id_idx"
+CREATE INDEX IF NOT EXISTS "sandbox_sessions_teamspace_id_idx"
   ON "sandbox_sessions" ("teamspace_id");
 
-CREATE INDEX "sandbox_sessions_environment_id_idx"
+CREATE INDEX IF NOT EXISTS "sandbox_sessions_environment_id_idx"
   ON "sandbox_sessions" ("sandbox_environment_id");
 
-CREATE TABLE "sandbox_snapshots" (
+CREATE TABLE IF NOT EXISTS "sandbox_snapshots" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "teamspace_id" uuid NOT NULL REFERENCES "teamspaces"("id") ON DELETE CASCADE,
   "sandbox_environment_id" uuid NOT NULL,
@@ -117,7 +133,7 @@ CREATE TABLE "sandbox_snapshots" (
     ON DELETE CASCADE
 );
 
-CREATE INDEX "sandbox_snapshots_environment_id_idx"
+CREATE INDEX IF NOT EXISTS "sandbox_snapshots_environment_id_idx"
   ON "sandbox_snapshots" ("sandbox_environment_id");
 
 ALTER TABLE "sandbox_environments" ENABLE ROW LEVEL SECURITY;
@@ -125,14 +141,18 @@ ALTER TABLE "sandbox_sources" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "sandbox_sessions" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "sandbox_snapshots" ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "deny_all_sandbox_environments" ON "sandbox_environments";
 CREATE POLICY "deny_all_sandbox_environments" ON "sandbox_environments"
   AS RESTRICTIVE FOR ALL TO public USING (false) WITH CHECK (false);
 
+DROP POLICY IF EXISTS "deny_all_sandbox_sources" ON "sandbox_sources";
 CREATE POLICY "deny_all_sandbox_sources" ON "sandbox_sources"
   AS RESTRICTIVE FOR ALL TO public USING (false) WITH CHECK (false);
 
+DROP POLICY IF EXISTS "deny_all_sandbox_sessions" ON "sandbox_sessions";
 CREATE POLICY "deny_all_sandbox_sessions" ON "sandbox_sessions"
   AS RESTRICTIVE FOR ALL TO public USING (false) WITH CHECK (false);
 
+DROP POLICY IF EXISTS "deny_all_sandbox_snapshots" ON "sandbox_snapshots";
 CREATE POLICY "deny_all_sandbox_snapshots" ON "sandbox_snapshots"
   AS RESTRICTIVE FOR ALL TO public USING (false) WITH CHECK (false);
