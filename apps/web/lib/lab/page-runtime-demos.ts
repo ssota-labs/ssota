@@ -1040,6 +1040,63 @@ export const PAGE_RUNTIME_DEMOS: PageRuntimeDemo[] = [
     },
   },
   {
+    id: "research-media-embed",
+    category: "document",
+    title: "MediaEmbed (YouTube / X)",
+    description:
+      "External research source preview: YouTube renders an iframe; X and articles render a link card with summary.",
+    components: ["Section", "MediaEmbed"],
+    spec: {
+      root: "section",
+      elements: {
+        section: {
+          type: "Section",
+          props: { title: "Source preview", subtitle: "YouTube and X samples" },
+          children: ["youtube", "xCard"],
+        },
+        youtube: {
+          type: "MediaEmbed",
+          props: {
+            binding: "youtubeSource",
+            urlField: "url",
+            platformField: "platform",
+            height: 280,
+          },
+        },
+        xCard: {
+          type: "MediaEmbed",
+          props: {
+            binding: "xSource",
+            urlField: "url",
+            platformField: "platform",
+          },
+        },
+      },
+    },
+    bindingData: {
+      youtubeSource: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa01",
+        catalogKey: "raw_source",
+        title: "Landscape overview (YouTube)",
+        properties: {
+          url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+          platform: "youtube",
+          summary: "Analyst overview of dev workflow tools",
+        },
+      },
+      xSource: {
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaa02",
+        catalogKey: "raw_source",
+        title: "Founder thread",
+        properties: {
+          url: "https://x.com/ssotalabs/status/1234567890",
+          platform: "x",
+          summary: "Thread on graph-native product ops",
+        },
+      },
+    },
+  },
+  {
     id: "spreadsheet",
     category: "data",
     title: "Spreadsheet (Google Sheets-style)",

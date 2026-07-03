@@ -16,6 +16,7 @@ import { wireframeComponents } from "./components/wireframe-canvas";
 import { erdDiagramComponents } from "./components/erd-diagram";
 import { widgetComponents } from "./components/widget";
 import { figmaEmbedComponents } from "./components/figma-embed";
+import { mediaEmbedComponents } from "./components/media-embed";
 import { periodSelectComponents } from "./components/period-select";
 import { chartComponents } from "./components/charts";
 
@@ -42,6 +43,7 @@ export const CATALOG: Record<string, CatalogComponent> = {
   ...erdDiagramComponents,
   ...widgetComponents,
   ...figmaEmbedComponents,
+  ...mediaEmbedComponents,
   ...periodSelectComponents,
   ...chartComponents,
 };

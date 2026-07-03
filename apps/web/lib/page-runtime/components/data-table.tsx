@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { TableViewState } from "@ssota/contracts";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
@@ -82,6 +83,7 @@ function DataTableEl({
   columns,
   title,
   rowHref,
+  selectionParam,
   setAction,
   addAction,
   deleteAction,
@@ -91,6 +93,7 @@ function DataTableEl({
   columns: DataTableColumn[];
   title?: string;
   rowHref?: string;
+  selectionParam?: string;
   setAction?: string;
   addAction?: string;
   deleteAction?: string;
@@ -98,6 +101,21 @@ function DataTableEl({
   const onAction = useAction();
   const basePath = useBasePath();
   const viewStateCtx = usePageViewState();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const selectedRowId = selectionParam
+    ? searchParams.get(selectionParam)
+    : null;
+
+  const selectRow = React.useCallback(
+    (id: string) => {
+      if (!selectionParam) return;
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(selectionParam, id);
+      router.replace(`?${params.toString()}`, { scroll: false });
+    },
+    [router, searchParams, selectionParam],
+  );
 
   // Notion-style editing: cells render read-only, double-click opens an
   // absolute-overlay editor (text/number/date → input, select → popover).
@@ -219,6 +237,21 @@ function DataTableEl({
               />
             );
           }
+          if (col.key === "title" && selectionParam) {
+            return (
+              <button
+                type="button"
+                onClick={() => selectRow(node.id)}
+                className={`text-left font-medium hover:underline ${
+                  selectedRowId === node.id
+                    ? "text-primary"
+                    : "text-foreground"
+                }`}
+              >
+                {node.title}
+              </button>
+            );
+          }
           if (col.key === "title" && rowHref) {
             return (
               <Link
@@ -278,7 +311,18 @@ function DataTableEl({
       });
     }
     return defs;
-  }, [columns, setAction, deleteAction, rowHref, basePath, commitCell, deleteRow]);
+  }, [
+    columns,
+    setAction,
+    deleteAction,
+    rowHref,
+    selectionParam,
+    selectedRowId,
+    basePath,
+    commitCell,
+    deleteRow,
+    selectRow,
+  ]);
 
   const facetedFilters = React.useMemo<FacetedFilterDef[]>(
     () =>
@@ -343,6 +387,9 @@ export const dataTableComponents: Record<string, CatalogComponent> = {
       columns={Array.isArray(props.columns) ? (props.columns as DataTableColumn[]) : []}
       title={props.title ? String(props.title) : undefined}
       rowHref={typeof props.rowHref === "string" ? props.rowHref : undefined}
+      selectionParam={
+        typeof props.selectionParam === "string" ? props.selectionParam : undefined
+      }
       setAction={typeof props.setAction === "string" ? props.setAction : undefined}
       addAction={typeof props.addAction === "string" ? props.addAction : undefined}
       deleteAction={
