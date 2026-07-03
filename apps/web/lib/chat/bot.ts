@@ -246,7 +246,15 @@ async function handleInboundMessage(
   await thread.setState({ agentDefinitionId: route.agentDefinitionId });
 
   if (route.showTypingIndicator && !isEmulateEnabled()) {
-    await thread.startTyping();
+    try {
+      await thread.startTyping();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("not_allowed_token_type")) {
+        throw error;
+      }
+      // User-subject Slack tokens (xoxp) cannot call assistant.threads.setStatus.
+    }
   }
 
   const { run, stream } = await runAgentStream(
