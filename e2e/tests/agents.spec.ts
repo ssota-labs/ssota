@@ -294,6 +294,42 @@ test.describe("Agents", () => {
     await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
   });
 
+  test("unlinks bound connection from tools card and persists on save", async ({
+    page,
+  }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
+
+    const toolsCard = page.getByTestId("agent-settings-tools-card");
+    const boundRow = toolsCard.getByTestId(
+      "agent-bound-connection-user-seed-notion-user-1",
+    );
+    await expect(boundRow).toBeVisible();
+
+    await toolsCard
+      .getByTestId("agent-bound-connection-unlink-user-seed-notion-user-1")
+      .click();
+
+    await expect(boundRow).not.toBeVisible();
+    await expect(page.getByTestId("agent-settings-sheet")).toHaveAttribute(
+      "data-unsaved",
+      "true",
+    );
+
+    await page.getByTestId("agent-settings-save").click();
+    await expect(page.getByTestId("agent-settings-save")).toBeDisabled();
+
+    await page.getByTestId("card-list-sheet-close").click();
+    await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
+
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await expect(
+      toolsCard.getByTestId("agent-bound-connection-user-seed-notion-user-1"),
+    ).not.toBeVisible();
+  });
+
   test("sidebar nav link reaches agents", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "overview");

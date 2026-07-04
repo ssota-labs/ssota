@@ -117,3 +117,14 @@ export function removeConnectorBinding(
     (b) => !(b.scope === scope && b.connectionId === connectionId),
   );
 }
+
+/** Draft patch for connector binding list changes (syncs legacy provider list). */
+export function patchConnectorBindingsDraft(bindings: AgentConnectorBinding[]): {
+  connectorBindings: AgentConnectorBinding[];
+  enabledConnectorProviders: string[];
+} {
+  return {
+    connectorBindings: bindings,
+    enabledConnectorProviders: deriveEnabledProvidersFromBindings(bindings),
+  };
+}

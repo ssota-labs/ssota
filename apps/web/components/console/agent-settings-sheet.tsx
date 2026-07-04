@@ -8,12 +8,14 @@ import {
   ChatsCircleIcon,
   ClockIcon,
   LightbulbIcon,
+  LinkBreakIcon,
   PlusIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type { Block } from "@blocknote/core";
 import type {
   AgentDefinition,
+  AgentConnectorBinding,
   AgentTrigger,
   ConnectionTrigger,
   SkillIndex,
@@ -74,6 +76,8 @@ import {
 import {
   connectionDisplayLabel,
   migrateConnectorBindings,
+  patchConnectorBindingsDraft,
+  removeConnectorBinding,
 } from "@/lib/console/agent-connector-bindings";
 
 const DocumentEditorEl = dynamic(
@@ -282,6 +286,17 @@ export function AgentSettingsSheet({
 
   const patchDraft = (patch: Partial<AgentSettingsDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
+  };
+
+  const removeBindingFromDraft = (
+    scope: AgentConnectorBinding["scope"],
+    connectionId: string,
+  ) => {
+    patchDraft(
+      patchConnectorBindingsDraft(
+        removeConnectorBinding(draft.connectorBindings, scope, connectionId),
+      ),
+    );
   };
 
   const handleInstructionsSave = useCallback((blocks: Block[]) => {
@@ -629,6 +644,24 @@ export function AgentSettingsSheet({
                           binding.scope === "org" ? "Organization" : "Personal"
                         }`}
                         testId={`agent-bound-connection-${binding.scope}-${binding.connectionId}`}
+                        trailing={
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon-sm"
+                            className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                            aria-label={`Unlink ${label} from agent`}
+                            data-testid={`agent-bound-connection-unlink-${binding.scope}-${binding.connectionId}`}
+                            onClick={() =>
+                              removeBindingFromDraft(
+                                binding.scope,
+                                binding.connectionId,
+                              )
+                            }
+                          >
+                            <LinkBreakIcon className="size-4" aria-hidden />
+                          </Button>
+                        }
                       />
                     ))}
                     {linkedScriptTools.map((tool) => (
