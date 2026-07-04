@@ -2,6 +2,10 @@ import type {
   AgentConnectorBinding,
   ConnectorToolPermission,
 } from "@ssota/contracts";
+import {
+  deriveApprovalToolsByToolkit,
+  deriveBlockedToolsByToolkit,
+} from "@ssota/contracts";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorConnectScope } from "@/lib/connect/authorize-href";
 
@@ -171,45 +175,10 @@ export function getEffectiveToolPermission(
   return binding.toolPermissions?.[slug] ?? "allow";
 }
 
-export function deriveBlockedToolsByToolkit(
-  bindings: AgentConnectorBinding[],
-): Record<string, string[]> {
-  const grouped = new Map<string, Set<string>>();
-  for (const binding of bindings) {
-    if (!binding.toolPermissions) continue;
-    for (const [slug, permission] of Object.entries(binding.toolPermissions)) {
-      if (permission !== "block") continue;
-      const slugs = grouped.get(binding.provider) ?? new Set<string>();
-      slugs.add(slug);
-      grouped.set(binding.provider, slugs);
-    }
-  }
-  return Object.fromEntries(
-    [...grouped.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([toolkit, slugs]) => [toolkit, [...slugs].sort()]),
-  );
-}
-
-export function deriveApprovalToolsByToolkit(
-  bindings: AgentConnectorBinding[],
-): Record<string, string[]> {
-  const grouped = new Map<string, Set<string>>();
-  for (const binding of bindings) {
-    if (!binding.toolPermissions) continue;
-    for (const [slug, permission] of Object.entries(binding.toolPermissions)) {
-      if (permission !== "approval") continue;
-      const slugs = grouped.get(binding.provider) ?? new Set<string>();
-      slugs.add(slug);
-      grouped.set(binding.provider, slugs);
-    }
-  }
-  return Object.fromEntries(
-    [...grouped.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([toolkit, slugs]) => [toolkit, [...slugs].sort()]),
-  );
-}
+export {
+  deriveApprovalToolsByToolkit,
+  deriveBlockedToolsByToolkit,
+};
 
 export function normalizeConnectorBindingForSnapshot(
   binding: AgentConnectorBinding,

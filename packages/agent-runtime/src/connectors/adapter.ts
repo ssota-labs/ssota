@@ -9,6 +9,8 @@
 import type { ToolSet } from "ai";
 import { isComposioEnabled } from "../composio/client.js";
 import { createComposioOrgTools, createComposioTools } from "../composio/tools.js";
+import { deriveBlockedToolsByToolkit } from "@ssota/contracts";
+import type { AgentConnectorBinding } from "@ssota/contracts";
 import { isComposioMetaToolName } from "../composio/meta-tool-schemas.js";
 import { resolveOrgIdForProject } from "../ports.js";
 
@@ -22,6 +24,8 @@ export interface BuildConnectorToolsInput {
   profileId?: string;
   /** Composio toolkit slugs enabled for this agent run. */
   enabledConnectorProviders?: string[];
+  /** Per-connection tool permissions for this agent run. */
+  connectorBindings?: AgentConnectorBinding[];
 }
 
 export interface ConnectorAdapter {
@@ -32,7 +36,7 @@ const EMPTY: ConnectorToolsBundle = { tools: {} };
 
 function composioAdapter(): ConnectorAdapter {
   return {
-    async buildTools({ teamspaceId, profileId, enabledConnectorProviders }) {
+    async buildTools({ teamspaceId, profileId, enabledConnectorProviders, connectorBindings }) {
       const orgId = await resolveOrgIdForProject(teamspaceId);
       if (!orgId) return EMPTY;
       if (enabledConnectorProviders && enabledConnectorProviders.length === 0) {
@@ -41,9 +45,21 @@ function composioAdapter(): ConnectorAdapter {
       const enabledToolkits = enabledConnectorProviders?.length
         ? enabledConnectorProviders
         : undefined;
+      const agentBlockedTools = deriveBlockedToolsByToolkit(
+        connectorBindings ?? [],
+      );
       const tools = profileId
-        ? await createComposioTools({ orgId, profileId, enabledToolkits })
-        : await createComposioOrgTools({ orgId, enabledToolkits });
+        ? await createComposioTools({
+            orgId,
+            profileId,
+            enabledToolkits,
+            agentBlockedTools,
+          })
+        : await createComposioOrgTools({
+            orgId,
+            enabledToolkits,
+            agentBlockedTools,
+          });
       return { tools };
     },
   };

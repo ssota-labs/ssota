@@ -8,6 +8,7 @@
  */
 import type { ToolSet } from "ai";
 import { getComposioClient } from "./client.js";
+import { mergeDisabledToolsByToolkit } from "./connector-tool-policy.js";
 import { getOrgToolRouterSession, getToolRouterSession } from "./session.js";
 import { getConnectorToolSettingsPort } from "../ports.js";
 
@@ -16,6 +17,8 @@ export interface ComposioToolsInput {
   profileId: string;
   /** When set, restrict the Tool Router session to these toolkit slugs. */
   enabledToolkits?: string[];
+  /** Agent-level blocked tool slugs grouped by toolkit. */
+  agentBlockedTools?: Record<string, string[]>;
 }
 
 /** AI-SDK ToolSet from the user entity's Tool Router session (personal +
@@ -23,9 +26,14 @@ export interface ComposioToolsInput {
 export async function createComposioTools(
   input: ComposioToolsInput,
 ): Promise<ToolSet> {
-  const disabledTools = await getConnectorToolSettingsPort()
+  const globalDisabled = await getConnectorToolSettingsPort()
     .getDisabledByToolkit(input.orgId, input.profileId)
     .catch(() => ({}) as Record<string, string[]>);
+
+  const disabledTools = mergeDisabledToolsByToolkit(
+    globalDisabled,
+    input.agentBlockedTools ?? {},
+  );
 
   const session = await getToolRouterSession({
     ...input,
@@ -45,10 +53,17 @@ export async function createComposioTools(
 export async function createComposioOrgTools(input: {
   orgId: string;
   enabledToolkits?: string[];
+  agentBlockedTools?: Record<string, string[]>;
 }): Promise<ToolSet> {
+  const disabledTools =
+    input.agentBlockedTools &&
+    Object.keys(input.agentBlockedTools).length > 0
+      ? input.agentBlockedTools
+      : undefined;
   const session = await getOrgToolRouterSession({
     orgId: input.orgId,
     enabledToolkits: input.enabledToolkits,
+    disabledTools,
   });
   if (!session) return {};
   const tools = await session.tools();

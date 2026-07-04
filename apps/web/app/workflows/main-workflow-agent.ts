@@ -38,6 +38,7 @@ export async function runMainWorkflowAgent(input: RunMainAgentInput) {
     agentDefinitionId: definition.agentDefinitionId,
     nodeScopes: definition.nodeScopes,
     enabledConnectorProviders: definition.enabledConnectorProviders,
+    connectorBindings: definition.connectorBindings,
     trigger,
   };
 

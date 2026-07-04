@@ -20,6 +20,7 @@ import {
   executeComposioMetaTool,
   getConnectorAdapter,
 } from "../connectors/adapter.js";
+import { assertMultiExecuteToolPermissions } from "../composio/multi-execute-guard.js";
 import { isComposioMetaToolName } from "../composio/meta-tool-schemas.js";
 import type { AgentRunContext } from "../engine/types.js";
 import {
@@ -99,11 +100,24 @@ export async function runMainAgentToolStep(
         `Connector tool ${toolName} requires Composio (COMPOSIO_API_KEY).`,
       );
     }
+    if (toolName === "COMPOSIO_MULTI_EXECUTE_TOOL") {
+      await assertMultiExecuteToolPermissions({
+        toolInput: input,
+        organizationId: ssota.organizationId,
+        profileId: ssota.profileId,
+        teamspaceId: ssota.teamspaceId,
+        accountId: ssota.accountId,
+        taskId: ssota.taskId,
+        connectorBindings: ssota.connectorBindings,
+        approvedConnectorToolSlugs: ssota.approvedConnectorToolSlugs,
+      });
+    }
     return executeComposioMetaTool(toolName, input, {
       teamspaceId: ssota.teamspaceId,
       accountId: ssota.accountId,
       profileId: ssota.profileId,
       enabledConnectorProviders: ssota.enabledConnectorProviders,
+      connectorBindings: ssota.connectorBindings,
     });
   }
 
