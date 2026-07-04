@@ -8,8 +8,7 @@ import { resolveOrgPage } from "@/lib/console/resolve-org-page";
 import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
-import { ConsolePageFrame } from "@/components/console/console-page-frame";
-import { PageSiblingNav } from "@/components/console/page-sibling-nav";
+import { PageChrome } from "@/components/console/page-chrome";
 import { loadPageSiblingNav } from "@/lib/console/page-sibling-nav";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
@@ -171,32 +170,25 @@ async function TreePageInner({
   );
 
   return (
-    <>
-      {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
-      <ConsolePageFrame
-        fullWidth={usesWorkbench}
-        fillHeight={!usesWorkbench}
-        contentClassName={siblingNav ? "pt-2" : undefined}
-      >
-        <DynamicPageRenderer
-          spec={page.spec}
-          pageBindings={page.bindings}
-          bindingData={bindingData}
-          basePath={basePath}
-          onAction={onAction}
-          viewState={{ initial: initialViewStates, save: saveViewState }}
-          artifactWorkbench={
-            usesWorkbench
-              ? {
-                  teamspaceId: project.id,
-                  previewBasePath,
-                  onCreateComponent: onStudioCreateComponent,
-                  onDeployComponent: onStudioDeployComponent,
-                }
-              : null
-          }
-        />
-      </ConsolePageFrame>
-    </>
+    <PageChrome spec={page.spec} siblingNav={siblingNav}>
+      <DynamicPageRenderer
+        spec={page.spec}
+        pageBindings={page.bindings}
+        bindingData={bindingData}
+        basePath={basePath}
+        onAction={onAction}
+        viewState={{ initial: initialViewStates, save: saveViewState }}
+        artifactWorkbench={
+          usesWorkbench
+            ? {
+                teamspaceId: project.id,
+                previewBasePath,
+                onCreateComponent: onStudioCreateComponent,
+                onDeployComponent: onStudioDeployComponent,
+              }
+            : null
+        }
+      />
+    </PageChrome>
   );
 }

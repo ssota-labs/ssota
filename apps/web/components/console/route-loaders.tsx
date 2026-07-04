@@ -1,5 +1,6 @@
 import { Skeleton } from "@ssota/ui/components/ui/skeleton";
 import { cn } from "@ssota/ui/lib/utils";
+import { WorkspaceHeader } from "@/lib/console/workspace-header";
 import { ConsolePageFrame } from "@/components/console/console-page-frame";
 
 function BrowseHeaderSkeleton({ showAction = false }: { showAction?: boolean }) {
@@ -39,6 +40,65 @@ export function ListRowSkeleton() {
       </div>
       <Skeleton className="size-4 shrink-0 rounded-sm" />
     </div>
+  );
+}
+
+/** DocumentCardListSheet row: status badge + title/subtitle + caret. */
+export function CardListRowSkeleton() {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3">
+      <div className="flex min-w-0 flex-1 items-start gap-2">
+        <Skeleton className="mt-0.5 h-5 w-14 shrink-0 rounded-full" />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <Skeleton className="h-4 w-48 max-w-full rounded-sm" />
+          <Skeleton className="h-3 w-64 max-w-full rounded-sm" />
+        </div>
+      </div>
+      <Skeleton className="size-4 shrink-0 rounded-sm" />
+    </div>
+  );
+}
+
+type SegmentedListSkeletonProps = {
+  rows?: number;
+  row?: "default" | "card";
+  className?: string;
+};
+
+export function SegmentedListSkeleton({
+  rows = 4,
+  row = "default",
+  className,
+}: SegmentedListSkeletonProps) {
+  const Row = row === "card" ? CardListRowSkeleton : ListRowSkeleton;
+  return (
+    <div
+      className={cn(
+        "divide-y divide-border overflow-hidden rounded-lg border border-border bg-card",
+        className,
+      )}
+    >
+      {Array.from({ length: rows }, (_, index) => (
+        <Row key={index} />
+      ))}
+    </div>
+  );
+}
+
+export function SectionHeaderStatic({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle?: string;
+}) {
+  return (
+    <WorkspaceHeader
+      as="h2"
+      density="section"
+      title={title}
+      description={subtitle}
+    />
   );
 }
 

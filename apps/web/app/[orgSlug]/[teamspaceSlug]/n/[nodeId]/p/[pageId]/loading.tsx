@@ -1,10 +1,5 @@
-import { BrowseWorkspaceListLoading } from "@/components/console/route-loaders";
+import { PageRouteLoading } from "@/components/console/browse-content-loading/page-route-loading";
 
 export default function Loading() {
-  return (
-    <BrowseWorkspaceListLoading
-      testId="route-loading-node-page"
-      sections={[{ labelWidth: "w-28", rows: 4 }]}
-    />
-  );
+  return <PageRouteLoading />;
 }
