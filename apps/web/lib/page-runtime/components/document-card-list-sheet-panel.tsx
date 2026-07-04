@@ -1,10 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import {
-  CardListSheet,
-  type CardListSheetSize,
-} from "@/components/card-list-sheet";
+import { CardListSheet } from "@/components/card-list-sheet";
 import type { RenderNode } from "../types";
 import { DocumentStatusBadge } from "./document-status-badge";
 
@@ -17,15 +14,12 @@ const DocumentEditorEl = dynamic(
   { ssr: false },
 );
 
-export type DocumentCardListSheetSize = CardListSheetSize;
-
 type DocumentCardListSheetPanelProps = {
   node: RenderNode;
   subtitle?: string;
   status?: string;
   field: string;
   editable: boolean;
-  sheetSize: DocumentCardListSheetSize;
   onClose: () => void;
   onSave?: (blocks: unknown[]) => void;
 };
@@ -40,13 +34,11 @@ export function DocumentCardListSheetPanel({
   status,
   field,
   editable,
-  sheetSize,
   onClose,
   onSave,
 }: DocumentCardListSheetPanelProps) {
   return (
     <CardListSheet.Sheet.Root
-      sheetSize={sheetSize}
       onClose={onClose}
       testId="document-sheet-panel"
       titleId="document-sheet-title"

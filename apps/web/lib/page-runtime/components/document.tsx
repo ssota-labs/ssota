@@ -94,16 +94,6 @@ export const documentComponents: Record<string, CatalogComponent> = {
       }
       editable={props.editable === true}
       action={typeof props.action === "string" ? props.action : undefined}
-      sheetSize={
-        props.sheetSize === "default" ||
-        props.sheetSize === "half" ||
-        props.sheetSize === "inspector" ||
-        props.sheetSize === "wide" ||
-        props.sheetSize === "full" ||
-        props.sheetSize === "viewport"
-          ? props.sheetSize
-          : "viewport"
-      }
       filters={props.filters}
       />
     </div>

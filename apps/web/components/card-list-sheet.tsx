@@ -12,26 +12,15 @@ import {
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
 import { CaretRightIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
-
-export type CardListSheetSize =
-  | "default"
-  | "half"
-  | "inspector"
-  | "wide"
-  | "full"
-  | "viewport";
 
 /** Docked sheet width as % of CardListSheet.Root (main content column). */
 const DOCKED_SHEET_MIN_WIDTH_PX = 24 * 16;
 const DOCKED_SHEET_MAX_WIDTH_PX = 640;
 /** 60% of the positioning parent — scales with ConsolePageFrame column width. */
 const dockedSheetWidthClass = "w-[60%] min-w-[24rem] max-w-[640px]";
-
-const isViewportSheet = (sheetSize: CardListSheetSize) => sheetSize === "viewport";
 
 function readDockedSheetMaxWidth(panel: HTMLElement): number {
   const parent = panel.offsetParent;
@@ -235,7 +224,6 @@ function useCardListSheetSheet() {
 
 type SheetRootProps = {
   open?: boolean;
-  sheetSize?: CardListSheetSize;
   fullHeight?: boolean;
   onClose: () => void;
   children: ReactNode;
@@ -247,7 +235,6 @@ type SheetRootProps = {
 
 function SheetRoot({
   open = true,
-  sheetSize = "inspector",
   fullHeight = false,
   onClose,
   children,
@@ -262,9 +249,8 @@ function SheetRoot({
   const [widthPx, setWidthPx] = useState<number | null>(null);
 
   useLayoutEffect(() => {
-    if (isViewportSheet(sheetSize)) return;
     setWidthPx(null);
-  }, [sheetSize, open]);
+  }, [open]);
 
   const beginResize = (startX: number) => {
     const panel = panelRef.current;
@@ -307,57 +293,42 @@ function SheetRoot({
 
   if (!open) return null;
 
-  const viewport = isViewportSheet(sheetSize);
-
-  const panel = (
+  return (
     <CardListSheetSheetContext
       value={{ onClose, titleId, closeButtonTestId, resizeHandleTestId }}
     >
       <div
         ref={panelRef}
         role="dialog"
-        aria-modal={viewport}
         aria-labelledby={titleId}
         data-testid={testId}
-        style={viewport || widthPx === null ? undefined : { width: widthPx }}
+        style={widthPx === null ? undefined : { width: widthPx }}
         className={cn(
           "flex flex-col overflow-hidden border-[1.5px] border-border",
-          viewport
-            ? "fixed inset-0 z-50 rounded-none"
-            : cn(
-                "absolute z-20",
-                fullHeight
-                  ? "inset-y-0 right-0 h-full rounded-l-xl border-y-0 border-r-0"
-                  : "inset-y-2 right-2 rounded-xl",
-                widthPx === null ? dockedSheetWidthClass : "min-w-0 max-w-[640px]",
-              ),
+          "absolute z-20",
+          fullHeight
+            ? "inset-y-0 right-0 h-full rounded-l-xl border-y-0 border-r-0"
+            : "inset-y-2 right-2 rounded-xl",
+          widthPx === null ? dockedSheetWidthClass : "min-w-0 max-w-[640px]",
           "bg-background/50 shadow-lg shadow-black/5",
           "supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150",
           "supports-backdrop-filter:bg-background/40",
           "animate-in slide-in-from-right-4 fade-in duration-200",
         )}
       >
-        {!viewport ? (
-          <div
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize panel"
-            data-testid={resizeHandleTestId}
-            className="hover:bg-primary/20 active:bg-primary/30 absolute top-0 bottom-0 left-0 z-30 w-1.5 -translate-x-1/2 cursor-col-resize touch-none"
-            onMouseDown={handleResizeMouseDown}
-            onPointerDown={handleResizePointerDown}
-          />
-        ) : null}
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize panel"
+          data-testid={resizeHandleTestId}
+          className="hover:bg-primary/20 active:bg-primary/30 absolute top-0 bottom-0 left-0 z-30 w-1.5 -translate-x-1/2 cursor-col-resize touch-none"
+          onMouseDown={handleResizeMouseDown}
+          onPointerDown={handleResizePointerDown}
+        />
         {children}
       </div>
     </CardListSheetSheetContext>
   );
-
-  if (viewport && typeof document !== "undefined") {
-    return createPortal(panel, document.body);
-  }
-
-  return panel;
 }
 
 function SheetHeader({
@@ -486,7 +457,6 @@ export type CardListSheetPanelProps = {
   subtitle?: string;
   headerPrefix?: ReactNode;
   headerAction?: ReactNode;
-  sheetSize?: CardListSheetSize;
   fullHeight?: boolean;
   open?: boolean;
   onClose: () => void;
@@ -504,7 +474,6 @@ export function CardListSheetPanel({
   subtitle,
   headerPrefix,
   headerAction,
-  sheetSize = "inspector",
   fullHeight,
   open = true,
   onClose,
@@ -518,7 +487,6 @@ export function CardListSheetPanel({
   return (
     <SheetRoot
       open={open}
-      sheetSize={sheetSize}
       fullHeight={fullHeight}
       onClose={onClose}
       testId={testId}

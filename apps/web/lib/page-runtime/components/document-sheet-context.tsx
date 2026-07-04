@@ -10,10 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { RenderNode } from "../types";
-import {
-  DocumentCardListSheetPanel,
-  type DocumentCardListSheetSize,
-} from "./document-card-list-sheet-panel";
+import { DocumentCardListSheetPanel } from "./document-card-list-sheet-panel";
 
 export type DocumentSheetOpenOptions = {
   node: RenderNode;
@@ -21,7 +18,6 @@ export type DocumentSheetOpenOptions = {
   status?: string;
   field: string;
   editable: boolean;
-  sheetSize: DocumentCardListSheetSize;
   onSave?: (blocks: unknown[]) => void;
 };
 
@@ -78,7 +74,6 @@ export function DocumentSheetProvider({ children }: { children: ReactNode }) {
           status={sheet.status}
           field={sheet.field}
           editable={sheet.editable}
-          sheetSize={sheet.sheetSize}
           onClose={closeSheet}
           onSave={sheet.onSave}
         />

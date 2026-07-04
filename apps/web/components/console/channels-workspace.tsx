@@ -168,7 +168,6 @@ function InboundChannelSettingsPanel({
       <CardListSheetPanel
         title={channel.label}
         subtitle={channel.description}
-        sheetSize="inspector"
         onClose={onClose}
         headerPrefix={
           <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40">

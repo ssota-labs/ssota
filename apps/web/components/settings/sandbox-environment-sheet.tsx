@@ -265,7 +265,6 @@ export function SandboxEnvironmentSheet({
     <CardListSheetPanel
       title={title}
       subtitle="VM template for coding agent runs — runtime, repos, and boot policy."
-      sheetSize="viewport"
       testId="sandbox-environment-sheet"
       onClose={() => onOpenChange(false)}
       footer={

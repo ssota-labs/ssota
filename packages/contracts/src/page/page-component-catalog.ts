@@ -657,10 +657,6 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       statusField: { type: "string", description: 'Status badge property (default "lifecycleStatus").' },
       editable: { type: "boolean", description: "Enable in-sheet editing." },
       action: action("Dispatched on save with { nodeId, doc }."),
-      sheetSize: {
-        type: "string",
-        description: '"default"|"half"|"inspector"|"wide"|"full"|"viewport" (default viewport).',
-      },
       filters: {
         type: '{ type:"toggle", field, value, label, defaultHidden? }[] | { type:"select", field, label }[]',
         description:
@@ -746,10 +742,6 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       editable: {
         type: "boolean",
         description: "Make the click-through sheet an editor (default false).",
-      },
-      sheetSize: {
-        type: "string",
-        description: "Sheet width: default|half|inspector|wide|full (default default).",
       },
       panel: {
         type: "object",

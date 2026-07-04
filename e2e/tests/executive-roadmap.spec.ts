@@ -77,7 +77,7 @@ test.describe("Executive roadmap", () => {
     await expect(q2Row.locator('[class*="amber"]').first()).toBeVisible();
   });
 
-  test("opens only one full-viewport sheet when switching between lists", async ({
+  test("opens only one docked sheet when switching between lists", async ({
     page,
   }) => {
     const year = new Date().getFullYear();
@@ -90,8 +90,8 @@ test.describe("Executive roadmap", () => {
     expect(viewport).not.toBeNull();
     const box = await panel.boundingBox();
     expect(box).not.toBeNull();
-    expect(box!.width).toBeGreaterThanOrEqual(viewport!.width - 4);
-    expect(box!.height).toBeGreaterThanOrEqual(viewport!.height - 4);
+    expect(box!.width).toBeLessThan(viewport!.width);
+    await expect(page.getByTestId("document-sheet-resize-handle")).toBeVisible();
 
     await page
       .getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) })
@@ -102,7 +102,7 @@ test.describe("Executive roadmap", () => {
     ).toBeVisible();
   });
 
-  test("opens roadmap document in full-viewport sheet panel", async ({ page }) => {
+  test("opens roadmap document in docked sheet panel", async ({ page }) => {
     const year = new Date().getFullYear();
     await page.getByRole("button", { name: new RegExp(`${year} Q1 분기 로드맵`) }).click();
 
@@ -120,9 +120,8 @@ test.describe("Executive roadmap", () => {
     expect(viewport).not.toBeNull();
     const box = await panel.boundingBox();
     expect(box).not.toBeNull();
-    expect(box!.width).toBeGreaterThanOrEqual(viewport!.width - 4);
-    expect(box!.height).toBeGreaterThanOrEqual(viewport!.height - 4);
-    await expect(page.getByTestId("document-sheet-resize-handle")).toHaveCount(0);
+    expect(box!.width).toBeLessThan(viewport!.width);
+    await expect(page.getByTestId("document-sheet-resize-handle")).toBeVisible();
   });
 
   test("closes sheet panel with close button", async ({ page }) => {

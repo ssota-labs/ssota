@@ -4,5 +4,4 @@ export {
   CardListSheetPanel,
   CardListSheet,
   type CardListSheetPanelProps as CardSheetPanelProps,
-  type CardListSheetSize as CardSheetSize,
 } from "@/components/card-list-sheet";

@@ -376,7 +376,6 @@ export function AgentSettingsSheet({
       <CardListSheetPanel
         title="Settings"
         subtitle={definition.name}
-        sheetSize="inspector"
         onClose={handleClose}
         headerAction={
           <Button
