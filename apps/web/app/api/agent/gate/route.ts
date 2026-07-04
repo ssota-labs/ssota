@@ -18,6 +18,16 @@ const bodySchema = z.object({
   note: z.string().optional(),
 });
 
+function readGateConnectorToolSlugs(context: unknown): string[] {
+  if (!context || typeof context !== "object") return [];
+  const gate = (context as { gate?: unknown }).gate;
+  if (!gate || typeof gate !== "object") return [];
+  const slugs = (gate as { connectorToolSlugs?: unknown }).connectorToolSlugs;
+  return Array.isArray(slugs)
+    ? slugs.filter((slug): slug is string => typeof slug === "string")
+    : [];
+}
+
 async function authorize(request: Request): Promise<boolean> {
   const secret = process.env.AGENT_RUN_SECRET;
   if (secret) {
@@ -84,12 +94,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, status: "cancelled" });
   }
 
+  const gateConnectorToolSlugs = readGateConnectorToolSlugs(task.context);
+
   // Approved: clear the gate, return to ready, and re-run the agent. The new
   // run re-reads context and continues past the gate (the decision is recorded
   // so the agent can see it was approved).
   await tasks.updateTask(body.taskId, {
     status: "ready",
-    context: { gateDecision: { approved: true, note: body.note } },
+    context: {
+      gateDecision: {
+        approved: true,
+        note: body.note,
+        ...(gateConnectorToolSlugs.length > 0
+          ? { connectorToolSlugs: gateConnectorToolSlugs }
+          : {}),
+      },
+    },
   });
 
   const run = await start(runSsotaAgentWorkflow, [

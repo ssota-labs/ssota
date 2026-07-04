@@ -130,6 +130,7 @@ export async function buildTaskPromptStep(
   messages: ModelMessage[];
   definition: Awaited<ReturnType<typeof resolveRunAgent>>["definition"];
   trigger: Awaited<ReturnType<typeof resolveRunAgent>>["trigger"];
+  approvedConnectorToolSlugs?: string[];
 }> {
   "use step";
   const resolved = await resolveRunAgent({
@@ -147,6 +148,7 @@ export async function buildTaskPromptStep(
     messages: resolved.messages,
     definition: resolved.definition,
     trigger: resolved.trigger,
+    approvedConnectorToolSlugs: resolved.approvedConnectorToolSlugs,
   };
 }
 

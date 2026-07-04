@@ -47,6 +47,19 @@ export interface ResolvedRunAgent {
   trigger: AgentTrigger;
   instructions: SystemModelMessage[];
   messages: ModelMessage[];
+  /** Pre-approved connector tool slugs from a prior human gate decision. */
+  approvedConnectorToolSlugs?: string[];
+}
+
+function readApprovedConnectorToolSlugs(context: unknown): string[] {
+  if (!context || typeof context !== "object") return [];
+  const gateDecision = (context as { gateDecision?: unknown }).gateDecision;
+  if (!gateDecision || typeof gateDecision !== "object") return [];
+  const slugs = (gateDecision as { connectorToolSlugs?: unknown })
+    .connectorToolSlugs;
+  return Array.isArray(slugs)
+    ? slugs.filter((slug): slug is string => typeof slug === "string")
+    : [];
 }
 
 function extractChatMessages(
@@ -272,6 +285,13 @@ export async function resolveRunAgent(input: RunAgentInput): Promise<ResolvedRun
         content: `Work the task "${task.title}" (id ${task.id}) to completion.`,
       },
     ];
+    return {
+      definition,
+      trigger,
+      instructions,
+      messages,
+      approvedConnectorToolSlugs: readApprovedConnectorToolSlugs(task.context),
+    };
   }
 
   return { definition, trigger, instructions, messages };
