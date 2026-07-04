@@ -111,7 +111,7 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "Resizable",
     category: "layout",
     description:
-      "Draggable split panels (horizontal or vertical). Each child is one panel. Fills the page main area.",
+      "Draggable split panels (horizontal or vertical). Each child is one panel. Inner gutter padding (pr/pl or pb/pt) between panels; outer edges stay flush.",
     children: true,
     props: {
       orientation: {
