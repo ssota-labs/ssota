@@ -88,6 +88,7 @@ import {
   removeConnectorBinding,
   updateBindingInList,
 } from "@/lib/console/agent-connector-bindings";
+import { prefetchToolkitToolSettings } from "@/lib/hooks/use-toolkit-tool-settings";
 
 const DocumentEditorEl = dynamic(
   () =>
@@ -124,6 +125,12 @@ function BoundConnectionToolPermissionsControl({
                   className="text-muted-foreground hover:text-foreground"
                   aria-label={`Tool permissions for ${label}`}
                   data-testid={`agent-bound-connection-settings-${binding.scope}-${binding.connectionId}`}
+                  onPointerEnter={() =>
+                    prefetchToolkitToolSettings(teamspaceId, binding.provider)
+                  }
+                  onFocus={() =>
+                    prefetchToolkitToolSettings(teamspaceId, binding.provider)
+                  }
                 />
               }
             />
@@ -272,6 +279,12 @@ export function AgentSettingsSheet({
       ),
     );
   }, [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections]);
+
+  useEffect(() => {
+    for (const binding of draft.connectorBindings) {
+      prefetchToolkitToolSettings(teamspaceId, binding.provider);
+    }
+  }, [teamspaceId, draft.connectorBindings]);
 
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,

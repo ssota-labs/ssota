@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import {
   CheckCircleIcon,
   HandIcon,
@@ -12,16 +11,11 @@ import type {
 } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
 import { cn } from "@ssota/ui/lib/utils";
-import { loadToolkitToolSettingsAction } from "@/app/[orgSlug]/[teamspaceSlug]/connections/actions";
 import {
   getEffectiveToolPermission,
   setBindingToolPermission,
 } from "@/lib/console/agent-connector-bindings";
-
-type ToolRow = {
-  slug: string;
-  name: string;
-};
+import { useToolkitToolSettings } from "@/lib/hooks/use-toolkit-tool-settings";
 
 const PERMISSION_OPTIONS: Array<{
   value: ConnectorToolPermission;
@@ -90,33 +84,8 @@ export function AgentConnectorToolPermissionsPopoverContent({
   providerLabel: string;
   onBindingChange: (next: AgentConnectorBinding) => void;
 }) {
-  const [tools, setTools] = useState<ToolRow[] | null>(null);
-  const [globalDisabled, setGlobalDisabled] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(null);
-    loadToolkitToolSettingsAction({ teamspaceId, toolkit: binding.provider })
-      .then((result) => {
-        if (!active) return;
-        setTools(result.tools.map((tool) => ({ slug: tool.slug, name: tool.name })));
-        setGlobalDisabled(result.disabled);
-      })
-      .catch(() => {
-        if (!active) return;
-        setError("Could not load tools for this connector.");
-        setTools([]);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [binding.provider, teamspaceId]);
+  const { tools, disabled: globalDisabled, loading, error } =
+    useToolkitToolSettings(teamspaceId, binding.provider);
 
   const handlePermissionChange = (
     slug: string,
@@ -138,8 +107,13 @@ export function AgentConnectorToolPermissionsPopoverContent({
         </p>
       </div>
 
-      {loading ? (
-        <p className="text-muted-foreground text-xs">Loading tools…</p>
+      {loading && !tools ? (
+        <div
+          className="flex min-h-[min(50vh,20rem)] items-start pt-1"
+          aria-busy="true"
+        >
+          <p className="text-muted-foreground text-xs">Loading tools…</p>
+        </div>
       ) : error ? (
         <p className="text-destructive text-xs">{error}</p>
       ) : !tools || tools.length === 0 ? (
