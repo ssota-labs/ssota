@@ -6,7 +6,8 @@ import { resolveOrg } from "@/lib/console/resolve-project";
 import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
-import { PageSiblingNav } from "@/components/console/page-sibling-nav";
+import { PageChrome } from "@/components/console/page-chrome";
+import { SetNodeDrill } from "@/components/console/node-drill-context";
 import { loadPageSiblingNav } from "@/lib/console/page-sibling-nav";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
@@ -16,8 +17,6 @@ import {
 } from "@/lib/page-runtime/hub-redirect";
 import { normalizeSearchParams } from "@/lib/page-runtime/search-params";
 import { runPageAction } from "@/lib/page-runtime/run-page-action";
-import { ConsolePageFrame } from "@/components/console/console-page-frame";
-import { SetNodeDrill } from "@/components/console/node-drill-context";
 
 /**
  * Node drill-in template renderer. Renders a node-type template page (from the
@@ -125,18 +124,13 @@ async function NodeTemplatePageInner({
 
   return (
     <>
-      {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
       <SetNodeDrill
         nodeId={subject.id}
         catalogKey={subject.catalogKey}
         nodeTitle={subject.title}
         pageTitle={page.title}
       />
-      <ConsolePageFrame
-        fullWidth={usesWorkbench}
-        fillHeight={!usesWorkbench}
-        contentClassName={siblingNav ? "pt-2" : undefined}
-      >
+      <PageChrome spec={page.spec} siblingNav={siblingNav}>
         <DynamicPageRenderer
           spec={page.spec}
           pageBindings={page.bindings}
@@ -152,7 +146,7 @@ async function NodeTemplatePageInner({
               : null
           }
         />
-      </ConsolePageFrame>
+      </PageChrome>
     </>
   );
 }
