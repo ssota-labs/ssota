@@ -67,6 +67,7 @@ import {
 } from "@/components/ui/table"
 import { AdvancedDataTableColumnHeader } from "@/components/ui/advanced-data-table-column-header"
 import { AdvancedDataTablePagination } from "@/components/ui/advanced-data-table-pagination"
+import { Badge } from "@/components/ui/badge"
 import {
   AdvancedDataTableSort,
   type SortableColumn,
@@ -351,6 +352,24 @@ function PopoverCellEditor({
   )
 }
 
+function SelectOptionChip({ value, color }: { value: string; color?: string }) {
+  if (color) {
+    return (
+      <span
+        className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium"
+        style={{ backgroundColor: color }}
+      >
+        {value}
+      </span>
+    )
+  }
+  return (
+    <Badge variant="secondary" className="rounded px-1.5 font-normal">
+      {value}
+    </Badge>
+  )
+}
+
 function SelectCellEditor({
   initial,
   options,
@@ -374,20 +393,11 @@ function SelectCellEditor({
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => onCommit(option)}
             className={cn(
-              "flex items-center gap-2 rounded px-2 py-1.5 text-left text-sm hover:bg-accent",
+              "flex items-center rounded px-2 py-1.5 text-left text-sm hover:bg-accent",
               option === initial && "bg-accent",
             )}
           >
-            {colors?.[option] ? (
-              <span
-                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium"
-                style={{ backgroundColor: colors[option] }}
-              >
-                {option}
-              </span>
-            ) : (
-              option
-            )}
+            <SelectOptionChip value={option} color={colors?.[option]} />
           </button>
         ))}
       </div>
