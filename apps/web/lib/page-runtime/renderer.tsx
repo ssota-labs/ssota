@@ -17,6 +17,7 @@ import { CATALOG } from "./registry";
 import type { BindingContext } from "./types";
 import { PeriodFilterProvider } from "./period-filter-context";
 import { DocumentSheetProvider } from "./components/document-sheet-context";
+import { NodeDetailSheetProvider } from "./components/node-detail-sheet-context";
 import {
   extractUrlSelectionBindings,
   SelectionProvider,
@@ -94,7 +95,9 @@ function SelectionWrappedTree({
   return (
     <Suspense fallback={selectionTree}>
       <PeriodFilterProvider>
-        <DocumentSheetProvider>{selectionTree}</DocumentSheetProvider>
+        <DocumentSheetProvider>
+          <NodeDetailSheetProvider>{selectionTree}</NodeDetailSheetProvider>
+        </DocumentSheetProvider>
       </PeriodFilterProvider>
     </Suspense>
   );

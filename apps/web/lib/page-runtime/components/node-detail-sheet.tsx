@@ -2,18 +2,12 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Badge } from "@ssota/ui/components/ui/badge";
 import { CardListSheet } from "@/components/card-list-sheet";
 import { boundNode } from "../bindings";
 import { readNodeField } from "./roadmap-doc-card";
+import { useNodeDetailSheet } from "./node-detail-sheet-context";
+import { NodeDetailSheetPanel } from "./node-detail-sheet-panel";
 import type { RenderNode } from "../types";
-
-function platformLabel(raw: string): string {
-  if (raw === "x") return "X";
-  if (raw === "article") return "Article";
-  if (raw === "youtube") return "YouTube";
-  return raw;
-}
 
 export type NodeDetailSheetProps = {
   bindingData: Record<string, unknown>;
@@ -34,6 +28,7 @@ export function NodeDetailSheetEl({
 }: NodeDetailSheetProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const nodeDetailSheet = useNodeDetailSheet();
   const node = boundNode(bindingData, { binding });
   const activeId = node?.id ?? null;
   const childNodes = React.Children.toArray(children);
@@ -47,17 +42,40 @@ export function NodeDetailSheetEl({
     router.replace(query ? `?${query}` : "?", { scroll: false });
   }, [router, searchParams, selectionParam]);
 
+  const subtitle = node ? readNodeField(node, subtitleField) : undefined;
+  const platform = node ? readNodeField(node, platformField) : undefined;
+  const sheetBodyRef = React.useRef(sheetBody);
+  sheetBodyRef.current = sheetBody;
+
   React.useEffect(() => {
+    if (!nodeDetailSheet) return;
+    if (!node) {
+      nodeDetailSheet.closeSheet();
+      return;
+    }
+    nodeDetailSheet.openSheet({
+      node,
+      subtitle,
+      platform,
+      sheetBody: sheetBodyRef.current,
+      onClose: close,
+    });
+    return () => nodeDetailSheet.closeSheet();
+  }, [nodeDetailSheet, node, subtitle, platform, close]);
+
+  React.useEffect(() => {
+    if (nodeDetailSheet) return;
     if (!node) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") close();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [node, close]);
+  }, [nodeDetailSheet, node, close]);
 
-  const subtitle = node ? readNodeField(node, subtitleField) : undefined;
-  const platform = node ? readNodeField(node, platformField) : undefined;
+  if (nodeDetailSheet) {
+    return <div className="flex min-h-0 flex-1 flex-col">{main}</div>;
+  }
 
   return (
     <CardListSheet.Root
@@ -71,33 +89,14 @@ export function NodeDetailSheetEl({
     >
       <div className="flex min-h-0 flex-1 flex-col">{main}</div>
       {node ? (
-        <CardListSheet.Sheet.Root
+        <NodeDetailSheetPanel
+          node={node}
+          subtitle={subtitle}
+          platform={platform}
           onClose={close}
-          testId="node-detail-sheet-panel"
-          titleId="node-detail-sheet-title"
-          closeButtonTestId="node-detail-sheet-close"
-          resizeHandleTestId="node-detail-sheet-resize-handle"
         >
-          <CardListSheet.Sheet.Header align={platform ? "start" : "center"}>
-            {platform ? (
-              <CardListSheet.Sheet.HeaderPrefix>
-                <Badge variant="secondary" className="mt-0.5 shrink-0">
-                  {platformLabel(platform)}
-                </Badge>
-              </CardListSheet.Sheet.HeaderPrefix>
-            ) : null}
-            <CardListSheet.Sheet.HeaderMain>
-              <CardListSheet.Sheet.Title>{node.title}</CardListSheet.Sheet.Title>
-              {subtitle ? (
-                <CardListSheet.Sheet.Subtitle>{subtitle}</CardListSheet.Sheet.Subtitle>
-              ) : null}
-            </CardListSheet.Sheet.HeaderMain>
-            <CardListSheet.Sheet.Close />
-          </CardListSheet.Sheet.Header>
-          <CardListSheet.Sheet.Body>
-            <div className="flex min-h-0 flex-col gap-4">{sheetBody}</div>
-          </CardListSheet.Sheet.Body>
-        </CardListSheet.Sheet.Root>
+          {sheetBody}
+        </NodeDetailSheetPanel>
       ) : null}
     </CardListSheet.Root>
   );
