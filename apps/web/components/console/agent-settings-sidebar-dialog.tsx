@@ -99,7 +99,7 @@ export function AgentSettingsSidebarDialog({
               ) : null}
             </div>
             <nav
-              className="min-h-0 flex-1 overflow-y-auto px-1.5"
+              className="min-h-0 flex-1 overflow-y-auto"
               aria-label={title}
             >
               {flatItems.length === 0 ? (
@@ -142,9 +142,9 @@ export function AgentSettingsSidebarDialog({
             </nav>
           </aside>
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-4 pt-0 scrollbar-none">{detail}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 pt-0 scrollbar-none">{detail}</div>
             {footer ? (
-              <div className="flex justify-end px-3 pt-3 pb-1.5">{footer}</div>
+              <div className="flex justify-end px-5 pt-3 pb-1.5">{footer}</div>
             ) : null}
           </div>
         </div>
@@ -169,7 +169,7 @@ export function SidebarDetailHeader({
       className={cn(
         "mb-4 flex items-start gap-3",
         sticky &&
-          "sticky top-0 z-10 -mx-3 border-b border-border/60 bg-popover px-3 pb-3 pt-0",
+          "sticky top-0 z-10 -mx-5 border-b border-border/60 bg-popover px-5 pb-3 pt-0",
       )}
     >
       {icon ? (
