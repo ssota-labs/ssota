@@ -139,7 +139,7 @@ function BoundConnectionToolPermissionsControl({
         side="bottom"
         align="end"
         sideOffset={6}
-        className="w-[min(24rem,92vw)] p-3"
+        className="w-[min(20rem,92vw)] p-3"
         data-testid="agent-tool-permissions-popover"
         initialFocus={false}
         finalFocus={false}
