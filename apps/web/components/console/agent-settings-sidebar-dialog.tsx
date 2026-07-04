@@ -80,7 +80,7 @@ export function AgentSettingsSidebarDialog({
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <div className="flex min-h-0 flex-1">
-          <aside className="flex w-52 shrink-0 flex-col border-r border-muted">
+          <aside className="flex w-52 shrink-0 flex-col gap-2 border-r border-muted">
             <div className="space-y-2 px-2">
               <h2 className="min-w-0 truncate text-sm font-semibold">{title}</h2>
               {showSearch ? (
@@ -99,7 +99,7 @@ export function AgentSettingsSidebarDialog({
               ) : null}
             </div>
             <nav
-              className="min-h-0 flex-1 overflow-y-auto p-1.5"
+              className="min-h-0 flex-1 overflow-y-auto px-1.5"
               aria-label={title}
             >
               {flatItems.length === 0 ? (
