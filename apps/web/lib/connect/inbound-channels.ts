@@ -107,6 +107,7 @@ export function inboundChannelAuthorizeHref(params: {
     accountId: params.accountId,
     teamspaceId: params.teamspaceId,
     returnTo: params.returnTo,
+    purpose: "inbound",
   });
   return `/api/connect/authorize?${search.toString()}`;
 }

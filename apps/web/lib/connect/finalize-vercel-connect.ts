@@ -1,10 +1,14 @@
 import {
   enrichConnectInstallationDisplay,
+  createVercelConnectProvider,
   getConnectInstallation,
   getDb,
   normalizeConnectInstallationId,
 } from "@ssota/agent-runtime";
-import { connectTokenScopesForConnector } from "@ssota/agent-runtime/connect-scopes";
+import {
+  connectTokenScopesForConnector,
+  inboundConnectTokenScopesForConnector,
+} from "@ssota/agent-runtime/connect-scopes";
 import {
   createAccountConnectionPort,
   createChatWorkspacePort,
@@ -17,6 +21,46 @@ import { providerOf } from "@/lib/connect/connectors";
 
 /** Inbound chat routes by platform workspace key (Slack team_id, Discord guild_id). */
 const CHAT_PROVIDERS = new Set(["slack", "discord"]);
+
+function scopesForConnector(connector: string): string[] | undefined {
+  const platform = providerOf(connector);
+  return CHAT_PROVIDERS.has(platform)
+    ? inboundConnectTokenScopesForConnector(connector)
+    : connectTokenScopesForConnector(connector);
+}
+
+async function assertInboundBotTokenReady(input: {
+  connector: string;
+  teamspaceId: string;
+  accountId?: string;
+  installationId?: string;
+}): Promise<void> {
+  const platform = providerOf(input.connector);
+  if (!CHAT_PROVIDERS.has(platform)) return;
+  if (process.env.CONNECT_STUB === "1") return;
+
+  const provider = createVercelConnectProvider();
+  const cred = await provider.getToken(input.connector, {
+    teamspaceId: input.teamspaceId,
+    accountId: input.accountId,
+    installationId: input.installationId,
+    connectPurpose: "inbound",
+  });
+
+  if (!cred?.token) {
+    throw new Error(
+      platform === "slack"
+        ? "Slack bot is not installed for this workspace. Install the bot in Vercel Connect, then reconnect from Channels."
+        : "Discord bot is not installed for this server. Install the bot in Vercel Connect, then reconnect from Channels.",
+    );
+  }
+
+  if (platform === "slack" && cred.token.startsWith("xoxp")) {
+    throw new Error(
+      "Slack connected with a user token only. Reconnect from Channels after installing the bot to the workspace.",
+    );
+  }
+}
 
 export interface FinalizeVercelConnectInput {
   connector: string;
@@ -41,7 +85,7 @@ export async function finalizeVercelConnect(
   input: FinalizeVercelConnectInput,
 ): Promise<FinalizeVercelConnectResult> {
   const installationId = normalizeConnectInstallationId(input.installationId);
-  const scopes = connectTokenScopesForConnector(input.connector);
+  const scopes = scopesForConnector(input.connector);
 
   const installation = await getConnectInstallation(
     input.connector,
@@ -56,6 +100,17 @@ export async function finalizeVercelConnect(
 
   if (!installation) {
     return { recorded: false, linked: false };
+  }
+
+  if (input.accountId) {
+    await assertInboundBotTokenReady({
+      connector: input.connector,
+      teamspaceId: input.teamspaceId,
+      accountId: input.accountId,
+      installationId: normalizeConnectInstallationId(
+        installation.installationId ?? installationId,
+      ),
+    });
   }
 
   let recorded = false;

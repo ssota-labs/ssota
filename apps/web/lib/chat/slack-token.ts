@@ -157,6 +157,7 @@ async function tryConnectMint(input: {
     accountId: string;
     installationId?: string;
     userId?: string;
+    connectPurpose?: "inbound" | "default";
   };
   step: SlackTokenMintDebugStep["step"];
   steps?: SlackTokenMintDebugStep[];
@@ -258,6 +259,7 @@ async function mintSlackBotToken(input: {
     teamspaceId: input.teamspaceId,
     accountId: input.accountId,
     installationId,
+    connectPurpose: "inbound" as const,
   };
 
   logSlackTokenMint({
@@ -278,31 +280,16 @@ async function mintSlackBotToken(input: {
     step: "app-getToken",
     steps: input.debugSteps,
   });
-  if (appMinted) {
+  if (appMinted && !isSlackUserToken(appMinted.token)) {
     cacheSlackTokenSubject(installationId, appMinted.tokenSubject);
     return appMinted;
-  }
-
-  const subjectUserId = slackScope?.subjectUserId ?? undefined;
-  if (subjectUserId) {
-    const userMinted = await tryConnectMint({
-      provider,
-      connector,
-      tokenScope: { ...tokenScope, userId: subjectUserId },
-      step: "user-getToken",
-      steps: input.debugSteps,
-    });
-    if (userMinted) {
-      cacheSlackTokenSubject(installationId, userMinted.tokenSubject);
-      return userMinted;
-    }
   }
 
   logSlackTokenMint({
     phase: "complete",
     connector,
     installationId: installationId ?? null,
-    outcome: "no-token",
+    outcome: appMinted ? "user-token-rejected" : "no-token",
   });
   return null;
 }
