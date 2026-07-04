@@ -3,10 +3,12 @@ import type {
   NodeScope,
   TeamspaceMainConfig,
   ToolBundle,
+  AgentConnectorBinding,
 } from "@ssota/contracts";
 import {
   DEFAULT_MAIN_TOOL_BUNDLES,
   DEFAULT_MAIN_RUN_POLICY,
+  deriveEnabledConnectorProviders,
 } from "@ssota/contracts";
 import {
   BUILTIN_AGENT_IDS,
@@ -20,7 +22,9 @@ export interface AgentRuntimeDefinition {
   toolBundles: ToolBundle[];
   nodeScopes: NodeScope[];
   allowedTriggers: AgentTrigger[] | null;
-  /** Composio toolkit slugs the agent may use; empty/omitted = no connector tools. */
+  /** Explicit connected-account bindings for connector tools. */
+  connectorBindings?: AgentConnectorBinding[];
+  /** Composio toolkit slugs the agent may use; derived from bindings when set. */
   enabledConnectorProviders?: string[];
 }
 
@@ -29,6 +33,13 @@ export function mainAgentRuntimeDefinition(
   config?: Pick<TeamspaceMainConfig, "toolBundles" | "runPolicy"> | null,
 ): AgentRuntimeDefinition {
   const builtin = getAgentDefinitionById(BUILTIN_AGENT_IDS.main);
+  const mergedRunPolicy = {
+    ...builtin?.runPolicy,
+    ...config?.runPolicy,
+  };
+  const allowedTriggers =
+    mergedRunPolicy.allowedTriggers ??
+    [...DEFAULT_MAIN_RUN_POLICY.allowedTriggers];
   return {
     agentDefinitionId: BUILTIN_AGENT_IDS.main,
     isMain: true,
@@ -37,14 +48,25 @@ export function mainAgentRuntimeDefinition(
         ? config.toolBundles
         : (builtin?.toolBundles ?? [...DEFAULT_MAIN_TOOL_BUNDLES]),
     nodeScopes: builtin?.nodeScopes ?? [],
-    allowedTriggers:
-      config?.runPolicy.allowedTriggers ??
-      builtin?.runPolicy.allowedTriggers ??
-      [...DEFAULT_MAIN_RUN_POLICY.allowedTriggers],
-    enabledConnectorProviders:
-      config?.runPolicy.enabledConnectorProviders ??
-      builtin?.runPolicy.enabledConnectorProviders ??
-      [],
+    allowedTriggers: [...allowedTriggers],
+    ...runtimeConnectorPolicy(mergedRunPolicy),
+  };
+}
+
+function runtimeConnectorPolicy(
+  runPolicy: {
+    connectorBindings?: AgentConnectorBinding[];
+    enabledConnectorProviders?: string[];
+  },
+): Pick<
+  AgentRuntimeDefinition,
+  "connectorBindings" | "enabledConnectorProviders"
+> {
+  const connectorBindings = runPolicy.connectorBindings;
+  const enabledConnectorProviders = deriveEnabledConnectorProviders(runPolicy);
+  return {
+    connectorBindings,
+    enabledConnectorProviders,
   };
 }
 
@@ -60,8 +82,7 @@ export function runtimeDefinitionFromAgent(
     toolBundles: definition.toolBundles,
     nodeScopes: definition.nodeScopes,
     allowedTriggers: definition.runPolicy.allowedTriggers ?? null,
-    enabledConnectorProviders:
-      definition.runPolicy.enabledConnectorProviders ?? [],
+    ...runtimeConnectorPolicy(definition.runPolicy),
   };
 }
 
@@ -76,8 +97,7 @@ export function runtimeDefinitionFromBuiltinId(
     toolBundles: builtin.toolBundles,
     nodeScopes: builtin.nodeScopes,
     allowedTriggers: builtin.runPolicy.allowedTriggers ?? null,
-    enabledConnectorProviders:
-      builtin.runPolicy.enabledConnectorProviders ?? [],
+    ...runtimeConnectorPolicy(builtin.runPolicy),
   };
 }
 

@@ -14,8 +14,10 @@ const baseDraft = (): AgentSettingsDraft => ({
   scriptToolIds: [],
   linkedWorkerAgentIds: [],
   enabledConnectorProviders: [],
+  connectorBindings: [],
   scheduleEnabledById: {},
   connectionTriggers: [],
+  boundSkillIds: [],
 });
 
 describe("agent-settings-save-snapshot", () => {

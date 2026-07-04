@@ -1,47 +1,44 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
+  BuildingsIcon,
   CalendarBlankIcon,
   ClockIcon,
+  LightbulbIcon,
+  MinusIcon,
+  PlusIcon,
+  UserIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type {
   AgentDefinition,
+  AgentConnectorBinding,
   ConnectionTrigger,
+  SkillIndex,
   ToolBundle,
 } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@ssota/ui/components/ui/dialog";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Switch } from "@ssota/ui/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ssota/ui/components/ui/select";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
 import { provisionSlackAgentMentionTriggerAction } from "@/app/actions";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { inboundChannelAuthorizeHref, inboundChannelStatusFor } from "@/lib/connect/inbound-channels";
-import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
+import type { ConnectorConnectScope } from "@/lib/connect/authorize-href";
 import {
-  BASE_TOOL_BUNDLES,
-  OPTIONAL_TOOL_BUNDLES,
-  TOOL_BUNDLE_LABELS,
-  isWorkerAgentId,
-} from "@/lib/console/agent-tool-catalog";
+  addConnectorBinding,
+  connectorBindingKey,
+  connectionDisplayLabel,
+  deriveEnabledProvidersFromBindings,
+  flattenScopedConnections,
+  isConnectorBound,
+  removeConnectorBinding,
+  scopedConnectionsForProvider,
+  type ScopedConnection,
+} from "@/lib/console/agent-connector-bindings";
 import {
   ADDABLE_TRIGGER_GROUPS,
   filterAddableTriggerGroups,
@@ -50,6 +47,7 @@ import {
 import {
   ScheduleSheet,
 } from "@/components/schedules/schedule-sheet";
+import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import {
   AgentSettingsSidebarDialog,
   SidebarDetailDoneButton,
@@ -65,9 +63,11 @@ export type AgentSettingsDraft = {
   model: string;
   scriptToolIds: string[];
   linkedWorkerAgentIds: string[];
+  connectorBindings: AgentConnectorBinding[];
   enabledConnectorProviders: string[];
   scheduleEnabledById: Record<string, boolean>;
   connectionTriggers: ConnectionTrigger[];
+  boundSkillIds: string[];
 };
 
 type AgentSettingsDialogsProps = {
@@ -76,23 +76,30 @@ type AgentSettingsDialogsProps = {
   onDraftChange: (patch: Partial<AgentSettingsDraft>) => void;
   workers: AgentDefinition[];
   scriptTools: Array<{ id: string; key: string; name: string }>;
+  skillCatalog: SkillIndex[];
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
   inboundChannels: InboundChannelStatus[];
   channelsHref: string;
+  connectionsHref: string;
   teamspaceId: string;
   accountId: string;
+  returnTo: string;
+  allowOrgScope: boolean;
   openDialog: AgentSettingsDialogKind | null;
   onOpenDialogChange: (kind: AgentSettingsDialogKind | null) => void;
 };
 
-export type AgentSettingsDialogKind = "add-trigger" | "tools" | "model";
+export type AgentSettingsDialogKind = "add-trigger" | "tools" | "skills";
 
 type ToolEntry =
-  | { kind: "connector"; id: string; provider: string; label: string }
-  | { kind: "script"; id: string; toolId: string; label: string; key: string }
-  | { kind: "worker"; id: string; workerId: string; label: string }
-  | { kind: "bundle"; id: string; bundle: ToolBundle; label: string };
+  | { kind: "connect-provider"; id: string; provider: string; label: string }
+  | { kind: "script"; id: string; toolId: string; label: string; key: string };
+
+const SCOPE_LABEL: Record<ConnectorConnectScope, string> = {
+  user: "Personal",
+  org: "Organization",
+};
 
 function matchesSearch(label: string, query: string, extra?: string) {
   const q = query.trim().toLowerCase();
@@ -103,36 +110,60 @@ function matchesSearch(label: string, query: string, extra?: string) {
   );
 }
 
+function skillSourceLabel(source: SkillIndex["source"]) {
+  if (source === "builtin") return "Platform";
+  if (source === "custom") return "Custom";
+  return source;
+}
+
 export function AgentSettingsDialogs({
   definition,
   draft,
   onDraftChange,
   workers,
   scriptTools,
+  skillCatalog,
   connectors,
   connections,
   inboundChannels,
   channelsHref,
+  connectionsHref,
   teamspaceId,
   accountId,
+  returnTo,
+  allowOrgScope,
   openDialog,
   onOpenDialogChange,
 }: AgentSettingsDialogsProps) {
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
+  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
   const [selectedAddTriggerId, setSelectedAddTriggerId] = useState<
     string | null
   >(null);
   const [toolSearch, setToolSearch] = useState("");
+  const [skillSearch, setSkillSearch] = useState("");
   const [addTriggerSearch, setAddTriggerSearch] = useState("");
   const [isProvisioningSlack, setIsProvisioningSlack] = useState(false);
   const [addTriggerError, setAddTriggerError] = useState<string | null>(null);
+  const connectorByProvider = useMemo(
+    () => new Map(connectors.map((c) => [c.provider, c])),
+    [connectors],
+  );
 
-  const connectedProviders = useMemo(() => {
-    const set = new Set<string>();
-    for (const c of connections.user) set.add(c.connector);
-    for (const c of connections.org) set.add(c.connector);
-    return set;
-  }, [connections]);
+  const scopedConnections = useMemo(
+    () => flattenScopedConnections(connections),
+    [connections],
+  );
+
+  const connectionsByProvider = useMemo(() => {
+    const map = new Map<string, ScopedConnection[]>();
+    for (const c of scopedConnections) {
+      const list = map.get(c.connector) ?? [];
+      list.push(c);
+      map.set(c.connector, list);
+    }
+    return map;
+  }, [scopedConnections]);
 
   const slackInbound = useMemo(
     () => inboundChannelStatusFor(inboundChannels, "slack"),
@@ -170,35 +201,29 @@ export function AgentSettingsDialogs({
   );
 
   const toolEntries = useMemo((): ToolEntry[] => {
-    const entries: ToolEntry[] = [
-      ...connectors.map((connector) => ({
-        kind: "connector" as const,
-        id: `connector:${connector.provider}`,
+    const entries: ToolEntry[] = [];
+
+    for (const connector of connectors) {
+      entries.push({
+        kind: "connect-provider",
+        id: `connect:${connector.provider}`,
         provider: connector.provider,
         label: connector.label,
-      })),
-      ...scriptTools.map((tool) => ({
-        kind: "script" as const,
+      });
+    }
+
+    for (const tool of scriptTools) {
+      entries.push({
+        kind: "script",
         id: `script:${tool.id}`,
         toolId: tool.id,
         label: tool.name,
         key: tool.key,
-      })),
-      ...workers.map((worker) => ({
-        kind: "worker" as const,
-        id: `worker:${worker.id}`,
-        workerId: worker.id,
-        label: worker.name,
-      })),
-      ...OPTIONAL_TOOL_BUNDLES.map((bundle) => ({
-        kind: "bundle" as const,
-        id: `bundle:${bundle}`,
-        bundle,
-        label: TOOL_BUNDLE_LABELS[bundle],
-      })),
-    ];
-    return entries.sort((a, b) => a.label.localeCompare(b.label));
-  }, [connectors, scriptTools, workers]);
+      });
+    }
+
+    return entries;
+  }, [connectors, scriptTools]);
 
   const filteredToolEntries = useMemo(
     () =>
@@ -206,9 +231,24 @@ export function AgentSettingsDialogs({
         if (entry.kind === "script") {
           return matchesSearch(entry.label, toolSearch, entry.key);
         }
-        return matchesSearch(entry.label, toolSearch);
+        if (entry.kind === "connect-provider") {
+          return matchesSearch(entry.label, toolSearch);
+        }
+        return true;
       }),
     [toolEntries, toolSearch],
+  );
+
+  const filteredSkills = useMemo(
+    () =>
+      [...skillCatalog]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .filter(
+          (skill) =>
+            matchesSearch(skill.name, skillSearch, skill.key) ||
+            matchesSearch(skill.description, skillSearch),
+        ),
+    [skillCatalog, skillSearch],
   );
 
   useEffect(() => {
@@ -217,6 +257,13 @@ export function AgentSettingsDialogs({
       setSelectedToolId(toolEntries[0]?.id ?? null);
     }
   }, [openDialog, toolEntries]);
+
+  useEffect(() => {
+    if (openDialog === "skills") {
+      setSkillSearch("");
+      setSelectedSkillId(filteredSkills[0]?.id ?? skillCatalog[0]?.id ?? null);
+    }
+  }, [openDialog, filteredSkills, skillCatalog]);
 
   useEffect(() => {
     if (openDialog === "add-trigger") {
@@ -234,21 +281,47 @@ export function AgentSettingsDialogs({
   }, [filteredToolEntries, openDialog, selectedToolId]);
 
   useEffect(() => {
+    if (openDialog !== "skills" || !selectedSkillId) return;
+    if (!filteredSkills.some((skill) => skill.id === selectedSkillId)) {
+      setSelectedSkillId(filteredSkills[0]?.id ?? null);
+    }
+  }, [filteredSkills, openDialog, selectedSkillId]);
+
+  useEffect(() => {
     if (openDialog !== "add-trigger" || !selectedAddTriggerId) return;
     if (!addTriggerFlatItems.some((item) => item.id === selectedAddTriggerId)) {
       setSelectedAddTriggerId(addTriggerFlatItems[0]?.id ?? null);
     }
   }, [addTriggerFlatItems, openDialog, selectedAddTriggerId]);
 
-  const toggleOptionalBundle = (bundle: ToolBundle, enabled: boolean) => {
-    const optionalSet = new Set(
-      draft.toolBundles.filter((b) => !BASE_TOOL_BUNDLES.includes(b)),
-    );
-    if (enabled) optionalSet.add(bundle);
-    else optionalSet.delete(bundle);
+  const patchConnectorBindings = (bindings: AgentConnectorBinding[]) => {
     onDraftChange({
-      toolBundles: [...BASE_TOOL_BUNDLES, ...optionalSet],
+      connectorBindings: bindings,
+      enabledConnectorProviders: deriveEnabledProvidersFromBindings(bindings),
     });
+  };
+
+  const addBindingForConnection = (connection: ScopedConnection) => {
+    const providerLabel =
+      connectorByProvider.get(connection.connector)?.label ??
+      connection.connector;
+    patchConnectorBindings(
+      addConnectorBinding(
+        draft.connectorBindings,
+        connection,
+        providerLabel,
+      ),
+    );
+  };
+
+  const removeBindingForConnection = (connection: ScopedConnection) => {
+    patchConnectorBindings(
+      removeConnectorBinding(
+        draft.connectorBindings,
+        connection.scope,
+        connection.id,
+      ),
+    );
   };
 
   const toggleScriptTool = (id: string, enabled: boolean) => {
@@ -258,64 +331,99 @@ export function AgentSettingsDialogs({
     onDraftChange({ scriptToolIds: [...next] });
   };
 
-  const toggleConnectorProvider = (provider: string, enabled: boolean) => {
-    const next = new Set(draft.enabledConnectorProviders);
-    if (enabled) next.add(provider);
-    else next.delete(provider);
-    onDraftChange({ enabledConnectorProviders: [...next] });
-  };
-
-  const toggleWorker = (id: string, enabled: boolean) => {
-    const next = new Set(draft.linkedWorkerAgentIds);
-    if (enabled) next.add(id);
-    else next.delete(id);
-    const hasWorkers = next.size > 0;
-    const bundleSet = new Set(draft.toolBundles);
-    if (hasWorkers) bundleSet.add("delegate");
-    onDraftChange({
-      linkedWorkerAgentIds: [...next],
-      toolBundles: [...bundleSet],
-    });
+  const toggleSkillBinding = (skillId: string, enabled: boolean) => {
+    const next = new Set(draft.boundSkillIds);
+    if (enabled) next.add(skillId);
+    else next.delete(skillId);
+    onDraftChange({ boundSkillIds: [...next] });
   };
 
   const isToolEnabled = (entry: ToolEntry) => {
     switch (entry.kind) {
-      case "connector":
-        return draft.enabledConnectorProviders.includes(entry.provider);
+      case "connect-provider":
+        return draft.connectorBindings.some(
+          (binding) => binding.provider === entry.provider,
+        );
       case "script":
         return draft.scriptToolIds.includes(entry.toolId);
-      case "worker":
-        return draft.linkedWorkerAgentIds.includes(entry.workerId);
-      case "bundle":
-        return draft.toolBundles.includes(entry.bundle);
     }
   };
 
-  const toolSidebarItems: SidebarListItem[] = filteredToolEntries.map(
-    (entry) => {
-      const enabled = isToolEnabled(entry);
-      const subtitle = entry.kind === "script" ? entry.key : undefined;
+  const toolEntryToSidebarItem = (entry: ToolEntry): SidebarListItem => {
+    const enabled = isToolEnabled(entry);
+    let subtitle: string | undefined;
+    let icon: ReactNode;
+    let testId: string;
 
-      const icon =
-        entry.kind === "connector" ? (
+    switch (entry.kind) {
+      case "connect-provider": {
+        const count = connectionsByProvider.get(entry.provider)?.length ?? 0;
+        const boundCount = draft.connectorBindings.filter(
+          (binding) => binding.provider === entry.provider,
+        ).length;
+        subtitle =
+          boundCount > 0
+            ? `${boundCount} on agent`
+            : count > 0
+              ? `${count} connection${count === 1 ? "" : "s"}`
+              : undefined;
+        icon = (
           <ConnectorBrandIcon provider={entry.provider} className="size-3.5" />
-        ) : (
-          <WrenchIcon className="size-3.5 text-muted-foreground" />
         );
+        testId = `agent-connect-${entry.provider}`;
+        break;
+      }
+      case "script":
+        subtitle = entry.key;
+        icon = <WrenchIcon className="size-3.5 text-muted-foreground" />;
+        testId = `agent-script-${entry.toolId}`;
+        break;
+    }
 
-      return {
-        id: entry.id,
-        label: entry.label,
-        subtitle,
-        icon,
-        enabled,
-        testId:
-          entry.kind === "connector"
-            ? `agent-connector-${entry.provider}`
-            : undefined,
-      };
-    },
-  );
+    return {
+      id: entry.id,
+      label: entry.label,
+      subtitle,
+      icon,
+      enabled,
+      testId,
+    };
+  };
+
+  const toolSidebarGroups: SidebarListGroup[] = useMemo(() => {
+    const connect = filteredToolEntries.filter(
+      (e) => e.kind === "connect-provider",
+    );
+    const scripts = filteredToolEntries.filter((e) => e.kind === "script");
+    const groups: SidebarListGroup[] = [];
+
+    if (connect.length > 0) {
+      groups.push({
+        id: "connect",
+        label: "Connect",
+        items: connect.map(toolEntryToSidebarItem),
+      });
+    }
+    if (scripts.length > 0) {
+      groups.push({
+        id: "scripts",
+        label: "TypeScript scripts",
+        icon: <WrenchIcon className="size-3" aria-hidden />,
+        items: scripts.map(toolEntryToSidebarItem),
+      });
+    }
+
+    return groups;
+  }, [filteredToolEntries, draft.connectorBindings, draft.scriptToolIds]);
+
+  const skillSidebarItems: SidebarListItem[] = filteredSkills.map((skill) => ({
+    id: skill.id,
+    label: skill.name,
+    subtitle: skill.key,
+    icon: <LightbulbIcon className="size-3.5 text-muted-foreground" />,
+    enabled: draft.boundSkillIds.includes(skill.id),
+    testId: `agent-skill-${skill.key}`,
+  }));
 
   const addTriggerSidebarGroups: SidebarListGroup[] = useMemo(
     () =>
@@ -344,6 +452,8 @@ export function AgentSettingsDialogs({
   );
 
   const selectedTool = toolEntries.find((e) => e.id === selectedToolId) ?? null;
+  const selectedSkill =
+    skillCatalog.find((skill) => skill.id === selectedSkillId) ?? null;
   const selectedAddTrigger = selectedAddTriggerId
     ? findAddableTrigger(selectedAddTriggerId)
     : null;
@@ -401,22 +511,117 @@ export function AgentSettingsDialogs({
 
     const allowed = new Set(draft.allowedTriggers);
     allowed.add("chatbot");
-    if (!draft.enabledConnectorProviders.includes(def.provider)) {
-      onDraftChange({
-        connectionTriggers: [...draft.connectionTriggers, entry],
-        allowedTriggers: [...allowed],
-        enabledConnectorProviders: [
-          ...draft.enabledConnectorProviders,
-          def.provider,
-        ],
-      });
-    } else {
-      onDraftChange({
-        connectionTriggers: [...draft.connectionTriggers, entry],
-        allowedTriggers: [...allowed],
-      });
+
+    const providerConnections =
+      connectionsByProvider.get(def.provider) ?? [];
+    const firstConnection = providerConnections[0];
+    let nextBindings = draft.connectorBindings;
+    if (
+      firstConnection &&
+      !isConnectorBound(
+        draft.connectorBindings,
+        firstConnection.scope,
+        firstConnection.id,
+      )
+    ) {
+      const providerLabel =
+        connectorByProvider.get(def.provider)?.label ?? def.provider;
+      nextBindings = addConnectorBinding(
+        draft.connectorBindings,
+        firstConnection,
+        providerLabel,
+      );
     }
+
+    onDraftChange({
+      connectionTriggers: [...draft.connectionTriggers, entry],
+      allowedTriggers: [...allowed],
+      connectorBindings: nextBindings,
+      enabledConnectorProviders:
+        deriveEnabledProvidersFromBindings(nextBindings),
+    });
     onOpenDialogChange(null);
+  };
+
+  const scopeOptions: ConnectorConnectScope[] = allowOrgScope
+    ? ["user", "org"]
+    : ["user"];
+
+  const renderProviderConnectionRow = (
+    connection: ScopedConnection,
+    providerLabel: string,
+  ) => {
+    const label = connectionDisplayLabel(connection, providerLabel);
+    const bound = isConnectorBound(
+      draft.connectorBindings,
+      connection.scope,
+      connection.id,
+    );
+    return (
+      <AgentSettingCard.Item
+        key={connectorBindingKey(connection.scope, connection.id)}
+        title={label}
+        testId={`agent-provider-connection-${connection.scope}-${connection.id}`}
+        trailing={
+          bound ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              className="shrink-0"
+              aria-label={`Remove ${label} from agent`}
+              data-testid={`agent-connection-remove-${connection.scope}-${connection.id}`}
+              onClick={() => removeBindingForConnection(connection)}
+            >
+              <MinusIcon className="size-4" aria-hidden />
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="icon-sm"
+              className="shrink-0"
+              aria-label={`Add ${label} to agent`}
+              data-testid={`agent-connection-add-${connection.scope}-${connection.id}`}
+              onClick={() => addBindingForConnection(connection)}
+            >
+              <PlusIcon className="size-4" aria-hidden />
+            </Button>
+          )
+        }
+      />
+    );
+  };
+
+  const renderProviderConnectionSection = (
+    scope: ConnectorConnectScope,
+    providerConnections: ScopedConnection[],
+    providerLabel: string,
+  ) => {
+    const ScopeIcon = scope === "user" ? UserIcon : BuildingsIcon;
+    return (
+      <div className="space-y-2" data-testid={`agent-connect-section-${scope}`}>
+        <div className="flex items-center gap-2">
+          <ScopeIcon className="size-4 text-muted-foreground" aria-hidden />
+          <p className="text-sm font-medium">{SCOPE_LABEL[scope]}</p>
+        </div>
+        {providerConnections.length > 0 ? (
+          <AgentSettingCard.Root>
+            <AgentSettingCard.Body>
+              <AgentSettingCard.Items>
+                {providerConnections.map((connection) =>
+                  renderProviderConnectionRow(connection, providerLabel),
+                )}
+              </AgentSettingCard.Items>
+            </AgentSettingCard.Body>
+          </AgentSettingCard.Root>
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            No {SCOPE_LABEL[scope].toLowerCase()} {providerLabel} connections
+            yet.
+          </p>
+        )}
+      </div>
+    );
   };
 
   const renderToolDetail = () => {
@@ -428,10 +633,11 @@ export function AgentSettingsDialogs({
       );
     }
 
-    const enabled = isToolEnabled(selectedTool);
-
-    if (selectedTool.kind === "connector") {
-      const connected = connectedProviders.has(selectedTool.provider);
+    if (selectedTool.kind === "connect-provider") {
+      const providerLabel = selectedTool.label;
+      const { user: userConnections, org: orgConnections } =
+        scopedConnectionsForProvider(connections, selectedTool.provider);
+      const totalConnections = userConnections.length + orgConnections.length;
       return (
         <>
           <SidebarDetailHeader
@@ -441,35 +647,52 @@ export function AgentSettingsDialogs({
                 className="size-5"
               />
             }
-            title={selectedTool.label}
+            title={providerLabel}
             status={
               <span className="text-muted-foreground text-xs">
-                {connected ? "Connected" : "Not connected"}
+                {totalConnections > 0
+                  ? `${totalConnections} connected account${totalConnections === 1 ? "" : "s"}`
+                  : "Not connected"}
               </span>
             }
           />
-          <p className="text-muted-foreground mb-6 text-sm">
-            Allow this agent to use {selectedTool.label} through Composio.
-            Connect an account on the Connections page before running.
+          <p className="text-muted-foreground mb-4 text-sm">
+            Choose a connected account to add to this agent. Connect new
+            accounts on the Connections page.
           </p>
-          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-            <Label htmlFor={`tool-enable-${selectedTool.id}`}>
-              Enable for this agent
-            </Label>
-            <Switch
-              id={`tool-enable-${selectedTool.id}`}
-              checked={enabled}
-              onCheckedChange={(checked) =>
-                toggleConnectorProvider(selectedTool.provider, checked)
-              }
-              data-testid={`agent-connector-${selectedTool.provider}`}
-            />
+          <div className="mb-6 space-y-4">
+            {renderProviderConnectionSection(
+              "user",
+              userConnections,
+              providerLabel,
+            )}
+            {scopeOptions.includes("org")
+              ? renderProviderConnectionSection(
+                  "org",
+                  orgConnections,
+                  providerLabel,
+                )
+              : null}
           </div>
+          <Button
+            size="sm"
+            variant="outline"
+            nativeButton={false}
+            render={
+              <a
+                href={connectionsHref}
+                data-testid={`agent-connect-manage-${selectedTool.provider}`}
+              />
+            }
+          >
+            Open Connections
+          </Button>
         </>
       );
     }
 
     if (selectedTool.kind === "script") {
+      const enabled = draft.scriptToolIds.includes(selectedTool.toolId);
       return (
         <>
           <SidebarDetailHeader
@@ -500,53 +723,51 @@ export function AgentSettingsDialogs({
       );
     }
 
-    if (selectedTool.kind === "worker") {
-      const worker = workers.find((w) => w.id === selectedTool.workerId);
+    return null;
+  };
+
+  const renderSkillDetail = () => {
+    if (!selectedSkill) {
       return (
-        <>
-          <SidebarDetailHeader
-            title={selectedTool.label}
-            status={
-              <span className="text-muted-foreground text-xs">Worker agent</span>
-            }
-          />
-          <p className="text-muted-foreground mb-6 text-sm">
-            {worker?.description ??
-              "Link this worker as a delegate target for batch runs."}
-          </p>
-          <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-            <Label htmlFor={`tool-enable-${selectedTool.id}`}>
-              Link worker
-            </Label>
-            <Switch
-              id={`tool-enable-${selectedTool.id}`}
-              checked={enabled}
-              onCheckedChange={(checked) =>
-                toggleWorker(selectedTool.workerId, checked)
-              }
-              disabled={!isWorkerAgentId(selectedTool.workerId)}
-            />
-          </div>
-        </>
+        <p className="text-muted-foreground text-sm">
+          Select a skill from the list to bind it to this agent.
+        </p>
       );
     }
 
+    const enabled = draft.boundSkillIds.includes(selectedSkill.id);
+
     return (
       <>
-        <SidebarDetailHeader title={selectedTool.label} />
+        <SidebarDetailHeader
+          icon={<LightbulbIcon className="size-5 text-muted-foreground" />}
+          title={selectedSkill.name}
+          status={
+            <span className="text-muted-foreground font-mono text-xs">
+              {selectedSkill.key}
+            </span>
+          }
+        />
         <p className="text-muted-foreground mb-6 text-sm">
-          Optional capability for this agent beyond the default tool set.
+          {selectedSkill.description.trim() ||
+            "Skill descriptions appear in the agent manifest. Full bodies load via read_skill at runtime."}
         </p>
         <div className="flex items-center justify-between gap-3 rounded-lg border px-4 py-3">
-          <Label htmlFor={`tool-enable-${selectedTool.id}`}>Enable</Label>
+          <Label htmlFor={`skill-enable-${selectedSkill.id}`}>
+            Bind to this agent
+          </Label>
           <Switch
-            id={`tool-enable-${selectedTool.id}`}
+            id={`skill-enable-${selectedSkill.id}`}
             checked={enabled}
             onCheckedChange={(checked) =>
-              toggleOptionalBundle(selectedTool.bundle, checked)
+              toggleSkillBinding(selectedSkill.id, checked)
             }
+            data-testid={`agent-skill-bind-${selectedSkill.key}`}
           />
         </div>
+        <p className="text-muted-foreground mt-3 text-xs">
+          Source: {skillSourceLabel(selectedSkill.source)}
+        </p>
       </>
     );
   };
@@ -728,18 +949,36 @@ export function AgentSettingsDialogs({
         onOpenChange={(open) => !open && onOpenDialogChange(null)}
         title="Tools and access"
         testId="agent-tools-sidebar-dialog"
-        items={toolSidebarItems}
+        groups={toolSidebarGroups}
         selectedId={selectedToolId}
         onSelect={setSelectedToolId}
         searchQuery={toolSearch}
         onSearchQueryChange={setToolSearch}
         searchPlaceholder="Search tools…"
+        detail={renderToolDetail()}
+        footer={
+          <SidebarDetailDoneButton onClick={() => onOpenDialogChange(null)} />
+        }
+      />
+
+      <AgentSettingsSidebarDialog
+        open={openDialog === "skills"}
+        onOpenChange={(open) => !open && onOpenDialogChange(null)}
+        title="Skills"
+        testId="agent-skills-sidebar-dialog"
+        items={skillSidebarItems}
+        selectedId={selectedSkillId}
+        onSelect={setSelectedSkillId}
+        searchQuery={skillSearch}
+        onSearchQueryChange={setSkillSearch}
+        searchPlaceholder="Search skills…"
         detail={
           <>
             <p className="text-muted-foreground mb-4 text-xs">
-              Graph and task tools are always available in the background.
+              Bound skill descriptions appear in the agent manifest. Full bodies
+              load via read_skill at runtime.
             </p>
-            {renderToolDetail()}
+            {renderSkillDetail()}
           </>
         }
         footer={
@@ -747,48 +986,6 @@ export function AgentSettingsDialogs({
         }
       />
 
-      <Dialog
-        open={openDialog === "model"}
-        onOpenChange={(open) => !open && onOpenDialogChange(null)}
-      >
-        <DialogContent className="max-w-xl" forceBackdrop>
-          <DialogHeader>
-            <DialogTitle>Model</DialogTitle>
-            <DialogDescription>
-              Default model for this agent when not overridden per run.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-2">
-            <Label htmlFor="agent-model-select">Model</Label>
-            <Select
-              value={draft.model || DEFAULT_MODEL_ID}
-              onValueChange={(value) =>
-                value && onDraftChange({ model: value })
-              }
-              items={MODEL_OPTIONS.map((m) => ({
-                value: m.id,
-                label: `${m.label} (${m.provider})`,
-              }))}
-            >
-              <SelectTrigger id="agent-model-select" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {MODEL_OPTIONS.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    {model.label} — {model.provider}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <DialogFooter>
-            <Button type="button" onClick={() => onOpenDialogChange(null)}>
-              Done
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

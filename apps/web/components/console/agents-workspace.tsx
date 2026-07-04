@@ -15,7 +15,9 @@ type AgentsWorkspaceProps = {
   definitions: AgentDefinition[];
   settingsContext: AgentSettingsContext;
   scriptToolLinks: Record<string, string[]>;
+  skillLinks: Record<string, string[]>;
   skillsHref: string;
+  connectionsHref: string;
 };
 
 export function AgentsWorkspace({
@@ -24,7 +26,9 @@ export function AgentsWorkspace({
   definitions: initialDefinitions,
   settingsContext,
   scriptToolLinks,
+  skillLinks,
   skillsHref,
+  connectionsHref,
 }: AgentsWorkspaceProps) {
   const [definitions, setDefinitions] = useState(initialDefinitions);
   const [mainAgent, setMainAgent] = useState(mainAgentDefinition);
@@ -153,12 +157,15 @@ export function AgentsWorkspace({
           teamspaceId={teamspaceId}
           accountId={settingsContext.accountId}
           scriptToolIds={scriptToolLinks[activeDefinition.id] ?? []}
+          boundSkillIds={skillLinks[activeDefinition.id] ?? []}
+          skillCatalog={settingsContext.skillCatalog}
           scriptTools={settingsContext.scriptTools}
           workers={workers}
           connectors={settingsContext.connectors}
           connections={settingsContext.connections}
           inboundChannels={settingsContext.inboundChannels}
           channelsHref={settingsContext.channelsHref}
+          connectionsHref={connectionsHref}
           schedules={settingsContext.schedules}
           onClose={close}
           registerRequestClose={registerRequestClose}

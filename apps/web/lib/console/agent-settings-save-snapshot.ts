@@ -1,4 +1,5 @@
-import type { AgentTrigger, ToolBundle } from "@ssota/contracts";
+import type { AgentTrigger, ToolBundle, AgentConnectorBinding } from "@ssota/contracts";
+import { deriveEnabledConnectorProviders } from "@ssota/contracts";
 import type { AgentSettingsDraft } from "@/components/console/agent-settings-dialogs";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { mergeToolBundles } from "@/lib/console/agent-tool-catalog";
@@ -10,9 +11,11 @@ export type AgentSettingsSaveSnapshot = {
   model: string;
   scriptToolIds: string[];
   linkedWorkerAgentIds: string[];
+  connectorBindingsJson: string;
   enabledConnectorProviders: string[];
   connectionTriggersJson: string;
   scheduleEnabledJson: string;
+  boundSkillIds: string[];
 };
 
 function sortStrings(values: string[]): string[] {
@@ -82,12 +85,34 @@ function stableScheduleEnabledJson(
   return JSON.stringify(Object.fromEntries(sortedEntries));
 }
 
+function stableConnectorBindingsJson(
+  bindings: AgentConnectorBinding[],
+): string {
+  const sorted = [...bindings].sort((a, b) => {
+    const keyA = `${a.scope}:${a.connectionId}`;
+    const keyB = `${b.scope}:${b.connectionId}`;
+    return keyA.localeCompare(keyB);
+  });
+  return JSON.stringify(sorted);
+}
+
+export function resolveConnectorBindingsForSave(
+  draft: AgentSettingsDraft,
+): AgentConnectorBinding[] {
+  return [...draft.connectorBindings].sort((a, b) => {
+    const keyA = `${a.scope}:${a.connectionId}`;
+    const keyB = `${b.scope}:${b.connectionId}`;
+    return keyA.localeCompare(keyB);
+  });
+}
+
 /** Serializable snapshot of what Save would persist. */
 export function buildAgentSettingsSaveSnapshot(
   draft: AgentSettingsDraft,
   agentSchedules: AgentScheduleSummary[],
 ): AgentSettingsSaveSnapshot {
   const scheduleEnabled = resolveScheduleEnabled(draft, agentSchedules);
+  const connectorBindings = resolveConnectorBindingsForSave(draft);
   return {
     instructionsJson: JSON.stringify(draft.instructions),
     toolBundles: resolveToolBundlesForSave(draft),
@@ -95,11 +120,15 @@ export function buildAgentSettingsSaveSnapshot(
     model: draft.model,
     scriptToolIds: sortStrings(draft.scriptToolIds),
     linkedWorkerAgentIds: sortStrings(draft.linkedWorkerAgentIds),
-    enabledConnectorProviders: sortStrings(draft.enabledConnectorProviders),
+    connectorBindingsJson: stableConnectorBindingsJson(connectorBindings),
+    enabledConnectorProviders: deriveEnabledConnectorProviders({
+      connectorBindings,
+    }),
     connectionTriggersJson: stableConnectionTriggersJson(
       draft.connectionTriggers,
     ),
     scheduleEnabledJson: stableScheduleEnabledJson(scheduleEnabled),
+    boundSkillIds: sortStrings(draft.boundSkillIds),
   };
 }
 
@@ -116,10 +145,12 @@ export function agentSettingsSnapshotsEqual(
     JSON.stringify(left.scriptToolIds) === JSON.stringify(right.scriptToolIds) &&
     JSON.stringify(left.linkedWorkerAgentIds) ===
       JSON.stringify(right.linkedWorkerAgentIds) &&
+    left.connectorBindingsJson === right.connectorBindingsJson &&
     JSON.stringify(left.enabledConnectorProviders) ===
       JSON.stringify(right.enabledConnectorProviders) &&
     left.connectionTriggersJson === right.connectionTriggersJson &&
-    left.scheduleEnabledJson === right.scheduleEnabledJson
+    left.scheduleEnabledJson === right.scheduleEnabledJson &&
+    JSON.stringify(left.boundSkillIds) === JSON.stringify(right.boundSkillIds)
   );
 }
 

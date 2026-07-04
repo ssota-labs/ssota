@@ -45,7 +45,8 @@ test.describe("Agents", () => {
     ).toBeVisible();
     await expect(page.getByTestId("agent-instructions-editor")).toBeVisible();
     await expect(page.getByTestId("agent-settings-tools-card")).toBeVisible();
-    await expect(page.getByTestId("agent-settings-model-card")).toBeVisible();
+    await expect(page.getByTestId("agent-settings-skills-card")).toBeVisible();
+    await expect(page.getByTestId("agent-settings-advanced-card")).toBeVisible();
   });
 
   test("triggers card shows default chat/task and add trigger button", async ({ page }) => {
@@ -143,9 +144,61 @@ test.describe("Agents", () => {
 
     const toolsDialog = page.getByTestId("agent-tools-sidebar-dialog");
     await expect(toolsDialog).toBeVisible();
-    await expect(toolsDialog.getByTestId("agent-connector-notion")).toBeVisible();
-    await expect(toolsDialog.getByText("Composio connectors")).not.toBeVisible();
-    await expect(toolsDialog.getByText("TypeScript scripts")).not.toBeVisible();
+    await expect(toolsDialog.getByText("Connect", { exact: true })).toBeVisible();
+    await expect(toolsDialog.getByText("On this agent")).not.toBeVisible();
+    await expect(toolsDialog.getByTestId("agent-connect-notion")).toBeVisible();
+    await expect(toolsDialog.getByText("Pages")).not.toBeVisible();
+
+    await toolsDialog.getByTestId("agent-connect-notion").click();
+    await expect(toolsDialog.getByTestId("agent-connect-section-user")).toBeVisible();
+    await expect(
+      toolsDialog.getByTestId("agent-connection-remove-user-seed-notion-user-1"),
+    ).toBeVisible();
+    await expect(
+      toolsDialog.getByTestId("agent-connection-add-user-seed-notion-user-2"),
+    ).toBeVisible();
+    await expect(
+      toolsDialog.getByTestId("agent-connect-manage-notion"),
+    ).toBeVisible();
+    await expect(
+      toolsDialog.getByTestId("agent-connect-scope-notion-user"),
+    ).toHaveCount(0);
+  });
+
+  test("opens skills dialog with sidebar list", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
+    await page.getByTestId("agent-skills-manage").click();
+
+    const skillsDialog = page.getByTestId("agent-skills-sidebar-dialog");
+    await expect(skillsDialog).toBeVisible();
+    await expect(
+      skillsDialog.getByRole("button", { name: "Done" }),
+    ).toBeVisible();
+    await expect(
+      page.getByTestId("agent-settings-skills-card").getByText("Save bindings"),
+    ).not.toBeVisible();
+  });
+
+  test("opens model picker popover in Advanced card", async ({ page }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
+
+    const advancedCard = page.getByTestId("agent-settings-advanced-card");
+    await expect(advancedCard.getByText("Advanced", { exact: true })).toBeVisible();
+    await expect(advancedCard.getByTestId("agent-advanced-model-row")).toBeVisible();
+
+    await advancedCard.getByTestId("agent-model-picker").click();
+    const picker = page.getByTestId("agent-model-picker-content");
+    await expect(picker).toBeVisible();
+    await expect(
+      picker.getByTestId("agent-model-option-anthropic--claude-sonnet-4.6"),
+    ).toBeVisible();
+    await expect(page.getByTestId("agent-model-change")).toHaveCount(0);
   });
 
   test("settings cards show configured items in footer", async ({ page }) => {
@@ -156,9 +209,14 @@ test.describe("Agents", () => {
 
     const toolsCard = page.getByTestId("agent-settings-tools-card");
     await expect(
-      toolsCard.getByText("No connectors or scripts selected yet"),
+      toolsCard.getByTestId("agent-bound-connection-user-seed-notion-user-1"),
     ).toBeVisible();
-    await expect(toolsCard.getByText("Base capabilities")).not.toBeVisible();
+    await expect(
+      toolsCard.getByText("Alex — Personal Workspace"),
+    ).toBeVisible();
+    await expect(
+      toolsCard.getByText("No connectors or scripts selected yet"),
+    ).not.toBeVisible();
 
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
     await expect(
@@ -166,8 +224,9 @@ test.describe("Agents", () => {
     ).toBeVisible();
     await expect(triggersCard.getByTestId("agent-trigger-chat")).toBeVisible();
 
-    const modelCard = page.getByTestId("agent-settings-model-card");
-    await expect(modelCard.getByText(/Auto|Claude|GPT/i)).toBeVisible();
+    const advancedCard = page.getByTestId("agent-settings-advanced-card");
+    await expect(advancedCard.getByTestId("agent-model-picker")).toBeVisible();
+    await expect(advancedCard.getByText(/Claude|GPT|Gemini/i)).toBeVisible();
   });
 
   test("shows unsaved state when task trigger is toggled", async ({ page }) => {
