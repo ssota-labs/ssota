@@ -201,7 +201,7 @@ function SortableHeader<TData>({
     <TableHead
       ref={setNodeRef}
       colSpan={header.colSpan}
-      className={cn("relative bg-muted whitespace-nowrap")}
+      className={cn("relative border-r border-border bg-muted whitespace-nowrap")}
       style={{
         width: header.getSize(),
         transform: CSS.Transform.toString(transform),
@@ -697,7 +697,7 @@ export function AdvancedDataTable<TData>({
           <TableCell
             key={cell.id}
             className={cn(
-              "relative py-1 whitespace-nowrap",
+              "relative border-r border-border py-1 whitespace-nowrap",
               isSelected || isFocused ? "bg-primary/15" : "bg-background",
               align === "right" && "text-right",
               align === "center" && "text-center",
