@@ -19,15 +19,22 @@ import { cn } from "@ssota/ui/lib/utils";
 /** Docked sheet width as % of CardListSheet.Root (main content column). */
 const DOCKED_SHEET_MIN_WIDTH_PX = 24 * 16;
 const DOCKED_SHEET_MAX_WIDTH_PX = 640;
+/** Inset from container or viewport edges (top/right/bottom). */
+const DOCKED_SHEET_INSET_PX = 16;
+const DOCKED_SHEET_INSET_CLASS = "top-4 right-4 bottom-4";
 /** 60% of the positioning parent — scales with ConsolePageFrame column width. */
 const dockedSheetWidthClass = "w-[60%] min-w-[24rem] max-w-[640px]";
 
-function readDockedSheetMaxWidth(panel: HTMLElement): number {
-  const parent = panel.offsetParent;
-  const parentCap =
-    parent instanceof HTMLElement
-      ? parent.clientWidth - 8
-      : window.innerWidth * 0.95;
+function readDockedSheetMaxWidth(
+  panel: HTMLElement,
+  options?: { viewport?: boolean },
+): number {
+  const inset = DOCKED_SHEET_INSET_PX * 2;
+  const parentCap = options?.viewport
+    ? window.innerWidth - inset
+    : panel.offsetParent instanceof HTMLElement
+      ? panel.offsetParent.clientWidth - inset
+      : window.innerWidth * 0.95 - inset;
   return Math.min(DOCKED_SHEET_MAX_WIDTH_PX, parentCap);
 }
 
@@ -224,7 +231,10 @@ function useCardListSheetSheet() {
 
 type SheetRootProps = {
   open?: boolean;
+  /** Stretch to parent height with inset gaps (content-column docked). */
   fullHeight?: boolean;
+  /** Pin to the browser viewport with inset gaps (full-height floating panel). */
+  viewport?: boolean;
   onClose: () => void;
   children: ReactNode;
   testId?: string;
@@ -236,6 +246,7 @@ type SheetRootProps = {
 function SheetRoot({
   open = true,
   fullHeight = false,
+  viewport = false,
   onClose,
   children,
   testId = "card-list-sheet-panel",
@@ -258,7 +269,7 @@ function SheetRoot({
 
     const startWidth = panel.getBoundingClientRect().width;
     const minWidth = DOCKED_SHEET_MIN_WIDTH_PX;
-    const maxWidth = readDockedSheetMaxWidth(panel);
+    const maxWidth = readDockedSheetMaxWidth(panel, { viewport });
 
     const onMove = (moveEvent: MouseEvent | globalThis.PointerEvent) => {
       const delta = startX - moveEvent.clientX;
@@ -304,11 +315,19 @@ function SheetRoot({
         data-testid={testId}
         style={widthPx === null ? undefined : { width: widthPx }}
         className={cn(
-          "flex flex-col overflow-hidden border-[1.5px] border-border",
-          "absolute z-20",
-          fullHeight
-            ? "inset-y-0 right-0 h-full rounded-l-xl border-y-0 border-r-0"
-            : "inset-y-2 right-2 rounded-xl",
+          "flex flex-col overflow-hidden rounded-xl border-[1.5px] border-border",
+          viewport
+            ? cn(
+                "fixed z-50",
+                DOCKED_SHEET_INSET_CLASS,
+                "max-h-[calc(100dvh-2rem)]",
+              )
+            : cn(
+                "absolute z-20",
+                fullHeight
+                  ? cn(DOCKED_SHEET_INSET_CLASS, "h-[calc(100%-2rem)]")
+                  : "inset-y-2 right-2 max-h-[calc(100%-1rem)]",
+              ),
           widthPx === null ? dockedSheetWidthClass : "min-w-0 max-w-[640px]",
           "bg-background/50 shadow-lg shadow-black/5",
           "supports-backdrop-filter:backdrop-blur-xl supports-backdrop-filter:backdrop-saturate-150",
@@ -458,6 +477,7 @@ export type CardListSheetPanelProps = {
   headerPrefix?: ReactNode;
   headerAction?: ReactNode;
   fullHeight?: boolean;
+  viewport?: boolean;
   open?: boolean;
   onClose: () => void;
   footer?: ReactNode;
@@ -475,6 +495,7 @@ export function CardListSheetPanel({
   headerPrefix,
   headerAction,
   fullHeight,
+  viewport,
   open = true,
   onClose,
   footer,
@@ -488,6 +509,7 @@ export function CardListSheetPanel({
     <SheetRoot
       open={open}
       fullHeight={fullHeight}
+      viewport={viewport}
       onClose={onClose}
       testId={testId}
       titleId={titleId}

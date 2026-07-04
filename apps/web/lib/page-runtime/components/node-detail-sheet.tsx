@@ -72,7 +72,7 @@ export function NodeDetailSheetEl({
       {node ? (
         <CardListSheet.Sheet.Root
           onClose={close}
-          fullHeight
+          viewport
           testId="node-detail-sheet-panel"
           titleId="node-detail-sheet-title"
           closeButtonTestId="node-detail-sheet-close"
