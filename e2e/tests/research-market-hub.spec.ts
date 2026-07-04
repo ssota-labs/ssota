@@ -67,10 +67,13 @@ test.describe("Research market hub", () => {
     page,
   }) => {
     await page.getByRole("tab", { name: "Sources" }).click();
+    await expect(page.getByTestId("resizable-panels")).toHaveCount(0);
     await page
       .getByRole("button", { name: "Dev workflow tools landscape (YouTube)" })
       .click();
+    await expect(page.getByTestId("node-detail-sheet-root")).toBeVisible();
     await expect(page.getByTestId("node-detail-sheet-panel")).toBeVisible();
+    await expect(page.getByTestId("resizable-panels")).toHaveCount(0);
     await expect(page.getByTestId("media-embed-youtube")).toBeVisible();
     await expect(page.getByTestId("blocknote-editor-shell")).toBeVisible({
       timeout: 15_000,

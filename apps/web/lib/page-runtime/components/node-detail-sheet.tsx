@@ -35,6 +35,7 @@ export function NodeDetailSheetEl({
   const router = useRouter();
   const searchParams = useSearchParams();
   const node = boundNode(bindingData, { binding });
+  const activeId = node?.id ?? null;
   const childNodes = React.Children.toArray(children);
   const main = childNodes[0];
   const sheetBody = childNodes.slice(1);
@@ -59,7 +60,13 @@ export function NodeDetailSheetEl({
   const platform = node ? readNodeField(node, platformField) : undefined;
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
+    <CardListSheet.Root
+      activeId={activeId}
+      onActiveIdChange={(id) => {
+        if (!id) close();
+      }}
+      testId="node-detail-sheet-root"
+    >
       <div className="flex min-h-0 flex-1 flex-col">{main}</div>
       {node ? (
         <CardListSheet.Sheet.Root
@@ -91,7 +98,7 @@ export function NodeDetailSheetEl({
           </CardListSheet.Sheet.Body>
         </CardListSheet.Sheet.Root>
       ) : null}
-    </div>
+    </CardListSheet.Root>
   );
 }
 
