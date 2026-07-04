@@ -289,7 +289,8 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       binding: binding("A multi-node binding (e.g. a `query`)."),
       columns: {
         type: "{ key, header, type?, editable?, width?, options?, colors? }[]",
-        description: "Column schema; `type` = text|select|number|checkbox|date|badge.",
+        description:
+          "Column schema; `type` = text|select|number|checkbox|date|badge. `badge` with `options` is chip display + select editor on double-click.",
         required: true,
       },
       title: { type: "string", description: "Optional table title." },

@@ -181,14 +181,16 @@ function DataTableEl({
       const type = col.type ?? "text";
       const editable = col.editable !== false && !!setAction;
       const isFaceted = type === "select" || type === "badge";
-      // Text/number/date/select are double-click-editable via the absolute
-      // overlay editor (text/number/date → input; select → popover of chips).
+      const badgeSelect =
+        type === "badge" && (col.options?.length ?? 0) > 0;
+      // Text/number/date/select (+ badge w/ options) are double-click-editable.
       const overlayEditable =
         editable &&
         (type === "text" ||
           type === "number" ||
           type === "date" ||
-          type === "select");
+          type === "select" ||
+          badgeSelect);
       return {
         id: col.key,
         accessorFn: (row) => readCell(row, col.key),
@@ -199,15 +201,17 @@ function DataTableEl({
           align: type === "number" ? "right" : undefined,
           editable: overlayEditable,
           editType:
-            type === "select"
+            type === "select" || badgeSelect
               ? "select"
               : type === "number"
                 ? "number"
                 : type === "date"
                   ? "date"
                   : "text",
-          editOptions: type === "select" ? col.options : undefined,
-          editColors: type === "select" ? col.colors : undefined,
+          editOptions:
+            type === "select" || badgeSelect ? col.options : undefined,
+          editColors:
+            type === "select" || badgeSelect ? col.colors : undefined,
         },
         filterFn: isFaceted
           ? (row, columnId, filterValue: string[]) =>
@@ -230,8 +234,7 @@ function DataTableEl({
             );
           }
           if (isFaceted) {
-            // Read-only chip; select columns are edited via the double-click
-            // overlay popover (badge columns are display-only).
+            // Badge/select chips; badge+options opens select editor on double-click.
             return (
               <Chip
                 value={raw == null ? "" : String(raw)}
