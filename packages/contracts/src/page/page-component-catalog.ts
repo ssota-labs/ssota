@@ -679,6 +679,37 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       },
     },
   },
+  NodeDetailSheet: {
+    key: "NodeDetailSheet",
+    category: "document",
+    description:
+      "CardListSheet detail for a url_selection binding: first child is main content (e.g. DataTable); remaining children render in the docked sheet when the selection param is set.",
+    children: true,
+    props: {
+      binding: binding("A url_selection binding (selected node)."),
+      selectionParam: {
+        type: "string",
+        description: "URL query param cleared when the sheet closes.",
+        required: true,
+      },
+      subtitleField: {
+        type: "string",
+        description: 'Sheet subtitle property (default "summary").',
+      },
+      platformField: {
+        type: "string",
+        description: 'Header badge property for research sources (default "platform").',
+      },
+    },
+    example: {
+      type: "NodeDetailSheet",
+      props: {
+        binding: "selectedSource",
+        selectionParam: "source",
+      },
+      children: ["sourcesTable", "sourceSheetBody"],
+    },
+  },
   Spreadsheet: {
     key: "Spreadsheet",
     category: "data",

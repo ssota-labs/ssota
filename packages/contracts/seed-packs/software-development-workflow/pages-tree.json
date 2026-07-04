@@ -406,9 +406,14 @@
           }
         },
         "sourcesPanel": {
-          "type": "Resizable",
-          "props": { "defaultSizes": [40, 60], "minSizes": [25, 25] },
-          "children": ["sourcesTable", "sourceDetailCol"]
+          "type": "NodeDetailSheet",
+          "props": {
+            "binding": "selectedSource",
+            "selectionParam": "source",
+            "subtitleField": "summary",
+            "platformField": "platform"
+          },
+          "children": ["sourcesTable", "sourceSheetBody"]
         },
         "sourcesTable": {
           "type": "DataTable",
@@ -432,8 +437,9 @@
             ]
           }
         },
-        "sourceDetailCol": {
-          "type": "Section",
+        "sourceSheetBody": {
+          "type": "Stack",
+          "props": { "gap": "md", "padding": "none" },
           "children": ["sourceEmbed", "sourceEditor"]
         },
         "sourceEmbed": {

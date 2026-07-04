@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useAction } from "../context";
 import { boundNode, boundNodes } from "../bindings";
 import { DocumentCardListSheetEl } from "./document-card-list-sheet";
+import { NodeDetailSheetEl } from "./node-detail-sheet";
 import type { CatalogComponent } from "../types";
 
 // BlockNote is browser-only; load lazily (no SSR).
@@ -97,5 +98,21 @@ export const documentComponents: Record<string, CatalogComponent> = {
       filters={props.filters}
       />
     </div>
+  ),
+  NodeDetailSheet: ({ props, children, bindingData }) => (
+    <NodeDetailSheetEl
+      bindingData={bindingData}
+      binding={typeof props.binding === "string" ? props.binding : ""}
+      selectionParam={
+        typeof props.selectionParam === "string" ? props.selectionParam : ""
+      }
+      subtitleField={
+        typeof props.subtitleField === "string" ? props.subtitleField : undefined
+      }
+      platformField={
+        typeof props.platformField === "string" ? props.platformField : undefined
+      }
+      children={children}
+    />
   ),
 };
