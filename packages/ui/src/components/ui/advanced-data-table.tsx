@@ -731,10 +731,11 @@ export function AdvancedDataTable<TData>({
           </TableCell>
         )
       })}
+      <TableCell aria-hidden className="p-0" />
     </TableRow>
       {renderExpanded && row.getIsExpanded() ? (
         <TableRow data-expanded-for={row.id} className="hover:bg-transparent">
-          <TableCell colSpan={leafCols.length} className="bg-muted/30 p-0">
+          <TableCell colSpan={leafCols.length + 1} className="bg-muted/30 p-0">
             {renderExpanded(row)}
           </TableCell>
         </TableRow>
@@ -806,11 +807,11 @@ export function AdvancedDataTable<TData>({
             <table
               data-slot="table"
               className="cn-table"
-              style={{ width: table.getTotalSize() }}
+              style={{ width: "100%", minWidth: table.getTotalSize() }}
             >
               <TableHeader className="sticky top-0 z-20 bg-muted">
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
+                  <TableRow key={headerGroup.id} className="bg-muted hover:bg-muted">
                     <SortableContext
                       items={headerGroup.headers.map((h) => h.column.id)}
                       strategy={horizontalListSortingStrategy}
@@ -825,6 +826,10 @@ export function AdvancedDataTable<TData>({
                         />
                       ))}
                     </SortableContext>
+                    <TableHead
+                      aria-hidden
+                      className="bg-muted w-full p-0"
+                    />
                   </TableRow>
                 ))}
               </TableHeader>
@@ -832,7 +837,7 @@ export function AdvancedDataTable<TData>({
                 {rows.length === 0 ? (
                   <TableRow>
                     <TableCell
-                      colSpan={leafCols.length}
+                      colSpan={leafCols.length + 1}
                       className="h-20 text-center text-muted-foreground"
                     >
                       No rows
