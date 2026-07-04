@@ -20,32 +20,31 @@ type DataTableViewOptionsProps<TData> = {
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
+  const hideable = table
+    .getAllLeafColumns()
+    .filter((column) => column.getCanHide())
+  if (hideable.length === 0) return null
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="outline" size="sm" className="hidden h-8 lg:flex" />
+          <Button variant="outline" size="sm" className="h-8" />
         }
       >
         <SlidersHorizontalIcon className="size-3.5" />
         Columns
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[10rem]">
+      <DropdownMenuContent align="end" className="max-h-72 w-44 overflow-y-auto">
         <DropdownMenuGroup>
           <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-          {table
-            .getAllColumns()
-            .filter(
-              (column) => typeof column.accessorFn !== "undefined" && column.getCanHide(),
-            )
-            .map((column) => (
+          {hideable.map((column) => (
               <DropdownMenuCheckboxItem
                 key={column.id}
-                className="capitalize"
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id}
+                {String(column.columnDef.meta?.label ?? column.id)}
               </DropdownMenuCheckboxItem>
             ))}
         </DropdownMenuGroup>

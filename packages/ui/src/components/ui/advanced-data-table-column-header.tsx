@@ -9,7 +9,6 @@ import {
   DotsSixVerticalIcon,
   EyeSlashIcon,
   PushPinIcon,
-  TableIcon,
   ArrowLineLeftIcon,
   ArrowLineRightIcon,
 } from "@phosphor-icons/react"
@@ -17,15 +16,9 @@ import {
 import { cn } from "@/lib/utils"
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -168,31 +161,6 @@ export function AdvancedDataTableColumnHeader<TData, TValue>({
               <DropdownMenuSeparator />
             </>
           ) : null}
-
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <TableIcon className="size-3.5" />
-              Columns
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-72 w-44 overflow-y-auto">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-                {table
-                  .getAllLeafColumns()
-                  .filter((c) => c.getCanHide())
-                  .map((c) => (
-                    <DropdownMenuCheckboxItem
-                      key={c.id}
-                      className="capitalize"
-                      checked={c.getIsVisible()}
-                      onCheckedChange={(value) => c.toggleVisibility(!!value)}
-                    >
-                      {String(c.columnDef.meta?.label ?? c.id)}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-              </DropdownMenuGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
 
           {canHide ? (
             <DropdownMenuItem onClick={() => column.toggleVisibility(false)}>

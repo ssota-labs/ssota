@@ -72,6 +72,7 @@ import {
   type SortableColumn,
 } from "@/components/ui/advanced-data-table-sort"
 import { DataTableFacetedFilter } from "@/components/ui/data-table-faceted-filter"
+import { DataTableViewOptions } from "@/components/ui/data-table-view-options"
 
 // Column metadata the table reads for labels / alignment. Domain props (type,
 // options, colors, editable) are closed over by the consumer's cell renderers,
@@ -122,6 +123,8 @@ type AdvancedDataTableProps<TData> = {
   enablePinning?: boolean
   enableMultiSort?: boolean
   enableGlobalFilter?: boolean
+  /** Show a toolbar Columns visibility menu (default true). */
+  enableColumnVisibility?: boolean
   /** Spreadsheet cell selection + keyboard nav + Cmd/Ctrl+C CSV copy. */
   enableCellSelection?: boolean
   /** Single-cell click focus ring only (no multi-select, no keyboard nav, no CSV). */
@@ -466,6 +469,7 @@ export function AdvancedDataTable<TData>({
   enablePinning = true,
   enableMultiSort = true,
   enableGlobalFilter = true,
+  enableColumnVisibility = true,
   enableCellSelection = false,
   enableCellFocus = false,
   enablePagination = true,
@@ -584,6 +588,9 @@ export function AdvancedDataTable<TData>({
         .map((c) => ({ id: c.id, label: String(c.columnDef.meta?.label ?? c.id) })),
     [table, columnOrder, columnVisibility],
   )
+
+  const showColumnVisibility =
+    enableColumnVisibility && table.getAllLeafColumns().some((c) => c.getCanHide())
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -753,6 +760,7 @@ export function AdvancedDataTable<TData>({
     enableGlobalFilter ||
     facetedFilters.length > 0 ||
     enableMultiSort ||
+    showColumnVisibility ||
     !!toolbarEnd
 
   return (
@@ -787,9 +795,12 @@ export function AdvancedDataTable<TData>({
           {enableMultiSort ? (
             <AdvancedDataTableSort table={table} columns={sortableColumns} />
           ) : null}
-          {toolbarEnd ? (
-            <div className="ml-auto flex items-center gap-2">{toolbarEnd}</div>
-          ) : null}
+          <div className="ml-auto flex items-center gap-2">
+            {showColumnVisibility ? (
+              <DataTableViewOptions table={table} />
+            ) : null}
+            {toolbarEnd}
+          </div>
         </div>
       ) : null}
 
