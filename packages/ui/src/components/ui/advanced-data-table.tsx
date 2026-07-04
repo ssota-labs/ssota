@@ -384,8 +384,8 @@ function SelectCellEditor({
   onCancel: () => void
 }) {
   return (
-    <PopoverCellEditor onCancel={onCancel} className="w-44" style={{ padding: "0.25rem" }}>
-      <div className="flex flex-col">
+    <PopoverCellEditor onCancel={onCancel} className="w-44" style={{ padding: "0.375rem" }}>
+      <div className="flex flex-col gap-1">
         {options.map((option) => (
           <button
             key={option}
