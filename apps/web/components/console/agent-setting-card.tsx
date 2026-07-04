@@ -59,7 +59,7 @@ function AgentSettingCardBody({
   className?: string;
 }) {
   return (
-    <div className={cn("select-none px-3 pb-2", className)}>{children}</div>
+    <div className={cn("select-none px-3 py-2", className)}>{children}</div>
   );
 }
 
