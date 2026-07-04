@@ -596,7 +596,7 @@ export function AgentSettingsDialogs({
     : ["user"];
 
   const connectionRowClassName =
-    "@max-[26rem]/detail:flex-col @max-[26rem]/detail:items-stretch @max-[26rem]/detail:gap-2.5 py-2.5";
+    "rounded-none px-1 @max-[26rem]/detail:flex-col @max-[26rem]/detail:items-stretch @max-[26rem]/detail:gap-2.5 py-2.5";
   const connectionActionClassName =
     "@max-[26rem]/detail:w-full shrink-0 sm:shrink-0";
 
@@ -658,13 +658,15 @@ export function AgentSettingsDialogs({
           <p className="text-sm font-medium">{SCOPE_LABEL[scope]}</p>
         </div>
         {providerConnections.length > 0 ? (
-          <div className="overflow-hidden rounded-lg border border-border px-2">
-            <AgentSettingCard.Items divided>
-              {providerConnections.map((connection) =>
-                renderProviderConnectionRow(connection, providerLabel),
-              )}
-            </AgentSettingCard.Items>
-          </div>
+          <AgentSettingCard.Root>
+            <AgentSettingCard.Body className="pb-2 pt-0">
+              <AgentSettingCard.Items divided>
+                {providerConnections.map((connection) =>
+                  renderProviderConnectionRow(connection, providerLabel),
+                )}
+              </AgentSettingCard.Items>
+            </AgentSettingCard.Body>
+          </AgentSettingCard.Root>
         ) : (
           <p className="text-muted-foreground text-sm">
             No {SCOPE_LABEL[scope].toLowerCase()} {providerLabel} connections

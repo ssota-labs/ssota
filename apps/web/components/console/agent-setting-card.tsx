@@ -51,8 +51,16 @@ function AgentSettingCardHeader({
   );
 }
 
-function AgentSettingCardBody({ children }: { children: ReactNode }) {
-  return <div className="select-none px-3 pb-2">{children}</div>;
+function AgentSettingCardBody({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("select-none px-3 pb-2", className)}>{children}</div>
+  );
 }
 
 function AgentSettingCardFooter({ children }: { children: ReactNode }) {
