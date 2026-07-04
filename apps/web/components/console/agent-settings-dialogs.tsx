@@ -405,7 +405,7 @@ export function AgentSettingsDialogs({
         subtitle =
           count > 0
             ? `${count} connection${count === 1 ? "" : "s"}`
-            : "Not connected";
+            : undefined;
         icon = (
           <ConnectorBrandIcon provider={entry.provider} className="size-3.5" />
         );
