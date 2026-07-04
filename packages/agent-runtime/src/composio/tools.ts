@@ -11,6 +11,10 @@ import { getComposioClient } from "./client.js";
 import { mergeDisabledToolsByToolkit } from "./connector-tool-policy.js";
 import { getOrgToolRouterSession, getToolRouterSession } from "./session.js";
 import { getConnectorToolSettingsPort } from "../ports.js";
+import {
+  getStubToolkitTools,
+  shouldUseStubToolkitTools,
+} from "./stub-toolkit-tools.js";
 
 export interface ComposioToolsInput {
   orgId: string;
@@ -84,7 +88,9 @@ export async function listComposioToolkitTools(
   toolkit: string,
 ): Promise<ComposioToolInfo[]> {
   const composio = getComposioClient();
-  if (!composio) return [];
+  if (!composio) {
+    return shouldUseStubToolkitTools() ? getStubToolkitTools(toolkit) : [];
+  }
   const list = await composio.tools.getRawComposioTools({ toolkits: [toolkit] });
   const items = Array.isArray(list)
     ? list

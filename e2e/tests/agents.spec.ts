@@ -324,6 +324,12 @@ test.describe("Agents", () => {
         "agent-tool-permissions-popover-user-seed-notion-user-1",
       ),
     ).toBeVisible();
+    await expect(
+      popover.getByTestId("agent-tool-permission-row-NOTION_SEARCH_NOTION_PAGE"),
+    ).toBeVisible();
+    await expect(
+      popover.getByText("Search Notion pages and databases"),
+    ).toBeVisible();
   });
 
   test("unlinks bound connection from tools card and persists on save", async ({
