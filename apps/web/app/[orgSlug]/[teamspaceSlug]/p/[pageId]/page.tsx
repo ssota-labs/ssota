@@ -10,7 +10,7 @@ import { getGraphPorts, getPagePort, getPageViewStatePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { ConsolePageFrame } from "@/components/console/console-page-frame";
 import { PageSiblingNav } from "@/components/console/page-sibling-nav";
-import { loadPageSiblingNav } from "@/lib/console/page-sibling-nav";
+import { loadPageSiblingNav, buildPageSiblingNavBar } from "@/lib/console/page-sibling-nav";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
 import {
@@ -169,14 +169,20 @@ async function TreePageInner({
   const siblingNav = await loadPageSiblingNav(pagePort, page, (id) =>
     orgPath(routeCtx, "p", id),
   );
+  const pageNav = buildPageSiblingNavBar(siblingNav, {
+    page,
+    spec: page.spec,
+    pageHref: pagePath,
+    tabParam: typeof urlParams.tab === "string" ? urlParams.tab : undefined,
+  });
 
   return (
     <>
-      {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
+      {pageNav ? <PageSiblingNav {...pageNav} /> : null}
       <ConsolePageFrame
         fullWidth={usesWorkbench}
         fillHeight={!usesWorkbench}
-        contentClassName={siblingNav ? "pt-2" : undefined}
+        contentClassName={pageNav ? "pt-2" : undefined}
       >
         <DynamicPageRenderer
           spec={page.spec}

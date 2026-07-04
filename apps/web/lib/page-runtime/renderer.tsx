@@ -7,6 +7,7 @@ import {
   ArtifactWorkbenchContext,
   BasePathContext,
   JsonRenderContext,
+  PageHoistedTabsContext,
   PageViewStateContext,
   WidgetBuildContext,
   type ArtifactWorkbenchRuntime,
@@ -17,6 +18,9 @@ import { CATALOG } from "./registry";
 import type { BindingContext } from "./types";
 import { PeriodFilterProvider } from "./period-filter-context";
 import { DocumentSheetProvider } from "./components/document-sheet-context";
+import {
+  extractHoistedPageTabs,
+} from "./spec-utils";
 import {
   extractUrlSelectionBindings,
   SelectionProvider,
@@ -119,6 +123,7 @@ export function DynamicPageRenderer({
 
   const urlSelections = extractUrlSelectionBindings(pageBindings);
   const selectionConfig = urlSelections[0] ?? null;
+  const hoistedTabs = extractHoistedPageTabs(spec) !== null;
 
   const tree = (
     <div
@@ -135,15 +140,17 @@ export function DynamicPageRenderer({
         <ArtifactWorkbenchContext.Provider value={artifactWorkbench}>
           <PageViewStateContext.Provider value={viewState ?? null}>
             <BasePathContext.Provider value={basePath}>
-              <JsonRenderContext.Provider value={runtime}>
-                <SelectionWrappedTree
-                  spec={spec}
-                  bindingData={bindingData}
-                  selectionConfig={selectionConfig}
-                >
-                  {tree}
-                </SelectionWrappedTree>
-              </JsonRenderContext.Provider>
+              <PageHoistedTabsContext.Provider value={hoistedTabs}>
+                <JsonRenderContext.Provider value={runtime}>
+                  <SelectionWrappedTree
+                    spec={spec}
+                    bindingData={bindingData}
+                    selectionConfig={selectionConfig}
+                  >
+                    {tree}
+                  </SelectionWrappedTree>
+                </JsonRenderContext.Provider>
+              </PageHoistedTabsContext.Provider>
             </BasePathContext.Provider>
           </PageViewStateContext.Provider>
         </ArtifactWorkbenchContext.Provider>

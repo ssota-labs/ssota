@@ -1,6 +1,10 @@
-import type { Page } from "@ssota/contracts";
+import type { JsonRenderSpec, Page } from "@ssota/contracts";
 import type { PagePort } from "@ssota/core";
 import { isHubPage } from "@/lib/page-runtime/hub-redirect";
+import {
+  extractHoistedPageTabs,
+  resolveHoistedTabValue,
+} from "@/lib/page-runtime/spec-utils";
 
 export type PageNavItem = {
   id: string;
@@ -8,10 +12,20 @@ export type PageNavItem = {
   href: string;
 };
 
+export type PageSubTabItem = {
+  value: string;
+  label: string;
+};
+
 export type PageSiblingNavData = {
   /** Sibling pages under the same sidebar parent. */
   items: PageNavItem[];
   activeId: string;
+  /** In-page tabs hoisted into the page header row (`?tab=`). */
+  subTabs?: PageSubTabItem[];
+  activeSubTab?: string;
+  /** Current page href — required when `subTabs` is set. */
+  pageHref?: string;
 };
 
 function sameNavScope(a: Page, b: Page): boolean {
@@ -60,4 +74,28 @@ export async function loadPageSiblingNav(
   if (items.length <= 1) return null;
 
   return { items, activeId: page.id };
+}
+
+/** Merge sibling page nav with hoisted in-page tabs for the header row. */
+export function buildPageSiblingNavBar(
+  siblingNav: PageSiblingNavData | null,
+  options: {
+    page: Page;
+    spec: JsonRenderSpec;
+    pageHref: string;
+    tabParam?: string;
+  },
+): PageSiblingNavData | null {
+  const hoisted = extractHoistedPageTabs(options.spec);
+  if (!siblingNav && !hoisted) return null;
+
+  return {
+    items: siblingNav?.items ?? [],
+    activeId: siblingNav?.activeId ?? options.page.id,
+    subTabs: hoisted?.items.map(({ value, label }) => ({ value, label })),
+    activeSubTab: hoisted
+      ? resolveHoistedTabValue(hoisted, options.tabParam)
+      : undefined,
+    pageHref: hoisted ? options.pageHref : undefined,
+  };
 }

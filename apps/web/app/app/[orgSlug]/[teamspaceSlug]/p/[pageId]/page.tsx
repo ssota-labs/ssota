@@ -3,7 +3,7 @@ import { resolvePageBindings } from "@ssota/core";
 import { ConsolePageFrame } from "@/components/console/console-page-frame";
 import { PageSiblingNav } from "@/components/console/page-sibling-nav";
 import { appProjectPath } from "@/lib/console/app-paths";
-import { loadPageSiblingNav } from "@/lib/console/page-sibling-nav";
+import { loadPageSiblingNav, buildPageSiblingNavBar } from "@/lib/console/page-sibling-nav";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
 import { resolveEndUserContext } from "@/lib/request-context";
@@ -46,19 +46,25 @@ export default async function AppDynamicPage({
 
   const usesWorkbench = pageUsesArtifactWorkbench(page.spec);
   const basePath = appProjectPath({ orgSlug, teamspaceSlug });
+  const pageHref = `${basePath}/p/${pageId}`;
   const siblingNav = await loadPageSiblingNav(
     getPagePort(ctx.teamspaceId),
     page,
     (id) => `${basePath}/p/${id}`,
   );
+  const pageNav = buildPageSiblingNavBar(siblingNav, {
+    page,
+    spec: page.spec,
+    pageHref,
+  });
 
   return (
     <>
-      {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
+      {pageNav ? <PageSiblingNav {...pageNav} /> : null}
       <ConsolePageFrame
         fullWidth={usesWorkbench}
         fillHeight={!usesWorkbench}
-        contentClassName={siblingNav ? "pt-2" : undefined}
+        contentClassName={pageNav ? "pt-2" : undefined}
       >
         <DynamicPageRenderer
           spec={page.spec}
