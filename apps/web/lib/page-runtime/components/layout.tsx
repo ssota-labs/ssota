@@ -13,6 +13,7 @@ import {
 } from "@ssota/ui/components/ui/resizable";
 import { cn } from "@ssota/ui/lib/utils";
 import type { CatalogComponent } from "../types";
+import { ResizablePanelContext } from "./section";
 import { SectionEl } from "./section";
 import { TabsEl, type TabItemDef } from "./layout-tabs";
 import { ToolbarEl, type ToolbarActionDef } from "./layout-toolbar";
@@ -142,9 +143,11 @@ export const layoutComponents: Record<string, CatalogComponent> = {
               minSize={minSizes?.[index]}
               className="min-h-0"
             >
-              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                {panel}
-              </div>
+              <ResizablePanelContext value={true}>
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  {panel}
+                </div>
+              </ResizablePanelContext>
             </ResizablePanel>
           </Fragment>
         ))}

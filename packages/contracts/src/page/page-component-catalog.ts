@@ -71,14 +71,15 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
     key: "Section",
     category: "layout",
     description:
-      "Titled section container with default padding (p-4 md:p-6). Wrap lists, editors, and tables; put the heading in Section props, not on child components.",
+      "Titled section container. Default padding (p-4 md:p-6) outside Resizable; inside Resizable panels padding defaults to none unless props.padding is set.",
     children: true,
     props: {
       title: { type: "string", description: "Section heading." },
       subtitle: { type: "string", description: "Optional secondary line." },
       padding: {
         type: "string",
-        description: '"default" (p-4 md:p-6) or "none". Default "default".',
+        description:
+          '"default" (p-4 md:p-6) or "none". Default "default" outside Resizable; inside Resizable panels default is "none" unless set.',
       },
     },
     example: { type: "Section", props: { title: "Overview" }, children: [] },
