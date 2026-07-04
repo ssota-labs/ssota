@@ -164,7 +164,7 @@ export function AgentConnectorToolPermissionsPopoverContent({
               >
                 <span
                   className="min-w-0 truncate text-xs"
-                  title={tool.slug}
+                  title={`${tool.name} (${tool.slug})`}
                 >
                   {tool.name}
                 </span>
