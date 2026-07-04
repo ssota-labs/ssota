@@ -7,6 +7,7 @@ import {
   AtIcon,
   ChatsCircleIcon,
   ClockIcon,
+  GearIcon,
   LightbulbIcon,
   LinkBreakIcon,
   PlusIcon,
@@ -65,6 +66,7 @@ import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { AgentModelPicker } from "@/components/console/agent-model-picker";
+import { AgentConnectorToolPermissionsPopoverContent } from "@/components/console/agent-connector-tool-permissions-popover";
 import { DEFAULT_MODEL_ID } from "@/lib/chat/models";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
 import {
@@ -75,9 +77,11 @@ import {
 } from "@/lib/console/agent-settings-save-snapshot";
 import {
   connectionDisplayLabel,
+  connectorBindingKey,
   migrateConnectorBindings,
   patchConnectorBindingsDraft,
   removeConnectorBinding,
+  updateBindingInList,
 } from "@/lib/console/agent-connector-bindings";
 
 const DocumentEditorEl = dynamic(
@@ -190,7 +194,11 @@ export function AgentSettingsSheet({
   const [editingSlackTriggerId, setEditingSlackTriggerId] = useState<
     string | null
   >(null);
+  const [editingToolPermissionsKey, setEditingToolPermissionsKey] = useState<
+    string | null
+  >(null);
   const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
+  const toolPermissionsPopoverAnchorRef = useRef<HTMLDivElement | null>(null);
   const ignoreNextScheduleRowPressRef = useRef(false);
   const [isPending, startTransition] = useTransition();
 
@@ -292,12 +300,44 @@ export function AgentSettingsSheet({
     scope: AgentConnectorBinding["scope"],
     connectionId: string,
   ) => {
+    const key = connectorBindingKey(scope, connectionId);
+    if (editingToolPermissionsKey === key) {
+      setEditingToolPermissionsKey(null);
+    }
     patchDraft(
       patchConnectorBindingsDraft(
         removeConnectorBinding(draft.connectorBindings, scope, connectionId),
       ),
     );
   };
+
+  const updateBindingToolPermissions = (
+    scope: AgentConnectorBinding["scope"],
+    connectionId: string,
+    updater: (binding: AgentConnectorBinding) => AgentConnectorBinding,
+  ) => {
+    patchDraft(
+      patchConnectorBindingsDraft(
+        updateBindingInList(
+          draft.connectorBindings,
+          scope,
+          connectionId,
+          updater,
+        ),
+      ),
+    );
+  };
+
+  const editingToolPermissionsBinding = useMemo(() => {
+    if (!editingToolPermissionsKey) return null;
+    return (
+      draft.connectorBindings.find(
+        (binding) =>
+          connectorBindingKey(binding.scope, binding.connectionId) ===
+          editingToolPermissionsKey,
+      ) ?? null
+    );
+  }, [draft.connectorBindings, editingToolPermissionsKey]);
 
   const handleInstructionsSave = useCallback((blocks: Block[]) => {
     setDraft((current) => ({
@@ -645,22 +685,46 @@ export function AgentSettingsSheet({
                         }`}
                         testId={`agent-bound-connection-${binding.scope}-${binding.connectionId}`}
                         trailing={
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon-sm"
-                            className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
-                            aria-label={`Unlink ${label} from agent`}
-                            data-testid={`agent-bound-connection-unlink-${binding.scope}-${binding.connectionId}`}
-                            onClick={() =>
-                              removeBindingFromDraft(
-                                binding.scope,
-                                binding.connectionId,
-                              )
-                            }
-                          >
-                            <LinkBreakIcon className="size-4" aria-hidden />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:text-foreground"
+                              aria-label={`Tool permissions for ${label}`}
+                              data-testid={`agent-bound-connection-settings-${binding.scope}-${binding.connectionId}`}
+                              onClick={(event) => {
+                                const key = connectorBindingKey(
+                                  binding.scope,
+                                  binding.connectionId,
+                                );
+                                setEditingToolPermissionsKey((current) => {
+                                  if (current === key) return null;
+                                  toolPermissionsPopoverAnchorRef.current =
+                                    event.currentTarget;
+                                  return key;
+                                });
+                              }}
+                            >
+                              <GearIcon className="size-4" aria-hidden />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon-sm"
+                              className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                              aria-label={`Unlink ${label} from agent`}
+                              data-testid={`agent-bound-connection-unlink-${binding.scope}-${binding.connectionId}`}
+                              onClick={() =>
+                                removeBindingFromDraft(
+                                  binding.scope,
+                                  binding.connectionId,
+                                )
+                              }
+                            >
+                              <LinkBreakIcon className="size-4" aria-hidden />
+                            </Button>
+                          </div>
                         }
                       />
                     ))}
@@ -808,6 +872,43 @@ export function AgentSettingsSheet({
               accountId={accountId}
               instructions={[{ id: definition.id, name: definition.name }]}
               schedule={scheduleEditTarget}
+            />
+          ) : null}
+        </PopoverContent>
+      </Popover>
+
+      <Popover
+        open={editingToolPermissionsKey !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingToolPermissionsKey(null);
+        }}
+      >
+        <PopoverContent
+          anchor={toolPermissionsPopoverAnchorRef}
+          side="bottom"
+          align="end"
+          sideOffset={6}
+          className="w-[min(24rem,92vw)] p-3"
+          data-testid="agent-tool-permissions-popover"
+        >
+          {editingToolPermissionsBinding ? (
+            <AgentConnectorToolPermissionsPopoverContent
+              binding={editingToolPermissionsBinding}
+              teamspaceId={teamspaceId}
+              providerLabel={
+                boundConnectorItems.find(
+                  ({ binding }) =>
+                    connectorBindingKey(binding.scope, binding.connectionId) ===
+                    editingToolPermissionsKey,
+                )?.providerLabel ?? editingToolPermissionsBinding.provider
+              }
+              onBindingChange={(next) =>
+                updateBindingToolPermissions(
+                  editingToolPermissionsBinding.scope,
+                  editingToolPermissionsBinding.connectionId,
+                  () => next,
+                )
+              }
             />
           ) : null}
         </PopoverContent>

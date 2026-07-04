@@ -294,6 +294,29 @@ test.describe("Agents", () => {
     await expect(page.getByTestId("agent-settings-sheet")).not.toBeVisible();
   });
 
+  test("opens tool permissions popover from bound connection row", async ({
+    page,
+  }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await page.getByTestId(PROJECT_AGENT_CARD).click();
+
+    const toolsCard = page.getByTestId("agent-settings-tools-card");
+    await toolsCard
+      .getByTestId("agent-bound-connection-settings-user-seed-notion-user-1")
+      .click();
+
+    const popover = page.getByTestId("agent-tool-permissions-popover");
+    await expect(popover).toBeVisible();
+    await expect(popover.getByText("Tool permissions")).toBeVisible();
+    await expect(
+      popover.getByTestId(
+        "agent-tool-permissions-popover-user-seed-notion-user-1",
+      ),
+    ).toBeVisible();
+  });
+
   test("unlinks bound connection from tools card and persists on save", async ({
     page,
   }) => {
