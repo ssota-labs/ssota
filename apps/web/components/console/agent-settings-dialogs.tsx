@@ -596,7 +596,7 @@ export function AgentSettingsDialogs({
     : ["user"];
 
   const connectionRowClassName =
-    "rounded-none px-1 @max-[26rem]/detail:flex-col @max-[26rem]/detail:items-stretch @max-[26rem]/detail:gap-2.5 py-2.5";
+    "@max-[26rem]/detail:flex-col @max-[26rem]/detail:items-stretch @max-[26rem]/detail:gap-2.5";
   const connectionActionClassName =
     "@max-[26rem]/detail:w-full shrink-0 sm:shrink-0";
 
@@ -659,8 +659,8 @@ export function AgentSettingsDialogs({
         </div>
         {providerConnections.length > 0 ? (
           <AgentSettingCard.Root>
-            <AgentSettingCard.Body className="pb-2 pt-0">
-              <AgentSettingCard.Items divided>
+            <AgentSettingCard.Body>
+              <AgentSettingCard.Items>
                 {providerConnections.map((connection) =>
                   renderProviderConnectionRow(connection, providerLabel),
                 )}
