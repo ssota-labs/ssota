@@ -221,8 +221,14 @@ function SortableHeader<TData>({
       )}
       {enableColumnResizing && column.getCanResize() ? (
         <div
-          onMouseDown={header.getResizeHandler()}
-          onTouchStart={header.getResizeHandler()}
+          onMouseDown={(event) => {
+            event.stopPropagation()
+            header.getResizeHandler()(event)
+          }}
+          onTouchStart={(event) => {
+            event.stopPropagation()
+            header.getResizeHandler()(event)
+          }}
           onClick={(e) => e.stopPropagation()}
           className={cn(
             "absolute top-0 right-0 h-full w-1 cursor-col-resize touch-none select-none bg-transparent hover:bg-primary/40",
@@ -806,9 +812,15 @@ export function AdvancedDataTable<TData>({
           >
             <table
               data-slot="table"
-              className="cn-table"
+              className="cn-table table-fixed"
               style={{ width: "100%", minWidth: table.getTotalSize() }}
             >
+              <colgroup>
+                {leafCols.map((col) => (
+                  <col key={col.id} style={{ width: col.getSize() }} />
+                ))}
+                <col />
+              </colgroup>
               <TableHeader className="sticky top-0 z-20 bg-muted">
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id} className="bg-muted hover:bg-muted">
@@ -828,7 +840,7 @@ export function AdvancedDataTable<TData>({
                     </SortableContext>
                     <TableHead
                       aria-hidden
-                      className="bg-muted w-full p-0"
+                      className="bg-muted p-0"
                     />
                   </TableRow>
                 ))}
