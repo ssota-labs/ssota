@@ -44,6 +44,7 @@ import {
 import {
   Popover,
   PopoverContent,
+  PopoverTrigger,
 } from "@ssota/ui/components/ui/popover";
 import { Switch } from "@ssota/ui/components/ui/switch";
 import {
@@ -82,7 +83,6 @@ import {
 } from "@/lib/console/agent-settings-save-snapshot";
 import {
   connectionDisplayLabel,
-  connectorBindingKey,
   migrateConnectorBindings,
   patchConnectorBindingsDraft,
   removeConnectorBinding,
@@ -96,6 +96,64 @@ const DocumentEditorEl = dynamic(
     ),
   { ssr: false },
 );
+
+function BoundConnectionToolPermissionsControl({
+  label,
+  binding,
+  teamspaceId,
+  providerLabel,
+  onBindingChange,
+}: {
+  label: string;
+  binding: AgentConnectorBinding;
+  teamspaceId: string;
+  providerLabel: string;
+  onBindingChange: (next: AgentConnectorBinding) => void;
+}) {
+  return (
+    <Popover modal={false}>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <PopoverTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={`Tool permissions for ${label}`}
+                  data-testid={`agent-bound-connection-settings-${binding.scope}-${binding.connectionId}`}
+                />
+              }
+            />
+          }
+        >
+          <GearIcon className="size-4" aria-hidden />
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={5}>
+          Tool permissions
+        </TooltipContent>
+      </Tooltip>
+      <PopoverContent
+        side="bottom"
+        align="end"
+        sideOffset={6}
+        className="w-[min(24rem,92vw)] p-3"
+        data-testid="agent-tool-permissions-popover"
+        initialFocus={false}
+        finalFocus={false}
+      >
+        <AgentConnectorToolPermissionsPopoverContent
+          binding={binding}
+          teamspaceId={teamspaceId}
+          providerLabel={providerLabel}
+          onBindingChange={onBindingChange}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 type AgentSettingsSheetProps = {
   definition: AgentDefinition;
@@ -199,11 +257,7 @@ export function AgentSettingsSheet({
   const [editingSlackTriggerId, setEditingSlackTriggerId] = useState<
     string | null
   >(null);
-  const [editingToolPermissionsKey, setEditingToolPermissionsKey] = useState<
-    string | null
-  >(null);
   const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
-  const toolPermissionsPopoverAnchorRef = useRef<HTMLElement | null>(null);
   const ignoreNextScheduleRowPressRef = useRef(false);
   const [isPending, startTransition] = useTransition();
 
@@ -305,10 +359,6 @@ export function AgentSettingsSheet({
     scope: AgentConnectorBinding["scope"],
     connectionId: string,
   ) => {
-    const key = connectorBindingKey(scope, connectionId);
-    if (editingToolPermissionsKey === key) {
-      setEditingToolPermissionsKey(null);
-    }
     patchDraft(
       patchConnectorBindingsDraft(
         removeConnectorBinding(draft.connectorBindings, scope, connectionId),
@@ -332,17 +382,6 @@ export function AgentSettingsSheet({
       ),
     );
   };
-
-  const editingToolPermissionsBinding = useMemo(() => {
-    if (!editingToolPermissionsKey) return null;
-    return (
-      draft.connectorBindings.find(
-        (binding) =>
-          connectorBindingKey(binding.scope, binding.connectionId) ===
-          editingToolPermissionsKey,
-      ) ?? null
-    );
-  }, [draft.connectorBindings, editingToolPermissionsKey]);
 
   const handleInstructionsSave = useCallback((blocks: Block[]) => {
     setDraft((current) => ({
@@ -691,37 +730,19 @@ export function AgentSettingsSheet({
                         testId={`agent-bound-connection-${binding.scope}-${binding.connectionId}`}
                         trailing={
                           <div className="flex items-center gap-1">
-                            <Tooltip>
-                              <TooltipTrigger
-                                render={
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon-sm"
-                                    className="text-muted-foreground hover:text-foreground"
-                                    aria-label={`Tool permissions for ${label}`}
-                                    data-testid={`agent-bound-connection-settings-${binding.scope}-${binding.connectionId}`}
-                                    onClick={(event) => {
-                                      const key = connectorBindingKey(
-                                        binding.scope,
-                                        binding.connectionId,
-                                      );
-                                      setEditingToolPermissionsKey((current) => {
-                                        if (current === key) return null;
-                                        toolPermissionsPopoverAnchorRef.current =
-                                          event.currentTarget;
-                                        return key;
-                                      });
-                                    }}
-                                  />
-                                }
-                              >
-                                <GearIcon className="size-4" aria-hidden />
-                              </TooltipTrigger>
-                              <TooltipContent side="top" sideOffset={5}>
-                                Tool permissions
-                              </TooltipContent>
-                            </Tooltip>
+                            <BoundConnectionToolPermissionsControl
+                              label={label}
+                              binding={binding}
+                              teamspaceId={teamspaceId}
+                              providerLabel={providerLabel}
+                              onBindingChange={(next) =>
+                                updateBindingToolPermissions(
+                                  binding.scope,
+                                  binding.connectionId,
+                                  () => next,
+                                )
+                              }
+                            />
                             <Tooltip>
                               <TooltipTrigger
                                 render={
@@ -895,43 +916,6 @@ export function AgentSettingsSheet({
               accountId={accountId}
               instructions={[{ id: definition.id, name: definition.name }]}
               schedule={scheduleEditTarget}
-            />
-          ) : null}
-        </PopoverContent>
-      </Popover>
-
-      <Popover
-        open={editingToolPermissionsKey !== null}
-        onOpenChange={(open) => {
-          if (!open) setEditingToolPermissionsKey(null);
-        }}
-      >
-        <PopoverContent
-          anchor={toolPermissionsPopoverAnchorRef}
-          side="bottom"
-          align="end"
-          sideOffset={6}
-          className="w-[min(24rem,92vw)] p-3"
-          data-testid="agent-tool-permissions-popover"
-        >
-          {editingToolPermissionsBinding ? (
-            <AgentConnectorToolPermissionsPopoverContent
-              binding={editingToolPermissionsBinding}
-              teamspaceId={teamspaceId}
-              providerLabel={
-                boundConnectorItems.find(
-                  ({ binding }) =>
-                    connectorBindingKey(binding.scope, binding.connectionId) ===
-                    editingToolPermissionsKey,
-                )?.providerLabel ?? editingToolPermissionsBinding.provider
-              }
-              onBindingChange={(next) =>
-                updateBindingToolPermissions(
-                  editingToolPermissionsBinding.scope,
-                  editingToolPermissionsBinding.connectionId,
-                  () => next,
-                )
-              }
             />
           ) : null}
         </PopoverContent>
