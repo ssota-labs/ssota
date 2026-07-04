@@ -100,19 +100,21 @@ export const documentComponents: Record<string, CatalogComponent> = {
     </div>
   ),
   NodeDetailSheet: ({ props, children, bindingData }) => (
-    <NodeDetailSheetEl
-      bindingData={bindingData}
-      binding={typeof props.binding === "string" ? props.binding : ""}
-      selectionParam={
-        typeof props.selectionParam === "string" ? props.selectionParam : ""
-      }
-      subtitleField={
-        typeof props.subtitleField === "string" ? props.subtitleField : undefined
-      }
-      platformField={
-        typeof props.platformField === "string" ? props.platformField : undefined
-      }
-      children={children}
-    />
+    <div className="flex min-h-0 flex-1 flex-col">
+      <NodeDetailSheetEl
+        bindingData={bindingData}
+        binding={typeof props.binding === "string" ? props.binding : ""}
+        selectionParam={
+          typeof props.selectionParam === "string" ? props.selectionParam : ""
+        }
+        subtitleField={
+          typeof props.subtitleField === "string" ? props.subtitleField : undefined
+        }
+        platformField={
+          typeof props.platformField === "string" ? props.platformField : undefined
+        }
+        children={children}
+      />
+    </div>
   ),
 };

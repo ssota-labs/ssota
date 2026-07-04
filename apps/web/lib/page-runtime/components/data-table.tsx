@@ -363,6 +363,7 @@ function DataTableEl({
         defaultViewState={viewStateCtx?.initial[elementId]}
         onViewStateChange={viewStateCtx ? save : undefined}
         enablePagination={false}
+        fillHeight
         enableCellFocus
         onCellEdit={onCellEdit}
         footer={

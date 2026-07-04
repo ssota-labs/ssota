@@ -34,7 +34,7 @@ export function TabsEl({
   const active = defaultValue ?? items[0]?.value ?? "";
 
   return (
-    <Tabs defaultValue={active} className="w-full">
+    <Tabs defaultValue={active} className="flex min-h-0 w-full flex-1 flex-col">
       <TabsList variant={variant}>
         {items.map((item) => (
           <TabsTrigger key={item.value} value={item.value}>
@@ -43,7 +43,11 @@ export function TabsEl({
         ))}
       </TabsList>
       {items.map((item) => (
-        <TabsContent key={item.value} value={item.value} className="pt-4">
+        <TabsContent
+          key={item.value}
+          value={item.value}
+          className="flex min-h-0 flex-1 flex-col pt-4"
+        >
           {runtime?.renderElement(item.panel) ?? null}
         </TabsContent>
       ))}

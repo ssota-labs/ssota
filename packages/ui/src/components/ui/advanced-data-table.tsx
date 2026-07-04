@@ -139,6 +139,8 @@ type AdvancedDataTableProps<TData> = {
   enablePagination?: boolean
   /** Max height (px) of the scroll viewport; the sticky header pins to its top. */
   maxBodyHeight?: number
+  /** When true, the table body grows to fill the parent flex column (no max-height cap). */
+  fillHeight?: boolean
   /** Commit a double-click cell edit (grid mode, `meta.editable` columns). */
   onCellEdit?: (rowId: string, columnId: string, value: string) => void
   /**
@@ -484,6 +486,7 @@ export function AdvancedDataTable<TData>({
   enableCellFocus = false,
   enablePagination = true,
   maxBodyHeight = 480,
+  fillHeight = false,
   onCellEdit,
   getRowCanExpand,
   renderExpanded,
@@ -773,7 +776,12 @@ export function AdvancedDataTable<TData>({
     !!toolbarEnd
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div
+      className={cn(
+        fillHeight ? "flex min-h-0 flex-1 flex-col gap-2" : "space-y-2",
+        className,
+      )}
+    >
       {showToolbar ? (
         <div className="flex flex-wrap items-center gap-2">
           {enableGlobalFilter ? (
@@ -815,13 +823,21 @@ export function AdvancedDataTable<TData>({
 
       {/* One scroll container directly wraps the <table> (no nested overflow
           div), so the sticky <thead> sticks to the top while the body scrolls. */}
-      <div className="overflow-hidden rounded-md border">
+      <div
+        className={cn(
+          "overflow-hidden rounded-md border",
+          fillHeight && "flex min-h-0 flex-1 flex-col",
+        )}
+      >
         <div
           ref={scrollRef}
           tabIndex={enableCellSelection ? 0 : undefined}
           onKeyDown={enableCellSelection ? selection.onKeyDown : undefined}
-          className="relative overflow-auto outline-none"
-          style={{ maxHeight: maxBodyHeight }}
+          className={cn(
+            "relative overflow-auto outline-none",
+            fillHeight && "min-h-0 flex-1",
+          )}
+          style={fillHeight ? undefined : { maxHeight: maxBodyHeight }}
         >
           <DndContext
             id={dndId}
