@@ -109,20 +109,12 @@ export function mergeMainAgentConnectorBindingSeed<
     return runPolicy;
   }
 
-  const existing = runPolicy.connectorBindings ?? [];
-  const extras = MAIN_AGENT_CONNECTOR_BINDING_SEED.filter(
-    (seed) =>
-      !existing.some(
-        (binding) =>
-          binding.scope === seed.scope &&
-          binding.connectionId === seed.connectionId,
-      ),
-  );
-  if (extras.length === 0) {
+  // Explicit array (including empty) means bindings were saved — do not re-seed preview rows.
+  if (runPolicy.connectorBindings !== undefined) {
     return runPolicy;
   }
 
-  const connectorBindings = [...existing, ...extras];
+  const connectorBindings = [...MAIN_AGENT_CONNECTOR_BINDING_SEED];
   return {
     ...runPolicy,
     connectorBindings,

@@ -1,10 +1,19 @@
 import { test, expect } from "@playwright/test";
+import { resetMainAgentConnectorBindingSeed } from "../helpers/agent-main-config";
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
 
 const PROJECT_AGENT_CARD = "main-agent-card";
 
 test.describe("Agents", () => {
+  test.beforeAll(async () => {
+    await resetMainAgentConnectorBindingSeed();
+  });
+
+  test.afterAll(async () => {
+    await resetMainAgentConnectorBindingSeed();
+  });
+
   test("agent browse list cards use transparent background", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "agents");
