@@ -367,8 +367,8 @@
           }
         },
         "segmentsPanel": {
-          "type": "Resizable",
-          "props": { "defaultSizes": [45, 55], "minSizes": [25, 25] },
+          "type": "Stack",
+          "props": { "gap": "md", "padding": "none" },
           "children": ["segmentsTable", "segmentDetailCol"]
         },
         "segmentsTable": {
