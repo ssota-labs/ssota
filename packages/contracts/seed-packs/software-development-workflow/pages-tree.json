@@ -355,7 +355,6 @@
           "type": "DataTable",
           "props": {
             "binding": "competitors",
-            "title": "Competitors",
             "setAction": "setCell",
             "columns": [
               { "key": "title", "header": "Name", "type": "text", "editable": true, "width": 200 },
