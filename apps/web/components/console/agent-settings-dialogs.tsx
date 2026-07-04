@@ -45,6 +45,7 @@ import {
 import {
   ScheduleSheet,
 } from "@/components/schedules/schedule-sheet";
+import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import {
   AgentSettingsSidebarDialog,
   SidebarDetailDoneButton,
@@ -605,33 +606,33 @@ export function AgentSettingsDialogs({
       connection.id,
     );
     return (
-      <div
+      <AgentSettingCard.Item
         key={connectorBindingKey(connection.scope, connection.id)}
-        className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
-        data-testid={`agent-provider-connection-${connection.scope}-${connection.id}`}
-      >
-        <span className="min-w-0 truncate text-sm">{label}</span>
-        {bound ? (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            data-testid={`agent-connection-remove-${connection.scope}-${connection.id}`}
-            onClick={() => removeBindingForConnection(connection)}
-          >
-            Remove
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            size="sm"
-            data-testid={`agent-connection-add-${connection.scope}-${connection.id}`}
-            onClick={() => addBindingForConnection(connection)}
-          >
-            Add to agent
-          </Button>
-        )}
-      </div>
+        title={label}
+        testId={`agent-provider-connection-${connection.scope}-${connection.id}`}
+        trailing={
+          bound ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              data-testid={`agent-connection-remove-${connection.scope}-${connection.id}`}
+              onClick={() => removeBindingForConnection(connection)}
+            >
+              Remove
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              data-testid={`agent-connection-add-${connection.scope}-${connection.id}`}
+              onClick={() => addBindingForConnection(connection)}
+            >
+              Add to agent
+            </Button>
+          )
+        }
+      />
     );
   };
 
@@ -648,10 +649,12 @@ export function AgentSettingsDialogs({
           <p className="text-sm font-medium">{SCOPE_LABEL[scope]}</p>
         </div>
         {providerConnections.length > 0 ? (
-          <div className="space-y-2">
-            {providerConnections.map((connection) =>
-              renderProviderConnectionRow(connection, providerLabel),
-            )}
+          <div className="overflow-hidden rounded-lg border border-border px-2">
+            <AgentSettingCard.Items divided>
+              {providerConnections.map((connection) =>
+                renderProviderConnectionRow(connection, providerLabel),
+              )}
+            </AgentSettingCard.Items>
           </div>
         ) : (
           <p className="text-muted-foreground text-sm">

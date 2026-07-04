@@ -2,6 +2,7 @@ import type { ScriptToolIndex, SkillIndex } from "@ssota/contracts";
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
+import { mergeAgentToolsConnectionSeed } from "@/lib/console/agent-settings-connection-seed";
 import {
   getOrCreateProjectAccount,
   getSchedulePort,
@@ -104,8 +105,8 @@ export async function loadAgentSettingsConnections(
     ReturnType<typeof listComposioConnections>
   >[number];
 
-  return {
+  return mergeAgentToolsConnectionSeed({
     user: userConns.filter((c: ComposioConn) => c.active).map(toConnection),
     org: orgConns.filter((c: ComposioConn) => c.active).map(toConnection),
-  };
+  });
 }
