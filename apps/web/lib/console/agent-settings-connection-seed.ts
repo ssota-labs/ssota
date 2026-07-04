@@ -104,7 +104,10 @@ export function mergeMainAgentConnectorBindingSeed<
     connectorBindings?: AgentConnectorBinding[];
     enabledConnectorProviders?: string[];
   },
->(runPolicy: T): T {
+>(runPolicy: T): T & {
+  connectorBindings?: AgentConnectorBinding[];
+  enabledConnectorProviders?: string[];
+} {
   if (!shouldMergeAgentToolsConnectionSeed()) {
     return runPolicy;
   }

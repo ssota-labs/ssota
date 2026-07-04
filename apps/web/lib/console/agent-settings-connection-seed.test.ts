@@ -58,7 +58,7 @@ describe("mergeMainAgentConnectorBindingSeed", () => {
     vi.stubEnv("CONNECT_STUB", "");
 
     const merged = mergeMainAgentConnectorBindingSeed({
-      enabledConnectorProviders: [],
+      enabledConnectorProviders: [] as string[],
     });
 
     expect(merged.connectorBindings).toEqual(MAIN_AGENT_CONNECTOR_BINDING_SEED);

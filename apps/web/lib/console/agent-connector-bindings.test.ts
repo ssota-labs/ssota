@@ -1,3 +1,4 @@
+import type { AgentConnectorBinding } from "@ssota/contracts";
 import { describe, expect, it } from "vitest";
 import {
   addConnectorBinding,
@@ -112,7 +113,7 @@ describe("agent-connector-bindings", () => {
   });
 
   it("derives blocked and approval tool maps by toolkit", () => {
-    const bindings = [
+    const bindings: AgentConnectorBinding[] = [
       {
         connectionId: "acc-1",
         provider: "notion",

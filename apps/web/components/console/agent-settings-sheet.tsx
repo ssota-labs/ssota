@@ -198,7 +198,7 @@ export function AgentSettingsSheet({
     string | null
   >(null);
   const schedulePopoverAnchorRef = useRef<HTMLDivElement | null>(null);
-  const toolPermissionsPopoverAnchorRef = useRef<HTMLDivElement | null>(null);
+  const toolPermissionsPopoverAnchorRef = useRef<HTMLElement | null>(null);
   const ignoreNextScheduleRowPressRef = useRef(false);
   const [isPending, startTransition] = useTransition();
 
