@@ -113,8 +113,9 @@ export const documentComponents: Record<string, CatalogComponent> = {
         platformField={
           typeof props.platformField === "string" ? props.platformField : undefined
         }
-        children={children}
-      />
+      >
+        {children}
+      </NodeDetailSheetEl>
     </div>
   ),
 };
