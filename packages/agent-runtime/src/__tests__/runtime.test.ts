@@ -321,6 +321,17 @@ describe("resolveConnectTokenSubject", () => {
       }),
     ).toEqual({ type: "app" });
   });
+
+  it("uses app subject for inbound Channels even when userId is present", () => {
+    expect(
+      resolveConnectTokenSubject("slack/dev", {
+        teamspaceId: "p",
+        userId: "user-42",
+        installationId: "T0914DV7GA0",
+        connectPurpose: "inbound",
+      }),
+    ).toEqual({ type: "app" });
+  });
 });
 
 describe("resolveConnectCallbackSubject", () => {

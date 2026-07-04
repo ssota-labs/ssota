@@ -9,6 +9,7 @@
  * tools consume the provider, the model only sees results.
  */
 import { connectTokenScopesForConnector } from "./mcp-scopes.js";
+import { inboundConnectTokenScopesForConnector } from "./mcp-scopes.js";
 import { resolveEmulateSlackOAuthAuthorizeUrl } from "../connections/provider-api-base.js";
 
 export interface CredentialScope {
@@ -25,6 +26,10 @@ export interface CredentialScope {
    * at authorize/callback/getToken; omitted for slack/github/discord app installs.
    */
   userId?: string;
+  /**
+   * Channels inbound bot flows mint app-subject bot tokens only — never user xoxp.
+   */
+  connectPurpose?: "inbound" | "default";
 }
 
 /** Scope for `startConnectAuthorization` — Vercel Connect requires a user subject. */
@@ -87,9 +92,12 @@ export function resolveConnectTokenSubject(
   scope: CredentialScope,
 ): ConnectTokenSubject {
   const provider = connectorUid.split("/")[0] ?? connectorUid;
+  if (scope.connectPurpose === "inbound" && connectUsesAppSubject(connectorUid)) {
+    return { type: "app" };
+  }
   // Slack MCP (https://mcp.slack.com/mcp) requires user OAuth tokens (xoxp), not
   // app/bot installation tokens. Mint user-subject when the install row has a
-  // subject user (chat / per-user Connect authorize flow).
+  // subject user (legacy Vercel Connect MCP authorize flow).
   if (provider === "slack" && scope.userId) {
     return { type: "user", id: scope.userId };
   }
@@ -189,17 +197,75 @@ export function createVercelConnectProvider(): CredentialProvider {
       // an identity-only token and its MCP server lists 0 tools. The user must
       // have consented to these same scopes (see resolveAuthorizeScopes in
       // apps/web) — otherwise Connect can't carry them and getToken returns null.
-      const scopes = connectTokenScopesForConnector(connector);
+      const scopes =
+        scope.connectPurpose === "inbound"
+          ? inboundConnectTokenScopesForConnector(connector)
+          : connectTokenScopesForConnector(connector);
+      const resolvedSubject = resolveConnectTokenSubject(connector, scope);
+      const connectDebug = process.env.CONNECT_TOKEN_DEBUG === "1";
+      if (connectDebug) {
+        console.info(
+          JSON.stringify({
+            component: "connect-token",
+            phase: "mint-request",
+            connector,
+            subject: resolvedSubject,
+            installationId: scope.installationId ?? null,
+            userId: scope.userId ?? null,
+            scopeCount: scopes?.length ?? 0,
+          }),
+        );
+      }
       try {
         const token = await connect.getToken(connector, {
-          subject: resolveConnectTokenSubject(connector, scope),
+          subject: resolvedSubject,
           ...(scope.installationId
             ? { installationId: scope.installationId }
             : {}),
           ...(scopes && scopes.length > 0 ? { scopes } : {}),
         });
+        if (connectDebug) {
+          console.info(
+            JSON.stringify({
+              component: "connect-token",
+              phase: "mint-result",
+              connector,
+              subject: resolvedSubject,
+              installationId: scope.installationId ?? null,
+              outcome: token ? "token" : "null",
+              tokenPrefix: token
+                ? token.startsWith("xoxb")
+                  ? "xoxb"
+                  : token.startsWith("xoxp")
+                    ? "xoxp"
+                    : token.slice(0, 4)
+                : null,
+            }),
+          );
+        }
         return token ? { token } : null;
       } catch (error) {
+        if (connectDebug) {
+          console.info(
+            JSON.stringify({
+              component: "connect-token",
+              phase: "mint-error",
+              connector,
+              subject: resolvedSubject,
+              installationId: scope.installationId ?? null,
+              errorName: error instanceof Error ? error.name : "unknown",
+              errorMessage:
+                error instanceof Error ? error.message : String(error),
+              errorCode:
+                error &&
+                typeof error === "object" &&
+                "code" in error &&
+                typeof error.code === "string"
+                  ? error.code
+                  : null,
+            }),
+          );
+        }
         // Not yet authorized / token not minted → no credential (surface consent upstream).
         if (
           connect.UserAuthorizationRequiredError &&

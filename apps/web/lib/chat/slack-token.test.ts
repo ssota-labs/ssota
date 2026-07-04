@@ -16,12 +16,17 @@ vi.mock("@ssota/adapter-postgres", () => ({
   }),
 }));
 
-vi.mock("@ssota/agent-runtime", () => ({
-  getDb: () => ({}),
-  createVercelConnectProvider: () => ({
-    getToken,
-  }),
-}));
+vi.mock("@ssota/agent-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@ssota/agent-runtime")>();
+  return {
+    ...actual,
+    getDb: () => ({}),
+    createVercelConnectProvider: () => ({
+      getToken,
+    }),
+    probeSlackToken: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/ports", () => ({
   getOrCreateProjectAccount: getAccount,
@@ -68,10 +73,11 @@ describe("getSlackBotTokenForInstallation", () => {
       teamspaceId: "teamspace-1",
       accountId: "acct-1",
       installationId: "T0914DV7GA0",
+      connectPurpose: "inbound",
     });
   });
 
-  it("tries app subject before user subject for Connect token mint", async () => {
+  it("rejects user token fallback and returns null when only xoxp is available", async () => {
     resolveWorkspace.mockResolvedValue({
       teamspaceId: "teamspace-1",
       accountId: "acct-1",
@@ -85,24 +91,18 @@ describe("getSlackBotTokenForInstallation", () => {
         installationName: "SSOTA Labs",
       },
     ]);
-    getToken
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ token: "xoxp-user-fallback" });
+    getToken.mockResolvedValueOnce({ token: "xoxp-user-only" });
 
     const { getSlackBotTokenForInstallation } = await import("./slack-token");
     const token = await getSlackBotTokenForInstallation("T0914DV7GA0");
 
-    expect(token).toBe("xoxp-user-fallback");
-    expect(getToken).toHaveBeenNthCalledWith(1, "slack/ssota", {
+    expect(token).toBeNull();
+    expect(getToken).toHaveBeenCalledTimes(1);
+    expect(getToken).toHaveBeenCalledWith("slack/ssota", {
       teamspaceId: "teamspace-1",
       accountId: "acct-1",
       installationId: "T0914DV7GA0",
-    });
-    expect(getToken).toHaveBeenNthCalledWith(2, "slack/ssota", {
-      teamspaceId: "teamspace-1",
-      accountId: "acct-1",
-      installationId: "T0914DV7GA0",
-      userId: "user-who-connected",
+      connectPurpose: "inbound",
     });
   });
 
@@ -129,10 +129,11 @@ describe("getSlackBotTokenForInstallation", () => {
       teamspaceId: "teamspace-fallback",
       accountId: "acct-fallback",
       installationId: "T0914DV7GA0",
+      connectPurpose: "inbound",
     });
   });
 
-  it("caches user subject when Connect falls back to user token", async () => {
+  it("does not cache user subject when user token is rejected", async () => {
     resolveWorkspace.mockResolvedValue({
       teamspaceId: "teamspace-1",
       accountId: "acct-1",
@@ -146,15 +147,13 @@ describe("getSlackBotTokenForInstallation", () => {
         installationName: "SSOTA Labs",
       },
     ]);
-    getToken
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ token: "xoxp-user-fallback" });
+    getToken.mockResolvedValueOnce({ token: "xoxp-user-only" });
 
     const { getSlackBotTokenForInstallation, getCachedSlackTokenSubject } =
       await import("./slack-token");
     await getSlackBotTokenForInstallation("T0914DV7GA0");
 
-    expect(getCachedSlackTokenSubject("T0914DV7GA0")).toBe("user");
+    expect(getCachedSlackTokenSubject("T0914DV7GA0")).toBeUndefined();
   });
 
   it("caches app subject when Connect returns bot token", async () => {

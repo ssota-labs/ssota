@@ -133,3 +133,20 @@ export function connectTokenScopesForConnector(
   const deduped = [...new Set(merged)];
   return deduped.length > 0 ? deduped : undefined;
 }
+
+const INBOUND_BOT_PROVIDERS = new Set(["slack", "discord"]);
+
+/**
+ * Scopes for Channels (inbound bot) Connect authorize + token mint.
+ * Bot tokens use the connector dashboard's Bot Scopes — do not request Slack MCP
+ * user OAuth scopes here or Connect may complete with xoxp only.
+ */
+export function inboundConnectTokenScopesForConnector(
+  connectorUid: string,
+): string[] | undefined {
+  const provider = connectorUid.split("/")[0] ?? connectorUid;
+  if (INBOUND_BOT_PROVIDERS.has(provider)) {
+    return undefined;
+  }
+  return connectTokenScopesForConnector(connectorUid);
+}

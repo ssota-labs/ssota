@@ -6,7 +6,10 @@ import {
   isComposioToolkit,
   startConnectAuthorization,
 } from "@ssota/agent-runtime";
-import { connectTokenScopesForConnector } from "@ssota/agent-runtime/connect-scopes";
+import {
+  connectTokenScopesForConnector,
+  inboundConnectTokenScopesForConnector,
+} from "@ssota/agent-runtime/connect-scopes";
 import { loginRedirect } from "@/lib/auth/login-redirect";
 import { apiScopeErrorResponse } from "@/lib/api/scope-error";
 import { resolveApiAccountScope } from "@/lib/api/resolve-api-account-scope";
@@ -37,6 +40,7 @@ export async function GET(request: Request) {
   const installationId = url.searchParams.get("installationId") ?? undefined;
   const returnTo = url.searchParams.get("returnTo") ?? "/";
   const scope = url.searchParams.get("scope") === "org" ? "org" : "user";
+  const purpose = url.searchParams.get("purpose");
 
   if (!connector) {
     return NextResponse.json(
@@ -85,7 +89,10 @@ export async function GET(request: Request) {
     callback.searchParams.set("returnTo", returnTo);
     callback.searchParams.set("userId", user.id);
 
-    const scopes = connectTokenScopesForConnector(connector);
+    const scopes =
+      purpose === "inbound"
+        ? inboundConnectTokenScopesForConnector(connector)
+        : connectTokenScopesForConnector(connector);
 
     try {
       const flowUrl = await startConnectAuthorization(

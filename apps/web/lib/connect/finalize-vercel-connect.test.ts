@@ -2,16 +2,22 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const getConnectInstallation = vi.fn();
 const enrichConnectInstallationDisplay = vi.fn();
+const getToken = vi.fn();
 const record = vi.fn();
 const link = vi.fn();
 
 vi.mock("@ssota/agent-runtime", () => ({
   getConnectInstallation,
   enrichConnectInstallationDisplay,
+  createVercelConnectProvider: () => ({ getToken }),
   getDb: () => ({}),
   normalizeConnectInstallationId: (id?: string | null) =>
     id?.trim() ? id.trim() : undefined,
+}));
+
+vi.mock("@ssota/agent-runtime/connect-scopes", () => ({
   connectTokenScopesForConnector: () => ["chat:write"],
+  inboundConnectTokenScopesForConnector: () => undefined,
 }));
 
 vi.mock("@ssota/adapter-postgres", () => ({
@@ -32,6 +38,7 @@ describe("finalizeVercelConnect", () => {
       tenantId: "T01234567",
       name: "Acme Slack",
     });
+    getToken.mockResolvedValue({ token: "xoxb-bot" });
     enrichConnectInstallationDisplay.mockImplementation(
       async ({ installation }) => installation,
     );
@@ -91,5 +98,25 @@ describe("finalizeVercelConnect", () => {
     expect(result.linked).toBe(false);
     expect(link).not.toHaveBeenCalled();
     expect(result.recorded).toBe(true);
+    expect(getToken).not.toHaveBeenCalled();
+  });
+
+  it("rejects Slack when only a user token is available", async () => {
+    getToken.mockResolvedValue({ token: "xoxp-user-only" });
+
+    const { finalizeVercelConnect } = await import("./finalize-vercel-connect");
+
+    await expect(
+      finalizeVercelConnect({
+        connector: "slack/ssota",
+        teamspaceId: "00000000-0000-4000-8000-000000000001",
+        accountId: "acc-1",
+        userId: "user-1",
+        installationId: "inst-1",
+      }),
+    ).rejects.toThrow(/user token only/i);
+
+    expect(record).not.toHaveBeenCalled();
+    expect(link).not.toHaveBeenCalled();
   });
 });

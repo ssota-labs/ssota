@@ -46,7 +46,8 @@
     "e2e:billing:open": "bash scripts/e2e-billing-open-report.sh",
     "e2e:billing:patch-theme": "tsx scripts/patch-playwright-report-theme.ts",
     "test:billing": "pnpm --filter @ssota/core test -- assert-cloud-entitlement && pnpm --filter @ssota/ee test -- sync-subscription && pnpm --filter @ssota/adapter-postgres test -- billing-port",
-    "stripe:smoke": "tsx scripts/stripe-billing-smoke.ts"
+    "stripe:smoke": "tsx scripts/stripe-billing-smoke.ts",
+    "debug:slack-connect-token": "pnpm --filter web debug:slack-connect-token"
   },
   "devDependencies": {
     "@ssota/client": "workspace:*",

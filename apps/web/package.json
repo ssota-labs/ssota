@@ -12,7 +12,8 @@
     "start": "next start --port 3000",
     "lint": "eslint .",
     "test": "vitest run --passWithNoTests",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "debug:slack-connect-token": "tsx scripts/debug-slack-connect-token.ts"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.2",
