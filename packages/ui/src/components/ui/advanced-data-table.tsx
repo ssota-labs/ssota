@@ -683,17 +683,22 @@ export function AdvancedDataTable<TData>({
     <TableRow data-index={rIndex}>
       {row.getVisibleCells().map((cell, c) => {
         const col = cell.column
-        const pinned = col.getIsPinned()
         const align = col.columnDef.meta?.align
         const editable = !!col.columnDef.meta?.editable && !!onCellEdit
         const isEditing =
           editing?.rowId === row.id && editing?.colId === col.id
+        const isSelected =
+          enableCellSelection && selection.isSelected(rIndex, c)
+        const isFocused =
+          enableCellFocus &&
+          focusedCell?.rowId === row.id &&
+          focusedCell?.colId === col.id
         return (
           <TableCell
             key={cell.id}
             className={cn(
               "relative py-1 whitespace-nowrap",
-              pinned && "bg-background",
+              isSelected || isFocused ? "bg-primary/15" : "bg-background",
               align === "right" && "text-right",
               align === "center" && "text-center",
               // Grid modes: click is a cell action, so suppress text drag-select
@@ -701,15 +706,9 @@ export function AdvancedDataTable<TData>({
               (enableCellSelection || enableCellFocus) && "select-none",
               enableCellSelection && "cursor-cell",
               enableCellSelection &&
-                selection.isSelected(rIndex, c) &&
-                "bg-primary/15",
-              enableCellSelection &&
                 selection.isFocus(rIndex, c) &&
                 "ring-1 ring-inset ring-primary",
-              enableCellFocus &&
-                focusedCell?.rowId === row.id &&
-                focusedCell?.colId === col.id &&
-                "bg-primary/15 ring-1 ring-inset ring-primary",
+              isFocused && "ring-1 ring-inset ring-primary",
             )}
             style={{ width: col.getSize(), ...pinStyles(col, 1) }}
             onMouseDown={
