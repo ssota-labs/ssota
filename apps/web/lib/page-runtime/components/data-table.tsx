@@ -86,6 +86,7 @@ function DataTableEl({
   selectionParam,
   setAction,
   addAction,
+  addLabel = "New row",
   deleteAction,
 }: {
   elementId: string;
@@ -96,6 +97,7 @@ function DataTableEl({
   selectionParam?: string;
   setAction?: string;
   addAction?: string;
+  addLabel?: string;
   deleteAction?: string;
 }) {
   const onAction = useAction();
@@ -368,7 +370,7 @@ function DataTableEl({
               className="flex w-full items-center gap-1.5 border-t px-3 py-2 text-sm text-muted-foreground hover:bg-muted/40"
             >
               <PlusIcon className="size-3.5" />
-              New row
+              {addLabel}
             </button>
           ) : null
         }
@@ -392,6 +394,7 @@ export const dataTableComponents: Record<string, CatalogComponent> = {
       }
       setAction={typeof props.setAction === "string" ? props.setAction : undefined}
       addAction={typeof props.addAction === "string" ? props.addAction : undefined}
+      addLabel={typeof props.addLabel === "string" ? props.addLabel : undefined}
       deleteAction={
         typeof props.deleteAction === "string" ? props.deleteAction : undefined
       }
