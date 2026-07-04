@@ -77,7 +77,3 @@ export const PageViewStateContext = createContext<PageViewStateRuntime | null>(
   null,
 );
 export const usePageViewState = () => useContext(PageViewStateContext);
-
-/** Tab triggers for the current page render in PageSiblingNav (not in-page TabsList). */
-export const PageHoistedTabsContext = createContext(false);
-export const usePageHoistedTabs = () => useContext(PageHoistedTabsContext);

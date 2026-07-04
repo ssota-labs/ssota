@@ -7,7 +7,7 @@ import { orgPath, type OrgRouteContext } from "@/lib/console/paths";
 import { getGraphPorts, getPagePort } from "@/lib/ports";
 import { resolveArtifactBindings } from "@/lib/design-studio/resolve-artifact-binding";
 import { PageSiblingNav } from "@/components/console/page-sibling-nav";
-import { loadPageSiblingNav, buildPageSiblingNavBar } from "@/lib/console/page-sibling-nav";
+import { loadPageSiblingNav } from "@/lib/console/page-sibling-nav";
 import { DynamicPageRenderer } from "@/lib/page-runtime";
 import { pageUsesArtifactWorkbench } from "@/lib/page-runtime/spec-utils";
 import {
@@ -122,16 +122,10 @@ async function NodeTemplatePageInner({
   const siblingNav = await loadPageSiblingNav(pagePort, page, (id) =>
     orgPath(routeCtx, "n", nodeId, "p", id),
   );
-  const pageNav = buildPageSiblingNavBar(siblingNav, {
-    page,
-    spec: page.spec,
-    pageHref: pagePath,
-    tabParam: typeof urlParams.tab === "string" ? urlParams.tab : undefined,
-  });
 
   return (
     <>
-      {pageNav ? <PageSiblingNav {...pageNav} /> : null}
+      {siblingNav ? <PageSiblingNav {...siblingNav} /> : null}
       <SetNodeDrill
         nodeId={subject.id}
         catalogKey={subject.catalogKey}
@@ -141,7 +135,7 @@ async function NodeTemplatePageInner({
       <ConsolePageFrame
         fullWidth={usesWorkbench}
         fillHeight={!usesWorkbench}
-        contentClassName={pageNav ? "pt-2" : undefined}
+        contentClassName={siblingNav ? "pt-2" : undefined}
       >
         <DynamicPageRenderer
           spec={page.spec}
