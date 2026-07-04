@@ -246,6 +246,7 @@ function DataTableEl({
             return (
               <button
                 type="button"
+                data-card-list-sheet-row=""
                 onClick={() => selectRow(node.id)}
                 className={`text-left font-medium hover:underline ${
                   selectedRowId === node.id

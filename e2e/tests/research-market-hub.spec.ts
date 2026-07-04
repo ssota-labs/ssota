@@ -82,4 +82,31 @@ test.describe("Research market hub", () => {
       page.getByText("Key points from video", { exact: false }),
     ).toBeVisible();
   });
+
+  test("Studies sheet closes when clicking outside the panel", async ({
+    page,
+  }) => {
+    await expect(page.getByTestId("document-sheet-list")).toBeVisible();
+    await page
+      .locator('[data-testid^="document-sheet-list-item-"]')
+      .filter({ hasText: "Competitive landscape — dev workflow tools" })
+      .click();
+    await expect(page.getByTestId("document-sheet-panel")).toBeVisible();
+
+    await page.getByRole("tab", { name: "Competitors" }).click();
+    await expect(page.getByTestId("document-sheet-panel")).not.toBeVisible();
+  });
+
+  test("Sources sheet closes when clicking outside the panel", async ({
+    page,
+  }) => {
+    await page.getByRole("tab", { name: "Sources" }).click();
+    await page
+      .getByRole("button", { name: "Dev workflow tools landscape (YouTube)" })
+      .click();
+    await expect(page.getByTestId("node-detail-sheet-panel")).toBeVisible();
+
+    await page.getByRole("tab", { name: "Studies" }).click();
+    await expect(page.getByTestId("node-detail-sheet-panel")).not.toBeVisible();
+  });
 });

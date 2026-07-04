@@ -65,6 +65,7 @@ export function NodeDetailSheetEl({
       onActiveIdChange={(id) => {
         if (!id) close();
       }}
+      dismissOnOutsideClick
       testId="node-detail-sheet-root"
       className="min-h-0 flex-1"
     >
@@ -72,7 +73,6 @@ export function NodeDetailSheetEl({
       {node ? (
         <CardListSheet.Sheet.Root
           onClose={close}
-          viewport
           testId="node-detail-sheet-panel"
           titleId="node-detail-sheet-title"
           closeButtonTestId="node-detail-sheet-close"

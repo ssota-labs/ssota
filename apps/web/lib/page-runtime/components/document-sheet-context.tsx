@@ -55,6 +55,32 @@ export function DocumentSheetProvider({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [sheet, closeSheet]);
 
+  useEffect(() => {
+    if (!sheet) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) return;
+
+      const panel = document.querySelector(
+        '[data-testid="document-sheet-panel"]',
+      );
+      if (panel?.contains(target)) return;
+
+      if (
+        target instanceof Element &&
+        target.closest("[data-card-list-sheet-row]")
+      ) {
+        return;
+      }
+
+      closeSheet();
+    };
+
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, [sheet, closeSheet]);
+
   const value = useMemo(
     () => ({
       activeNodeId: sheet?.node.id ?? null,

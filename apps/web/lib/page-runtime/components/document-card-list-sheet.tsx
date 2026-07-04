@@ -180,6 +180,7 @@ export function DocumentCardListSheetEl({
     <CardListSheet.Root
       activeId={activeId}
       onActiveIdChange={onActiveIdChange}
+      dismissOnOutsideClick
       testId="document-sheet-list"
     >
       {filterBar && inSection ? (
