@@ -154,7 +154,7 @@ function AgentSettingItem({
         </span>
       ) : null}
       <div className="min-w-0 flex-1 space-y-0.5">
-        <span className="block text-sm">{title}</span>
+        <span className="block min-w-0 text-sm [overflow-wrap:anywhere]">{title}</span>
         {subtitle ? (
           <p className="text-muted-foreground line-clamp-2 text-xs">{subtitle}</p>
         ) : null}

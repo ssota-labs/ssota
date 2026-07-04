@@ -595,6 +595,11 @@ export function AgentSettingsDialogs({
     ? ["user", "org"]
     : ["user"];
 
+  const connectionRowClassName =
+    "@max-[26rem]/detail:flex-col @max-[26rem]/detail:items-stretch @max-[26rem]/detail:gap-2.5 py-2.5";
+  const connectionActionClassName =
+    "@max-[26rem]/detail:w-full shrink-0 sm:shrink-0";
+
   const renderProviderConnectionRow = (
     connection: ScopedConnection,
     providerLabel: string,
@@ -609,6 +614,7 @@ export function AgentSettingsDialogs({
       <AgentSettingCard.Item
         key={connectorBindingKey(connection.scope, connection.id)}
         title={label}
+        className={connectionRowClassName}
         testId={`agent-provider-connection-${connection.scope}-${connection.id}`}
         trailing={
           bound ? (
@@ -616,6 +622,7 @@ export function AgentSettingsDialogs({
               type="button"
               variant="outline"
               size="sm"
+              className={connectionActionClassName}
               data-testid={`agent-connection-remove-${connection.scope}-${connection.id}`}
               onClick={() => removeBindingForConnection(connection)}
             >
@@ -625,10 +632,12 @@ export function AgentSettingsDialogs({
             <Button
               type="button"
               size="sm"
+              className={connectionActionClassName}
               data-testid={`agent-connection-add-${connection.scope}-${connection.id}`}
               onClick={() => addBindingForConnection(connection)}
             >
-              Add to agent
+              <span className="hidden @max-[26rem]/detail:inline">Add</span>
+              <span className="@max-[26rem]/detail:hidden">Add to agent</span>
             </Button>
           )
         }

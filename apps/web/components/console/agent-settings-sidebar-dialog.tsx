@@ -72,7 +72,7 @@ export function AgentSettingsSidebarDialog({
     <Dialog open={open} onOpenChange={onOpenChange} modal="trap-focus">
       <DialogContent
         className={cn(
-          "flex h-[min(85vh,40rem)] w-[min(68vw,56rem)] !max-w-[min(68vw,56rem)] flex-col gap-0 overflow-hidden !px-3 !py-4 sm:!max-w-[min(68vw,56rem)]",
+          "flex h-[min(85vh,40rem)] w-[min(94vw,56rem)] !max-w-[min(94vw,56rem)] flex-col gap-0 overflow-hidden !px-3 !py-4 sm:!max-w-[min(94vw,56rem)]",
           className,
         )}
         forceBackdrop
@@ -80,7 +80,7 @@ export function AgentSettingsSidebarDialog({
       >
         <DialogTitle className="sr-only">{title}</DialogTitle>
         <div className="flex min-h-0 flex-1">
-          <aside className="flex w-52 shrink-0 flex-col gap-2 border-r border-muted">
+          <aside className="flex w-[34%] max-w-52 min-w-[8.75rem] shrink-0 flex-col gap-2 border-r border-muted">
             <div className="space-y-2 px-2">
               <h2 className="min-w-0 truncate text-sm font-semibold">{title}</h2>
               {showSearch ? (
@@ -142,9 +142,11 @@ export function AgentSettingsSidebarDialog({
             </nav>
           </aside>
           <div className="flex min-w-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4 pt-0 scrollbar-none">{detail}</div>
+            <div className="@container/detail min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-4 pt-0 scrollbar-none sm:px-5">
+              {detail}
+            </div>
             {footer ? (
-              <div className="flex justify-end px-5 pt-3 pb-1.5">{footer}</div>
+              <div className="flex justify-end px-4 pt-3 pb-1.5 sm:px-5">{footer}</div>
             ) : null}
           </div>
         </div>
@@ -169,7 +171,7 @@ export function SidebarDetailHeader({
       className={cn(
         "mb-4 flex items-start gap-3",
         sticky &&
-          "sticky top-0 z-10 -mx-5 border-b border-border/60 bg-popover px-5 pb-3 pt-0",
+          "sticky top-0 z-10 -mx-4 border-b border-border/60 bg-popover px-4 pb-3 pt-0 sm:-mx-5 sm:px-5",
       )}
     >
       {icon ? (
