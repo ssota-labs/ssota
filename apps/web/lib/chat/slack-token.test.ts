@@ -16,12 +16,17 @@ vi.mock("@ssota/adapter-postgres", () => ({
   }),
 }));
 
-vi.mock("@ssota/agent-runtime", () => ({
-  getDb: () => ({}),
-  createVercelConnectProvider: () => ({
-    getToken,
-  }),
-}));
+vi.mock("@ssota/agent-runtime", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@ssota/agent-runtime")>();
+  return {
+    ...actual,
+    getDb: () => ({}),
+    createVercelConnectProvider: () => ({
+      getToken,
+    }),
+    probeSlackToken: vi.fn(),
+  };
+});
 
 vi.mock("@/lib/ports", () => ({
   getOrCreateProjectAccount: getAccount,

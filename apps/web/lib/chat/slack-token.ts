@@ -1,4 +1,9 @@
-import { createVercelConnectProvider } from "@ssota/agent-runtime";
+import {
+  createVercelConnectProvider,
+  probeSlackToken,
+  resolveConnectTokenSubject,
+  type SlackTokenProbe,
+} from "@ssota/agent-runtime";
 import {
   createAccountConnectionPort,
   createChatWorkspacePort,
@@ -93,11 +98,143 @@ export function isSlackNotAllowedTokenTypeError(error: unknown): boolean {
   return false;
 }
 
+function slackTokenDebugEnabled(): boolean {
+  return (
+    process.env.SLACK_TOKEN_DEBUG === "1" ||
+    process.env.CONNECT_TOKEN_DEBUG === "1"
+  );
+}
+
+function logSlackTokenMint(event: Record<string, unknown>): void {
+  if (!slackTokenDebugEnabled()) return;
+  console.info(JSON.stringify({ component: "slack-token-mint", ...event }));
+}
+
+export type SlackTokenMintDebugStep = {
+  step: "app-getToken" | "user-getToken";
+  connectSubject: { type: "app" } | { type: "user"; id: string };
+  outcome: "token" | "null" | "error";
+  tokenPrefix?: string;
+  probe?: SlackTokenProbe;
+  error?: string;
+};
+
+export type SlackTokenMintDebugReport = {
+  installationId?: string;
+  connector: string;
+  teamspaceId: string;
+  accountId: string;
+  subjectUserId?: string | null;
+  connectionRow?: {
+    installationId: string | null;
+    tenantId: string | null;
+    connector: string;
+  };
+  steps: SlackTokenMintDebugStep[];
+  chosen?: { tokenSubject: SlackTokenSubject; tokenPrefix: string };
+};
+
+async function probeMintedSlackToken(
+  token: string,
+): Promise<SlackTokenProbe | undefined> {
+  if (!slackTokenDebugEnabled()) return undefined;
+  try {
+    return await probeSlackToken(token);
+  } catch (error) {
+    logSlackTokenMint({
+      phase: "probe-error",
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return undefined;
+  }
+}
+
+async function tryConnectMint(input: {
+  provider: ReturnType<typeof createVercelConnectProvider>;
+  connector: string;
+  tokenScope: {
+    teamspaceId: string;
+    accountId: string;
+    installationId?: string;
+    userId?: string;
+  };
+  step: SlackTokenMintDebugStep["step"];
+  steps?: SlackTokenMintDebugStep[];
+}): Promise<{ token: string; tokenSubject: SlackTokenSubject } | null> {
+  const connectSubject = resolveConnectTokenSubject(
+    input.connector,
+    input.tokenScope,
+  );
+  logSlackTokenMint({
+    phase: "getToken-request",
+    step: input.step,
+    connector: input.connector,
+    connectSubject,
+    installationId: input.tokenScope.installationId ?? null,
+    userId: input.tokenScope.userId ?? null,
+  });
+
+  try {
+    const cred = await input.provider.getToken(input.connector, input.tokenScope);
+    if (!cred?.token) {
+      logSlackTokenMint({
+        phase: "getToken-result",
+        step: input.step,
+        connectSubject,
+        outcome: "null",
+      });
+      input.steps?.push({
+        step: input.step,
+        connectSubject,
+        outcome: "null",
+      });
+      return null;
+    }
+
+    const tokenSubject: SlackTokenSubject = isSlackUserToken(cred.token)
+      ? "user"
+      : "app";
+    const probe = await probeMintedSlackToken(cred.token);
+    logSlackTokenMint({
+      phase: "getToken-result",
+      step: input.step,
+      connectSubject,
+      outcome: "token",
+      tokenPrefix: probe?.tokenPrefix ?? (tokenSubject === "user" ? "xoxp" : "xoxb"),
+      authTest: probe?.authTest,
+    });
+    input.steps?.push({
+      step: input.step,
+      connectSubject,
+      outcome: "token",
+      tokenPrefix: probe?.tokenPrefix,
+      probe,
+    });
+    return { token: cred.token, tokenSubject };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logSlackTokenMint({
+      phase: "getToken-error",
+      step: input.step,
+      connectSubject,
+      error: message,
+    });
+    input.steps?.push({
+      step: input.step,
+      connectSubject,
+      outcome: "error",
+      error: message,
+    });
+    return null;
+  }
+}
+
 async function mintSlackBotToken(input: {
   teamspaceId: string;
   accountId: string;
   installationId?: string;
   connectorUid?: string;
+  debugSteps?: SlackTokenMintDebugStep[];
 }): Promise<{ token: string; tokenSubject: SlackTokenSubject } | null> {
   const db = getDb();
   const accountConnections = createAccountConnectionPort(db);
@@ -123,31 +260,120 @@ async function mintSlackBotToken(input: {
     installationId,
   };
 
-  // Inbound bot APIs (streaming, assistant.threads.setStatus) need bot token (xoxb).
-  // Connect exposes that via app-subject + installationId after Channels OAuth.
-  const appCred = await provider.getToken(connector, tokenScope);
-  if (appCred?.token) {
-    const tokenSubject: SlackTokenSubject = isSlackUserToken(appCred.token)
-      ? "user"
-      : "app";
-    cacheSlackTokenSubject(installationId, tokenSubject);
-    return { token: appCred.token, tokenSubject };
+  logSlackTokenMint({
+    phase: "start",
+    connector,
+    installationId: installationId ?? null,
+    teamspaceId: input.teamspaceId,
+    accountId: input.accountId,
+    subjectUserId: slackScope?.subjectUserId ?? null,
+    connectionInstallationId: slackScope?.installationId ?? null,
+    connectionTenantId: slackScope?.tenantId ?? null,
+  });
+
+  const appMinted = await tryConnectMint({
+    provider,
+    connector,
+    tokenScope,
+    step: "app-getToken",
+    steps: input.debugSteps,
+  });
+  if (appMinted) {
+    cacheSlackTokenSubject(installationId, appMinted.tokenSubject);
+    return appMinted;
   }
 
-  // Fallback: user-subject grant from Channels OAuth (xoxp — chat.postMessage only).
   const subjectUserId = slackScope?.subjectUserId ?? undefined;
   if (subjectUserId) {
-    const userCred = await provider.getToken(connector, {
-      ...tokenScope,
-      userId: subjectUserId,
+    const userMinted = await tryConnectMint({
+      provider,
+      connector,
+      tokenScope: { ...tokenScope, userId: subjectUserId },
+      step: "user-getToken",
+      steps: input.debugSteps,
     });
-    if (userCred?.token) {
-      cacheSlackTokenSubject(installationId, "user");
-      return { token: userCred.token, tokenSubject: "user" };
+    if (userMinted) {
+      cacheSlackTokenSubject(installationId, userMinted.tokenSubject);
+      return userMinted;
     }
   }
 
+  logSlackTokenMint({
+    phase: "complete",
+    connector,
+    installationId: installationId ?? null,
+    outcome: "no-token",
+  });
   return null;
+}
+
+/** Diagnostic report for why inbound Slack mint chose app vs user token. */
+export async function debugMintSlackBotTokenForInstallation(
+  installationId: string,
+): Promise<SlackTokenMintDebugReport | null> {
+  if (usesStaticSlackToken()) {
+    const token = staticSlackToken();
+    return token
+      ? {
+          installationId,
+          connector: "(static SLACK_BOT_TOKEN)",
+          teamspaceId: "",
+          accountId: "",
+          steps: [],
+          chosen: {
+            tokenSubject: token.startsWith("xoxp") ? "user" : "app",
+            tokenPrefix: token.startsWith("xoxp") ? "xoxp" : "xoxb",
+          },
+        }
+      : null;
+  }
+
+  const db = getDb();
+  const link = await createChatWorkspacePort(db).resolve(installationId);
+  const teamspaceId = link?.teamspaceId ?? process.env.CHAT_PROJECT_ID;
+  if (!teamspaceId) return null;
+
+  const accountId =
+    link?.accountId ?? (await getOrCreateProjectAccount(teamspaceId)).id;
+
+  const accountConnections = createAccountConnectionPort(db);
+  const scopes = await accountConnections.listConnectCredentialScopes(accountId);
+  const slackScope = pickSlackScope(scopes, installationId);
+  const connector = slackScope?.connector ?? defaultSlackConnectorUid();
+  const steps: SlackTokenMintDebugStep[] = [];
+
+  const minted = await mintSlackBotToken({
+    teamspaceId,
+    accountId,
+    installationId,
+    connectorUid: defaultSlackConnectorUid(),
+    debugSteps: steps,
+  });
+
+  const report: SlackTokenMintDebugReport = {
+    installationId,
+    connector,
+    teamspaceId,
+    accountId,
+    subjectUserId: slackScope?.subjectUserId ?? null,
+    connectionRow: slackScope
+      ? {
+          connector: slackScope.connector,
+          installationId: slackScope.installationId,
+          tenantId: slackScope.tenantId,
+        }
+      : undefined,
+    steps,
+    chosen: minted
+      ? {
+          tokenSubject: minted.tokenSubject,
+          tokenPrefix: minted.token.startsWith("xoxp") ? "xoxp" : "xoxb",
+        }
+      : undefined,
+  };
+
+  console.info(JSON.stringify({ component: "slack-token-mint-report", ...report }));
+  return report;
 }
 
 /**

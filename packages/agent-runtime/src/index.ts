@@ -101,6 +101,11 @@ export {
 } from "./credentials/provider.js";
 export { mcpScopesForConnector } from "./credentials/mcp-scopes.js";
 export {
+  probeSlackToken,
+  slackTokenPrefix,
+  type SlackTokenProbe,
+} from "./credentials/slack-token-probe.js";
+export {
   enrichConnectInstallationDisplay,
   type EnrichConnectInstallationInput,
 } from "./connections/enrich-installation-display.js";
