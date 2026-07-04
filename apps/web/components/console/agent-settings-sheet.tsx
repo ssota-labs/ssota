@@ -46,6 +46,11 @@ import {
   PopoverContent,
 } from "@ssota/ui/components/ui/popover";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@ssota/ui/components/ui/tooltip";
 import { Label } from "@ssota/ui/components/ui/label";
 import {
   ScheduleSheet,
@@ -686,44 +691,62 @@ export function AgentSettingsSheet({
                         testId={`agent-bound-connection-${binding.scope}-${binding.connectionId}`}
                         trailing={
                           <div className="flex items-center gap-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              className="text-muted-foreground hover:text-foreground"
-                              aria-label={`Tool permissions for ${label}`}
-                              data-testid={`agent-bound-connection-settings-${binding.scope}-${binding.connectionId}`}
-                              onClick={(event) => {
-                                const key = connectorBindingKey(
-                                  binding.scope,
-                                  binding.connectionId,
-                                );
-                                setEditingToolPermissionsKey((current) => {
-                                  if (current === key) return null;
-                                  toolPermissionsPopoverAnchorRef.current =
-                                    event.currentTarget;
-                                  return key;
-                                });
-                              }}
-                            >
-                              <GearIcon className="size-4" aria-hidden />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon-sm"
-                              className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
-                              aria-label={`Unlink ${label} from agent`}
-                              data-testid={`agent-bound-connection-unlink-${binding.scope}-${binding.connectionId}`}
-                              onClick={() =>
-                                removeBindingFromDraft(
-                                  binding.scope,
-                                  binding.connectionId,
-                                )
-                              }
-                            >
-                              <LinkBreakIcon className="size-4" aria-hidden />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    className="text-muted-foreground hover:text-foreground"
+                                    aria-label={`Tool permissions for ${label}`}
+                                    data-testid={`agent-bound-connection-settings-${binding.scope}-${binding.connectionId}`}
+                                    onClick={(event) => {
+                                      const key = connectorBindingKey(
+                                        binding.scope,
+                                        binding.connectionId,
+                                      );
+                                      setEditingToolPermissionsKey((current) => {
+                                        if (current === key) return null;
+                                        toolPermissionsPopoverAnchorRef.current =
+                                          event.currentTarget;
+                                        return key;
+                                      });
+                                    }}
+                                  />
+                                }
+                              >
+                                <GearIcon className="size-4" aria-hidden />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" sideOffset={5}>
+                                Tool permissions
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                                    aria-label={`Unlink ${label} from agent`}
+                                    data-testid={`agent-bound-connection-unlink-${binding.scope}-${binding.connectionId}`}
+                                    onClick={() =>
+                                      removeBindingFromDraft(
+                                        binding.scope,
+                                        binding.connectionId,
+                                      )
+                                    }
+                                  />
+                                }
+                              >
+                                <LinkBreakIcon className="size-4" aria-hidden />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" sideOffset={5}>
+                                Unlink from agent
+                              </TooltipContent>
+                            </Tooltip>
                           </div>
                         }
                       />
