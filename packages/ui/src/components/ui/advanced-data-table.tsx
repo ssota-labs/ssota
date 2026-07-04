@@ -201,7 +201,7 @@ function SortableHeader<TData>({
     <TableHead
       ref={setNodeRef}
       colSpan={header.colSpan}
-      className={cn("relative border-r border-border bg-muted whitespace-nowrap")}
+      className={cn("relative border-r border-border bg-background whitespace-nowrap")}
       style={{
         width: header.getSize(),
         transform: CSS.Transform.toString(transform),
@@ -822,7 +822,7 @@ export function AdvancedDataTable<TData>({
           >
             <table
               data-slot="table"
-              className="cn-table table-fixed"
+              className="cn-table table-fixed border-collapse"
               style={{ width: "100%", minWidth: table.getTotalSize() }}
             >
               <colgroup>
@@ -831,9 +831,9 @@ export function AdvancedDataTable<TData>({
                 ))}
                 <col />
               </colgroup>
-              <TableHeader className="sticky top-0 z-20 bg-muted">
+              <TableHeader className="sticky top-0 z-20 bg-background">
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className="bg-muted hover:bg-muted">
+                  <TableRow key={headerGroup.id} className="bg-background hover:bg-background">
                     <SortableContext
                       items={headerGroup.headers.map((h) => h.column.id)}
                       strategy={horizontalListSortingStrategy}
@@ -850,7 +850,7 @@ export function AdvancedDataTable<TData>({
                     </SortableContext>
                     <TableHead
                       aria-hidden
-                      className="bg-muted p-0"
+                      className="bg-background p-0"
                     />
                   </TableRow>
                 ))}
