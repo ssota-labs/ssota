@@ -21,7 +21,7 @@ export const TOOL_BUNDLE_LABELS: Record<ToolBundle, string> = {
   "graph.write": "Graph write",
   "tasks.manage": "Tasks",
   "pages.author": "Pages",
-  connectors: "Composio connectors",
+  connectors: "Connectors",
   delegate: "Delegate subagents",
   script_tools: "TypeScript scripts",
   "skills.read": "Runtime skills",

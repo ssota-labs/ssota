@@ -68,6 +68,17 @@ export const ConnectionTriggerSchema = z.object({
 
 export type ConnectionTrigger = z.infer<typeof ConnectionTriggerSchema>;
 
+/** Per-connection toolkit access bound to an agent (Composio connected-account id). */
+export const AgentConnectorBindingSchema = z.object({
+  connectionId: z.string().min(1),
+  provider: z.string().min(1),
+  scope: z.enum(["user", "org"]),
+  /** Display snapshot — account label at bind time. */
+  accountLabel: z.string().optional(),
+});
+
+export type AgentConnectorBinding = z.infer<typeof AgentConnectorBindingSchema>;
+
 export const RunPolicySchema = z.object({
   model: z.string().optional(),
   maxSteps: z.number().int().positive().optional(),
@@ -80,9 +91,22 @@ export const RunPolicySchema = z.object({
   linkedWorkerAgentIds: z.array(z.string().uuid()).optional(),
   /** Composio connector providers this agent may use (empty = none selected). */
   enabledConnectorProviders: z.array(z.string()).optional(),
+  /** Explicit connected-account bindings (preferred over provider-level toggles). */
+  connectorBindings: z.array(AgentConnectorBindingSchema).optional(),
   /** External connection event triggers (Slack, Notion, etc.). */
   connectionTriggers: z.array(ConnectionTriggerSchema).optional(),
 });
+
+/** Unique toolkit slugs from bindings, or legacy enabledConnectorProviders. */
+export function deriveEnabledConnectorProviders(
+  runPolicy: Pick<RunPolicy, "connectorBindings" | "enabledConnectorProviders">,
+): string[] {
+  const fromBindings = runPolicy.connectorBindings?.map((b) => b.provider) ?? [];
+  if (fromBindings.length > 0) {
+    return [...new Set(fromBindings)].sort();
+  }
+  return [...(runPolicy.enabledConnectorProviders ?? [])].sort();
+}
 
 export type RunPolicy = z.infer<typeof RunPolicySchema>;
 

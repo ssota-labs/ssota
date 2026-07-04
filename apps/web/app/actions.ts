@@ -53,6 +53,12 @@ export async function updateAgentDefinitionAction(
       allowedTriggers?: string[];
       linkedWorkerAgentIds?: string[];
       enabledConnectorProviders?: string[];
+      connectorBindings?: Array<{
+        connectionId: string;
+        provider: string;
+        scope: "user" | "org";
+        accountLabel?: string;
+      }>;
       connectionTriggers?: Array<{
         id: string;
         provider: string;
@@ -132,6 +138,12 @@ export async function updateTeamspaceMainConfigAction(
       allowedTriggers?: string[];
       linkedWorkerAgentIds?: string[];
       enabledConnectorProviders?: string[];
+      connectorBindings?: Array<{
+        connectionId: string;
+        provider: string;
+        scope: "user" | "org";
+        accountLabel?: string;
+      }>;
       connectionTriggers?: Array<{
         id: string;
         provider: string;

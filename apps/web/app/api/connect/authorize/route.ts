@@ -112,7 +112,7 @@ export async function GET(request: Request) {
 
   if (!isComposioToolkit(connector)) {
     return NextResponse.json(
-      { error: "connector must be a Composio toolkit slug or Vercel Connect uid" },
+      { error: "connector must be a supported toolkit slug or Vercel Connect uid" },
       { status: 422 },
     );
   }
@@ -142,7 +142,7 @@ export async function GET(request: Request) {
     });
     if (!session) {
       return NextResponse.json(
-        { error: "Composio is not configured for this deployment" },
+        { error: "Connectors are not configured for this deployment" },
         { status: 503 },
       );
     }

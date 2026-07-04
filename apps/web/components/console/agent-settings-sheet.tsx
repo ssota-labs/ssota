@@ -7,13 +7,19 @@ import {
   AtIcon,
   ChatsCircleIcon,
   ClockIcon,
-  CpuIcon,
+  LightbulbIcon,
   PlusIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type { Block } from "@blocknote/core";
-import type { AgentDefinition, AgentTrigger, ConnectionTrigger } from "@ssota/contracts";
-import { Button, buttonVariants } from "@ssota/ui/components/ui/button";
+import type {
+  AgentDefinition,
+  AgentTrigger,
+  ConnectionTrigger,
+  SkillIndex,
+} from "@ssota/contracts";
+import { deriveEnabledConnectorProviders } from "@ssota/contracts";
+import { Button } from "@ssota/ui/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,7 +50,6 @@ import {
 } from "@/components/schedules/schedule-sheet";
 import { updateAgentDefinitionAction, updateTeamspaceMainConfigAction } from "@/app/actions";
 import { ConnectorBrandIcon } from "@/components/connections/connector-brand-icon";
-import { AgentSkillBindings } from "@/components/console/skills-workspace";
 import { CardListSheetPanel } from "@/components/card-list-sheet";
 import { AgentSettingCard } from "@/components/console/agent-setting-card";
 import {
@@ -54,17 +59,22 @@ import {
 } from "@/components/console/agent-settings-dialogs";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorDef } from "@/lib/connect/connectors";
-import { buildConnectorAuthorizeHref } from "@/lib/connect/authorize-href";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
-import { DEFAULT_MODEL_ID, MODEL_OPTIONS } from "@/lib/chat/models";
+import { AgentModelPicker } from "@/components/console/agent-model-picker";
+import { DEFAULT_MODEL_ID } from "@/lib/chat/models";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
 import {
   isAgentSettingsDraftDirty,
   resolveAllowedTriggersForSave,
+  resolveConnectorBindingsForSave,
   resolveToolBundlesForSave,
 } from "@/lib/console/agent-settings-save-snapshot";
+import {
+  connectionDisplayLabel,
+  migrateConnectorBindings,
+} from "@/lib/console/agent-connector-bindings";
 
 const DocumentEditorEl = dynamic(
   () =>
@@ -80,12 +90,15 @@ type AgentSettingsSheetProps = {
   teamspaceId: string;
   accountId: string;
   scriptToolIds: string[];
+  boundSkillIds: string[];
+  skillCatalog: SkillIndex[];
   scriptTools: Array<{ id: string; key: string; name: string }>;
   workers: AgentDefinition[];
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
   inboundChannels: InboundChannelStatus[];
   channelsHref: string;
+  connectionsHref: string;
   schedules: AgentScheduleSummary[];
   onClose: () => void;
   registerRequestClose?: (
@@ -99,12 +112,19 @@ const DEFAULT_CARD_TRIGGERS: AgentTrigger[] = ["chat", "task"];
 function buildDraft(
   definition: AgentDefinition,
   scriptToolIds: string[],
+  boundSkillIds: string[],
   schedules: AgentScheduleSummary[],
+  connections: { user: ConnectorConnection[]; org: ConnectorConnection[] },
 ): AgentSettingsDraft {
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
   const allowedTriggers = definition.runPolicy.allowedTriggers ?? [];
+  const connectorBindings = migrateConnectorBindings(
+    definition.runPolicy.enabledConnectorProviders ?? [],
+    connections,
+    definition.runPolicy.connectorBindings,
+  );
   return {
     instructions: definition.instructions,
     toolBundles: mergeToolBundles(definition.toolBundles),
@@ -114,12 +134,14 @@ function buildDraft(
     model: definition.runPolicy.model ?? DEFAULT_MODEL_ID,
     scriptToolIds,
     linkedWorkerAgentIds: definition.runPolicy.linkedWorkerAgentIds ?? [],
+    connectorBindings,
     enabledConnectorProviders:
       definition.runPolicy.enabledConnectorProviders ?? [],
     scheduleEnabledById: Object.fromEntries(
       agentSchedules.map((s) => [s.id, s.enabled]),
     ),
     connectionTriggers: definition.runPolicy.connectionTriggers ?? [],
+    boundSkillIds,
   };
 }
 
@@ -129,12 +151,15 @@ export function AgentSettingsSheet({
   teamspaceId,
   accountId,
   scriptToolIds: initialScriptToolIds,
+  boundSkillIds: initialBoundSkillIds,
+  skillCatalog,
   scriptTools,
   workers,
   connectors,
   connections,
   inboundChannels,
   channelsHref,
+  connectionsHref,
   schedules,
   onClose,
   registerRequestClose,
@@ -142,7 +167,13 @@ export function AgentSettingsSheet({
   const router = useRouter();
   const pathname = usePathname();
   const [draft, setDraft] = useState(() =>
-    buildDraft(definition, initialScriptToolIds, schedules),
+    buildDraft(
+      definition,
+      initialScriptToolIds,
+      initialBoundSkillIds,
+      schedules,
+      connections,
+    ),
   );
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const pendingCloseActionRef = useRef<(() => void) | null>(null);
@@ -160,16 +191,31 @@ export function AgentSettingsSheet({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    setDraft(buildDraft(definition, initialScriptToolIds, schedules));
-  }, [definition, initialScriptToolIds, schedules]);
+    setDraft(
+      buildDraft(
+        definition,
+        initialScriptToolIds,
+        initialBoundSkillIds,
+        schedules,
+        connections,
+      ),
+    );
+  }, [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections]);
 
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
 
   const savedDraft = useMemo(
-    () => buildDraft(definition, initialScriptToolIds, schedules),
-    [definition, initialScriptToolIds, schedules],
+    () =>
+      buildDraft(
+        definition,
+        initialScriptToolIds,
+        initialBoundSkillIds,
+        schedules,
+        connections,
+      ),
+    [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections],
   );
 
   const isDirty = useMemo(
@@ -282,33 +328,31 @@ export function AgentSettingsSheet({
     });
   };
 
-  const modelLabel =
-    MODEL_OPTIONS.find((m) => m.id === draft.model)?.label ?? "Auto";
-
-  const modelProvider =
-    MODEL_OPTIONS.find((m) => m.id === draft.model)?.provider ?? "";
-
-  const connectedProviders = useMemo(() => {
-    const map = new Map<string, ConnectorConnection[]>();
-    for (const c of connections.user) {
-      const list = map.get(c.connector) ?? [];
-      list.push(c);
-      map.set(c.connector, list);
-    }
-    for (const c of connections.org) {
-      const list = map.get(c.connector) ?? [];
-      list.push(c);
-      map.set(c.connector, list);
-    }
-    return map;
-  }, [connections]);
-
   const linkedScriptTools = scriptTools.filter((t) =>
     draft.scriptToolIds.includes(t.id),
   );
 
-  const enabledConnectors = connectors.filter((c) =>
-    draft.enabledConnectorProviders.includes(c.provider),
+  const boundConnectorItems = useMemo(() => {
+    const connectorLabels = new Map(
+      connectors.map((c) => [c.provider, c.label]),
+    );
+    return draft.connectorBindings.map((binding) => ({
+      binding,
+      label:
+        binding.accountLabel ??
+        connectionDisplayLabel(
+          {
+            connector: binding.provider,
+            name: binding.accountLabel ?? null,
+          },
+          connectorLabels.get(binding.provider),
+        ),
+      providerLabel: connectorLabels.get(binding.provider) ?? binding.provider,
+    }));
+  }, [connectors, draft.connectorBindings]);
+
+  const boundSkills = skillCatalog.filter((skill) =>
+    draft.boundSkillIds.includes(skill.id),
   );
 
   const chatLabel = `New chat with ${definition.name}`;
@@ -317,12 +361,16 @@ export function AgentSettingsSheet({
     startTransition(async () => {
       const bundles = resolveToolBundlesForSave(draft);
       const allowedTriggers = resolveAllowedTriggersForSave(draft, agentSchedules);
+      const connectorBindings = resolveConnectorBindingsForSave(draft);
       const runPolicy = {
         ...definition.runPolicy,
         model: draft.model,
         allowedTriggers,
         linkedWorkerAgentIds: draft.linkedWorkerAgentIds,
-        enabledConnectorProviders: draft.enabledConnectorProviders,
+        connectorBindings,
+        enabledConnectorProviders: deriveEnabledConnectorProviders({
+          connectorBindings,
+        }),
         connectionTriggers: draft.connectionTriggers,
       };
 
@@ -366,6 +414,22 @@ export function AgentSettingsSheet({
           }),
         ),
       );
+
+      const skillsRes = await fetch(
+        `/api/agents/${definition.id}/skills`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            teamspaceId,
+            skillIds: draft.boundSkillIds,
+          }),
+        },
+      );
+      if (!skillsRes.ok) {
+        throw new Error(`Failed to update skill bindings (${skillsRes.status})`);
+      }
+
       router.refresh();
       onClose();
     });
@@ -536,68 +600,37 @@ export function AgentSettingsSheet({
           <AgentSettingCard.Root testId="agent-settings-tools-card">
             <AgentSettingCard.Header
               title="Tools and access"
-              description="Composio connectors and TypeScript scripts for this agent."
+              description="Connectors and TypeScript scripts for this agent."
             />
             <AgentSettingCard.Body>
               <AgentSettingCard.Items>
-                {enabledConnectors.length === 0 && linkedScriptTools.length === 0 ? (
+                {boundConnectorItems.length === 0 &&
+                linkedScriptTools.length === 0 ? (
                   <AgentSettingCard.Item
                     testId="agent-tools-empty"
                     icon={
                       <WrenchIcon className="size-3.5 text-muted-foreground" />
                     }
                     title="No connectors or scripts selected yet"
-                    onPress={() => setOpenDialog("tools")}
-                    trailing={<AgentSettingCard.ItemCaret />}
                   />
                 ) : (
                   <>
-                    {enabledConnectors.map((connector) => {
-                      const connected = connectedProviders.has(connector.provider);
-                      const count =
-                        connectedProviders.get(connector.provider)?.length ?? 0;
-                      return (
-                        <AgentSettingCard.Item
-                          key={connector.provider}
-                          icon={
-                            <ConnectorBrandIcon
-                              provider={connector.provider}
-                              className="size-3.5"
-                            />
-                          }
-                          title={connector.label}
-                          subtitle={
-                            connected ? "Composio connector" : "Enabled"
-                          }
-                          trailing={
-                            connected ? (
-                              count > 1 ? (
-                                `${count} accounts`
-                              ) : (
-                                "Connected"
-                              )
-                            ) : (
-                              <a
-                                href={buildConnectorAuthorizeHref({
-                                  slug: connector.provider,
-                                  teamspaceId,
-                                  accountId,
-                                  returnTo: pathname,
-                                })}
-                                className={buttonVariants({
-                                  variant: "secondary",
-                                  size: "sm",
-                                  className: "h-7 shrink-0",
-                                })}
-                                data-testid={`agent-connector-connect-${connector.provider}`}
-                              >
-                                Connect
-                              </a>
-                            )
-                          }
-                        />
-                      );
-                    })}
+                    {boundConnectorItems.map(({ binding, label, providerLabel }) => (
+                      <AgentSettingCard.Item
+                        key={`${binding.scope}:${binding.connectionId}`}
+                        icon={
+                          <ConnectorBrandIcon
+                            provider={binding.provider}
+                            className="size-3.5"
+                          />
+                        }
+                        title={label}
+                        subtitle={`${providerLabel} · ${
+                          binding.scope === "org" ? "Organization" : "Personal"
+                        }`}
+                        testId={`agent-bound-connection-${binding.scope}-${binding.connectionId}`}
+                      />
+                    ))}
                     {linkedScriptTools.map((tool) => (
                       <AgentSettingCard.Item
                         key={tool.id}
@@ -628,36 +661,30 @@ export function AgentSettingsSheet({
             </AgentSettingCard.Footer>
           </AgentSettingCard.Root>
 
-          <AgentSettingCard.Root testId="agent-settings-model-card">
+          <AgentSettingCard.Root testId="agent-settings-advanced-card">
             <AgentSettingCard.Header
-              title="Model"
-              description="Default model for agent runs."
+              title="Advanced"
+              description="Additional configuration for agent runs."
             />
             <AgentSettingCard.Body>
-              <AgentSettingCard.Items>
-                <AgentSettingCard.Item
-                  testId="agent-model-summary"
-                  icon={<CpuIcon className="size-3.5 text-muted-foreground" />}
-                  title={modelLabel}
-                  subtitle={modelProvider || "Default model"}
-                  onPress={() => setOpenDialog("model")}
-                  trailing={<AgentSettingCard.ItemCaret />}
-                />
+              <AgentSettingCard.Items divided>
+                <div
+                  className="flex items-center justify-between gap-3 px-1 py-2"
+                  data-testid="agent-advanced-model-row"
+                >
+                  <Label
+                    htmlFor="agent-model-picker"
+                    className="text-sm font-normal"
+                  >
+                    Model
+                  </Label>
+                  <AgentModelPicker
+                    value={draft.model || DEFAULT_MODEL_ID}
+                    onChange={(modelId) => patchDraft({ model: modelId })}
+                  />
+                </div>
               </AgentSettingCard.Items>
             </AgentSettingCard.Body>
-            <AgentSettingCard.Footer>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="w-fit justify-start gap-2"
-                data-testid="agent-model-change"
-                onClick={() => setOpenDialog("model")}
-              >
-                <CpuIcon className="size-3.5" aria-hidden />
-                Change model
-              </Button>
-            </AgentSettingCard.Footer>
           </AgentSettingCard.Root>
 
           <AgentSettingCard.Root testId="agent-settings-skills-card">
@@ -666,12 +693,46 @@ export function AgentSettingsSheet({
               description="Runtime skills loaded via read_skill."
             />
             <AgentSettingCard.Body>
-              <AgentSkillBindings
-                embedded
-                teamspaceId={teamspaceId}
-                agentDefinitionId={definition.id}
-              />
+              <AgentSettingCard.Items>
+                {boundSkills.length === 0 ? (
+                  <AgentSettingCard.Item
+                    testId="agent-skills-empty"
+                    icon={
+                      <LightbulbIcon className="size-3.5 text-muted-foreground" />
+                    }
+                    title="No skills bound yet"
+                  />
+                ) : (
+                  boundSkills.map((skill) => (
+                    <AgentSettingCard.Item
+                      key={skill.id}
+                      testId={`agent-bound-skill-${skill.key}`}
+                      icon={
+                        <LightbulbIcon className="size-3.5 text-muted-foreground" />
+                      }
+                      title={skill.name}
+                      subtitle={skill.key}
+                      trailing={
+                        skill.source === "builtin" ? "Platform" : "Custom"
+                      }
+                    />
+                  ))
+                )}
+              </AgentSettingCard.Items>
             </AgentSettingCard.Body>
+            <AgentSettingCard.Footer>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="w-fit justify-start gap-2"
+                data-testid="agent-skills-manage"
+                onClick={() => setOpenDialog("skills")}
+              >
+                <LightbulbIcon className="size-3.5" aria-hidden />
+                Manage skills
+              </Button>
+            </AgentSettingCard.Footer>
           </AgentSettingCard.Root>
         </div>
       </CardListSheetPanel>
@@ -775,12 +836,16 @@ export function AgentSettingsSheet({
         onDraftChange={patchDraft}
         workers={workers}
         scriptTools={scriptTools}
+        skillCatalog={skillCatalog}
         connectors={connectors}
         connections={connections}
         inboundChannels={inboundChannels}
         channelsHref={channelsHref}
+        connectionsHref={connectionsHref}
         teamspaceId={teamspaceId}
         accountId={accountId}
+        returnTo={pathname}
+        allowOrgScope
         openDialog={openDialog}
         onOpenDialogChange={setOpenDialog}
       />

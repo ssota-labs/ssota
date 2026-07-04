@@ -71,7 +71,7 @@ export async function executeComposioMetaTool(
   }
   const adapter = getConnectorAdapter();
   if (!adapter) {
-    throw new Error("Composio connectors are not configured for this deployment.");
+    throw new Error("Connectors are not configured for this deployment.");
   }
   const bundle = await adapter.buildTools(scope);
   const tool = bundle.tools[toolName];
