@@ -68,6 +68,17 @@ export const ConnectionTriggerSchema = z.object({
 
 export type ConnectionTrigger = z.infer<typeof ConnectionTriggerSchema>;
 
+/** Per-tool permission for a connector binding on an agent. */
+export const ConnectorToolPermissionSchema = z.enum([
+  "allow",
+  "approval",
+  "block",
+]);
+
+export type ConnectorToolPermission = z.infer<
+  typeof ConnectorToolPermissionSchema
+>;
+
 /** Per-connection toolkit access bound to an agent (Composio connected-account id). */
 export const AgentConnectorBindingSchema = z.object({
   connectionId: z.string().min(1),
@@ -75,6 +86,10 @@ export const AgentConnectorBindingSchema = z.object({
   scope: z.enum(["user", "org"]),
   /** Display snapshot — account label at bind time. */
   accountLabel: z.string().optional(),
+  /** Tool slug → permission. Omitted slugs default to allow at runtime. */
+  toolPermissions: z
+    .record(z.string(), ConnectorToolPermissionSchema)
+    .optional(),
 });
 
 export type AgentConnectorBinding = z.infer<typeof AgentConnectorBindingSchema>;

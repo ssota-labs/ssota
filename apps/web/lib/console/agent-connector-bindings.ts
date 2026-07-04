@@ -1,4 +1,7 @@
-import type { AgentConnectorBinding } from "@ssota/contracts";
+import type {
+  AgentConnectorBinding,
+  ConnectorToolPermission,
+} from "@ssota/contracts";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 import type { ConnectorConnectScope } from "@/lib/connect/authorize-href";
 
@@ -127,4 +130,95 @@ export function patchConnectorBindingsDraft(bindings: AgentConnectorBinding[]): 
     connectorBindings: bindings,
     enabledConnectorProviders: deriveEnabledProvidersFromBindings(bindings),
   };
+}
+
+export function setBindingToolPermission(
+  binding: AgentConnectorBinding,
+  slug: string,
+  permission: ConnectorToolPermission,
+): AgentConnectorBinding {
+  const next = { ...(binding.toolPermissions ?? {}) };
+  if (permission === "allow") {
+    delete next[slug];
+  } else {
+    next[slug] = permission;
+  }
+  const toolPermissions =
+    Object.keys(next).length > 0 ? next : undefined;
+  return { ...binding, toolPermissions };
+}
+
+export function updateBindingInList(
+  bindings: AgentConnectorBinding[],
+  scope: ConnectorConnectScope,
+  connectionId: string,
+  updater: (binding: AgentConnectorBinding) => AgentConnectorBinding,
+): AgentConnectorBinding[] {
+  return bindings.map((binding) =>
+    binding.scope === scope && binding.connectionId === connectionId
+      ? updater(binding)
+      : binding,
+  );
+}
+
+export function getEffectiveToolPermission(
+  globalDisabledSlugs: Iterable<string>,
+  binding: AgentConnectorBinding,
+  slug: string,
+): ConnectorToolPermission {
+  const globalDisabled = new Set(globalDisabledSlugs);
+  if (globalDisabled.has(slug)) return "block";
+  return binding.toolPermissions?.[slug] ?? "allow";
+}
+
+export function deriveBlockedToolsByToolkit(
+  bindings: AgentConnectorBinding[],
+): Record<string, string[]> {
+  const grouped = new Map<string, Set<string>>();
+  for (const binding of bindings) {
+    if (!binding.toolPermissions) continue;
+    for (const [slug, permission] of Object.entries(binding.toolPermissions)) {
+      if (permission !== "block") continue;
+      const slugs = grouped.get(binding.provider) ?? new Set<string>();
+      slugs.add(slug);
+      grouped.set(binding.provider, slugs);
+    }
+  }
+  return Object.fromEntries(
+    [...grouped.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([toolkit, slugs]) => [toolkit, [...slugs].sort()]),
+  );
+}
+
+export function deriveApprovalToolsByToolkit(
+  bindings: AgentConnectorBinding[],
+): Record<string, string[]> {
+  const grouped = new Map<string, Set<string>>();
+  for (const binding of bindings) {
+    if (!binding.toolPermissions) continue;
+    for (const [slug, permission] of Object.entries(binding.toolPermissions)) {
+      if (permission !== "approval") continue;
+      const slugs = grouped.get(binding.provider) ?? new Set<string>();
+      slugs.add(slug);
+      grouped.set(binding.provider, slugs);
+    }
+  }
+  return Object.fromEntries(
+    [...grouped.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([toolkit, slugs]) => [toolkit, [...slugs].sort()]),
+  );
+}
+
+export function normalizeConnectorBindingForSnapshot(
+  binding: AgentConnectorBinding,
+): AgentConnectorBinding {
+  if (!binding.toolPermissions) return binding;
+  const toolPermissions = Object.fromEntries(
+    Object.entries(binding.toolPermissions).sort(([a], [b]) =>
+      a.localeCompare(b),
+    ),
+  );
+  return { ...binding, toolPermissions };
 }

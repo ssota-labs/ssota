@@ -3,6 +3,7 @@ import { deriveEnabledConnectorProviders } from "@ssota/contracts";
 import type { AgentSettingsDraft } from "@/components/console/agent-settings-dialogs";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { mergeToolBundles } from "@/lib/console/agent-tool-catalog";
+import { normalizeConnectorBindingForSnapshot } from "@/lib/console/agent-connector-bindings";
 
 export type AgentSettingsSaveSnapshot = {
   instructionsJson: string;
@@ -88,22 +89,26 @@ function stableScheduleEnabledJson(
 function stableConnectorBindingsJson(
   bindings: AgentConnectorBinding[],
 ): string {
-  const sorted = [...bindings].sort((a, b) => {
-    const keyA = `${a.scope}:${a.connectionId}`;
-    const keyB = `${b.scope}:${b.connectionId}`;
-    return keyA.localeCompare(keyB);
-  });
+  const sorted = [...bindings]
+    .map(normalizeConnectorBindingForSnapshot)
+    .sort((a, b) => {
+      const keyA = `${a.scope}:${a.connectionId}`;
+      const keyB = `${b.scope}:${b.connectionId}`;
+      return keyA.localeCompare(keyB);
+    });
   return JSON.stringify(sorted);
 }
 
 export function resolveConnectorBindingsForSave(
   draft: AgentSettingsDraft,
 ): AgentConnectorBinding[] {
-  return [...draft.connectorBindings].sort((a, b) => {
-    const keyA = `${a.scope}:${a.connectionId}`;
-    const keyB = `${b.scope}:${b.connectionId}`;
-    return keyA.localeCompare(keyB);
-  });
+  return [...draft.connectorBindings]
+    .map(normalizeConnectorBindingForSnapshot)
+    .sort((a, b) => {
+      const keyA = `${a.scope}:${a.connectionId}`;
+      const keyB = `${b.scope}:${b.connectionId}`;
+      return keyA.localeCompare(keyB);
+    });
 }
 
 /** Serializable snapshot of what Save would persist. */
