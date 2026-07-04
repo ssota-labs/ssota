@@ -114,7 +114,7 @@ export function AgentSettingsSidebarDialog({
                         {group.icon}
                         <span>{group.label}</span>
                       </div>
-                      <ul className="space-y-0.5 pr-1.5">
+                      <ul className="space-y-0.5 pr-2">
                         {group.items.map((item) => (
                           <SidebarNavItem
                             key={item.id}
@@ -128,7 +128,7 @@ export function AgentSettingsSidebarDialog({
                   ))}
                 </div>
               ) : (
-                <ul className="space-y-0.5 pr-1.5">
+                <ul className="space-y-0.5 pr-2">
                   {flatItems.map((item) => (
                     <SidebarNavItem
                       key={item.id}
