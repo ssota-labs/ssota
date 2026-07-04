@@ -1071,6 +1071,16 @@ async function seedMarketResearchHub(
       `${MARKET_HUB_SEED_PREFIX}edge:x-part_of-study`,
     );
   }
+  if (articleSourceId) {
+    await ensureEdge(
+      db,
+      teamspaceId,
+      partOfId,
+      articleSourceId,
+      studyId,
+      `${MARKET_HUB_SEED_PREFIX}edge:article-part_of-study`,
+    );
+  }
 
   for (const competitorId of [notionId, linearId, cursorId]) {
     if (!competitorId) continue;
