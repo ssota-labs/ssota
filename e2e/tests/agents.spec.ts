@@ -145,11 +145,18 @@ test.describe("Agents", () => {
     const toolsDialog = page.getByTestId("agent-tools-sidebar-dialog");
     await expect(toolsDialog).toBeVisible();
     await expect(toolsDialog.getByText("Connect", { exact: true })).toBeVisible();
+    await expect(toolsDialog.getByText("On this agent")).not.toBeVisible();
     await expect(toolsDialog.getByTestId("agent-connect-notion")).toBeVisible();
     await expect(toolsDialog.getByText("Pages")).not.toBeVisible();
 
     await toolsDialog.getByTestId("agent-connect-notion").click();
     await expect(toolsDialog.getByTestId("agent-connect-section-user")).toBeVisible();
+    await expect(
+      toolsDialog.getByTestId("agent-connection-remove-user-seed-notion-user-1"),
+    ).toBeVisible();
+    await expect(
+      toolsDialog.getByTestId("agent-connection-add-user-seed-notion-user-2"),
+    ).toBeVisible();
     await expect(
       toolsDialog.getByTestId("agent-connect-manage-notion"),
     ).toBeVisible();
@@ -202,9 +209,14 @@ test.describe("Agents", () => {
 
     const toolsCard = page.getByTestId("agent-settings-tools-card");
     await expect(
-      toolsCard.getByText("No connectors or scripts selected yet"),
+      toolsCard.getByTestId("agent-bound-connection-user-seed-notion-user-1"),
     ).toBeVisible();
-    await expect(toolsCard.getByText("Base capabilities")).not.toBeVisible();
+    await expect(
+      toolsCard.getByText("Alex — Personal Workspace"),
+    ).toBeVisible();
+    await expect(
+      toolsCard.getByText("No connectors or scripts selected yet"),
+    ).not.toBeVisible();
 
     const triggersCard = page.getByTestId("agent-settings-triggers-card");
     await expect(
