@@ -352,17 +352,11 @@
           }
         },
         "competitorsPanel": {
-          "type": "Resizable",
-          "props": { "defaultSizes": [45, 55], "minSizes": [25, 25] },
-          "children": ["competitorsTable", "competitorDetailCol"]
-        },
-        "competitorsTable": {
           "type": "DataTable",
           "props": {
             "binding": "competitors",
             "title": "Competitors",
             "setAction": "setCell",
-            "selectionParam": "competitor",
             "columns": [
               { "key": "title", "header": "Name", "type": "text", "editable": true, "width": 200 },
               { "key": "category", "header": "Category", "type": "text", "editable": true, "width": 120 },
@@ -370,19 +364,6 @@
               { "key": "website_url", "header": "Website", "type": "text", "editable": true, "width": 180 },
               { "key": "last_reviewed_at", "header": "Reviewed", "type": "date", "editable": true, "width": 120 }
             ]
-          }
-        },
-        "competitorDetailCol": {
-          "type": "Section",
-          "props": { "title": "Deep analysis" },
-          "children": ["competitorEditor"]
-        },
-        "competitorEditor": {
-          "type": "DocumentEditor",
-          "props": {
-            "binding": "selectedCompetitor",
-            "field": "content",
-            "action": "saveDoc"
           }
         },
         "segmentsPanel": {
@@ -510,11 +491,6 @@
       "competitors": { "kind": "query", "catalogKey": "competitor" },
       "segments": { "kind": "query", "catalogKey": "market_segment" },
       "sources": { "kind": "query", "catalogKey": "raw_source" },
-      "selectedCompetitor": {
-        "kind": "url_selection",
-        "param": "competitor",
-        "catalogKey": "competitor"
-      },
       "selectedSegment": {
         "kind": "url_selection",
         "param": "segment",
