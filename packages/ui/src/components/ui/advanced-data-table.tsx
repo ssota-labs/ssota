@@ -201,7 +201,7 @@ function SortableHeader<TData>({
     <TableHead
       ref={setNodeRef}
       colSpan={header.colSpan}
-      className={cn("relative border-r border-border bg-background whitespace-nowrap")}
+      className={cn("relative border-r border-border bg-muted whitespace-nowrap")}
       style={{
         width: header.getSize(),
         transform: CSS.Transform.toString(transform),
@@ -831,9 +831,9 @@ export function AdvancedDataTable<TData>({
                 ))}
                 <col />
               </colgroup>
-              <TableHeader className="sticky top-0 z-20 bg-background">
+              <TableHeader className="sticky top-0 z-20 bg-muted">
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id} className="bg-background hover:bg-background">
+                  <TableRow key={headerGroup.id} className="bg-muted hover:bg-muted">
                     <SortableContext
                       items={headerGroup.headers.map((h) => h.column.id)}
                       strategy={horizontalListSortingStrategy}
@@ -850,7 +850,7 @@ export function AdvancedDataTable<TData>({
                     </SortableContext>
                     <TableHead
                       aria-hidden
-                      className="bg-background p-0"
+                      className="bg-muted p-0"
                     />
                   </TableRow>
                 ))}
