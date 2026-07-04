@@ -300,6 +300,10 @@ export const PAGE_COMPONENT_CATALOG: Record<string, PageComponentDescriptor> = {
       },
       setAction: action("Dispatched with { nodeId, field, value } on cell edit."),
       addAction: action("Dispatched when the user adds a row."),
+      addLabel: {
+        type: "string",
+        description: 'Footer add-row button label. Default "New row".',
+      },
       deleteAction: action("Dispatched with { nodeId } when a row is deleted."),
     },
     example: {

@@ -408,41 +408,15 @@
         "sourcesPanel": {
           "type": "Resizable",
           "props": { "defaultSizes": [40, 60], "minSizes": [25, 25] },
-          "children": ["sourcesListCol", "sourceDetailCol"]
-        },
-        "sourcesListCol": {
-          "type": "Section",
-          "children": ["addSourceForm", "sourcesTable"]
-        },
-        "addSourceForm": {
-          "type": "Form",
-          "children": ["sourceTitleField", "sourceUrlField", "addSourceBtn"]
-        },
-        "sourceTitleField": {
-          "type": "Field",
-          "props": {
-            "name": "title",
-            "label": "Title",
-            "placeholder": "Source title"
-          }
-        },
-        "sourceUrlField": {
-          "type": "Field",
-          "props": {
-            "name": "url",
-            "label": "URL",
-            "placeholder": "https://…"
-          }
-        },
-        "addSourceBtn": {
-          "type": "Button",
-          "props": { "label": "Add source", "action": "addSource" }
+          "children": ["sourcesTable", "sourceDetailCol"]
         },
         "sourcesTable": {
           "type": "DataTable",
           "props": {
             "binding": "sources",
             "setAction": "setCell",
+            "addAction": "addSource",
+            "addLabel": "Add source",
             "selectionParam": "source",
             "columns": [
               { "key": "title", "header": "Title", "type": "text", "editable": true, "width": 200 },
@@ -513,9 +487,9 @@
       "addSource": {
         "kind": "create_node",
         "catalogKey": "raw_source",
-        "title": { "$input": "title" },
+        "title": "Untitled source",
         "properties": {
-          "url": { "$input": "url" }
+          "url": "https://"
         }
       }
     }
