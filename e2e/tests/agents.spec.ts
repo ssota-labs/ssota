@@ -147,6 +147,15 @@ test.describe("Agents", () => {
     await expect(toolsDialog.getByText("Connect", { exact: true })).toBeVisible();
     await expect(toolsDialog.getByTestId("agent-connect-notion")).toBeVisible();
     await expect(toolsDialog.getByText("Pages")).not.toBeVisible();
+
+    await toolsDialog.getByTestId("agent-connect-notion").click();
+    await expect(toolsDialog.getByTestId("agent-connect-section-user")).toBeVisible();
+    await expect(
+      toolsDialog.getByTestId("agent-connect-manage-notion"),
+    ).toBeVisible();
+    await expect(
+      toolsDialog.getByTestId("agent-connect-scope-notion-user"),
+    ).toHaveCount(0);
   });
 
   test("opens skills dialog with sidebar list", async ({ page }) => {

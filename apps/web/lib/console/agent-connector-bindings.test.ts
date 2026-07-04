@@ -6,6 +6,7 @@ import {
   isConnectorBound,
   migrateConnectorBindings,
   removeConnectorBinding,
+  scopedConnectionsForProvider,
 } from "./agent-connector-bindings";
 
 describe("agent-connector-bindings", () => {
@@ -63,5 +64,17 @@ describe("agent-connector-bindings", () => {
 
   it("builds stable binding keys", () => {
     expect(connectorBindingKey("org", "acc-3")).toBe("org:acc-3");
+  });
+
+  it("filters scoped connections by provider", () => {
+    const { user, org } = scopedConnectionsForProvider(connections, "notion");
+    expect(user).toHaveLength(1);
+    expect(user[0]?.id).toBe("acc-1");
+    expect(org).toHaveLength(1);
+    expect(org[0]?.id).toBe("acc-3");
+    expect(scopedConnectionsForProvider(connections, "gmail")).toEqual({
+      user: [],
+      org: [],
+    });
   });
 });

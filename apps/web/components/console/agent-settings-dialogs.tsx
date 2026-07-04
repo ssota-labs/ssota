@@ -25,10 +25,7 @@ import type { ConnectorConnection } from "@/components/connectors/connectors-vie
 import type { ConnectorDef } from "@/lib/connect/connectors";
 import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { inboundChannelAuthorizeHref, inboundChannelStatusFor } from "@/lib/connect/inbound-channels";
-import {
-  buildConnectorAuthorizeHref,
-  type ConnectorConnectScope,
-} from "@/lib/connect/authorize-href";
+import type { ConnectorConnectScope } from "@/lib/connect/authorize-href";
 import {
   addConnectorBinding,
   connectorBindingKey,
@@ -37,6 +34,7 @@ import {
   flattenScopedConnections,
   isConnectorBound,
   removeConnectorBinding,
+  scopedConnectionsForProvider,
   type ScopedConnection,
 } from "@/lib/console/agent-connector-bindings";
 import {
@@ -80,6 +78,7 @@ type AgentSettingsDialogsProps = {
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
   inboundChannels: InboundChannelStatus[];
   channelsHref: string;
+  connectionsHref: string;
   teamspaceId: string;
   accountId: string;
   returnTo: string;
@@ -93,13 +92,6 @@ export type AgentSettingsDialogKind = "add-trigger" | "tools" | "skills";
 type ToolEntry =
   | {
       kind: "bound-connection";
-      id: string;
-      connection: ScopedConnection;
-      providerLabel: string;
-      label: string;
-    }
-  | {
-      kind: "connection";
       id: string;
       connection: ScopedConnection;
       providerLabel: string;
@@ -139,6 +131,7 @@ export function AgentSettingsDialogs({
   connections,
   inboundChannels,
   channelsHref,
+  connectionsHref,
   teamspaceId,
   accountId,
   returnTo,
@@ -156,8 +149,6 @@ export function AgentSettingsDialogs({
   const [addTriggerSearch, setAddTriggerSearch] = useState("");
   const [isProvisioningSlack, setIsProvisioningSlack] = useState(false);
   const [addTriggerError, setAddTriggerError] = useState<string | null>(null);
-  const [connectScope, setConnectScope] = useState<ConnectorConnectScope>("user");
-
   const connectorByProvider = useMemo(
     () => new Map(connectors.map((c) => [c.provider, c])),
     [connectors],
@@ -235,38 +226,13 @@ export function AgentSettingsDialogs({
       });
     }
 
-    for (const connection of scopedConnections) {
-      if (
-        isConnectorBound(
-          draft.connectorBindings,
-          connection.scope,
-          connection.id,
-        )
-      ) {
-        continue;
-      }
-      const providerLabel =
-        connectorByProvider.get(connection.connector)?.label ??
-        connection.connector;
-      entries.push({
-        kind: "connection",
-        id: `connection:${connectorBindingKey(connection.scope, connection.id)}`,
-        connection,
-        providerLabel,
-        label: connectionDisplayLabel(connection, providerLabel),
-      });
-    }
-
     for (const connector of connectors) {
-      const count = connectionsByProvider.get(connector.provider)?.length ?? 0;
-      if (count === 0) {
-        entries.push({
-          kind: "connect-provider",
-          id: `connect:${connector.provider}`,
-          provider: connector.provider,
-          label: connector.label,
-        });
-      }
+      entries.push({
+        kind: "connect-provider",
+        id: `connect:${connector.provider}`,
+        provider: connector.provider,
+        label: connector.label,
+      });
     }
 
     for (const tool of scriptTools) {
@@ -282,7 +248,6 @@ export function AgentSettingsDialogs({
     return entries;
   }, [
     connectors,
-    connectionsByProvider,
     connectorByProvider,
     draft.connectorBindings,
     scopedConnections,
@@ -410,7 +375,6 @@ export function AgentSettingsDialogs({
     switch (entry.kind) {
       case "bound-connection":
         return true;
-      case "connection":
       case "connect-provider":
         return false;
       case "script":
@@ -425,8 +389,7 @@ export function AgentSettingsDialogs({
     let testId: string;
 
     switch (entry.kind) {
-      case "bound-connection":
-      case "connection": {
+      case "bound-connection": {
         subtitle = `${entry.providerLabel} · ${SCOPE_LABEL[entry.connection.scope]}`;
         icon = (
           <ConnectorBrandIcon
@@ -437,13 +400,18 @@ export function AgentSettingsDialogs({
         testId = `agent-connection-${entry.connection.scope}-${entry.connection.id}`;
         break;
       }
-      case "connect-provider":
-        subtitle = "Not connected";
+      case "connect-provider": {
+        const count = connectionsByProvider.get(entry.provider)?.length ?? 0;
+        subtitle =
+          count > 0
+            ? `${count} connection${count === 1 ? "" : "s"}`
+            : "Not connected";
         icon = (
           <ConnectorBrandIcon provider={entry.provider} className="size-3.5" />
         );
         testId = `agent-connect-${entry.provider}`;
         break;
+      }
       case "script":
         subtitle = entry.key;
         icon = <WrenchIcon className="size-3.5 text-muted-foreground" />;
@@ -463,7 +431,6 @@ export function AgentSettingsDialogs({
 
   const toolSidebarGroups: SidebarListGroup[] = useMemo(() => {
     const bound = filteredToolEntries.filter((e) => e.kind === "bound-connection");
-    const available = filteredToolEntries.filter((e) => e.kind === "connection");
     const connect = filteredToolEntries.filter(
       (e) => e.kind === "connect-provider",
     );
@@ -475,13 +442,6 @@ export function AgentSettingsDialogs({
         id: "on-agent",
         label: "On this agent",
         items: bound.map(toolEntryToSidebarItem),
-      });
-    }
-    if (available.length > 0) {
-      groups.push({
-        id: "connections",
-        label: "Connections",
-        items: available.map(toolEntryToSidebarItem),
       });
     }
     if (connect.length > 0) {
@@ -634,42 +594,74 @@ export function AgentSettingsDialogs({
     ? ["user", "org"]
     : ["user"];
 
-  const renderScopePicker = (provider: string) => (
-    <div className="mb-4 space-y-2">
-      <p className="text-muted-foreground text-sm">
-        Choose who owns this connection.
-      </p>
-      <div className="flex flex-col gap-2">
-        {scopeOptions.map((scope) => {
-          const ScopeIcon = scope === "user" ? UserIcon : BuildingsIcon;
-          const selected = connectScope === scope;
-          return (
-            <button
-              key={scope}
-              type="button"
-              className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors ${
-                selected
-                  ? "border-primary bg-primary/5"
-                  : "hover:bg-muted/40"
-              }`}
-              onClick={() => setConnectScope(scope)}
-              data-testid={`agent-connect-scope-${provider}-${scope}`}
-            >
-              <ScopeIcon className="size-4 shrink-0 text-muted-foreground" />
-              <span>
-                <span className="font-medium">{SCOPE_LABEL[scope]}</span>
-                <span className="text-muted-foreground block text-xs">
-                  {scope === "user"
-                    ? "Only your runs use this connection."
-                    : "Everyone in the org can use this connection."}
-                </span>
-              </span>
-            </button>
-          );
-        })}
+  const renderProviderConnectionRow = (
+    connection: ScopedConnection,
+    providerLabel: string,
+  ) => {
+    const label = connectionDisplayLabel(connection, providerLabel);
+    const bound = isConnectorBound(
+      draft.connectorBindings,
+      connection.scope,
+      connection.id,
+    );
+    return (
+      <div
+        key={connectorBindingKey(connection.scope, connection.id)}
+        className="flex items-center justify-between gap-3 rounded-lg border bg-background px-3 py-2"
+        data-testid={`agent-provider-connection-${connection.scope}-${connection.id}`}
+      >
+        <span className="min-w-0 truncate text-sm">{label}</span>
+        {bound ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            data-testid={`agent-connection-remove-${connection.scope}-${connection.id}`}
+            onClick={() => removeBindingForConnection(connection)}
+          >
+            Remove
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            data-testid={`agent-connection-add-${connection.scope}-${connection.id}`}
+            onClick={() => addBindingForConnection(connection)}
+          >
+            Add to agent
+          </Button>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
+
+  const renderProviderConnectionSection = (
+    scope: ConnectorConnectScope,
+    providerConnections: ScopedConnection[],
+    providerLabel: string,
+  ) => {
+    const ScopeIcon = scope === "user" ? UserIcon : BuildingsIcon;
+    return (
+      <div className="space-y-2" data-testid={`agent-connect-section-${scope}`}>
+        <div className="flex items-center gap-2">
+          <ScopeIcon className="size-4 text-muted-foreground" aria-hidden />
+          <p className="text-sm font-medium">{SCOPE_LABEL[scope]}</p>
+        </div>
+        {providerConnections.length > 0 ? (
+          <div className="space-y-2">
+            {providerConnections.map((connection) =>
+              renderProviderConnectionRow(connection, providerLabel),
+            )}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            No {SCOPE_LABEL[scope].toLowerCase()} {providerLabel} connections
+            yet.
+          </p>
+        )}
+      </div>
+    );
+  };
 
   const renderToolDetail = () => {
     if (!selectedTool) {
@@ -680,12 +672,8 @@ export function AgentSettingsDialogs({
       );
     }
 
-    if (
-      selectedTool.kind === "bound-connection" ||
-      selectedTool.kind === "connection"
-    ) {
+    if (selectedTool.kind === "bound-connection") {
       const { connection, providerLabel, label } = selectedTool;
-      const bound = selectedTool.kind === "bound-connection";
       return (
         <>
           <SidebarDetailHeader
@@ -703,42 +691,27 @@ export function AgentSettingsDialogs({
             }
           />
           <p className="text-muted-foreground mb-6 text-sm">
-            {bound
-              ? "This connected account is available to the agent at runtime."
-              : "Add this connection to let the agent use this account."}
+            This connected account is available to the agent at runtime.
           </p>
           <div className="flex flex-wrap gap-2">
-            {bound ? (
-              <Button
-                type="button"
-                variant="outline"
-                data-testid={`agent-connection-remove-${connection.scope}-${connection.id}`}
-                onClick={() => removeBindingForConnection(connection)}
-              >
-                Remove from agent
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                data-testid={`agent-connection-add-${connection.scope}-${connection.id}`}
-                onClick={() => addBindingForConnection(connection)}
-              >
-                Add to agent
-              </Button>
-            )}
+            <Button
+              type="button"
+              variant="outline"
+              data-testid={`agent-connection-remove-${connection.scope}-${connection.id}`}
+              onClick={() => removeBindingForConnection(connection)}
+            >
+              Remove from agent
+            </Button>
           </div>
         </>
       );
     }
 
     if (selectedTool.kind === "connect-provider") {
-      const authorizeHref = buildConnectorAuthorizeHref({
-        slug: selectedTool.provider,
-        teamspaceId,
-        accountId,
-        returnTo,
-        scope: connectScope,
-      });
+      const providerLabel = selectedTool.label;
+      const { user: userConnections, org: orgConnections } =
+        scopedConnectionsForProvider(connections, selectedTool.provider);
+      const totalConnections = userConnections.length + orgConnections.length;
       return (
         <>
           <SidebarDetailHeader
@@ -748,28 +721,45 @@ export function AgentSettingsDialogs({
                 className="size-5"
               />
             }
-            title={selectedTool.label}
+            title={providerLabel}
             status={
               <span className="text-muted-foreground text-xs">
-                Not connected
+                {totalConnections > 0
+                  ? `${totalConnections} connected account${totalConnections === 1 ? "" : "s"}`
+                  : "Not connected"}
               </span>
             }
           />
           <p className="text-muted-foreground mb-4 text-sm">
-            Connect a {selectedTool.label} account, then add it to this agent.
+            Choose a connected account to add to this agent. Connect new
+            accounts on the Connections page.
           </p>
-          {scopeOptions.length > 1 ? renderScopePicker(selectedTool.provider) : null}
+          <div className="mb-6 space-y-4">
+            {renderProviderConnectionSection(
+              "user",
+              userConnections,
+              providerLabel,
+            )}
+            {scopeOptions.includes("org")
+              ? renderProviderConnectionSection(
+                  "org",
+                  orgConnections,
+                  providerLabel,
+                )
+              : null}
+          </div>
           <Button
             size="sm"
+            variant="outline"
             nativeButton={false}
             render={
               <a
-                href={authorizeHref}
-                data-testid={`agent-connect-link-${selectedTool.provider}`}
+                href={connectionsHref}
+                data-testid={`agent-connect-manage-${selectedTool.provider}`}
               />
             }
           >
-            Connect {selectedTool.label}
+            Open Connections
           </Button>
         </>
       );

@@ -17,6 +17,7 @@ type AgentsWorkspaceProps = {
   scriptToolLinks: Record<string, string[]>;
   skillLinks: Record<string, string[]>;
   skillsHref: string;
+  connectionsHref: string;
 };
 
 export function AgentsWorkspace({
@@ -27,6 +28,7 @@ export function AgentsWorkspace({
   scriptToolLinks,
   skillLinks,
   skillsHref,
+  connectionsHref,
 }: AgentsWorkspaceProps) {
   const [definitions, setDefinitions] = useState(initialDefinitions);
   const [mainAgent, setMainAgent] = useState(mainAgentDefinition);
@@ -163,6 +165,7 @@ export function AgentsWorkspace({
           connections={settingsContext.connections}
           inboundChannels={settingsContext.inboundChannels}
           channelsHref={settingsContext.channelsHref}
+          connectionsHref={connectionsHref}
           schedules={settingsContext.schedules}
           onClose={close}
           registerRequestClose={registerRequestClose}

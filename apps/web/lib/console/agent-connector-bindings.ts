@@ -23,6 +23,20 @@ export function flattenScopedConnections(connections: {
   ];
 }
 
+export function scopedConnectionsForProvider(
+  connections: { user: ConnectorConnection[]; org: ConnectorConnection[] },
+  provider: string,
+): { user: ScopedConnection[]; org: ScopedConnection[] } {
+  return {
+    user: connections.user
+      .filter((c) => c.connector === provider)
+      .map((c) => ({ ...c, scope: "user" as const })),
+    org: connections.org
+      .filter((c) => c.connector === provider)
+      .map((c) => ({ ...c, scope: "org" as const })),
+  };
+}
+
 export function connectionDisplayLabel(
   connection: Pick<ConnectorConnection, "name" | "connector">,
   providerLabel?: string,

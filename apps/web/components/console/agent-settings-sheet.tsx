@@ -98,6 +98,7 @@ type AgentSettingsSheetProps = {
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
   inboundChannels: InboundChannelStatus[];
   channelsHref: string;
+  connectionsHref: string;
   schedules: AgentScheduleSummary[];
   onClose: () => void;
   registerRequestClose?: (
@@ -158,6 +159,7 @@ export function AgentSettingsSheet({
   connections,
   inboundChannels,
   channelsHref,
+  connectionsHref,
   schedules,
   onClose,
   registerRequestClose,
@@ -839,6 +841,7 @@ export function AgentSettingsSheet({
         connections={connections}
         inboundChannels={inboundChannels}
         channelsHref={channelsHref}
+        connectionsHref={connectionsHref}
         teamspaceId={teamspaceId}
         accountId={accountId}
         returnTo={pathname}
