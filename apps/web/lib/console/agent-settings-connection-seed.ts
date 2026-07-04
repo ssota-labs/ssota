@@ -1,3 +1,5 @@
+import type { AgentConnectorBinding } from "@ssota/contracts";
+import { deriveEnabledConnectorProviders } from "@ssota/contracts";
 import type { ConnectorConnection } from "@/components/connectors/connectors-view";
 
 /** Dev/stub preview — multiple accounts per provider and scope. */
@@ -56,6 +58,16 @@ export const AGENT_TOOLS_CONNECTION_SEED: {
   ],
 };
 
+/** Dev/stub preview — one bound Notion account on main agent Tools card. */
+export const MAIN_AGENT_CONNECTOR_BINDING_SEED: AgentConnectorBinding[] = [
+  {
+    connectionId: "seed-notion-user-1",
+    provider: "notion",
+    scope: "user",
+    accountLabel: "Alex — Personal Workspace",
+  },
+];
+
 export function shouldMergeAgentToolsConnectionSeed(): boolean {
   return (
     process.env.NODE_ENV === "development" ||
@@ -84,5 +96,38 @@ export function mergeAgentToolsConnectionSeed(connections: {
   return {
     user: mergeScope(connections.user, AGENT_TOOLS_CONNECTION_SEED.user),
     org: mergeScope(connections.org, AGENT_TOOLS_CONNECTION_SEED.org),
+  };
+}
+
+export function mergeMainAgentConnectorBindingSeed<
+  T extends {
+    connectorBindings?: AgentConnectorBinding[];
+    enabledConnectorProviders?: string[];
+  },
+>(runPolicy: T): T {
+  if (!shouldMergeAgentToolsConnectionSeed()) {
+    return runPolicy;
+  }
+
+  const existing = runPolicy.connectorBindings ?? [];
+  const extras = MAIN_AGENT_CONNECTOR_BINDING_SEED.filter(
+    (seed) =>
+      !existing.some(
+        (binding) =>
+          binding.scope === seed.scope &&
+          binding.connectionId === seed.connectionId,
+      ),
+  );
+  if (extras.length === 0) {
+    return runPolicy;
+  }
+
+  const connectorBindings = [...existing, ...extras];
+  return {
+    ...runPolicy,
+    connectorBindings,
+    enabledConnectorProviders: deriveEnabledConnectorProviders({
+      connectorBindings,
+    }),
   };
 }
