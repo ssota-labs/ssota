@@ -31,7 +31,8 @@ export async function runSsotaAgentWorkflow(input: RunSsotaAgentInput) {
     workflowRunId,
   );
 
-  const { instructions, messages, definition, trigger } = await buildTaskPromptStep(
+  const { instructions, messages, definition, trigger, approvedConnectorToolSlugs } =
+    await buildTaskPromptStep(
     input,
     workflowRunId,
   );
@@ -50,6 +51,8 @@ export async function runSsotaAgentWorkflow(input: RunSsotaAgentInput) {
       agentDefinitionId: definition.agentDefinitionId,
       nodeScopes: definition.nodeScopes,
       enabledConnectorProviders: definition.enabledConnectorProviders,
+      connectorBindings: definition.connectorBindings,
+      approvedConnectorToolSlugs,
       trigger,
     },
     definition,

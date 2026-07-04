@@ -68,6 +68,17 @@ export const ConnectionTriggerSchema = z.object({
 
 export type ConnectionTrigger = z.infer<typeof ConnectionTriggerSchema>;
 
+/** Per-tool permission for a connector binding on an agent. */
+export const ConnectorToolPermissionSchema = z.enum([
+  "allow",
+  "approval",
+  "block",
+]);
+
+export type ConnectorToolPermission = z.infer<
+  typeof ConnectorToolPermissionSchema
+>;
+
 /** Per-connection toolkit access bound to an agent (Composio connected-account id). */
 export const AgentConnectorBindingSchema = z.object({
   connectionId: z.string().min(1),
@@ -75,6 +86,10 @@ export const AgentConnectorBindingSchema = z.object({
   scope: z.enum(["user", "org"]),
   /** Display snapshot — account label at bind time. */
   accountLabel: z.string().optional(),
+  /** Tool slug → permission. Omitted slugs default to allow at runtime. */
+  toolPermissions: z
+    .record(z.string(), ConnectorToolPermissionSchema)
+    .optional(),
 });
 
 export type AgentConnectorBinding = z.infer<typeof AgentConnectorBindingSchema>;
@@ -106,6 +121,48 @@ export function deriveEnabledConnectorProviders(
     return [...new Set(fromBindings)].sort();
   }
   return [...(runPolicy.enabledConnectorProviders ?? [])].sort();
+}
+
+/** Agent-blocked tool slugs grouped by Composio toolkit. */
+export function deriveBlockedToolsByToolkit(
+  bindings: AgentConnectorBinding[],
+): Record<string, string[]> {
+  const grouped = new Map<string, Set<string>>();
+  for (const binding of bindings) {
+    if (!binding.toolPermissions) continue;
+    for (const [slug, permission] of Object.entries(binding.toolPermissions)) {
+      if (permission !== "block") continue;
+      const slugs = grouped.get(binding.provider) ?? new Set<string>();
+      slugs.add(slug);
+      grouped.set(binding.provider, slugs);
+    }
+  }
+  return Object.fromEntries(
+    [...grouped.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([toolkit, slugs]) => [toolkit, [...slugs].sort()]),
+  );
+}
+
+/** Agent approval-required tool slugs grouped by Composio toolkit. */
+export function deriveApprovalToolsByToolkit(
+  bindings: AgentConnectorBinding[],
+): Record<string, string[]> {
+  const grouped = new Map<string, Set<string>>();
+  for (const binding of bindings) {
+    if (!binding.toolPermissions) continue;
+    for (const [slug, permission] of Object.entries(binding.toolPermissions)) {
+      if (permission !== "approval") continue;
+      const slugs = grouped.get(binding.provider) ?? new Set<string>();
+      slugs.add(slug);
+      grouped.set(binding.provider, slugs);
+    }
+  }
+  return Object.fromEntries(
+    [...grouped.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([toolkit, slugs]) => [toolkit, [...slugs].sort()]),
+  );
 }
 
 export type RunPolicy = z.infer<typeof RunPolicySchema>;

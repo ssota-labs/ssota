@@ -53,16 +53,27 @@ describe("mergeMainAgentConnectorBindingSeed", () => {
     expect(mergeMainAgentConnectorBindingSeed(runPolicy)).toEqual(runPolicy);
   });
 
-  it("merges seed binding for main agent preview", () => {
+  it("merges seed binding for main agent preview when bindings were never saved", () => {
     vi.stubEnv("AGENT_TOOLS_CONNECTION_SEED", "1");
     vi.stubEnv("CONNECT_STUB", "");
+
+    const merged = mergeMainAgentConnectorBindingSeed({
+      enabledConnectorProviders: [] as string[],
+    });
+
+    expect(merged.connectorBindings).toEqual(MAIN_AGENT_CONNECTOR_BINDING_SEED);
+    expect(merged.enabledConnectorProviders).toEqual(["notion"]);
+  });
+
+  it("does not re-seed when connectorBindings was explicitly saved empty", () => {
+    vi.stubEnv("CONNECT_STUB", "1");
 
     const merged = mergeMainAgentConnectorBindingSeed({
       connectorBindings: [],
       enabledConnectorProviders: [],
     });
 
-    expect(merged.connectorBindings).toEqual(MAIN_AGENT_CONNECTOR_BINDING_SEED);
-    expect(merged.enabledConnectorProviders).toEqual(["notion"]);
+    expect(merged.connectorBindings).toEqual([]);
+    expect(merged.enabledConnectorProviders).toEqual([]);
   });
 });

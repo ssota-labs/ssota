@@ -7,13 +7,16 @@ import {
   AtIcon,
   ChatsCircleIcon,
   ClockIcon,
+  GearIcon,
   LightbulbIcon,
+  LinkBreakIcon,
   PlusIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
 import type { Block } from "@blocknote/core";
 import type {
   AgentDefinition,
+  AgentConnectorBinding,
   AgentTrigger,
   ConnectionTrigger,
   SkillIndex,
@@ -41,8 +44,14 @@ import {
 import {
   Popover,
   PopoverContent,
+  PopoverTrigger,
 } from "@ssota/ui/components/ui/popover";
 import { Switch } from "@ssota/ui/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@ssota/ui/components/ui/tooltip";
 import { Label } from "@ssota/ui/components/ui/label";
 import {
   ScheduleSheet,
@@ -63,6 +72,7 @@ import type { InboundChannelStatus } from "@/lib/connect/inbound-channels";
 import { TRIGGER_LABELS, mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import type { AgentScheduleSummary } from "@/lib/console/load-agent-settings-context";
 import { AgentModelPicker } from "@/components/console/agent-model-picker";
+import { AgentConnectorToolPermissionsPopoverContent } from "@/components/console/agent-connector-tool-permissions-popover";
 import { DEFAULT_MODEL_ID } from "@/lib/chat/models";
 import { describeRecurrence, cronToRecurrence } from "@/lib/schedules/recurrence";
 import {
@@ -74,7 +84,11 @@ import {
 import {
   connectionDisplayLabel,
   migrateConnectorBindings,
+  patchConnectorBindingsDraft,
+  removeConnectorBinding,
+  updateBindingInList,
 } from "@/lib/console/agent-connector-bindings";
+import { prefetchToolkitToolSettings } from "@/lib/hooks/use-toolkit-tool-settings";
 
 const DocumentEditorEl = dynamic(
   () =>
@@ -83,6 +97,70 @@ const DocumentEditorEl = dynamic(
     ),
   { ssr: false },
 );
+
+function BoundConnectionToolPermissionsControl({
+  label,
+  binding,
+  teamspaceId,
+  providerLabel,
+  onBindingChange,
+}: {
+  label: string;
+  binding: AgentConnectorBinding;
+  teamspaceId: string;
+  providerLabel: string;
+  onBindingChange: (next: AgentConnectorBinding) => void;
+}) {
+  return (
+    <Popover modal={false}>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <PopoverTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label={`Tool permissions for ${label}`}
+                  data-testid={`agent-bound-connection-settings-${binding.scope}-${binding.connectionId}`}
+                  onPointerEnter={() =>
+                    prefetchToolkitToolSettings(teamspaceId, binding.provider)
+                  }
+                  onFocus={() =>
+                    prefetchToolkitToolSettings(teamspaceId, binding.provider)
+                  }
+                />
+              }
+            />
+          }
+        >
+          <GearIcon className="size-4" aria-hidden />
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={5}>
+          Tool permissions
+        </TooltipContent>
+      </Tooltip>
+      <PopoverContent
+        side="bottom"
+        align="end"
+        sideOffset={6}
+        className="w-[min(20rem,92vw)] p-3"
+        data-testid="agent-tool-permissions-popover"
+        initialFocus={false}
+        finalFocus={false}
+      >
+        <AgentConnectorToolPermissionsPopoverContent
+          binding={binding}
+          teamspaceId={teamspaceId}
+          providerLabel={providerLabel}
+          onBindingChange={onBindingChange}
+        />
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 type AgentSettingsSheetProps = {
   definition: AgentDefinition;
@@ -202,6 +280,12 @@ export function AgentSettingsSheet({
     );
   }, [definition, initialScriptToolIds, initialBoundSkillIds, schedules, connections]);
 
+  useEffect(() => {
+    for (const binding of draft.connectorBindings) {
+      prefetchToolkitToolSettings(teamspaceId, binding.provider);
+    }
+  }, [teamspaceId, draft.connectorBindings]);
+
   const agentSchedules = schedules.filter(
     (s) => s.agentDefinitionId === definition.id,
   );
@@ -282,6 +366,34 @@ export function AgentSettingsSheet({
 
   const patchDraft = (patch: Partial<AgentSettingsDraft>) => {
     setDraft((current) => ({ ...current, ...patch }));
+  };
+
+  const removeBindingFromDraft = (
+    scope: AgentConnectorBinding["scope"],
+    connectionId: string,
+  ) => {
+    patchDraft(
+      patchConnectorBindingsDraft(
+        removeConnectorBinding(draft.connectorBindings, scope, connectionId),
+      ),
+    );
+  };
+
+  const updateBindingToolPermissions = (
+    scope: AgentConnectorBinding["scope"],
+    connectionId: string,
+    updater: (binding: AgentConnectorBinding) => AgentConnectorBinding,
+  ) => {
+    patchDraft(
+      patchConnectorBindingsDraft(
+        updateBindingInList(
+          draft.connectorBindings,
+          scope,
+          connectionId,
+          updater,
+        ),
+      ),
+    );
   };
 
   const handleInstructionsSave = useCallback((blocks: Block[]) => {
@@ -629,6 +741,48 @@ export function AgentSettingsSheet({
                           binding.scope === "org" ? "Organization" : "Personal"
                         }`}
                         testId={`agent-bound-connection-${binding.scope}-${binding.connectionId}`}
+                        trailing={
+                          <div className="flex items-center gap-1">
+                            <BoundConnectionToolPermissionsControl
+                              label={label}
+                              binding={binding}
+                              teamspaceId={teamspaceId}
+                              providerLabel={providerLabel}
+                              onBindingChange={(next) =>
+                                updateBindingToolPermissions(
+                                  binding.scope,
+                                  binding.connectionId,
+                                  () => next,
+                                )
+                              }
+                            />
+                            <Tooltip>
+                              <TooltipTrigger
+                                render={
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    className="text-muted-foreground hover:bg-destructive/10! hover:text-destructive! [&_svg]:text-current"
+                                    aria-label={`Unlink ${label} from agent`}
+                                    data-testid={`agent-bound-connection-unlink-${binding.scope}-${binding.connectionId}`}
+                                    onClick={() =>
+                                      removeBindingFromDraft(
+                                        binding.scope,
+                                        binding.connectionId,
+                                      )
+                                    }
+                                  />
+                                }
+                              >
+                                <LinkBreakIcon className="size-4" aria-hidden />
+                              </TooltipTrigger>
+                              <TooltipContent side="top" sideOffset={5}>
+                                Unlink from agent
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                        }
                       />
                     ))}
                     {linkedScriptTools.map((tool) => (

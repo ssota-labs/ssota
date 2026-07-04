@@ -1,4 +1,4 @@
-import type { AgentTrigger, NodeScope } from "@ssota/contracts";
+import type { AgentTrigger, AgentConnectorBinding, NodeScope } from "@ssota/contracts";
 
 /**
  * Scope passed to every SSOTA tool call. `accountId` is the end-user data
@@ -18,6 +18,10 @@ export interface AgentRunContext {
   nodeScopes?: NodeScope[];
   /** Composio toolkit slugs this agent may use (empty = connector tools off). */
   enabledConnectorProviders?: string[];
+  /** Explicit connector bindings including per-tool permissions. */
+  connectorBindings?: AgentConnectorBinding[];
+  /** Tool slugs pre-approved via a human gate for this run. */
+  approvedConnectorToolSlugs?: string[];
   /** Trigger that started this run (for policy checks). */
   trigger?: AgentTrigger;
   /**

@@ -31,7 +31,8 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
     workflowRunId,
   );
 
-  const { instructions, messages, definition, trigger } = await buildTaskPromptStep(
+  const { instructions, messages, definition, trigger, approvedConnectorToolSlugs } =
+    await buildTaskPromptStep(
     input,
     workflowRunId,
   );
@@ -50,6 +51,8 @@ export async function runTaskAgentWorkflow(input: RunTaskAgentInput) {
       agentDefinitionId: definition.agentDefinitionId,
       nodeScopes: definition.nodeScopes,
       enabledConnectorProviders: definition.enabledConnectorProviders,
+      connectorBindings: definition.connectorBindings,
+      approvedConnectorToolSlugs,
       trigger,
     },
     definition,

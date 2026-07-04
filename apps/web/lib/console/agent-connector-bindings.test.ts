@@ -1,12 +1,19 @@
+import type { AgentConnectorBinding } from "@ssota/contracts";
 import { describe, expect, it } from "vitest";
 import {
   addConnectorBinding,
   connectorBindingKey,
+  deriveApprovalToolsByToolkit,
+  deriveBlockedToolsByToolkit,
   deriveEnabledProvidersFromBindings,
+  getEffectiveToolPermission,
   isConnectorBound,
   migrateConnectorBindings,
+  normalizeConnectorBindingForSnapshot,
   removeConnectorBinding,
   scopedConnectionsForProvider,
+  setBindingToolPermission,
+  updateBindingInList,
 } from "./agent-connector-bindings";
 
 describe("agent-connector-bindings", () => {
@@ -76,5 +83,82 @@ describe("agent-connector-bindings", () => {
       user: [],
       org: [],
     });
+  });
+
+  it("sets and clears per-tool permissions on a binding", () => {
+    const binding = {
+      connectionId: "acc-1",
+      provider: "notion",
+      scope: "user" as const,
+    };
+    const blocked = setBindingToolPermission(binding, "NOTION_CREATE_PAGE", "block");
+    expect(blocked.toolPermissions).toEqual({ NOTION_CREATE_PAGE: "block" });
+    const allowed = setBindingToolPermission(blocked, "NOTION_CREATE_PAGE", "allow");
+    expect(allowed.toolPermissions).toBeUndefined();
+  });
+
+  it("global disabled slugs are a hard floor over binding permissions", () => {
+    const binding = {
+      connectionId: "acc-1",
+      provider: "notion",
+      scope: "user" as const,
+      toolPermissions: { NOTION_CREATE_PAGE: "allow" as const },
+    };
+    expect(
+      getEffectiveToolPermission(["NOTION_CREATE_PAGE"], binding, "NOTION_CREATE_PAGE"),
+    ).toBe("block");
+    expect(
+      getEffectiveToolPermission([], binding, "NOTION_CREATE_PAGE"),
+    ).toBe("allow");
+  });
+
+  it("derives blocked and approval tool maps by toolkit", () => {
+    const bindings: AgentConnectorBinding[] = [
+      {
+        connectionId: "acc-1",
+        provider: "notion",
+        scope: "user" as const,
+        toolPermissions: {
+          NOTION_CREATE_PAGE: "block" as const,
+          NOTION_SEARCH: "approval" as const,
+        },
+      },
+      {
+        connectionId: "acc-2",
+        provider: "github",
+        scope: "user" as const,
+        toolPermissions: { GITHUB_CREATE_ISSUE: "block" as const },
+      },
+    ];
+    expect(deriveBlockedToolsByToolkit(bindings)).toEqual({
+      github: ["GITHUB_CREATE_ISSUE"],
+      notion: ["NOTION_CREATE_PAGE"],
+    });
+    expect(deriveApprovalToolsByToolkit(bindings)).toEqual({
+      notion: ["NOTION_SEARCH"],
+    });
+  });
+
+  it("updates a binding in place within a list", () => {
+    const bindings = [
+      { connectionId: "acc-1", provider: "notion", scope: "user" as const },
+    ];
+    const next = updateBindingInList(bindings, "user", "acc-1", (binding) =>
+      setBindingToolPermission(binding, "NOTION_SEARCH", "approval"),
+    );
+    expect(next[0]?.toolPermissions).toEqual({ NOTION_SEARCH: "approval" });
+  });
+
+  it("normalizes tool permission keys for stable snapshots", () => {
+    const binding = normalizeConnectorBindingForSnapshot({
+      connectionId: "acc-1",
+      provider: "notion",
+      scope: "user",
+      toolPermissions: { Z_TOOL: "block", A_TOOL: "approval" },
+    });
+    expect(Object.keys(binding.toolPermissions ?? {})).toEqual([
+      "A_TOOL",
+      "Z_TOOL",
+    ]);
   });
 });

@@ -32,9 +32,9 @@ import {
   addConnectorBinding,
   connectorBindingKey,
   connectionDisplayLabel,
-  deriveEnabledProvidersFromBindings,
   flattenScopedConnections,
   isConnectorBound,
+  patchConnectorBindingsDraft,
   removeConnectorBinding,
   scopedConnectionsForProvider,
   type ScopedConnection,
@@ -295,10 +295,7 @@ export function AgentSettingsDialogs({
   }, [addTriggerFlatItems, openDialog, selectedAddTriggerId]);
 
   const patchConnectorBindings = (bindings: AgentConnectorBinding[]) => {
-    onDraftChange({
-      connectorBindings: bindings,
-      enabledConnectorProviders: deriveEnabledProvidersFromBindings(bindings),
-    });
+    onDraftChange(patchConnectorBindingsDraft(bindings));
   };
 
   const addBindingForConnection = (connection: ScopedConnection) => {
@@ -536,9 +533,7 @@ export function AgentSettingsDialogs({
     onDraftChange({
       connectionTriggers: [...draft.connectionTriggers, entry],
       allowedTriggers: [...allowed],
-      connectorBindings: nextBindings,
-      enabledConnectorProviders:
-        deriveEnabledProvidersFromBindings(nextBindings),
+      ...patchConnectorBindingsDraft(nextBindings),
     });
     onOpenDialogChange(null);
   };

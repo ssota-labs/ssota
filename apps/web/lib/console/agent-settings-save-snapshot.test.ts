@@ -60,4 +60,55 @@ describe("agent-settings-save-snapshot", () => {
     );
     expect(left.allowedTriggers).toEqual(right.allowedTriggers);
   });
+
+  it("treats tool permission key order as equivalent for dirty checks", () => {
+    const saved: AgentSettingsDraft = {
+      ...baseDraft(),
+      connectorBindings: [
+        {
+          connectionId: "acc-1",
+          provider: "notion",
+          scope: "user",
+          toolPermissions: { A_TOOL: "block", Z_TOOL: "approval" },
+        },
+      ],
+    };
+    const draft: AgentSettingsDraft = {
+      ...saved,
+      connectorBindings: [
+        {
+          connectionId: "acc-1",
+          provider: "notion",
+          scope: "user",
+          toolPermissions: { Z_TOOL: "approval", A_TOOL: "block" },
+        },
+      ],
+    };
+    expect(isAgentSettingsDraftDirty(draft, saved, [])).toBe(false);
+  });
+
+  it("detects tool permission changes as dirty", () => {
+    const saved: AgentSettingsDraft = {
+      ...baseDraft(),
+      connectorBindings: [
+        {
+          connectionId: "acc-1",
+          provider: "notion",
+          scope: "user",
+        },
+      ],
+    };
+    const draft: AgentSettingsDraft = {
+      ...saved,
+      connectorBindings: [
+        {
+          connectionId: "acc-1",
+          provider: "notion",
+          scope: "user",
+          toolPermissions: { NOTION_SEARCH: "block" },
+        },
+      ],
+    };
+    expect(isAgentSettingsDraftDirty(draft, saved, [])).toBe(true);
+  });
 });
