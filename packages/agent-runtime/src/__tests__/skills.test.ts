@@ -10,6 +10,12 @@ function createMockPort(overrides: Partial<SkillPort> = {}): SkillPort {
     async listForOrganization() {
       return [];
     },
+    async listLibrarySkills() {
+      return [];
+    },
+    async listExploreSkills() {
+      return [];
+    },
     async listForAgentDefinition() {
       return [];
     },

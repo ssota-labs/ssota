@@ -45,6 +45,7 @@ export type SkillFile = z.infer<typeof SkillFileSchema>;
 export const SkillMetadataSchema = z.object({
   allowedTools: z.array(z.string()).optional(),
   disableModelInvocation: z.boolean().optional(),
+  /** UI origin — community catalog vs org-owned import */
   kind: z.enum(["community", "builtin", "custom"]).optional(),
   catalogSource: SkillCatalogSourceSchema.optional(),
   fileIndex: z
@@ -62,6 +63,14 @@ export const SkillMetadataSchema = z.object({
 });
 
 export type SkillMetadata = z.infer<typeof SkillMetadataSchema>;
+
+export const SkillOriginSchema = z.enum([
+  "inline",
+  "github",
+  "community",
+]);
+
+export type SkillOrigin = z.infer<typeof SkillOriginSchema>;
 
 export const SkillSchema = z.object({
   id: z.string().uuid(),
@@ -85,6 +94,8 @@ export const SkillIndexSchema = z.object({
   name: z.string().min(1),
   description: z.string(),
   source: SkillSourceSchema,
+  /** Derived for Skills UI — how the skill was added to the org library */
+  origin: SkillOriginSchema.optional(),
 });
 
 export type SkillIndex = z.infer<typeof SkillIndexSchema>;

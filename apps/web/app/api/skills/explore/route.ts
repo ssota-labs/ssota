@@ -23,7 +23,7 @@ async function resolveOrgId(teamspaceId: string): Promise<string> {
   return organizationId;
 }
 
-/** Search org skill library (no platform builtins). */
+/** Community catalog skills not yet in the org library. */
 export async function GET(request: Request) {
   const user = await requireUser();
   if (!user) {
@@ -39,15 +39,14 @@ export async function GET(request: Request) {
 
   const port = await getSkillPort(teamspaceId);
   const organizationId = await resolveOrgId(teamspaceId);
-  const skills = await port.listLibrarySkills(organizationId);
-  const results = q
-    ? skills.filter(
-        (s) =>
-          s.key.toLowerCase().includes(q) ||
-          s.name.toLowerCase().includes(q) ||
-          s.description.toLowerCase().includes(q),
-      )
-    : skills;
-
-  return NextResponse.json({ results });
+  let skills = await port.listExploreSkills(organizationId);
+  if (q) {
+    skills = skills.filter(
+      (s) =>
+        s.key.toLowerCase().includes(q) ||
+        s.name.toLowerCase().includes(q) ||
+        s.description.toLowerCase().includes(q),
+    );
+  }
+  return NextResponse.json({ skills });
 }

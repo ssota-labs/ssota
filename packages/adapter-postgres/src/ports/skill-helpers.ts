@@ -53,7 +53,6 @@ export function resolveCatalogSource(
         source: `${repo.owner}/${repo.repo}`,
         sourceType: "github",
         skillPath: "SKILL.md",
-        ref: "main",
       };
     }
   }
@@ -82,6 +81,30 @@ export function inferLockSourceType(input: {
   return "platform";
 }
 
+/** Public repo default branch (falls back to main when the API is unavailable). */
+export async function resolveGithubDefaultRef(
+  owner: string,
+  repo: string,
+  options?: { githubToken?: string },
+): Promise<string> {
+  const headers: Record<string, string> = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "ssota-skill-fetch",
+  };
+  if (options?.githubToken) {
+    headers.Authorization = `Bearer ${options.githubToken}`;
+  }
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+    headers,
+  });
+  if (!res.ok) {
+    return "main";
+  }
+  const data = (await res.json()) as { default_branch?: string };
+  const branch = data.default_branch?.trim();
+  return branch && branch.length > 0 ? branch : "main";
+}
+
 export async function fetchGithubSkillFiles(
   catalog: SkillCatalogSource,
   options?: { githubToken?: string },
@@ -91,7 +114,9 @@ export async function fetchGithubSkillFiles(
     throw new Error(`Invalid github source: ${catalog.source}`);
   }
   const { owner, repo: repoName } = repo;
-  const ref = catalog.ref ?? "main";
+  const ref =
+    catalog.ref ??
+    (await resolveGithubDefaultRef(owner, repoName, options));
   const skillDir = skillDirFromPath(catalog.skillPath);
   const basePath = skillDir ? `${skillDir}/` : "";
 
