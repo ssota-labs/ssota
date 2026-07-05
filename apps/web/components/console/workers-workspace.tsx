@@ -15,7 +15,7 @@ import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
-import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
+import { CardListSheet, CardListSheetInlineTitle, CardListSheetPanel } from "@/components/card-list-sheet";
 import { WorkerScriptEditor } from "@/components/console/worker-script-editor";
 import {
   createWorkerAction,
@@ -102,6 +102,7 @@ export function WorkersWorkspace({
   const [dryRunResult, setDryRunResult] = useState<string | null>(null);
   const [workerDetail, setWorkerDetail] = useState<Worker | null>(null);
   const [editScript, setEditScript] = useState("");
+  const [editName, setEditName] = useState("");
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   const [createKind, setCreateKind] = useState<WorkerKind>("tool");
@@ -120,6 +121,7 @@ export function WorkersWorkspace({
     if (!activeId || isCreating || isCreateWorkerSheetId(activeId)) {
       setWorkerDetail(null);
       setEditScript("");
+      setEditName("");
       setDryRunResult(null);
       return;
     }
@@ -140,6 +142,12 @@ export function WorkersWorkspace({
       cancelled = true;
     };
   }, [activeId, isCreating, teamspaceId]);
+
+  useEffect(() => {
+    if (activeWorker) {
+      setEditName(activeWorker.name);
+    }
+  }, [activeWorker?.id, activeWorker?.name]);
 
   const workersByKind = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -281,6 +289,33 @@ export function WorkersWorkspace({
     });
   }
 
+  function handleSaveName() {
+    if (!activeWorker) return;
+    const trimmed = editName.trim();
+    if (!trimmed || trimmed === activeWorker.name) {
+      setEditName(activeWorker.name);
+      return;
+    }
+    startTransition(async () => {
+      const worker = await updateWorkerAction(
+        orgSlug,
+        teamspaceSlug,
+        teamspaceId,
+        activeWorker.id,
+        { name: trimmed },
+      );
+      setEditName(worker.name);
+      setWorkerDetail((prev) =>
+        prev && prev.id === worker.id ? { ...prev, name: worker.name } : prev,
+      );
+      setWorkers((prev) =>
+        prev.map((entry) =>
+          entry.id === worker.id ? { ...entry, name: worker.name } : entry,
+        ),
+      );
+    });
+  }
+
   function handleActiveIdChange(nextId: string | null) {
     if (isCreateWorkerSheetId(activeId) && !isCreateWorkerSheetId(nextId)) {
       resetCreateForm();
@@ -378,6 +413,24 @@ export function WorkersWorkspace({
       {activeWorker && !isCreating ? (
         <CardListSheetPanel
           title={activeWorker.name}
+          titleNode={
+            <CardListSheetInlineTitle
+              value={editName}
+              onChange={(event) => setEditName(event.target.value)}
+              onBlur={handleSaveName}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                }
+                if (event.key === "Escape") {
+                  setEditName(activeWorker.name);
+                  event.currentTarget.blur();
+                }
+              }}
+              data-testid="worker-edit-name"
+            />
+          }
           subtitle={activeWorker.key}
           onClose={() => setActiveId(null)}
           headerPrefix={

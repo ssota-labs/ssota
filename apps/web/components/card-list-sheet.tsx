@@ -14,6 +14,7 @@ import {
 } from "react";
 import { CaretRightIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
+import { Input } from "@ssota/ui/components/ui/input";
 import { cn } from "@ssota/ui/lib/utils";
 
 /** Docked sheet width as % of CardListSheet.Root (main content column). */
@@ -402,6 +403,45 @@ function SheetHeaderAction({
   return <div className={cn("shrink-0", className)}>{children}</div>;
 }
 
+const SHEET_INLINE_TITLE_CLASS =
+  "h-auto w-full border-0 bg-transparent px-0 text-base font-semibold leading-snug shadow-none focus-visible:ring-0";
+
+/** Notion-style title field — matches SheetTitle typography inside Sheet.Root. */
+export function CardListSheetInlineTitle({
+  value,
+  onChange,
+  onBlur,
+  onKeyDown,
+  readOnly,
+  "data-testid": testId,
+  "aria-label": ariaLabel = "Title",
+  className,
+}: {
+  value: string;
+  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
+  onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+  readOnly?: boolean;
+  "data-testid"?: string;
+  "aria-label"?: string;
+  className?: string;
+}) {
+  const { titleId } = useCardListSheetSheet();
+  return (
+    <Input
+      id={titleId}
+      value={value}
+      onChange={onChange}
+      onBlur={onBlur}
+      onKeyDown={onKeyDown}
+      readOnly={readOnly}
+      aria-label={ariaLabel}
+      data-testid={testId}
+      className={cn(SHEET_INLINE_TITLE_CLASS, className)}
+    />
+  );
+}
+
 function SheetTitle({
   children,
   id,
@@ -473,6 +513,8 @@ function SheetFooter({
 
 export type CardListSheetPanelProps = {
   title: string;
+  /** Replaces the default SheetTitle (e.g. inline editable title). */
+  titleNode?: ReactNode;
   subtitle?: string;
   headerPrefix?: ReactNode;
   headerAction?: ReactNode;
@@ -491,6 +533,7 @@ export type CardListSheetPanelProps = {
 /** Title + body shortcut over CardListSheet.Sheet compound parts. */
 export function CardListSheetPanel({
   title,
+  titleNode,
   subtitle,
   headerPrefix,
   headerAction,
@@ -519,7 +562,7 @@ export function CardListSheetPanel({
       <SheetHeader align={headerPrefix ? "start" : "center"}>
         {headerPrefix ? <SheetHeaderPrefix>{headerPrefix}</SheetHeaderPrefix> : null}
         <SheetHeaderMain>
-          <SheetTitle>{title}</SheetTitle>
+          {titleNode ?? <SheetTitle>{title}</SheetTitle>}
           {subtitle ? <SheetSubtitle>{subtitle}</SheetSubtitle> : null}
         </SheetHeaderMain>
         {headerAction ? <SheetHeaderAction>{headerAction}</SheetHeaderAction> : null}
