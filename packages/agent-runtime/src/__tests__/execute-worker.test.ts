@@ -9,21 +9,18 @@ const baseWorker: Worker = {
   key: "echo",
   name: "Echo",
   description: "",
-  kind: "tool",
+  kind: "sync",
   inputSchema: {},
   outputSchema: null,
-  script: `export default async function run(input) {
-  return { echoed: input?.msg ?? null, dry: true };
+  script: `export default async function handler(input, sdk) {
+  sdk.log("worker run", input);
+  return { ok: true };
 }`,
   runtime: "vercel_sandbox",
   kindConfig: {
-    permissions: {
-      graphRead: false,
-      graphWrite: false,
-      connectorScopes: [],
-      canMutate: false,
-    },
-    defaultConfig: { timeoutMs: 60_000, maxConcurrency: 1, supportsDryRun: true },
+    cronExpression: "0 * * * *",
+    timezone: "UTC",
+    enabled: true,
   },
   version: 1,
   createdAt: new Date().toISOString(),
@@ -55,14 +52,21 @@ describe("executeWorker local fallback", () => {
   });
 
   it("dry-runs without Vercel OIDC using local subprocess", async () => {
+    const host = { invoke: async () => ({ dryRun: true }) };
     const result = await executeWorker({
       worker: baseWorker,
       input: { msg: "hello" },
       dryRun: true,
       trigger: "manual",
+      scope: {
+        teamspaceId: baseWorker.teamspaceId,
+        accountId: null,
+        organizationId: "00000000-0000-4000-8000-000000000099",
+        host,
+      },
     });
 
     expect(result.ok).toBe(true);
-    expect(result.output).toEqual({ echoed: "hello", dry: true });
+    expect(result.output).toEqual({ ok: true });
   });
 });
