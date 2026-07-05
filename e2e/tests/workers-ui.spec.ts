@@ -5,7 +5,7 @@ import { gotoProject } from "../helpers/console";
 const SCREENSHOT_DIR = "/opt/cursor/artifacts/screenshots";
 
 test.describe("workers-ui", () => {
-  test("workers page shows browse grid and create sheet", async ({ page }) => {
+  test("workers page shows sync create sheet and detail", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "workers");
 
@@ -13,7 +13,7 @@ test.describe("workers-ui", () => {
     await expect(workspace).toBeVisible();
     await expect(page.getByRole("heading", { name: "Workers", exact: true })).toBeVisible();
 
-    await page.getByTestId("workers-create-tool").click();
+    await page.getByTestId("workers-create-sync").click();
     await expect(page.getByTestId("workers-create-sheet")).toBeVisible();
     await expect(page.getByTestId("workers-create-form")).toBeVisible();
 
@@ -22,9 +22,9 @@ test.describe("workers-ui", () => {
       fullPage: true,
     });
 
-    const key = `e2e-echo-${Date.now()}`;
+    const key = `e2e-sync-${Date.now()}`;
     await page.getByTestId("worker-create-key").fill(key);
-    await page.getByTestId("worker-create-name").fill("E2E Echo");
+    await page.getByTestId("worker-create-name").fill("E2E Sync");
     await page.getByTestId("worker-create-submit").click();
 
     const card = page.getByTestId(`worker-card-${key}`);
@@ -33,7 +33,7 @@ test.describe("workers-ui", () => {
     await expect(page.getByTestId(`worker-detail-${key}`)).toBeVisible();
 
     await page.screenshot({
-      path: `${SCREENSHOT_DIR}/workers-detail-tool.png`,
+      path: `${SCREENSHOT_DIR}/workers-detail-sync.png`,
       fullPage: true,
     });
   });
