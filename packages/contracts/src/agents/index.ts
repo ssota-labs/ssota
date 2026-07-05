@@ -143,7 +143,7 @@ const AGENT_META: AgentMeta[] = [
     title: "Notion worker",
     description:
       "Batch sync or transform Notion content. Use for connector-backed Notion operations.",
-    toolBundles: ["connectors", "script_tools", "tasks.manage"],
+    toolBundles: ["connectors", "workers", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
     defaultExecutorType: "Agent",
@@ -155,7 +155,7 @@ const AGENT_META: AgentMeta[] = [
     title: "Graph batch worker",
     description:
       "Batch graph read/write operations. Use for bulk node/edge updates with bounded concurrency.",
-    toolBundles: ["graph.read", "graph.write", "script_tools", "tasks.manage"],
+    toolBundles: ["graph.read", "graph.write", "workers", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
     defaultExecutorType: "Agent",
@@ -167,7 +167,7 @@ const AGENT_META: AgentMeta[] = [
     title: "Connector sync worker",
     description:
       "Sync data from external connectors into the graph. Use for scheduled or on-demand connector batch jobs.",
-    toolBundles: ["connectors", "graph.write", "script_tools", "tasks.manage"],
+    toolBundles: ["connectors", "graph.write", "workers", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
     defaultExecutorType: "Agent",
@@ -179,7 +179,7 @@ const AGENT_META: AgentMeta[] = [
     title: "Report builder worker",
     description:
       "Build structured reports from graph data. Use when output is a compact summary or export artifact.",
-    toolBundles: ["graph.read", "script_tools", "tasks.manage"],
+    toolBundles: ["graph.read", "workers", "tasks.manage"],
     nodeScopes: [],
     runPolicy: { allowedTriggers: ["task", "schedule"] },
     defaultExecutorType: "Agent",
