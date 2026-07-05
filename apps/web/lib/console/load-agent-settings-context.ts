@@ -46,7 +46,7 @@ export async function loadAgentSettingsContext(
         m.loadInboundChannelStatus(teamspaceId),
       ),
       getSkillPort(teamspaceId).then((port) =>
-        port.listForOrganization(organizationId),
+        port.listLibrarySkills(organizationId),
       ),
     ]);
 

@@ -126,7 +126,11 @@ export async function getSkillPort(teamspaceId: string) {
     organizationId = await resolveOrganizationIdForTeamspace(getDb(), teamspaceId);
     registerTeamspaceOrganization(teamspaceId, organizationId);
   }
-  return createSkillPort(getDb(), { organizationId, teamspaceId });
+  return createSkillPort(getDb(), {
+    organizationId,
+    teamspaceId,
+    githubToken: process.env.GITHUB_TOKEN,
+  });
 }
 
 export function getSchedulePort(teamspaceId: string, accountId?: string | null) {

@@ -31,7 +31,7 @@ async function SkillsPageInner({
         teamspaceId={project.id}
         orgSlug={orgSlug}
         teamspaceSlug={teamspaceSlug}
-        initialSkills={initialSkills}
+        initialLibrarySkills={initialSkills}
       />
     </div>
   );

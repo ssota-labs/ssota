@@ -24,14 +24,19 @@ export function SkillsContentLoading() {
               </div>
             </header>
 
-            <div className="flex gap-2">
+            <div className="mt-2 flex gap-2">
+              <Skeleton className="h-9 w-24 rounded-md" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+            </div>
+
+            <div className="mt-4 flex gap-2">
               <Skeleton className="h-9 min-w-0 flex-1 rounded-md" />
               <Skeleton className="h-9 w-20 shrink-0 rounded-md" />
             </div>
 
-            <section className="space-y-3">
+            <section className="mt-4 space-y-3">
               <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Catalog
+                My library
               </h2>
               <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
                 {Array.from({ length: DEFAULT_SKILL_ROWS }, (_, index) => (
