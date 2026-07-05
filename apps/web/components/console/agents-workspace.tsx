@@ -1,9 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PlusIcon } from "@phosphor-icons/react";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { AgentSettingsSheet } from "@/components/console/agent-settings-sheet";
+import { CreateAgentDialog } from "@/components/console/create-agent-dialog";
 import { CardListSheet } from "@/components/card-list-sheet";
+import { Button } from "@ssota/ui/components/ui/button";
 import type { AgentDefinition } from "@ssota/contracts";
 import { MAIN_AGENT_ID } from "@ssota/contracts/agents";
 import type { AgentSettingsContext } from "@/lib/console/load-agent-settings-context";
@@ -16,7 +19,6 @@ type AgentsWorkspaceProps = {
   settingsContext: AgentSettingsContext;
   scriptToolLinks: Record<string, string[]>;
   skillLinks: Record<string, string[]>;
-  skillsHref: string;
   connectionsHref: string;
 };
 
@@ -27,12 +29,12 @@ export function AgentsWorkspace({
   settingsContext,
   scriptToolLinks,
   skillLinks,
-  skillsHref,
   connectionsHref,
 }: AgentsWorkspaceProps) {
   const [definitions, setDefinitions] = useState(initialDefinitions);
   const [mainAgent, setMainAgent] = useState(mainAgentDefinition);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
   const requestCloseRef = useRef<((action: () => void) => void) | null>(null);
 
   const activeDefinition =
@@ -95,12 +97,14 @@ export function AgentsWorkspace({
           title="Agents"
           description="Configure the project agent and agents you create for this project."
           actions={
-            <a
-              href={skillsHref}
-              className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+            <Button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              data-testid="agents-create-button"
             >
-              Open Skills
-            </a>
+              <PlusIcon className="size-4" aria-hidden />
+              Create agent
+            </Button>
           }
         />
 
@@ -171,6 +175,16 @@ export function AgentsWorkspace({
           registerRequestClose={registerRequestClose}
         />
       ) : null}
+
+      <CreateAgentDialog
+        open={createOpen}
+        teamspaceId={teamspaceId}
+        onOpenChange={setCreateOpen}
+        onCreated={(definition) => {
+          setDefinitions((prev) => [...prev, definition]);
+          setActiveId(definition.id);
+        }}
+      />
     </CardListSheet.Root>
   );
 }

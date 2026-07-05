@@ -364,6 +364,47 @@ test.describe("Agents", () => {
     ).not.toBeVisible();
   });
 
+  test("header shows create agent button instead of open skills link", async ({
+    page,
+  }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    await expect(page.getByTestId("agents-create-button")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Open Skills" })).toHaveCount(0);
+  });
+
+  test("creates agent from header button and opens settings sheet", async ({
+    page,
+  }) => {
+    await loginAsSmoke(page);
+    await gotoProject(page, "agents");
+
+    const agentName = `E2E Agent ${Date.now()}`;
+    await page.getByTestId("agents-create-button").click();
+
+    const dialog = page.getByTestId("agent-create-dialog");
+    await expect(dialog).toBeVisible();
+    await dialog.getByTestId("agent-create-name").fill(agentName);
+    await dialog
+      .getByTestId("agent-create-description")
+      .fill("Use for automated E2E agent creation tests.");
+    await dialog.getByTestId("agent-create-submit").click();
+
+    await expect(dialog).not.toBeVisible();
+
+    await expect(page.getByTestId("agent-settings-sheet")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Settings", exact: true }),
+    ).toBeVisible();
+    await expect(page.getByTestId("agent-instructions-editor")).toBeVisible();
+    await expect(
+      page.getByRole("main").locator("span.text-sm.font-medium", {
+        hasText: agentName,
+      }),
+    ).toBeVisible();
+  });
+
   test("sidebar nav link reaches agents", async ({ page }) => {
     await loginAsSmoke(page);
     await gotoProject(page, "overview");

@@ -75,7 +75,6 @@ async function AgentsPageInner({
         }}
         scriptToolLinks={scriptToolLinks}
         skillLinks={skillLinks}
-        skillsHref={legacyOrgTeamspacePath({ orgSlug, teamspaceSlug }, "skills")}
         connectionsHref={legacyOrgTeamspacePath(
           { orgSlug, teamspaceSlug },
           "connections",
