@@ -8,10 +8,10 @@ export function ChannelsContentLoading() {
       title="Channels"
       description={
         <p className="max-w-2xl text-sm text-muted-foreground">
-          Connect Slack or Discord so agents can receive inbound messages.
+          Connect Slack or Discord so agents can receive messages.
         </p>
       }
-      sections={[{ label: "Inbound channels", count: 2 }]}
+      sections={[{ label: "Channels", count: 2 }]}
     />
   );
 }
