@@ -70,7 +70,7 @@ describe("skills registry", () => {
     expect(file?.contents).not.toMatch(/^---\s*\nname:/m);
   });
 
-  it("binds skills to agent definitions", async () => {
+  it("binds skills to agent definitions with ready locks", async () => {
     if (skip || !agentDefinitionId) return;
     const port = createSkillPort(db, { organizationId, teamspaceId });
     const catalog = await port.listForOrganization(organizationId);
@@ -82,6 +82,18 @@ describe("skills registry", () => {
     ]);
     const bound = await port.listForAgentDefinition(agentDefinitionId);
     expect(bound.some((s) => s.key === "supabase")).toBe(true);
+
+    const links = await port.listAgentSkillLinks(agentDefinitionId);
+    const link = links.find((l) => l.skillId === skillId);
+    expect(link?.lockStatus).toBe("ready");
+    expect(link?.lock?.sourceType).toBe("platform");
+    expect(link?.lock?.computedHash).toBeTruthy();
+
+    const pkg = await port.getSkillPackageByHash(
+      organizationId,
+      link!.lock!.computedHash,
+    );
+    expect(pkg?.files.length).toBeGreaterThan(0);
   });
 
   it("creates, updates, and deletes custom org skills", async () => {

@@ -126,6 +126,13 @@ export function getSandboxSessionPort(teamspaceId: string) {
     environmentPort: getSandboxEnvironmentPort(teamspaceId),
     sessionRecordPort: getSandboxSessionRecordPort(teamspaceId),
     githubToken: process.env.GITHUB_TOKEN,
+    resolveOrganizationId: async (tsId) => resolveOrgIdForProject(tsId),
+    createSkillPort: ({ organizationId, teamspaceId: tsId }) =>
+      createSkillPort(getDb(), {
+        organizationId,
+        teamspaceId: tsId,
+        githubToken: process.env.GITHUB_TOKEN,
+      }),
   });
 }
 

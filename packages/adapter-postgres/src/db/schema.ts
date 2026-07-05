@@ -532,8 +532,19 @@ export const agentDefinitionScriptTools = pgTable(
 
 export const skillSourceEnum = pgEnum("skill_source", [
   "builtin",
-  "skills_sh",
   "custom",
+]);
+
+export const skillPackageSourceTypeEnum = pgEnum("skill_package_source_type", [
+  "platform",
+  "github",
+  "inline",
+]);
+
+export const skillLockStatusEnum = pgEnum("skill_lock_status", [
+  "ready",
+  "pending",
+  "failed",
 ]);
 
 export const skills = pgTable(
@@ -582,6 +593,53 @@ export const skillSnapshots = pgTable(
   },
 );
 
+export const organizationSkills = pgTable(
+  "organization_skills",
+  {
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    skillId: uuid("skill_id")
+      .notNull()
+      .references(() => skills.id, { onDelete: "cascade" }),
+    addedAt: timestamp("added_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: uniqueIndex("organization_skills_pk").on(
+      table.organizationId,
+      table.skillId,
+    ),
+    skillIdx: index("organization_skills_skill_id_idx").on(table.skillId),
+  }),
+);
+
+export const skillPackages = pgTable(
+  "skill_packages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    contentHash: text("content_hash").notNull(),
+    sourceType: skillPackageSourceTypeEnum("source_type").notNull(),
+    storageKey: text("storage_key"),
+    files: jsonb("files")
+      .notNull()
+      .default([])
+      .$type<Array<{ path: string; contents: string }>>(),
+    fileCount: integer("file_count").notNull().default(0),
+    sizeBytes: integer("size_bytes").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    orgHashUnique: uniqueIndex("skill_packages_org_hash_unique").on(
+      table.organizationId,
+      table.contentHash,
+    ),
+    orgIdx: index("skill_packages_organization_id_idx").on(table.organizationId),
+  }),
+);
+
 export const agentDefinitionSkills = pgTable(
   "agent_definition_skills",
   {
@@ -594,6 +652,15 @@ export const agentDefinitionSkills = pgTable(
       .references(() => skills.id, { onDelete: "cascade" }),
     enabled: boolean("enabled").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
+    lock: jsonb("lock").$type<{
+      source: string;
+      sourceType: "github" | "inline" | "platform";
+      skillPath: string;
+      computedHash: string;
+      ref?: string;
+    } | null>(),
+    lockStatus: skillLockStatusEnum("lock_status"),
+    lockError: text("lock_error"),
   },
   (table) => ({
     definitionFk: foreignKey({

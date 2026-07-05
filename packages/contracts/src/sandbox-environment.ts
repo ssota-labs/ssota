@@ -186,6 +186,7 @@ export const CreateSandboxSessionInputSchema = z.object({
   sandboxEnvironmentId: z.string().uuid(),
   ownerAgentRunId: z.string().uuid().nullable().optional(),
   ownerTaskId: z.string().uuid().nullable().optional(),
+  agentDefinitionId: z.string().uuid().optional(),
 });
 
 export type CreateSandboxSessionInput = z.infer<

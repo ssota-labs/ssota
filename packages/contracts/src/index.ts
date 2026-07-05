@@ -13,6 +13,7 @@ export * from "./agent-definition.js";
 export * from "./teamspace-main-config.js";
 export * from "./script-tool.js";
 export * from "./skill.js";
+export * from "./skills/main-default-pack.js";
 export * from "./sandbox-environment.js";
 export * from "./schedule.js";
 export * from "./markdown-blocknote.js";
