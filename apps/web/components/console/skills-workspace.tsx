@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import Link from "next/link";
 import { BooksIcon, CompassIcon, FolderOpenIcon, GithubLogoIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import type { Skill, SkillFile, SkillIndex } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -367,16 +366,6 @@ export function SkillsPageWorkspace({
               </BrowseWorkspace.Section>
             )}
 
-            <p className="text-xs text-muted-foreground">
-              Bind library skills to agents on the{" "}
-              <Link
-                href={`/${orgSlug}/${teamspaceSlug}/agents`}
-                className="underline underline-offset-2"
-              >
-                Agents
-              </Link>{" "}
-              page.
-            </p>
           </BrowseWorkspace.Frame>
         </div>
 
