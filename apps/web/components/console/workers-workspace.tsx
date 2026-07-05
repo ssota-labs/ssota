@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   ClockIcon,
+  FloppyDiskIcon,
   GlobeIcon,
+  PlayIcon,
   PlusIcon,
   TrashIcon,
   WrenchIcon,
@@ -14,8 +16,17 @@ import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
-import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import { TooltipProvider } from "@ssota/ui/components/ui/tooltip";
+import {
+  Artifact,
+  ArtifactAction,
+  ArtifactActions,
+  ArtifactContent,
+  ArtifactHeader,
+  ArtifactTitle,
+} from "@/components/ai-elements/artifact";
 import { CardListSheet, CardListSheetInlineTitle, CardListSheetPanel } from "@/components/card-list-sheet";
+import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { WorkerScriptEditor } from "@/components/console/worker-script-editor";
 import {
   createWorkerAction,
@@ -433,6 +444,30 @@ export function WorkersWorkspace({
           }
           subtitle={activeWorker.key}
           onClose={() => setActiveId(null)}
+          headerAction={
+            <TooltipProvider delay={0}>
+              <ArtifactActions>
+                {scriptDirty ? (
+                  <ArtifactAction
+                    tooltip="Save script"
+                    icon={<FloppyDiskIcon className="size-4" />}
+                    disabled={isPending || !editScript.trim()}
+                    onClick={handleSaveScript}
+                    data-testid="worker-save-script"
+                  />
+                ) : null}
+                {activeWorker.kind === "tool" ? (
+                  <ArtifactAction
+                    tooltip="Dry run"
+                    icon={<PlayIcon className="size-4" />}
+                    disabled={isPending}
+                    onClick={() => handleDryRun(activeWorker.id)}
+                    data-testid="worker-dry-run"
+                  />
+                ) : null}
+              </ArtifactActions>
+            </TooltipProvider>
+          }
           headerPrefix={
             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40 text-muted-foreground">
               {kindIcon(activeWorker.kind)}
@@ -461,51 +496,25 @@ export function WorkersWorkspace({
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
-                <Label htmlFor={`worker-script-${activeWorker.id}`}>
-                  TypeScript script
-                </Label>
-                {scriptDirty ? (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="sm"
-                    disabled={isPending || !editScript.trim()}
-                    onClick={handleSaveScript}
-                    data-testid="worker-save-script"
-                  >
-                    Save script
-                  </Button>
-                ) : null}
-              </div>
-              {isLoadingDetail ? (
-                <p className="text-xs text-muted-foreground">Loading script…</p>
-              ) : (
-                <WorkerScriptEditor
-                  id={`worker-script-${activeWorker.id}`}
-                  testId="worker-edit-script"
-                  value={editScript}
-                  onChange={setEditScript}
-                  minHeight="16rem"
-                />
-              )}
-            </div>
-
-            {activeWorker.kind === "tool" ? (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  disabled={isPending}
-                  onClick={() => handleDryRun(activeWorker.id)}
-                  data-testid="worker-dry-run"
-                >
-                  Dry run
-                </Button>
-              </div>
-            ) : null}
+            <Artifact data-testid="worker-script-artifact">
+              <ArtifactHeader>
+                <ArtifactTitle>TypeScript script</ArtifactTitle>
+              </ArtifactHeader>
+              <ArtifactContent className="p-0">
+                {isLoadingDetail ? (
+                  <p className="px-4 py-3 text-xs text-muted-foreground">Loading script…</p>
+                ) : (
+                  <WorkerScriptEditor
+                    id={`worker-script-${activeWorker.id}`}
+                    testId="worker-edit-script"
+                    value={editScript}
+                    onChange={setEditScript}
+                    minHeight="16rem"
+                    className="rounded-none border-0 bg-transparent shadow-none"
+                  />
+                )}
+              </ArtifactContent>
+            </Artifact>
 
             {dryRunResult ? (
               <pre className="max-h-48 overflow-auto rounded-md border bg-muted/30 p-3 text-xs">
