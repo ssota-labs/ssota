@@ -14,7 +14,7 @@
 | **PR-2** | ✅ 완료 | `skill-github-discover.ts`, provenance-aware `registerSkill`, `importSkills` / `discoverGithubSkills` + adapter 단위·통합 테스트 |
 | **PR-3** | ✅ 완료 | API `GET /api/skills/discover/github`, `POST /api/skills/import` + route tests |
 | **PR-4** | ✅ 완료 | 통합 `SkillImportSheet` UI, import-refs API, E2E folder + GitHub mock |
-| **PR-5** | ⬜ 미착수 | Custom 시트 슬림화 + E2E |
+| **PR-5** | ✅ 완료 | Custom 시트 key 숨김, title → `toSkillKey` 자동, E2E 갱신 |
 | **PR-6** | ⬜ 미착수 | (선택) recursive fallback 등 |
 
 ### 추가된 파일 (PR-1 + PR-2)
@@ -36,7 +36,7 @@ packages/agent-runtime/src/__tests__/skills.test.ts  # mock port 보강
 
 ### 다음 작업
 
-1. PR-5: Custom key 필드 제거, E2E 갱신
+1. PR-6: (선택) recursive fallback, Cursor marketplace 등
 
 ---
 
@@ -423,7 +423,7 @@ Add skill ▾
 | **PR-2** | Adapter: GitHub tree fetch, `discoverGithubSkills`, provenance-aware `registerSkill` + `allocateUniqueSkillKey` | adapter unit + integration | ✅ |
 | **PR-3** | API: `discover/github`, `import` batch | route tests | ✅ |
 | **PR-4** | UI: 통합 Import 시트, 기존 GitHub/Folder 시트 제거 | E2E folder + github mock | ✅ |
-| **PR-5** | Custom 시트 슬림화 (title + body, key 숨김) | E2E custom | ⬜ |
+| **PR-5** | Custom 시트 슬림화 (title + body, key 숨김) | E2E custom | ✅ |
 | **PR-6** | (선택) Cursor marketplace, recursive fallback, Advanced key override | — | ⬜ |
 
 ---
