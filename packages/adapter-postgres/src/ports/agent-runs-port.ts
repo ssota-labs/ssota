@@ -92,5 +92,14 @@ export function createAgentRunPort(db: Db) {
         .limit(1);
       return rows.length > 0;
     },
+
+    async hasWorkflowRun(workflowRunId: string): Promise<boolean> {
+      const rows = await db
+        .select({ id: agentRuns.id })
+        .from(agentRuns)
+        .where(eq(agentRuns.workflowRunId, workflowRunId))
+        .limit(1);
+      return rows.length > 0;
+    },
   };
 }

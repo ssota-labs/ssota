@@ -6,6 +6,7 @@ export {
   createTaskPort,
   createGraphPorts,
   createAgentDefinitionPort,
+  createWorkerPort,
   createScriptToolPort,
   createSkillPort,
   createSandboxEnvironmentPort,

@@ -50,6 +50,7 @@ export const agentRuntimeKindEnum = pgEnum("agent_runtime_kind", [
   "main",
   "task",
   "scheduler",
+  "worker",
 ]);
 
 export const profiles = pgTable("profiles", {
@@ -457,8 +458,8 @@ export const agentDefinitions = pgTable(
 /** @deprecated Use `agentDefinitions` */
 export const workflowInstructions = agentDefinitions;
 
-export const scriptTools = pgTable(
-  "script_tools",
+export const workers = pgTable(
+  "workers",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     teamspaceId: uuid("teamspace_id")
@@ -470,6 +471,7 @@ export const scriptTools = pgTable(
     key: text("key").notNull(),
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
+    kind: text("kind").notNull().default("tool"),
     inputSchema: jsonb("input_schema")
       .notNull()
       .default({})
@@ -477,11 +479,7 @@ export const scriptTools = pgTable(
     outputSchema: jsonb("output_schema").$type<Record<string, unknown> | null>(),
     script: text("script").notNull(),
     runtime: text("runtime").notNull().default("vercel_sandbox"),
-    permissions: jsonb("permissions")
-      .notNull()
-      .default({})
-      .$type<Record<string, unknown>>(),
-    defaultConfig: jsonb("default_config")
+    kindConfig: jsonb("kind_config")
       .notNull()
       .default({})
       .$type<Record<string, unknown>>(),
@@ -490,28 +488,31 @@ export const scriptTools = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => ({
-    teamspaceKeyUnique: uniqueIndex("script_tools_teamspace_key_unique")
+    teamspaceKeyUnique: uniqueIndex("workers_teamspace_key_unique")
       .on(table.teamspaceId, table.key)
       .where(sql`${table.accountId} IS NULL`),
     teamspaceAccountKeyUnique: uniqueIndex(
-      "script_tools_teamspace_account_key_unique",
+      "workers_teamspace_account_key_unique",
     )
       .on(table.teamspaceId, table.accountId, table.key)
       .where(sql`${table.accountId} IS NOT NULL`),
-    teamspaceIdx: index("script_tools_teamspace_id_idx").on(table.teamspaceId),
+    teamspaceIdx: index("workers_teamspace_id_idx").on(table.teamspaceId),
   }),
 );
 
-export const agentDefinitionScriptTools = pgTable(
-  "agent_definition_script_tools",
+/** @deprecated Use `workers` */
+export const scriptTools = workers;
+
+export const agentDefinitionWorkers = pgTable(
+  "agent_definition_workers",
   {
     teamspaceId: uuid("teamspace_id")
       .notNull()
       .references(() => teamspaces.id, { onDelete: "cascade" }),
     agentDefinitionId: uuid("agent_definition_id").notNull(),
-    scriptToolId: uuid("script_tool_id")
+    workerId: uuid("worker_id")
       .notNull()
-      .references(() => scriptTools.id, { onDelete: "cascade" }),
+      .references(() => workers.id, { onDelete: "cascade" }),
     enabled: boolean("enabled").notNull().default(true),
     config: jsonb("config")
       .notNull()
@@ -523,12 +524,15 @@ export const agentDefinitionScriptTools = pgTable(
       columns: [table.teamspaceId, table.agentDefinitionId],
       foreignColumns: [agentDefinitions.teamspaceId, agentDefinitions.id],
     }).onDelete("cascade"),
-    pk: uniqueIndex("agent_definition_script_tools_pk").on(
+    pk: uniqueIndex("agent_definition_workers_pk").on(
       table.agentDefinitionId,
-      table.scriptToolId,
+      table.workerId,
     ),
   }),
 );
+
+/** @deprecated Use `agentDefinitionWorkers` */
+export const agentDefinitionScriptTools = agentDefinitionWorkers;
 
 export const skillSourceEnum = pgEnum("skill_source", [
   "builtin",
