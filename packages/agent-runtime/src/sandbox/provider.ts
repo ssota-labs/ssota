@@ -4,6 +4,7 @@ import type {
   SandboxHandle,
   SandboxSessionPort,
   SandboxSessionRecordPort,
+  SkillPort,
 } from "@ssota/core";
 import { createSandboxHandle } from "./handle.js";
 import { provisionSandboxSession } from "./provision.js";
@@ -13,6 +14,11 @@ export interface SandboxProviderDeps {
   environmentPort: SandboxEnvironmentPort;
   sessionRecordPort: SandboxSessionRecordPort;
   githubToken?: string;
+  resolveOrganizationId?: (teamspaceId: string) => Promise<string | null>;
+  createSkillPort?: (scope: {
+    organizationId: string;
+    teamspaceId: string;
+  }) => SkillPort;
 }
 
 export function createSandboxProvider(
@@ -30,6 +36,18 @@ export function createSandboxProvider(
       }
 
       const sources = await deps.environmentPort.listSources(environment.id);
+      let organizationId: string | undefined;
+      let skillPort: SkillPort | undefined;
+      if (input.agentDefinitionId && deps.resolveOrganizationId && deps.createSkillPort) {
+        const orgId = await deps.resolveOrganizationId(environment.teamspaceId);
+        if (orgId) {
+          organizationId = orgId;
+          skillPort = deps.createSkillPort({
+            organizationId: orgId,
+            teamspaceId: environment.teamspaceId,
+          });
+        }
+      }
       const { sessionId } = await provisionSandboxSession({
         environment,
         sources,
@@ -37,6 +55,9 @@ export function createSandboxProvider(
         ownerAgentRunId: input.ownerAgentRunId,
         ownerTaskId: input.ownerTaskId,
         githubToken: deps.githubToken,
+        agentDefinitionId: input.agentDefinitionId,
+        organizationId,
+        skillPort,
       });
 
       const session = await deps.sessionRecordPort.getById(sessionId);

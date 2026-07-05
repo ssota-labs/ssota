@@ -1,6 +1,5 @@
 import { tool, type ToolSet } from "ai";
 import { ReadSkillInputSchema } from "@ssota/contracts";
-import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import { getSkillPort, ensureTeamspaceOrganizationScope } from "../ports.js";
 import { getRunContext } from "./context.js";
 
@@ -9,19 +8,11 @@ async function resolveBoundSkillKeys(
   agentDefinitionId: string | undefined,
 ): Promise<Set<string>> {
   const port = getSkillPort(organizationId);
-  if (agentDefinitionId) {
-    const bound = await port.listForAgentDefinition(agentDefinitionId);
-    if (bound.length > 0) {
-      return new Set(bound.map((s) => s.key));
-    }
-    if (agentDefinitionId === BUILTIN_AGENT_IDS.main) {
-      const catalog = await port.listForOrganization(organizationId);
-      return new Set(
-        catalog.filter((s) => s.source === "builtin").map((s) => s.key),
-      );
-    }
+  if (!agentDefinitionId) {
+    return new Set();
   }
-  return new Set();
+  const bound = await port.listForAgentDefinition(agentDefinitionId);
+  return new Set(bound.map((s) => s.key));
 }
 
 export function createSkillTools(): ToolSet {
