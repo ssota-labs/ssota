@@ -25,11 +25,11 @@ export function SkillsContentLoading() {
             </header>
 
             <div className="-mx-4 flex gap-x-5 px-4 py-3 md:-mx-6 md:gap-x-6 md:px-6 md:py-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Skeleton className="size-5 rounded-sm md:size-[1.35rem]" />
                 <Skeleton className="h-7 w-20 rounded-sm md:h-8 md:w-24" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <Skeleton className="size-5 rounded-sm md:size-[1.35rem]" />
                 <Skeleton className="h-7 w-28 rounded-sm md:h-8 md:w-32" />
               </div>

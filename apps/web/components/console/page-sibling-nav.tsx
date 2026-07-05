@@ -49,7 +49,7 @@ function SiblingNavItemContent({
   icon?: ReactNode;
 }) {
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className="inline-flex items-center gap-1.5">
       {icon ? (
         <span
           className={cn(
