@@ -1,14 +1,20 @@
 import { test, expect } from "@playwright/test";
 import { loginAsSmoke } from "../helpers/auth";
 import { DEFAULT_CONSOLE_BASE, gotoProject } from "../helpers/console";
+import { resetCommunityExploreSkills } from "../helpers/skills-library";
 
 const CUSTOM_KEY = `e2e-skill-${Date.now()}`;
 
 test.describe("Skills", () => {
-  test("sidebar nav link reaches skills page", async ({ page }) => {
+  test.beforeEach(async ({ page }) => {
     await loginAsSmoke(page);
+    await resetCommunityExploreSkills(page);
+  });
+
+  test("sidebar nav link reaches skills page", async ({ page }) => {
     await gotoProject(page, "overview");
 
+    await page.getByRole("link", { name: /^Agents$|^에이전트$/i }).click();
     await page.getByRole("link", { name: /^Skills$|^스킬$/i }).click();
 
     await expect(page).toHaveURL(
@@ -19,17 +25,36 @@ test.describe("Skills", () => {
     ).toBeVisible();
   });
 
-  test("lists platform builtins and creates custom skill", async ({ page }) => {
-    await loginAsSmoke(page);
+  test("explore and library tabs hide platform builtins", async ({ page }) => {
     await gotoProject(page, "skills");
 
     const main = page.getByRole("main");
     await expect(main.getByTestId("skills-workspace")).toBeVisible();
-    await expect(main.getByTestId("skill-catalog-item-supabase")).toBeVisible({
-      timeout: 15_000,
-    });
+    await expect(main.getByTestId("skills-tab-explore")).toBeVisible();
+    await expect(main.getByTestId("skills-tab-library")).toBeVisible();
 
-    await main.getByTestId("skills-create-button").click();
+    await main.getByTestId("skills-tab-explore").click();
+    await expect(
+      main.getByTestId("skill-catalog-item-supabase"),
+    ).toHaveCount(0);
+    await expect(
+      main.getByTestId("skill-catalog-item-frontend-design"),
+    ).toBeVisible({ timeout: 15_000 });
+
+    await main.getByTestId("skills-tab-library").click();
+    await expect(
+      main.getByTestId("skill-library-item-supabase"),
+    ).toHaveCount(0);
+  });
+
+  test("creates custom skill in library", async ({ page }) => {
+    await gotoProject(page, "skills");
+
+    const main = page.getByRole("main");
+    await main.getByTestId("skills-tab-library").click();
+    await main.getByTestId("skills-add-button").click();
+    await page.getByTestId("skills-add-custom").click();
+
     const dialog = page.getByTestId("skill-create-dialog");
     await expect(dialog).toBeVisible();
 
@@ -51,13 +76,34 @@ test.describe("Skills", () => {
     ).toBeVisible();
 
     await expect(
-      page.getByTestId(`skill-catalog-item-${CUSTOM_KEY}`),
+      main.getByTestId(`skill-library-item-${CUSTOM_KEY}`),
     ).toBeVisible({ timeout: 10_000 });
 
-    await sheet.getByTestId("skill-delete-button").click();
-    await expect(main.getByTestId(`skill-catalog-item-${CUSTOM_KEY}`)).toHaveCount(
+    await sheet.getByTestId("skill-remove-from-library").click();
+    await expect(main.getByTestId(`skill-library-item-${CUSTOM_KEY}`)).toHaveCount(
       0,
       { timeout: 10_000 },
     );
+  });
+
+  test("saves explore skill to library", async ({ page }) => {
+    await gotoProject(page, "skills");
+
+    const main = page.getByRole("main");
+    await main.getByTestId("skills-tab-explore").click();
+    const saveButton = main.getByTestId("skill-save-frontend-design");
+    await expect(saveButton).toBeVisible({ timeout: 15_000 });
+    await saveButton.click();
+
+    await expect(
+      main.getByTestId("skill-library-item-frontend-design"),
+    ).toBeVisible({ timeout: 10_000 });
+
+    const sheet = page.getByTestId("skill-detail-sheet");
+    await expect(sheet).toBeVisible({ timeout: 10_000 });
+    await sheet.getByTestId("skill-remove-from-library").click();
+    await expect(
+      main.getByTestId("skill-library-item-frontend-design"),
+    ).toHaveCount(0, { timeout: 10_000 });
   });
 });
