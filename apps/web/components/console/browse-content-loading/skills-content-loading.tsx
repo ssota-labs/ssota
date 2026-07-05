@@ -24,9 +24,9 @@ export function SkillsContentLoading() {
               </div>
             </header>
 
-            <div className="mt-2 flex gap-2">
-              <Skeleton className="h-9 w-24 rounded-md" />
-              <Skeleton className="h-9 w-28 rounded-md" />
+            <div className="-mx-4 flex gap-x-5 px-4 py-3 md:-mx-6 md:gap-x-6 md:px-6 md:py-4">
+              <Skeleton className="h-7 w-20 rounded-sm md:h-8 md:w-24" />
+              <Skeleton className="h-7 w-28 rounded-sm md:h-8 md:w-32" />
             </div>
 
             <div className="mt-4 flex gap-2">

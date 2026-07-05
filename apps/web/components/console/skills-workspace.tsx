@@ -22,14 +22,9 @@ import {
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@ssota/ui/components/ui/tabs";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import { ClientSiblingNav } from "@/components/console/page-sibling-nav";
 import {
   SkillDetailCard,
   SkillMarkdownView,
@@ -292,79 +287,82 @@ export function SkillsPageWorkspace({
               }
             />
 
-            <Tabs
-              value={tab}
-              onValueChange={(value) => {
-                setTab(value as SkillsTab);
+            <ClientSiblingNav
+              items={[
+                {
+                  id: "explore",
+                  title: "Explore",
+                  testId: "skills-tab-explore",
+                },
+                {
+                  id: "library",
+                  title: "My library",
+                  testId: "skills-tab-library",
+                },
+              ]}
+              activeId={tab}
+              onSelect={(id) => {
+                setTab(id as SkillsTab);
                 setActiveId(null);
                 setQuery("");
               }}
-            >
-              <TabsList>
-                <TabsTrigger value="explore" data-testid="skills-tab-explore">
-                  Explore
-                </TabsTrigger>
-                <TabsTrigger value="library" data-testid="skills-tab-library">
-                  My library
-                </TabsTrigger>
-              </TabsList>
+              testId="skills-sibling-nav"
+              ariaLabel="Skills tabs"
+            />
 
-              <div className="mt-4 flex gap-2">
-                <Input
-                  placeholder="Search by name, key, or description…"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSearch();
-                  }}
-                  data-testid="skills-search-input"
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search by name, key, or description…"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearch();
+                }}
+                data-testid="skills-search-input"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={isPending}
+                onClick={handleSearch}
+              >
+                Search
+              </Button>
+            </div>
+
+            {tab === "explore" ? (
+              <BrowseWorkspace.Section label="Community">
+                <SkillIndexList
+                  skills={exploreSkills}
+                  isPending={isPending}
+                  emptyMessage="No community skills to explore. Check back after catalog updates."
+                  renderAction={(skill) => (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={isPending}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSaveToLibrary(skill.id);
+                      }}
+                      data-testid={`skill-save-${skill.key}`}
+                    >
+                      Save to library
+                    </Button>
+                  )}
                 />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  disabled={isPending}
-                  onClick={handleSearch}
-                >
-                  Search
-                </Button>
-              </div>
-
-              <TabsContent value="explore" className="mt-4">
-                <BrowseWorkspace.Section label="Community">
-                  <SkillIndexList
-                    skills={exploreSkills}
-                    isPending={isPending}
-                    emptyMessage="No community skills to explore. Check back after catalog updates."
-                    renderAction={(skill) => (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        disabled={isPending}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSaveToLibrary(skill.id);
-                        }}
-                        data-testid={`skill-save-${skill.key}`}
-                      >
-                        Save to library
-                      </Button>
-                    )}
-                  />
-                </BrowseWorkspace.Section>
-              </TabsContent>
-
-              <TabsContent value="library" className="mt-4">
-                <BrowseWorkspace.Section label="My library">
-                  <SkillIndexList
-                    skills={librarySkills}
-                    isPending={isPending}
-                    emptyMessage="Your library is empty. Explore community skills or add a custom, GitHub, or folder skill."
-                    testIdPrefix="skill-library-item"
-                  />
-                </BrowseWorkspace.Section>
-              </TabsContent>
-            </Tabs>
+              </BrowseWorkspace.Section>
+            ) : (
+              <BrowseWorkspace.Section label="My library">
+                <SkillIndexList
+                  skills={librarySkills}
+                  isPending={isPending}
+                  emptyMessage="Your library is empty. Explore community skills or add a custom, GitHub, or folder skill."
+                  testIdPrefix="skill-library-item"
+                />
+              </BrowseWorkspace.Section>
+            )}
 
             <p className="text-xs text-muted-foreground">
               Bind library skills to agents on the{" "}
