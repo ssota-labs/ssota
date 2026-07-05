@@ -15,6 +15,7 @@ import { Label } from "@ssota/ui/components/ui/label";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { cn } from "@ssota/ui/lib/utils";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
+import { ListRowSkeleton } from "@/components/console/route-loaders";
 import { ClientSiblingNav } from "@/components/console/page-sibling-nav";
 import {
   SkillDetailCard,
@@ -30,6 +31,8 @@ type SkillDetail = {
 
 type SkillsTab = "explore" | "library";
 type AddSkillSheetMode = "custom" | "github" | "folder";
+
+const SKILL_LIST_SKELETON_ROWS = 6;
 
 type SkillsPageWorkspaceProps = {
   teamspaceId: string;
@@ -510,32 +513,36 @@ function SkillIndexList({
 }) {
   return (
     <CardListSheet.List className="border-border">
-      {skills.map((skill) => (
-        <CardListSheet.Row
-          key={skill.id}
-          id={skill.id}
-          testId={`${testIdPrefix}-${skill.key}`}
-          action={renderAction?.(skill)}
-        >
-          <div className="min-w-0 flex-1 space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">{skill.name}</span>
-              {originLabel(skill.origin) ? (
-                <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                  {originLabel(skill.origin)}
-                </span>
-              ) : null}
-            </div>
-            {skill.description ? (
-              <p className="line-clamp-2 text-xs text-muted-foreground">
-                {skill.description}
-              </p>
-            ) : null}
-          </div>
-          {!renderAction ? <CardListSheet.RowCaret /> : null}
-        </CardListSheet.Row>
-      ))}
-      {skills.length === 0 && !isPending ? (
+      {isPending
+        ? Array.from({ length: SKILL_LIST_SKELETON_ROWS }, (_, index) => (
+            <ListRowSkeleton key={index} />
+          ))
+        : skills.map((skill) => (
+            <CardListSheet.Row
+              key={skill.id}
+              id={skill.id}
+              testId={`${testIdPrefix}-${skill.key}`}
+              action={renderAction?.(skill)}
+            >
+              <div className="min-w-0 flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{skill.name}</span>
+                  {originLabel(skill.origin) ? (
+                    <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                      {originLabel(skill.origin)}
+                    </span>
+                  ) : null}
+                </div>
+                {skill.description ? (
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
+                    {skill.description}
+                  </p>
+                ) : null}
+              </div>
+              {!renderAction ? <CardListSheet.RowCaret /> : null}
+            </CardListSheet.Row>
+          ))}
+      {!isPending && skills.length === 0 ? (
         <CardListSheet.Empty>{emptyMessage}</CardListSheet.Empty>
       ) : null}
     </CardListSheet.List>
