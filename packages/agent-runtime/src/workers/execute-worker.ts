@@ -8,7 +8,7 @@ import { runEphemeralSandbox } from "../sandbox/provider.js";
 
 const RUNNER_WRAPPER = `
 import { readFileSync } from "node:fs";
-export default async function run() {
+async function run() {
   const { input, sdk } = JSON.parse(readFileSync("/tmp/run-payload.json", "utf8"));
   const fn = await import("./worker.mjs");
   const handler = fn.default ?? fn.run ?? fn;
@@ -18,6 +18,7 @@ export default async function run() {
   const result = await handler(input, sdk);
   process.stdout.write(JSON.stringify(result ?? null));
 }
+await run();
 `;
 
 export type WorkerExecuteTrigger =

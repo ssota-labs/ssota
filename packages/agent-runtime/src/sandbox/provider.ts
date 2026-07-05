@@ -6,8 +6,13 @@ import type {
   SandboxSessionRecordPort,
 } from "@ssota/core";
 import { createSandboxHandle } from "./handle.js";
+import { createLocalRawSandbox } from "./local-sandbox.js";
 import { provisionSandboxSession } from "./provision.js";
-import { createVercelSandbox, getVercelSandbox } from "./vercel-client.js";
+import {
+  createVercelSandbox,
+  getVercelSandbox,
+  shouldUseVercelSandbox,
+} from "./vercel-client.js";
 
 export interface SandboxProviderDeps {
   environmentPort: SandboxEnvironmentPort;
@@ -108,13 +113,20 @@ export async function runEphemeralSandbox<T>(
     workingDirectory?: string;
   },
 ): Promise<T> {
-  const raw = await createVercelSandbox({
-    runtime: options?.runtime ?? "node24",
-    timeoutMs: options?.timeoutMs ?? 120_000,
-  });
+  const useVercel = shouldUseVercelSandbox();
+  const raw = useVercel
+    ? await createVercelSandbox({
+        runtime: options?.runtime ?? "node24",
+        timeoutMs: options?.timeoutMs ?? 120_000,
+      })
+    : createLocalRawSandbox();
   const vercelSandboxId = raw.sandboxId ?? "ephemeral";
-  const workingDirectory = options?.workingDirectory ?? "/vercel/sandbox";
-  const ephemeralRoots = [workingDirectory, "/tmp"];
+  const workingDirectory = useVercel
+    ? (options?.workingDirectory ?? "/vercel/sandbox")
+    : "/tmp";
+  const ephemeralRoots = useVercel
+    ? [workingDirectory, "/tmp"]
+    : ["/tmp"];
   const handle = createSandboxHandle({
     sessionId: "ephemeral",
     vercelSandboxId,
