@@ -329,6 +329,14 @@ function ConnectorScopeCard({
                     title={label}
                     trailing={
                       <div className="flex items-center gap-1">
+                        <ConnectorToolPermissionsControl
+                          toolkit={connector.provider}
+                          providerLabel={connector.label}
+                          scope={scope}
+                          teamspaceId={teamspaceId}
+                          returnTo={returnTo}
+                          connectionId={conn.id}
+                        />
                         <Tooltip>
                           <TooltipTrigger
                             render={
@@ -350,14 +358,6 @@ function ConnectorScopeCard({
                             Reconnect
                           </TooltipContent>
                         </Tooltip>
-                        <ConnectorToolPermissionsControl
-                          toolkit={connector.provider}
-                          providerLabel={connector.label}
-                          scope={scope}
-                          teamspaceId={teamspaceId}
-                          returnTo={returnTo}
-                          connectionId={conn.id}
-                        />
                         <Tooltip>
                           <TooltipTrigger
                             render={
