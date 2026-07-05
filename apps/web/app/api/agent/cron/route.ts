@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/ports";
 import { schema, createAgentRunPort } from "@ssota/adapter-postgres";
 import { fanOutSchedule } from "@/lib/schedules/schedule-fan-out";
+import { fanOutSyncWorkers } from "@/lib/workers/worker-sync-fan-out";
 import { shouldRunNow } from "@/lib/schedules/should-run-now";
 
 export const runtime = "nodejs";
@@ -72,10 +73,13 @@ export async function GET(request: Request) {
     if (runHandle) started.push(runHandle);
   }
 
+  const syncResult = await fanOutSyncWorkers(db, now);
+
   return NextResponse.json({
     started,
     skipped,
     evaluated: schedules.length,
+    syncWorkers: syncResult,
   });
 }
 

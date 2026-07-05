@@ -64,7 +64,7 @@ export type AgentSettingsDraft = {
   toolBundles: ToolBundle[];
   allowedTriggers: NonNullable<AgentDefinition["runPolicy"]["allowedTriggers"]>;
   model: string;
-  scriptToolIds: string[];
+  linkedWorkerIds: string[];
   linkedWorkerAgentIds: string[];
   connectorBindings: AgentConnectorBinding[];
   enabledConnectorProviders: string[];
@@ -78,7 +78,7 @@ type AgentSettingsDialogsProps = {
   draft: AgentSettingsDraft;
   onDraftChange: (patch: Partial<AgentSettingsDraft>) => void;
   workers: AgentDefinition[];
-  scriptTools: Array<{ id: string; key: string; name: string }>;
+  storedWorkers: Array<{ id: string; key: string; name: string }>;
   skillCatalog: SkillIndex[];
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
@@ -125,7 +125,7 @@ export function AgentSettingsDialogs({
   draft,
   onDraftChange,
   workers,
-  scriptTools,
+  storedWorkers,
   skillCatalog,
   connectors,
   connections,
@@ -221,7 +221,7 @@ export function AgentSettingsDialogs({
       });
     }
 
-    for (const tool of scriptTools) {
+    for (const tool of storedWorkers) {
       entries.push({
         kind: "script",
         id: `script:${tool.id}`,
@@ -232,7 +232,7 @@ export function AgentSettingsDialogs({
     }
 
     return entries;
-  }, [connectors, scriptTools]);
+  }, [connectors, storedWorkers]);
 
   const filteredToolEntries = useMemo(
     () =>
@@ -331,10 +331,10 @@ export function AgentSettingsDialogs({
   };
 
   const toggleScriptTool = (id: string, enabled: boolean) => {
-    const next = new Set(draft.scriptToolIds);
+    const next = new Set(draft.linkedWorkerIds);
     if (enabled) next.add(id);
     else next.delete(id);
-    onDraftChange({ scriptToolIds: [...next] });
+    onDraftChange({ linkedWorkerIds: [...next] });
   };
 
   const toggleSkillBinding = (skillId: string, enabled: boolean) => {
@@ -351,7 +351,7 @@ export function AgentSettingsDialogs({
           (binding) => binding.provider === entry.provider,
         );
       case "script":
-        return draft.scriptToolIds.includes(entry.toolId);
+        return draft.linkedWorkerIds.includes(entry.toolId);
     }
   };
 
@@ -420,7 +420,7 @@ export function AgentSettingsDialogs({
     }
 
     return groups;
-  }, [filteredToolEntries, draft.connectorBindings, draft.scriptToolIds]);
+  }, [filteredToolEntries, draft.connectorBindings, draft.linkedWorkerIds]);
 
   const skillSidebarItems: SidebarListItem[] = filteredSkills.map((skill) => ({
     id: skill.id,
@@ -696,7 +696,7 @@ export function AgentSettingsDialogs({
     }
 
     if (selectedTool.kind === "script") {
-      const enabled = draft.scriptToolIds.includes(selectedTool.toolId);
+      const enabled = draft.linkedWorkerIds.includes(selectedTool.toolId);
       return (
         <>
           <SidebarDetailHeader

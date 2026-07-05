@@ -14,6 +14,7 @@ import {
   createTeamspaceMainConfigPort,
   createSkillPort,
   createSchedulePort,
+  createWorkerPort,
   createScriptToolPort,
   createPagePort,
   createPageViewStatePort,
@@ -133,8 +134,13 @@ export function getSchedulePort(teamspaceId: string, accountId?: string | null) 
   return createSchedulePort(getDb(), { teamspaceId, accountId });
 }
 
+export function getWorkerPort(teamspaceId: string) {
+  return createWorkerPort(getDb(), { teamspaceId });
+}
+
+/** @deprecated Use getWorkerPort */
 export function getScriptToolPort(teamspaceId: string) {
-  return createScriptToolPort(getDb(), { teamspaceId });
+  return getWorkerPort(teamspaceId);
 }
 
 export function getPagePort(teamspaceId: string) {

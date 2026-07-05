@@ -22,10 +22,10 @@ export const AGENTS_NAV: AgentsNavItem[] = [
     iconKey: "skills",
   },
   {
-    key: "tools",
-    labelKey: "nav.tools",
-    href: "tools",
-    iconKey: "tools",
+    key: "workers",
+    labelKey: "nav.workers",
+    href: "workers",
+    iconKey: "workers",
   },
   {
     key: "sandbox",

@@ -10,7 +10,7 @@ import {
 } from "@/lib/console/load-agent-settings-context";
 import { legacyOrgTeamspacePath } from "@/lib/console/paths";
 import { resolveOrg } from "@/lib/console/resolve-project";
-import { getScriptToolPort, getSkillPort } from "@/lib/ports";
+import { getWorkerPort, getSkillPort } from "@/lib/ports";
 import { getCurrentUser } from "@/lib/supabase/server";
 
 export default function AgentsPage({
@@ -49,15 +49,15 @@ async function AgentsPageInner({
       ? await loadAgentSettingsConnections(project.id, org.id, user.id)
       : { user: [], org: [] };
 
-  const scriptToolPort = getScriptToolPort(project.id);
+  const workerPort = getWorkerPort(project.id);
   const skillPort = await getSkillPort(project.id);
-  const scriptToolLinks: Record<string, string[]> = {};
+  const workerLinks: Record<string, string[]> = {};
   const skillLinks: Record<string, string[]> = {};
 
   await Promise.all(
     definitions.map(async (definition) => {
-      scriptToolLinks[definition.id] =
-        await scriptToolPort.listLinkedScriptToolIds(definition.id);
+      workerLinks[definition.id] =
+        await workerPort.listLinkedWorkerIds(definition.id);
       const boundSkills = await skillPort.listForAgentDefinition(definition.id);
       skillLinks[definition.id] = boundSkills.map((skill: SkillIndex) => skill.id);
     }),
@@ -73,7 +73,7 @@ async function AgentsPageInner({
           ...settingsContext,
           connections,
         }}
-        scriptToolLinks={scriptToolLinks}
+        workerLinks={workerLinks}
         skillLinks={skillLinks}
         connectionsHref={legacyOrgTeamspacePath(
           { orgSlug, teamspaceSlug },

@@ -61,6 +61,7 @@ const CONSOLE_ROUTE_SEGMENTS = new Set([
   "sandbox",
   "templates",
   "tools",
+  "workers",
   "subagents",
   "design",
   "graph",
@@ -127,9 +128,15 @@ function orgUrlResponse(request: NextRequest): NextResponse | null {
   }
 
   if (second === "templates") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/onboarding/template";
+    return NextResponse.redirect(url, 308);
+  }
+
+  if (second === "tools") {
     const suffix = rest.length ? `/${rest.join("/")}` : "";
     const url = request.nextUrl.clone();
-    url.pathname = `/${orgSlug}/tools${suffix}`;
+    url.pathname = `/${orgSlug}/workers${suffix}`;
     return NextResponse.redirect(url, 308);
   }
 
