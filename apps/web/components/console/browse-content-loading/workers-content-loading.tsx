@@ -5,7 +5,7 @@ export function WorkersContentLoading() {
     <ConnectionsBrowseLoading
       testId="workers-page-loading"
       titleSkeleton
-      sections={[{ count: 6 }]}
+      sections={[{ count: 3 }, { count: 2 }, { count: 2 }]}
     />
   );
 }

@@ -13,9 +13,9 @@ test.describe("workers-ui", () => {
     await expect(workspace).toBeVisible();
     await expect(page.getByRole("heading", { name: "Workers", exact: true })).toBeVisible();
 
-    await page.getByTestId("workers-create-button").click();
+    await page.getByTestId("workers-create-tool").click();
     await expect(page.getByTestId("workers-create-sheet")).toBeVisible();
-    await expect(page.getByTestId("worker-create-kind")).toBeVisible();
+    await expect(page.getByTestId("workers-create-form")).toBeVisible();
 
     await page.screenshot({
       path: `${SCREENSHOT_DIR}/workers-browse-empty.png`,

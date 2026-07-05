@@ -13,13 +13,6 @@ import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
 import { Label } from "@ssota/ui/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@ssota/ui/components/ui/select";
 import { Textarea } from "@ssota/ui/components/ui/textarea";
 import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { CardListSheet, CardListSheetPanel } from "@/components/card-list-sheet";
@@ -30,6 +23,32 @@ import {
 } from "@/app/[orgSlug]/[teamspaceSlug]/workers/actions";
 
 const CREATE_WORKER_SHEET_ID = "__create-worker__";
+
+const WORKER_KIND_SECTIONS: Array<{
+  kind: WorkerKind;
+  label: string;
+  description: string;
+  createLabel: string;
+}> = [
+  {
+    kind: "tool",
+    label: "Tools",
+    description: "Run on demand from agents.",
+    createLabel: "Create tool",
+  },
+  {
+    kind: "sync",
+    label: "Sync",
+    description: "Scheduled jobs on a cron expression.",
+    createLabel: "Create sync",
+  },
+  {
+    kind: "webhook",
+    label: "Webhooks",
+    description: "HTTP POST handlers for external events.",
+    createLabel: "Create webhook",
+  },
+];
 
 function isCreateWorkerSheetId(activeId: string | null): boolean {
   return activeId === CREATE_WORKER_SHEET_ID;
@@ -75,7 +94,6 @@ export function WorkersWorkspace({
 }: WorkersWorkspaceProps) {
   const [workers, setWorkers] = useState(initialWorkers);
   const [query, setQuery] = useState("");
-  const [kindFilter, setKindFilter] = useState<WorkerKind | "all">("all");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [dryRunResult, setDryRunResult] = useState<string | null>(null);
@@ -90,23 +108,43 @@ export function WorkersWorkspace({
   const activeWorker = workers.find((w) => w.id === activeId) ?? null;
   const isCreating = isCreateWorkerSheetId(activeId);
 
-  const filtered = useMemo(() => {
+  const workersByKind = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return workers
-      .filter((w) => (kindFilter === "all" ? true : w.kind === kindFilter))
-      .filter((w) => {
-        if (!q) return true;
-        return (
-          w.name.toLowerCase().includes(q) ||
-          w.key.toLowerCase().includes(q) ||
-          w.description.toLowerCase().includes(q)
-        );
-      })
-      .toSorted((a, b) => a.name.localeCompare(b.name));
-  }, [workers, query, kindFilter]);
+    const matchesSearch = (w: WorkerIndex) => {
+      if (!q) return true;
+      return (
+        w.name.toLowerCase().includes(q) ||
+        w.key.toLowerCase().includes(q) ||
+        w.description.toLowerCase().includes(q)
+      );
+    };
 
-  function openCreateSheet() {
+    const grouped: Record<WorkerKind, WorkerIndex[]> = {
+      tool: [],
+      sync: [],
+      webhook: [],
+    };
+
+    for (const worker of workers) {
+      if (matchesSearch(worker)) {
+        grouped[worker.kind].push(worker);
+      }
+    }
+
+    for (const kind of Object.keys(grouped) as WorkerKind[]) {
+      grouped[kind].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return grouped;
+  }, [workers, query]);
+
+  const hasVisibleWorkers = WORKER_KIND_SECTIONS.some(
+    (section) => workersByKind[section.kind].length > 0,
+  );
+
+  function openCreateSheet(kind: WorkerKind) {
     resetCreateForm();
+    setCreateKind(kind);
     setActiveId(CREATE_WORKER_SHEET_ID);
   }
 
@@ -196,6 +234,10 @@ export function WorkersWorkspace({
     setActiveId(nextId);
   }
 
+  const createSection =
+    WORKER_KIND_SECTIONS.find((section) => section.kind === createKind) ??
+    WORKER_KIND_SECTIONS[0]!;
+
   return (
     <CardListSheet.Root
       activeId={activeId}
@@ -208,18 +250,8 @@ export function WorkersWorkspace({
         <BrowseWorkspace.Header
           title="Workers"
           description="Stored TypeScript capabilities — tools for agents, scheduled sync jobs, and webhook handlers."
-          actions={
-            <Button
-              type="button"
-              onClick={openCreateSheet}
-              data-testid="workers-create-button"
-            >
-              <PlusIcon className="size-4" aria-hidden />
-              Create worker
-            </Button>
-          }
         >
-          <div className="flex flex-wrap items-center gap-2 pt-2">
+          <div className="pt-2">
             <Input
               placeholder="Search workers…"
               value={query}
@@ -227,51 +259,66 @@ export function WorkersWorkspace({
               className="max-w-xs"
               data-testid="workers-search"
             />
-            <Select
-              value={kindFilter}
-              onValueChange={(v) => setKindFilter(v as WorkerKind | "all")}
-            >
-              <SelectTrigger className="w-[140px]" data-testid="workers-kind-filter">
-                <SelectValue placeholder="Kind" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All kinds</SelectItem>
-                <SelectItem value="tool">Tool</SelectItem>
-                <SelectItem value="sync">Sync</SelectItem>
-                <SelectItem value="webhook">Webhook</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </BrowseWorkspace.Header>
 
-        {filtered.length === 0 ? (
-          <BrowseWorkspace.Empty>
-            No workers yet. Create a tool, sync, or webhook worker to get started.
-          </BrowseWorkspace.Empty>
-        ) : (
-          <BrowseWorkspace.Grid>
-            {filtered.map((worker) => (
-              <BrowseWorkspace.Card
-                key={worker.id}
-                title={worker.name}
-                subtitle={worker.key}
-                description={worker.description || undefined}
-                onSelect={() => setActiveId(worker.id)}
-                testId={`worker-card-${worker.key}`}
-                icon={
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40 text-muted-foreground">
-                    {kindIcon(worker.kind)}
-                  </span>
-                }
-                badge={
-                  <Badge variant="secondary" className="shrink-0 font-normal">
-                    {kindLabel(worker.kind)}
-                  </Badge>
-                }
-              />
-            ))}
-          </BrowseWorkspace.Grid>
-        )}
+        {query.trim() && !hasVisibleWorkers ? (
+          <BrowseWorkspace.Empty>No workers match your search.</BrowseWorkspace.Empty>
+        ) : null}
+
+        {WORKER_KIND_SECTIONS.map((section) => {
+          const sectionWorkers = workersByKind[section.kind];
+          if (sectionWorkers.length === 0 && query.trim()) {
+            return null;
+          }
+
+          return (
+            <section key={section.kind} className="space-y-3" data-testid={`workers-section-${section.kind}`}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {section.label}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">{section.description}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => openCreateSheet(section.kind)}
+                  data-testid={`workers-create-${section.kind}`}
+                >
+                  <PlusIcon className="size-4" aria-hidden />
+                  {section.createLabel}
+                </Button>
+              </div>
+
+              {sectionWorkers.length === 0 ? (
+                <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+                  No {section.label.toLowerCase()} yet.
+                </p>
+              ) : (
+                <BrowseWorkspace.Grid>
+                  {sectionWorkers.map((worker) => (
+                    <BrowseWorkspace.Card
+                      key={worker.id}
+                      title={worker.name}
+                      subtitle={worker.key}
+                      description={worker.description || undefined}
+                      onSelect={() => setActiveId(worker.id)}
+                      testId={`worker-card-${worker.key}`}
+                      icon={
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40 text-muted-foreground">
+                          {kindIcon(worker.kind)}
+                        </span>
+                      }
+                    />
+                  ))}
+                </BrowseWorkspace.Grid>
+              )}
+            </section>
+          );
+        })}
       </BrowseWorkspace.Frame>
 
       {activeWorker && !isCreating ? (
@@ -345,10 +392,15 @@ export function WorkersWorkspace({
 
       {isCreating ? (
         <CardListSheetPanel
-          title="Create worker"
-          subtitle="Tool, sync, or webhook"
+          title={createSection.createLabel}
+          subtitle={createSection.label}
           onClose={closeCreateSheet}
           testId="workers-create-sheet"
+          headerPrefix={
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40 text-muted-foreground">
+              {kindIcon(createKind)}
+            </span>
+          }
           footer={
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={closeCreateSheet}>
@@ -366,26 +418,7 @@ export function WorkersWorkspace({
           }
         >
           <div className="grid gap-4" data-testid="workers-create-form">
-            <p className="text-sm text-muted-foreground">
-              Tool workers run on demand from agents. Sync workers run on a cron schedule.
-              Webhook workers accept HTTP POST payloads.
-            </p>
-            <div className="grid gap-2">
-              <Label htmlFor="worker-kind">Kind</Label>
-              <Select
-                value={createKind}
-                onValueChange={(v) => setCreateKind(v as WorkerKind)}
-              >
-                <SelectTrigger id="worker-kind" data-testid="worker-create-kind">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="tool">Tool</SelectItem>
-                  <SelectItem value="sync">Sync</SelectItem>
-                  <SelectItem value="webhook">Webhook</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <p className="text-sm text-muted-foreground">{createSection.description}</p>
             <div className="grid gap-2">
               <Label htmlFor="worker-key">Key</Label>
               <Input
