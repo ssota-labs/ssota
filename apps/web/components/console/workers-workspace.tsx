@@ -382,6 +382,7 @@ export function WorkersWorkspace({
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="gap-1.5 border-border/70 bg-muted/15 text-muted-foreground hover:border-border hover:bg-muted/50 hover:text-foreground active:bg-muted/60"
                   onClick={() => openCreateSheet(section.kind)}
                   data-testid={`workers-create-${section.kind}`}
                 >
