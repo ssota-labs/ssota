@@ -58,6 +58,8 @@ import {
 } from "@/components/console/agent-settings-sidebar-dialog";
 
 export type AgentSettingsDraft = {
+  name: string;
+  description: string;
   instructions: AgentDefinition["instructions"];
   toolBundles: ToolBundle[];
   allowedTriggers: NonNullable<AgentDefinition["runPolicy"]["allowedTriggers"]>;

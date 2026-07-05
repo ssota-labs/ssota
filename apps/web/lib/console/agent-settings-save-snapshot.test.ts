@@ -7,6 +7,8 @@ import {
 } from "./agent-settings-save-snapshot";
 
 const baseDraft = (): AgentSettingsDraft => ({
+  name: "Research",
+  description: "When research is needed",
   instructions: [{ type: "paragraph", content: "Hello" }],
   toolBundles: ["graph.read"],
   allowedTriggers: ["chat", "task"],

@@ -6,6 +6,8 @@ import { mergeToolBundles } from "@/lib/console/agent-tool-catalog";
 import { normalizeConnectorBindingForSnapshot } from "@/lib/console/agent-connector-bindings";
 
 export type AgentSettingsSaveSnapshot = {
+  name: string;
+  description: string;
   instructionsJson: string;
   toolBundles: ToolBundle[];
   allowedTriggers: AgentTrigger[];
@@ -121,6 +123,8 @@ export function buildAgentSettingsSaveSnapshot(
   const scheduleEnabled = resolveScheduleEnabled(draft, agentSchedules);
   const connectorBindings = resolveConnectorBindingsForSave(draft);
   return {
+    name: draft.name.trim(),
+    description: draft.description.trim(),
     instructionsJson: JSON.stringify(draft.instructions),
     toolBundles: resolveToolBundlesForSave(draft),
     allowedTriggers: resolveAllowedTriggersForSave(
@@ -148,6 +152,8 @@ export function agentSettingsSnapshotsEqual(
   right: AgentSettingsSaveSnapshot,
 ): boolean {
   return (
+    left.name === right.name &&
+    left.description === right.description &&
     left.instructionsJson === right.instructionsJson &&
     JSON.stringify(left.toolBundles) === JSON.stringify(right.toolBundles) &&
     JSON.stringify(left.allowedTriggers) ===

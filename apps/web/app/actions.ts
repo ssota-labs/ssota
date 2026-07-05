@@ -6,8 +6,6 @@ import {
   UpdateTaskInputSchema,
   UpdateTeamspaceMainConfigInputSchema,
   UpsertAgentDefinitionInputSchema,
-  textToBlockNoteContent,
-  type AgentDefinition,
   type TaskStatus,
 } from "@ssota/contracts";
 import { spawnTask } from "@ssota/core";
@@ -129,35 +127,6 @@ export async function updateAgentDefinitionAction(
 
 /** @deprecated Use updateAgentDefinitionAction */
 export const updateWorkflowInstructionAction = updateAgentDefinitionAction;
-
-export async function createAgentDefinitionAction(
-  teamspaceId: string,
-  input: { name: string; description?: string },
-): Promise<AgentDefinition> {
-  const user = await getCurrentUser();
-  if (!user) throw new Error("Unauthorized");
-
-  const name = input.name.trim();
-  if (!name) throw new Error("Name is required");
-
-  const parsed = UpsertAgentDefinitionInputSchema.parse({
-    id: crypto.randomUUID(),
-    name,
-    description: input.description?.trim() ?? "",
-    instructions: textToBlockNoteContent(""),
-    toolBundles: [],
-    runPolicy: { allowedTriggers: ["chat", "task"] },
-  });
-
-  const port = getAgentDefinitionPort(teamspaceId);
-  const created = await port.upsertDefinition(parsed);
-
-  for (const path of withConsolePaths(["/agents"])) {
-    revalidatePath(path);
-  }
-
-  return created;
-}
 
 export async function updateTeamspaceMainConfigAction(
   teamspaceId: string,

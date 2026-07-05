@@ -383,21 +383,18 @@ test.describe("Agents", () => {
     const agentName = `E2E Agent ${Date.now()}`;
     await page.getByTestId("agents-create-button").click();
 
-    const dialog = page.getByTestId("agent-create-dialog");
-    await expect(dialog).toBeVisible();
-    await dialog.getByTestId("agent-create-name").fill(agentName);
-    await dialog
-      .getByTestId("agent-create-description")
-      .fill("Use for automated E2E agent creation tests.");
-    await dialog.getByTestId("agent-create-submit").click();
-
-    await expect(dialog).not.toBeVisible();
-
-    await expect(page.getByTestId("agent-settings-sheet")).toBeVisible();
+    const sheet = page.getByTestId("agent-settings-sheet");
+    await expect(sheet).toBeVisible();
     await expect(
-      page.getByRole("heading", { name: "Settings", exact: true }),
+      page.getByRole("heading", { name: "Create agent", exact: true }),
     ).toBeVisible();
-    await expect(page.getByTestId("agent-instructions-editor")).toBeVisible();
+    await sheet.getByTestId("agent-settings-name").fill(agentName);
+    await sheet
+      .getByTestId("agent-settings-description")
+      .fill("Use for automated E2E agent creation tests.");
+    await page.getByTestId("agent-settings-save").click();
+
+    await expect(sheet).not.toBeVisible();
     await expect(
       page.getByRole("main").locator("span.text-sm.font-medium", {
         hasText: agentName,
