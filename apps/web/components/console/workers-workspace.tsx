@@ -426,6 +426,7 @@ export function WorkersWorkspace({
           title={activeWorker.name}
           titleNode={
             <CardListSheetInlineTitle
+              key={activeWorker.id}
               value={editName}
               onChange={(event) => setEditName(event.target.value)}
               onBlur={handleSaveName}
@@ -436,7 +437,6 @@ export function WorkersWorkspace({
                 }
                 if (event.key === "Escape") {
                   setEditName(activeWorker.name);
-                  event.currentTarget.blur();
                 }
               }}
               data-testid="worker-edit-name"

@@ -14,7 +14,6 @@ import {
 } from "react";
 import { CaretRightIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@ssota/ui/components/ui/button";
-import { Input } from "@ssota/ui/components/ui/input";
 import { cn } from "@ssota/ui/lib/utils";
 
 /** Docked sheet width as % of CardListSheet.Root (main content column). */
@@ -404,15 +403,16 @@ function SheetHeaderAction({
 }
 
 const SHEET_INLINE_TITLE_CLASS =
-  "h-auto w-full border-0 bg-transparent px-0 text-base font-semibold leading-snug shadow-none focus-visible:ring-0";
+  "w-full min-w-0 border-0 bg-transparent p-0 text-base font-semibold leading-snug text-foreground shadow-none outline-none ring-0 focus-visible:ring-0";
 
-/** Notion-style title field — matches SheetTitle typography inside Sheet.Root. */
+/** Notion-style title — static heading until clicked, then inline edit. */
 export function CardListSheetInlineTitle({
   value,
   onChange,
   onBlur,
   onKeyDown,
   readOnly,
+  placeholder = "Untitled",
   "data-testid": testId,
   "aria-label": ariaLabel = "Title",
   className,
@@ -422,19 +422,83 @@ export function CardListSheetInlineTitle({
   onBlur?: (event: React.FocusEvent<HTMLInputElement>) => void;
   onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
   readOnly?: boolean;
+  placeholder?: string;
   "data-testid"?: string;
   "aria-label"?: string;
   className?: string;
 }) {
   const { titleId } = useCardListSheetSheet();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const skipBlurCommitRef = useRef(false);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const titleClass = cn("text-base font-semibold leading-snug", className);
+  const displayValue = value.trim() || placeholder;
+
+  useEffect(() => {
+    if (!isEditing) return;
+    const input = inputRef.current;
+    if (!input) return;
+    input.focus();
+    input.select();
+  }, [isEditing]);
+
+  function beginEditing() {
+    if (readOnly) return;
+    setIsEditing(true);
+  }
+
+  function endEditing() {
+    setIsEditing(false);
+  }
+
+  if (readOnly) {
+    return (
+      <h2 id={titleId} className={titleClass} data-testid={testId}>
+        {displayValue}
+      </h2>
+    );
+  }
+
+  if (!isEditing) {
+    return (
+      <button
+        type="button"
+        id={titleId}
+        data-testid={testId}
+        aria-label={ariaLabel}
+        className={cn(
+          titleClass,
+          "block w-full min-w-0 cursor-text truncate rounded-sm text-left",
+          !value.trim() && "text-muted-foreground",
+        )}
+        onClick={beginEditing}
+      >
+        {displayValue}
+      </button>
+    );
+  }
+
   return (
-    <Input
+    <input
+      ref={inputRef}
       id={titleId}
       value={value}
       onChange={onChange}
-      onBlur={onBlur}
-      onKeyDown={onKeyDown}
-      readOnly={readOnly}
+      onBlur={(event) => {
+        endEditing();
+        if (!skipBlurCommitRef.current) {
+          onBlur?.(event);
+        }
+        skipBlurCommitRef.current = false;
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Escape") {
+          skipBlurCommitRef.current = true;
+          endEditing();
+        }
+        onKeyDown?.(event);
+      }}
       aria-label={ariaLabel}
       data-testid={testId}
       className={cn(SHEET_INLINE_TITLE_CLASS, className)}
