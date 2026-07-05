@@ -92,17 +92,10 @@ test.describe("Agents", () => {
     await expect(addDialog.getByTestId("add-trigger-confirm")).toBeVisible();
     await expect(addDialog.getByRole("button", { name: "Cancel" })).toBeVisible();
     await expect(addDialog.getByRole("button", { name: "Done" })).toHaveCount(0);
-    await expect(nav.getByText("Slack", { exact: true })).toBeVisible();
-    await expect(nav.getByText("Agent mentioned").first()).toBeVisible();
+    await expect(nav.getByText("Slack", { exact: true })).toHaveCount(0);
+    await expect(nav.getByText("Agent mentioned").first()).toHaveCount(0);
     await expect(nav.getByText("Notion", { exact: true })).not.toBeVisible();
     await expect(nav.getByText("Discord", { exact: true })).not.toBeVisible();
-    await addDialog.getByTestId("add-trigger-slack:agent_mentioned").click();
-    await expect(
-      addDialog.getByText(/creates a Slack user group/i),
-    ).toBeVisible();
-    await expect(
-      addDialog.getByText(/Saved or Later messages/i),
-    ).toBeVisible();
   });
 
   test("frequency select opens inside add-trigger dialog", async ({ page }) => {

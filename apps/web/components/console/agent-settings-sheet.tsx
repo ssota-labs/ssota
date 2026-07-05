@@ -999,6 +999,7 @@ export function AgentSettingsSheet({
         accountId={accountId}
         returnTo={pathname}
         allowOrgScope
+        settingsTarget={settingsTarget}
         openDialog={openDialog}
         onOpenDialogChange={setOpenDialog}
       />

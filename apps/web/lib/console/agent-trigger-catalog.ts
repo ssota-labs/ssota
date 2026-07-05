@@ -60,6 +60,20 @@ export const ADDABLE_TRIGGER_GROUPS: AddableTriggerGroup[] = [
 export const ALL_ADDABLE_TRIGGERS: AddableTriggerDef[] =
   ADDABLE_TRIGGER_GROUPS.flatMap((group) => group.items);
 
+/** Hidden from main (project) agent Add trigger — Slack @mention is inbound by default. */
+export const SLACK_AGENT_MENTION_ADDABLE_TRIGGER_ID = "slack:agent_mentioned";
+
+export function addTriggerExcludeIdsForSettingsTarget(
+  settingsTarget: "main" | "agent",
+  alreadyAdded: Iterable<string>,
+): Set<string> {
+  const excludeIds = new Set(alreadyAdded);
+  if (settingsTarget === "main") {
+    excludeIds.add(SLACK_AGENT_MENTION_ADDABLE_TRIGGER_ID);
+  }
+  return excludeIds;
+}
+
 export function findAddableTrigger(id: string): AddableTriggerDef | undefined {
   return ALL_ADDABLE_TRIGGERS.find((t) => t.id === id);
 }
