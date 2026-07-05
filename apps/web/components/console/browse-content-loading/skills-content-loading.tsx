@@ -15,10 +15,7 @@ export function SkillsContentLoading() {
         <div className="h-full overflow-y-auto">
           <ConsolePageFrame contentClassName="gap-8">
             <header className="space-y-1">
-              <div className="flex items-start justify-between gap-3">
-                <h1 className="text-2xl font-semibold tracking-tight">Skills</h1>
-                <Skeleton className="h-9 w-28 shrink-0 rounded-md" />
-              </div>
+              <h1 className="text-2xl font-semibold tracking-tight">Skills</h1>
               <div className="max-w-2xl">
                 <Skeleton className="h-4 w-full max-w-2xl rounded-sm" />
               </div>
@@ -35,9 +32,10 @@ export function SkillsContentLoading() {
               </div>
             </div>
 
-            <div className="mt-4 flex gap-2">
+            <div className="flex gap-2">
               <Skeleton className="h-9 min-w-0 flex-1 rounded-md" />
               <Skeleton className="h-9 w-20 shrink-0 rounded-md" />
+              <Skeleton className="h-9 w-28 shrink-0 rounded-md" />
             </div>
 
             <section className="mt-4 space-y-3">

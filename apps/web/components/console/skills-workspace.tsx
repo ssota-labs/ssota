@@ -243,51 +243,6 @@ export function SkillsPageWorkspace({
             <BrowseWorkspace.Header
               title="Skills"
               description="Explore community skills or manage your organization's saved library. Platform defaults are attached to the main agent automatically."
-              actions={
-                tab === "library" ? (
-                  <DropdownMenu open={addMenuOpen} onOpenChange={setAddMenuOpen}>
-                    <DropdownMenuTrigger
-                      render={
-                        <Button type="button" data-testid="skills-add-button">
-                          <PlusIcon className="size-4" aria-hidden />
-                          Add skill
-                        </Button>
-                      }
-                    />
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setAddMenuOpen(false);
-                          setCreateOpen(true);
-                        }}
-                        data-testid="skills-add-custom"
-                      >
-                        Custom (SKILL.md)
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setAddMenuOpen(false);
-                          setGithubOpen(true);
-                        }}
-                        data-testid="skills-add-github"
-                      >
-                        <GithubLogoIcon className="size-4" aria-hidden />
-                        Import from GitHub
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setAddMenuOpen(false);
-                          setFolderOpen(true);
-                        }}
-                        data-testid="skills-add-folder"
-                      >
-                        <FolderOpenIcon className="size-4" aria-hidden />
-                        Upload folder
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : undefined
-              }
             />
 
             <ClientSiblingNav
@@ -333,6 +288,49 @@ export function SkillsPageWorkspace({
               >
                 Search
               </Button>
+              {tab === "library" ? (
+                <DropdownMenu open={addMenuOpen} onOpenChange={setAddMenuOpen}>
+                  <DropdownMenuTrigger
+                    render={
+                      <Button type="button" data-testid="skills-add-button">
+                        <PlusIcon className="size-4" aria-hidden />
+                        Add skill
+                      </Button>
+                    }
+                  />
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setAddMenuOpen(false);
+                        setCreateOpen(true);
+                      }}
+                      data-testid="skills-add-custom"
+                    >
+                      Custom (SKILL.md)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setAddMenuOpen(false);
+                        setGithubOpen(true);
+                      }}
+                      data-testid="skills-add-github"
+                    >
+                      <GithubLogoIcon className="size-4" aria-hidden />
+                      Import from GitHub
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setAddMenuOpen(false);
+                        setFolderOpen(true);
+                      }}
+                      data-testid="skills-add-folder"
+                    >
+                      <FolderOpenIcon className="size-4" aria-hidden />
+                      Upload folder
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null}
             </div>
 
             {tab === "explore" ? (
