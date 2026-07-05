@@ -42,25 +42,21 @@ const WORKER_KIND_SECTIONS: Array<{
   kind: WorkerKind;
   label: string;
   description: string;
-  createLabel: string;
 }> = [
   {
     kind: "tool",
     label: "Tools",
     description: "Run on demand from agents.",
-    createLabel: "Create tool",
   },
   {
     kind: "sync",
     label: "Sync",
     description: "Scheduled jobs on a cron expression.",
-    createLabel: "Create sync",
   },
   {
     kind: "webhook",
     label: "Webhooks",
     description: "HTTP POST handlers for external events.",
-    createLabel: "Create webhook",
   },
 ];
 
@@ -389,7 +385,7 @@ export function WorkersWorkspace({
                   data-testid={`workers-create-${section.kind}`}
                 >
                   <PlusIcon className="size-4" aria-hidden />
-                  {section.createLabel}
+                  {section.kind}
                 </Button>
               </div>
 
@@ -539,7 +535,7 @@ export function WorkersWorkspace({
 
       {isCreating ? (
         <CardListSheetPanel
-          title={createSection.createLabel}
+          title={createSection.kind}
           subtitle={createSection.label}
           onClose={closeCreateSheet}
           testId="workers-create-sheet"
