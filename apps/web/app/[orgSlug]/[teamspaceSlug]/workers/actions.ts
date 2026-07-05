@@ -12,6 +12,11 @@ function revalidateWorkers(orgSlug: string, teamspaceSlug: string) {
   );
 }
 
+export async function getWorkerAction(teamspaceId: string, workerId: string) {
+  const port = getWorkerPort(teamspaceId);
+  return port.getById(workerId);
+}
+
 export async function createWorkerAction(
   orgSlug: string,
   teamspaceSlug: string,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   ClockIcon,
   GlobeIcon,
@@ -8,7 +8,7 @@ import {
   TrashIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
-import type { WorkerIndex, WorkerKind } from "@ssota/contracts";
+import type { Worker, WorkerIndex, WorkerKind } from "@ssota/contracts";
 import { Badge } from "@ssota/ui/components/ui/badge";
 import { Button } from "@ssota/ui/components/ui/button";
 import { Input } from "@ssota/ui/components/ui/input";
@@ -20,6 +20,8 @@ import {
   createWorkerAction,
   deleteWorkerAction,
   dryRunWorkerAction,
+  getWorkerAction,
+  updateWorkerAction,
 } from "@/app/[orgSlug]/[teamspaceSlug]/workers/actions";
 
 const CREATE_WORKER_SHEET_ID = "__create-worker__";
@@ -97,6 +99,9 @@ export function WorkersWorkspace({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [dryRunResult, setDryRunResult] = useState<string | null>(null);
+  const [workerDetail, setWorkerDetail] = useState<Worker | null>(null);
+  const [editScript, setEditScript] = useState("");
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   const [createKind, setCreateKind] = useState<WorkerKind>("tool");
   const [createKey, setCreateKey] = useState("");
@@ -107,6 +112,33 @@ export function WorkersWorkspace({
 
   const activeWorker = workers.find((w) => w.id === activeId) ?? null;
   const isCreating = isCreateWorkerSheetId(activeId);
+  const scriptDirty =
+    workerDetail !== null && editScript.trim() !== workerDetail.script;
+
+  useEffect(() => {
+    if (!activeId || isCreating || isCreateWorkerSheetId(activeId)) {
+      setWorkerDetail(null);
+      setEditScript("");
+      setDryRunResult(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingDetail(true);
+    void getWorkerAction(teamspaceId, activeId)
+      .then((worker) => {
+        if (cancelled || !worker) return;
+        setWorkerDetail(worker);
+        setEditScript(worker.script);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingDetail(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeId, isCreating, teamspaceId]);
 
   const workersByKind = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -224,6 +256,27 @@ export function WorkersWorkspace({
           ? JSON.stringify(result.output, null, 2)
           : result.error ?? "Dry run failed",
       );
+    });
+  }
+
+  function handleSaveScript() {
+    if (!activeWorker || !editScript.trim()) return;
+    startTransition(async () => {
+      const worker = await updateWorkerAction(
+        orgSlug,
+        teamspaceSlug,
+        teamspaceId,
+        activeWorker.id,
+        { script: editScript },
+      );
+      setWorkerDetail(worker);
+      setEditScript(worker.script);
+      setWorkers((prev) =>
+        prev.map((entry) =>
+          entry.id === worker.id ? { ...entry, version: worker.version } : entry,
+        ),
+      );
+      setDryRunResult(null);
     });
   }
 
@@ -353,6 +406,38 @@ export function WorkersWorkspace({
                 />
               </div>
             ) : null}
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <Label htmlFor={`worker-script-${activeWorker.id}`}>
+                  TypeScript script
+                </Label>
+                {scriptDirty ? (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={isPending || !editScript.trim()}
+                    onClick={handleSaveScript}
+                    data-testid="worker-save-script"
+                  >
+                    Save script
+                  </Button>
+                ) : null}
+              </div>
+              {isLoadingDetail ? (
+                <p className="text-xs text-muted-foreground">Loading script…</p>
+              ) : (
+                <Textarea
+                  id={`worker-script-${activeWorker.id}`}
+                  value={editScript}
+                  onChange={(e) => setEditScript(e.target.value)}
+                  rows={14}
+                  className="font-mono text-xs"
+                  data-testid="worker-edit-script"
+                />
+              )}
+            </div>
 
             {activeWorker.kind === "tool" ? (
               <div className="flex flex-wrap gap-2">
