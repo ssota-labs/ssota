@@ -440,30 +440,6 @@ export function WorkersWorkspace({
           }
           subtitle={activeWorker.key}
           onClose={() => setActiveId(null)}
-          headerAction={
-            <TooltipProvider delay={0}>
-              <ArtifactActions>
-                {scriptDirty ? (
-                  <ArtifactAction
-                    tooltip="Save script"
-                    icon={<FloppyDiskIcon className="size-4" />}
-                    disabled={isPending || !editScript.trim()}
-                    onClick={handleSaveScript}
-                    data-testid="worker-save-script"
-                  />
-                ) : null}
-                {activeWorker.kind === "tool" ? (
-                  <ArtifactAction
-                    tooltip="Dry run"
-                    icon={<PlayIcon className="size-4" />}
-                    disabled={isPending}
-                    onClick={() => handleDryRun(activeWorker.id)}
-                    data-testid="worker-dry-run"
-                  />
-                ) : null}
-              </ArtifactActions>
-            </TooltipProvider>
-          }
           headerPrefix={
             <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-muted/40 text-muted-foreground">
               {kindIcon(activeWorker.kind)}
@@ -495,6 +471,28 @@ export function WorkersWorkspace({
             <Artifact data-testid="worker-script-artifact">
               <ArtifactHeader>
                 <ArtifactTitle>TypeScript script</ArtifactTitle>
+                <TooltipProvider delay={0}>
+                  <ArtifactActions>
+                    {scriptDirty ? (
+                      <ArtifactAction
+                        tooltip="Save script"
+                        icon={<FloppyDiskIcon className="size-4" />}
+                        disabled={isPending || !editScript.trim()}
+                        onClick={handleSaveScript}
+                        data-testid="worker-save-script"
+                      />
+                    ) : null}
+                    {activeWorker.kind === "tool" ? (
+                      <ArtifactAction
+                        tooltip="Dry run"
+                        icon={<PlayIcon className="size-4" />}
+                        disabled={isPending}
+                        onClick={() => handleDryRun(activeWorker.id)}
+                        data-testid="worker-dry-run"
+                      />
+                    ) : null}
+                  </ArtifactActions>
+                </TooltipProvider>
               </ArtifactHeader>
               <ArtifactContent className="p-0">
                 {isLoadingDetail ? (
