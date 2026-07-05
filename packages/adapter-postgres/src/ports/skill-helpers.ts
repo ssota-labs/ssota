@@ -1,4 +1,13 @@
-import type { SkillCatalogSource, SkillFile } from "@ssota/contracts";
+import { createHash } from "node:crypto";
+import type { SkillCatalogSource, SkillFile, SkillLockEntry } from "@ssota/contracts";
+
+export function hashSkillFiles(files: SkillFile[]): string {
+  const payload = files
+    .map((f) => `${f.path}\0${f.contents}`)
+    .sort()
+    .join("\n");
+  return createHash("sha256").update(payload).digest("hex");
+}
 
 export function skillDirFromPath(skillPath: string): string {
   const normalized = skillPath.replace(/\\/g, "/");
@@ -15,6 +24,62 @@ export function parseGithubRepo(source: string): { owner: string; repo: string }
   const parts = trimmed.split("/").filter(Boolean);
   if (parts.length < 2) return null;
   return { owner: parts[0]!, repo: parts[1]!.replace(/\.git$/, "") };
+}
+
+export function resolveCatalogSource(
+  metadata: Record<string, unknown> | undefined,
+  externalId: string | null,
+): SkillCatalogSource | null {
+  const raw = metadata?.catalogSource;
+  if (raw && typeof raw === "object" && raw !== null) {
+    const cs = raw as Record<string, unknown>;
+    if (
+      typeof cs.source === "string" &&
+      cs.sourceType === "github" &&
+      typeof cs.skillPath === "string"
+    ) {
+      return {
+        source: cs.source,
+        sourceType: "github",
+        skillPath: cs.skillPath,
+        ref: typeof cs.ref === "string" ? cs.ref : undefined,
+      };
+    }
+  }
+  if (externalId && externalId.includes("/")) {
+    const repo = parseGithubRepo(externalId);
+    if (repo) {
+      return {
+        source: `${repo.owner}/${repo.repo}`,
+        sourceType: "github",
+        skillPath: "SKILL.md",
+        ref: "main",
+      };
+    }
+  }
+  return null;
+}
+
+export function inferLockSourceType(input: {
+  organizationId: string | null;
+  source: string;
+  metadata: Record<string, unknown> | undefined;
+  externalId: string | null;
+}): SkillLockEntry["sourceType"] {
+  if (input.organizationId === null && input.source === "builtin") {
+    return "platform";
+  }
+  const packageHash = input.metadata?.packageHash;
+  if (typeof packageHash === "string" && packageHash.length > 0) {
+    return "inline";
+  }
+  if (resolveCatalogSource(input.metadata, input.externalId)) {
+    return "github";
+  }
+  if (input.source === "custom" && input.organizationId) {
+    return "inline";
+  }
+  return "platform";
 }
 
 export async function fetchGithubSkillFiles(
@@ -61,11 +126,7 @@ export async function fetchGithubSkillFiles(
       const res = await fetch(apiUrl, { headers });
       if (res.status === 404) continue;
       if (!res.ok) continue;
-      const entries = (await res.json()) as Array<{
-        name: string;
-        type: string;
-        path: string;
-      }>;
+      const entries = (await res.json()) as Array<{ name: string; type: string; path: string }>;
       for (const entry of entries) {
         if (entry.type !== "file" || !entry.name.endsWith(".md")) continue;
         const contents = await fetchRaw(entry.path);
@@ -88,4 +149,15 @@ export async function fetchGithubSkillFiles(
   }
 
   return files;
+}
+
+export function packageStats(files: SkillFile[]): {
+  fileCount: number;
+  sizeBytes: number;
+} {
+  let sizeBytes = 0;
+  for (const file of files) {
+    sizeBytes += Buffer.byteLength(file.contents, "utf8");
+  }
+  return { fileCount: files.length, sizeBytes };
 }

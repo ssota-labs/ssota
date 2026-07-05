@@ -3,10 +3,12 @@ import type { ActionPortsScope, AgentDefinitionPort } from "@ssota/core";
 import {
   AgentDefinitionSchema,
   AgentDefinitionSeedSchema,
+  textToBlockNoteContent,
   type UpsertAgentDefinitionInput,
   type AgentDefinition,
   type AgentDefinitionIndex,
 } from "@ssota/contracts";
+import { getMainAgentDefinition } from "@ssota/contracts/agents";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
 
@@ -167,6 +169,24 @@ export async function seedAgentDefinitions(
   for (const seed of seeds) {
     await port.upsertDefinition(seed);
   }
+}
+
+/** Main orchestrator row for FK targets (tasks, skill bindings). Config lives on teamspaces too. */
+export async function seedMainAgentDefinition(
+  db: Db,
+  teamspaceId: string,
+): Promise<void> {
+  const builtin = getMainAgentDefinition();
+  const port = createAgentDefinitionPort(db, { teamspaceId });
+  await port.upsertDefinition({
+    id: builtin.id,
+    name: builtin.title,
+    description: builtin.description,
+    instructions: textToBlockNoteContent(builtin.instruction),
+    toolBundles: builtin.toolBundles,
+    nodeScopes: builtin.nodeScopes,
+    runPolicy: builtin.runPolicy,
+  });
 }
 
 /** @deprecated Use seedAgentDefinitions */

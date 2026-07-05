@@ -1,33 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
 import type { SkillIndex } from "@ssota/contracts";
 import type { SkillPort } from "@ssota/core";
 import { resolveSkillManifest } from "../skill-manifest.js";
 import { resolveWorkflowToolNames } from "../workflow/resolve-workflow-tools.js";
 import { buildAgentTools } from "../tools/build-agent-tools.js";
 
-describe("resolveSkillManifest", () => {
-  const builtins: SkillIndex[] = [
-    {
-      id: "00000000-0000-4000-8000-000000000001",
-      key: "supabase",
-      name: "Supabase",
-      description: "Supabase guidance",
-      source: "builtin",
-    },
-  ];
-
-  const port: SkillPort = {
+function createMockPort(overrides: Partial<SkillPort> = {}): SkillPort {
+  return {
     async listForOrganization() {
-      return builtins;
+      return [];
     },
     async listLibrarySkills() {
       return [];
     },
     async listExploreSkills() {
-      return [];
-    },
-    async listOrganizationSkills() {
       return [];
     },
     async listForAgentDefinition() {
@@ -48,6 +34,15 @@ describe("resolveSkillManifest", () => {
     async listAgentSkillLinks() {
       return [];
     },
+    async listReadySkillBindings() {
+      return [];
+    },
+    async listOrganizationSkills() {
+      return [];
+    },
+    async getSkillPackageByHash() {
+      return null;
+    },
     async registerSkill() {
       throw new Error("not implemented");
     },
@@ -60,18 +55,28 @@ describe("resolveSkillManifest", () => {
     async updateAgentSkillBindings() {},
     async addSkillToOrganization() {},
     async removeSkillFromOrganization() {},
+    async refreshAgentSkillBinding() {
+      throw new Error("not implemented");
+    },
     async upsertSnapshot() {
       throw new Error("not implemented");
     },
+    async upsertSkillPackage() {
+      throw new Error("not implemented");
+    },
+    ...overrides,
   };
+}
 
-  it("falls back to platform builtins for main agent when unbound", async () => {
+describe("resolveSkillManifest", () => {
+  it("returns empty manifest when agent has no ready bindings", async () => {
+    const port = createMockPort();
     const manifest = await resolveSkillManifest(
       port,
       "org-id",
-      BUILTIN_AGENT_IDS.main,
+      "00000000-0000-4000-8000-000000000099",
     );
-    expect(manifest).toEqual(builtins);
+    expect(manifest).toEqual([]);
   });
 
   it("returns bound skills for task agents", async () => {
@@ -84,16 +89,15 @@ describe("resolveSkillManifest", () => {
         source: "builtin",
       },
     ];
-    const boundPort: SkillPort = {
-      ...port,
+    const port = createMockPort({
       async listForAgentDefinition() {
         return bound;
       },
-    };
+    });
     const manifest = await resolveSkillManifest(
-      boundPort,
+      port,
       "org-id",
-      BUILTIN_AGENT_IDS.implementFeature,
+      "00000000-0000-4000-8000-000000000099",
     );
     expect(manifest).toEqual(bound);
   });

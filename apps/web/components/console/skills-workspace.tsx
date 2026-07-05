@@ -51,7 +51,6 @@ function skillOriginFromRecord(
   if ("origin" in skill && skill.origin) return skill.origin;
   if ("metadata" in skill) {
     if (skill.metadata?.catalogSource) return "github";
-    if (skill.source === "skills_sh") return "skills_sh";
     if (skill.metadata?.kind === "community") return "community";
     return "inline";
   }
@@ -60,7 +59,7 @@ function skillOriginFromRecord(
 
 function originLabel(origin: SkillIndex["origin"] | undefined) {
   if (origin === "github") return "GitHub";
-  if (origin === "skills_sh" || origin === "community") return "Community";
+  if (origin === "community") return "Community";
   if (origin === "inline") return "Custom";
   return null;
 }
@@ -101,8 +100,8 @@ export function SkillsPageWorkspace({
       origin:
         skill.metadata?.catalogSource != null
           ? "github"
-          : skill.source === "skills_sh"
-            ? "skills_sh"
+          : skill.metadata?.kind === "community"
+            ? "community"
             : "inline",
     };
     setLibrarySkills((prev) => {

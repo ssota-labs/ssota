@@ -41,11 +41,19 @@ export function resolvePathWithinRoots(
 export function buildAllowedRoots(
   workingRoot: string,
   sourcePaths: readonly string[],
+  extraRoots: readonly string[] = [],
 ): string[] {
   const roots = new Set<string>();
   roots.add(path.posix.normalize(workingRoot));
   for (const sourcePath of sourcePaths) {
     roots.add(path.posix.normalize(sourcePath));
   }
+  for (const extra of extraRoots) {
+    roots.add(path.posix.normalize(extra));
+  }
   return [...roots];
+}
+
+export function skillSandboxRoot(workingRoot: string): string {
+  return path.posix.join(workingRoot, ".ssota/skills");
 }

@@ -4,7 +4,8 @@ import { BrowseWorkspace } from "@/components/console/browse-workspace";
 import { ConnectorCardSkeleton } from "@/components/connectors/connector-card-skeleton";
 
 export type ConnectionsBrowseSection = {
-  label: string;
+  /** Omit for a flat grid under the page header (Channels / Tools style). */
+  label?: string;
   count: number;
 };
 
@@ -40,15 +41,25 @@ export function ConnectionsBrowseLoading({
           )}
         </header>
 
-        {sections.map((section) => (
-          <BrowseWorkspace.Section key={section.label} label={section.label}>
+        {sections.map((section, sectionIndex) => {
+          const grid = (
             <BrowseWorkspace.Grid>
               {Array.from({ length: section.count }, (_, index) => (
-                <ConnectorCardSkeleton key={index} />
+                <ConnectorCardSkeleton key={index} showBadge={false} />
               ))}
             </BrowseWorkspace.Grid>
-          </BrowseWorkspace.Section>
-        ))}
+          );
+
+          if (!section.label) {
+            return <div key={sectionIndex}>{grid}</div>;
+          }
+
+          return (
+            <BrowseWorkspace.Section key={section.label} label={section.label}>
+              {grid}
+            </BrowseWorkspace.Section>
+          );
+        })}
       </BrowseWorkspace.Frame>
     </div>
   );

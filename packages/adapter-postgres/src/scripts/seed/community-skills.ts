@@ -50,7 +50,7 @@ ${body.trim()}
 }
 
 /**
- * Global community catalog rows (skills_sh) for Explore tab — not platform builtins.
+ * Global community catalog rows for Explore tab — not platform builtins.
  */
 export async function seedCommunitySkills(db: Db): Promise<number> {
   let seeded = 0;
@@ -78,7 +78,7 @@ export async function seedCommunitySkills(db: Db): Promise<number> {
         .set({
           name: entry.name,
           description: entry.description,
-          source: "skills_sh",
+          source: "custom",
           contentHash,
           metadata: { kind: "community" },
           updatedAt: new Date(),
@@ -92,7 +92,7 @@ export async function seedCommunitySkills(db: Db): Promise<number> {
           key: entry.key,
           name: entry.name,
           description: entry.description,
-          source: "skills_sh",
+          source: "custom",
           contentHash,
           metadata: { kind: "community" },
         })

@@ -1,9 +1,13 @@
 import type { SandboxEnvironment, SandboxSource } from "@ssota/contracts";
-import type { SandboxSessionRecordPort } from "@ssota/core";
+import type { SandboxSessionRecordPort, SkillPort } from "@ssota/core";
 import { checkoutSandboxSources, runSetupScript } from "./broker.js";
-import { buildAllowedRoots } from "./path-policy.js";
+import {
+  buildAllowedRoots,
+  skillSandboxRoot,
+} from "./path-policy.js";
 import { createSandboxHandle } from "./handle.js";
 import { createVercelSandbox } from "./vercel-client.js";
+import { materializeBoundSkills } from "./materialize-bound-skills.js";
 
 export async function provisionSandboxSession(input: {
   environment: SandboxEnvironment;
@@ -12,11 +16,16 @@ export async function provisionSandboxSession(input: {
   ownerAgentRunId?: string | null;
   ownerTaskId?: string | null;
   githubToken?: string;
+  agentDefinitionId?: string;
+  organizationId?: string;
+  skillPort?: SkillPort;
 }): Promise<{ sessionId: string; vercelSandboxId: string }> {
   const { environment, sources, sessionRecordPort } = input;
+  const skillsRoot = skillSandboxRoot(environment.workingRoot);
   const allowedRoots = buildAllowedRoots(
     environment.workingRoot,
     sources.map((source) => source.path),
+    input.agentDefinitionId ? [skillsRoot] : [],
   );
 
   const session = await sessionRecordPort.createRecord({
@@ -64,6 +73,23 @@ export async function provisionSandboxSession(input: {
       environment.setupScript,
       environment.workingRoot,
     );
+
+    if (
+      input.agentDefinitionId &&
+      input.organizationId &&
+      input.skillPort
+    ) {
+      await input.sessionRecordPort.updateRecord(session.id, {
+        setupStatus: "installing",
+      });
+      await materializeBoundSkills({
+        handle,
+        workingRoot: environment.workingRoot,
+        organizationId: input.organizationId,
+        agentDefinitionId: input.agentDefinitionId,
+        skillPort: input.skillPort,
+      });
+    }
 
     await input.sessionRecordPort.updateRecord(session.id, {
       status: "ready",

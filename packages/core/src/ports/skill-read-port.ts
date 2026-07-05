@@ -6,6 +6,8 @@ import type {
   Skill,
   SkillFile,
   SkillIndex,
+  SkillLockEntry,
+  SkillPackage,
   SkillSnapshot,
   UpdateSkillInput,
 } from "@ssota/contracts";
@@ -27,7 +29,15 @@ export interface SkillReadPort {
   ): Promise<SkillFile | null>;
   listSkillFiles(organizationId: string, skillId: string): Promise<SkillFile[]>;
   listAgentSkillLinks(agentDefinitionId: string): Promise<AgentDefinitionSkillLink[]>;
+  /** Enabled bindings with lockStatus ready for sandbox materialize. */
+  listReadySkillBindings(
+    agentDefinitionId: string,
+  ): Promise<Array<AgentDefinitionSkillLink & { skillKey: string }>>;
   listOrganizationSkills(organizationId: string): Promise<OrganizationSkill[]>;
+  getSkillPackageByHash(
+    organizationId: string,
+    contentHash: string,
+  ): Promise<SkillPackage | null>;
 }
 
 export interface SkillWritePort {
@@ -51,7 +61,19 @@ export interface SkillWritePort {
     organizationId: string,
     skillId: string,
   ): Promise<void>;
+  refreshAgentSkillBinding(
+    teamspaceId: string,
+    agentDefinitionId: string,
+    skillId: string,
+  ): Promise<AgentDefinitionSkillLink>;
   upsertSnapshot(snapshot: Omit<SkillSnapshot, "fetchedAt">): Promise<SkillSnapshot>;
+  upsertSkillPackage(input: {
+    organizationId: string;
+    contentHash: string;
+    sourceType: SkillLockEntry["sourceType"];
+    files: SkillFile[];
+    storageKey?: string | null;
+  }): Promise<SkillPackage>;
 }
 
 export type SkillPort = SkillReadPort & SkillWritePort;

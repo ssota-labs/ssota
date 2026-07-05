@@ -18,6 +18,7 @@ import { seedInboundChannelFixtures } from "./seed/inbound-channels.js";
 import { seedScheduleFixtures } from "./seed/schedules.js";
 import { seedBuiltinSkills } from "./seed/builtin-skills.js";
 import { seedCommunitySkills } from "./seed/community-skills.js";
+import { seedMainDefaultSkillBindings } from "./seed/main-default-skill-bindings.js";
 import { applyTemplate, SOFTWARE_DEV_TEMPLATE } from "../ports/templates.js";
 import { ensureAuthUserRow } from "../ensure-auth-user.js";
 import { BUILTIN_AGENT_IDS } from "@ssota/contracts/agents";
@@ -365,6 +366,14 @@ async function main() {
   console.log("Seeding community explore catalog...");
   const communityCount = await seedCommunitySkills(db);
   console.log(`Seeded ${communityCount} community skills.`);
+  if (consoleSeed?.organizationId && consoleSeed.teamspaceId) {
+    console.log("Seeding main agent default skill bindings...");
+    const boundCount = await seedMainDefaultSkillBindings(db, {
+      organizationId: consoleSeed.organizationId,
+      teamspaceId: consoleSeed.teamspaceId,
+    });
+    console.log(`Bound ${boundCount} default skills to main agent.`);
+  }
   console.log("Seeding default sandbox environments...");
   await seedDefaultSandboxEnvironments(db);
   console.log("Seed complete.");

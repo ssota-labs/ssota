@@ -220,6 +220,7 @@ export async function provisionSandboxStep(
       sandboxEnvironmentId: environmentId,
       ownerAgentRunId: null,
       ownerTaskId: input.taskId,
+      agentDefinitionId: task.agentDefinitionId,
     });
     return {
       sandboxSessionId: session.id,

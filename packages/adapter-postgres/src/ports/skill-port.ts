@@ -1,28 +1,26 @@
-import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import type { SkillPort } from "@ssota/core";
 import { stripSkillFrontmatter } from "@ssota/core";
 import {
   SkillSchema,
   SkillSnapshotSchema,
+  SkillPackageSchema,
   type RegisterSkillInput,
   type Skill,
   type SkillFile,
   type SkillIndex,
+  type SkillLockEntry,
   type UpdateSkillInput,
 } from "@ssota/contracts";
 import type { Db } from "../db/client.js";
 import * as schema from "../db/schema.js";
-import { fetchGithubSkillFiles } from "./skill-helpers.js";
+import { fetchGithubSkillFiles, hashSkillFiles } from "./skill-helpers.js";
+import { resolveBindingLock, upsertSkillPackageRow } from "./skill-lock-resolve.js";
 
 type SkillRow = typeof schema.skills.$inferSelect;
 
 function hashFiles(files: SkillFile[]): string {
-  const payload = files
-    .map((f) => `${f.path}\0${f.contents}`)
-    .sort()
-    .join("\n");
-  return createHash("sha256").update(payload).digest("hex");
+  return hashSkillFiles(files);
 }
 
 function mapSkill(row: SkillRow): Skill {
@@ -44,7 +42,6 @@ function mapSkill(row: SkillRow): Skill {
 function skillOrigin(row: SkillRow): SkillIndex["origin"] {
   const meta = row.metadata as Record<string, unknown>;
   if (meta?.catalogSource) return "github";
-  if (row.source === "skills_sh") return "skills_sh";
   if (meta?.kind === "community") return "community";
   return "inline";
 }
@@ -133,7 +130,8 @@ export function createSkillPort(
         .where(
           and(
             isNull(schema.skills.organizationId),
-            eq(schema.skills.source, "skills_sh"),
+            eq(schema.skills.source, "custom"),
+            sql`${schema.skills.metadata}->>'kind' = 'community'`,
           ),
         )
         .orderBy(asc(schema.skills.key));
@@ -141,19 +139,6 @@ export function createSkillPort(
       return rows
         .filter((row) => !libraryIds.has(row.id))
         .map(mapIndex);
-    },
-
-    async listOrganizationSkills(orgId) {
-      const rows = await db
-        .select()
-        .from(schema.organizationSkills)
-        .where(eq(schema.organizationSkills.organizationId, orgId))
-        .orderBy(asc(schema.organizationSkills.addedAt));
-      return rows.map((row) => ({
-        organizationId: row.organizationId,
-        skillId: row.skillId,
-        addedAt: row.addedAt.toISOString(),
-      }));
     },
 
     async listForAgentDefinition(agentDefinitionId) {
@@ -171,6 +156,10 @@ export function createSkillPort(
           and(
             eq(schema.agentDefinitionSkills.agentDefinitionId, agentDefinitionId),
             eq(schema.agentDefinitionSkills.enabled, true),
+            or(
+              eq(schema.agentDefinitionSkills.lockStatus, "ready"),
+              isNull(schema.agentDefinitionSkills.lockStatus),
+            ),
           ),
         )
         .orderBy(asc(schema.agentDefinitionSkills.sortOrder));
@@ -263,7 +252,82 @@ export function createSkillPort(
         skillId: row.skillId,
         enabled: row.enabled,
         sortOrder: row.sortOrder,
+        lock: (row.lock as SkillLockEntry | null) ?? null,
+        lockStatus: row.lockStatus ?? null,
+        lockError: row.lockError ?? null,
       }));
+    },
+
+    async listReadySkillBindings(agentDefinitionId) {
+      const rows = await db
+        .select({
+          link: schema.agentDefinitionSkills,
+          skill: schema.skills,
+        })
+        .from(schema.agentDefinitionSkills)
+        .innerJoin(
+          schema.skills,
+          eq(schema.agentDefinitionSkills.skillId, schema.skills.id),
+        )
+        .where(
+          and(
+            eq(schema.agentDefinitionSkills.agentDefinitionId, agentDefinitionId),
+            eq(schema.agentDefinitionSkills.enabled, true),
+            eq(schema.agentDefinitionSkills.lockStatus, "ready"),
+            sql`${schema.agentDefinitionSkills.lock} IS NOT NULL`,
+          ),
+        )
+        .orderBy(asc(schema.agentDefinitionSkills.sortOrder));
+
+      return rows.map((row) => ({
+        agentDefinitionId: row.link.agentDefinitionId,
+        skillId: row.link.skillId,
+        enabled: row.link.enabled,
+        sortOrder: row.link.sortOrder,
+        lock: row.link.lock as SkillLockEntry,
+        lockStatus: row.link.lockStatus,
+        lockError: row.link.lockError,
+        skillKey: row.skill.key,
+      }));
+    },
+
+    async listOrganizationSkills(orgId) {
+      const rows = await db
+        .select()
+        .from(schema.organizationSkills)
+        .where(eq(schema.organizationSkills.organizationId, orgId))
+        .orderBy(asc(schema.organizationSkills.addedAt));
+      return rows.map((row) => ({
+        organizationId: row.organizationId,
+        skillId: row.skillId,
+        addedAt: row.addedAt.toISOString(),
+      }));
+    },
+
+    async getSkillPackageByHash(orgId, contentHash) {
+      const rows = await db
+        .select()
+        .from(schema.skillPackages)
+        .where(
+          and(
+            eq(schema.skillPackages.organizationId, orgId),
+            eq(schema.skillPackages.contentHash, contentHash),
+          ),
+        )
+        .limit(1);
+      const row = rows[0];
+      if (!row) return null;
+      return SkillPackageSchema.parse({
+        id: row.id,
+        organizationId: row.organizationId,
+        contentHash: row.contentHash,
+        sourceType: row.sourceType,
+        storageKey: row.storageKey,
+        files: row.files,
+        fileCount: row.fileCount,
+        sizeBytes: row.sizeBytes,
+        createdAt: row.createdAt.toISOString(),
+      });
     },
 
     async registerSkill(orgId, input: RegisterSkillInput) {
@@ -281,11 +345,14 @@ export function createSkillPort(
       }
 
       const contentHash = files.length > 0 ? hashFiles(files) : null;
-      const source = input.source ?? (input.externalId ? "skills_sh" : "custom");
+      const source = input.source ?? "custom";
       const metadata = {
         ...(input.metadata ?? {}),
         kind: input.metadata?.kind ?? ("custom" as const),
         ...(catalogSource ? { catalogSource } : {}),
+        ...(contentHash && input.files?.length
+          ? { packageHash: contentHash }
+          : {}),
       };
 
       let snapshotFiles = files;
@@ -359,6 +426,24 @@ export function createSkillPort(
               fetchedAt: sql`now()`,
             },
           });
+
+        if (input.files && input.files.length > 0) {
+          await upsertSkillPackageRow(db, {
+            organizationId: orgId,
+            contentHash: resolvedHash,
+            sourceType: "inline",
+            files: snapshotFiles,
+            storageKey: `inline://${skillRow.id}`,
+          });
+        } else if (input.body !== undefined) {
+          await upsertSkillPackageRow(db, {
+            organizationId: orgId,
+            contentHash: resolvedHash,
+            sourceType: "inline",
+            files: snapshotFiles,
+            storageKey: `inline://${skillRow.id}`,
+          });
+        }
       }
 
       await db
@@ -528,7 +613,7 @@ export function createSkillPort(
       if (skillIds.length === 0) return;
 
       const validSkills = await db
-        .select({ id: schema.skills.id })
+        .select()
         .from(schema.skills)
         .where(
           and(
@@ -536,19 +621,116 @@ export function createSkillPort(
             inArray(schema.skills.id, skillIds),
           ),
         );
-      const validIds = new Set(validSkills.map((s) => s.id));
+      const skillById = new Map(validSkills.map((s) => [s.id, s]));
 
-      await db.insert(schema.agentDefinitionSkills).values(
-        skillIds
-          .filter((id) => validIds.has(id))
-          .map((skillId, index) => ({
-            teamspaceId,
-            agentDefinitionId,
-            skillId,
-            enabled: true,
-            sortOrder: index,
-          })),
-      );
+      for (const [index, skillId] of skillIds.entries()) {
+        const row = skillById.get(skillId);
+        if (!row) continue;
+
+        const skill = mapSkill(row);
+        const resolved = await resolveBindingLock(db, {
+          organizationId,
+          skill,
+          githubToken,
+        });
+
+        await db.insert(schema.agentDefinitionSkills).values({
+          teamspaceId,
+          agentDefinitionId,
+          skillId,
+          enabled: true,
+          sortOrder: index,
+          lock: resolved.lock,
+          lockStatus: resolved.lockStatus,
+          lockError: resolved.lockError,
+        });
+      }
+    },
+
+    async refreshAgentSkillBinding(tsId, agentDefinitionId, skillId) {
+      if (tsId !== teamspaceId) {
+        throw new Error("teamspaceId mismatch for skill binding refresh");
+      }
+
+      const skillRows = await db
+        .select()
+        .from(schema.skills)
+        .where(and(orgCatalogCondition(organizationId), eq(schema.skills.id, skillId)))
+        .limit(1);
+      if (!skillRows[0]) {
+        throw new Error("SKILL_NOT_FOUND");
+      }
+
+      const skill = mapSkill(skillRows[0]);
+      const resolved = await resolveBindingLock(db, {
+        organizationId,
+        skill,
+        githubToken,
+      });
+
+      const [updated] = await db
+        .update(schema.agentDefinitionSkills)
+        .set({
+          lock: resolved.lock,
+          lockStatus: resolved.lockStatus,
+          lockError: resolved.lockError,
+        })
+        .where(
+          and(
+            eq(schema.agentDefinitionSkills.agentDefinitionId, agentDefinitionId),
+            eq(schema.agentDefinitionSkills.skillId, skillId),
+          ),
+        )
+        .returning();
+
+      if (!updated) {
+        throw new Error("BINDING_NOT_FOUND");
+      }
+
+      return {
+        agentDefinitionId: updated.agentDefinitionId,
+        skillId: updated.skillId,
+        enabled: updated.enabled,
+        sortOrder: updated.sortOrder,
+        lock: (updated.lock as SkillLockEntry | null) ?? null,
+        lockStatus: updated.lockStatus ?? null,
+        lockError: updated.lockError ?? null,
+      };
+    },
+
+    async upsertSkillPackage(input) {
+      await upsertSkillPackageRow(db, {
+        organizationId: input.organizationId,
+        contentHash: input.contentHash,
+        sourceType: input.sourceType,
+        files: input.files,
+        storageKey: input.storageKey,
+      });
+      const rows = await db
+        .select()
+        .from(schema.skillPackages)
+        .where(
+          and(
+            eq(schema.skillPackages.organizationId, input.organizationId),
+            eq(schema.skillPackages.contentHash, input.contentHash),
+          ),
+        )
+        .limit(1);
+      const row = rows[0];
+      if (!row) {
+        throw new Error("SKILL_PACKAGE_UPSERT_FAILED");
+      }
+      return SkillPackageSchema.parse({
+        id: row.id,
+        organizationId: row.organizationId,
+        contentHash: row.contentHash,
+        sourceType: row.sourceType,
+        storageKey: row.storageKey,
+        files: row.files,
+        fileCount: row.fileCount,
+        sizeBytes: row.sizeBytes,
+        createdAt: row.createdAt.toISOString(),
+      });
     },
 
     async upsertSnapshot(snapshot) {
