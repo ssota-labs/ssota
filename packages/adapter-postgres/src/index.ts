@@ -1,5 +1,6 @@
 export { createAdminDb, createDb, schema } from "./db/client.js";
 export type { Db } from "./db/client.js";
+export { isPostgresRelationMissingError } from "./db/postgres-errors.js";
 export {
   createConsolePort,
   createOnboardingPort,
