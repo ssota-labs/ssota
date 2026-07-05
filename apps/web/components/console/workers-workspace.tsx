@@ -45,11 +45,6 @@ const WORKER_KIND_SECTIONS: Array<{
   description: string;
 }> = [
   {
-    kind: "tool",
-    label: "Tools",
-    description: "Run on demand from agents.",
-  },
-  {
     kind: "sync",
     label: "Sync",
     description: "Scheduled jobs on a cron expression.",
@@ -79,9 +74,9 @@ type WorkersWorkspaceProps = {
 };
 
 function kindLabel(kind: WorkerKind): string {
-  if (kind === "tool") return "Tool";
   if (kind === "sync") return "Sync";
-  return "Webhook";
+  if (kind === "webhook") return "Webhook";
+  return "Worker";
 }
 
 function kindIcon(kind: WorkerKind) {
@@ -114,7 +109,7 @@ export function WorkersWorkspace({
   const [editDescription, setEditDescription] = useState("");
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
-  const [createKind, setCreateKind] = useState<WorkerKind>("tool");
+  const [createKind, setCreateKind] = useState<WorkerKind>("sync");
   const [createKey, setCreateKey] = useState("");
   const [createName, setCreateName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
@@ -179,7 +174,7 @@ export function WorkersWorkspace({
     };
 
     for (const worker of workers) {
-      if (matchesSearch(worker)) {
+      if (matchesSearch(worker) && worker.kind !== "tool") {
         grouped[worker.kind].push(worker);
       }
     }
@@ -209,7 +204,7 @@ export function WorkersWorkspace({
   }
 
   function resetCreateForm() {
-    setCreateKind("tool");
+    setCreateKind("sync");
     setCreateKey("");
     setCreateName("");
     setCreateDescription("");
@@ -227,9 +222,7 @@ export function WorkersWorkspace({
               timezone: "UTC",
               enabled: true,
             }
-          : createKind === "webhook"
-            ? { enabled: true, verification: "none" as const }
-            : undefined;
+          : { enabled: true, verification: "none" as const };
 
       const worker = await createWorkerAction(orgSlug, teamspaceSlug, teamspaceId, {
         key: createKey.trim(),
@@ -386,7 +379,7 @@ export function WorkersWorkspace({
       <BrowseWorkspace.Frame testId="workers-browse">
         <BrowseWorkspace.Header
           title="Workers"
-          description="Stored TypeScript capabilities — tools for agents, scheduled sync jobs, and webhook handlers."
+          description="Scheduled sync jobs and webhook handlers with a scoped SSOTA SDK."
         >
           <div className="pt-2">
             <Input
@@ -533,11 +526,9 @@ export function WorkersWorkspace({
               <ArtifactHeader>
                 <ArtifactTitle>TypeScript script</ArtifactTitle>
                 {isLoadingDetail ? (
-                  activeWorker.kind === "tool" ? (
-                    <ArtifactActions>
-                      <Skeleton className="size-8 shrink-0 rounded-sm" />
-                    </ArtifactActions>
-                  ) : null
+                  <ArtifactActions>
+                    <Skeleton className="size-8 shrink-0 rounded-sm" />
+                  </ArtifactActions>
                 ) : (
                   <TooltipProvider delay={0}>
                     <ArtifactActions>
@@ -550,15 +541,13 @@ export function WorkersWorkspace({
                           data-testid="worker-save-script"
                         />
                       ) : null}
-                      {activeWorker.kind === "tool" ? (
-                        <ArtifactAction
-                          tooltip="Test run"
-                          icon={<PlayIcon className="size-4" />}
-                          disabled={isPending}
-                          onClick={() => handleDryRun(activeWorker.id)}
-                          data-testid="worker-dry-run"
-                        />
-                      ) : null}
+                      <ArtifactAction
+                        tooltip="Test run"
+                        icon={<PlayIcon className="size-4" />}
+                        disabled={isPending}
+                        onClick={() => handleDryRun(activeWorker.id)}
+                        data-testid="worker-dry-run"
+                      />
                     </ArtifactActions>
                   </TooltipProvider>
                 )}

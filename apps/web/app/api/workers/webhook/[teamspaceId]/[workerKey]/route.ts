@@ -1,6 +1,6 @@
 import { after, NextResponse } from "next/server";
-import { executeWorker } from "@ssota/agent-runtime/workers/execute-worker";
 import { WorkerWebhookConfigSchema } from "@ssota/contracts";
+import { executeScopedWorker } from "@/lib/workers/execute-scoped-worker";
 import { getWorkerPort } from "@/lib/ports";
 
 export const runtime = "nodejs";
@@ -38,7 +38,7 @@ export async function POST(request: Request, context: RouteContext) {
   };
 
   after(async () => {
-    await executeWorker({
+    await executeScopedWorker({
       worker,
       input,
       trigger: "webhook",

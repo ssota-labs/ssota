@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import type { CreateWorkerInput, UpdateWorkerInput } from "@ssota/contracts";
-import { executeWorker } from "@ssota/agent-runtime/workers/execute-worker";
+import { executeScopedWorker } from "@/lib/workers/execute-scoped-worker";
 import { getWorkerPort } from "@/lib/ports";
 import { legacyOrgTeamspacePath } from "@/lib/console/paths";
 
@@ -61,5 +61,5 @@ export async function dryRunWorkerAction(
   const port = getWorkerPort(teamspaceId);
   const worker = await port.getById(workerId);
   if (!worker) throw new Error("Worker not found");
-  return executeWorker({ worker, input, dryRun: true, trigger: "manual" });
+  return executeScopedWorker({ worker, input, dryRun: true, trigger: "manual" });
 }

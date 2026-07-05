@@ -238,18 +238,8 @@ export function AgentSettingsDialogs({
       });
     }
 
-    for (const tool of storedWorkers) {
-      entries.push({
-        kind: "script",
-        id: `script:${tool.id}`,
-        toolId: tool.id,
-        label: tool.name,
-        key: tool.key,
-      });
-    }
-
     return entries;
-  }, [connectors, storedWorkers]);
+  }, [connectors]);
 
   const filteredToolEntries = useMemo(
     () =>
