@@ -275,7 +275,7 @@ export function WorkersWorkspace({
       setDryRunResult(
         result.ok
           ? JSON.stringify(result.output, null, 2)
-          : result.error ?? "Dry run failed",
+          : result.error ?? "Test run failed",
       );
     });
   }
@@ -552,7 +552,7 @@ export function WorkersWorkspace({
                       ) : null}
                       {activeWorker.kind === "tool" ? (
                         <ArtifactAction
-                          tooltip="Dry run"
+                          tooltip="Test run"
                           icon={<PlayIcon className="size-4" />}
                           disabled={isPending}
                           onClick={() => handleDryRun(activeWorker.id)}

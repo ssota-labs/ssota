@@ -20,6 +20,7 @@ import type {
   AgentTrigger,
   ConnectionTrigger,
   SkillIndex,
+  WorkerIndex,
 } from "@ssota/contracts";
 import { deriveEnabledConnectorProviders } from "@ssota/contracts";
 import { Button } from "@ssota/ui/components/ui/button";
@@ -173,7 +174,7 @@ type AgentSettingsSheetProps = {
   linkedWorkerIds: string[];
   boundSkillIds: string[];
   skillCatalog: SkillIndex[];
-  storedWorkers: Array<{ id: string; key: string; name: string }>;
+  storedWorkers: WorkerIndex[];
   workers: AgentDefinition[];
   connectors: ConnectorDef[];
   connections: { user: ConnectorConnection[]; org: ConnectorConnection[] };
