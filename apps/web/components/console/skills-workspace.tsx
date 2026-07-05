@@ -509,6 +509,7 @@ function SkillIndexList({
           key={skill.id}
           id={skill.id}
           testId={`${testIdPrefix}-${skill.key}`}
+          action={renderAction?.(skill)}
         >
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex items-center gap-2">
@@ -525,7 +526,6 @@ function SkillIndexList({
               </p>
             ) : null}
           </div>
-          {renderAction?.(skill)}
           {!renderAction ? <CardListSheet.RowCaret /> : null}
         </CardListSheet.Row>
       ))}
